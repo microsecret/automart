@@ -1,0 +1,2 @@
+- [Language Preference] — User prefers all communication in Russian language permanently
+- [Russian Comments Only] — All code comments must be in Russian language permanently

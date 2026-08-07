@@ -1,0 +1,294 @@
+// Prisma Schema for AutoRent Markt
+// Defines the data models for vehicles, parts, users, listings, etc.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and user profiles
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?  // URL to user's avatar
+  role          String   @default("USER") // USER, ADMIN, MODERATOR
+  hashedPassword String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  vehicles     Vehicle[] @relation("UserVehicles")
+  parts        Part[]    @relation("UserParts")
+  listings     Listing[]
+  favoriteListings Listing[] @relation("Favorites")
+  reviews      Review[] @relation("Reviewer")
+  messagesSent Message[] @relation("MessageSender")
+  messagesReceived Message[] @relation("MessageReceiver")
+  aiServiceLogs AIServiceLog[] @relation("UserAIServiceLogs")
+  sessions     Session[] @relation("UserSessions")
+  notifications  Notification[] @relation("UserNotifications")
+
+  @@index([email])
+}
+
+// Vehicle model - base model for all types of vehicles
+model Vehicle {
+  id           String   @id @default(uuid())
+  make         String   // Manufacturer (Toyota, BMW, etc.)
+  model        String   // Model name (Camry, X5, etc.)
+  year         Int
+  price        Int      // Price in rubles
+  mileage      Int      // in kilometers
+  vin          String   @unique // Vehicle Identification Number
+  fuelType     String   // GASOLINE, DIESEL, ELECTRIC, HYBRID, GAS, OTHER
+  transmission String   // MANUAL, AUTOMATIC, VARIATOR, ROBOTIC
+  bodyType     String?  // SEDAN, HATCHBACK, SUV, COUPE, CONVERTIBLE, WAGON, MINIVAN, PICKUP, OTHER
+  color        String?
+  doors        Int?
+  engineVolume Float?   // in liters
+  power        Int?     // in horsepower
+  driveType    String?  // FWD, RWD, AWD, FOUR_WD
+  condition    String   // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
+  location     String   // City, region
+  lat          Float?   // Latitude
+  lng          Float?   // Longitude
+  description  String?
+  // Images will be stored as JSON string or separate table - for simplicity using String
+  images       String?  // JSON array of image URLs as string
+
+  // Foreign keys
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], name: "UserVehicles")
+  category     Category @relation(fields: [categoryId], references: [id])
+
+  // Reverse relation for listings
+  listings     Listing[] @relation("ListingVehicle")
+  categoryId   String
+
+  // Timestamps
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Indexes for search optimization
+  @@index([make, model])
+  @@index([year])
+  @@index([price])
+  @@index([location])
+  @@index([vin])
+}
+
+// Vehicle categories
+model Category {
+  id            String   @id @default(uuid())
+  name          String   // e.g., "Легковые автомобили"
+  description   String?
+  icon          String   // Icon name from lucide-react
+  vehicleCount  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  vehicles      Vehicle[]
+
+  @@unique([name])
+}
+
+// Auto parts model
+model Part {
+  id            String   @id @default(uuid())
+  name          String   // Part name
+  description   String?
+  price         Int      // Price in rubles
+  condition     String   // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
+  make          String   // Compatible vehicle make
+  model         String   // Compatible vehicle model
+  yearFrom      Int?     // Compatible from year
+  yearTo        Int?     // Compatible to year
+  partType      String   // ENGINE, TRANSMISSION, SUSPENSION, BRAKES, ELECTRICAL, BODY, INTERIOR, WHEELS, ACCESSORIES, OTHER
+  location      String   // City, region
+  lat           Float?   // Latitude
+  lng           Float?   // Longitude
+  // Images will be stored as JSON string or separate table - for simplicity using String
+  images        String?  // JSON array of image URLs as string
+
+  // Foreign keys
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], name: "UserParts")
+
+  // Reverse relation for listings
+  listings      Listing[] @relation("ListingPart")
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Indexes
+  @@index([name])
+  @@index([make, model])
+  @@index([partType])
+}
+
+// Listing model (combines vehicles and parts for unified interface)
+model Listing {
+  id            String   @id @default(uuid())
+  title         String
+  description   String?
+  price         Int      // Price in rubles
+  isFeatured    Boolean  @default(false)
+  views         Int      @default(0)
+
+  // Polymorphic relation - can be either vehicle or part
+  vehicleId     String?
+  vehicle       Vehicle? @relation(fields: [vehicleId], references: [id], name: "ListingVehicle")
+
+  partId        String?
+  part          Part?    @relation(fields: [partId], references: [id], name: "ListingPart")
+
+  // Foreign keys
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  // Reverse relation for favorites
+  favoritedBy   User[]   @relation("Favorites")
+
+  // Reverse relation for messages
+  messages      Message[] @relation("MessageListing")
+
+  // Reverse relation for reviews
+  reviews       Review[] @relation("ListingReviews")
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // TODO: Add validation to ensure either vehicleId or partId is set, but not both
+  // This will be handled at the application level for now
+
+  @@index([createdAt])
+  @@index([price])
+  @@index([isFeatured])
+}
+
+// Review model for transaction feedback
+model Review {
+  id            String   @id @default(uuid())
+  rating        Int      // 1-5 stars
+  comment       String?
+
+  // Foreign keys
+  userId        String   // Reviewer (user who left the review)
+  user          User     @relation("Reviewer", fields: [userId], references: [id])
+
+  // For transaction-based reviews, we might want to link to a specific transaction
+  // For now, we'll keep it general but allow linking to a listing
+  listingId     String?
+  listing       Listing? @relation("ListingReviews", fields: [listingId], references: [id])
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+// Message model for user-to-user communication
+model Message {
+  id            String   @id @default(uuid())
+  content       String
+  isRead        Boolean  @default(false)
+
+  // Conversation ID for efficient querying
+  // Format: "{userId1}-{userId2}-{listingId}" or "{userId1}-{userId2}-no-listing"
+  // where userId1 < userId2 alphabetically
+  conversationId String
+
+  // Foreign keys
+  senderId      String
+  sender        User     @relation("MessageSender", fields: [senderId], references: [id])
+
+  receiverId    String
+  receiver      User     @relation("MessageReceiver", fields: [receiverId], references: [id])
+
+  // Optional relation to listing (if message is about a specific listing)
+  listingId     String?
+  listing       Listing? @relation(fields: [listingId], references: [id], name: "MessageListing")
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([senderId, receiverId])
+  @@index([createdAt])
+}
+
+// Favorite listings (many-to-many relationship between users and listings)
+ // Handled implicitly through the relations in User and Listing models
+
+// AI Service logs (to track usage of AI features)
+model AIServiceLog {
+  id            String   @id @default(uuid())
+  serviceType   String   // VALUATION, HISTORY_CHECK, SIMILAR_SEARCH, PRICE_PREDICTION, DAMAGE_ASSESSMENT, SMART_MATCHING
+  inputData     String?  // Input data for the AI service (stored as JSON string)
+  resultData    String?  // Result from the AI service (stored as JSON string)
+
+  // Foreign keys
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], name: "UserAIServiceLogs")
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+
+  @@index([serviceType, createdAt])
+}
+
+// Session model for NextAuth
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], name: "UserSessions")
+  expires      DateTime
+
+  @@index([sessionToken])
+  @@index([userId])
+}
+
+// Notification model for in-app notifications
+model Notification {
+  id            String   @id @default(uuid())
+  title         String
+  content       String
+  isRead        Boolean  @default(false)
+  type          String   // INFO, WARNING, ERROR, SUCCESS
+  relatedId     String?  // ID of related entity (listing, message, etc.)
+  relatedType   String?  // Type of related entity (LISTING, MESSAGE, USER, etc.)
+
+  // Foreign keys
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], name: "UserNotifications")
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+// VerificationToken model for NextAuth
+model VerificationToken {
+  id            String   @id @default(uuid())
+  identifier    String
+  token         String   @unique
+  expires       DateTime
+
+  @@unique([identifier, token])
+  @@index([token])
+}

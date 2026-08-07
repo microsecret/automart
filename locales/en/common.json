@@ -1,0 +1,21 @@
+{
+  "navbar": {
+    "home": "Home",
+    "listings": "Transport",
+    "parts": "Parts",
+    "services": "Services",
+    "aiServices": "AI Services",
+    "messages": "Messages",
+    "favorites": "Favorites",
+    "notifications": "Notifications",
+    "reviews": "Reviews",
+    "search": "Advanced Search"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "submit": "Create Listing"
+  }
+}

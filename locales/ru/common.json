@@ -1,0 +1,21 @@
+{
+  "navbar": {
+    "home": "Главная",
+    "listings": "Транспорт",
+    "parts": "Запчасти",
+    "services": "Услуги",
+    "aiServices": "AI-Сервисы",
+    "messages": "Сообщения",
+    "favorites": "Избранное",
+    "notifications": "Уведомления",
+    "reviews": "Отзывы",
+    "search": "Расширенный поиск"
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успех",
+    "cancel": "Отмена",
+    "submit": "Создать объявление"
+  }
+}

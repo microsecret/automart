@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 224 71% 4%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 224 71% 4%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 71% 4%;
+
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 220 14% 97%;
+  --secondary-foreground: 220 9% 45%;
+
+  --muted: 220 14% 97%;
+  --muted-foreground: 220 8% 91%;
+
+  --accent: 220 14% 97%;
+  --accent-foreground: 220 9% 45%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+
+  --ring: 215 28% 17%;
+
+  --radius: 0.5rem;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+.dark {
+  --background: 224 71% 4%;
+  --foreground: 210 40% 98%;
+
+  --card: 224 71% 4%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 224 71% 4%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 220 91% 57%;
+  --primary-foreground: 224 71% 4%;
+
+  --secondary: 215 28% 17%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 215 28% 17%;
+  --muted-foreground: 217 15% 45%;
+
+  --accent: 215 28% 17%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 215 28% 17%;
+  --input: 215 28% 17%;
+}
+
+/* Glassmorphism effect */
+.glass {
+  @apply bg-white/80 backdrop-blur-sm border border-border/20 shadow-sm;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/30 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary/40;
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+}
+
+/* Gradient button */
+.gradient-button {
+  @apply bg-gradient-to-r from-primary to-accent hover:from-accent hover:to-primary text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-all flex items-center justify-center space-x-2;
+}
+
+/* Custom animations */
+@keyframes pulse-border {
+  0%, 100% { border-width: 1px; }
+  50% { border-width: 3px; }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fade-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-down {
+  0% { transform: translateY(-20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.5s ease-out;
+}

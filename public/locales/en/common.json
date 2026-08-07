@@ -1,0 +1,21 @@
+{
+  "navbar": {
+    "home": "Home",
+    "vehicles": "Vehicles",
+    "parts": "Parts",
+    "services": "Services",
+    "aiServices": "AI Services",
+    "messages": "Messages",
+    "favorites": "Favorites",
+    "notifications": "Notifications",
+    "reviews": "Reviews",
+    "search": "Advanced Search",
+    "createListing": "Create Listing",
+    "findTransport": "Find Transport",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "darkModeLight": "Light Theme",
+    "darkModeDark": "Dark Theme",
+    "cart": "Cart"
+  }
+}
