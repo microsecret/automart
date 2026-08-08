@@ -36,6 +36,17 @@ export async function GET(request: NextRequest) {
     const powerTo = sp.get("powerTo")
     const color = sp.get("color")
     const condition = sp.get("condition")
+    const steeringWheel = sp.get("steeringWheel")
+    const documentsStatus = sp.get("documentsStatus")
+    const damageInfo = sp.get("damageInfo")
+    const sellerType = sp.get("sellerType")
+    const availability = sp.get("availability")
+    const customsCleared = sp.get("customsCleared")
+    const ownersCountFrom = sp.get("ownersCountFrom")
+    const ownersCountTo = sp.get("ownersCountTo")
+    const mileageFrom = sp.get("mileageFrom")
+    const mileageTo = sp.get("mileageTo")
+    const keywords = sp.get("keywords")
     const vehicleType = sp.get("vehicleType") // CAR, MOTORCYCLE, TRUCK, SPECIAL, WATER, AIR
 
     // Фильтры запчастей
@@ -80,6 +91,24 @@ export async function GET(request: NextRequest) {
     if (driveType) vehicleFilters.driveType = driveType
     if (color) vehicleFilters.color = { contains: color }
     if (condition) vehicleFilters.condition = condition
+    if (steeringWheel) vehicleFilters.steeringWheel = steeringWheel
+    if (documentsStatus) vehicleFilters.documentsStatus = documentsStatus
+    if (damageInfo) vehicleFilters.damageInfo = damageInfo
+    if (sellerType) vehicleFilters.sellerType = sellerType
+    if (availability) vehicleFilters.availability = availability
+    if (customsCleared === "true") vehicleFilters.customsCleared = true
+    if (customsCleared === "false") vehicleFilters.customsCleared = false
+    if (keywords) vehicleFilters.keywords = { contains: keywords }
+    if (ownersCountFrom || ownersCountTo) {
+      vehicleFilters.ownersCount = {}
+      if (ownersCountFrom) vehicleFilters.ownersCount.gte = parseInt(ownersCountFrom)
+      if (ownersCountTo) vehicleFilters.ownersCount.lte = parseInt(ownersCountTo)
+    }
+    if (mileageFrom || mileageTo) {
+      vehicleFilters.mileage = {}
+      if (mileageFrom) vehicleFilters.mileage.gte = parseInt(mileageFrom)
+      if (mileageTo) vehicleFilters.mileage.lte = parseInt(mileageTo)
+    }
     if (engineVolumeFrom || engineVolumeTo) {
       vehicleFilters.engineVolume = {}
       if (engineVolumeFrom) vehicleFilters.engineVolume.gte = parseFloat(engineVolumeFrom)

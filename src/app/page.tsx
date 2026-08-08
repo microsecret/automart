@@ -8,7 +8,7 @@ import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX,
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { getModels, POPULAR_BRANDS } from "@/lib/catalog"
-import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS } from "@/lib/constants"
+import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, COUNTRIES_OF_ORIGIN } from "@/lib/constants"
 
 const fetcher = (url) => fetch(url).then((r) => r.json())
 const CAR_COLORS = ["Белый","Чёрный","Серебристый","Серый","Синий","Красный","Зелёный","Коричневый","Бордовый","Золотистый","Жёлтый","Оранжевый"]
@@ -37,6 +37,17 @@ export default function HomePage(p) {
   const [powerTo, setPowerTo] = useState("")
   const [color, setColor] = useState(null)
   const [condition, setCondition] = useState([])
+  const [steeringWheel, setSteeringWheel] = useState(null)
+  const [documentsStatus, setDocumentsStatus] = useState(null)
+  const [damageInfo, setDamageInfo] = useState(null)
+  const [sellerType, setSellerType] = useState(null)
+  const [availability, setAvailability] = useState(null)
+  const [customsCleared, setCustomsCleared] = useState(null)
+  const [ownersCountFrom, setOwnersCountFrom] = useState("")
+  const [ownersCountTo, setOwnersCountTo] = useState("")
+  const [mileageFrom, setMileageFrom] = useState("")
+  const [countryOfOrigin, setCountryOfOrigin] = useState(null)
+  const [keywords, setKeywords] = useState("")
 
   const brandOptions = POPULAR_BRANDS.slice(0,80).map((b) => ({ value: b.name, label: b.name }))
   const modelOptions = make ? getModels(make).map((m) => ({ value: m, label: m })) : []
@@ -67,6 +78,16 @@ export default function HomePage(p) {
     if(powerTo) q.set("powerTo", powerTo)
     if(color) q.set("color", color)
     if(condition.length) q.set("condition", condition[0])
+    if(steeringWheel) q.set("steeringWheel", steeringWheel)
+    if(documentsStatus) q.set("documentsStatus", documentsStatus)
+    if(damageInfo) q.set("damageInfo", damageInfo)
+    if(sellerType) q.set("sellerType", sellerType)
+    if(availability) q.set("availability", availability)
+    if(customsCleared !== null) q.set("customsCleared", String(customsCleared))
+    if(ownersCountFrom) q.set("ownersCountFrom", ownersCountFrom)
+    if(ownersCountTo) q.set("ownersCountTo", ownersCountTo)
+    if(mileageFrom) q.set("mileageFrom", mileageFrom)
+    if(keywords) q.set("keywords", keywords)
     return q.toString()
   }
 
@@ -78,10 +99,14 @@ export default function HomePage(p) {
     setTransmission(null); setFuelType([]); setDriveType(null); setBodyType([])
     setEngineVolumeFrom(""); setEngineVolumeTo(""); setPowerFrom(""); setPowerTo("")
     setColor(null); setCondition([])
+    setSteeringWheel(null); setDocumentsStatus(null); setDamageInfo(null)
+    setSellerType(null); setAvailability(null); setCustomsCleared(null)
+    setOwnersCountFrom(""); setOwnersCountTo(""); setMileageFrom("")
+    setCountryOfOrigin(null); setKeywords("")
     setQuery(""); setPage(1)
   }
 
-  const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)
+  const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(countryOfOrigin?1:0)+(keywords?1:0)
 
   return (
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
@@ -195,6 +220,64 @@ export default function HomePage(p) {
                   ))}</Group>
                 </Box>
               </Group>
+
+              <Group gap="lg" wrap="wrap" align="flex-start">
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Руль</Text>
+                  <Group gap={6}>{STEERING_WHEELS.map((sw) => (
+                    <Chip key={sw.value} checked={steeringWheel === sw.value} onChange={() => setSteeringWheel(steeringWheel === sw.value ? null : sw.value)} variant={steeringWheel === sw.value ? "filled" : "outline"} color="indigo" size="sm" radius="md">{sw.label}</Chip>
+                  ))}</Group>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Продавец</Text>
+                  <Group gap={6}>{SELLER_TYPES.map((st) => (
+                    <Chip key={st.value} checked={sellerType === st.value} onChange={() => setSellerType(sellerType === st.value ? null : st.value)} variant={sellerType === st.value ? "filled" : "outline"} color="indigo" size="sm" radius="md">{st.label}</Chip>
+                  ))}</Group>
+                </Box>
+              </Group>
+
+              <Group gap="lg" wrap="wrap" align="flex-start">
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Документы</Text>
+                  <Select placeholder="Неважно" data={DOCUMENT_STATUSES.map((d) => ({value:d.value,label:d.label}))} clearable value={documentsStatus} onChange={setDocumentsStatus} size="sm" w={170}/>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Повреждения</Text>
+                  <Select placeholder="Неважно" data={DAMAGE_INFO.map((d) => ({value:d.value,label:d.label}))} clearable value={damageInfo} onChange={setDamageInfo} size="sm" w={170}/>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Наличие</Text>
+                  <Select placeholder="Неважно" data={AVAILABILITY_TYPES.map((a) => ({value:a.value,label:a.label}))} clearable value={availability} onChange={setAvailability} size="sm" w={150}/>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Страна марки</Text>
+                  <Select placeholder="Неважно" data={COUNTRIES_OF_ORIGIN.map((c) => ({value:c.value,label:c.label}))} clearable value={countryOfOrigin} onChange={setCountryOfOrigin} size="sm" w={160}/>
+                </Box>
+              </Group>
+
+              <Group gap="lg" wrap="wrap" align="flex-end">
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Пробег, км</Text>
+                  <Group gap="xs" align="flex-end">
+                    <TextInput placeholder="от" value={mileageFrom} onChange={(e) => setMileageFrom(e.target.value)} size="sm" w={90} type="number"/>
+                    <TextInput placeholder="до" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" w={90} type="number"/>
+                  </Group>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Владельцев, до</Text>
+                  <Select placeholder="Неважно" data={OWNERS_COUNT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} clearable value={ownersCountTo} onChange={setOwnersCountTo} size="sm" w={150}/>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Растаможен</Text>
+                  <SegmentedControl size="sm" value={customsCleared === null ? "any" : customsCleared ? "yes" : "no"} onChange={(v) => setCustomsCleared(v === "any" ? null : v === "yes")} data={[{label:"Неважно",value:"any"},{label:"Да",value:"yes"},{label:"Нет",value:"no"}]}/>
+                </Box>
+              </Group>
+
+              <Box>
+                <Text size="xs" fw={600} c="#52525b" mb={6}>Ключевые слова</Text>
+                <TextInput placeholder='Например: "один хозяин", RAID, ксенон...' value={keywords} onChange={(e) => setKeywords(e.target.value)} size="sm" w={400} leftSection={<IconSearch size={14}/>}/>
+                <Text size={10} c="#a1a1aa" mt={4}>Для точного совпадения используйте кавычки</Text>
+              </Box>
             </Stack>
           </Collapse>
         </Stack>

@@ -7,6 +7,7 @@ import Link from "next/link"
 import { formatPrice, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import BrandLogo from "@/components/brands/BrandLogo"
+import BrandIcon from "@/components/brands/BrandIcon"
 import type { ListingCardData } from "./ListingCard"
 
 export type ListingRowData = ListingCardData
@@ -79,12 +80,15 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
           <Box p="sm" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <Stack gap={4}>
               <Group justify="space-between" gap="sm" align="flex-start" wrap="nowrap">
-                <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
+                <Group gap="sm" align="center" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
+                  {isVehicle && <BrandIcon brand={listing.vehicle!.make} size={32} variant="rounded" />}
+                  <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
                   <Text fw={500} fz="sm" c="#3f3f46" style={TRUNCATE}>{listing.title}</Text>
                   <Text fz="xs" c="#a1a1aa" style={TRUNCATE}>
                     {isVehicle ? `${listing.vehicle!.make} ${listing.vehicle!.model}` : listing.part?.name}
                   </Text>
-                </Stack>
+                  </Stack>
+                </Group>
                 <Text fw={700} fz="md" c="#18181b" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
                   {formatPriceShort(listing.price)}
                 </Text>

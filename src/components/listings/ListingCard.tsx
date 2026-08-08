@@ -8,6 +8,7 @@ import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from
 import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import BrandLogo from "@/components/brands/BrandLogo"
 import BrandBadge from "@/components/brands/BrandBadge"
+import BrandIcon from "@/components/brands/BrandIcon"
 
 export interface ListingCardData {
   id: string
@@ -108,10 +109,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             </Box>
           )}
 
-          {/* Цветной лейбл бренда — справа сверху */}
+          {/* Цветная иконка бренда — справа сверху */}
           {isVehicle && (
-            <Box pos="absolute" top={8} right={8} style={{ borderRadius: 4, overflow: "hidden" }}>
-              <BrandBadge brand={listing.vehicle!.make} size="xs" />
+            <Box pos="absolute" top={8} right={8}>
+              <BrandIcon brand={listing.vehicle!.make} size={28} variant="rounded" />
             </Box>
           )}
 

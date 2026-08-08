@@ -31,7 +31,16 @@ export default function CreateVehicleListingPage() {
     driveType: "", // FWD, RWD, AWD, FOUR_WD
     condition: "", // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
     location: "",
-    categoryId: ""
+    categoryId: "",
+    steeringWheel: "",
+    ownersCount: "",
+    documentsStatus: "",
+    damageInfo: "",
+    sellerType: "",
+    availability: "",
+    customsCleared: "",
+    generation: "",
+    keywords: ""
   })
 
   const [images, setImages] = useState<string[]>([])
@@ -128,6 +137,15 @@ export default function CreateVehicleListingPage() {
           power: formData.power ? parseInt(formData.power) : null,
           driveType: formData.driveType.trim() || null,
           condition: formData.condition.trim() || null,
+          steeringWheel: formData.steeringWheel.trim() || null,
+          ownersCount: formData.ownersCount ? parseInt(formData.ownersCount) : null,
+          documentsStatus: formData.documentsStatus.trim() || null,
+          damageInfo: formData.damageInfo.trim() || null,
+          sellerType: formData.sellerType.trim() || null,
+          availability: formData.availability.trim() || null,
+          customsCleared: formData.customsCleared === "true" ? true : formData.customsCleared === "false" ? false : null,
+          generation: formData.generation.trim() || null,
+          keywords: formData.keywords.trim() || null,
           location: formData.location.trim() || null,
           description: formData.description.trim() || null,
           images: images.length > 0 ? JSON.stringify(images) : null, // Store as JSON string
@@ -451,6 +469,91 @@ export default function CreateVehicleListingPage() {
                   <option value="POOR">Плохое</option>
                 </select>
               </div>
+            </div>
+          </div>
+
+          {/* Дополнительные параметры (как на Drom) */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">
+              Документы и состояние
+            </h2>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Документы</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.documentsStatus} onChange={(e) => handleChange("documentsStatus", e.target.value)}>
+                  <option value="">Выберите</option>
+                  <option value="CLEAN">В порядке</option>
+                  <option value="ISSUES">Есть проблемы</option>
+                  <option value="MISSING">Нет документов</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Повреждения</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.damageInfo} onChange={(e) => handleChange("damageInfo", e.target.value)}>
+                  <option value="">Выберите</option>
+                  <option value="NONE">Не битая</option>
+                  <option value="REPAINTED">Крашена</option>
+                  <option value="DAMAGED">Битая</option>
+                  <option value="SEVERE">Тотал</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Количество владельцев</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.ownersCount} onChange={(e) => handleChange("ownersCount", e.target.value)}>
+                  <option value="">Выберите</option>
+                  <option value="1">1 владелец</option>
+                  <option value="2">2 владельца</option>
+                  <option value="3">3 владельца</option>
+                  <option value="4">4 владельца</option>
+                  <option value="5">5 и более</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Руль</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.steeringWheel} onChange={(e) => handleChange("steeringWheel", e.target.value)}>
+                  <option value="">Выберите</option>
+                  <option value="LEFT">Левый</option>
+                  <option value="RIGHT">Правый</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Растаможен</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.customsCleared} onChange={(e) => handleChange("customsCleared", e.target.value)}>
+                  <option value="">Неважно</option>
+                  <option value="true">Да</option>
+                  <option value="false">Нет</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Наличие</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.availability} onChange={(e) => handleChange("availability", e.target.value)}>
+                  <option value="">Выберите</option>
+                  <option value="IN_STOCK">В наличии</option>
+                  <option value="ON_ORDER">На заказ</option>
+                  <option value="IN_TRANSIT">В пути</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Продавец</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.sellerType} onChange={(e) => handleChange("sellerType", e.target.value)}>
+                  <option value="">Выберите</option>
+                  <option value="OWNER">Собственник</option>
+                  <option value="DEALER">Дилер / Салон</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Поколение</label>
+                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.generation} onChange={(e) => handleChange("generation", e.target.value)} placeholder="Напр. III рестайлинг"/>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ключевые слова</label>
+              <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" value={formData.keywords} onChange={(e) => handleChange("keywords", e.target.value)} placeholder='Напр: "один хозяин", ксенон, панорама...'/>
+              <p className="text-xs text-gray-500 mt-1">Для точного соответствия используйте кавычки</p>
             </div>
           </div>
 

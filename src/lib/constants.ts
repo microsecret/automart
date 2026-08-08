@@ -148,6 +148,58 @@ export const POPULAR_CITIES = [
   "Красноярск",
 ] as const
 
+export const STEERING_WHEELS = [
+  { value: "LEFT", label: "Левый" },
+  { value: "RIGHT", label: "Правый" },
+] as const
+
+export const DOCUMENT_STATUSES = [
+  { value: "CLEAN", label: "В порядке" },
+  { value: "ISSUES", label: "Есть проблемы" },
+  { value: "MISSING", label: "Нет документов" },
+] as const
+
+export const DAMAGE_INFO = [
+  { value: "NONE", label: "Не битая" },
+  { value: "REPAINTED", label: "Крашена" },
+  { value: "DAMAGED", label: "Битая" },
+  { value: "SEVERE", label: "Тотал" },
+] as const
+
+export const SELLER_TYPES = [
+  { value: "OWNER", label: "Собственник" },
+  { value: "DEALER", label: "Дилер / Салон" },
+] as const
+
+export const AVAILABILITY_TYPES = [
+  { value: "IN_STOCK", label: "В наличии" },
+  { value: "ON_ORDER", label: "На заказ" },
+  { value: "IN_TRANSIT", label: "В пути" },
+] as const
+
+export const OWNERS_COUNT_OPTIONS = [
+  { value: "1", label: "1 владелец" },
+  { value: "2", label: "2 владельца" },
+  { value: "3", label: "3 владельца" },
+  { value: "4", label: "4 владельца" },
+  { value: "5", label: "5 и более" },
+] as const
+
+export const COUNTRIES_OF_ORIGIN = [
+  { value: "RU", label: "🇷🇺 Россия" },
+  { value: "CN", label: "🇨🇳 Китай" },
+  { value: "JP", label: "🇯🇵 Япония" },
+  { value: "DE", label: "🇩🇪 Германия" },
+  { value: "KR", label: "🇰🇷 Корея" },
+  { value: "US", label: "🇺🇸 США" },
+  { value: "FR", label: "🇫🇷 Франция" },
+  { value: "GB", label: "🇬🇧 Великобритания" },
+  { value: "CZ", label: "🇨🇿 Чехия" },
+  { value: "SE", label: "🇸🇪 Швеция" },
+  { value: "IT", label: "🇮🇹 Италия" },
+  { value: "ES", label: "🇪🇸 Испания" },
+] as const
+
 /** Поиск по словарю */
 export function findLabel<
   T extends { value: string; label: string }

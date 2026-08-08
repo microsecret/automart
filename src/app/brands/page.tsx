@@ -6,6 +6,7 @@ import { Container, Stack, Text, Group, SegmentedControl, SimpleGrid, Paper, Anc
 import Link from "next/link"
 import { BRANDS, COUNTRY_FLAGS, TRANSPORT_CATEGORIES } from "@/lib/catalog"
 import BrandBadge from "@/components/brands/BrandBadge"
+import BrandIcon from "@/components/brands/BrandIcon"
 import { getBrandColor, getContrastText } from "@/lib/brand-colors"
 
 const CAT_LABELS: Record<string, string> = {
@@ -59,23 +60,7 @@ export default function BrandsPage() {
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#f4f4f5"; e.currentTarget.style.background = "#fff" }}
               >
                 <Group gap="sm" align="center" wrap="nowrap">
-                  <Box
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 8,
-                      background: getBrandColor(brand.name),
-                      color: getContrastText(getBrandColor(brand.name)),
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      fontWeight: 700,
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    {brand.name[0]?.toUpperCase()}
-                  </Box>
+<BrandIcon brand={brand.name} size={40} variant="rounded" />
                   <Stack gap={0} style={{ minWidth: 0, flex: 1 }}>
                     <Text size="sm" fw={600} c="#18181b" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {brand.name}

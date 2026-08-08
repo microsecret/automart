@@ -56,6 +56,15 @@ model Vehicle {
   power        Int?     // in horsepower
   driveType    String?  // FWD, RWD, AWD, FOUR_WD
   condition    String   // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
+  steeringWheel    String?  // LEFT, RIGHT (руль)
+  ownersCount      Int?     // количество владельцев
+  documentsStatus  String?  // CLEAN, ISSUES, MISSING
+  damageInfo       String?  // NONE, REPAINTED, DAMAGED, SEVERE
+  sellerType       String?  // OWNER, DEALER
+  availability     String?  // IN_STOCK, ON_ORDER, IN_TRANSIT
+  customsCleared   Boolean? // растаможен
+  generation       String?  // поколение
+  keywords         String?  // ключевые слова для поиска
   vehicleType   String   @default("CAR")
   location     String   // City, region
   lat          Float?   // Latitude
@@ -108,6 +117,15 @@ model Part {
   description   String?
   price         Int      // Price in rubles
   condition     String   // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
+  steeringWheel    String?  // LEFT, RIGHT (руль)
+  ownersCount      Int?     // количество владельцев
+  documentsStatus  String?  // CLEAN, ISSUES, MISSING
+  damageInfo       String?  // NONE, REPAINTED, DAMAGED, SEVERE
+  sellerType       String?  // OWNER, DEALER
+  availability     String?  // IN_STOCK, ON_ORDER, IN_TRANSIT
+  customsCleared   Boolean? // растаможен
+  generation       String?  // поколение
+  keywords         String?  // ключевые слова для поиска
   vehicleType   String   @default("CAR")
   make          String   // Compatible vehicle make
   model         String   // Compatible vehicle model
