@@ -229,13 +229,13 @@ export default function HomePage(p) {
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconManualGearbox size={14}/> Коробка передач</Text>
                   <Group gap={6}>{TRANSMISSIONS.map((t) => (
-                    <Chip key={t.value} checked={transmission === t.value} onChange={() => setTransmission(transmission === t.value ? null : t.value)} variant={transmission === t.value ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{t.label}</Chip>
+                    <Chip key={t.value} checked={transmission === t.value} onChange={() => setTransmission(transmission === t.value ? null : t.value)} variant={transmission === t.value ? "filled" : "outline"} color="indigo">{t.label}</Chip>
                   ))}</Group>
                 </Box>
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Привод</Text>
                   <Group gap={6}>{DRIVE_TYPES.map((d) => (
-                    <Chip key={d.value} checked={driveType === d.value} onChange={() => setDriveType(driveType === d.value ? null : d.value)} variant={driveType === d.value ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{d.label}</Chip>
+                    <Chip key={d.value} checked={driveType === d.value} onChange={() => setDriveType(driveType === d.value ? null : d.value)} variant={driveType === d.value ? "filled" : "outline"} color="indigo" size="md" radius="xl">{d.label}</Chip>
                   ))}</Group>
                 </Box>
               </Group>
@@ -244,7 +244,7 @@ export default function HomePage(p) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconGasStation size={14}/> Тип топлива</Text>
                 <Group gap={6}>{FUEL_TYPES.map((f) => (
-                  <Chip key={f.value} checked={fuelType.includes(f.value)} onChange={(c) => { setFuelType(c ? [...fuelType, f.value] : fuelType.filter((v) => v !== f.value)); setPage(1) }} variant={fuelType.includes(f.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{f.label}</Chip>
+                  <Chip key={f.value} checked={fuelType.includes(f.value)} onChange={(c) => { setFuelType(c ? [...fuelType, f.value] : fuelType.filter((v) => v !== f.value)); setPage(1) }} variant={fuelType.includes(f.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{f.label}</Chip>
                 ))}</Group>
               </Box>
 
@@ -253,7 +253,7 @@ export default function HomePage(p) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconCar size={14}/> Тип кузова</Text>
                 <Group gap={6}>{BODY_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{b.label}</Chip>
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -261,7 +261,7 @@ export default function HomePage(p) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconCar size={14}/> Тип мотоцикла</Text>
                 <Group gap={6}>{MOTORCYCLE_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{b.label}</Chip>
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -269,7 +269,7 @@ export default function HomePage(p) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconTruck size={14}/> Тип кузова / надстройки</Text>
                 <Group gap={6}>{TRUCK_BODY_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{b.label}</Chip>
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -277,7 +277,7 @@ export default function HomePage(p) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconTractor size={14}/> Тип спецтехники</Text>
                 <Group gap={6}>{SPECIAL_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{b.label}</Chip>
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -285,7 +285,7 @@ export default function HomePage(p) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconSpeedboat size={14}/> Тип судна</Text>
                 <Group gap={6}>{WATER_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{b.label}</Chip>
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -293,7 +293,7 @@ export default function HomePage(p) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconPlane size={14}/> Тип воздушного судна</Text>
                 <Group gap={6}>{AIR_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{b.label}</Chip>
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -323,7 +323,7 @@ export default function HomePage(p) {
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Состояние</Text>
                   <Group gap={6}>{CONDITIONS.map((c) => (
-                    <Chip key={c.value} checked={condition.includes(c.value)} onChange={(ch) => { setCondition(ch ? [...condition, c.value] : condition.filter((v) => v !== c.value)); setPage(1) }} variant={condition.includes(c.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{c.label}</Chip>
+                    <Chip key={c.value} checked={condition.includes(c.value)} onChange={(ch) => { setCondition(ch ? [...condition, c.value] : condition.filter((v) => v !== c.value)); setPage(1) }} variant={condition.includes(c.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{c.label}</Chip>
                   ))}</Group>
                 </Box>
               </Group>
@@ -333,13 +333,13 @@ export default function HomePage(p) {
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Руль</Text>
                   <Group gap={6}>{STEERING_WHEELS.map((sw) => (
-                    <Chip key={sw.value} checked={steeringWheel === sw.value} onChange={() => setSteeringWheel(steeringWheel === sw.value ? null : sw.value)} variant={steeringWheel === sw.value ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{sw.label}</Chip>
+                    <Chip key={sw.value} checked={steeringWheel === sw.value} onChange={() => setSteeringWheel(steeringWheel === sw.value ? null : sw.value)} variant={steeringWheel === sw.value ? "filled" : "outline"} color="indigo" size="md" radius="xl">{sw.label}</Chip>
                   ))}</Group>
                 </Box>
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Продавец</Text>
                   <Group gap={6}>{SELLER_TYPES.map((st) => (
-                    <Chip key={st.value} checked={sellerType === st.value} onChange={() => setSellerType(sellerType === st.value ? null : st.value)} variant={sellerType === st.value ? "filled" : "outline"} color="indigo" size="md" radius="xl" styles={{ root: { transition: "all 150ms ease", cursor: "pointer" }, label: { fontWeight: 600, padding: "4px 14px" } }}>{st.label}</Chip>
+                    <Chip key={st.value} checked={sellerType === st.value} onChange={() => setSellerType(sellerType === st.value ? null : st.value)} variant={sellerType === st.value ? "filled" : "outline"} color="indigo" size="md" radius="xl">{st.label}</Chip>
                   ))}</Group>
                 </Box>
               </Group>

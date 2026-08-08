@@ -113,17 +113,17 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
             {session ? (
               <>
                 <Indicator size={7} color="red" offset={4} disabled={favCount === 0}>
-                  <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="md" radius="md" aria-label="Избранное">
+                  <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="lg" radius="md" aria-label="Избранное">
                     <IconHeart size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator>
                 <Indicator size={7} color="violet" offset={4}>
-                  <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="md" radius="md" aria-label="Сообщения">
+                  <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="lg" radius="md" aria-label="Сообщения">
                     <IconMessageCircle2 size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator>
                 <Indicator size={7} color="red" offset={4}>
-                  <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="md" radius="md" aria-label="Уведомления">
+                  <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="lg" radius="md" aria-label="Уведомления">
                     <IconBell size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator>
@@ -161,11 +161,11 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
               <>
                 <Divider orientation="vertical" mx={2} h={24} />
                 {/* Войти — subtle gray */}
-                <Button component={Link} href="/auth/signin" variant="subtle" color="gray" size="sm" radius="md" styles={{ root: { height: 34, fontWeight: 600 } }}>
+                <Button component={Link} href="/auth/signin" variant="light" color="indigo" size="sm" radius="md" styles={{ root: { height: 34, fontWeight: 700 } }}>
                   Войти
                 </Button>
                 {/* Регистрация — outline indigo, отличается от «Войти» */}
-                <Button component={Link} href="/auth/signup" variant="light" color="indigo" size="sm" radius="md" visibleFrom="xs" styles={{ root: { height: 34, fontWeight: 600 } }}>
+                <Button component={Link} href="/auth/signup" variant="filled" color="indigo" size="sm" radius="md" visibleFrom="xs" styles={{ root: { height: 34, fontWeight: 700 } }}>
                   Регистрация
                 </Button>
               </>
