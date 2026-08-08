@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, SimpleGrid, Center, Loader, Paper, Button, ThemeIcon, Pagination, SegmentedControl } from "@mantine/core"
-import { IconHeart, IconHeartBroken } from "@tabler/icons-react"
+import { IconHeart, IconHeartBroken, IconLayoutGrid, IconList } from "@tabler/icons-react"
 import { useState } from "react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
@@ -29,7 +29,7 @@ export default function FavoritesPage() {
             {data && <Text size="xs" c="gray.5">{data.pagination.total} объявлений в избранном</Text>}
           </Stack>
           {favorites.length > 0 && (
-            <SegmentedControl size="xs" value={view} onChange={setView} data={[{label:"▦",value:"grid"},{label:"☰",value:"list"}]} />
+            <SegmentedControl size="xs" value={view} onChange={setView} data={[{label:<IconLayoutGrid size={14}/>,value:"grid"},{label:<IconList size={14}/>,value:"list"}]} />
           )}
         </Group>
 

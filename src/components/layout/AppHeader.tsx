@@ -5,7 +5,7 @@ import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogo
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useColorScheme } from "@/components/providers/AppProviders"
 import { IconSun, IconMoon } from "@tabler/icons-react"
 
@@ -16,6 +16,10 @@ interface AppHeaderProps {
 
 export default function AppHeader(_props: AppHeaderProps = {}) {
   const { data: session } = useSession()
+  const [favCount, setFavCount] = useState(0)
+  useEffect(() => {
+    if (session) fetch("/api/favorites?countOnly=true").then(r => r.json()).then(d => setFavCount(d.count || 0)).catch(() => {})
+  }, [session])
   const { colorScheme, toggleScheme } = useColorScheme()
   const router = useRouter()
   const [query, setQuery] = useState("")
@@ -108,9 +112,11 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
 
             {session ? (
               <>
-                <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="md" radius="md" aria-label="Избранное">
-                  <IconHeart size={18} stroke={1.8} />
-                </ActionIcon>
+                <Indicator size={7} color="red" offset={4} disabled={favCount === 0}>
+                  <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="md" radius="md" aria-label="Избранное">
+                    <IconHeart size={18} stroke={1.8} />
+                  </ActionIcon>
+                </Indicator>
                 <Indicator size={7} color="violet" offset={4}>
                   <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="md" radius="md" aria-label="Сообщения">
                     <IconMessageCircle2 size={18} stroke={1.8} />

@@ -23,11 +23,16 @@ const CATEGORIES = [
 ]
 
 const PARTS_LINKS = [
-  { slug: "parts", label: "Все запчасти", href: "/category/parts" },
-  { label: "Двигатель", href: "/category/parts?partType=ENGINE" },
-  { label: "Кузов", href: "/category/parts?partType=BODY" },
-  { label: "Подвеска", href: "/category/parts?partType=SUSPENSION" },
-  { label: "Колёса и диски", href: "/category/parts?partType=WHEELS" },
+  { slug: "parts", label: "Все запчасти", href: "/parts-finder" },
+  { label: "Двигатель", href: "/parts-finder?partType=ENGINE" },
+  { label: "Тормоза", href: "/parts-finder?partType=BRAKES" },
+  { label: "Подвеска / Ходовая", href: "/parts-finder?partType=SUSPENSION" },
+  { label: "Рулевое управление", href: "/parts-finder?partType=STEERING" },
+  { label: "Электрика", href: "/parts-finder?partType=ELECTRICAL" },
+  { label: "Оптика / Фары", href: "/parts-finder?partType=LIGHTING" },
+  { label: "Кузов", href: "/parts-finder?partType=BODY" },
+  { label: "Колёса и диски", href: "/parts-finder?partType=WHEELS" },
+  { label: "Охлаждение", href: "/parts-finder?partType=COOLING" },
 ]
 
 const SERVICE_LINKS = [
@@ -100,7 +105,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               <Stack gap={1}>
                 <NavLink
                   component={Link}
-                  href="/category/parts"
+                  href="/parts-finder"
                   label="Все запчасти"
                   leftSection={<IconTools size={16} stroke={1.7} />}
                   active={activeCat === "parts"}

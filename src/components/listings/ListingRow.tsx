@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio } from "@mantine/core"
 import { IconHeart, IconMapPin, IconGauge, IconCalendar, IconManualGearbox, IconGasStation } from "@tabler/icons-react"
 import Link from "next/link"
@@ -22,6 +22,15 @@ const TRUNCATE: React.CSSProperties = {
 
 export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const [isFav, setIsFav] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/favorites").then(r => r.json()).then(d => {
+      if (d.favorites) {
+        const ids = d.favorites.map(f => f.id)
+        if (ids.includes(listing.id)) setIsFav(true)
+      }
+    }).catch(() => {})
+  }, [listing.id])
   const [pending, startTransition] = useTransition()
 
   const isVehicle = !!listing.vehicle

@@ -22,10 +22,13 @@ import {
   Anchor,
   Skeleton,
 } from "@mantine/core"
+import { notifications } from "@mantine/notifications"
 import { Carousel } from "@mantine/carousel"
 import { useMediaQuery } from "@mantine/hooks"
 import {
   IconHeart,
+  IconGitCompare,
+  IconFlag,
   IconPhone,
   IconMessageCircle2,
   IconShieldCheck,
@@ -433,6 +436,29 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   >
                     {isFav ? "В избранном" : "В избранное"}
                   </Button>
+                  <Group gap="sm">
+                    <Button
+                      component={Link}
+                      href={`/compare?ids=${data.id}`}
+                      size="md"
+                      radius="md"
+                      variant="subtle"
+                      color="indigo"
+                      leftSection={<IconGitCompare size={18} />}
+                    >
+                      Сравнить
+                    </Button>
+                    <Button
+                      size="md"
+                      radius="md"
+                      variant="subtle"
+                      color="gray"
+                      leftSection={<IconFlag size={18} />}
+                      onClick={() => notifications.show({ title: "Жалоба отправлена", message: "Модератор рассмотрит объявление", color: "orange" })}
+                    >
+                      Пожаловаться
+                    </Button>
+                  </Group>
                 </Stack>
               <CreditCalculator price={data.price} />
               </Card>
