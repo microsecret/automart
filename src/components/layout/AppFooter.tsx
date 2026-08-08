@@ -17,7 +17,7 @@ const FOOTER_SECTIONS = [
   {
     title: "Запчасти",
     links: [
-      { label: "Все запчасти", href: "/category/parts" },
+      { label: "Все запчасти", href: "/parts-finder" },
       { label: "Двигатель", href: "/search?type=part&partType=ENGINE" },
       { label: "Кузов", href: "/search?type=part&partType=BODY" },
       { label: "Подвеска", href: "/search?type=part&partType=SUSPENSION" },
@@ -27,10 +27,10 @@ const FOOTER_SECTIONS = [
   {
     title: "Сервисы",
     links: [
-      { label: "Оценка стоимости", href: "/ai/valuation" },
-      { label: "Проверка истории", href: "/ai/history-check" },
-      { label: "Умный подбор", href: "/ai/smart-matching" },
-      { label: "Безопасная сделка", href: "/help/safe-deal" },
+      { label: "Оценка стоимости", href: "/services/valuation" },
+      { label: "Проверка истории", href: "/services/history-check" },
+      { label: "Умный подбор", href: "/services/smart-matching" },
+      { label: "Безопасная сделка", href: "/services/safe-deal" },
     ],
   },
   {

@@ -35,7 +35,7 @@ interface Conversation {
 }
 
 export default function MessagesPage() {
-  const { data: session, status } = useSession()
+  const { data: session, status } = useSession() || { data: null, status: 'unauthenticated' }
   const router = useRouter()
   const { data, isLoading } = useSWR<{ conversations: Conversation[] }>(
     session ? "/api/messages" : null,

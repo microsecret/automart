@@ -1664,7 +1664,7 @@ export const ALL_BRANDS: Brand[] = [
 export const BRANDS: Brand[] = ALL_BRANDS
 
 /** Только популярные бренды (для сайдбара / быстрого доступа) */
-export const POPULAR_BRANDS: Brand[] = ALL_BRANDS.filter((b) => b.popular)
+const _rawPopular: Brand[] = ALL_BRANDS.filter((b) => b.popular)
 
 /** Имена брендов для Select, отсортированные по алфавиту */
 export const BRAND_NAMES: string[] = Array.from(new Set(ALL_BRANDS.map((b) => b.name))).sort((a, b) =>
@@ -1691,3 +1691,5 @@ export function getBrandCountry(brandName: string): CountryCode | undefined {
   )
   return brand ? brand.country : undefined
 }
+
+export const POPULAR_BRANDS = Array.from(new Map(_rawPopular.map(b=>[b.name,b])).values())

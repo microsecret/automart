@@ -5,6 +5,7 @@ const nextConfig = {
   serverExternalPackages: ['prisma', '@prisma/client'],
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  output: 'standalone',
   webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.svg$/i,

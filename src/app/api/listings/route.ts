@@ -29,6 +29,13 @@ export async function GET(request: NextRequest) {
     const fuelType = sp.get("fuelType")
     const transmission = sp.get("transmission")
     const bodyType = sp.get("bodyType")
+    const driveType = sp.get("driveType")
+    const engineVolumeFrom = sp.get("engineVolumeFrom")
+    const engineVolumeTo = sp.get("engineVolumeTo")
+    const powerFrom = sp.get("powerFrom")
+    const powerTo = sp.get("powerTo")
+    const color = sp.get("color")
+    const condition = sp.get("condition")
     const vehicleType = sp.get("vehicleType") // CAR, MOTORCYCLE, TRUCK, SPECIAL, WATER, AIR
 
     // Фильтры запчастей
@@ -43,10 +50,9 @@ export async function GET(request: NextRequest) {
       where.partId = { not: null }
     }
 
-    // Фильтр по типу транспорта (категории)
-    if (vehicleType) {
-      where.vehicle = { ...((where.vehicle as any) || {}), vehicleType }
-    }
+    // Фильтр по типу транспорта (категории) — аккумулируем в vehicleFilters
+    const vehicleFilters: Prisma.VehicleWhereInput = {}
+    if (vehicleType) vehicleFilters.vehicleType = vehicleType
 
     if (priceFrom || priceTo) {
       where.price = {}
@@ -61,7 +67,6 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const vehicleFilters: Prisma.VehicleWhereInput = {}
     if (make) vehicleFilters.make = { contains: make }
     if (model) vehicleFilters.model = { contains: model }
     if (yearFrom || yearTo) {
@@ -72,6 +77,19 @@ export async function GET(request: NextRequest) {
     if (fuelType) vehicleFilters.fuelType = fuelType
     if (transmission) vehicleFilters.transmission = transmission
     if (bodyType) vehicleFilters.bodyType = bodyType
+    if (driveType) vehicleFilters.driveType = driveType
+    if (color) vehicleFilters.color = { contains: color }
+    if (condition) vehicleFilters.condition = condition
+    if (engineVolumeFrom || engineVolumeTo) {
+      vehicleFilters.engineVolume = {}
+      if (engineVolumeFrom) vehicleFilters.engineVolume.gte = parseFloat(engineVolumeFrom)
+      if (engineVolumeTo) vehicleFilters.engineVolume.lte = parseFloat(engineVolumeTo)
+    }
+    if (powerFrom || powerTo) {
+      vehicleFilters.power = {}
+      if (powerFrom) vehicleFilters.power.gte = parseInt(powerFrom)
+      if (powerTo) vehicleFilters.power.lte = parseInt(powerTo)
+    }
     if (city) vehicleFilters.location = { contains: city }
     if (Object.keys(vehicleFilters).length > 0) {
       where.vehicle = vehicleFilters

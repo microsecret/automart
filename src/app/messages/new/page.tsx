@@ -29,7 +29,7 @@ interface User {
 }
 
 function NewMessageContent() {
-  const { data: session, status } = useSession()
+  const { data: session, status } = useSession() || { data: null, status: 'unauthenticated' }
   const router = useRouter()
   const sp = useSearchParams()
   const listingId = sp.get("listingId")

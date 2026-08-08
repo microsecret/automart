@@ -1,3 +1,224 @@
-export default function RootPage() {
-  return <h1>Hello from app directory</h1>;
+"use client"
+export const dynamic = "force-dynamic"
+import { useState, useMemo } from "react"
+import useSWR from "swr"
+import Link from "next/link"
+import { Box, Text, Select, Group, Pagination, Center, Loader, Stack, SegmentedControl, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip } from "@mantine/core"
+import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt } from "@tabler/icons-react"
+import ListingCard from "@/components/listings/ListingCard"
+import ListingRow from "@/components/listings/ListingRow"
+import { getModels, POPULAR_BRANDS } from "@/lib/catalog"
+import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS } from "@/lib/constants"
+
+const fetcher = (url) => fetch(url).then((r) => r.json())
+const CAR_COLORS = ["Белый","Чёрный","Серебристый","Серый","Синий","Красный","Зелёный","Коричневый","Бордовый","Золотистый","Жёлтый","Оранжевый"]
+
+export default function HomePage(p) {
+  const [query, setQuery] = useState("")
+  const [page, setPage] = useState(1)
+  const [view, setView] = useState("grid")
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [make, setMake] = useState(null)
+  const [model, setModel] = useState(null)
+  const [sort, setSort] = useState("newest")
+  const [priceFrom, setPriceFrom] = useState("")
+  const [priceTo, setPriceTo] = useState("")
+  const [yearFrom, setYearFrom] = useState(null)
+  const [yearTo, setYearTo] = useState(null)
+  const [city, setCity] = useState(null)
+  const [mileageTo, setMileageTo] = useState("")
+  const [transmission, setTransmission] = useState(null)
+  const [fuelType, setFuelType] = useState([])
+  const [driveType, setDriveType] = useState(null)
+  const [bodyType, setBodyType] = useState([])
+  const [engineVolumeFrom, setEngineVolumeFrom] = useState("")
+  const [engineVolumeTo, setEngineVolumeTo] = useState("")
+  const [powerFrom, setPowerFrom] = useState("")
+  const [powerTo, setPowerTo] = useState("")
+  const [color, setColor] = useState(null)
+  const [condition, setCondition] = useState([])
+
+  const brandOptions = POPULAR_BRANDS.slice(0,80).map((b) => ({ value: b.name, label: b.name }))
+  const modelOptions = make ? getModels(make).map((m) => ({ value: m, label: m })) : []
+  const yearData = Array.from({length:35},(_,i) => ({ value: String(2024-i), label: String(2024-i) }))
+
+  const buildQuery = () => {
+    const q = new URLSearchParams()
+    q.set("type", p.initialType || "vehicle")
+    q.set("page", page)
+    q.set("limit", "18")
+    q.set("sort", sort)
+    if(query) q.set("q", query)
+    if(make) q.set("make", make)
+    if(model) q.set("model", model)
+    if(city) q.set("city", city)
+    if(priceFrom) q.set("priceFrom", priceFrom)
+    if(priceTo) q.set("priceTo", priceTo)
+    if(yearFrom) q.set("yearFrom", yearFrom)
+    if(yearTo) q.set("yearTo", yearTo)
+    if(mileageTo) q.set("mileageTo", mileageTo)
+    if(transmission) q.set("transmission", transmission)
+    if(fuelType.length) q.set("fuelType", fuelType[0])
+    if(driveType) q.set("driveType", driveType)
+    if(bodyType.length) q.set("bodyType", bodyType[0])
+    if(engineVolumeFrom) q.set("engineVolumeFrom", engineVolumeFrom)
+    if(engineVolumeTo) q.set("engineVolumeTo", engineVolumeTo)
+    if(powerFrom) q.set("powerFrom", powerFrom)
+    if(powerTo) q.set("powerTo", powerTo)
+    if(color) q.set("color", color)
+    if(condition.length) q.set("condition", condition[0])
+    return q.toString()
+  }
+
+  const { data, isLoading } = useSWR("/api/listings?" + buildQuery(), fetcher)
+
+  const resetFilters = () => {
+    setMake(null); setModel(null); setPriceFrom(""); setPriceTo("")
+    setYearFrom(null); setYearTo(null); setCity(null); setMileageTo("")
+    setTransmission(null); setFuelType([]); setDriveType(null); setBodyType([])
+    setEngineVolumeFrom(""); setEngineVolumeTo(""); setPowerFrom(""); setPowerTo("")
+    setColor(null); setCondition([])
+    setQuery(""); setPage(1)
+  }
+
+  const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)
+
+  return (
+    <Box p={{base:"sm",md:"md"}}><Stack gap="md">
+      {!p.categorySlug && (
+        <Paper radius="lg" p="xl" style={{background:"linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#ec4899 100%)",position:"relative",overflow:"hidden"}}>
+          <Box style={{position:"relative",zIndex:1}}>
+            <Text ff="var(--font-display),sans-serif" fw={800} fz={{base:24,md:30}} c="white" mb={6}>Найдите свой автомобиль</Text>
+            <Text size="sm" c="rgba(255,255,255,0.9)" mb="lg">214+ объявлений · 6 видов транспорта · VIN-проверка · Безопасные сделки</Text>
+            <Group gap="xs" wrap="wrap">
+              {[{l:"Легковые",h:"/category/cars"},{l:"Мото",h:"/category/moto"},{l:"Грузовики",h:"/category/trucks"},{l:"Спецтехника",h:"/category/special"},{l:"Вода",h:"/category/water"},{l:"Авиа",h:"/category/air"}].map((c) => (
+                <Link key={c.h} href={c.h} style={{textDecoration:"none"}}>
+                  <Badge size="md" radius="md" style={{cursor:"pointer",background:"rgba(255,255,255,0.95)",color:"#4f46e5",fontWeight:600}}>{c.l}</Badge>
+                </Link>))}
+            </Group>
+          </Box>
+        </Paper>)}
+
+      <Group justify="space-between" align="center">
+        <Stack gap={0}>
+          <Text component="h1" fw={800} fz={{base:20,md:24}} c="#18181b">{p.pageTitle || "Все объявления"}</Text>
+          {data && <Text size="xs" c="#71717a">{data.pagination?.total || 0} объявлений</Text>}
+        </Stack>
+        <SegmentedControl size="xs" value={view} onChange={(v) => setView(v)} data={[{label:<IconLayoutGrid size={14}/>,value:"grid"},{label:<IconList size={14}/>,value:"list"}]} />
+      </Group>
+
+      <Paper radius="md" p="md" withBorder style={{background:"#fff"}}>
+        <Stack gap="sm">
+          <Group gap="xs" wrap="wrap" align="flex-end">
+            <TextInput placeholder="Поиск по тексту..." leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" style={{flex:1,minWidth:200}} />
+            <Select placeholder="Марка" data={brandOptions} searchable clearable value={make} onChange={(v) => {setMake(v);setModel(null)}} size="sm" w={150} />
+            <Select placeholder="Модель" data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="sm" w={140} />
+            <Select data={SORT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} value={sort} onChange={(v) => setSort(v || "newest")} size="sm" w={160} />
+          </Group>
+
+          <Group gap="xs" wrap="wrap" align="flex-end">
+            <TextInput placeholder="Цена от, ₽" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" w={110} type="number" />
+            <TextInput placeholder="Цена до, ₽" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" w={110} type="number" />
+            <Select placeholder="Год от" data={yearData} searchable clearable value={yearFrom} onChange={setYearFrom} size="sm" w={100} />
+            <Select placeholder="Год до" data={yearData} searchable clearable value={yearTo} onChange={setYearTo} size="sm" w={100} />
+            <Select placeholder="Город" data={POPULAR_CITIES.map((c) => ({value:c,label:c}))} searchable clearable value={city} onChange={setCity} size="sm" w={150} />
+            <TextInput placeholder="Пробег до, км" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" w={130} type="number" />
+          </Group>
+
+          <Group justify="space-between" align="center">
+            <Anchor size="sm" c="indigo" onClick={() => setShowAdvanced((s) => !s)} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+              <IconAdjustmentsHorizontal size={16}/> Расширенные фильтры
+              {activeFilterCount > 0 && <Badge size="xs" circle color="indigo" ml={4}>{activeFilterCount}</Badge>}
+              <IconChevronDown size={14} style={{transform: showAdvanced ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
+            </Anchor>
+            {activeFilterCount > 0 && <Button variant="subtle" size="xs" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить всё</Button>}
+          </Group>
+
+          <Collapse in={showAdvanced}>
+            <Divider my="xs"/>
+            <Stack gap="md">
+              <Group gap="lg" wrap="wrap" align="flex-start">
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconManualGearbox size={14}/> Коробка передач</Text>
+                  <Group gap={6}>{TRANSMISSIONS.map((t) => (
+                    <Chip key={t.value} checked={transmission === t.value} onChange={() => setTransmission(transmission === t.value ? null : t.value)} variant={transmission === t.value ? "filled" : "outline"} color="indigo" size="sm" radius="md">{t.label}</Chip>
+                  ))}</Group>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Привод</Text>
+                  <Group gap={6}>{DRIVE_TYPES.map((d) => (
+                    <Chip key={d.value} checked={driveType === d.value} onChange={() => setDriveType(driveType === d.value ? null : d.value)} variant={driveType === d.value ? "filled" : "outline"} color="indigo" size="sm" radius="md">{d.label}</Chip>
+                  ))}</Group>
+                </Box>
+              </Group>
+
+              <Box>
+                <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconGasStation size={14}/> Тип топлива</Text>
+                <Group gap={6}>{FUEL_TYPES.map((f) => (
+                  <Chip key={f.value} checked={fuelType.includes(f.value)} onChange={(c) => { setFuelType(c ? [...fuelType, f.value] : fuelType.filter((v) => v !== f.value)); setPage(1) }} variant={fuelType.includes(f.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{f.label}</Chip>
+                ))}</Group>
+              </Box>
+
+              <Box>
+                <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconCar size={14}/> Тип кузова</Text>
+                <Group gap={6}>{BODY_TYPES.map((b) => (
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{b.label}</Chip>
+                ))}</Group>
+              </Box>
+
+              <Group gap="lg" wrap="wrap" align="flex-start">
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconEngine size={14}/> Объём двигателя, л</Text>
+                  <Group gap="xs" align="flex-end">
+                    <TextInput placeholder="от" value={engineVolumeFrom} onChange={(e) => setEngineVolumeFrom(e.target.value)} size="sm" w={80} type="number" step="0.1"/>
+                    <TextInput placeholder="до" value={engineVolumeTo} onChange={(e) => setEngineVolumeTo(e.target.value)} size="sm" w={80} type="number" step="0.1"/>
+                  </Group>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconBolt size={14}/> Мощность, л.с.</Text>
+                  <Group gap="xs" align="flex-end">
+                    <TextInput placeholder="от" value={powerFrom} onChange={(e) => setPowerFrom(e.target.value)} size="sm" w={80} type="number"/>
+                    <TextInput placeholder="до" value={powerTo} onChange={(e) => setPowerTo(e.target.value)} size="sm" w={80} type="number"/>
+                  </Group>
+                </Box>
+              </Group>
+
+              <Group gap="lg" wrap="wrap" align="flex-start">
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconPalette size={14}/> Цвет</Text>
+                  <Select placeholder="Любой" data={CAR_COLORS.map((c) => ({value:c,label:c}))} clearable searchable value={color} onChange={setColor} size="sm" w={160}/>
+                </Box>
+                <Box>
+                  <Text size="xs" fw={600} c="#52525b" mb={6}>Состояние</Text>
+                  <Group gap={6}>{CONDITIONS.map((c) => (
+                    <Chip key={c.value} checked={condition.includes(c.value)} onChange={(ch) => { setCondition(ch ? [...condition, c.value] : condition.filter((v) => v !== c.value)); setPage(1) }} variant={condition.includes(c.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{c.label}</Chip>
+                  ))}</Group>
+                </Box>
+              </Group>
+            </Stack>
+          </Collapse>
+        </Stack>
+      </Paper>
+
+      {isLoading ? (
+        <Center py={80}><Loader size="sm" color="indigo"/></Center>
+      ) : !data?.listings?.length ? (
+        <Center py={80}>
+          <Stack align="center" gap="xs">
+            <Text c="#71717a" fz="lg">Ничего не найдено</Text>
+            <Text size="xs" c="#a1a1aa">Попробуйте изменить фильтры</Text>
+            {activeFilterCount > 0 && <Button variant="subtle" size="sm" onClick={resetFilters} mt="xs">Сбросить фильтры</Button>}
+          </Stack>
+        </Center>
+      ) : view === "grid" ? (
+        <SimpleGrid cols={{base:1,sm:2,md:3,lg:4}} spacing="sm">{data.listings.map((l) => <ListingCard key={l.id} listing={l}/>)}</SimpleGrid>
+      ) : (
+        <Stack gap="xs">{data.listings.map((l) => <ListingRow key={l.id} listing={l}/>)}</Stack>
+      )}
+
+      {data && data.pagination?.pages > 1 && (
+        <Group justify="center"><Pagination value={page} onChange={setPage} total={data.pagination.pages} size="sm" color="indigo"/></Group>
+      )}
+    </Stack></Box>
+  )
 }
