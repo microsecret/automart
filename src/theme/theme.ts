@@ -7,8 +7,8 @@ const indigo: MantineColorsTuple = [
 ]
 
 const gray: MantineColorsTuple = [
-  "#fcfcfd", "#f4f4f5", "#e4e4e7", "#d4d4d8", "#a1a1aa",
-  "#71717a", "#52525b", "#3f3f46", "#27272a", "#18181b",
+  "#fcfcfd", "#f4f4f5", "#e4e4e7", "#d4d4d8", "var(--mantine-color-dimmed)",
+  "var(--mantine-color-dimmed)", "var(--mantine-color-gray-6)", "var(--mantine-color-gray-7)", "#27272a", "var(--mantine-color-text)",
 ]
 
 export const theme = createTheme({

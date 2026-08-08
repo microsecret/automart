@@ -46,8 +46,8 @@ export default function ValuationPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconCalculator size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="#18181b" ff="var(--font-display),sans-serif">Оценка стоимости авто</Text>
-            <Text size="xs" c="#71717a">Рыночная цена за 10 секунд — на основе года, пробега и состояния</Text>
+            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Оценка стоимости авто</Text>
+            <Text size="xs" c="gray.5">Рыночная цена за 10 секунд — на основе года, пробега и состояния</Text>
           </Stack>
         </Group>
 
@@ -72,15 +72,15 @@ export default function ValuationPage() {
           <Stack gap="md">
             <Paper radius="md" p="lg" style={{ background: "linear-gradient(135deg, #eef2ff 0%, #fff 100%)", borderColor: "#c7d2fe", borderWidth: 1 }} withBorder>
               <Stack gap="sm" align="center">
-                <Text size="xs" c="#71717a" tt="uppercase" fw={600}>Рыночная стоимость</Text>
+                <Text size="xs" c="gray.5" tt="uppercase" fw={600}>Рыночная стоимость</Text>
                 <Text size="2.2rem" fw={800} c="#4f46e5" ff="var(--font-display),sans-serif" lh={1}>{formatPrice(result.avg)}</Text>
                 <Group gap="xl">
                   <Stack gap={0} align="center">
-                    <Group gap={4}><IconTrendingDown size={14} color="#e11d48" /><Text size="xs" c="#71717a">Минимум</Text></Group>
+                    <Group gap={4}><IconTrendingDown size={14} color="#e11d48" /><Text size="xs" c="gray.5">Минимум</Text></Group>
                     <Text fw={700} fz="md" c="#e11d48">{formatPrice(result.min)}</Text>
                   </Stack>
                   <Stack gap={0} align="center">
-                    <Group gap={4}><IconTrendingUp size={14} color="#059669" /><Text size="xs" c="#71717a">Максимум</Text></Group>
+                    <Group gap={4}><IconTrendingUp size={14} color="#059669" /><Text size="xs" c="gray.5">Максимум</Text></Group>
                     <Text fw={700} fz="md" c="#059669">{formatPrice(result.max)}</Text>
                   </Stack>
                 </Group>
@@ -89,10 +89,10 @@ export default function ValuationPage() {
 
             <Paper radius="md" p="md" withBorder>
               <Stack gap="xs">
-                <Text size="sm" fw={700} c="#18181b">Факторы оценки</Text>
+                <Text size="sm" fw={700} c="dark.9">Факторы оценки</Text>
                 {result.factors.map((f) => (
                   <Group key={f.label} justify="space-between">
-                    <Text size="xs" c="#52525b">{f.label}</Text>
+                    <Text size="xs" c="gray.6">{f.label}</Text>
                     <Badge size="sm" color={f.positive ? "green" : "red"} variant="light">
                       {f.positive ? "+" : ""}{(f.impact / 1000).toFixed(0)}к ₽
                     </Badge>
@@ -102,8 +102,8 @@ export default function ValuationPage() {
             </Paper>
 
             <Group gap="xs" align="center">
-              <IconInfoCircle size={14} color="#a1a1aa" />
-              <Text size="xs" c="#a1a1aa">Расчёт приблизительный, на основе алгоритма. Для точной оценки нужна диагностика.</Text>
+              <IconInfoCircle size={14} color="gray.4" />
+              <Text size="xs" c="gray.4">Расчёт приблизительный, на основе алгоритма. Для точной оценки нужна диагностика.</Text>
             </Group>
           </Stack>
         )}

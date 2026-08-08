@@ -29,8 +29,8 @@ export default function AppSidebar() {
       component="nav"
       style={{
         height: "100%",
-        background: "#ffffff",
-        borderRight: "1px solid #f4f4f5",
+        background: "var(--mantine-color-body)",
+        borderRight: "1px solid var(--mantine-color-border)",
       }}
     >
       <ScrollArea h="100%" type="hover" offsetScrollbars scrollbarSize={6}>
@@ -39,7 +39,7 @@ export default function AppSidebar() {
           <Text
             size="10px"
             fw={700}
-            c="#a1a1aa"
+            c="gray.4"
             px="sm"
             pt="md"
             pb="xs"
@@ -56,7 +56,7 @@ export default function AppSidebar() {
                 component={Link}
                 href={`/category/${item.slug}`}
                 label={
-                  <Text size="sm" c="#3f3f46" fw={500}>
+                  <Text size="sm" c="dark.7" fw={500}>
                     {item.label}
                   </Text>
                 }
@@ -67,14 +67,14 @@ export default function AppSidebar() {
             ))}
           </Stack>
 
-          <Divider my="sm" color="#f4f4f5" />
+          <Divider my="sm" color="gray.2" />
 
           {/* Популярные бренды */}
           <Group justify="space-between" px="sm" pb="xs">
             <Text
               size="10px"
               fw={700}
-              c="#a1a1aa"
+              c="gray.4"
               ff="var(--font-display), sans-serif"
               style={{ letterSpacing: "0.08em", textTransform: "uppercase" }}
             >
@@ -90,7 +90,7 @@ export default function AppSidebar() {
                 href={`/search?type=vehicle&make=${encodeURIComponent(brand.name)}`}
                 label={
                   <Group gap={8} wrap="nowrap" align="center">
-                    <Text size="sm" c="#3f3f46" fw={500} className="line-clamp-1">
+                    <Text size="sm" c="dark.7" fw={500} className="line-clamp-1">
                       {brand.name}
                     </Text>
                     <Text size="xs" ml="auto" style={{ opacity: 0.7 }}>

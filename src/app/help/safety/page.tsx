@@ -17,13 +17,13 @@ export default function HelpSafetyPage() {
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 700, margin: "0 auto" }}>
       <Stack gap="md">
         <Title order={2} size="h3" ff="var(--font-display),sans-serif">Безопасность сделок</Title>
-        <Text size="sm" c="#71717a">Следуйте этим правилам, чтобы не стать жертвой мошенников</Text>
+        <Text size="sm" c="gray.5">Следуйте этим правилам, чтобы не стать жертвой мошенников</Text>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           {TIPS.map((tip, i) => (
-            <Card key={i} withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+            <Card key={i} withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start">
                 <ThemeIcon variant="light" color="red" size={32} radius="md">{tip.icon}</ThemeIcon>
-                <Stack gap={2}><Text size="sm" fw={600} c="#18181b">{tip.title}</Text><Text size="xs" c="#71717a" lh={1.4}>{tip.desc}</Text></Stack>
+                <Stack gap={2}><Text size="sm" fw={600} c="dark.9">{tip.title}</Text><Text size="xs" c="gray.5" lh={1.4}>{tip.desc}</Text></Stack>
               </Group>
             </Card>
           ))}

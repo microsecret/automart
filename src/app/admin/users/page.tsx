@@ -18,13 +18,13 @@ export default function AdminUsersPage() {
       <Stack gap="md">
         <Stack gap={0}>
           <Title order={2} size="h3" ff="var(--font-display),sans-serif">Пользователи</Title>
-          <Text size="xs" c="#71717a">{users.length} зарегистрировано</Text>
+          <Text size="xs" c="gray.5">{users.length} зарегистрировано</Text>
         </Stack>
 
         {isLoading ? (
           <Center py={40}><Loader size="sm" color="indigo" /></Center>
         ) : users.length === 0 ? (
-          <Center py={40}><Text size="sm" c="#52525b">Нет пользователей</Text></Center>
+          <Center py={40}><Text size="sm" c="gray.6">Нет пользователей</Text></Center>
         ) : (
           <Box style={{ overflowX: "auto" }}>
             <Table striped highlightOnHover>
@@ -45,11 +45,11 @@ export default function AdminUsersPage() {
                         <Text size="sm" fw={500}>{u.name || "Без имени"}</Text>
                       </Group>
                     </Table.Td>
-                    <Table.Td><Text size="xs" c="#71717a">{u.email}</Text></Table.Td>
+                    <Table.Td><Text size="xs" c="gray.5">{u.email}</Text></Table.Td>
                     <Table.Td>
                       <Badge variant="light" color={u.role === "ADMIN" ? "red" : "indigo"} size="sm">{u.role}</Badge>
                     </Table.Td>
-                    <Table.Td><Text size="xs" c="#a1a1aa">{formatDate(u.createdAt)}</Text></Table.Td>
+                    <Table.Td><Text size="xs" c="gray.4">{formatDate(u.createdAt)}</Text></Table.Td>
                   </Table.Tr>
                 ))}
               </Table.Tbody>

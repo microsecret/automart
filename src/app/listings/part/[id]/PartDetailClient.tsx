@@ -81,10 +81,10 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
   return (
     <Container size="xl" py="lg">
-      <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="#a1a1aa" />}>
-        <Anchor component={Link} href="/" size="sm" c="#71717a">Главная</Anchor>
-        <Anchor component={Link} href="/search?type=part" size="sm" c="#71717a">Запчасти</Anchor>
-        <Text size="sm" c="#18181b" className="line-clamp-1">{data.name}</Text>
+      <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="gray.4" />}>
+        <Anchor component={Link} href="/" size="sm" c="gray.5">Главная</Anchor>
+        <Anchor component={Link} href="/search?type=part" size="sm" c="gray.5">Запчасти</Anchor>
+        <Text size="sm" c="dark.9" className="line-clamp-1">{data.name}</Text>
       </Breadcrumbs>
 
       <Grid gutter="lg">
@@ -95,7 +95,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             <Card p={0} radius="lg" withBorder style={{ overflow: "hidden" }}>
               {hasImages ? (
                 <>
-                  <Box style={{ position: "relative", background: "#f4f4f5", aspectRatio: "16/10" }}>
+                  <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={images[activeImage]} alt={data.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     {data.condition && (
@@ -124,10 +124,10 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   )}
                 </>
               ) : (
-                <Box style={{ aspectRatio: "16/10", background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Box style={{ aspectRatio: "16/10", background: "var(--mantine-color-gray-1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Stack align="center" gap="xs">
                     <IconTool size={48} color="#d4d4d8" />
-                    <Text size="sm" c="#a1a1aa">Нет фото</Text>
+                    <Text size="sm" c="gray.4">Нет фото</Text>
                   </Stack>
                 </Box>
               )}
@@ -150,7 +150,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             {data.description && (
               <Card withBorder radius="lg" p="lg">
                 <Title order={3} size="h4" mb="sm">Описание</Title>
-                <Text size="sm" c="#52525b" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>{data.description}</Text>
+                <Text size="sm" c="gray.6" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>{data.description}</Text>
               </Card>
             )}
 
@@ -167,9 +167,9 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                           <Text size="sm" fw={500}>{review.user.name || "Аноним"}</Text>
                           <Rating value={review.rating} size="xs" readOnly />
                         </Stack>
-                        <Text size="xs" c="#a1a1aa" ml="auto">{formatRelativeDate(review.createdAt)}</Text>
+                        <Text size="xs" c="gray.4" ml="auto">{formatRelativeDate(review.createdAt)}</Text>
                       </Group>
-                      {review.comment && <Text size="sm" c="#52525b" pl={36}>{review.comment}</Text>}
+                      {review.comment && <Text size="sm" c="gray.6" pl={36}>{review.comment}</Text>}
                     </Box>
                   ))}
                 </Stack>
@@ -186,10 +186,10 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                 <Title order={1} size="h4" mb={4}>{data.name}</Title>
                 <Text size="1.75rem" fw={800} c="indigo" lh={1.1} mb="xs">{formatPrice(data.price)}</Text>
                 <Group gap={6}>
-                  <IconMapPin size={14} color="#71717a" />
-                  <Text size="sm" c="#71717a">{data.location}</Text>
-                  <Text size="sm" c="#a1a1aa">·</Text>
-                  <Text size="sm" c="#71717a">{formatRelativeDate(data.createdAt)}</Text>
+                  <IconMapPin size={14} color="gray.5" />
+                  <Text size="sm" c="gray.5">{data.location}</Text>
+                  <Text size="sm" c="gray.4">·</Text>
+                  <Text size="sm" c="gray.5">{formatRelativeDate(data.createdAt)}</Text>
                 </Group>
               </Card>
 
@@ -212,17 +212,17 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">{data.seller.name?.[0]?.toUpperCase()}</Avatar>
                   <Stack gap={2}>
                     <Text fw={600}>{data.seller.name || "Продавец"}</Text>
-                    <Text size="xs" c="#a1a1aa">На Авторынке с {formatDate(data.seller.memberSince)}</Text>
+                    <Text size="xs" c="gray.4">На Авторынке с {formatDate(data.seller.memberSince)}</Text>
                   </Stack>
                 </Group>
                 <Divider mb="sm" />
                 <Group gap={6}>
                   <IconShieldCheck size={16} color="#10b981" />
-                  <Text size="sm" c="#52525b">Проверенный продавец</Text>
+                  <Text size="sm" c="gray.6">Проверенный продавец</Text>
                 </Group>
                 {data.seller.otherParts.length > 0 && (
                   <Box mt="sm">
-                    <Text size="xs" c="#71717a" mb={6}>Другие запчасти ({data.seller.otherParts.length})</Text>
+                    <Text size="xs" c="gray.5" mb={6}>Другие запчасти ({data.seller.otherParts.length})</Text>
                     {data.seller.otherParts.slice(0, 3).map((p) => (
                       <Anchor key={p.id} component={Link} href={`/listings/part/${p.id}`} size="xs" c="indigo" display="block">
                         {p.name} — {formatPriceShort(p.price)}
@@ -244,9 +244,9 @@ function SpecRow({ icon, label, value }: { icon: React.ReactNode; label: string;
     <Group gap="sm" justify="space-between">
       <Group gap={8}>
         <ThemeIcon variant="light" color="indigo" size={30} radius="md">{icon}</ThemeIcon>
-        <Text size="sm" c="#71717a">{label}</Text>
+        <Text size="sm" c="gray.5">{label}</Text>
       </Group>
-      <Text size="sm" fw={500} c="#18181b">{value}</Text>
+      <Text size="sm" fw={500} c="dark.9">{value}</Text>
     </Group>
   )
 }

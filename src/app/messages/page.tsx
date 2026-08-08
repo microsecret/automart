@@ -67,8 +67,8 @@ export default function MessagesPage() {
             <Stack align="center" gap="md">
               <IconMessageCircleOff size={48} color="#d4d4d8" />
               <Stack gap={4} align="center">
-                <Text fw={500} c="#52525b">Нет диалогов</Text>
-                <Text size="sm" c="#a1a1aa">Начните общение со страницы объявления</Text>
+                <Text fw={500} c="gray.6">Нет диалогов</Text>
+                <Text size="sm" c="gray.4">Начните общение со страницы объявления</Text>
               </Stack>
             </Stack>
           </Center>
@@ -92,14 +92,14 @@ export default function MessagesPage() {
                   </Avatar>
                   <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                     <Group justify="space-between" gap="sm">
-                      <Text size="sm" fw={600} c="#18181b">{conv.otherUserName || "Пользователь"}</Text>
-                      <Text size="xs" c="#a1a1aa">{formatRelativeDate(conv.lastMessageAt)}</Text>
+                      <Text size="sm" fw={600} c="dark.9">{conv.otherUserName || "Пользователь"}</Text>
+                      <Text size="xs" c="gray.4">{formatRelativeDate(conv.lastMessageAt)}</Text>
                     </Group>
                     {conv.listingTitle && (
                       <Text size="xs" c="#4f46e5" className="line-clamp-1">{conv.listingTitle}</Text>
                     )}
                     <Group gap="xs" align="center">
-                      <Text size="sm" c="#71717a" className="line-clamp-1" style={{ flex: 1 }}>
+                      <Text size="sm" c="gray.5" className="line-clamp-1" style={{ flex: 1 }}>
                         {conv.lastMessage}
                       </Text>
                       {conv.unreadCount > 0 && (

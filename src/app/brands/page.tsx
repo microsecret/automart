@@ -22,10 +22,10 @@ export default function BrandsPage() {
     <Container size="xl" py="md" px={{ base: "md", md: "lg" }}>
       <Stack gap="md">
         <Stack gap={0}>
-          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} lh={1.2} c="#18181b">
+          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} lh={1.2} c="dark.9">
             Все марки
           </Text>
-          <Text size="xs" c="#71717a" mt={2}>{filteredBrands.length} брендов в категории</Text>
+          <Text size="xs" c="gray.5" mt={2}>{filteredBrands.length} брендов в категории</Text>
         </Stack>
 
         <SegmentedControl
@@ -55,17 +55,17 @@ export default function BrandsPage() {
                 radius="md"
                 p="sm"
                 withBorder
-                style={{ borderColor: "#f4f4f5", transition: "all 150ms ease", cursor: "pointer" }}
+                style={{ borderColor: "var(--mantine-color-border)", transition: "all 150ms ease", cursor: "pointer" }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#e4e4e7"; e.currentTarget.style.background = "#fafafa" }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#f4f4f5"; e.currentTarget.style.background = "#fff" }}
               >
                 <Group gap="sm" align="center" wrap="nowrap">
 <BrandIcon brand={brand.name} size={40} variant="rounded" />
                   <Stack gap={0} style={{ minWidth: 0, flex: 1 }}>
-                    <Text size="sm" fw={600} c="#18181b" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {brand.name}
                     </Text>
-                    <Text size="xs" c="#a1a1aa">{brand.models.length} моделей {COUNTRY_FLAGS[brand.country]}</Text>
+                    <Text size="xs" c="gray.4">{brand.models.length} моделей {COUNTRY_FLAGS[brand.country]}</Text>
                   </Stack>
                 </Group>
               </Paper>

@@ -26,17 +26,17 @@ export default function CreditCalculator({ price }: { price: number }) {
   }, [price, downPayment, term, rate])
 
   return (
-    <Card withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+    <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
       <Stack gap="sm">
         <Group gap="sm" align="center">
           <IconCalculator size={18} color="#4f46e5" />
-          <Text size="sm" fw={600} c="#18181b">Кредитный калькулятор</Text>
+          <Text size="sm" fw={600} c="dark.9">Кредитный калькулятор</Text>
         </Group>
 
         {/* Сумма кредита */}
         <Box>
-          <Text size="xs" c="#71717a" mb={4}>Первоначальный взнос</Text>
-          <Text size="md" fw={700} c="#18181b" mb={6}>{formatPrice(downPayment)}</Text>
+          <Text size="xs" c="gray.5" mb={4}>Первоначальный взнос</Text>
+          <Text size="md" fw={700} c="dark.9" mb={6}>{formatPrice(downPayment)}</Text>
           <Slider
             value={downPayment}
             onChange={setDownPayment}
@@ -51,8 +51,8 @@ export default function CreditCalculator({ price }: { price: number }) {
 
         {/* Срок */}
         <Box>
-          <Text size="xs" c="#71717a" mb={4}>Срок кредита</Text>
-          <Text size="md" fw={700} c="#18181b" mb={6}>{term} мес ({Math.round(term / 12 * 10) / 10} лет)</Text>
+          <Text size="xs" c="gray.5" mb={4}>Срок кредита</Text>
+          <Text size="md" fw={700} c="dark.9" mb={6}>{term} мес ({Math.round(term / 12 * 10) / 10} лет)</Text>
           <Slider
             value={term}
             onChange={setTerm}
@@ -90,16 +90,16 @@ export default function CreditCalculator({ price }: { price: number }) {
         {/* Результат */}
         <Group justify="space-between" align="center">
           <Stack gap={0}>
-            <Text size="xs" c="#71717a">Ежемесячный платёж</Text>
+            <Text size="xs" c="gray.5">Ежемесячный платёж</Text>
             <Text size="xl" fw={800} c="#4f46e5" ff="var(--font-display),sans-serif">{formatPrice(monthlyPayment)}</Text>
           </Stack>
           <Stack gap={0} align="flex-end">
-            <Text size="xs" c="#71717a">Сумма кредита</Text>
-            <Text size="sm" fw={600} c="#18181b">{formatPrice(totalLoan)}</Text>
+            <Text size="xs" c="gray.5">Сумма кредита</Text>
+            <Text size="sm" fw={600} c="dark.9">{formatPrice(totalLoan)}</Text>
           </Stack>
         </Group>
 
-        <Text size="10px" c="#a1a1aa">Расчёт предварительный. Точные условия определяет банк.</Text>
+        <Text size="10px" c="gray.4">Расчёт предварительный. Точные условия определяет банк.</Text>
       </Stack>
     </Card>
   )

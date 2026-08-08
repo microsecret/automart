@@ -62,7 +62,7 @@ function NewMessageContent() {
       <Stack gap="lg">
         <Stack gap={4}>
           <Title order={1} size="h2">Новое сообщение</Title>
-          <Text size="sm" c="#71717a">Выберите пользователя для начала диалога</Text>
+          <Text size="sm" c="gray.5">Выберите пользователя для начала диалога</Text>
         </Stack>
 
         <TextInput
@@ -94,7 +94,7 @@ function NewMessageContent() {
                   </Avatar>
                   <Stack gap={2} style={{ flex: 1 }}>
                     <Text size="sm" fw={500}>{user.name || "Пользователь"}</Text>
-                    <Text size="xs" c="#a1a1aa">{user.email}</Text>
+                    <Text size="xs" c="gray.4">{user.email}</Text>
                   </Stack>
                   <IconMessageCirclePlus size={20} color="#4f46e5" />
                 </Group>
@@ -102,7 +102,7 @@ function NewMessageContent() {
             ))}
             {data?.users?.length === 0 && (
               <Center py={40}>
-                <Text size="sm" c="#a1a1aa">Пользователи не найдены</Text>
+                <Text size="sm" c="gray.4">Пользователи не найдены</Text>
               </Center>
             )}
           </Stack>

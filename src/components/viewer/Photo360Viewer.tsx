@@ -86,8 +86,8 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
         <Center>
           <Box style={{ textAlign: "center" }}>
             <IconRotate360 size={56} color="#4f46e5" style={{ margin: "0 auto 12px" }} />
-            <Text size="sm" c="#a1a1aa" fw={500}>360° осмотр недоступен</Text>
-            <Text size="xs" c="#52525b" mt={4}>Продавец не загрузил серию фото</Text>
+            <Text size="sm" c="gray.4" fw={500}>360° осмотр недоступен</Text>
+            <Text size="xs" c="gray.6" mt={4}>Продавец не загрузил серию фото</Text>
           </Box>
         </Center>
       </Box>
@@ -233,7 +233,7 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
           {title || "360° осмотр"}
         </Text>
         <Group gap="sm">
-          <Text size="xs" c="#a1a1aa">← → для поворота · ESC для выхода</Text>
+          <Text size="xs" c="gray.4">← → для поворота · ESC для выхода</Text>
           <ActionIcon variant="subtle" color="gray" size="lg" onClick={() => setFullscreen(false)} aria-label="Закрыть">
             <IconX size={20} color="white" />
           </ActionIcon>

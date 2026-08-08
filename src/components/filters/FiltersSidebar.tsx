@@ -68,7 +68,7 @@ export default function FiltersSidebar({
       </Group>
 
       {/* Марка */}
-      <Divider labelPosition="center" label={<Text size="xs" fw={500} c="#71717a">Марка</Text>} />
+      <Divider labelPosition="center" label={<Text size="xs" fw={500} c="gray.5">Марка</Text>} />
       <Select
         placeholder="Любая"
         data={BRAND_NAMES.map((b) => ({ value: b, label: b }))}
@@ -93,7 +93,7 @@ export default function FiltersSidebar({
       {isVehicle && (
         <>
           {/* Кузов */}
-          <Divider labelPosition="center" label={<Text size="xs" fw={500} c="#71717a">Кузов</Text>} />
+          <Divider labelPosition="center" label={<Text size="xs" fw={500} c="gray.5">Кузов</Text>} />
           <Select
             placeholder="Любой"
             data={[...BODY_TYPES]}
@@ -103,7 +103,7 @@ export default function FiltersSidebar({
           />
 
           {/* Двигатель */}
-          <Divider labelPosition="center" label={<Text size="xs" fw={500} c="#71717a">Двигатель</Text>} />
+          <Divider labelPosition="center" label={<Text size="xs" fw={500} c="gray.5">Двигатель</Text>} />
           <Select
             placeholder="Любой"
             data={[...FUEL_TYPES]}
@@ -113,7 +113,7 @@ export default function FiltersSidebar({
           />
 
           {/* Коробка */}
-          <Divider labelPosition="center" label={<Text size="xs" fw={500} c="#71717a">Коробка передач</Text>} />
+          <Divider labelPosition="center" label={<Text size="xs" fw={500} c="gray.5">Коробка передач</Text>} />
           <Select
             placeholder="Любая"
             data={[...TRANSMISSIONS]}
@@ -125,7 +125,7 @@ export default function FiltersSidebar({
       )}
 
       {/* Цена */}
-      <Divider labelPosition="center" label={<Text size="xs" fw={500} c="#71717a">Цена, ₽</Text>} />
+      <Divider labelPosition="center" label={<Text size="xs" fw={500} c="gray.5">Цена, ₽</Text>} />
       <Group grow>
         <NumberInput
           placeholder="от"
@@ -146,7 +146,7 @@ export default function FiltersSidebar({
       {isVehicle && (
         <>
           {/* Год */}
-          <Divider labelPosition="center" label={<Text size="xs" fw={500} c="#71717a">Год выпуска</Text>} />
+          <Divider labelPosition="center" label={<Text size="xs" fw={500} c="gray.5">Год выпуска</Text>} />
           <Group grow>
             <Select
               placeholder="от"
@@ -167,7 +167,7 @@ export default function FiltersSidebar({
       )}
 
       {/* Город */}
-      <Divider labelPosition="center" label={<Text size="xs" fw={500} c="#71717a">Город</Text>} />
+      <Divider labelPosition="center" label={<Text size="xs" fw={500} c="gray.5">Город</Text>} />
       <TextInput
         placeholder="Любой город"
         value={values.city || ""}

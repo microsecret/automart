@@ -52,7 +52,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const toggle = (id: string) => setExpanded(expanded === id ? null : id)
 
   return (
-    <Box style={{ minHeight: "100vh", background: "#fcfcfd" }}>
+    <Box style={{ minHeight: "100vh", background: "var(--mantine-color-body)" }}>
       <AppHeader />
 
       <Box style={{ display: "flex", maxWidth: 1440, margin: "0 auto" }}>
@@ -66,8 +66,8 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
             position: "sticky",
             top: 56,
             height: "calc(100vh - 56px)",
-            borderRight: "1px solid #f4f4f5",
-            background: "#fff",
+            borderRight: "1px solid var(--mantine-color-border)",
+            background: "var(--mantine-color-body)",
             overflow: "hidden",
           }}
         >
@@ -119,7 +119,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                     py={4}
                     px="lg"
                     color="gray"
-                    style={{ fontSize: "0.75rem", color: "#71717a" }}
+                    style={{ fontSize: "0.75rem", color: "var(--mantine-color-dimmed)" }}
                   />
                 ))}
               </Stack>
@@ -158,7 +158,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </Stack>
 
-              <Divider color="#f4f4f5" mb="xs" />
+              <Divider color="gray.2" mb="xs" />
 
               {/* Быстрые ссылки */}
               <Stack gap={1}>
@@ -173,9 +173,10 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         {/* Контент */}
         <Box component="main" style={{ flex: 1, minWidth: 0 }}>
           {children}
-          <AppFooter />
         </Box>
       </Box>
+
+      <AppFooter />
 
       <style>{`
         @media (max-width: 900px) { .app-sidebar { display: none !important; } }
@@ -192,7 +193,7 @@ function SectionLabel({ children, mt }: { children: React.ReactNode; mt?: string
     <Text
       size="10px"
       fw={700}
-      c="#a1a1aa"
+      c="gray.4"
       px="sm"
       mt={mt || 0}
       pb="xs"

@@ -93,7 +93,7 @@ export default function ConversationPage({ params }: { params: { conversationId:
           </Avatar>
           <Stack gap={0}>
             <Text size="sm" fw={600}>{data?.otherUserName || "Диалог"}</Text>
-            <Text size="xs" c="#a1a1aa">ID: {conversationId.substring(0, 12)}...</Text>
+            <Text size="xs" c="gray.4">ID: {conversationId.substring(0, 12)}...</Text>
           </Stack>
         </Group>
 
@@ -103,7 +103,7 @@ export default function ConversationPage({ params }: { params: { conversationId:
             <Center py={40}><Loader color="indigo" /></Center>
           ) : messages.length === 0 ? (
             <Center py={40}>
-              <Text size="sm" c="#a1a1aa">Начните диалог — отправьте первое сообщение</Text>
+              <Text size="sm" c="gray.4">Начните диалог — отправьте первое сообщение</Text>
             </Center>
           ) : (
             <Stack gap="xs" p="xs">
@@ -118,12 +118,12 @@ export default function ConversationPage({ params }: { params: { conversationId:
                       style={{
                         maxWidth: "75%",
                         background: isOwn ? "#4f46e5" : "#f4f4f5",
-                        color: isOwn ? "#fff" : "#18181b",
+                        color: isOwn ? "#fff" : "var(--mantine-color-text)",
                       }}
                     >
                       <Stack gap={2}>
                         <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>{msg.content}</Text>
-                        <Text size="10px" c={isOwn ? "#c7d2fe" : "#a1a1aa"}>{formatRelativeDate(msg.createdAt)}</Text>
+                        <Text size="10px" c={isOwn ? "#c7d2fe" : "var(--mantine-color-dimmed)"}>{formatRelativeDate(msg.createdAt)}</Text>
                       </Stack>
                     </Paper>
                   </Group>

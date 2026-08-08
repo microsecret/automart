@@ -11,19 +11,19 @@ export default function HelpRulesPage() {
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 700, margin: "0 auto" }}>
       <Stack gap="md">
         <Title order={2} size="h3" ff="var(--font-display),sans-serif">Правила площадки</Title>
-        <Card withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+        <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
           <Stack gap="xs">
             <Text size="sm" fw={600} c="#16a34a">✓ Разрешено</Text>
-            {ALLOWED.map((item) => <Group key={item} gap={6}><IconCheck size={14} color="#16a34a" /><Text size="xs" c="#52525b">{item}</Text></Group>)}
+            {ALLOWED.map((item) => <Group key={item} gap={6}><IconCheck size={14} color="#16a34a" /><Text size="xs" c="gray.6">{item}</Text></Group>)}
           </Stack>
         </Card>
-        <Card withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+        <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
           <Stack gap="xs">
             <Text size="sm" fw={600} c="#dc2626">✗ Запрещено</Text>
-            {FORBIDDEN.map((item) => <Group key={item} gap={6}><IconX size={14} color="#dc2626" /><Text size="xs" c="#52525b">{item}</Text></Group>)}
+            {FORBIDDEN.map((item) => <Group key={item} gap={6}><IconX size={14} color="#dc2626" /><Text size="xs" c="gray.6">{item}</Text></Group>)}
           </Stack>
         </Card>
-        <Text size="xs" c="#a1a1aa">Нарушение правил ведёт к блокировке аккаунта и объявлений.</Text>
+        <Text size="xs" c="gray.4">Нарушение правил ведёт к блокировке аккаунта и объявлений.</Text>
       </Stack>
     </Box>
   )

@@ -24,7 +24,7 @@ export default function SignUpPage() {
         </Box>
         <Stack gap={4} align="center">
           <Title order={1} size="h2">Регистрация</Title>
-          <Text size="sm" c="#71717a">Создайте аккаунт на Авторынке</Text>
+          <Text size="sm" c="gray.5">Создайте аккаунт на Авторынке</Text>
         </Stack>
       </Stack>
 

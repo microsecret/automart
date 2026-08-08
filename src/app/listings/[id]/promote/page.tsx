@@ -53,15 +53,15 @@ export default function PromotePage({ params }: { params: { id: string } }) {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconChartBar size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="#18181b" ff="var(--font-display),sans-serif">Продвижение объявления</Text>
-            <Text size="xs" c="#71717a">Увеличьте просмотры и продажи в 3-10 раз</Text>
+            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Продвижение объявления</Text>
+            <Text size="xs" c="gray.5">Увеличьте просмотры и продажи в 3-10 раз</Text>
           </Stack>
         </Group>
 
         {listing?.views !== undefined && (
-          <Paper radius="md" p="sm" withBorder style={{ background: "#fafafa" }}>
+          <Paper radius="md" p="sm" withBorder style={{ background: "var(--mantine-color-gray-0)" }}>
             <Group gap="md" justify="center">
-              <Stack gap={0} align="center"><Text fw={700} fz="xl" c="#18181b">{listing.views || 0}</Text><Text size="xs" c="#71717a">просмотров сейчас</Text></Stack>
+              <Stack gap={0} align="center"><Text fw={700} fz="xl" c="dark.9">{listing.views || 0}</Text><Text size="xs" c="gray.5">просмотров сейчас</Text></Stack>
             </Group>
           </Paper>
         )}
@@ -82,17 +82,17 @@ export default function PromotePage({ params }: { params: { id: string } }) {
                     <Badge variant="light" color={opt.id === "boost" ? "cyan" : opt.id === "premium" ? "orange" : "violet"} size="xs">{opt.days} дн.</Badge>
                   </Group>
                   <Stack gap={4}>
-                    <Text fw={700} fz="md" c="#18181b">{opt.title}</Text>
-                    <Text size="xs" c="#71717a" lh={1.4}>{opt.desc}</Text>
+                    <Text fw={700} fz="md" c="dark.9">{opt.title}</Text>
+                    <Text size="xs" c="gray.5" lh={1.4}>{opt.desc}</Text>
                   </Stack>
                   <Stack gap={4}>
                     {opt.features.map((f) => (
-                      <Group key={f} gap={6}><IconCheck size={13} color={opt.color} /><Text size="xs" c="#52525b">{f}</Text></Group>
+                      <Group key={f} gap={6}><IconCheck size={13} color={opt.color} /><Text size="xs" c="gray.6">{f}</Text></Group>
                     ))}
                   </Stack>
                   <Divider my={2} />
                   <Group justify="space-between" align="center">
-                    <Text fw={800} fz="xl" c="#18181b" ff="var(--font-display),sans-serif">{opt.price} ₽</Text>
+                    <Text fw={800} fz="xl" c="dark.9" ff="var(--font-display),sans-serif">{opt.price} ₽</Text>
                     <Button size="sm" radius="md" color={opt.id === "boost" ? "cyan" : opt.id === "premium" ? "orange" : "violet"} onClick={() => handleSelect(opt.id)}>Выбрать</Button>
                   </Group>
                 </Stack>
@@ -115,8 +115,8 @@ export default function PromotePage({ params }: { params: { id: string } }) {
           <Stack gap="md" align="center" py="md">
             <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>
             <Stack gap={0} align="center">
-              <Text fw={700} fz="lg" c="#18181b">Продвижение активировано!</Text>
-              <Text size="sm" c="#71717a" ta="center">Тариф «{selectedOption?.title}» активен {selectedOption?.days} дней</Text>
+              <Text fw={700} fz="lg" c="dark.9">Продвижение активировано!</Text>
+              <Text size="sm" c="gray.5" ta="center">Тариф «{selectedOption?.title}» активен {selectedOption?.days} дней</Text>
             </Stack>
             <Button fullWidth radius="md" onClick={() => { setModalOpen(false); setPaid(false) }}>Отлично</Button>
           </Stack>
@@ -125,15 +125,15 @@ export default function PromotePage({ params }: { params: { id: string } }) {
             {selectedOption && (
               <>
                 <Group justify="space-between" align="center">
-                  <Stack gap={2}><Text size="xs" c="#71717a">Тариф</Text><Text fw={600} c="#18181b">{selectedOption.title}</Text></Stack>
+                  <Stack gap={2}><Text size="xs" c="gray.5">Тариф</Text><Text fw={600} c="dark.9">{selectedOption.title}</Text></Stack>
                   <Badge size="lg" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} variant="light">{selectedOption.days} дней</Badge>
                 </Group>
                 <Divider />
-                <Group justify="space-between"><Text size="sm" c="#71717a">Стоимость</Text><Text fw={800} fz="xl" c="#18181b">{selectedOption.price} ₽</Text></Group>
+                <Group justify="space-between"><Text size="sm" c="gray.5">Стоимость</Text><Text fw={800} fz="xl" c="dark.9">{selectedOption.price} ₽</Text></Group>
                 <Button fullWidth size="md" radius="md" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} leftSection={<IconCreditCard size={18} />} loading={pending} onClick={handlePay}>
                   Оплатить {selectedOption.price} ₽
                 </Button>
-                <Text size="xs" c="#a1a1aa" ta="center">Демо-режим: оплата не списывается</Text>
+                <Text size="xs" c="gray.4" ta="center">Демо-режим: оплата не списывается</Text>
               </>
             )}
           </Stack>

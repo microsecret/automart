@@ -30,8 +30,8 @@ export default function ReviewsPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="orange" size={36} radius="md"><IconStar size={20} fill="currentColor" /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="#18181b" ff="var(--font-display),sans-serif">Отзывы</Text>
-            <Text size="xs" c="#71717a">{reviews.length} отзывов</Text>
+            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Отзывы</Text>
+            <Text size="xs" c="gray.5">{reviews.length} отзывов</Text>
           </Stack>
         </Group>
 
@@ -42,7 +42,7 @@ export default function ReviewsPage() {
             <Center>
               <Stack align="center" gap="sm">
                 <ThemeIcon variant="light" color="gray" size={56} radius="md"><IconMessage2 size={28} /></ThemeIcon>
-                <Text c="#71717a">Пока нет отзывов</Text>
+                <Text c="gray.5">Пока нет отзывов</Text>
               </Stack>
             </Center>
           </Paper>
@@ -51,19 +51,19 @@ export default function ReviewsPage() {
             {/* Сводка рейтинга */}
             <Paper radius="md" p="lg" withBorder>
               <Stack gap="sm" align="center">
-                <Text fw={800} fz={48} c="#18181b" lh={1}>{avg}</Text>
+                <Text fw={800} fz={48} c="dark.9" lh={1}>{avg}</Text>
                 <Rating value={Number(avg) || 0} readOnly size="lg" />
-                <Text size="xs" c="#71717a">из {reviews.length} отзывов</Text>
+                <Text size="xs" c="gray.5">из {reviews.length} отзывов</Text>
               </Stack>
               <Divider my="sm" />
               <Stack gap={4}>
                 {dist.map((d) => (
                   <Group key={d.star} gap="xs" align="center">
-                    <Text fz="xs" c="#71717a" style={{ width: 20 }}>{d.star}★</Text>
-                    <Box style={{ flex: 1, height: 6, background: "#f4f4f5", borderRadius: 3, overflow: "hidden" }}>
+                    <Text fz="xs" c="gray.5" style={{ width: 20 }}>{d.star}★</Text>
+                    <Box style={{ flex: 1, height: 6, background: "var(--mantine-color-gray-1)", borderRadius: 3, overflow: "hidden" }}>
                       <Box style={{ width: `${d.pct}%`, height: "100%", background: "#f59e0b", borderRadius: 3 }} />
                     </Box>
-                    <Text fz="xs" c="#a1a1aa" style={{ width: 30, textAlign: "right" }}>{d.count}</Text>
+                    <Text fz="xs" c="gray.4" style={{ width: 30, textAlign: "right" }}>{d.count}</Text>
                   </Group>
                 ))}
               </Stack>
@@ -78,11 +78,11 @@ export default function ReviewsPage() {
                       <Avatar src={r.user?.image} size={40} radius="xl" color="orange">{r.user?.name?.[0]?.toUpperCase()}</Avatar>
                       <Stack gap={4} style={{ flex: 1 }}>
                         <Group gap="sm" align="center" justify="space-between">
-                          <Text fw={600} fz="sm" c="#18181b">{r.user?.name || "Аноним"}</Text>
-                          <Text fz="xs" c="#a1a1aa">{formatRelativeDate(r.createdAt)}</Text>
+                          <Text fw={600} fz="sm" c="dark.9">{r.user?.name || "Аноним"}</Text>
+                          <Text fz="xs" c="gray.4">{formatRelativeDate(r.createdAt)}</Text>
                         </Group>
                         <Rating value={r.rating} readOnly size="sm" />
-                        {r.comment && <Text fz="sm" c="#3f3f46" mt={4}>{r.comment}</Text>}
+                        {r.comment && <Text fz="sm" c="dark.7" mt={4}>{r.comment}</Text>}
                         {r.listing && (
                           <Link href={`/listings/vehicle/${r.listing.vehicleId || r.listing.id}`} style={{ textDecoration: "none" }}>
                             <Text fz="xs" c="indigo" mt={4}>→ {r.listing.title}</Text>

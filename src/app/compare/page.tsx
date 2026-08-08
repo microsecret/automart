@@ -51,7 +51,7 @@ function CompareContent() {
             <IconGitCompare size={28} />
           </ThemeIcon>
           <Title order={2} ff="var(--font-display),sans-serif" ta="center">Сравнение объявлений</Title>
-          <Text size="sm" c="#71717a" ta="center" maw={420}>
+          <Text size="sm" c="gray.5" ta="center" maw={420}>
             Чтобы сравнить автомобили, добавьте их в сравнение.
             Откройте страницу объявления и нажмите «Сравнить», или добавьте через URL:
           </Text>
@@ -73,7 +73,7 @@ function CompareContent() {
       <Container size="md" py="xl">
         <Center>
           <Stack align="center" gap="md">
-            <Text c="#71717a" fz="lg">Объявления не найдены</Text>
+            <Text c="gray.5" fz="lg">Объявления не найдены</Text>
             <Button component={Link} href="/" variant="subtle" color="indigo">На главную</Button>
           </Stack>
         </Center>
@@ -86,8 +86,8 @@ function CompareContent() {
       <Stack gap="md">
         <Group justify="space-between" align="center">
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={24} c="#18181b" ff="var(--font-display),sans-serif">Сравнение</Text>
-            <Text size="xs" c="#71717a">{vehicles.length} автомобиля</Text>
+            <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Сравнение</Text>
+            <Text size="xs" c="gray.5">{vehicles.length} автомобиля</Text>
           </Stack>
           <Button component={Link} href="/" variant="subtle" color="gray" size="sm" leftSection={<IconArrowLeft size={14} />}>
             Назад
@@ -99,12 +99,12 @@ function CompareContent() {
           <Group gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180 }}>
             {/* Колонка с названиями полей */}
             <Box style={{ width: 160, flexShrink: 0 }}>
-              <Text size="xs" fw={700} c="#a1a1aa" tt="uppercase" mt={60}>Характеристика</Text>
+              <Text size="xs" fw={700} c="gray.4" tt="uppercase" mt={60}>Характеристика</Text>
             </Box>
             {/* Колонки автомобилей */}
             {vehicles.map((v) => (
               <Box key={v.id} style={{ width: 200, flexShrink: 0 }}>
-                <Box style={{ position: "relative", background: "#f4f4f5", borderRadius: 8, overflow: "hidden", aspectRatio: "4/3", marginBottom: 8 }}>
+                <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", borderRadius: 8, overflow: "hidden", aspectRatio: "4/3", marginBottom: 8 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={v.images ? (JSON.parse(v.images)[0] || "/placeholder.svg") : "/placeholder.svg"} alt={v.make} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </Box>
@@ -112,8 +112,8 @@ function CompareContent() {
                   <Group gap="sm" mb={4}>
                     <BrandIcon brand={v.make} size={32} />
                     <Stack gap={0}>
-                      <Text fw={700} fz="sm" c="#18181b">{v.make} {v.model}</Text>
-                      <Text fz="xs" c="#71717a">{v.year}</Text>
+                      <Text fw={700} fz="sm" c="dark.9">{v.make} {v.model}</Text>
+                      <Text fz="xs" c="gray.5">{v.year}</Text>
                     </Stack>
                   </Group>
                 </Link>
@@ -127,14 +127,14 @@ function CompareContent() {
           {COMPARE_FIELDS.map((field, idx) => (
             <Group key={field.key} gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180, background: idx % 2 === 0 ? "transparent" : "#fafafa", padding: "6px 0", borderRadius: 4 }}>
               <Box style={{ width: 160, flexShrink: 0 }}>
-                <Text size="xs" fw={600} c="#52525b" pl="xs">{field.label}</Text>
+                <Text size="xs" fw={600} c="gray.6" pl="xs">{field.label}</Text>
               </Box>
               {vehicles.map((v) => {
                 const raw = v[field.key]
                 const isBest = field.key === "price" && raw === Math.min(...vehicles.map((x) => x.price).filter(Boolean))
                 return (
                   <Box key={v.id} style={{ width: 200, flexShrink: 0 }}>
-                    <Text size="sm" fw={isBest ? 700 : 400} c={isBest ? "#059669" : "#3f3f46"} pl="xs">
+                    <Text size="sm" fw={isBest ? 700 : 400} c={isBest ? "#059669" : "var(--mantine-color-gray-7)"} pl="xs">
                       {field.format(raw)}
                     </Text>
                   </Box>

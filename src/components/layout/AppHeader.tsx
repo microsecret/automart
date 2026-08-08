@@ -33,8 +33,8 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
       style={{
         zIndex: 200,
         height: 56,
-        background: colorScheme === "dark" ? "#18181b" : "#ffffff",
-        borderBottom: colorScheme === "dark" ? "1px solid #27272a" : "1px solid #f4f4f5",
+        background: "var(--mantine-color-body)",
+        borderBottom: "1px solid var(--mantine-color-border)",
         boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
       }}
     >
@@ -51,7 +51,7 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
               }}>
                 <IconCar size={18} color="white" />
               </Box>
-              <Text ff="var(--font-display),sans-serif" fw={800} fz={17} lh={1} c={colorScheme === "dark" ? "#fafafa" : "#18181b"} style={{ letterSpacing: "-0.02em" }}>
+              <Text ff="var(--font-display),sans-serif" fw={800} fz={17} lh={1} c="var(--mantine-color-text)" style={{ letterSpacing: "-0.02em" }}>
                 Авторынок
               </Text>
             </Group>
@@ -61,7 +61,7 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
           <Box component="form" onSubmit={handleSearch} style={{ flex: 1, maxWidth: 520 }} visibleFrom="sm">
             <TextInput
               placeholder="Марка, модель, город..."
-              leftSection={<IconSearch size={16} color="#a1a1aa" />}
+              leftSection={<IconSearch size={16} color="gray.4" />}
               value={query}
               onChange={(e) => setQuery(e.currentTarget.value)}
               radius="md"
@@ -69,7 +69,7 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
               variant="filled"
               styles={{
                 input: {
-                  background: "#f4f4f5",
+                  background: "var(--mantine-color-gray-1)",
                   border: "1px solid transparent",
                   height: 36,
                   transition: "all 200ms ease",
@@ -132,7 +132,7 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
                   </Menu.Target>
                   <Menu.Dropdown>
                     <Box px="sm" py={6}>
-                      <Text size="sm" fw={600} c="#18181b" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {session.user?.name || session.user?.email}
                       </Text>
                     </Box>

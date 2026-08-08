@@ -24,7 +24,7 @@ export default function SignInPage() {
         </Box>
         <Stack gap={4} align="center">
           <Title order={1} size="h2">Вход в Авторынок</Title>
-          <Text size="sm" c="#71717a">Войдите в свой аккаунт</Text>
+          <Text size="sm" c="gray.5">Войдите в свой аккаунт</Text>
         </Stack>
       </Stack>
 

@@ -63,8 +63,8 @@ export default function HistoryCheckPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="green" size={44} radius="md"><IconHistory size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="#18181b" ff="var(--font-display),sans-serif">Проверка истории авто</Text>
-            <Text size="xs" c="#71717a">Полный отчёт по VIN: ДТП, пробег, ограничения, розыск, владельцы</Text>
+            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Проверка истории авто</Text>
+            <Text size="xs" c="gray.5">Полный отчёт по VIN: ДТП, пробег, ограничения, розыск, владельцы</Text>
           </Stack>
         </Group>
 
@@ -74,11 +74,11 @@ export default function HistoryCheckPage() {
             <Button onClick={check} color="green" radius="md" size="md" loading={loading} leftSection={<IconShieldCheck size={18} />} disabled={vin.length < 10}>
               Проверить историю
             </Button>
-            <Text size="xs" c="#a1a1aa">Отчёт формируется 2-3 секунды</Text>
+            <Text size="xs" c="gray.4">Отчёт формируется 2-3 секунды</Text>
           </Stack>
         </Paper>
 
-        {loading && <Center py={40}><Stack align="center"><Loader size="sm" color="green" /><Text size="sm" c="#71717a">Проверяем по базам ЕАЭС...</Text></Stack></Center>}
+        {loading && <Center py={40}><Stack align="center"><Loader size="sm" color="green" /><Text size="sm" c="gray.5">Проверяем по базам ЕАЭС...</Text></Stack></Center>}
 
         {report && (
           <Stack gap="md">
@@ -93,7 +93,7 @@ export default function HistoryCheckPage() {
                 </ThemeIcon>
                 <Stack gap={2}>
                   <Text fw={700} fz="lg" c={isClean ? "#16a34a" : "#d97706"}>{isClean ? "Чистая история" : "Найдены проблемы"}</Text>
-                  <Text size="sm" c="#52525b">{report.cleanScore} из {report.total} проверок пройдено</Text>
+                  <Text size="sm" c="gray.6">{report.cleanScore} из {report.total} проверок пройдено</Text>
                   <Badge size="sm" color={isClean ? "green" : "orange"} variant="light">VIN: {vin.slice(0, 4)}...{vin.slice(-4)}</Badge>
                 </Stack>
               </Group>
@@ -101,7 +101,7 @@ export default function HistoryCheckPage() {
 
             {/* Детальный отчёт */}
             <Paper radius="md" p="md" withBorder>
-              <Group gap="xs" mb="sm"><IconFileText size={16} color="#52525b" /><Text fw={700} c="#18181b">Результаты проверок</Text></Group>
+              <Group gap="xs" mb="sm"><IconFileText size={16} color="gray.6" /><Text fw={700} c="dark.9">Результаты проверок</Text></Group>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                 {report.items.map((item) => (
                   <Group key={item.label} gap="sm" align="flex-start">
@@ -109,7 +109,7 @@ export default function HistoryCheckPage() {
                       {item.ok ? <IconCheck size={16} /> : <IconX size={16} />}
                     </ThemeIcon>
                     <Stack gap={0}>
-                      <Text size="xs" c="#71717a">{item.label}</Text>
+                      <Text size="xs" c="gray.5">{item.label}</Text>
                       <Text size="sm" fw={600} c={item.ok ? "#16a34a" : "#dc2626"}>{item.value}</Text>
                     </Stack>
                   </Group>
@@ -119,17 +119,17 @@ export default function HistoryCheckPage() {
 
             {/* Хронология */}
             <Paper radius="md" p="md" withBorder>
-              <Group gap="xs" mb="sm"><IconHistory size={16} color="#52525b" /><Text fw={700} c="#18181b">Хронология событий</Text></Group>
+              <Group gap="xs" mb="sm"><IconHistory size={16} color="gray.6" /><Text fw={700} c="dark.9">Хронология событий</Text></Group>
               <Timeline bulletSize={20} lineWidth={2} color="green">
                 {report.events.map((e, i) => (
-                  <Timeline.Item key={i} bullet={<IconCar size={12} />} title={<Text size="sm" fw={600} c={e.type === "bad" ? "#dc2626" : e.type === "warn" ? "#d97706" : "#18181b"}>{e.title}</Text>}>
-                    <Text size="xs" c="#a1a1aa">{e.date}</Text>
+                  <Timeline.Item key={i} bullet={<IconCar size={12} />} title={<Text size="sm" fw={600} c={e.type === "bad" ? "#dc2626" : e.type === "warn" ? "#d97706" : "var(--mantine-color-text)"}>{e.title}</Text>}>
+                    <Text size="xs" c="gray.4">{e.date}</Text>
                   </Timeline.Item>
                 ))}
               </Timeline>
             </Paper>
 
-            <Text size="xs" c="#a1a1aa" ta="center">Демонстрационный отчёт. В продакшене — данные из реестров ГИБДД, ФССП, НБКИ.</Text>
+            <Text size="xs" c="gray.4" ta="center">Демонстрационный отчёт. В продакшене — данные из реестров ГИБДД, ФССП, НБКИ.</Text>
           </Stack>
         )}
       </Stack>

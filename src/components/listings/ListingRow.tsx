@@ -55,16 +55,16 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
         withBorder
         style={{
           overflow: "hidden",
-          borderColor: "#f4f4f5",
+          borderColor: "var(--mantine-color-border)",
           transition: "border-color 200ms ease, box-shadow 200ms ease",
           cursor: "pointer",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#e4e4e7"; e.currentTarget.style.boxShadow = "0 4px 12px -4px rgba(0,0,0,0.06)" }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#f4f4f5"; e.currentTarget.style.boxShadow = "none" }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-gray-4)"; e.currentTarget.style.boxShadow = "0 4px 12px -4px rgba(0,0,0,0.06)" }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)"; e.currentTarget.style.boxShadow = "none" }}
       >
         <Group gap={0} align="stretch" wrap="nowrap">
           {/* Фото */}
-          <Box pos="relative" style={{ width: 180, flexShrink: 0, background: "#f4f4f5", lineHeight: 0 }}>
+          <Box pos="relative" style={{ width: 180, flexShrink: 0, background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
             <AspectRatio ratio={4 / 3} w={180}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image} alt={listing.title} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
@@ -83,13 +83,13 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 <Group gap="sm" align="center" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
                   {isVehicle && <BrandIcon brand={listing.vehicle!.make} size={32} variant="rounded" />}
                   <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-                  <Text fw={500} fz="sm" c="#3f3f46" style={TRUNCATE}>{listing.title}</Text>
-                  <Text fz="xs" c="#a1a1aa" style={TRUNCATE}>
+                  <Text fw={500} fz="sm" c="dark.7" style={TRUNCATE}>{listing.title}</Text>
+                  <Text fz="xs" c="gray.4" style={TRUNCATE}>
                     {isVehicle ? `${listing.vehicle!.make} ${listing.vehicle!.model}` : listing.part?.name}
                   </Text>
                   </Stack>
                 </Group>
-                <Text fw={700} fz="md" c="#18181b" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                <Text fw={700} fz="md" c="dark.9" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
                   {formatPriceShort(listing.price)}
                 </Text>
               </Group>
@@ -97,26 +97,26 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
               {isVehicle && (
                 <Group gap={12} wrap="nowrap" mt={2}>
                   <Group gap={3} wrap="nowrap">
-                    <IconCalendar size={12} stroke={1.8} color="#a1a1aa" />
-                    <Text fz="xs" c="#71717a">{listing.vehicle!.year}</Text>
+                    <IconCalendar size={12} stroke={1.8} color="gray.4" />
+                    <Text fz="xs" c="gray.5">{listing.vehicle!.year}</Text>
                   </Group>
                   <Group gap={3} wrap="nowrap">
-                    <IconGauge size={12} stroke={1.8} color="#a1a1aa" />
-                    <Text fz="xs" c="#71717a">{formatMileage(listing.vehicle!.mileage)}</Text>
+                    <IconGauge size={12} stroke={1.8} color="gray.4" />
+                    <Text fz="xs" c="gray.5">{formatMileage(listing.vehicle!.mileage)}</Text>
                   </Group>
                   {listing.vehicle!.bodyType && (
-                    <Text fz="xs" c="#71717a">{findLabel(BODY_TYPES, listing.vehicle!.bodyType)}</Text>
+                    <Text fz="xs" c="gray.5">{findLabel(BODY_TYPES, listing.vehicle!.bodyType)}</Text>
                   )}
                   {listing.vehicle!.transmission && (
                     <Group gap={3} wrap="nowrap">
-                      <IconManualGearbox size={12} stroke={1.8} color="#a1a1aa" />
-                      <Text fz="xs" c="#71717a">{findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
+                      <IconManualGearbox size={12} stroke={1.8} color="gray.4" />
+                      <Text fz="xs" c="gray.5">{findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
                     </Group>
                   )}
                   {listing.vehicle!.fuelType && (
                     <Group gap={3} wrap="nowrap">
-                      <IconGasStation size={12} stroke={1.8} color="#a1a1aa" />
-                      <Text fz="xs" c="#71717a">{findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>
+                      <IconGasStation size={12} stroke={1.8} color="gray.4" />
+                      <Text fz="xs" c="gray.5">{findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>
                     </Group>
                   )}
                 </Group>
@@ -126,12 +126,12 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
             <Group justify="space-between" gap={4} mt={4}>
               {listing.location ? (
                 <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
-                  <IconMapPin size={11} stroke={1.8} color="#a1a1aa" style={{ flexShrink: 0 }} />
-                  <Text fz="xs" c="#a1a1aa" style={TRUNCATE}>{listing.location}</Text>
+                  <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                  <Text fz="xs" c="gray.4" style={TRUNCATE}>{listing.location}</Text>
                 </Group>
               ) : <span />}
               <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
-                {listing.createdAt && <Text fz="xs" c="#a1a1aa">{formatRelativeDate(listing.createdAt)}</Text>}
+                {listing.createdAt && <Text fz="xs" c="gray.4">{formatRelativeDate(listing.createdAt)}</Text>}
                 <ActionIcon
                   color={isFav ? "red" : "gray"}
                   variant={isFav ? "filled" : "subtle"}

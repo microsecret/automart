@@ -18,10 +18,10 @@ export default function HelpSellPage() {
         <Title order={2} size="h3" ff="var(--font-display),sans-serif">Как продать авто</Title>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           {STEPS.map((s, i) => (
-            <Card key={i} withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+            <Card key={i} withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start">
                 <ThemeIcon variant="light" color="indigo" size={36} radius="md">{s.icon}</ThemeIcon>
-                <Stack gap={2}><Text size="xs" c="#a1a1aa">Шаг {i + 1}</Text><Text size="sm" fw={600} c="#18181b">{s.title}</Text><Text size="xs" c="#71717a">{s.desc}</Text></Stack>
+                <Stack gap={2}><Text size="xs" c="gray.4">Шаг {i + 1}</Text><Text size="sm" fw={600} c="dark.9">{s.title}</Text><Text size="xs" c="gray.5">{s.desc}</Text></Stack>
               </Group>
             </Card>
           ))}
@@ -31,7 +31,7 @@ export default function HelpSellPage() {
             <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconShieldCheck size={18} /></ThemeIcon>
             <Stack gap={0} style={{ flex: 1 }}>
               <Text size="sm" fw={600}>Готовы продать?</Text>
-              <Text size="xs" c="#71717a">Размещение бесплатно</Text>
+              <Text size="xs" c="gray.5">Размещение бесплатно</Text>
             </Stack>
             <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm" radius="md">Разместить</Button>
           </Group>

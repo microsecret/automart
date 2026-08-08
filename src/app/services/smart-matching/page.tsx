@@ -31,8 +31,8 @@ export default function SmartmatchingPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconTarget size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="#18181b" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
-            <Text size="xs" c="#71717a">Подберём лучшие варианты под ваш бюджет и критерии</Text>
+            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
+            <Text size="xs" c="gray.5">Подберём лучшие варианты под ваш бюджет и критерии</Text>
           </Stack>
         </Group>
 
@@ -52,7 +52,7 @@ export default function SmartmatchingPage() {
           <Stack gap="md">
             <Group gap="sm" align="center">
               <ThemeIcon variant="light" color="violet" size={32} radius="md"><IconSparkles size={18} /></ThemeIcon>
-              <Text fw={700} fz="md" c="#18181b">Рекомендации для вас</Text>
+              <Text fw={700} fz="md" c="dark.9">Рекомендации для вас</Text>
               {!isLoading && <Badge size="sm" color="violet" variant="light">{results.length} совпадений</Badge>}
             </Group>
 
@@ -62,8 +62,8 @@ export default function SmartmatchingPage() {
               <Paper radius="md" p="xl" withBorder>
                 <Center>
                   <Stack align="center" gap="sm">
-                    <IconCar size={40} color="#a1a1aa" />
-                    <Text c="#71717a">Ничего не найдено. Попробуйте увеличить бюджет или изменить критерии.</Text>
+                    <IconCar size={40} color="gray.4" />
+                    <Text c="gray.5">Ничего не найдено. Попробуйте увеличить бюджет или изменить критерии.</Text>
                   </Stack>
                 </Center>
               </Paper>
@@ -78,7 +78,7 @@ export default function SmartmatchingPage() {
                     <Paper key={l.id} radius="md" p="md" withBorder style={{ borderColor: i === 0 ? "#7c3aed" : "#f4f4f5", background: i === 0 ? "#faf5ff" : "#fff" }}>
                       <Group gap="md" align="flex-start" wrap="nowrap">
                         <Box style={{ position: "relative", flexShrink: 0 }}>
-                          <Box style={{ width: 120, height: 90, borderRadius: 8, overflow: "hidden", background: "#f4f4f5" }}>
+                          <Box style={{ width: 120, height: 90, borderRadius: 8, overflow: "hidden", background: "var(--mantine-color-gray-1)" }}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={image} alt={l.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           </Box>
@@ -88,12 +88,12 @@ export default function SmartmatchingPage() {
                           <Group gap="sm" align="center">
                             {v && <BrandIcon brand={v.make} size={28} />}
                             <Link href={`/listings/vehicle/${v?.id}`} style={{ textDecoration: "none" }}>
-                              <Text fw={700} fz="sm" c="#18181b">{l.title}</Text>
+                              <Text fw={700} fz="sm" c="dark.9">{l.title}</Text>
                             </Link>
                           </Group>
-                          <Text fz="xs" c="#71717a">{v ? `${v.year} г. · ${formatMileage(v.mileage)} · ${v.location || "—"}` : ""}</Text>
+                          <Text fz="xs" c="gray.5">{v ? `${v.year} г. · ${formatMileage(v.mileage)} · ${v.location || "—"}` : ""}</Text>
                           <Group gap="sm" mt={2}>
-                            <Text fw={800} fz="lg" c="#18181b" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
+                            <Text fw={800} fz="lg" c="dark.9" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
                             <Badge size="xs" color={matchScore >= 90 ? "green" : matchScore >= 80 ? "orange" : "gray"} variant="light">Совпадение {matchScore}%</Badge>
                           </Group>
                         </Stack>

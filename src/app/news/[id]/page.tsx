@@ -34,37 +34,37 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
   }
 
   if (isLoading) return <Center py={60}><Loader color="indigo" /></Center>
-  if (!article) return <Center py={60}><Text c="#71717a">Новость не найдена</Text></Center>
+  if (!article) return <Center py={60}><Text c="gray.5">Новость не найдена</Text></Center>
 
   return (
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 800, margin: "0 auto" }}>
       <Stack gap="md">
         {/* Хлебные крошки */}
         <Breadcrumbs separator="›">
-          <Anchor component={Link} href="/" size="xs" c="#71717a">Главная</Anchor>
-          <Anchor component={Link} href="/news" size="xs" c="#71717a">Новости</Anchor>
+          <Anchor component={Link} href="/" size="xs" c="gray.5">Главная</Anchor>
+          <Anchor component={Link} href="/news" size="xs" c="gray.5">Новости</Anchor>
         </Breadcrumbs>
 
         {/* Заголовок */}
         <Stack gap="xs">
-          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 20, md: 26 }} lh={1.2} c="#18181b">
+          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 20, md: 26 }} lh={1.2} c="dark.9">
             {article.title}
           </Text>
           <Group gap="md">
-            <Group gap={3}><IconClock size={13} color="#a1a1aa" /><Text size="xs" c="#71717a">{formatDate(article.publishedAt)}</Text></Group>
-            <Group gap={3}><IconEye size={13} color="#a1a1aa" /><Text size="xs" c="#71717a">{article.views} просмотров</Text></Group>
-            <Group gap={3}><IconMessageCircle2 size={13} color="#a1a1aa" /><Text size="xs" c="#71717a">{article.comments?.length || 0} комментариев</Text></Group>
+            <Group gap={3}><IconClock size={13} color="gray.4" /><Text size="xs" c="gray.5">{formatDate(article.publishedAt)}</Text></Group>
+            <Group gap={3}><IconEye size={13} color="gray.4" /><Text size="xs" c="gray.5">{article.views} просмотров</Text></Group>
+            <Group gap={3}><IconMessageCircle2 size={13} color="gray.4" /><Text size="xs" c="gray.5">{article.comments?.length || 0} комментариев</Text></Group>
           </Group>
         </Stack>
 
         {/* Контент */}
-        <Card withBorder radius="md" p="lg" style={{ borderColor: "#f4f4f5" }}>
-          <Text size="sm" c="#3f3f46" lh={1.7} style={{ whiteSpace: "pre-wrap" }}>
+        <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Text size="sm" c="dark.7" lh={1.7} style={{ whiteSpace: "pre-wrap" }}>
             {article.content}
           </Text>
           {article.sourceUrl && (
-            <Group gap={4} mt="md" pt="md" style={{ borderTop: "1px solid #f4f4f5" }}>
-              <IconExternalLink size={13} color="#a1a1aa" />
+            <Group gap={4} mt="md" pt="md" style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
+              <IconExternalLink size={13} color="gray.4" />
               <Anchor href={article.sourceUrl} target="_blank" size="xs" c="#4f46e5">Источник</Anchor>
             </Group>
           )}
@@ -72,11 +72,11 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
 
         {/* Комментарии */}
         <Stack gap="sm">
-          <Text size="sm" fw={600} c="#18181b">Комментарии ({article.comments?.length || 0})</Text>
+          <Text size="sm" fw={600} c="dark.9">Комментарии ({article.comments?.length || 0})</Text>
 
           {/* Форма комментария */}
           {session ? (
-            <Card withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}>
+            <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Stack gap="xs">
                 <Textarea
                   placeholder="Ваш комментарий..."
@@ -94,8 +94,8 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
               </Stack>
             </Card>
           ) : (
-            <Card withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5", background: "#fcfcfd" }}>
-              <Text size="xs" c="#71717a" ta="center">
+            <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)", background: "var(--mantine-color-body)" }}>
+              <Text size="xs" c="gray.5" ta="center">
                 <Anchor component={Link} href="/auth/signin" size="xs" c="indigo">Войдите</Anchor> чтобы оставить комментарий
               </Text>
             </Card>
@@ -103,15 +103,15 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
 
           {/* Список комментариев */}
           {(article.comments || []).map((c: any) => (
-            <Card key={c.id} withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}>
+            <Card key={c.id} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start">
                 <Avatar src={c.user?.image} size="sm" radius="xl" color="indigo">{c.user?.name?.[0]?.toUpperCase()}</Avatar>
                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                   <Group gap="xs">
-                    <Text size="xs" fw={600} c="#18181b">{c.user?.name || "Аноним"}</Text>
-                    <Text size="10px" c="#a1a1aa">{formatRelativeDate(c.createdAt)}</Text>
+                    <Text size="xs" fw={600} c="dark.9">{c.user?.name || "Аноним"}</Text>
+                    <Text size="10px" c="gray.4">{formatRelativeDate(c.createdAt)}</Text>
                   </Group>
-                  <Text size="xs" c="#52525b" lh={1.5}>{c.content}</Text>
+                  <Text size="xs" c="gray.6" lh={1.5}>{c.content}</Text>
                 </Stack>
               </Group>
             </Card>

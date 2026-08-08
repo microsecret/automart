@@ -138,10 +138,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   return (
     <Container size="xl" py="lg">
       {/* Хлебные крошки */}
-      <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="#a1a1aa" />}>
-        <Anchor component={Link} href="/" size="sm" c="#71717a">Главная</Anchor>
-        <Anchor component={Link} href="/search?type=vehicle" size="sm" c="#71717a">Автомобили</Anchor>
-        <Text size="sm" c="#18181b">{data.make} {data.model}</Text>
+      <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="gray.4" />}>
+        <Anchor component={Link} href="/" size="sm" c="gray.5">Главная</Anchor>
+        <Anchor component={Link} href="/search?type=vehicle" size="sm" c="gray.5">Автомобили</Anchor>
+        <Text size="sm" c="dark.9">{data.make} {data.model}</Text>
       </Breadcrumbs>
 
       <Grid gutter="lg">
@@ -159,7 +159,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               {hasImages ? (
                 <>
                   {/* Главное изображение */}
-                  <Box style={{ position: "relative", background: "#f4f4f5", aspectRatio: "16/10" }}>
+                  <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={images[activeImage]}
@@ -211,10 +211,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   )}
                 </>
               ) : (
-                <Box style={{ aspectRatio: "16/10", background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Box style={{ aspectRatio: "16/10", background: "var(--mantine-color-gray-1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Stack align="center" gap="xs">
                     <IconCar size={48} color="#d4d4d8" />
-                    <Text size="sm" c="#a1a1aa">Нет фото</Text>
+                    <Text size="sm" c="gray.4">Нет фото</Text>
                   </Stack>
                 </Box>
               )}
@@ -233,9 +233,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       <ThemeIcon variant="light" color="indigo" size={28} radius="md">
                         {spec.icon}
                       </ThemeIcon>
-                      <Text size="xs" c="#a1a1aa">{spec.label}</Text>
+                      <Text size="xs" c="gray.4">{spec.label}</Text>
                     </Group>
-                    <Text size="sm" fw={500} c="#18181b" style={{ paddingLeft: 34 }}>
+                    <Text size="sm" fw={500} c="dark.9" style={{ paddingLeft: 34 }}>
                       {spec.value}
                     </Text>
                   </Stack>
@@ -279,7 +279,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 </ThemeIcon>
                 <Stack gap={6} style={{ flex: 1 }}>
                   <Title order={3} size="h4">Безопасная сделка</Title>
-                  <Text size="sm" c="#52525b">
+                  <Text size="sm" c="gray.6">
                     Деньги на защищённом счёте платформы до подписания договора и передачи ключей.
                     Страхование сделки включено.
                   </Text>
@@ -304,7 +304,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             {data.description && (
               <Card withBorder radius="lg" p="lg">
                 <Title order={3} size="h4" mb="sm">Описание</Title>
-                <Text size="sm" c="#52525b" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>
+                <Text size="sm" c="gray.6" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>
                   {data.description}
                 </Text>
               </Card>
@@ -325,10 +325,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                           <Text size="sm" fw={500}>{review.user.name || "Аноним"}</Text>
                           <Rating value={review.rating} size="xs" readOnly />
                         </Stack>
-                        <Text size="xs" c="#a1a1aa" ml="auto">{formatRelativeDate(review.createdAt)}</Text>
+                        <Text size="xs" c="gray.4" ml="auto">{formatRelativeDate(review.createdAt)}</Text>
                       </Group>
                       {review.comment && (
-                        <Text size="sm" c="#52525b" pl={36}>{review.comment}</Text>
+                        <Text size="sm" c="gray.6" pl={36}>{review.comment}</Text>
                       )}
                     </Box>
                   ))}
@@ -368,7 +368,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
           <Box style={{ position: "sticky", top: 80 }}>
             <Stack gap="md">
               {/* Цена и заголовок */}
-              <Card withBorder radius="md" p="lg" style={{ borderColor: "#f4f4f5" }}>
+              <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)" }}>
                 <Title
                   order={1}
                   size="h4"
@@ -376,14 +376,14 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   ff="var(--font-display), sans-serif"
                   fw={700}
                   lh={1.2}
-                  c="#18181b"
+                  c="dark.9"
                 >
                   {data.year} {data.make} {data.model}
                 </Title>
                 <Text
                   size="1.75rem"
                   fw={800}
-                  c="#18181b"
+                  c="dark.9"
                   ff="var(--font-display), sans-serif"
                   lh={1.1}
                   mb="xs"
@@ -392,10 +392,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   {formatPrice(data.price)}
                 </Text>
                 <Group gap={6}>
-                  <IconMapPin size={13} color="#a1a1aa" />
-                  <Text size="xs" c="#71717a">{data.location}</Text>
-                  <Text size="xs" c="#d4d4d8">·</Text>
-                  <Text size="sm" c="#71717a">{formatRelativeDate(data.createdAt)}</Text>
+                  <IconMapPin size={13} color="gray.4" />
+                  <Text size="xs" c="gray.5">{data.location}</Text>
+                  <Text size="xs" c="gray.3">·</Text>
+                  <Text size="sm" c="gray.5">{formatRelativeDate(data.createdAt)}</Text>
                 </Group>
               </Card>
 
@@ -445,17 +445,17 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </Avatar>
                   <Stack gap={2}>
                     <Text fw={600}>{data.seller.name || "Продавец"}</Text>
-                    <Text size="xs" c="#a1a1aa">На Авторынке с {formatDate(data.seller.memberSince)}</Text>
+                    <Text size="xs" c="gray.4">На Авторынке с {formatDate(data.seller.memberSince)}</Text>
                   </Stack>
                 </Group>
                 <Divider mb="sm" />
                 <Group gap={6} mb="xs">
                   <IconShieldCheck size={16} color="#10b981" />
-                  <Text size="sm" c="#52525b">Проверенный продавец</Text>
+                  <Text size="sm" c="gray.6">Проверенный продавец</Text>
                 </Group>
                 {data.seller.otherVehicles.length > 0 && (
                   <Box mt="sm">
-                    <Text size="xs" c="#71717a" mb={6}>Другие объявления ({data.seller.otherVehicles.length})</Text>
+                    <Text size="xs" c="gray.5" mb={6}>Другие объявления ({data.seller.otherVehicles.length})</Text>
                     {data.seller.otherVehicles.slice(0, 3).map((v) => (
                       <Anchor
                         key={v.id}
@@ -482,10 +482,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
 function VinField({ label, value, status }: { label: string; value: string; status?: "ok" | "warn" }) {
   return (
     <Stack gap={2}>
-      <Text size="xs" c="#71717a">{label}</Text>
+      <Text size="xs" c="gray.5">{label}</Text>
       <Group gap={4}>
         {status === "ok" && <IconCheck size={13} color="#16a34a" />}
-        <Text size="sm" fw={500} c={status === "ok" ? "#16a34a" : "#18181b"}>{value}</Text>
+        <Text size="sm" fw={500} c={status === "ok" ? "#16a34a" : "var(--mantine-color-text)"}>{value}</Text>
       </Group>
     </Stack>
   )

@@ -117,7 +117,7 @@ export default function SignUpForm() {
       <Divider label="или" labelPosition="center" />
 
       <Group justify="center">
-        <Text size="sm" c="#71717a">
+        <Text size="sm" c="gray.5">
           Уже есть аккаунт?{" "}
           <Anchor href="/auth/signin" size="sm" c="indigo" fw={500}>
             Войти

@@ -100,16 +100,16 @@ export default function SupportChat() {
       {/* Окно чата */}
       {open && (
         <Box pos="fixed" bottom={20} right={20} z={500} style={{ width: 340, maxWidth: "calc(100vw - 40px)" }}>
-          <Paper radius="md" withBorder shadow="lg" style={{ borderColor: "#e4e4e7", overflow: "hidden" }}>
+          <Paper radius="md" withBorder shadow="lg" style={{ borderColor: "var(--mantine-color-border)", overflow: "hidden" }}>
             {/* Шапка */}
-            <Group justify="space-between" p="sm" style={{ background: "#18181b" }}>
+            <Group justify="space-between" p="sm" style={{ background: "var(--mantine-color-text)" }}>
               <Group gap="sm">
                 <ThemeIcon variant="light" color="indigo" size={32} radius="md">
                   <IconHeadset size={18} />
                 </ThemeIcon>
                 <Stack gap={0}>
                   <Text size="sm" fw={600} c="white">Поддержка</Text>
-                  <Text size="10px" c="#a1a1aa">Обычно отвечает за минуты</Text>
+                  <Text size="10px" c="gray.4">Обычно отвечает за минуты</Text>
                 </Stack>
               </Group>
               <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setOpen(false)} aria-label="Закрыть">
@@ -118,11 +118,11 @@ export default function SupportChat() {
             </Group>
 
             {/* Лента */}
-            <Box ref={scrollRef} style={{ height: 320, overflowY: "auto", padding: 12, background: "#fcfcfd" }}>
+            <Box ref={scrollRef} style={{ height: 320, overflowY: "auto", padding: 12, background: "var(--mantine-color-body)" }}>
               {messages.length === 0 ? (
                 <Stack align="center" gap="sm" py={20}>
                   <IconMessageCircle2 size={32} stroke={1.5} color="#d4d4d8" />
-                  <Text size="sm" c="#71717a" ta="center">Напишите нам — поможем с любым вопросом</Text>
+                  <Text size="sm" c="gray.5" ta="center">Напишите нам — поможем с любым вопросом</Text>
                 </Stack>
               ) : (
                 <Stack gap="xs">
@@ -137,7 +137,7 @@ export default function SupportChat() {
                           style={{
                             maxWidth: "80%",
                             background: isMe ? "#4f46e5" : "#fff",
-                            color: isMe ? "#fff" : "#18181b",
+                            color: isMe ? "#fff" : "var(--mantine-color-text)",
                             border: isMe ? "none" : "1px solid #f4f4f5",
                           }}
                         >
@@ -151,7 +151,7 @@ export default function SupportChat() {
             </Box>
 
             {/* Поле ввода */}
-            <Group gap="xs" p="sm" style={{ borderTop: "1px solid #f4f4f5", background: "#fff" }}>
+            <Group gap="xs" p="sm" style={{ borderTop: "1px solid var(--mantine-color-border)", background: "var(--mantine-color-body)" }}>
               <TextInput
                 value={text}
                 onChange={(e) => setText(e.currentTarget.value)}

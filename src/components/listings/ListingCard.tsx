@@ -83,21 +83,21 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         withBorder
         style={{
           overflow: "hidden",
-          borderColor: "#f4f4f5",
+          borderColor: "var(--mantine-color-border)",
           transition: "border-color 200ms ease, box-shadow 200ms ease",
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "#e4e4e7"
+          e.currentTarget.style.borderColor = "var(--mantine-color-gray-4)"
           e.currentTarget.style.boxShadow = "0 6px 20px -6px rgba(0,0,0,0.08)"
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "#f4f4f5"
+          e.currentTarget.style.borderColor = "var(--mantine-color-border)"
           e.currentTarget.style.boxShadow = "none"
         }}
       >
         {/* Фото область */}
-        <Box pos="relative" style={{ background: "#f4f4f5", lineHeight: 0 }}>
+        <Box pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
           <AspectRatio ratio={4 / 3}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={images[activeImg] || image} alt={listing.title} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
@@ -163,18 +163,18 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         <Box p="sm">
           {/* Цена + цена в месяц */}
           <Group justify="space-between" align="baseline" mb={4}>
-            <Text fw={800} fz="md" lh={1.1} c="#18181b" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.01em" }}>
+            <Text fw={800} fz="md" lh={1.1} c="dark.9" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.01em" }}>
               {formatPriceShort(listing.price)}
             </Text>
             {listing.price && listing.price > 100000 && (
-              <Text fz="10px" c="#71717a" style={{ whiteSpace: "nowrap" }}>
+              <Text fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>
                 от {Math.round(listing.price * 0.025 / 1000)}к/мес
               </Text>
             )}
           </Group>
 
           {/* Заголовок */}
-          <Text fz="xs" c="#52525b" lh={1.4} mb={6} style={TRUNCATE_STYLE}>
+          <Text fz="xs" c="gray.6" lh={1.4} mb={6} style={TRUNCATE_STYLE}>
             {listing.title}
           </Text>
 
@@ -182,38 +182,38 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           {isVehicle && (
             <SimpleGrid cols={2} spacing={4} mb={6}>
               <Group gap={3} wrap="nowrap">
-                <IconCalendar size={11} stroke={1.8} color="#a1a1aa" style={{ flexShrink: 0 }} />
-                <Text fz="10px" c="#71717a" style={TRUNCATE_STYLE}>{listing.vehicle!.year}</Text>
+                <IconCalendar size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                <Text fz="10px" c="gray.5" style={TRUNCATE_STYLE}>{listing.vehicle!.year}</Text>
               </Group>
               <Group gap={3} wrap="nowrap">
-                <IconGauge size={11} stroke={1.8} color="#a1a1aa" style={{ flexShrink: 0 }} />
-                <Text fz="10px" c="#71717a" style={TRUNCATE_STYLE}>{formatMileage(listing.vehicle!.mileage)}</Text>
+                <IconGauge size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                <Text fz="10px" c="gray.5" style={TRUNCATE_STYLE}>{formatMileage(listing.vehicle!.mileage)}</Text>
               </Group>
               {listing.vehicle!.transmission && (
                 <Group gap={3} wrap="nowrap">
-                  <IconManualGearbox size={11} stroke={1.8} color="#a1a1aa" style={{ flexShrink: 0 }} />
-                  <Text fz="10px" c="#71717a" style={TRUNCATE_STYLE}>{findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
+                  <IconManualGearbox size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                  <Text fz="10px" c="gray.5" style={TRUNCATE_STYLE}>{findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
                 </Group>
               )}
               {listing.vehicle!.fuelType && (
                 <Group gap={3} wrap="nowrap">
-                  <IconGasStation size={11} stroke={1.8} color="#a1a1aa" style={{ flexShrink: 0 }} />
-                  <Text fz="10px" c="#71717a" style={TRUNCATE_STYLE}>{findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>
+                  <IconGasStation size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                  <Text fz="10px" c="gray.5" style={TRUNCATE_STYLE}>{findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>
                 </Group>
               )}
             </SimpleGrid>
           )}
 
           {/* Низ — город и дата */}
-          <Group justify="space-between" gap={4} mt={6} pt={6} style={{ borderTop: "1px solid #f4f4f5" }}>
+          <Group justify="space-between" gap={4} mt={6} pt={6} style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
             {listing.location ? (
               <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
-                <IconMapPin size={11} stroke={1.8} color="#a1a1aa" style={{ flexShrink: 0 }} />
-                <Text fz="xs" c="#a1a1aa" style={TRUNCATE_STYLE}>{listing.location}</Text>
+                <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                <Text fz="xs" c="gray.4" style={TRUNCATE_STYLE}>{listing.location}</Text>
               </Group>
             ) : <span />}
             {listing.createdAt && (
-              <Text fz="xs" c="#a1a1aa" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+              <Text fz="xs" c="gray.4" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
                 {formatRelativeDate(listing.createdAt)}
               </Text>
             )}

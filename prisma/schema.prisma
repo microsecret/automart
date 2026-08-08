@@ -11,6 +11,7 @@ datasource db {
 }
 
 // User model for authentication and user profiles
+
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
@@ -95,6 +96,24 @@ model Vehicle {
 }
 
 // Vehicle categories
+
+model PartCompatibility {
+  id          String   @id @default(uuid())
+  partId      String
+  part        Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  make        String
+  model       String
+  generation  String?
+  yearFrom    Int?
+  yearTo      Int?
+  engine      String?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  @@index([partId])
+  @@index([make, model])
+}
+
 model Category {
   id            String   @id @default(uuid())
   name          String   // e.g., "Легковые автомобили"
@@ -126,6 +145,11 @@ model Part {
   customsCleared   Boolean? // растаможен
   generation       String?  // поколение
   keywords         String?  // ключевые слова для поиска
+  subcategory      String?  // подкатегория (амортизаторы, колодки)
+  oemNumber        String?  // OEM номер
+  suspensionType   String?  // MACPHERSON, MULTI_LINK, TORSION
+  brakeType        String?  // DISC, DRUM, VENTED_DISC
+  compatibility    PartCompatibility[]
   vehicleType   String   @default("CAR")
   make          String   // Compatible vehicle make
   model         String   // Compatible vehicle model

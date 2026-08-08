@@ -21,8 +21,8 @@ export default function NewsPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={40} radius="md"><IconNews size={20} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} c="#18181b">Автомобильные новости</Text>
-            <Text size="xs" c="#71717a">{data?.pagination?.total || "—"} публикаций</Text>
+            <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} c="dark.9">Автомобильные новости</Text>
+            <Text size="xs" c="gray.5">{data?.pagination?.total || "—"} публикаций</Text>
           </Stack>
         </Group>
 
@@ -32,27 +32,27 @@ export default function NewsPage() {
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
             {(data?.news || []).map((article) => (
               <Link key={article.id} href={`/news/${article.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <Card withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5", height: "100%", transition: "all 200ms ease", cursor: "pointer" }}
+                <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)", height: "100%", transition: "all 200ms ease", cursor: "pointer" }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#e4e4e7"; e.currentTarget.style.boxShadow = "0 4px 12px -4px rgba(0,0,0,0.06)" }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#f4f4f5"; e.currentTarget.style.boxShadow = "none" }}>
                   <Stack gap="xs" style={{ height: "100%", justifyContent: "space-between" }}>
-                    <Text size="sm" fw={600} c="#18181b" lh={1.3} style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    <Text size="sm" fw={600} c="dark.9" lh={1.3} style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                       {article.title}
                     </Text>
                     {article.excerpt && (
-                      <Text size="xs" c="#71717a" lh={1.4} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      <Text size="xs" c="gray.5" lh={1.4} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                         {article.excerpt}
                       </Text>
                     )}
-                    <Group gap="xs" mt="auto" pt="xs" style={{ borderTop: "1px solid #f4f4f5" }}>
+                    <Group gap="xs" mt="auto" pt="xs" style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
                       <Group gap={3}>
-                        <IconClock size={11} stroke={1.8} color="#a1a1aa" />
-                        <Text size="xs" c="#a1a1aa">{formatRelativeDate(article.publishedAt)}</Text>
+                        <IconClock size={11} stroke={1.8} color="gray.4" />
+                        <Text size="xs" c="gray.4">{formatRelativeDate(article.publishedAt)}</Text>
                       </Group>
                       {article._count?.comments > 0 && (
                         <Group gap={3}>
-                          <IconMessageCircle2 size={11} stroke={1.8} color="#a1a1aa" />
-                          <Text size="xs" c="#a1a1aa">{article._count.comments}</Text>
+                          <IconMessageCircle2 size={11} stroke={1.8} color="gray.4" />
+                          <Text size="xs" c="gray.4">{article._count.comments}</Text>
                         </Group>
                       )}
                     </Group>

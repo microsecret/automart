@@ -33,7 +33,7 @@ export default function NotificationsPage() {
           <Stack gap={0}>
             <Group gap="sm" align="center">
               <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconBell size={20} /></ThemeIcon>
-              <Text component="h1" fw={800} fz={22} c="#18181b" ff="var(--font-display),sans-serif">Уведомления</Text>
+              <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Уведомления</Text>
               {unread > 0 && <Badge size="sm" color="red" variant="filled">{unread} новых</Badge>}
             </Group>
           </Stack>
@@ -47,7 +47,7 @@ export default function NotificationsPage() {
             <Center>
               <Stack align="center" gap="sm">
                 <ThemeIcon variant="light" color="gray" size={56} radius="md"><IconBell size={28} /></ThemeIcon>
-                <Text c="#71717a">Нет уведомлений</Text>
+                <Text c="gray.5">Нет уведомлений</Text>
               </Stack>
             </Center>
           </Paper>
@@ -68,10 +68,10 @@ export default function NotificationsPage() {
                     </Box>
                     <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                       <Group gap="sm" align="center">
-                        <Text fw={600} fz="sm" c="#18181b">{n.title}</Text>
+                        <Text fw={600} fz="sm" c="dark.9">{n.title}</Text>
                         {!n.isRead && <Badge size="xs" color="red" variant="filled" circle>p</Badge>}
                       </Group>
-                      <Text fz="xs" c="#52525b">{n.content}</Text>
+                      <Text fz="xs" c="gray.6">{n.content}</Text>
                     </Stack>
                   </Group>
                 </Paper>

@@ -57,7 +57,7 @@ const BRAND_COLORS: Record<string, string> = {
 
 /** Получить цвет бренда (fallback — серый) */
 export function getBrandColor(brand: string): string {
-  return BRAND_COLORS[brand] || "#71717a"
+  return BRAND_COLORS[brand] || "var(--mantine-color-dimmed)"
 }
 
 /** Генерирует контрастный текст (белый/чёрный) по фоновому цвету */
@@ -67,5 +67,5 @@ export function getContrastText(bgColor: string): string {
   const g = parseInt(hex.substring(2, 4), 16)
   const b = parseInt(hex.substring(4, 6), 16)
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.5 ? "#18181b" : "#ffffff"
+  return luminance > 0.5 ? "var(--mantine-color-text)" : "#ffffff"
 }

@@ -18,7 +18,7 @@ export default function HelpPage() {
     <Box p={{ base: "sm", md: "lg" }}>
       <Stack gap="lg" maw={1000} mx="auto">
         <Box>
-          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={32} c="#0f172a" mb={4}>Помощь и поддержка</Text>
+          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={32} c="dark.9" mb={4}>Помощь и поддержка</Text>
           <Text size="md" c="#64748b">Всё, что нужно для безопасной сделки на AutoMart</Text>
         </Box>
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
@@ -34,7 +34,7 @@ export default function HelpPage() {
                       <Icon size={22} color="white" />
                     </ThemeIcon>
                     <Stack gap={4} style={{ flex: 1 }}>
-                      <Text fw={700} fz="md" c="#0f172a">{s.title}</Text>
+                      <Text fw={700} fz="md" c="dark.9">{s.title}</Text>
                       <Text size="sm" c="#64748b">{s.desc}</Text>
                     </Stack>
                   </Group>

@@ -28,10 +28,10 @@ export default function AboutPage() {
       <Stack gap="md">
         <Stack gap="xs" align="center" ta="center" py="md">
           <Badge variant="light" color="indigo" size="md">О проекте</Badge>
-          <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="#18181b" style={{ letterSpacing: "-0.02em" }}>
+          <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="dark.9" style={{ letterSpacing: "-0.02em" }}>
             Авторынок — маркетплейс транспорта
           </Title>
-          <Text size="sm" c="#71717a" maw={500} lh={1.6}>
+          <Text size="sm" c="gray.5" maw={500} lh={1.6}>
             Полноценная экосистема для покупки и продажи автомобилей, мото, спецтехники,
             водного и воздушного транспорта в странах ЕАЭС. С проверкой истории, безопасной сделкой
             и умным подбором.
@@ -41,10 +41,10 @@ export default function AboutPage() {
         {/* Статистика */}
         <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="xs">
           {STATS.map((s) => (
-            <Card key={s.label} withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}>
+            <Card key={s.label} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Stack gap={0} align="center" ta="center">
                 <Text size="xl" fw={800} c="#4f46e5" ff="var(--font-display),sans-serif">{s.value}</Text>
-                <Text size="xs" c="#71717a">{s.label}</Text>
+                <Text size="xs" c="gray.5">{s.label}</Text>
               </Stack>
             </Card>
           ))}
@@ -54,15 +54,15 @@ export default function AboutPage() {
 
         {/* Возможности */}
         <Stack gap="xs">
-          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="#18181b">Возможности</Title>
+          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="dark.9">Возможности</Title>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             {FEATURES.map((f) => (
-              <Card key={f.title} withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+              <Card key={f.title} withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
                 <Group gap="sm" align="flex-start">
                   <ThemeIcon variant="light" color="indigo" size={36} radius="md">{f.icon}</ThemeIcon>
                   <Stack gap={2}>
-                    <Text size="sm" fw={600} c="#18181b">{f.title}</Text>
-                    <Text size="xs" c="#71717a" lh={1.4}>{f.desc}</Text>
+                    <Text size="sm" fw={600} c="dark.9">{f.title}</Text>
+                    <Text size="xs" c="gray.5" lh={1.4}>{f.desc}</Text>
                   </Stack>
                 </Group>
               </Card>
@@ -74,15 +74,15 @@ export default function AboutPage() {
 
         {/* Страны ЕАЭС */}
         <Stack gap="xs">
-          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="#18181b">География</Title>
+          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="dark.9">География</Title>
           <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="xs">
             {COUNTRIES.map((c) => (
-              <Card key={c.code} withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}>
+              <Card key={c.code} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
                 <Group gap="sm">
                   <Text size="xl">{c.flag}</Text>
                   <Stack gap={0}>
-                    <Text size="sm" fw={600} c="#18181b">{c.name}</Text>
-                    <Text size="xs" c="#a1a1aa">{c.cities.length} городов</Text>
+                    <Text size="sm" fw={600} c="dark.9">{c.name}</Text>
+                    <Text size="xs" c="gray.4">{c.cities.length} городов</Text>
                   </Stack>
                 </Group>
               </Card>
@@ -94,7 +94,7 @@ export default function AboutPage() {
 
         {/* Принципы */}
         <Stack gap="xs">
-          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="#18181b">Наши принципы</Title>
+          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="dark.9">Наши принципы</Title>
           <Stack gap="xs">
             {[
               "Доверие превыше всего — верификация продавцов и VIN-паспорт",
@@ -105,7 +105,7 @@ export default function AboutPage() {
             ].map((p, i) => (
               <Group key={i} gap="sm">
                 <ThemeIcon variant="light" color="green" size={28} radius="md"><IconCheck size={14} /></ThemeIcon>
-                <Text size="sm" c="#3f3f46">{p}</Text>
+                <Text size="sm" c="dark.7">{p}</Text>
               </Group>
             ))}
           </Stack>

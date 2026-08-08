@@ -84,7 +84,7 @@ export default function SignInForm() {
       <Divider label="или" labelPosition="center" />
 
       <Group justify="center">
-        <Text size="sm" c="#71717a">
+        <Text size="sm" c="gray.5">
           Нет аккаунта?{" "}
           <Anchor href="/auth/signup" size="sm" c="indigo" fw={500}>
             Зарегистрироваться
