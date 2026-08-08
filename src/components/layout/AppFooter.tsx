@@ -139,8 +139,8 @@ export default function AppFooter() {
             <Group gap="lg">
               <Anchor component={Link} href="/about" size="xs" c="#71717a">О проекте</Anchor>
               <Anchor component={Link} href="/news" size="xs" c="#71717a">Новости</Anchor>
-              <Anchor component={Link} href="/help/rules" size="xs" c="#71717a">Конфиденциальность</Anchor>
-              <Anchor component={Link} href="/help/rules" size="xs" c="#71717a">Условия</Anchor>
+              <Anchor component={Link} href="/legal/privacy" size="xs" c="gray.5">Конфиденциальность</Anchor>
+              <Anchor component={Link} href="/legal/terms" size="xs" c="gray.5">Условия</Anchor>
             </Group>
           </Group>
         </Stack>

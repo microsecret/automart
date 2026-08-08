@@ -1,33 +1,82 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { Box, Stack, Title, Text, Card, Group, ThemeIcon, SimpleGrid } from "@mantine/core"
-import { IconShieldCheck, IconEye, IconWallet, IconAlertTriangle, IconPhone, IconCheck } from "@tabler/icons-react"
+import { Box, Stack, Text, Paper, ThemeIcon, Group, SimpleGrid, Alert, Badge } from "@mantine/core"
+import { IconShieldCheck, IconAlertTriangle, IconChecks, IconEye, IconCash, IconMapPin, IconPhone } from "@tabler/icons-react"
 
-const TIPS = [
-  { icon: <IconEye size={18} />, title: "Проверяйте авто лично", desc: "Осмотрите авто при дневном свете, проверьте все документы" },
-  { icon: <IconWallet size={18} />, title: "Не предоплата", desc: "Никогда не переводите деньги до осмотра авто" },
-  { icon: <IconAlertTriangle size={18} />, title: "Заниженная цена = мошенники", desc: "Если цена намного ниже рынка — это подозрительно" },
-  { icon: <IconCheck size={18} />, title: "VIN-паспорт", desc: "Проверяйте авто по VIN перед покупкой" },
-  { icon: <IconShieldCheck size={18} />, title: "Безопасная сделка", desc: "Используйте эскроу-сервис для защиты денег" },
-  { icon: <IconPhone size={18} />, title: "Встречайтесь в людном месте", desc: "Осмотр — в безопасном месте, лучше с другом" },
+const SAFETY_RULES = [
+  { icon: IconEye, title: "Проверяйте при встрече", text: "Осмотрите авто или запчасть лично. Сверьте VIN, номера деталей. Не переводите деньги до осмотра." },
+  { icon: IconCash, title: "Безопасная оплата", text: "Используйте Безопасную сделку (эскроу). Деньги продавцу — только после получения товара." },
+  { icon: IconMapPin, title: "Встречайтесь в людных местах", text: "Днём, на охраняемых парковках или в ГИБДД для проверки авто. Не ездите в гаражи одни." },
+  { icon: IconPhone, title: "Не давайте предоплату", text: "Требование предоплаты на карту — частый приём мошенников. Особенно «Сбербанк Онлайн» на чужое имя." },
 ]
 
-export default function HelpSafetyPage() {
+const SCAM_SIGNS = [
+  "Цена ниже рынка на 30-50% без причины",
+  "Продавец за границей, авто «в пути»",
+  "Просьба перевести задаток до осмотра",
+  "Отказ от встречи, только доставка",
+  "VIN не пробивается или не совпадает",
+  "Только мессенджеры, без звонков",
+]
+
+export default function SafetyPage() {
   return (
-    <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 700, margin: "0 auto" }}>
-      <Stack gap="md">
-        <Title order={2} size="h3" ff="var(--font-display),sans-serif">Безопасность сделок</Title>
-        <Text size="sm" c="gray.5">Следуйте этим правилам, чтобы не стать жертвой мошенников</Text>
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          {TIPS.map((tip, i) => (
-            <Card key={i} withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
-              <Group gap="sm" align="flex-start">
-                <ThemeIcon variant="light" color="red" size={32} radius="md">{tip.icon}</ThemeIcon>
-                <Stack gap={2}><Text size="sm" fw={600} c="dark.9">{tip.title}</Text><Text size="xs" c="gray.5" lh={1.4}>{tip.desc}</Text></Stack>
-              </Group>
-            </Card>
-          ))}
+    <Box p={{ base: "sm", md: "md" }}>
+      <Stack gap="md" maw={800} mx="auto">
+        <Group gap="sm" align="center">
+          <ThemeIcon variant="light" color="red" size={44} radius="md"><IconShieldCheck size={22} /></ThemeIcon>
+          <Stack gap={0}>
+            <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Безопасность</Text>
+            <Text size="xs" c="gray.5">Как не стать жертвой мошенников</Text>
+          </Stack>
+        </Group>
+
+        <Alert icon={<IconAlertTriangle size={16} />} color="red" variant="light" radius="md" title="Главное правило">
+          Никогда не переводите деньги до осмотра товара. Используйте Безопасную сделку для эскроу-защиты.
+        </Alert>
+
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+          {SAFETY_RULES.map((r) => {
+            const Icon = r.icon
+            return (
+              <Paper key={r.title} radius="md" p="md" withBorder>
+                <Group gap="sm" align="flex-start">
+                  <ThemeIcon variant="light" color="green" size={36} radius="md"><Icon size={20} /></ThemeIcon>
+                  <Stack gap={4} style={{ flex: 1 }}>
+                    <Text fw={700} fz="sm" c="dark.9">{r.title}</Text>
+                    <Text size="xs" c="gray.6" lh={1.5}>{r.text}</Text>
+                  </Stack>
+                </Group>
+              </Paper>
+            )
+          })}
         </SimpleGrid>
+
+        <Paper radius="md" p="lg" withBorder style={{ background: "#fffbeb", borderColor: "#fde68a" }}>
+          <Group gap="sm" mb="md">
+            <ThemeIcon variant="light" color="orange" size={32} radius="md"><IconAlertTriangle size={18} /></ThemeIcon>
+            <Text fw={700} c="dark.9">Признаки мошенничества</Text>
+          </Group>
+          <Stack gap={8}>
+            {SCAM_SIGNS.map((s) => (
+              <Group key={s} gap={8}>
+                <IconChecks size={16} color="#d97706" />
+                <Text size="sm" c="gray.7">{s}</Text>
+              </Group>
+            ))}
+          </Stack>
+        </Paper>
+
+        <Paper radius="md" p="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+          <Group gap="sm" align="center">
+            <ThemeIcon variant="light" color="green" size={36} radius="md"><IconShieldCheck size={20} /></ThemeIcon>
+            <Stack gap={0} style={{ flex: 1 }}>
+              <Text fw={700} fz="sm" c="dark.9">Безопасная сделка защищает вас</Text>
+              <Text size="xs" c="gray.6">Деньги на эскроу-счёте до подтверждения получения товара</Text>
+            </Stack>
+            <Badge variant="light" color="green" size="md">2% комиссии</Badge>
+          </Group>
+        </Paper>
       </Stack>
     </Box>
   )
