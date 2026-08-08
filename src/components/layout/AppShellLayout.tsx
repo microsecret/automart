@@ -130,10 +130,22 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               </Stack>
 
               {/* Аукционы */}
-      <SectionLabel mt="sm">Аукционы</SectionLabel>
+      <SectionLabel mt="sm">Аукционы мира</SectionLabel>
       <Stack gap={1}>
-        <Anchor component={Link} href="/auctions" size="sm" c="gray.6" style={{ padding: "6px 10px", borderRadius: 8, fontWeight: 500, textDecoration: "none" }}>
-          Все аукционы
+        <Anchor component={Link} href="/auctions" size="sm" c="gray.6" style={{ padding: "6px 10px", borderRadius: 8, fontWeight: 600, textDecoration: "none" }}>
+          🔨 Все аукционы
+        </Anchor>
+        <Anchor component={Link} href="/auctions?country=JP" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
+          🇯🇵 Япония (USS, TAA)
+        </Anchor>
+        <Anchor component={Link} href="/auctions?country=KR" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
+          🇰🇷 Корея (Emaraat, AJ)
+        </Anchor>
+        <Anchor component={Link} href="/auctions?country=US" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
+          🇺🇸 США (Copart, IAAI)
+        </Anchor>
+        <Anchor component={Link} href="/auctions?country=DE" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
+          🇩🇪 Европа (Mobile.de)
         </Anchor>
       </Stack>
 

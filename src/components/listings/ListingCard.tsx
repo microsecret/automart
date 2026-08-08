@@ -97,12 +97,14 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--mantine-color-gray-4)"
-          e.currentTarget.style.boxShadow = "0 6px 20px -6px rgba(0,0,0,0.08)"
+          e.currentTarget.style.borderColor = "#4f46e5"
+          e.currentTarget.style.boxShadow = "0 12px 32px -8px rgba(79,70,229,0.25)"
+          e.currentTarget.style.transform = "translateY(-3px)"
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = "var(--mantine-color-border)"
           e.currentTarget.style.boxShadow = "none"
+          e.currentTarget.style.transform = ""
         }}
       >
         {/* Фото область */}

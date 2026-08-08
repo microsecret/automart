@@ -51,6 +51,8 @@ export default function HomePage(p) {
 
   const brandOptions = POPULAR_BRANDS.slice(0,80).map((b) => ({ value: b.name, label: b.name }))
   const modelOptions = make ? getModels(make).map((m) => ({ value: m, label: m })) : []
+  const { data: stats } = useSWR("/api/stats", fetcher)
+
   const yearData = Array.from({length:35},(_,i) => ({ value: String(2024-i), label: String(2024-i) }))
 
   const vt = p.initialVehicleType || "CAR"
@@ -134,6 +136,42 @@ export default function HomePage(p) {
             </Group>
           </Box>
         </Paper>)}
+
+      {/* Аукционы мира */}
+      {stats && (
+        <Paper radius="lg" p="lg" withBorder style={{ background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)", borderColor: "#fed7aa" }}>
+          <Group justify="space-between" align="center" wrap="wrap">
+            <Group gap="sm">
+              <Box style={{ width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg, #ea580c, #f97316)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Text size="xl">🔨</Text>
+              </Box>
+              <Stack gap={0}>
+                <Text fw={800} fz="md" c="dark.9" ff="var(--font-display),sans-serif">Аукционы мира</Text>
+                <Text size="xs" c="gray.5">{stats.auctions} авто · доставка в РФ под ключ · ИИ-перевод</Text>
+              </Stack>
+            </Group>
+            <Group gap={6}>
+              {[
+                { flag: "🇯🇵", label: "Япония", count: stats.auctionByCountry?.JP || 0, href: "/auctions?country=JP" },
+                { flag: "🇰🇷", label: "Корея", count: stats.auctionByCountry?.KR || 0, href: "/auctions?country=KR" },
+                { flag: "🇺🇸", label: "США", count: stats.auctionByCountry?.US || 0, href: "/auctions?country=US" },
+                { flag: "🇩🇪", label: "Европа", count: stats.auctionByCountry?.DE || 0, href: "/auctions?country=DE" },
+              ].map((c) => (
+                <Link key={c.href} href={c.href} style={{ textDecoration: "none" }}>
+                  <Badge size="md" radius="md" variant="light" color="orange" style={{ cursor: "pointer", padding: "8px 12px" }}>
+                    {c.flag} {c.label} ({c.count})
+                  </Badge>
+                </Link>
+              ))}
+              <Link href="/auctions" style={{ textDecoration: "none" }}>
+                <Badge size="md" radius="md" variant="filled" color="orange" style={{ cursor: "pointer", padding: "8px 12px", fontWeight: 700 }}>
+                  Все аукционы →
+                </Badge>
+              </Link>
+            </Group>
+          </Group>
+        </Paper>
+      )}
 
       <Group justify="space-between" align="center">
         <Stack gap={0}>

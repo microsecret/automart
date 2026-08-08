@@ -68,8 +68,8 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
           transition: "border-color 200ms ease, box-shadow 200ms ease",
           cursor: "pointer",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-gray-4)"; e.currentTarget.style.boxShadow = "0 4px 12px -4px rgba(0,0,0,0.06)" }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)"; e.currentTarget.style.boxShadow = "none" }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4f46e5"; e.currentTarget.style.boxShadow = "0 8px 24px -6px rgba(79,70,229,0.2)"; e.currentTarget.style.transform = "translateY(-2px)" }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "" }}
       >
         <Group gap={0} align="stretch" wrap="nowrap">
           {/* Фото */}
