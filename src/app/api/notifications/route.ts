@@ -219,3 +219,30 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+/** PATCH /api/notifications — отметить прочитанными */
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const body = await request.json()
+    const { id, all } = body
+
+    if (all) {
+      await prisma.notification.updateMany({
+        where: { userId: session.user.id, isRead: false },
+        data: { isRead: true },
+      })
+    } else if (id) {
+      await prisma.notification.update({
+        where: { id },
+        data: { isRead: true },
+      })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Notifications PATCH error:", error)
+    return NextResponse.json({ error: "Failed" }, { status: 500 })
+  }
+}

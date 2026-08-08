@@ -128,6 +128,7 @@ export default function SupportChat() {
                 <Stack gap="xs">
                   {messages.map((msg) => {
                     const isMe = msg.senderId === "me" || msg.senderId === "support-anonymous"
+              const isAI = msg.senderId === "ai-assistant"
                     return (
                       <Box key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
                         <Paper
