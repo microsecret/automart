@@ -7,18 +7,32 @@ import HomePage from "@/app/page"
 import { Container, Center, Loader } from "@mantine/core"
 import { TRANSPORT_CATEGORIES } from "@/lib/catalog"
 
+const SLUG_TO_VEHICLE_TYPE: Record<string, string> = {
+  cars: "CAR",
+  moto: "MOTORCYCLE",
+  trucks: "TRUCK",
+  special: "SPECIAL",
+  water: "WATER",
+  air: "AIR",
+}
+
 function CategoryContent({ slug }: { slug: string }) {
   const sp = useSearchParams()
   const category = TRANSPORT_CATEGORIES.find((c) => c.slug === slug)
   const make = sp.get("make") || undefined
 
-  const apiType = slug === "parts" ? "part" : "vehicle"
+  if (slug === "parts") {
+    return <HomePage key={`parts-${make || ""}`} initialQuery={make} initialType="part" pageTitle="Запчасти" categorySlug="parts" />
+  }
+
+  const vehicleType = SLUG_TO_VEHICLE_TYPE[slug] || "CAR"
 
   return (
     <HomePage
       key={`${slug}-${make || ""}`}
       initialQuery={make}
-      initialType={apiType as "vehicle" | "part"}
+      initialType="vehicle"
+      initialVehicleType={vehicleType}
       pageTitle={category?.label}
       categorySlug={slug}
     />

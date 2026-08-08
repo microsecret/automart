@@ -56,6 +56,7 @@ export default function HomePage(p) {
   const buildQuery = () => {
     const q = new URLSearchParams()
     q.set("type", p.initialType || "vehicle")
+    if (p.initialVehicleType) q.set("vehicleType", p.initialVehicleType)
     q.set("page", page)
     q.set("limit", "18")
     q.set("sort", sort)
