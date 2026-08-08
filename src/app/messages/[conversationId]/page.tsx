@@ -39,6 +39,14 @@ export default function ConversationPage({ params }: { params: { conversationId:
   const [sending, setSending] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => { scrollToBottom() }, [data])
+
   const { data, isLoading } = useSWR<{ messages: Message[]; otherUserName: string; otherUserImage: string | null }>(
     session ? `/api/messages/${conversationId}` : null,
     fetcher,

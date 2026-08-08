@@ -110,6 +110,7 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     images: vehicle.images,
     createdAt: vehicle.createdAt,
     listingId: listing?.id,
+    views: listing?.views || 0,
     seller: {
       id: vehicle.user.id,
       name: vehicle.user.name,

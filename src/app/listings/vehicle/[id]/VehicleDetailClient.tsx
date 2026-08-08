@@ -48,6 +48,7 @@ import {
   IconUsers,
   IconRoute,
   IconChevronRight,
+  IconEye,
   IconSteeringWheel,
   IconAlertTriangle,
   IconBuildingStore,
@@ -102,6 +103,7 @@ interface VehicleData {
   images: string | null
   createdAt: Date
   listingId?: string
+  views: number
   seller: {
     id: string
     name: string | null
@@ -531,7 +533,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   <IconMapPin size={13} color="gray.4" />
                   <Text size="xs" c="gray.5">{data.location}</Text>
                   <Text size="xs" c="gray.3">·</Text>
-                  <Text size="sm" c="gray.5">{formatRelativeDate(data.createdAt)}</Text>
+                  <Group gap={3}><IconEye size={12} color="gray.4" /><Text size="xs" c="gray.5">{data.views} просмотров</Text></Group>
                 </Group>
               </Card>
 

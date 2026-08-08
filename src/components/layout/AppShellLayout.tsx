@@ -129,7 +129,24 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </Stack>
 
-              {/* Аукционы */}
+              {/* Быстрые ссылки */}
+      <SectionLabel mt="sm">Кабинет</SectionLabel>
+      <Stack gap={1}>
+        <Anchor component={Link} href="/dashboard" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
+          📊 Личный кабинет
+        </Anchor>
+        <Anchor component={Link} href="/favorites" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
+          ❤️ Избранное
+        </Anchor>
+        <Anchor component={Link} href="/compare" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
+          ⚖️ Сравнение
+        </Anchor>
+        <Anchor component={Link} href="/messages" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
+          💬 Сообщения
+        </Anchor>
+      </Stack>
+
+      {/* Аукционы */}
       <SectionLabel mt="sm">Аукционы мира</SectionLabel>
       <Stack gap={1}>
         <Anchor component={Link} href="/auctions" size="sm" c="gray.6" style={{ padding: "6px 10px", borderRadius: 8, fontWeight: 600, textDecoration: "none" }}>
