@@ -35,6 +35,8 @@ export default function AuctionsPage() {
   const [make, setMake] = useState("")
   const [priceFrom, setPriceFrom] = useState("")
   const [priceTo, setPriceTo] = useState("")
+  const [bodyType, setBodyType] = useState("")
+  const [yearFrom, setYearFrom] = useState("")
 
   const buildQ = () => {
     const q = new URLSearchParams()
@@ -45,6 +47,8 @@ export default function AuctionsPage() {
     if (make) q.set("make", make)
     if (priceFrom) q.set("priceFrom", priceFrom)
     if (priceTo) q.set("priceTo", priceTo)
+    if (bodyType) q.set("bodyType", bodyType)
+    if (yearFrom) q.set("yearFrom", yearFrom)
     return q.toString()
   }
 
@@ -66,9 +70,69 @@ export default function AuctionsPage() {
           <Group gap="xs" wrap="wrap" align="flex-end">
             <Select label="Страна" data={COUNTRIES} value={country} onChange={setCountry} size="xs" w={130} />
             <Select label="Площадка" data={SOURCES} value={source} onChange={setSource} size="xs" w={170} />
-            <TextInput placeholder="Марка" value={make} onChange={(e) => setMake(e.target.value)} size="xs" w={120} />
+            <Select
+                placeholder="Марка"
+                searchable
+                clearable
+                data={[
+                  { value: "Toyota", label: "Toyota" },
+                  { value: "Honda", label: "Honda" },
+                  { value: "Nissan", label: "Nissan" },
+                  { value: "Hyundai", label: "Hyundai" },
+                  { value: "Kia", label: "Kia" },
+                  { value: "Genesis", label: "Genesis" },
+                  { value: "BMW", label: "BMW" },
+                  { value: "Mercedes-Benz", label: "Mercedes-Benz" },
+                  { value: "Audi", label: "Audi" },
+                  { value: "Volkswagen", label: "Volkswagen" },
+                  { value: "Tesla", label: "Tesla" },
+                  { value: "Ford", label: "Ford" },
+                  { value: "Lexus", label: "Lexus" },
+                  { value: "Mazda", label: "Mazda" },
+                  { value: "Subaru", label: "Subaru" },
+                  { value: "Mitsubishi", label: "Mitsubishi" },
+                  { value: "Land Rover", label: "Land Rover" },
+                  { value: "Porsche", label: "Porsche" },
+                  { value: "Volvo", label: "Volvo" },
+                  { value: "Geely", label: "Geely" },
+                  { value: "Chery", label: "Chery" },
+                  { value: "Haval", label: "Haval" },
+                  { value: "BYD", label: "BYD" },
+                  { value: "Zeekr", label: "Zeekr" },
+                  { value: "Li Auto", label: "Li Auto" },
+                ]}
+                value={make || null}
+                onChange={setMake}
+                size="xs"
+                w={140}
+              />
             <TextInput placeholder="Цена от ₽" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="xs" w={100} type="number" />
             <TextInput placeholder="до ₽" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="xs" w={100} type="number" />
+              <Select
+                placeholder="Кузов"
+                clearable
+                data={[
+                  { value: "SEDAN", label: "Седан" },
+                  { value: "SUV", label: "Внедорожник" },
+                  { value: "HATCHBACK", label: "Хэтчбек" },
+                  { value: "COUPE", label: "Купе" },
+                  { value: "PICKUP", label: "Пикап" },
+                  { value: "WAGON", label: "Универсал" },
+                ]}
+                value={bodyType || null}
+                onChange={setBodyType}
+                size="xs"
+                w={120}
+              />
+              <Select
+                placeholder="Год от"
+                clearable
+                data={Array.from({length: 15}, (_, i) => ({ value: String(2025 - i), label: String(2025 - i) }))}
+                value={yearFrom || null}
+                onChange={setYearFrom}
+                size="xs"
+                w={90}
+              />
           </Group>
         </Paper>
 

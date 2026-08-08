@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
       if (priceTo) where.finalPrice.lte = parseInt(priceTo)
     }
     if (yearFrom) where.year = { gte: parseInt(yearFrom) }
+    const bodyType = sp.get("bodyType")
+    if (bodyType) where.bodyType = bodyType
 
     const [listings, total] = await prisma.$transaction([
       prisma.auctionListing.findMany({
