@@ -361,3 +361,81 @@ model Comment {
   news      News?    @relation(fields: [newsId], references: [id])
   createdAt DateTime @default(now())
 }
+
+// === АУКЦИОННЫЙ АГРЕГАТОР ===
+
+model AuctionListing {
+  id              String   @id @default(uuid())
+  sourceId        String   // ID лота на источнике (дедупликация)
+  source          String   // EMARAAT, AJ, COPART, IAAI, USS, TAA, MOBILE_DE
+  sourceUrl       String   // ссылка на оригинал
+  // Данные ТС
+  make            String
+  model           String
+  year            Int
+  mileage         Int?
+  fuelType        String?
+  transmission    String?
+  bodyType        String?
+  color           String?
+  engineVolume    Float?
+  power           Int?
+  driveType       String?
+  vin             String?
+  lotNumber       String?
+  // Цена
+  sourcePrice     Int      // цена на аукционе
+  sourceCurrency  String   // JPY, KRW, USD, EUR
+  priceRub        Int      // цена в рублях
+  markup          Int      // наценка
+  finalPrice      Int      // итоговая цена для покупателя
+  // Медиа (прямые ссылки)
+  imageUrl        String?
+  images          String?  // JSON массив
+  // Перевод
+  descriptionOrig String?
+  descriptionRu   String?
+  specsRu         String?
+  // Локация
+  country         String   // JP, KR, US, DE
+  auctionDate     DateTime?
+  location        String?
+  // Статус
+  status          String   @default("ACTIVE") // ACTIVE, SOLD, EXPIRED
+  isTranslated    Boolean  @default(false)
+  translatedAt    DateTime?
+  lastChecked     DateTime @default(now())
+  viewCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  inquiries       AuctionInquiry[]
+
+  @@unique([source, sourceId])
+  @@index([source])
+  @@index([status])
+  @@index([make, model])
+  @@index([country])
+  @@index([auctionDate])
+}
+
+model AuctionInquiry {
+  id               String   @id @default(uuid())
+  auctionListingId String
+  auctionListing   AuctionListing @relation(fields: [auctionListingId], references: [id], onDelete: Cascade)
+  name             String
+  phone            String
+  email            String?
+  city             String?
+  comment          String?
+  status           String   @default("NEW") // NEW, CONTACTED, IN_PROGRESS, CLOSED, SOLD
+  managerNotes     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([auctionListingId])
+  @@index([status])
+}
+
+// === АУКЦИОННЫЙ АГРЕГАТОР ===
+

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Box, ScrollArea, NavLink, Text, Stack, Divider, Group, Badge, ThemeIcon } from "@mantine/core"
+import { Box, ScrollArea, NavLink, Text, Stack, Divider, Group, Badge, ThemeIcon, Anchor } from "@mantine/core"
 import SupportChat from "@/components/support/SupportChat"
 import {
   IconCar, IconMotorbike, IconTruck, IconTractor, IconSpeedboat, IconPlane,
@@ -129,7 +129,15 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </Stack>
 
-              {/* Сервисы */}
+              {/* Аукционы */}
+      <SectionLabel mt="sm">Аукционы</SectionLabel>
+      <Stack gap={1}>
+        <Anchor component={Link} href="/auctions" size="sm" c="gray.6" style={{ padding: "6px 10px", borderRadius: 8, fontWeight: 500, textDecoration: "none" }}>
+          Все аукционы
+        </Anchor>
+      </Stack>
+
+      {/* Сервисы */}
               <SectionLabel mt="sm">Сервисы</SectionLabel>
               <Stack gap={1}>
                 {SERVICE_LINKS.map((link) => (
