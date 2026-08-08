@@ -1,10 +1,11 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useState } from "react"
-import useSWR from "swr"
+import useSWR, { useSWRConfig } from "swr"
+import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, SegmentedControl, Center, Loader, Image as MImage, Avatar, Button, Divider, ActionIcon } from "@mantine/core"
-import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconChartBar, IconTrendingUp, IconClock, IconExternalLink } from "@tabler/icons-react"
+import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconChartBar, IconTrendingUp, IconClock, IconExternalLink, IconTrash } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -15,6 +16,18 @@ export default function DashboardPage() {
   const { data: session } = useSession()
   const [tab, setTab] = useState("listings")
   const { data, isLoading } = useSWR("/api/dashboard/stats", fetcher)
+  const { mutate } = useSWRConfig()
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Удалить «${title}»?`)) return
+    try {
+      await fetch(`/api/listings/${id}`, { method: "DELETE" })
+      notifications.show({ title: "Удалено", message: "Объявление удалено", color: "green" })
+      mutate("/api/dashboard/stats")
+    } catch {
+      notifications.show({ title: "Ошибка", message: "Не удалось удалить", color: "red" })
+    }
+  }
 
   if (isLoading) return <Center py={80}><Loader size="sm" color="indigo" /></Center>
   if (!data) return <Center py={80}><Text c="gray.5">Не удалось загрузить данные</Text></Center>
@@ -125,6 +138,7 @@ export default function DashboardPage() {
                       <Group gap={4}>
                         <ActionIcon component={Link} href={href} variant="subtle" color="gray" size="sm"><IconExternalLink size={16} /></ActionIcon>
                         <ActionIcon component={Link} href={`/listings/${l.id}/promote`} variant="subtle" color="violet" size="sm"><IconTrendingUp size={16} /></ActionIcon>
+                        <ActionIcon variant="subtle" color="red" size="sm" onClick={() => handleDelete(l.id, l.title)}><IconTrash size={16} /></ActionIcon>
                       </Group>
                     </Group>
                   </Paper>

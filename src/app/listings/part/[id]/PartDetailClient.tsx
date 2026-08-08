@@ -28,6 +28,9 @@ import {
   IconShieldCheck,
   IconMapPin,
   IconTool,
+  IconHash,
+  IconAdjustments,
+  IconCircleDot,
   IconCalendar,
   IconCar,
   IconChevronRight,
@@ -58,6 +61,11 @@ interface PartData {
   yearFrom: number | null
   yearTo: number | null
   partType: string
+  subcategory: string | null
+  oemNumber: string | null
+  suspensionType: string | null
+  brakeType: string | null
+  compatibility: { id: string; make: string; model: string; generation: string | null; yearFrom: number | null; yearTo: number | null; engine: string | null }[]
   location: string
   images: string | null
   createdAt: Date
@@ -139,6 +147,11 @@ export default function PartDetailClient({ data }: { data: PartData }) {
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                 <SpecRow icon={<IconTool size={18} />} label="Тип детали" value={PART_TYPES_MAP[data.partType] || data.partType} />
                 <SpecRow icon={<IconCheck size={18} />} label="Состояние" value={data.condition ? CONDITIONS_MAP[data.condition] || data.condition : "—"} />
+                {data.subcategory && <SpecRow icon={<IconTool size={18} />} label="Подкатегория" value={data.subcategory} />}
+                {data.oemNumber && <SpecRow icon={<IconHash size={18} />} label="OEM номер" value={data.oemNumber} />}
+                {data.make && data.model && <SpecRow icon={<IconCar size={18} />} label="Основной авто" value={`${data.make} ${data.model}${data.yearFrom ? ` ${data.yearFrom}-${data.yearTo || ""}` : ""}`} />}
+                {data.suspensionType && <SpecRow icon={<IconAdjustments size={18} />} label="Тип подвески" value={data.suspensionType} />}
+                {data.brakeType && <SpecRow icon={<IconCircleDot size={18} />} label="Тип тормозов" value={data.brakeType} />}
                 <SpecRow icon={<IconCar size={18} />} label="Марка" value={data.make} />
                 <SpecRow icon={<IconCar size={18} />} label="Модель" value={data.model} />
                 <SpecRow icon={<IconCalendar size={18} />} label="Год от" value={data.yearFrom ? String(data.yearFrom) : "—"} />

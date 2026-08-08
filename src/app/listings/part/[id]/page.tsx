@@ -24,6 +24,10 @@ export default async function PartDetailPage({ params }: PageProps) {
   const part = await prisma.part.findUnique({
     where: { id: params.id },
     include: {
+      compatibility: {
+        select: { id: true, make: true, model: true, generation: true, yearFrom: true, yearTo: true, engine: true },
+        orderBy: { make: "asc" },
+      },
       user: {
         select: {
           id: true, name: true, image: true, createdAt: true,
@@ -56,6 +60,11 @@ export default async function PartDetailPage({ params }: PageProps) {
     yearFrom: part.yearFrom,
     yearTo: part.yearTo,
     partType: part.partType,
+    subcategory: part.subcategory,
+    oemNumber: part.oemNumber,
+    suspensionType: part.suspensionType,
+    brakeType: part.brakeType,
+    compatibility: part.compatibility || [],
     location: part.location,
     images: part.images,
     createdAt: part.createdAt,
@@ -70,5 +79,26 @@ export default async function PartDetailPage({ params }: PageProps) {
     reviews: listing?.reviews || [],
   }
 
-  return <PartDetailClient data={data} />
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": part.name,
+    "description": part.description || `${part.name} для ${part.make} ${part.model}`,
+    "brand": { "@type": "Brand", "name": part.make },
+    "category": part.partType,
+    "sku": part.oemNumber || undefined,
+    "offers": {
+      "@type": "Offer",
+      "price": part.price,
+      "priceCurrency": "RUB",
+      "itemCondition": part.condition === "NEW" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
+    },
+  }
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <PartDetailClient data={data} />
+    </>
+  )
 }

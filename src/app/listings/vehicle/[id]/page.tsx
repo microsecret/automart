@@ -127,5 +127,31 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     })),
   }
 
-  return <VehicleDetailClient data={data} />
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Vehicle",
+    "name": `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+    "brand": { "@type": "Brand", "name": vehicle.make },
+    "model": vehicle.model,
+    "vehicleModelDate": String(vehicle.year),
+    "mileageFromOdometer": { "@type": "QuantitativeValue", "value": vehicle.mileage, "unitCode": "KMT" },
+    "fuelType": vehicle.fuelType,
+    "vehicleTransmission": vehicle.transmission,
+    "vehicleConfiguration": vehicle.bodyType || undefined,
+    "color": vehicle.color || undefined,
+    "vehicleEngine": vehicle.engineVolume ? { "@type": "EngineSpecification", "engineDisplacement": { "@type": "QuantitativeValue", "value": vehicle.engineVolume * 1000, "unitCode": "CMQ" } } : undefined,
+    "offers": {
+      "@type": "Offer",
+      "price": vehicle.price,
+      "priceCurrency": "RUB",
+      "itemCondition": `https://schema.org/${vehicle.condition === "NEW" ? "NewCondition" : "UsedCondition"}`,
+    },
+  }
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <VehicleDetailClient data={data} />
+    </>
+  )
 }
