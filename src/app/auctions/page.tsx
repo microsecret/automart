@@ -174,6 +174,17 @@ export default function AuctionsPage() {
                     </Group>
                     <Text fw={800} fz="md" c="orange" ff="var(--font-display),sans-serif">{formatPriceShort(l.finalPrice)}</Text>
                     <Text size="10px" c="gray.4">с доставкой под ключ</Text>
+                    {l.auctionDate && (
+                      <Group gap={4} mt={4} pt={4} style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
+                        <Text size="10px" fw={600} c={new Date(l.auctionDate) > new Date() ? "#059669" : "#a1a1aa"}>
+                          {new Date(l.auctionDate) > new Date() ? "Торги: " : "Торги были: "}
+                        </Text>
+                        <Text size="10px" c="gray.5">
+                          {new Date(l.auctionDate).toLocaleDateString("ru", { day: "numeric", month: "short" })}
+                        </Text>
+                        {l.lotNumber && <Text size="10px" c="gray.4">· #{l.lotNumber}</Text>}
+                      </Group>
+                    )}
                   </Box>
                 </Paper>
               </Link>

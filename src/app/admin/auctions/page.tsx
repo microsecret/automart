@@ -1,7 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
 import useSWR from "swr"
-import { Box, Stack, Group, Text, Paper, Badge, Center, Loader, ThemeIcon, Select } from "@mantine/core"
+import { Box, Stack, Group, Text, Paper, Badge, Center, Loader, ThemeIcon, Select, SimpleGrid } from "@mantine/core"
 import { IconGavel, IconPhone, IconMail, IconMapPin, IconClock } from "@tabler/icons-react"
 import { formatRelativeDate } from "@/lib/format"
 import { useState } from "react"
@@ -18,6 +18,7 @@ const STATUSES = [
 export default function AdminAuctionsPage() {
   const [status, setStatus] = useState("NEW")
   const { data, isLoading } = useSWR(`/api/admin/auctions/inquiries${status ? `?status=${status}` : ""}`, fetcher)
+  const { data: stats } = useSWR("/api/admin/auctions/stats", fetcher)
   const inquiries = data?.inquiries || []
 
   return (
@@ -30,6 +31,29 @@ export default function AdminAuctionsPage() {
             <Text size="xs" c="gray.5">{inquiries.length} заявок</Text>
           </Stack>
         </Group>
+
+        {/* Статистика */}
+        {stats && (
+          <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
+            {[
+              { label: "Всего заявок", value: stats.total, color: "#4f46e5", bg: "#eef2ff" },
+              { label: "Новые", value: stats.byStatus?.NEW || 0, color: "#e11d48", bg: "#fff1f2" },
+              { label: "Связались", value: stats.byStatus?.CONTACTED || 0, color: "#ea580c", bg: "#fff7ed" },
+              { label: "В работе", value: stats.byStatus?.IN_PROGRESS || 0, color: "#2563eb", bg: "#eff6ff" },
+              { label: "Продано", value: stats.byStatus?.SOLD || 0, color: "#059669", bg: "#ecfdf5" },
+              { label: "За неделю", value: stats.recent || 0, color: "#7c3aed", bg: "#f5f3ff" },
+            ].map((card) => (
+              <Paper key={card.label} radius="md" p="sm" withBorder>
+                <Group gap="sm" align="center">
+                  <Box style={{ width: 36, height: 36, borderRadius: 8, background: card.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Text fw={800} fz="lg" c={card.color} lh={1}>{card.value}</Text>
+                  </Box>
+                  <Text size="xs" c="gray.5">{card.label}</Text>
+                </Group>
+              </Paper>
+            ))}
+          </SimpleGrid>
+        )}
 
         <Select
           label="Статус заявки"
