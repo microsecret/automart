@@ -13,6 +13,7 @@ const COUNTRIES = [
   { value: "", label: "Все страны" },
   { value: "JP", label: "🇯🇵 Япония" },
   { value: "KR", label: "🇰🇷 Корея" },
+  { value: "CN", label: "🇨🇳 Китай" },
   { value: "US", label: "🇺🇸 США" },
   { value: "DE", label: "🇩🇪 Европа" },
 ]
@@ -26,6 +27,10 @@ const SOURCES = [
   { value: "COPART", label: "Copart (США)" },
   { value: "IAAI", label: "IAAI (США)" },
   { value: "MOBILE_DE", label: "Mobile.de (Европа)" },
+  { value: "YCHEZHAI", label: "YCheZhai (Китай)" },
+  { value: "GUAZI", label: "Guazi (Китай)" },
+  { value: "TAOCHE", label: "Taoche (Китай)" },
+  { value: "UCAR", label: "Ucar (Китай)" },
 ]
 
 export default function AuctionsPage() {
@@ -157,9 +162,15 @@ export default function AuctionsPage() {
                   </Box>
                   <Box p="sm">
                     <Text fw={700} fz="sm" c="dark.9" mb={4}>{l.make} {l.model}</Text>
-                    <Group gap="xs" mb={6}>
+                    <Group gap="xs" mb={4}>
                       <Text size="xs" c="gray.5">{l.year} г.</Text>
-                      {l.mileage && <Text size="xs" c="gray.5">· {l.mileage.toLocaleString("ru")} км</Text>}
+                      {l.mileage != null && <Text size="xs" c="gray.5">· {l.mileage.toLocaleString("ru")} км</Text>}
+                    </Group>
+                    <Group gap={4} mb={6}>
+                      {l.fuelType && <Badge size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "gray"}>{l.fuelType === "ELECTRIC" ? "⚡ Электро" : l.fuelType === "HYBRID" ? "🔋 Гибрид" : l.fuelType === "DIESEL" ? "⛽ Дизель" : "⛽ Бензин"}</Badge>}
+                      {l.bodyType && <Badge size="xs" variant="light" color="indigo">{l.bodyType === "SUV" ? "SUV" : l.bodyType === "SEDAN" ? "Седан" : l.bodyType === "PICKUP" ? "Пикап" : l.bodyType === "WAGON" ? "Универсал" : l.bodyType === "HATCHBACK" ? "Хэтчбек" : l.bodyType}</Badge>}
+                      {l.engineVolume && <Text size="10px" c="gray.4">{l.engineVolume} л</Text>}
+                      {l.power && <Text size="10px" c="gray.4">· {l.power} л.с.</Text>}
                     </Group>
                     <Text fw={800} fz="md" c="orange" ff="var(--font-display),sans-serif">{formatPriceShort(l.finalPrice)}</Text>
                     <Text size="10px" c="gray.4">с доставкой под ключ</Text>

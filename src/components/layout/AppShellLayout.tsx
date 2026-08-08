@@ -161,6 +161,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         <Anchor component={Link} href="/auctions?country=US" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
           🇺🇸 США (Copart, IAAI)
         </Anchor>
+        <Anchor component={Link} href="/auctions?country=CN" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
+          🇨🇳 Китай (YCheZhai, Guazi)
+        </Anchor>
         <Anchor component={Link} href="/auctions?country=DE" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
           🇩🇪 Европа (Mobile.de)
         </Anchor>

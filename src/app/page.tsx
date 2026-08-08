@@ -156,6 +156,7 @@ export default function HomePage(p) {
                 { flag: "🇰🇷", label: "Корея", count: stats.auctionByCountry?.KR || 0, href: "/auctions?country=KR" },
                 { flag: "🇺🇸", label: "США", count: stats.auctionByCountry?.US || 0, href: "/auctions?country=US" },
                 { flag: "🇩🇪", label: "Европа", count: stats.auctionByCountry?.DE || 0, href: "/auctions?country=DE" },
+                { flag: "🇨🇳", label: "Китай", count: stats.auctionByCountry?.CN || 0, href: "/auctions?country=CN" },
               ].map((c) => (
                 <Link key={c.href} href={c.href} style={{ textDecoration: "none" }}>
                   <Badge size="md" radius="md" variant="light" color="orange" style={{ cursor: "pointer", padding: "8px 12px" }}>

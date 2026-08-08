@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 const PARSER_TOKEN = process.env.PARSER_TOKEN || "automart-parser-2026"
 
-const RATES: Record<string, number> = { JPY: 0.62, KRW: 0.072, USD: 95, EUR: 102 }
+const RATES: Record<string, number> = { JPY: 0.62, KRW: 0.072, USD: 95, EUR: 102, CNY: 13.2 }
 
 export async function POST(request: NextRequest) {
   try {
