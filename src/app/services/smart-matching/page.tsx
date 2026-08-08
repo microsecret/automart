@@ -1,42 +1,112 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useState } from "react"
-import { Box, Stack, Title, Text, Card, Select, NumberInput, Button, Group, ThemeIcon, Alert, Checkbox } from "@mantine/core"
-import { IconTarget, IconSparkles } from "@tabler/icons-react"
+import useSWR from "swr"
+import Link from "next/link"
+import { Box, Stack, Text, Paper, Select, NumberInput, Button, Group, ThemeIcon, SimpleGrid, Center, Loader, Divider, Badge, SegmentedControl } from "@mantine/core"
+import { IconTarget, IconSparkles, IconCheck, IconCar, IconBolt, IconShieldCheck } from "@tabler/icons-react"
+import { formatPriceShort, formatMileage, parseImages } from "@/lib/format"
+import BrandIcon from "@/components/brands/BrandIcon"
+import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 
-export default function SmartMatchingPage() {
+const fetcher = (url) => fetch(url).then((r) => r.json())
+
+export default function SmartmatchingPage() {
   const [budget, setBudget] = useState(3000000)
   const [bodyType, setBodyType] = useState("SUV")
   const [fuel, setFuel] = useState("GASOLINE")
+  const [transmission, setTransmission] = useState("AUTOMATIC")
   const [submitted, setSubmitted] = useState(false)
 
+  const query = submitted
+    ? `/api/listings?type=vehicle&priceTo=${budget}&bodyType=${bodyType}&fuelType=${fuel}&transmission=${transmission}&sort=price_asc&limit=3`
+    : null
+  const { data, isLoading } = useSWR(query, fetcher)
+
+  const results = data?.listings || []
+
   return (
-    <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 600, margin: "0 auto" }}>
+    <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 800, margin: "0 auto" }}>
       <Stack gap="md">
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconTarget size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Title order={2} size="h3" ff="var(--font-display),sans-serif">Умный подбор</Title>
-            <Text size="xs" c="#71717a">ИИ подберёт идеальный авто под ваши критерии</Text>
+            <Text component="h1" fw={800} fz={22} c="#18181b" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
+            <Text size="xs" c="#71717a">Подберём лучшие варианты под ваш бюджет и критерии</Text>
           </Stack>
         </Group>
 
-        <Card withBorder radius="md" p="lg" style={{ borderColor: "#f4f4f5" }}>
+        <Paper withBorder radius="md" p="lg">
           <Stack gap="md">
-            <NumberInput label="Бюджет, ₽" value={budget} onChange={(v) => setBudget(Number(v) || 0)} size="sm" />
-            <Select label="Тип кузова" data={[{ value: "SEDAN", label: "Седан" }, { value: "SUV", label: "Внедорожник" }, { value: "HATCHBACK", label: "Хэтчбек" }, { value: "WAGON", label: "Универсал" }]} value={bodyType} onChange={setBodyType} size="sm" />
-            <Select label="Двигатель" data={[{ value: "GASOLINE", label: "Бензин" }, { value: "DIESEL", label: "Дизель" }, { value: "HYBRID", label: "Гибрид" }, { value: "ELECTRIC", label: "Электро" }]} value={fuel} onChange={setFuel} size="sm" />
-            <Button onClick={() => setSubmitted(true)} color="indigo" radius="md" leftSection={<IconSparkles size={18} />}>Подобрать</Button>
+            <NumberInput label="Бюджет, ₽" value={budget} onChange={(v) => setBudget(Number(v) || 0)} size="sm" thousandGroup separator=" " min={100000} step={100000} />
+            <Group gap="md" grow>
+              <Select label="Кузов" data={BODY_TYPES.map((b) => ({ value: b.value, label: b.label }))} value={bodyType} onChange={setBodyType} size="sm" />
+              <Select label="Двигатель" data={FUEL_TYPES.map((f) => ({ value: f.value, label: f.label }))} value={fuel} onChange={setFuel} size="sm" />
+              <Select label="КПП" data={TRANSMISSIONS.map((t) => ({ value: t.value, label: t.label }))} value={transmission} onChange={setTransmission} size="sm" />
+            </Group>
+            <Button onClick={() => setSubmitted(true)} color="violet" radius="md" size="md" leftSection={<IconSparkles size={18} />}>Подобрать автомобиль</Button>
           </Stack>
-        </Card>
+        </Paper>
 
         {submitted && (
-          <Alert icon={<IconSparkles size={16} />} color="violet" variant="light" radius="md">
-            <Stack gap="xs">
-              <Text size="sm" fw={600}>Рекомендации ИИ:</Text>
-              <Text size="xs" c="#52525b">На основе вашего бюджета ({budget.toLocaleString("ru-RU")} ₽) и предпочтений ({bodyType}, {fuel}) мы подбираем лучшие варианты. Перейдите в <a href={`/category/cars`} style={{ color: "#4f46e5" }}>каталог</a> для просмотра.</Text>
-            </Stack>
-          </Alert>
+          <Stack gap="md">
+            <Group gap="sm" align="center">
+              <ThemeIcon variant="light" color="violet" size={32} radius="md"><IconSparkles size={18} /></ThemeIcon>
+              <Text fw={700} fz="md" c="#18181b">Рекомендации для вас</Text>
+              {!isLoading && <Badge size="sm" color="violet" variant="light">{results.length} совпадений</Badge>}
+            </Group>
+
+            {isLoading ? (
+              <Center py={40}><Loader size="sm" color="violet" /></Center>
+            ) : results.length === 0 ? (
+              <Paper radius="md" p="xl" withBorder>
+                <Center>
+                  <Stack align="center" gap="sm">
+                    <IconCar size={40} color="#a1a1aa" />
+                    <Text c="#71717a">Ничего не найдено. Попробуйте увеличить бюджет или изменить критерии.</Text>
+                  </Stack>
+                </Center>
+              </Paper>
+            ) : (
+              <Stack gap="sm">
+                {results.map((l, i) => {
+                  const v = l.vehicle
+                  const images = parseImages(v?.images)
+                  const image = images[0] || "/placeholder.svg"
+                  const matchScore = Math.max(70, 99 - i * 10)
+                  return (
+                    <Paper key={l.id} radius="md" p="md" withBorder style={{ borderColor: i === 0 ? "#7c3aed" : "#f4f4f5", background: i === 0 ? "#faf5ff" : "#fff" }}>
+                      <Group gap="md" align="flex-start" wrap="nowrap">
+                        <Box style={{ position: "relative", flexShrink: 0 }}>
+                          <Box style={{ width: 120, height: 90, borderRadius: 8, overflow: "hidden", background: "#f4f4f5" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={image} alt={l.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </Box>
+                          {i === 0 && <Badge pos="absolute" top={-8} left={-8} color="violet" variant="filled" size="xs" circle><IconSparkles size={10} /></Badge>}
+                        </Box>
+                        <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+                          <Group gap="sm" align="center">
+                            {v && <BrandIcon brand={v.make} size={28} />}
+                            <Link href={`/listings/vehicle/${v?.id}`} style={{ textDecoration: "none" }}>
+                              <Text fw={700} fz="sm" c="#18181b">{l.title}</Text>
+                            </Link>
+                          </Group>
+                          <Text fz="xs" c="#71717a">{v ? `${v.year} г. · ${formatMileage(v.mileage)} · ${v.location || "—"}` : ""}</Text>
+                          <Group gap="sm" mt={2}>
+                            <Text fw={800} fz="lg" c="#18181b" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
+                            <Badge size="xs" color={matchScore >= 90 ? "green" : matchScore >= 80 ? "orange" : "gray"} variant="light">Совпадение {matchScore}%</Badge>
+                          </Group>
+                        </Stack>
+                        <Button component={Link} href={v ? `/listings/vehicle/${v.id}` : "/"} variant="light" color="violet" size="xs" radius="md">Открыть</Button>
+                      </Group>
+                    </Paper>
+                  )
+                })}
+                <Divider my="xs" />
+                <Button component={Link} href={`/category/cars`} variant="subtle" color="violet" size="sm">Смотреть все варианты →</Button>
+              </Stack>
+            )}
+          </Stack>
         )}
       </Stack>
     </Box>

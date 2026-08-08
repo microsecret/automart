@@ -162,6 +162,8 @@ model Listing {
   description   String?
   price         Int      // Price in rubles
   isFeatured    Boolean  @default(false)
+  promoType     String?  // boost, premium, vip
+  promoUntil    DateTime? // до какого числа действует продвижение
   views         Int      @default(0)
 
   // Polymorphic relation - can be either vehicle or part
