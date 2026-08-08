@@ -116,12 +116,20 @@ export default function HomePage(p) {
       {!p.categorySlug && (
         <Paper radius="lg" p="xl" style={{background:"linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#ec4899 100%)",position:"relative",overflow:"hidden"}}>
           <Box style={{position:"relative",zIndex:1}}>
-            <Text ff="var(--font-display),sans-serif" fw={800} fz={{base:24,md:30}} c="white" mb={6}>Найдите свой автомобиль</Text>
-            <Text size="sm" c="rgba(255,255,255,0.9)" mb="lg">214+ объявлений · 6 видов транспорта · VIN-проверка · Безопасные сделки</Text>
-            <Group gap="xs" wrap="wrap">
+            <Text ff="var(--font-display),sans-serif" fw={800} fz={{base:24,md:32}} c="white" mb={6}>Авторынок — транспорт и запчасти</Text>
+            <Text size="sm" c="rgba(255,255,255,0.9)" mb="md">300+ авто · 50+ запчастей · VIN-проверка · Безопасные сделки · Умный подбор</Text>
+            <Group gap="xs" wrap="wrap" mb="sm">
+              <Text size="xs" c="rgba(255,255,255,0.7)" fw={600} tt="uppercase">Транспорт:</Text>
               {[{l:"Легковые",h:"/category/cars"},{l:"Мото",h:"/category/moto"},{l:"Грузовики",h:"/category/trucks"},{l:"Спецтехника",h:"/category/special"},{l:"Вода",h:"/category/water"},{l:"Авиа",h:"/category/air"}].map((c) => (
                 <Link key={c.h} href={c.h} style={{textDecoration:"none"}}>
                   <Badge size="md" radius="md" style={{cursor:"pointer",background:"rgba(255,255,255,0.95)",color:"#4f46e5",fontWeight:600}}>{c.l}</Badge>
+                </Link>))}
+            </Group>
+            <Group gap="xs" wrap="wrap">
+              <Text size="xs" c="rgba(255,255,255,0.7)" fw={600} tt="uppercase">Запчасти:</Text>
+              {[{l:"Все запчасти",h:"/parts-finder"},{l:"Двигатель",h:"/parts-finder?partType=ENGINE"},{l:"Тормоза",h:"/parts-finder?partType=BRAKES"},{l:"Подвеска",h:"/parts-finder?partType=SUSPENSION"},{l:"Оптика",h:"/parts-finder?partType=LIGHTING"},{l:"Электрика",h:"/parts-finder?partType=ELECTRICAL"}].map((c) => (
+                <Link key={c.h} href={c.h} style={{textDecoration:"none"}}>
+                  <Badge size="md" radius="md" style={{cursor:"pointer",background:"rgba(255,255,255,0.2)",color:"white",fontWeight:500,border:"1px solid rgba(255,255,255,0.3)"}}>{c.l}</Badge>
                 </Link>))}
             </Group>
           </Box>
