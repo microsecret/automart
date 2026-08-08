@@ -39,3 +39,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Security
+.env
+.env.*
+!.env.example
+
+# Database
+prisma/dev.db
+prisma/dev.db-journal
+
+# Logs
+*.log
+
+# Temp
+fix-*.js
+replace-*.js
+audit-*.js
+count.js
+reset.js

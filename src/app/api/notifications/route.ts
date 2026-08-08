@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "../auth/[...nextauth]/route"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
-
+import { prisma } from "@/lib/prisma"
 // GET all notifications for the current user
 export async function GET(request: NextRequest) {
   try {
@@ -188,8 +185,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { notif
   }
 }
 
-// PUT mark all notifications as read
-export async function PUT(request: NextRequest) {
+// POST mark all notifications as read
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {

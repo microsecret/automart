@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { uploadImage } from "@/lib/cloudinary"
+export const dynamic = "force-dynamic"
+import { uploadImage } from "../../../../lib/cloudinary"
+import { prisma } from "@/lib/prisma"
 
 export const config = {
   api: {

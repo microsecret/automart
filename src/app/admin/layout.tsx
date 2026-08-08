@@ -1,40 +1,47 @@
+"use client"
+export const dynamic = "force-dynamic"
+
 import { useSession } from "next-auth/react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Navbar from "@/components/layout/navbar"
-import Footer from "@/components/layout/footer"
-import "../globals.css"
+import { Container, Text, Center, Loader } from "@mantine/core"
 
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   const { data: session, status } = useSession()
   const router = useRouter()
 
   useEffect(() => {
-    if (status === "loading") {
-      return
-    }
-
+    if (status === "loading") return
     if (!session) {
       router.push("/auth/signin")
       return
     }
-
-    // Check if user has ADMIN role
     if (session.user.role !== "ADMIN") {
       router.push("/")
-      return
     }
   }, [session, status, router])
 
-  return (
-    <>
-      <Navbar />
-      <main className="min-h-screen bg-gray-50">{children}</main>
-      <Footer />
-    </>
-  )
+  if (status === "loading") {
+    return (
+      <Center h={400}>
+        <Loader color="indigo" />
+      </Center>
+    )
+  }
+
+  if (!session || session.user.role !== "ADMIN") {
+    return (
+      <Container py={40}>
+        <Center>
+          <Text c="dimmed">Доступ только для администраторов</Text>
+        </Center>
+      </Container>
+    )
+  }
+
+  return <>{children}</>
 }

@@ -1,0 +1,74 @@
+"use client"
+
+export const dynamic = "force-dynamic"
+
+import { useState } from "react"
+import useSWR from "swr"
+import { Box, Stack, Text, Group, Center, Loader, Pagination, SimpleGrid, Card, ThemeIcon, Anchor } from "@mantine/core"
+import { IconNews, IconClock, IconMessageCircle2, IconExternalLink } from "@tabler/icons-react"
+import Link from "next/link"
+import { formatRelativeDate } from "@/lib/format"
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+export default function NewsPage() {
+  const [page, setPage] = useState(1)
+  const { data, isLoading } = useSWR<{ news: any[]; pagination: any }>(`/api/news?page=${page}&limit=12`, fetcher)
+
+  return (
+    <Box p={{ base: "sm", md: "md" }}>
+      <Stack gap="md">
+        <Group gap="sm" align="center">
+          <ThemeIcon variant="light" color="indigo" size={40} radius="md"><IconNews size={20} /></ThemeIcon>
+          <Stack gap={0}>
+            <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} c="#18181b">Автомобильные новости</Text>
+            <Text size="xs" c="#71717a">{data?.pagination?.total || "—"} публикаций</Text>
+          </Stack>
+        </Group>
+
+        {isLoading ? (
+          <Center py={60}><Loader color="indigo" size="sm" /></Center>
+        ) : (
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
+            {(data?.news || []).map((article) => (
+              <Link key={article.id} href={`/news/${article.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <Card withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5", height: "100%", transition: "all 200ms ease", cursor: "pointer" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#e4e4e7"; e.currentTarget.style.boxShadow = "0 4px 12px -4px rgba(0,0,0,0.06)" }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#f4f4f5"; e.currentTarget.style.boxShadow = "none" }}>
+                  <Stack gap="xs" style={{ height: "100%", justifyContent: "space-between" }}>
+                    <Text size="sm" fw={600} c="#18181b" lh={1.3} style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      {article.title}
+                    </Text>
+                    {article.excerpt && (
+                      <Text size="xs" c="#71717a" lh={1.4} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {article.excerpt}
+                      </Text>
+                    )}
+                    <Group gap="xs" mt="auto" pt="xs" style={{ borderTop: "1px solid #f4f4f5" }}>
+                      <Group gap={3}>
+                        <IconClock size={11} stroke={1.8} color="#a1a1aa" />
+                        <Text size="xs" c="#a1a1aa">{formatRelativeDate(article.publishedAt)}</Text>
+                      </Group>
+                      {article._count?.comments > 0 && (
+                        <Group gap={3}>
+                          <IconMessageCircle2 size={11} stroke={1.8} color="#a1a1aa" />
+                          <Text size="xs" c="#a1a1aa">{article._count.comments}</Text>
+                        </Group>
+                      )}
+                    </Group>
+                  </Stack>
+                </Card>
+              </Link>
+            ))}
+          </SimpleGrid>
+        )}
+
+        {data && data.pagination.pages > 1 && (
+          <Group justify="center" mt="md">
+            <Pagination value={page} onChange={setPage} total={data.pagination.pages} color="indigo" radius="md" size="sm" />
+          </Group>
+        )}
+      </Stack>
+    </Box>
+  )
+}

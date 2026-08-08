@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-import Stripe from "stripe"
-
-const prisma = new PrismaClient()
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
-})
+import { prisma } from "@/lib/prisma"
+export const dynamic = "force-dynamic"
 
 // Webhook secret for verifying webhook signatures
 // In production, this should be set as an environment variable
@@ -13,6 +8,11 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_..."
 
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json({ error: "Webhook not configured" }, { status: 503 })
+    }
+    const Stripe = (await import("stripe")).default
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
     const body = await request.text()
     const signature = request.headers.get("stripe-signature") as string
 

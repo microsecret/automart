@@ -1,134 +1,129 @@
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { PrismaClient } from "@prisma/client"
-import bcrypt from "bcryptjs"
+"use client"
 
-const prisma = new PrismaClient()
+import { useState } from "react"
+import { useForm } from "@mantine/form"
+import { signIn } from "next-auth/react"
+import {
+  TextInput,
+  PasswordInput,
+  Button,
+  Stack,
+  Text,
+  Alert,
+  Anchor,
+  Divider,
+  Group,
+} from "@mantine/core"
+import { IconAlertCircle, IconAt, IconLock, IconUser } from "@tabler/icons-react"
 
 export default function SignUpForm() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const form = useForm({
+    initialValues: { name: "", email: "", password: "", confirmPassword: "" },
+    validate: {
+      name: (v) => (v.trim().length < 2 ? "Минимум 2 символа" : null),
+      email: (v) => (/^\S+@\S+\.\S+$/.test(v) ? null : "Введите корректный email"),
+      password: (v) => (v.length < 6 ? "Минимум 6 символов" : null),
+      confirmPassword: (v, values) => (v !== values.password ? "Пароли не совпадают" : null),
+    },
+  })
+
+  const handleSubmit = async (values: typeof form.values) => {
     setLoading(true)
     setError(null)
-
-    if (!name || !email || !password) {
-      setError("Пожалуйста, заполните все поля")
-      setLoading(false)
-      return
-    }
-
     try {
-      // Проверяем, существует ли уже пользователь с таким email
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+        }),
       })
-
-      if (existingUser) {
-        setError("Пользователь с таким email уже существует")
-        setLoading(false)
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || "Ошибка регистрации")
         return
       }
-
-      // Хешируем пароль
-      const hashedPassword = await bcrypt.hash(password, 10)
-
-      // Создаем пользователя
-      await prisma.user.create({
-        data: {
-          name,
-          email,
-          hashedPassword,
-        }
+      // Авто-вход после регистрации
+      const signInRes = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
       })
-
-      // Перенаправляем на страницу входа
-      router.push("/auth/signin")
-    } catch (err) {
-      console.error("Ошибка регистрации:", err)
-      setError("Ошибка регистрации. Пожалуйста, попробуйте снова.")
+      if (signInRes?.ok) {
+        window.location.href = "/dashboard"
+      } else {
+        setError("Аккаунт создан. Войдите вручную.")
+      }
+    } catch {
+      setError("Ошибка регистрации. Попробуйте позже.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-          Имя
-        </label>
-        <input
-          id="name"
-          type="text"
-          autoComplete="name"
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          autoComplete="email"
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          Пароль
-        </label>
-        <input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-
+    <Stack gap="md">
       {error && (
-        <div className="text-sm text-red-600">
+        <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light" radius="md">
           {error}
-        </div>
+        </Alert>
       )}
 
-      <div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-          {loading ? "Регистрация..." : "Зарегистрироваться"}
-        </button>
-      </div>
+      <form onSubmit={form.onSubmit(handleSubmit)}>
+        <Stack gap="md">
+          <TextInput
+            label="Имя"
+            placeholder="Как вас зовут"
+            leftSection={<IconUser size={18} />}
+            size="md"
+            radius="md"
+            {...form.getInputProps("name")}
+          />
+          <TextInput
+            label="Email"
+            placeholder="you@example.com"
+            leftSection={<IconAt size={18} />}
+            size="md"
+            radius="md"
+            {...form.getInputProps("email")}
+          />
+          <PasswordInput
+            label="Пароль"
+            placeholder="Минимум 6 символов"
+            leftSection={<IconLock size={18} />}
+            size="md"
+            radius="md"
+            {...form.getInputProps("password")}
+          />
+          <PasswordInput
+            label="Повторите пароль"
+            placeholder="Подтвердите пароль"
+            leftSection={<IconLock size={18} />}
+            size="md"
+            radius="md"
+            {...form.getInputProps("confirmPassword")}
+          />
+          <Button type="submit" loading={loading} fullWidth size="md" radius="md" color="indigo">
+            Создать аккаунт
+          </Button>
+        </Stack>
+      </form>
 
-      <div className="text-sm">
-        <a
-          href="/auth/signin"
-          className="font-medium text-indigo-600 hover:text-indigo-500"
-        >
-          Уже есть аккаунт? Войти
-        </a>
-      </div>
-    </form>
+      <Divider label="или" labelPosition="center" />
+
+      <Group justify="center">
+        <Text size="sm" c="#71717a">
+          Уже есть аккаунт?{" "}
+          <Anchor href="/auth/signin" size="sm" c="indigo" fw={500}>
+            Войти
+          </Anchor>
+        </Text>
+      </Group>
+    </Stack>
   )
 }

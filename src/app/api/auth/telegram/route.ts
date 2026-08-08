@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
 import crypto from "crypto"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // Verify Telegram WebApp data according to official docs
 function verifyTelegramData(initData: string, botToken: string): boolean {

@@ -1,319 +1,180 @@
+"use client"
+export const dynamic = "force-dynamic"
+
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import useSWR, { mutate as globalMutate } from "swr"
 import { useSession } from "next-auth/react"
-import Link from "next/link"
-import { MessageCircle, ChevronRight, Trash2, RefreshCw, Bell, X } from "lucide-react"
+import {
+  Container,
+  Stack,
+  Text,
+  Title,
+  Center,
+  Loader,
+  Button,
+  Group,
+  Card,
+  ThemeIcon,
+  ActionIcon,
+  Box,
+  Badge,
+} from "@mantine/core"
+import {
+  IconBell,
+  IconBellOff,
+  IconCheck,
+  IconMessageCircle2,
+  IconHeart,
+  IconStar,
+  IconTrash,
+} from "@tabler/icons-react"
+import { formatRelativeDate } from "@/lib/format"
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+interface Notification {
+  id: string
+  title: string
+  content: string | null
+  isRead: boolean
+  type: string | null
+  createdAt: string
+}
+
+function getNotifIcon(type: string | null) {
+  if (type === "MESSAGE") return <IconMessageCircle2 size={20} />
+  if (type === "FAVORITE") return <IconHeart size={20} />
+  if (type === "REVIEW") return <IconStar size={20} />
+  return <IconBell size={20} />
+}
 
 export default function NotificationsPage() {
   const { data: session, status } = useSession()
-  const [notifications, setNotifications] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-
-  // Fetch notifications
-  const fetchNotifications = async () => {
-    if (!session) return
-
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const response = await fetch("/api/notifications")
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch notifications")
-      }
-
-      const data = await response.json()
-      setNotifications(data.notifications || [])
-    } catch (err) {
-      console.error("Error fetching notifications:", err)
-      setError(err.message || "Failed to load notifications")
-    } finally {
-      setIsLoading(false)
-      setIsRefreshing(false)
-    }
-  }
-
-  // Mark notification as read
-  const markAsRead = async (notificationId: string) {
-    try {
-      await fetch(`/api/notifications/${notificationId}/read`, {
-        method: "PUT"
-      })
-
-      // Update local state
-      setNotifications(notifications.map(notif =>
-        notif.id === notificationId
-          ? { ...notif, isRead: true }
-          : notif
-      ))
-    } catch (err) {
-      console.error("Error marking notification as read:", err)
-      setError(err.message || "Failed to mark as read")
-    }
-  }
-
-  // Delete notification
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      await fetch(`/api/notifications/${notificationId}`, {
-        method: "DELETE"
-      })
-
-      // Remove from local state
-      setNotifications(notifications.filter(notif => notif.id !== notificationId))
-    } catch (err) {
-      console.error("Error deleting notification:", err)
-      setError(err.message || "Failed to delete notification")
-    }
-  }
-
-  // Mark all as read
-  const markAllAsRead = async () => {
-    try {
-      await fetch("/api/notifications/read-all", {
-        method: "PUT"
-      })
-
-      // Update local state
-      setNotifications(notifications.map(notif => ({
-        ...notif,
-        isRead: true
-      })))
-    } catch (err) {
-      console.error("Error marking all as read:", err)
-      setError(err.message || "Failed to mark all as read")
-    }
-  }
-
-  // Clear all notifications
-  const clearAll = async () => {
-    try {
-      // In a real app, we might want to delete all notifications
-      // For now, we'll just mark them all as read
-      await markAllAsRead()
-    } catch (err) {
-      console.error("Error clearing all notifications:", err)
-      setError(err.message || "Failed to clear all")
-    }
-  }
-
-  // Refresh notifications
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    fetchNotifications()
-  }
-
-  // Fetch notifications when session changes
-  useEffect(() => {
-    if (session) {
-      fetchNotifications()
-    }
-  }, [session])
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex items-center space-x-3">
-          <div className="h-5 w-5 border-2 border-primary border-t-transparent border-l-transparent border-r-primary animate-spin" />
-          <span className="text-gray-500">Загрузка...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Уведомления</h2>
-          <p className="text-gray-600 mb-6">
-            Пожалуйста, войдите в систему, чтобы просматривать уведомления
-          </p>
-          <Link href="/auth/signin" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
-            Войти
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Уведомления</h2>
-          <p className="text-red-500 mb-6">{error}</p>
-          <Button
-            onClick={() => {
-              setError(null)
-              fetchNotifications()
-            }}
-          >
-            Попробовать снова
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  const unreadCount = notifications.filter(n => !n.isRead).length
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-4">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Уведомления</h1>
-          <p className="text-gray-600">
-            Ваши уведомления и оповещения
-          </p>
-        </div>
-
-        {/* Header actions */}
-        <div className="mb-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <span className="text-sm text-gray-500">
-              {unreadCount} непрочитанных
-            </span>
-            <button
-              onClick={markAllAsRead}
-              disabled=unreadCount === 0
-              className={`px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90 ${
-                unreadCount === 0 ? 'opacity-50' : ''
-              }`}
-            >
-              Отметить всё как прочитанное
-            </button>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={`px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-50 transition-colors ${
-                isRefreshing ? 'opacity-50' : ''
-              }`}
-            >
-              {isRefreshing ? (
-                <div className="h-4 w-4 border-2 border-t-transparent border-l-transparent border-b-primary animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Обновить
-            </button>
-          </div>
-        </div>
-
-        {/* Notifications list */}
-        {isLoading && notifications.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="h-5 w-5 border-2 border-primary border-t-transparent border-l-transparent border-r-primary animate-spin mx-auto mb-4" />
-            <p className="text-gray-500">Загрузка уведомлений...</p>
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="text-center py-12">
-            <Bell className="h-10 w-10 mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-500 mb-4">
-              У вас пока нет уведомлений
-            </p>
-            <p className="text-gray-400">
-              Вы будете получать уведомления о новых сообщениях, обновлениях объявлений и других событиях
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {notifications.map(notification => (
-              <div key={notification.id} className={`border-l-4 border-l-2 ${notification.isRead ? 'border-gray-200' : 'border-primary'} bg-white rounded-lg shadow-sm p-4`}>
-                <div className="flex items-start space-x-3">
-                  {/* Icon */}
-                  <div className="flex-shrink-0">
-                    <div className="h-8 w-8 flex items-center justify-center rounded-md ${notification.type === 'ERROR' ? 'bg-red-100' : notification.type === 'WARNING' ? 'bg-yellow-100' : notification.type === 'SUCCESS' ? 'bg-green-100' : 'bg-blue-100'}">
-                      {notification.type === 'ERROR' ? (
-                        <MessageCircle className="h-4 w-4 text-red-500" />
-                      ) : notification.type === 'WARNING' ? (
-                        <Search className="h-4 w-4 text-yellow-500" />
-                      ) : notification.type === 'SUCCESS' ? (
-                        <MessageCircle className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <Bell className="h-4 w-4 text-blue-500" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 space-y-2">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-medium text-gray-900">
-                        {notification.title}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {notification.createdAt ? new Date(notification.createdAt).toLocaleString('ru-RU', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        }) : ''}
-                      </p>
-                    </div>
-
-                    <p className="text-sm text-gray-600">
-                      {notification.content}
-                    </p>
-
-                    {notification.relatedId && notification.relatedType && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        <span className="font-medium">{notification.relatedType}:</span> {notification.relatedId}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex-shrink-0 space-x-2">
-                    <button
-                      onClick={() => markAsRead(notification.id)}
-                      disabled={notification.isRead}
-                      className={`p-1 rounded hover:bg-gray-100 ${notification.isRead ? 'opacity-50' : ''}`}
-                    >
-                      {notification.isRead ? (
-                        <MessageCircle className="h-3 w-3 text-gray-400" />
-                      ) : (
-                        <MessageCircle className="h-3 w-3 text-gray-600" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => deleteNotification(notification.id)}
-                      className="p-1 rounded hover:bg-gray-100"
-                    >
-                      <Trash2 className="h-3 w-3 text-gray-400 hover:text-red-500" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    )
+  const router = useRouter()
+  const { data, isLoading } = useSWR<{ notifications: Notification[] }>(
+    session ? "/api/notifications" : null,
+    fetcher
   )
-}
+  const [markingAll, setMarkingAll] = useState(false)
 
-// Simple button component for reuse
-function Button({
-  children,
-  onClick,
-  className = ""
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  className?: string
-}) {
+  useEffect(() => {
+    if (status === "loading") return
+    if (!session) router.push("/auth/signin")
+  }, [session, status, router])
+
+  const markAllRead = async () => {
+    setMarkingAll(true)
+    try {
+      await fetch("/api/notifications", { method: "POST" })
+      globalMutate("/api/notifications")
+    } finally {
+      setMarkingAll(false)
+    }
+  }
+
+  const markOneRead = async (id: string) => {
+    await fetch(`/api/notifications?notificationId=${id}`, { method: "PUT" })
+    globalMutate("/api/notifications")
+  }
+
+  if (status === "loading" || !session) {
+    return (
+      <Container py={80}>
+        <Center><Loader color="indigo" /></Center>
+      </Container>
+    )
+  }
+
+  const notifs = data?.notifications || []
+  const unreadCount = notifs.filter((n) => !n.isRead).length
+
   return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors ${className}`}
-    >
-      {children}
-    </button>
+    <Container size="md" py="lg">
+      <Stack gap="lg">
+        <Group justify="space-between">
+          <Stack gap={2}>
+            <Title order={1} size="h2">Уведомления</Title>
+            <Text size="sm" c="#71717a">
+              {unreadCount > 0 ? `${unreadCount} непрочитанных` : "Все прочитаны"}
+            </Text>
+          </Stack>
+          {unreadCount > 0 && (
+            <Button
+              variant="light"
+              color="indigo"
+              size="sm"
+              leftSection={<IconCheck size={16} />}
+              loading={markingAll}
+              onClick={markAllRead}
+            >
+              Отметить все
+            </Button>
+          )}
+        </Group>
+
+        {isLoading ? (
+          <Center py={60}><Loader color="indigo" /></Center>
+        ) : notifs.length === 0 ? (
+          <Center py={80}>
+            <Stack align="center" gap="md">
+              <IconBellOff size={48} color="#d4d4d8" />
+              <Stack gap={4} align="center">
+                <Text fw={500} c="#52525b">Нет уведомлений</Text>
+                <Text size="sm" c="#a1a1aa">Здесь появятся новые события</Text>
+              </Stack>
+            </Stack>
+          </Center>
+        ) : (
+          <Stack gap="xs" className="av-fade-in">
+            {notifs.map((n) => (
+              <Card
+                key={n.id}
+                withBorder
+                radius="md"
+                p="md"
+                style={{
+                  borderColor: n.isRead ? "#e4e4e7" : "#c7d2fe",
+                  background: n.isRead ? "#fff" : "#f5f3ff",
+                  transition: "all 150ms ease",
+                }}
+              >
+                <Group gap="sm" align="flex-start">
+                  <ThemeIcon
+                    variant={n.isRead ? "light" : "filled"}
+                    color="indigo"
+                    size={38}
+                    radius="md"
+                  >
+                    {getNotifIcon(n.type)}
+                  </ThemeIcon>
+                  <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={6} align="center">
+                      <Text size="sm" fw={600} c="#18181b">{n.title}</Text>
+                      {!n.isRead && <Badge color="indigo" size="xs" variant="filled">Новое</Badge>}
+                    </Group>
+                    {n.content && (
+                      <Text size="xs" c="#71717a" className="line-clamp-2">{n.content}</Text>
+                    )}
+                    <Text size="xs" c="#a1a1aa">{formatRelativeDate(n.createdAt)}</Text>
+                  </Stack>
+                  {!n.isRead && (
+                    <ActionIcon
+                      variant="subtle"
+                      color="indigo"
+                      size="sm"
+                      onClick={() => markOneRead(n.id)}
+                      aria-label="Прочитать"
+                    >
+                      <IconCheck size={16} />
+                    </ActionIcon>
+                  )}
+                </Group>
+              </Card>
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Container>
   )
 }

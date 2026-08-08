@@ -1,128 +1,138 @@
-import { useState } from "react"
-import { PrismaClient } from "@prisma/client"
-import LoadingSpinner from "@/components/ui/loading-spinner"
+"use client"
+export const dynamic = "force-dynamic"
 
-const prisma = new PrismaClient()
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+import useSWR from "swr"
+import { Box, Stack, Text, Center, Loader, SimpleGrid, Card, ThemeIcon, Title, Group, Badge, Table, Progress, Divider } from "@mantine/core"
+import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconCheck } from "@tabler/icons-react"
+import Link from "next/link"
 
-  // In a real implementation, we would use useSession here as well
-  // but since AdminLayout already checks for admin role, we can assume user is admin
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-  const loadStats = async () => {
-    try {
-      setLoading(true)
-      const [usersCount, vehiclesCount, partsCount, listingsCount, featuredListingsCount] = await prisma.$transaction([
-        prisma.user.count(),
-        prisma.vehicle.count(),
-        prisma.part.count(),
-        prisma.listing.count(),
-        prisma.listing.count({ where: { isFeatured: true } })
-      ])
-
-      setStats({
-        users: usersCount,
-        vehicles: vehiclesCount,
-        parts: partsCount,
-        listings: listingsCount,
-        featured: featuredListingsCount
-      })
-    } catch (error) {
-      console.error("Error loading admin stats:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Simulate useEffect for data loading - in real app, we'd use useEffect
-  // But for simplicity in this example, we'll call it directly
-  // In a real Next.js 13+ app, we'd use useEffect or fetch in server component
-  // For now, we'll note that this needs proper implementation
-
-  return (
-    <div className="p-6">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">
-        Админ-панель AutoRent Markt
-      </h1>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner />
-        </div>
-      ) : stats ? (
-        <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Пользователи</h3>
-            <p className="text-3xl font-bold text-primary">{stats.users}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Транспорт</h3>
-            <p className="text-3xl font-bold text-primary">{stats.vehicles}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Запчасти</h3>
-            <p className="text-3xl font-bold text-primary">{stats.parts}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Объявления</h3>
-            <p className="text-3xl font-bold text-primary">{stats.listings}</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Из них в продвижении: {stats.featured}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Загрузка статистики...</p>
-        </div>
-      )}
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Управление пользователями</h2>
-          <p className="text-gray-600 mb-4">
-            Просмотр, блокировка и управление ролями пользователей
-          </p>
-          <a
-            href="/admin/users"
-            className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Перейти к управлению пользователями
-          </a>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Управление объявлениями</h2>
-          <p className="text-gray-600 mb-4">
-            Просмотр, удаление и управление продвижением объявлений
-          </p>
-          <a
-            href="/admin/listings"
-            className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Перейти к управлению объявлениями
-          </a>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Управление транспортом и запчастями</h2>
-          <p className="text-gray-600 mb-4">
-            Просмотр и управление каталогом транспортных средств и запчастей
-          </p>
-          <a
-            href="/admin/inventory"
-            className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Перейти к управлению'inventaireм
-          </a>
-        </div>
-      </div>
-    </div>
-  )
+const VEHICLE_TYPE_LABELS: Record<string, string> = {
+  CAR: "Легковые", MOTORCYCLE: "Мото", TRUCK: "Грузовики", SPECIAL: "Спецтехника", WATER: "Водный", AIR: "Авиа",
 }
 
-// In a real implementation, we would import useState from react
-// For the purpose of this example, we're showing the intended structure
-// The actual implementation would need to properly use React hooks
+export default function AdminDashboard() {
+  const { data, isLoading } = useSWR<any>("/api/admin/stats", fetcher)
+
+  if (isLoading) return <Center py={80}><Loader color="indigo" /></Center>
+
+  const c = data?.counts || {}
+  const stats = [
+    { label: "Пользователи", value: c.users ?? 0, icon: <IconUsers size={18} />, color: "indigo", href: "/admin/users", new: data?.recent?.newUsers },
+    { label: "Объявления", value: c.listings ?? 0, icon: <IconTag size={18} />, color: "blue", new: data?.recent?.newListings },
+    { label: "Транспорт", value: c.vehicles ?? 0, icon: <IconCar size={18} />, color: "teal" },
+    { label: "Запчасти", value: c.parts ?? 0, icon: <IconCar size={18} />, color: "green" },
+    { label: "Сообщения", value: c.messages ?? 0, icon: <IconMessageCircle2 size={18} />, color: "cyan" },
+    { label: "Отзывы", value: c.reviews ?? 0, icon: <IconStar size={18} />, color: "orange" },
+    { label: "Уведомления", value: c.notifications ?? 0, icon: <IconBell size={18} />, color: "red" },
+    { label: "AI-запросы", value: c.aiLogs ?? 0, icon: <IconRobot size={18} />, color: "violet" },
+  ]
+
+  const total = c.listings || 1
+
+  return (
+    <Box p={{ base: "sm", md: "md" }}>
+      <Stack gap="md">
+        <Group justify="space-between" align="center">
+          <Stack gap={0}>
+            <Title order={2} size="h3" ff="var(--font-display),sans-serif">Дашборд</Title>
+            <Text size="xs" c="#71717a">Обзор платформы в реальном времени</Text>
+          </Stack>
+          <Badge variant="light" color="red" size="md" leftSection={<IconCheck size={12} />}>ADMIN</Badge>
+        </Group>
+
+        {/* Основные метрики */}
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+          {stats.map((s) => (
+            <Card key={s.label} withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}
+              component={s.href ? Link : "div"} href={s.href || undefined}>
+              <Group gap="sm" align="flex-start" justify="space-between">
+                <Stack gap={0}>
+                  <Text size="xl" fw={800} c="#18181b" ff="var(--font-display),sans-serif" lh={1}>{s.value}</Text>
+                  <Text size="xs" c="#71717a" mt={2}>{s.label}</Text>
+                  {s.new != null && s.new > 0 && (
+                    <Group gap={3} mt={4}>
+                      <IconTrendingUp size={11} color="#16a34a" />
+                      <Text size="10px" c="#16a34a" fw={600}>+{s.new} за неделю</Text>
+                    </Group>
+                  )}
+                </Stack>
+                <ThemeIcon variant="light" color={s.color} size={36} radius="md">{s.icon}</ThemeIcon>
+              </Group>
+            </Card>
+          ))}
+        </SimpleGrid>
+
+        {/* Распределение по категориям */}
+        <Card withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+          <Group justify="space-between" mb="sm">
+            <Text size="sm" fw={600} c="#18181b">Объявления по категориям транспорта</Text>
+            <Badge variant="light" color="indigo" size="sm">{c.listings} всего</Badge>
+          </Group>
+          <Stack gap="xs">
+            {Object.entries(data?.byVehicleType || {}).map(([type, count]) => {
+              const pct = Math.round(((count as number) / (c.vehicles || 1)) * 100)
+              return (
+                <Group gap="sm" key={type}>
+                  <Text size="xs" c="#52525b" style={{ width: 90, flexShrink: 0 }}>{VEHICLE_TYPE_LABELS[type] || type}</Text>
+                  <Progress value={pct} size="sm" radius="sm" style={{ flex: 1 }} color="indigo" />
+                  <Text size="xs" c="#71717a" style={{ width: 40, flexShrink: 0, textAlign: "right" }}>{count as number}</Text>
+                </Group>
+              )
+            })}
+          </Stack>
+        </Card>
+
+        {/* Доп. статистика */}
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+          <Card withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+            <Stack gap="xs">
+              <Group gap="sm"><IconFlame size={16} color="#f97316" /><Text size="xs" c="#71717a">Премиум-объявления</Text></Group>
+              <Text size="xl" fw={700} c="#18181b">{data?.featured ?? 0}</Text>
+              <Text size="xs" c="#a1a1aa">{Math.round(((data?.featured ?? 0) / total) * 100)}% от всех</Text>
+            </Stack>
+          </Card>
+          <Card withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+            <Stack gap="xs">
+              <Group gap="sm"><IconTrendingUp size={16} color="#16a34a" /><Text size="xs" c="#71717a">Средняя цена</Text></Group>
+              <Text size="xl" fw={700} c="#18181b">{data?.avgPrice?.toLocaleString("ru-RU") ?? 0} ₽</Text>
+              <Text size="xs" c="#a1a1aa">по всем объявлениям</Text>
+            </Stack>
+          </Card>
+          <Card withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+            <Stack gap="xs">
+              <Group gap="sm"><IconUsers size={16} color="#4f46e5" /><Text size="xs" c="#71717a">Роли</Text></Group>
+              {Object.entries(data?.byRole || {}).map(([role, count]) => (
+                <Group key={role} justify="space-between">
+                  <Text size="xs" c="#52525b">{role}</Text>
+                  <Text size="xs" fw={600} c="#18181b">{count as number}</Text>
+                </Group>
+              ))}
+            </Stack>
+          </Card>
+        </SimpleGrid>
+
+        {/* Быстрые действия */}
+        <Card withBorder radius="md" p="md" style={{ borderColor: "#f4f4f5" }}>
+          <Text size="sm" fw={600} c="#18181b" mb="sm">Управление</Text>
+          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
+            <Card component={Link} href="/admin/users" withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}>
+              <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconUsers size={16} /></ThemeIcon><Text size="xs" fw={500}>Пользователи</Text></Group>
+            </Card>
+            <Card component={Link} href="/category/cars" withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}>
+              <Group gap="sm"><ThemeIcon variant="light" color="blue" size={32} radius="md"><IconCar size={16} /></ThemeIcon><Text size="xs" fw={500}>Объявления</Text></Group>
+            </Card>
+            <Card component={Link} href="/category/parts" withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}>
+              <Group gap="sm"><ThemeIcon variant="light" color="green" size={32} radius="md"><IconTag size={16} /></ThemeIcon><Text size="xs" fw={500}>Запчасти</Text></Group>
+            </Card>
+            <Card component={Link} href="/messages" withBorder radius="md" p="sm" style={{ borderColor: "#f4f4f5" }}>
+              <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={32} radius="md"><IconMessageCircle2 size={16} /></ThemeIcon><Text size="xs" fw={500}>Сообщения</Text></Group>
+            </Card>
+          </SimpleGrid>
+        </Card>
+      </Stack>
+    </Box>
+  )
+}
