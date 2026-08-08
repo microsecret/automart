@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useForm } from "@mantine/form"
+import Link from "next/link"
 import { signIn } from "next-auth/react"
 import {
   TextInput,
@@ -79,7 +80,8 @@ export default function SignInForm() {
             Войти
           </Button>
         </Stack>
-      </form>
+      <Text size="xs" c="gray.5" ta="right"><Link href="/auth/forgot-password" style={{ color: "#4f46e5" }}>Забыли пароль?</Link></Text>
+    </form>
 
       <Divider label="или" labelPosition="center" />
 

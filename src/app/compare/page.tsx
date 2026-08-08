@@ -5,7 +5,7 @@ import useSWR from "swr"
 import { Container, Stack, Title, Text, Center, Button, ThemeIcon, Box, SimpleGrid, Paper, Group, Loader, Image, Badge, Divider } from "@mantine/core"
 import { IconGitCompare, IconArrowLeft, IconX } from "@tabler/icons-react"
 import Link from "next/link"
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { formatPrice } from "@/lib/format"
 import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS } from "@/lib/constants"
@@ -34,7 +34,15 @@ const COMPARE_FIELDS = [
 
 function CompareContent() {
   const sp = useSearchParams()
-  const ids = sp.get("ids")?.split(",").filter(Boolean) || []
+  const [localIds, setLocalIds] = useState<string[]>([])
+
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("compare-ids") : null
+    if (saved) setLocalIds(saved.split(",").filter(Boolean))
+  }, [])
+
+  const urlIds = sp.get("ids")?.split(",").filter(Boolean) || []
+  const ids = [...new Set([...urlIds, ...localIds])].slice(0, 4)
 
   const { data, isLoading } = useSWR(
     ids.length > 0 ? "/api/listings?ids=" + ids.join(",") + "&limit=10" : null,
@@ -42,6 +50,11 @@ function CompareContent() {
   )
 
   const vehicles = data?.listings?.map((l) => l.vehicle).filter(Boolean) || []
+
+    const clearCompare = () => {
+    localStorage.removeItem("compare-ids")
+    setLocalIds([])
+  }
 
   if (ids.length === 0) {
     return (
@@ -89,9 +102,10 @@ function CompareContent() {
             <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Сравнение</Text>
             <Text size="xs" c="gray.5">{vehicles.length} автомобиля</Text>
           </Stack>
-          <Button component={Link} href="/" variant="subtle" color="gray" size="sm" leftSection={<IconArrowLeft size={14} />}>
-            Назад
-          </Button>
+          <Group gap="xs">
+            <Button component={Link} href="/" variant="subtle" color="gray" size="sm" leftSection={<IconArrowLeft size={14} />}>Назад</Button>
+            <Button variant="subtle" color="red" size="sm" leftSection={<IconX size={14} />} onClick={clearCompare}>Очистить</Button>
+          </Group>
         </Group>
 
         <Paper radius="md" withBorder p="md" style={{ overflowX: "auto" }}>

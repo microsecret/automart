@@ -132,7 +132,53 @@ export default function AdminDashboard() {
             </Card>
           </SimpleGrid>
         </Card>
+        {/* Модерация объявлений */}
+        <ModerationSection />
       </Stack>
     </Box>
+  )
+}
+
+function ModerationSection() {
+  const { data, isLoading, mutate } = useSWR<any>("/api/admin/listings", fetcher)
+  const listings = data?.listings || []
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Удалить объявление?")) return
+    await fetch(`/api/admin/listings?id=${id}`, { method: "DELETE" })
+    mutate()
+  }
+
+  return (
+    <Card withBorder radius="md" p="md">
+      <Stack gap="sm">
+        <Group justify="space-between" align="center">
+          <Group gap="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconFlame size={18} /></ThemeIcon><Text fw={700} c="dark.9">Модерация объявлений</Text></Group>
+          <Badge size="sm" variant="light" color="gray">{listings.length}</Badge>
+        </Group>
+        {isLoading ? <Center py={20}><Loader size="sm" color="indigo" /></Center> : (
+          <Stack gap="xs" style={{ maxHeight: 400, overflow: "auto" }}>
+            {listings.slice(0, 20).map((l: any) => (
+              <Group key={l.id} gap="sm" align="center" justify="space-between" p="xs" style={{ background: "var(--mantine-color-gray-0)", borderRadius: 8 }}>
+                <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                  <IconTag size={16} color="#71717a" />
+                  <Stack gap={0} style={{ minWidth: 0 }}>
+                    <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</Text>
+                    <Text size="xs" c="gray.5">{l.user?.name || l.user?.email} · {l.vehicle ? `${l.vehicle.make} ${l.vehicle.model}` : l.part?.name}</Text>
+                  </Stack>
+                </Group>
+                <Group gap="xs">
+                  <Text size="xs" fw={700} c="dark.9">{(l.price || 0).toLocaleString("ru")}₽</Text>
+                  <Link href={l.vehicle ? `/listings/vehicle/${l.vehicle.id}` : `/listings/part/${l.part?.id}`} target="_blank">
+                    <Badge size="xs" variant="light" color="indigo">Открыть</Badge>
+                  </Link>
+                  <Badge size="xs" variant="light" color="red" style={{ cursor: "pointer" }} onClick={() => handleDelete(l.id)}>Удалить</Badge>
+                </Group>
+              </Group>
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Card>
   )
 }

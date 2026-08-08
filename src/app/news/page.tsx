@@ -4,8 +4,8 @@ export const dynamic = "force-dynamic"
 
 import { useState } from "react"
 import useSWR from "swr"
-import { Box, Stack, Text, Group, Center, Loader, Pagination, SimpleGrid, Card, ThemeIcon, Anchor } from "@mantine/core"
-import { IconNews, IconClock, IconMessageCircle2, IconExternalLink } from "@tabler/icons-react"
+import { Box, Stack, Text, Group, Center, Loader, Pagination, SimpleGrid, Card, ThemeIcon, Anchor, TextInput } from "@mantine/core"
+import { IconNews, IconClock, IconMessageCircle2, IconExternalLink, IconSearch } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
 
@@ -13,7 +13,8 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function NewsPage() {
   const [page, setPage] = useState(1)
-  const { data, isLoading } = useSWR<{ news: any[]; pagination: any }>(`/api/news?page=${page}&limit=12`, fetcher)
+  const [q, setQ] = useState("")
+  const { data, isLoading } = useSWR<{ news: any[]; pagination: any }>(`/api/news?page=${page}&limit=12${q ? `&q=${encodeURIComponent(q)}` : ""}`, fetcher)
 
   return (
     <Box p={{ base: "sm", md: "md" }}>
@@ -25,6 +26,8 @@ export default function NewsPage() {
             <Text size="xs" c="gray.5">{data?.pagination?.total || "—"} публикаций</Text>
           </Stack>
         </Group>
+
+        <TextInput placeholder="Поиск по новостям..." leftSection={<IconSearch size={16} />} value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} size="sm" radius="md" mb="sm" />
 
         {isLoading ? (
           <Center py={60}><Loader color="indigo" size="sm" /></Center>

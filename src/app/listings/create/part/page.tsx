@@ -1,349 +1,135 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { PrismaClient } from "@prisma/client"
-import ImageUploader from "@/components/uploads/image-uploader"
 import { useSession } from "next-auth/react"
+import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge } from "@mantine/core"
+import { IconPlus, IconCheck, IconCar, IconTrash } from "@tabler/icons-react"
+import { notifications } from "@mantine/notifications"
+import { PART_TYPES, PART_SUBCATEGORIES, CONDITIONS } from "@/lib/constants"
+import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
 
-const prisma = new PrismaClient()
-
-export default function CreatePartListingPage() {
-  const { data: session } = useSession()
+export default function CreatePartPage() {
+  const { data: session, status } = useSession()
   const router = useRouter()
-
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    price: "",
-    name: "",
-    make: "",
-    model: "",
-    yearFrom: "",
-    yearTo: "",
-    partType: "", // ENGINE, TRANSMISSION, SUSPENSION, BRAKES, ELECTRICAL, BODY, INTERIOR, WHEELS, ACCESSORIES, OTHER
-    condition: "", // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
-    location: ""
-  })
-
-  const [images, setImages] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [f, setF] = useState({
+    name: "", description: "", price: "", condition: "NEW", partType: "ENGINE",
+    make: "", model: "", location: "Москва", subcategory: "", oemNumber: "",
+  })
+  const [compat, setCompat] = useState<{ make: string; model: string; yearFrom: string; yearTo: string }[]>([])
+  const [newCompat, setNewCompat] = useState({ make: "", model: "", yearFrom: "", yearTo: "" })
 
-  const handleChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/auth/signin")
+  }, [status, router])
 
-  const handleImageUpload = (urls: string[]) => {
-    setImages(urls)
+  if (status === "loading") return <Center py={100}><Loader color="indigo" /></Center>
+  if (!session) return null
+
+  const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }))
+  const subcats = f.partType ? PART_SUBCATEGORIES[f.partType] || [] : []
+
+  const addCompat = () => {
+    if (!newCompat.make) return
+    setCompat([...compat, { ...newCompat }])
+    setNewCompat({ make: "", model: "", yearFrom: "", yearTo: "" })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    if (!f.name || !f.price) {
+      notifications.show({ title: "Ошибка", message: "Заполните название и цену", color: "red" })
+      return
+    }
     setLoading(true)
-
-    // Basic validation
-    if (!formData.title.trim()) {
-      setError("Title is required")
-      setLoading(false)
-      return
-    }
-
-    if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
-      setError("Valid price is required")
-      setLoading(false)
-      return
-    }
-
-    if (!formData.name.trim()) {
-      setError("Part name is required")
-      setLoading(false)
-      return
-    }
-
-    if (!formData.make.trim()) {
-      setError("Make is required")
-      setLoading(false)
-      return
-    }
-
-    if (!formData.model.trim()) {
-      setError("Model is required")
-      setLoading(false)
-      return
-    }
-
     try {
-      // Create the part first
-      const part = await prisma.part.create({
-        data: {
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          price: parseInt(formData.price),
-          condition: formData.condition.trim() || null,
-          make: formData.make.trim(),
-          model: formData.model.trim(),
-          yearFrom: formData.yearFrom ? parseInt(formData.yearFrom) : null,
-          yearTo: formData.yearTo ? parseInt(formData.yearTo) : null,
-          partType: formData.partType.trim() || null,
-          location: formData.location.trim() || null,
-          images: images.length > 0 ? JSON.stringify(images) : null, // Store as JSON string
-          userId: session?.user.id || ""
-        }
+      const res = await fetch("/api/parts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: f.name, description: f.description, price: Number(f.price),
+          condition: f.condition, partType: f.partType,
+          make: f.make || compat[0]?.make || "Universal", model: f.model || compat[0]?.model || "Universal",
+          yearFrom: compat[0]?.yearFrom ? Number(compat[0].yearFrom) : null,
+          yearTo: compat[0]?.yearTo ? Number(compat[0].yearTo) : null,
+          location: f.location, subcategory: f.subcategory, oemNumber: f.oemNumber,
+          compatibility: compat.map(c => ({ make: c.make, model: c.model, yearFrom: c.yearFrom ? Number(c.yearFrom) : null, yearTo: c.yearTo ? Number(c.yearTo) : null })),
+        }),
       })
-
-      // Create the listing for this part
-      await prisma.listing.create({
-        data: {
-          title: formData.title.trim(),
-          description: formData.description.trim() || null,
-          price: parseInt(formData.price),
-          userId: session?.user.id || "",
-          partId: part.id
-          // vehicleId will be null by default
-        }
-      })
-
-      // Redirect to the part listing page or dashboard
-      router.push(`/dashboard`)
-    } catch (err) {
-      console.error("Error creating part listing:", err)
-      setError("Failed to create listing. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (!session) {
-    router.push("/auth/signin")
-    return null
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Ошибка")
+      notifications.show({ title: "Готово!", message: "Запчасть опубликована", color: "green" })
+      router.push(`/listings/part/${data.id}`)
+    } catch (err: any) {
+      notifications.show({ title: "Ошибка", message: err.message, color: "red" })
+    } finally { setLoading(false) }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Добавить запчасть
-          </h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Заполните форму ниже, чтобы создать объявление о продаже запчасти
-          </p>
-        </div>
+    <Container size="md" py="lg">
+      <Stack gap="md">
+        <Group gap="sm" align="center">
+          <ThemeIcon variant="light" color="green" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
+          <Stack gap={0}>
+            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Продать запчасть</Text>
+            <Text size="xs" c="gray.5">Укажите совместимость — больше продаж</Text>
+          </Stack>
+        </Group>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg shadow p-6">
-          {/* Basic Info */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Название объявления
-              </label>
-              <input
-                id="title"
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                Цена (���₽)
-              </label>
-              <input
-                id="price"
-                type="number"
-                min="0"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                value={formData.price}
-                onChange={(e) => handleChange('price', e.target.value)}
-              />
-            </div>
-          </div>
+        <form onSubmit={handleSubmit}>
+          <Stack gap="md">
+            <Paper radius="md" p="md" withBorder>
+              <Stack gap="sm">
+                <Text fw={700} fz="sm" c="dark.9">Информация о запчасти</Text>
+                <TextInput label="Название" placeholder="Колодки тормозные передние" required value={f.name} onChange={(e) => set("name", e.target.value)} size="sm" />
+                <Group gap="sm" grow>
+                  <Select label="Категория" data={PART_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.partType} onChange={(v) => { set("partType", v || ""); set("subcategory", "") }} size="sm" />
+                  {subcats.length > 0 && <Select label="Подкатегория" data={subcats.map(s => ({ value: s, label: s }))} value={f.subcategory} onChange={(v) => set("subcategory", v || "")} size="sm" />}
+                </Group>
+                <Group gap="sm" grow>
+                  <NumberInput label="Цена, ₽" placeholder="4500" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />
+                  <Select label="Состояние" data={CONDITIONS.map(c => ({ value: c.value, label: c.label }))} value={f.condition} onChange={(v) => set("condition", v || "")} size="sm" />
+                  <TextInput label="OEM номер" placeholder="04465-0E040" value={f.oemNumber} onChange={(e) => set("oemNumber", e.target.value)} size="sm" />
+                </Group>
+                <Textarea label="Описание" placeholder="Состояние, комплектация, гарантия..." value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={3} />
+                <TextInput label="Город" value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
+              </Stack>
+            </Paper>
 
-          {/* Part Details */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">
-              Информация о запчасти
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Название запчасти
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="make" className="block text-sm font-medium text-gray-700 mb-2">
-                  Марка транспортного средства
-                </label>
-                <input
-                  id="make"
-                  type="text"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.make}
-                  onChange={(e) => handleChange('make', e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-2">
-                  Модель транспортного средства
-                </label>
-                <input
-                  id="model"
-                  type="text"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.model}
-                  onChange={(e) => handleChange('model', e.target.value)}
-                />
-              </div>
-            </div>
+            <Paper radius="md" p="md" withBorder>
+              <Stack gap="sm">
+                <Group gap="sm" align="center">
+                  <IconCar size={18} color="#4f46e5" />
+                  <Text fw={700} fz="sm" c="dark.9">Совместимость (на какие авто подходит)</Text>
+                </Group>
+                {compat.length > 0 && (
+                  <Group gap="xs" wrap="wrap">
+                    {compat.map((c, i) => (
+                      <Badge key={i} size="md" variant="light" color="blue" rightSection={<button onClick={() => setCompat(compat.filter((_, idx) => idx !== i))} style={{ border: "none", background: "transparent", cursor: "pointer" }}><IconTrash size={10} /></button>}>
+                        {c.make} {c.model} {c.yearFrom ? `${c.yearFrom}-${c.yearTo || ""}` : ""}
+                      </Badge>
+                    ))}
+                  </Group>
+                )}
+                <Divider />
+                <Group gap="sm" grow align="flex-end">
+                  <Select placeholder="Марка" data={POPULAR_BRANDS.slice(0, 60).map(b => ({ value: b.name, label: b.name }))} searchable value={newCompat.make} onChange={(v) => setNewCompat({ ...newCompat, make: v || "" })} size="xs" />
+                  <Select placeholder="Модель" data={newCompat.make ? getModels(newCompat.make).map(m => ({ value: m, label: m })) : []} searchable value={newCompat.model} onChange={(v) => setNewCompat({ ...newCompat, model: v || "" })} size="xs" />
+                  <TextInput placeholder="Год от" value={newCompat.yearFrom} onChange={(e) => setNewCompat({ ...newCompat, yearFrom: e.target.value })} size="xs" type="number" />
+                  <TextInput placeholder="Год до" value={newCompat.yearTo} onChange={(e) => setNewCompat({ ...newCompat, yearTo: e.target.value })} size="xs" type="number" />
+                  <Button variant="light" color="indigo" size="xs" onClick={addCompat} leftSection={<IconPlus size={14} />}>Добавить</Button>
+                </Group>
+                <Text size="xs" c="gray.5">Добавьте все совместимые авто — запчасть найдут больше покупателей</Text>
+              </Stack>
+            </Paper>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label htmlFor="yearFrom" className="block text-sm font-medium text-gray-700 mb-2">
-                  Год выпуска (от)
-                </label>
-                <input
-                  id="yearFrom"
-                  type="number"
-                  min="1886"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.yearFrom}
-                  onChange={(e) => handleChange('yearFrom', e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="yearTo" className="block text-sm font-medium text-gray-700 mb-2">
-                  Год выпуска (до)
-                </label>
-                <input
-                  id="yearTo"
-                  type="number"
-                  min="1886"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.yearTo}
-                  onChange={(e) => handleChange('yearTo', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label htmlFor="partType" className="block text-sm font-medium text-gray-700 mb-2">
-                  Тип запчасти
-                </label>
-                <select
-                  id="partType"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.partType}
-                  onChange={(e) => handleChange('partType', e.target.value)}
-                >
-                  <option value="">Выберите тип запчасти</option>
-                  <option value="ENGINE">Двигатель</option>
-                  <option value="TRANSMISSION">Коробка передач</option>
-                  <option value="SUSPENSION">Подвеска</option>
-                  <option value="BRAKES">Тормоза</option>
-                  <option value="ELECTRICAL">Электрика</option>
-                  <option value="BODY">Кузов</option>
-                  <option value="INTERIOR">Салон</option>
-                  <option value="WHEELS">Колеса</option>
-                  <option value="ACCESSORIES">Аксессуары</option>
-                  <option value="OTHER">Другое</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-2">
-                  Состояние
-                </label>
-                <select
-                  id="condition"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.condition}
-                  onChange={(e) => handleChange('condition', e.target.value)}
-                >
-                  <option value="">Выберите состояние</option>
-                  <option value="NEW">Новое</option>
-                  <option value="LIKE_NEW">Как новое</option>
-                  <option value="EXCELLENT">Отличное</option>
-                  <option value="GOOD">Хорошее</option>
-                  <option value="FAIR">Удовлетворительное</option>
-                  <option value="POOR">Плохое</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Расположение
-              </label>
-              <input
-                id="location"
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                value={formData.location}
-                onChange={(e) => handleChange('location', e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">
-              Описание
-            </h2>
-            <textarea
-              id="description"
-              rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-            />
-          </div>
-
-          {/* Image Upload */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">
-              Изображения
-            </h2>
-            <p className="text-sm text-gray-500 mb-2">
-              Вы можете загрузить несколько изображений. Первое изображение будет использовано как главное.
-            </p>
-            <ImageUploader
-              multiple={true}
-              onUploadComplete={handleImageUpload}
-              acceptedFiles={['image/jpeg', 'image/png', 'image/webp']}
-              maxSizeMB={10}
-            />
-          </div>
-
-          {/* Submit Button */}
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              {loading ? "Создание объявления..." : "Опубликовать объявление"}
-            </button>
-          </div>
+            <Button type="submit" size="lg" radius="md" color="green" loading={loading} leftSection={<IconCheck size={18} />}>
+              {loading ? "Публикация..." : "Опубликовать запчасть"}
+            </Button>
+          </Stack>
         </form>
-      </div>
-    </div>
+      </Stack>
+    </Container>
   )
 }
