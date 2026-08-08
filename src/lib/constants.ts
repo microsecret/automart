@@ -148,6 +148,103 @@ export const POPULAR_CITIES = [
   "Красноярск",
 ] as const
 
+// === СПЕЦИФИЧНЫЕ ФИЛЬТРЫ ПО КАТЕГОРИЯМ ===
+
+export const MOTORCYCLE_TYPES = [
+  { value: "SPORT", label: "Спортбайк" },
+  { value: "CRUISER", label: "Круизер" },
+  { value: "ENDURO", label: "Эндуро" },
+  { value: "CHOPPER", label: "Чоппер" },
+  { value: "TOURING", label: "Туристический" },
+  { value: "NAKED", label: "Нейкед" },
+  { value: "ADVENTURE", label: "Адвенчер" },
+  { value: "SCOOTER", label: "Скутер" },
+  { value: "CROSS", label: "Кросс" },
+  { value: "OTHER", label: "Другое" },
+] as const
+
+export const TRUCK_BODY_TYPES = [
+  { value: "TENT", label: "Тент" },
+  { value: "VAN", label: "Фургон" },
+  { value: "DUMP", label: "Самосвал" },
+  { value: "TANKER", label: "Цистерна" },
+  { value: "FLATBED", label: "Бортовая" },
+  { value: "REFRIGERATOR", label: "Рефрижератор" },
+  { value: "CONTAINER", label: "Контейнеровоз" },
+  { value: "TIMBER", label: "Лесовоз" },
+  { value: "TRACTOR", label: "Седельный тягач" },
+  { value: "OTHER", label: "Другое" },
+] as const
+
+export const TRUCK_AXLE_FORMULAS = [
+  { value: "4x2", label: "4×2" },
+  { value: "6x2", label: "6×2" },
+  { value: "6x4", label: "6×4" },
+  { value: "6x6", label: "6×6" },
+  { value: "8x4", label: "8×4" },
+  { value: "8x8", label: "8×8" },
+  { value: "10x10", label: "10×10" },
+] as const
+
+export const SPECIAL_TYPES = [
+  { value: "EXCAVATOR", label: "Экскаватор" },
+  { value: "LOADER", label: "Погрузчик" },
+  { value: "BULLDOZER", label: "Бульдозер" },
+  { value: "CRANE", label: "Кран" },
+  { value: "GRADER", label: "Грейдер" },
+  { value: "ROLLER", label: "Каток" },
+  { value: "TRACTOR_SP", label: "Трактор" },
+  { value: "MIXER", label: "Бетоносмеситель" },
+  { value: "DUMP_SP", label: "Самосвал спец." },
+  { value: "OTHER", label: "Другое" },
+] as const
+
+export const WATER_TYPES = [
+  { value: "JETSKI", label: "Гидроцикл" },
+  { value: "BOAT", label: "Моторная лодка" },
+  { value: "YACHT", label: "Яхта" },
+  { value: "CATAMARAN", label: "Катамаран" },
+  { value: "SAILBOAT", label: "Парусная яхта" },
+  { value: "RIB", label: "RIB (жёсткий корпус)" },
+  { value: "KAYAK", label: "Байдарка / каяк" },
+  { value: "WATERSCOOTER", label: "Водный мотоцикл" },
+  { value: "OTHER", label: "Другое" },
+] as const
+
+export const HULL_MATERIALS = [
+  { value: "PLASTIC", label: "Пластик" },
+  { value: "ALUMINUM", label: "Алюминий" },
+  { value: "STEEL", label: "Сталь" },
+  { value: "WOOD", label: "Дерево" },
+  { value: "CARBON", label: "Карбон" },
+  { value: "INFLATABLE", label: "Надувная" },
+] as const
+
+export const AIR_TYPES = [
+  { value: "HELICOPTER", label: "Вертолёт" },
+  { value: "AIRPLANE", label: "Самолёт" },
+  { value: "GLIDER", label: "Планер" },
+  { value: "ULTRALIGHT", label: "Сверхлёгкий (ULA)" },
+  { value: "GYROCOPTER", label: "Автожир" },
+  { value: "DRONE", label: "БПЛА / Дрон" },
+  { value: "OTHER", label: "Другое" },
+] as const
+
+export const ENGINE_TYPE_AIR = [
+  { value: "PISTON", label: "Поршневой" },
+  { value: "TURBOPROP", label: "Турбовинтовой" },
+  { value: "JET", label: "Реактивный" },
+  { value: "NONE", label: "Без двигателя (планер)" },
+] as const
+
+// Мотоциклетные тормоза
+export const MOTO_BRAKES = [
+  { value: "DISC", label: "Дисковые" },
+  { value: "DRUM", label: "Барабанные" },
+  { value: "ABS", label: "ABS" },
+  { value: "COMBINED", label: "Комбинированные" },
+] as const
+
 export const STEERING_WHEELS = [
   { value: "LEFT", label: "Левый" },
   { value: "RIGHT", label: "Правый" },

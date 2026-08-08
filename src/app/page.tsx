@@ -8,7 +8,7 @@ import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX,
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { getModels, POPULAR_BRANDS } from "@/lib/catalog"
-import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, COUNTRIES_OF_ORIGIN } from "@/lib/constants"
+import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, COUNTRIES_OF_ORIGIN, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES } from "@/lib/constants"
 
 const fetcher = (url) => fetch(url).then((r) => r.json())
 const CAR_COLORS = ["Белый","Чёрный","Серебристый","Серый","Синий","Красный","Зелёный","Коричневый","Бордовый","Золотистый","Жёлтый","Оранжевый"]
@@ -52,6 +52,8 @@ export default function HomePage(p) {
   const brandOptions = POPULAR_BRANDS.slice(0,80).map((b) => ({ value: b.name, label: b.name }))
   const modelOptions = make ? getModels(make).map((m) => ({ value: m, label: m })) : []
   const yearData = Array.from({length:35},(_,i) => ({ value: String(2024-i), label: String(2024-i) }))
+
+  const vt = p.initialVehicleType || "CAR"
 
   const buildQuery = () => {
     const q = new URLSearchParams()
@@ -163,6 +165,7 @@ export default function HomePage(p) {
           <Collapse in={showAdvanced}>
             <Divider my="xs"/>
             <Stack gap="md">
+              {(vt === "CAR" || vt === "TRUCK") && (
               <Group gap="lg" wrap="wrap" align="flex-start">
                 <Box>
                   <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconManualGearbox size={14}/> Коробка передач</Text>
@@ -177,6 +180,7 @@ export default function HomePage(p) {
                   ))}</Group>
                 </Box>
               </Group>
+              )}
 
               <Box>
                 <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconGasStation size={14}/> Тип топлива</Text>
@@ -185,12 +189,55 @@ export default function HomePage(p) {
                 ))}</Group>
               </Box>
 
+              {/* Подтип по категории */}
+              {vt === "CAR" && (
               <Box>
                 <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconCar size={14}/> Тип кузова</Text>
                 <Group gap={6}>{BODY_TYPES.map((b) => (
                   <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{b.label}</Chip>
                 ))}</Group>
               </Box>
+              )}
+              {vt === "MOTORCYCLE" && (
+              <Box>
+                <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconCar size={14}/> Тип мотоцикла</Text>
+                <Group gap={6}>{MOTORCYCLE_TYPES.map((b) => (
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{b.label}</Chip>
+                ))}</Group>
+              </Box>
+              )}
+              {vt === "TRUCK" && (
+              <Box>
+                <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconTruck size={14}/> Тип кузова / надстройки</Text>
+                <Group gap={6}>{TRUCK_BODY_TYPES.map((b) => (
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{b.label}</Chip>
+                ))}</Group>
+              </Box>
+              )}
+              {vt === "SPECIAL" && (
+              <Box>
+                <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconTractor size={14}/> Тип спецтехники</Text>
+                <Group gap={6}>{SPECIAL_TYPES.map((b) => (
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{b.label}</Chip>
+                ))}</Group>
+              </Box>
+              )}
+              {vt === "WATER" && (
+              <Box>
+                <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconSpeedboat size={14}/> Тип судна</Text>
+                <Group gap={6}>{WATER_TYPES.map((b) => (
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{b.label}</Chip>
+                ))}</Group>
+              </Box>
+              )}
+              {vt === "AIR" && (
+              <Box>
+                <Text size="xs" fw={600} c="#52525b" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconPlane size={14}/> Тип воздушного судна</Text>
+                <Group gap={6}>{AIR_TYPES.map((b) => (
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="sm" radius="md">{b.label}</Chip>
+                ))}</Group>
+              </Box>
+              )}
 
               <Group gap="lg" wrap="wrap" align="flex-start">
                 <Box>
@@ -222,6 +269,7 @@ export default function HomePage(p) {
                 </Box>
               </Group>
 
+              {(vt === "CAR" || vt === "TRUCK") && (
               <Group gap="lg" wrap="wrap" align="flex-start">
                 <Box>
                   <Text size="xs" fw={600} c="#52525b" mb={6}>Руль</Text>
@@ -236,6 +284,7 @@ export default function HomePage(p) {
                   ))}</Group>
                 </Box>
               </Group>
+              )}
 
               <Group gap="lg" wrap="wrap" align="flex-start">
                 <Box>
