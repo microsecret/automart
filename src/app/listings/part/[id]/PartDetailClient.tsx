@@ -84,8 +84,9 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const [showPhone, setShowPhone] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
   const [isFav, setIsFav] = useState(false)
-  const images = parseImages(data.images)
-  const hasImages = images.length > 0
+  const rawImages = parseImages(data.images)
+  const images = rawImages.length > 0 ? rawImages : ["/placeholder.svg"]
+  const hasImages = true
 
   return (
     <Container size="xl" py="lg">
@@ -158,6 +159,37 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                 <SpecRow icon={<IconCalendar size={18} />} label="Год до" value={data.yearTo ? String(data.yearTo) : "—"} />
               </SimpleGrid>
             </Card>
+
+            {/* Совместимость */}
+            {data.compatibility && data.compatibility.length > 0 && (
+              <Card withBorder radius="lg" p="lg">
+                <Stack gap="md">
+                  <Group gap="sm" align="center">
+                    <ThemeIcon variant="light" color="green" size={32} radius="md"><IconCheck size={18} /></ThemeIcon>
+                    <Stack gap={0}>
+                      <Title order={3} size="h4">Совместимость</Title>
+                      <Text size="xs" c="gray.5">Подходит на {data.compatibility.length} авто</Text>
+                    </Stack>
+                  </Group>
+                  <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
+                    {data.compatibility.map((c) => (
+                      <Group key={c.id} gap="sm" align="center"
+                        style={{ background: "var(--mantine-color-gray-0)", borderRadius: 10, padding: "10px 12px", border: "1px solid var(--mantine-color-border)" }}>
+                        <ThemeIcon variant="light" color="blue" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
+                        <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                          <Text size="sm" fw={600} c="dark.9">{c.make} {c.model}</Text>
+                          <Text size="xs" c="gray.5">
+                            {c.generation ? c.generation + " · " : ""}
+                            {c.yearFrom || "?"}{c.yearTo ? `-${c.yearTo}` : "+"}
+                            {c.engine ? " · " + c.engine : ""}
+                          </Text>
+                        </Stack>
+                      </Group>
+                    ))}
+                  </SimpleGrid>
+                </Stack>
+              </Card>
+            )}
 
             {/* Описание */}
             {data.description && (
