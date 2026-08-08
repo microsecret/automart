@@ -33,7 +33,6 @@ model User {
   aiServiceLogs AIServiceLog[] @relation("UserAIServiceLogs")
   sessions     Session[] @relation("UserSessions")
   notifications  Notification[] @relation("UserNotifications")
-  comments     Comment[]
 
   @@index([email])
 }
@@ -56,7 +55,6 @@ model Vehicle {
   power        Int?     // in horsepower
   driveType    String?  // FWD, RWD, AWD, FOUR_WD
   condition    String   // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
-  vehicleType   String   @default("CAR")
   location     String   // City, region
   lat          Float?   // Latitude
   lng          Float?   // Longitude
@@ -293,27 +291,4 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@index([token])
-}
-model News {
-  id          String   @id @default(uuid())
-  title       String
-  content     String
-  excerpt     String?
-  imageUrl    String?
-  sourceUrl   String?
-  publishedAt DateTime
-  views       Int      @default(0)
-  createdAt   DateTime @default(now())
-
-  comments    Comment[]
-}
-
-model Comment {
-  id        String   @id @default(uuid())
-  content   String
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  newsId    String?
-  news      News?    @relation(fields: [newsId], references: [id])
-  createdAt DateTime @default(now())
 }

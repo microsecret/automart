@@ -1,0 +1,19 @@
+{
+  "navbar": {
+    "home": "Главная",
+    "transport": "Транспорт",
+    "parts": "Запчасти",
+    "services": "Услуги",
+    "aiServices": "AI-Сервисы",
+    "messages": "Сообщения",
+    "favorites": "Избранное",
+    "notifications": "Уведомления",
+    "reviews": "Отзывы",
+    "searchPlaceholder": "Поиск...",
+    "advancedSearch": "Расширенный поиск"
+  },
+  "language": {
+    "russian": "Русский",
+    "english": "Английский"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "navbar": {
+    "home": "Home",
+    "transport": "Transport",
+    "parts": "Parts",
+    "services": "Services",
+    "aiServices": "AI Services",
+    "messages": "Messages",
+    "favorites": "Favorites",
+    "notifications": "Notifications",
+    "reviews": "Reviews",
+    "searchPlaceholder": "Search...",
+    "advancedSearch": "Advanced Search"
+  },
+  "language": {
+    "russian": "Russian",
+    "english": "English"
+  }
+}
