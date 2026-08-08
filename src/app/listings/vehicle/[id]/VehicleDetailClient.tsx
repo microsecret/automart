@@ -11,6 +11,7 @@ import {
   Button,
   Badge,
   Card,
+  Paper,
   SimpleGrid,
   Avatar,
   ActionIcon,
@@ -246,6 +247,75 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               </SimpleGrid>
             </Card>
 
+            {/* Состояние и документы */}
+            <Card withBorder radius="lg" p="lg">
+              <Stack gap="md">
+                <Title order={3} size="h4">Состояние и документы</Title>
+                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+                  {/* Документы */}
+                  <Paper radius="md" p="sm" withBorder style={{ borderColor: data.documentsStatusLabel === "В порядке" ? "#bbf7d0" : "var(--mantine-color-border)", background: data.documentsStatusLabel === "В порядке" ? "#f0fdf4" : "transparent" }}>
+                    <Group gap="sm" align="flex-start">
+                      <ThemeIcon variant="light" color={data.documentsStatusLabel === "В порядке" ? "green" : "red"} size={32} radius="md"><IconShieldCheck size={18} /></ThemeIcon>
+                      <Stack gap={2}>
+                        <Text size="xs" c="gray.5">Документы</Text>
+                        <Text size="sm" fw={600} c="dark.9">{data.documentsStatusLabel || "—"}</Text>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                  {/* Повреждения */}
+                  <Paper radius="md" p="sm" withBorder style={{ borderColor: data.damageInfoLabel === "Не битая" ? "#bbf7d0" : "#fecaca", background: data.damageInfoLabel === "Не битая" ? "#f0fdf4" : "#fef2f2" }}>
+                    <Group gap="sm" align="flex-start">
+                      <ThemeIcon variant="light" color={data.damageInfoLabel === "Не битая" ? "green" : "red"} size={32} radius="md"><IconAlertTriangle size={18} /></ThemeIcon>
+                      <Stack gap={2}>
+                        <Text size="xs" c="gray.5">Состояние кузова</Text>
+                        <Text size="sm" fw={600} c="dark.9">{data.damageInfoLabel || "—"}</Text>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                  {/* Растаможен */}
+                  <Paper radius="md" p="sm" withBorder style={{ borderColor: data.customsCleared ? "#bbf7d0" : "#fde68a", background: data.customsCleared ? "#f0fdf4" : "#fffbeb" }}>
+                    <Group gap="sm" align="flex-start">
+                      <ThemeIcon variant="light" color={data.customsCleared ? "green" : "orange"} size={32} radius="md"><IconCheck size={18} /></ThemeIcon>
+                      <Stack gap={2}>
+                        <Text size="xs" c="gray.5">Растаможен</Text>
+                        <Text size="sm" fw={600} c="dark.9">{data.customsCleared === null ? "—" : data.customsCleared ? "Да" : "Нет"}</Text>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                  {/* Владельцы */}
+                  <Paper radius="md" p="sm" withBorder>
+                    <Group gap="sm" align="flex-start">
+                      <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconUsers size={18} /></ThemeIcon>
+                      <Stack gap={2}>
+                        <Text size="xs" c="gray.5">Владельцев по ПТС</Text>
+                        <Text size="sm" fw={600} c="dark.9">{data.ownersCount ? String(data.ownersCount) : "—"}</Text>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                  {/* Продавец */}
+                  <Paper radius="md" p="sm" withBorder>
+                    <Group gap="sm" align="flex-start">
+                      <ThemeIcon variant="light" color={data.sellerTypeLabel === "Дилер" ? "violet" : "blue"} size={32} radius="md"><IconBuildingStore size={18} /></ThemeIcon>
+                      <Stack gap={2}>
+                        <Text size="xs" c="gray.5">Продавец</Text>
+                        <Text size="sm" fw={600} c="dark.9">{data.sellerTypeLabel || "—"}</Text>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                  {/* Наличие */}
+                  <Paper radius="md" p="sm" withBorder>
+                    <Group gap="sm" align="flex-start">
+                      <ThemeIcon variant="light" color={data.availabilityLabel === "В наличии" ? "green" : "gray"} size={32} radius="md"><IconTruckDelivery size={18} /></ThemeIcon>
+                      <Stack gap={2}>
+                        <Text size="xs" c="gray.5">Наличие</Text>
+                        <Text size="sm" fw={600} c="dark.9">{data.availabilityLabel || "—"}</Text>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                </SimpleGrid>
+              </Stack>
+            </Card>
+
             {/* VIN-паспорт */}
             <Card withBorder radius="lg" p="lg" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 60%)", borderColor: "#bbf7d0" }}>
               <Group justify="space-between" mb="sm">
@@ -394,6 +464,13 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 >
                   {formatPrice(data.price)}
                 </Text>
+                <Badge variant="filled" color="green" size="sm" radius="sm" mb="xs" leftSection={<IconCheck size={12} />}>
+                  Справедливая цена
+                </Badge>
+                <Group gap={6} mb="xs">
+                  <Text size="xs" c="gray.5">в кредит от</Text>
+                  <Text size="sm" fw={700} c="indigo">{Math.round(data.price * 0.025 / 1000)}к ₽/мес</Text>
+                </Group>
                 <Group gap={6}>
                   <IconMapPin size={13} color="gray.4" />
                   <Text size="xs" c="gray.5">{data.location}</Text>
