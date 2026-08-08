@@ -18,6 +18,8 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
   const [sending, setSending] = useState(false)
 
   const { data: article, isLoading } = useSWR<any>(`/api/news/${params.id}`, fetcher)
+  const { data: relatedData } = useSWR<any>("/api/news?limit=4", fetcher)
+  const relatedNews = (relatedData?.news || []).filter((n: any) => n.id !== params.id).slice(0, 3)
 
   const submitComment = async () => {
     if (!comment.trim() || !session) return
@@ -116,6 +118,30 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
               </Group>
             </Card>
           ))}
+        {/* Похожие новости */}
+          {relatedNews.length > 0 && (
+            <Stack gap="sm">
+              <Text size="sm" fw={600} c="dark.9">Читайте также</Text>
+              {relatedNews.map((n: any) => (
+                <Link key={n.id} href={`/news/${n.id}`} style={{ textDecoration: "none" }}>
+                  <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)", transition: "all 150ms" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4f46e5" }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)" }}>
+                    <Group gap="sm" align="flex-start">
+                      <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconNews size={18} /></ThemeIcon>
+                      <Stack gap={2} style={{ flex: 1 }}>
+                        <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{n.title}</Text>
+                        <Group gap={4}>
+                          <IconClock size={11} color="gray.4" />
+                          <Text size="10px" c="gray.4">{formatRelativeDate(n.publishedAt)}</Text>
+                        </Group>
+                      </Stack>
+                    </Group>
+                  </Card>
+                </Link>
+              ))}
+            </Stack>
+          )}
         </Stack>
       </Stack>
     </Box>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import {
   Container,
   Grid,
@@ -21,6 +22,7 @@ import {
   ThemeIcon,
   Breadcrumbs,
   Anchor,
+  Textarea,
   Skeleton,
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
@@ -113,8 +115,32 @@ interface VehicleData {
 
 export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const [showPhone, setShowPhone] = useState(false)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewText, setReviewText] = useState("")
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const { data: session } = useSession()
   const [isFav, setIsFav] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
+  const submitReview = async () => {
+    if (!session) return
+    if (!data.listingId) return
+    setReviewSubmitting(true)
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating: reviewRating, comment: reviewText, listingId: data.listingId }),
+      })
+      if (res.ok) {
+        setReviewText("")
+        setReviewRating(5)
+        notifications.show({ title: "Спасибо!", message: "Отзыв добавлен", color: "green" })
+        setTimeout(() => window.location.reload(), 1000)
+      }
+    } catch {}
+    setReviewSubmitting(false)
+  }
+
   const isMobile = useMediaQuery("(max-width: 768px)")
   const images = parseImages(data.images)
   const hasImages = images.length > 0
@@ -384,9 +410,37 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             )}
 
             {/* Отзывы */}
-            {data.reviews.length > 0 && (
-              <Card withBorder radius="lg" p="lg">
-                <Title order={3} size="h4" mb="md">Отзывы ({data.reviews.length})</Title>
+            <Card withBorder radius="lg" p="lg">
+              <Group justify="space-between" align="center" mb="md">
+                <Title order={3} size="h4">Отзывы ({data.reviews.length})</Title>
+              </Group>
+
+              {/* Форма отзыва */}
+              {session ? (
+                <Paper radius="md" p="md" withBorder mb="md" style={{ background: "var(--mantine-color-gray-0)" }}>
+                  <Stack gap="sm">
+                    <Group gap="sm">
+                      <Text size="sm" fw={600} c="dark.9">Ваш отзыв</Text>
+                      <Rating value={reviewRating} onChange={setReviewRating} size="md" />
+                    </Group>
+                    <Textarea placeholder="Поделитесь впечатлениями об авто..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} size="sm" minRows={2} autosize />
+                    <Group justify="flex-end">
+                      <Button size="sm" color="indigo" radius="md" onClick={submitReview} loading={reviewSubmitting} disabled={!reviewText.trim()}>
+                        Отправить отзыв
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Paper>
+              ) : (
+                <Paper radius="md" p="md" withBorder mb="md" style={{ background: "var(--mantine-color-gray-0)" }}>
+                  <Group gap="sm" justify="center">
+                    <Text size="sm" c="gray.5">Чтобы оставить отзыв,</Text>
+                    <Anchor component={Link} href="/auth/signin" size="sm" c="indigo" fw={600}>войдите</Anchor>
+                  </Group>
+                </Paper>
+              )}
+
+              {data.reviews.length > 0 ? (
                 <Stack gap="md">
                   {data.reviews.map((review) => (
                     <Box key={review.id}>
@@ -406,8 +460,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     </Box>
                   ))}
                 </Stack>
-              </Card>
-            )}
+              ) : (
+                <Text size="sm" c="gray.5" ta="center" py="md">Пока нет отзывов. Будьте первым!</Text>
+              )}
+            </Card>
 
             {/* Похожие */}
             {data.similar.length > 0 && (
