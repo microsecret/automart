@@ -8,6 +8,7 @@ import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, D
 import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconGasStation, IconManualGearbox, IconPalette, IconChevronRight, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { formatPrice } from "@/lib/format"
+import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -91,17 +92,19 @@ function AuctionDetail() {
                 </Paper>
               )}
 
-              {/* Цены */}
-              <Paper radius="md" p="md" withBorder>
-                <Stack gap="xs">
-                  <Text fw={700} fz="sm" c="dark.9">Расчёт стоимости</Text>
-                  <Group justify="space-between"><Text size="sm" c="gray.5">Цена на аукционе</Text><Text size="sm" fw={600} c="dark.9">{listing.sourcePrice.toLocaleString("ru")} {listing.sourceCurrency}</Text></Group>
-                  <Group justify="space-between"><Text size="sm" c="gray.5">В рублях (по курсу)</Text><Text size="sm" fw={600} c="dark.9">{formatPrice(listing.priceRub)}</Text></Group>
-                  <Group justify="space-between"><Text size="sm" c="gray.5">Наценка + услуги</Text><Text size="sm" fw={600} c="dark.9">{formatPrice(listing.markup)}</Text></Group>
-                  <Divider />
-                  <Group justify="space-between"><Text fw={700} c="dark.9">Итого под ключ</Text><Text fw={800} fz="lg" c="orange">{formatPrice(listing.finalPrice)}</Text></Group>
-                </Stack>
-              </Paper>
+              {/* Умный калькулятор */}
+              <AuctionCalculator
+                make={listing.make}
+                model={listing.model}
+                year={listing.year}
+                engineVolume={listing.engineVolume}
+                power={listing.power}
+                fuelType={listing.fuelType}
+                sourcePrice={listing.sourcePrice}
+                sourceCurrency={listing.sourceCurrency}
+                priceRub={listing.priceRub}
+                country={listing.country}
+              />
             </Stack>
           </Box>
 
