@@ -7,10 +7,19 @@ import HomePage from "@/app/page"
 
 function SearchContent() {
   const sp = useSearchParams()
-  // Главная уже читает фильтры через SWR; для /search мы просто рендерим главную,
-  // но передаём начальный запрос через URL ?q=
-  const q = sp.get("q")
-  return <HomePage initialQuery={q || undefined} />
+  const q = sp.get("q") || undefined
+  const type = sp.get("type") || undefined
+  const make = sp.get("make") || undefined
+  const partType = sp.get("partType") || undefined
+  const pageTitle = type === "part" ? "Запчасти" : make ? `${make} — результаты поиска` : "Результаты поиска"
+
+  return (
+    <HomePage
+      initialQuery={q}
+      initialType={type}
+      pageTitle={pageTitle}
+    />
+  )
 }
 
 export default function SearchPage() {

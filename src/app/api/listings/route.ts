@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
 
     const type = sp.get("type") // "vehicle" | "part" | undefined (оба)
     const q = sp.get("q")?.trim()
+    const ids = sp.get("ids") // список ID через запятую для сравнения
     const priceFrom = sp.get("priceFrom")
     const priceTo = sp.get("priceTo")
     const city = sp.get("city")?.trim()
@@ -54,6 +55,10 @@ export async function GET(request: NextRequest) {
     const partCondition = sp.get("partCondition")
 
     const where: Prisma.ListingWhereInput = {}
+    if (ids) {
+      const idArr = ids.split(",").map((x) => x.trim()).filter(Boolean)
+      where.vehicleId = { in: idArr }
+    }
 
     if (type === "vehicle") {
       where.vehicleId = { not: null }

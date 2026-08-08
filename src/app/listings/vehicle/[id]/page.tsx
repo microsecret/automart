@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import VehicleDetailClient from "./VehicleDetailClient"
-import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS } from "@/lib/constants"
+import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -89,6 +89,20 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     driveTypeLabel: vehicle.driveType ? findLabel(DRIVE_TYPES, vehicle.driveType) : null,
     condition: vehicle.condition,
     conditionLabel: findLabel(CONDITIONS, vehicle.condition),
+    steeringWheel: vehicle.steeringWheel,
+    steeringWheelLabel: vehicle.steeringWheel ? findLabel(STEERING_WHEELS, vehicle.steeringWheel) : null,
+    ownersCount: vehicle.ownersCount,
+    documentsStatus: vehicle.documentsStatus,
+    documentsStatusLabel: vehicle.documentsStatus ? findLabel(DOCUMENT_STATUSES, vehicle.documentsStatus) : null,
+    damageInfo: vehicle.damageInfo,
+    damageInfoLabel: vehicle.damageInfo ? findLabel(DAMAGE_INFO, vehicle.damageInfo) : null,
+    sellerType: vehicle.sellerType,
+    sellerTypeLabel: vehicle.sellerType ? findLabel(SELLER_TYPES, vehicle.sellerType) : null,
+    availability: vehicle.availability,
+    availabilityLabel: vehicle.availability ? findLabel(AVAILABILITY_TYPES, vehicle.availability) : null,
+    customsCleared: vehicle.customsCleared,
+    generation: vehicle.generation,
+    keywords: vehicle.keywords,
     location: vehicle.location,
     lat: vehicle.lat,
     lng: vehicle.lng,

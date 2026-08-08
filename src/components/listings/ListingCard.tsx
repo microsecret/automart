@@ -49,6 +49,7 @@ const TRUNCATE_STYLE: React.CSSProperties = {
 
 export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const [isFav, setIsFav] = useState(false)
+  const [activeImg, setActiveImg] = useState(0)
   const [pending, startTransition] = useTransition()
 
   const isVehicle = !!listing.vehicle
@@ -99,8 +100,33 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         <Box pos="relative" style={{ background: "#f4f4f5", lineHeight: 0 }}>
           <AspectRatio ratio={4 / 3}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt={listing.title} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+            <img src={images[activeImg] || image} alt={listing.title} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
           </AspectRatio>
+          {images.length > 1 && (
+            <>
+              {/* Точки навигации */}
+              <Box pos="absolute" bottom={6} left={0} right={0} style={{ display: "flex", justifyContent: "center", gap: 4 }}>
+                {images.slice(0, 5).map((_, i) => (
+                  <Box
+                    key={i}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveImg(i) }}
+                    style={{
+                      width: i === activeImg ? 16 : 6,
+                      height: 6,
+                      borderRadius: 3,
+                      background: i === activeImg ? "#fff" : "rgba(255,255,255,0.5)",
+                      cursor: "pointer",
+                      transition: "all 200ms ease",
+                    }}
+                  />
+                ))}
+              </Box>
+              {/* Счётчик фото */}
+              <Box pos="absolute" top={8} left={8} style={{ background: "rgba(0,0,0,0.6)", borderRadius: 4, padding: "2px 6px" }}>
+                <Text fz={10} c="white" fw={500}>{activeImg + 1}/{images.length}</Text>
+              </Box>
+            </>
+          )}
 
           {/* Бейдж Премиум — слева сверху */}
           {listing.isFeatured && (

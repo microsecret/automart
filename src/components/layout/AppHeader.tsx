@@ -6,6 +6,8 @@ import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { useColorScheme } from "@/components/providers/AppProviders"
+import { IconSun, IconMoon } from "@tabler/icons-react"
 
 interface AppHeaderProps {
   onBurgerClick?: () => void
@@ -14,6 +16,7 @@ interface AppHeaderProps {
 
 export default function AppHeader(_props: AppHeaderProps = {}) {
   const { data: session } = useSession()
+  const { colorScheme, toggleScheme } = useColorScheme()
   const router = useRouter()
   const [query, setQuery] = useState("")
 
@@ -30,8 +33,8 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
       style={{
         zIndex: 200,
         height: 56,
-        background: "#ffffff",
-        borderBottom: "1px solid #f4f4f5",
+        background: colorScheme === "dark" ? "#18181b" : "#ffffff",
+        borderBottom: colorScheme === "dark" ? "1px solid #27272a" : "1px solid #f4f4f5",
         boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
       }}
     >
@@ -48,7 +51,7 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
               }}>
                 <IconCar size={18} color="white" />
               </Box>
-              <Text ff="var(--font-display),sans-serif" fw={800} fz={17} lh={1} c="#18181b" style={{ letterSpacing: "-0.02em" }}>
+              <Text ff="var(--font-display),sans-serif" fw={800} fz={17} lh={1} c={colorScheme === "dark" ? "#fafafa" : "#18181b"} style={{ letterSpacing: "-0.02em" }}>
                 Авторынок
               </Text>
             </Group>
@@ -78,6 +81,17 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
           {/* ПРАВО: Кнопки — разделены визуально */}
           <Group gap={6} wrap="nowrap" align="center">
             {/* Продать — яркая индиго */}
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="md"
+              radius="md"
+              onClick={toggleScheme}
+              aria-label="Сменить тему"
+            >
+              {colorScheme === "dark" ? <IconSun size={18} stroke={1.8} /> : <IconMoon size={18} stroke={1.8} />}
+            </ActionIcon>
+
             <Button
               component={Link}
               href="/listings/create/vehicle"

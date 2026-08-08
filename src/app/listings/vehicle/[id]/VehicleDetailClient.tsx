@@ -42,6 +42,11 @@ import {
   IconUsers,
   IconRoute,
   IconChevronRight,
+  IconSteeringWheel,
+  IconAlertTriangle,
+  IconBuildingStore,
+  IconTruckDelivery,
+  IconCircleCheck,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatPrice, formatMileage, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
@@ -70,6 +75,20 @@ interface VehicleData {
   driveTypeLabel: string | null
   condition: string
   conditionLabel: string
+  steeringWheel: string | null
+  steeringWheelLabel: string | null
+  ownersCount: number | null
+  documentsStatus: string | null
+  documentsStatusLabel: string | null
+  damageInfo: string | null
+  damageInfoLabel: string | null
+  sellerType: string | null
+  sellerTypeLabel: string | null
+  availability: string | null
+  availabilityLabel: string | null
+  customsCleared: boolean | null
+  generation: string | null
+  keywords: string | null
   location: string
   lat: number | null
   lng: number | null
@@ -107,6 +126,13 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
     { icon: <IconBolt size={20} />, label: "Мощность", value: data.power ? `${data.power} л.с.` : "—" },
     { icon: <IconPalette size={20} />, label: "Цвет", value: data.color || "—" },
     { icon: <IconUsers size={20} />, label: "Дверей", value: data.doors ? String(data.doors) : "—" },
+    { icon: <IconSteeringWheel size={20} />, label: "Руль", value: data.steeringWheelLabel || "—" },
+    { icon: <IconUsers size={20} />, label: "Владельцев", value: data.ownersCount ? String(data.ownersCount) : "—" },
+    { icon: <IconShieldCheck size={20} />, label: "Документы", value: data.documentsStatusLabel || "—" },
+    { icon: <IconAlertTriangle size={20} />, label: "Состояние кузова", value: data.damageInfoLabel || "—" },
+    { icon: <IconBuildingStore size={20} />, label: "Продавец", value: data.sellerTypeLabel || "—" },
+    { icon: <IconTruckDelivery size={20} />, label: "Наличие", value: data.availabilityLabel || "—" },
+    { icon: <IconCircleCheck size={20} />, label: "Растаможен", value: data.customsCleared === null ? "—" : data.customsCleared ? "Да" : "Нет" },
   ]
 
   return (
