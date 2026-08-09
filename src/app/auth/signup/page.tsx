@@ -1,12 +1,11 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { Container, Card, Stack, Text, Box, Group, ThemeIcon, Alert } from "@mantine/core"
-import { IconCar, IconCheck, IconInfoCircle } from "@tabler/icons-react"
-import Link from "next/link"
+import { Container, Card, Stack, Text, Box, Group, ThemeIcon } from "@mantine/core"
+import { IconCar, IconCheck } from "@tabler/icons-react"
 import SignUpForm from "@/components/auth/SignUpForm"
 
 const BENEFITS = [
-  "Размещение объявлений бесплатно",
+  "Подтверждение email и телефона",
   "Доступ к проверке истории авто",
   "Безопасные сделки через эскроу",
   "Сохранение избранных объявлений",
@@ -24,7 +23,7 @@ export default function SignUpPage() {
             </Box>
             <Text fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Авторынок</Text>
           </Group>
-          <Text size="sm" c="gray.5" lh={1.6}>Создайте бесплатный аккаунт за 30 секунд.</Text>
+          <Text size="sm" c="gray.5" lh={1.6}>Создайте защищённый аккаунт за минуту.</Text>
           <Stack gap="sm">
             {BENEFITS.map((b) => (
               <Group key={b} gap="sm">
@@ -46,9 +45,6 @@ export default function SignUpPage() {
             <SignUpForm />
           </Card>
 
-          <Text size="xs" c="gray.5">
-            Уже есть аккаунт? <Link href="/auth/signin" style={{ color: "#4f46e5", fontWeight: 600 }}>Войти</Link>
-          </Text>
         </Stack>
       </Group>
     </Container>

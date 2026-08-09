@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "@mantine/form"
 import Link from "next/link"
 import { signIn } from "next-auth/react"
@@ -20,6 +20,10 @@ import { IconAlertCircle, IconAt, IconLock } from "@tabler/icons-react"
 export default function SignInForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [verificationState, setVerificationState] = useState<string | null>(null)
+  useEffect(() => {
+    setVerificationState(new URLSearchParams(window.location.search).get("verified"))
+  }, [])
 
   const form = useForm({
     initialValues: { email: "", password: "" },
@@ -52,6 +56,8 @@ export default function SignInForm() {
 
   return (
     <Stack gap="md">
+      {verificationState === "1" && <Alert color="green" variant="light" radius="md">Email подтверждён. Теперь можно войти.</Alert>}
+      {verificationState === "0" && <Alert color="red" variant="light" radius="md">Ссылка недействительна или устарела. Запросите новое письмо.</Alert>}
       {error && (
         <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light" radius="md">
           {error}

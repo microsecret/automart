@@ -1,7 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { Container, Card, Stack, Text, Box, Group, ThemeIcon, Divider, Alert, Badge } from "@mantine/core"
-import { IconCar, IconShieldCheck, IconChartBar, IconBell, IconInfoCircle } from "@tabler/icons-react"
+import { Container, Card, Stack, Text, Box, Group, ThemeIcon } from "@mantine/core"
+import { IconCar, IconShieldCheck, IconChartBar, IconBell } from "@tabler/icons-react"
 import Link from "next/link"
 import SignInForm from "@/components/auth/SignInForm"
 
@@ -43,10 +43,6 @@ export default function SignInPage() {
             <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Вход в аккаунт</Text>
             <Text size="sm" c="gray.5">Войдите, чтобы управлять объявлениями</Text>
           </Stack>
-
-          <Alert icon={<IconInfoCircle size={16} />} color="indigo" variant="light" radius="md" w="100%">
-            <Text size="xs" c="gray.7"><b>Демо-вход:</b> admin@automart.ru / любой пароль</Text>
-          </Alert>
 
           <Card withBorder radius="lg" p="xl" w={420} shadow="sm">
             <SignInForm />

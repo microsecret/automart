@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useForm } from "@mantine/form"
-import { signIn } from "next-auth/react"
+import Link from "next/link"
 import {
   TextInput,
   PasswordInput,
@@ -14,17 +14,19 @@ import {
   Divider,
   Group,
 } from "@mantine/core"
-import { IconAlertCircle, IconAt, IconLock, IconUser } from "@tabler/icons-react"
+import { IconAlertCircle, IconAt, IconLock, IconPhone, IconUser } from "@tabler/icons-react"
 
 export default function SignUpForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
 
   const form = useForm({
-    initialValues: { name: "", email: "", password: "", confirmPassword: "" },
+    initialValues: { name: "", email: "", phone: "", password: "", confirmPassword: "" },
     validate: {
       name: (v) => (v.trim().length < 2 ? "Минимум 2 символа" : null),
       email: (v) => (/^\S+@\S+\.\S+$/.test(v) ? null : "Введите корректный email"),
+      phone: (v) => (v.replace(/\D/g, "").length >= 10 ? null : "Введите номер телефона"),
       password: (v) => (v.length < 6 ? "Минимум 6 символов" : null),
       confirmPassword: (v, values) => (v !== values.password ? "Пароли не совпадают" : null),
     },
@@ -40,6 +42,7 @@ export default function SignUpForm() {
         body: JSON.stringify({
           name: values.name,
           email: values.email,
+          phone: values.phone,
           password: values.password,
         }),
       })
@@ -48,22 +51,24 @@ export default function SignUpForm() {
         setError(data.error || "Ошибка регистрации")
         return
       }
-      // Авто-вход после регистрации
-      const signInRes = await signIn("credentials", {
-        email: values.email,
-        password: values.password,
-        redirect: false,
-      })
-      if (signInRes?.ok) {
-        window.location.href = "/dashboard"
-      } else {
-        setError("Аккаунт создан. Войдите вручную.")
-      }
+      setSubmittedEmail(values.email.trim())
     } catch {
       setError("Ошибка регистрации. Попробуйте позже.")
     } finally {
       setLoading(false)
     }
+  }
+
+  if (submittedEmail) {
+    return (
+      <Stack gap="md" align="center" ta="center">
+        <Alert color="green" variant="light" radius="md" w="100%">
+          Письмо с подтверждением отправлено на <b>{submittedEmail}</b>.
+        </Alert>
+        <Text size="sm" c="gray.6">Перейдите по ссылке из письма, затем подтвердите номер через Telegram-бота для входа по коду.</Text>
+        <Button component={Link} href="/auth/signin" fullWidth color="indigo">Перейти ко входу</Button>
+      </Stack>
+    )
   }
 
   return (
@@ -92,6 +97,16 @@ export default function SignUpForm() {
             radius="md"
             {...form.getInputProps("email")}
           />
+          <TextInput
+            label="Телефон"
+            placeholder="+7 900 000-00-00"
+            description="Нужен для входа по коду в Telegram и защиты аккаунта"
+            leftSection={<IconPhone size={18} />}
+            inputMode="tel"
+            size="md"
+            radius="md"
+            {...form.getInputProps("phone")}
+          />
           <PasswordInput
             label="Пароль"
             placeholder="Минимум 6 символов"
@@ -119,7 +134,7 @@ export default function SignUpForm() {
       <Group justify="center">
         <Text size="sm" c="gray.5">
           Уже есть аккаунт?{" "}
-          <Anchor href="/auth/signin" size="sm" c="indigo" fw={500}>
+          <Anchor component={Link} href="/auth/signin" size="sm" c="indigo" fw={500}>
             Войти
           </Anchor>
         </Text>
