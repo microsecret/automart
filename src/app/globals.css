@@ -974,6 +974,12 @@ select {
   background: var(--market-field);
 }
 
+.moderation-listing-row {
+  border: 1px solid var(--market-line);
+  border-radius: 10px;
+  background: var(--market-surface-subtle);
+}
+
 @media (max-width: 48em) {
   .home-auctions {
     min-height: 360px;
@@ -1017,6 +1023,10 @@ select {
 
   .parts-workspace {
     grid-template-columns: 1fr;
+  }
+
+  .moderation-listing-row {
+    align-items: flex-start;
   }
 }
 

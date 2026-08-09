@@ -162,6 +162,12 @@ export default function AppHeader() {
                         <Menu.Item component={Link} href="/admin" leftSection={<IconSettings size={15} />} color="red">Админ-панель</Menu.Item>
                       </>
                     )}
+                    {session.user?.role === "MODERATOR" && (
+                      <>
+                        <Menu.Divider />
+                        <Menu.Item component={Link} href="/moderation" leftSection={<IconGavel size={15} />} color="orange">Модерация объявлений</Menu.Item>
+                      </>
+                    )}
                     <Menu.Divider />
                     <Menu.Item leftSection={<IconLogout size={15} />} onClick={() => signOut({ callbackUrl: "/" })} color="red">Выйти</Menu.Item>
                   </Menu.Dropdown>
