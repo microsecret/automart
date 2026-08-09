@@ -20,6 +20,8 @@ import { IconAlertCircle, IconAt, IconLock } from "@tabler/icons-react"
 export default function SignInForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false)
   const [verificationState, setVerificationState] = useState<string | null>(null)
   useEffect(() => {
     setVerificationState(new URLSearchParams(window.location.search).get("verified"))
@@ -36,19 +38,44 @@ export default function SignInForm() {
   const handleSubmit = async (values: { email: string; password: string }) => {
     setLoading(true)
     setError(null)
+    setInfo(null)
+    setNeedsEmailVerification(false)
     try {
       const res = await signIn("credentials", {
         email: values.email,
         password: values.password,
         redirect: false,
       })
-      if (res?.error) {
+      if (res?.error === "EMAIL_NOT_VERIFIED") {
+        setNeedsEmailVerification(true)
+        setError("Сначала подтвердите email по ссылке из письма.")
+      } else if (res?.error) {
         setError("Неверный email или пароль")
       } else if (res?.ok) {
         window.location.href = "/dashboard"
       }
     } catch {
       setError("Ошибка входа. Попробуйте позже.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resendVerification = async () => {
+    setLoading(true)
+    setError(null)
+    setInfo(null)
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.values.email }),
+      })
+      const data = await response.json()
+      if (response.ok) setInfo(data.message)
+      else setError(data.error || "Не удалось отправить письмо")
+    } catch {
+      setError("Не удалось отправить письмо")
     } finally {
       setLoading(false)
     }
@@ -63,6 +90,8 @@ export default function SignInForm() {
           {error}
         </Alert>
       )}
+      {info && <Alert color="green" variant="light" radius="md">{info}</Alert>}
+      {needsEmailVerification && <Button variant="light" color="indigo" onClick={resendVerification} loading={loading}>Отправить письмо повторно</Button>}
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">

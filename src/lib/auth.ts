@@ -18,6 +18,7 @@ export const authOptions = {
         if (!user) return null
         const valid = await bcrypt.compare(credentials.password, user.hashedPassword || "")
         if (!valid) return null
+        if (!user.emailVerified) throw new Error("EMAIL_NOT_VERIFIED")
         return { id: user.id, email: user.email, name: user.name, role: user.role }
       },
     }),
