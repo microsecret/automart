@@ -107,6 +107,10 @@ select {
     padding: 14px 12px 36px;
   }
 
+  .app-main-content {
+    padding-bottom: 92px;
+  }
+
   .market-search-grid,
   .market-result-grid {
     grid-template-columns: 1fr;
@@ -146,6 +150,16 @@ select {
 
   .mobile-bottom-nav a:last-child {
     color: var(--market-primary);
+  }
+
+  .support-chat__launcher {
+    bottom: 88px !important;
+  }
+
+  .support-chat__panel {
+    right: 12px !important;
+    bottom: 88px !important;
+    max-width: calc(100vw - 24px) !important;
   }
 }
 

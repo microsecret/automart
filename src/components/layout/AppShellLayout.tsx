@@ -218,7 +218,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         </Box>
 
         {/* Контент */}
-        <Box component="main" style={{ flex: 1, minWidth: 0 }}>
+        <Box component="main" className="app-main-content" style={{ flex: 1, minWidth: 0 }}>
           {children}
         </Box>
       </Box>
@@ -235,7 +235,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       <nav className="mobile-bottom-nav" aria-label="Основная навигация">
         <Link href="/" aria-label="Главная"><IconHome2 size={18} /><span>Главная</span></Link>
         <Link href="/search" aria-label="Поиск"><IconSearch size={18} /><span>Поиск</span></Link>
-        <Link href="/sell" aria-label="Разместить объявление" className="mobile-bottom-nav__accent"><IconPlus size={20} /><span>Продать</span></Link>
+        <Link href="/listings/create/vehicle" aria-label="Разместить объявление" className="mobile-bottom-nav__accent"><IconPlus size={20} /><span>Продать</span></Link>
         <Link href="/favorites" aria-label="Избранное"><IconHeart size={18} /><span>Избранное</span></Link>
         <Link href="/messages" aria-label="Сообщения"><IconMessageCircle2 size={18} /><span>Чаты</span></Link>
       </nav>

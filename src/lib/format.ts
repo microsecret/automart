@@ -22,6 +22,12 @@ export function formatPriceShort(price: number | null | undefined): string {
   return `${price} ₽`
 }
 
+/** Ориентировочный ежемесячный платёж для краткого отображения в карточке. */
+export function formatMonthlyPayment(price: number | null | undefined): string | null {
+  if (!price || price <= 100_000) return null
+  return `от ${formatPriceShort(Math.round(price * 0.025))}/мес`
+}
+
 /** Форматирование пробега: 45000 → 45 000 км */
 export function formatMileage(mileage: number | null | undefined): string {
   if (mileage == null) return "—"

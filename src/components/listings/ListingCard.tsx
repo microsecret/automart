@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio, Menu, Portal, SimpleGrid } from "@mantine/core"
 import { IconHeart, IconMapPin, IconGauge, IconCalendar, IconManualGearbox, IconGasStation, IconDotsVertical, IconShare } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
+import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import BrandLogo from "@/components/brands/BrandLogo"
 import BrandBadge from "@/components/brands/BrandBadge"
@@ -50,6 +50,7 @@ const TRUNCATE_STYLE: React.CSSProperties = {
 export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const [isFav, setIsFav] = useState(false)
   const [activeImg, setActiveImg] = useState(0)
+  const [imageFailed, setImageFailed] = useState(false)
 
   useEffect(() => {
     fetch("/api/favorites").then(r => r.json()).then(d => {
@@ -58,6 +59,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         if (ids.includes(listing.id)) setIsFav(true)
       }
     }).catch(() => {})
+  }, [listing.id])
+  useEffect(() => {
+    setActiveImg(0)
+    setImageFailed(false)
   }, [listing.id])
   const [pending, startTransition] = useTransition()
 
@@ -70,6 +75,9 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const fallbackImage = isVehicle ? "/images/home/listing-fallback.png" : "/placeholder.svg"
   const sourceImage = images[0] || ""
   const image = sourceImage.includes("/placeholder/") ? fallbackImage : sourceImage || fallbackImage
+  const activeImage = images[activeImg] || image
+  const displayImage = imageFailed || activeImage.includes("/placeholder/") ? fallbackImage : activeImage
+  const monthlyPayment = formatMonthlyPayment(listing.price)
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -87,8 +95,8 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   }
 
   return (
-    <Link href={detailHref} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-      <Card
+    <Card
+        pos="relative"
         padding={0}
         radius="md"
         withBorder
@@ -109,23 +117,31 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           e.currentTarget.style.transform = ""
         }}
       >
+        <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         {/* Фото область */}
         <Box pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
           <AspectRatio ratio={1}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={(images[activeImg] || image).includes("/placeholder/") ? fallbackImage : images[activeImg] || image} alt={listing.title} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImage }} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
+            <img src={displayImage} alt={listing.title} onError={() => setImageFailed(true)} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
           </AspectRatio>
           {images.length > 1 && (
             <>
               {/* Точки навигации */}
               <Box pos="absolute" bottom={6} left={0} right={0} style={{ display: "flex", justifyContent: "center", gap: 4 }}>
                 {images.slice(0, 5).map((_, i) => (
-                  <Box
+                  <ActionIcon
                     key={i}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveImg(i) }}
+                    onClick={() => { setActiveImg(i); setImageFailed(false) }}
+                    aria-label={`Фото ${i + 1}`}
+                    variant="transparent"
                     style={{
+                      position: "relative",
+                      zIndex: 2,
                       width: i === activeImg ? 16 : 6,
                       height: 6,
+                      minWidth: i === activeImg ? 16 : 6,
+                      minHeight: 6,
+                      padding: 0,
                       borderRadius: 3,
                       background: i === activeImg ? "#fff" : "rgba(255,255,255,0.5)",
                       cursor: "pointer",
@@ -135,7 +151,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 ))}
               </Box>
               {/* Счётчик фото */}
-              <Box pos="absolute" top={8} left={8} style={{ background: "rgba(0,0,0,0.6)", borderRadius: 4, padding: "2px 6px" }}>
+              <Box pos="absolute" top={8} left={listing.isFeatured ? 76 : 8} style={{ background: "rgba(0,0,0,0.6)", borderRadius: 4, padding: "2px 6px", zIndex: 2 }}>
                 <Text fz={10} c="white" fw={500}>{activeImg + 1}/{images.length}</Text>
               </Box>
             </>
@@ -143,20 +159,20 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
 
           {/* Бейдж Премиум — слева сверху */}
           {listing.isFeatured && (
-            <Box pos="absolute" top={8} left={8}>
+            <Box pos="absolute" top={8} left={8} style={{ zIndex: 2 }}>
               <Badge color="dark" variant="filled" size="sm" radius="sm">Премиум</Badge>
             </Box>
           )}
 
           {/* Цветная иконка бренда — справа сверху */}
           {isVehicle && (
-            <Box pos="absolute" top={8} right={8}>
+            <Box pos="absolute" top={8} right={8} style={{ zIndex: 2 }}>
               <BrandIcon brand={listing.vehicle!.make} size={28} variant="rounded" />
             </Box>
           )}
 
           {/* Сердечко — справа снизу */}
-          <Box pos="absolute" bottom={8} right={8}>
+          <Box pos="absolute" bottom={8} right={8} style={{ zIndex: 2 }}>
             <ActionIcon
               color={isFav ? "red" : "dark"}
               variant="filled"
@@ -179,9 +195,9 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             <Text fw={800} fz="md" lh={1.1} c="dark.9" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.01em" }}>
               {formatPriceShort(listing.price)}
             </Text>
-            {listing.price && listing.price > 100000 && (
+            {monthlyPayment && (
               <Text fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>
-                от {Math.round(listing.price * 0.025 / 1000)}к/мес
+                {monthlyPayment}
               </Text>
             )}
           </Group>
@@ -233,6 +249,5 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           </Group>
         </Box>
       </Card>
-    </Link>
   )
 }

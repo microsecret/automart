@@ -81,7 +81,7 @@ export default function SupportChat() {
   return (
     <>
       {/* Кнопка открытия — fixed в правом нижнем углу */}
-      <Box pos="fixed" bottom={20} right={20} z={500}>
+      <Box className="support-chat__launcher" pos="fixed" bottom={20} right={20} z={500}>
         {!open && (
           <ActionIcon
             color="indigo"
@@ -99,7 +99,7 @@ export default function SupportChat() {
 
       {/* Окно чата */}
       {open && (
-        <Box pos="fixed" bottom={20} right={20} z={500} style={{ width: 340, maxWidth: "calc(100vw - 40px)" }}>
+        <Box className="support-chat__panel" pos="fixed" bottom={20} right={20} z={500} style={{ width: 340, maxWidth: "calc(100vw - 40px)" }}>
           <Paper radius="md" withBorder shadow="lg" style={{ borderColor: "var(--mantine-color-border)", overflow: "hidden" }}>
             {/* Шапка */}
             <Group justify="space-between" p="sm" style={{ background: "var(--mantine-color-text)" }}>

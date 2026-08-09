@@ -12,6 +12,16 @@ function parseInteger(value: string | null, fallback?: number) {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : fallback
 }
 
+function parseValues(value: string | null) {
+  return (value || "").split(",").map((item) => item.trim()).filter(Boolean)
+}
+
+function oneOrMany(value: string | null) {
+  const values = parseValues(value)
+  if (values.length === 0) return undefined
+  return values.length === 1 ? values[0] : { in: values }
+}
+
 function normalizeListing<T extends {
   vehicle?: { location?: string | null } | null
   part?: { location?: string | null } | null
@@ -112,12 +122,15 @@ export async function GET(request: NextRequest) {
       if (minYear !== undefined) vehicleFilters.year.gte = minYear
       if (maxYear !== undefined) vehicleFilters.year.lte = maxYear
     }
-    if (fuelType) vehicleFilters.fuelType = fuelType
+    const fuelTypes = oneOrMany(fuelType)
+    if (fuelTypes) vehicleFilters.fuelType = fuelTypes
     if (transmission) vehicleFilters.transmission = transmission
-    if (bodyType) vehicleFilters.bodyType = bodyType
+    const bodyTypes = oneOrMany(bodyType)
+    if (bodyTypes) vehicleFilters.bodyType = bodyTypes
     if (driveType) vehicleFilters.driveType = driveType
     if (color) vehicleFilters.color = { contains: color }
-    if (condition) vehicleFilters.condition = condition
+    const conditions = oneOrMany(condition)
+    if (conditions) vehicleFilters.condition = conditions
     if (steeringWheel) vehicleFilters.steeringWheel = steeringWheel
     if (documentsStatus) vehicleFilters.documentsStatus = documentsStatus
     if (damageInfo) vehicleFilters.damageInfo = damageInfo

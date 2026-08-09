@@ -54,9 +54,13 @@ import {
   IconBuildingStore,
   IconTruckDelivery,
   IconCircleCheck,
+  IconPlane,
+  IconSpeedboat,
+  IconMotorbike,
+  IconTractor,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatPrice, formatMileage, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
+import { formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
 import Photo360Viewer from "@/components/viewer/Photo360Viewer"
 import CreditCalculator from "@/components/listings/CreditCalculator"
 
@@ -66,6 +70,8 @@ interface VehicleData {
   model: string
   year: number
   price: number
+  vehicleType: string
+  typeDetails: string | null
   mileage: number
   vin: string
   fuelType: string
@@ -115,6 +121,15 @@ interface VehicleData {
   similar: { id: string; title: string; price: number; year: number; listingId?: string }[]
 }
 
+const VEHICLE_META: Record<string, { label: string; detailLabel: string; icon: React.ReactNode }> = {
+  CAR: { label: "Автомобили", detailLabel: "Кузов", icon: <IconCar size={20} /> },
+  MOTORCYCLE: { label: "Мотоциклы", detailLabel: "Тип мотоцикла", icon: <IconMotorbike size={20} /> },
+  TRUCK: { label: "Грузовики", detailLabel: "Надстройка", icon: <IconTruckDelivery size={20} /> },
+  SPECIAL: { label: "Спецтехника", detailLabel: "Тип техники", icon: <IconTractor size={20} /> },
+  WATER: { label: "Водный транспорт", detailLabel: "Тип судна", icon: <IconSpeedboat size={20} /> },
+  AIR: { label: "Воздушный транспорт", detailLabel: "Тип воздушного судна", icon: <IconPlane size={20} /> },
+}
+
 export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const [showPhone, setShowPhone] = useState(false)
   const [reviewRating, setReviewRating] = useState(5)
@@ -146,25 +161,28 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const images = parseImages(data.images)
   const hasImages = images.length > 0
+  const typeMeta = VEHICLE_META[data.vehicleType] || VEHICLE_META.CAR
+  const isRoadVehicle = ["CAR", "MOTORCYCLE", "TRUCK", "SPECIAL"].includes(data.vehicleType)
+  const typeDetails = parseTypeDetails(data.typeDetails)
+  const additionalSpecs = Object.entries(typeDetails).filter(([, value]) => value !== null && value !== "")
 
   const specs = [
     { icon: <IconCalendar size={20} />, label: "Год", value: String(data.year) },
-    { icon: <IconGauge size={20} />, label: "Пробег", value: formatMileage(data.mileage) },
-    { icon: <IconCar size={20} />, label: "Кузов", value: data.bodyTypeLabel || "—" },
+    { icon: <IconGauge size={20} />, label: data.vehicleType === "AIR" || data.vehicleType === "WATER" ? "Наработка" : "Пробег", value: formatMileage(data.mileage) },
+    { icon: typeMeta.icon, label: typeMeta.detailLabel, value: data.bodyTypeLabel || "—" },
     { icon: <IconGasStation size={20} />, label: "Двигатель", value: data.fuelTypeLabel },
-    { icon: <IconManualGearbox size={20} />, label: "Коробка", value: data.transmissionLabel },
-    { icon: <IconRoute size={20} />, label: "Привод", value: data.driveTypeLabel || "—" },
+    ...(isRoadVehicle ? [
+      { icon: <IconManualGearbox size={20} />, label: "Коробка", value: data.transmissionLabel },
+      { icon: <IconRoute size={20} />, label: "Привод", value: data.driveTypeLabel || "—" },
+    ] : []),
     { icon: <IconEngine size={20} />, label: "Объём", value: data.engineVolume ? `${data.engineVolume} л` : "—" },
     { icon: <IconBolt size={20} />, label: "Мощность", value: data.power ? `${data.power} л.с.` : "—" },
     { icon: <IconPalette size={20} />, label: "Цвет", value: data.color || "—" },
-    { icon: <IconUsers size={20} />, label: "Дверей", value: data.doors ? String(data.doors) : "—" },
-    { icon: <IconSteeringWheel size={20} />, label: "Руль", value: data.steeringWheelLabel || "—" },
-    { icon: <IconUsers size={20} />, label: "Владельцев", value: data.ownersCount ? String(data.ownersCount) : "—" },
-    { icon: <IconShieldCheck size={20} />, label: "Документы", value: data.documentsStatusLabel || "—" },
-    { icon: <IconAlertTriangle size={20} />, label: "Состояние кузова", value: data.damageInfoLabel || "—" },
-    { icon: <IconBuildingStore size={20} />, label: "Продавец", value: data.sellerTypeLabel || "—" },
-    { icon: <IconTruckDelivery size={20} />, label: "Наличие", value: data.availabilityLabel || "—" },
-    { icon: <IconCircleCheck size={20} />, label: "Растаможен", value: data.customsCleared === null ? "—" : data.customsCleared ? "Да" : "Нет" },
+    ...(isRoadVehicle ? [
+      { icon: <IconUsers size={20} />, label: "Дверей", value: data.doors ? String(data.doors) : "—" },
+      { icon: <IconSteeringWheel size={20} />, label: "Руль", value: data.steeringWheelLabel || "—" },
+    ] : []),
+    ...additionalSpecs.map(([label, value]) => ({ icon: <IconCircleCheck size={20} />, label: formatDetailLabel(label), value: String(value) })),
   ]
 
   return (
@@ -172,7 +190,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
       {/* Хлебные крошки */}
       <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="gray.4" />}>
         <Anchor component={Link} href="/" size="sm" c="gray.5">Главная</Anchor>
-        <Anchor component={Link} href="/search?type=vehicle" size="sm" c="gray.5">Автомобили</Anchor>
+        <Anchor component={Link} href={`/search?type=vehicle&vehicleType=${data.vehicleType}`} size="sm" c="gray.5">{typeMeta.label}</Anchor>
         <Text size="sm" c="dark.9">{data.make} {data.model}</Text>
       </Breadcrumbs>
 
@@ -180,11 +198,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         {/* Левая колонка — галерея + характеристики */}
         <Grid.Col span={{ base: 12, md: 8 }}>
           <Stack gap="md">
-            {/* 360° просмотр */}
-            <Photo360Viewer
-              images={images}
-              title={`${data.year} ${data.make} ${data.model} — 360° осмотр`}
-            />
+            {images.length >= 3 && <Photo360Viewer images={images} title={`${data.year} ${data.make} ${data.model} — 360° осмотр`} />}
 
             {/* Галерея */}
             <Card p={0} radius="lg" withBorder style={{ overflow: "hidden" }}>
@@ -256,7 +270,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             <Card withBorder radius="lg" p="lg">
               <Group justify="space-between" mb="md">
                 <Title order={3} size="h4">Характеристики</Title>
-                <Badge variant="light" color="gray" size="sm">VIN: {data.vin}</Badge>
+                {isRoadVehicle && data.vin && <Badge variant="light" color="gray" size="sm">VIN: {data.vin}</Badge>}
               </Group>
               <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
                 {specs.map((spec, i) => (
@@ -344,8 +358,8 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               </Stack>
             </Card>
 
-            {/* VIN-паспорт */}
-            <Card withBorder radius="lg" p="lg" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 60%)", borderColor: "#bbf7d0" }}>
+            {/* VIN-паспорт выводится только для дорожного транспорта и без демо-утверждений. */}
+            {isRoadVehicle && data.vin && <Card withBorder radius="lg" p="lg" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 60%)", borderColor: "#bbf7d0" }}>
               <Group justify="space-between" mb="sm">
                 <Group gap={8}>
                   <ThemeIcon variant="light" color="green" size={32} radius="md">
@@ -353,24 +367,20 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </ThemeIcon>
                   <Title order={3} size="h4">VIN-паспорт</Title>
                 </Group>
-                <Badge variant="light" color="green" size="md">Проверено</Badge>
+                <Badge variant="light" color="gray" size="md">Данные объявления</Badge>
               </Group>
               <SimpleGrid cols={{ base: 2, md: 3 }} spacing="sm">
                 <VinField label="VIN" value={data.vin} />
                 <VinField label="Пробег" value={formatMileage(data.mileage)} status="ok" />
-                <VinField label="Владельцев по ПТС" value="2" status="ok" />
-                <VinField label="ДТП" value="Не найдено" status="ok" />
-                <VinField label="В розыске" value="Нет" status="ok" />
-                <VinField label="Залог / ограничения" value="Нет" status="ok" />
-                <VinField label="Такси / аренда" value="Не использовалось" status="ok" />
-                <VinField label="Утиль / тотал" value="Нет" status="ok" />
-                <VinField label="Использование в лизинг" value="Нет" status="ok" />
+                <VinField label="Владельцев по ПТС" value={data.ownersCount ? String(data.ownersCount) : "Не указано"} status="ok" />
+                <VinField label="Проверка ограничений" value="Подключается отдельно" />
+                <VinField label="История ДТП" value="Подключается отдельно" />
               </SimpleGrid>
               <Group mt="md" gap="xs">
                 <IconShieldCheck size={14} color="#16a34a" />
-                <Text size="xs" c="#16a34a">Демо-данные. В продакшене — реальная проверка по базам ЕАЭС.</Text>
+                <Text size="xs" c="#16a34a">Проверка по внешним базам будет показана после подключения провайдера.</Text>
               </Group>
-            </Card>
+            </Card>}
 
             {/* Безопасная сделка */}
             <Card withBorder radius="lg" p="lg" style={{ background: "linear-gradient(135deg, #eef2ff 0%, #ffffff 60%)", borderColor: "#c7d2fe" }}>

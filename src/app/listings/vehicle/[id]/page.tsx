@@ -73,6 +73,8 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     model: vehicle.model,
     year: vehicle.year,
     price: vehicle.price,
+    vehicleType: vehicle.vehicleType,
+    typeDetails: vehicle.typeDetails,
     mileage: vehicle.mileage,
     vin: vehicle.vin,
     fuelType: vehicle.fuelType,

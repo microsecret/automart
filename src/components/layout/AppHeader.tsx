@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -9,12 +9,7 @@ import { useState, useEffect } from "react"
 import { useColorScheme } from "@/components/providers/AppProviders"
 import { IconSun, IconMoon } from "@tabler/icons-react"
 
-interface AppHeaderProps {
-  onBurgerClick?: () => void
-  showBurger?: boolean
-}
-
-export default function AppHeader(_props: AppHeaderProps = {}) {
+export default function AppHeader() {
   const { data: session } = useSession()
   const [favCount, setFavCount] = useState(0)
   useEffect(() => {
@@ -96,6 +91,14 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
               {colorScheme === "dark" ? <IconSun size={18} stroke={1.8} /> : <IconMoon size={18} stroke={1.8} />}
             </ActionIcon>
 
+            <ActionIcon component={Link} href="/search" variant="subtle" color="gray" size="md" radius="md" hiddenFrom="sm" aria-label="Открыть поиск">
+              <IconSearch size={18} stroke={1.8} />
+            </ActionIcon>
+
+            <ActionIcon component={Link} href="/listings/create/vehicle" variant="light" color="indigo" size="md" radius="md" hiddenFrom="md" aria-label="Разместить объявление">
+              <IconPlus size={18} stroke={1.8} />
+            </ActionIcon>
+
             <Button
               component={Link}
               href="/listings/create/vehicle"
@@ -168,6 +171,9 @@ export default function AppHeader(_props: AppHeaderProps = {}) {
                 <Button component={Link} href="/auth/signup" variant="filled" color="indigo" size="sm" radius="md" visibleFrom="xs" styles={{ root: { height: 34, fontWeight: 700 } }}>
                   Регистрация
                 </Button>
+                <ActionIcon component={Link} href="/auth/signup" variant="light" color="indigo" size="md" radius="md" hiddenFrom="xs" aria-label="Регистрация">
+                  <IconUserPlus size={18} stroke={1.8} />
+                </ActionIcon>
               </>
             )}
           </Group>

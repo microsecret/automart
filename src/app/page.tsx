@@ -9,7 +9,7 @@ import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX,
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { getModels, POPULAR_BRANDS } from "@/lib/catalog"
-import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, COUNTRIES_OF_ORIGIN, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES } from "@/lib/constants"
+import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES } from "@/lib/constants"
 
 const fetcher = (url) => fetch(url).then((r) => r.json())
 const CAR_COLORS = ["Белый","Чёрный","Серебристый","Серый","Синий","Красный","Зелёный","Коричневый","Бордовый","Золотистый","Жёлтый","Оранжевый"]
@@ -47,7 +47,6 @@ export default function HomePage(p) {
   const [ownersCountFrom, setOwnersCountFrom] = useState("")
   const [ownersCountTo, setOwnersCountTo] = useState("")
   const [mileageFrom, setMileageFrom] = useState("")
-  const [countryOfOrigin, setCountryOfOrigin] = useState(null)
   const [keywords, setKeywords] = useState("")
 
   const brandOptions = POPULAR_BRANDS.slice(0,80).map((b) => ({ value: b.name, label: b.name }))
@@ -76,15 +75,15 @@ export default function HomePage(p) {
     if(yearTo) q.set("yearTo", yearTo)
     if(mileageTo) q.set("mileageTo", mileageTo)
     if(transmission) q.set("transmission", transmission)
-    if(fuelType.length) q.set("fuelType", fuelType[0])
+    if(fuelType.length) q.set("fuelType", fuelType.join(","))
     if(driveType) q.set("driveType", driveType)
-    if(bodyType.length) q.set("bodyType", bodyType[0])
+    if(bodyType.length) q.set("bodyType", bodyType.join(","))
     if(engineVolumeFrom) q.set("engineVolumeFrom", engineVolumeFrom)
     if(engineVolumeTo) q.set("engineVolumeTo", engineVolumeTo)
     if(powerFrom) q.set("powerFrom", powerFrom)
     if(powerTo) q.set("powerTo", powerTo)
     if(color) q.set("color", color)
-    if(condition.length) q.set("condition", condition[0])
+    if(condition.length) q.set("condition", condition.join(","))
     if(steeringWheel) q.set("steeringWheel", steeringWheel)
     if(documentsStatus) q.set("documentsStatus", documentsStatus)
     if(damageInfo) q.set("damageInfo", damageInfo)
@@ -109,11 +108,11 @@ export default function HomePage(p) {
     setSteeringWheel(null); setDocumentsStatus(null); setDamageInfo(null)
     setSellerType(null); setAvailability(null); setCustomsCleared(null)
     setOwnersCountFrom(""); setOwnersCountTo(""); setMileageFrom("")
-    setCountryOfOrigin(null); setKeywords("")
+    setKeywords("")
     setQuery(""); setPage(1)
   }
 
-  const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(countryOfOrigin?1:0)+(keywords?1:0)
+  const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(keywords?1:0)
 
   return (
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
@@ -362,10 +361,6 @@ export default function HomePage(p) {
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Наличие</Text>
                   <Select placeholder="Неважно" data={AVAILABILITY_TYPES.map((a) => ({value:a.value,label:a.label}))} clearable value={availability} onChange={setAvailability} size="sm" w={150}/>
-                </Box>
-                <Box>
-                  <Text size="xs" fw={600} c="gray.6" mb={6}>Страна марки</Text>
-                  <Select placeholder="Неважно" data={COUNTRIES_OF_ORIGIN.map((c) => ({value:c.value,label:c.label}))} clearable value={countryOfOrigin} onChange={setCountryOfOrigin} size="sm" w={160}/>
                 </Box>
               </Group>
 
