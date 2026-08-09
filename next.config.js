@@ -44,8 +44,12 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: false },
   output: 'standalone',
   // На VPS рядом лежат другие package-lock.json. Фиксируем корень именно
-  // Авторынка, чтобы Next не захватывал чужое рабочее пространство в trace.
+  // Авторынка, чтобы Next не захватывал чужое рабочее пространство в trace
+  // и при запуске Turbopack.
   outputFileTracingRoot: __dirname,
+  turbopack: {
+    root: __dirname,
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }]
   },
