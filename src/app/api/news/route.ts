@@ -9,16 +9,25 @@ export async function GET(request: NextRequest) {
     const sp = new URL(request.url).searchParams
     const page = Math.max(1, parseInt(sp.get("page") || "1"))
     const limit = Math.min(50, parseInt(sp.get("limit") || "10"))
+    const q = sp.get("q")?.trim()
     const skip = (page - 1) * limit
+    const where = q ? {
+      OR: [
+        { title: { contains: q } },
+        { content: { contains: q } },
+        { excerpt: { contains: q } },
+      ],
+    } : undefined
 
     const [news, total] = await prisma.$transaction([
       prisma.news.findMany({
+        where,
         orderBy: { publishedAt: "desc" },
         skip,
         take: limit,
         include: { _count: { select: { comments: true } } },
       }),
-      prisma.news.count(),
+      prisma.news.count({ where }),
     ])
 
     return NextResponse.json({

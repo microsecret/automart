@@ -8,8 +8,15 @@ export const dynamic = "force-dynamic"
 /** GET /api/news/[id] — одна новость с комментариями */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const found = await prisma.news.findFirst({
+      where: { OR: [{ id: params.id }, { slug: params.id }] },
+      select: { id: true },
+    })
+
+    if (!found) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
     const news = await prisma.news.update({
-      where: { id: params.id },
+      where: { id: found.id },
       data: { views: { increment: 1 } },
       include: {
         comments: {
@@ -19,7 +26,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       },
     })
 
-    if (!news) return NextResponse.json({ error: "Not found" }, { status: 404 })
     return NextResponse.json(news)
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 })
@@ -35,11 +41,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const { content } = await request.json()
     if (!content?.trim()) return NextResponse.json({ error: "Пустой комментарий" }, { status: 400 })
 
+    const news = await prisma.news.findFirst({
+      where: { OR: [{ id: params.id }, { slug: params.id }] },
+      select: { id: true },
+    })
+
+    if (!news) return NextResponse.json({ error: "Новость не найдена" }, { status: 404 })
+
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
         userId: session.user.id,
-        newsId: params.id,
+        newsId: news.id,
       },
       include: { user: { select: { id: true, name: true, image: true } } },
     })

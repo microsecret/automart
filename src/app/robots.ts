@@ -1,13 +1,15 @@
 import { MetadataRoute } from "next"
+import { getSiteUrl } from "@/lib/site-url"
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = getSiteUrl()
   return {
     rules: {
       userAgent: "*",
       allow: "/",
       disallow: ["/api/", "/admin/", "/dashboard/", "/favorites/", "/notifications/", "/messages/", "/auth/"],
     },
-    sitemap: "https://avtorynok.ru/sitemap.xml",
-    host: "https://avtorynok.ru",
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   }
 }

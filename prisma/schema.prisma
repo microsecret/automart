@@ -400,16 +400,29 @@ model TelegramAuthCode {
   @@index([expiresAt])
 }
 model News {
-  id          String   @id @default(uuid())
-  title       String
-  content     String
-  excerpt     String?
-  imageUrl    String?
-  sourceUrl   String?
-  publishedAt DateTime
-  views       Int      @default(0)
-  createdAt   DateTime @default(now())
-  comments    Comment[]
+  id               String   @id @default(uuid())
+  title            String
+  slug             String?  @unique
+  content          String
+  excerpt          String?
+  imageUrl         String?
+  sourceUrl        String?
+  telegramUrl      String?
+  sourceKey        String?  @unique
+  sourceChannel    String?
+  sourceMessageId  Int?
+  author           String?
+  tags             String?
+  seoTitle         String?
+  seoDescription   String?
+  publishedAt      DateTime
+  views            Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  comments         Comment[]
+
+  @@index([publishedAt])
+  @@index([sourceChannel, sourceMessageId])
 }
 
 model Comment {

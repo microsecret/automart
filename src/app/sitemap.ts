@@ -1,7 +1,12 @@
 import { MetadataRoute } from "next"
+import { prisma } from "@/lib/prisma"
+import { newsHref } from "@/lib/news"
+import { getSiteUrl } from "@/lib/site-url"
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://avtorynok.ru"
+export const dynamic = "force-dynamic"
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = getSiteUrl()
   const now = new Date()
 
   // Статические страницы
@@ -14,7 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/auth/signin", "/auth/signup",
   ]
 
-  return [
+  const pages: MetadataRoute.Sitemap = [
     ...staticPages.map((path) => ({
       url: `${baseUrl}${path}`,
       lastModified: now,
@@ -22,4 +27,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: path === "" ? 1 : path.startsWith("/category") ? 0.9 : 0.7,
     })),
   ]
+
+  try {
+    const news = await prisma.news.findMany({
+      select: { id: true, slug: true, publishedAt: true, updatedAt: true },
+      orderBy: { publishedAt: "desc" },
+      take: 10_000,
+    })
+
+    return [
+      ...pages,
+      ...news.map((article) => ({
+        url: `${baseUrl}${newsHref(article)}`,
+        lastModified: article.updatedAt || article.publishedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      })),
+    ]
+  } catch (error) {
+    console.error("Sitemap news query failed:", error)
+    return pages
+  }
 }
