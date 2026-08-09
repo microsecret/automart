@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { LISTING_STATUS } from "@/lib/listing-lifecycle"
+import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import { Prisma } from "@prisma/client"
 import { AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPES, SELLER_TYPES } from "@/lib/constants"
 
@@ -38,7 +38,12 @@ export async function GET(request: NextRequest) {
     const oemNumber = sp.get("oemNumber")
     const sort = sp.get("sort") || "newest"
 
-    const where: Prisma.PartWhereInput = {}
+    // A Part is publicly visible only through an active, non-deleted Listing.
+    // The nested relation keeps drafts and records awaiting moderation out of
+    // catalog search even though their Part row already exists for the owner.
+    const where: Prisma.PartWhereInput = {
+      listings: { some: publicListingWhere },
+    }
     const and: Prisma.PartWhereInput[] = []
 
     const minPrice = priceFrom ? Number.parseInt(priceFrom, 10) : undefined

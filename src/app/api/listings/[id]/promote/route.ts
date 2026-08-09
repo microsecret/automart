@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -27,10 +28,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Проверяем владельца
     const listing = await prisma.listing.findUnique({
       where: { id },
-      select: { id: true, userId: true, title: true },
+      select: { id: true, userId: true, title: true, status: true, deletedAt: true },
     })
     if (!listing) return NextResponse.json({ error: "Объявление не найдено" }, { status: 404 })
     if (listing.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+    if (listing.status !== LISTING_STATUS.ACTIVE || listing.deletedAt) {
+      return NextResponse.json({ error: "Продвижение доступно только активному объявлению" }, { status: 409 })
+    }
 
     const promoUntil = new Date(Date.now() + t.days * 24 * 60 * 60 * 1000)
 

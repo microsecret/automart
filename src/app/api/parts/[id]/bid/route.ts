@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { publicListingWhere } from "@/lib/listing-lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -15,7 +16,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!Number.isFinite(amount) || amount <= 0) return NextResponse.json({ error: "Укажите корректную сумму" }, { status: 400 })
 
     const result = await prisma.$transaction(async (tx) => {
-      const part = await tx.part.findUnique({ where: { id }, select: { id: true, saleFormat: true, auctionStatus: true, auctionEndsAt: true, auctionCurrentPrice: true, auctionStartPrice: true, auctionMinStep: true } })
+      const part = await tx.part.findFirst({
+        where: { id, listings: { some: publicListingWhere } },
+        select: { id: true, saleFormat: true, auctionStatus: true, auctionEndsAt: true, auctionCurrentPrice: true, auctionStartPrice: true, auctionMinStep: true },
+      })
       if (!part) return { error: "Запчасть не найдена", status: 404 as const }
       if (part.saleFormat !== "AUCTION") return { error: "Это объявление не является аукционом", status: 400 as const }
       if (part.auctionStatus !== "ACTIVE" || !part.auctionEndsAt || part.auctionEndsAt <= new Date()) {

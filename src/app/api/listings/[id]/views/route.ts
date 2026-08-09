@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { publicListingWhere } from "@/lib/listing-lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -7,11 +8,13 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const listing = await prisma.listing.update({
-      where: { id },
+    const result = await prisma.listing.updateMany({
+      where: { id, ...publicListingWhere },
       data: { views: { increment: 1 } },
-      select: { id: true, views: true },
     })
+    if (!result.count) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    const listing = await prisma.listing.findUnique({ where: { id }, select: { views: true } })
+    if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 })
     return NextResponse.json({ views: listing.views })
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 })
@@ -22,8 +25,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const listing = await prisma.listing.findUnique({
-      where: { id },
+    const listing = await prisma.listing.findFirst({
+      where: { id, ...publicListingWhere },
       select: { views: true },
     })
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 })

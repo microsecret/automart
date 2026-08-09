@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { publicListingWhere } from "@/lib/listing-lifecycle"
+
+function currentUserFavoritesWhere(userId: string) {
+  return {
+    ...publicListingWhere,
+    favoritedBy: { some: { id: userId } },
+  }
+}
+
 // GET all favorite listings for the current user
 export async function GET(request: NextRequest) {
   try {
@@ -18,13 +27,7 @@ export async function GET(request: NextRequest) {
     // Handle special case for count only
     if (searchParams.get("countOnly") === "true") {
       const count = await prisma.listing.count({
-        where: {
-          favoritedBy: {
-            some: {
-              id: session.user.id
-            }
-          }
-        }
+        where: currentUserFavoritesWhere(session.user.id)
       })
 
       return NextResponse.json({ count })
@@ -34,13 +37,7 @@ export async function GET(request: NextRequest) {
     // listing records once per card just to determine whether the heart is on.
     if (searchParams.get("idsOnly") === "true") {
       const favorites = await prisma.listing.findMany({
-        where: {
-          favoritedBy: {
-            some: {
-              id: session.user.id
-            }
-          }
-        },
+        where: currentUserFavoritesWhere(session.user.id),
         select: {
           id: true
         }
@@ -59,13 +56,7 @@ export async function GET(request: NextRequest) {
     // Get favorite listings for the current user
     const [favorites, total] = await prisma.$transaction([
       prisma.listing.findMany({
-        where: {
-          favoritedBy: {
-            some: {
-              id: session.user.id
-            }
-          }
-        },
+        where: currentUserFavoritesWhere(session.user.id),
         include: {
           vehicle: true,
           part: true,
@@ -84,13 +75,7 @@ export async function GET(request: NextRequest) {
         }
       }),
       prisma.listing.count({
-        where: {
-          favoritedBy: {
-            some: {
-              id: session.user.id
-            }
-          }
-        }
+        where: currentUserFavoritesWhere(session.user.id)
       })
     ])
 
@@ -135,8 +120,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify listing exists
-    const listing = await prisma.listing.findUnique({
-      where: { id: listingId },
+    const listing = await prisma.listing.findFirst({
+      where: { id: listingId, ...publicListingWhere },
       select: { id: true }
     })
 
