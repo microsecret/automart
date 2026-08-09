@@ -817,6 +817,163 @@ select {
   text-transform: uppercase;
 }
 
+/* Единая поверхность поиска: контрастная, но спокойная. Эти правила
+   используются каталогом транспорта, запчастей и аукционов. */
+.catalog-filter-panel,
+.parts-filter-panel,
+.auction-filter-panel {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--market-field-line);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--market-primary-soft) 56%, var(--market-surface)) 0%, var(--market-surface) 46%, var(--market-surface-subtle) 100%);
+  box-shadow: 0 18px 36px -34px rgba(15, 23, 42, 0.78);
+}
+
+.catalog-filter-panel::before,
+.parts-filter-panel::before,
+.auction-filter-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #4f46e5 0%, #818cf8 40%, transparent 74%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.catalog-filter-panel__intro {
+  min-height: 34px;
+}
+
+.catalog-filter-panel__intro > .mantine-Box-root > .mantine-Text-root:first-child {
+  color: var(--market-ink);
+  letter-spacing: -0.01em;
+}
+
+.catalog-filter-grid {
+  gap: 10px;
+}
+
+.catalog-filter-field,
+.parts-filter-grid > .mantine-InputWrapper-root,
+.parts-filter-grid > .mantine-Box-root,
+.auction-filter-grid > .mantine-InputWrapper-root,
+.auction-filter-grid > .mantine-Box-root {
+  min-height: 70px;
+  border-color: color-mix(in srgb, var(--market-field-line) 88%, transparent);
+  border-radius: 11px;
+  background: var(--market-field);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.025), 0 8px 18px -20px rgba(15, 23, 42, 0.46);
+}
+
+.catalog-filter-field:hover,
+.parts-filter-grid > .mantine-InputWrapper-root:hover,
+.parts-filter-grid > .mantine-Box-root:hover,
+.auction-filter-grid > .mantine-InputWrapper-root:hover,
+.auction-filter-grid > .mantine-Box-root:hover {
+  border-color: #a5b4fc;
+  background: color-mix(in srgb, var(--market-field) 92%, #eef2ff);
+}
+
+.catalog-filter-field:focus-within,
+.parts-filter-grid > .mantine-InputWrapper-root:focus-within,
+.parts-filter-grid > .mantine-Box-root:focus-within,
+.auction-filter-grid > .mantine-InputWrapper-root:focus-within,
+.auction-filter-grid > .mantine-Box-root:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(49, 46, 129, 0.72);
+}
+
+.catalog-filter-field .mantine-Input-input,
+.catalog-filter-field .mantine-Select-input,
+.parts-filter-grid .mantine-Input-input,
+.parts-filter-grid .mantine-Select-input,
+.auction-filter-grid .mantine-Input-input,
+.auction-filter-grid .mantine-Select-input {
+  min-height: 32px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.auction-filter-grid .mantine-InputWrapper-label {
+  margin-bottom: 5px;
+  color: var(--market-label);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.catalog-price-range .mantine-Group-root,
+.parts-price-range .mantine-Group-root,
+.auction-price-range .mantine-Group-root {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--market-field-line) 78%, transparent);
+  border-radius: 8px;
+}
+
+.catalog-price-range .mantine-TextInput-root,
+.parts-price-range .mantine-TextInput-root,
+.auction-price-range .mantine-TextInput-root {
+  flex: 1;
+  min-width: 0;
+}
+
+.catalog-price-range .mantine-TextInput-root + .mantine-TextInput-root,
+.parts-price-range .mantine-TextInput-root + .mantine-TextInput-root,
+.auction-price-range .mantine-TextInput-root + .mantine-TextInput-root {
+  border-left: 1px solid color-mix(in srgb, var(--market-field-line) 78%, transparent);
+}
+
+.catalog-price-range .mantine-TextInput-input,
+.parts-price-range .mantine-TextInput-input,
+.auction-price-range .mantine-TextInput-input {
+  min-width: 0;
+  padding-inline: 9px;
+}
+
+.catalog-filter-advanced > .mantine-Box-root,
+.catalog-filter-advanced > .mantine-Group-root:not(.catalog-filter-advanced__actions) {
+  border-color: color-mix(in srgb, var(--market-line) 90%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--market-surface) 92%, var(--market-primary-soft));
+}
+
+.catalog-filter-advanced .mantine-Chip-label {
+  border-color: color-mix(in srgb, var(--market-field-line) 92%, transparent);
+  background: var(--market-field);
+  font-weight: 650;
+}
+
+.parts-workspace {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 12px !important;
+}
+
+.parts-workspace > .mantine-Box-root {
+  width: auto !important;
+}
+
+.parts-vehicle-inline {
+  width: auto;
+}
+
+.parts-vehicle-inline__panel {
+  height: 100%;
+  border-color: #c7d2fe;
+  background: linear-gradient(145deg, #f1f5ff 0%, var(--market-surface) 76%);
+  box-shadow: 0 14px 26px -28px rgba(67, 56, 202, 0.74);
+}
+
+.parts-vehicle-inline__panel .mantine-Input-input,
+.parts-vehicle-inline__panel .mantine-Select-input {
+  border-color: var(--market-field-line);
+  background: var(--market-field);
+}
+
 @media (max-width: 48em) {
   .home-auctions {
     min-height: 360px;
@@ -857,6 +1014,10 @@ select {
   .parts-vehicle-inline {
     width: 100%;
   }
+
+  .parts-workspace {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 36em) {
@@ -874,5 +1035,22 @@ select {
   .catalog-filter-field--search,
   .parts-filter-grid__search {
     grid-column: auto;
+  }
+
+  .catalog-heading {
+    align-items: flex-start;
+  }
+
+  .catalog-view-switch {
+    width: 100%;
+  }
+
+  .catalog-view-switch .mantine-SegmentedControl-root,
+  .catalog-view-switch .mantine-SegmentedControl-inner {
+    width: 100%;
+  }
+
+  .catalog-filter-panel__intro {
+    align-items: flex-start;
   }
 }

@@ -149,7 +149,7 @@ function PartsContent() {
   )
 
   const VehiclePicker = (
-    <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #eef2ff, #f5f3ff)" }}>
+    <Paper radius="md" p="md" withBorder className="parts-vehicle-inline__panel">
       <Stack gap="sm">
         <Group gap="sm">
           <ThemeIcon variant="light" color="violet" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
@@ -172,14 +172,14 @@ function PartsContent() {
   )
 
   const FilterBar = (
-    <Paper radius="md" p="sm" withBorder>
+    <Paper radius="md" p="sm" withBorder className="parts-filter-panel">
       <Stack gap="sm">
           <Box className="parts-filter-grid">
             <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
             <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
             <Select label="Состояние" placeholder="Любое" data={PART_CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={setCondition} size="sm" />
             <Box className="parts-filter-field"><Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text><SegmentedControl size="xs" fullWidth value={availability || "ANY"} onChange={(value) => setAvailability(value === "ANY" ? null : value)} data={[{ value: "ANY", label: "Все" }, ...AVAILABILITY_TYPES.map((item) => ({ value: item.value, label: item.label }))]} /></Box>
-            <Select label="Формат продажи" placeholder="Все варианты" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
+            <Select label="Способ покупки" placeholder="Все варианты" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
           </Box>
         {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
         {(partType || make || condition || availability || saleFormat || priceFrom || priceTo) && (

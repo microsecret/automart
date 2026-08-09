@@ -182,14 +182,14 @@ export default function HomePage(p: HomePageProps = {}) {
       <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
         <Stack gap={0}>
           <Text component={p.categorySlug ? "h1" : "h2"} fw={800} fz={{base:20,md:24}} c="dark.9">{p.pageTitle || "Все объявления"}</Text>
-          {data && <Text size="xs" c="gray.5">{data.pagination?.total || 0} объявлений</Text>}
+          {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} объявлений</Text>}
         </Stack>
         <SegmentedControl className="catalog-view-switch" size="sm" value={view} onChange={(v) => setView(v)} radius="md" data={[{label:<Group gap={4} wrap="nowrap"><IconLayoutGrid size={15} stroke={1.8}/> <Text size="xs" fw={600}>Сетка</Text></Group>,value:"grid"},{label:<Group gap={4} wrap="nowrap"><IconList size={15} stroke={1.8}/> <Text size="xs" fw={600}>Список</Text></Group>,value:"list"}]} />
       </Group>
 
       <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="lg" p="md" withBorder>
         <Stack gap="sm">
-          <Group justify="space-between" align="baseline" gap="sm">
+          <Group className="catalog-filter-panel__intro" justify="space-between" align="baseline" gap="sm">
             <Box><Text size="sm" fw={750}>Найдите подходящий транспорт</Text><Text size="xs" c="dimmed">Начните с марки, цены или города — остальное уточните при необходимости.</Text></Box>
             {activeFilterCount > 0 && <Badge color="indigo" variant="light" radius="xl">Выбрано: {activeFilterCount}</Badge>}
           </Group>
@@ -220,6 +220,8 @@ export default function HomePage(p: HomePageProps = {}) {
               size="sm"
               radius="md"
               onClick={() => setShowAdvanced((s) => !s)}
+              aria-expanded={showAdvanced}
+              aria-controls="catalog-advanced-filters"
               leftSection={<IconAdjustmentsHorizontal size={16} />}
               rightSection={
                 <Group gap={6}>
@@ -234,7 +236,7 @@ export default function HomePage(p: HomePageProps = {}) {
             {activeFilterCount > 0 && <Button variant="subtle" size="xs" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить всё</Button>}
           </Group>
 
-          <Collapse in={showAdvanced}>
+          <Collapse in={showAdvanced} id="catalog-advanced-filters">
             <Divider my="xs"/>
             <Stack gap="md" className="catalog-filter-advanced">
               {supportsTransmission(vt) && (
