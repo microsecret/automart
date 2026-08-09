@@ -1,9 +1,15 @@
 import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
+const REQUIRED_TRIGGERS = [
+  "Listing_require_exactly_one_subject_insert",
+  "Listing_require_exactly_one_subject_update",
+  "Vehicle_delete_linked_listing",
+  "Part_delete_linked_listing",
+]
 
 async function main() {
-  const [orphanedListings, ambiguousListings, vehicleCount, partCount, listingCount, userCount, auctionCount, newsCount] = await Promise.all([
+  const [orphanedListings, ambiguousListings, vehicleCount, partCount, listingCount, userCount, auctionCount, newsCount, triggers] = await Promise.all([
     prisma.listing.findMany({
       where: { vehicleId: null, partId: null },
       select: { id: true, title: true, status: true, createdAt: true },
@@ -22,7 +28,11 @@ async function main() {
     prisma.user.count(),
     prisma.auctionListing.count(),
     prisma.news.count(),
+    prisma.$queryRawUnsafe("SELECT name FROM sqlite_master WHERE type = 'trigger'"),
   ])
+
+  const installedTriggers = triggers.map((trigger) => trigger.name).filter((name) => typeof name === "string")
+  const missingTriggers = REQUIRED_TRIGGERS.filter((name) => !installedTriggers.includes(name))
 
   const report = {
     checkedAt: new Date().toISOString(),
@@ -37,7 +47,11 @@ async function main() {
     integrity: {
       orphanedListings: orphanedListings.length,
       ambiguousListings: ambiguousListings.length,
-      valid: orphanedListings.length === 0 && ambiguousListings.length === 0,
+      valid: orphanedListings.length === 0 && ambiguousListings.length === 0 && missingTriggers.length === 0,
+    },
+    databaseTriggers: {
+      installed: REQUIRED_TRIGGERS.filter((name) => installedTriggers.includes(name)),
+      missing: missingTriggers,
     },
     samples: {
       orphanedListings,
