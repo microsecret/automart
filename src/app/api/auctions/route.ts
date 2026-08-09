@@ -9,6 +9,7 @@ const SOURCE_COUNTRY: Record<string, string> = {
 }
 
 const VALID_COUNTRIES = new Set(["JP", "KR", "CN", "US", "DE"])
+const VALID_BODY_TYPES = new Set(["SEDAN", "SUV", "HATCHBACK", "COUPE", "PICKUP", "WAGON"])
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
       where.year = { gte: parsedYear }
     }
     const bodyType = sp.get("bodyType")
+    if (bodyType && !VALID_BODY_TYPES.has(bodyType)) return NextResponse.json({ error: "Некорректный тип кузова" }, { status: 400 })
     if (bodyType) where.bodyType = bodyType
 
     const [listings, total] = await prisma.$transaction([

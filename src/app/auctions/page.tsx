@@ -41,6 +41,11 @@ const SOURCE_COUNTRY: Record<string, string> = {
   MOBILE_DE: "DE", YCHEZHAI: "CN", GUAZI: "CN", TAOCHE: "CN", UCAR: "CN",
 }
 
+const auctionYears = Array.from(
+  { length: 15 },
+  (_, index) => String(new Date().getFullYear() + 1 - index),
+)
+
 type AuctionResponse = {
   listings: any[]
   pagination: { total: number; pages: number; limit: number }
@@ -122,7 +127,15 @@ export default function AuctionsPage() {
             </Group>
           <Box className="auction-filter-grid">
             <Select label="Страна" data={COUNTRIES} value={country} onChange={(value) => { setCountry(value || ""); setSource(""); setPage(1) }} size="sm" />
-            <Select label="Площадка" placeholder={country ? "Все площадки" : "Сначала страна или все"} data={sourceOptions} value={source} onChange={(value) => { setSource(value || ""); setPage(1) }} size="sm" />
+            <Select
+              label="Площадка"
+              placeholder={country ? "Все площадки" : "Сначала выберите страну"}
+              data={sourceOptions}
+              value={source}
+              disabled={!country}
+              onChange={(value) => { setSource(value || ""); setPage(1) }}
+              size="sm"
+            />
             <Select
                 label="Марка"
                 placeholder="Любая"
@@ -180,7 +193,7 @@ export default function AuctionsPage() {
                 label="Год от"
                 placeholder="Любой"
                 clearable
-                data={Array.from({length: 15}, (_, i) => ({ value: String(2025 - i), label: String(2025 - i) }))}
+                data={auctionYears.map((year) => ({ value: year, label: year }))}
                 value={yearFrom || null}
                 onChange={(value) => { setYearFrom(value || ""); setPage(1) }}
                 size="sm"
