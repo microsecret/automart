@@ -42,7 +42,6 @@ const nextConfig = {
   serverExternalPackages: ['prisma', '@prisma/client'],
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
-  output: 'standalone',
   // На VPS рядом лежат другие package-lock.json. Фиксируем корень именно
   // Авторынка, чтобы Next не захватывал чужое рабочее пространство в trace
   // и при запуске Turbopack.
