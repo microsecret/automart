@@ -7,15 +7,20 @@ import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, Divider, TextInput, Textarea, ThemeIcon, Center, Loader, Breadcrumbs, Anchor } from "@mantine/core"
 import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconGasStation, IconManualGearbox, IconPalette, IconChevronRight, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
-import { formatPrice } from "@/lib/format"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import type { AuctionListing } from "@prisma/client"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type AuctionDetailResponse = { listing: AuctionListing }
 
 function AuctionDetail() {
   const params = useParams()
   const id = params.id as string
-  const { data, isLoading } = useSWR(`/api/auctions/${id}`, fetcher)
+  const { data, error, isLoading, mutate } = useSWR<AuctionDetailResponse>(
+    `/api/auctions/${id}`,
+    fetchJson<AuctionDetailResponse>,
+  )
   const [form, setForm] = useState({ name: "", phone: "", email: "", city: "", comment: "" })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -27,19 +32,26 @@ function AuctionDetail() {
     if (!form.name || !form.phone) return
     setSubmitting(true)
     try {
-      await fetch(`/api/auctions/${id}/inquiry`, {
+      const response = await fetch(`/api/auctions/${id}/inquiry`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       })
+      const payload = await response.json().catch(() => null) as { error?: string } | null
+      if (!response.ok) throw new Error(payload?.error || "Не удалось отправить заявку")
       setSubmitted(true)
       notifications.show({ title: "Заявка отправлена!", message: "Менеджер свяжется с вами в течение 1 часа", color: "green" })
-    } catch {
-      notifications.show({ title: "Ошибка", message: "Попробуйте ещё раз", color: "red" })
+    } catch (error) {
+      notifications.show({
+        title: "Не удалось отправить заявку",
+        message: error instanceof Error ? error.message : "Проверьте соединение и попробуйте ещё раз",
+        color: "red",
+      })
     } finally { setSubmitting(false) }
   }
 
   if (isLoading) return <Container py={80}><Center><Loader size="sm" color="orange" /></Center></Container>
+  if (error) return <Container py={80}><AsyncErrorState title="Лот недоступен" description="Возможно, он уже завершён или снят с публикации." onRetry={() => void mutate()} /></Container>
   if (!listing) return <Container py={80}><Center><Text c="gray.5">Лот не найден</Text></Center></Container>
 
   const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇩🇪 Германия", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
