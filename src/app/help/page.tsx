@@ -6,7 +6,7 @@ import { IconShieldCheck, IconHelpCircle, IconScale, IconMessage2, IconCar, Icon
 
 const SECTIONS = [
   { icon: IconCar, title: "Как продать авто", desc: "Пошаговое руководство для продавцов", href: "/help/sell", color: "#4f46e5" },
-  { icon: IconShieldCheck, title: "Безопасная сделка", desc: "Эскроу-сервис и проверка продавца", href: "/services/safe-deal", color: "#059669" },
+  { icon: IconShieldCheck, title: "Сопровождение сделки", desc: "Проверка документов, статусы и сопровождение покупки", href: "/services/safe-deal", color: "#059669" },
   { icon: IconLock, title: "Безопасность", desc: "Как защититься от мошенников", href: "/help/safety", color: "#dc2626" },
   { icon: IconScale, title: "Правила площадки", desc: "Условия использования, модерация", href: "/help/rules", color: "#7c3aed" },
   { icon: IconMessage2, title: "Поддержка", desc: "Связаться с командой поддержки", href: "/help/support", color: "#ea580c" },

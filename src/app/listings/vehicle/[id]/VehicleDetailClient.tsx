@@ -468,14 +468,14 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   <IconShieldCheck size={24} />
                 </ThemeIcon>
                 <Stack gap={6} style={{ flex: 1 }}>
-                  <Title order={3} size="h4">Безопасная сделка</Title>
+                  <Title order={3} size="h4">Сопровождаемая сделка</Title>
                   <Text size="sm" c="gray.6">
-                    Деньги на защищённом счёте платформы до подписания договора и передачи ключей.
-                    Страхование сделки включено.
+                    Проверка продавца и документов, прозрачные этапы и поддержка до передачи ключей.
+                    Платформа не удерживает деньги: платежи оформляются по согласованным сторонами реквизитам.
                   </Text>
                   <Group gap={6} mt={4}>
                     <IconCheck size={14} color="#4f46e5" />
-                    <Text size="xs" c="#4f46e5">Защита от мошенничества</Text>
+                    <Text size="xs" c="#4f46e5">Проверка данных объявления</Text>
                   </Group>
                   <Group gap={6}>
                     <IconCheck size={14} color="#4f46e5" />
@@ -483,10 +483,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </Group>
                   <Group gap={6}>
                     <IconCheck size={14} color="#4f46e5" />
-                    <Text size="xs" c="#4f46e5">Возврат при отмене</Text>
+                    <Text size="xs" c="#4f46e5">Статусы и поддержка</Text>
                   </Group>
                 </Stack>
-                <Button variant="light" color="indigo" radius="md" size="md">Подробнее</Button>
+                <Button component={Link} href="/services/safe-deal" variant="light" color="indigo" radius="md" size="md">Как это работает</Button>
               </Group>
             </Card>
 

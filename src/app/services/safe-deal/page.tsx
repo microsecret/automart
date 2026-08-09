@@ -4,10 +4,10 @@ import { Box, Stack, Title, Text, Card, Group, ThemeIcon, SimpleGrid, Divider, B
 import { IconShieldCheck, IconCheck, IconWallet, IconFileCheck, IconKey } from "@tabler/icons-react"
 
 const STEPS = [
-  { icon: <IconWallet size={20} />, title: "Деньги на счёте", desc: "Покупатель переводит деньги на защищённый счёт платформы" },
-  { icon: <IconFileCheck size={20} />, title: "Проверка документов", desc: "Платформа проверяет документы авто и продавца" },
-  { icon: <IconKey size={20} />, title: "Передача авто", desc: "Продавец передаёт авто и ключи покупателю" },
-  { icon: <IconCheck size={20} />, title: "Деньги продавцу", desc: "После подтверждения — деньги перечисляются продавцу" },
+  { icon: <IconWallet size={20} />, title: "Заявка и договор", desc: "Покупатель и партнёр фиксируют состав услуги, стоимость и реквизиты до начала работы" },
+  { icon: <IconFileCheck size={20} />, title: "Проверка документов", desc: "Проверяем сведения об объявлении и документы продавца перед ключевыми этапами" },
+  { icon: <IconKey size={20} />, title: "Контроль этапов", desc: "Покупатель видит статусы, документы и следующий шаг в личном кабинете" },
+  { icon: <IconCheck size={20} />, title: "Передача авто", desc: "Оплата и передача оформляются по согласованным сторонами документам" },
 ]
 
 export default function SafeDealPage() {
@@ -17,14 +17,14 @@ export default function SafeDealPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="green" size={44} radius="md"><IconShieldCheck size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Title order={2} size="h3" ff="var(--font-display),sans-serif">Безопасная сделка</Title>
-            <Text size="xs" c="gray.5">Защита от мошенничества с эскроу-сервисом</Text>
+            <Title order={2} size="h3" ff="var(--font-display),sans-serif">Сопровождаемая сделка</Title>
+            <Text size="xs" c="gray.5">Проверка, документы и прозрачные этапы без лишних рисков</Text>
           </Stack>
         </Group>
 
         <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)", background: "#f0fdf4" }}>
           <Text size="sm" c="gray.6" lh={1.6}>
-            Безопасная сделка — это эскроу-сервис: деньги покупателя находятся на защищённом счёте платформы до момента, когда сделка завершена и обе стороны довольны. Если что-то пойдёт не так — деньги вернутся покупателю.
+            Сопровождаемая сделка помогает проверить продавца, собрать документы и контролировать путь покупки. Площадка пока не принимает и не удерживает деньги: платежи выполняются напрямую по согласованным реквизитам.
           </Text>
         </Card>
 
@@ -46,14 +46,14 @@ export default function SafeDealPage() {
         <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
           <Stack gap="xs">
             <Text size="sm" fw={600} c="dark.9">Что входит:</Text>
-            {["Проверка юридической чистоты авто", "Защита денег до передачи авто", "Страхование сделки", "Поддержка на всех этапах", "Возврат при отмене"].map((item) => (
+            {["Проверка сведений об объявлении и продавце", "Статусы, документы и чат по сделке", "Подготовка заявок и квитанций", "Поддержка на ключевых этапах", "Понятный следующий шаг для покупателя"].map((item) => (
               <Group key={item} gap={6}><IconCheck size={14} color="#16a34a" /><Text size="xs" c="gray.6">{item}</Text></Group>
             ))}
           </Stack>
         </Card>
 
         <Alert color="indigo" variant="light" radius="md">
-          <Text size="xs" c="#4f46e5">Демо-режим. Интеграция с платёжной системой и банком будет подключена позже.</Text>
+          <Text size="xs" c="#4f46e5">Сервис развивается. Банковское или платёжное сопровождение появится только после подключения лицензированного провайдера.</Text>
         </Alert>
       </Stack>
     </Box>

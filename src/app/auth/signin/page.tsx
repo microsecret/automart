@@ -5,7 +5,7 @@ import { IconCar, IconShieldCheck, IconChartBar, IconBell } from "@tabler/icons-
 import SignInForm from "@/components/auth/SignInForm"
 
 const FEATURES = [
-  { icon: IconShieldCheck, text: "Безопасные сделки с эскроу" },
+  { icon: IconShieldCheck, text: "Сопровождение сделки и проверка документов" },
   { icon: IconChartBar, text: "Продвижение объявлений" },
   { icon: IconBell, text: "Уведомления и сообщения" },
 ]

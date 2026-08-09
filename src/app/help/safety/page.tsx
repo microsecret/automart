@@ -1,11 +1,11 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { Box, Stack, Text, Paper, ThemeIcon, Group, SimpleGrid, Alert, Badge } from "@mantine/core"
+import { Box, Stack, Text, Paper, ThemeIcon, Group, SimpleGrid, Alert } from "@mantine/core"
 import { IconShieldCheck, IconAlertTriangle, IconChecks, IconEye, IconCash, IconMapPin, IconPhone } from "@tabler/icons-react"
 
 const SAFETY_RULES = [
   { icon: IconEye, title: "Проверяйте при встрече", text: "Осмотрите авто или запчасть лично. Сверьте VIN, номера деталей. Не переводите деньги до осмотра." },
-  { icon: IconCash, title: "Безопасная оплата", text: "Используйте Безопасную сделку (эскроу). Деньги продавцу — только после получения товара." },
+  { icon: IconCash, title: "Сопровождение оплаты", text: "Фиксируйте документы, этапы и реквизиты оплаты до передачи автомобиля." },
   { icon: IconMapPin, title: "Встречайтесь в людных местах", text: "Днём, на охраняемых парковках или в ГИБДД для проверки авто. Не ездите в гаражи одни." },
   { icon: IconPhone, title: "Не давайте предоплату", text: "Требование предоплаты на карту — частый приём мошенников. Особенно «Сбербанк Онлайн» на чужое имя." },
 ]
@@ -32,7 +32,7 @@ export default function SafetyPage() {
         </Group>
 
         <Alert icon={<IconAlertTriangle size={16} />} color="red" variant="light" radius="md" title="Главное правило">
-          Никогда не переводите деньги до осмотра товара. Используйте Безопасную сделку для эскроу-защиты.
+          Никогда не переводите деньги до осмотра товара и проверки реквизитов. Для сложной покупки оформляйте сопровождаемую сделку с понятными документами и этапами.
         </Alert>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
@@ -71,10 +71,9 @@ export default function SafetyPage() {
           <Group gap="sm" align="center">
             <ThemeIcon variant="light" color="green" size={36} radius="md"><IconShieldCheck size={20} /></ThemeIcon>
             <Stack gap={0} style={{ flex: 1 }}>
-              <Text fw={700} fz="sm" c="dark.9">Безопасная сделка защищает вас</Text>
-              <Text size="xs" c="gray.6">Деньги на эскроу-счёте до подтверждения получения товара</Text>
+              <Text fw={700} fz="sm" c="dark.9">Сопровождаемая сделка помогает контролировать процесс</Text>
+              <Text size="xs" c="gray.6">Проверка продавца, документы, статусы и поддержка. Площадка не удерживает деньги до подключения лицензированного платёжного провайдера.</Text>
             </Stack>
-            <Badge variant="light" color="green" size="md">2% комиссии</Badge>
           </Group>
         </Paper>
       </Stack>
