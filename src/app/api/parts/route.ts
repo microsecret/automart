@@ -57,6 +57,9 @@ export async function GET(request: NextRequest) {
     if (partType && !PART_TYPE_VALUES.has(partType)) {
       return NextResponse.json({ error: "Неизвестная категория запчасти" }, { status: 400 })
     }
+    if (subcategory && (!partType || !(PART_SUBCATEGORIES[partType] || []).includes(subcategory))) {
+      return NextResponse.json({ error: "Подкатегория не соответствует выбранной категории" }, { status: 400 })
+    }
     if (condition && !PART_CONDITION_VALUES.has(condition)) {
       return NextResponse.json({ error: "Неизвестное состояние запчасти" }, { status: 400 })
     }

@@ -55,6 +55,7 @@ function PartsContent() {
   const router = useRouter()
   const searchKey = sp.toString()
   const urlPartType = sp.get("partType")
+  const urlSubcategory = sp.get("subcategory")
   const [q, setQ] = useState(sp.get("q") || "")
   const [partType, setPartType] = useState<string | null>(sp.get("partType"))
   const [subcategory, setSubcategory] = useState<string | null>(sp.get("subcategory"))
@@ -69,9 +70,12 @@ function PartsContent() {
 
   useEffect(() => {
     const validPartType = urlPartType && PART_TYPES.some((item) => item.value === urlPartType) ? urlPartType : null
+    const validSubcategory = validPartType && urlSubcategory && (PART_SUBCATEGORIES[validPartType] || []).includes(urlSubcategory)
+      ? urlSubcategory
+      : null
     setPartType((current) => current === validPartType ? current : validPartType)
-    setSubcategory(null)
-  }, [urlPartType])
+    setSubcategory((current) => current === validSubcategory ? current : validSubcategory)
+  }, [urlPartType, urlSubcategory])
 
   const selectPartType = (nextPartType: string | null) => {
     setPartType(nextPartType)
@@ -80,6 +84,18 @@ function PartsContent() {
     const params = new URLSearchParams(searchKey)
     if (nextPartType) params.set("partType", nextPartType)
     else params.delete("partType")
+    params.delete("subcategory")
+    params.delete("page")
+    const query = params.toString()
+    router.replace(query ? `/parts-finder?${query}` : "/parts-finder", { scroll: false })
+  }
+
+  const selectSubcategory = (nextSubcategory: string | null) => {
+    setSubcategory(nextSubcategory)
+    setPage(1)
+    const params = new URLSearchParams(searchKey)
+    if (nextSubcategory) params.set("subcategory", nextSubcategory)
+    else params.delete("subcategory")
     params.delete("page")
     const query = params.toString()
     router.replace(query ? `/parts-finder?${query}` : "/parts-finder", { scroll: false })
@@ -141,7 +157,7 @@ function PartsContent() {
         {partType && subcats.length > 0 && (
           <Group gap={6} wrap="wrap" className="parts-subcategories">
             <Text size="xs" c="dimmed">Уточнить:</Text>
-            {subcats.map((sc) => <Button key={sc} size="compact-xs" radius="xl" variant={subcategory === sc ? "light" : "subtle"} color="violet" onClick={() => { setSubcategory(subcategory === sc ? null : sc); setPage(1) }}>{sc}</Button>)}
+            {subcats.map((sc) => <Button key={sc} size="compact-xs" radius="xl" variant={subcategory === sc ? "light" : "subtle"} color="violet" onClick={() => selectSubcategory(subcategory === sc ? null : sc)}>{sc}</Button>)}
           </Group>
         )}
       </Stack>
