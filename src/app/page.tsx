@@ -5,7 +5,7 @@ import useSWR from "swr"
 import Link from "next/link"
 import NextImage from "next/image"
 import { Box, Text, Select, Group, Pagination, Center, Loader, Stack, SegmentedControl, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip } from "@mantine/core"
-import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane } from "@tabler/icons-react"
+import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconRoute, IconShieldCheck } from "@tabler/icons-react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { getModels, POPULAR_BRANDS } from "@/lib/catalog"
@@ -117,43 +117,57 @@ export default function HomePage(p) {
   return (
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
       {!p.categorySlug && (
-        <Paper className="home-hero" radius="lg" p={{base:"lg",md:"xl"}}>
-          <NextImage src="/images/home/automarket-hero.png" alt="Современный транспорт на площадке Авторынка" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-hero__image" />
-          <Box className="home-hero__scrim" />
-          <Box className="home-hero__content">
-            <Badge variant="light" color="indigo" size="sm" mb="sm" className="home-hero__eyebrow">Площадка для транспорта и запчастей</Badge>
-            <Text ff="var(--font-display),sans-serif" fw={800} fz={{base:26,md:38}} c="white" mb={6} maw={620}>Авторынок — покупайте с уверенностью</Text>
-            <Text size="sm" c="rgba(255,255,255,0.86)" mb="md" maw={520}>Автомобили, мото, техника, вода, авиа и запчасти — в одном спокойном и понятном интерфейсе.</Text>
-            <Group gap="xs" wrap="wrap" mb="sm">
-              <Text size="xs" c="rgba(255,255,255,0.7)" fw={600} tt="uppercase">Транспорт:</Text>
+        <Paper className="market-directory" radius="lg" p={{ base: "md", md: "lg" }} withBorder>
+          <Group justify="space-between" align="flex-start" gap="xl" wrap="wrap">
+            <Box maw={520}>
+              <Badge variant="light" color="indigo" size="sm" mb={8}>Авторынок</Badge>
+              <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 24, md: 30 }} c="dark.9" lh={1.12}>Транспорт и запчасти без лишних шагов</Text>
+              <Text size="sm" c="dimmed" mt={6}>Начните с категории или перейдите к международным аукционам — все основные действия остаются в одном экране.</Text>
+            </Box>
+            <Group gap="xs" className="market-directory__signals">
+              <Group gap={6} wrap="nowrap"><IconShieldCheck size={17} color="#059669" /><Text size="xs" fw={600}>Проверка продавцов</Text></Group>
+              <Group gap={6} wrap="nowrap"><IconRoute size={17} color="#4f46e5" /><Text size="xs" fw={600}>Доставка под ключ</Text></Group>
+            </Group>
+          </Group>
+          <Divider my="md" />
+          <Stack gap={10}>
+            <Group gap="xs" wrap="wrap">
+              <Text size="xs" c="dimmed" fw={700} tt="uppercase" w={82}>Транспорт</Text>
               {[{l:"Легковые",h:"/category/cars"},{l:"Мото",h:"/category/moto"},{l:"Грузовики",h:"/category/trucks"},{l:"Спецтехника",h:"/category/special"},{l:"Вода",h:"/category/water"},{l:"Авиа",h:"/category/air"}].map((c) => (
-                <Link key={c.h} href={c.h} style={{textDecoration:"none"}}>
-                  <Badge size="md" radius="md" style={{cursor:"pointer",background:"rgba(255,255,255,0.95)",color:"#4f46e5",fontWeight:600}}>{c.l}</Badge>
-                </Link>))}
+                <Button key={c.h} component={Link} href={c.h} variant="default" color="gray" size="xs" radius="md">{c.l}</Button>
+              ))}
             </Group>
             <Group gap="xs" wrap="wrap">
-              <Text size="xs" c="rgba(255,255,255,0.7)" fw={600} tt="uppercase">Запчасти:</Text>
+              <Text size="xs" c="dimmed" fw={700} tt="uppercase" w={82}>Запчасти</Text>
               {[{l:"Все запчасти",h:"/parts-finder"},{l:"Двигатель",h:"/parts-finder?partType=ENGINE"},{l:"Тормоза",h:"/parts-finder?partType=BRAKES"},{l:"Подвеска",h:"/parts-finder?partType=SUSPENSION"},{l:"Оптика",h:"/parts-finder?partType=LIGHTING"},{l:"Электрика",h:"/parts-finder?partType=ELECTRICAL"}].map((c) => (
-                <Link key={c.h} href={c.h} style={{textDecoration:"none"}}>
-                  <Badge size="md" radius="md" style={{cursor:"pointer",background:"rgba(255,255,255,0.2)",color:"white",fontWeight:500,border:"1px solid rgba(255,255,255,0.3)"}}>{c.l}</Badge>
-                </Link>))}
+                <Button key={c.h} component={Link} href={c.h} variant="subtle" color="indigo" size="xs" radius="md">{c.l}</Button>
+              ))}
             </Group>
-          </Box>
+          </Stack>
         </Paper>)}
 
       {/* Аукционы мира */}
-      {(
-        <Paper className="home-auctions" radius="lg" p={{base:"lg",md:"xl"}}>
-          <NextImage src="/images/home/world-auctions.png" alt="Международная площадка аукционов транспорта" fill sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
+      {!p.categorySlug && (
+        <Paper className="home-auctions home-auctions--primary" radius="lg" p={{base:"lg",md:"xl"}}>
+          <NextImage src="/images/home/automarket-hero.png" alt="Авторынок — международные аукционы транспорта" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
           <Box className="home-auctions__scrim" />
           <Box className="home-auctions__content">
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
-              <Box maw={560}>
-                <Badge variant="light" color="orange" size="sm" mb="sm" className="home-auctions__eyebrow">WORLD AUCTIONS · LIVE</Badge>
-                <Text fw={800} fz={{base:22,md:30}} c="white" ff="var(--font-display),sans-serif">Аукционы мира</Text>
-                <Text size="sm" c="rgba(255,255,255,0.78)" mt={4}>{auctionStats.auctions} лотов · доставка в РФ под ключ · ИИ-перевод и проверка истории</Text>
+              <Box maw={590}>
+                <Badge variant="light" color="orange" size="sm" mb="sm" className="home-auctions__eyebrow">МЕЖДУНАРОДНЫЕ АУКЦИОНЫ</Badge>
+                <Text fw={800} fz={{base:26,md:36}} c="white" ff="var(--font-display),sans-serif">Выберите лот. Маршрут и документы — под контролем.</Text>
+                <Text size="sm" c="rgba(255,255,255,0.82)" mt={8} maw={510}>{auctionStats.auctions} лотов в каталоге. До сделки видны ориентир цены, страна, путь доставки и следующий шаг.</Text>
+                <Button component={Link} href="/auctions" color="orange" size="sm" radius="md" mt="lg" rightSection={<IconArrowUpRight size={16} />}>Открыть аукционы</Button>
               </Box>
-              <Group gap={6} maw={620} justify="flex-end">
+              <Box className="home-auctions__summary">
+                <Text size="xs" c="rgba(255,255,255,0.68)" tt="uppercase" fw={700}>Сценарий сделки</Text>
+                <Stack gap={8} mt="sm">
+                  <Text size="sm" c="white" fw={600}>1. Выбор и проверка лота</Text>
+                  <Text size="sm" c="white" fw={600}>2. Прозрачная оплата и документы</Text>
+                  <Text size="sm" c="white" fw={600}>3. Отслеживание доставки в кабинете</Text>
+                </Stack>
+              </Box>
+              <Group gap={6} maw={680} justify="flex-start" className="home-auctions__countries">
               {[
                 { flag: "🇯🇵", label: "Япония", count: auctionStats.auctionByCountry?.JP || 0, href: "/auctions?country=JP" },
                 { flag: "🇰🇷", label: "Корея", count: auctionStats.auctionByCountry?.KR || 0, href: "/auctions?country=KR" },
@@ -167,11 +181,6 @@ export default function HomePage(p) {
                   </Badge>
                 </Link>
               ))}
-              <Link href="/auctions" style={{ textDecoration: "none" }}>
-                <Badge size="md" radius="md" variant="filled" color="orange" className="home-auctions__cta" style={{ cursor: "pointer", padding: "8px 12px", fontWeight: 700 }}>
-                  Все аукционы →
-                </Badge>
-              </Link>
               </Group>
             </Group>
           </Box>
@@ -183,26 +192,28 @@ export default function HomePage(p) {
           <Text component="h1" fw={800} fz={{base:20,md:24}} c="dark.9">{p.pageTitle || "Все объявления"}</Text>
           {data && <Text size="xs" c="gray.5">{data.pagination?.total || 0} объявлений</Text>}
         </Stack>
-        <SegmentedControl size="md" value={view} onChange={(v) => setView(v)} radius="md" data={[{label:<Group gap={4}><IconLayoutGrid size={16} stroke={1.8}/> <Text size="xs" fw={600}>Сетка</Text></Group>,value:"grid"},{label:<Group gap={4}><IconList size={16} stroke={1.8}/> <Text size="xs" fw={600}>Список</Text></Group>,value:"list"}]} />
+        <SegmentedControl className="catalog-view-switch" size="sm" value={view} onChange={(v) => setView(v)} radius="md" data={[{label:<Group gap={4} wrap="nowrap"><IconLayoutGrid size={15} stroke={1.8}/> <Text size="xs" fw={600}>Сетка</Text></Group>,value:"grid"},{label:<Group gap={4} wrap="nowrap"><IconList size={15} stroke={1.8}/> <Text size="xs" fw={600}>Список</Text></Group>,value:"list"}]} />
       </Group>
 
       <Paper radius="md" p="md" withBorder style={{background:"var(--mantine-color-body)"}}>
         <Stack gap="sm">
-          <Group gap="xs" wrap="wrap" align="flex-end">
-            <TextInput placeholder="Поиск по тексту..." leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" style={{flex:1,minWidth:200}} />
-            <Select placeholder="Марка" data={brandOptions} searchable clearable value={make} onChange={(v) => {setMake(v);setModel(null)}} size="sm" w={150} />
-            <Select placeholder="Модель" data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="sm" w={140} />
-            <Select data={SORT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} value={sort} onChange={(v) => setSort(v || "newest")} size="sm" w={160} />
-          </Group>
-
-          <Group gap="xs" wrap="wrap" align="flex-end">
-            <TextInput placeholder="Цена от, ₽" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" w={110} type="number" />
-            <TextInput placeholder="Цена до, ₽" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" w={110} type="number" />
-            <Select placeholder="Год от" data={yearData} searchable clearable value={yearFrom} onChange={setYearFrom} size="sm" w={100} />
-            <Select placeholder="Год до" data={yearData} searchable clearable value={yearTo} onChange={setYearTo} size="sm" w={100} />
-            <Select placeholder="Город" data={POPULAR_CITIES.map((c) => ({value:c,label:c}))} searchable clearable value={city} onChange={setCity} size="sm" w={150} />
-            <TextInput placeholder="Пробег до, км" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" w={130} type="number" />
-          </Group>
+          <Box className="catalog-filter-grid">
+            <TextInput className="catalog-filter-grid__search" placeholder="Марка, модель, ключевое слово" leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
+            <Select placeholder="Марка" data={brandOptions} searchable clearable value={make} onChange={(v) => {setMake(v);setModel(null)}} size="sm" />
+            <Select placeholder="Модель" data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="sm" />
+            <Select data={SORT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} value={sort} onChange={(v) => setSort(v || "newest")} size="sm" />
+            <Box className="catalog-price-range">
+              <Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text>
+              <Group gap={4} wrap="nowrap">
+                <TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" />
+                <TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" />
+              </Group>
+            </Box>
+            <Select placeholder="Год от" data={yearData} searchable clearable value={yearFrom} onChange={setYearFrom} size="sm" />
+            <Select placeholder="Год до" data={yearData} searchable clearable value={yearTo} onChange={setYearTo} size="sm" />
+            <Select placeholder="Город" data={POPULAR_CITIES.map((c) => ({value:c,label:c}))} searchable clearable value={city} onChange={setCity} size="sm" />
+            <TextInput placeholder="Пробег до, км" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" type="number" />
+          </Box>
 
           <Group justify="space-between" align="center">
             <Button

@@ -249,44 +249,49 @@ select {
   animation: av-shimmer 1.6s infinite linear;
 }
 
-.home-hero,
+.market-directory {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(129, 140, 248, 0.14), transparent 34%),
+    #fff;
+  border-color: #e5e7eb;
+}
+
+.market-directory__signals {
+  padding: 10px 12px;
+  border: 1px solid #e8e8ec;
+  border-radius: 12px;
+  background: rgba(250, 250, 252, 0.9);
+}
+
 .home-auctions {
   position: relative;
   overflow: hidden;
-  min-height: 292px;
+  min-height: 336px;
   border: 0;
   isolation: isolate;
 }
 
-.home-hero__image,
 .home-auctions__image {
   object-fit: cover;
-  object-position: center;
+  object-position: 66% center;
   z-index: -2;
 }
 
-.home-hero__scrim,
 .home-auctions__scrim {
   position: absolute;
   inset: 0;
   z-index: -1;
 }
 
-.home-hero__scrim {
-  background: linear-gradient(90deg, rgba(10, 16, 42, 0.92) 0%, rgba(25, 22, 69, 0.76) 42%, rgba(18, 18, 35, 0.1) 100%);
-}
-
 .home-auctions__scrim {
-  background: linear-gradient(90deg, rgba(4, 10, 24, 0.9) 0%, rgba(7, 18, 40, 0.6) 52%, rgba(7, 18, 40, 0.22) 100%);
+  background: linear-gradient(90deg, rgba(5, 10, 26, 0.94) 0%, rgba(12, 22, 48, 0.78) 48%, rgba(10, 18, 40, 0.22) 100%);
 }
 
-.home-hero__content,
 .home-auctions__content {
   position: relative;
   z-index: 1;
 }
 
-.home-hero__eyebrow,
 .home-auctions__eyebrow {
   border: 1px solid rgba(255, 255, 255, 0.24);
   background: rgba(255, 255, 255, 0.14);
@@ -304,13 +309,125 @@ select {
   color: #fff;
 }
 
+.home-auctions__summary {
+  width: min(100%, 270px);
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(3, 8, 22, 0.36);
+  backdrop-filter: blur(10px);
+}
+
+.catalog-view-switch {
+  flex-shrink: 0;
+}
+
+.catalog-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(210px, 1.8fr) repeat(3, minmax(128px, 0.8fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.catalog-filter-grid__search {
+  grid-column: span 2;
+}
+
+.catalog-price-range,
+.parts-price-range {
+  display: grid;
+  gap: 4px;
+}
+
+.catalog-price-range .mantine-TextInput-root,
+.parts-price-range .mantine-TextInput-root {
+  min-width: 0;
+  flex: 1;
+}
+
+.catalog-price-range .mantine-TextInput-input,
+.parts-price-range .mantine-TextInput-input {
+  min-width: 0;
+}
+
+.vehicle-fallback {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  place-content: center;
+  justify-items: center;
+  padding: 16px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 74% 24%, rgba(255, 255, 255, 0.8), transparent 24%),
+    linear-gradient(145deg, #eef2ff 0%, #f8fafc 58%, #e0e7ff 100%);
+}
+
+.vehicle-fallback--air { background: linear-gradient(145deg, #e0f2fe 0%, #f8fafc 58%, #dbeafe 100%); }
+.vehicle-fallback--water { background: linear-gradient(145deg, #cffafe 0%, #f8fafc 58%, #dbeafe 100%); }
+.vehicle-fallback--truck,
+.vehicle-fallback--special { background: linear-gradient(145deg, #fff7ed 0%, #f8fafc 58%, #fef3c7 100%); }
+.vehicle-fallback--motorcycle { background: linear-gradient(145deg, #f3e8ff 0%, #faf5ff 58%, #ede9fe 100%); }
+.vehicle-fallback[data-compact] { min-height: 110px; padding: 10px; }
+
+.parts-category-bar {
+  background: linear-gradient(145deg, #fff 0%, #fafaff 100%);
+}
+
+.parts-workspace > * {
+  min-width: 0;
+}
+
+.parts-vehicle-inline {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.parts-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.7fr) minmax(190px, 1fr) repeat(2, minmax(145px, 0.8fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.part-result-card {
+  min-width: 0;
+}
+
+.part-result-card__media {
+  position: relative;
+  display: grid;
+  height: 148px;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(145deg, #eef2ff, #f8fafc);
+}
+
+.part-result-card__media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.part-result-card__media img[data-loaded] { opacity: 1; }
+
+.part-result-card__placeholder {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
 @media (max-width: 48em) {
-  .home-hero,
   .home-auctions {
-    min-height: 430px;
+    min-height: 360px;
   }
 
-  .home-hero__image,
   .home-auctions__image {
     object-position: 66% center;
   }
@@ -323,25 +440,35 @@ select {
     margin-top: 14px;
     justify-content: flex-start;
   }
-}
 
-/* Адаптивные обёртки каталога запчастей без устаревшего MediaQuery Mantine. */
-.parts-mobile-only {
-  display: none;
-}
-
-@media (max-width: 47.99em) {
-  .parts-mobile-only {
-    display: block;
+  .catalog-filter-grid,
+  .parts-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .parts-sidebar-desktop {
-    display: none;
+  .catalog-filter-grid__search,
+  .parts-filter-grid__search {
+    grid-column: 1 / -1;
+  }
+
+  .parts-vehicle-inline {
+    width: 100%;
   }
 }
 
-@media (max-width: 63.99em) {
-  .parts-vehicle-desktop {
-    display: none;
+@media (max-width: 36em) {
+  .market-directory__signals,
+  .home-auctions__summary {
+    width: 100%;
+  }
+
+  .catalog-filter-grid,
+  .parts-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-filter-grid__search,
+  .parts-filter-grid__search {
+    grid-column: auto;
   }
 }

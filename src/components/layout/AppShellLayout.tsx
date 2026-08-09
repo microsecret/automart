@@ -53,6 +53,7 @@ const HELP_LINKS = [
 export default function AppShellLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const activeCat = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
+  const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCat === "parts"
   const [expanded, setExpanded] = useState<string | null>(null)
 
   const toggle = (id: string) => setExpanded(expanded === id ? null : id)
@@ -110,11 +111,11 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                   href="/parts-finder"
                   label="Все запчасти"
                   leftSection={<IconTools size={16} stroke={1.7} />}
-                  active={activeCat === "parts"}
+                  active={isPartsRoute}
                   color="indigo"
                   radius="md"
                   py={6}
-                  style={{ fontSize: "0.8125rem", fontWeight: activeCat === "parts" ? 600 : 500 }}
+                  style={{ fontSize: "0.8125rem", fontWeight: isPartsRoute ? 600 : 500 }}
                 />
                 {PARTS_LINKS.slice(1).map((link) => (
                   <NavLink

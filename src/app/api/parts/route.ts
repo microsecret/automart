@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "../auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
@@ -9,8 +10,8 @@ export const dynamic = "force-dynamic"
 export async function GET(request: NextRequest) {
   try {
     const sp = request.nextUrl.searchParams
-    const page = parseInt(sp.get("page") || "1")
-    const limit = parseInt(sp.get("limit") || "20")
+    const page = Math.max(1, Number.parseInt(sp.get("page") || "1", 10) || 1)
+    const limit = Math.min(50, Math.max(1, Number.parseInt(sp.get("limit") || "20", 10) || 20))
     const skip = (page - 1) * limit
 
     const q = sp.get("q")?.trim()
@@ -25,19 +26,31 @@ export async function GET(request: NextRequest) {
     const oemNumber = sp.get("oemNumber")
     const sort = sp.get("sort") || "newest"
 
-    const where: any = {}
+    const where: Prisma.PartWhereInput = {}
+    const and: Prisma.PartWhereInput[] = []
 
     if (q) {
-      where.OR = [
-        { name: { contains: q } },
-        { description: { contains: q } },
-        { keywords: { contains: q } },
-      ]
+      and.push({
+        OR: [
+          { name: { contains: q } },
+          { description: { contains: q } },
+          { keywords: { contains: q } },
+        ],
+      })
     }
     if (partType) where.partType = partType
     if (subcategory) where.subcategory = { contains: subcategory }
-    if (make) where.make = { contains: make }
-    if (model) where.model = { contains: model }
+    if (make && sp.get("compatible") === "true") {
+      and.push({
+        OR: [
+          { make: { contains: make }, ...(model ? { model: { contains: model } } : {}) },
+          { compatibility: { some: { make: { contains: make }, ...(model ? { model: { contains: model } } : {}) } } },
+        ],
+      })
+    } else {
+      if (make) where.make = { contains: make }
+      if (model) where.model = { contains: model }
+    }
     if (condition) where.condition = condition
     if (saleFormat === "FIXED" || saleFormat === "AUCTION") where.saleFormat = saleFormat
     if (oemNumber) where.oemNumber = { contains: oemNumber }
@@ -47,13 +60,7 @@ export async function GET(request: NextRequest) {
       if (priceTo) where.price.lte = parseInt(priceTo)
     }
 
-    // Если есть make+model — ищем также через PartCompatibility
-    if (make && sp.get("compatible") === "true") {
-      where.OR = [
-        ...(where.OR || []),
-        { compatibility: { some: { make: { contains: make }, ...(model ? { model: { contains: model } } : {}) } } },
-      ]
-    }
+    if (and.length) where.AND = and
 
     const orderBy: any =
       sort === "price_asc" ? { price: "asc" }

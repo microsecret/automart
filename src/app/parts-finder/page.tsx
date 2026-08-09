@@ -4,8 +4,8 @@ import { useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, ScrollArea, Container, Drawer } from "@mantine/core"
-import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconFilter, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
+import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination } from "@mantine/core"
+import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
 import { PART_TYPES, PART_SUBCATEGORIES, CONDITIONS } from "@/lib/constants"
 import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
@@ -25,6 +25,24 @@ type PartResult = {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
+function PartMedia({ image, name }: { image: string; name: string }) {
+  const [failed, setFailed] = useState(!image || image.includes("/placeholder"))
+  const [loaded, setLoaded] = useState(false)
+
+  return (
+    <Box className="part-result-card__media">
+      <Stack gap={4} align="center" className="part-result-card__placeholder" style={{ opacity: !loaded || failed ? 1 : 0 }}>
+        <ThemeIcon variant="light" color="indigo" size={50} radius="xl"><IconTools size={28} stroke={1.5} /></ThemeIcon>
+        <Text size="10px" c="dimmed">Фото продавца</Text>
+      </Stack>
+      {!failed && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={image} alt={name} onLoad={() => setLoaded(true)} onError={() => setFailed(true)} data-loaded={loaded || undefined} />
+      )}
+    </Box>
+  )
+}
+
 function PartsContent() {
   const sp = useSearchParams()
   const [q, setQ] = useState(sp.get("q") || "")
@@ -36,12 +54,14 @@ function PartsContent() {
   const [saleFormat, setSaleFormat] = useState<string | null>(null)
   const [priceFrom, setPriceFrom] = useState("")
   const [priceTo, setPriceTo] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
+  const [page, setPage] = useState(1)
 
   const subcats = partType ? PART_SUBCATEGORIES[partType] || [] : []
 
   const buildQuery = () => {
     const u = new URLSearchParams()
+    u.set("page", String(page))
+    u.set("limit", "24")
     if (q) u.set("q", q)
     if (partType) u.set("partType", partType)
     if (subcategory) u.set("subcategory", subcategory)
@@ -58,56 +78,27 @@ function PartsContent() {
   const { data, isLoading } = useSWR("/api/parts?" + buildQuery(), fetcher)
   const parts: PartResult[] = data?.parts || []
 
-  const CategorySidebar = (
-    <Stack gap={2}>
-      <Group gap="sm" mb="xs">
-        <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconTools size={18} /></ThemeIcon>
-        <Text fw={800} fz="sm" c="dark.9" ff="var(--font-display),sans-serif">Категории</Text>
-      </Group>
-      <Box
-        component="button"
-        onClick={() => { setPartType(null); setSubcategory(null) }}
-        style={{
-          width: "100%", textAlign: "left", padding: "8px 12px", borderRadius: 8, cursor: "pointer",
-          background: !partType ? "#4f46e5" : "transparent",
-          color: !partType ? "white" : "var(--mantine-color-gray-7)",
-          border: "none", fontWeight: !partType ? 600 : 500, fontSize: "0.8125rem",
-          transition: "all 150ms",
-        }}
-      >Все запчасти</Box>
-      {PART_TYPES.map((t) => (
-        <Box key={t.value}>
-          <Box
-            component="button"
-            onClick={() => { setPartType(partType === t.value ? null : t.value); setSubcategory(null) }}
-            style={{
-              width: "100%", textAlign: "left", padding: "8px 12px", borderRadius: 8, cursor: "pointer",
-              background: partType === t.value ? "#eef2ff" : "transparent",
-              color: partType === t.value ? "#4f46e5" : "var(--mantine-color-gray-7)",
-              border: "none", fontWeight: partType === t.value ? 700 : 500, fontSize: "0.8125rem",
-              transition: "all 150ms",
-            }}
-          >{t.label}</Box>
-          {partType === t.value && subcats.length > 0 && (
-            <Stack gap={1} pl={16} pt={2} pb={4}>
-              {subcats.map((sc) => (
-                <Box
-                  key={sc}
-                  component="button"
-                  onClick={() => setSubcategory(subcategory === sc ? null : sc)}
-                  style={{
-                    width: "100%", textAlign: "left", padding: "4px 8px", borderRadius: 6, cursor: "pointer",
-                    background: subcategory === sc ? "#f5f3ff" : "transparent",
-                    color: subcategory === sc ? "#7c3aed" : "var(--mantine-color-gray-5)",
-                    border: "none", fontWeight: subcategory === sc ? 600 : 400, fontSize: "0.75rem",
-                  }}
-                >{sc}</Box>
-              ))}
-            </Stack>
-          )}
-        </Box>
-      ))}
-    </Stack>
+  const CategoryBar = (
+    <Paper radius="md" p="sm" withBorder className="parts-category-bar">
+      <Stack gap={8}>
+        <Group gap="xs" justify="space-between">
+          <Group gap="xs"><ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconTools size={16} /></ThemeIcon><Text fw={800} fz="sm" ff="var(--font-display),sans-serif">Категории запчастей</Text></Group>
+          {partType && <Button variant="subtle" color="gray" size="compact-xs" onClick={() => { setPartType(null); setSubcategory(null); setPage(1) }}>Сбросить категорию</Button>}
+        </Group>
+        <Group gap={6} wrap="wrap">
+          <Button size="compact-sm" radius="md" variant={!partType ? "filled" : "default"} color="indigo" onClick={() => { setPartType(null); setSubcategory(null); setPage(1) }}>Все запчасти</Button>
+          {PART_TYPES.map((t) => (
+            <Button key={t.value} size="compact-sm" radius="md" variant={partType === t.value ? "filled" : "default"} color="indigo" onClick={() => { setPartType(partType === t.value ? null : t.value); setSubcategory(null); setPage(1) }}>{t.label}</Button>
+          ))}
+        </Group>
+        {partType && subcats.length > 0 && (
+          <Group gap={6} wrap="wrap" className="parts-subcategories">
+            <Text size="xs" c="dimmed">Уточнить:</Text>
+            {subcats.map((sc) => <Button key={sc} size="compact-xs" radius="xl" variant={subcategory === sc ? "light" : "subtle"} color="violet" onClick={() => { setSubcategory(subcategory === sc ? null : sc); setPage(1) }}>{sc}</Button>)}
+          </Group>
+        )}
+      </Stack>
+    </Paper>
   )
 
   const VehiclePicker = (
@@ -136,15 +127,14 @@ function PartsContent() {
   const FilterBar = (
     <Paper radius="md" p="sm" withBorder>
       <Stack gap="sm">
-        <Group gap="xs" wrap="wrap" align="flex-end">
-          <TextInput placeholder="Поиск по названию, OEM..." leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="xs" style={{ flex: 1, minWidth: 180 }} />
-          <TextInput placeholder="Цена от" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="xs" w={80} type="number" />
-          <TextInput placeholder="до" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="xs" w={80} type="number" />
-          <Select placeholder="Состояние" data={CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={setCondition} size="xs" w={110} />
-          <Select placeholder="Формат" data={[{ value: "FIXED", label: "Цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="xs" w={110} />
-        </Group>
+        <Box className="parts-filter-grid">
+          <TextInput className="parts-filter-grid__search" placeholder="Название или OEM-номер" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} size="sm" />
+          <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => { setPriceFrom(e.target.value); setPage(1) }} size="sm" type="number" /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => { setPriceTo(e.target.value); setPage(1) }} size="sm" type="number" /></Group></Box>
+          <Select placeholder="Состояние" data={CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={(v) => { setCondition(v); setPage(1) }} size="sm" />
+          <Select placeholder="Формат продажи" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={(v) => { setSaleFormat(v); setPage(1) }} size="sm" />
+        </Box>
         {(partType || make || condition || saleFormat || priceFrom || priceTo) && (
-          <Group gap={6}>
+          <Group gap={6} wrap="wrap">
             <Text size="xs" c="gray.5">Активные:</Text>
             {partType && <Badge size="xs" variant="light" color="indigo">{PART_TYPES.find((t) => t.value === partType)?.label}</Badge>}
             {subcategory && <Badge size="xs" variant="light" color="violet">{subcategory}</Badge>}
@@ -152,7 +142,7 @@ function PartsContent() {
             {saleFormat && <Badge size="xs" variant="light" color="orange">{saleFormat === "AUCTION" ? "Аукцион" : "Цена"}</Badge>}
             {priceFrom && <Badge size="xs" variant="light" color="gray">от {priceFrom}₽</Badge>}
             {priceTo && <Badge size="xs" variant="light" color="gray">до {priceTo}₽</Badge>}
-            <Button variant="subtle" size="xs" color="red" onClick={() => { setPartType(null); setSubcategory(null); setCondition(null); setSaleFormat(null); setPriceFrom(""); setPriceTo("") }}>Сбросить</Button>
+            <Button variant="subtle" size="xs" color="red" onClick={() => { setPartType(null); setSubcategory(null); setCondition(null); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1) }}>Сбросить</Button>
           </Group>
         )}
       </Stack>
@@ -171,28 +161,16 @@ function PartsContent() {
               <Text size="xs" c="gray.5">{data?.pagination?.total || 0} запчастей · кросс-совместимость по авто</Text>
             </Stack>
           </Group>
-          <Box className="parts-mobile-only">
-            <Button variant="light" color="indigo" size="sm" leftSection={<IconFilter size={16} />} onClick={() => setShowFilters(true)}>Категории</Button>
-          </Box>
         </Group>
 
-        {/* Трёхколоночный layout */}
-        <Group gap="md" align="flex-start" wrap="nowrap">
-          {/* Левая колонка — категории (десктоп) */}
-          <Box className="parts-sidebar-desktop">
-            <Box style={{ width: 220, flexShrink: 0, position: "sticky", top: 64 }}>
-              <Paper radius="md" p="sm" withBorder>
-                <ScrollArea.Autosize style={{ maxHeight: 600 }}>
-                  {CategorySidebar}
-                </ScrollArea.Autosize>
-              </Paper>
-            </Box>
-          </Box>
+        {CategoryBar}
 
-          {/* Центр — результаты */}
-          <Box style={{ flex: 1, minWidth: 0 }}>
-            <Stack gap="sm">
-              {FilterBar}
+        <Group gap="md" align="stretch" className="parts-workspace" wrap="wrap">
+          <Box style={{ flex: 1, minWidth: 0 }}>{FilterBar}</Box>
+          <Box className="parts-vehicle-inline">{VehiclePicker}</Box>
+        </Group>
+
+        <Stack gap="sm">
 
               {isLoading ? (
                 <Center py={60}><Loader size="sm" color="indigo" /></Center>
@@ -201,21 +179,18 @@ function PartsContent() {
                   <Center><Stack align="center"><IconTools size={40} color="#a1a1aa" /><Text c="gray.5">Запчасти не найдены. Измените фильтры.</Text></Stack></Center>
                 </Paper>
               ) : (
-                <Stack gap="xs">
+                <SimpleGrid cols={{ base: 1, sm: 2, xl: 3 }} spacing="sm">
                   {parts.map((p) => {
                     const images = parseImages(p.images)
-                    const image = images[0] || "/placeholder.svg"
+                    const image = images[0] || ""
                     return (
-                      <Paper key={p.id} radius="md" withBorder style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", transition: "all 200ms" }}
+                      <Paper key={p.id} radius="md" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", transition: "all 200ms" }}
                         onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-gray-4)" }}
                         onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)" }}>
-                        <Group gap={0} align="stretch" wrap="nowrap">
-                          <Link href={`/listings/part/${p.id}`} style={{ flexShrink: 0 }}>
-                            <Box style={{ width: 120, height: "100%", minHeight: 110, background: "var(--mantine-color-gray-1)" }}>
-                              <img src={image} alt={p.name} style={{ width: "100%", height: "100%", minHeight: 110, objectFit: "cover" }} />
-                            </Box>
-                          </Link>
-                          <Box p="sm" style={{ flex: 1, minWidth: 0 }}>
+                        <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                          <PartMedia image={image} name={p.name} />
+                        </Link>
+                        <Box p="sm">
                             <Stack gap={4}>
                               <Group gap="sm" align="flex-start" justify="space-between">
                                 <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none" }}>
@@ -246,35 +221,21 @@ function PartsContent() {
                                 </Group>
                               )}
 
-                              <Group gap="xs" mt={2} justify="space-between">
-                                <Text size="xs" c="gray.4">{p.location || "Москва"}</Text>
-                                <Button component={Link} href={`/listings/part/${p.id}`} variant="light" color="indigo" size="xs" radius="md">Подробнее</Button>
+                              <Group gap="xs" mt={4} justify="space-between">
+                                <Text size="xs" c="gray.4">{p.location || "Город не указан"}</Text>
+                                <Text size="xs" fw={700} c="indigo.6">Подробнее →</Text>
                               </Group>
                             </Stack>
-                          </Box>
-                        </Group>
+                        </Box>
                       </Paper>
                     )
                   })}
-                </Stack>
+                </SimpleGrid>
               )}
-            </Stack>
-          </Box>
+        </Stack>
 
-          {/* Правая колонка — подбор по авто (десктоп) */}
-          <Box className="parts-vehicle-desktop">
-            <Box style={{ width: 240, flexShrink: 0, position: "sticky", top: 64 }}>
-              {VehiclePicker}
-            </Box>
-          </Box>
-        </Group>
+        {data && data.pagination?.pages > 1 && <Group justify="center"><Pagination value={page} onChange={setPage} total={data.pagination.pages} size="sm" color="indigo" /></Group>}
       </Stack>
-
-      {/* Drawer для мобильных категорий */}
-      <Drawer opened={showFilters} onClose={() => setShowFilters(false)} title="Категории запчастей" padding="md" size="sm">
-        {CategorySidebar}
-        <Box mt="md">{VehiclePicker}</Box>
-      </Drawer>
     </Container>
   )
 }

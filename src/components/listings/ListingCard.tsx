@@ -2,13 +2,13 @@
 
 import { useState, useTransition, useEffect } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio, Menu, Portal, SimpleGrid } from "@mantine/core"
-import { IconHeart, IconMapPin, IconGauge, IconCalendar, IconManualGearbox, IconGasStation, IconDotsVertical, IconShare } from "@tabler/icons-react"
+import { IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
-import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
-import BrandLogo from "@/components/brands/BrandLogo"
-import BrandBadge from "@/components/brands/BrandBadge"
+import { findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
+import { hasBrandLogo } from "@/components/brands/BrandLogo"
+import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
 
 export interface ListingCardData {
   id: string
@@ -28,6 +28,8 @@ export interface ListingCardData {
     transmission: string | null
     bodyType: string | null
     images: string | null
+    vehicleType?: string | null
+    typeDetails?: string | null
   } | null
   part?: {
     id: string
@@ -72,12 +74,18 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
     : `/listings/part/${listing.part!.id}`
 
   const images = parseImages(isVehicle ? listing.vehicle!.images : listing.part?.images)
-  const fallbackImage = isVehicle ? "/images/home/listing-fallback.png" : "/placeholder.svg"
   const sourceImage = images[0] || ""
-  const image = sourceImage.includes("/placeholder/") ? fallbackImage : sourceImage || fallbackImage
+  const image = sourceImage.includes("/placeholder/") ? "" : sourceImage
   const activeImage = images[activeImg] || image
-  const displayImage = imageFailed || activeImage.includes("/placeholder/") ? fallbackImage : activeImage
+  const displayImage = imageFailed || activeImage.includes("/placeholder/") ? "" : activeImage
   const monthlyPayment = formatMonthlyPayment(listing.price)
+  const vehicleType = listing.vehicle?.vehicleType || "CAR"
+  const isAir = vehicleType === "AIR"
+  const distanceLabel = isAir ? "Налёт" : "Пробег"
+  const distanceValue = isAir
+    ? `${new Intl.NumberFormat("ru-RU").format(listing.vehicle?.mileage || 0)} ч`
+    : formatMileage(listing.vehicle?.mileage)
+  const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -121,8 +129,14 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         {/* Фото область */}
         <Box pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
           <AspectRatio ratio={1}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={displayImage} alt={listing.title} onError={() => setImageFailed(true)} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
+            {displayImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={displayImage} alt={listing.title} onError={() => setImageFailed(true)} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
+            ) : isVehicle ? (
+              <VehicleFallback type={vehicleType} bodyType={listing.vehicle?.bodyType} />
+            ) : (
+              <VehicleFallback type="CAR" />
+            )}
           </AspectRatio>
           {images.length > 1 && (
             <>
@@ -165,7 +179,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           )}
 
           {/* Цветная иконка бренда — справа сверху */}
-          {isVehicle && (
+          {showBrandMark && (
             <Box pos="absolute" top={8} right={8} style={{ zIndex: 2 }}>
               <BrandIcon brand={listing.vehicle!.make} size={28} variant="rounded" />
             </Box>
@@ -209,26 +223,30 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
 
           {/* Характеристики — сетка с иконками */}
           {isVehicle && (
-            <SimpleGrid cols={2} spacing={4} mb={6}>
-              <Group gap={3} wrap="nowrap">
-                <IconCalendar size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
-                <Text fz="10px" c="gray.5" style={TRUNCATE_STYLE}>{listing.vehicle!.year}</Text>
-              </Group>
-              <Group gap={3} wrap="nowrap">
-                <IconGauge size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
-                <Text fz="10px" c="gray.5" style={TRUNCATE_STYLE}>{formatMileage(listing.vehicle!.mileage)}</Text>
-              </Group>
+            <SimpleGrid cols={2} spacing={6} mb={6}>
+              <Stack gap={0}>
+                <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>Тип</Text>
+                <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>
+              </Stack>
+              <Stack gap={0}>
+                <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>Год</Text>
+                <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{listing.vehicle!.year}</Text>
+              </Stack>
+              <Stack gap={0}>
+                <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>{distanceLabel}</Text>
+                <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{distanceValue}</Text>
+              </Stack>
               {listing.vehicle!.transmission && (
-                <Group gap={3} wrap="nowrap">
-                  <IconManualGearbox size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
-                  <Text fz="10px" c="gray.5" style={TRUNCATE_STYLE}>{findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
-                </Group>
+                <Stack gap={0}>
+                  <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>Трансмиссия</Text>
+                  <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
+                </Stack>
               )}
               {listing.vehicle!.fuelType && (
-                <Group gap={3} wrap="nowrap">
-                  <IconGasStation size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
-                  <Text fz="10px" c="gray.5" style={TRUNCATE_STYLE}>{findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>
-                </Group>
+                <Stack gap={0}>
+                  <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>Топливо</Text>
+                  <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>
+                </Stack>
               )}
             </SimpleGrid>
           )}
