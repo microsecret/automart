@@ -16,6 +16,7 @@
   --market-surface: #ffffff;
   --market-background: #f7f7f9;
   --market-primary: #4f46e5;
+  --app-header-height: 68px;
 }
 
 /* Базовый фон и текст */
@@ -163,6 +164,71 @@ select {
   }
 }
 
+.market-app-header {
+  height: var(--app-header-height);
+}
+
+.market-app-header__links .mantine-Button-root {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.market-shell {
+  display: flex;
+  max-width: 1440px;
+  min-height: calc(100vh - var(--app-header-height));
+  margin: 0 auto;
+}
+
+.app-sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  position: sticky;
+  top: var(--app-header-height);
+  height: calc(100vh - var(--app-header-height));
+  border-right: 1px solid #e8e8ee;
+  background: rgba(250, 250, 252, 0.88);
+}
+
+.app-main-content {
+  min-width: 0;
+  flex: 1;
+}
+
+@media (max-width: 900px) {
+  .app-sidebar {
+    display: none;
+  }
+}
+
+.market-side-account,
+.market-side-panel,
+.market-side-service {
+  border-color: #e5e7eb;
+  background: #fff;
+  box-shadow: 0 10px 24px -24px rgba(15, 23, 42, 0.8);
+}
+
+.market-side-account {
+  background: linear-gradient(145deg, #f5f7ff 0%, #fff 76%);
+}
+
+.market-side-account--user {
+  background: linear-gradient(145deg, #eef2ff 0%, #fff 78%);
+}
+
+.market-side-nav {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.market-side-nav--nested {
+  padding-left: 34px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
 /* Скроллбар — минималистичный, индиго при ховере */
 ::-webkit-scrollbar {
   width: 10px;
@@ -266,7 +332,7 @@ select {
 .home-auctions {
   position: relative;
   overflow: hidden;
-  min-height: 336px;
+  min-height: 360px;
   border: 0;
   isolation: isolate;
 }
@@ -284,7 +350,7 @@ select {
 }
 
 .home-auctions__scrim {
-  background: linear-gradient(90deg, rgba(5, 10, 26, 0.94) 0%, rgba(12, 22, 48, 0.78) 48%, rgba(10, 18, 40, 0.22) 100%);
+  background: linear-gradient(90deg, rgba(5, 10, 26, 0.95) 0%, rgba(10, 19, 43, 0.8) 53%, rgba(10, 18, 40, 0.28) 100%);
 }
 
 .home-auctions__content {
@@ -324,13 +390,45 @@ select {
 
 .catalog-filter-grid {
   display: grid;
-  grid-template-columns: minmax(210px, 1.8fr) repeat(3, minmax(128px, 0.8fr));
-  gap: 10px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
   align-items: end;
 }
 
-.catalog-filter-grid__search {
-  grid-column: span 2;
+.catalog-filter-panel {
+  border-color: #e4e6ed;
+  background: linear-gradient(145deg, #fff 0%, #fcfcff 100%);
+}
+
+.catalog-filter-field--search { grid-column: span 4; }
+.catalog-filter-field--make,
+.catalog-filter-field--model { grid-column: span 2; }
+.catalog-filter-field--sort { grid-column: span 4; }
+.catalog-filter-field--price { grid-column: span 3; }
+.catalog-filter-field--year { grid-column: span 2; }
+.catalog-filter-field--city { grid-column: span 3; }
+.catalog-filter-field--mileage { grid-column: span 2; }
+
+.catalog-filter-field .mantine-InputWrapper-label {
+  margin-bottom: 5px;
+  color: #5b6270;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.catalog-filter-field .mantine-Input-input,
+.catalog-filter-field .mantine-Select-input {
+  min-height: 38px;
+  border-color: #dfe3ed;
+  background: #fff;
+}
+
+.catalog-filter-field .mantine-Input-input:focus,
+.catalog-filter-field .mantine-Select-input:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .catalog-price-range,
@@ -446,10 +544,18 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .catalog-filter-grid__search,
+  .catalog-filter-field--search,
   .parts-filter-grid__search {
     grid-column: 1 / -1;
   }
+
+  .catalog-filter-field--make,
+  .catalog-filter-field--model,
+  .catalog-filter-field--sort,
+  .catalog-filter-field--price,
+  .catalog-filter-field--year,
+  .catalog-filter-field--city,
+  .catalog-filter-field--mileage { grid-column: auto; }
 
   .parts-vehicle-inline {
     width: 100%;
@@ -467,7 +573,7 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .catalog-filter-grid__search,
+  .catalog-filter-field--search,
   .parts-filter-grid__search {
     grid-column: auto;
   }

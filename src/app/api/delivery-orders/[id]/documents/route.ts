@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { asTrimmedString, canManageDeliveryOrder, canReadDeliveryOrder } from "@/lib/delivery-access"
+import { hasExpectedFileSignature } from "@/lib/file-signature"
 
 export const dynamic = "force-dynamic"
 
@@ -19,13 +20,14 @@ function privateDocumentsDirectory() {
 }
 
 /** POST /api/delivery-orders/[id]/documents — загрузка закрытого файла сделки. */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const order = await prisma.deliveryOrder.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, buyerId: true, partnerId: true, managerId: true },
     })
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
@@ -40,6 +42,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     if (!(file instanceof File) || !acceptedMimeTypes.has(file.type) || file.size <= 0 || file.size > MAX_DOCUMENT_SIZE) {
       return NextResponse.json({ error: "Разрешены PDF, JPG, PNG и WebP до 20 МБ" }, { status: 400 })
+    }
+    const fileBytes = Buffer.from(await file.arrayBuffer())
+    if (!hasExpectedFileSignature(file.type, fileBytes)) {
+      return NextResponse.json({ error: "Содержимое файла не соответствует заявленному формату" }, { status: 400 })
     }
     if (!allDocumentCategories.has(category) || (!canManage && !buyerDocumentCategories.has(category))) {
       return NextResponse.json({ error: "Недопустимый тип документа" }, { status: 400 })
@@ -61,7 +67,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const directory = privateDocumentsDirectory()
     await mkdir(directory, { recursive: true })
     const target = path.join(directory, storageKey)
-    await writeFile(target, Buffer.from(await file.arrayBuffer()))
+    await writeFile(target, fileBytes)
 
     try {
       const document = await prisma.$transaction(async (tx) => {

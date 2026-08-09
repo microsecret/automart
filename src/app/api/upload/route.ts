@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { randomUUID } from "crypto"
 import { writeFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
 import path from "path"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { hasExpectedFileSignature } from "@/lib/file-signature"
 
 export const dynamic = "force-dynamic"
 
@@ -25,15 +27,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Max 10MB" }, { status: 400 })
     }
 
+    const bytes = Buffer.from(await file.arrayBuffer())
+    if (!hasExpectedFileSignature(file.type, bytes)) {
+      return NextResponse.json({ error: "File content does not match its declared type" }, { status: 400 })
+    }
+
     const uploadDir = path.join(process.cwd(), "public", "uploads")
     if (!existsSync(uploadDir)) await mkdir(uploadDir, { recursive: true })
 
-    const ext = file.name.split(".").pop() || "jpg"
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+    const extensionByMime: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }
+    const filename = `${randomUUID()}.${extensionByMime[file.type]}`
     const filepath = path.join(uploadDir, filename)
 
-    const bytes = await file.arrayBuffer()
-    await writeFile(filepath, Buffer.from(bytes))
+    await writeFile(filepath, bytes)
 
     return NextResponse.json({ url: `/uploads/${filename}` })
   } catch (error) {

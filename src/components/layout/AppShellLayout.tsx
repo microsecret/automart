@@ -1,239 +1,139 @@
 "use client"
 
-import { useState } from "react"
-import { Box, ScrollArea, NavLink, Text, Stack, Divider, Group, Badge, ThemeIcon, Anchor } from "@mantine/core"
-import SupportChat from "@/components/support/SupportChat"
+import { Avatar, Box, Button, Group, NavLink, Paper, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core"
+import { useSession } from "next-auth/react"
 import {
-  IconCar, IconMotorbike, IconTruck, IconTractor, IconSpeedboat, IconPlane,
-  IconTools, IconBuildingStore, IconChevronDown, IconHeart, IconMessageCircle2,
-  IconBell, IconAdjustmentsHorizontal, IconNews, IconHome2, IconSearch, IconPlus,
+  IconCar, IconHeart, IconHome2, IconMessageCircle2, IconMotorbike, IconPlane,
+  IconPlus, IconSearch, IconSpeedboat, IconTools, IconTractor, IconTruck,
+  IconTruckDelivery, IconUserCircle, IconGavel, IconNews, IconShieldCheck,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import AppHeader from "./AppHeader"
-import AppFooter from "./AppFooter"
 import AppAnalytics from "@/components/analytics/AppAnalytics"
+import SupportChat from "@/components/support/SupportChat"
+import AppFooter from "./AppFooter"
+import AppHeader from "./AppHeader"
 
-const CATEGORIES = [
-  { slug: "cars", label: "Легковые", icon: <IconCar size={16} stroke={1.7} /> },
-  { slug: "moto", label: "Мото", icon: <IconMotorbike size={16} stroke={1.7} /> },
-  { slug: "trucks", label: "Грузовики", icon: <IconTruck size={16} stroke={1.7} /> },
-  { slug: "special", label: "Спецтехника", icon: <IconTractor size={16} stroke={1.7} /> },
-  { slug: "water", label: "Водный транспорт", icon: <IconSpeedboat size={16} stroke={1.7} /> },
-  { slug: "air", label: "Воздушный транспорт", icon: <IconPlane size={16} stroke={1.7} /> },
+const TRANSPORT = [
+  { slug: "cars", label: "Легковые", icon: <IconCar size={16} stroke={1.8} /> },
+  { slug: "moto", label: "Мото", icon: <IconMotorbike size={16} stroke={1.8} /> },
+  { slug: "trucks", label: "Грузовики", icon: <IconTruck size={16} stroke={1.8} /> },
+  { slug: "special", label: "Спецтехника", icon: <IconTractor size={16} stroke={1.8} /> },
+  { slug: "water", label: "Водный транспорт", icon: <IconSpeedboat size={16} stroke={1.8} /> },
+  { slug: "air", label: "Воздушный транспорт", icon: <IconPlane size={16} stroke={1.8} /> },
 ]
 
-const PARTS_LINKS = [
-  { slug: "parts", label: "Все запчасти", href: "/parts-finder" },
+const PARTS = [
+  { label: "Все запчасти", href: "/parts-finder", icon: <IconTools size={16} stroke={1.8} /> },
   { label: "Двигатель", href: "/parts-finder?partType=ENGINE" },
   { label: "Тормоза", href: "/parts-finder?partType=BRAKES" },
-  { label: "Подвеска / Ходовая", href: "/parts-finder?partType=SUSPENSION" },
-  { label: "Рулевое управление", href: "/parts-finder?partType=STEERING" },
+  { label: "Подвеска и ходовая", href: "/parts-finder?partType=SUSPENSION" },
   { label: "Электрика", href: "/parts-finder?partType=ELECTRICAL" },
-  { label: "Оптика / Фары", href: "/parts-finder?partType=LIGHTING" },
-  { label: "Кузов", href: "/parts-finder?partType=BODY" },
-  { label: "Колёса и диски", href: "/parts-finder?partType=WHEELS" },
-  { label: "Охлаждение", href: "/parts-finder?partType=COOLING" },
+  { label: "Оптика", href: "/parts-finder?partType=LIGHTING" },
 ]
 
-const SERVICE_LINKS = [
-  { label: "Оценка стоимости", href: "/services/valuation" },
-  { label: "Проверка истории", href: "/services/history-check" },
-  { label: "Умный подбор", href: "/services/smart-matching" },
-  { label: "Безопасная сделка", href: "/services/safe-deal" },
-]
-
-const HELP_LINKS = [
-  { label: "Как продать авто", href: "/help/sell" },
-  { label: "Безопасность", href: "/help/safety" },
-  { label: "Правила", href: "/help/rules" },
-  { label: "Поддержка", href: "/help/support" },
+const AUCTIONS = [
+  { label: "Все аукционы", href: "/auctions" },
+  { label: "Япония", href: "/auctions?country=JP" },
+  { label: "Корея", href: "/auctions?country=KR" },
+  { label: "Китай", href: "/auctions?country=CN" },
 ]
 
 export default function AppShellLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const activeCat = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
-  const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCat === "parts"
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const { data: session } = useSession()
+  const isAuthRoute = pathname?.startsWith("/auth/")
+  const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
+  const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCategory === "parts"
 
-  const toggle = (id: string) => setExpanded(expanded === id ? null : id)
+  if (isAuthRoute) {
+    return (
+      <Box component="main" style={{ minHeight: "100vh", background: "var(--market-background)" }}>
+        <AppAnalytics />
+        {children}
+      </Box>
+    )
+  }
 
   return (
-    <Box style={{ minHeight: "100vh", background: "var(--mantine-color-body)" }}>
+    <Box style={{ minHeight: "100vh", background: "var(--market-background)" }}>
       <AppAnalytics />
       <AppHeader />
 
-      <Box style={{ display: "flex", maxWidth: 1440, margin: "0 auto" }}>
-        {/* Сайдбар */}
-        <Box
-          component="aside"
-          className="app-sidebar"
-          style={{
-            width: 230,
-            flexShrink: 0,
-            position: "sticky",
-            top: 56,
-            height: "calc(100vh - 56px)",
-            borderRight: "1px solid var(--mantine-color-border)",
-            background: "var(--mantine-color-body)",
-            overflow: "hidden",
-          }}
-        >
+      <Box className="market-shell">
+        <Box component="aside" className="app-sidebar">
           <ScrollArea h="100%" type="hover" scrollbarSize={5}>
-            <Stack gap={0} p="xs">
-              {/* Транспорт */}
-              <SectionLabel>Транспорт</SectionLabel>
-              <Stack gap={1}>
-                {CATEGORIES.map((cat) => {
-                  const isActive = activeCat === cat.slug
-                  return (
-                    <NavLink
-                      key={cat.slug}
-                      component={Link}
-                      href={`/category/${cat.slug}`}
-                      label={cat.label}
-                      leftSection={cat.icon}
-                      active={isActive}
-                      color="indigo"
-                      radius="md"
-                      py={6}
-                      style={{ fontSize: "0.8125rem", fontWeight: isActive ? 600 : 500 }}
-                    />
-                  )
-                })}
-              </Stack>
+            <Stack gap="sm" p="sm">
+              <AccountPanel session={session} />
 
-              {/* Запчасти */}
-              <SectionLabel mt="sm">Запчасти</SectionLabel>
-              <Stack gap={1}>
-                <NavLink
-                  component={Link}
-                  href="/parts-finder"
-                  label="Все запчасти"
-                  leftSection={<IconTools size={16} stroke={1.7} />}
-                  active={isPartsRoute}
-                  color="indigo"
-                  radius="md"
-                  py={6}
-                  style={{ fontSize: "0.8125rem", fontWeight: isPartsRoute ? 600 : 500 }}
-                />
-                {PARTS_LINKS.slice(1).map((link) => (
+              <SidebarPanel title="Транспорт" icon={<IconCar size={15} />}>
+                {TRANSPORT.map((item) => (
                   <NavLink
-                    key={link.label}
+                    key={item.slug}
                     component={Link}
-                    href={link.href}
-                    label={link.label}
-                    radius="sm"
-                    py={4}
-                    px="lg"
-                    color="gray"
-                    style={{ fontSize: "0.75rem", color: "var(--mantine-color-dimmed)" }}
+                    href={`/category/${item.slug}`}
+                    label={item.label}
+                    leftSection={item.icon}
+                    active={activeCategory === item.slug}
+                    color="indigo"
+                    className="market-side-nav"
                   />
                 ))}
-              </Stack>
+              </SidebarPanel>
 
-              {/* Быстрые ссылки */}
-      <SectionLabel mt="sm">Кабинет</SectionLabel>
-      <Stack gap={1}>
-        <Anchor component={Link} href="/dashboard" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
-          📊 Личный кабинет
-        </Anchor>
-        <Anchor component={Link} href="/dashboard/deliveries" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
-          🚚 Мои доставки
-        </Anchor>
-        <Anchor component={Link} href="/favorites" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
-          ❤️ Избранное
-        </Anchor>
-        <Anchor component={Link} href="/compare" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
-          ⚖️ Сравнение
-        </Anchor>
-        <Anchor component={Link} href="/messages" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
-          💬 Сообщения
-        </Anchor>
-      </Stack>
-
-      {/* Аукционы */}
-      <SectionLabel mt="sm">Аукционы мира</SectionLabel>
-      <Stack gap={1}>
-        <Anchor component={Link} href="/auctions" size="sm" c="gray.6" style={{ padding: "6px 10px", borderRadius: 8, fontWeight: 600, textDecoration: "none" }}>
-          🔨 Все аукционы
-        </Anchor>
-        <Anchor component={Link} href="/auctions?country=JP" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
-          🇯🇵 Япония (USS, TAA)
-        </Anchor>
-        <Anchor component={Link} href="/auctions?country=KR" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
-          🇰🇷 Корея (Emaraat, AJ)
-        </Anchor>
-        <Anchor component={Link} href="/auctions?country=US" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
-          🇺🇸 США (Copart, IAAI)
-        </Anchor>
-        <Anchor component={Link} href="/auctions?country=CN" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
-          🇨🇳 Китай (YCheZhai, Guazi)
-        </Anchor>
-        <Anchor component={Link} href="/auctions?country=DE" size="xs" c="gray.5" style={{ padding: "4px 10px 4px 24px", borderRadius: 6, textDecoration: "none" }}>
-          🇩🇪 Европа (Mobile.de)
-        </Anchor>
-      </Stack>
-
-      {/* Сервисы */}
-              <SectionLabel mt="sm">Сервисы</SectionLabel>
-              <Stack gap={1}>
-                {SERVICE_LINKS.map((link) => (
+              <SidebarPanel title="Запчасти" icon={<IconTools size={15} />}>
+                {PARTS.map((item, index) => (
                   <NavLink
-                    key={link.label}
+                    key={item.href}
                     component={Link}
-                    href={link.href}
-                    label={link.label}
-                    radius="sm"
-                    py={5}
-                    color="gray"
-                    style={{ fontSize: "0.8125rem" }}
+                    href={item.href}
+                    label={item.label}
+                    leftSection={index === 0 ? item.icon : undefined}
+                    active={index === 0 && isPartsRoute}
+                    color="indigo"
+                    className={`market-side-nav ${index > 0 ? "market-side-nav--nested" : ""}`}
                   />
                 ))}
-              </Stack>
+              </SidebarPanel>
 
-              {/* Помощь */}
-              <SectionLabel mt="sm">Помощь</SectionLabel>
-              <Stack gap={1} mb="sm">
-                {HELP_LINKS.map((link) => (
+              <SidebarPanel title="Мировые аукционы" icon={<IconGavel size={15} />}>
+                {AUCTIONS.map((item, index) => (
                   <NavLink
-                    key={link.label}
+                    key={item.href}
                     component={Link}
-                    href={link.href}
-                    label={link.label}
-                    radius="sm"
-                    py={5}
-                    color="gray"
-                    style={{ fontSize: "0.8125rem" }}
+                    href={item.href}
+                    label={item.label}
+                    leftSection={index === 0 ? <IconGavel size={16} stroke={1.8} /> : undefined}
+                    active={pathname === "/auctions" && index === 0}
+                    color="orange"
+                    className={`market-side-nav ${index > 0 ? "market-side-nav--nested" : ""}`}
                   />
                 ))}
-              </Stack>
+              </SidebarPanel>
 
-              <Divider color="gray.2" mb="xs" />
+              <Paper className="market-side-service" radius="lg" p="sm" withBorder>
+                <Group gap="xs" wrap="nowrap" align="flex-start">
+                  <ThemeIcon variant="light" color="indigo" radius="md" size={30}><IconShieldCheck size={17} /></ThemeIcon>
+                  <Box>
+                    <Text size="xs" fw={700}>Безопасная сделка</Text>
+                    <Text size="10px" c="dimmed">Проверка, документы и доставка</Text>
+                  </Box>
+                </Group>
+                <Button component={Link} href="/services/safe-deal" variant="subtle" color="indigo" size="compact-sm" mt={6}>Как это работает →</Button>
+              </Paper>
 
-              {/* Быстрые ссылки */}
-              <Stack gap={1}>
-                <NavLink component={Link} href="/news" label="Новости" leftSection={<IconNews size={16} stroke={1.7} />} radius="sm" py={5} color="gray" style={{ fontSize: "0.8125rem" }} />
-                <NavLink component={Link} href="/brands" label="Все марки" radius="sm" py={5} color="gray" style={{ fontSize: "0.8125rem" }} />
-                <NavLink component={Link} href="/compare" label="Сравнение" radius="sm" py={5} color="gray" style={{ fontSize: "0.8125rem" }} />
-              </Stack>
+              <Group justify="space-between" px={4} pt={2}>
+                <Button component={Link} href="/news" variant="subtle" color="gray" size="compact-xs" leftSection={<IconNews size={14} />}>Новости</Button>
+                <Button component={Link} href="/help/safety" variant="subtle" color="gray" size="compact-xs">Помощь</Button>
+              </Group>
             </Stack>
           </ScrollArea>
         </Box>
 
-        {/* Контент */}
-        <Box component="main" className="app-main-content" style={{ flex: 1, minWidth: 0 }}>
-          {children}
-        </Box>
+        <Box component="main" className="app-main-content">{children}</Box>
       </Box>
 
       <AppFooter />
-
-      <style>{`
-        @media (max-width: 900px) { .app-sidebar { display: none !important; } }
-      `}</style>
-
-      {/* Чат поддержки */}
       <SupportChat />
 
       <nav className="mobile-bottom-nav" aria-label="Основная навигация">
@@ -247,20 +147,44 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   )
 }
 
-function SectionLabel({ children, mt }: { children: React.ReactNode; mt?: string }) {
+function AccountPanel({ session }: { session: ReturnType<typeof useSession>["data"] }) {
+  if (session?.user) {
+    return (
+      <Paper className="market-side-account market-side-account--user" radius="lg" p="sm" withBorder>
+        <Group wrap="nowrap" gap="sm">
+          <Avatar src={session.user.image} color="indigo" radius="xl" size={34}>{session.user.name?.[0]?.toUpperCase()}</Avatar>
+          <Box style={{ minWidth: 0 }}>
+            <Text size="xs" c="dimmed">Личный кабинет</Text>
+            <Text size="sm" fw={700} lineClamp={1}>{session.user.name || session.user.email}</Text>
+          </Box>
+        </Group>
+        <Group grow mt="sm">
+          <Button component={Link} href="/dashboard" variant="filled" color="indigo" size="xs">Кабинет</Button>
+          <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" size="xs" leftSection={<IconTruckDelivery size={14} />}>Доставки</Button>
+        </Group>
+      </Paper>
+    )
+  }
+
   return (
-    <Text
-      size="10px"
-      fw={700}
-      c="gray.4"
-      px="sm"
-      mt={mt || 0}
-      pb="xs"
-      pt="xs"
-      ff="var(--font-display), sans-serif"
-      style={{ letterSpacing: "0.08em", textTransform: "uppercase" }}
-    >
-      {children}
-    </Text>
+    <Paper className="market-side-account" radius="lg" p="sm" withBorder>
+      <Group gap="xs" wrap="nowrap">
+        <ThemeIcon variant="light" color="indigo" radius="md" size={32}><IconUserCircle size={19} /></ThemeIcon>
+        <Box><Text size="sm" fw={700}>Личный кабинет</Text><Text size="10px" c="dimmed">Объявления, избранное, доставка</Text></Box>
+      </Group>
+      <Group grow mt="sm">
+        <Button component={Link} href="/auth/signin" variant="light" color="indigo" size="xs">Войти</Button>
+        <Button component={Link} href="/auth/signup" color="indigo" size="xs">Создать</Button>
+      </Group>
+    </Paper>
+  )
+}
+
+function SidebarPanel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Paper className="market-side-panel" radius="lg" p={6} withBorder>
+      <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={800} tt="uppercase" c="dimmed">{title}</Text></Group>
+      <Stack gap={1} mt={2}>{children}</Stack>
+    </Paper>
   )
 }

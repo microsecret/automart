@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Box, Paper, Stack, Group, Text, TextInput, Button, ActionIcon, ThemeIcon, Anchor } from "@mantine/core"
+import { Box, Paper, Stack, Group, Text, TextInput, Button, ActionIcon, ThemeIcon } from "@mantine/core"
 import { IconMessageCircle2, IconX, IconSend, IconHeadset } from "@tabler/icons-react"
+import { useSession } from "next-auth/react"
+import Link from "next/link"
 
 interface Msg {
   id: string
@@ -18,16 +20,19 @@ export default function SupportChat() {
   const [text, setText] = useState("")
   const [sending, setSending] = useState(false)
   const [ticketId, setTicketId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { data: session, status } = useSession()
 
   useEffect(() => {
-    // Восстановить ticketId из localStorage
-    const saved = localStorage.getItem("support-ticket")
-    if (saved) {
-      setTicketId(saved)
-      loadMessages(saved)
+    if (session?.user?.id) {
+      setTicketId(session.user.id)
+      loadMessages(session.user.id)
+    } else {
+      setTicketId(null)
+      setMessages([])
     }
-  }, [])
+  }, [session?.user?.id])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
@@ -37,13 +42,14 @@ export default function SupportChat() {
     try {
       const res = await fetch(`/api/support?ticketId=${tId}`)
       const data = await res.json()
-      if (data.messages) setMessages(data.messages)
+      if (res.ok && data.messages) setMessages(data.messages)
     } catch {}
   }
 
   const send = async () => {
-    if (!text.trim()) return
+    if (!session?.user?.id || !text.trim()) return
     setSending(true)
+    setError(null)
     const content = text.trim()
     setText("")
 
@@ -58,30 +64,28 @@ export default function SupportChat() {
         body: JSON.stringify({ message: content, ticketId }),
       })
       const data = await res.json()
-      if (data.ticketId && !ticketId) {
-        setTicketId(data.ticketId)
-        localStorage.setItem("support-ticket", data.ticketId)
+      if (!res.ok) {
+        setMessages((items) => items.filter((message) => message.id !== tempMsg.id))
+        setError(data.error || "Не удалось отправить сообщение")
+        return
       }
-
-      // Авто-ответ бота поддержки через 1 сек
-      setTimeout(() => {
-        const botReply: Msg = {
-          id: `bot-${Date.now()}`,
-          content: getBotReply(content),
-          senderId: "support-team",
-          createdAt: new Date().toISOString(),
-          isSupport: true,
-        }
-        setMessages((p) => [...p, botReply])
-      }, 1200)
-    } catch {}
+      if (data.ticketId) {
+        setTicketId(data.ticketId)
+      }
+      if (data.message) {
+        setMessages((items) => items.map((message) => message.id === tempMsg.id ? data.message : message))
+      }
+    } catch {
+      setMessages((items) => items.filter((message) => message.id !== tempMsg.id))
+      setError("Не удалось отправить сообщение")
+    }
     finally { setSending(false) }
   }
 
   return (
     <>
       {/* Кнопка открытия — fixed в правом нижнем углу */}
-      <Box className="support-chat__launcher" pos="fixed" bottom={20} right={20} z={500}>
+      <Box className="support-chat__launcher" pos="fixed" bottom={20} right={20} style={{ zIndex: 500 }}>
         {!open && (
           <ActionIcon
             color="indigo"
@@ -99,7 +103,7 @@ export default function SupportChat() {
 
       {/* Окно чата */}
       {open && (
-        <Box className="support-chat__panel" pos="fixed" bottom={20} right={20} z={500} style={{ width: 340, maxWidth: "calc(100vw - 40px)" }}>
+        <Box className="support-chat__panel" pos="fixed" bottom={20} right={20} style={{ zIndex: 500, width: 340, maxWidth: "calc(100vw - 40px)" }}>
           <Paper radius="md" withBorder shadow="lg" style={{ borderColor: "var(--mantine-color-border)", overflow: "hidden" }}>
             {/* Шапка */}
             <Group justify="space-between" p="sm" style={{ background: "var(--mantine-color-text)" }}>
@@ -119,7 +123,13 @@ export default function SupportChat() {
 
             {/* Лента */}
             <Box ref={scrollRef} style={{ height: 320, overflowY: "auto", padding: 12, background: "var(--mantine-color-body)" }}>
-              {messages.length === 0 ? (
+              {!session?.user?.id && status !== "loading" ? (
+                <Stack align="center" gap="sm" py={20}>
+                  <IconHeadset size={32} stroke={1.5} color="#a5b4fc" />
+                  <Text size="sm" c="gray.5" ta="center">Войдите, чтобы поддержка могла безопасно вести переписку по вашему обращению.</Text>
+                  <Button component={Link} href="/auth/signin" size="xs" color="indigo">Войти в кабинет</Button>
+                </Stack>
+              ) : messages.length === 0 ? (
                 <Stack align="center" gap="sm" py={20}>
                   <IconMessageCircle2 size={32} stroke={1.5} color="#d4d4d8" />
                   <Text size="sm" c="gray.5" ta="center">Напишите нам — поможем с любым вопросом</Text>
@@ -127,8 +137,7 @@ export default function SupportChat() {
               ) : (
                 <Stack gap="xs">
                   {messages.map((msg) => {
-                    const isMe = msg.senderId === "me" || msg.senderId === "support-anonymous"
-              const isAI = msg.senderId === "ai-assistant"
+                    const isMe = msg.senderId === session?.user?.id
                     return (
                       <Box key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
                         <Paper
@@ -152,17 +161,19 @@ export default function SupportChat() {
             </Box>
 
             {/* Поле ввода */}
+            {error && <Text px="sm" pt="xs" size="xs" c="red">{error}</Text>}
             <Group gap="xs" p="sm" style={{ borderTop: "1px solid var(--mantine-color-border)", background: "var(--mantine-color-body)" }}>
               <TextInput
                 value={text}
                 onChange={(e) => setText(e.currentTarget.value)}
                 placeholder="Сообщение..."
+                disabled={!session?.user?.id}
                 size="xs"
                 radius="md"
                 style={{ flex: 1 }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send() } }}
               />
-              <ActionIcon color="indigo" variant="filled" size="md" radius="md" onClick={send} loading={sending} disabled={!text.trim()} aria-label="Отправить">
+              <ActionIcon color="indigo" variant="filled" size="md" radius="md" onClick={send} loading={sending} disabled={!text.trim() || !session?.user?.id} aria-label="Отправить">
                 <IconSend size={14} />
               </ActionIcon>
             </Group>
@@ -171,16 +182,4 @@ export default function SupportChat() {
       )}
     </>
   )
-}
-
-function getBotReply(input: string): string {
-  const lower = input.toLowerCase()
-  if (/привет|здравств|добр|хай/i.test(lower)) return "Здравствуйте! Чем могу помочь?"
-  if (/как.*прода|размест|добавить.*объяв/i.test(lower)) return "Чтобы разместить объявление: нажмите «Продать» в шапке → заполните форму. Это бесплатно!"
-  if (/цен|стоим|сколько/i.test(lower)) return "Размещение объявлений — бесплатно. Платно только продвижение (ТОП, Премиум, VIP)."
-  if (/VIN|вин|истори|провер/i.test(lower)) return "Проверка VIN доступна на странице объявления в блоке «VIN-паспорт»."
-  if (/безопасн|эскроу|сделк/i.test(lower)) return "Безопасная сделка: деньги на счёте платформы до передачи авто. Подробности — на странице объявления."
-  if (/удалить|отредактир|изменить/i.test(lower)) return "Управление объявлениями — в Личном кабинете → Продавец → Мои объявления."
-  if (/спасибо|благодар/i.test(lower)) return "Рады помочь! Если есть ещё вопросы — пишите."
-  return "Спасибо за обращение! Наш специалист ответит в ближайшее время. А пока вы можете найти ответ в разделе «Помощь»."
 }

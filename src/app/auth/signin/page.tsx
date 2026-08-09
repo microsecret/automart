@@ -2,7 +2,6 @@
 export const dynamic = "force-dynamic"
 import { Container, Card, Stack, Text, Box, Group, ThemeIcon } from "@mantine/core"
 import { IconCar, IconShieldCheck, IconChartBar, IconBell } from "@tabler/icons-react"
-import Link from "next/link"
 import SignInForm from "@/components/auth/SignInForm"
 
 const FEATURES = [
@@ -47,10 +46,6 @@ export default function SignInPage() {
           <Card withBorder radius="lg" p="xl" w={420} shadow="sm">
             <SignInForm />
           </Card>
-
-          <Text size="xs" c="gray.5">
-            Нет аккаунта? <Link href="/auth/signup" style={{ color: "#4f46e5", fontWeight: 600 }}>Зарегистрироваться</Link>
-          </Text>
         </Stack>
       </Group>
     </Container>

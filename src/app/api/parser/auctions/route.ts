@@ -4,12 +4,16 @@ import { translateListingFields } from "@/lib/nvidia-translate"
 
 export const dynamic = "force-dynamic"
 
-const PARSER_TOKEN = process.env.PARSER_TOKEN || "automart-parser-2026"
+const PARSER_TOKEN = process.env.PARSER_TOKEN
 
 const RATES: Record<string, number> = { JPY: 0.62, KRW: 0.072, USD: 95, EUR: 102, CNY: 13.2 }
 
 export async function POST(request: NextRequest) {
   try {
+    if (!PARSER_TOKEN) {
+      console.error("PARSER_TOKEN is not configured")
+      return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
+    }
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
     if (token !== PARSER_TOKEN) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 

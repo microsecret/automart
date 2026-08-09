@@ -16,7 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/category/water", "/category/air", "/category/parts", "/category/services",
     "/services/valuation", "/services/history-check", "/services/smart-matching", "/services/safe-deal",
     "/help/sell", "/help/safety", "/help/rules", "/help/support",
-    "/auth/signin", "/auth/signup",
+    "/parts-finder", "/auctions",
   ]
 
   const pages: MetadataRoute.Sitemap = [
@@ -29,11 +29,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    const news = await prisma.news.findMany({
-      select: { id: true, slug: true, publishedAt: true, updatedAt: true },
-      orderBy: { publishedAt: "desc" },
-      take: 10_000,
-    })
+    const [news, vehicles, parts, auctions] = await Promise.all([
+      prisma.news.findMany({
+        select: { id: true, slug: true, publishedAt: true, updatedAt: true },
+        orderBy: { publishedAt: "desc" },
+        take: 10_000,
+      }),
+      prisma.vehicle.findMany({
+        select: { id: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 10_000,
+      }),
+      prisma.part.findMany({
+        select: { id: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 10_000,
+      }),
+      prisma.auctionListing.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 10_000,
+      }),
+    ])
 
     return [
       ...pages,
@@ -42,6 +60,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: article.updatedAt || article.publishedAt,
         changeFrequency: "weekly" as const,
         priority: 0.8,
+      })),
+      ...vehicles.map((vehicle) => ({
+        url: `${baseUrl}/listings/vehicle/${vehicle.id}`,
+        lastModified: vehicle.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      })),
+      ...parts.map((part) => ({
+        url: `${baseUrl}/listings/part/${part.id}`,
+        lastModified: part.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.75,
+      })),
+      ...auctions.map((auction) => ({
+        url: `${baseUrl}/auctions/${auction.id}`,
+        lastModified: auction.updatedAt,
+        changeFrequency: "daily" as const,
+        priority: 0.85,
       })),
     ]
   } catch (error) {

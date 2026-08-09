@@ -1,49 +1,56 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import NextImage from "next/image"
 import { Box, Text, Select, Group, Pagination, Center, Loader, Stack, SegmentedControl, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip } from "@mantine/core"
-import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconRoute, IconShieldCheck } from "@tabler/icons-react"
+import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { getModels, POPULAR_BRANDS } from "@/lib/catalog"
 import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES } from "@/lib/constants"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+type HomePageProps = {
+  initialVehicleType?: string
+  initialType?: string
+  categorySlug?: string
+  pageTitle?: string
+}
+
+const fetcher = (url: string) => fetch(url).then((response) => response.json())
 const CAR_COLORS = ["Белый","Чёрный","Серебристый","Серый","Синий","Красный","Зелёный","Коричневый","Бордовый","Золотистый","Жёлтый","Оранжевый"]
 
-export default function HomePage(p) {
+export default function HomePage(p: HomePageProps) {
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [make, setMake] = useState(null)
-  const [model, setModel] = useState(null)
+  const [make, setMake] = useState<string | null>(null)
+  const [model, setModel] = useState<string | null>(null)
   const [sort, setSort] = useState("newest")
   const [priceFrom, setPriceFrom] = useState("")
   const [priceTo, setPriceTo] = useState("")
-  const [yearFrom, setYearFrom] = useState(null)
-  const [yearTo, setYearTo] = useState(null)
-  const [city, setCity] = useState(null)
+  const [yearFrom, setYearFrom] = useState<string | null>(null)
+  const [yearTo, setYearTo] = useState<string | null>(null)
+  const [city, setCity] = useState<string | null>(null)
   const [mileageTo, setMileageTo] = useState("")
-  const [transmission, setTransmission] = useState(null)
-  const [fuelType, setFuelType] = useState([])
-  const [driveType, setDriveType] = useState(null)
-  const [bodyType, setBodyType] = useState([])
+  const [transmission, setTransmission] = useState<string | null>(null)
+  const [fuelType, setFuelType] = useState<string[]>([])
+  const [driveType, setDriveType] = useState<string | null>(null)
+  const [bodyType, setBodyType] = useState<string[]>([])
   const [engineVolumeFrom, setEngineVolumeFrom] = useState("")
   const [engineVolumeTo, setEngineVolumeTo] = useState("")
   const [powerFrom, setPowerFrom] = useState("")
   const [powerTo, setPowerTo] = useState("")
-  const [color, setColor] = useState(null)
-  const [condition, setCondition] = useState([])
-  const [steeringWheel, setSteeringWheel] = useState(null)
-  const [documentsStatus, setDocumentsStatus] = useState(null)
-  const [damageInfo, setDamageInfo] = useState(null)
-  const [sellerType, setSellerType] = useState(null)
-  const [availability, setAvailability] = useState(null)
-  const [customsCleared, setCustomsCleared] = useState(null)
+  const [color, setColor] = useState<string | null>(null)
+  const [condition, setCondition] = useState<string[]>([])
+  const [steeringWheel, setSteeringWheel] = useState<string | null>(null)
+  const [documentsStatus, setDocumentsStatus] = useState<string | null>(null)
+  const [damageInfo, setDamageInfo] = useState<string | null>(null)
+  const [sellerType, setSellerType] = useState<string | null>(null)
+  const [availability, setAvailability] = useState<string | null>(null)
+  const [customsCleared, setCustomsCleared] = useState<boolean | null>(null)
   const [ownersCountFrom, setOwnersCountFrom] = useState("")
   const [ownersCountTo, setOwnersCountTo] = useState("")
   const [mileageFrom, setMileageFrom] = useState("")
@@ -51,7 +58,7 @@ export default function HomePage(p) {
 
   const brandOptions = POPULAR_BRANDS.slice(0,80).map((b) => ({ value: b.name, label: b.name }))
   const modelOptions = make ? getModels(make).map((m) => ({ value: m, label: m })) : []
-  const { data: stats } = useSWR("/api/stats", fetcher)
+  const { data: stats } = useSWR<{ auctions?: number; auctionByCountry?: Record<string, number> }>("/api/stats", fetcher)
   const auctionStats = stats || { auctions: 0, auctionByCountry: {} }
 
   const yearData = Array.from({length:35},(_,i) => ({ value: String(2024-i), label: String(2024-i) }))
@@ -62,7 +69,7 @@ export default function HomePage(p) {
     const q = new URLSearchParams()
     q.set("type", p.initialType || "vehicle")
     if (p.initialVehicleType) q.set("vehicleType", p.initialVehicleType)
-    q.set("page", page)
+    q.set("page", String(page))
     q.set("limit", "18")
     q.set("sort", sort)
     if(query) q.set("q", query)
@@ -117,67 +124,35 @@ export default function HomePage(p) {
   return (
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
       {!p.categorySlug && (
-        <Paper className="market-directory" radius="lg" p={{ base: "md", md: "lg" }} withBorder>
-          <Group justify="space-between" align="flex-start" gap="xl" wrap="wrap">
-            <Box maw={520}>
-              <Badge variant="light" color="indigo" size="sm" mb={8}>Авторынок</Badge>
-              <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 24, md: 30 }} c="dark.9" lh={1.12}>Транспорт и запчасти без лишних шагов</Text>
-              <Text size="sm" c="dimmed" mt={6}>Начните с категории или перейдите к международным аукционам — все основные действия остаются в одном экране.</Text>
-            </Box>
-            <Group gap="xs" className="market-directory__signals">
-              <Group gap={6} wrap="nowrap"><IconShieldCheck size={17} color="#059669" /><Text size="xs" fw={600}>Проверка продавцов</Text></Group>
-              <Group gap={6} wrap="nowrap"><IconRoute size={17} color="#4f46e5" /><Text size="xs" fw={600}>Доставка под ключ</Text></Group>
-            </Group>
-          </Group>
-          <Divider my="md" />
-          <Stack gap={10}>
-            <Group gap="xs" wrap="wrap">
-              <Text size="xs" c="dimmed" fw={700} tt="uppercase" w={82}>Транспорт</Text>
-              {[{l:"Легковые",h:"/category/cars"},{l:"Мото",h:"/category/moto"},{l:"Грузовики",h:"/category/trucks"},{l:"Спецтехника",h:"/category/special"},{l:"Вода",h:"/category/water"},{l:"Авиа",h:"/category/air"}].map((c) => (
-                <Button key={c.h} component={Link} href={c.h} variant="default" color="gray" size="xs" radius="md">{c.l}</Button>
-              ))}
-            </Group>
-            <Group gap="xs" wrap="wrap">
-              <Text size="xs" c="dimmed" fw={700} tt="uppercase" w={82}>Запчасти</Text>
-              {[{l:"Все запчасти",h:"/parts-finder"},{l:"Двигатель",h:"/parts-finder?partType=ENGINE"},{l:"Тормоза",h:"/parts-finder?partType=BRAKES"},{l:"Подвеска",h:"/parts-finder?partType=SUSPENSION"},{l:"Оптика",h:"/parts-finder?partType=LIGHTING"},{l:"Электрика",h:"/parts-finder?partType=ELECTRICAL"}].map((c) => (
-                <Button key={c.h} component={Link} href={c.h} variant="subtle" color="indigo" size="xs" radius="md">{c.l}</Button>
-              ))}
-            </Group>
-          </Stack>
-        </Paper>)}
-
-      {/* Аукционы мира */}
-      {!p.categorySlug && (
-        <Paper className="home-auctions home-auctions--primary" radius="lg" p={{base:"lg",md:"xl"}}>
-          <NextImage src="/images/home/automarket-hero.png" alt="Авторынок — международные аукционы транспорта" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
+        <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
+          <NextImage src="/images/home/automarket-hero.png" alt="Авторынок — транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
           <Box className="home-auctions__scrim" />
           <Box className="home-auctions__content">
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
-              <Box maw={590}>
-                <Badge variant="light" color="orange" size="sm" mb="sm" className="home-auctions__eyebrow">МЕЖДУНАРОДНЫЕ АУКЦИОНЫ</Badge>
-                <Text fw={800} fz={{base:26,md:36}} c="white" ff="var(--font-display),sans-serif">Выберите лот. Маршрут и документы — под контролем.</Text>
-                <Text size="sm" c="rgba(255,255,255,0.82)" mt={8} maw={510}>{auctionStats.auctions} лотов в каталоге. До сделки видны ориентир цены, страна, путь доставки и следующий шаг.</Text>
-                <Button component={Link} href="/auctions" color="orange" size="sm" radius="md" mt="lg" rightSection={<IconArrowUpRight size={16} />}>Открыть аукционы</Button>
+              <Box maw={650}>
+                <Badge variant="light" color="indigo" size="sm" mb="sm" className="home-auctions__eyebrow">ЕДИНАЯ ПЛОЩАДКА ТРАНСПОРТА</Badge>
+                <Text component="h1" fw={800} fz={{base:28,md:42}} c="white" ff="var(--font-display),sans-serif" lh={1.08}>Найдите свой маршрут: транспорт, запчасти и аукционы.</Text>
+                <Text size="sm" c="rgba(255,255,255,0.84)" mt={10} maw={560}>От первого поиска до сделки и доставки — всё понятно, в одном кабинете и без лишних шагов.</Text>
+                <Group gap="sm" mt="lg" wrap="wrap">
+                  <Button component={Link} href="#catalog" color="indigo" size="sm" radius="md" rightSection={<IconArrowUpRight size={16} />}>Смотреть объявления</Button>
+                  <Button component={Link} href="/auctions" variant="white" color="dark" size="sm" radius="md" leftSection={<IconSparkles size={16} />}>Мировые аукционы</Button>
+                </Group>
               </Box>
               <Box className="home-auctions__summary">
-                <Text size="xs" c="rgba(255,255,255,0.68)" tt="uppercase" fw={700}>Сценарий сделки</Text>
+                <Text size="xs" c="rgba(255,255,255,0.68)" tt="uppercase" fw={700}>В одном месте</Text>
                 <Stack gap={8} mt="sm">
-                  <Text size="sm" c="white" fw={600}>1. Выбор и проверка лота</Text>
-                  <Text size="sm" c="white" fw={600}>2. Прозрачная оплата и документы</Text>
-                  <Text size="sm" c="white" fw={600}>3. Отслеживание доставки в кабинете</Text>
+                  <Text size="sm" c="white" fw={600}>Каталог всех видов транспорта</Text>
+                  <Text size="sm" c="white" fw={600}>Запчасти с подбором по авто</Text>
+                  <Text size="sm" c="white" fw={600}>{auctionStats.auctions || "—"} лотов из пяти стран</Text>
                 </Stack>
               </Box>
-              <Group gap={6} maw={680} justify="flex-start" className="home-auctions__countries">
+              <Group gap={7} maw={720} justify="flex-start" className="home-auctions__countries">
               {[
-                { flag: "🇯🇵", label: "Япония", count: auctionStats.auctionByCountry?.JP || 0, href: "/auctions?country=JP" },
-                { flag: "🇰🇷", label: "Корея", count: auctionStats.auctionByCountry?.KR || 0, href: "/auctions?country=KR" },
-                { flag: "🇺🇸", label: "США", count: auctionStats.auctionByCountry?.US || 0, href: "/auctions?country=US" },
-                { flag: "🇩🇪", label: "Европа", count: auctionStats.auctionByCountry?.DE || 0, href: "/auctions?country=DE" },
-                { flag: "🇨🇳", label: "Китай", count: auctionStats.auctionByCountry?.CN || 0, href: "/auctions?country=CN" },
+                { label: "Легковые", href: "/category/cars" }, { label: "Мото", href: "/category/moto" }, { label: "Грузовики", href: "/category/trucks" }, { label: "Спецтехника", href: "/category/special" }, { label: "Вода и авиа", href: "/category/water" }, { label: "Запчасти", href: "/parts-finder" },
               ].map((c) => (
                 <Link key={c.href} href={c.href} style={{ textDecoration: "none" }}>
-                  <Badge size="md" radius="md" variant="light" color="orange" className="home-auctions__chip" style={{ cursor: "pointer", padding: "8px 12px" }}>
-                    {c.flag} {c.label} ({c.count})
+                  <Badge size="md" radius="md" variant="light" color="indigo" className="home-auctions__chip" style={{ cursor: "pointer", padding: "8px 12px" }}>
+                    {c.label}
                   </Badge>
                 </Link>
               ))}
@@ -187,7 +162,7 @@ export default function HomePage(p) {
         </Paper>
       )}
 
-      <Group justify="space-between" align="center">
+      <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
         <Stack gap={0}>
           <Text component="h1" fw={800} fz={{base:20,md:24}} c="dark.9">{p.pageTitle || "Все объявления"}</Text>
           {data && <Text size="xs" c="gray.5">{data.pagination?.total || 0} объявлений</Text>}
@@ -195,24 +170,28 @@ export default function HomePage(p) {
         <SegmentedControl className="catalog-view-switch" size="sm" value={view} onChange={(v) => setView(v)} radius="md" data={[{label:<Group gap={4} wrap="nowrap"><IconLayoutGrid size={15} stroke={1.8}/> <Text size="xs" fw={600}>Сетка</Text></Group>,value:"grid"},{label:<Group gap={4} wrap="nowrap"><IconList size={15} stroke={1.8}/> <Text size="xs" fw={600}>Список</Text></Group>,value:"list"}]} />
       </Group>
 
-      <Paper radius="md" p="md" withBorder style={{background:"var(--mantine-color-body)"}}>
+      <Paper className="catalog-filter-panel" radius="lg" p="md" withBorder>
         <Stack gap="sm">
+          <Group justify="space-between" align="baseline" gap="sm">
+            <Box><Text size="sm" fw={750}>Найдите подходящий транспорт</Text><Text size="xs" c="dimmed">Начните с марки, цены или города — остальное уточните при необходимости.</Text></Box>
+            {activeFilterCount > 0 && <Badge color="indigo" variant="light" radius="xl">Выбрано: {activeFilterCount}</Badge>}
+          </Group>
           <Box className="catalog-filter-grid">
-            <TextInput className="catalog-filter-grid__search" placeholder="Марка, модель, ключевое слово" leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
-            <Select placeholder="Марка" data={brandOptions} searchable clearable value={make} onChange={(v) => {setMake(v);setModel(null)}} size="sm" />
-            <Select placeholder="Модель" data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="sm" />
-            <Select data={SORT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} value={sort} onChange={(v) => setSort(v || "newest")} size="sm" />
-            <Box className="catalog-price-range">
-              <Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text>
+            <TextInput className="catalog-filter-field catalog-filter-field--search" label="Что ищете" placeholder="Марка, модель, ключевое слово" leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
+            <Select className="catalog-filter-field catalog-filter-field--make" label="Марка" placeholder="Любая" data={brandOptions} searchable clearable value={make} onChange={(v) => {setMake(v);setModel(null)}} size="sm" />
+            <Select className="catalog-filter-field catalog-filter-field--model" label="Модель" placeholder={make ? "Любая" : "Сначала марка"} data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="sm" />
+            <Select className="catalog-filter-field catalog-filter-field--sort" label="Сортировка" data={SORT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} value={sort} onChange={(v) => setSort(v || "newest")} size="sm" />
+            <Box className="catalog-filter-field catalog-filter-field--price catalog-price-range">
+              <Text size="10px" c="dimmed" fw={800} tt="uppercase">Цена, ₽</Text>
               <Group gap={4} wrap="nowrap">
                 <TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" />
                 <TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" />
               </Group>
             </Box>
-            <Select placeholder="Год от" data={yearData} searchable clearable value={yearFrom} onChange={setYearFrom} size="sm" />
-            <Select placeholder="Год до" data={yearData} searchable clearable value={yearTo} onChange={setYearTo} size="sm" />
-            <Select placeholder="Город" data={POPULAR_CITIES.map((c) => ({value:c,label:c}))} searchable clearable value={city} onChange={setCity} size="sm" />
-            <TextInput placeholder="Пробег до, км" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" type="number" />
+            <Select className="catalog-filter-field catalog-filter-field--year" label="Год от" placeholder="Любой" data={yearData} searchable clearable value={yearFrom} onChange={setYearFrom} size="sm" />
+            <Select className="catalog-filter-field catalog-filter-field--year" label="Год до" placeholder="Любой" data={yearData} searchable clearable value={yearTo} onChange={setYearTo} size="sm" />
+            <Select className="catalog-filter-field catalog-filter-field--city" label="Город" placeholder="Все города" data={POPULAR_CITIES.map((c) => ({value:c,label:c}))} searchable clearable value={city} onChange={setCity} size="sm" />
+            <TextInput className="catalog-filter-field catalog-filter-field--mileage" label={vt === "AIR" ? "Налёт, до ч" : "Пробег, до км"} placeholder="Не ограничен" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" type="number" />
           </Box>
 
           <Group justify="space-between" align="center">
@@ -385,7 +364,7 @@ export default function HomePage(p) {
                 </Box>
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Владельцев, до</Text>
-                  <Select placeholder="Неважно" data={OWNERS_COUNT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} clearable value={ownersCountTo} onChange={setOwnersCountTo} size="sm" w={150}/>
+                  <Select placeholder="Неважно" data={OWNERS_COUNT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} clearable value={ownersCountTo || null} onChange={(value) => setOwnersCountTo(value || "")} size="sm" w={150}/>
                 </Box>
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Растаможен</Text>
@@ -396,7 +375,7 @@ export default function HomePage(p) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6}>Ключевые слова</Text>
                 <TextInput placeholder='Например: "один хозяин", RAID, ксенон...' value={keywords} onChange={(e) => setKeywords(e.target.value)} size="sm" w={400} leftSection={<IconSearch size={14}/>}/>
-                <Text size={10} c="gray.4" mt={4}>Для точного совпадения используйте кавычки</Text>
+                <Text size="10px" c="gray.4" mt={4}>Для точного совпадения используйте кавычки</Text>
               </Box>
             </Stack>
           </Collapse>
@@ -414,9 +393,9 @@ export default function HomePage(p) {
           </Stack>
         </Center>
       ) : view === "grid" ? (
-        <SimpleGrid cols={{base:1,sm:2,md:3,lg:4}} spacing="sm">{data.listings.map((l) => <ListingCard key={l.id} listing={l}/>)}</SimpleGrid>
+        <SimpleGrid cols={{base:1,sm:2,md:3,lg:4}} spacing="sm">{data.listings.map((listing: any) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
-        <Stack gap="xs">{data.listings.map((l) => <ListingRow key={l.id} listing={l}/>)}</Stack>
+        <Stack gap="xs">{data.listings.map((listing: any) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}
 
       {data && data.pagination?.pages > 1 && (

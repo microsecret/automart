@@ -13,19 +13,20 @@ function privateDocumentsDirectory() {
 }
 
 /** GET /api/delivery-orders/[id]/documents/[documentId] — закрытая отдача файла. */
-export async function GET(_: NextRequest, { params }: { params: { id: string; documentId: string } }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string; documentId: string }> }) {
   try {
+    const { id, documentId } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const order = await prisma.deliveryOrder.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, buyerId: true, partnerId: true, managerId: true },
     })
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
     if (!canReadDeliveryOrder(session, order)) return NextResponse.json({ error: "Нет доступа к документу" }, { status: 403 })
 
-    const document = await prisma.deliveryDocument.findFirst({ where: { id: params.documentId, deliveryOrderId: order.id } })
+    const document = await prisma.deliveryDocument.findFirst({ where: { id: documentId, deliveryOrderId: order.id } })
     if (!document) return NextResponse.json({ error: "Документ не найден" }, { status: 404 })
     if (document.visibility === "TEAM_ONLY" && !canManageDeliveryOrder(session, order)) {
       return NextResponse.json({ error: "Нет доступа к служебному документу" }, { status: 403 })

@@ -60,7 +60,7 @@ import {
   IconTractor,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
+import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
 import Photo360Viewer from "@/components/viewer/Photo360Viewer"
 import CreditCalculator from "@/components/listings/CreditCalculator"
 
@@ -128,6 +128,32 @@ const VEHICLE_META: Record<string, { label: string; detailLabel: string; icon: R
   SPECIAL: { label: "Спецтехника", detailLabel: "Тип техники", icon: <IconTractor size={20} /> },
   WATER: { label: "Водный транспорт", detailLabel: "Тип судна", icon: <IconSpeedboat size={20} /> },
   AIR: { label: "Воздушный транспорт", detailLabel: "Тип воздушного судна", icon: <IconPlane size={20} /> },
+}
+
+function parseTypeDetails(value: string | null): Record<string, string | number | boolean> {
+  if (!value) return {}
+  try {
+    const parsed: unknown = JSON.parse(value)
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, string | number | boolean>
+    }
+  } catch {
+    // Старые объявления могут содержать невалидный JSON. Детальная страница
+    // всё равно должна открываться и показывать основные характеристики.
+  }
+  return {}
+}
+
+function formatDetailLabel(value: string) {
+  const labels: Record<string, string> = {
+    crewCapacity: "Экипаж", hullMaterial: "Материал корпуса", flightRange: "Дальность полёта",
+    payloadCapacity: "Грузоподъёмность", registrationNumber: "Регистрационный номер", engineHours: "Моточасы",
+  }
+  if (labels[value]) return labels[value]
+  return value
+    .replace(/([a-zа-я])([A-ZА-Я])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/^./, (letter) => letter.toUpperCase())
 }
 
 export default function VehicleDetailClient({ data }: { data: VehicleData }) {
@@ -229,10 +255,8 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Carousel
                       slideSize="120px"
                       slideGap="xs"
-                      align="start"
-                      dragFree
                       withControls={false}
-                      p="xs"
+                      style={{ padding: 8 }}
                     >
                       {images.map((img, i) => (
                         <Carousel.Slide key={i}>

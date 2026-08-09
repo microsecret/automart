@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
+import Stripe from "stripe"
 import { prisma } from "@/lib/prisma"
 export const dynamic = "force-dynamic"
 
-// Webhook secret for verifying webhook signatures
-// In production, this should be set as an environment variable
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_..."
+const PROMOTION_DURATIONS: Record<string, number> = { BOOST: 7, PREMIUM: 14, VIP: 30 }
 
 export async function POST(request: NextRequest) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+    if (!process.env.STRIPE_SECRET_KEY || !webhookSecret) {
       return NextResponse.json({ error: "Webhook not configured" }, { status: 503 })
     }
-    const Stripe = (await import("stripe")).default
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
     const body = await request.text()
-    const signature = request.headers.get("stripe-signature") as string
+    const signature = request.headers.get("stripe-signature")
+    if (!signature) return NextResponse.json({ error: "Missing Stripe signature" }, { status: 400 })
 
     let event: Stripe.Event
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       console.error(`Webhook signature verification failed.`, err)
       return NextResponse.json(
-        { error: `Webhook Error: ${err.message}` },
+        { error: `Webhook Error: ${err instanceof Error ? err.message : "invalid signature"}` },
         { status: 400 }
       )
     }
@@ -34,21 +34,18 @@ export async function POST(request: NextRequest) {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
         const listingId = paymentIntent.metadata.listingId
         const userId = paymentIntent.metadata.userId
+        const promotionType = paymentIntent.metadata.promotionType
+        const durationDays = PROMOTION_DURATIONS[promotionType]
 
-        if (listingId && userId) {
-          // Update the listing to be featured
-          await prisma.listing.update({
-            where: { id: listingId },
+        if (listingId && userId && durationDays) {
+          await prisma.listing.updateMany({
+            where: { id: listingId, userId },
             data: {
               isFeatured: true,
-              // Optionally, we could set an expiration date for featuring
-              // For simplicity, we'll leave it as indefinitely featured
-              // In a real implementation, we might want to add a featuredUntil field
-            }
+              promoType: promotionType.toLowerCase(),
+              promoUntil: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
+            },
           })
-
-          // Optionally, create a record of the payment for tracking
-          // We could create a Payment table or add metadata to the listing
           console.log(`Listing ${listingId} has been featured via payment ${paymentIntent.id}`)
         }
         break

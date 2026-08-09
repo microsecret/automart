@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -29,35 +29,40 @@ export default function AppHeader() {
       component="header"
       pos="sticky"
       top={0}
+      className="market-app-header"
       style={{
         zIndex: 200,
-        height: 56,
         background: "var(--mantine-color-body)",
         borderBottom: "1px solid var(--mantine-color-border)",
         boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
       }}
     >
-      <Container size="xl" h={56} px={{ base: "sm", md: "md" }}>
-        {/* Единая строка — все в одну линию */}
-        <Group h={56} gap="md" wrap="nowrap" align="center" justify="space-between">
+      <Container size="xl" px={{ base: "sm", md: "md" }} style={{ height: "var(--app-header-height)" }}>
+        <Group h="100%" gap="md" wrap="nowrap" align="center" justify="space-between">
           {/* ЛЕВО: Лого */}
           <Link href="/" style={{ textDecoration: "none", color: "inherit", flexShrink: 0 }}>
             <Group gap={8} wrap="nowrap" align="center">
               <Box style={{
-                width: 32, height: 32, borderRadius: 8,
+                width: 36, height: 36, borderRadius: 11,
                 background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <IconCar size={18} color="white" />
+                <IconCar size={19} color="white" />
               </Box>
-              <Text ff="var(--font-display),sans-serif" fw={800} fz={17} lh={1} c="var(--mantine-color-text)" style={{ letterSpacing: "-0.02em" }}>
+              <Text ff="var(--font-display),sans-serif" fw={800} fz={18} lh={1} c="var(--mantine-color-text)" style={{ letterSpacing: "-0.025em" }}>
                 Авторынок
               </Text>
             </Group>
           </Link>
 
+          <Group gap={2} visibleFrom="lg" wrap="nowrap" className="market-app-header__links">
+            <Button component={Link} href="/" variant="subtle" color="gray" size="compact-sm">Объявления</Button>
+            <Button component={Link} href="/parts-finder" variant="subtle" color="gray" size="compact-sm" leftSection={<IconTools size={14} />}>Запчасти</Button>
+            <Button component={Link} href="/auctions" variant="subtle" color="gray" size="compact-sm" leftSection={<IconGavel size={14} />}>Аукционы</Button>
+          </Group>
+
           {/* ЦЕНТР: Поиск — максимальная ширина */}
-          <Box component="form" onSubmit={handleSearch} style={{ flex: 1, maxWidth: 520 }} visibleFrom="sm">
+          <Box component="form" onSubmit={handleSearch} style={{ flex: 1, maxWidth: 440 }} visibleFrom="sm">
             <TextInput
               placeholder="Марка, модель, город..."
               leftSection={<IconSearch size={16} color="gray.4" />}
@@ -70,7 +75,7 @@ export default function AppHeader() {
                 input: {
                   background: "var(--mantine-color-gray-1)",
                   border: "1px solid transparent",
-                  height: 36,
+                  height: 38,
                   transition: "all 200ms ease",
                 },
               }}
@@ -108,7 +113,7 @@ export default function AppHeader() {
               color="indigo"
               variant="filled"
               visibleFrom="md"
-              styles={{ root: { height: 34, fontWeight: 600 } }}
+              styles={{ root: { height: 38, fontWeight: 700 } }}
             >
               Продать
             </Button>
@@ -130,7 +135,7 @@ export default function AppHeader() {
                     <IconBell size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator>
-                <Divider orientation="vertical" mx={2} h={24} />
+                <Divider orientation="vertical" mx={2} h={26} />
                 <Menu shadow="md" width={220} position="bottom-end" radius="md" offset={4}>
                   <Menu.Target>
                     <ActionIcon variant="subtle" radius="xl" size={32}>
@@ -162,13 +167,13 @@ export default function AppHeader() {
               </>
             ) : (
               <>
-                <Divider orientation="vertical" mx={2} h={24} />
+                <Divider orientation="vertical" mx={2} h={26} />
                 {/* Войти — subtle gray */}
-                <Button component={Link} href="/auth/signin" variant="light" color="indigo" size="sm" radius="md" styles={{ root: { height: 34, fontWeight: 700 } }}>
+                <Button component={Link} href="/auth/signin" variant="light" color="indigo" size="sm" radius="md" styles={{ root: { height: 38, fontWeight: 700 } }}>
                   Войти
                 </Button>
                 {/* Регистрация — outline indigo, отличается от «Войти» */}
-                <Button component={Link} href="/auth/signup" variant="filled" color="indigo" size="sm" radius="md" visibleFrom="xs" styles={{ root: { height: 34, fontWeight: 700 } }}>
+                <Button component={Link} href="/auth/signup" variant="filled" color="indigo" size="sm" radius="md" visibleFrom="xs" styles={{ root: { height: 38, fontWeight: 700 } }}>
                   Регистрация
                 </Button>
                 <ActionIcon component={Link} href="/auth/signup" variant="light" color="indigo" size="md" radius="md" hiddenFrom="xs" aria-label="Регистрация">
