@@ -1,3 +1,5 @@
+import { isSafeMediaUrl } from "@/lib/media-url"
+
 export type ListingEditInput = {
   title?: string
   description?: string | null
@@ -29,15 +31,7 @@ function parseImageUrls(value: unknown): string[] | null {
   if (unique.some((item) => typeof item !== "string" || item.length > 2_000)) return null
 
   const urls = unique as string[]
-  return urls.every((item) => {
-    if (item.startsWith("/uploads/")) return true
-    try {
-      const url = new URL(item)
-      return url.protocol === "https:" && !url.username && !url.password
-    } catch {
-      return false
-    }
-  }) ? urls : null
+  return urls.every(isSafeMediaUrl) ? urls : null
 }
 
 /** Validates only the owner-editable common marketplace fields. */

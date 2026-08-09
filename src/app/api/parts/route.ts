@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import { Prisma } from "@prisma/client"
 import { AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPES, SELLER_TYPES } from "@/lib/constants"
+import { parseMarketplaceImages } from "@/lib/media-url"
 
 export const dynamic = "force-dynamic"
 
@@ -162,6 +163,8 @@ export async function POST(request: NextRequest) {
     if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) return NextResponse.json({ error: "Укажите корректную цену" }, { status: 400 })
     if (partType && !PART_TYPE_VALUES.has(partType)) return NextResponse.json({ error: "Неизвестная категория запчасти" }, { status: 400 })
     if (subcategory && (!partType || !(PART_SUBCATEGORIES[partType] || []).includes(subcategory))) return NextResponse.json({ error: "Подкатегория не соответствует выбранному типу запчасти" }, { status: 400 })
+    const normalizedImages = parseMarketplaceImages(images)
+    if (!normalizedImages) return NextResponse.json({ error: "Допустимы до 12 корректных изображений" }, { status: 400 })
 
     const normalizedCondition = typeof condition === "string" ? condition : "USED"
     const normalizedAvailability = typeof availability === "string" ? availability : "IN_STOCK"
@@ -221,7 +224,7 @@ export async function POST(request: NextRequest) {
         yearFrom: yearFrom ? parseInt(yearFrom) : null,
         yearTo: yearTo ? parseInt(yearTo) : null,
         location: location || "Москва",
-        images: images || null,
+        images: normalizedImages.length ? JSON.stringify(normalizedImages) : null,
         subcategory: subcategory || null,
         oemNumber: oemNumber || null,
         suspensionType: suspensionType || null,

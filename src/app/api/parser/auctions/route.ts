@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { translateListingFields } from "@/lib/nvidia-translate"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
+import { safeHttpsUrl } from "@/lib/media-url"
 
 export const dynamic = "force-dynamic"
 
@@ -59,14 +60,7 @@ function optionalNumber(value: unknown) {
 }
 
 function optionalUrl(value: unknown) {
-  const url = optionalText(value, 2_000)
-  if (!url) return null
-  try {
-    const protocol = new URL(url).protocol
-    return protocol === "https:" || protocol === "http:" ? url : null
-  } catch {
-    return null
-  }
+  return safeHttpsUrl(optionalText(value, 2_000))
 }
 
 function normalizeImportItem(item: unknown, index: number): AuctionImportItem {
@@ -91,7 +85,7 @@ function normalizeImportItem(item: unknown, index: number): AuctionImportItem {
   if (!Number.isInteger(year) || year < 1886 || year > new Date().getFullYear() + 1) throw new Error(`Лот ${index + 1}: некорректный год`)
   if (value.auctionDate && (!auctionDate || Number.isNaN(auctionDate.getTime()))) throw new Error(`Лот ${index + 1}: некорректная дата торгов`)
   if (!make || !model) throw new Error(`Лот ${index + 1}: обязательны марка и модель`)
-  if (!sourceUrl) throw new Error(`Лот ${index + 1}: нужна HTTPS/HTTP-ссылка источника`)
+  if (!sourceUrl) throw new Error(`Лот ${index + 1}: нужна защищённая HTTPS-ссылка источника`)
 
   return {
     source,

@@ -15,7 +15,14 @@ interface RateLimitResult {
   resetIn: number
 }
 
-type RequestWithHeaders = { headers: Headers }
+type HeaderCollection = Headers | Record<string, string | string[] | undefined>
+type RequestWithHeaders = { headers: HeaderCollection }
+
+function readHeader(headers: HeaderCollection, name: string) {
+  if (headers instanceof Headers) return headers.get(name)
+  const value = headers[name] ?? headers[name.toLowerCase()]
+  return Array.isArray(value) ? value[0] : value || null
+}
 
 export function rateLimit(
   identifier: string,
@@ -48,9 +55,9 @@ export function cleanupRateLimit() {
 
 /** Берём первый адрес из доверенного reverse proxy или прямой адрес клиента. */
 export function getClientIp(request: RequestWithHeaders) {
-  const forwarded = request.headers.get("x-forwarded-for")
+  const forwarded = readHeader(request.headers, "x-forwarded-for")
   const candidate = forwarded?.split(",")[0]?.trim()
-    || request.headers.get("x-real-ip")?.trim()
+    || readHeader(request.headers, "x-real-ip")?.trim()
     || "unknown"
   return candidate.slice(0, 128)
 }

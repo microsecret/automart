@@ -49,6 +49,8 @@ export default function SignInForm() {
       if (res?.error === "EMAIL_NOT_VERIFIED") {
         setNeedsEmailVerification(true)
         setError("Сначала подтвердите email по ссылке из письма.")
+      } else if (res?.error === "RATE_LIMITED") {
+        setError("Слишком много попыток входа. Подождите 15 минут и попробуйте снова.")
       } else if (res?.error) {
         setError("Неверный email или пароль")
       } else if (res?.ok) {

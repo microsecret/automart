@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
+import { parseMarketplaceImages } from "@/lib/media-url"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -171,10 +172,12 @@ export async function POST(request: NextRequest) {
     const normalizedMileage = normalizeOptionalNonNegativeInteger(mileage)
     const normalizedOperatingHours = normalizeOptionalNonNegativeInteger(operatingHours)
     const normalizedFlightHours = normalizeOptionalNonNegativeInteger(flightHours)
+    const normalizedImages = parseMarketplaceImages(images)
 
     if (normalizedMileage === undefined || normalizedOperatingHours === undefined || normalizedFlightHours === undefined) {
       return NextResponse.json({ error: "Пробег и наработка должны быть неотрицательными целыми числами" }, { status: 400 })
     }
+    if (!normalizedImages) return NextResponse.json({ error: "Допустимы до 12 корректных изображений" }, { status: 400 })
 
     const allowedFuelTypes = new Set<string>(getFuelOptions(normalizedVehicleType).map((item) => item.value))
     if (!fuelType || !allowedFuelTypes.has(String(fuelType))) {
@@ -230,7 +233,7 @@ export async function POST(request: NextRequest) {
         typeDetails: normalizedTypeDetails,
         location: location ? location.trim() : null,
         description: description ? description.trim() : null,
-        images: images || null, // Expecting JSON string of array or null
+        images: normalizedImages.length ? JSON.stringify(normalizedImages) : null,
         userId: session.user.id,
         categoryId,
         lat,

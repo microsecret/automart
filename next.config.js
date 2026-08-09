@@ -38,7 +38,6 @@ if (process.env.ENABLE_HSTS === "true") {
 const nextConfig = {
   reactStrictMode: false,
   poweredByHeader: false,
-  images: { remotePatterns: [{ protocol: 'https', hostname: '**' }] },
   serverExternalPackages: ['prisma', '@prisma/client'],
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },

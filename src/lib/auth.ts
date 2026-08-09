@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { consumeTelegramOtp, linkTelegramIdentity, verifyTelegramInitData } from "@/lib/telegram"
 import { normalizeUserRole } from "@/lib/permissions"
+import { getClientIp, rateLimit } from "@/lib/rate-limit"
 
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
@@ -14,9 +15,14 @@ export const authOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Пароль", type: "password" },
       },
-      async authorize(credentials: any) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } })
+        const email = credentials.email.trim().toLowerCase()
+        const ipLimit = rateLimit(`auth:password:ip:${getClientIp({ headers: request.headers })}`, { windowMs: 15 * 60_000, maxRequests: 15 })
+        const emailLimit = rateLimit(`auth:password:email:${email}`, { windowMs: 15 * 60_000, maxRequests: 8 })
+        if (!ipLimit.success || !emailLimit.success) throw new Error("RATE_LIMITED")
+
+        const user = await prisma.user.findUnique({ where: { email } })
         if (!user) return null
         const valid = await bcrypt.compare(credentials.password, user.hashedPassword || "")
         if (!valid) return null

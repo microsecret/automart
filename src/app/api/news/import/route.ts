@@ -4,6 +4,7 @@ import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { cleanNewsTitle, makeExcerpt, makeImportedNewsSlug, makeSeoDescription, normalizeNewsText } from "@/lib/news"
+import { safeHttpsUrl } from "@/lib/media-url"
 
 export const runtime = "nodejs"
 
@@ -34,16 +35,6 @@ function isAuthorized(request: NextRequest) {
   return expected.length === received.length && timingSafeEqual(expected, received)
 }
 
-function externalHttpUrl(value?: string) {
-  if (!value) return null
-  try {
-    const parsed = new URL(value)
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : null
-  } catch {
-    return null
-  }
-}
-
 /** POST /api/news/import — private bridge from the moderated Telegram news editor. */
 export async function POST(request: NextRequest) {
   if (!isAuthorized(request)) {
@@ -62,9 +53,9 @@ export async function POST(request: NextRequest) {
     const sourceChannel = parsed.source.channel.toLowerCase()
     const sourceKey = `telegram-editor:${sourceChannel}:${parsed.source.articleId}`
     const slug = makeImportedNewsSlug(title, parsed.source.articleId)
-    const sourceUrl = externalHttpUrl(parsed.sourceUrl)
-    const imageUrl = externalHttpUrl(parsed.imageUrl)
-    const telegramUrl = externalHttpUrl(parsed.telegramUrl)
+    const sourceUrl = safeHttpsUrl(parsed.sourceUrl)
+    const imageUrl = safeHttpsUrl(parsed.imageUrl)
+    const telegramUrl = safeHttpsUrl(parsed.telegramUrl)
     const excerpt = makeExcerpt(parsed.excerpt || content)
     const seoTitle = `${title} — автоновости`
     const seoDescription = makeSeoDescription(parsed.excerpt || content)
