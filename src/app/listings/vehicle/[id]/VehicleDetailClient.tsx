@@ -24,6 +24,7 @@ import {
   Anchor,
   Textarea,
   Skeleton,
+  UnstyledButton,
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { Carousel } from "@mantine/carousel"
@@ -47,6 +48,7 @@ import {
   IconEngine,
   IconUsers,
   IconRoute,
+  IconChevronLeft,
   IconChevronRight,
   IconEye,
   IconSteeringWheel,
@@ -172,6 +174,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const { data: session } = useSession()
   const [activeImage, setActiveImage] = useState(0)
+  const [imageFailed, setImageFailed] = useState(false)
   const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
   const isFav = Boolean(data.listingId && favoriteIds.has(data.listingId))
@@ -182,6 +185,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
       return
     }
     void toggleFavorite(data.listingId)
+  }
+  const selectImage = (index: number) => {
+    setActiveImage(index)
+    setImageFailed(false)
   }
   const submitReview = async () => {
     if (!session) return
@@ -206,6 +213,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const images = parseImages(data.images)
   const hasImages = images.length > 0
+  const moveImage = (direction: number) => {
+    selectImage((activeImage + direction + images.length) % images.length)
+  }
   const typeMeta = VEHICLE_META[data.vehicleType] || VEHICLE_META.CAR
   const hasRoadVehicleDetails = ["CAR", "MOTORCYCLE", "TRUCK"].includes(data.vehicleType)
   const usageMeta = getUsageMeta(data.vehicleType)
@@ -260,12 +270,20 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 <>
                   {/* Главное изображение */}
                   <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={images[activeImage]}
-                      alt={`${data.make} ${data.model}`}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+                    {imageFailed ? (
+                      <Stack align="center" justify="center" gap="xs" h="100%" c="dimmed">
+                        <IconCar size={42} stroke={1.5} />
+                        <Text size="sm">Фото недоступно</Text>
+                      </Stack>
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={images[activeImage]}
+                        alt={`${data.make} ${data.model} — фото ${activeImage + 1}`}
+                        onError={() => setImageFailed(true)}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    )}
                     <Badge
                       pos="absolute"
                       top={16}
@@ -277,6 +295,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     >
                       {data.conditionLabel}
                     </Badge>
+                    {images.length > 1 && <>
+                      <ActionIcon aria-label="Предыдущее фото" variant="filled" color="dark" radius="xl" pos="absolute" left={14} top="50%" style={{ transform: "translateY(-50%)" }} onClick={() => moveImage(-1)}><IconChevronLeft size={18} /></ActionIcon>
+                      <ActionIcon aria-label="Следующее фото" variant="filled" color="dark" radius="xl" pos="absolute" right={14} top="50%" style={{ transform: "translateY(-50%)" }} onClick={() => moveImage(1)}><IconChevronRight size={18} /></ActionIcon>
+                      <Badge pos="absolute" bottom={14} right={14} variant="filled" color="dark" size="sm">{activeImage + 1} / {images.length}</Badge>
+                    </>}
                   </Box>
                   {/* Thumbnails */}
                   {images.length > 1 && (
@@ -288,7 +311,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     >
                       {images.map((img, i) => (
                         <Carousel.Slide key={i}>
-                          <Box
+                          <UnstyledButton
+                            type="button"
+                            aria-label={`Показать фото ${i + 1}`}
+                            aria-current={activeImage === i ? "true" : undefined}
                             style={{
                               width: 110,
                               height: 80,
@@ -298,11 +324,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                               border: activeImage === i ? "2px solid #4f46e5" : "2px solid transparent",
                               transition: "border-color 150ms ease",
                             }}
-                            onClick={() => setActiveImage(i)}
+                            onClick={() => selectImage(i)}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                          </Box>
+                            <img src={img} alt="" onError={(event) => { event.currentTarget.style.opacity = "0" }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </UnstyledButton>
                         </Carousel.Slide>
                       ))}
                     </Carousel>

@@ -21,6 +21,7 @@ import {
   Anchor,
   TextInput,
   ActionIcon,
+  UnstyledButton,
 } from "@mantine/core"
 import { Carousel } from "@mantine/carousel"
 import {
@@ -103,6 +104,7 @@ interface PartData {
 export default function PartDetailClient({ data }: { data: PartData }) {
   const [showPhone, setShowPhone] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
+  const [imageFailed, setImageFailed] = useState(false)
   const [bidAmount, setBidAmount] = useState("")
   const [bidLoading, setBidLoading] = useState(false)
   const [bidMessage, setBidMessage] = useState<string | null>(null)
@@ -120,7 +122,11 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const rawImages = parseImages(data.images)
   const images = rawImages
   const hasImages = images.length > 0
-  const moveImage = (direction: number) => setActiveImage((current) => (current + direction + images.length) % images.length)
+  const selectImage = (index: number) => {
+    setActiveImage(index)
+    setImageFailed(false)
+  }
+  const moveImage = (direction: number) => selectImage((activeImage + direction + images.length) % images.length)
   const submitBid = async () => {
     setBidLoading(true)
     setBidMessage(null)
@@ -154,8 +160,15 @@ export default function PartDetailClient({ data }: { data: PartData }) {
               {hasImages ? (
                 <>
                   <Box style={{ position: "relative", background: "linear-gradient(145deg, #f8fafc, #eef2ff)", aspectRatio: "4/3", maxHeight: 520 }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={images[activeImage]} alt={`${data.name} — фото ${activeImage + 1}`} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    {imageFailed ? (
+                      <Stack align="center" justify="center" gap="xs" h="100%" c="dimmed">
+                        <ThemeIcon variant="light" color="gray" size={52} radius="xl"><IconPhoto size={25} /></ThemeIcon>
+                        <Text size="sm">Фото недоступно</Text>
+                      </Stack>
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={images[activeImage]} alt={`${data.name} — фото ${activeImage + 1}`} onError={() => setImageFailed(true)} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    )}
                     {data.condition && (
                       <Badge pos="absolute" top={14} left={14} color="indigo" variant="filled" size="sm" style={{ backdropFilter: "blur(4px)" }}>
                         {CONDITIONS_MAP[data.condition] || data.condition}
@@ -172,16 +185,19 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                     <Carousel slideSize="120px" slideGap="xs" withControls={false} style={{ padding: "var(--mantine-spacing-xs)" }}>
                       {images.map((img, i) => (
                         <Carousel.Slide key={i}>
-                          <Box
+                          <UnstyledButton
+                            type="button"
+                            aria-label={`Показать фото ${i + 1}`}
+                            aria-current={activeImage === i ? "true" : undefined}
                             style={{
                               width: 110, height: 80, borderRadius: 8, overflow: "hidden", cursor: "pointer",
                               border: activeImage === i ? "2px solid #4f46e5" : "2px solid transparent",
                             }}
-                            onClick={() => setActiveImage(i)}
+                            onClick={() => selectImage(i)}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                          </Box>
+                            <img src={img} alt="" onError={(event) => { event.currentTarget.style.opacity = "0" }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </UnstyledButton>
                         </Carousel.Slide>
                       ))}
                     </Carousel>
