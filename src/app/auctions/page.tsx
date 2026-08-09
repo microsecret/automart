@@ -7,8 +7,10 @@ import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Ce
 import { IconDatabaseOff, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort, parseImages } from "@/lib/format"
 import VehicleFallback from "@/components/listings/VehicleFallback"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = fetchJson
 
 const COUNTRIES = [
   { value: "", label: "Все страны" },
@@ -37,6 +39,11 @@ const SOURCES = [
 const SOURCE_COUNTRY: Record<string, string> = {
   USS: "JP", TAA: "JP", EMARAAT: "KR", AJ: "KR", COPART: "US", IAAI: "US",
   MOBILE_DE: "DE", YCHEZHAI: "CN", GUAZI: "CN", TAOCHE: "CN", UCAR: "CN",
+}
+
+type AuctionResponse = {
+  listings: any[]
+  pagination: { total: number; pages: number; limit: number }
 }
 function AuctionMedia({ listing }: { listing: any }) {
   const [failed, setFailed] = useState(false)
@@ -89,7 +96,7 @@ export default function AuctionsPage() {
     return q.toString()
   }
 
-  const { data, isLoading } = useSWR(hasInvalidPriceRange ? null : "/api/auctions?" + buildQ(), fetcher)
+  const { data, error, isLoading, mutate } = useSWR<AuctionResponse>(hasInvalidPriceRange ? null : "/api/auctions?" + buildQ(), fetcher)
   const listings = data?.listings || []
   const resetFilters = () => {
     setCountry(""); setSource(""); setMake(""); setPriceFrom(""); setPriceTo(""); setBodyType(""); setYearFrom(""); setPage(1)
@@ -184,7 +191,13 @@ export default function AuctionsPage() {
         </Paper>
 
         {isLoading ? (
-          <Center py={60}><Loader size="sm" color="orange" /></Center>
+          <ResultsGridSkeleton count={8} />
+        ) : error ? (
+          <AsyncErrorState
+            title="Не удалось загрузить лоты"
+            description="Аукционный каталог временно не отвечает. Повторите запрос через несколько секунд."
+            onRetry={() => mutate()}
+          />
         ) : listings.length === 0 ? (
           <Paper radius="lg" p={{ base: "lg", md: "xl" }} withBorder>
             <Stack align="center" gap="sm" maw={460} mx="auto" ta="center">

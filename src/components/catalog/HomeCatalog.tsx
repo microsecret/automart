@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import NextImage from "next/image"
-import { Box, Text, Select, Group, Pagination, Center, Loader, Stack, SegmentedControl, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip } from "@mantine/core"
+import { Box, Text, Select, Group, Pagination, Stack, SegmentedControl, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip } from "@mantine/core"
 import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
-import ListingCard from "@/components/listings/ListingCard"
+import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { getBrandsByCategory } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
 type HomePageProps = {
   initialQuery?: string
@@ -19,7 +21,10 @@ type HomePageProps = {
   pageTitle?: string
 }
 
-const fetcher = (url: string) => fetch(url).then((response) => response.json())
+type Pagination = { total: number; pages: number; limit: number }
+type ListingsResponse = { listings: ListingCardData[]; pagination: Pagination }
+
+const fetcher = fetchJson
 const CAR_COLORS = ["Белый","Чёрный","Серебристый","Серый","Синий","Красный","Зелёный","Коричневый","Бордовый","Золотистый","Жёлтый","Оранжевый"]
 const BRAND_CATEGORY_BY_VEHICLE_TYPE: Record<string, "cars" | "moto" | "trucks" | "special" | "water" | "air"> = {
   CAR: "cars", MOTORCYCLE: "moto", TRUCK: "trucks", SPECIAL: "special", WATER: "water", AIR: "air",
@@ -116,7 +121,7 @@ export default function HomePage(p: HomePageProps = {}) {
     return q.toString()
   }
 
-  const { data, isLoading } = useSWR(hasInvalidPriceRange ? null : "/api/listings?" + buildQuery(), fetcher)
+  const { data, error, isLoading, mutate } = useSWR<ListingsResponse>(hasInvalidPriceRange ? null : "/api/listings?" + buildQuery(), fetcher)
 
   const resetFilters = () => {
     setMake(null); setModel(null); setPriceFrom(""); setPriceTo("")
@@ -409,17 +414,22 @@ export default function HomePage(p: HomePageProps = {}) {
       </Paper>
 
       {isLoading ? (
-        <Center py={80}><Loader size="sm" color="indigo"/></Center>
+        <ResultsGridSkeleton count={8} />
+      ) : error ? (
+        <AsyncErrorState
+          title="Не удалось загрузить объявления"
+          description="Каталог временно не отвечает. Проверьте подключение и повторите запрос."
+          onRetry={() => mutate()}
+        />
       ) : !data?.listings?.length ? (
-        <Center py={80}>
-          <Stack align="center" gap="xs">
-            <Text c="gray.5" fz="lg">Ничего не найдено</Text>
-            <Text size="xs" c="gray.4">Попробуйте изменить фильтры</Text>
-            {activeFilterCount > 0 && <Button variant="subtle" size="sm" onClick={resetFilters} mt="xs">Сбросить фильтры</Button>}
-          </Stack>
-        </Center>
+        <EmptyState
+          title="Ничего не найдено"
+          description="Попробуйте изменить условия поиска или сбросить часть фильтров."
+          actionLabel={activeFilterCount > 0 ? "Сбросить фильтры" : undefined}
+          onAction={activeFilterCount > 0 ? resetFilters : undefined}
+        />
       ) : view === "grid" ? (
-        <SimpleGrid cols={{base:1,sm:2,md:3,lg:4}} spacing="sm">{data.listings.map((listing: any) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
+        <SimpleGrid cols={{base:1,sm:2,md:3,lg:4}} spacing="sm">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
         <Stack gap="xs">{data.listings.map((listing: any) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}

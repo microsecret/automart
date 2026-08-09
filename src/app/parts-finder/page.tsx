@@ -9,6 +9,8 @@ import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCh
 import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
 type PartResult = {
   id: string
@@ -24,7 +26,12 @@ type PartResult = {
   compatibility?: Array<{ make: string; model: string }>
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type PartsResponse = {
+  parts: PartResult[]
+  pagination: { total: number; pages: number; limit: number }
+}
+
+const fetcher = fetchJson
 
 function PartMedia({ image, name }: { image: string; name: string }) {
   const [failed, setFailed] = useState(!image || image.includes("/placeholder"))
@@ -109,7 +116,7 @@ function PartsContent() {
     return u.toString()
   }
 
-  const { data, isLoading } = useSWR(hasInvalidPriceRange ? null : "/api/parts?" + buildQuery(), fetcher)
+  const { data, error, isLoading, mutate } = useSWR<PartsResponse>(hasInvalidPriceRange ? null : "/api/parts?" + buildQuery(), fetcher)
   const parts: PartResult[] = data?.parts || []
 
   const resetFilters = () => {
@@ -216,7 +223,13 @@ function PartsContent() {
         <Stack gap="sm">
 
               {isLoading ? (
-                <Center py={60}><Loader size="sm" color="indigo" /></Center>
+                <ResultsGridSkeleton count={6} mediaHeight={148} />
+              ) : error ? (
+                <AsyncErrorState
+                  title="Не удалось загрузить запчасти"
+                  description="Каталог временно не отвечает. Попробуйте обновить выдачу."
+                  onRetry={() => mutate()}
+                />
               ) : parts.length === 0 ? (
                 <Paper radius="md" p="xl" withBorder>
                   <Center><Stack align="center"><IconTools size={40} color="#a1a1aa" /><Text c="gray.5">Запчасти не найдены. Измените фильтры.</Text></Stack></Center>
