@@ -8,6 +8,7 @@ import { IconCar, IconCheck, IconPlus } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 
 const CATS = [
   { value: "CAR", label: "Легковые" },
@@ -22,7 +23,7 @@ export default function CreateVehiclePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [catId, setCatId] = useState("")
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; vehicleType: MarketplaceVehicleType | null }>>([])
 
   const [f, setF] = useState({
     title: "", make: "", model: "", year: "", price: "", mileage: "",
@@ -45,7 +46,7 @@ export default function CreateVehiclePage() {
 
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(d => {
-      if (d.categories?.[0]) setCatId(d.categories[0].id)
+      if (Array.isArray(d.categories)) setCategories(d.categories)
     }).catch(() => {})
   }, [])
 
@@ -59,15 +60,21 @@ export default function CreateVehiclePage() {
     fuelType: getFuelOptions(vehicleType)[0]?.value || "OTHER",
     transmission: getTransmissionOptions(vehicleType)[0]?.value || "",
     bodyType: vehicleType === "CAR" ? previous.bodyType || "SEDAN" : "",
+    driveType: vehicleType === "CAR" ? previous.driveType || "FWD" : "",
   }))
   const usageMeta = getUsageMeta(f.vehicleType)
   const fuelOptions = getFuelOptions(f.vehicleType)
   const transmissionOptions = getTransmissionOptions(f.vehicleType)
+  const selectedCategory = categories.find((category) => category.vehicleType === f.vehicleType)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!f.make || !f.model || !f.year || !f.price) {
       notifications.show({ title: "Ошибка", message: "Заполните обязательные поля", color: "red" })
+      return
+    }
+    if (!selectedCategory) {
+      notifications.show({ title: "Категория недоступна", message: "Не удалось подобрать категорию для выбранного типа транспорта. Обновите страницу.", color: "red" })
       return
     }
     setLoading(true)
@@ -118,7 +125,7 @@ export default function CreateVehiclePage() {
             mtowKg: f.mtowKg ? Number(f.mtowKg) : "",
             passengerCapacity: f.passengerCapacity ? Number(f.passengerCapacity) : "",
           },
-          categoryId: catId,
+          categoryId: selectedCategory.id,
         }),
       })
       const veh = await vehRes.json()
@@ -192,7 +199,7 @@ export default function CreateVehiclePage() {
                 <Group gap="sm" grow>
                   <Select label={f.vehicleType === "AIR" ? "Тип топлива" : "Топливо"} data={fuelOptions.map(t => ({ value: t.value, label: t.label }))} value={f.fuelType} onChange={(v) => set("fuelType", v || "")} size="sm" />
                   {supportsTransmission(f.vehicleType) && <Select label="КПП" data={transmissionOptions.map(t => ({ value: t.value, label: t.label }))} value={f.transmission} onChange={(v) => set("transmission", v || "")} size="sm" />}
-                  {["CAR", "MOTORCYCLE", "TRUCK"].includes(f.vehicleType) && <Select label="Привод" data={DRIVE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.driveType} onChange={(v) => set("driveType", v || "")} size="sm" />}
+                  {f.vehicleType === "CAR" && <Select label="Привод" data={DRIVE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.driveType} onChange={(v) => set("driveType", v || "")} size="sm" />}
                 </Group>
                 {f.vehicleType === "CAR" && (
                   <Select label="Тип кузова" data={BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.bodyType} onChange={(v) => set("bodyType", v || "")} size="sm" />
@@ -294,7 +301,7 @@ export default function CreateVehiclePage() {
             </Paper>
 
             {/* Кнопка */}
-            <Button type="submit" size="lg" radius="md" color="indigo" loading={loading} leftSection={<IconCheck size={18} />}>
+            <Button type="submit" size="lg" radius="md" color="indigo" loading={loading} disabled={!selectedCategory} leftSection={<IconCheck size={18} />}>
               {loading ? "Публикация..." : "Опубликовать объявление"}
             </Button>
           </Stack>

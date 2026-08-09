@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
     if (transmission) vehicleFilters.transmission = transmission
     const bodyTypes = oneOrMany(bodyType)
     if (bodyTypes) vehicleFilters.bodyType = bodyTypes
-    if (driveType) vehicleFilters.driveType = driveType
+    if (driveType && vehicleType === "CAR") vehicleFilters.driveType = driveType
     if (color) vehicleFilters.color = { contains: color }
     const conditions = oneOrMany(condition)
     if (conditions) vehicleFilters.condition = conditions

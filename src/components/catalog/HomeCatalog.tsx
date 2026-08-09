@@ -238,12 +238,14 @@ export default function HomePage(p: HomePageProps = {}) {
                     <Chip key={t.value} checked={transmission === t.value} onChange={() => setTransmission(transmission === t.value ? null : t.value)} variant={transmission === t.value ? "filled" : "outline"} color="indigo">{t.label}</Chip>
                   ))}</Group>
                 </Box>
-                <Box>
-                  <Text size="xs" fw={600} c="gray.6" mb={6}>Привод</Text>
-                  <Group gap={6}>{DRIVE_TYPES.map((d) => (
-                    <Chip key={d.value} checked={driveType === d.value} onChange={() => setDriveType(driveType === d.value ? null : d.value)} variant={driveType === d.value ? "filled" : "outline"} color="indigo" size="md" radius="xl">{d.label}</Chip>
-                  ))}</Group>
-                </Box>
+                {vt === "CAR" && (
+                  <Box>
+                    <Text size="xs" fw={600} c="gray.6" mb={6}>Привод</Text>
+                    <Group gap={6}>{DRIVE_TYPES.map((d) => (
+                      <Chip key={d.value} checked={driveType === d.value} onChange={() => setDriveType(driveType === d.value ? null : d.value)} variant={driveType === d.value ? "filled" : "outline"} color="indigo" size="md" radius="xl">{d.label}</Chip>
+                    ))}</Group>
+                  </Box>
+                )}
               </Group>
               )}
 

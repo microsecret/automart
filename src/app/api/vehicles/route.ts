@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import axios from "axios"
 import { prisma } from "@/lib/prisma"
-import { getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
+import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -115,6 +116,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const allowedVehicleTypes = new Set(["CAR", "MOTORCYCLE", "TRUCK", "SPECIAL", "WATER", "AIR"])
+    const normalizedVehicleType = allowedVehicleTypes.has(String(vehicleType)) ? String(vehicleType) : "CAR"
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { id: true, name: true },
+    })
+    if (!category) {
+      return NextResponse.json({ error: "Категория не найдена" }, { status: 404 })
+    }
+    if (!isVehicleCategoryCompatible(category.name, normalizedVehicleType)) {
+      return NextResponse.json({ error: "Категория не соответствует типу транспорта" }, { status: 400 })
+    }
+
     // Geocode location if provided
     let lat = null
     let lng = null
@@ -139,8 +153,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the vehicle
-    const allowedVehicleTypes = new Set(["CAR", "MOTORCYCLE", "TRUCK", "SPECIAL", "WATER", "AIR"])
-    const normalizedVehicleType = allowedVehicleTypes.has(String(vehicleType)) ? String(vehicleType) : "CAR"
     const normalizedTypeDetails = normalizeTypeDetails(typeDetails, normalizedVehicleType)
     const normalizedMileage = normalizeOptionalNonNegativeInteger(mileage)
     const normalizedOperatingHours = normalizeOptionalNonNegativeInteger(operatingHours)
@@ -160,6 +172,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Выбранный тип КПП не подходит для этой категории транспорта" }, { status: 400 })
     }
 
+    const allowedDriveTypes = new Set<string>(DRIVE_TYPES.map((item) => item.value))
+    if (normalizedVehicleType === "CAR" && driveType && !allowedDriveTypes.has(String(driveType))) {
+      return NextResponse.json({ error: "Выбранный тип привода не подходит для легкового автомобиля" }, { status: 400 })
+    }
+    const allowedBodyTypes = new Set<string>(BODY_TYPES.map((item) => item.value))
+    if (normalizedVehicleType === "CAR" && bodyType && !allowedBodyTypes.has(String(bodyType))) {
+      return NextResponse.json({ error: "Выбранный тип кузова не подходит для легкового автомобиля" }, { status: 400 })
+    }
+
     const vehicle = await prisma.vehicle.create({
       data: {
         make: make.trim(),
@@ -172,12 +193,12 @@ export async function POST(request: NextRequest) {
         vin: vin ? vin.trim() : null,
         fuelType: fuelType ? fuelType.trim() : null,
         transmission: supportsTransmission(normalizedVehicleType) ? String(transmission).trim() : "NOT_APPLICABLE",
-        bodyType: bodyType ? bodyType.trim() : null,
+        bodyType: normalizedVehicleType === "CAR" && bodyType ? bodyType.trim() : null,
         color: color ? color.trim() : null,
         doors: doors ? parseInt(doors) : null,
         engineVolume: engineVolume ? parseFloat(engineVolume) : null,
         power: power ? parseInt(power) : null,
-        driveType: driveType ? driveType.trim() : null,
+        driveType: normalizedVehicleType === "CAR" && driveType ? driveType.trim() : null,
         condition: condition ? condition.trim() : null,
         steeringWheel: steeringWheel ? steeringWheel.trim() : null,
         ownersCount: ownersCount ? parseInt(ownersCount) : null,
