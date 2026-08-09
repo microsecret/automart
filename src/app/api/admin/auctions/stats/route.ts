@@ -12,11 +12,14 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const [byStatus, total, totalAuctions, recent] = await Promise.all([
+    const now = new Date()
+    const [byStatus, total, totalAuctions, visibleAuctions, latestAuctionCheck, recent] = await Promise.all([
       prisma.auctionInquiry.groupBy({ by: ["status"], _count: true }),
       prisma.auctionInquiry.count(),
       prisma.auctionListing.count({ where: { status: "ACTIVE" } }),
-      prisma.auctionInquiry.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+      prisma.auctionListing.count({ where: { status: "ACTIVE", OR: [{ auctionDate: null }, { auctionDate: { gte: now } }] } }),
+      prisma.auctionListing.aggregate({ _max: { lastChecked: true } }),
+      prisma.auctionInquiry.count({ where: { createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } } }),
     ])
 
     const statusCounts = byStatus.reduce((acc, s) => {
@@ -27,6 +30,8 @@ export async function GET() {
     return NextResponse.json({
       total,
       totalAuctions,
+      visibleAuctions,
+      lastAuctionSync: latestAuctionCheck._max.lastChecked,
       recent,
       byStatus: {
         NEW: statusCounts.NEW || 0,

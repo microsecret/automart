@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic"
 import useSWR from "swr"
 import { Box, Stack, Group, Text, Paper, Badge, Center, Loader, ThemeIcon, Select, SimpleGrid } from "@mantine/core"
-import { IconGavel, IconPhone, IconMail, IconMapPin, IconClock } from "@tabler/icons-react"
+import { IconDatabase, IconGavel, IconPhone, IconMail, IconMapPin, IconClock } from "@tabler/icons-react"
 import { formatRelativeDate } from "@/lib/format"
 import { useState } from "react"
 
@@ -34,9 +34,10 @@ export default function AdminAuctionsPage() {
 
         {/* Статистика */}
         {stats && (
-          <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
+          <SimpleGrid cols={{ base: 2, sm: 3, md: 7 }} spacing="sm">
             {[
               { label: "Всего заявок", value: stats.total, color: "#4f46e5", bg: "#eef2ff" },
+              { label: "Лотов в каталоге", value: stats.visibleAuctions ?? stats.totalAuctions ?? 0, color: "#c2410c", bg: "#fff7ed" },
               { label: "Новые", value: stats.byStatus?.NEW || 0, color: "#e11d48", bg: "#fff1f2" },
               { label: "Связались", value: stats.byStatus?.CONTACTED || 0, color: "#ea580c", bg: "#fff7ed" },
               { label: "В работе", value: stats.byStatus?.IN_PROGRESS || 0, color: "#2563eb", bg: "#eff6ff" },
@@ -53,6 +54,18 @@ export default function AdminAuctionsPage() {
               </Paper>
             ))}
           </SimpleGrid>
+        )}
+
+        {stats && (
+          <Paper radius="md" p="sm" withBorder bg={stats.visibleAuctions ? undefined : "orange.0"}>
+            <Group gap="xs" wrap="nowrap">
+              <ThemeIcon variant="light" color={stats.visibleAuctions ? "orange" : "red"} size="sm"><IconDatabase size={14} /></ThemeIcon>
+              <Text size="xs" c="gray.6">
+                {stats.lastAuctionSync ? `Последняя проверка источников: ${formatRelativeDate(stats.lastAuctionSync)}.` : "Синхронизация источников ещё не выполнялась."}
+                {stats.visibleAuctions ? ` В публичной выдаче: ${stats.visibleAuctions} лотов.` : " Публичная выдача пуста: проверьте импорт и статусы лотов."}
+              </Text>
+            </Group>
+          </Paper>
         )}
 
         <Select
