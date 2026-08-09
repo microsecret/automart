@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import useSWR, { mutate as globalMutate } from "swr"
 import { useSession } from "next-auth/react"
+import { notifications } from "@mantine/notifications"
 import {
   Container,
   Stack,
@@ -21,8 +22,8 @@ import {
 import { IconArrowLeft, IconSend } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
 interface Message {
   id: string
@@ -45,9 +46,9 @@ export default function ConversationPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  const { data, isLoading } = useSWR<{ messages: Message[]; otherUserName: string; otherUserImage: string | null }>(
+  const { data, error, isLoading, mutate } = useSWR<{ messages: Message[]; otherUserName: string; otherUserImage: string | null }>(
     session ? `/api/messages/${conversationId}` : null,
-    fetcher,
+    fetchJson,
     { refreshInterval: 5000 }
   )
 
@@ -68,14 +69,21 @@ export default function ConversationPage() {
     const content = text.trim()
     setText("")
     try {
-      await fetch(`/api/messages/${conversationId}`, {
+      const response = await fetch(`/api/messages/${conversationId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
       })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || "Не удалось отправить сообщение")
       globalMutate(`/api/messages/${conversationId}`)
-    } catch {
+    } catch (error) {
       setText(content)
+      notifications.show({
+        title: "Сообщение не отправлено",
+        message: error instanceof Error ? error.message : "Повторите попытку.",
+        color: "red",
+      })
     } finally {
       setSending(false)
     }
@@ -109,6 +117,8 @@ export default function ConversationPage() {
         <Box ref={scrollRef} style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
           {isLoading ? (
             <Center py={40}><Loader color="indigo" /></Center>
+          ) : error ? (
+            <AsyncErrorState title="Не удалось загрузить диалог" description="Сообщения временно недоступны. Повторите запрос." onRetry={() => mutate()} backHref="/messages" backLabel="К сообщениям" />
           ) : messages.length === 0 ? (
             <Center py={40}>
               <Text size="sm" c="gray.4">Начните диалог — отправьте первое сообщение</Text>

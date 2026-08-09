@@ -21,8 +21,8 @@ import {
 import { IconMessageCircleOff } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
 interface Conversation {
   conversationId: string
@@ -37,9 +37,9 @@ interface Conversation {
 export default function MessagesPage() {
   const { data: session, status } = useSession() || { data: null, status: 'unauthenticated' }
   const router = useRouter()
-const { data, isLoading } = useSWR<{ conversations: Conversation[] }>(
+  const { data, error, isLoading, mutate } = useSWR<{ conversations: Conversation[] }>(
     session ? "/api/messages" : null,
-    fetcher,
+    fetchJson,
     { refreshInterval: 5000 }
   )
 
@@ -63,6 +63,8 @@ const { data, isLoading } = useSWR<{ conversations: Conversation[] }>(
 
         {isLoading ? (
           <Center py={60}><Loader color="indigo" /></Center>
+        ) : error ? (
+          <AsyncErrorState title="Не удалось загрузить сообщения" description="Диалоги временно недоступны. Повторите запрос." onRetry={() => mutate()} />
         ) : conversations.length === 0 ? (
           <Center py={80}>
             <Stack align="center" gap="md">

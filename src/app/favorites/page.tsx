@@ -2,20 +2,26 @@
 export const dynamic = "force-dynamic"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Group, Text, SimpleGrid, Center, Loader, Paper, Button, ThemeIcon, Pagination, SegmentedControl } from "@mantine/core"
+import { Box, Stack, Group, Text, SimpleGrid, Center, Paper, Button, ThemeIcon, Pagination, SegmentedControl } from "@mantine/core"
 import { IconHeart, IconHeartBroken, IconLayoutGrid, IconList } from "@tabler/icons-react"
 import { useState } from "react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
+import type { ListingCardData } from "@/components/listings/ListingCard"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type FavoritesResponse = {
+  favorites: ListingCardData[]
+  pagination: { total: number; pages: number }
+}
 
 export default function FavoritesPage() {
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
-  const { data, isLoading } = useSWR(`/api/favorites?page=${page}&limit=18`, fetcher)
+  const { data, error, isLoading, mutate } = useSWR<FavoritesResponse>(`/api/favorites?page=${page}&limit=18`, fetchJson)
 
-  const favorites: any[] = data?.favorites || []
+  const favorites = data?.favorites || []
 
   return (
     <Box p={{ base: "sm", md: "md" }}>
@@ -34,7 +40,9 @@ export default function FavoritesPage() {
         </Group>
 
         {isLoading ? (
-          <Center py={80}><Loader size="sm" color="indigo" /></Center>
+          <ResultsGridSkeleton count={8} mediaHeight={210} />
+        ) : error ? (
+          <AsyncErrorState title="Не удалось загрузить избранное" description="Проверьте авторизацию и повторите запрос." onRetry={() => mutate()} backHref="/auth/signin" backLabel="Войти" />
         ) : favorites.length === 0 ? (
           <Paper radius="md" p="xl" withBorder>
             <Center>

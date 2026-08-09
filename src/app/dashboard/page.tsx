@@ -1,36 +1,52 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useState } from "react"
-import useSWR, { useSWRConfig } from "swr"
+import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import Link from "next/link"
-import { Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, SegmentedControl, Center, Loader, Image as MImage, Avatar, Button, Divider, ActionIcon } from "@mantine/core"
+import { Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, SegmentedControl, Center, Avatar, Button, Divider, ActionIcon } from "@mantine/core"
 import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconChartBar, IconTrendingUp, IconClock, IconExternalLink, IconTrash } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type DashboardResponse = {
+  stats: {
+    totalListings: number
+    totalViews: number
+    favoritesCount: number
+    reviewsCount: number
+    garageCount: number
+    avgRating: number
+  }
+  listings: any[]
+  favorites: any[]
+}
 
 export default function DashboardPage() {
   const { data: session } = useSession()
   const [tab, setTab] = useState("listings")
-  const { data, isLoading } = useSWR("/api/dashboard/stats", fetcher)
-  const { mutate } = useSWRConfig()
+  const { data, error, isLoading, mutate } = useSWR<DashboardResponse>("/api/dashboard/stats", fetchJson)
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Удалить «${title}»?`)) return
     try {
-      await fetch(`/api/listings/${id}`, { method: "DELETE" })
+      const response = await fetch(`/api/listings/${id}`, { method: "DELETE" })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(payload?.error || "Не удалось удалить объявление")
+      }
       notifications.show({ title: "Удалено", message: "Объявление удалено", color: "green" })
-      mutate("/api/dashboard/stats")
-    } catch {
-      notifications.show({ title: "Ошибка", message: "Не удалось удалить", color: "red" })
+      await mutate()
+    } catch (error) {
+      notifications.show({ title: "Ошибка", message: error instanceof Error ? error.message : "Не удалось удалить", color: "red" })
     }
   }
 
-  if (isLoading) return <Center py={80}><Loader size="sm" color="indigo" /></Center>
-  if (!data) return <Center py={80}><Text c="gray.5">Не удалось загрузить данные</Text></Center>
+  if (isLoading) return <Box p={{ base: "sm", md: "md" }}><ResultsGridSkeleton count={6} mediaHeight={44} /></Box>
+  if (error || !data) return <Box p={{ base: "sm", md: "md" }}><AsyncErrorState title="Не удалось загрузить личный кабинет" description="Статистика и объявления временно недоступны. Повторите запрос." onRetry={() => mutate()} /></Box>
 
   const stats = data.stats
 
