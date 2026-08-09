@@ -87,7 +87,7 @@ function DeliveriesWorkspace() {
             <Stack gap="xs" maw={650}>
               <Group gap="xs"><ThemeIcon size={34} radius="md" variant="white" color="indigo"><IconRoute size={18} /></ThemeIcon><Badge color="indigo" variant="white">Кабинет сделки</Badge></Group>
               <Title order={1} fz={{ base: 25, md: 34 }} lh={1.08} ff="var(--font-display), sans-serif">Доставка без тёмных зон</Title>
-              <Text c="rgba(255,255,255,.78)" size="sm" maw={590}>От заявки на аукционный автомобиль или запчасть до выдачи в вашем городе: этапы, счета, документы и общий чат — в одной защищённой сделке.</Text>
+              <Text c="rgba(255,255,255,.78)" size="sm" maw={590}>От заявки на аукционный автомобиль или запчасть до выдачи в вашем городе: этапы, счета, документы и общий чат — в одном рабочем пространстве.</Text>
               <Group gap="xs" mt="xs"><Badge color="cyan" variant="light">Статусы с автором</Badge><Badge color="violet" variant="light">Отдельные платежи</Badge><Badge color="teal" variant="light">Закрытые документы</Badge></Group>
             </Stack>
             <Button onClick={() => setOpened(true)} color="white" c="indigo" leftSection={<IconPlus size={17} />} radius="md">Новая заявка</Button>
@@ -137,7 +137,7 @@ function DeliveriesWorkspace() {
           <SimpleGrid cols={2}><Select required label="Страна отправления" data={DELIVERY_COUNTRIES} value={form.originCountry} onChange={(value) => setForm({ ...form, originCountry: value || "CN" })} /><TextInput label="Город / порт отправления" placeholder="Например, Суйфэньхэ" value={form.originCity} onChange={(e) => setForm({ ...form, originCity: e.currentTarget.value })} /></SimpleGrid>
           <TextInput required label="Город доставки в России" placeholder="Например, Екатеринбург" value={form.destinationCity} onChange={(e) => setForm({ ...form, destinationCity: e.currentTarget.value })} />
           <Textarea label="Комментарий" placeholder="Нужен маршрут, бюджет, номер лота, особые условия" minRows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.currentTarget.value })} />
-          <Button type="submit" loading={submitting} color="indigo" rightSection={<IconArrowRight size={16} />}>Создать защищённую сделку</Button>
+          <Button type="submit" loading={submitting} color="indigo" rightSection={<IconArrowRight size={16} />}>Создать заявку</Button>
         </Stack></form>
       </Modal>
     </Box>

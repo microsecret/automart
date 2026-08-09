@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { asTrimmedString, deliveryOrderInclude, isDeliveryAdmin } from "@/lib/delivery-access"
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, makeDeliveryCode } from "@/lib/delivery"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -64,6 +65,16 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const userLimit = rateLimit(`delivery:create:user:${session.user.id}`, { windowMs: 15 * 60_000, maxRequests: 5 })
+    const ipLimit = rateLimit(`delivery:create:ip:${getClientIp(request)}`, { windowMs: 15 * 60_000, maxRequests: 12 })
+    if (!userLimit.success || !ipLimit.success) {
+      const limit = !userLimit.success ? userLimit : ipLimit
+      return NextResponse.json(
+        { error: "Слишком много заявок. Попробуйте позже." },
+        { status: 429, headers: rateLimitHeaders(limit) },
+      )
+    }
 
     const body = await request.json()
     const title = asTrimmedString(body.title, 160)

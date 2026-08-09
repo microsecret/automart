@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { asTrimmedString, canReadDeliveryOrder } from "@/lib/delivery-access"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -11,6 +12,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const userLimit = rateLimit(`delivery:message:user:${session.user.id}`, { windowMs: 60_000, maxRequests: 30 })
+    const ipLimit = rateLimit(`delivery:message:ip:${getClientIp(request)}`, { windowMs: 60_000, maxRequests: 60 })
+    if (!userLimit.success || !ipLimit.success) {
+      const limit = !userLimit.success ? userLimit : ipLimit
+      return NextResponse.json(
+        { error: "Слишком много сообщений. Попробуйте через минуту." },
+        { status: 429, headers: rateLimitHeaders(limit) },
+      )
+    }
     const order = await prisma.deliveryOrder.findUnique({ where: { id }, select: { id: true, buyerId: true, partnerId: true, managerId: true } })
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
     if (!canReadDeliveryOrder(session, order)) return NextResponse.json({ error: "Нет доступа к чату сделки" }, { status: 403 })
