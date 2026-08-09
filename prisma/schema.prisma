@@ -39,6 +39,7 @@ model User {
   sessions     Session[] @relation("UserSessions")
   notifications  Notification[] @relation("UserNotifications")
   comments     Comment[]
+  visitEvents  VisitEvent[] @relation("UserVisitEvents")
 
   @@index([email])
 }
@@ -343,6 +344,24 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@index([token])
+}
+
+// Privacy-safe product analytics: raw IP is never stored.
+model VisitEvent {
+  id         String   @id @default(uuid())
+  path       String
+  sessionKey String?
+  ipHash     String?
+  userAgent  String?
+  referer    String?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], name: "UserVisitEvents")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path, createdAt])
+  @@index([sessionKey, createdAt])
+  @@index([userId, createdAt])
 }
 
 // One-time codes delivered by the Telegram bot for phone login.

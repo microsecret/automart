@@ -45,6 +45,15 @@ export async function GET() {
     const newListings = await prisma.listing.count({ where: { createdAt: { gte: weekAgo } } })
     const newUsers = await prisma.user.count({ where: { createdAt: { gte: weekAgo } } })
 
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const [visits24h, visits7d, uniqueSessions7d, topPaths, recentVisitors] = await Promise.all([
+      prisma.visitEvent.count({ where: { createdAt: { gte: dayAgo } } }),
+      prisma.visitEvent.count({ where: { createdAt: { gte: weekAgo } } }),
+      prisma.visitEvent.findMany({ where: { createdAt: { gte: weekAgo }, sessionKey: { not: null } }, select: { sessionKey: true }, distinct: ["sessionKey"] }),
+      prisma.visitEvent.groupBy({ by: ["path"], where: { createdAt: { gte: weekAgo } }, _count: { path: true }, orderBy: { _count: { path: "desc" } }, take: 8 }),
+      prisma.visitEvent.findMany({ where: { createdAt: { gte: weekAgo }, userId: { not: null } }, orderBy: { createdAt: "desc" }, take: 10, include: { user: { select: { id: true, name: true, email: true, telegramUsername: true } } } }),
+    ])
+
     // Featured
     const featured = await prisma.listing.count({ where: { isFeatured: true } })
 
@@ -59,6 +68,17 @@ export async function GET() {
       recent: { newListings, newUsers },
       featured,
       avgPrice,
+      traffic: {
+        visits24h,
+        visits7d,
+        uniqueVisitors7d: uniqueSessions7d.length,
+        topPaths: topPaths.map((item) => ({ path: item.path, count: item._count.path })),
+        recentVisitors: recentVisitors.map((visit) => ({
+          id: visit.id,
+          createdAt: visit.createdAt,
+          user: visit.user,
+        })),
+      },
     })
   } catch (error) {
     console.error("Admin stats error:", error)

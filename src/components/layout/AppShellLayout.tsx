@@ -12,6 +12,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import AppHeader from "./AppHeader"
 import AppFooter from "./AppFooter"
+import AppAnalytics from "@/components/analytics/AppAnalytics"
 
 const CATEGORIES = [
   { slug: "cars", label: "Легковые", icon: <IconCar size={16} stroke={1.7} /> },
@@ -58,6 +59,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
 
   return (
     <Box style={{ minHeight: "100vh", background: "var(--mantine-color-body)" }}>
+      <AppAnalytics />
       <AppHeader />
 
       <Box style={{ display: "flex", maxWidth: 1440, margin: "0 auto" }}>

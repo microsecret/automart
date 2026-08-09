@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import useSWR from "swr"
 import { Box, Stack, Text, Center, Loader, SimpleGrid, Card, ThemeIcon, Title, Group, Badge, Table, Progress, Divider } from "@mantine/core"
-import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconCheck } from "@tabler/icons-react"
+import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconCheck, IconActivity, IconWorld } from "@tabler/icons-react"
 import Link from "next/link"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -63,6 +63,46 @@ export default function AdminDashboard() {
               </Group>
             </Card>
           ))}
+        </SimpleGrid>
+
+        {/* Посещаемость */}
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Посещения за 24 часа</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data?.traffic?.visits24h ?? 0}</Text>
+            <Text size="xs" c="gray.4">все просмотры экранов</Text>
+          </Card>
+          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · 7 дней</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data?.traffic?.uniqueVisitors7d ?? 0}</Text>
+            <Text size="xs" c="gray.4">по анонимной сессии</Text>
+          </Card>
+          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Посещения за 7 дней</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data?.traffic?.visits7d ?? 0}</Text>
+            <Text size="xs" c="gray.4">путь пользователя по сайту</Text>
+          </Card>
+        </SimpleGrid>
+
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Text size="sm" fw={600} c="dark.9" mb="sm">Популярные экраны за 7 дней</Text>
+            <Stack gap="xs">
+              {(data?.traffic?.topPaths || []).map((item: { path: string; count: number }) => (
+                <Group key={item.path} justify="space-between"><Text size="xs" c="gray.6" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.path}</Text><Badge size="sm" variant="light" color="indigo">{item.count}</Badge></Group>
+              ))}
+              {!data?.traffic?.topPaths?.length && <Text size="xs" c="gray.4">Данные появятся после первых визитов.</Text>}
+            </Stack>
+          </Card>
+          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Text size="sm" fw={600} c="dark.9" mb="sm">Последние идентифицированные посетители</Text>
+            <Stack gap="xs">
+              {(data?.traffic?.recentVisitors || []).slice(0, 6).map((visit: any) => (
+                <Group key={visit.id} justify="space-between"><Text size="xs" c="gray.6">{visit.user?.name || visit.user?.email || "Пользователь"}</Text><Text size="xs" c="gray.4">{new Date(visit.createdAt).toLocaleDateString("ru-RU")}</Text></Group>
+              ))}
+              {!data?.traffic?.recentVisitors?.length && <Text size="xs" c="gray.4">Пока нет авторизованных визитов.</Text>}
+            </Stack>
+          </Card>
         </SimpleGrid>
 
         {/* Распределение по категориям */}
