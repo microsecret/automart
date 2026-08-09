@@ -30,6 +30,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ count })
     }
 
+    // Compact representation for catalog cards. This avoids loading complete
+    // listing records once per card just to determine whether the heart is on.
+    if (searchParams.get("idsOnly") === "true") {
+      const favorites = await prisma.listing.findMany({
+        where: {
+          favoritedBy: {
+            some: {
+              id: session.user.id
+            }
+          }
+        },
+        select: {
+          id: true
+        }
+      })
+
+      return NextResponse.json({
+        ids: favorites.map((favorite) => favorite.id),
+        count: favorites.length
+      })
+    }
+
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
     const skip = (page - 1) * limit

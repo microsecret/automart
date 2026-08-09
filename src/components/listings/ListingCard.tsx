@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
-import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio, Menu, Portal, SimpleGrid } from "@mantine/core"
+import { useState, useEffect } from "react"
+import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio, SimpleGrid } from "@mantine/core"
 import { IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
@@ -9,6 +9,8 @@ import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, suppor
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
 import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
+import { useFavorites } from "@/hooks/useFavorites"
+import { useRouter } from "next/navigation"
 
 export interface ListingCardData {
   id: string
@@ -52,24 +54,14 @@ const TRUNCATE_STYLE: React.CSSProperties = {
 }
 
 export default function ListingCard({ listing }: { listing: ListingCardData }) {
-  const [isFav, setIsFav] = useState(false)
   const [activeImg, setActiveImg] = useState(0)
   const [imageFailed, setImageFailed] = useState(false)
-
-  useEffect(() => {
-    fetch("/api/favorites").then(r => r.json()).then(d => {
-      if (d.favorites) {
-        const ids = d.favorites.map((f: { id: string }) => f.id)
-        if (ids.includes(listing.id)) setIsFav(true)
-      }
-    }).catch(() => {})
-  }, [listing.id])
+  const router = useRouter()
+  const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
   useEffect(() => {
     setActiveImg(0)
     setImageFailed(false)
   }, [listing.id])
-  const [pending, startTransition] = useTransition()
-
   const isVehicle = !!listing.vehicle
   const detailHref = isVehicle
     ? `/listings/vehicle/${listing.vehicle!.id}`
@@ -91,20 +83,17 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
     : usageMeta.field === "mileage" ? formatMileage(usageValue)
     : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
+  const isFav = favoriteIds.has(listing.id)
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    startTransition(async () => {
-      try {
-        await fetch("/api/favorites", {
-          method: isFav ? "DELETE" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ listingId: listing.id }),
-        })
-        setIsFav(!isFav)
-      } catch {}
-    })
+    if (!isAuthenticated) {
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(detailHref)}`)
+      return
+    }
+
+    void toggleFavorite(listing.id)
   }
 
   return (
@@ -204,8 +193,8 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               size="sm"
               radius="xl"
               onClick={toggleFav}
-              loading={pending}
-              aria-label="В избранное"
+              loading={isPending(listing.id)}
+              aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
               style={{ opacity: 0.9 }}
             >
               <IconHeart size={14} fill={isFav ? "currentColor" : "none"} />

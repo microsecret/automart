@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio } from "@mantine/core"
 import { IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
@@ -10,6 +9,8 @@ import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
 import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
 import type { ListingCardData } from "./ListingCard"
+import { useFavorites } from "@/hooks/useFavorites"
+import { useRouter } from "next/navigation"
 
 export type ListingRowData = ListingCardData
 
@@ -22,17 +23,8 @@ const TRUNCATE: React.CSSProperties = {
 }
 
 export default function ListingRow({ listing }: { listing: ListingRowData }) {
-  const [isFav, setIsFav] = useState(false)
-
-  useEffect(() => {
-    fetch("/api/favorites").then(r => r.json()).then(d => {
-      if (d.favorites) {
-        const ids = d.favorites.map((f: { id: string }) => f.id)
-        if (ids.includes(listing.id)) setIsFav(true)
-      }
-    }).catch(() => {})
-  }, [listing.id])
-  const [pending, startTransition] = useTransition()
+  const router = useRouter()
+  const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
 
   const isVehicle = !!listing.vehicle
   const detailHref = isVehicle
@@ -51,20 +43,17 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
     : usageMeta.field === "mileage" ? formatMileage(usageValue)
     : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
+  const isFav = favoriteIds.has(listing.id)
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    startTransition(async () => {
-      try {
-        await fetch("/api/favorites", {
-          method: isFav ? "DELETE" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ listingId: listing.id }),
-        })
-        setIsFav(!isFav)
-      } catch {}
-    })
+    if (!isAuthenticated) {
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(detailHref)}`)
+      return
+    }
+
+    void toggleFavorite(listing.id)
   }
 
   return (
@@ -148,8 +137,8 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   size="sm"
                   radius="xl"
                   onClick={toggleFav}
-                  loading={pending}
-                  aria-label="В избранное"
+                  loading={isPending(listing.id)}
+                  aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
                 >
                   <IconHeart size={14} fill={isFav ? "currentColor" : "none"} />
                 </ActionIcon>
