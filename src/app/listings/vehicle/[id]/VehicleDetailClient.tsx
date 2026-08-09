@@ -64,6 +64,8 @@ import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, 
 import Photo360Viewer from "@/components/viewer/Photo360Viewer"
 import CreditCalculator from "@/components/listings/CreditCalculator"
 import { getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { useFavorites } from "@/hooks/useFavorites"
+import { useRouter } from "next/navigation"
 
 interface VehicleData {
   id: string
@@ -169,8 +171,18 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const [reviewText, setReviewText] = useState("")
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const { data: session } = useSession()
-  const [isFav, setIsFav] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
+  const router = useRouter()
+  const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
+  const isFav = Boolean(data.listingId && favoriteIds.has(data.listingId))
+  const toggleDetailFavorite = () => {
+    if (!data.listingId) return
+    if (!isAuthenticated) {
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/vehicle/${data.id}`)}`)
+      return
+    }
+    void toggleFavorite(data.listingId)
+  }
   const submitReview = async () => {
     if (!session) return
     if (!data.listingId) return
@@ -617,7 +629,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     variant="subtle"
                     color={isFav ? "red" : "gray"}
                     leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />}
-                    onClick={() => setIsFav(!isFav)}
+                    onClick={toggleDetailFavorite}
+                    loading={data.listingId ? isPending(data.listingId) : false}
+                    disabled={!data.listingId}
                   >
                     {isFav ? "В избранном" : "В избранное"}
                   </Button>

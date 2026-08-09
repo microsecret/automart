@@ -42,7 +42,9 @@ import {
   IconPhoto,
 } from "@tabler/icons-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
+import { useFavorites } from "@/hooks/useFavorites"
 
 const PART_TYPES_MAP: Record<string, string> = {
   ENGINE: "Двигатель", TRANSMISSION: "Трансмиссия", SUSPENSION: "Подвеска",
@@ -101,10 +103,20 @@ interface PartData {
 export default function PartDetailClient({ data }: { data: PartData }) {
   const [showPhone, setShowPhone] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
-  const [isFav, setIsFav] = useState(false)
   const [bidAmount, setBidAmount] = useState("")
   const [bidLoading, setBidLoading] = useState(false)
   const [bidMessage, setBidMessage] = useState<string | null>(null)
+  const router = useRouter()
+  const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
+  const isFav = Boolean(data.listingId && favoriteIds.has(data.listingId))
+  const toggleDetailFavorite = () => {
+    if (!data.listingId) return
+    if (!isAuthenticated) {
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/part/${data.id}`)}`)
+      return
+    }
+    void toggleFavorite(data.listingId)
+  }
   const rawImages = parseImages(data.images)
   const images = rawImages
   const hasImages = images.length > 0
@@ -302,7 +314,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Button size="lg" radius="md" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={`/messages/new?listingId=${data.listingId || data.id}`}>
                     Написать продавцу
                   </Button>
-                  <Button size="lg" radius="md" variant="subtle" color={isFav ? "red" : "gray"} leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />} onClick={() => setIsFav(!isFav)}>
+                  <Button size="lg" radius="md" variant="subtle" color={isFav ? "red" : "gray"} leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />} onClick={toggleDetailFavorite} loading={data.listingId ? isPending(data.listingId) : false} disabled={!data.listingId}>
                     {isFav ? "В избранном" : "В избранное"}
                   </Button>
                 </Stack>
