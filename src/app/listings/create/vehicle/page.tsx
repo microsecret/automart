@@ -3,8 +3,8 @@ export const dynamic = "force-dynamic"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon } from "@mantine/core"
-import { IconCar, IconCheck, IconPlus } from "@tabler/icons-react"
+import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge } from "@mantine/core"
+import { IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
@@ -23,6 +23,8 @@ export default function CreateVehiclePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [images, setImages] = useState<string[]>([])
+  const [uploadingImages, setUploadingImages] = useState(false)
   const [categories, setCategories] = useState<Array<{ id: string; name: string; vehicleType: MarketplaceVehicleType | null }>>([])
 
   const [f, setF] = useState({
@@ -67,6 +69,37 @@ export default function CreateVehiclePage() {
   const transmissionOptions = getTransmissionOptions(f.vehicleType)
   const selectedCategory = categories.find((category) => category.vehicleType === f.vehicleType)
 
+  const uploadPhotos = async (files: File[] | null) => {
+    const selected = Array.isArray(files) ? files : []
+    if (selected.length === 0) return
+
+    const freeSlots = Math.max(0, 12 - images.length)
+    if (freeSlots === 0) {
+      notifications.show({ title: "Лимит фотографий", message: "В объявление можно добавить до 12 фотографий.", color: "orange" })
+      return
+    }
+
+    setUploadingImages(true)
+    try {
+      const urls = await Promise.all(selected.slice(0, freeSlots).map(async (file) => {
+        const formData = new FormData()
+        formData.append("file", file)
+        const response = await fetch("/api/upload", { method: "POST", body: formData })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error || "Не удалось загрузить фотографию")
+        return result.url as string
+      }))
+      setImages((current) => [...current, ...urls])
+      if (selected.length > freeSlots) {
+        notifications.show({ title: "Добавлены не все фото", message: `Добавлено ${freeSlots} из ${selected.length}: лимит 12.`, color: "orange" })
+      }
+    } catch (error: any) {
+      notifications.show({ title: "Не удалось загрузить фото", message: error.message || "Повторите попытку.", color: "red" })
+    } finally {
+      setUploadingImages(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!f.make || !f.model || !f.year || !f.price) {
@@ -94,7 +127,7 @@ export default function CreateVehiclePage() {
           engineVolume: f.engineVolume ? parseFloat(f.engineVolume) : null,
           power: f.power ? Number(f.power) : null, driveType: f.driveType,
           condition: f.condition, location: f.location || "Москва",
-          description: f.description, images: null,
+          description: f.description, images: images.length > 0 ? JSON.stringify(images) : null,
           steeringWheel: f.steeringWheel, ownersCount: f.ownersCount || null,
           documentsStatus: f.documentsStatus, damageInfo: f.damageInfo,
           sellerType: f.sellerType, availability: f.availability,
@@ -300,8 +333,45 @@ export default function CreateVehiclePage() {
               </Stack>
             </Paper>
 
+            <Paper radius="md" p="md" withBorder>
+              <Stack gap="sm">
+                <Group justify="space-between" align="center">
+                  <Group gap="sm">
+                    <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconPhoto size={18} /></ThemeIcon>
+                    <Stack gap={0}>
+                      <Text fw={700} fz="sm" c="dark.9">Фотографии транспорта</Text>
+                      <Text size="xs" c="gray.5">Первая фотография станет обложкой. До 12 JPG, PNG или WebP — до 10 МБ каждая.</Text>
+                    </Stack>
+                  </Group>
+                  <Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge>
+                </Group>
+                <FileInput
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  clearable
+                  disabled={uploadingImages || images.length >= 12}
+                  placeholder="Выберите фотографии"
+                  onChange={uploadPhotos}
+                  leftSection={<IconPhoto size={16} />}
+                />
+                {uploadingImages && <Text size="xs" c="indigo">Загружаем фотографии…</Text>}
+                {images.length > 0 && (
+                  <SimpleGrid cols={{ base: 3, sm: 4, md: 6 }} spacing="xs">
+                    {images.map((image, index) => (
+                      <Box key={image} pos="relative" style={{ aspectRatio: "1", overflow: "hidden", borderRadius: 10, border: index === 0 ? "2px solid var(--mantine-color-indigo-5)" : "1px solid var(--mantine-color-gray-3)" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={image} alt={`Фото ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <ActionIcon aria-label={`Удалить фото ${index + 1}`} type="button" size="sm" color="dark" variant="filled" pos="absolute" top={5} right={5} onClick={() => setImages((current) => current.filter((_, imageIndex) => imageIndex !== index))}><IconX size={13} /></ActionIcon>
+                        {index === 0 && <Badge size="xs" color="indigo" variant="filled" pos="absolute" left={5} bottom={5}>Обложка</Badge>}
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+                )}
+              </Stack>
+            </Paper>
+
             {/* Кнопка */}
-            <Button type="submit" size="lg" radius="md" color="indigo" loading={loading} disabled={!selectedCategory} leftSection={<IconCheck size={18} />}>
+            <Button type="submit" size="lg" radius="md" color="indigo" loading={loading} disabled={!selectedCategory || uploadingImages} leftSection={<IconCheck size={18} />}>
               {loading ? "Публикация..." : "Опубликовать объявление"}
             </Button>
           </Stack>
