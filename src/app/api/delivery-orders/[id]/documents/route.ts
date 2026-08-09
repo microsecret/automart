@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { asTrimmedString, canManageDeliveryOrder, canReadDeliveryOrder } from "@/lib/delivery-access"
+import { canTransitionDeliveryPayment } from "@/lib/delivery"
 import { hasExpectedFileSignature } from "@/lib/file-signature"
 
 export const dynamic = "force-dynamic"
@@ -14,6 +15,7 @@ const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024
 const acceptedMimeTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"])
 const buyerDocumentCategories = new Set(["RECEIPT", "BUYER_DOCUMENT", "OTHER"])
 const allDocumentCategories = new Set(["INVOICE", "RECEIPT", "EXPORT", "CUSTOMS", "LABORATORY", "EPTS", "CONTRACT", "BUYER_DOCUMENT", "OTHER"])
+const PAYMENT_STATE_CONFLICT = "DELIVERY_PAYMENT_STATE_CONFLICT"
 
 function privateDocumentsDirectory() {
   return process.env.DELIVERY_DOCUMENTS_PATH || path.join(process.cwd(), "data", "delivery-documents")
@@ -51,10 +53,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Недопустимый тип документа" }, { status: 400 })
     }
 
-    let relatedPayment: { id: string } | null = null
+    let relatedPayment: { id: string; status: string } | null = null
     if (paymentId) {
-      relatedPayment = await prisma.deliveryPayment.findFirst({ where: { id: paymentId, deliveryOrderId: order.id }, select: { id: true } })
+      if (category !== "RECEIPT") {
+        return NextResponse.json({ error: "К счёту можно приложить только квитанцию" }, { status: 400 })
+      }
+      relatedPayment = await prisma.deliveryPayment.findFirst({ where: { id: paymentId, deliveryOrderId: order.id }, select: { id: true, status: true } })
       if (!relatedPayment) return NextResponse.json({ error: "Счёт не относится к этой сделке" }, { status: 400 })
+      if (!canTransitionDeliveryPayment(relatedPayment.status, "AWAITING_CONFIRMATION")) {
+        return NextResponse.json({ error: "Квитанцию можно приложить только к выставленному или просроченному счёту" }, { status: 409 })
+      }
     }
 
     const extensionByMime: Record<string, string> = {
@@ -85,16 +93,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           },
         })
         if (relatedPayment) {
-          await tx.deliveryPayment.update({
-            where: { id: relatedPayment.id },
+          const paymentUpdated = await tx.deliveryPayment.updateMany({
+            where: { id: relatedPayment.id, status: relatedPayment.status },
             data: { receiptDocumentId: created.id, status: "AWAITING_CONFIRMATION", paidAt: new Date() },
           })
+          if (paymentUpdated.count === 0) throw new Error(PAYMENT_STATE_CONFLICT)
         }
         return created
       })
       return NextResponse.json({ document: { ...document, downloadUrl: `/api/delivery-orders/${order.id}/documents/${document.id}` } }, { status: 201 })
     } catch (error) {
       await unlink(target).catch(() => undefined)
+      if (error instanceof Error && error.message === PAYMENT_STATE_CONFLICT) {
+        return NextResponse.json({ error: "Статус счёта уже изменился. Обновите страницу." }, { status: 409 })
+      }
       throw error
     }
   } catch (error) {

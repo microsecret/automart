@@ -27,6 +27,39 @@ export const DELIVERY_STATUSES = [
 
 export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number]
 
+const operationalStatuses = DELIVERY_STATUSES.filter((status) => !["ON_HOLD", "CANCELED", "COMPLETED"].includes(status))
+
+/** Allows only the next confirmed delivery milestone, a pause or cancellation. */
+export function canTransitionDeliveryStatus(current: unknown, next: unknown) {
+  if (!isDeliveryStatus(current) || !isDeliveryStatus(next) || current === next || current === "COMPLETED" || current === "CANCELED") return false
+  if (next === "ON_HOLD" || next === "CANCELED") return true
+  if (current === "ON_HOLD") return operationalStatuses.includes(next)
+
+  const currentIndex = operationalStatuses.indexOf(current)
+  const nextIndex = operationalStatuses.indexOf(next)
+  return currentIndex >= 0 && nextIndex === currentIndex + 1
+}
+
+export const DELIVERY_PAYMENT_STATUSES = ["DRAFT", "INVOICE_ISSUED", "AWAITING_CONFIRMATION", "CONFIRMED", "OVERDUE", "CANCELED"] as const
+export type DeliveryPaymentStatus = (typeof DELIVERY_PAYMENT_STATUSES)[number]
+
+const paymentTransitions: Record<DeliveryPaymentStatus, readonly DeliveryPaymentStatus[]> = {
+  DRAFT: ["INVOICE_ISSUED", "CANCELED"],
+  INVOICE_ISSUED: ["AWAITING_CONFIRMATION", "OVERDUE", "CANCELED"],
+  AWAITING_CONFIRMATION: ["CONFIRMED", "CANCELED"],
+  CONFIRMED: [],
+  OVERDUE: ["AWAITING_CONFIRMATION", "CANCELED"],
+  CANCELED: [],
+}
+
+export function canTransitionDeliveryPayment(current: unknown, next: unknown) {
+  return isDeliveryPaymentStatus(current) && isDeliveryPaymentStatus(next) && paymentTransitions[current].includes(next)
+}
+
+export function isDeliveryPaymentStatus(value: unknown): value is DeliveryPaymentStatus {
+  return typeof value === "string" && DELIVERY_PAYMENT_STATUSES.includes(value as DeliveryPaymentStatus)
+}
+
 export const DELIVERY_STATUS_META: Record<DeliveryStatus, { label: string; shortLabel: string; responsible: string; description: string; color: string }> = {
   REQUEST_CREATED: { label: "Заявка создана", shortLabel: "Заявка", responsible: "Площадка", description: "Проверяем данные заказа и подбираем ответственного партнёра.", color: "gray" },
   DEPOSIT_PENDING: { label: "Ожидается задаток", shortLabel: "Задаток", responsible: "Покупатель", description: "Счёт и условия задатка доступны после согласования сделки.", color: "orange" },
