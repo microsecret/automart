@@ -60,6 +60,8 @@ model Vehicle {
   year         Int
   price        Int      // Price in rubles
   mileage      Int      // in kilometers
+  operatingHours Int?   // Engine hours for special equipment and water transport
+  flightHours  Int?     // Airframe flight hours for aircraft
   vin          String   @unique // Vehicle Identification Number
   fuelType     String   // GASOLINE, DIESEL, ELECTRIC, HYBRID, GAS, OTHER
   transmission String   // MANUAL, AUTOMATIC, VARIATOR, ROBOTIC
@@ -128,6 +130,18 @@ model PartCompatibility {
   @@index([make, model])
 }
 
+model PartCrossReference {
+  id               String   @id @default(uuid())
+  partId           String
+  part             Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  number           String
+  normalizedNumber String
+  createdAt        DateTime @default(now())
+
+  @@unique([partId, normalizedNumber])
+  @@index([normalizedNumber])
+}
+
 model Category {
   id            String   @id @default(uuid())
   name          String   // e.g., "Легковые автомобили"
@@ -164,6 +178,7 @@ model Part {
   suspensionType   String?  // MACPHERSON, MULTI_LINK, TORSION
   brakeType        String?  // DISC, DRUM, VENTED_DISC
   compatibility    PartCompatibility[]
+  crossReferences  PartCrossReference[]
   vehicleType   String   @default("CAR")
   saleFormat    String   @default("FIXED") // FIXED or AUCTION
   auctionStatus String   @default("ACTIVE")

@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getModels, POPULAR_BRANDS } from "@/lib/catalog"
+import { getModels, ALL_BRANDS, type BrandCategory } from "@/lib/catalog"
+
+const CATEGORY_ALIASES: Record<string, BrandCategory> = {
+  CAR: "cars",
+  cars: "cars",
+  MOTORCYCLE: "moto",
+  moto: "moto",
+  TRUCK: "trucks",
+  trucks: "trucks",
+  SPECIAL: "special",
+  special: "special",
+  WATER: "water",
+  water: "water",
+  AIR: "air",
+  air: "air",
+}
 
 /**
  * Справочник моделей для каскадных полей. Название марки временно служит ID,
@@ -11,10 +26,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "brand_id is required" }, { status: 400 })
   }
 
-  const brand = POPULAR_BRANDS.find((item) => item.name.toLocaleLowerCase("ru") === brandId.toLocaleLowerCase("ru"))
+  const category = request.nextUrl.searchParams.get("category") || ""
+  const brandCategory = CATEGORY_ALIASES[category]
+  const brand = ALL_BRANDS.find((item) =>
+    item.name.toLocaleLowerCase("ru") === brandId.toLocaleLowerCase("ru") && (!brandCategory || item.category === brandCategory),
+  )
   if (!brand) {
     return NextResponse.json({ brand: brandId, models: [] })
   }
 
-  return NextResponse.json({ brand: brand.name, models: getModels(brand.name) })
+  return NextResponse.json({ brand: brand.name, category: brand.category, models: getModels(brand.name, brand.category) })
 }

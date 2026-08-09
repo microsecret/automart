@@ -68,6 +68,46 @@ export const TRANSMISSIONS = [
   { value: "ROBOTIC", label: "Робот" },
 ] as const
 
+export const AIR_FUEL_TYPES = [
+  { value: "JET_A1", label: "Авиационный керосин / Jet A-1" },
+  { value: "AVGAS", label: "Авиационный бензин / Avgas" },
+  { value: "DIESEL", label: "Авиационный дизель" },
+] as const
+
+export const TRUCK_TRANSMISSIONS = [
+  { value: "MANUAL", label: "Механика" },
+  { value: "AUTOMATIC", label: "Автомат" },
+  { value: "ROBOTIC", label: "Роботизированная КПП" },
+] as const
+
+export const MOTORCYCLE_TRANSMISSIONS = [
+  { value: "MANUAL", label: "Механика" },
+  { value: "AUTOMATIC", label: "АКПП / DCT" },
+  { value: "VARIATOR", label: "Вариатор / ремень" },
+] as const
+
+export type TransportVehicleType = "CAR" | "MOTORCYCLE" | "TRUCK" | "SPECIAL" | "WATER" | "AIR"
+
+export function supportsTransmission(vehicleType: string | null | undefined) {
+  return vehicleType === "CAR" || vehicleType === "MOTORCYCLE" || vehicleType === "TRUCK"
+}
+
+export function getTransmissionOptions(vehicleType: string | null | undefined) {
+  if (vehicleType === "TRUCK") return TRUCK_TRANSMISSIONS
+  if (vehicleType === "MOTORCYCLE") return MOTORCYCLE_TRANSMISSIONS
+  return vehicleType === "CAR" ? TRANSMISSIONS : []
+}
+
+export function getFuelOptions(vehicleType: string | null | undefined) {
+  return vehicleType === "AIR" ? AIR_FUEL_TYPES : FUEL_TYPES
+}
+
+export function getUsageMeta(vehicleType: string | null | undefined) {
+  if (vehicleType === "AIR") return { field: "flightHours", label: "Налёт", unit: "ч" } as const
+  if (vehicleType === "SPECIAL" || vehicleType === "WATER") return { field: "operatingHours", label: "Наработка", unit: "м/ч" } as const
+  return { field: "mileage", label: "Пробег", unit: "км" } as const
+}
+
 export const DRIVE_TYPES = [
   { value: "FWD", label: "Передний" },
   { value: "RWD", label: "Задний" },
@@ -298,9 +338,7 @@ export const COUNTRIES_OF_ORIGIN = [
 ] as const
 
 /** Поиск по словарю */
-export function findLabel<
-  T extends { value: string; label: string }
->(arr: readonly T[], value: string | null | undefined): string {
+export function findLabel(arr: readonly { value: string; label: string }[], value: string | null | undefined): string {
   if (!value) return "—"
   return arr.find((item) => item.value === value)?.label ?? value
 }

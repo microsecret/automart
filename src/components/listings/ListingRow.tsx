@@ -5,7 +5,7 @@ import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio } from "@
 import { IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
-import { findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
+import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
 import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
@@ -43,11 +43,13 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const sourceImage = images[0] || ""
   const image = sourceImage.includes("/placeholder/") ? "" : sourceImage
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
-  const isAir = vehicleType === "AIR"
-  const distanceLabel = isAir ? "Налёт" : "Пробег"
-  const distanceValue = isAir
-    ? `${new Intl.NumberFormat("ru-RU").format(listing.vehicle?.mileage || 0)} ч`
-    : formatMileage(listing.vehicle?.mileage)
+  const usageMeta = getUsageMeta(vehicleType)
+  const usageValue = usageMeta.field === "flightHours" ? listing.vehicle?.flightHours
+    : usageMeta.field === "operatingHours" ? listing.vehicle?.operatingHours
+    : listing.vehicle?.mileage
+  const distanceValue = usageValue == null ? "Не указано"
+    : usageMeta.field === "mileage" ? formatMileage(usageValue)
+    : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
 
   const toggleFav = (e: React.MouseEvent) => {
@@ -120,12 +122,12 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 <Group gap={12} wrap="wrap" mt={2}>
                   <Text fz="xs" c="gray.5">{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>
                   <Text fz="xs" c="gray.5">Год: {listing.vehicle!.year}</Text>
-                  <Text fz="xs" c="gray.5">{distanceLabel}: {distanceValue}</Text>
-                  {listing.vehicle!.transmission && (
-                    <Text fz="xs" c="gray.5">КПП: {findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
+                  <Text fz="xs" c="gray.5">{usageMeta.label}: {distanceValue}</Text>
+                  {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
+                    <Text fz="xs" c="gray.5">КПП: {findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>
                   )}
                   {listing.vehicle!.fuelType && (
-                    <Text fz="xs" c="gray.5">Топливо: {findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>
+                    <Text fz="xs" c="gray.5">Топливо: {findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>
                   )}
                 </Group>
               )}

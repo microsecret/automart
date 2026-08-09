@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import VehicleDetailClient from "./VehicleDetailClient"
-import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
+import { findLabel, BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -78,11 +78,13 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     vehicleType: vehicle.vehicleType,
     typeDetails: vehicle.typeDetails,
     mileage: vehicle.mileage,
+    operatingHours: vehicle.operatingHours,
+    flightHours: vehicle.flightHours,
     vin: vehicle.vin,
     fuelType: vehicle.fuelType,
-    fuelTypeLabel: findLabel(FUEL_TYPES, vehicle.fuelType),
+    fuelTypeLabel: findLabel(getFuelOptions(vehicle.vehicleType), vehicle.fuelType),
     transmission: vehicle.transmission,
-    transmissionLabel: findLabel(TRANSMISSIONS, vehicle.transmission),
+    transmissionLabel: supportsTransmission(vehicle.vehicleType) ? findLabel(getTransmissionOptions(vehicle.vehicleType), vehicle.transmission) : null,
     bodyType: vehicle.bodyType,
     bodyTypeLabel: vehicle.bodyType ? findLabel(BODY_TYPES, vehicle.bodyType) : null,
     color: vehicle.color,
@@ -132,6 +134,10 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     })),
   }
 
+  const usageMeta = getUsageMeta(vehicle.vehicleType)
+  const usageValue = usageMeta.field === "flightHours" ? vehicle.flightHours
+    : usageMeta.field === "operatingHours" ? vehicle.operatingHours
+    : vehicle.mileage
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Vehicle",
@@ -139,9 +145,9 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     "brand": { "@type": "Brand", "name": vehicle.make },
     "model": vehicle.model,
     "vehicleModelDate": String(vehicle.year),
-    "mileageFromOdometer": { "@type": "QuantitativeValue", "value": vehicle.mileage, "unitCode": "KMT" },
-    "fuelType": vehicle.fuelType,
-    "vehicleTransmission": vehicle.transmission,
+    ...(usageMeta.field === "mileage" ? { "mileageFromOdometer": { "@type": "QuantitativeValue", "value": vehicle.mileage, "unitCode": "KMT" } } : {}),
+    ...(vehicle.fuelType ? { "fuelType": vehicle.fuelType } : {}),
+    ...(supportsTransmission(vehicle.vehicleType) ? { "vehicleTransmission": vehicle.transmission } : {}),
     "vehicleConfiguration": vehicle.bodyType || undefined,
     "color": vehicle.color || undefined,
     "vehicleEngine": vehicle.engineVolume ? { "@type": "EngineSpecification", "engineDisplacement": { "@type": "QuantitativeValue", "value": vehicle.engineVolume * 1000, "unitCode": "CMQ" } } : undefined,

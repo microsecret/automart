@@ -5,7 +5,7 @@ import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio, Menu, Po
 import { IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
-import { findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
+import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
 import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
@@ -24,6 +24,8 @@ export interface ListingCardData {
     model: string
     year: number
     mileage: number
+    operatingHours?: number | null
+    flightHours?: number | null
     fuelType: string | null
     transmission: string | null
     bodyType: string | null
@@ -80,13 +82,13 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const displayImage = imageFailed || activeImage.includes("/placeholder/") ? "" : activeImage
   const monthlyPayment = formatMonthlyPayment(listing.price)
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
-  const isAir = vehicleType === "AIR"
-  const supportsTransmission = vehicleType === "CAR" || vehicleType === "TRUCK"
-  const supportsFuel = vehicleType !== "AIR"
-  const distanceLabel = isAir ? "Налёт" : "Пробег"
-  const distanceValue = isAir
-    ? `${new Intl.NumberFormat("ru-RU").format(listing.vehicle?.mileage || 0)} ч`
-    : formatMileage(listing.vehicle?.mileage)
+  const usageMeta = getUsageMeta(vehicleType)
+  const usageValue = usageMeta.field === "flightHours" ? listing.vehicle?.flightHours
+    : usageMeta.field === "operatingHours" ? listing.vehicle?.operatingHours
+    : listing.vehicle?.mileage
+  const distanceValue = usageValue == null ? "Не указано"
+    : usageMeta.field === "mileage" ? formatMileage(usageValue)
+    : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
 
   const toggleFav = (e: React.MouseEvent) => {
@@ -234,19 +236,19 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{listing.vehicle!.year}</Text>
               </Stack>
               <Stack gap={0}>
-                <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>{distanceLabel}</Text>
+                <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>{usageMeta.label}</Text>
                 <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{distanceValue}</Text>
               </Stack>
-              {supportsTransmission && listing.vehicle!.transmission && (
+              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
                 <Stack gap={0}>
                   <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>Трансмиссия</Text>
-                  <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
+                  <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>
                 </Stack>
               )}
-              {supportsFuel && listing.vehicle!.fuelType && (
+              {listing.vehicle!.fuelType && (
                 <Stack gap={0}>
                   <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>Топливо</Text>
-                  <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>
+                  <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>
                 </Stack>
               )}
             </SimpleGrid>

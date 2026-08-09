@@ -3,8 +3,15 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
+import { PART_TYPES } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
+
+const PART_TYPE_VALUES = new Set<string>(PART_TYPES.map((item) => item.value))
+
+function normalizeOem(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9А-ЯЁ]/g, "")
+}
 
 /** GET /api/parts — листинг запчастей с фильтрами */
 export async function GET(request: NextRequest) {
@@ -37,14 +44,19 @@ export async function GET(request: NextRequest) {
     if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
       return NextResponse.json({ error: "Цена от не может быть больше цены до" }, { status: 400 })
     }
+    if (partType && !PART_TYPE_VALUES.has(partType)) {
+      return NextResponse.json({ error: "Неизвестная категория запчасти" }, { status: 400 })
+    }
 
     if (q) {
+      const normalizedQuery = normalizeOem(q)
       and.push({
         OR: [
           { name: { contains: q } },
           { description: { contains: q } },
           { keywords: { contains: q } },
           { oemNumber: { contains: q } },
+          ...(normalizedQuery ? [{ crossReferences: { some: { normalizedNumber: { contains: normalizedQuery } } } }] : []),
           { compatibility: { some: { OR: [{ make: { contains: q } }, { model: { contains: q } }] } } },
         ],
       })
@@ -64,7 +76,13 @@ export async function GET(request: NextRequest) {
     }
     if (condition) where.condition = condition
     if (saleFormat === "FIXED" || saleFormat === "AUCTION") where.saleFormat = saleFormat
-    if (oemNumber) where.oemNumber = { contains: oemNumber }
+    if (oemNumber) {
+      const normalizedOem = normalizeOem(oemNumber)
+      and.push({ OR: [
+        { oemNumber: { contains: oemNumber } },
+        ...(normalizedOem ? [{ crossReferences: { some: { normalizedNumber: { contains: normalizedOem } } } }] : []),
+      ] })
+    }
     if (priceFrom || priceTo) {
       where.price = {}
       if (minPrice !== undefined) where.price.gte = minPrice
@@ -108,10 +126,17 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = await request.json()
-    const { name, description, price, condition, partType, make, model, yearFrom, yearTo, location, images, subcategory, oemNumber, suspensionType, brakeType, compatibility, sellerType, availability, saleFormat, auctionEndsAt, auctionStartPrice, auctionMinStep } = body
+    const { name, description, price, condition, partType, make, model, yearFrom, yearTo, location, images, subcategory, oemNumber, crossNumbers, suspensionType, brakeType, compatibility, sellerType, availability, saleFormat, auctionEndsAt, auctionStartPrice, auctionMinStep } = body
 
     if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
     if (price == null || price < 0) return NextResponse.json({ error: "Price required" }, { status: 400 })
+    if (partType && !PART_TYPE_VALUES.has(partType)) return NextResponse.json({ error: "Неизвестная категория запчасти" }, { status: 400 })
+
+    const normalizedCrossNumbers = Array.from(new Set((Array.isArray(crossNumbers) ? crossNumbers : [])
+      .filter((value): value is string => typeof value === "string")
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 40)))
 
     const normalizedSaleFormat = saleFormat === "AUCTION" ? "AUCTION" : "FIXED"
     const parsedEnd = auctionEndsAt ? new Date(auctionEndsAt) : null
@@ -147,6 +172,9 @@ export async function POST(request: NextRequest) {
         oemNumber: oemNumber || null,
         suspensionType: suspensionType || null,
         brakeType: brakeType || null,
+        crossReferences: normalizedCrossNumbers.length > 0 ? {
+          create: normalizedCrossNumbers.map((number) => ({ number, normalizedNumber: normalizeOem(number) })),
+        } : undefined,
         compatibility: compatibility?.length > 0 ? {
           create: compatibility.map((c: any) => ({
             make: c.make,
@@ -160,7 +188,7 @@ export async function POST(request: NextRequest) {
         } : undefined,
         userId: session.user.id,
       },
-      include: { compatibility: true },
+      include: { compatibility: true, crossReferences: true },
     })
 
     return NextResponse.json(part, { status: 201 })

@@ -7,7 +7,7 @@ import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Butt
 import { IconCar, IconCheck, IconPlus } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
-import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 
 const CATS = [
   { value: "CAR", label: "Легковые" },
@@ -26,6 +26,7 @@ export default function CreateVehiclePage() {
 
   const [f, setF] = useState({
     title: "", make: "", model: "", year: "", price: "", mileage: "",
+    operatingHours: "", flightHours: "",
     vin: "", fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SEDAN",
     color: "", doors: "", engineVolume: "", power: "", driveType: "FWD",
     condition: "EXCELLENT", location: "", description: "",
@@ -33,7 +34,9 @@ export default function CreateVehiclePage() {
     steeringWheel: "LEFT", ownersCount: "", documentsStatus: "CLEAN",
     damageInfo: "NONE", sellerType: "OWNER", availability: "IN_STOCK",
     customsCleared: "true", generation: "", keywords: "",
-    motorcycleType: "", truckBodyType: "", axleFormula: "", specialType: "", waterType: "", hullMaterial: "", airType: "", airEngineType: "",
+    motorcycleType: "", finalDrive: "", strokeCycle: "", truckBodyType: "", axleFormula: "", ecoClass: "", payloadKg: "", grossWeightKg: "", transmissionVariant: "",
+    specialType: "", operatingWeightKg: "", bucketVolumeM3: "", diggingDepthM: "", waterType: "", hullMaterial: "", hullLengthM: "", waterEngineType: "",
+    airType: "", airEngineType: "", engineCount: "", mtowKg: "", passengerCapacity: "",
   })
 
   useEffect(() => {
@@ -50,6 +53,16 @@ export default function CreateVehiclePage() {
   if (!session) return null
 
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }))
+  const setVehicleType = (vehicleType: string) => setF((previous) => ({
+    ...previous,
+    vehicleType,
+    fuelType: getFuelOptions(vehicleType)[0]?.value || "OTHER",
+    transmission: getTransmissionOptions(vehicleType)[0]?.value || "",
+    bodyType: vehicleType === "CAR" ? previous.bodyType || "SEDAN" : "",
+  }))
+  const usageMeta = getUsageMeta(f.vehicleType)
+  const fuelOptions = getFuelOptions(f.vehicleType)
+  const transmissionOptions = getTransmissionOptions(f.vehicleType)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,6 +79,8 @@ export default function CreateVehiclePage() {
         body: JSON.stringify({
           make: f.make, model: f.model, year: Number(f.year), price: Number(f.price),
           mileage: f.mileage ? Number(f.mileage) : 0,
+          operatingHours: f.operatingHours ? Number(f.operatingHours) : null,
+          flightHours: f.flightHours ? Number(f.flightHours) : null,
           vin: f.vin || `TEMP${Date.now()}`,
           fuelType: f.fuelType, transmission: f.transmission, bodyType: f.bodyType,
           color: f.color || null, doors: f.doors ? Number(f.doors) : null,
@@ -81,13 +96,27 @@ export default function CreateVehiclePage() {
           vehicleType: f.vehicleType,
           typeDetails: {
             motorcycleType: f.motorcycleType,
+            finalDrive: f.finalDrive,
+            strokeCycle: f.strokeCycle,
             truckBodyType: f.truckBodyType,
             axleFormula: f.axleFormula,
+            ecoClass: f.ecoClass,
+            payloadKg: f.payloadKg ? Number(f.payloadKg) : "",
+            grossWeightKg: f.grossWeightKg ? Number(f.grossWeightKg) : "",
+            transmissionVariant: f.transmissionVariant,
             specialType: f.specialType,
+            operatingWeightKg: f.operatingWeightKg ? Number(f.operatingWeightKg) : "",
+            bucketVolumeM3: f.bucketVolumeM3 ? Number(f.bucketVolumeM3) : "",
+            diggingDepthM: f.diggingDepthM ? Number(f.diggingDepthM) : "",
             waterType: f.waterType,
             hullMaterial: f.hullMaterial,
+            hullLengthM: f.hullLengthM ? Number(f.hullLengthM) : "",
+            waterEngineType: f.waterEngineType,
             airType: f.airType,
             airEngineType: f.airEngineType,
+            engineCount: f.engineCount ? Number(f.engineCount) : "",
+            mtowKg: f.mtowKg ? Number(f.mtowKg) : "",
+            passengerCapacity: f.passengerCapacity ? Number(f.passengerCapacity) : "",
           },
           categoryId: catId,
         }),
@@ -132,7 +161,7 @@ export default function CreateVehiclePage() {
             {/* Тип транспорта */}
             <Paper radius="md" p="md" withBorder>
               <Text fw={700} fz="sm" c="dark.9" mb="sm">Тип транспорта</Text>
-              <SegmentedControl value={f.vehicleType} onChange={(v) => set("vehicleType", v)} data={CATS} size="sm" radius="md" fullWidth />
+              <SegmentedControl value={f.vehicleType} onChange={setVehicleType} data={CATS} size="sm" radius="md" fullWidth />
             </Paper>
 
             {/* Основное */}
@@ -147,7 +176,7 @@ export default function CreateVehiclePage() {
                 <Group gap="sm" grow>
                   <NumberInput label="Год" placeholder="2018" required value={f.year ? Number(f.year) : undefined} onChange={(v) => set("year", String(v || ""))} size="sm" min={1980} max={2026} />
                   <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />
-                  <NumberInput label="Пробег, км" placeholder="120000" value={f.mileage ? Number(f.mileage) : undefined} onChange={(v) => set("mileage", String(v || ""))} size="sm" min={0} />
+                  <NumberInput label={`${usageMeta.label}, ${usageMeta.unit}`} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, String(v || ""))} size="sm" min={0} />
                 </Group>
                 <Group gap="sm" grow>
                   <TextInput label="Город" placeholder="Москва" value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
@@ -161,9 +190,9 @@ export default function CreateVehiclePage() {
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="dark.9">Характеристики</Text>
                 <Group gap="sm" grow>
-                  <Select label="Топливо" data={FUEL_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.fuelType} onChange={(v) => set("fuelType", v || "")} size="sm" />
-                  <Select label="КПП" data={TRANSMISSIONS.map(t => ({ value: t.value, label: t.label }))} value={f.transmission} onChange={(v) => set("transmission", v || "")} size="sm" />
-                  <Select label="Привод" data={DRIVE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.driveType} onChange={(v) => set("driveType", v || "")} size="sm" />
+                  <Select label={f.vehicleType === "AIR" ? "Тип топлива" : "Топливо"} data={fuelOptions.map(t => ({ value: t.value, label: t.label }))} value={f.fuelType} onChange={(v) => set("fuelType", v || "")} size="sm" />
+                  {supportsTransmission(f.vehicleType) && <Select label="КПП" data={transmissionOptions.map(t => ({ value: t.value, label: t.label }))} value={f.transmission} onChange={(v) => set("transmission", v || "")} size="sm" />}
+                  {["CAR", "MOTORCYCLE", "TRUCK"].includes(f.vehicleType) && <Select label="Привод" data={DRIVE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.driveType} onChange={(v) => set("driveType", v || "")} size="sm" />}
                 </Group>
                 {f.vehicleType === "CAR" && (
                   <Select label="Тип кузова" data={BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.bodyType} onChange={(v) => set("bodyType", v || "")} size="sm" />
@@ -171,29 +200,56 @@ export default function CreateVehiclePage() {
                 {f.vehicleType === "MOTORCYCLE" && (
                   <Group gap="sm" grow>
                     <Select label="Тип мотоцикла" data={MOTORCYCLE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.motorcycleType} onChange={(v) => set("motorcycleType", v || "")} size="sm" />
-                    <TextInput label="Объём, см³" placeholder="600" value={f.engineVolume} onChange={(e) => set("engineVolume", e.target.value)} size="sm" type="number" />
+                    <Select label="Главная передача" data={[{ value: "CHAIN", label: "Цепь" }, { value: "SHAFT", label: "Кардан" }, { value: "BELT", label: "Ремень" }]} value={f.finalDrive} onChange={(v) => set("finalDrive", v || "")} size="sm" />
+                    <Select label="Тактность" data={[{ value: "2T", label: "2T" }, { value: "4T", label: "4T" }]} value={f.strokeCycle} onChange={(v) => set("strokeCycle", v || "")} size="sm" />
                   </Group>
                 )}
                 {f.vehicleType === "TRUCK" && (
-                  <Group gap="sm" grow>
-                    <Select label="Тип кузова" data={TRUCK_BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.truckBodyType} onChange={(v) => set("truckBodyType", v || "")} size="sm" />
-                    <Select label="Колёсная формула" data={TRUCK_AXLE_FORMULAS.map(t => ({ value: t.value, label: t.label }))} value={f.axleFormula} onChange={(v) => set("axleFormula", v || "")} size="sm" />
-                  </Group>
+                  <Stack gap="sm">
+                    <Group gap="sm" grow>
+                      <Select label="Тип кузова / прицепа" data={TRUCK_BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.truckBodyType} onChange={(v) => set("truckBodyType", v || "")} size="sm" />
+                      <Select label="Колёсная формула" data={TRUCK_AXLE_FORMULAS.map(t => ({ value: t.value, label: t.label }))} value={f.axleFormula} onChange={(v) => set("axleFormula", v || "")} size="sm" />
+                      <Select label="Экологический класс" data={["Евро-3", "Евро-4", "Евро-5", "Евро-6"].map(value => ({ value, label: value }))} value={f.ecoClass} onChange={(v) => set("ecoClass", v || "")} size="sm" />
+                    </Group>
+                    <Group gap="sm" grow>
+                      <NumberInput label="Грузоподъёмность, кг" value={f.payloadKg ? Number(f.payloadKg) : undefined} onChange={(v) => set("payloadKg", String(v || ""))} size="sm" min={0} />
+                      <NumberInput label="Полная масса, кг" value={f.grossWeightKg ? Number(f.grossWeightKg) : undefined} onChange={(v) => set("grossWeightKg", String(v || ""))} size="sm" min={0} />
+                      <TextInput label="Серия КПП" placeholder="I-Shift, Optidriver" value={f.transmissionVariant} onChange={(e) => set("transmissionVariant", e.target.value)} size="sm" />
+                    </Group>
+                  </Stack>
                 )}
                 {f.vehicleType === "SPECIAL" && (
-                  <Select label="Вид спецтехники" data={SPECIAL_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.specialType} onChange={(v) => set("specialType", v || "")} size="sm" />
+                  <Stack gap="sm">
+                    <Select label="Вид спецтехники" data={SPECIAL_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.specialType} onChange={(v) => set("specialType", v || "")} size="sm" />
+                    <Group gap="sm" grow>
+                      <NumberInput label="Эксплуатационная масса, кг" value={f.operatingWeightKg ? Number(f.operatingWeightKg) : undefined} onChange={(v) => set("operatingWeightKg", String(v || ""))} size="sm" min={0} />
+                      <NumberInput label="Объём ковша, м³" value={f.bucketVolumeM3 ? Number(f.bucketVolumeM3) : undefined} onChange={(v) => set("bucketVolumeM3", String(v || ""))} size="sm" min={0} decimalScale={2} />
+                      <NumberInput label="Глубина копания, м" value={f.diggingDepthM ? Number(f.diggingDepthM) : undefined} onChange={(v) => set("diggingDepthM", String(v || ""))} size="sm" min={0} decimalScale={2} />
+                    </Group>
+                  </Stack>
                 )}
                 {f.vehicleType === "WATER" && (
-                  <Group gap="sm" grow>
-                    <Select label="Тип водного транспорта" data={WATER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.waterType} onChange={(v) => set("waterType", v || "")} size="sm" />
-                    <Select label="Материал корпуса" data={HULL_MATERIALS.map(t => ({ value: t.value, label: t.label }))} value={f.hullMaterial} onChange={(v) => set("hullMaterial", v || "")} size="sm" />
-                  </Group>
+                  <Stack gap="sm">
+                    <Group gap="sm" grow>
+                      <Select label="Тип водного транспорта" data={WATER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.waterType} onChange={(v) => set("waterType", v || "")} size="sm" />
+                      <Select label="Материал корпуса" data={HULL_MATERIALS.map(t => ({ value: t.value, label: t.label }))} value={f.hullMaterial} onChange={(v) => set("hullMaterial", v || "")} size="sm" />
+                      <Select label="Тип мотора" data={[{ value: "OUTBOARD", label: "Подвесной" }, { value: "INBOARD", label: "Стационарный" }, { value: "JET", label: "Водомёт" }]} value={f.waterEngineType} onChange={(v) => set("waterEngineType", v || "")} size="sm" />
+                    </Group>
+                    <NumberInput label="Длина корпуса, м" value={f.hullLengthM ? Number(f.hullLengthM) : undefined} onChange={(v) => set("hullLengthM", String(v || ""))} size="sm" min={0} decimalScale={2} />
+                  </Stack>
                 )}
                 {f.vehicleType === "AIR" && (
-                  <Group gap="sm" grow>
-                    <Select label="Тип воздушного судна" data={AIR_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.airType} onChange={(v) => set("airType", v || "")} size="sm" />
-                    <Select label="Тип двигателя" data={ENGINE_TYPE_AIR.map(t => ({ value: t.value, label: t.label }))} value={f.airEngineType} onChange={(v) => set("airEngineType", v || "")} size="sm" />
-                  </Group>
+                  <Stack gap="sm">
+                    <Group gap="sm" grow>
+                      <Select label="Категория ВС" data={AIR_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.airType} onChange={(v) => set("airType", v || "")} size="sm" />
+                      <Select label="Тип двигателя" data={ENGINE_TYPE_AIR.map(t => ({ value: t.value, label: t.label }))} value={f.airEngineType} onChange={(v) => set("airEngineType", v || "")} size="sm" />
+                    </Group>
+                    <Group gap="sm" grow>
+                      <NumberInput label="Количество двигателей" value={f.engineCount ? Number(f.engineCount) : undefined} onChange={(v) => set("engineCount", String(v || ""))} size="sm" min={0} />
+                      <NumberInput label="МВМ, кг" value={f.mtowKg ? Number(f.mtowKg) : undefined} onChange={(v) => set("mtowKg", String(v || ""))} size="sm" min={0} />
+                      <NumberInput label="Пассажировместимость" value={f.passengerCapacity ? Number(f.passengerCapacity) : undefined} onChange={(v) => set("passengerCapacity", String(v || ""))} size="sm" min={0} />
+                    </Group>
+                  </Stack>
                 )}
                 <Group gap="sm" grow>
                   <TextInput label="Объём двигателя, л" placeholder="2.0" value={f.engineVolume} onChange={(e) => set("engineVolume", e.target.value)} size="sm" type="number" step="0.1" />

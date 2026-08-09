@@ -3,6 +3,35 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import axios from "axios"
 import { prisma } from "@/lib/prisma"
+import { getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
+
+const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
+  MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
+  TRUCK: new Set(["truckBodyType", "axleFormula", "ecoClass", "payloadKg", "grossWeightKg", "transmissionVariant"]),
+  SPECIAL: new Set(["specialType", "operatingWeightKg", "bucketVolumeM3", "diggingDepthM", "payloadKg"]),
+  WATER: new Set(["waterType", "hullMaterial", "hullLengthM", "waterEngineType"]),
+  AIR: new Set(["airType", "airEngineType", "engineCount", "mtowKg", "passengerCapacity"]),
+  CAR: new Set(),
+}
+
+function normalizeOptionalNonNegativeInteger(value: unknown) {
+  if (value === undefined || value === null || value === "") return null
+  const parsed = Number(value)
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : undefined
+}
+
+function normalizeTypeDetails(value: unknown, vehicleType: string) {
+  const raw = typeof value === "string" ? (() => {
+    try { return JSON.parse(value) } catch { return null }
+  })() : value
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null
+
+  const allowed = TYPE_DETAIL_KEYS[vehicleType] || new Set<string>()
+  const details = Object.fromEntries(Object.entries(raw).filter(([key, item]) =>
+    allowed.has(key) && (typeof item === "string" || typeof item === "number" || typeof item === "boolean"),
+  ))
+  return Object.keys(details).length > 0 ? JSON.stringify(details) : null
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +50,8 @@ export async function POST(request: NextRequest) {
       year,
       price,
       mileage,
+      operatingHours,
+      flightHours,
       vin,
       fuelType,
       transmission,
@@ -110,9 +141,24 @@ export async function POST(request: NextRequest) {
     // Create the vehicle
     const allowedVehicleTypes = new Set(["CAR", "MOTORCYCLE", "TRUCK", "SPECIAL", "WATER", "AIR"])
     const normalizedVehicleType = allowedVehicleTypes.has(String(vehicleType)) ? String(vehicleType) : "CAR"
-    let normalizedTypeDetails: string | null = null
-    if (typeDetails && typeof typeDetails === "object") normalizedTypeDetails = JSON.stringify(typeDetails)
-    else if (typeof typeDetails === "string" && typeDetails.length <= 10000) normalizedTypeDetails = typeDetails
+    const normalizedTypeDetails = normalizeTypeDetails(typeDetails, normalizedVehicleType)
+    const normalizedMileage = normalizeOptionalNonNegativeInteger(mileage)
+    const normalizedOperatingHours = normalizeOptionalNonNegativeInteger(operatingHours)
+    const normalizedFlightHours = normalizeOptionalNonNegativeInteger(flightHours)
+
+    if (normalizedMileage === undefined || normalizedOperatingHours === undefined || normalizedFlightHours === undefined) {
+      return NextResponse.json({ error: "Пробег и наработка должны быть неотрицательными целыми числами" }, { status: 400 })
+    }
+
+    const allowedFuelTypes = new Set<string>(getFuelOptions(normalizedVehicleType).map((item) => item.value))
+    if (!fuelType || !allowedFuelTypes.has(String(fuelType))) {
+      return NextResponse.json({ error: "Выбранный тип топлива не подходит для этой категории транспорта" }, { status: 400 })
+    }
+
+    const transmissionOptions = getTransmissionOptions(normalizedVehicleType)
+    if (supportsTransmission(normalizedVehicleType) && (!transmission || !transmissionOptions.some((item) => item.value === transmission))) {
+      return NextResponse.json({ error: "Выбранный тип КПП не подходит для этой категории транспорта" }, { status: 400 })
+    }
 
     const vehicle = await prisma.vehicle.create({
       data: {
@@ -120,10 +166,12 @@ export async function POST(request: NextRequest) {
         model: model.trim(),
         year: parseInt(year),
         price: parseInt(price),
-        mileage: mileage ? parseInt(mileage) : 0,
+        mileage: ["SPECIAL", "WATER", "AIR"].includes(normalizedVehicleType) ? 0 : (normalizedMileage || 0),
+        operatingHours: ["SPECIAL", "WATER"].includes(normalizedVehicleType) ? normalizedOperatingHours : null,
+        flightHours: normalizedVehicleType === "AIR" ? normalizedFlightHours : null,
         vin: vin ? vin.trim() : null,
         fuelType: fuelType ? fuelType.trim() : null,
-        transmission: transmission ? transmission.trim() : null,
+        transmission: supportsTransmission(normalizedVehicleType) ? String(transmission).trim() : "NOT_APPLICABLE",
         bodyType: bodyType ? bodyType.trim() : null,
         color: color ? color.trim() : null,
         doors: doors ? parseInt(doors) : null,

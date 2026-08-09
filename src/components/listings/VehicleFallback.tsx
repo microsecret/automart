@@ -1,4 +1,4 @@
-import { Box, Text, ThemeIcon } from "@mantine/core"
+import { Box, ThemeIcon } from "@mantine/core"
 import { IconCar, IconHelicopter, IconMotorbike, IconPlane, IconSailboat, IconTractor, IconTruck } from "@tabler/icons-react"
 
 type VehicleKind = "CAR" | "MOTORCYCLE" | "TRUCK" | "SPECIAL" | "WATER" | "AIR" | string | null | undefined
@@ -26,8 +26,6 @@ export default function VehicleFallback({ type, bodyType, compact = false }: { t
       <ThemeIcon variant="light" color={item.color} radius="xl" size={compact ? 38 : 54}>
         <Icon size={compact ? 21 : 30} stroke={1.6} />
       </ThemeIcon>
-      {!compact && <Text size="xs" fw={700} c="dark.7" mt={8}>{vehicleTypeLabel(type, bodyType)}</Text>}
-      {!compact && <Text size="10px" c="dimmed">Фото появится после загрузки продавцом</Text>}
     </Box>
   )
 }

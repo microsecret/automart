@@ -63,6 +63,7 @@ import Link from "next/link"
 import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
 import Photo360Viewer from "@/components/viewer/Photo360Viewer"
 import CreditCalculator from "@/components/listings/CreditCalculator"
+import { getUsageMeta, supportsTransmission } from "@/lib/constants"
 
 interface VehicleData {
   id: string
@@ -73,11 +74,13 @@ interface VehicleData {
   vehicleType: string
   typeDetails: string | null
   mileage: number
+  operatingHours: number | null
+  flightHours: number | null
   vin: string
-  fuelType: string
+  fuelType: string | null
   fuelTypeLabel: string
-  transmission: string
-  transmissionLabel: string
+  transmission: string | null
+  transmissionLabel: string | null
   bodyType: string | null
   bodyTypeLabel: string | null
   color: string | null
@@ -146,8 +149,12 @@ function parseTypeDetails(value: string | null): Record<string, string | number 
 
 function formatDetailLabel(value: string) {
   const labels: Record<string, string> = {
-    crewCapacity: "Экипаж", hullMaterial: "Материал корпуса", flightRange: "Дальность полёта",
-    payloadCapacity: "Грузоподъёмность", registrationNumber: "Регистрационный номер", engineHours: "Моточасы",
+    crewCapacity: "Экипаж", flightRange: "Дальность полёта",
+    payloadCapacity: "Грузоподъёмность", payloadKg: "Грузоподъёмность, кг", grossWeightKg: "Полная масса, кг", axleFormula: "Колёсная формула",
+    ecoClass: "Экологический класс", transmissionVariant: "Серия КПП", motorcycleType: "Класс мотоцикла", finalDrive: "Главная передача", strokeCycle: "Тактность",
+    specialType: "Вид спецтехники", operatingWeightKg: "Эксплуатационная масса, кг", bucketVolumeM3: "Объём ковша, м³", diggingDepthM: "Глубина копания, м",
+    waterType: "Тип судна", hullMaterial: "Материал корпуса", hullLengthM: "Длина корпуса, м", waterEngineType: "Тип мотора",
+    airType: "Категория ВС", airEngineType: "Тип двигателя", engineCount: "Количество двигателей", mtowKg: "МВМ, кг", passengerCapacity: "Пассажировместимость",
   }
   if (labels[value]) return labels[value]
   return value
@@ -188,23 +195,32 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const images = parseImages(data.images)
   const hasImages = images.length > 0
   const typeMeta = VEHICLE_META[data.vehicleType] || VEHICLE_META.CAR
-  const isRoadVehicle = ["CAR", "MOTORCYCLE", "TRUCK", "SPECIAL"].includes(data.vehicleType)
+  const hasRoadVehicleDetails = ["CAR", "MOTORCYCLE", "TRUCK"].includes(data.vehicleType)
+  const usageMeta = getUsageMeta(data.vehicleType)
+  const usageValue = usageMeta.field === "flightHours" ? data.flightHours
+    : usageMeta.field === "operatingHours" ? data.operatingHours
+    : data.mileage
+  const usageDisplay = usageValue == null ? "Не указано"
+    : usageMeta.field === "mileage" ? formatMileage(usageValue)
+    : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const typeDetails = parseTypeDetails(data.typeDetails)
   const additionalSpecs = Object.entries(typeDetails).filter(([, value]) => value !== null && value !== "")
 
   const specs = [
     { icon: <IconCalendar size={20} />, label: "Год", value: String(data.year) },
-    { icon: <IconGauge size={20} />, label: data.vehicleType === "AIR" || data.vehicleType === "WATER" ? "Наработка" : "Пробег", value: formatMileage(data.mileage) },
+    { icon: <IconGauge size={20} />, label: usageMeta.label, value: usageDisplay },
     { icon: typeMeta.icon, label: typeMeta.detailLabel, value: data.bodyTypeLabel || "—" },
     { icon: <IconGasStation size={20} />, label: "Двигатель", value: data.fuelTypeLabel },
-    ...(isRoadVehicle ? [
+    ...(supportsTransmission(data.vehicleType) ? [
       { icon: <IconManualGearbox size={20} />, label: "Коробка", value: data.transmissionLabel },
+    ] : []),
+    ...(hasRoadVehicleDetails ? [
       { icon: <IconRoute size={20} />, label: "Привод", value: data.driveTypeLabel || "—" },
     ] : []),
     { icon: <IconEngine size={20} />, label: "Объём", value: data.engineVolume ? `${data.engineVolume} л` : "—" },
     { icon: <IconBolt size={20} />, label: "Мощность", value: data.power ? `${data.power} л.с.` : "—" },
     { icon: <IconPalette size={20} />, label: "Цвет", value: data.color || "—" },
-    ...(isRoadVehicle ? [
+    ...(hasRoadVehicleDetails ? [
       { icon: <IconUsers size={20} />, label: "Дверей", value: data.doors ? String(data.doors) : "—" },
       { icon: <IconSteeringWheel size={20} />, label: "Руль", value: data.steeringWheelLabel || "—" },
     ] : []),
@@ -294,7 +310,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             <Card withBorder radius="lg" p="lg">
               <Group justify="space-between" mb="md">
                 <Title order={3} size="h4">Характеристики</Title>
-                {isRoadVehicle && data.vin && <Badge variant="light" color="gray" size="sm">VIN: {data.vin}</Badge>}
+                {hasRoadVehicleDetails && data.vin && <Badge variant="light" color="gray" size="sm">VIN: {data.vin}</Badge>}
               </Group>
               <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
                 {specs.map((spec, i) => (
@@ -383,7 +399,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             </Card>
 
             {/* VIN-паспорт выводится только для дорожного транспорта и без демо-утверждений. */}
-            {isRoadVehicle && data.vin && <Card withBorder radius="lg" p="lg" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 60%)", borderColor: "#bbf7d0" }}>
+            {hasRoadVehicleDetails && data.vin && <Card withBorder radius="lg" p="lg" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 60%)", borderColor: "#bbf7d0" }}>
               <Group justify="space-between" mb="sm">
                 <Group gap={8}>
                   <ThemeIcon variant="light" color="green" size={32} radius="md">
@@ -395,7 +411,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               </Group>
               <SimpleGrid cols={{ base: 2, md: 3 }} spacing="sm">
                 <VinField label="VIN" value={data.vin} />
-                <VinField label="Пробег" value={formatMileage(data.mileage)} status="ok" />
+                <VinField label={usageMeta.label} value={usageDisplay} status="ok" />
                 <VinField label="Владельцев по ПТС" value={data.ownersCount ? String(data.ownersCount) : "Не указано"} status="ok" />
                 <VinField label="Проверка ограничений" value="Подключается отдельно" />
                 <VinField label="История ДТП" value="Подключается отдельно" />

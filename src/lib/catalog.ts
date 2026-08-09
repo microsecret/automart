@@ -1677,9 +1677,9 @@ export function getBrandsByCategory(category: BrandCategory): Brand[] {
 }
 
 /** Получить модели бренда по названию (без учёта регистра) */
-export function getModels(brandName: string): string[] {
+export function getModels(brandName: string, category?: BrandCategory): string[] {
   const brand = ALL_BRANDS.find(
-    (b) => b.name.toLowerCase() === brandName.toLowerCase(),
+    (b) => b.name.toLowerCase() === brandName.toLowerCase() && (!category || b.category === category),
   )
   return brand ? brand.models : []
 }

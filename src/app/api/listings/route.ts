@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
+import { getFuelOptions, supportsTransmission } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -28,11 +29,11 @@ function normalizeListing<T extends {
 }>(listing: T) {
   const vehicle = listing.vehicle
   const vehicleType = vehicle?.vehicleType || "CAR"
-  const supportsTransmission = vehicleType === "CAR" || vehicleType === "TRUCK"
+  const allowedFuelTypes = new Set<string>(getFuelOptions(vehicleType).map((item) => item.value))
   const normalizedVehicle = vehicle ? {
     ...vehicle,
-    transmission: supportsTransmission ? vehicle.transmission : null,
-    fuelType: vehicleType === "AIR" ? null : vehicle.fuelType,
+    transmission: supportsTransmission(vehicleType) ? vehicle.transmission : null,
+    fuelType: vehicle.fuelType && allowedFuelTypes.has(vehicle.fuelType) ? vehicle.fuelType : null,
   } : null
 
   return {
@@ -92,6 +93,10 @@ export async function GET(request: NextRequest) {
     const ownersCountTo = sp.get("ownersCountTo")
     const mileageFrom = sp.get("mileageFrom")
     const mileageTo = sp.get("mileageTo")
+    const operatingHoursFrom = sp.get("operatingHoursFrom")
+    const operatingHoursTo = sp.get("operatingHoursTo")
+    const flightHoursFrom = sp.get("flightHoursFrom")
+    const flightHoursTo = sp.get("flightHoursTo")
     const keywords = sp.get("keywords")
     const vehicleType = sp.get("vehicleType") // CAR, MOTORCYCLE, TRUCK, SPECIAL, WATER, AIR
 
@@ -170,6 +175,20 @@ export async function GET(request: NextRequest) {
       if (minMileage !== undefined) vehicleFilters.mileage.gte = minMileage
       if (maxMileage !== undefined) vehicleFilters.mileage.lte = maxMileage
     }
+    if (operatingHoursFrom || operatingHoursTo) {
+      vehicleFilters.operatingHours = {}
+      const minHours = parseInteger(operatingHoursFrom)
+      const maxHours = parseInteger(operatingHoursTo)
+      if (minHours !== undefined) vehicleFilters.operatingHours.gte = minHours
+      if (maxHours !== undefined) vehicleFilters.operatingHours.lte = maxHours
+    }
+    if (flightHoursFrom || flightHoursTo) {
+      vehicleFilters.flightHours = {}
+      const minHours = parseInteger(flightHoursFrom)
+      const maxHours = parseInteger(flightHoursTo)
+      if (minHours !== undefined) vehicleFilters.flightHours.gte = minHours
+      if (maxHours !== undefined) vehicleFilters.flightHours.lte = maxHours
+    }
     if (engineVolumeFrom || engineVolumeTo) {
       vehicleFilters.engineVolume = {}
       const minEngine = Number(engineVolumeFrom)
@@ -202,6 +221,8 @@ export async function GET(request: NextRequest) {
       : sort === "price_desc" ? { price: "desc" }
       : sort === "oldest" ? { createdAt: "asc" }
       : sort === "year_desc" ? { vehicle: { year: "desc" } }
+      : sort === "mileage_asc" && vehicleType === "AIR" ? { vehicle: { flightHours: "asc" } }
+      : sort === "mileage_asc" && (vehicleType === "SPECIAL" || vehicleType === "WATER") ? { vehicle: { operatingHours: "asc" } }
       : sort === "mileage_asc" ? { vehicle: { mileage: "asc" } }
       : { createdAt: "desc" }
 

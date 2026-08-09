@@ -8,8 +8,8 @@ import { Box, Text, Select, Group, Pagination, Center, Loader, Stack, SegmentedC
 import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
-import { getModels, POPULAR_BRANDS } from "@/lib/catalog"
-import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES } from "@/lib/constants"
+import { getBrandsByCategory } from "@/lib/catalog"
+import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 
 type HomePageProps = {
   initialQuery?: string
@@ -21,6 +21,9 @@ type HomePageProps = {
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json())
 const CAR_COLORS = ["Белый","Чёрный","Серебристый","Серый","Синий","Красный","Зелёный","Коричневый","Бордовый","Золотистый","Жёлтый","Оранжевый"]
+const BRAND_CATEGORY_BY_VEHICLE_TYPE: Record<string, "cars" | "moto" | "trucks" | "special" | "water" | "air"> = {
+  CAR: "cars", MOTORCYCLE: "moto", TRUCK: "trucks", SPECIAL: "special", WATER: "water", AIR: "air",
+}
 
 export default function HomePage(p: HomePageProps = {}) {
   const [query, setQuery] = useState(p.initialQuery || "")
@@ -57,15 +60,20 @@ export default function HomePage(p: HomePageProps = {}) {
   const [mileageFrom, setMileageFrom] = useState("")
   const [keywords, setKeywords] = useState("")
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
+  const vt = p.initialVehicleType || "CAR"
+  const brandCategory = BRAND_CATEGORY_BY_VEHICLE_TYPE[vt] || "cars"
+  const usageMeta = getUsageMeta(vt)
+  const transmissionOptions = getTransmissionOptions(vt)
+  const fuelOptions = getFuelOptions(vt)
 
-  const brandOptions = POPULAR_BRANDS.slice(0,80).map((b) => ({ value: b.name, label: b.name }))
-  const modelOptions = make ? getModels(make).map((m) => ({ value: m, label: m })) : []
+  const brandOptions = getBrandsByCategory(brandCategory).map((b) => ({ value: b.name, label: b.name }))
+  const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}&category=${brandCategory}` : null
+  const { data: modelsData } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
+  const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
   const { data: stats } = useSWR<{ auctions?: number; auctionByCountry?: Record<string, number> }>("/api/stats", fetcher)
   const auctionStats = stats || { auctions: 0, auctionByCountry: {} }
 
   const yearData = Array.from({length:35},(_,i) => ({ value: String(2024-i), label: String(2024-i) }))
-
-  const vt = p.initialVehicleType || "CAR"
 
   const buildQuery = () => {
     const q = new URLSearchParams()
@@ -82,7 +90,7 @@ export default function HomePage(p: HomePageProps = {}) {
     if(priceTo) q.set("priceTo", priceTo)
     if(yearFrom) q.set("yearFrom", yearFrom)
     if(yearTo) q.set("yearTo", yearTo)
-    if(mileageTo) q.set("mileageTo", mileageTo)
+    if(mileageTo) q.set(`${usageMeta.field}To`, mileageTo)
     if(transmission) q.set("transmission", transmission)
     if(fuelType.length) q.set("fuelType", fuelType.join(","))
     if(driveType) q.set("driveType", driveType)
@@ -101,7 +109,7 @@ export default function HomePage(p: HomePageProps = {}) {
     if(customsCleared !== null) q.set("customsCleared", String(customsCleared))
     if(ownersCountFrom) q.set("ownersCountFrom", ownersCountFrom)
     if(ownersCountTo) q.set("ownersCountTo", ownersCountTo)
-    if(mileageFrom) q.set("mileageFrom", mileageFrom)
+    if(mileageFrom) q.set(`${usageMeta.field}From`, mileageFrom)
     if(keywords) q.set("keywords", keywords)
     return q.toString()
   }
@@ -193,7 +201,7 @@ export default function HomePage(p: HomePageProps = {}) {
             <Select className="catalog-filter-field catalog-filter-field--year" label="Год от" placeholder="Любой" data={yearData} searchable clearable value={yearFrom} onChange={setYearFrom} size="sm" />
             <Select className="catalog-filter-field catalog-filter-field--year" label="Год до" placeholder="Любой" data={yearData} searchable clearable value={yearTo} onChange={setYearTo} size="sm" />
             <Select className="catalog-filter-field catalog-filter-field--city" label="Город" placeholder="Все города" data={POPULAR_CITIES.map((c) => ({value:c,label:c}))} searchable clearable value={city} onChange={setCity} size="sm" />
-            <TextInput className="catalog-filter-field catalog-filter-field--mileage" label={vt === "AIR" ? "Налёт, до ч" : "Пробег, до км"} placeholder="Не ограничен" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" type="number" />
+            <TextInput className="catalog-filter-field catalog-filter-field--mileage" label={`${usageMeta.label}, до ${usageMeta.unit}`} placeholder="Не ограничено" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" type="number" />
           </Box>
 
           {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
@@ -222,11 +230,11 @@ export default function HomePage(p: HomePageProps = {}) {
           <Collapse in={showAdvanced}>
             <Divider my="xs"/>
             <Stack gap="md">
-              {(vt === "CAR" || vt === "TRUCK") && (
+              {supportsTransmission(vt) && (
               <Group gap="lg" wrap="wrap" align="flex-start">
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconManualGearbox size={14}/> Коробка передач</Text>
-                  <Group gap={6}>{TRANSMISSIONS.map((t) => (
+                  <Group gap={6}>{transmissionOptions.map((t) => (
                     <Chip key={t.value} checked={transmission === t.value} onChange={() => setTransmission(transmission === t.value ? null : t.value)} variant={transmission === t.value ? "filled" : "outline"} color="indigo">{t.label}</Chip>
                   ))}</Group>
                 </Box>
@@ -241,7 +249,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconGasStation size={14}/> Тип топлива</Text>
-                <Group gap={6}>{FUEL_TYPES.map((f) => (
+                <Group gap={6}>{fuelOptions.map((f) => (
                   <Chip key={f.value} checked={fuelType.includes(f.value)} onChange={(c) => { setFuelType(c ? [...fuelType, f.value] : fuelType.filter((v) => v !== f.value)); setPage(1) }} variant={fuelType.includes(f.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{f.label}</Chip>
                 ))}</Group>
               </Box>
@@ -360,7 +368,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
               <Group gap="lg" wrap="wrap" align="flex-end">
                 <Box>
-                  <Text size="xs" fw={600} c="gray.6" mb={6}>Пробег, км</Text>
+                  <Text size="xs" fw={600} c="gray.6" mb={6}>{usageMeta.label}, {usageMeta.unit}</Text>
                   <Group gap="xs" align="flex-end">
                     <TextInput placeholder="от" value={mileageFrom} onChange={(e) => setMileageFrom(e.target.value)} size="sm" w={90} type="number"/>
                     <TextInput placeholder="до" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" w={90} type="number"/>

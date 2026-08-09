@@ -1,12 +1,12 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useEffect, useMemo, useState, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination } from "@mantine/core"
 import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
-import { PART_TYPES, PART_SUBCATEGORIES, CONDITIONS } from "@/lib/constants"
+import { findLabel, PART_TYPES, PART_SUBCATEGORIES, CONDITIONS } from "@/lib/constants"
 import { POPULAR_BRANDS } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
 
@@ -33,7 +33,6 @@ function PartMedia({ image, name }: { image: string; name: string }) {
     <Box className="part-result-card__media">
       <Stack gap={4} align="center" className="part-result-card__placeholder" style={{ opacity: !loaded || failed ? 1 : 0 }}>
         <ThemeIcon variant="light" color="indigo" size={50} radius="xl"><IconTools size={28} stroke={1.5} /></ThemeIcon>
-        <Text size="10px" c="dimmed">Фото пока нет</Text>
       </Stack>
       {!failed && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -45,6 +44,9 @@ function PartMedia({ image, name }: { image: string; name: string }) {
 
 function PartsContent() {
   const sp = useSearchParams()
+  const router = useRouter()
+  const searchKey = sp.toString()
+  const urlPartType = sp.get("partType")
   const [q, setQ] = useState(sp.get("q") || "")
   const [partType, setPartType] = useState<string | null>(sp.get("partType"))
   const [subcategory, setSubcategory] = useState<string | null>(null)
@@ -55,6 +57,24 @@ function PartsContent() {
   const [priceFrom, setPriceFrom] = useState("")
   const [priceTo, setPriceTo] = useState("")
   const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    const validPartType = urlPartType && PART_TYPES.some((item) => item.value === urlPartType) ? urlPartType : null
+    setPartType((current) => current === validPartType ? current : validPartType)
+    setSubcategory(null)
+  }, [urlPartType])
+
+  const selectPartType = (nextPartType: string | null) => {
+    setPartType(nextPartType)
+    setSubcategory(null)
+    setPage(1)
+    const params = new URLSearchParams(searchKey)
+    if (nextPartType) params.set("partType", nextPartType)
+    else params.delete("partType")
+    params.delete("page")
+    const query = params.toString()
+    router.replace(query ? `/parts-finder?${query}` : "/parts-finder", { scroll: false })
+  }
 
   const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}` : null
   const { data: modelsData } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
@@ -93,12 +113,12 @@ function PartsContent() {
       <Stack gap={8}>
         <Group gap="xs" justify="space-between">
           <Group gap="xs"><ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconTools size={16} /></ThemeIcon><Text fw={800} fz="sm" ff="var(--font-display),sans-serif">Категории запчастей</Text></Group>
-          {partType && <Button variant="subtle" color="gray" size="compact-xs" onClick={() => { setPartType(null); setSubcategory(null); setPage(1) }}>Сбросить категорию</Button>}
+          {partType && <Button variant="subtle" color="gray" size="compact-xs" onClick={() => selectPartType(null)}>Сбросить категорию</Button>}
         </Group>
         <Group gap={6} wrap="wrap">
-          <Button size="compact-sm" radius="md" variant={!partType ? "filled" : "default"} color="indigo" onClick={() => { setPartType(null); setSubcategory(null); setPage(1) }}>Все запчасти</Button>
+          <Button size="compact-sm" radius="md" variant={!partType ? "filled" : "default"} color="indigo" onClick={() => selectPartType(null)}>Все запчасти</Button>
           {PART_TYPES.map((t) => (
-            <Button key={t.value} size="compact-sm" radius="md" variant={partType === t.value ? "filled" : "default"} color="indigo" onClick={() => { setPartType(partType === t.value ? null : t.value); setSubcategory(null); setPage(1) }}>{t.label}</Button>
+            <Button key={t.value} size="compact-sm" radius="md" variant={partType === t.value ? "filled" : "default"} color="indigo" onClick={() => selectPartType(partType === t.value ? null : t.value)}>{t.label}</Button>
           ))}
         </Group>
         {partType && subcats.length > 0 && (
@@ -153,7 +173,7 @@ function PartsContent() {
             {saleFormat && <Badge size="xs" variant="light" color="orange">{saleFormat === "AUCTION" ? "Аукцион" : "Цена"}</Badge>}
             {priceFrom && <Badge size="xs" variant="light" color="gray">от {priceFrom}₽</Badge>}
             {priceTo && <Badge size="xs" variant="light" color="gray">до {priceTo}₽</Badge>}
-            <Button variant="subtle" size="xs" color="red" onClick={() => { setPartType(null); setSubcategory(null); setCondition(null); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1) }}>Сбросить</Button>
+            <Button variant="subtle" size="xs" color="red" onClick={() => { selectPartType(null); setCondition(null); setSaleFormat(null); setPriceFrom(""); setPriceTo("") }}>Сбросить</Button>
           </Group>
         )}
       </Stack>
@@ -211,7 +231,7 @@ function PartsContent() {
                               </Group>
 
                               <Group gap={6} wrap="wrap">
-                                {p.condition === "NEW" && <Badge size="xs" variant="filled" color="green">Новая</Badge>}
+                                {p.condition && <Badge size="xs" variant="light" color={p.condition === "NEW" ? "green" : "gray"}>{findLabel(CONDITIONS, p.condition)}</Badge>}
                                 {p.saleFormat === "AUCTION" && <Badge size="xs" variant="filled" color="orange">Аукцион</Badge>}
                                 {p.subcategory && <Badge size="xs" variant="light" color="indigo">{p.subcategory}</Badge>}
                                 {p.oemNumber && <Badge size="xs" variant="light" color="dark"><Group gap={3}><IconHash size={9} /> {p.oemNumber}</Group></Badge>}
