@@ -137,6 +137,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         <Anchor component={Link} href="/dashboard" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
           📊 Личный кабинет
         </Anchor>
+        <Anchor component={Link} href="/dashboard/deliveries" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
+          🚚 Мои доставки
+        </Anchor>
         <Anchor component={Link} href="/favorites" size="xs" c="gray.5" style={{ padding: "4px 10px", borderRadius: 6, textDecoration: "none" }}>
           ❤️ Избранное
         </Anchor>
