@@ -5,10 +5,15 @@ import useSWR from "swr"
 import Link from "next/link"
 import { notifications } from "@mantine/notifications"
 import { Badge, Button, Card, Center, Group, Loader, Modal, Stack, Text, Textarea, ThemeIcon } from "@mantine/core"
-import { IconArchive, IconCheck, IconFlame, IconTag, IconX } from "@tabler/icons-react"
+import { IconAlertTriangle, IconArchive, IconCheck, IconFlame, IconTag, IconX } from "@tabler/icons-react"
 import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 
-const fetcher = (url: string) => fetch(url).then((response) => response.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(payload?.error || "Не удалось загрузить очередь модерации")
+  return payload
+}
 
 type ModerationConfirmation = {
   id: string
@@ -19,7 +24,7 @@ type ModerationConfirmation = {
 /** A deliberately narrow moderation workspace. It uses the API as the source
  * of truth, so moderators never receive broader admin data in the browser. */
 export default function ListingModerationPanel() {
-  const { data, isLoading, mutate } = useSWR<any>("/api/admin/listings", fetcher)
+  const { data, error, isLoading, mutate } = useSWR<any>("/api/admin/listings", fetcher)
   const listings = data?.listings || []
   const visibleListings = listings.filter((listing: any) => !listing.deletedAt)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
@@ -79,7 +84,9 @@ export default function ListingModerationPanel() {
           <Group gap="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconFlame size={18} /></ThemeIcon><Text fw={700} c="dark.9">Модерация объявлений</Text></Group>
           <Badge size="sm" variant="light" color="gray">{visibleListings.length}</Badge>
         </Group>
-        {isLoading ? <Center py={20}><Loader size="sm" color="indigo" /></Center> : (
+        {isLoading ? <Center py={20}><Loader size="sm" color="indigo" /></Center> : error ? (
+          <Center py="xl"><Stack align="center" gap="xs"><ThemeIcon variant="light" color="red" size={42} radius="xl"><IconAlertTriangle size={22} /></ThemeIcon><Text fw={600}>Не удалось загрузить очередь</Text><Text size="sm" c="dimmed" ta="center">Проверьте соединение и повторите попытку. Данные объявлений не изменены.</Text><Button size="xs" variant="light" color="indigo" onClick={() => void mutate()}>Повторить</Button></Stack></Center>
+        ) : (
           visibleListings.length === 0 ? (
             <Center py="xl"><Stack align="center" gap={4}><ThemeIcon variant="light" color="green" size={42} radius="xl"><IconCheck size={22} /></ThemeIcon><Text fw={600}>Очередь разобрана</Text><Text size="sm" c="dimmed">Новые объявления появятся здесь после отправки на проверку.</Text></Stack></Center>
           ) : <Stack gap="xs" mah={520} style={{ overflow: "auto" }}>
