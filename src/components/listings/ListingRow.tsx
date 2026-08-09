@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio } from "@mantine/core"
 import { IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
@@ -23,6 +24,7 @@ const TRUNCATE: React.CSSProperties = {
 }
 
 export default function ListingRow({ listing }: { listing: ListingRowData }) {
+  const [imageFailed, setImageFailed] = useState(false)
   const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
 
@@ -34,6 +36,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const images = parseImages(isVehicle ? listing.vehicle!.images : listing.part?.images)
   const sourceImage = images[0] || ""
   const image = sourceImage.includes("/placeholder/") ? "" : sourceImage
+  const hasDisplayImage = Boolean(image) && !imageFailed
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
   const usageMeta = getUsageMeta(vehicleType)
   const usageValue = usageMeta.field === "flightHours" ? listing.vehicle?.flightHours
@@ -44,6 +47,10 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
     : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
   const isFav = favoriteIds.has(listing.id)
+
+  useEffect(() => {
+    setImageFailed(false)
+  }, [listing.id])
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -74,17 +81,22 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
         <Group gap={0} align="stretch" wrap="nowrap">
           {/* Фото */}
           <Box pos="relative" style={{ width: 180, flexShrink: 0, background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
-            {image ? (
+            {hasDisplayImage ? (
               <AspectRatio ratio={4 / 3} w={180}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image} alt={listing.title} onError={(e) => { e.currentTarget.style.display = "none" }} loading="lazy" decoding="async" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+                <img src={image} alt={listing.title} onError={() => setImageFailed(true)} loading="lazy" decoding="async" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
               </AspectRatio>
             ) : (
-              <Box h="100%"><VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact /></Box>
+              <Box h="100%" className="listing-card__media" data-empty-media="true"><VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact /></Box>
             )}
             {listing.isFeatured && (
               <Box pos="absolute" top={6} left={6}>
                 <Badge color="dark" variant="filled" size="xs" radius="sm">Премиум</Badge>
+              </Box>
+            )}
+            {!hasDisplayImage && (
+              <Box pos="absolute" top={6} right={6}>
+                <Badge color="gray" variant="white" size="xs" radius="sm">Без фото</Badge>
               </Box>
             )}
           </Box>
