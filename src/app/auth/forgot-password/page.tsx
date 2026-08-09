@@ -15,11 +15,21 @@ export default function ForgotPasswordPage() {
     e.preventDefault()
     if (!email) return
     setLoading(true)
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload?.error || "Не удалось отправить инструкцию")
       setSent(true)
+      notifications.show({ title: "Проверьте почту", message: payload?.message || "Если аккаунт существует, инструкция уже отправлена.", color: "green" })
+    } catch (error) {
+      notifications.show({ title: "Не удалось отправить инструкцию", message: error instanceof Error ? error.message : "Попробуйте позже.", color: "red" })
+    } finally {
       setLoading(false)
-      notifications.show({ title: "Письмо отправлено", message: "Проверьте почту", color: "green" })
-    }, 1000)
+    }
   }
 
   return (
@@ -39,7 +49,7 @@ export default function ForgotPasswordPage() {
               <ThemeIcon variant="light" color="green" size={56} radius="xl"><IconCheck size={28} /></ThemeIcon>
               <Stack gap={0} align="center">
                 <Text fw={700} fz="lg" c="dark.9">Письмо отправлено</Text>
-                <Text size="sm" c="gray.5" ta="center">Инструкции по сбросу отправлены на {email}</Text>
+                <Text size="sm" c="gray.5" ta="center">Если аккаунт с таким email существует, инструкции уже отправлены.</Text>
               </Stack>
               <Button component={Link} href="/auth/signin" variant="light" color="indigo" radius="md" leftSection={<IconArrowLeft size={16} />}>Вернуться ко входу</Button>
             </Stack>
@@ -49,7 +59,7 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSubmit}>
               <Stack gap="md">
                 <Alert icon={<IconMail size={16} />} color="indigo" variant="light" radius="md">
-                  <Text size="xs" c="gray.7">Демо-режим: реальная отправка email не выполняется</Text>
+                  <Text size="xs" c="gray.7">Мы отправим одноразовую ссылку для установки нового пароля.</Text>
                 </Alert>
                 <TextInput label="Email" placeholder="your@email.ru" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} size="md" leftSection={<IconMail size={18} />} />
                 <Button type="submit" size="md" color="indigo" radius="md" loading={loading} fullWidth>Отправить ссылку</Button>
