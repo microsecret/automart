@@ -85,6 +85,10 @@ export default function SignInForm() {
 
       <Divider label="или" labelPosition="center" />
 
+      <Button component={Link} href="/auth/telegram" variant="light" color="indigo" leftSection={<span aria-hidden>✈️</span>} fullWidth>
+        Войти через Telegram
+      </Button>
+
       <Group justify="center">
         <Text size="sm" c="gray.5">
           Нет аккаунта?{" "}

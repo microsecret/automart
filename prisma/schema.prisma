@@ -18,6 +18,10 @@ model User {
   emailVerified DateTime?
   name          String?
   image         String?  // URL to user's avatar
+  phone         String?  @unique
+  telegramId    String?  @unique
+  telegramUsername String?
+  telegramVerifiedAt DateTime?
   role          String   @default("USER") // USER, ADMIN, MODERATOR
   hashedPassword String?
   createdAt     DateTime @default(now())
@@ -338,6 +342,21 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@index([token])
+}
+
+// One-time codes delivered by the Telegram bot for phone login.
+model TelegramAuthCode {
+  id         String   @id @default(uuid())
+  phone      String
+  codeHash   String
+  purpose    String   @default("LOGIN")
+  attempts   Int      @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([phone, purpose, createdAt])
+  @@index([expiresAt])
 }
 model News {
   id          String   @id @default(uuid())

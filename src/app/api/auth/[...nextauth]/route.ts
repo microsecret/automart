@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { consumeTelegramOtp, linkTelegramIdentity, verifyTelegramInitData } from "@/lib/telegram"
 
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
@@ -42,6 +43,37 @@ export const authOptions = {
           role: user.role,
         }
       }
+    }),
+    CredentialsProvider({
+      id: "phone-otp",
+      name: "Telegram OTP",
+      credentials: {
+        phone: { label: "Телефон", type: "tel" },
+        code: { label: "Код из Telegram", type: "text" },
+      },
+      async authorize(credentials) {
+        const user = await consumeTelegramOtp(credentials?.phone, credentials?.code)
+        if (!user || !user.telegramVerifiedAt) return null
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role }
+      },
+    }),
+    CredentialsProvider({
+      id: "telegram",
+      name: "Telegram Mini App",
+      credentials: { initData: { label: "Telegram initData", type: "text" } },
+      async authorize(credentials) {
+        const botToken = process.env.TELEGRAM_BOT_TOKEN
+        if (!botToken || !credentials?.initData) return null
+        const telegramUser = verifyTelegramInitData(credentials.initData, botToken)
+        if (!telegramUser) return null
+        const user = await linkTelegramIdentity({
+          telegramId: telegramUser.id,
+          username: telegramUser.username,
+          name: [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" "),
+          image: telegramUser.photo_url,
+        })
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role }
+      },
     })
   ],
   session: {
