@@ -12,16 +12,17 @@ const editableListingInclude = {
   part: true,
 } as const
 
-/** GET /api/listings/[id] — public active card or the owner/moderator workspace. */
+/** GET /api/listings/[id] — owner/moderator workspace with full editable data. */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const listing = await prisma.listing.findUnique({ where: { id }, include: editableListingInclude })
     if (!listing || listing.deletedAt) return NextResponse.json({ error: "Не найдено" }, { status: 404 })
 
-    const canPreview = listing.status === LISTING_STATUS.ACTIVE || listing.userId === session?.user?.id || isListingModerator(session?.user?.role)
-    if (!canPreview) return NextResponse.json({ error: "Не найдено" }, { status: 404 })
+    const canEdit = listing.userId === session.user.id || isListingModerator(session.user.role)
+    if (!canEdit) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
 
     return NextResponse.json({ listing })
   } catch (error) {

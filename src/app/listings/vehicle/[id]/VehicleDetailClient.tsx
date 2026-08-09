@@ -60,6 +60,7 @@ import {
   IconSpeedboat,
   IconMotorbike,
   IconTractor,
+  IconEdit,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
@@ -638,6 +639,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   >
                     {showPhone ? "+7 (XXX) XXX-XX-XX" : "Показать телефон"}
                   </Button>
+                  {session?.user?.id === data.seller.id && data.listingId && (
+                    <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>
+                      Редактировать объявление
+                    </Button>
+                  )}
                   <Button
                     size="lg"
                     radius="md"

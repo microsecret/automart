@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import {
   Container,
   Grid,
@@ -41,6 +42,7 @@ import {
   IconCheck,
   IconGavel,
   IconPhoto,
+  IconEdit,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -102,6 +104,7 @@ interface PartData {
 }
 
 export default function PartDetailClient({ data }: { data: PartData }) {
+  const { data: session } = useSession()
   const [showPhone, setShowPhone] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
   const [imageFailed, setImageFailed] = useState(false)
@@ -327,6 +330,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Button size="lg" radius="md" leftSection={<IconPhone size={18} />} variant={showPhone ? "light" : "filled"} color="indigo" onClick={() => setShowPhone(true)}>
                     {showPhone ? "+7 (XXX) XXX-XX-XX" : "Показать телефон"}
                   </Button>
+                  {session?.user?.id === data.seller.id && data.listingId && <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>Редактировать объявление</Button>}
                   <Button size="lg" radius="md" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={`/messages/new?listingId=${data.listingId || data.id}`}>
                     Написать продавцу
                   </Button>

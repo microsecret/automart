@@ -8,6 +8,7 @@ import { IconPlus, IconCheck, IconCar, IconTrash, IconPhoto, IconX } from "@tabl
 import { notifications } from "@mantine/notifications"
 import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
+import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 
 export default function CreatePartPage() {
   const { data: session, status } = useSession()
@@ -20,8 +21,7 @@ export default function CreatePartPage() {
   })
   const [compat, setCompat] = useState<{ make: string; model: string; generation: string; engine: string; yearFrom: string; yearTo: string }[]>([])
   const [newCompat, setNewCompat] = useState({ make: "", model: "", generation: "", engine: "", yearFrom: "", yearTo: "" })
-  const [images, setImages] = useState<string[]>([])
-  const [uploadingImages, setUploadingImages] = useState(false)
+  const { images, uploadingImages, uploadPhotos, removeImage } = useMarketplaceImageUpload()
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/signin")
@@ -37,33 +37,6 @@ export default function CreatePartPage() {
     if (!newCompat.make) return
     setCompat([...compat, { ...newCompat }])
     setNewCompat({ make: "", model: "", generation: "", engine: "", yearFrom: "", yearTo: "" })
-  }
-
-  const uploadPhotos = async (files: File[] | null) => {
-    const selected = Array.isArray(files) ? files : []
-    if (selected.length === 0) return
-    const freeSlots = Math.max(0, 12 - images.length)
-    if (freeSlots === 0) {
-      notifications.show({ title: "Лимит фотографий", message: "В объявление можно добавить до 12 фотографий.", color: "orange" })
-      return
-    }
-    setUploadingImages(true)
-    try {
-      const urls = await Promise.all(selected.slice(0, freeSlots).map(async (file) => {
-        const formData = new FormData()
-        formData.append("file", file)
-        const response = await fetch("/api/upload", { method: "POST", body: formData })
-        const result = await response.json()
-        if (!response.ok) throw new Error(result.error || "Не удалось загрузить фотографию")
-        return result.url as string
-      }))
-      setImages((current) => [...current, ...urls])
-      if (selected.length > freeSlots) notifications.show({ title: "Добавлены не все фото", message: `Добавлено ${freeSlots} из ${selected.length}: лимит 12.`, color: "orange" })
-    } catch (error: any) {
-      notifications.show({ title: "Не удалось загрузить фото", message: error.message || "Повторите попытку.", color: "red" })
-    } finally {
-      setUploadingImages(false)
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,7 +130,7 @@ export default function CreatePartPage() {
                 {images.length > 0 && <SimpleGrid cols={{ base: 3, sm: 4, md: 6 }} spacing="xs">
                   {images.map((image, index) => <Box key={image} pos="relative" style={{ aspectRatio: "1", overflow: "hidden", borderRadius: 10, border: index === 0 ? "2px solid var(--mantine-color-indigo-5)" : "1px solid var(--mantine-color-gray-3)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}<img src={image} alt={`Фото ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    <ActionIcon aria-label={`Удалить фото ${index + 1}`} type="button" size="sm" color="dark" variant="filled" pos="absolute" top={5} right={5} onClick={() => setImages((current) => current.filter((_, imageIndex) => imageIndex !== index))}><IconX size={13} /></ActionIcon>
+                    <ActionIcon aria-label={`Удалить фото ${index + 1}`} type="button" size="sm" color="dark" variant="filled" pos="absolute" top={5} right={5} onClick={() => removeImage(index)}><IconX size={13} /></ActionIcon>
                     {index === 0 && <Badge size="xs" color="indigo" variant="filled" pos="absolute" left={5} bottom={5}>Обложка</Badge>}
                   </Box>)}
                 </SimpleGrid>}

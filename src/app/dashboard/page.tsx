@@ -5,7 +5,7 @@ import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, SegmentedControl, Center, Avatar, Button, Divider, ActionIcon } from "@mantine/core"
-import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconChartBar, IconTrendingUp, IconClock, IconExternalLink, IconTrash } from "@tabler/icons-react"
+import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconChartBar, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -156,9 +156,10 @@ export default function DashboardPage() {
                         </Group>
                       </Stack>
                       <Group gap={4}>
-                        <ActionIcon component={Link} href={href} variant="subtle" color="gray" size="sm"><IconExternalLink size={16} /></ActionIcon>
-                        <ActionIcon component={Link} href={`/listings/${l.id}/promote`} variant="subtle" color="violet" size="sm"><IconTrendingUp size={16} /></ActionIcon>
-                        <ActionIcon variant="subtle" color="red" size="sm" onClick={() => handleDelete(l.id, l.title)}><IconTrash size={16} /></ActionIcon>
+                        <ActionIcon component={Link} href={href} variant="subtle" color="gray" size="sm" aria-label={`Открыть ${l.title}`}><IconExternalLink size={16} /></ActionIcon>
+                        <ActionIcon component={Link} href={`/listings/${l.id}/edit`} variant="subtle" color="indigo" size="sm" aria-label={`Редактировать ${l.title}`}><IconEdit size={16} /></ActionIcon>
+                        <ActionIcon component={Link} href={`/listings/${l.id}/promote`} variant="subtle" color="violet" size="sm" aria-label={`Продвинуть ${l.title}`}><IconTrendingUp size={16} /></ActionIcon>
+                        <ActionIcon variant="subtle" color="red" size="sm" aria-label={`Архивировать ${l.title}`} onClick={() => handleDelete(l.id, l.title)}><IconTrash size={16} /></ActionIcon>
                       </Group>
                     </Group>
                   </Paper>
