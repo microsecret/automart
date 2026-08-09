@@ -7,9 +7,13 @@ const REQUIRED_TRIGGERS = [
   "Vehicle_delete_linked_listing",
   "Part_delete_linked_listing",
 ]
+const REQUIRED_INDEXES = [
+  "Listing_live_vehicle_subject_key",
+  "Listing_live_part_subject_key",
+]
 
 async function main() {
-  const [orphanedListings, ambiguousListings, vehicleCount, partCount, listingCount, userCount, auctionCount, newsCount, triggers] = await Promise.all([
+  const [orphanedListings, ambiguousListings, vehicleCount, partCount, listingCount, userCount, auctionCount, newsCount, triggers, indexes, duplicateLiveSubjects] = await Promise.all([
     prisma.listing.findMany({
       where: { vehicleId: null, partId: null },
       select: { id: true, title: true, status: true, createdAt: true },
@@ -29,10 +33,26 @@ async function main() {
     prisma.auctionListing.count(),
     prisma.news.count(),
     prisma.$queryRawUnsafe("SELECT name FROM sqlite_master WHERE type = 'trigger'"),
+    prisma.$queryRawUnsafe("SELECT name FROM sqlite_master WHERE type = 'index'"),
+    prisma.$queryRawUnsafe(`
+      SELECT 'vehicle' AS kind, vehicleId AS subjectId, COUNT(*) AS total
+      FROM "Listing"
+      WHERE "vehicleId" IS NOT NULL AND "deletedAt" IS NULL AND "status" <> 'ARCHIVED'
+      GROUP BY "vehicleId"
+      HAVING COUNT(*) > 1
+      UNION ALL
+      SELECT 'part' AS kind, partId AS subjectId, COUNT(*) AS total
+      FROM "Listing"
+      WHERE "partId" IS NOT NULL AND "deletedAt" IS NULL AND "status" <> 'ARCHIVED'
+      GROUP BY "partId"
+      HAVING COUNT(*) > 1
+    `),
   ])
 
   const installedTriggers = triggers.map((trigger) => trigger.name).filter((name) => typeof name === "string")
   const missingTriggers = REQUIRED_TRIGGERS.filter((name) => !installedTriggers.includes(name))
+  const installedIndexes = indexes.map((index) => index.name).filter((name) => typeof name === "string")
+  const missingIndexes = REQUIRED_INDEXES.filter((name) => !installedIndexes.includes(name))
 
   const report = {
     checkedAt: new Date().toISOString(),
@@ -47,15 +67,21 @@ async function main() {
     integrity: {
       orphanedListings: orphanedListings.length,
       ambiguousListings: ambiguousListings.length,
-      valid: orphanedListings.length === 0 && ambiguousListings.length === 0 && missingTriggers.length === 0,
+      duplicateLiveSubjects: duplicateLiveSubjects.length,
+      valid: orphanedListings.length === 0 && ambiguousListings.length === 0 && duplicateLiveSubjects.length === 0 && missingTriggers.length === 0 && missingIndexes.length === 0,
     },
     databaseTriggers: {
       installed: REQUIRED_TRIGGERS.filter((name) => installedTriggers.includes(name)),
       missing: missingTriggers,
     },
+    databaseIndexes: {
+      installed: REQUIRED_INDEXES.filter((name) => installedIndexes.includes(name)),
+      missing: missingIndexes,
+    },
     samples: {
       orphanedListings,
       ambiguousListings,
+      duplicateLiveSubjects,
     },
   }
 

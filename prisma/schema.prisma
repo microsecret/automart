@@ -262,6 +262,7 @@ model Listing {
   // Reverse relation for reviews
   reviews       Review[] @relation("ListingReviews")
   statusEvents  ListingStatusEvent[]
+  revisions     ListingRevision[]
 
   // Timestamps
   createdAt     DateTime @default(now())
@@ -292,6 +293,22 @@ model ListingStatusEvent {
   reason      String?
   actorId     String?
   createdAt   DateTime @default(now())
+
+  @@index([listingId, createdAt])
+}
+
+// Immutable snapshots of owner edits. The actor is stored as an id instead of
+// a relation so retention of a user account never erases marketplace history.
+model ListingRevision {
+  id            String   @id @default(uuid())
+  listingId     String
+  listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  actorId       String?
+  changedFields String   // JSON string array
+  before        String   // JSON snapshot of editable public fields
+  after         String   // JSON snapshot of editable public fields
+  reason        String?
+  createdAt     DateTime @default(now())
 
   @@index([listingId, createdAt])
 }
