@@ -6,7 +6,7 @@ import SupportChat from "@/components/support/SupportChat"
 import {
   IconCar, IconMotorbike, IconTruck, IconTractor, IconSpeedboat, IconPlane,
   IconTools, IconBuildingStore, IconChevronDown, IconHeart, IconMessageCircle2,
-  IconBell, IconAdjustmentsHorizontal, IconNews,
+  IconBell, IconAdjustmentsHorizontal, IconNews, IconHome2, IconSearch, IconPlus,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -229,6 +229,14 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
 
       {/* Чат поддержки */}
       <SupportChat />
+
+      <nav className="mobile-bottom-nav" aria-label="Основная навигация">
+        <Link href="/" aria-label="Главная"><IconHome2 size={18} /><span>Главная</span></Link>
+        <Link href="/search" aria-label="Поиск"><IconSearch size={18} /><span>Поиск</span></Link>
+        <Link href="/sell" aria-label="Разместить объявление" className="mobile-bottom-nav__accent"><IconPlus size={20} /><span>Продать</span></Link>
+        <Link href="/favorites" aria-label="Избранное"><IconHeart size={18} /><span>Избранное</span></Link>
+        <Link href="/messages" aria-label="Сообщения"><IconMessageCircle2 size={18} /><span>Чаты</span></Link>
+      </nav>
     </Box>
   )
 }

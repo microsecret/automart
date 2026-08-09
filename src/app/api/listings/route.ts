@@ -6,12 +6,28 @@ import { Prisma } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
+function parseInteger(value: string | null, fallback?: number) {
+  if (!value) return fallback
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : fallback
+}
+
+function normalizeListing<T extends {
+  vehicle?: { location?: string | null } | null
+  part?: { location?: string | null } | null
+}>(listing: T) {
+  return {
+    ...listing,
+    location: listing.vehicle?.location || listing.part?.location || null,
+  }
+}
+
 /** GET /api/listings — список объявлений с фильтрами и пагинацией */
 export async function GET(request: NextRequest) {
   try {
     const sp = new URL(request.url).searchParams
-    const page = Math.max(1, parseInt(sp.get("page") || "1"))
-    const limit = Math.min(50, Math.max(1, parseInt(sp.get("limit") || "12")))
+    const page = Math.max(1, parseInteger(sp.get("page"), 1) || 1)
+    const limit = Math.min(50, Math.max(1, parseInteger(sp.get("limit"), 12) || 12))
     const skip = (page - 1) * limit
 
     const type = sp.get("type") // "vehicle" | "part" | undefined (оба)
@@ -72,14 +88,18 @@ export async function GET(request: NextRequest) {
 
     if (priceFrom || priceTo) {
       where.price = {}
-      if (priceFrom) where.price.gte = parseInt(priceFrom)
-      if (priceTo) where.price.lte = parseInt(priceTo)
+      const minPrice = parseInteger(priceFrom)
+      const maxPrice = parseInteger(priceTo)
+      if (minPrice !== undefined) where.price.gte = minPrice
+      if (maxPrice !== undefined) where.price.lte = maxPrice
     }
 
     if (q) {
       where.OR = [
         { title: { contains: q } },
         { description: { contains: q } },
+        { vehicle: { OR: [{ make: { contains: q } }, { model: { contains: q } }, { vin: { contains: q } }] } },
+        { part: { OR: [{ name: { contains: q } }, { make: { contains: q } }, { model: { contains: q } }] } },
       ]
     }
 
@@ -87,8 +107,10 @@ export async function GET(request: NextRequest) {
     if (model) vehicleFilters.model = { contains: model }
     if (yearFrom || yearTo) {
       vehicleFilters.year = {}
-      if (yearFrom) vehicleFilters.year.gte = parseInt(yearFrom)
-      if (yearTo) vehicleFilters.year.lte = parseInt(yearTo)
+      const minYear = parseInteger(yearFrom)
+      const maxYear = parseInteger(yearTo)
+      if (minYear !== undefined) vehicleFilters.year.gte = minYear
+      if (maxYear !== undefined) vehicleFilters.year.lte = maxYear
     }
     if (fuelType) vehicleFilters.fuelType = fuelType
     if (transmission) vehicleFilters.transmission = transmission
@@ -106,23 +128,31 @@ export async function GET(request: NextRequest) {
     if (keywords) vehicleFilters.keywords = { contains: keywords }
     if (ownersCountFrom || ownersCountTo) {
       vehicleFilters.ownersCount = {}
-      if (ownersCountFrom) vehicleFilters.ownersCount.gte = parseInt(ownersCountFrom)
-      if (ownersCountTo) vehicleFilters.ownersCount.lte = parseInt(ownersCountTo)
+      const minOwners = parseInteger(ownersCountFrom)
+      const maxOwners = parseInteger(ownersCountTo)
+      if (minOwners !== undefined) vehicleFilters.ownersCount.gte = minOwners
+      if (maxOwners !== undefined) vehicleFilters.ownersCount.lte = maxOwners
     }
     if (mileageFrom || mileageTo) {
       vehicleFilters.mileage = {}
-      if (mileageFrom) vehicleFilters.mileage.gte = parseInt(mileageFrom)
-      if (mileageTo) vehicleFilters.mileage.lte = parseInt(mileageTo)
+      const minMileage = parseInteger(mileageFrom)
+      const maxMileage = parseInteger(mileageTo)
+      if (minMileage !== undefined) vehicleFilters.mileage.gte = minMileage
+      if (maxMileage !== undefined) vehicleFilters.mileage.lte = maxMileage
     }
     if (engineVolumeFrom || engineVolumeTo) {
       vehicleFilters.engineVolume = {}
-      if (engineVolumeFrom) vehicleFilters.engineVolume.gte = parseFloat(engineVolumeFrom)
-      if (engineVolumeTo) vehicleFilters.engineVolume.lte = parseFloat(engineVolumeTo)
+      const minEngine = Number(engineVolumeFrom)
+      const maxEngine = Number(engineVolumeTo)
+      if (Number.isFinite(minEngine)) vehicleFilters.engineVolume.gte = minEngine
+      if (Number.isFinite(maxEngine)) vehicleFilters.engineVolume.lte = maxEngine
     }
     if (powerFrom || powerTo) {
       vehicleFilters.power = {}
-      if (powerFrom) vehicleFilters.power.gte = parseInt(powerFrom)
-      if (powerTo) vehicleFilters.power.lte = parseInt(powerTo)
+      const minPower = parseInteger(powerFrom)
+      const maxPower = parseInteger(powerTo)
+      if (minPower !== undefined) vehicleFilters.power.gte = minPower
+      if (maxPower !== undefined) vehicleFilters.power.lte = maxPower
     }
     if (city) vehicleFilters.location = { contains: city }
     if (Object.keys(vehicleFilters).length > 0) {
@@ -161,7 +191,7 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({
-      listings,
+      listings: listings.map(normalizeListing),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     })
   } catch (error) {
@@ -180,6 +210,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { title, description, price, vehicleId, partId } = body
+    const normalizedTitle = typeof title === "string" ? title.trim() : ""
+    const normalizedDescription = typeof description === "string" ? description.trim() : null
+    const normalizedPrice = Number(price)
 
     if ((vehicleId && partId) || (!vehicleId && !partId)) {
       return NextResponse.json(
@@ -187,10 +220,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    if (!title?.trim()) {
+    if (!normalizedTitle) {
       return NextResponse.json({ error: "Заголовок обязателен" }, { status: 400 })
     }
-    if (price == null || price < 0) {
+    if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
       return NextResponse.json({ error: "Цена обязательна" }, { status: 400 })
     }
 
@@ -207,9 +240,9 @@ export async function POST(request: NextRequest) {
 
     const listing = await prisma.listing.create({
       data: {
-        title: title.trim(),
-        description: description?.trim() || null,
-        price: parseInt(price),
+        title: normalizedTitle,
+        description: normalizedDescription || null,
+        price: Math.trunc(normalizedPrice),
         userId: session.user.id,
         vehicleId: vehicleId || null,
         partId: partId || null,
@@ -221,7 +254,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(listing, { status: 201 })
+    return NextResponse.json(normalizeListing(listing), { status: 201 })
   } catch (error) {
     console.error("Error creating listing:", error)
     return NextResponse.json({ error: "Failed to create listing" }, { status: 500 })

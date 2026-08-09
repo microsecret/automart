@@ -10,17 +10,143 @@
 :root {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-display: "Manrope", "Inter", sans-serif;
+  --market-ink: #171719;
+  --market-muted: #71717a;
+  --market-line: #e8e8ec;
+  --market-surface: #ffffff;
+  --market-background: #f7f7f9;
+  --market-primary: #4f46e5;
 }
 
 /* Базовый фон и текст */
 body {
-  background: #fcfcfd;
-  color: #18181b;
+  background: var(--market-background);
+  color: var(--market-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "cv11", "ss01";
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.market-main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px clamp(16px, 3vw, 36px) 48px;
+}
+
+.market-hero {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(129, 140, 248, 0.46), transparent 32%),
+    linear-gradient(135deg, #312e81 0%, #4338ca 48%, #4f46e5 100%);
+  box-shadow: 0 18px 45px -28px rgba(49, 46, 129, 0.8);
+}
+
+.market-hero::after {
+  content: "";
+  position: absolute;
+  width: 270px;
+  height: 270px;
+  right: -88px;
+  bottom: -130px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  box-shadow: 0 0 0 28px rgba(255, 255, 255, 0.04), 0 0 0 58px rgba(255, 255, 255, 0.03);
+  pointer-events: none;
+}
+
+.market-search-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.8fr) repeat(2, minmax(145px, 0.8fr)) minmax(145px, 0.8fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.market-result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.market-surface {
+  background: var(--market-surface);
+  border: 1px solid var(--market-line);
+  box-shadow: 0 8px 24px -24px rgba(24, 24, 27, 0.35);
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 1060px) {
+  .market-search-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .market-search-grid > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .market-result-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .market-main {
+    padding: 14px 12px 36px;
+  }
+
+  .market-search-grid,
+  .market-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .market-search-grid > :first-child {
+    grid-column: auto;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    z-index: 250;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid rgba(232, 232, 236, 0.95);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 12px 32px -16px rgba(24, 24, 27, 0.28);
+    backdrop-filter: blur(14px);
+  }
+
+  .mobile-bottom-nav a {
+    display: grid;
+    min-height: 44px;
+    place-items: center;
+    gap: 2px;
+    color: var(--market-muted);
+    font-size: 10px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .mobile-bottom-nav a:last-child {
+    color: var(--market-primary);
+  }
 }
 
 /* Скроллбар — минималистичный, индиго при ховере */
