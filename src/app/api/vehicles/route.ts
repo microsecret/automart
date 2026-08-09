@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
       customsCleared,
       generation,
       keywords,
+      vehicleType,
+      typeDetails,
       location,
       description,
       images,
@@ -106,6 +108,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the vehicle
+    const allowedVehicleTypes = new Set(["CAR", "MOTORCYCLE", "TRUCK", "SPECIAL", "WATER", "AIR"])
+    const normalizedVehicleType = allowedVehicleTypes.has(String(vehicleType)) ? String(vehicleType) : "CAR"
+    let normalizedTypeDetails: string | null = null
+    if (typeDetails && typeof typeDetails === "object") normalizedTypeDetails = JSON.stringify(typeDetails)
+    else if (typeof typeDetails === "string" && typeDetails.length <= 10000) normalizedTypeDetails = typeDetails
+
     const vehicle = await prisma.vehicle.create({
       data: {
         make: make.trim(),
@@ -132,6 +140,8 @@ export async function POST(request: NextRequest) {
         customsCleared: customsCleared !== undefined ? Boolean(customsCleared) : null,
         generation: generation ? generation.trim() : null,
         keywords: keywords ? keywords.trim() : null,
+        vehicleType: normalizedVehicleType,
+        typeDetails: normalizedTypeDetails,
         location: location ? location.trim() : null,
         description: description ? description.trim() : null,
         images: images || null, // Expecting JSON string of array or null

@@ -71,6 +71,7 @@ model Vehicle {
   generation       String?  // поколение
   keywords         String?  // ключевые слова для поиска
   vehicleType   String   @default("CAR")
+  typeDetails  String?  // JSON with transport-specific fields
   location     String   // City, region
   lat          Float?   // Latitude
   lng          Float?   // Longitude

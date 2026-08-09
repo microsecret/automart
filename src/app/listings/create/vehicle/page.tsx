@@ -7,7 +7,7 @@ import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Butt
 import { IconCar, IconCheck, IconPlus } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
-import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
+import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR } from "@/lib/constants"
 
 const CATS = [
   { value: "CAR", label: "Легковые" },
@@ -33,6 +33,7 @@ export default function CreateVehiclePage() {
     steeringWheel: "LEFT", ownersCount: "", documentsStatus: "CLEAN",
     damageInfo: "NONE", sellerType: "OWNER", availability: "IN_STOCK",
     customsCleared: "true", generation: "", keywords: "",
+    motorcycleType: "", truckBodyType: "", axleFormula: "", specialType: "", waterType: "", hullMaterial: "", airType: "", airEngineType: "",
   })
 
   useEffect(() => {
@@ -77,6 +78,17 @@ export default function CreateVehiclePage() {
           sellerType: f.sellerType, availability: f.availability,
           customsCleared: f.customsCleared === "true",
           generation: f.generation, keywords: f.keywords,
+          vehicleType: f.vehicleType,
+          typeDetails: {
+            motorcycleType: f.motorcycleType,
+            truckBodyType: f.truckBodyType,
+            axleFormula: f.axleFormula,
+            specialType: f.specialType,
+            waterType: f.waterType,
+            hullMaterial: f.hullMaterial,
+            airType: f.airType,
+            airEngineType: f.airEngineType,
+          },
           categoryId: catId,
         }),
       })
@@ -155,6 +167,33 @@ export default function CreateVehiclePage() {
                 </Group>
                 {f.vehicleType === "CAR" && (
                   <Select label="Тип кузова" data={BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.bodyType} onChange={(v) => set("bodyType", v || "")} size="sm" />
+                )}
+                {f.vehicleType === "MOTORCYCLE" && (
+                  <Group gap="sm" grow>
+                    <Select label="Тип мотоцикла" data={MOTORCYCLE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.motorcycleType} onChange={(v) => set("motorcycleType", v || "")} size="sm" />
+                    <TextInput label="Объём, см³" placeholder="600" value={f.engineVolume} onChange={(e) => set("engineVolume", e.target.value)} size="sm" type="number" />
+                  </Group>
+                )}
+                {f.vehicleType === "TRUCK" && (
+                  <Group gap="sm" grow>
+                    <Select label="Тип кузова" data={TRUCK_BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.truckBodyType} onChange={(v) => set("truckBodyType", v || "")} size="sm" />
+                    <Select label="Колёсная формула" data={TRUCK_AXLE_FORMULAS.map(t => ({ value: t.value, label: t.label }))} value={f.axleFormula} onChange={(v) => set("axleFormula", v || "")} size="sm" />
+                  </Group>
+                )}
+                {f.vehicleType === "SPECIAL" && (
+                  <Select label="Вид спецтехники" data={SPECIAL_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.specialType} onChange={(v) => set("specialType", v || "")} size="sm" />
+                )}
+                {f.vehicleType === "WATER" && (
+                  <Group gap="sm" grow>
+                    <Select label="Тип водного транспорта" data={WATER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.waterType} onChange={(v) => set("waterType", v || "")} size="sm" />
+                    <Select label="Материал корпуса" data={HULL_MATERIALS.map(t => ({ value: t.value, label: t.label }))} value={f.hullMaterial} onChange={(v) => set("hullMaterial", v || "")} size="sm" />
+                  </Group>
+                )}
+                {f.vehicleType === "AIR" && (
+                  <Group gap="sm" grow>
+                    <Select label="Тип воздушного судна" data={AIR_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.airType} onChange={(v) => set("airType", v || "")} size="sm" />
+                    <Select label="Тип двигателя" data={ENGINE_TYPE_AIR.map(t => ({ value: t.value, label: t.label }))} value={f.airEngineType} onChange={(v) => set("airEngineType", v || "")} size="sm" />
+                  </Group>
                 )}
                 <Group gap="sm" grow>
                   <TextInput label="Объём двигателя, л" placeholder="2.0" value={f.engineVolume} onChange={(e) => set("engineVolume", e.target.value)} size="sm" type="number" step="0.1" />
