@@ -10,6 +10,7 @@ npx prisma migrate deploy
 npx prisma db push --skip-generate
 npx prisma generate
 node scripts/reconcile-transport-categories.mjs
+npm run type-check
 npm run build
 systemctl restart automart
 systemctl is-active --quiet automart

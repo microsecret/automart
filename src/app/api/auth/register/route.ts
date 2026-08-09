@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { isEmailDeliveryConfigured, sendEmailVerification } from "@/lib/emailVerification"
 import { normalizePhone } from "@/lib/telegram"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -11,6 +12,13 @@ export async function POST(request: NextRequest) {
     const { name, email: emailInput, phone: phoneInput, password } = await request.json()
     const email = String(emailInput || "").trim().toLowerCase()
     const phone = normalizePhone(phoneInput)
+
+    const ipLimit = rateLimit(`auth:register:ip:${getClientIp(request)}`, { windowMs: 15 * 60_000, maxRequests: 5 })
+    const emailLimit = rateLimit(`auth:register:email:${email || "unknown"}`, { windowMs: 60 * 60_000, maxRequests: 3 })
+    if (!ipLimit.success || !emailLimit.success) {
+      const limit = !ipLimit.success ? ipLimit : emailLimit
+      return NextResponse.json({ error: "Слишком много попыток регистрации. Повторите позже." }, { status: 429, headers: rateLimitHeaders(limit) })
+    }
 
     if (!email || !phone || !password) {
       return NextResponse.json({ error: "Имя, email, телефон и пароль обязательны" }, { status: 400 })

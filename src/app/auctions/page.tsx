@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box } from "@mantine/core"
-import { IconGavel, IconPhoto, IconX } from "@tabler/icons-react"
+import { IconDatabaseOff, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort, parseImages } from "@/lib/format"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 
@@ -186,7 +186,27 @@ export default function AuctionsPage() {
         {isLoading ? (
           <Center py={60}><Loader size="sm" color="orange" /></Center>
         ) : listings.length === 0 ? (
-          <Paper radius="md" p="xl" withBorder><Center><Text c="gray.5">Нет авто по фильтрам</Text></Center></Paper>
+          <Paper radius="lg" p={{ base: "lg", md: "xl" }} withBorder>
+            <Stack align="center" gap="sm" maw={460} mx="auto" ta="center">
+              <ThemeIcon size={52} radius="xl" variant="light" color={hasActiveFilters ? "gray" : "orange"}>
+                <IconDatabaseOff size={26} />
+              </ThemeIcon>
+              <Text fw={750}>{hasActiveFilters ? "По этим параметрам лотов не найдено" : "Каталог аукционов обновляется"}</Text>
+              <Text size="sm" c="dimmed">
+                {hasActiveFilters
+                  ? "Сбросьте часть условий или выберите другую страну и площадку."
+                  : "Поставщики ещё не передали актуальные лоты. Можно оставить заявку на подбор — специалист сообщит, когда появится подходящий вариант."}
+              </Text>
+              <Group justify="center" gap="xs">
+                {hasActiveFilters ? (
+                  <Button variant="light" color="orange" size="sm" leftSection={<IconX size={15} />} onClick={resetFilters}>Сбросить фильтры</Button>
+                ) : (
+                  <Button component={Link} href="/services/smart-matching" color="orange" size="sm" leftSection={<IconGavel size={15} />}>Оставить заявку на подбор</Button>
+                )}
+                <Button variant="subtle" color="gray" size="sm" leftSection={<IconRefresh size={15} />} onClick={() => window.location.reload()}>Обновить</Button>
+              </Group>
+            </Stack>
+          </Paper>
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm">
             {listings.map((l: any) => (

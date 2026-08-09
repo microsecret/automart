@@ -15,6 +15,8 @@ interface RateLimitResult {
   resetIn: number
 }
 
+type RequestWithHeaders = { headers: Headers }
+
 export function rateLimit(
   identifier: string,
   options: RateLimitOptions = { windowMs: 60_000, maxRequests: 60 }
@@ -41,5 +43,22 @@ export function cleanupRateLimit() {
   const now = Date.now()
   for (const [key, val] of requests.entries()) {
     if (now > val.resetTime) requests.delete(key)
+  }
+}
+
+/** Берём первый адрес из доверенного reverse proxy или прямой адрес клиента. */
+export function getClientIp(request: RequestWithHeaders) {
+  const forwarded = request.headers.get("x-forwarded-for")
+  const candidate = forwarded?.split(",")[0]?.trim()
+    || request.headers.get("x-real-ip")?.trim()
+    || "unknown"
+  return candidate.slice(0, 128)
+}
+
+/** Стандартные заголовки для ответа 429, чтобы клиент видел время повторной попытки. */
+export function rateLimitHeaders(result: RateLimitResult) {
+  return {
+    "Retry-After": String(Math.max(1, Math.ceil(result.resetIn / 1000))),
+    "X-RateLimit-Remaining": String(Math.max(0, result.remaining)),
   }
 }
