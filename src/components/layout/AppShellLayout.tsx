@@ -39,6 +39,14 @@ const AUCTIONS = [
   { label: "Китай", href: "/auctions?country=CN" },
 ]
 
+const MOBILE_NAV = [
+  { href: "/", label: "Главная", Icon: IconHome2 },
+  { href: "/search", label: "Поиск", Icon: IconSearch },
+  { href: "/listings/create/vehicle", label: "Продать", Icon: IconPlus, accent: true },
+  { href: "/favorites", label: "Избранное", Icon: IconHeart },
+  { href: "/messages", label: "Чаты", Icon: IconMessageCircle2 },
+]
+
 export default function AppShellLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { data: session } = useSession()
@@ -46,6 +54,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
   const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCategory === "parts"
   const isAuctionsRoute = pathname?.startsWith("/auctions")
+  const isMobileNavActive = (href: string) => href === "/" ? pathname === "/" : pathname?.startsWith(href)
 
   if (isAuthRoute) {
     return (
@@ -143,11 +152,21 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       <SupportChat />
 
       <nav className="mobile-bottom-nav" aria-label="Основная навигация">
-        <Link href="/" aria-label="Главная"><IconHome2 size={18} /><span>Главная</span></Link>
-        <Link href="/search" aria-label="Поиск"><IconSearch size={18} /><span>Поиск</span></Link>
-        <Link href="/listings/create/vehicle" aria-label="Разместить объявление" className="mobile-bottom-nav__accent"><IconPlus size={20} /><span>Продать</span></Link>
-        <Link href="/favorites" aria-label="Избранное"><IconHeart size={18} /><span>Избранное</span></Link>
-        <Link href="/messages" aria-label="Сообщения"><IconMessageCircle2 size={18} /><span>Чаты</span></Link>
+        {MOBILE_NAV.map(({ href, label, Icon, accent }) => {
+          const active = isMobileNavActive(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-label={label === "Продать" ? "Разместить объявление" : label}
+              aria-current={active ? "page" : undefined}
+              className={`${accent ? "mobile-bottom-nav__accent" : ""}${active ? " mobile-bottom-nav__item--active" : ""}`}
+            >
+              <Icon size={accent ? 20 : 18} />
+              <span>{label}</span>
+            </Link>
+          )
+        })}
       </nav>
     </Box>
   )
