@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { getFuelOptions, supportsTransmission } from "@/lib/constants"
+import { getVehicleSubtypeConfig, isValidVehicleSubtype } from "@/lib/vehicleSubtypes"
 
 export const dynamic = "force-dynamic"
 
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
     const fuelType = sp.get("fuelType")
     const transmission = sp.get("transmission")
     const bodyType = sp.get("bodyType")
+    const subtype = sp.get("subtype")
     const driveType = sp.get("driveType")
     const engineVolumeFrom = sp.get("engineVolumeFrom")
     const engineVolumeTo = sp.get("engineVolumeTo")
@@ -149,6 +151,18 @@ export async function GET(request: NextRequest) {
     if (transmission) vehicleFilters.transmission = transmission
     const bodyTypes = oneOrMany(bodyType)
     if (bodyTypes) vehicleFilters.bodyType = bodyTypes
+    const subtypeValues = parseValues(subtype)
+    if (subtypeValues.length > 0 && vehicleType && vehicleType !== "CAR") {
+      const subtypeConfig = getVehicleSubtypeConfig(vehicleType)
+      if (!subtypeConfig || subtypeValues.some((value) => !isValidVehicleSubtype(vehicleType, value))) {
+        return NextResponse.json({ error: "Некорректный подтип транспорта" }, { status: 400 })
+      }
+      const typeDetailChecks = subtypeValues.map((value) => ({
+        typeDetails: { contains: `\"${subtypeConfig.field}\":\"${value}\"` },
+      }))
+      if (typeDetailChecks.length === 1) vehicleFilters.typeDetails = typeDetailChecks[0].typeDetails
+      else vehicleFilters.OR = typeDetailChecks
+    }
     if (driveType && vehicleType === "CAR") vehicleFilters.driveType = driveType
     if (color) vehicleFilters.color = { contains: color }
     const conditions = oneOrMany(condition)

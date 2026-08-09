@@ -5,6 +5,7 @@ import axios from "axios"
 import { prisma } from "@/lib/prisma"
 import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
+import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -25,13 +26,13 @@ function normalizeTypeDetails(value: unknown, vehicleType: string) {
   const raw = typeof value === "string" ? (() => {
     try { return JSON.parse(value) } catch { return null }
   })() : value
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {} as VehicleTypeDetails
 
   const allowed = TYPE_DETAIL_KEYS[vehicleType] || new Set<string>()
   const details = Object.fromEntries(Object.entries(raw).filter(([key, item]) =>
     allowed.has(key) && (typeof item === "string" || typeof item === "number" || typeof item === "boolean"),
-  ))
-  return Object.keys(details).length > 0 ? JSON.stringify(details) : null
+  )) as VehicleTypeDetails
+  return details
 }
 
 export async function POST(request: NextRequest) {
@@ -153,7 +154,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the vehicle
-    const normalizedTypeDetails = normalizeTypeDetails(typeDetails, normalizedVehicleType)
+    const inferredSubtype = inferVehicleSubtype(normalizedVehicleType, make.trim(), model.trim())
+    const submittedTypeDetails = normalizeTypeDetails(typeDetails, normalizedVehicleType)
+    const subtypeConfig = getVehicleSubtypeConfig(normalizedVehicleType)
+    const submittedSubtype = subtypeConfig && normalizedVehicleType !== "CAR"
+      ? submittedTypeDetails[subtypeConfig.field]
+      : null
+    if (typeof submittedSubtype === "string" && !isValidVehicleSubtype(normalizedVehicleType, submittedSubtype)) {
+      return NextResponse.json({ error: "Выбранный подтип не подходит для этой категории транспорта" }, { status: 400 })
+    }
+    const normalizedTypeDetails = Object.keys({ ...inferredSubtype.typeDetails, ...submittedTypeDetails }).length > 0
+      ? JSON.stringify({ ...inferredSubtype.typeDetails, ...submittedTypeDetails })
+      : null
     const normalizedMileage = normalizeOptionalNonNegativeInteger(mileage)
     const normalizedOperatingHours = normalizeOptionalNonNegativeInteger(operatingHours)
     const normalizedFlightHours = normalizeOptionalNonNegativeInteger(flightHours)
@@ -180,6 +192,9 @@ export async function POST(request: NextRequest) {
     if (normalizedVehicleType === "CAR" && bodyType && !allowedBodyTypes.has(String(bodyType))) {
       return NextResponse.json({ error: "Выбранный тип кузова не подходит для легкового автомобиля" }, { status: 400 })
     }
+    const normalizedBodyType = normalizedVehicleType === "CAR"
+      ? String(bodyType || inferredSubtype.bodyType || "").trim() || null
+      : null
 
     const vehicle = await prisma.vehicle.create({
       data: {
@@ -193,7 +208,7 @@ export async function POST(request: NextRequest) {
         vin: vin ? vin.trim() : null,
         fuelType: fuelType ? fuelType.trim() : null,
         transmission: supportsTransmission(normalizedVehicleType) ? String(transmission).trim() : "NOT_APPLICABLE",
-        bodyType: normalizedVehicleType === "CAR" && bodyType ? bodyType.trim() : null,
+        bodyType: normalizedBodyType,
         color: color ? color.trim() : null,
         doors: doors ? parseInt(doors) : null,
         engineVolume: engineVolume ? parseFloat(engineVolume) : null,

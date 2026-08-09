@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -59,6 +59,8 @@ export default function AppHeader() {
             <Button component={Link} href="/" variant="subtle" color="gray" size="compact-sm">Объявления</Button>
             <Button component={Link} href="/parts-finder" variant="subtle" color="gray" size="compact-sm" leftSection={<IconTools size={14} />}>Запчасти</Button>
             <Button component={Link} href="/auctions" variant="subtle" color="gray" size="compact-sm" leftSection={<IconGavel size={14} />}>Аукционы</Button>
+            <Button component={Link} href="/services/safe-deal" variant="subtle" color="gray" size="compact-sm" leftSection={<IconShieldCheck size={14} />}>Сервисы</Button>
+            <Button component={Link} href="/help/safety" variant="subtle" color="gray" size="compact-sm" leftSection={<IconHelpCircle size={14} />}>Помощь</Button>
           </Group>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}

@@ -43,6 +43,7 @@ export default function HomePage(p: HomePageProps = {}) {
   const [fuelType, setFuelType] = useState<string[]>([])
   const [driveType, setDriveType] = useState<string | null>(null)
   const [bodyType, setBodyType] = useState<string[]>([])
+  const [subtype, setSubtype] = useState<string[]>([])
   const [engineVolumeFrom, setEngineVolumeFrom] = useState("")
   const [engineVolumeTo, setEngineVolumeTo] = useState("")
   const [powerFrom, setPowerFrom] = useState("")
@@ -95,6 +96,7 @@ export default function HomePage(p: HomePageProps = {}) {
     if(fuelType.length) q.set("fuelType", fuelType.join(","))
     if(driveType) q.set("driveType", driveType)
     if(bodyType.length) q.set("bodyType", bodyType.join(","))
+    if(subtype.length) q.set("subtype", subtype.join(","))
     if(engineVolumeFrom) q.set("engineVolumeFrom", engineVolumeFrom)
     if(engineVolumeTo) q.set("engineVolumeTo", engineVolumeTo)
     if(powerFrom) q.set("powerFrom", powerFrom)
@@ -119,7 +121,7 @@ export default function HomePage(p: HomePageProps = {}) {
   const resetFilters = () => {
     setMake(null); setModel(null); setPriceFrom(""); setPriceTo("")
     setYearFrom(null); setYearTo(null); setCity(null); setMileageTo("")
-    setTransmission(null); setFuelType([]); setDriveType(null); setBodyType([])
+    setTransmission(null); setFuelType([]); setDriveType(null); setBodyType([]); setSubtype([])
     setEngineVolumeFrom(""); setEngineVolumeTo(""); setPowerFrom(""); setPowerTo("")
     setColor(null); setCondition([])
     setSteeringWheel(null); setDocumentsStatus(null); setDamageInfo(null)
@@ -129,14 +131,14 @@ export default function HomePage(p: HomePageProps = {}) {
     setQuery(""); setPage(1)
   }
 
-  const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(keywords?1:0)
+  const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(subtype.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(keywords?1:0)
   const filterKey = useMemo(() => [
     p.initialType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo,
     yearFrom, yearTo, city, mileageTo, transmission, fuelType.join(","), driveType,
-    bodyType.join(","), engineVolumeFrom, engineVolumeTo, powerFrom, powerTo, color,
+    bodyType.join(","), subtype.join(","), engineVolumeFrom, engineVolumeTo, powerFrom, powerTo, color,
     condition.join(","), steeringWheel, documentsStatus, damageInfo, sellerType,
     availability, customsCleared, ownersCountFrom, ownersCountTo, mileageFrom, keywords,
-  ].join("|"), [p.initialType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo, yearFrom, yearTo, city, mileageTo, transmission, fuelType, driveType, bodyType, engineVolumeFrom, engineVolumeTo, powerFrom, powerTo, color, condition, steeringWheel, documentsStatus, damageInfo, sellerType, availability, customsCleared, ownersCountFrom, ownersCountTo, mileageFrom, keywords])
+  ].join("|"), [p.initialType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo, yearFrom, yearTo, city, mileageTo, transmission, fuelType, driveType, bodyType, subtype, engineVolumeFrom, engineVolumeTo, powerFrom, powerTo, color, condition, steeringWheel, documentsStatus, damageInfo, sellerType, availability, customsCleared, ownersCountFrom, ownersCountTo, mileageFrom, keywords])
 
   useEffect(() => {
     setPage(1)
@@ -261,7 +263,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconCar size={14}/> Тип кузова</Text>
                 <Group gap={6}>{BODY_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
+                  <Chip key={b.value} checked={subtype.includes(b.value)} onChange={(c) => { setSubtype(c ? [...subtype, b.value] : subtype.filter((v) => v !== b.value)); setPage(1) }} variant={subtype.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -269,7 +271,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconCar size={14}/> Тип мотоцикла</Text>
                 <Group gap={6}>{MOTORCYCLE_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
+                  <Chip key={b.value} checked={subtype.includes(b.value)} onChange={(c) => { setSubtype(c ? [...subtype, b.value] : subtype.filter((v) => v !== b.value)); setPage(1) }} variant={subtype.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -277,7 +279,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconTruck size={14}/> Тип кузова / надстройки</Text>
                 <Group gap={6}>{TRUCK_BODY_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
+                  <Chip key={b.value} checked={subtype.includes(b.value)} onChange={(c) => { setSubtype(c ? [...subtype, b.value] : subtype.filter((v) => v !== b.value)); setPage(1) }} variant={subtype.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -285,7 +287,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconTractor size={14}/> Тип спецтехники</Text>
                 <Group gap={6}>{SPECIAL_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
+                  <Chip key={b.value} checked={subtype.includes(b.value)} onChange={(c) => { setSubtype(c ? [...subtype, b.value] : subtype.filter((v) => v !== b.value)); setPage(1) }} variant={subtype.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -293,7 +295,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconSpeedboat size={14}/> Тип судна</Text>
                 <Group gap={6}>{WATER_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
+                  <Chip key={b.value} checked={subtype.includes(b.value)} onChange={(c) => { setSubtype(c ? [...subtype, b.value] : subtype.filter((v) => v !== b.value)); setPage(1) }} variant={subtype.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
@@ -301,7 +303,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconPlane size={14}/> Тип воздушного судна</Text>
                 <Group gap={6}>{AIR_TYPES.map((b) => (
-                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
+                  <Chip key={b.value} checked={subtype.includes(b.value)} onChange={(c) => { setSubtype(c ? [...subtype, b.value] : subtype.filter((v) => v !== b.value)); setPage(1) }} variant={subtype.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
