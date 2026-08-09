@@ -12,7 +12,10 @@ export const listingCreateSchema = z.object({
   vehicleId: z.string().uuid().optional(),
   partId: z.string().uuid().optional(),
   description: z.string().max(5000).optional(),
-}).refine(d => d.vehicleId || d.partId, { message: "Укажите vehicleId или partId" })
+}).refine(
+  ({ vehicleId, partId }) => Boolean(vehicleId) !== Boolean(partId),
+  { message: "Выберите ровно один тип объявления: транспорт или запчасть" },
+)
 
 export const partCreateSchema = z.object({
   name: z.string().min(2).max(200),
