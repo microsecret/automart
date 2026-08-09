@@ -79,7 +79,11 @@ export default function HomePage(p: HomePageProps = {}) {
   const { data: stats } = useSWR<{ auctions?: number; auctionByCountry?: Record<string, number> }>("/api/stats", fetcher)
   const auctionStats = stats || { auctions: 0, auctionByCountry: {} }
 
-  const yearData = Array.from({length:35},(_,i) => ({ value: String(2024-i), label: String(2024-i) }))
+  const newestModelYear = new Date().getFullYear() + 1
+  const yearData = Array.from({ length: 60 }, (_, index) => {
+    const year = newestModelYear - index
+    return { value: String(year), label: String(year) }
+  })
 
   const buildQuery = () => {
     const q = new URLSearchParams()

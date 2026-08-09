@@ -96,9 +96,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!year || isNaN(Number(year)) || Number(year) < 1886) {
+    const normalizedYear = Number(year)
+    const maxVehicleYear = new Date().getFullYear() + 1
+    if (!Number.isInteger(normalizedYear) || normalizedYear < 1886 || normalizedYear > maxVehicleYear) {
       return NextResponse.json(
-        { error: "Valid year is required (after 1886)" },
+        { error: `Год выпуска должен быть целым числом от 1886 до ${maxVehicleYear}` },
         { status: 400 }
       )
     }
@@ -200,7 +202,7 @@ export async function POST(request: NextRequest) {
       data: {
         make: make.trim(),
         model: model.trim(),
-        year: parseInt(year),
+        year: normalizedYear,
         price: parseInt(price),
         mileage: ["SPECIAL", "WATER", "AIR"].includes(normalizedVehicleType) ? 0 : (normalizedMileage || 0),
         operatingHours: ["SPECIAL", "WATER"].includes(normalizedVehicleType) ? normalizedOperatingHours : null,
