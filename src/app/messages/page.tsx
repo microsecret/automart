@@ -25,13 +25,11 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
 interface Conversation {
-  conversationId: string
-  otherUserName: string
-  otherUserImage: string | null
-  lastMessage: string
-  lastMessageAt: string
+  id: string
+  otherUser: { id: string; name: string | null; image: string | null }
+  lastMessage: { content: string; createdAt: string } | null
   unreadCount: number
-  listingTitle?: string
+  listing: { title: string } | null
 }
 
 export default function MessagesPage() {
@@ -79,9 +77,9 @@ export default function MessagesPage() {
           <Stack gap="xs" className="av-fade-in">
             {conversations.map((conv) => (
               <Card
-                key={conv.conversationId}
+                key={conv.id}
                 component={Link}
-                href={`/messages/${conv.conversationId}`}
+                href={`/messages/${conv.id}`}
                 withBorder
                 radius="md"
                 p="md"
@@ -90,20 +88,20 @@ export default function MessagesPage() {
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = conv.unreadCount > 0 ? "#c7d2fe" : "#e4e4e7" }}
               >
                 <Group gap="sm" align="flex-start">
-                  <Avatar src={conv.otherUserImage} radius="xl" color="indigo">
-                    {conv.otherUserName?.[0]?.toUpperCase()}
+                  <Avatar src={conv.otherUser.image} radius="xl" color="indigo">
+                    {conv.otherUser.name?.[0]?.toUpperCase()}
                   </Avatar>
                   <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                     <Group justify="space-between" gap="sm">
-                      <Text size="sm" fw={600} c="dark.9">{conv.otherUserName || "Пользователь"}</Text>
-                      <Text size="xs" c="gray.4">{formatRelativeDate(conv.lastMessageAt)}</Text>
+                      <Text size="sm" fw={600} c="dark.9">{conv.otherUser.name || "Пользователь"}</Text>
+                      {conv.lastMessage && <Text size="xs" c="gray.4">{formatRelativeDate(conv.lastMessage.createdAt)}</Text>}
                     </Group>
-                    {conv.listingTitle && (
-                      <Text size="xs" c="#4f46e5" className="line-clamp-1">{conv.listingTitle}</Text>
+                    {conv.listing?.title && (
+                      <Text size="xs" c="#4f46e5" className="line-clamp-1">{conv.listing.title}</Text>
                     )}
                     <Group gap="xs" align="center">
                       <Text size="sm" c="gray.5" className="line-clamp-1" style={{ flex: 1 }}>
-                        {conv.lastMessage}
+                        {conv.lastMessage?.content || "Нет сообщений"}
                       </Text>
                       {conv.unreadCount > 0 && (
                         <Badge color="indigo" size="xs" variant="filled" circle>

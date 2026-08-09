@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+
+const CONVERSATION_PAGE_SIZE = 50
 // GET messages in a conversation
 export async function GET(request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) {
   try {
@@ -37,8 +39,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "50")
+    const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1)
+    const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || String(CONVERSATION_PAGE_SIZE), 10) || CONVERSATION_PAGE_SIZE))
     const skip = (page - 1) * limit
 
     // Get messages in this conversation using the conversationId index
@@ -95,8 +97,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     })
 
+    const firstMessage = messages[0]
+    const otherUserId = firstMessage?.senderId === session.user.id ? firstMessage.receiverId : firstMessage?.senderId
+    const otherUser = otherUserId ? await prisma.user.findUnique({
+      where: { id: otherUserId },
+      select: { id: true, name: true, image: true },
+    }) : null
+
     return NextResponse.json({
       messages,
+      otherUser,
+      listingId: firstMessage?.listingId || null,
       pagination: {
         page,
         limit,

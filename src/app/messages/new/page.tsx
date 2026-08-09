@@ -47,10 +47,10 @@ function NewMessageContent() {
 
   const startConversation = (userId: string) => {
     const ids = [session!.user.id, userId].sort()
-    const conversationId = listingId
-      ? `${ids[0]}-${ids[1]}-${listingId}`
-      : `${ids[0]}-${ids[1]}`
-    router.push(`/messages/${conversationId}`)
+    const conversationId = `${ids[0]}-${ids[1]}-${listingId || "no-listing"}`
+    const params = new URLSearchParams({ recipientId: userId })
+    if (listingId) params.set("listingId", listingId)
+    router.push(`/messages/${conversationId}?${params.toString()}`)
   }
 
   if (status === "loading" || !session) {
