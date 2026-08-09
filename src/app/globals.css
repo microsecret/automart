@@ -335,7 +335,6 @@ select {
   min-height: 360px;
   border: 0;
   isolation: isolate;
-  scroll-margin-top: calc(var(--app-header-height) + 16px);
 }
 
 .home-auctions__image {
@@ -387,6 +386,10 @@ select {
 
 .catalog-view-switch {
   flex-shrink: 0;
+}
+
+.catalog-heading {
+  scroll-margin-top: calc(var(--app-header-height) + 16px);
 }
 
 .catalog-filter-grid {
