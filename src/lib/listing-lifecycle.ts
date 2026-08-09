@@ -40,7 +40,7 @@ export function isListingModerator(role?: string | null) {
 export function getOwnerTransition(status: ListingStatus, action: unknown): ListingStatus | null {
   switch (action) {
     case "SUBMIT_FOR_MODERATION":
-      return [LISTING_STATUS.DRAFT, LISTING_STATUS.REJECTED, LISTING_STATUS.ARCHIVED].includes(status)
+      return status === LISTING_STATUS.DRAFT || status === LISTING_STATUS.REJECTED || status === LISTING_STATUS.ARCHIVED
         ? LISTING_STATUS.PENDING_MODERATION
         : null
     case "PAUSE":
@@ -48,7 +48,7 @@ export function getOwnerTransition(status: ListingStatus, action: unknown): List
     case "RESUME":
       return status === LISTING_STATUS.PAUSED ? LISTING_STATUS.ACTIVE : null
     case "MARK_SOLD":
-      return [LISTING_STATUS.ACTIVE, LISTING_STATUS.PAUSED].includes(status) ? LISTING_STATUS.SOLD : null
+      return status === LISTING_STATUS.ACTIVE || status === LISTING_STATUS.PAUSED ? LISTING_STATUS.SOLD : null
     case "ARCHIVE":
       return status !== LISTING_STATUS.ARCHIVED ? LISTING_STATUS.ARCHIVED : null
     default:
