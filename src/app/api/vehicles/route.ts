@@ -7,6 +7,7 @@ import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, suppor
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 import { parseMarketplaceImages } from "@/lib/media-url"
+import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -79,7 +80,8 @@ export async function POST(request: NextRequest) {
       location,
       description,
       images,
-      categoryId
+      categoryId,
+      title,
     } = body
 
     // Validation
@@ -129,6 +131,10 @@ export async function POST(request: NextRequest) {
     if (!category) {
       return NextResponse.json({ error: "Категория не найдена" }, { status: 404 })
     }
+    const normalizedTitle = typeof title === "string" ? title.trim() : `${normalizedYear} ${make} ${model}`.trim()
+    if (normalizedTitle.length < 3 || normalizedTitle.length > 200) {
+      return NextResponse.json({ error: "Заголовок должен содержать от 3 до 200 символов" }, { status: 400 })
+    }
     if (!isVehicleCategoryCompatible(category.name, normalizedVehicleType)) {
       return NextResponse.json({ error: "Категория не соответствует типу транспорта" }, { status: 400 })
     }
@@ -156,7 +162,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the vehicle
+    // Create the transport record and its moderation listing atomically. A
+    // network error or a failed listing validation can no longer leave an
+    // unpublished orphan vehicle in the catalogue database.
     const inferredSubtype = inferVehicleSubtype(normalizedVehicleType, make.trim(), model.trim())
     const submittedTypeDetails = normalizeTypeDetails(typeDetails, normalizedVehicleType)
     const subtypeConfig = getVehicleSubtypeConfig(normalizedVehicleType)
@@ -237,8 +245,26 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         categoryId,
         lat,
-        lng
-      }
+        lng,
+        listings: {
+          create: {
+            title: normalizedTitle,
+            description: description ? description.trim() : null,
+            price: Math.trunc(Number(price)),
+            userId: session.user.id,
+            status: LISTING_STATUS.PENDING_MODERATION,
+            lastStatusChangedAt: new Date(),
+            statusEvents: {
+              create: {
+                toStatus: LISTING_STATUS.PENDING_MODERATION,
+                actorId: session.user.id,
+                reason: "Отправлено владельцем на модерацию",
+              },
+            },
+          },
+        },
+      },
+      include: { listings: { select: { id: true, status: true } } },
     })
 
     return NextResponse.json(vehicle, { status: 201 })

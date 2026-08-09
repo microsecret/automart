@@ -81,11 +81,13 @@ export default function CreateVehiclePage() {
     }
     setLoading(true)
     try {
-      // 1. Создать vehicle
+      // Сервер создаёт ТС и объявление в одной транзакции: не оставляем
+      // транспорт без объявления, если сеть оборвётся между запросами.
       const vehRes = await fetch("/api/vehicles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          title: f.title || `${f.year} ${f.make} ${f.model}`,
           make: f.make, model: f.model, year: Number(f.year), price: Number(f.price),
           mileage: f.mileage ? Number(f.mileage) : 0,
           operatingHours: f.operatingHours ? Number(f.operatingHours) : null,
@@ -132,18 +134,6 @@ export default function CreateVehiclePage() {
       })
       const veh = await vehRes.json()
       if (!vehRes.ok) throw new Error(veh.error || "Ошибка создания ТС")
-
-      // 2. Создать listing
-      const listRes = await fetch("/api/listings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: f.title || `${f.year} ${f.make} ${f.model}`,
-          description: f.description, price: Number(f.price), vehicleId: veh.id,
-        }),
-      })
-      const list = await listRes.json()
-      if (!listRes.ok) throw new Error(list.error || "Ошибка создания объявления")
 
       notifications.show({ title: "Отправлено на проверку", message: "Мы проверим объявление и опубликуем его после модерации.", color: "indigo" })
       router.push(`/listings/vehicle/${veh.id}`)
