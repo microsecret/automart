@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { canModeratorTransition, isListingModerator, isListingStatus, LISTING_STATUS } from "@/lib/listing-lifecycle"
+import { canModeratorTransition, isListingStatus, LISTING_STATUS } from "@/lib/listing-lifecycle"
+import { can } from "@/lib/permissions"
 
 export const dynamic = "force-dynamic"
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic"
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || !isListingModerator(session.user?.role)) {
+    if (!session || !can(session.user?.role, "listing:moderate")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || !isListingModerator(session.user?.role)) {
+    if (!session || !can(session.user?.role, "listing:moderate")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -83,7 +84,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || !isListingModerator(session.user?.role)) {
+    if (!session || !can(session.user?.role, "listing:remove:any")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

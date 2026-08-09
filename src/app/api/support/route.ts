@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { isModerator } from "@/lib/permissions"
 
 export const dynamic = "force-dynamic"
 
-const STAFF_ROLES = new Set(["ADMIN", "MODERATOR"])
-
 function isStaff(role?: string) {
-  return Boolean(role && STAFF_ROLES.has(role))
+  return isModerator(role)
 }
 
 async function getAuthenticatedUser() {

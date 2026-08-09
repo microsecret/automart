@@ -34,7 +34,7 @@ export function isListingStatus(value: unknown): value is ListingStatus {
 }
 
 export function isListingModerator(role?: string | null) {
-  return role === "ADMIN" || role === "MODERATOR"
+  return isModerator(role)
 }
 
 export function getOwnerTransition(status: ListingStatus, action: unknown): ListingStatus | null {
@@ -67,3 +67,4 @@ export const publicListingWhere = {
   status: LISTING_STATUS.ACTIVE,
   deletedAt: null,
 } as const
+import { isModerator } from "@/lib/permissions"

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { can, isAdmin } from "@/lib/permissions"
 
 type SessionLike = { user?: { id?: string; role?: string } } | null
 
@@ -27,7 +28,7 @@ export async function getDeliveryOrder(id: string) {
 }
 
 export function isDeliveryAdmin(session: SessionLike) {
-  return session?.user?.role === "ADMIN"
+  return isAdmin(session?.user?.role)
 }
 
 export function canReadDeliveryOrder(session: SessionLike, order: { buyerId: string; partnerId: string | null; managerId: string | null }) {
@@ -37,7 +38,12 @@ export function canReadDeliveryOrder(session: SessionLike, order: { buyerId: str
 
 export function canManageDeliveryOrder(session: SessionLike, order: { partnerId: string | null; managerId: string | null }) {
   const userId = session?.user?.id
-  return Boolean(userId && (isDeliveryAdmin(session) || order.partnerId === userId || order.managerId === userId))
+  return Boolean(
+    userId && (
+      can(session?.user?.role, "delivery:manage:any") ||
+      (can(session?.user?.role, "delivery:manage:assigned") && (order.partnerId === userId || order.managerId === userId))
+    ),
+  )
 }
 
 export function deliveryOrderPermissions(session: SessionLike, order: { buyerId: string; partnerId: string | null; managerId: string | null }) {

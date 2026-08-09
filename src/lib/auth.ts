@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { consumeTelegramOtp, linkTelegramIdentity, verifyTelegramInitData } from "@/lib/telegram"
+import { normalizeUserRole } from "@/lib/permissions"
 
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
@@ -20,7 +21,7 @@ export const authOptions = {
         const valid = await bcrypt.compare(credentials.password, user.hashedPassword || "")
         if (!valid) return null
         if (!user.emailVerified) throw new Error("EMAIL_NOT_VERIFIED")
-        return { id: user.id, email: user.email, name: user.name, role: user.role }
+        return { id: user.id, email: user.email, name: user.name, role: normalizeUserRole(user.role) }
       },
     }),
     CredentialsProvider({
@@ -33,7 +34,7 @@ export const authOptions = {
       async authorize(credentials: any) {
         const user = await consumeTelegramOtp(credentials?.phone, credentials?.code)
         if (!user?.telegramVerifiedAt) return null
-        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role }
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role) }
       },
     }),
     CredentialsProvider({
@@ -51,7 +52,7 @@ export const authOptions = {
           name: [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" "),
           image: telegramUser.photo_url,
         })
-        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role }
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role) }
       },
     }),
   ],
@@ -60,14 +61,14 @@ export const authOptions = {
     async session({ session, token }: any) {
       if (token) {
         session.user.id = token.id
-        session.user.role = token.role
+        session.user.role = normalizeUserRole(token.role)
       }
       return session
     },
     async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id
-        token.role = (user as any).role
+        token.role = normalizeUserRole((user as any).role)
       }
       return token
     },
