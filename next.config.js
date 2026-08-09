@@ -43,6 +43,9 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
   output: 'standalone',
+  // На VPS рядом лежат другие package-lock.json. Фиксируем корень именно
+  // Авторынка, чтобы Next не захватывал чужое рабочее пространство в trace.
+  outputFileTracingRoot: __dirname,
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }]
   },
