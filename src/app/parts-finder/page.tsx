@@ -4,22 +4,34 @@ import { useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, SimpleGrid, Center, Loader, Badge, Divider, Chip, ThemeIcon, ScrollArea, Container, MediaQuery, Drawer, Accordion } from "@mantine/core"
-import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconBrand, IconFilter, IconCircleCheck, IconTag, IconHash, IconTools } from "@tabler/icons-react"
+import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, ScrollArea, Container, Drawer } from "@mantine/core"
+import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconFilter, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
 import { PART_TYPES, PART_SUBCATEGORIES, CONDITIONS } from "@/lib/constants"
 import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+type PartResult = {
+  id: string
+  name: string
+  price: number | null
+  images: string | null
+  condition?: string | null
+  subcategory?: string | null
+  oemNumber?: string | null
+  location?: string | null
+  compatibility?: Array<{ make: string; model: string }>
+}
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 function PartsContent() {
   const sp = useSearchParams()
   const [q, setQ] = useState(sp.get("q") || "")
-  const [partType, setPartType] = useState(sp.get("partType") || null)
-  const [subcategory, setSubcategory] = useState(null)
-  const [make, setMake] = useState(null)
-  const [model, setModel] = useState(null)
-  const [condition, setCondition] = useState(null)
+  const [partType, setPartType] = useState<string | null>(sp.get("partType"))
+  const [subcategory, setSubcategory] = useState<string | null>(null)
+  const [make, setMake] = useState<string | null>(null)
+  const [model, setModel] = useState<string | null>(null)
+  const [condition, setCondition] = useState<string | null>(null)
   const [priceFrom, setPriceFrom] = useState("")
   const [priceTo, setPriceTo] = useState("")
   const [showFilters, setShowFilters] = useState(false)
@@ -41,7 +53,7 @@ function PartsContent() {
   }
 
   const { data, isLoading } = useSWR("/api/parts?" + buildQuery(), fetcher)
-  const parts = data?.parts || []
+  const parts: PartResult[] = data?.parts || []
 
   const CategorySidebar = (
     <Stack gap={2}>
@@ -154,23 +166,23 @@ function PartsContent() {
               <Text size="xs" c="gray.5">{data?.pagination?.total || 0} запчастей · кросс-совместимость по авто</Text>
             </Stack>
           </Group>
-          <MediaQuery largerThan="md" styles={{ display: "none" }}>
+          <Box className="parts-mobile-only">
             <Button variant="light" color="indigo" size="sm" leftSection={<IconFilter size={16} />} onClick={() => setShowFilters(true)}>Категории</Button>
-          </MediaQuery>
+          </Box>
         </Group>
 
         {/* Трёхколоночный layout */}
         <Group gap="md" align="flex-start" wrap="nowrap">
           {/* Левая колонка — категории (десктоп) */}
-          <MediaQuery smallerThan="md" styles={{ display: "none" }}>
+          <Box className="parts-sidebar-desktop">
             <Box style={{ width: 220, flexShrink: 0, position: "sticky", top: 64 }}>
               <Paper radius="md" p="sm" withBorder>
-                <ScrollArea.Autosize maxHeight={600}>
+                <ScrollArea.Autosize style={{ maxHeight: 600 }}>
                   {CategorySidebar}
                 </ScrollArea.Autosize>
               </Paper>
             </Box>
-          </MediaQuery>
+          </Box>
 
           {/* Центр — результаты */}
           <Box style={{ flex: 1, minWidth: 0 }}>
@@ -244,11 +256,11 @@ function PartsContent() {
           </Box>
 
           {/* Правая колонка — подбор по авто (десктоп) */}
-          <MediaQuery smallerThan="lg" styles={{ display: "none" }}>
+          <Box className="parts-vehicle-desktop">
             <Box style={{ width: 240, flexShrink: 0, position: "sticky", top: 64 }}>
               {VehiclePicker}
             </Box>
-          </MediaQuery>
+          </Box>
         </Group>
       </Stack>
 

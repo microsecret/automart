@@ -234,3 +234,24 @@ select {
   background-size: 1000px 100%;
   animation: av-shimmer 1.6s infinite linear;
 }
+
+/* Адаптивные обёртки каталога запчастей без устаревшего MediaQuery Mantine. */
+.parts-mobile-only {
+  display: none;
+}
+
+@media (max-width: 47.99em) {
+  .parts-mobile-only {
+    display: block;
+  }
+
+  .parts-sidebar-desktop {
+    display: none;
+  }
+}
+
+@media (max-width: 63.99em) {
+  .parts-vehicle-desktop {
+    display: none;
+  }
+}
