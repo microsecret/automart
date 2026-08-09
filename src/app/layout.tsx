@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${inter.variable} ${manrope.variable}`}>
+    <html lang="ru" suppressHydrationWarning className={`${inter.variable} ${manrope.variable}`}>
       <head><ColorSchemeScript defaultColorScheme="light" /></head>
       <body>
         <AppProviders>

@@ -67,7 +67,9 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
     : `/listings/part/${listing.part!.id}`
 
   const images = parseImages(isVehicle ? listing.vehicle!.images : listing.part?.images)
-  const image = images[0] || "/placeholder.svg"
+  const fallbackImage = isVehicle ? "/images/home/listing-fallback.png" : "/placeholder.svg"
+  const sourceImage = images[0] || ""
+  const image = sourceImage.includes("/placeholder/") ? fallbackImage : sourceImage || fallbackImage
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -109,9 +111,9 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
       >
         {/* Фото область */}
         <Box pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
-          <AspectRatio ratio={4 / 3}>
+          <AspectRatio ratio={1}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={images[activeImg] || image} alt={listing.title} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
+            <img src={(images[activeImg] || image).includes("/placeholder/") ? fallbackImage : images[activeImg] || image} alt={listing.title} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImage }} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
           </AspectRatio>
           {images.length > 1 && (
             <>

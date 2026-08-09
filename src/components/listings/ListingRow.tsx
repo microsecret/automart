@@ -39,7 +39,9 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
     : `/listings/part/${listing.part!.id}`
 
   const images = parseImages(isVehicle ? listing.vehicle!.images : listing.part?.images)
-  const image = images[0] || "/placeholder.svg"
+  const fallbackImage = isVehicle ? "/images/home/listing-fallback.png" : "/placeholder.svg"
+  const sourceImage = images[0] || ""
+  const image = sourceImage.includes("/placeholder/") ? fallbackImage : sourceImage || fallbackImage
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -76,7 +78,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
           <Box pos="relative" style={{ width: 180, flexShrink: 0, background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
             <AspectRatio ratio={4 / 3} w={180}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image} alt={listing.title} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+              <img src={image.includes("/placeholder/") ? fallbackImage : image} alt={listing.title} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImage }} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
             </AspectRatio>
             {listing.isFeatured && (
               <Box pos="absolute" top={6} left={6}>
