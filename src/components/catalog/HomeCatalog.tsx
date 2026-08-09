@@ -182,7 +182,7 @@ export default function HomePage(p: HomePageProps = {}) {
         <SegmentedControl className="catalog-view-switch" size="sm" value={view} onChange={(v) => setView(v)} radius="md" data={[{label:<Group gap={4} wrap="nowrap"><IconLayoutGrid size={15} stroke={1.8}/> <Text size="xs" fw={600}>Сетка</Text></Group>,value:"grid"},{label:<Group gap={4} wrap="nowrap"><IconList size={15} stroke={1.8}/> <Text size="xs" fw={600}>Список</Text></Group>,value:"list"}]} />
       </Group>
 
-      <Paper className="catalog-filter-panel" radius="lg" p="md" withBorder>
+      <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="lg" p="md" withBorder>
         <Stack gap="sm">
           <Group justify="space-between" align="baseline" gap="sm">
             <Box><Text size="sm" fw={750}>Найдите подходящий транспорт</Text><Text size="xs" c="dimmed">Начните с марки, цены или города — остальное уточните при необходимости.</Text></Box>
@@ -231,7 +231,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
           <Collapse in={showAdvanced}>
             <Divider my="xs"/>
-            <Stack gap="md">
+            <Stack gap="md" className="catalog-filter-advanced">
               {supportsTransmission(vt) && (
               <Group gap="lg" wrap="wrap" align="flex-start">
                 <Box>
@@ -393,6 +393,16 @@ export default function HomePage(p: HomePageProps = {}) {
                 <TextInput placeholder='Например: "один хозяин", RAID, ксенон...' value={keywords} onChange={(e) => setKeywords(e.target.value)} size="sm" w={400} leftSection={<IconSearch size={14}/>}/>
                 <Text size="10px" c="gray.4" mt={4}>Для точного совпадения используйте кавычки</Text>
               </Box>
+
+              <Group className="catalog-filter-advanced__actions" justify="space-between" gap="sm">
+                <Text size="xs" c="dimmed">Фильтры применяются сразу — уточните параметры и посмотрите результат.</Text>
+                <Group gap="xs">
+                  {activeFilterCount > 0 && <Button variant="subtle" size="sm" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить</Button>}
+                  <Button color="indigo" size="sm" radius="md" leftSection={<IconSearch size={15}/>} onClick={() => setShowAdvanced(false)}>
+                    Показать {data?.pagination?.total ?? 0} объявлений
+                  </Button>
+                </Group>
+              </Group>
             </Stack>
           </Collapse>
         </Stack>

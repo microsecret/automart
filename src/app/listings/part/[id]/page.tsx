@@ -62,6 +62,7 @@ export default async function PartDetailPage({ params }: PageProps) {
     description: part.description,
     price: part.price,
     condition: part.condition,
+    availability: part.availability || "IN_STOCK",
     make: part.make,
     model: part.model,
     yearFrom: part.yearFrom,

@@ -3,11 +3,14 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
-import { PART_TYPES } from "@/lib/constants"
+import { AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPES, SELLER_TYPES } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
 const PART_TYPE_VALUES = new Set<string>(PART_TYPES.map((item) => item.value))
+const PART_CONDITION_VALUES = new Set<string>(PART_CONDITIONS.map((item) => item.value))
+const AVAILABILITY_VALUES = new Set<string>(AVAILABILITY_TYPES.map((item) => item.value))
+const SELLER_TYPE_VALUES = new Set<string>(SELLER_TYPES.map((item) => item.value))
 
 function normalizeOem(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9А-ЯЁ]/g, "")
@@ -29,6 +32,7 @@ export async function GET(request: NextRequest) {
     const priceFrom = sp.get("priceFrom")
     const priceTo = sp.get("priceTo")
     const condition = sp.get("condition")
+    const availability = sp.get("availability")
     const saleFormat = sp.get("saleFormat")
     const oemNumber = sp.get("oemNumber")
     const sort = sp.get("sort") || "newest"
@@ -46,6 +50,15 @@ export async function GET(request: NextRequest) {
     }
     if (partType && !PART_TYPE_VALUES.has(partType)) {
       return NextResponse.json({ error: "Неизвестная категория запчасти" }, { status: 400 })
+    }
+    if (condition && !PART_CONDITION_VALUES.has(condition)) {
+      return NextResponse.json({ error: "Неизвестное состояние запчасти" }, { status: 400 })
+    }
+    if (availability && !AVAILABILITY_VALUES.has(availability)) {
+      return NextResponse.json({ error: "Неизвестный статус наличия" }, { status: 400 })
+    }
+    if (saleFormat && saleFormat !== "FIXED" && saleFormat !== "AUCTION") {
+      return NextResponse.json({ error: "Неизвестный формат продажи" }, { status: 400 })
     }
 
     if (q) {
@@ -75,6 +88,13 @@ export async function GET(request: NextRequest) {
       if (model) where.model = { contains: model }
     }
     if (condition) where.condition = condition
+    // У старых записей availability не заполнялся: считаем их доступными,
+    // не скрывая каталог при выборе «В наличии».
+    if (availability === "IN_STOCK") {
+      and.push({ OR: [{ availability: "IN_STOCK" }, { availability: null }] })
+    } else if (availability) {
+      where.availability = availability
+    }
     if (saleFormat === "FIXED" || saleFormat === "AUCTION") where.saleFormat = saleFormat
     if (oemNumber) {
       const normalizedOem = normalizeOem(oemNumber)
@@ -110,7 +130,7 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({
-      parts,
+      parts: parts.map((part) => ({ ...part, availability: part.availability || "IN_STOCK" })),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     })
   } catch (error) {
@@ -128,9 +148,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, description, price, condition, partType, make, model, yearFrom, yearTo, location, images, subcategory, oemNumber, crossNumbers, suspensionType, brakeType, compatibility, sellerType, availability, saleFormat, auctionEndsAt, auctionStartPrice, auctionMinStep } = body
 
-    if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
-    if (price == null || price < 0) return NextResponse.json({ error: "Price required" }, { status: 400 })
+    if (!name?.trim()) return NextResponse.json({ error: "Укажите название запчасти" }, { status: 400 })
+    const normalizedPrice = Math.trunc(Number(price))
+    if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) return NextResponse.json({ error: "Укажите корректную цену" }, { status: 400 })
     if (partType && !PART_TYPE_VALUES.has(partType)) return NextResponse.json({ error: "Неизвестная категория запчасти" }, { status: 400 })
+    if (subcategory && (!partType || !(PART_SUBCATEGORIES[partType] || []).includes(subcategory))) return NextResponse.json({ error: "Подкатегория не соответствует выбранному типу запчасти" }, { status: 400 })
+
+    const normalizedCondition = typeof condition === "string" ? condition : "USED"
+    const normalizedAvailability = typeof availability === "string" ? availability : "IN_STOCK"
+    const normalizedSellerType = typeof sellerType === "string" ? sellerType : "OWNER"
+    if (!PART_CONDITION_VALUES.has(normalizedCondition)) return NextResponse.json({ error: "Неизвестное состояние запчасти" }, { status: 400 })
+    if (!AVAILABILITY_VALUES.has(normalizedAvailability)) return NextResponse.json({ error: "Неизвестный статус наличия" }, { status: 400 })
+    if (!SELLER_TYPE_VALUES.has(normalizedSellerType)) return NextResponse.json({ error: "Неизвестный тип продавца" }, { status: 400 })
 
     const normalizedCrossNumbers = Array.from(new Set((Array.isArray(crossNumbers) ? crossNumbers : [])
       .filter((value): value is string => typeof value === "string")
@@ -143,18 +172,34 @@ export async function POST(request: NextRequest) {
     if (normalizedSaleFormat === "AUCTION" && (!parsedEnd || Number.isNaN(parsedEnd.getTime()) || parsedEnd <= new Date())) {
       return NextResponse.json({ error: "Для аукциона укажите дату окончания в будущем" }, { status: 400 })
     }
-    const normalizedPrice = Math.trunc(Number(price))
     const startPrice = normalizedSaleFormat === "AUCTION" ? Math.max(1, Math.trunc(Number(auctionStartPrice || price))) : null
     const minStep = normalizedSaleFormat === "AUCTION" ? Math.max(1, Math.trunc(Number(auctionMinStep || Math.max(100, normalizedPrice * 0.01)))) : null
+
+    const normalizedCompatibility = Array.from(new Map((Array.isArray(compatibility) ? compatibility : [])
+      .slice(0, 30)
+      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+      .map((item) => {
+        const compatibleMake = typeof item.make === "string" ? item.make.trim() : ""
+        const compatibleModel = typeof item.model === "string" ? item.model.trim() : ""
+        const compatibleGeneration = typeof item.generation === "string" ? item.generation.trim() : ""
+        const compatibleEngine = typeof item.engine === "string" ? item.engine.trim() : ""
+        const compatibleYearFrom = item.yearFrom ? Number.parseInt(String(item.yearFrom), 10) : null
+        const compatibleYearTo = item.yearTo ? Number.parseInt(String(item.yearTo), 10) : null
+        if (!compatibleMake) return null
+        if ((compatibleYearFrom !== null && !Number.isFinite(compatibleYearFrom)) || (compatibleYearTo !== null && !Number.isFinite(compatibleYearTo)) || (compatibleYearFrom !== null && compatibleYearTo !== null && compatibleYearFrom > compatibleYearTo)) return null
+        return { make: compatibleMake, model: compatibleModel || "Все модели", generation: compatibleGeneration || null, engine: compatibleEngine || null, yearFrom: compatibleYearFrom, yearTo: compatibleYearTo }
+      })
+      .filter((item): item is { make: string; model: string; generation: string | null; engine: string | null; yearFrom: number | null; yearTo: number | null } => item !== null)
+      .map((item) => [`${item.make}|${item.model}|${item.generation || ""}|${item.engine || ""}|${item.yearFrom || ""}|${item.yearTo || ""}`, item])).values())
 
     const part = await prisma.part.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,
         price: normalizedSaleFormat === "AUCTION" ? startPrice! : normalizedPrice,
-        condition: condition || "USED",
-        sellerType: sellerType || "OWNER",
-        availability: availability || "IN_STOCK",
+        condition: normalizedCondition,
+        sellerType: normalizedSellerType,
+        availability: normalizedAvailability,
         saleFormat: normalizedSaleFormat,
         auctionStatus: normalizedSaleFormat === "AUCTION" ? "ACTIVE" : "NONE",
         auctionEndsAt: normalizedSaleFormat === "AUCTION" ? parsedEnd : null,
@@ -175,15 +220,14 @@ export async function POST(request: NextRequest) {
         crossReferences: normalizedCrossNumbers.length > 0 ? {
           create: normalizedCrossNumbers.map((number) => ({ number, normalizedNumber: normalizeOem(number) })),
         } : undefined,
-        compatibility: compatibility?.length > 0 ? {
-          create: compatibility.map((c: any) => ({
-            make: c.make,
-            model: c.model,
-            generation: c.generation || null,
-            yearFrom: c.yearFrom ? parseInt(c.yearFrom) : null,
-            yearTo: c.yearTo ? parseInt(c.yearTo) : null,
-            engine: c.engine || null,
-            note: c.note || null,
+        compatibility: normalizedCompatibility.length > 0 ? {
+          create: normalizedCompatibility.map((item) => ({
+            make: item.make,
+            model: item.model,
+            generation: item.generation,
+            yearFrom: item.yearFrom,
+            yearTo: item.yearTo,
+            engine: item.engine,
           }))
         } : undefined,
         userId: session.user.id,

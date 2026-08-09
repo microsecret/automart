@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination } from "@mantine/core"
+import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, SegmentedControl } from "@mantine/core"
 import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
-import { findLabel, PART_TYPES, PART_SUBCATEGORIES, CONDITIONS } from "@/lib/constants"
-import { POPULAR_BRANDS } from "@/lib/catalog"
+import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, AVAILABILITY_TYPES } from "@/lib/constants"
+import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
 
 type PartResult = {
@@ -16,6 +16,7 @@ type PartResult = {
   price: number | null
   images: string | null
   condition?: string | null
+  availability?: string | null
   saleFormat?: string | null
   subcategory?: string | null
   oemNumber?: string | null
@@ -49,14 +50,15 @@ function PartsContent() {
   const urlPartType = sp.get("partType")
   const [q, setQ] = useState(sp.get("q") || "")
   const [partType, setPartType] = useState<string | null>(sp.get("partType"))
-  const [subcategory, setSubcategory] = useState<string | null>(null)
-  const [make, setMake] = useState<string | null>(null)
-  const [model, setModel] = useState<string | null>(null)
-  const [condition, setCondition] = useState<string | null>(null)
-  const [saleFormat, setSaleFormat] = useState<string | null>(null)
-  const [priceFrom, setPriceFrom] = useState("")
-  const [priceTo, setPriceTo] = useState("")
-  const [page, setPage] = useState(1)
+  const [subcategory, setSubcategory] = useState<string | null>(sp.get("subcategory"))
+  const [make, setMake] = useState<string | null>(sp.get("make"))
+  const [model, setModel] = useState<string | null>(sp.get("model"))
+  const [condition, setCondition] = useState<string | null>(sp.get("condition"))
+  const [availability, setAvailability] = useState<string | null>(sp.get("availability"))
+  const [saleFormat, setSaleFormat] = useState<string | null>(sp.get("saleFormat"))
+  const [priceFrom, setPriceFrom] = useState(sp.get("priceFrom") || "")
+  const [priceTo, setPriceTo] = useState(sp.get("priceTo") || "")
+  const [page, setPage] = useState(Number(sp.get("page")) || 1)
 
   useEffect(() => {
     const validPartType = urlPartType && PART_TYPES.some((item) => item.value === urlPartType) ? urlPartType : null
@@ -76,11 +78,12 @@ function PartsContent() {
     router.replace(query ? `/parts-finder?${query}` : "/parts-finder", { scroll: false })
   }
 
-  const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}` : null
+  const partBrandOptions = getBrandsByCategory("cars").map((brand) => ({ value: brand.name, label: brand.name }))
+  const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}&category=cars` : null
   const { data: modelsData } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
   const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
-  const filterKey = useMemo(() => [q, partType, subcategory, make, model, condition, saleFormat, priceFrom, priceTo].join("|"), [q, partType, subcategory, make, model, condition, saleFormat, priceFrom, priceTo])
+  const filterKey = useMemo(() => [q, partType, subcategory, make, model, condition, availability, saleFormat, priceFrom, priceTo].join("|"), [q, partType, subcategory, make, model, condition, availability, saleFormat, priceFrom, priceTo])
 
   useEffect(() => {
     setPage(1)
@@ -98,6 +101,7 @@ function PartsContent() {
     if (make) u.set("make", make)
     if (model) u.set("model", model)
     if (condition) u.set("condition", condition)
+    if (availability) u.set("availability", availability)
     if (saleFormat) u.set("saleFormat", saleFormat)
     if (priceFrom) u.set("priceFrom", priceFrom)
     if (priceTo) u.set("priceTo", priceTo)
@@ -107,6 +111,12 @@ function PartsContent() {
 
   const { data, isLoading } = useSWR(hasInvalidPriceRange ? null : "/api/parts?" + buildQuery(), fetcher)
   const parts: PartResult[] = data?.parts || []
+
+  const resetFilters = () => {
+    setQ(""); setPartType(null); setSubcategory(null); setMake(null); setModel(null)
+    setCondition(null); setAvailability(null); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1)
+    router.replace("/parts-finder", { scroll: false })
+  }
 
   const CategoryBar = (
     <Paper radius="md" p="sm" withBorder className="parts-category-bar">
@@ -141,7 +151,7 @@ function PartsContent() {
             <Text size="xs" c="gray.5">Найдём запчасти на ваш авто</Text>
           </Stack>
         </Group>
-        <Select label="Марка" placeholder="Выберите марку" data={POPULAR_BRANDS.slice(0, 60).map((b) => ({ value: b.name, label: b.name }))} searchable clearable value={make} onChange={(v) => { setMake(v); setModel(null) }} size="xs" />
+        <Select label="Марка" placeholder="Выберите марку" data={partBrandOptions} searchable clearable value={make} onChange={(v) => { setMake(v); setModel(null) }} size="xs" />
         <Select label="Модель" placeholder={make ? "Любая модель" : "Сначала марка"} data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="xs" />
         {make && (
           <Badge variant="filled" color="violet" size="sm" radius="md">
@@ -157,23 +167,25 @@ function PartsContent() {
   const FilterBar = (
     <Paper radius="md" p="sm" withBorder>
       <Stack gap="sm">
-        <Box className="parts-filter-grid">
-          <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
-          <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
-          <Select label="Состояние" placeholder="Любое" data={CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={setCondition} size="sm" />
-          <Select label="Формат продажи" placeholder="Все варианты" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
-        </Box>
+          <Box className="parts-filter-grid">
+            <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
+            <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
+            <Select label="Состояние" placeholder="Любое" data={PART_CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={setCondition} size="sm" />
+            <Box className="parts-filter-field"><Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text><SegmentedControl size="xs" fullWidth value={availability || "ANY"} onChange={(value) => setAvailability(value === "ANY" ? null : value)} data={[{ value: "ANY", label: "Все" }, ...AVAILABILITY_TYPES.map((item) => ({ value: item.value, label: item.label }))]} /></Box>
+            <Select label="Формат продажи" placeholder="Все варианты" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
+          </Box>
         {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
-        {(partType || make || condition || saleFormat || priceFrom || priceTo) && (
+        {(partType || make || condition || availability || saleFormat || priceFrom || priceTo) && (
           <Group gap={6} wrap="wrap">
             <Text size="xs" c="gray.5">Активные:</Text>
             {partType && <Badge size="xs" variant="light" color="indigo">{PART_TYPES.find((t) => t.value === partType)?.label}</Badge>}
             {subcategory && <Badge size="xs" variant="light" color="violet">{subcategory}</Badge>}
             {condition && <Badge size="xs" variant="light" color="green">{condition}</Badge>}
+            {availability && <Badge size="xs" variant="light" color="teal">{findLabel(AVAILABILITY_TYPES, availability)}</Badge>}
             {saleFormat && <Badge size="xs" variant="light" color="orange">{saleFormat === "AUCTION" ? "Аукцион" : "Цена"}</Badge>}
             {priceFrom && <Badge size="xs" variant="light" color="gray">от {priceFrom}₽</Badge>}
             {priceTo && <Badge size="xs" variant="light" color="gray">до {priceTo}₽</Badge>}
-            <Button variant="subtle" size="xs" color="red" onClick={() => { selectPartType(null); setCondition(null); setSaleFormat(null); setPriceFrom(""); setPriceTo("") }}>Сбросить</Button>
+            <Button variant="subtle" size="xs" color="red" onClick={resetFilters}>Сбросить</Button>
           </Group>
         )}
       </Stack>
@@ -231,7 +243,8 @@ function PartsContent() {
                               </Group>
 
                               <Group gap={6} wrap="wrap">
-                                {p.condition && <Badge size="xs" variant="light" color={p.condition === "NEW" ? "green" : "gray"}>{findLabel(CONDITIONS, p.condition)}</Badge>}
+                                {p.condition && <Badge size="xs" variant="light" color={p.condition === "NEW" ? "green" : "gray"}>{findLabel(PART_CONDITIONS, p.condition)}</Badge>}
+                                {p.availability && <Badge size="xs" variant="light" color={p.availability === "ON_ORDER" ? "orange" : "teal"}>{findLabel(AVAILABILITY_TYPES, p.availability)}</Badge>}
                                 {p.saleFormat === "AUCTION" && <Badge size="xs" variant="filled" color="orange">Аукцион</Badge>}
                                 {p.subcategory && <Badge size="xs" variant="light" color="indigo">{p.subcategory}</Badge>}
                                 {p.oemNumber && <Badge size="xs" variant="light" color="dark"><Group gap={3}><IconHash size={9} /> {p.oemNumber}</Group></Badge>}

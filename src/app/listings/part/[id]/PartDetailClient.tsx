@@ -20,6 +20,7 @@ import {
   Breadcrumbs,
   Anchor,
   TextInput,
+  ActionIcon,
 } from "@mantine/core"
 import { Carousel } from "@mantine/carousel"
 import {
@@ -34,9 +35,11 @@ import {
   IconCircleDot,
   IconCalendar,
   IconCar,
+  IconChevronLeft,
   IconChevronRight,
   IconCheck,
   IconGavel,
+  IconPhoto,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
@@ -52,12 +55,19 @@ const CONDITIONS_MAP: Record<string, string> = {
   GOOD: "Хорошее", FAIR: "Среднее", POOR: "Требует ремонта",
 }
 
+const AVAILABILITY_MAP: Record<string, string> = {
+  IN_STOCK: "В наличии",
+  ON_ORDER: "Под заказ",
+  IN_TRANSIT: "В пути",
+}
+
 interface PartData {
   id: string
   name: string
   description: string | null
   price: number
   condition: string | null
+  availability: string | null
   make: string
   model: string
   yearFrom: number | null
@@ -96,8 +106,9 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const [bidLoading, setBidLoading] = useState(false)
   const [bidMessage, setBidMessage] = useState<string | null>(null)
   const rawImages = parseImages(data.images)
-  const images = rawImages.length > 0 ? rawImages : ["/placeholder.svg"]
-  const hasImages = true
+  const images = rawImages
+  const hasImages = images.length > 0
+  const moveImage = (direction: number) => setActiveImage((current) => (current + direction + images.length) % images.length)
   const submitBid = async () => {
     setBidLoading(true)
     setBidMessage(null)
@@ -130,14 +141,20 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             <Card p={0} radius="lg" withBorder style={{ overflow: "hidden" }}>
               {hasImages ? (
                 <>
-                  <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
+                  <Box style={{ position: "relative", background: "linear-gradient(145deg, #f8fafc, #eef2ff)", aspectRatio: "4/3", maxHeight: 520 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={images[activeImage]} alt={data.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={images[activeImage]} alt={`${data.name} — фото ${activeImage + 1}`} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                     {data.condition && (
-                      <Badge pos="absolute" top={16} left={16} color="indigo" variant="filled" size="md" style={{ backdropFilter: "blur(4px)" }}>
+                      <Badge pos="absolute" top={14} left={14} color="indigo" variant="filled" size="sm" style={{ backdropFilter: "blur(4px)" }}>
                         {CONDITIONS_MAP[data.condition] || data.condition}
                       </Badge>
                     )}
+                    {data.availability && <Badge pos="absolute" top={14} right={14} color={data.availability === "ON_ORDER" ? "orange" : "teal"} variant="light" size="sm" style={{ backdropFilter: "blur(4px)" }}>{AVAILABILITY_MAP[data.availability] || data.availability}</Badge>}
+                    {images.length > 1 && <>
+                      <ActionIcon aria-label="Предыдущее фото" variant="filled" color="dark" radius="xl" pos="absolute" left={14} top="50%" style={{ transform: "translateY(-50%)" }} onClick={() => moveImage(-1)}><IconChevronLeft size={18} /></ActionIcon>
+                      <ActionIcon aria-label="Следующее фото" variant="filled" color="dark" radius="xl" pos="absolute" right={14} top="50%" style={{ transform: "translateY(-50%)" }} onClick={() => moveImage(1)}><IconChevronRight size={18} /></ActionIcon>
+                      <Badge pos="absolute" bottom={14} right={14} variant="filled" color="dark" size="sm">{activeImage + 1} / {images.length}</Badge>
+                    </>}
                   </Box>
                   {images.length > 1 && (
                     <Carousel slideSize="120px" slideGap="xs" withControls={false} style={{ padding: "var(--mantine-spacing-xs)" }}>
@@ -161,8 +178,8 @@ export default function PartDetailClient({ data }: { data: PartData }) {
               ) : (
                 <Box style={{ aspectRatio: "16/10", background: "var(--mantine-color-gray-1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Stack align="center" gap="xs">
-                    <IconTool size={48} color="#d4d4d8" />
-                    <Text size="sm" c="gray.4">Нет фото</Text>
+                    <ThemeIcon variant="light" color="gray" size={56} radius="xl"><IconPhoto size={28} /></ThemeIcon>
+                    <Text size="sm" c="gray.5">Продавец ещё не добавил фото</Text>
                   </Stack>
                 </Box>
               )}
@@ -174,15 +191,13 @@ export default function PartDetailClient({ data }: { data: PartData }) {
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                 <SpecRow icon={<IconTool size={18} />} label="Тип детали" value={PART_TYPES_MAP[data.partType] || data.partType} />
                 <SpecRow icon={<IconCheck size={18} />} label="Состояние" value={data.condition ? CONDITIONS_MAP[data.condition] || data.condition : "—"} />
+                {data.availability && <SpecRow icon={<IconCheck size={18} />} label="Наличие" value={AVAILABILITY_MAP[data.availability] || data.availability} />}
                 {data.subcategory && <SpecRow icon={<IconTool size={18} />} label="Подкатегория" value={data.subcategory} />}
                 {data.oemNumber && <SpecRow icon={<IconHash size={18} />} label="OEM номер" value={data.oemNumber} />}
-                {data.make && data.model && <SpecRow icon={<IconCar size={18} />} label="Основной авто" value={`${data.make} ${data.model}${data.yearFrom ? ` ${data.yearFrom}-${data.yearTo || ""}` : ""}`} />}
+                {data.make && data.model && data.make !== "Universal" && <SpecRow icon={<IconCar size={18} />} label="Основной авто" value={`${data.make} ${data.model}${data.yearFrom ? ` ${data.yearFrom}-${data.yearTo || ""}` : ""}`} />}
                 {data.suspensionType && <SpecRow icon={<IconAdjustments size={18} />} label="Тип подвески" value={data.suspensionType} />}
                 {data.brakeType && <SpecRow icon={<IconCircleDot size={18} />} label="Тип тормозов" value={data.brakeType} />}
-                <SpecRow icon={<IconCar size={18} />} label="Марка" value={data.make} />
-                <SpecRow icon={<IconCar size={18} />} label="Модель" value={data.model} />
-                <SpecRow icon={<IconCalendar size={18} />} label="Год от" value={data.yearFrom ? String(data.yearFrom) : "—"} />
-                <SpecRow icon={<IconCalendar size={18} />} label="Год до" value={data.yearTo ? String(data.yearTo) : "—"} />
+                {(!data.make || data.make === "Universal") && <SpecRow icon={<IconCar size={18} />} label="Совместимость" value="Универсальная" />}
               </SimpleGrid>
             </Card>
 

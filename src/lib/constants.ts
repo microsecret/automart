@@ -124,6 +124,17 @@ export const CONDITIONS = [
   { value: "POOR", label: "Требует ремонта" },
 ] as const
 
+/** Состояния для запчастей: «б/у» — отдельное понятное состояние, а не необъяснимый код USED. */
+export const PART_CONDITIONS = [
+  { value: "NEW", label: "Новая" },
+  { value: "USED", label: "Б/у" },
+  { value: "LIKE_NEW", label: "Как новая" },
+  { value: "EXCELLENT", label: "Отличное" },
+  { value: "GOOD", label: "Хорошее" },
+  { value: "FAIR", label: "Среднее" },
+  { value: "POOR", label: "Требует ремонта" },
+] as const
+
 export const PART_TYPES = [
   { value: "ENGINE", label: "Двигатель" },
   { value: "TRANSMISSION", label: "Трансмиссия" },
