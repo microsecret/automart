@@ -510,6 +510,8 @@ model AuctionListing {
   priceRub        Int      // цена в рублях
   markup          Int      // наценка
   finalPrice      Int      // итоговая цена для покупателя
+  exchangeRate    Float?   // снимок курса ЦБ, использованный при расчёте
+  pricingUpdatedAt DateTime? // когда цена была пересчитана по актуальному курсу
   // Медиа (прямые ссылки)
   imageUrl        String?
   images          String?  // JSON массив
@@ -540,6 +542,17 @@ model AuctionListing {
   @@index([country])
   @@index([auctionDate])
   @@index([country, source, status, auctionDate])
+}
+
+model ExchangeRate {
+  currency    String   @id // ISO: USD, EUR, JPY, KRW, CNY
+  rateToRub   Float    // стоимость одной единицы валюты в рублях
+  source      String   // CBR или резервный источник
+  effectiveAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([updatedAt])
 }
 
 model AuctionInquiry {

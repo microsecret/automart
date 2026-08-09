@@ -1,5 +1,6 @@
 "use client"
 import { useState, useMemo } from "react"
+import useSWR from "swr"
 import { Paper, Stack, Group, Text, Select, Divider, ThemeIcon, Box, Badge, Accordion, Tooltip, NumberInput } from "@mantine/core"
 import { IconCalculator, IconInfoCircle, IconShip, IconBuildingBank, IconTruckDelivery, IconCar, IconCheck, IconAlertTriangle, IconCoin } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
@@ -17,8 +18,16 @@ interface Props {
   country: string
 }
 
-// Курсы валют
-const RATES: Record<string, number> = { JPY: 0.62, KRW: 0.072, USD: 95, EUR: 102 }
+const CURRENT_YEAR = new Date().getFullYear()
+
+type ExchangeRateResponse = {
+  rates: Record<string, { rateToRub: number; source: string; updatedAt: string | null }>
+}
+
+const fetcher = (url: string) => fetch(url).then((response) => {
+  if (!response.ok) throw new Error("Unable to load exchange rates")
+  return response.json()
+})
 
 // Города РФ с ценой доставки из Владивостока (в рублях)
 const RF_CITIES = [
@@ -65,9 +74,8 @@ function auctionFee(priceRub: number): number {
 
 // Таможенная пошлина для физических лиц (старше 3 лет)
 // Источник: ЕАЭС, единые ставки для физлиц
-function customsDuty(year: number, volume: number, priceRub: number): { duty: number; category: string; ageLabel: string; isProkhodnoy: boolean } {
-  const currentYear = 2026
-  const age = currentYear - year
+function customsDuty(year: number, volume: number, priceRub: number, eurRate: number): { duty: number; category: string; ageLabel: string; isProkhodnoy: boolean } {
+  const age = CURRENT_YEAR - year
 
   // Возрастные категории
   let rate: number // € за куб.см
@@ -80,7 +88,7 @@ function customsDuty(year: number, volume: number, priceRub: number): { duty: nu
     ageLabel = `${age} ${age === 1 ? "год" : "года"}`
     const minRate = volume <= 1000 ? 1.5 : volume <= 1500 ? 2.2 : volume <= 1800 ? 2.7 : volume <= 2300 ? 3.7 : 5.7
     const byValue = priceRub * 0.48
-    const byVolume = volume * minRate * 102 // EUR→RUB
+    const byVolume = volume * minRate * eurRate
     return { duty: Math.round(Math.max(byValue, byVolume)), category, ageLabel, isProkhodnoy: true }
   } else if (age <= 5) {
     // 3-5 лет
@@ -92,7 +100,7 @@ function customsDuty(year: number, volume: number, priceRub: number): { duty: nu
     else if (volume <= 2300) rate = 2.7
     else if (volume <= 3000) rate = 3.0
     else rate = 3.6
-    return { duty: Math.round(volume * rate * 102), category, ageLabel, isProkhodnoy: age === 5 ? false : true }
+    return { duty: Math.round(volume * rate * eurRate), category, ageLabel, isProkhodnoy: age === 5 ? false : true }
   } else if (age <= 7) {
     // 5-7 лет
     category = "5-7 лет"
@@ -103,7 +111,7 @@ function customsDuty(year: number, volume: number, priceRub: number): { duty: nu
     else if (volume <= 2300) rate = 3.0
     else if (volume <= 3000) rate = 3.4
     else rate = 5.7
-    return { duty: Math.round(volume * rate * 102), category, ageLabel, isProkhodnoy: false }
+    return { duty: Math.round(volume * rate * eurRate), category, ageLabel, isProkhodnoy: false }
   } else {
     // Старше 7 лет
     category = "старше 7 лет"
@@ -114,29 +122,33 @@ function customsDuty(year: number, volume: number, priceRub: number): { duty: nu
     else if (volume <= 2300) rate = 4.8
     else if (volume <= 3000) rate = 5.0
     else rate = 5.7
-    return { duty: Math.round(volume * rate * 102), category, ageLabel, isProkhodnoy: false }
+    return { duty: Math.round(volume * rate * eurRate), category, ageLabel, isProkhodnoy: false }
   }
 }
 
 export default function AuctionCalculator({ make, model, year, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country }: Props) {
   const [city, setCity] = useState("Москва")
   const [customsCity, setCustomsCity] = useState("Владивосток")
+  const { data: exchangeRateData } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetcher, { revalidateOnFocus: false })
   const volume = Math.round((engineVolume || 2.0) * 1000) // куб.см
-  const age = 2026 - year
+  const age = CURRENT_YEAR - year
+  const sourceRate = exchangeRateData?.rates[sourceCurrency]?.rateToRub
+  const eurRate = exchangeRateData?.rates.EUR?.rateToRub || 102
+  const effectivePriceRub = sourceRate && sourcePrice >= 0 ? Math.round(sourcePrice * sourceRate) : priceRub
 
   const calc = useMemo(() => {
     const c = {
-      auctionPrice: priceRub,
-      auctionFee: auctionFee(priceRub),
+      auctionPrice: effectivePriceRub,
+      auctionFee: auctionFee(effectivePriceRub),
       inlandDelivery: INLAND_DELIVERY[country] || 45000,
       seaDelivery: SEA_TO_VLAD[country] || 100000,
-      ...customsDuty(year, volume, priceRub),
+      ...customsDuty(year, volume, effectivePriceRub, eurRate),
       utilFee: 3400, // Утилизационный сбор для физлиц (3400₽)
       customsProcess: 15000, // Оформление на СВХ
       brokerFee: 30000, // Брокерские услуги
       svh: 25000, // Склад временного хранения (2 недели)
       rfDelivery: RF_CITIES.find((c) => c.value === city)?.deliveryFromVlad || 180000,
-      ourCommission: priceRub > 2000000 ? 150000 : 80000,
+      ourCommission: effectivePriceRub > 2000000 ? 150000 : 80000,
     }
 
     const total =
@@ -144,7 +156,7 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
       c.duty + c.utilFee + c.customsProcess + c.brokerFee + c.svh + c.rfDelivery + c.ourCommission
 
     return { ...c, total }
-  }, [priceRub, country, year, volume, city])
+  }, [effectivePriceRub, country, year, volume, city, eurRate])
 
   const currencySymbol = sourceCurrency === "JPY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : "€"
   const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : "Европа"
@@ -179,7 +191,7 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
               <IconAlertTriangle size={18} color="#d97706" />
               <Text size="xs" c="#92400e">
                 <b>Непроходной год!</b> Авто {calc.ageLabel} — повышенная пошлина (категория {calc.category}).
-                Регистрация возможна после {2026 - year + 3} года.
+                Регистрация возможна после {CURRENT_YEAR - year + 3} года.
               </Text>
             </Group>
           </Paper>
@@ -208,7 +220,7 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
               label={
                 <Group gap={4}>
                   <Text size="sm" c="gray.6">Таможенная пошлина</Text>
-                  <Tooltip label={`Возраст: ${calc.ageLabel} (${calc.category}). Объём: ${volume} см³. Расчёт: ${volume} × ставка × 102₽`}>
+                  <Tooltip label={`Возраст: ${calc.ageLabel} (${calc.category}). Объём: ${volume} см³. Расчёт: ${volume} × ставка × ${eurRate.toFixed(2)} ₽`}>
                     <IconInfoCircle size={13} color="#a1a1aa" style={{ cursor: "help" }} />
                   </Tooltip>
                 </Group>
@@ -240,7 +252,7 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
 
         <Group gap={6}>
           <IconInfoCircle size={14} color="#a1a1aa" />
-          <Text size="10px" c="gray.4">Предварительный расчёт. Точная стоимость — после заявки (курс, пошлина и ставки могут меняться).</Text>
+          <Text size="10px" c="gray.4">Предварительный расчёт. {sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}. ` : "Использован курс из снимка лота. "}Точная стоимость подтверждается после заявки.</Text>
         </Group>
       </Stack>
     </Paper>
