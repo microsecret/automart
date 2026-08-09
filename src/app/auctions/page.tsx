@@ -122,7 +122,7 @@ export default function AuctionsPage() {
         <Paper radius="lg" p="md" withBorder className="auction-filter-panel">
           <Stack gap="sm">
             <Group justify="space-between" align="center">
-              <Box><Text size="sm" fw={750}>Подберите лот под импорт</Text><Text size="xs" c="dimmed">Площадка зависит от страны, цена уже рассчитана под ключ.</Text></Box>
+              <Box><Text size="sm" fw={750}>Подберите лот под импорт</Text><Text size="xs" c="dimmed">Площадка зависит от страны, цена лота пересчитывается по курсу ЦБ.</Text></Box>
               {hasActiveFilters && <Button variant="subtle" color="gray" size="compact-sm" leftSection={<IconX size={14} />} onClick={resetFilters}>Сбросить</Button>}
             </Group>
           <Box className="auction-filter-grid">
@@ -172,7 +172,7 @@ export default function AuctionsPage() {
                 onChange={(value) => { setMake(value || ""); setPage(1) }}
                 size="sm"
               />
-            <Box className="auction-price-range"><Text size="10px" c="dimmed" fw={800} tt="uppercase">Бюджет под ключ, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => { setPriceFrom(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => { setPriceTo(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
+            <Box className="auction-price-range"><Text size="10px" c="dimmed" fw={800} tt="uppercase">Ориентир цены лота, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => { setPriceFrom(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => { setPriceTo(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
               <Select
                 label="Кузов"
                 placeholder="Любой"
@@ -252,7 +252,7 @@ export default function AuctionsPage() {
                       {l.power && <Text size="10px" c="gray.4">· {l.power} л.с.</Text>}
                     </Group>
                     <Text fw={800} fz="md" c="orange" ff="var(--font-display),sans-serif">{formatPriceShort(l.finalPrice)}</Text>
-                    <Text size="10px" c="gray.4">с доставкой под ключ</Text>
+                    <Text size="10px" c="gray.4">ориентир: курс ЦБ + сервис</Text>
                     {l.auctionDate && (
                       <Group gap={4} mt={4} pt={4} style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
                         <Text size="10px" fw={600} c={new Date(l.auctionDate) > new Date() ? "#059669" : "#a1a1aa"}>

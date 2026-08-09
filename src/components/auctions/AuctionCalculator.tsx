@@ -1,7 +1,7 @@
 "use client"
 import { useState, useMemo } from "react"
 import useSWR from "swr"
-import { Paper, Stack, Group, Text, Select, Divider, ThemeIcon, Box, Badge, Accordion, Tooltip, NumberInput } from "@mantine/core"
+import { Paper, Stack, Group, Text, Select, Divider, ThemeIcon, Box, Tooltip } from "@mantine/core"
 import { IconCalculator, IconInfoCircle, IconShip, IconBuildingBank, IconTruckDelivery, IconCar, IconCheck, IconAlertTriangle, IconCoin } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
 
@@ -128,7 +128,6 @@ function customsDuty(year: number, volume: number, priceRub: number, eurRate: nu
 
 export default function AuctionCalculator({ make, model, year, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country }: Props) {
   const [city, setCity] = useState("Москва")
-  const [customsCity, setCustomsCity] = useState("Владивосток")
   const { data: exchangeRateData } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetcher, { revalidateOnFocus: false })
   const volume = Math.round((engineVolume || 2.0) * 1000) // куб.см
   const age = CURRENT_YEAR - year
@@ -158,8 +157,8 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
     return { ...c, total }
   }, [effectivePriceRub, country, year, volume, city, eurRate])
 
-  const currencySymbol = sourceCurrency === "JPY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : "€"
-  const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : "Европа"
+  const currencySymbol = sourceCurrency === "JPY" || sourceCurrency === "CNY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : sourceCurrency === "RUB" ? "₽" : "€"
+  const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : country === "CN" ? "Китай" : country === "DE" ? "Германия" : "Европа"
   const isElectric = fuelType === "ELECTRIC"
 
   return (
