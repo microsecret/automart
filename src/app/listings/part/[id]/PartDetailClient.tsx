@@ -113,6 +113,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const [bidMessage, setBidMessage] = useState<string | null>(null)
   const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
+  const isSeller = session?.user?.id === data.seller.id
   const isFav = Boolean(data.listingId && favoriteIds.has(data.listingId))
   const toggleDetailFavorite = () => {
     if (!data.listingId) return
@@ -139,8 +140,9 @@ export default function PartDetailClient({ data }: { data: PartData }) {
       if (!response.ok) throw new Error(result.error || "Ставка не принята")
       setBidMessage(`Ставка ${(result.bid.amount as number).toLocaleString("ru-RU")} ₽ принята`)
       setBidAmount("")
-    } catch (error: any) {
-      setBidMessage(error.message || "Не удалось сделать ставку")
+      router.refresh()
+    } catch (error) {
+      setBidMessage(error instanceof Error ? error.message : "Не удалось сделать ставку")
     } finally {
       setBidLoading(false)
     }
@@ -318,8 +320,14 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Group justify="space-between" mb="xs"><Text fw={700}>Сделать ставку</Text><IconGavel size={18} color="#f97316" /></Group>
                   <Text size="xs" c="gray.5">Минимум: {formatPrice((data.auctionCurrentPrice || data.price) + (data.auctionMinStep || 1))}</Text>
                   {data.auctionEndsAt && <Text size="xs" c="gray.5" mb="sm">Окончание: {new Date(data.auctionEndsAt).toLocaleString("ru-RU")}</Text>}
-                  <TextInput placeholder="Сумма ставки, ₽" type="number" value={bidAmount} onChange={(event) => setBidAmount(event.currentTarget.value)} mb="sm" />
-                  <Button fullWidth color="orange" loading={bidLoading} disabled={data.auctionStatus !== "ACTIVE" || !bidAmount} onClick={submitBid}>Подтвердить ставку</Button>
+                  {isSeller ? (
+                    <Text size="sm" c="gray.6">Это ваш лот. Ставки владельца недоступны.</Text>
+                  ) : (
+                    <>
+                      <TextInput placeholder="Сумма ставки, ₽" type="number" value={bidAmount} onChange={(event) => setBidAmount(event.currentTarget.value)} mb="sm" />
+                      <Button fullWidth color="orange" loading={bidLoading} disabled={data.auctionStatus !== "ACTIVE" || !bidAmount} onClick={submitBid}>Подтвердить ставку</Button>
+                    </>
+                  )}
                   {bidMessage && <Text size="xs" c={bidMessage.includes("принята") ? "green" : "red"} mt="sm">{bidMessage}</Text>}
                   {data.bids.length > 0 && <Text size="xs" c="gray.5" mt="md">Последние ставки: {data.bids.slice(0, 3).map((bid) => `${bid.amount.toLocaleString("ru-RU")} ₽`).join(" · ")}</Text>}
                 </Card>
@@ -330,7 +338,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Button size="lg" radius="md" leftSection={<IconPhone size={18} />} variant={showPhone ? "light" : "filled"} color="indigo" onClick={() => setShowPhone(true)}>
                     {showPhone ? "+7 (XXX) XXX-XX-XX" : "Показать телефон"}
                   </Button>
-                  {session?.user?.id === data.seller.id && data.listingId && <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>Редактировать объявление</Button>}
+                  {isSeller && data.listingId && <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>Редактировать объявление</Button>}
                   <Button size="lg" radius="md" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={`/messages/new?listingId=${data.listingId || data.id}`}>
                     Написать продавцу
                   </Button>
