@@ -271,8 +271,7 @@ model Listing {
   deletedAt     DateTime?
   lastStatusChangedAt DateTime?
 
-  // TODO: Add validation to ensure either vehicleId or partId is set, but not both
-  // This will be handled at the application level for now
+  // Application validation and SQLite triggers enforce exactly one subject.
 
   @@index([createdAt])
   @@index([price])
