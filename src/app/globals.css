@@ -335,6 +335,7 @@ select {
   min-height: 360px;
   border: 0;
   isolation: isolate;
+  scroll-margin-top: calc(var(--app-header-height) + 16px);
 }
 
 .home-auctions__image {
@@ -396,11 +397,11 @@ select {
 }
 
 .catalog-filter-panel {
-  border-color: #dfe4f0;
+  border-color: #d7deed;
   background:
-    radial-gradient(circle at 92% 0%, rgba(129, 140, 248, 0.12), transparent 30%),
+    radial-gradient(circle at 92% 0%, rgba(129, 140, 248, 0.15), transparent 30%),
     linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
-  box-shadow: 0 18px 42px -38px rgba(30, 41, 89, 0.72);
+  box-shadow: 0 20px 46px -38px rgba(30, 41, 89, 0.78);
 }
 
 .catalog-filter-field--search { grid-column: span 4; }
@@ -415,9 +416,10 @@ select {
 .catalog-filter-field {
   min-width: 0;
   padding: 9px 10px 10px;
-  border: 1px solid #e1e6f0;
+  border: 1px solid #d6deeb;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.92);
+  background: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
@@ -433,7 +435,7 @@ select {
 
 .catalog-filter-field .mantine-InputWrapper-label {
   margin-bottom: 5px;
-  color: #667085;
+  color: #475467;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -460,8 +462,15 @@ select {
 
 .catalog-filter-field .mantine-Input-input::placeholder,
 .catalog-filter-field .mantine-Select-input::placeholder {
+  color: #667085;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.catalog-filter-field .mantine-Input-input:disabled,
+.catalog-filter-field .mantine-Select-input:disabled {
   color: #98a2b3;
-  font-weight: 500;
+  cursor: not-allowed;
 }
 
 .catalog-filter-panel[data-expanded] {
@@ -546,6 +555,20 @@ select {
 .vehicle-fallback--special { background: linear-gradient(145deg, #fff7ed 0%, #f8fafc 58%, #fef3c7 100%); }
 .vehicle-fallback--motorcycle { background: linear-gradient(145deg, #f3e8ff 0%, #faf5ff 58%, #ede9fe 100%); }
 .vehicle-fallback[data-compact] { min-height: 110px; padding: 10px; }
+
+.listing-card {
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.listing-card__media[data-empty-media] {
+  background: linear-gradient(145deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.listing-card__media[data-empty-media] .vehicle-fallback {
+  background:
+    radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.98), transparent 22%),
+    linear-gradient(145deg, #f6f8fc 0%, #eef2ff 54%, #e7edff 100%);
+}
 
 .parts-category-bar {
   background: linear-gradient(145deg, #fff 0%, #fafaff 100%);

@@ -80,6 +80,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const image = sourceImage.includes("/placeholder/") ? "" : sourceImage
   const activeImage = images[activeImg] || image
   const displayImage = imageFailed || activeImage.includes("/placeholder/") ? "" : activeImage
+  const hasDisplayImage = Boolean(displayImage)
   const monthlyPayment = formatMonthlyPayment(listing.price)
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
   const usageMeta = getUsageMeta(vehicleType)
@@ -108,6 +109,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
 
   return (
     <Card
+        className="listing-card"
         pos="relative"
         padding={0}
         radius="md"
@@ -131,10 +133,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
       >
         <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         {/* Фото область */}
-        <Box pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
-          <AspectRatio ratio={1}>
+        <Box className="listing-card__media" data-empty-media={!hasDisplayImage || undefined} pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
+          <AspectRatio ratio={hasDisplayImage ? 1 : 4 / 3}>
             <>
-              <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={Boolean(displayImage)} />
+              <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={displayImage} alt={listing.title} onError={() => setImageFailed(true)} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
@@ -178,6 +180,12 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           {listing.isFeatured && (
             <Box pos="absolute" top={8} left={8} style={{ zIndex: 2 }}>
               <Badge color="dark" variant="filled" size="sm" radius="sm">Премиум</Badge>
+            </Box>
+          )}
+
+          {!hasDisplayImage && (
+            <Box pos="absolute" top={8} left={listing.isFeatured ? 76 : 8} style={{ zIndex: 2 }}>
+              <Badge color="gray" variant="white" size="xs" radius="sm">Без фото</Badge>
             </Box>
           )}
 
