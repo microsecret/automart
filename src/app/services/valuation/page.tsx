@@ -53,17 +53,17 @@ export default function ValuationPage() {
 
         <Paper withBorder radius="md" p="lg">
           <Stack gap="md">
-            <Select label="Марка" data={Array.from(new Set(BRAND_NAMES)).map((b) => ({ value: b, label: b }))} searchable value={make} onChange={setMake} size="sm" placeholder="Выберите марку" />
-            {make && <Select label="Модель" data={getModels(make).map((m) => ({ value: m, label: m }))} searchable value={model} onChange={setModel} size="sm" />}
+            <Select label="Марка" data={Array.from(new Set(BRAND_NAMES)).map((b) => ({ value: b, label: b }))} searchable value={make} onChange={(value) => setMake(value || "")} size="sm" placeholder="Выберите марку" />
+            {make && <Select label="Модель" data={getModels(make).map((m) => ({ value: m, label: m }))} searchable value={model} onChange={(value) => setModel(value || "")} size="sm" />}
             <Group grow>
               <NumberInput label="Год выпуска" value={year} onChange={(v) => setYear(Number(v) || 2020)} min={1990} max={2025} size="sm" />
-              <NumberInput label="Пробег, км" value={mileage} onChange={(v) => setMileage(Number(v) || 0)} min={0} size="sm" thousandGroup />
+              <NumberInput label="Пробег, км" value={mileage} onChange={(v) => setMileage(Number(v) || 0)} min={0} size="sm" />
             </Group>
             <Select label="Состояние" data={[
               { value: "NEW", label: "Новое" }, { value: "LIKE_NEW", label: "Как новое" },
               { value: "EXCELLENT", label: "Отличное" }, { value: "GOOD", label: "Хорошее" },
               { value: "FAIR", label: "Удовлетворительное" }, { value: "POOR", label: "Требует ремонта" },
-            ]} value={condition} onChange={setCondition} size="sm" />
+            ]} value={condition} onChange={(value) => setCondition(value || "EXCELLENT")} size="sm" />
             <Button onClick={calc} color="indigo" radius="md" size="md" leftSection={<IconCalculator size={18} />} disabled={!make}>Рассчитать стоимость</Button>
           </Stack>
         </Paper>

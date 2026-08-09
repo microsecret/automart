@@ -3,13 +3,13 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 // GET a specific review
-export async function GET(request: NextRequest, { params }: { params: { reviewId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ reviewId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     // Note: We don't require authentication for reading a review
     // but we might want to show different info based on auth status
 
-    const { reviewId } = params
+    const { reviewId } = await params
 
     // Get the review
     const review = await prisma.review.findUnique({
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, { params }: { params: { reviewId
 }
 
 // PUT update a review
-export async function PUT(request: NextRequest, { params }: { params: { reviewId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ reviewId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -60,7 +60,7 @@ export async function PUT(request: NextRequest, { params }: { params: { reviewId
       )
     }
 
-    const { reviewId } = params
+    const { reviewId } = await params
 
     // Verify the review exists and belongs to the current user
     const existingReview = await prisma.review.findFirst({
@@ -127,7 +127,7 @@ export async function PUT(request: NextRequest, { params }: { params: { reviewId
 }
 
 // DELETE a review
-export async function DELETE(request: NextRequest, { params }: { params: { reviewId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ reviewId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -137,7 +137,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { revie
       )
     }
 
-    const { reviewId } = params
+    const { reviewId } = await params
 
     // Verify the review exists and belongs to the current user
     const existingReview = await prisma.review.findFirst({

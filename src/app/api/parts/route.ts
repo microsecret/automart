@@ -29,12 +29,23 @@ export async function GET(request: NextRequest) {
     const where: Prisma.PartWhereInput = {}
     const and: Prisma.PartWhereInput[] = []
 
+    const minPrice = priceFrom ? Number.parseInt(priceFrom, 10) : undefined
+    const maxPrice = priceTo ? Number.parseInt(priceTo, 10) : undefined
+    if ((priceFrom && !Number.isFinite(minPrice)) || (priceTo && !Number.isFinite(maxPrice))) {
+      return NextResponse.json({ error: "Цена должна быть целым числом" }, { status: 400 })
+    }
+    if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
+      return NextResponse.json({ error: "Цена от не может быть больше цены до" }, { status: 400 })
+    }
+
     if (q) {
       and.push({
         OR: [
           { name: { contains: q } },
           { description: { contains: q } },
           { keywords: { contains: q } },
+          { oemNumber: { contains: q } },
+          { compatibility: { some: { OR: [{ make: { contains: q } }, { model: { contains: q } }] } } },
         ],
       })
     }
@@ -56,8 +67,8 @@ export async function GET(request: NextRequest) {
     if (oemNumber) where.oemNumber = { contains: oemNumber }
     if (priceFrom || priceTo) {
       where.price = {}
-      if (priceFrom) where.price.gte = parseInt(priceFrom)
-      if (priceTo) where.price.lte = parseInt(priceTo)
+      if (minPrice !== undefined) where.price.gte = minPrice
+      if (maxPrice !== undefined) where.price.lte = maxPrice
     }
 
     if (and.length) where.AND = and

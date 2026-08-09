@@ -29,14 +29,12 @@ export async function GET(request: NextRequest) {
         OR: [
           {
             name: {
-              contains: q,
-              mode: 'insensitive'
+              contains: q
             }
           },
           {
             email: {
-              contains: q,
-              mode: 'insensitive'
+              contains: q
             }
           }
         ],

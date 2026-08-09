@@ -6,12 +6,13 @@ import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIO
 export const dynamic = "force-dynamic"
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: PageProps) {
+  const { id } = await params
   const vehicle = await prisma.vehicle.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { make: true, model: true, year: true, price: true },
   })
   if (!vehicle) return { title: "Объявление не найдено" }
@@ -22,8 +23,9 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function VehicleDetailPage({ params }: PageProps) {
+  const { id } = await params
   const vehicle = await prisma.vehicle.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       user: {
         select: {

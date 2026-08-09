@@ -10,26 +10,26 @@ import BrandIcon from "@/components/brands/BrandIcon"
 import { formatPrice } from "@/lib/format"
 import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS } from "@/lib/constants"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const COMPARE_FIELDS = [
-  { key: "price", label: "Цена", format: (v) => formatPrice(v) },
-  { key: "year", label: "Год", format: (v) => String(v) },
-  { key: "mileage", label: "Пробег", format: (v) => v ? `${v.toLocaleString("ru")} км` : "—" },
-  { key: "engineVolume", label: "Объём двигателя", format: (v) => v ? `${v} л` : "—" },
-  { key: "power", label: "Мощность", format: (v) => v ? `${v} л.с.` : "—" },
-  { key: "fuelTypeLabel", label: "Топливо", format: (v) => v || "—" },
-  { key: "transmissionLabel", label: "КПП", format: (v) => v || "—" },
-  { key: "driveTypeLabel", label: "Привод", format: (v) => v || "—" },
-  { key: "bodyTypeLabel", label: "Кузов", format: (v) => v || "—" },
-  { key: "color", label: "Цвет", format: (v) => v || "—" },
-  { key: "conditionLabel", label: "Состояние", format: (v) => v || "—" },
-  { key: "steeringWheelLabel", label: "Руль", format: (v) => v || "—" },
-  { key: "ownersCount", label: "Владельцев", format: (v) => v ? String(v) : "—" },
-  { key: "documentsStatusLabel", label: "Документы", format: (v) => v || "—" },
-  { key: "damageInfoLabel", label: "Повреждения", format: (v) => v || "—" },
-  { key: "customsCleared", label: "Растаможен", format: (v) => v === null ? "—" : v ? "Да" : "Нет" },
-  { key: "location", label: "Город", format: (v) => v || "—" },
+  { key: "price", label: "Цена", format: (v: any) => formatPrice(v) },
+  { key: "year", label: "Год", format: (v: any) => String(v) },
+  { key: "mileage", label: "Пробег", format: (v: any) => v ? `${v.toLocaleString("ru")} км` : "—" },
+  { key: "engineVolume", label: "Объём двигателя", format: (v: any) => v ? `${v} л` : "—" },
+  { key: "power", label: "Мощность", format: (v: any) => v ? `${v} л.с.` : "—" },
+  { key: "fuelTypeLabel", label: "Топливо", format: (v: any) => v || "—" },
+  { key: "transmissionLabel", label: "КПП", format: (v: any) => v || "—" },
+  { key: "driveTypeLabel", label: "Привод", format: (v: any) => v || "—" },
+  { key: "bodyTypeLabel", label: "Кузов", format: (v: any) => v || "—" },
+  { key: "color", label: "Цвет", format: (v: any) => v || "—" },
+  { key: "conditionLabel", label: "Состояние", format: (v: any) => v || "—" },
+  { key: "steeringWheelLabel", label: "Руль", format: (v: any) => v || "—" },
+  { key: "ownersCount", label: "Владельцев", format: (v: any) => v ? String(v) : "—" },
+  { key: "documentsStatusLabel", label: "Документы", format: (v: any) => v || "—" },
+  { key: "damageInfoLabel", label: "Повреждения", format: (v: any) => v || "—" },
+  { key: "customsCleared", label: "Растаможен", format: (v: any) => v === null ? "—" : v ? "Да" : "Нет" },
+  { key: "location", label: "Город", format: (v: any) => v || "—" },
 ]
 
 function CompareContent() {
@@ -49,7 +49,7 @@ function CompareContent() {
     fetcher
   )
 
-  const vehicles = data?.listings?.map((l) => l.vehicle).filter(Boolean) || []
+  const vehicles: any[] = data?.listings?.map((l: any) => l.vehicle).filter(Boolean) || []
 
     const clearCompare = () => {
     localStorage.removeItem("compare-ids")

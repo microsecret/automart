@@ -31,7 +31,7 @@ export async function GET() {
         select: { id: true, rating: true, comment: true, createdAt: true },
         orderBy: { createdAt: "desc" },
       }),
-      prisma.vehicle.count({ where: { userId, categoryId: null } }),
+      prisma.vehicle.count({ where: { userId, category: { name: "Личный гараж" } } }),
     ])
 
     const totalViews = listings.reduce((sum, l) => sum + (l.views || 0), 0)

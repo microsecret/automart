@@ -61,8 +61,6 @@ export default function AppSidebar() {
                   </Text>
                 }
                 leftSection={item.icon}
-                radius="md"
-                py={7}
               />
             ))}
           </Stack>
@@ -98,9 +96,6 @@ export default function AppSidebar() {
                     </Text>
                   </Group>
                 }
-                radius="sm"
-                py={5}
-                px="sm"
               />
             ))}
           </Stack>
@@ -109,9 +104,7 @@ export default function AppSidebar() {
             component={Link}
             href="/brands"
             label={<Text size="sm" c="#4f46e5" fw={600}>Все марки →</Text>}
-            radius="sm"
             mt="xs"
-            px="sm"
           />
         </Stack>
       </ScrollArea>

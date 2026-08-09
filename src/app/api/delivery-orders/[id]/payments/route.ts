@@ -9,11 +9,12 @@ export const dynamic = "force-dynamic"
 
 const currencies = new Set(["RUB", "CNY", "KRW", "JPY", "USD", "EUR"])
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const order = await prisma.deliveryOrder.findUnique({ where: { id: params.id }, select: { id: true, partnerId: true, managerId: true } })
+    const order = await prisma.deliveryOrder.findUnique({ where: { id }, select: { id: true, partnerId: true, managerId: true } })
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
     if (!canManageDeliveryOrder(session, order)) return NextResponse.json({ error: "Нет прав на выставление счёта" }, { status: 403 })
 

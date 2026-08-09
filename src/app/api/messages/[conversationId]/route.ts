@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 // GET messages in a conversation
-export async function GET(request: NextRequest, { params }: { params: { conversationId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) {
   try {
+    const { conversationId } = await params
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: { conversa
     // We'll check this by looking for messages in this conversation involving the user
     const hasAccess = await prisma.message.findFirst({
       where: {
-        conversationId: params.conversationId,
+        conversationId,
         OR: [
           { senderId: session.user.id },
           { receiverId: session.user.id }
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: { conversa
     // Get messages in this conversation using the conversationId index
     const messages = await prisma.message.findMany({
       where: {
-        conversationId: params.conversationId
+        conversationId
       },
       include: {
         sender: {
@@ -76,8 +77,9 @@ export async function GET(request: NextRequest, { params }: { params: { conversa
 
     // Mark unread messages as read
     await prisma.message.updateMany({
+      data: { isRead: true },
       where: {
-        conversationId: params.conversationId,
+        conversationId,
         senderId: {
           not: session.user.id
         },
@@ -89,7 +91,7 @@ export async function GET(request: NextRequest, { params }: { params: { conversa
     // Get total count for pagination
     const total = await prisma.message.count({
       where: {
-        conversationId: params.conversationId
+        conversationId
       }
     })
 
@@ -112,8 +114,9 @@ export async function GET(request: NextRequest, { params }: { params: { conversa
 }
 
 // PUT mark messages as read for the current user in this conversation
-export async function PUT(request: NextRequest, { params }: { params: { conversationId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) {
   try {
+    const { conversationId } = await params
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
@@ -125,7 +128,7 @@ export async function PUT(request: NextRequest, { params }: { params: { conversa
     // Verify that the current user is part of this conversation
     const hasAccess = await prisma.message.findFirst({
       where: {
-        conversationId: params.conversationId,
+        conversationId,
         OR: [
           { senderId: session.user.id },
           { receiverId: session.user.id }
@@ -145,8 +148,9 @@ export async function PUT(request: NextRequest, { params }: { params: { conversa
 
     // Mark unread messages as read
     const result = await prisma.message.updateMany({
+      data: { isRead: true },
       where: {
-        conversationId: params.conversationId,
+        conversationId,
         senderId: {
           not: session.user.id
         },

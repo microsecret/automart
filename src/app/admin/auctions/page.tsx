@@ -6,7 +6,7 @@ import { IconGavel, IconPhone, IconMail, IconMapPin, IconClock } from "@tabler/i
 import { formatRelativeDate } from "@/lib/format"
 import { useState } from "react"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 const STATUSES = [
   { value: "NEW", label: "Новые", color: "red" },
   { value: "CONTACTED", label: "Связались", color: "orange" },
@@ -59,7 +59,7 @@ export default function AdminAuctionsPage() {
           label="Статус заявки"
           data={[{ value: "", label: "Все" }, ...STATUSES.map((s) => ({ value: s.value, label: s.label }))]}
           value={status}
-          onChange={setStatus}
+          onChange={(value) => setStatus(value || "")}
           size="sm"
           w={200}
         />
@@ -67,7 +67,7 @@ export default function AdminAuctionsPage() {
         {isLoading ? <Center py={60}><Loader size="sm" color="orange" /></Center> :
          inquiries.length === 0 ? <Paper radius="md" p="xl" withBorder><Center><Text c="gray.5">Нет заявок</Text></Center></Paper> :
          <Stack gap="xs">
-          {inquiries.map((inq) => {
+          {inquiries.map((inq: any) => {
             const v = inq.auctionListing
             const statusCfg = STATUSES.find((s) => s.value === inq.status) || STATUSES[0]
             return (

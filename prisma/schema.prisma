@@ -198,6 +198,7 @@ model Part {
   @@index([name])
   @@index([make, model])
   @@index([partType])
+  @@index([partType, price, condition])
 }
 
 model PartBid {
@@ -498,6 +499,7 @@ model AuctionListing {
   @@index([make, model])
   @@index([country])
   @@index([auctionDate])
+  @@index([country, source, status, auctionDate])
 }
 
 model AuctionInquiry {

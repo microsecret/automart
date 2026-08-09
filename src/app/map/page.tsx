@@ -9,15 +9,15 @@ import BrandIcon from "@/components/brands/BrandIcon"
 import { formatPriceShort, parseImages } from "@/lib/format"
 import { POPULAR_CITIES } from "@/lib/constants"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function MapPage() {
   const [city, setCity] = useState("Москва")
   const { data, isLoading } = useSWR(`/api/listings?type=vehicle&city=${encodeURIComponent(city)}&limit=30`, fetcher)
-  const listings = data?.listings || []
+  const listings: any[] = data?.listings || []
 
   // Гео-координаты городов
-  const CITY_COORDS = {
+  const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
     "Москва": { lat: 55.7558, lng: 37.6173 },
     "Санкт-Петербург": { lat: 59.9343, lng: 30.3351 },
     "Новосибирск": { lat: 55.0084, lng: 82.9357 },
@@ -44,7 +44,7 @@ export default function MapPage() {
           label="Город"
           data={POPULAR_CITIES.map((c) => ({ value: c, label: c }))}
           value={city}
-          onChange={setCity}
+          onChange={(value) => setCity(value || "Москва")}
           size="sm"
           w={250}
           searchable
@@ -67,7 +67,7 @@ export default function MapPage() {
               <Stack gap="xs">
                 {isLoading ? <Center py={40}><Loader size="sm" color="indigo" /></Center> :
                  listings.length === 0 ? <Text c="gray.5" size="sm">Нет объявлений</Text> :
-                 listings.map((l) => {
+                 listings.map((l: any) => {
                    const v = l.vehicle
                    if (!v) return null
                    const images = parseImages(v.images)

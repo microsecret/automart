@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function DashboardPage() {
   const { data: session } = useSession()
@@ -100,7 +100,7 @@ export default function DashboardPage() {
                 </Center>
               </Paper>
             ) : (
-              data.listings.map((l) => {
+              data.listings.map((l: any) => {
                 const isVehicle = !!l.vehicle
                 const images = parseImages(isVehicle ? l.vehicle?.images : l.part?.images)
                 const image = images[0] || "/placeholder.svg"
@@ -162,7 +162,7 @@ export default function DashboardPage() {
               </Paper>
             ) : (
               <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
-                {data.favorites.map((fav) => {
+                {data.favorites.map((fav: any) => {
                   const v = fav.vehicle
                   if (!v) return null
                   const images = parseImages(v.images)

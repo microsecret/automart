@@ -8,14 +8,14 @@ import { useState } from "react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function FavoritesPage() {
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
   const { data, isLoading } = useSWR(`/api/favorites?page=${page}&limit=18`, fetcher)
 
-  const favorites = data?.favorites || []
+  const favorites: any[] = data?.favorites || []
 
   return (
     <Box p={{ base: "sm", md: "md" }}>

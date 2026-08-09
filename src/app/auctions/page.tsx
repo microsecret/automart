@@ -1,11 +1,12 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Chip, SegmentedControl } from "@mantine/core"
-import { IconGavel, IconSearch, IconMapPin, IconCalendar, IconGauge, IconCar } from "@tabler/icons-react"
-import { formatPriceShort } from "@/lib/format"
+import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box } from "@mantine/core"
+import { IconGavel, IconPhoto, IconX } from "@tabler/icons-react"
+import { formatPriceShort, parseImages } from "@/lib/format"
+import VehicleFallback from "@/components/listings/VehicleFallback"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -33,6 +34,35 @@ const SOURCES = [
   { value: "UCAR", label: "Ucar (Китай)" },
 ]
 
+const SOURCE_COUNTRY: Record<string, string> = {
+  USS: "JP", TAA: "JP", EMARAAT: "KR", AJ: "KR", COPART: "US", IAAI: "US",
+  MOBILE_DE: "DE", YCHEZHAI: "CN", GUAZI: "CN", TAOCHE: "CN", UCAR: "CN",
+}
+function AuctionMedia({ listing }: { listing: any }) {
+  const [failed, setFailed] = useState(false)
+  const image = listing.imageUrl || parseImages(listing.images)[0] || ""
+  const hasImage = Boolean(image) && !failed
+
+  return (
+    <Box className="auction-card__media">
+      <VehicleFallback type="CAR" compact={hasImage} />
+      {hasImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={image} alt={`${listing.make} ${listing.model}`} onError={() => setFailed(true)} />
+      ) : (
+        <Stack className="auction-card__image-pending" gap={4} align="center">
+          <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
+          <Text size="10px" c="dimmed">Фото загружается из источника</Text>
+        </Stack>
+      )}
+      <Badge pos="absolute" top={8} left={8} color="orange" variant="filled" size="sm">{listing.source}</Badge>
+      <Badge pos="absolute" top={8} right={8} color="dark" variant="filled" size="sm">
+        {listing.country === "JP" ? "🇯🇵" : listing.country === "KR" ? "🇰🇷" : listing.country === "US" ? "🇺🇸" : listing.country === "DE" ? "🇩🇪" : listing.country === "CN" ? "🇨🇳" : listing.country}
+      </Badge>
+    </Box>
+  )
+}
+
 export default function AuctionsPage() {
   const [page, setPage] = useState(1)
   const [country, setCountry] = useState("")
@@ -42,6 +72,8 @@ export default function AuctionsPage() {
   const [priceTo, setPriceTo] = useState("")
   const [bodyType, setBodyType] = useState("")
   const [yearFrom, setYearFrom] = useState("")
+  const sourceOptions = useMemo(() => SOURCES.filter((item) => !item.value || !country || SOURCE_COUNTRY[item.value] === country), [country])
+  const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
 
   const buildQ = () => {
     const q = new URLSearchParams()
@@ -57,8 +89,12 @@ export default function AuctionsPage() {
     return q.toString()
   }
 
-  const { data, isLoading } = useSWR("/api/auctions?" + buildQ(), fetcher)
+  const { data, isLoading } = useSWR(hasInvalidPriceRange ? null : "/api/auctions?" + buildQ(), fetcher)
   const listings = data?.listings || []
+  const resetFilters = () => {
+    setCountry(""); setSource(""); setMake(""); setPriceFrom(""); setPriceTo(""); setBodyType(""); setYearFrom(""); setPage(1)
+  }
+  const hasActiveFilters = Boolean(country || source || make || priceFrom || priceTo || bodyType || yearFrom)
 
   return (
     <Container size="xl" p={{ base: "sm", md: "md" }}>
@@ -71,12 +107,18 @@ export default function AuctionsPage() {
           </Stack>
         </Group>
 
-        <Paper radius="md" p="sm" withBorder>
-          <Group gap="xs" wrap="wrap" align="flex-end">
-            <Select label="Страна" data={COUNTRIES} value={country} onChange={setCountry} size="xs" w={130} />
-            <Select label="Площадка" data={SOURCES} value={source} onChange={setSource} size="xs" w={170} />
+        <Paper radius="lg" p="md" withBorder className="auction-filter-panel">
+          <Stack gap="sm">
+            <Group justify="space-between" align="center">
+              <Box><Text size="sm" fw={750}>Подберите лот под импорт</Text><Text size="xs" c="dimmed">Площадка зависит от страны, цена уже рассчитана под ключ.</Text></Box>
+              {hasActiveFilters && <Button variant="subtle" color="gray" size="compact-sm" leftSection={<IconX size={14} />} onClick={resetFilters}>Сбросить</Button>}
+            </Group>
+          <Box className="auction-filter-grid">
+            <Select label="Страна" data={COUNTRIES} value={country} onChange={(value) => { setCountry(value || ""); setSource(""); setPage(1) }} size="sm" />
+            <Select label="Площадка" placeholder={country ? "Все площадки" : "Сначала страна или все"} data={sourceOptions} value={source} onChange={(value) => { setSource(value || ""); setPage(1) }} size="sm" />
             <Select
-                placeholder="Марка"
+                label="Марка"
+                placeholder="Любая"
                 searchable
                 clearable
                 data={[
@@ -107,14 +149,13 @@ export default function AuctionsPage() {
                   { value: "Li Auto", label: "Li Auto" },
                 ]}
                 value={make || null}
-                onChange={setMake}
-                size="xs"
-                w={140}
+                onChange={(value) => { setMake(value || ""); setPage(1) }}
+                size="sm"
               />
-            <TextInput placeholder="Цена от ₽" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="xs" w={100} type="number" />
-            <TextInput placeholder="до ₽" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="xs" w={100} type="number" />
+            <Box className="auction-price-range"><Text size="10px" c="dimmed" fw={800} tt="uppercase">Бюджет под ключ, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => { setPriceFrom(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => { setPriceTo(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
               <Select
-                placeholder="Кузов"
+                label="Кузов"
+                placeholder="Любой"
                 clearable
                 data={[
                   { value: "SEDAN", label: "Седан" },
@@ -125,20 +166,21 @@ export default function AuctionsPage() {
                   { value: "WAGON", label: "Универсал" },
                 ]}
                 value={bodyType || null}
-                onChange={setBodyType}
-                size="xs"
-                w={120}
+                onChange={(value) => { setBodyType(value || ""); setPage(1) }}
+                size="sm"
               />
               <Select
-                placeholder="Год от"
+                label="Год от"
+                placeholder="Любой"
                 clearable
                 data={Array.from({length: 15}, (_, i) => ({ value: String(2025 - i), label: String(2025 - i) }))}
                 value={yearFrom || null}
-                onChange={setYearFrom}
-                size="xs"
-                w={90}
+                onChange={(value) => { setYearFrom(value || ""); setPage(1) }}
+                size="sm"
               />
-          </Group>
+          </Box>
+          {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
+          </Stack>
         </Paper>
 
         {isLoading ? (
@@ -152,14 +194,7 @@ export default function AuctionsPage() {
                 <Paper radius="md" withBorder style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", transition: "all 200ms", cursor: "pointer" }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#fb923c" }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)" }}>
-                  <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "4/3" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={l.imageUrl || "/placeholder.svg"} alt={l.make} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    <Badge pos="absolute" top={8} left={8} color="orange" variant="filled" size="sm">{l.source}</Badge>
-                    <Badge pos="absolute" top={8} right={8} color="dark" variant="filled" size="sm">
-                      {l.country === "JP" ? "🇯🇵" : l.country === "KR" ? "🇰🇷" : l.country === "US" ? "🇺🇸" : l.country === "DE" ? "🇩🇪" : l.country}
-                    </Badge>
-                  </Box>
+                  <AuctionMedia listing={l} />
                   <Box p="sm">
                     <Text fw={700} fz="sm" c="dark.9" mb={4}>{l.make} {l.model}</Text>
                     <Group gap="xs" mb={4}>
@@ -193,17 +228,12 @@ export default function AuctionsPage() {
         )}
 
         {data && data.pagination.pages > 1 && (
-          <Group justify="center">
-            <SegmentedControl
-              value={String(page)}
-              onChange={(v) => setPage(Number(v))}
-              data={Array.from({ length: Math.min(data.pagination.pages, 5) }, (_, i) => ({ label: String(i + 1), value: String(i + 1) }))}
-            />
-          </Group>
+          <Stack align="center" gap={6}>
+            <Pagination value={page} onChange={setPage} total={data.pagination.pages} boundaries={1} siblings={1} size="sm" color="orange" />
+            <Text size="xs" c="dimmed">Страница {page} из {data.pagination.pages} · по {data.pagination.limit} лота</Text>
+          </Stack>
         )}
       </Stack>
     </Container>
   )
 }
-
-import { Box } from "@mantine/core"

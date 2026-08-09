@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, Notifications } from "@mantine/core"
+import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon } from "@mantine/core"
 import { IconCar, IconCheck, IconPlus } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
@@ -146,8 +146,8 @@ export default function CreateVehiclePage() {
                 </Group>
                 <Group gap="sm" grow>
                   <NumberInput label="Год" placeholder="2018" required value={f.year ? Number(f.year) : undefined} onChange={(v) => set("year", String(v || ""))} size="sm" min={1980} max={2026} />
-                  <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} thousandGroup />
-                  <NumberInput label="Пробег, км" placeholder="120000" value={f.mileage ? Number(f.mileage) : undefined} onChange={(v) => set("mileage", String(v || ""))} size="sm" min={0} thousandGroup />
+                  <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />
+                  <NumberInput label="Пробег, км" placeholder="120000" value={f.mileage ? Number(f.mileage) : undefined} onChange={(v) => set("mileage", String(v || ""))} size="sm" min={0} />
                 </Group>
                 <Group gap="sm" grow>
                   <TextInput label="Город" placeholder="Москва" value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />

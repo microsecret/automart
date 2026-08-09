@@ -106,7 +106,7 @@ export default function AppFooter() {
             </Stack>
 
             {/* Колонки ссылок */}
-            <Group gap={{ base: 32, md: 56 }} wrap="wrap">
+            <Group gap={32} wrap="wrap">
               {FOOTER_SECTIONS.map((section) => (
                 <Stack key={section.title} gap={8}>
                   <Text size="xs" fw={700} c="#a1a1aa" tt="uppercase" style={{ letterSpacing: "0.06em" }}>

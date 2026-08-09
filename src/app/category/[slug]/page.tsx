@@ -2,8 +2,8 @@
 export const dynamic = "force-dynamic"
 
 import { Suspense } from "react"
-import { useSearchParams } from "next/navigation"
-import HomePage from "@/app/page"
+import { useParams, useSearchParams } from "next/navigation"
+import HomePage from "@/components/catalog/HomeCatalog"
 import { Container, Center, Loader } from "@mantine/core"
 import { TRANSPORT_CATEGORIES } from "@/lib/catalog"
 
@@ -39,10 +39,11 @@ function CategoryContent({ slug }: { slug: string }) {
   )
 }
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
+export default function CategoryPage() {
+  const { slug } = useParams<{ slug: string }>()
   return (
     <Suspense fallback={<Container py={80}><Center><Loader color="indigo" /></Center></Container>}>
-      <CategoryContent slug={params.slug} />
+      <CategoryContent slug={slug} />
     </Suspense>
   )
 }

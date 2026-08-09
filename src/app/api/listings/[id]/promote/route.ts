@@ -12,8 +12,9 @@ const TARIFFS: Record<string, { price: number; days: number; isFeatured: boolean
 }
 
 /** POST /api/listings/[id]/promote — применить продвижение (демо: без оплаты) */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // Проверяем владельца
     const listing = await prisma.listing.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, userId: true, title: true },
     })
     if (!listing) return NextResponse.json({ error: "Объявление не найдено" }, { status: 404 })
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const promoUntil = new Date(Date.now() + t.days * 24 * 60 * 60 * 1000)
 
     const updated = await prisma.listing.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         isFeatured: t.isFeatured,
         promoType: tariff,

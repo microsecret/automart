@@ -6,22 +6,22 @@ import { Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Avatar, Simp
 import { IconStar, IconMessage2 } from "@tabler/icons-react"
 import { formatRelativeDate } from "@/lib/format"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-function StarsRow({ rating, fz = "xs" }) {
+function StarsRow({ rating }: { rating: number }) {
   return <Rating value={rating} readOnly size="sm" />
 }
 
 export default function ReviewsPage() {
   const { data, isLoading } = useSWR("/api/reviews?limit=50", fetcher)
 
-  const reviews = data?.reviews || []
-  const avg = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "—"
+  const reviews: any[] = data?.reviews || []
+  const avg = reviews.length > 0 ? (reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length).toFixed(1) : "—"
 
   const dist = [5, 4, 3, 2, 1].map((star) => ({
     star,
-    count: reviews.filter((r) => r.rating === star).length,
-    pct: reviews.length > 0 ? (reviews.filter((r) => r.rating === star).length / reviews.length * 100) : 0,
+    count: reviews.filter((r: any) => r.rating === star).length,
+    pct: reviews.length > 0 ? (reviews.filter((r: any) => r.rating === star).length / reviews.length * 100) : 0,
   }))
 
   return (
@@ -72,7 +72,7 @@ export default function ReviewsPage() {
             {/* Список отзывов */}
             <Box style={{ gridColumn: "span 2" }}>
               <Stack gap="xs">
-                {reviews.map((r) => (
+                {reviews.map((r: any) => (
                   <Paper key={r.id} radius="md" p="md" withBorder>
                     <Group gap="sm" align="flex-start" wrap="nowrap">
                       <Avatar src={r.user?.image} size={40} radius="xl" color="orange">{r.user?.name?.[0]?.toUpperCase()}</Avatar>

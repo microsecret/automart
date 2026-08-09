@@ -9,11 +9,12 @@ export const dynamic = "force-dynamic"
 const manageableStatuses = new Set(["DRAFT", "INVOICE_ISSUED", "AWAITING_CONFIRMATION", "CONFIRMED", "OVERDUE", "CANCELED"])
 
 /** PATCH /api/delivery-orders/[id]/payments/[paymentId] — подтверждение квитанции представителем. */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string; paymentId: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string; paymentId: string }> }) {
   try {
+    const { id, paymentId } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const order = await prisma.deliveryOrder.findUnique({ where: { id: params.id }, select: { id: true, partnerId: true, managerId: true } })
+    const order = await prisma.deliveryOrder.findUnique({ where: { id }, select: { id: true, partnerId: true, managerId: true } })
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
     if (!canManageDeliveryOrder(session, order)) return NextResponse.json({ error: "Нет прав на проверку платежа" }, { status: 403 })
 
@@ -22,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (!manageableStatuses.has(status)) return NextResponse.json({ error: "Недопустимый статус платежа" }, { status: 400 })
 
     const payment = await prisma.deliveryPayment.updateMany({
-      where: { id: params.paymentId, deliveryOrderId: order.id },
+      where: { id: paymentId, deliveryOrderId: order.id },
       data: { status, confirmedAt: status === "CONFIRMED" ? new Date() : null },
     })
     if (payment.count === 0) return NextResponse.json({ error: "Счёт не найден" }, { status: 404 })

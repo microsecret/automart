@@ -12,7 +12,7 @@ export async function GET() {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const vehicles = await prisma.vehicle.findMany({
-      where: { userId: session.user.id, categoryId: null },
+      where: { userId: session.user.id, category: { name: "Личный гараж" } },
       select: {
         id: true, make: true, model: true, year: true, mileage: true,
         fuelType: true, transmission: true, bodyType: true, color: true,
@@ -40,10 +40,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Марка, модель и год обязательны" }, { status: 400 })
     }
 
-    // categoryId = null означает "гаражное авто" (без объявления)
+    const garageCategory = await prisma.category.upsert({
+      where: { name: "Личный гараж" },
+      update: {},
+      create: {
+        name: "Личный гараж",
+        description: "Служебная категория личного гаража без публикации в каталоге",
+        icon: "garage",
+      },
+    })
+
+    // У гаражного автомобиля нет Listing, поэтому он не попадает в публичный каталог.
     const vehicle = await prisma.vehicle.create({
       data: {
         make, model, year: parseInt(year),
+        price: 0,
         mileage: parseInt(mileage) || 0,
         vin: vin || `GARAGE-${Date.now()}`,
         fuelType: fuelType || "GASOLINE",
@@ -54,7 +65,7 @@ export async function POST(request: NextRequest) {
         location: location || "",
         vehicleType: "CAR",
         userId: session.user.id,
-        categoryId: null, // null = гараж (не в объявлениях)
+        categoryId: garageCategory.id,
       },
     })
 

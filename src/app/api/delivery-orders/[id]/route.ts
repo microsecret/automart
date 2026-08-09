@@ -6,12 +6,13 @@ import { asTrimmedString, canManageDeliveryOrder, canReadDeliveryOrder, delivery
 
 export const dynamic = "force-dynamic"
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const order = await getDeliveryOrder(params.id)
+    const order = await getDeliveryOrder(id)
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
     if (!canReadDeliveryOrder(session, order)) return NextResponse.json({ error: "Нет доступа к этой сделке" }, { status: 403 })
 
@@ -39,13 +40,14 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 }
 
 /** PATCH /api/delivery-orders/[id] — назначение и следующий шаг; статус меняется через подтверждённое событие. */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const order = await prisma.deliveryOrder.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, buyerId: true, partnerId: true, managerId: true },
     })
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
@@ -65,7 +67,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if ("managerId" in body) data.managerId = asTrimmedString(body.managerId, 80) || null
     }
 
-    const updated = await prisma.deliveryOrder.update({ where: { id: params.id }, data, select: { id: true, updatedAt: true } })
+    const updated = await prisma.deliveryOrder.update({ where: { id }, data, select: { id: true, updatedAt: true } })
     return NextResponse.json({ order: updated })
   } catch (error) {
     console.error("Delivery order PATCH error:", error)

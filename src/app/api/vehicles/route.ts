@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
         model: model.trim(),
         year: parseInt(year),
         price: parseInt(price),
-        mileage: mileage ? parseInt(mileage) : null,
+        mileage: mileage ? parseInt(mileage) : 0,
         vin: vin ? vin.trim() : null,
         fuelType: fuelType ? fuelType.trim() : null,
         transmission: transmission ? transmission.trim() : null,

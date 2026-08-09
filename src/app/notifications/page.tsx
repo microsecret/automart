@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Button, Badge, SimpleGrid } from "@mantine/core"
 import { IconBell, IconCircleCheck, IconAlertTriangle, IconInfoCircle, IconAlertCircle, IconTrash } from "@tabler/icons-react"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const TYPE_CONFIG = {
   SUCCESS: { icon: IconCircleCheck, color: "#059669", bg: "#ecfdf5" },
@@ -23,8 +23,8 @@ export default function NotificationsPage() {
     mutate("/api/notifications?limit=50")
   }
 
-  const notifications = data?.notifications || []
-  const unread = notifications.filter((n) => !n.isRead).length
+  const notifications: any[] = data?.notifications || []
+  const unread = notifications.filter((n: any) => !n.isRead).length
 
   return (
     <Box p={{ base: "sm", md: "md" }}>
@@ -53,8 +53,8 @@ export default function NotificationsPage() {
           </Paper>
         ) : (
           <Stack gap="xs">
-            {notifications.map((n) => {
-              const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.INFO
+            {notifications.map((n: any) => {
+              const cfg = TYPE_CONFIG[n.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.INFO
               const Icon = cfg.icon
               return (
                 <Paper key={n.id} radius="md" p="sm" withBorder style={{

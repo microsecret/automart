@@ -47,7 +47,7 @@ export default function AdminDashboard() {
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
           {stats.map((s) => (
             <Card key={s.label} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}
-              component={s.href ? Link : "div"} href={s.href || undefined}>
+              component={(s.href ? Link : "div") as any} href={s.href || undefined}>
               <Group gap="sm" align="flex-start" justify="space-between">
                 <Stack gap={0}>
                   <Text size="xl" fw={800} c="dark.9" ff="var(--font-display),sans-serif" lh={1}>{s.value}</Text>

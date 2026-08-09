@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma"
 export const dynamic = "force-dynamic"
 
 /** POST /api/listings/[id]/views — увеличить счётчик просмотров */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const listing = await prisma.listing.update({
-      where: { id: params.id },
+      where: { id },
       data: { views: { increment: 1 } },
       select: { id: true, views: true },
     })
@@ -18,10 +19,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 /** GET /api/listings/[id]/views — получить просмотры */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const listing = await prisma.listing.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { views: true },
     })
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 })

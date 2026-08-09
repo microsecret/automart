@@ -9,7 +9,7 @@ import { formatPriceShort, formatMileage, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function SmartmatchingPage() {
   const [budget, setBudget] = useState(3000000)
@@ -23,7 +23,7 @@ export default function SmartmatchingPage() {
     : null
   const { data, isLoading } = useSWR(query, fetcher)
 
-  const results = data?.listings || []
+  const results: any[] = data?.listings || []
 
   return (
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -38,11 +38,11 @@ export default function SmartmatchingPage() {
 
         <Paper withBorder radius="md" p="lg">
           <Stack gap="md">
-            <NumberInput label="Бюджет, ₽" value={budget} onChange={(v) => setBudget(Number(v) || 0)} size="sm" thousandGroup separator=" " min={100000} step={100000} />
+            <NumberInput label="Бюджет, ₽" value={budget} onChange={(v) => setBudget(Number(v) || 0)} size="sm" min={100000} step={100000} />
             <Group gap="md" grow>
-              <Select label="Кузов" data={BODY_TYPES.map((b) => ({ value: b.value, label: b.label }))} value={bodyType} onChange={setBodyType} size="sm" />
-              <Select label="Двигатель" data={FUEL_TYPES.map((f) => ({ value: f.value, label: f.label }))} value={fuel} onChange={setFuel} size="sm" />
-              <Select label="КПП" data={TRANSMISSIONS.map((t) => ({ value: t.value, label: t.label }))} value={transmission} onChange={setTransmission} size="sm" />
+              <Select label="Кузов" data={BODY_TYPES.map((b) => ({ value: b.value, label: b.label }))} value={bodyType} onChange={(value) => setBodyType(value || "SUV")} size="sm" />
+              <Select label="Двигатель" data={FUEL_TYPES.map((f) => ({ value: f.value, label: f.label }))} value={fuel} onChange={(value) => setFuel(value || "GASOLINE")} size="sm" />
+              <Select label="КПП" data={TRANSMISSIONS.map((t) => ({ value: t.value, label: t.label }))} value={transmission} onChange={(value) => setTransmission(value || "AUTOMATIC")} size="sm" />
             </Group>
             <Button onClick={() => setSubmitted(true)} color="violet" radius="md" size="md" leftSection={<IconSparkles size={18} />}>Подобрать автомобиль</Button>
           </Stack>
@@ -69,7 +69,7 @@ export default function SmartmatchingPage() {
               </Paper>
             ) : (
               <Stack gap="sm">
-                {results.map((l, i) => {
+                {results.map((l: any, i: number) => {
                   const v = l.vehicle
                   const images = parseImages(v?.images)
                   const image = images[0] || "/placeholder.svg"

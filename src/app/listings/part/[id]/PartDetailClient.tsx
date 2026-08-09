@@ -140,7 +140,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                     )}
                   </Box>
                   {images.length > 1 && (
-                    <Carousel slideSize="120px" slideGap="xs" align="start" dragFree withControls={false} p="xs">
+                    <Carousel slideSize="120px" slideGap="xs" withControls={false} style={{ padding: "var(--mantine-spacing-xs)" }}>
                       {images.map((img, i) => (
                         <Carousel.Slide key={i}>
                           <Box

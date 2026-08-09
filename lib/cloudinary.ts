@@ -25,10 +25,13 @@ export async function uploadImage(file: File | string, folder = "autorent-markt"
       });
     } else if (file instanceof File) {
       // File object
-      const buffer = await file.arrayBuffer();
-      uploadResult = await cloudinary.uploader.upload(Buffer.from(buffer), {
-        folder,
-        resource_type: "auto"
+      const buffer = Buffer.from(await file.arrayBuffer());
+      uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder, resource_type: "auto" },
+          (error, result) => error || !result ? reject(error || new Error("Cloudinary upload failed")) : resolve(result)
+        )
+        stream.end(buffer)
       });
     } else {
       throw new Error("Invalid file type");

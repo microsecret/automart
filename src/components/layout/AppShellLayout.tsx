@@ -45,6 +45,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const isAuthRoute = pathname?.startsWith("/auth/")
   const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
   const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCategory === "parts"
+  const isAuctionsRoute = pathname?.startsWith("/auctions")
 
   if (isAuthRoute) {
     return (
@@ -64,7 +65,8 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         <Box component="aside" className="app-sidebar">
           <ScrollArea h="100%" type="hover" scrollbarSize={5}>
             <Stack gap="sm" p="sm">
-              <AccountPanel session={session} />
+              {/* Для гостя вход уже доступен в хедере: не дублируем две одинаковые пары кнопок. */}
+              {session?.user && <AccountPanel session={session} />}
 
               <SidebarPanel title="Транспорт" icon={<IconCar size={15} />}>
                 {TRANSPORT.map((item) => (
@@ -81,35 +83,39 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </SidebarPanel>
 
-              <SidebarPanel title="Запчасти" icon={<IconTools size={15} />}>
-                {PARTS.map((item, index) => (
-                  <NavLink
-                    key={item.href}
-                    component={Link}
-                    href={item.href}
-                    label={item.label}
-                    leftSection={index === 0 ? item.icon : undefined}
-                    active={index === 0 && isPartsRoute}
-                    color="indigo"
-                    className={`market-side-nav ${index > 0 ? "market-side-nav--nested" : ""}`}
-                  />
-                ))}
-              </SidebarPanel>
+              {!isPartsRoute && (
+                <SidebarPanel title="Запчасти" icon={<IconTools size={15} />}>
+                  {PARTS.map((item, index) => (
+                    <NavLink
+                      key={item.href}
+                      component={Link}
+                      href={item.href}
+                      label={item.label}
+                      leftSection={index === 0 ? item.icon : undefined}
+                      active={index === 0 && isPartsRoute}
+                      color="indigo"
+                      className={`market-side-nav ${index > 0 ? "market-side-nav--nested" : ""}`}
+                    />
+                  ))}
+                </SidebarPanel>
+              )}
 
-              <SidebarPanel title="Мировые аукционы" icon={<IconGavel size={15} />}>
-                {AUCTIONS.map((item, index) => (
-                  <NavLink
-                    key={item.href}
-                    component={Link}
-                    href={item.href}
-                    label={item.label}
-                    leftSection={index === 0 ? <IconGavel size={16} stroke={1.8} /> : undefined}
-                    active={pathname === "/auctions" && index === 0}
-                    color="orange"
-                    className={`market-side-nav ${index > 0 ? "market-side-nav--nested" : ""}`}
-                  />
-                ))}
-              </SidebarPanel>
+              {!isAuctionsRoute && (
+                <SidebarPanel title="Мировые аукционы" icon={<IconGavel size={15} />}>
+                  {AUCTIONS.map((item, index) => (
+                    <NavLink
+                      key={item.href}
+                      component={Link}
+                      href={item.href}
+                      label={item.label}
+                      leftSection={index === 0 ? <IconGavel size={16} stroke={1.8} /> : undefined}
+                      active={pathname === "/auctions" && index === 0}
+                      color="orange"
+                      className={`market-side-nav ${index > 0 ? "market-side-nav--nested" : ""}`}
+                    />
+                  ))}
+                </SidebarPanel>
+              )}
 
               <Paper className="market-side-service" radius="lg" p="sm" withBorder>
                 <Group gap="xs" wrap="nowrap" align="flex-start">
@@ -166,18 +172,7 @@ function AccountPanel({ session }: { session: ReturnType<typeof useSession>["dat
     )
   }
 
-  return (
-    <Paper className="market-side-account" radius="lg" p="sm" withBorder>
-      <Group gap="xs" wrap="nowrap">
-        <ThemeIcon variant="light" color="indigo" radius="md" size={32}><IconUserCircle size={19} /></ThemeIcon>
-        <Box><Text size="sm" fw={700}>Личный кабинет</Text><Text size="10px" c="dimmed">Объявления, избранное, доставка</Text></Box>
-      </Group>
-      <Group grow mt="sm">
-        <Button component={Link} href="/auth/signin" variant="light" color="indigo" size="xs">Войти</Button>
-        <Button component={Link} href="/auth/signup" color="indigo" size="xs">Создать</Button>
-      </Group>
-    </Paper>
-  )
+  return null
 }
 
 function SidebarPanel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {

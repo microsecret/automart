@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import useSWR, { mutate as globalMutate } from "swr"
 import { useSession } from "next-auth/react"
 import {
@@ -31,8 +31,8 @@ interface Message {
   createdAt: string
 }
 
-export default function ConversationPage({ params }: { params: { conversationId: string } }) {
-  const { conversationId } = params
+export default function ConversationPage() {
+  const { conversationId } = useParams<{ conversationId: string }>()
   const { data: session, status } = useSession() || { data: null, status: 'unauthenticated' }
   const router = useRouter()
   const [text, setText] = useState("")
@@ -45,13 +45,13 @@ export default function ConversationPage({ params }: { params: { conversationId:
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  useEffect(() => { scrollToBottom() }, [data])
-
   const { data, isLoading } = useSWR<{ messages: Message[]; otherUserName: string; otherUserImage: string | null }>(
     session ? `/api/messages/${conversationId}` : null,
     fetcher,
     { refreshInterval: 5000 }
   )
+
+  useEffect(() => { scrollToBottom() }, [data])
 
   useEffect(() => {
     if (status === "loading") return

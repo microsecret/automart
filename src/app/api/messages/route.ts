@@ -19,21 +19,9 @@ export async function GET(request: NextRequest) {
     if (searchParams.get("unreadCountOnly") === "true") {
       const unreadCount = await prisma.message.count({
         where: {
-          OR: [
-            { senderId: session.user.id },
-            { receiverId: session.user.id }
-          ],
-          AND: [
-            {
-              OR: [
-                { senderId: session.user.id, receiverNotId: session.user.id },
-                { receiverId: session.user.id, senderNotId: session.user.id }
-              ]
-            },
-            {
-              isRead: false
-            }
-          ]
+          receiverId: session.user.id,
+          senderId: { not: session.user.id },
+          isRead: false,
         }
       })
 

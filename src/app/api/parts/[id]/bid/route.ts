@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Войдите, чтобы делать ставки" }, { status: 401 })
     const body = await request.json()
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (!Number.isFinite(amount) || amount <= 0) return NextResponse.json({ error: "Укажите корректную сумму" }, { status: 400 })
 
     const result = await prisma.$transaction(async (tx) => {
-      const part = await tx.part.findUnique({ where: { id: params.id }, select: { id: true, saleFormat: true, auctionStatus: true, auctionEndsAt: true, auctionCurrentPrice: true, auctionStartPrice: true, auctionMinStep: true } })
+      const part = await tx.part.findUnique({ where: { id }, select: { id: true, saleFormat: true, auctionStatus: true, auctionEndsAt: true, auctionCurrentPrice: true, auctionStartPrice: true, auctionMinStep: true } })
       if (!part) return { error: "Запчасть не найдена", status: 404 as const }
       if (part.saleFormat !== "AUCTION") return { error: "Это объявление не является аукционом", status: 400 as const }
       if (part.auctionStatus !== "ACTIVE" || !part.auctionEndsAt || part.auctionEndsAt <= new Date()) {

@@ -4,7 +4,7 @@ import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Container, Center, Loader, Group, Text, Breadcrumbs, Anchor, Badge } from "@mantine/core"
 import Link from "next/link"
-import HomePage from "@/app/page"
+import HomePage from "@/components/catalog/HomeCatalog"
 import { IconSearch } from "@tabler/icons-react"
 
 function SearchContent() {

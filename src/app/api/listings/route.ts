@@ -23,12 +23,22 @@ function oneOrMany(value: string | null) {
 }
 
 function normalizeListing<T extends {
-  vehicle?: { location?: string | null } | null
+  vehicle?: { location?: string | null; vehicleType?: string | null; transmission?: string | null; fuelType?: string | null } | null
   part?: { location?: string | null } | null
 }>(listing: T) {
+  const vehicle = listing.vehicle
+  const vehicleType = vehicle?.vehicleType || "CAR"
+  const supportsTransmission = vehicleType === "CAR" || vehicleType === "TRUCK"
+  const normalizedVehicle = vehicle ? {
+    ...vehicle,
+    transmission: supportsTransmission ? vehicle.transmission : null,
+    fuelType: vehicleType === "AIR" ? null : vehicle.fuelType,
+  } : null
+
   return {
     ...listing,
-    location: listing.vehicle?.location || listing.part?.location || null,
+    vehicle: normalizedVehicle,
+    location: normalizedVehicle?.location || listing.part?.location || null,
   }
 }
 
@@ -47,6 +57,15 @@ export async function GET(request: NextRequest) {
     const priceTo = sp.get("priceTo")
     const city = sp.get("city")?.trim()
     const sort = sp.get("sort") || "newest"
+
+    const minPrice = parseInteger(priceFrom)
+    const maxPrice = parseInteger(priceTo)
+    if ((priceFrom && minPrice === undefined) || (priceTo && maxPrice === undefined)) {
+      return NextResponse.json({ error: "Цена должна быть целым числом" }, { status: 400 })
+    }
+    if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
+      return NextResponse.json({ error: "Цена от не может быть больше цены до" }, { status: 400 })
+    }
 
     // Фильтры ТС
     const make = sp.get("make")
@@ -98,8 +117,6 @@ export async function GET(request: NextRequest) {
 
     if (priceFrom || priceTo) {
       where.price = {}
-      const minPrice = parseInteger(priceFrom)
-      const maxPrice = parseInteger(priceTo)
       if (minPrice !== undefined) where.price.gte = minPrice
       if (maxPrice !== undefined) where.price.lte = maxPrice
     }

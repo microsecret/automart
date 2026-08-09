@@ -6,10 +6,11 @@ import { authOptions } from "@/lib/auth"
 export const dynamic = "force-dynamic"
 
 /** GET /api/news/[id] — одна новость с комментариями */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const found = await prisma.news.findFirst({
-      where: { OR: [{ id: params.id }, { slug: params.id }] },
+      where: { OR: [{ id }, { slug: id }] },
       select: { id: true },
     })
 
@@ -33,8 +34,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 /** POST /api/news/[id] — добавить комментарий */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (!content?.trim()) return NextResponse.json({ error: "Пустой комментарий" }, { status: 400 })
 
     const news = await prisma.news.findFirst({
-      where: { OR: [{ id: params.id }, { slug: params.id }] },
+      where: { OR: [{ id }, { slug: id }] },
       select: { id: true },
     })
 

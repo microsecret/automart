@@ -6,11 +6,12 @@ import { asTrimmedString, canReadDeliveryOrder } from "@/lib/delivery-access"
 
 export const dynamic = "force-dynamic"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const order = await prisma.deliveryOrder.findUnique({ where: { id: params.id }, select: { id: true, buyerId: true, partnerId: true, managerId: true } })
+    const order = await prisma.deliveryOrder.findUnique({ where: { id }, select: { id: true, buyerId: true, partnerId: true, managerId: true } })
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
     if (!canReadDeliveryOrder(session, order)) return NextResponse.json({ error: "Нет доступа к чату сделки" }, { status: 403 })
 

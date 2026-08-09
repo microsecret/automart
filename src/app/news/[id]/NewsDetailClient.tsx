@@ -80,8 +80,8 @@ export default function NewsDetailClient({ id }: { id: string }) {
           )}
           {(article.sourceUrl || article.telegramUrl) && (
             <Group gap="md" mt="md" pt="md" style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
-              {article.sourceUrl && <Anchor href={article.sourceUrl} target="_blank" rel="noreferrer" size="xs" c="#4f46e5" leftSection={<IconExternalLink size={13} />}>Первоисточник</Anchor>}
-              {article.telegramUrl && <Anchor href={article.telegramUrl} target="_blank" rel="noreferrer" size="xs" c="#4f46e5" leftSection={<IconBrandTelegram size={13} />}>Открыть в Telegram</Anchor>}
+              {article.sourceUrl && <Anchor href={article.sourceUrl} target="_blank" rel="noreferrer" size="xs" c="#4f46e5"><IconExternalLink size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />Первоисточник</Anchor>}
+              {article.telegramUrl && <Anchor href={article.telegramUrl} target="_blank" rel="noreferrer" size="xs" c="#4f46e5"><IconBrandTelegram size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />Открыть в Telegram</Anchor>}
             </Group>
           )}
         </Card>

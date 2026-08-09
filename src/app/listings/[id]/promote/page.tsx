@@ -1,12 +1,13 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useState, useTransition } from "react"
+import { useParams } from "next/navigation"
 import { Box, Stack, Text, Paper, Group, Button, SimpleGrid, ThemeIcon, Badge, Modal, Center, Loader, Divider, Alert } from "@mantine/core"
 import { IconFlame, IconStar, IconArrowUp, IconCheck, IconCreditCard, IconShieldCheck, IconChartBar } from "@tabler/icons-react"
 import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 
-const fetcher = (url) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const PROMO_OPTIONS = [
   { id: "boost", title: "Поднятие в топ", desc: "Объявление поднимется на первое место в поиске", price: 499, icon: IconArrowUp, color: "#0891b2", bg: "#ecfeff", days: 3, features: ["Поднятие в топ выдачи", "Длительность: 3 дня", "Статистика просмотров"] },
@@ -14,12 +15,13 @@ const PROMO_OPTIONS = [
   { id: "vip", title: "VIP-размещение", desc: "Закрепление на главной + топ поиска + бейдж VIP", price: 3990, icon: IconStar, color: "#7c3aed", bg: "#f5f3ff", days: 30, features: ["Всё из «Премиум»", "Закрепление на главной", "Максимальный приоритет", "Бейдж VIP", "Длительность: 30 дней"] },
 ]
 
-export default function PromotePage({ params }: { params: { id: string } }) {
+export default function PromotePage() {
+  const { id } = useParams<{ id: string }>()
   const [selected, setSelected] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [paid, setPaid] = useState(false)
   const [pending, startTransition] = useTransition()
-  const { data: listing } = useSWR(`/api/listings/${params.id}/views`, fetcher)
+  const { data: listing } = useSWR(`/api/listings/${id}/views`, fetcher)
 
   const selectedOption = PROMO_OPTIONS.find((o) => o.id === selected)
 
@@ -32,7 +34,7 @@ export default function PromotePage({ params }: { params: { id: string } }) {
   const handlePay = () => {
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/listings/${params.id}/promote`, {
+        const res = await fetch(`/api/listings/${id}/promote`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tariff: selected }),
@@ -42,7 +44,7 @@ export default function PromotePage({ params }: { params: { id: string } }) {
         setPaid(true)
         notifications.show({ title: "Продвижение активировано", message: `Тариф «${selectedOption?.title}» активен`, color: "green" })
       } catch (e) {
-        notifications.show({ title: "Ошибка", message: e.message, color: "red" })
+        notifications.show({ title: "Ошибка", message: e instanceof Error ? e.message : "Не удалось активировать продвижение", color: "red" })
       }
     })
   }

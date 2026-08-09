@@ -1,13 +1,13 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState, Suspense } from "react"
+import { useEffect, useMemo, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination } from "@mantine/core"
 import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
 import { PART_TYPES, PART_SUBCATEGORIES, CONDITIONS } from "@/lib/constants"
-import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
+import { POPULAR_BRANDS } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
 
 type PartResult = {
@@ -33,7 +33,7 @@ function PartMedia({ image, name }: { image: string; name: string }) {
     <Box className="part-result-card__media">
       <Stack gap={4} align="center" className="part-result-card__placeholder" style={{ opacity: !loaded || failed ? 1 : 0 }}>
         <ThemeIcon variant="light" color="indigo" size={50} radius="xl"><IconTools size={28} stroke={1.5} /></ThemeIcon>
-        <Text size="10px" c="dimmed">Фото продавца</Text>
+        <Text size="10px" c="dimmed">Фото пока нет</Text>
       </Stack>
       {!failed && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -56,6 +56,16 @@ function PartsContent() {
   const [priceTo, setPriceTo] = useState("")
   const [page, setPage] = useState(1)
 
+  const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}` : null
+  const { data: modelsData } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
+  const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
+  const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
+  const filterKey = useMemo(() => [q, partType, subcategory, make, model, condition, saleFormat, priceFrom, priceTo].join("|"), [q, partType, subcategory, make, model, condition, saleFormat, priceFrom, priceTo])
+
+  useEffect(() => {
+    setPage(1)
+  }, [filterKey])
+
   const subcats = partType ? PART_SUBCATEGORIES[partType] || [] : []
 
   const buildQuery = () => {
@@ -75,7 +85,7 @@ function PartsContent() {
     return u.toString()
   }
 
-  const { data, isLoading } = useSWR("/api/parts?" + buildQuery(), fetcher)
+  const { data, isLoading } = useSWR(hasInvalidPriceRange ? null : "/api/parts?" + buildQuery(), fetcher)
   const parts: PartResult[] = data?.parts || []
 
   const CategoryBar = (
@@ -111,8 +121,8 @@ function PartsContent() {
             <Text size="xs" c="gray.5">Найдём запчасти на ваш авто</Text>
           </Stack>
         </Group>
-        <Select placeholder="Марка" data={POPULAR_BRANDS.slice(0, 60).map((b) => ({ value: b.name, label: b.name }))} searchable clearable value={make} onChange={(v) => { setMake(v); setModel(null) }} size="xs" />
-        <Select placeholder="Модель" data={make ? getModels(make).map((m) => ({ value: m, label: m })) : []} searchable clearable disabled={!make} value={model} onChange={setModel} size="xs" />
+        <Select label="Марка" placeholder="Выберите марку" data={POPULAR_BRANDS.slice(0, 60).map((b) => ({ value: b.name, label: b.name }))} searchable clearable value={make} onChange={(v) => { setMake(v); setModel(null) }} size="xs" />
+        <Select label="Модель" placeholder={make ? "Любая модель" : "Сначала марка"} data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="xs" />
         {make && (
           <Badge variant="filled" color="violet" size="sm" radius="md">
             <Group gap={4}><IconCheck size={12} /> Совместимость: {make}{model ? " " + model : ""}</Group></Badge>
@@ -128,11 +138,12 @@ function PartsContent() {
     <Paper radius="md" p="sm" withBorder>
       <Stack gap="sm">
         <Box className="parts-filter-grid">
-          <TextInput className="parts-filter-grid__search" placeholder="Название или OEM-номер" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} size="sm" />
-          <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => { setPriceFrom(e.target.value); setPage(1) }} size="sm" type="number" /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => { setPriceTo(e.target.value); setPage(1) }} size="sm" type="number" /></Group></Box>
-          <Select placeholder="Состояние" data={CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={(v) => { setCondition(v); setPage(1) }} size="sm" />
-          <Select placeholder="Формат продажи" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={(v) => { setSaleFormat(v); setPage(1) }} size="sm" />
+          <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
+          <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
+          <Select label="Состояние" placeholder="Любое" data={CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={setCondition} size="sm" />
+          <Select label="Формат продажи" placeholder="Все варианты" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
         </Box>
+        {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
         {(partType || make || condition || saleFormat || priceFrom || priceTo) && (
           <Group gap={6} wrap="wrap">
             <Text size="xs" c="gray.5">Активные:</Text>
@@ -213,7 +224,7 @@ function PartsContent() {
                                     <Text size="xs" fw={600} c="gray.6">Подходит:</Text>
                                   </Group>
                                   {p.compatibility.slice(0, 4).map((c, i) => (
-                                    <Badge key={i} size="xs" variant="light" color="blue" radius="sm">{c.make} {c.model}</Badge>
+                                    <Badge key={i} size="xs" variant="filled" color="indigo" radius="sm">{c.make} {c.model}</Badge>
                                   ))}
                                   {p.compatibility.length > 4 && (
                                     <Text size="xs" c="gray.5">+{p.compatibility.length - 4} ещё</Text>
@@ -234,7 +245,7 @@ function PartsContent() {
               )}
         </Stack>
 
-        {data && data.pagination?.pages > 1 && <Group justify="center"><Pagination value={page} onChange={setPage} total={data.pagination.pages} size="sm" color="indigo" /></Group>}
+        {data && data.pagination?.pages > 1 && <Stack align="center" gap={6}><Pagination value={page} onChange={setPage} total={data.pagination.pages} boundaries={1} siblings={1} size="sm" color="indigo" /><Text size="xs" c="dimmed">Страница {page} из {data.pagination.pages} · по {data.pagination.limit} запчасти</Text></Stack>}
       </Stack>
     </Container>
   )

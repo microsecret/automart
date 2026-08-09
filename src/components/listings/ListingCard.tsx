@@ -57,7 +57,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   useEffect(() => {
     fetch("/api/favorites").then(r => r.json()).then(d => {
       if (d.favorites) {
-        const ids = d.favorites.map(f => f.id)
+        const ids = d.favorites.map((f: { id: string }) => f.id)
         if (ids.includes(listing.id)) setIsFav(true)
       }
     }).catch(() => {})
@@ -81,6 +81,8 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const monthlyPayment = formatMonthlyPayment(listing.price)
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
   const isAir = vehicleType === "AIR"
+  const supportsTransmission = vehicleType === "CAR" || vehicleType === "TRUCK"
+  const supportsFuel = vehicleType !== "AIR"
   const distanceLabel = isAir ? "Налёт" : "Пробег"
   const distanceValue = isAir
     ? `${new Intl.NumberFormat("ru-RU").format(listing.vehicle?.mileage || 0)} ч`
@@ -129,14 +131,13 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         {/* Фото область */}
         <Box pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
           <AspectRatio ratio={1}>
-            {displayImage ? (
+            <>
+              <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={Boolean(displayImage)} />
+              {displayImage && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={displayImage} alt={listing.title} onError={() => setImageFailed(true)} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
-            ) : isVehicle ? (
-              <VehicleFallback type={vehicleType} bodyType={listing.vehicle?.bodyType} />
-            ) : (
-              <VehicleFallback type="CAR" />
-            )}
+              )}
+            </>
           </AspectRatio>
           {images.length > 1 && (
             <>
@@ -236,13 +237,13 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>{distanceLabel}</Text>
                 <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{distanceValue}</Text>
               </Stack>
-              {listing.vehicle!.transmission && (
+              {supportsTransmission && listing.vehicle!.transmission && (
                 <Stack gap={0}>
                   <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>Трансмиссия</Text>
                   <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{findLabel(TRANSMISSIONS, listing.vehicle!.transmission)}</Text>
                 </Stack>
               )}
-              {listing.vehicle!.fuelType && (
+              {supportsFuel && listing.vehicle!.fuelType && (
                 <Stack gap={0}>
                   <Text fz="9px" c="gray.5" tt="uppercase" fw={700}>Топливо</Text>
                   <Text fz="11px" c="dark.7" fw={600} style={TRUNCATE_STYLE}>{findLabel(FUEL_TYPES, listing.vehicle!.fuelType)}</Text>

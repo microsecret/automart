@@ -27,7 +27,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   useEffect(() => {
     fetch("/api/favorites").then(r => r.json()).then(d => {
       if (d.favorites) {
-        const ids = d.favorites.map(f => f.id)
+        const ids = d.favorites.map((f: { id: string }) => f.id)
         if (ids.includes(listing.id)) setIsFav(true)
       }
     }).catch(() => {})

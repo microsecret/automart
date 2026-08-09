@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
 }
 
 // PUT mark a notification as read
-export async function PUT(request: NextRequest, { params }: { params: { notificationId: string } }) {
+export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -101,7 +101,10 @@ export async function PUT(request: NextRequest, { params }: { params: { notifica
       )
     }
 
-    const { notificationId } = params
+    const notificationId = new URL(request.url).searchParams.get("id")?.trim()
+    if (!notificationId) {
+      return NextResponse.json({ error: "Notification id is required" }, { status: 400 })
+    }
 
     // Verify the notification exists and belongs to the current user
     const notification = await prisma.notification.findFirst({
@@ -140,7 +143,7 @@ export async function PUT(request: NextRequest, { params }: { params: { notifica
 }
 
 // DELETE delete a notification
-export async function DELETE(request: NextRequest, { params }: { params: { notificationId: string } }) {
+export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -150,7 +153,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { notif
       )
     }
 
-    const { notificationId } = params
+    const notificationId = new URL(request.url).searchParams.get("id")?.trim()
+    if (!notificationId) {
+      return NextResponse.json({ error: "Notification id is required" }, { status: 400 })
+    }
 
     // Verify the notification exists and belongs to the current user
     const notification = await prisma.notification.findFirst({

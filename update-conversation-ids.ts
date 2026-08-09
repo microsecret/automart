@@ -9,7 +9,6 @@ async function updateConversationIds() {
   const messagesWithoutConversationId = await prisma.message.findMany({
     where: {
       OR: [
-        { conversationId: null },
         { conversationId: "" }
       ]
     }

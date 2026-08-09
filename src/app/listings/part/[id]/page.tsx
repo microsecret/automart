@@ -5,12 +5,13 @@ import PartDetailClient from "./PartDetailClient"
 export const dynamic = "force-dynamic"
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: PageProps) {
+  const { id } = await params
   const part = await prisma.part.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { name: true, make: true, model: true },
   })
   if (!part) return { title: "Запчасть не найдена" }
@@ -21,8 +22,9 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function PartDetailPage({ params }: PageProps) {
+  const { id } = await params
   const part = await prisma.part.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       compatibility: {
         select: { id: true, make: true, model: true, generation: true, yearFrom: true, yearTo: true, engine: true },

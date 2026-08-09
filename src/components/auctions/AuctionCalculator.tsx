@@ -122,6 +122,7 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
   const [city, setCity] = useState("Москва")
   const [customsCity, setCustomsCity] = useState("Владивосток")
   const volume = Math.round((engineVolume || 2.0) * 1000) // куб.см
+  const age = 2026 - year
 
   const calc = useMemo(() => {
     const c = {
@@ -165,7 +166,7 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
           label="Город доставки в РФ"
           data={RF_CITIES.map((c) => ({ value: c.value, label: c.label }))}
           value={city}
-          onChange={setCity}
+          onChange={(value) => setCity(value || "Москва")}
           size="sm"
           searchable
           description="Выберите город — пересчитаем доставку"
