@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation"
+import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
+import { authOptions } from "@/lib/auth"
+import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import VehicleDetailClient from "./VehicleDetailClient"
 import { findLabel, BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 
@@ -11,10 +14,11 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { id } = await params
-  const vehicle = await prisma.vehicle.findUnique({
-    where: { id },
-    select: { make: true, model: true, year: true, price: true },
+  const listing = await prisma.listing.findFirst({
+    where: { vehicleId: id, ...publicListingWhere },
+    select: { vehicle: { select: { make: true, model: true, year: true, price: true } } },
   })
+  const vehicle = listing?.vehicle
   if (!vehicle) return { title: "Объявление не найдено" }
   return {
     title: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
@@ -24,6 +28,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function VehicleDetailPage({ params }: PageProps) {
   const { id } = await params
+  const session = await getServerSession(authOptions)
   const vehicle = await prisma.vehicle.findUnique({
     where: { id },
     include: {
@@ -35,12 +40,16 @@ export default async function VehicleDetailPage({ params }: PageProps) {
           email: true,
           createdAt: true,
           vehicles: {
+            where: { listings: { some: publicListingWhere } },
             select: { id: true, make: true, model: true, year: true, price: true },
             take: 4,
           },
         },
       },
       listings: {
+        where: { deletedAt: null },
+        orderBy: { updatedAt: "desc" },
+        take: 1,
         include: {
           reviews: {
             include: { user: { select: { id: true, name: true, image: true } } },
@@ -55,6 +64,14 @@ export default async function VehicleDetailPage({ params }: PageProps) {
 
   // Находим листинг для этого ТС
   const listing = vehicle.listings[0]
+  const canPreview = Boolean(
+    listing && (
+      listing.status === LISTING_STATUS.ACTIVE ||
+      listing.userId === session?.user?.id ||
+      isListingModerator(session?.user?.role)
+    ),
+  )
+  if (!listing || !canPreview) notFound()
 
   // Похожие объявления
   const similar = await prisma.vehicle.findMany({
@@ -62,9 +79,10 @@ export default async function VehicleDetailPage({ params }: PageProps) {
       id: { not: vehicle.id },
       make: vehicle.make,
       price: { gte: vehicle.price * 0.7, lte: vehicle.price * 1.3 },
+      listings: { some: publicListingWhere },
     },
     take: 4,
-    include: { listings: true },
+    include: { listings: { where: publicListingWhere, take: 1 } },
     orderBy: { createdAt: "desc" },
   })
 

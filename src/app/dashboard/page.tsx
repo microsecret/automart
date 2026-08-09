@@ -11,6 +11,7 @@ import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from
 import BrandIcon from "@/components/brands/BrandIcon"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 
 type DashboardResponse = {
   stats: {
@@ -31,14 +32,14 @@ export default function DashboardPage() {
   const { data, error, isLoading, mutate } = useSWR<DashboardResponse>("/api/dashboard/stats", fetchJson)
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Удалить «${title}»?`)) return
+    if (!confirm(`Снять с публикации «${title}»? Данные останутся в архиве.`)) return
     try {
       const response = await fetch(`/api/listings/${id}`, { method: "DELETE" })
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
         throw new Error(payload?.error || "Не удалось удалить объявление")
       }
-      notifications.show({ title: "Удалено", message: "Объявление удалено", color: "green" })
+      notifications.show({ title: "Снято с публикации", message: "Объявление перенесено в архив", color: "green" })
       await mutate()
     } catch (error) {
       notifications.show({ title: "Ошибка", message: error instanceof Error ? error.message : "Не удалось удалить", color: "red" })
@@ -121,6 +122,7 @@ export default function DashboardPage() {
                 const images = parseImages(isVehicle ? l.vehicle?.images : l.part?.images)
                 const image = images[0] || "/placeholder.svg"
                 const href = isVehicle ? `/listings/vehicle/${l.vehicle.id}` : `/listings/part/${l.part.id}`
+                const statusMeta = LISTING_STATUS_META[l.status as keyof typeof LISTING_STATUS_META] || LISTING_STATUS_META[LISTING_STATUS.DRAFT]
                 return (
                   <Paper key={l.id} radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-border)" }}>
                     <Group gap="md" align="center" wrap="nowrap">
@@ -136,9 +138,11 @@ export default function DashboardPage() {
                           <Link href={href} style={{ textDecoration: "none" }}>
                             <Text fw={600} fz="sm" c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</Text>
                           </Link>
+                          <Badge size="xs" color={statusMeta.color} variant="light">{statusMeta.label}</Badge>
                           {l.isFeatured && <Badge size="xs" color="violet" variant="light">Премиум</Badge>}
                         </Group>
                         <Text fz="xs" c="gray.5">{isVehicle && l.vehicle ? `${formatMileage(l.vehicle.mileage)} · ${l.vehicle.location || "—"}` : l.part?.name}</Text>
+                        {l.statusReason && l.status !== LISTING_STATUS.ACTIVE && <Text fz="xs" c="red.6" lineClamp={1}>{l.statusReason}</Text>}
                         <Group gap="md">
                           <Text fw={800} fz="md" c="dark.9" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
                           <Group gap={4}>

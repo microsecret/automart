@@ -176,7 +176,7 @@ export default function CreateVehiclePage() {
       const list = await listRes.json()
       if (!listRes.ok) throw new Error(list.error || "Ошибка создания объявления")
 
-      notifications.show({ title: "Готово!", message: "Объявление опубликовано", color: "green" })
+      notifications.show({ title: "Отправлено на проверку", message: "Мы проверим объявление и опубликуем его после модерации.", color: "indigo" })
       router.push(`/listings/vehicle/${veh.id}`)
     } catch (err: any) {
       notifications.show({ title: "Ошибка", message: err.message, color: "red" })
@@ -192,7 +192,7 @@ export default function CreateVehiclePage() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Новое объявление</Text>
-            <Text size="xs" c="gray.5">Заполните данные — объявление появится в поиске сразу</Text>
+            <Text size="xs" c="gray.5">Заполните данные — после проверки объявление появится в поиске</Text>
           </Stack>
         </Group>
 

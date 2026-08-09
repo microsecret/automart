@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { getFuelOptions, supportsTransmission } from "@/lib/constants"
 import { getVehicleSubtypeConfig, isValidVehicleSubtype } from "@/lib/vehicleSubtypes"
+import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -106,7 +107,9 @@ export async function GET(request: NextRequest) {
     const partType = sp.get("partType")
     const partCondition = sp.get("partCondition")
 
-    const where: Prisma.ListingWhereInput = {}
+    // The public API is the catalogue boundary: drafts, rejected, archived and
+    // soft-deleted records must never leak through search, comparison or map.
+    const where: Prisma.ListingWhereInput = { ...publicListingWhere }
     if (ids) {
       const idArr = ids.split(",").map((x) => x.trim()).filter(Boolean)
       where.vehicleId = { in: idArr }
@@ -308,9 +311,18 @@ export async function POST(request: NextRequest) {
         title: normalizedTitle,
         description: normalizedDescription || null,
         price: Math.trunc(normalizedPrice),
+        status: LISTING_STATUS.PENDING_MODERATION,
+        lastStatusChangedAt: new Date(),
         userId: session.user.id,
         vehicleId: vehicleId || null,
         partId: partId || null,
+        statusEvents: {
+          create: {
+            toStatus: LISTING_STATUS.PENDING_MODERATION,
+            actorId: session.user.id,
+            reason: "Отправлено владельцем на модерацию",
+          },
+        },
       },
       include: {
         vehicle: true,

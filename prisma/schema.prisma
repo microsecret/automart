@@ -235,6 +235,8 @@ model Listing {
   title         String
   description   String?
   price         Int      // Price in rubles
+  status        String   @default("ACTIVE") // DRAFT, PENDING_MODERATION, ACTIVE, PAUSED, REJECTED, SOLD, ARCHIVED
+  statusReason  String?
   isFeatured    Boolean  @default(false)
   promoType     String?  // boost, premium, vip
   promoUntil    DateTime? // до какого числа действует продвижение
@@ -259,10 +261,15 @@ model Listing {
 
   // Reverse relation for reviews
   reviews       Review[] @relation("ListingReviews")
+  statusEvents  ListingStatusEvent[]
 
   // Timestamps
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  publishedAt   DateTime?
+  archivedAt    DateTime?
+  deletedAt     DateTime?
+  lastStatusChangedAt DateTime?
 
   // TODO: Add validation to ensure either vehicleId or partId is set, but not both
   // This will be handled at the application level for now
@@ -270,6 +277,24 @@ model Listing {
   @@index([createdAt])
   @@index([price])
   @@index([isFeatured])
+  @@index([status, createdAt])
+  @@index([userId, status, updatedAt])
+  @@index([deletedAt])
+}
+
+// Immutable record of every lifecycle decision. actorId intentionally remains
+// nullable to retain historical actions if a user account is removed later.
+model ListingStatusEvent {
+  id          String   @id @default(uuid())
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  fromStatus  String?
+  toStatus    String
+  reason      String?
+  actorId     String?
+  createdAt   DateTime @default(now())
+
+  @@index([listingId, createdAt])
 }
 
 // Review model for transaction feedback

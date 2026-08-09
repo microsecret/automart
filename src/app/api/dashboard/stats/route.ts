@@ -49,6 +49,8 @@ export async function GET() {
         id: l.id,
         title: l.title,
         price: l.price,
+        status: l.status,
+        statusReason: l.statusReason,
         isFeatured: l.isFeatured,
         views: l.views || 0,
         createdAt: l.createdAt,

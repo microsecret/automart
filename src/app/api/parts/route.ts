@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { Prisma } from "@prisma/client"
 import { AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPES, SELLER_TYPES } from "@/lib/constants"
 
@@ -231,8 +232,27 @@ export async function POST(request: NextRequest) {
           }))
         } : undefined,
         userId: session.user.id,
+        // A part must have the same marketplace lifecycle as a vehicle. The
+        // nested write keeps the part and its moderation record atomic.
+        listings: {
+          create: {
+            title: name.trim(),
+            description: description?.trim() || null,
+            price: normalizedSaleFormat === "AUCTION" ? startPrice! : normalizedPrice,
+            userId: session.user.id,
+            status: LISTING_STATUS.PENDING_MODERATION,
+            lastStatusChangedAt: new Date(),
+            statusEvents: {
+              create: {
+                toStatus: LISTING_STATUS.PENDING_MODERATION,
+                actorId: session.user.id,
+                reason: "Отправлено владельцем на модерацию",
+              },
+            },
+          },
+        },
       },
-      include: { compatibility: true, crossReferences: true },
+      include: { compatibility: true, crossReferences: true, listings: { select: { id: true, status: true } } },
     })
 
     return NextResponse.json(part, { status: 201 })

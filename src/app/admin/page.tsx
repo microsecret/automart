@@ -3,9 +3,12 @@ export const dynamic = "force-dynamic"
 
 
 import useSWR from "swr"
-import { Box, Stack, Text, Center, Loader, SimpleGrid, Card, ThemeIcon, Title, Group, Badge, Table, Progress, Divider } from "@mantine/core"
-import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconCheck, IconActivity, IconWorld } from "@tabler/icons-react"
+import { useState } from "react"
+import { notifications } from "@mantine/notifications"
+import { Box, Stack, Text, Center, Loader, SimpleGrid, Card, ThemeIcon, Title, Group, Badge, Table, Progress, Divider, Button } from "@mantine/core"
+import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconCheck, IconActivity, IconWorld, IconArchive, IconX } from "@tabler/icons-react"
 import Link from "next/link"
+import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -182,11 +185,46 @@ export default function AdminDashboard() {
 function ModerationSection() {
   const { data, isLoading, mutate } = useSWR<any>("/api/admin/listings", fetcher)
   const listings = data?.listings || []
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+  const handleStatus = async (id: string, status: typeof LISTING_STATUS[keyof typeof LISTING_STATUS]) => {
+    const reason = status === LISTING_STATUS.REJECTED
+      ? window.prompt("Укажите причину отклонения для владельца")?.trim()
+      : undefined
+    if (status === LISTING_STATUS.REJECTED && !reason) return
+
+    setUpdatingId(id)
+    try {
+      const response = await fetch("/api/admin/listings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status, reason }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || "Не удалось обновить статус")
+      notifications.show({ title: "Статус обновлён", message: "Решение сохранено в журнале модерации.", color: "green" })
+      await mutate()
+    } catch (error) {
+      notifications.show({ title: "Ошибка модерации", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
+    } finally {
+      setUpdatingId(null)
+    }
+  }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Удалить объявление?")) return
-    await fetch(`/api/admin/listings?id=${id}`, { method: "DELETE" })
-    mutate()
+    if (!confirm("Снять объявление с публикации? Оно останется в журнале.")) return
+    setUpdatingId(id)
+    try {
+      const response = await fetch(`/api/admin/listings?id=${id}`, { method: "DELETE" })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || "Не удалось снять объявление")
+      notifications.show({ title: "Снято с публикации", message: "Объявление сохранено в архиве", color: "green" })
+      await mutate()
+    } catch (error) {
+      notifications.show({ title: "Ошибка модерации", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
+    } finally {
+      setUpdatingId(null)
+    }
   }
 
   return (
@@ -198,13 +236,16 @@ function ModerationSection() {
         </Group>
         {isLoading ? <Center py={20}><Loader size="sm" color="indigo" /></Center> : (
           <Stack gap="xs" style={{ maxHeight: 400, overflow: "auto" }}>
-            {listings.slice(0, 20).map((l: any) => (
+            {listings.filter((l: any) => !l.deletedAt).slice(0, 20).map((l: any) => {
+              const statusMeta = LISTING_STATUS_META[l.status as keyof typeof LISTING_STATUS_META] || LISTING_STATUS_META[LISTING_STATUS.DRAFT]
+              const isPending = l.status === LISTING_STATUS.PENDING_MODERATION
+              return (
               <Group key={l.id} gap="sm" align="center" justify="space-between" p="xs" style={{ background: "var(--mantine-color-gray-0)", borderRadius: 8 }}>
                 <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
                   <IconTag size={16} color="#71717a" />
                   <Stack gap={0} style={{ minWidth: 0 }}>
                     <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</Text>
-                    <Text size="xs" c="gray.5">{l.user?.name || l.user?.email} · {l.vehicle ? `${l.vehicle.make} ${l.vehicle.model}` : l.part?.name}</Text>
+                    <Group gap={6}><Text size="xs" c="gray.5">{l.user?.name || l.user?.email} · {l.vehicle ? `${l.vehicle.make} ${l.vehicle.model}` : l.part?.name}</Text><Badge size="xs" color={statusMeta.color} variant="light">{statusMeta.label}</Badge></Group>
                   </Stack>
                 </Group>
                 <Group gap="xs">
@@ -212,10 +253,13 @@ function ModerationSection() {
                   <Link href={l.vehicle ? `/listings/vehicle/${l.vehicle.id}` : `/listings/part/${l.part?.id}`} target="_blank">
                     <Badge size="xs" variant="light" color="indigo">Открыть</Badge>
                   </Link>
-                  <Badge size="xs" variant="light" color="red" style={{ cursor: "pointer" }} onClick={() => handleDelete(l.id)}>Удалить</Badge>
+                  {isPending && <Button size="xs" variant="light" color="green" loading={updatingId === l.id} onClick={() => handleStatus(l.id, LISTING_STATUS.ACTIVE)} leftSection={<IconCheck size={12} />}>Одобрить</Button>}
+                  {isPending && <Button size="xs" variant="light" color="red" loading={updatingId === l.id} onClick={() => handleStatus(l.id, LISTING_STATUS.REJECTED)} leftSection={<IconX size={12} />}>Отклонить</Button>}
+                  {!isPending && l.status !== LISTING_STATUS.ARCHIVED && <Button size="xs" variant="subtle" color="gray" loading={updatingId === l.id} onClick={() => handleStatus(l.id, LISTING_STATUS.ARCHIVED)} leftSection={<IconArchive size={12} />}>В архив</Button>}
+                  <Button size="xs" variant="subtle" color="red" loading={updatingId === l.id} onClick={() => handleDelete(l.id)}>Снять</Button>
                 </Group>
               </Group>
-            ))}
+            )})}
           </Stack>
         )}
       </Stack>

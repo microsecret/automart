@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation"
+import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
+import { authOptions } from "@/lib/auth"
+import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import PartDetailClient from "./PartDetailClient"
 
 export const dynamic = "force-dynamic"
@@ -10,10 +13,11 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { id } = await params
-  const part = await prisma.part.findUnique({
-    where: { id },
-    select: { name: true, make: true, model: true },
+  const listing = await prisma.listing.findFirst({
+    where: { partId: id, ...publicListingWhere },
+    select: { part: { select: { name: true, make: true, model: true } } },
   })
+  const part = listing?.part
   if (!part) return { title: "Запчасть не найдена" }
   return {
     title: `${part.name} для ${part.make} ${part.model}`,
@@ -23,6 +27,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function PartDetailPage({ params }: PageProps) {
   const { id } = await params
+  const session = await getServerSession(authOptions)
   const part = await prisma.part.findUnique({
     where: { id },
     include: {
@@ -33,10 +38,13 @@ export default async function PartDetailPage({ params }: PageProps) {
       user: {
         select: {
           id: true, name: true, image: true, createdAt: true,
-          parts: { select: { id: true, name: true, price: true }, take: 4 },
+          parts: { where: { listings: { some: publicListingWhere } }, select: { id: true, name: true, price: true }, take: 4 },
         },
       },
       listings: {
+        where: { deletedAt: null },
+        orderBy: { updatedAt: "desc" },
+        take: 1,
         include: {
           reviews: {
             include: { user: { select: { id: true, name: true, image: true } } },
@@ -55,6 +63,14 @@ export default async function PartDetailPage({ params }: PageProps) {
   if (!part) notFound()
 
   const listing = part.listings[0]
+  const canPreview = Boolean(
+    listing && (
+      listing.status === LISTING_STATUS.ACTIVE ||
+      listing.userId === session?.user?.id ||
+      isListingModerator(session?.user?.role)
+    ),
+  )
+  if (!listing || !canPreview) notFound()
 
   const data = {
     id: part.id,

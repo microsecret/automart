@@ -96,7 +96,7 @@ export default function CreatePartPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Ошибка")
-      notifications.show({ title: "Готово!", message: "Запчасть опубликована", color: "green" })
+      notifications.show({ title: "Отправлено на проверку", message: "Мы проверим карточку и опубликуем её после модерации.", color: "indigo" })
       router.push(`/listings/part/${data.id}`)
     } catch (err: any) {
       notifications.show({ title: "Ошибка", message: err.message, color: "red" })
