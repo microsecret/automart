@@ -32,6 +32,7 @@ model User {
   parts        Part[]    @relation("UserParts")
   listings     Listing[]
   favoriteListings Listing[] @relation("Favorites")
+  partBids     PartBid[]
   reviews      Review[] @relation("Reviewer")
   messagesSent Message[] @relation("MessageSender")
   messagesReceived Message[] @relation("MessageReceiver")
@@ -157,6 +158,12 @@ model Part {
   brakeType        String?  // DISC, DRUM, VENTED_DISC
   compatibility    PartCompatibility[]
   vehicleType   String   @default("CAR")
+  saleFormat    String   @default("FIXED") // FIXED or AUCTION
+  auctionStatus String   @default("ACTIVE")
+  auctionEndsAt DateTime?
+  auctionStartPrice Int?
+  auctionCurrentPrice Int?
+  auctionMinStep Int?
   make          String   // Compatible vehicle make
   model         String   // Compatible vehicle model
   yearFrom      Int?     // Compatible from year
@@ -174,6 +181,7 @@ model Part {
 
   // Reverse relation for listings
   listings      Listing[] @relation("ListingPart")
+  bids          PartBid[]
 
   // Timestamps
   createdAt     DateTime @default(now())
@@ -183,6 +191,19 @@ model Part {
   @@index([name])
   @@index([make, model])
   @@index([partType])
+}
+
+model PartBid {
+  id        String   @id @default(uuid())
+  amount    Int
+  partId    String
+  part      Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([partId, createdAt])
+  @@index([userId, createdAt])
 }
 
 // Listing model (combines vehicles and parts for unified interface)

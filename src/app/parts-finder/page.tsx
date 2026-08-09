@@ -16,6 +16,7 @@ type PartResult = {
   price: number | null
   images: string | null
   condition?: string | null
+  saleFormat?: string | null
   subcategory?: string | null
   oemNumber?: string | null
   location?: string | null
@@ -32,6 +33,7 @@ function PartsContent() {
   const [make, setMake] = useState<string | null>(null)
   const [model, setModel] = useState<string | null>(null)
   const [condition, setCondition] = useState<string | null>(null)
+  const [saleFormat, setSaleFormat] = useState<string | null>(null)
   const [priceFrom, setPriceFrom] = useState("")
   const [priceTo, setPriceTo] = useState("")
   const [showFilters, setShowFilters] = useState(false)
@@ -46,6 +48,7 @@ function PartsContent() {
     if (make) u.set("make", make)
     if (model) u.set("model", model)
     if (condition) u.set("condition", condition)
+    if (saleFormat) u.set("saleFormat", saleFormat)
     if (priceFrom) u.set("priceFrom", priceFrom)
     if (priceTo) u.set("priceTo", priceTo)
     if (make) u.set("compatible", "true")
@@ -138,16 +141,18 @@ function PartsContent() {
           <TextInput placeholder="Цена от" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="xs" w={80} type="number" />
           <TextInput placeholder="до" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="xs" w={80} type="number" />
           <Select placeholder="Состояние" data={CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={setCondition} size="xs" w={110} />
+          <Select placeholder="Формат" data={[{ value: "FIXED", label: "Цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="xs" w={110} />
         </Group>
-        {(partType || make || condition || priceFrom || priceTo) && (
+        {(partType || make || condition || saleFormat || priceFrom || priceTo) && (
           <Group gap={6}>
             <Text size="xs" c="gray.5">Активные:</Text>
             {partType && <Badge size="xs" variant="light" color="indigo">{PART_TYPES.find((t) => t.value === partType)?.label}</Badge>}
             {subcategory && <Badge size="xs" variant="light" color="violet">{subcategory}</Badge>}
             {condition && <Badge size="xs" variant="light" color="green">{condition}</Badge>}
+            {saleFormat && <Badge size="xs" variant="light" color="orange">{saleFormat === "AUCTION" ? "Аукцион" : "Цена"}</Badge>}
             {priceFrom && <Badge size="xs" variant="light" color="gray">от {priceFrom}₽</Badge>}
             {priceTo && <Badge size="xs" variant="light" color="gray">до {priceTo}₽</Badge>}
-            <Button variant="subtle" size="xs" color="red" onClick={() => { setPartType(null); setSubcategory(null); setCondition(null); setPriceFrom(""); setPriceTo("") }}>Сбросить</Button>
+            <Button variant="subtle" size="xs" color="red" onClick={() => { setPartType(null); setSubcategory(null); setCondition(null); setSaleFormat(null); setPriceFrom(""); setPriceTo("") }}>Сбросить</Button>
           </Group>
         )}
       </Stack>
@@ -221,6 +226,7 @@ function PartsContent() {
 
                               <Group gap={6} wrap="wrap">
                                 {p.condition === "NEW" && <Badge size="xs" variant="filled" color="green">Новая</Badge>}
+                                {p.saleFormat === "AUCTION" && <Badge size="xs" variant="filled" color="orange">Аукцион</Badge>}
                                 {p.subcategory && <Badge size="xs" variant="light" color="indigo">{p.subcategory}</Badge>}
                                 {p.oemNumber && <Badge size="xs" variant="light" color="dark"><Group gap={3}><IconHash size={9} /> {p.oemNumber}</Group></Badge>}
                               </Group>

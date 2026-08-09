@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react"
 import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge } from "@mantine/core"
 import { IconPlus, IconCheck, IconCar, IconTrash } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
-import { PART_TYPES, PART_SUBCATEGORIES, CONDITIONS } from "@/lib/constants"
+import { PART_TYPES, PART_SUBCATEGORIES, CONDITIONS, SELLER_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
 
 export default function CreatePartPage() {
@@ -15,7 +15,8 @@ export default function CreatePartPage() {
   const [loading, setLoading] = useState(false)
   const [f, setF] = useState({
     name: "", description: "", price: "", condition: "NEW", partType: "ENGINE",
-    make: "", model: "", location: "Москва", subcategory: "", oemNumber: "",
+    make: "", model: "", location: "Москва", subcategory: "", oemNumber: "", sellerType: "OWNER", availability: "IN_STOCK",
+    saleFormat: "FIXED", auctionEndsAt: "", auctionStartPrice: "", auctionMinStep: "",
   })
   const [compat, setCompat] = useState<{ make: string; model: string; yearFrom: string; yearTo: string }[]>([])
   const [newCompat, setNewCompat] = useState({ make: "", model: "", yearFrom: "", yearTo: "" })
@@ -55,6 +56,12 @@ export default function CreatePartPage() {
           yearTo: compat[0]?.yearTo ? Number(compat[0].yearTo) : null,
           location: f.location, subcategory: f.subcategory, oemNumber: f.oemNumber,
           compatibility: compat.map(c => ({ make: c.make, model: c.model, yearFrom: c.yearFrom ? Number(c.yearFrom) : null, yearTo: c.yearTo ? Number(c.yearTo) : null })),
+          sellerType: f.sellerType,
+          availability: f.availability,
+          saleFormat: f.saleFormat,
+          auctionEndsAt: f.auctionEndsAt || null,
+          auctionStartPrice: f.auctionStartPrice ? Number(f.auctionStartPrice) : null,
+          auctionMinStep: f.auctionMinStep ? Number(f.auctionMinStep) : null,
         }),
       })
       const data = await res.json()
@@ -92,6 +99,18 @@ export default function CreatePartPage() {
                   <Select label="Состояние" data={CONDITIONS.map(c => ({ value: c.value, label: c.label }))} value={f.condition} onChange={(v) => set("condition", v || "")} size="sm" />
                   <TextInput label="OEM номер" placeholder="04465-0E040" value={f.oemNumber} onChange={(e) => set("oemNumber", e.target.value)} size="sm" />
                 </Group>
+                <Group gap="sm" grow>
+                  <Select label="Формат продажи" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} value={f.saleFormat} onChange={(v) => set("saleFormat", v || "FIXED")} size="sm" />
+                  <Select label="Продавец" data={SELLER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.sellerType} onChange={(v) => set("sellerType", v || "OWNER")} size="sm" />
+                  <Select label="Наличие" data={AVAILABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.availability} onChange={(v) => set("availability", v || "IN_STOCK")} size="sm" />
+                </Group>
+                {f.saleFormat === "AUCTION" && (
+                  <Group gap="sm" grow>
+                    <TextInput label="Окончание аукциона" type="datetime-local" required value={f.auctionEndsAt} onChange={(e) => set("auctionEndsAt", e.target.value)} size="sm" />
+                    <NumberInput label="Стартовая цена, ₽" value={f.auctionStartPrice ? Number(f.auctionStartPrice) : undefined} onChange={(v) => set("auctionStartPrice", String(v || ""))} size="sm" min={1} />
+                    <NumberInput label="Шаг ставки, ₽" value={f.auctionMinStep ? Number(f.auctionMinStep) : undefined} onChange={(v) => set("auctionMinStep", String(v || ""))} size="sm" min={1} />
+                  </Group>
+                )}
                 <Textarea label="Описание" placeholder="Состояние, комплектация, гарантия..." value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={3} />
                 <TextInput label="Город" value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
               </Stack>

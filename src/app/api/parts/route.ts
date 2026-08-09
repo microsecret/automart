@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "../auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -19,6 +21,7 @@ export async function GET(request: NextRequest) {
     const priceFrom = sp.get("priceFrom")
     const priceTo = sp.get("priceTo")
     const condition = sp.get("condition")
+    const saleFormat = sp.get("saleFormat")
     const oemNumber = sp.get("oemNumber")
     const sort = sp.get("sort") || "newest"
 
@@ -36,6 +39,7 @@ export async function GET(request: NextRequest) {
     if (make) where.make = { contains: make }
     if (model) where.model = { contains: model }
     if (condition) where.condition = condition
+    if (saleFormat === "FIXED" || saleFormat === "AUCTION") where.saleFormat = saleFormat
     if (oemNumber) where.oemNumber = { contains: oemNumber }
     if (priceFrom || priceTo) {
       where.price = {}
@@ -82,18 +86,38 @@ export async function GET(request: NextRequest) {
 /** POST /api/parts — создать запчасть с совместимостью */
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
     const body = await request.json()
-    const { name, description, price, condition, partType, make, model, yearFrom, yearTo, location, images, subcategory, oemNumber, suspensionType, brakeType, compatibility } = body
+    const { name, description, price, condition, partType, make, model, yearFrom, yearTo, location, images, subcategory, oemNumber, suspensionType, brakeType, compatibility, sellerType, availability, saleFormat, auctionEndsAt, auctionStartPrice, auctionMinStep } = body
 
     if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
     if (price == null || price < 0) return NextResponse.json({ error: "Price required" }, { status: 400 })
+
+    const normalizedSaleFormat = saleFormat === "AUCTION" ? "AUCTION" : "FIXED"
+    const parsedEnd = auctionEndsAt ? new Date(auctionEndsAt) : null
+    if (normalizedSaleFormat === "AUCTION" && (!parsedEnd || Number.isNaN(parsedEnd.getTime()) || parsedEnd <= new Date())) {
+      return NextResponse.json({ error: "Для аукциона укажите дату окончания в будущем" }, { status: 400 })
+    }
+    const normalizedPrice = Math.trunc(Number(price))
+    const startPrice = normalizedSaleFormat === "AUCTION" ? Math.max(1, Math.trunc(Number(auctionStartPrice || price))) : null
+    const minStep = normalizedSaleFormat === "AUCTION" ? Math.max(1, Math.trunc(Number(auctionMinStep || Math.max(100, normalizedPrice * 0.01)))) : null
 
     const part = await prisma.part.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        price: parseInt(price),
+        price: normalizedSaleFormat === "AUCTION" ? startPrice! : normalizedPrice,
         condition: condition || "USED",
+        sellerType: sellerType || "OWNER",
+        availability: availability || "IN_STOCK",
+        saleFormat: normalizedSaleFormat,
+        auctionStatus: normalizedSaleFormat === "AUCTION" ? "ACTIVE" : "NONE",
+        auctionEndsAt: normalizedSaleFormat === "AUCTION" ? parsedEnd : null,
+        auctionStartPrice: startPrice,
+        auctionCurrentPrice: startPrice,
+        auctionMinStep: minStep,
         partType: partType || "OTHER",
         make: make || "Universal",
         model: model || "Universal",
@@ -116,6 +140,7 @@ export async function POST(request: NextRequest) {
             note: c.note || null,
           }))
         } : undefined,
+        userId: session.user.id,
       },
       include: { compatibility: true },
     })

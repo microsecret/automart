@@ -19,6 +19,7 @@ import {
   ThemeIcon,
   Breadcrumbs,
   Anchor,
+  TextInput,
 } from "@mantine/core"
 import { Carousel } from "@mantine/carousel"
 import {
@@ -35,6 +36,7 @@ import {
   IconCar,
   IconChevronRight,
   IconCheck,
+  IconGavel,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
@@ -69,6 +71,12 @@ interface PartData {
   location: string
   images: string | null
   createdAt: Date
+  saleFormat: string
+  auctionStatus: string
+  auctionEndsAt: Date | null
+  auctionCurrentPrice: number | null
+  auctionMinStep: number | null
+  bids: { id: string; amount: number; createdAt: Date; user: { name: string | null } }[]
   listingId?: string
   seller: {
     id: string
@@ -84,9 +92,27 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const [showPhone, setShowPhone] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
   const [isFav, setIsFav] = useState(false)
+  const [bidAmount, setBidAmount] = useState("")
+  const [bidLoading, setBidLoading] = useState(false)
+  const [bidMessage, setBidMessage] = useState<string | null>(null)
   const rawImages = parseImages(data.images)
   const images = rawImages.length > 0 ? rawImages : ["/placeholder.svg"]
   const hasImages = true
+  const submitBid = async () => {
+    setBidLoading(true)
+    setBidMessage(null)
+    try {
+      const response = await fetch(`/api/parts/${data.id}/bid`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: bidAmount }) })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Ставка не принята")
+      setBidMessage(`Ставка ${(result.bid.amount as number).toLocaleString("ru-RU")} ₽ принята`)
+      setBidAmount("")
+    } catch (error: any) {
+      setBidMessage(error.message || "Не удалось сделать ставку")
+    } finally {
+      setBidLoading(false)
+    }
+  }
 
   return (
     <Container size="xl" py="lg">
@@ -229,14 +255,29 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             <Stack gap="md">
               <Card withBorder radius="lg" p="lg" style={{ borderColor: "#c7d2fe", background: "linear-gradient(135deg, #ffffff 0%, #eef2ff 100%)" }}>
                 <Title order={1} size="h4" mb={4}>{data.name}</Title>
-                <Text size="1.75rem" fw={800} c="indigo" lh={1.1} mb="xs">{formatPrice(data.price)}</Text>
+                <Text size="1.75rem" fw={800} c={data.saleFormat === "AUCTION" ? "orange" : "indigo"} lh={1.1} mb="xs">{formatPrice(data.price)}</Text>
                 <Group gap={6}>
                   <IconMapPin size={14} color="gray.5" />
                   <Text size="sm" c="gray.5">{data.location}</Text>
                   <Text size="sm" c="gray.4">·</Text>
                   <Text size="sm" c="gray.5">{formatRelativeDate(data.createdAt)}</Text>
                 </Group>
+                {data.saleFormat === "AUCTION" && (
+                  <Badge mt="sm" color="orange" variant="light" leftSection={<IconGavel size={13} />}>Аукцион · {data.auctionStatus === "ACTIVE" ? "идёт" : "завершён"}</Badge>
+                )}
               </Card>
+
+              {data.saleFormat === "AUCTION" && (
+                <Card withBorder radius="lg" p="lg" style={{ borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)" }}>
+                  <Group justify="space-between" mb="xs"><Text fw={700}>Сделать ставку</Text><IconGavel size={18} color="#f97316" /></Group>
+                  <Text size="xs" c="gray.5">Минимум: {formatPrice((data.auctionCurrentPrice || data.price) + (data.auctionMinStep || 1))}</Text>
+                  {data.auctionEndsAt && <Text size="xs" c="gray.5" mb="sm">Окончание: {new Date(data.auctionEndsAt).toLocaleString("ru-RU")}</Text>}
+                  <TextInput placeholder="Сумма ставки, ₽" type="number" value={bidAmount} onChange={(event) => setBidAmount(event.currentTarget.value)} mb="sm" />
+                  <Button fullWidth color="orange" loading={bidLoading} disabled={data.auctionStatus !== "ACTIVE" || !bidAmount} onClick={submitBid}>Подтвердить ставку</Button>
+                  {bidMessage && <Text size="xs" c={bidMessage.includes("принята") ? "green" : "red"} mt="sm">{bidMessage}</Text>}
+                  {data.bids.length > 0 && <Text size="xs" c="gray.5" mt="md">Последние ставки: {data.bids.slice(0, 3).map((bid) => `${bid.amount.toLocaleString("ru-RU")} ₽`).join(" · ")}</Text>}
+                </Card>
+              )}
 
               <Card withBorder radius="lg" p="lg">
                 <Stack gap="sm">

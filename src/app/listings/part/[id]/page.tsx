@@ -42,6 +42,11 @@ export default async function PartDetailPage({ params }: PageProps) {
           },
         },
       },
+      bids: {
+        take: 10,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } } },
+      },
     },
   })
 
@@ -68,6 +73,12 @@ export default async function PartDetailPage({ params }: PageProps) {
     location: part.location,
     images: part.images,
     createdAt: part.createdAt,
+    saleFormat: part.saleFormat,
+    auctionStatus: part.auctionStatus,
+    auctionEndsAt: part.auctionEndsAt,
+    auctionCurrentPrice: part.auctionCurrentPrice,
+    auctionMinStep: part.auctionMinStep,
+    bids: part.bids,
     listingId: listing?.id,
     seller: {
       id: part.user.id,
