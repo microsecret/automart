@@ -109,16 +109,6 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           transition: "border-color 200ms ease, box-shadow 200ms ease",
           cursor: "pointer",
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "#4f46e5"
-          e.currentTarget.style.boxShadow = "0 12px 32px -8px rgba(79,70,229,0.25)"
-          e.currentTarget.style.transform = "translateY(-3px)"
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "var(--mantine-color-border)"
-          e.currentTarget.style.boxShadow = "none"
-          e.currentTarget.style.transform = ""
-        }}
       >
         <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         {/* Фото область */}
@@ -128,7 +118,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={displayImage} alt={listing.title} onError={() => setImageFailed(true)} style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
+              <img src={displayImage} alt={listing.title} onError={() => setImageFailed(true)} loading="lazy" decoding="async" style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
               )}
             </>
           </AspectRatio>

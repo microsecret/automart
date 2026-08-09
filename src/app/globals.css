@@ -614,6 +614,37 @@ select {
   outline-offset: 3px;
 }
 
+.part-result-card:has(a:focus-visible),
+.auction-result-card:has(a:focus-visible) {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .listing-card:hover {
+    transform: translateY(-3px);
+    border-color: #4f46e5 !important;
+    box-shadow: 0 12px 32px -8px rgba(79, 70, 229, 0.25);
+  }
+
+  .listing-card--row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -6px rgba(79, 70, 229, 0.2);
+  }
+
+  .part-result-card:hover {
+    transform: translateY(-2px);
+    border-color: #c7d2fe !important;
+    box-shadow: 0 16px 26px -24px rgba(49, 46, 129, 0.72);
+  }
+
+  .auction-result-card:hover {
+    transform: translateY(-2px);
+    border-color: #fb923c !important;
+    box-shadow: 0 16px 28px -24px rgba(194, 65, 12, 0.72);
+  }
+}
+
 .listing-card__media[data-empty-media] {
   background: linear-gradient(145deg, #f8fafc 0%, #eef2ff 100%);
 }
@@ -739,12 +770,6 @@ select {
   min-width: 0;
   overflow: hidden;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-}
-
-.part-result-card:hover {
-  transform: translateY(-2px);
-  border-color: #c7d2fe !important;
-  box-shadow: 0 16px 26px -24px rgba(49, 46, 129, 0.72);
 }
 
 .part-result-card__media {

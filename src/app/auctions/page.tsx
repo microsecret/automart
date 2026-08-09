@@ -55,7 +55,7 @@ function AuctionMedia({ listing }: { listing: any }) {
       <VehicleFallback type="CAR" compact={hasImage} />
       {hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={`${listing.make} ${listing.model}`} onError={() => setFailed(true)} />
+        <img src={image} alt={`${listing.make} ${listing.model}`} onError={() => setFailed(true)} loading="lazy" decoding="async" />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
           <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
@@ -224,9 +224,7 @@ export default function AuctionsPage() {
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm">
             {listings.map((l: any) => (
               <Link key={l.id} href={`/auctions/${l.id}`} style={{ textDecoration: "none" }}>
-                <Paper radius="md" withBorder style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", transition: "all 200ms", cursor: "pointer" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#fb923c" }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)" }}>
+                <Paper radius="md" withBorder className="auction-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", cursor: "pointer" }}>
                   <AuctionMedia listing={l} />
                   <Box p="sm">
                     <Text fw={700} fz="sm" c="dark.9" mb={4}>{l.make} {l.model}</Text>

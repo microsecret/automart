@@ -57,27 +57,27 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   }
 
   return (
-    <Link href={detailHref} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-      <Card
-        padding={0}
-        radius="md"
-        withBorder
-        style={{
-          overflow: "hidden",
-          borderColor: "var(--mantine-color-border)",
-          transition: "border-color 200ms ease, box-shadow 200ms ease",
-          cursor: "pointer",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4f46e5"; e.currentTarget.style.boxShadow = "0 8px 24px -6px rgba(79,70,229,0.2)"; e.currentTarget.style.transform = "translateY(-2px)" }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "" }}
-      >
+    <Card
+      className="listing-card listing-card--row"
+      pos="relative"
+      padding={0}
+      radius="md"
+      withBorder
+      style={{
+        overflow: "hidden",
+        borderColor: "var(--mantine-color-border)",
+        transition: "border-color 200ms ease, box-shadow 200ms ease",
+        cursor: "pointer",
+      }}
+    >
+      <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         <Group gap={0} align="stretch" wrap="nowrap">
           {/* Фото */}
           <Box pos="relative" style={{ width: 180, flexShrink: 0, background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
             {image ? (
               <AspectRatio ratio={4 / 3} w={180}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image} alt={listing.title} onError={(e) => { e.currentTarget.style.display = "none" }} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+                <img src={image} alt={listing.title} onError={(e) => { e.currentTarget.style.display = "none" }} loading="lazy" decoding="async" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
               </AspectRatio>
             ) : (
               <Box h="100%"><VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact /></Box>
@@ -139,6 +139,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   onClick={toggleFav}
                   loading={isPending(listing.id)}
                   aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
+                  style={{ position: "relative", zIndex: 2 }}
                 >
                   <IconHeart size={14} fill={isFav ? "currentColor" : "none"} />
                 </ActionIcon>
@@ -146,7 +147,6 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
             </Group>
           </Box>
         </Group>
-      </Card>
-    </Link>
+    </Card>
   )
 }

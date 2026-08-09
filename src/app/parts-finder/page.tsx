@@ -44,7 +44,7 @@ function PartMedia({ image, name }: { image: string; name: string }) {
       </Stack>
       {!failed && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={name} onLoad={() => setLoaded(true)} onError={() => setFailed(true)} data-loaded={loaded || undefined} />
+        <img src={image} alt={name} onLoad={() => setLoaded(true)} onError={() => setFailed(true)} loading="lazy" decoding="async" data-loaded={loaded || undefined} />
       )}
     </Box>
   )
@@ -240,9 +240,7 @@ function PartsContent() {
                     const images = parseImages(p.images)
                     const image = images[0] || ""
                     return (
-                      <Paper key={p.id} radius="md" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", transition: "all 200ms" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-gray-4)" }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)" }}>
+                      <Paper key={p.id} radius="md" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)" }}>
                         <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                           <PartMedia image={image} name={p.name} />
                         </Link>
