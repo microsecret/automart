@@ -995,7 +995,7 @@ select {
 .vehicle-fallback--truck,
 .vehicle-fallback--special { background: linear-gradient(145deg, #fff7ed 0%, #f8fafc 58%, #fef3c7 100%); }
 .vehicle-fallback--motorcycle { background: linear-gradient(145deg, #f3e8ff 0%, #faf5ff 58%, #ede9fe 100%); }
-.vehicle-fallback[data-compact] { min-height: 110px; padding: 10px; }
+.vehicle-fallback[data-compact] { min-height: 96px; padding: 8px 10px; }
 
 .listing-card {
   --listing-accent: #6366f1;
