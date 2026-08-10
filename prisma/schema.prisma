@@ -363,6 +363,7 @@ model Message {
   createdAt     DateTime @default(now())
 
   @@index([conversationId])
+  @@index([conversationId, createdAt])
   @@index([senderId, receiverId])
   @@index([createdAt])
 }

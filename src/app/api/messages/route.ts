@@ -60,95 +60,96 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
-    // Get detailed information for each conversation
-    const conversationDetails = await Promise.all(
-      conversations.map(async (conv) => {
-        // Get the latest message in this conversation
-        const latestMessage = await prisma.message.findFirst({
-          where: {
-            conversationId: conv.conversationId
-          },
-          include: {
-            sender: {
-              select: {
-                id: true,
-                name: true,
-                image: true
-              }
+    // Fetch all details in batches instead of making three additional queries
+    // per conversation. The compound index on (conversationId, createdAt)
+    // keeps this predictable as the mailbox grows.
+    const latestMessageFilters = conversations.flatMap((conversation) => (
+      conversation._max.createdAt
+        ? [{ conversationId: conversation.conversationId, createdAt: conversation._max.createdAt }]
+        : []
+    ))
+    const conversationIds = conversations.map((conversation) => conversation.conversationId)
+    const [latestCandidates, unreadGroups] = await Promise.all([
+      latestMessageFilters.length > 0
+        ? prisma.message.findMany({
+            where: { OR: latestMessageFilters },
+            orderBy: { createdAt: "desc" },
+            include: {
+              listing: {
+                select: {
+                  id: true,
+                  title: true,
+                  vehicle: { select: { year: true, make: true, model: true } },
+                  part: { select: { name: true, make: true, model: true } },
+                },
+              },
             },
-            receiver: {
-              select: {
-                id: true,
-                name: true,
-                image: true
-              }
+          })
+        : Promise.resolve([]),
+      conversationIds.length > 0
+        ? prisma.message.groupBy({
+            by: ["conversationId"],
+            where: {
+              conversationId: { in: conversationIds },
+              senderId: { not: session.user.id },
+              receiverId: session.user.id,
+              isRead: false,
             },
-            listing: {
-              select: {
-                id: true,
-                title: true,
-                vehicle: true,
-                part: true
-              }
-            }
-          },
-          orderBy: {
-            createdAt: 'desc'
-          }
+            _count: { id: true },
+          })
+        : Promise.resolve([]),
+    ])
+
+    // Timestamps are expected to be unique enough for the groupBy query; the
+    // map also makes a rare tie deterministic without exposing duplicate rows.
+    const latestByConversation = new Map<string, typeof latestCandidates[number]>()
+    for (const message of latestCandidates) {
+      if (!latestByConversation.has(message.conversationId)) latestByConversation.set(message.conversationId, message)
+    }
+    const unreadByConversation = new Map(unreadGroups.map((group) => [group.conversationId, group._count.id]))
+    const otherUserIds = [...new Set(
+      [...latestByConversation.values()]
+        .map((message) => message.senderId === session.user.id ? message.receiverId : message.senderId)
+        .filter(Boolean),
+    )]
+    const otherUsers = otherUserIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: otherUserIds } },
+          select: { id: true, name: true, image: true },
         })
+      : []
+    const otherUserById = new Map(otherUsers.map((user) => [user.id, user]))
 
-        // Count unread messages in this conversation for the current user
-        const unreadCount = await prisma.message.count({
-          where: { conversationId: conv.conversationId, senderId: { not: session.user.id }, receiverId: session.user.id, isRead: false }
-        })
+    const conversationDetails = conversations.map((conversation) => {
+      const latestMessage = latestByConversation.get(conversation.conversationId)
+      const otherUserId = latestMessage?.senderId === session.user.id
+        ? latestMessage.receiverId
+        : latestMessage?.senderId
+      const otherUser = otherUserId ? otherUserById.get(otherUserId) : null
 
-        // Determine the other user in the conversation
-        const otherUserId = latestMessage?.senderId === session.user.id
-          ? latestMessage?.receiverId
-          : latestMessage?.senderId
-
-        // Get other user info
-        const otherUser = await prisma.user.findUnique({
-          where: { id: otherUserId ?? '' },
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        })
-
-        return {
-          id: conv.conversationId,
-          otherUser: otherUser ?? {
-            id: otherUserId ?? '',
-            name: 'Unknown User',
-            image: null
-          },
-          listing: latestMessage?.listing ? {
-            id: latestMessage.listing.id,
-            title: latestMessage.listing.title,
-            vehicle: latestMessage.listing.vehicle ? {
-              year: latestMessage.listing.vehicle.year,
-              make: latestMessage.listing.vehicle.make,
-              model: latestMessage.listing.vehicle.model
-            } : null,
-            part: latestMessage.listing.part ? {
-              name: latestMessage.listing.part.name,
-              make: latestMessage.listing.part.make,
-              model: latestMessage.listing.part.model
-            } : null
-          } : null,
-          lastMessage: latestMessage ? {
-            id: latestMessage.id,
-            content: latestMessage.content,
-            isRead: latestMessage.isRead,
-            createdAt: latestMessage.createdAt,
-            senderId: latestMessage.senderId
-          } : null,
-          unreadCount: unreadCount
-        }
-      })
-    )
+      return {
+        id: conversation.conversationId,
+        otherUser: otherUser ?? {
+          id: otherUserId ?? "",
+          name: "Пользователь",
+          image: null,
+        },
+        listing: latestMessage?.listing ? {
+          id: latestMessage.listing.id,
+          title: latestMessage.listing.title,
+          vehicle: latestMessage.listing.vehicle,
+          part: latestMessage.listing.part,
+        } : null,
+        lastMessage: latestMessage ? {
+          id: latestMessage.id,
+          content: latestMessage.content,
+          isRead: latestMessage.isRead,
+          createdAt: latestMessage.createdAt,
+          senderId: latestMessage.senderId,
+        } : null,
+        unreadCount: unreadByConversation.get(conversation.conversationId) || 0,
+      }
+    })
 
     return NextResponse.json({
       conversations: conversationDetails,
