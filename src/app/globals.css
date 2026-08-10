@@ -1270,17 +1270,30 @@ select {
 }
 
 .listing-card__facts {
-  padding: 7px 8px;
-  border-radius: 10px;
-  background: #f8fafc;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--market-line) 88%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--market-surface-subtle) 78%, #eef2ff);
 }
 
 .listing-card__fact {
+  padding: 6px 7px;
   font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+.listing-card__fact:nth-child(odd) {
+  border-right: 1px solid color-mix(in srgb, var(--market-line) 88%, transparent);
+}
+
+.listing-card__fact:nth-child(n + 3) {
+  border-top: 1px solid color-mix(in srgb, var(--market-line) 88%, transparent);
 }
 
 .listing-card__fact > span {
   color: #1e293b;
+  font-weight: 750;
 }
 
 .listing-card__footer {
