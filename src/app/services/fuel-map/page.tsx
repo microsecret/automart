@@ -33,6 +33,8 @@ const TILE_SIZE = 256
 const MAP_WORLD_SPAN = TILE_SIZE * 3
 const MIN_ZOOM = 9
 const MAX_ZOOM = 14
+const STATION_LIST_PAGE_SIZE = 24
+const EMPTY_STATIONS: FuelStation[] = []
 
 function coordinatesToWorld(latitude: number, longitude: number, zoom: number) {
   const worldSize = TILE_SIZE * (2 ** zoom)
@@ -250,6 +252,7 @@ export default function FuelMapPage() {
   const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
   const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
   const [requestedCoordinates, setRequestedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [visibleStationCount, setVisibleStationCount] = useState(STATION_LIST_PAGE_SIZE)
   const fuelStationsUrl = useMemo(() => {
     const params = new URLSearchParams({ city })
     if (requestedCoordinates) {
@@ -261,11 +264,29 @@ export default function FuelMapPage() {
   const { data, error, isLoading, isValidating, mutate } = useSWR<FuelStationsResponse>(fuelStationsUrl, fetchJson, { revalidateOnFocus: false })
   const coordinates = data?.coordinates || requestedCoordinates || CITY_COORDINATES[city]
   const isViewingMapArea = Boolean(requestedCoordinates)
+  const allStations = data?.stations ?? EMPTY_STATIONS
+  const displayedStations = allStations.slice(0, visibleStationCount)
+  const hasMoreStations = displayedStations.length < allStations.length
+
   useEffect(() => {
     setSelectedStation(null)
     setRequestedCoordinates(null)
     setViewportCoordinates(CITY_COORDINATES[city])
+    setVisibleStationCount(STATION_LIST_PAGE_SIZE)
   }, [city])
+
+  useEffect(() => {
+    setVisibleStationCount(STATION_LIST_PAGE_SIZE)
+  }, [fuelStationsUrl])
+
+  useEffect(() => {
+    if (!selectedStation) return
+
+    const selectedIndex = allStations.findIndex((station) => station.id === selectedStation.id && station.sourceType === selectedStation.sourceType)
+    if (selectedIndex >= visibleStationCount) {
+      setVisibleStationCount((current) => Math.max(current, Math.ceil((selectedIndex + 1) / STATION_LIST_PAGE_SIZE) * STATION_LIST_PAGE_SIZE))
+    }
+  }, [allStations, selectedStation, visibleStationCount])
 
   const showStationOnMap = (station: FuelStation) => {
     setSelectedStation(station)
@@ -298,13 +319,13 @@ export default function FuelMapPage() {
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={city} coordinates={coordinates} stations={data?.stations || []} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
-              {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : data?.stations.length ? <Stack gap="xs">{data.stations.map((station) => (
+              {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : allStations.length ? <Stack gap="xs">{displayedStations.map((station) => (
                 <Paper key={`${station.sourceType}-${station.id}`} className="fuel-station-card" data-selected={selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType || undefined} radius="md" p="sm" withBorder>
                   <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap"><Group gap="sm" wrap="nowrap"><ThemeIcon variant="light" color="orange" radius="md"><IconGasStation size={17} /></ThemeIcon><Box style={{ minWidth: 0 }}><Text fw={750} size="sm" lineClamp={1}>{station.name}</Text><Text size="xs" c="dimmed" lineClamp={1}>{station.address || station.operator || "Адрес не указан в OSM"}</Text></Box></Group><Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor></Group>
                   <Group mt={8} gap={5} wrap="wrap">{station.fuels.length ? station.fuels.map((fuel) => <Badge key={fuel} size="xs" variant="light" color="indigo">{fuel}</Badge>) : <Badge size="xs" variant="outline" color="gray">Вид топлива не указан</Badge>}{station.openingHours && <Badge size="xs" variant="outline" color="gray">{station.openingHours}</Badge>}</Group>
                   <Group mt={8} gap={4}><Button variant="subtle" color="indigo" size="compact-xs" onClick={() => showStationOnMap(station)} leftSection={<IconMapPin size={13} />}>На карте</Button><Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" variant="subtle" color="indigo" size="compact-xs" leftSection={<IconRoute size={13} />}>Маршрут</Button></Group>
                 </Paper>
-              ))}</Stack> : <Center h={460}><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={44} radius="xl"><IconGasStation size={22} /></ThemeIcon><Text fw={700}>Точки не найдены</Text><Text size="xs" c="dimmed" ta="center">Попробуйте выбрать другой город или обновить данные.</Text></Stack></Center>}
+              ))}{hasMoreStations && <Button variant="light" color="indigo" size="xs" fullWidth onClick={() => setVisibleStationCount((current) => current + STATION_LIST_PAGE_SIZE)}>Показать ещё {Math.min(STATION_LIST_PAGE_SIZE, allStations.length - displayedStations.length)} из {allStations.length}</Button>}</Stack> : <Center h={460}><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={44} radius="xl"><IconGasStation size={22} /></ThemeIcon><Text fw={700}>Точки не найдены</Text><Text size="xs" c="dimmed" ta="center">Попробуйте выбрать другой город или обновить данные.</Text></Stack></Center>}
             </Paper>
           </SimpleGrid>
         )}
