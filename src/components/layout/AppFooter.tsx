@@ -13,7 +13,7 @@ const FOOTER_SECTIONS = [
       { label: "Грузовики", href: "/category/trucks" },
       { label: "Спецтехника", href: "/category/special" },
       { label: "Водный транспорт", href: "/category/water" },
-      { label: "Авиа", href: "/category/air" },
+      { label: "Воздушный транспорт", href: "/category/air" },
     ],
   },
   {

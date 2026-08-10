@@ -51,14 +51,12 @@ export default function ValuationPage() {
     setRequestError(null)
     setResult(null)
     try {
-      const response = await fetch("/api/ai/valuation", {
+      const payload = await fetchJson<ValuationResponse>("/api/ai/valuation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vehicleId }),
       })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "Не удалось рассчитать оценку")
-      setResult(payload as ValuationResponse)
+      setResult(payload)
     } catch (requestError) {
       setRequestError(requestError instanceof Error ? requestError.message : "Не удалось рассчитать оценку")
     } finally {

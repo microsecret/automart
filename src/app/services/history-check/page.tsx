@@ -30,10 +30,12 @@ export default function HistoryCheckPage() {
     setRequestError(null)
     setRequest(null)
     try {
-      const response = await fetch("/api/ai/history-check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ vehicleId }) })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "Не удалось сохранить заявку")
-      setRequest(payload as HistoryRequestResponse)
+      const payload = await fetchJson<HistoryRequestResponse>("/api/ai/history-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vehicleId }),
+      })
+      setRequest(payload)
     } catch (requestError) {
       setRequestError(requestError instanceof Error ? requestError.message : "Не удалось сохранить заявку")
     } finally {
