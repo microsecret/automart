@@ -917,18 +917,57 @@ select {
 
 .vehicle-fallback__halo {
   position: absolute;
-  z-index: -1;
-  width: 96px;
-  height: 96px;
+  z-index: 1;
+  width: 104px;
+  height: 104px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.42);
-  box-shadow: 0 14px 30px rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    0 14px 30px rgba(79, 70, 229, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.vehicle-fallback__glow {
+  position: absolute;
+  z-index: 0;
+  width: 44%;
+  height: 44%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--listing-accent, #6366f1) 14%, transparent);
+  filter: blur(22px);
+  transform: translateY(18%);
+}
+
+.vehicle-fallback__beam {
+  position: absolute;
+  z-index: 0;
+  width: 58%;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--listing-accent, #6366f1) 32%, transparent), transparent);
+  opacity: 0.78;
+  transform: rotate(-24deg);
+}
+
+.vehicle-fallback__beam--one {
+  top: 35%;
+  right: -8%;
+}
+
+.vehicle-fallback__beam--two {
+  bottom: 30%;
+  left: -11%;
+  opacity: 0.5;
+  transform: rotate(18deg);
 }
 
 .vehicle-fallback .mantine-ThemeIcon-root {
   position: relative;
-  z-index: 1;
-  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.14);
+  z-index: 2;
+  box-shadow:
+    0 12px 22px rgba(79, 70, 229, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.72);
 }
 

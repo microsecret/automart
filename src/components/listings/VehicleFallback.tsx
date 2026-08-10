@@ -29,6 +29,9 @@ export default function VehicleFallback({ type, bodyType, compact = false }: { t
       aria-label={`Фото не добавлено: ${vehicleTypeLabel(type, bodyType)}`}
       role="img"
     >
+      <Box className="vehicle-fallback__glow" aria-hidden="true" />
+      <Box className="vehicle-fallback__beam vehicle-fallback__beam--one" aria-hidden="true" />
+      <Box className="vehicle-fallback__beam vehicle-fallback__beam--two" aria-hidden="true" />
       <Box className="vehicle-fallback__halo" aria-hidden="true" />
       <ThemeIcon variant="light" color={item.color} radius="xl" size={compact ? 38 : 54}>
         <Icon size={compact ? 21 : 30} stroke={1.6} />
