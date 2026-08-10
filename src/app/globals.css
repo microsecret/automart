@@ -973,7 +973,8 @@ select {
 .parts-filter-grid > .mantine-Box-root,
 .auction-filter-grid > .mantine-InputWrapper-root,
 .auction-filter-grid > .mantine-Box-root {
-  min-height: 70px;
+  min-height: 58px;
+  padding: 6px 10px 7px;
   border-color: color-mix(in srgb, var(--market-field-line) 88%, transparent);
   border-radius: 11px;
   background: var(--market-field);
@@ -1004,9 +1005,15 @@ select {
 .parts-filter-grid .mantine-Select-input,
 .auction-filter-grid .mantine-Input-input,
 .auction-filter-grid .mantine-Select-input {
-  min-height: 32px;
+  min-height: 30px;
   font-size: 13px;
   font-weight: 650;
+}
+
+.parts-filter-grid .mantine-SegmentedControl-label {
+  padding-inline: 7px;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .auction-filter-grid .mantine-InputWrapper-label {

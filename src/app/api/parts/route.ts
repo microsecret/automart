@@ -4,14 +4,14 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import { Prisma } from "@prisma/client"
-import { AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPES, SELLER_TYPES } from "@/lib/constants"
+import { PART_AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPES, SELLER_TYPES } from "@/lib/constants"
 import { parseMarketplaceImages } from "@/lib/media-url"
 
 export const dynamic = "force-dynamic"
 
 const PART_TYPE_VALUES = new Set<string>(PART_TYPES.map((item) => item.value))
 const PART_CONDITION_VALUES = new Set<string>(PART_CONDITIONS.map((item) => item.value))
-const AVAILABILITY_VALUES = new Set<string>(AVAILABILITY_TYPES.map((item) => item.value))
+const AVAILABILITY_VALUES = new Set<string>(PART_AVAILABILITY_TYPES.map((item) => item.value))
 const SELLER_TYPE_VALUES = new Set<string>(SELLER_TYPES.map((item) => item.value))
 const currentYear = new Date().getFullYear()
 
@@ -104,7 +104,12 @@ export async function GET(request: NextRequest) {
       if (make) where.make = { contains: make }
       if (model) where.model = { contains: model }
     }
-    if (condition) where.condition = condition
+    if (condition === "USED") {
+      // Поддерживаем неочищенные архивные записи до применения миграции.
+      where.condition = { in: ["USED", "LIKE_NEW", "EXCELLENT", "GOOD", "FAIR", "POOR"] }
+    } else if (condition) {
+      where.condition = condition
+    }
     // У старых записей availability не заполнялся: считаем их доступными,
     // не скрывая каталог при выборе «В наличии».
     if (availability === "IN_STOCK") {

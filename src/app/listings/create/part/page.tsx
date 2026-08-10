@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react"
 import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid } from "@mantine/core"
 import { IconPlus, IconCheck, IconCar, IconTrash, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
-import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
+import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, PART_AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 
@@ -105,7 +105,7 @@ export default function CreatePartPage() {
                 <Group gap="sm" grow>
                   <Select label="Формат продажи" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} value={f.saleFormat} onChange={(v) => set("saleFormat", v || "FIXED")} size="sm" />
                   <Select label="Продавец" data={SELLER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.sellerType} onChange={(v) => set("sellerType", v || "OWNER")} size="sm" />
-                  <Select label="Наличие" data={AVAILABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.availability} onChange={(v) => set("availability", v || "IN_STOCK")} size="sm" />
+                  <Select label="Наличие" data={PART_AVAILABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.availability} onChange={(v) => set("availability", v || "IN_STOCK")} size="sm" />
                 </Group>
                 {f.saleFormat === "AUCTION" && (
                   <Group gap="sm" grow>

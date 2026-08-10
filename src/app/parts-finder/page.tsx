@@ -6,7 +6,7 @@ import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, SegmentedControl } from "@mantine/core"
 import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
-import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, AVAILABILITY_TYPES } from "@/lib/constants"
+import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILABILITY_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
@@ -206,8 +206,8 @@ function PartsContent() {
             <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
             <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
             <Select label="Состояние" placeholder="Любое" data={PART_CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={setCondition} size="sm" />
-            <Box className="parts-filter-field"><Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text><SegmentedControl size="xs" fullWidth value={availability || "ANY"} onChange={(value) => setAvailability(value === "ANY" ? null : value)} data={[{ value: "ANY", label: "Всё" }, { value: "IN_STOCK", label: "Есть" }, { value: "ON_ORDER", label: "Заказ" }]} /></Box>
-            <Select label="Способ покупки" placeholder="Все варианты" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
+            <Box className="parts-filter-field"><Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text><SegmentedControl size="xs" fullWidth value={availability || "ANY"} onChange={(value) => setAvailability(value === "ANY" ? null : value)} data={[{ value: "ANY", label: "Все" }, ...PART_AVAILABILITY_TYPES.map((item) => ({ value: item.value, label: item.label }))]} /></Box>
+            <Select label="Формат сделки" placeholder="Любой" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
           </Box>
         {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
         {(partType || make || condition || availability || saleFormat || priceFrom || priceTo) && (
@@ -215,7 +215,7 @@ function PartsContent() {
             <Text size="xs" c="gray.5">Активные:</Text>
             {partType && <Badge size="xs" variant="light" color="indigo">{PART_TYPES.find((t) => t.value === partType)?.label}</Badge>}
             {subcategory && <Badge size="xs" variant="light" color="violet">{subcategory}</Badge>}
-            {condition && <Badge size="xs" variant="light" color="green">{condition}</Badge>}
+            {condition && <Badge size="xs" variant="light" color="green">{findLabel(PART_CONDITIONS, condition)}</Badge>}
             {availability && <Badge size="xs" variant="light" color="teal">{findLabel(AVAILABILITY_TYPES, availability)}</Badge>}
             {saleFormat && <Badge size="xs" variant="light" color="orange">{saleFormat === "AUCTION" ? "Аукцион" : "Цена"}</Badge>}
             {priceFrom && <Badge size="xs" variant="light" color="gray">от {priceFrom}₽</Badge>}

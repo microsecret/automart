@@ -190,15 +190,13 @@ export const CONDITIONS = [
   { value: "POOR", label: "Требует ремонта" },
 ] as const
 
-/** Состояния для запчастей: «б/у» — отдельное понятное состояние, а не необъяснимый код USED. */
+/**
+ * Для товара важнее происхождение, чем субъективная оценка продавца.
+ * Детальные исторические значения нормализуются в USED на уровне данных.
+ */
 export const PART_CONDITIONS = [
   { value: "NEW", label: "Новая" },
   { value: "USED", label: "Б/у" },
-  { value: "LIKE_NEW", label: "Как новая" },
-  { value: "EXCELLENT", label: "Отличное" },
-  { value: "GOOD", label: "Хорошее" },
-  { value: "FAIR", label: "Среднее" },
-  { value: "POOR", label: "Требует ремонта" },
 ] as const
 
 export const PART_TYPES = [
@@ -387,9 +385,12 @@ export const SELLER_TYPES = [
 
 export const AVAILABILITY_TYPES = [
   { value: "IN_STOCK", label: "В наличии" },
-  { value: "ON_ORDER", label: "На заказ" },
+  { value: "ON_ORDER", label: "Под заказ" },
   { value: "IN_TRANSIT", label: "В пути" },
 ] as const
+
+/** В каталоге и форме запчастей не выводим логистическое «в пути» как отдельный способ покупки. */
+export const PART_AVAILABILITY_TYPES = AVAILABILITY_TYPES.filter((item) => item.value !== "IN_TRANSIT")
 
 export const OWNERS_COUNT_OPTIONS = [
   { value: "1", label: "1 владелец" },
