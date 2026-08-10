@@ -6,7 +6,7 @@ import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, SegmentedControl, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal, Select, NumberInput } from "@mantine/core"
-import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery } from "@tabler/icons-react"
+import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -314,16 +314,22 @@ export default function DashboardPage() {
               data.listings.map((l: any) => {
                 const isVehicle = !!l.vehicle
                 const images = parseImages(isVehicle ? l.vehicle?.images : l.part?.images)
-                const image = images[0] || "/placeholder.svg"
+                const image = images[0]
                 const href = isVehicle ? `/listings/vehicle/${l.vehicle.id}` : `/listings/part/${l.part.id}`
                 const statusMeta = LISTING_STATUS_META[l.status as keyof typeof LISTING_STATUS_META] || LISTING_STATUS_META[LISTING_STATUS.DRAFT]
                 return (
-                  <Paper key={l.id} radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-border)" }}>
+                  <Paper key={l.id} className="dashboard-listing-card" radius="md" p="sm" withBorder>
                     <Group gap="md" align="center" wrap="nowrap">
                       <Link href={href} style={{ flexShrink: 0 }}>
-                        <Box style={{ width: 100, height: 75, borderRadius: 8, overflow: "hidden", background: "var(--mantine-color-gray-1)" }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={image} alt={l.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <Box className="dashboard-listing-card__media">
+                          {image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={image} alt={l.title} loading="lazy" />
+                          ) : isVehicle ? (
+                            <VehicleFallback type={l.vehicle?.vehicleType || "CAR"} bodyType={l.vehicle?.bodyType} compact />
+                          ) : (
+                            <ThemeIcon variant="light" color="indigo" size={34} radius="xl" aria-label="Фото запчасти не добавлено"><IconTools size={18} /></ThemeIcon>
+                          )}
                         </Box>
                       </Link>
                       <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
@@ -381,13 +387,15 @@ export default function DashboardPage() {
                   const v = fav.vehicle
                   if (!v) return null
                   const images = parseImages(v.images)
-                  const image = images[0] || "/placeholder.svg"
+                  const image = images[0]
                   return (
-                    <Paper key={fav.id} radius="md" p={0} withBorder style={{ borderColor: "var(--mantine-color-border)", overflow: "hidden" }}>
+                    <Paper key={fav.id} className="dashboard-favorite-card" radius="md" p={0} withBorder>
                       <Link href={`/listings/vehicle/${v.id}`}>
-                        <Box style={{ position: "relative", aspectRatio: "4/3", background: "var(--mantine-color-gray-1)" }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={image} alt={v.make} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <Box className="dashboard-favorite-card__media">
+                          {image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={image} alt={`${v.make} ${v.model}`} loading="lazy" />
+                          ) : <VehicleFallback type={v.vehicleType || "CAR"} bodyType={v.bodyType} />}
                           <Box pos="absolute" top={8} right={8}><BrandIcon brand={v.make} size={28} /></Box>
                         </Box>
                       </Link>
