@@ -970,10 +970,36 @@ select {
   transition: transform 280ms ease, filter 280ms ease;
 }
 
-.listing-card__media[data-empty-media] .vehicle-fallback {
+.listing-card__media[data-empty-media][data-vehicle-type="car"] .vehicle-fallback,
+.listing-card__media[data-empty-media][data-vehicle-type="part"] .vehicle-fallback {
   background:
     radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.98), transparent 22%),
     linear-gradient(145deg, #f6f8fc 0%, #eef2ff 54%, #e7edff 100%);
+}
+
+.listing-card__media[data-empty-media][data-vehicle-type="motorcycle"] .vehicle-fallback {
+  background:
+    radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.98), transparent 22%),
+    linear-gradient(145deg, #faf5ff 0%, #f3e8ff 54%, #ede9fe 100%);
+}
+
+.listing-card__media[data-empty-media][data-vehicle-type="air"] .vehicle-fallback {
+  background:
+    radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.98), transparent 22%),
+    linear-gradient(145deg, #f0f9ff 0%, #dbeafe 54%, #dbeafe 100%);
+}
+
+.listing-card__media[data-empty-media][data-vehicle-type="water"] .vehicle-fallback {
+  background:
+    radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.98), transparent 22%),
+    linear-gradient(145deg, #ecfeff 0%, #cffafe 54%, #dbeafe 100%);
+}
+
+.listing-card__media[data-empty-media][data-vehicle-type="truck"] .vehicle-fallback,
+.listing-card__media[data-empty-media][data-vehicle-type="special"] .vehicle-fallback {
+  background:
+    radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.98), transparent 22%),
+    linear-gradient(145deg, #fffbeb 0%, #ffedd5 54%, #fef3c7 100%);
 }
 
 .listing-card__media[data-vehicle-type="air"] .vehicle-fallback__halo {
