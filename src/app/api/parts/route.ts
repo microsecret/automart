@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
 
     if (and.length) where.AND = and
 
-    const orderBy: any =
+    const orderBy: Prisma.PartOrderByWithRelationInput =
       sort === "price_asc" ? { price: "asc" }
       : sort === "price_desc" ? { price: "desc" }
       : { createdAt: "desc" }

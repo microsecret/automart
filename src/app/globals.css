@@ -2001,6 +2001,111 @@ select {
   border-top: 1px solid color-mix(in srgb, var(--market-line) 84%, transparent);
 }
 
+.listing-map-page {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.listing-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(285px, 340px);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.listing-map-panel,
+.listing-map-results {
+  overflow: hidden;
+  border-color: var(--market-line);
+  background: var(--market-surface);
+  box-shadow: 0 18px 34px -32px rgba(15, 23, 42, 0.52);
+}
+
+.listing-map-panel {
+  min-height: 520px;
+}
+
+.listing-map-panel__frame {
+  display: block;
+  width: 100%;
+  min-height: 520px;
+  border: 0;
+}
+
+.listing-map-results__scroll {
+  height: 520px;
+}
+
+.listing-map-result {
+  display: block;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.listing-map-result__surface {
+  display: flex;
+  align-items: center;
+  min-height: 78px;
+  gap: 10px;
+  border-color: color-mix(in srgb, var(--market-line) 88%, transparent);
+  background: linear-gradient(145deg, #fff, color-mix(in srgb, #fff 92%, #eef2ff));
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.listing-map-result__media {
+  position: relative;
+  display: grid;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 10px;
+  place-items: center;
+  background: #eef2ff;
+}
+
+.listing-map-result__media .vehicle-fallback {
+  position: absolute;
+  inset: 0;
+}
+
+.listing-map-result__media img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.listing-map-result__title,
+.listing-map-result__meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listing-map-result__price {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.012em;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .listing-map-result:hover .listing-map-result__surface {
+    border-color: #a5b4fc;
+    box-shadow: 0 14px 24px -20px rgba(79, 70, 229, 0.55);
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 900px) {
+  .listing-map-layout { grid-template-columns: 1fr; }
+  .listing-map-panel,
+  .listing-map-panel__frame { min-height: 380px; }
+  .listing-map-results__scroll { height: min(420px, 58vh); }
+}
+
 .part-result-card__placeholder {
   position: relative;
   z-index: 1;
