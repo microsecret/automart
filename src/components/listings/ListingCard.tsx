@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio, SimpleGrid } from "@mantine/core"
+import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, SimpleGrid } from "@mantine/core"
 import { IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
-import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
+import VehicleFallback from "./VehicleFallback"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
+import { notifications } from "@mantine/notifications"
 
 export interface ListingCardData {
   id: string
@@ -79,9 +80,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const usageValue = usageMeta.field === "flightHours" ? listing.vehicle?.flightHours
     : usageMeta.field === "operatingHours" ? listing.vehicle?.operatingHours
     : listing.vehicle?.mileage
-  const distanceValue = usageValue == null ? "Не указано"
-    : usageMeta.field === "mileage" ? formatMileage(usageValue)
-    : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
+  const numericUsage = typeof usageValue === "number" && Number.isFinite(usageValue) ? usageValue : null
+  const distanceValue = numericUsage == null ? "Не указано"
+    : usageMeta.field === "mileage" ? formatMileage(numericUsage)
+    : `${new Intl.NumberFormat("ru-RU").format(numericUsage)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
   const isFav = favoriteIds.has(listing.id)
 
@@ -89,6 +91,11 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
     e.preventDefault()
     e.stopPropagation()
     if (!isAuthenticated) {
+      notifications.show({
+        title: "Войдите, чтобы сохранить",
+        message: "Избранное синхронизируется между сайтом и Telegram после авторизации.",
+        color: "indigo",
+      })
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent(detailHref)}`)
       return
     }
@@ -113,7 +120,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         {/* Фото область */}
         <Box className="listing-card__media" data-empty-media={!hasDisplayImage || undefined} pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
-          <AspectRatio ratio={hasDisplayImage ? 1 : 4 / 3}>
+          <AspectRatio ratio={8 / 5}>
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
@@ -211,35 +218,13 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             {listing.title}
           </Text>
 
-          {/* Характеристики — сетка с иконками */}
+          {/* Краткие факты: без капслока и повторения типа категории. */}
           {isVehicle && (
-            <SimpleGrid cols={2} spacing={6} mb={6}>
-              <Stack gap={0}>
-                <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>Тип</Text>
-                <Text fz="11px" c="dark.8" fw={700} style={TRUNCATE_STYLE}>{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>
-              </Stack>
-              <Stack gap={0}>
-                <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>Год</Text>
-                <Text fz="11px" c="dark.8" fw={700} style={TRUNCATE_STYLE}>{listing.vehicle!.year}</Text>
-              </Stack>
-              {usageValue != null && (
-                <Stack gap={0}>
-                  <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>{usageMeta.label}</Text>
-                  <Text fz="11px" c="dark.8" fw={700} style={TRUNCATE_STYLE}>{distanceValue}</Text>
-                </Stack>
-              )}
-              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
-                <Stack gap={0}>
-                  <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>Трансмиссия</Text>
-                  <Text fz="11px" c="dark.8" fw={700} style={TRUNCATE_STYLE}>{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>
-                </Stack>
-              )}
-              {listing.vehicle!.fuelType && (
-                <Stack gap={0}>
-                  <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>Топливо</Text>
-                  <Text fz="11px" c="dark.8" fw={700} style={TRUNCATE_STYLE}>{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>
-                </Stack>
-              )}
+            <SimpleGrid cols={2} spacing={4} mb={6} className="listing-card__facts">
+              <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
+              {numericUsage != null && <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>}
+              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && <Text fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="dark.8" style={TRUNCATE_STYLE}>{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
+              {listing.vehicle!.fuelType && <Text fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="dark.8" style={TRUNCATE_STYLE}>{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
             </SimpleGrid>
           )}
 

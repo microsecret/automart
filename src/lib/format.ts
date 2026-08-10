@@ -2,7 +2,7 @@ import { parseMarketplaceImages } from "@/lib/media-url"
 
 /** Форматирование цены в рублях */
 export function formatPrice(price: number | null | undefined): string {
-  if (price == null) return "Договорная"
+  if (price == null || !Number.isFinite(price)) return "Договорная"
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
     currency: "RUB",
@@ -12,7 +12,7 @@ export function formatPrice(price: number | null | undefined): string {
 
 /** Краткая цена: 4.5 млн ₽ вместо 4 500 000 ₽ */
 export function formatPriceShort(price: number | null | undefined): string {
-  if (price == null) return "Договорная"
+  if (price == null || !Number.isFinite(price)) return "Договорная"
   if (price >= 1_000_000) {
     const mln = price / 1_000_000
     return `${mln % 1 === 0 ? mln.toFixed(0) : mln.toFixed(1).replace(".", ",")} млн ₽`
@@ -26,13 +26,13 @@ export function formatPriceShort(price: number | null | undefined): string {
 
 /** Ориентировочный ежемесячный платёж для краткого отображения в карточке. */
 export function formatMonthlyPayment(price: number | null | undefined): string | null {
-  if (!price || price <= 100_000) return null
+  if (!price || !Number.isFinite(price) || price <= 100_000) return null
   return `от ${formatPriceShort(Math.round(price * 0.025))}/мес`
 }
 
 /** Форматирование пробега: 45000 → 45 000 км */
 export function formatMileage(mileage: number | null | undefined): string {
-  if (mileage == null) return "—"
+  if (mileage == null || !Number.isFinite(mileage)) return "—"
   return `${new Intl.NumberFormat("ru-RU").format(mileage)} км`
 }
 
@@ -52,6 +52,7 @@ export function formatPower(power: number | null | undefined): string {
 export function formatRelativeDate(date: Date | string | null | undefined): string {
   if (!date) return "—"
   const d = typeof date === "string" ? new Date(date) : date
+  if (Number.isNaN(d.getTime())) return "—"
   const now = new Date()
   const diff = now.getTime() - d.getTime()
   const seconds = Math.floor(diff / 1000)
@@ -76,6 +77,7 @@ export function formatRelativeDate(date: Date | string | null | undefined): stri
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—"
   const d = typeof date === "string" ? new Date(date) : date
+  if (Number.isNaN(d.getTime())) return "—"
   return new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
     month: "long",

@@ -9,6 +9,7 @@ import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX,
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { getBrandsByCategory } from "@/lib/catalog"
+import BrandIcon from "@/components/brands/BrandIcon"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
@@ -72,7 +73,9 @@ export default function HomePage(p: HomePageProps = {}) {
   const transmissionOptions = getTransmissionOptions(vt)
   const fuelOptions = getFuelOptions(vt)
 
-  const brandOptions = getBrandsByCategory(brandCategory).map((b) => ({ value: b.name, label: b.name }))
+  const brands = useMemo(() => getBrandsByCategory(brandCategory), [brandCategory])
+  const brandOptions = brands.map((brand) => ({ value: brand.name, label: brand.name }))
+  const brandByName = useMemo(() => new Map(brands.map((brand) => [brand.name, brand])), [brands])
   const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}&category=${brandCategory}` : null
   const { data: modelsData, error: modelsError, isLoading: isModelsLoading } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
   const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
@@ -231,7 +234,28 @@ export default function HomePage(p: HomePageProps = {}) {
           </Group>
           <Box className="catalog-filter-grid">
             <TextInput className="catalog-filter-field catalog-filter-field--search" label="Что ищете" placeholder="Марка, модель, ключевое слово" leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
-            <Select className="catalog-filter-field catalog-filter-field--make" label="Марка" placeholder="Любая" data={brandOptions} searchable clearable value={make} onChange={(v) => {setMake(v);setModel(null)}} size="sm" />
+            <Select
+              className="catalog-filter-field catalog-filter-field--make"
+              label="Марка"
+              placeholder="Любая"
+              data={brandOptions}
+              searchable
+              clearable
+              value={make}
+              onChange={(value) => { setMake(value); setModel(null) }}
+              leftSection={make ? <BrandIcon brand={make} size={20} variant="rounded" /> : <IconCar size={15} />}
+              renderOption={({ option }) => {
+                const brand = brandByName.get(option.value)
+                return (
+                  <Group gap="xs" wrap="nowrap">
+                    <BrandIcon brand={option.value} size={24} variant="rounded" />
+                    <Text size="sm" fw={650}>{option.label}</Text>
+                    {brand && <Text size="xs" c="dimmed" ml="auto">{brand.country}</Text>}
+                  </Group>
+                )
+              }}
+              size="sm"
+            />
             <Select
               className="catalog-filter-field catalog-filter-field--model"
               label="Модель"

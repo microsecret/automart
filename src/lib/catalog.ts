@@ -1673,7 +1673,12 @@ export const BRAND_NAMES: string[] = Array.from(new Set(ALL_BRANDS.map((b) => b.
 
 /** Бренды конкретной категории транспорта */
 export function getBrandsByCategory(category: BrandCategory): Brand[] {
-  return ALL_BRANDS.filter((b) => b.category === category)
+  // The selector is shared by catalogue filters, the creation flow and parts
+  // compatibility.  Keeping the order here prevents every screen inventing
+  // its own visual and lexical ordering of the same directory.
+  return ALL_BRANDS
+    .filter((b) => b.category === category)
+    .sort((a, b) => a.name.localeCompare(b.name, "ru"))
 }
 
 /** Получить модели бренда по названию (без учёта регистра) */
