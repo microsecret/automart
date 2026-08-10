@@ -15,6 +15,31 @@ function parseInteger(value: string | null, fallback?: number) {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : fallback
 }
 
+type NumericRange = { from?: number; to?: number; error?: string }
+
+function parseNumericRange(input: {
+  from: string | null
+  to: string | null
+  label: string
+  min?: number
+  max?: number
+  integer?: boolean
+}): NumericRange {
+  const { from: rawFrom, to: rawTo, label, min = 0, max, integer = true } = input
+  const parse = (value: string | null) => {
+    if (value === null || value.trim() === "") return undefined
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed) || (integer && !Number.isSafeInteger(parsed)) || parsed < min || (max !== undefined && parsed > max)) return null
+    return parsed
+  }
+
+  const from = parse(rawFrom)
+  const to = parse(rawTo)
+  if (from === null || to === null) return { error: `${label}: укажите корректное значение` }
+  if (from !== undefined && to !== undefined && from > to) return { error: `${label}: значение «от» не может быть больше значения «до»` }
+  return { from, to }
+}
+
 function parseValues(value: string | null) {
   return (value || "").split(",").map((item) => item.trim()).filter(Boolean)
 }
@@ -49,11 +74,12 @@ function normalizeListing<T extends {
 export async function GET(request: NextRequest) {
   try {
     const sp = new URL(request.url).searchParams
-    const page = Math.max(1, parseInteger(sp.get("page"), 1) || 1)
+    const page = Math.min(10_000, Math.max(1, parseInteger(sp.get("page"), 1) || 1))
     const limit = Math.min(50, Math.max(1, parseInteger(sp.get("limit"), 12) || 12))
     const skip = (page - 1) * limit
 
     const type = sp.get("type") // "vehicle" | "part" | undefined (оба)
+    if (type && type !== "vehicle" && type !== "part") return NextResponse.json({ error: "Некорректный тип объявления" }, { status: 400 })
     const q = sp.get("q")?.trim()
     const ids = sp.get("ids") // список ID через запятую для сравнения
     const priceFrom = sp.get("priceFrom")
@@ -61,14 +87,8 @@ export async function GET(request: NextRequest) {
     const city = sp.get("city")?.trim()
     const sort = sp.get("sort") || "newest"
 
-    const minPrice = parseInteger(priceFrom)
-    const maxPrice = parseInteger(priceTo)
-    if ((priceFrom && minPrice === undefined) || (priceTo && maxPrice === undefined)) {
-      return NextResponse.json({ error: "Цена должна быть целым числом" }, { status: 400 })
-    }
-    if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
-      return NextResponse.json({ error: "Цена от не может быть больше цены до" }, { status: 400 })
-    }
+    const priceRange = parseNumericRange({ from: priceFrom, to: priceTo, label: "Цена" })
+    if (priceRange.error) return NextResponse.json({ error: priceRange.error }, { status: 400 })
 
     // Фильтры ТС
     const make = sp.get("make")
@@ -102,6 +122,19 @@ export async function GET(request: NextRequest) {
     const flightHoursTo = sp.get("flightHoursTo")
     const keywords = sp.get("keywords")
     const vehicleType = sp.get("vehicleType") // CAR, MOTORCYCLE, TRUCK, SPECIAL, WATER, AIR
+    const allowedVehicleTypes = new Set(["CAR", "MOTORCYCLE", "TRUCK", "SPECIAL", "WATER", "AIR"])
+    if (vehicleType && !allowedVehicleTypes.has(vehicleType)) return NextResponse.json({ error: "Некорректный тип транспорта" }, { status: 400 })
+
+    const maxVehicleYear = new Date().getFullYear() + 1
+    const yearRange = parseNumericRange({ from: yearFrom, to: yearTo, label: "Год выпуска", min: 1886, max: maxVehicleYear })
+    const ownersRange = parseNumericRange({ from: ownersCountFrom, to: ownersCountTo, label: "Количество владельцев" })
+    const mileageRange = parseNumericRange({ from: mileageFrom, to: mileageTo, label: "Пробег" })
+    const operatingHoursRange = parseNumericRange({ from: operatingHoursFrom, to: operatingHoursTo, label: "Наработка" })
+    const flightHoursRange = parseNumericRange({ from: flightHoursFrom, to: flightHoursTo, label: "Налёт" })
+    const engineVolumeRange = parseNumericRange({ from: engineVolumeFrom, to: engineVolumeTo, label: "Объём двигателя", integer: false })
+    const powerRange = parseNumericRange({ from: powerFrom, to: powerTo, label: "Мощность" })
+    const invalidRange = [yearRange, ownersRange, mileageRange, operatingHoursRange, flightHoursRange, engineVolumeRange, powerRange].find((range) => range.error)
+    if (invalidRange?.error) return NextResponse.json({ error: invalidRange.error }, { status: 400 })
 
     // Фильтры запчастей
     const partType = sp.get("partType")
@@ -125,10 +158,10 @@ export async function GET(request: NextRequest) {
     const vehicleFilters: Prisma.VehicleWhereInput = {}
     if (vehicleType) vehicleFilters.vehicleType = vehicleType
 
-    if (priceFrom || priceTo) {
+    if (priceRange.from !== undefined || priceRange.to !== undefined) {
       where.price = {}
-      if (minPrice !== undefined) where.price.gte = minPrice
-      if (maxPrice !== undefined) where.price.lte = maxPrice
+      if (priceRange.from !== undefined) where.price.gte = priceRange.from
+      if (priceRange.to !== undefined) where.price.lte = priceRange.to
     }
 
     if (q) {
@@ -142,12 +175,10 @@ export async function GET(request: NextRequest) {
 
     if (make) vehicleFilters.make = { contains: make }
     if (model) vehicleFilters.model = { contains: model }
-    if (yearFrom || yearTo) {
+    if (yearRange.from !== undefined || yearRange.to !== undefined) {
       vehicleFilters.year = {}
-      const minYear = parseInteger(yearFrom)
-      const maxYear = parseInteger(yearTo)
-      if (minYear !== undefined) vehicleFilters.year.gte = minYear
-      if (maxYear !== undefined) vehicleFilters.year.lte = maxYear
+      if (yearRange.from !== undefined) vehicleFilters.year.gte = yearRange.from
+      if (yearRange.to !== undefined) vehicleFilters.year.lte = yearRange.to
     }
     const fuelTypes = oneOrMany(fuelType)
     if (fuelTypes) vehicleFilters.fuelType = fuelTypes
@@ -178,47 +209,35 @@ export async function GET(request: NextRequest) {
     if (customsCleared === "true") vehicleFilters.customsCleared = true
     if (customsCleared === "false") vehicleFilters.customsCleared = false
     if (keywords) vehicleFilters.keywords = { contains: keywords }
-    if (ownersCountFrom || ownersCountTo) {
+    if (ownersRange.from !== undefined || ownersRange.to !== undefined) {
       vehicleFilters.ownersCount = {}
-      const minOwners = parseInteger(ownersCountFrom)
-      const maxOwners = parseInteger(ownersCountTo)
-      if (minOwners !== undefined) vehicleFilters.ownersCount.gte = minOwners
-      if (maxOwners !== undefined) vehicleFilters.ownersCount.lte = maxOwners
+      if (ownersRange.from !== undefined) vehicleFilters.ownersCount.gte = ownersRange.from
+      if (ownersRange.to !== undefined) vehicleFilters.ownersCount.lte = ownersRange.to
     }
-    if (mileageFrom || mileageTo) {
+    if (mileageRange.from !== undefined || mileageRange.to !== undefined) {
       vehicleFilters.mileage = {}
-      const minMileage = parseInteger(mileageFrom)
-      const maxMileage = parseInteger(mileageTo)
-      if (minMileage !== undefined) vehicleFilters.mileage.gte = minMileage
-      if (maxMileage !== undefined) vehicleFilters.mileage.lte = maxMileage
+      if (mileageRange.from !== undefined) vehicleFilters.mileage.gte = mileageRange.from
+      if (mileageRange.to !== undefined) vehicleFilters.mileage.lte = mileageRange.to
     }
-    if (operatingHoursFrom || operatingHoursTo) {
+    if (operatingHoursRange.from !== undefined || operatingHoursRange.to !== undefined) {
       vehicleFilters.operatingHours = {}
-      const minHours = parseInteger(operatingHoursFrom)
-      const maxHours = parseInteger(operatingHoursTo)
-      if (minHours !== undefined) vehicleFilters.operatingHours.gte = minHours
-      if (maxHours !== undefined) vehicleFilters.operatingHours.lte = maxHours
+      if (operatingHoursRange.from !== undefined) vehicleFilters.operatingHours.gte = operatingHoursRange.from
+      if (operatingHoursRange.to !== undefined) vehicleFilters.operatingHours.lte = operatingHoursRange.to
     }
-    if (flightHoursFrom || flightHoursTo) {
+    if (flightHoursRange.from !== undefined || flightHoursRange.to !== undefined) {
       vehicleFilters.flightHours = {}
-      const minHours = parseInteger(flightHoursFrom)
-      const maxHours = parseInteger(flightHoursTo)
-      if (minHours !== undefined) vehicleFilters.flightHours.gte = minHours
-      if (maxHours !== undefined) vehicleFilters.flightHours.lte = maxHours
+      if (flightHoursRange.from !== undefined) vehicleFilters.flightHours.gte = flightHoursRange.from
+      if (flightHoursRange.to !== undefined) vehicleFilters.flightHours.lte = flightHoursRange.to
     }
-    if (engineVolumeFrom || engineVolumeTo) {
+    if (engineVolumeRange.from !== undefined || engineVolumeRange.to !== undefined) {
       vehicleFilters.engineVolume = {}
-      const minEngine = Number(engineVolumeFrom)
-      const maxEngine = Number(engineVolumeTo)
-      if (Number.isFinite(minEngine)) vehicleFilters.engineVolume.gte = minEngine
-      if (Number.isFinite(maxEngine)) vehicleFilters.engineVolume.lte = maxEngine
+      if (engineVolumeRange.from !== undefined) vehicleFilters.engineVolume.gte = engineVolumeRange.from
+      if (engineVolumeRange.to !== undefined) vehicleFilters.engineVolume.lte = engineVolumeRange.to
     }
-    if (powerFrom || powerTo) {
+    if (powerRange.from !== undefined || powerRange.to !== undefined) {
       vehicleFilters.power = {}
-      const minPower = parseInteger(powerFrom)
-      const maxPower = parseInteger(powerTo)
-      if (minPower !== undefined) vehicleFilters.power.gte = minPower
-      if (maxPower !== undefined) vehicleFilters.power.lte = maxPower
+      if (powerRange.from !== undefined) vehicleFilters.power.gte = powerRange.from
+      if (powerRange.to !== undefined) vehicleFilters.power.lte = powerRange.to
     }
     if (city) vehicleFilters.location = { contains: city }
     if (Object.keys(vehicleFilters).length > 0) {
