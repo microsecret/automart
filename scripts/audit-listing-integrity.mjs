@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client"
+import { inferLegacyVehicleType } from "./reconcile-transport-categories.mjs"
 
 const prisma = new PrismaClient()
 const REQUIRED_TRIGGERS = [
@@ -78,7 +79,7 @@ async function main() {
       HAVING COUNT(*) > 1
     `),
     prisma.vehicle.findMany({
-      select: { id: true, vehicleType: true, images: true, category: { select: { name: true } } },
+      select: { id: true, make: true, model: true, vehicleType: true, images: true, category: { select: { name: true } } },
     }),
     prisma.part.findMany({
       select: { id: true, images: true },
@@ -92,6 +93,10 @@ async function main() {
   const categoryMismatches = vehicles.filter((vehicle) => {
     const expectedName = CATEGORY_NAME_BY_VEHICLE_TYPE[vehicle.vehicleType]
     return expectedName && vehicle.category?.name !== expectedName
+  })
+  const legacyTypeMismatches = vehicles.filter((vehicle) => {
+    const inferredVehicleType = inferLegacyVehicleType(vehicle.make, vehicle.model)
+    return inferredVehicleType !== null && inferredVehicleType !== vehicle.vehicleType
   })
   const media = [...vehicles, ...parts].map((record) => inspectMedia(record.images))
   const mediaSummary = {
@@ -114,7 +119,7 @@ async function main() {
       orphanedListings: orphanedListings.length,
       ambiguousListings: ambiguousListings.length,
       duplicateLiveSubjects: duplicateLiveSubjects.length,
-      valid: orphanedListings.length === 0 && ambiguousListings.length === 0 && duplicateLiveSubjects.length === 0 && missingTriggers.length === 0 && missingIndexes.length === 0 && categoryMismatches.length === 0,
+      valid: orphanedListings.length === 0 && ambiguousListings.length === 0 && duplicateLiveSubjects.length === 0 && missingTriggers.length === 0 && missingIndexes.length === 0 && categoryMismatches.length === 0 && legacyTypeMismatches.length === 0,
     },
     databaseTriggers: {
       installed: REQUIRED_TRIGGERS.filter((name) => installedTriggers.includes(name)),
@@ -131,6 +136,16 @@ async function main() {
         vehicleType: vehicle.vehicleType,
         category: vehicle.category?.name || null,
         expectedCategory: CATEGORY_NAME_BY_VEHICLE_TYPE[vehicle.vehicleType] || null,
+      })),
+    },
+    transportTypeIntegrity: {
+      legacyMismatches: legacyTypeMismatches.length,
+      samples: legacyTypeMismatches.slice(0, 20).map((vehicle) => ({
+        id: vehicle.id,
+        make: vehicle.make,
+        model: vehicle.model,
+        vehicleType: vehicle.vehicleType,
+        expectedVehicleType: inferLegacyVehicleType(vehicle.make, vehicle.model),
       })),
     },
     media: mediaSummary,
