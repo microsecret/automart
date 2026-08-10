@@ -811,22 +811,30 @@ select {
 }
 
 .catalog-filter-advanced {
+  gap: 10px;
   padding-top: 2px;
 }
 
 .catalog-filter-advanced > .mantine-Box-root,
 .catalog-filter-advanced > .mantine-Group-root:not(.catalog-filter-advanced__actions) {
-  padding: 12px;
-  border: 1px solid var(--market-line);
-  border-radius: 12px;
-  background: var(--market-surface);
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--market-line) 88%, transparent);
+  border-radius: 0;
+  background: transparent;
+}
+
+.catalog-filter-advanced > .mantine-Box-root:first-child,
+.catalog-filter-advanced > .mantine-Group-root:not(.catalog-filter-advanced__actions):first-child {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .catalog-filter-advanced .mantine-Chip-label {
-  min-height: 32px;
-  padding-inline: 12px;
+  min-height: 28px;
+  padding: 3px 9px;
   border-color: var(--market-field-line);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--market-surface-subtle);
   color: var(--market-control-text);
   font-size: 13px;
@@ -845,6 +853,17 @@ select {
   background: linear-gradient(135deg, #4f46e5, #6366f1);
   color: #fff;
   box-shadow: 0 5px 12px -8px rgba(79, 70, 229, 0.9);
+}
+
+.catalog-filter-advanced .mantine-Input-input,
+.catalog-filter-advanced .mantine-Select-input {
+  min-height: 32px;
+  border-color: var(--market-field-line);
+  border-radius: 9px;
+  background: var(--market-field);
+  color: var(--market-control-text);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .catalog-filter-advanced__actions {
@@ -2421,17 +2440,17 @@ select {
 
 .catalog-filter-advanced > .mantine-Box-root,
 .catalog-filter-advanced > .mantine-Group-root:not(.catalog-filter-advanced__actions) {
-  border-color: color-mix(in srgb, var(--market-line) 90%, transparent);
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--market-surface) 92%, var(--market-primary-soft));
+  border-color: color-mix(in srgb, var(--market-line) 88%, transparent);
+  border-radius: 0;
+  background: transparent;
 }
 
 .catalog-filter-advanced .mantine-Chip-label {
   border-color: color-mix(in srgb, var(--market-field-line) 92%, transparent);
   background: var(--market-field);
   font-weight: 650;
-  min-height: 29px;
-  padding: 4px 10px;
+  min-height: 28px;
+  padding: 3px 9px;
   font-size: 12px;
 }
 
