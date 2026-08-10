@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get reviews
-    const [reviews, total] = await prisma.$transaction([
+    const [reviews, total, ratingGroups] = await prisma.$transaction([
       prisma.review.findMany({
         where,
         include: {
@@ -80,7 +80,9 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               title: true,
-              price: true
+              price: true,
+              vehicleId: true,
+              partId: true,
             }
           }
         },
@@ -92,11 +94,30 @@ export async function GET(request: NextRequest) {
       }),
       prisma.review.count({
         where
-      })
+      }),
+      prisma.review.groupBy({
+        by: ["rating"],
+        where,
+        _count: { _all: true },
+      }),
     ])
+
+    const distribution = [5, 4, 3, 2, 1].map((rating) => ({
+      rating,
+      count: ratingGroups.find((group) => group.rating === rating)?._count._all || 0,
+    }))
+    const ratingTotal = distribution.reduce((sum, item) => sum + item.count, 0)
+    const averageRating = ratingTotal > 0
+      ? distribution.reduce((sum, item) => sum + item.rating * item.count, 0) / ratingTotal
+      : null
 
     return NextResponse.json({
       reviews,
+      summary: {
+        averageRating,
+        total: ratingTotal,
+        distribution,
+      },
       pagination: {
         page,
         limit,
@@ -186,7 +207,9 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             title: true,
-            price: true
+            price: true,
+            vehicleId: true,
+            partId: true,
           }
         }
       }

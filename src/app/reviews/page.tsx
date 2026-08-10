@@ -1,28 +1,74 @@
 "use client"
 export const dynamic = "force-dynamic"
+import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Avatar, SimpleGrid, Rating, Divider } from "@mantine/core"
+import { Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Avatar, SimpleGrid, Rating, Divider, Pagination } from "@mantine/core"
 import { IconStar, IconMessage2 } from "@tabler/icons-react"
 import { formatRelativeDate } from "@/lib/format"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type ReviewListing = {
+  id: string
+  title: string
+  price: number
+  vehicleId: string | null
+  partId: string | null
+}
 
-function StarsRow({ rating }: { rating: number }) {
-  return <Rating value={rating} readOnly size="sm" />
+type MarketplaceReview = {
+  id: string
+  rating: number
+  comment: string | null
+  createdAt: string
+  user: { id: string; name: string | null; image: string | null }
+  listing: ReviewListing | null
+}
+
+type ReviewsResponse = {
+  reviews: MarketplaceReview[]
+  summary: {
+    averageRating: number | null
+    total: number
+    distribution: Array<{ rating: number; count: number }>
+  }
+  pagination: { page: number; limit: number; total: number; pages: number }
+}
+
+async function fetcher<T>(url: string): Promise<T> {
+  const response = await fetch(url)
+  const payload: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    const message = payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+      ? payload.error
+      : "Не удалось загрузить отзывы"
+    throw new Error(message)
+  }
+  return payload as T
+}
+
+function getListingHref(listing: ReviewListing) {
+  if (listing.vehicleId) return `/listings/vehicle/${listing.vehicleId}`
+  if (listing.partId) return `/listings/part/${listing.partId}`
+  return "/"
 }
 
 export default function ReviewsPage() {
-  const { data, isLoading } = useSWR("/api/reviews?limit=50", fetcher)
+  const [page, setPage] = useState(1)
+  const { data, error, isLoading, mutate } = useSWR<ReviewsResponse>(`/api/reviews?limit=15&page=${page}`, fetcher)
 
-  const reviews: any[] = data?.reviews || []
-  const avg = reviews.length > 0 ? (reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length).toFixed(1) : "—"
+  const reviews = data?.reviews || []
+  const summary = data?.summary
+  const reviewCount = summary?.total || 0
+  const avg = summary?.averageRating ? summary.averageRating.toFixed(1) : "—"
 
-  const dist = [5, 4, 3, 2, 1].map((star) => ({
+  const dist = [5, 4, 3, 2, 1].map((star) => {
+    const count = summary?.distribution.find((item) => item.rating === star)?.count || 0
+    return {
     star,
-    count: reviews.filter((r: any) => r.rating === star).length,
-    pct: reviews.length > 0 ? (reviews.filter((r: any) => r.rating === star).length / reviews.length * 100) : 0,
-  }))
+    count,
+    pct: reviewCount > 0 ? (count / reviewCount * 100) : 0,
+  }})
 
   return (
     <Box p={{ base: "sm", md: "md" }}>
@@ -31,13 +77,15 @@ export default function ReviewsPage() {
           <ThemeIcon variant="light" color="orange" size={36} radius="md"><IconStar size={20} fill="currentColor" /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Отзывы</Text>
-            <Text size="xs" c="gray.5">{reviews.length} отзывов</Text>
+            <Text size="xs" c="gray.5">{reviewCount} отзывов</Text>
           </Stack>
         </Group>
 
-        {isLoading ? (
+        {error ? (
+          <AsyncErrorState title="Не удалось загрузить отзывы" description="Отзывы временно недоступны. Повторите попытку — это не означает, что их нет." onRetry={() => void mutate()} />
+        ) : isLoading ? (
           <Center py={80}><Loader size="sm" color="orange" /></Center>
-        ) : reviews.length === 0 ? (
+        ) : reviewCount === 0 ? (
           <Paper radius="md" p="xl" withBorder>
             <Center>
               <Stack align="center" gap="sm">
@@ -53,7 +101,7 @@ export default function ReviewsPage() {
               <Stack gap="sm" align="center">
                 <Text fw={800} fz={48} c="dark.9" lh={1}>{avg}</Text>
                 <Rating value={Number(avg) || 0} readOnly size="lg" />
-                <Text size="xs" c="gray.5">из {reviews.length} отзывов</Text>
+                <Text size="xs" c="gray.5">из {reviewCount} отзывов</Text>
               </Stack>
               <Divider my="sm" />
               <Stack gap={4}>
@@ -72,20 +120,20 @@ export default function ReviewsPage() {
             {/* Список отзывов */}
             <Box style={{ gridColumn: "span 2" }}>
               <Stack gap="xs">
-                {reviews.map((r: any) => (
-                  <Paper key={r.id} radius="md" p="md" withBorder>
+                {reviews.map((review) => (
+                  <Paper key={review.id} radius="md" p="md" withBorder>
                     <Group gap="sm" align="flex-start" wrap="nowrap">
-                      <Avatar src={r.user?.image} size={40} radius="xl" color="orange">{r.user?.name?.[0]?.toUpperCase()}</Avatar>
+                      <Avatar src={review.user.image} size={40} radius="xl" color="orange">{review.user.name?.[0]?.toUpperCase()}</Avatar>
                       <Stack gap={4} style={{ flex: 1 }}>
                         <Group gap="sm" align="center" justify="space-between">
-                          <Text fw={600} fz="sm" c="dark.9">{r.user?.name || "Аноним"}</Text>
-                          <Text fz="xs" c="gray.4">{formatRelativeDate(r.createdAt)}</Text>
+                          <Text fw={600} fz="sm" c="dark.9">{review.user.name || "Аноним"}</Text>
+                          <Text fz="xs" c="gray.4">{formatRelativeDate(review.createdAt)}</Text>
                         </Group>
-                        <Rating value={r.rating} readOnly size="sm" />
-                        {r.comment && <Text fz="sm" c="dark.7" mt={4}>{r.comment}</Text>}
-                        {r.listing && (
-                          <Link href={`/listings/vehicle/${r.listing.vehicleId || r.listing.id}`} style={{ textDecoration: "none" }}>
-                            <Text fz="xs" c="indigo" mt={4}>→ {r.listing.title}</Text>
+                        <Rating value={review.rating} readOnly size="sm" />
+                        {review.comment && <Text fz="sm" c="dark.7" mt={4}>{review.comment}</Text>}
+                        {review.listing && (
+                          <Link href={getListingHref(review.listing)} style={{ textDecoration: "none" }}>
+                            <Text fz="xs" c="indigo" mt={4}>→ {review.listing.title}</Text>
                           </Link>
                         )}
                       </Stack>
@@ -93,6 +141,11 @@ export default function ReviewsPage() {
                   </Paper>
                 ))}
               </Stack>
+              {(data?.pagination.pages || 0) > 1 && (
+                <Center mt="lg">
+                  <Pagination total={data?.pagination.pages || 1} value={page} onChange={setPage} boundaries={1} siblings={1} radius="md" />
+                </Center>
+              )}
             </Box>
           </SimpleGrid>
         )}
