@@ -191,6 +191,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const toggleDetailFavorite = () => {
     if (!data.listingId) return
     if (!isAuthenticated) {
+      notifications.show({
+        title: "Войдите, чтобы сохранить объявление",
+        message: "После входа вы вернётесь к этому автомобилю, а избранное будет доступно на всех устройствах.",
+        color: "indigo",
+      })
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/vehicle/${data.id}`)}`)
       return
     }
