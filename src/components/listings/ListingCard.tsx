@@ -119,7 +119,13 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
       >
         <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         {/* Фото область */}
-        <Box className="listing-card__media" data-empty-media={!hasDisplayImage || undefined} pos="relative" style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
+        <Box
+          className="listing-card__media"
+          data-empty-media={!hasDisplayImage || undefined}
+          data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
+          pos="relative"
+          style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}
+        >
           <AspectRatio ratio={8 / 5}>
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
@@ -200,29 +206,29 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         </Box>
 
         {/* Текстовая область — чёткое разделение */}
-        <Box p="sm">
+        <Box p="sm" className="listing-card__content">
           {/* Цена + цена в месяц */}
           <Group justify="space-between" align="baseline" mb={4}>
-            <Text fw={800} fz="md" lh={1.1} c="dark.9" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.01em" }}>
+            <Text className="listing-card__price" fw={800} fz="md" lh={1.1} c="dark.9" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.01em" }}>
               {formatPriceShort(listing.price)}
             </Text>
             {monthlyPayment && (
-              <Text fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>
+              <Text className="listing-card__monthly-payment" fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>
                 {monthlyPayment}
               </Text>
             )}
           </Group>
 
           {/* Заголовок */}
-          <Text fz="xs" c="gray.6" lh={1.4} mb={6} style={TRUNCATE_STYLE}>
+          <Text className="listing-card__title" fz="xs" c="gray.6" lh={1.4} mb={6} style={TRUNCATE_STYLE}>
             {listing.title}
           </Text>
 
           {/* Краткие факты: без капслока и повторения типа категории. */}
           {isVehicle && (
             <SimpleGrid cols={2} spacing={4} mb={6} className="listing-card__facts">
-              <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
-              {numericUsage != null && <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>}
+              <Text className="listing-card__fact" fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
+              {numericUsage != null && <Text className="listing-card__fact" fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>}
               {supportsTransmission(vehicleType) && listing.vehicle!.transmission && <Text className="listing-card__fact" fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="dark.8">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
               {listing.vehicle!.fuelType && <Text className="listing-card__fact" fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="dark.8">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
             </SimpleGrid>

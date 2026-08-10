@@ -22,7 +22,14 @@ export default function VehicleFallback({ type, bodyType, compact = false }: { t
   const Icon = type === "AIR" && bodyType === "HELICOPTER" ? IconHelicopter : item.Icon
 
   return (
-    <Box className={`vehicle-fallback vehicle-fallback--${String(type || "CAR").toLowerCase()}`} data-compact={compact || undefined}>
+    <Box
+      className={`vehicle-fallback vehicle-fallback--${String(type || "CAR").toLowerCase()}`}
+      data-compact={compact || undefined}
+      data-kind={type === "AIR" && bodyType === "HELICOPTER" ? "helicopter" : String(type || "CAR").toLowerCase()}
+      aria-label={`Фото не добавлено: ${vehicleTypeLabel(type, bodyType)}`}
+      role="img"
+    >
+      <Box className="vehicle-fallback__halo" aria-hidden="true" />
       <ThemeIcon variant="light" color={item.color} radius="xl" size={compact ? 38 : 54}>
         <Icon size={compact ? 21 : 30} stroke={1.6} />
       </ThemeIcon>
