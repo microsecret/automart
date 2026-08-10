@@ -1,9 +1,10 @@
 "use client"
 import { useState, useMemo } from "react"
 import useSWR from "swr"
-import { Paper, Stack, Group, Text, Select, Divider, ThemeIcon, Box, Tooltip } from "@mantine/core"
+import { Alert, Paper, Stack, Group, Text, Select, Divider, ThemeIcon, Box, Tooltip } from "@mantine/core"
 import { IconCalculator, IconInfoCircle, IconShip, IconBuildingBank, IconTruckDelivery, IconCar, IconCheck, IconAlertTriangle, IconCoin } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
+import { fetchJson } from "@/lib/api-client"
 
 interface Props {
   make: string
@@ -23,11 +24,6 @@ const CURRENT_YEAR = new Date().getFullYear()
 type ExchangeRateResponse = {
   rates: Record<string, { rateToRub: number; source: string; updatedAt: string | null }>
 }
-
-const fetcher = (url: string) => fetch(url).then((response) => {
-  if (!response.ok) throw new Error("Unable to load exchange rates")
-  return response.json()
-})
 
 // Города РФ с ценой доставки из Владивостока (в рублях)
 const RF_CITIES = [
@@ -128,7 +124,7 @@ function customsDuty(year: number, volume: number, priceRub: number, eurRate: nu
 
 export default function AuctionCalculator({ make, model, year, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country }: Props) {
   const [city, setCity] = useState("Москва")
-  const { data: exchangeRateData } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetcher, { revalidateOnFocus: false })
+  const { data: exchangeRateData, error: exchangeRateError } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetchJson, { revalidateOnFocus: false })
   const volume = Math.round((engineVolume || 2.0) * 1000) // куб.см
   const age = CURRENT_YEAR - year
   const sourceRate = exchangeRateData?.rates[sourceCurrency]?.rateToRub
@@ -182,6 +178,12 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
           searchable
           description="Выберите город — пересчитаем доставку"
         />
+
+        {exchangeRateError && (
+          <Alert color="orange" variant="light" icon={<IconAlertTriangle size={17} />}>
+            Курсы ЦБ сейчас не обновились. Показана ориентировочная стоимость из данных лота; не используйте её для оплаты без подтверждения менеджером.
+          </Alert>
+        )}
 
         {/* Предупреждение о проходном годе */}
         {calc.isProkhodnoy === false && !isElectric && (
