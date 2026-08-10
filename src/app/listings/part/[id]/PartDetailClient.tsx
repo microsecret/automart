@@ -46,7 +46,9 @@ import {
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { notifications } from "@mantine/notifications"
 import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
+import { fetchJson } from "@/lib/api-client"
 import { useFavorites } from "@/hooks/useFavorites"
 
 const PART_TYPES_MAP: Record<string, string> = {
@@ -103,6 +105,8 @@ interface PartData {
   reviews: { id: string; rating: number; comment: string | null; createdAt: Date; user: { name: string | null; image: string | null } }[]
 }
 
+type BidResponse = { bid: { amount: number } }
+
 export default function PartDetailClient({ data }: { data: PartData }) {
   const { data: session } = useSession()
   const [showPhone, setShowPhone] = useState(false)
@@ -118,6 +122,11 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const toggleDetailFavorite = () => {
     if (!data.listingId) return
     if (!isAuthenticated) {
+      notifications.show({
+        title: "Войдите, чтобы сохранить",
+        message: "Избранное синхронизируется между сайтом и Telegram после авторизации.",
+        color: "indigo",
+      })
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/part/${data.id}`)}`)
       return
     }
@@ -135,9 +144,11 @@ export default function PartDetailClient({ data }: { data: PartData }) {
     setBidLoading(true)
     setBidMessage(null)
     try {
-      const response = await fetch(`/api/parts/${data.id}/bid`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: bidAmount }) })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || "Ставка не принята")
+      const result = await fetchJson<BidResponse>(`/api/parts/${data.id}/bid`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: bidAmount }),
+      })
       setBidMessage(`Ставка ${(result.bid.amount as number).toLocaleString("ru-RU")} ₽ принята`)
       setBidAmount("")
       router.refresh()
