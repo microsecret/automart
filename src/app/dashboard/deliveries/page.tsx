@@ -6,20 +6,38 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Badge, Box, Button, Center, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconArrowRight, IconCar, IconChevronRight, IconFileInvoice, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
+import { IconArrowRight, IconChevronRight, IconFileInvoice, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
-
-const fetcher = async (url: string) => {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error("Не удалось загрузить данные")
-  return response.json()
-}
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
 
 const sourceOptions = [
   { value: "AUCTION", label: "Аукцион" },
   { value: "DIRECT_IMPORT", label: "Прямой импорт" },
   { value: "PARTS_ORDER", label: "Запчасть под заказ" },
 ]
+
+type DeliveryOrderListItem = {
+  id: string
+  code: string
+  kind: "VEHICLE" | "PART"
+  sourceType: "AUCTION" | "DIRECT_IMPORT" | "PARTS_ORDER"
+  status: string
+  title: string
+  originCountry: string
+  originCity: string | null
+  destinationCity: string
+  nextAction: string | null
+}
+
+type DeliveryOrdersResponse = {
+  orders: DeliveryOrderListItem[]
+  summary: { total: number; active: number; pendingPayments: number; needsAttention: number }
+}
+
+type AuctionPrefillResponse = {
+  listing: { make: string; model: string; year: number; lotNumber: string | null; country: string; location: string | null }
+}
 
 export default function DeliveriesPage() {
   return <Suspense fallback={<Center py={100}><Loader color="indigo" /></Center>}><DeliveriesWorkspace /></Suspense>
@@ -28,20 +46,18 @@ export default function DeliveriesPage() {
 function DeliveriesWorkspace() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data, error, isLoading, mutate } = useSWR("/api/delivery-orders", fetcher)
+  const auctionListingIdFromSearch = searchParams.get("auctionListingId")
+  const { data, error, isLoading, mutate } = useSWR<DeliveryOrdersResponse>("/api/delivery-orders", fetchJson)
   const [opened, setOpened] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ title: "", kind: "VEHICLE", sourceType: "AUCTION", originCountry: "CN", destinationCity: "", originCity: "", description: "", auctionListingId: "" })
 
   useEffect(() => {
-    const auctionListingId = searchParams.get("auctionListingId")
+    const auctionListingId = auctionListingIdFromSearch
     if (!auctionListingId || form.auctionListingId === auctionListingId) return
 
-    fetch(`/api/auctions/${auctionListingId}`)
-      .then((response) => response.ok ? response.json() : null)
-      .then((payload) => {
-        const listing = payload?.listing
-        if (!listing) return
+    void fetchJson<AuctionPrefillResponse>(`/api/auctions/${auctionListingId}`)
+      .then(({ listing }) => {
         const originCountry = DELIVERY_COUNTRIES.some((country) => country.value === listing.country) ? listing.country : "OTHER"
         setForm((current) => ({
           ...current,
@@ -53,28 +69,32 @@ function DeliveriesWorkspace() {
         }))
         setOpened(true)
       })
-      .catch(() => undefined)
-  }, [form.auctionListingId, searchParams])
+      .catch((loadError: unknown) => {
+        notifications.show({
+          title: "Лот недоступен",
+          message: loadError instanceof Error ? loadError.message : "Можно создать заявку вручную.",
+          color: "orange",
+        })
+      })
+  }, [auctionListingIdFromSearch, form.auctionListingId])
 
   const createOrder = async (event: FormEvent) => {
     event.preventDefault()
     setSubmitting(true)
     try {
-      const response = await fetch("/api/delivery-orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
-      const payload = await response.json()
-      if (!response.ok) throw new Error(payload.error || "Не удалось создать заявку")
+      const payload = await fetchJson<{ order: { id: string } }>("/api/delivery-orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
       notifications.show({ title: "Заявка создана", message: "Сделка появилась в вашем кабинете. Счёт появится только после согласования условий.", color: "teal" })
       await mutate()
       router.push(`/dashboard/deliveries/${payload.order.id}`)
-    } catch (err: any) {
-      notifications.show({ title: "Не удалось создать заявку", message: err.message || "Попробуйте ещё раз", color: "red" })
+    } catch (createError: unknown) {
+      notifications.show({ title: "Не удалось создать заявку", message: createError instanceof Error ? createError.message : "Попробуйте ещё раз", color: "red" })
     } finally {
       setSubmitting(false)
     }
   }
 
-  if (isLoading) return <Center py={100}><Loader color="indigo" /></Center>
-  if (error) return <Center py={100}><Text c="red">Не удалось загрузить сделки. Обновите страницу.</Text></Center>
+  if (isLoading) return <Center py={100}><Loader color="indigo" aria-label="Загружаем доставки" /></Center>
+  if (error) return <Box py={80}><AsyncErrorState title="Не удалось загрузить доставки" description={error instanceof Error ? error.message : "Проверьте подключение и повторите попытку."} onRetry={() => void mutate()} backHref="/dashboard" backLabel="В кабинет" /></Box>
 
   const orders = data?.orders || []
   const summary = data?.summary || { total: 0, active: 0, pendingPayments: 0, needsAttention: 0 }
@@ -107,14 +127,12 @@ function DeliveriesWorkspace() {
         </Group>
 
         {orders.length === 0 ? (
-          <Paper withBorder radius="lg" p="xl">
-            <Center><Stack align="center" gap="sm" maw={420}><ThemeIcon size={54} radius="xl" variant="light" color="indigo"><IconTruckDelivery size={28} /></ThemeIcon><Text fw={700}>Пока нет заявок на доставку</Text><Text size="sm" c="dimmed" ta="center">Создайте первую заявку. Менеджер сначала согласует маршрут и партнёра — реквизиты для оплаты не появляются автоматически.</Text><Button onClick={() => setOpened(true)} leftSection={<IconPlus size={16} />} color="indigo">Создать заявку</Button></Stack></Center>
-          </Paper>
+          <EmptyState title="Пока нет заявок на доставку" description="Создайте первую заявку. Менеджер сначала согласует маршрут и партнёра — реквизиты для оплаты не появляются автоматически." actionLabel="Создать заявку" onAction={() => setOpened(true)} />
         ) : (
           <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="sm">
-            {orders.map((order: any) => {
+            {orders.map((order) => {
               const meta = DELIVERY_STATUS_META[order.status as keyof typeof DELIVERY_STATUS_META] || DELIVERY_STATUS_META.REQUEST_CREATED
-              return <Paper key={order.id} component={Link} href={`/dashboard/deliveries/${order.id}`} withBorder radius="lg" p="md" style={{ textDecoration: "none", color: "inherit", transition: "transform .18s ease, box-shadow .18s ease" }}>
+              return <Paper key={order.id} component={Link} href={`/dashboard/deliveries/${order.id}`} withBorder radius="lg" p="md" className="delivery-order-card" style={{ textDecoration: "none", color: "inherit" }}>
                 <Stack gap="sm">
                   <Group justify="space-between" gap="xs" wrap="nowrap"><Badge variant="light" color={meta.color}>{meta.shortLabel}</Badge><Text size="xs" c="dimmed" fw={600}>{order.code}</Text></Group>
                   <Stack gap={2}><Text fw={800} lineClamp={2}>{order.title}</Text><Text size="xs" c="dimmed">{order.kind === "PART" ? "Запчасть" : "Транспорт"} · {order.sourceType === "AUCTION" ? "аукцион" : order.sourceType === "PARTS_ORDER" ? "под заказ" : "прямой импорт"}</Text></Stack>

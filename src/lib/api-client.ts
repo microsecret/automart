@@ -23,8 +23,8 @@ function getErrorMessage(payload: unknown, fallback: string) {
  * SWR fetcher for browser API routes. Unlike `response.json()` directly, it
  * preserves the HTTP status and lets the UI render a recovery state for 4xx/5xx.
  */
-export async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url)
+export async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, init)
   const payload = await response.json().catch(() => null)
 
   if (!response.ok) {

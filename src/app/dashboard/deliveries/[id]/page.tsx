@@ -9,6 +9,7 @@ import { notifications } from "@mantine/notifications"
 import { IconArrowLeft, IconArrowRight, IconCalendar, IconCheck, IconCircleCheck, IconClock, IconFileDescription, IconFileInvoice, IconMapPin, IconMessageCircle, IconNotes, IconPlus, IconReceipt, IconRoute, IconSend, IconShieldCheck, IconTruckDelivery, IconUpload } from "@tabler/icons-react"
 import { canTransitionDeliveryStatus, DELIVERY_DOCUMENT_META, DELIVERY_PAYMENT_META, DELIVERY_STATUSES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { fetchJson } from "@/lib/api-client"
 
 type DeliveryUser = { id: string; name: string | null; image: string | null }
 
@@ -79,19 +80,6 @@ type DeliveryOrderResponse = {
   permissions: { currentUserId: string | null; canManage: boolean; isBuyer: boolean; isAdmin: boolean }
 }
 
-function getErrorMessage(payload: unknown, fallback: string) {
-  return payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
-    ? payload.error
-    : fallback
-}
-
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, init)
-  const payload: unknown = await response.json().catch(() => null)
-  if (!response.ok) throw new Error(getErrorMessage(payload, "Не удалось выполнить действие"))
-  return payload as T
-}
-
 const paymentStatusMeta: Record<string, { label: string; color: string }> = {
   DRAFT: { label: "Черновик", color: "gray" },
   INVOICE_ISSUED: { label: "Ожидает оплаты", color: "orange" },
@@ -103,7 +91,7 @@ const paymentStatusMeta: Record<string, { label: string; color: string }> = {
 
 export default function DeliveryOrderPage() {
   const params = useParams<{ id: string }>()
-  const { data, error, isLoading, mutate } = useSWR<DeliveryOrderResponse>(params.id ? `/api/delivery-orders/${params.id}` : null, requestJson)
+  const { data, error, isLoading, mutate } = useSWR<DeliveryOrderResponse>(params.id ? `/api/delivery-orders/${params.id}` : null, fetchJson)
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [eventOpened, setEventOpened] = useState(false)
@@ -128,7 +116,7 @@ export default function DeliveryOrderPage() {
     if (!message.trim()) return
     setSending(true)
     try {
-      await requestJson(`/api/delivery-orders/${order.id}/messages`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: message }) })
+      await fetchJson(`/api/delivery-orders/${order.id}/messages`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: message }) })
       setMessage("")
       mutate()
     } catch (error: unknown) {
@@ -139,7 +127,7 @@ export default function DeliveryOrderPage() {
   const addEvent = async (event: FormEvent) => {
     event.preventDefault()
     try {
-      await requestJson(`/api/delivery-orders/${order.id}/events`, {
+      await fetchJson(`/api/delivery-orders/${order.id}/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...eventForm, expectedAt: eventForm.expectedAt || null }),
@@ -156,7 +144,7 @@ export default function DeliveryOrderPage() {
   const addPayment = async (event: FormEvent) => {
     event.preventDefault()
     try {
-      await requestJson(`/api/delivery-orders/${order.id}/payments`, {
+      await fetchJson(`/api/delivery-orders/${order.id}/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...paymentForm, amount: Number(paymentForm.amount), dueAt: paymentForm.dueAt || null }),
@@ -179,7 +167,7 @@ export default function DeliveryOrderPage() {
       formData.append("category", uploadTarget.category)
       formData.append("title", uploadTarget.label)
       if (uploadTarget.paymentId) formData.append("paymentId", uploadTarget.paymentId)
-      await requestJson(`/api/delivery-orders/${order.id}/documents`, { method: "POST", body: formData })
+      await fetchJson(`/api/delivery-orders/${order.id}/documents`, { method: "POST", body: formData })
       notifications.show({ title: "Документ добавлен", message: uploadTarget.paymentId ? "Квитанция передана на проверку партнёру." : "Файл доступен участникам сделки.", color: "teal" })
       setSelectedFile(null)
       setUploadTarget(null)
@@ -191,7 +179,7 @@ export default function DeliveryOrderPage() {
 
   const confirmPayment = async (paymentId: string) => {
     try {
-      await requestJson(`/api/delivery-orders/${order.id}/payments/${paymentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "CONFIRMED" }) })
+      await fetchJson(`/api/delivery-orders/${order.id}/payments/${paymentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "CONFIRMED" }) })
       notifications.show({ title: "Квитанция подтверждена", message: "Статус платежа обновлён в сделке.", color: "teal" })
       mutate()
     } catch (error: unknown) {
