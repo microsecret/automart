@@ -22,7 +22,7 @@ import {
 import { IconArrowLeft, IconSend } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
-import { fetchJson } from "@/lib/api-client"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
 interface Message {
@@ -36,6 +36,10 @@ type ConversationResponse = {
   messages: Message[]
   otherUser: { id: string; name: string | null; image: string | null } | null
   listingId: string | null
+}
+
+type SendMessageResponse = {
+  conversationId?: string
 }
 
 export default function ConversationPage() {
@@ -81,23 +85,21 @@ export default function ConversationPage() {
     try {
       const receiverId = recipientId || data?.otherUser?.id
       if (!receiverId) throw new Error("Не удалось определить собеседника")
-      const response = await fetch("/api/messages", {
+      const payload = await fetchJson<SendMessageResponse>("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, receiverId, listingId: requestedListingId || data?.listingId || null }),
       })
-      const payload = await response.json().catch(() => null) as { error?: string; conversationId?: string } | null
-      if (!response.ok) throw new Error(payload?.error || "Не удалось отправить сообщение")
-      if (isNewConversation && payload?.conversationId) {
+      if (isNewConversation && payload.conversationId) {
         router.replace(`/messages/${payload.conversationId}`)
       } else {
-        globalMutate(`/api/messages/${conversationId}`)
+        void globalMutate(`/api/messages/${conversationId}`)
       }
-    } catch (error) {
+    } catch (requestError) {
       setText(content)
       notifications.show({
         title: "Сообщение не отправлено",
-        message: error instanceof Error ? error.message : "Повторите попытку.",
+        message: getApiClientErrorMessage(requestError, "Повторите попытку."),
         color: "red",
       })
     } finally {
