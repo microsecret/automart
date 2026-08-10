@@ -207,6 +207,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           {/* Сердечко — справа снизу */}
           <Box pos="absolute" bottom={8} right={8} style={{ zIndex: 2 }}>
             <ActionIcon
+              className="listing-card__favorite"
               color={isFav ? "red" : "dark"}
               variant="filled"
               size="sm"

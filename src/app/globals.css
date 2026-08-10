@@ -980,10 +980,27 @@ select {
 
 .listing-card {
   --listing-accent: #6366f1;
+  isolation: isolate;
   background: var(--market-surface);
   border-color: rgba(148, 163, 184, 0.28) !important;
   box-shadow: 0 8px 24px -22px rgba(15, 23, 42, 0.52);
   transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.listing-card::before {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: 18%;
+  left: 0;
+  height: 2px;
+  content: "";
+  pointer-events: none;
+  transform: scaleX(0.24);
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--listing-accent), color-mix(in srgb, var(--listing-accent) 16%, transparent));
+  opacity: 0.82;
+  transition: transform 200ms ease, opacity 200ms ease;
 }
 
 .listing-card[data-vehicle-type="motorcycle"] { --listing-accent: #8b5cf6; }
@@ -1008,6 +1025,11 @@ select {
     transform: translateY(-3px);
     border-color: #4f46e5 !important;
     box-shadow: 0 12px 32px -8px rgba(79, 70, 229, 0.25);
+  }
+
+  .listing-card:hover::before {
+    transform: scaleX(1);
+    opacity: 1;
   }
 
   .listing-card--row:hover {
@@ -1146,7 +1168,9 @@ select {
 }
 
 .listing-card__content {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), #ffffff 100%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), #ffffff 100%),
+    var(--market-surface);
 }
 
 .listing-card__price {
@@ -1193,6 +1217,33 @@ select {
 .listing-card__footer {
   min-height: 20px;
   border-top: 1px solid var(--mantine-color-border);
+}
+
+.listing-card__favorite {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow: 0 8px 16px -10px rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(10px) saturate(1.18);
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.listing-card__favorite--inline {
+  border-color: var(--market-field-line);
+  background: var(--market-field);
+}
+
+.listing-card__favorite:focus-visible {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .listing-card__favorite:hover {
+    transform: scale(1.08);
+    box-shadow: 0 12px 20px -10px rgba(15, 23, 42, 0.76);
+  }
 }
 
 .listing-card__views {

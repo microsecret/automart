@@ -77,6 +77,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   return (
     <Card
       className="listing-card listing-card--row"
+      data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
       pos="relative"
       padding={0}
       radius="md"
@@ -174,6 +175,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
               <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
                 {listing.createdAt && <Text fz="xs" c="gray.4">{formatRelativeDate(listing.createdAt)}</Text>}
                 <ActionIcon
+                  className="listing-card__favorite listing-card__favorite--inline"
                   color={isFav ? "red" : "gray"}
                   variant={isFav ? "filled" : "subtle"}
                   size="sm"
