@@ -1,79 +1,101 @@
 "use client"
 
-import { useState } from "react"
+import { useDeferredValue, useState } from "react"
 import useSWR from "swr"
-import { Box, Stack, Text, Group, Center, Loader, Pagination, SimpleGrid, Card, ThemeIcon, TextInput, Image, Badge } from "@mantine/core"
-import { IconNews, IconClock, IconMessageCircle2, IconSearch } from "@tabler/icons-react"
+import { Badge, Box, Card, Group, Image, Pagination, SimpleGrid, Stack, Text, TextInput, ThemeIcon } from "@mantine/core"
+import { IconArrowUpRight, IconMessageCircle2, IconNews, IconSearch } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
 import { newsHref } from "@/lib/news"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type NewsArticle = {
+  id: string
+  title: string
+  excerpt: string | null
+  imageUrl: string | null
+  sourceChannel: string | null
+  publishedAt: string
+  _count?: { comments: number }
+}
+
+type NewsResponse = {
+  news: NewsArticle[]
+  pagination: { page: number; limit: number; total: number; pages: number }
+}
+
+function NewsCard({ article, featured }: { article: NewsArticle; featured: boolean }) {
+  const source = article.sourceChannel ? `@${article.sourceChannel}` : "Новости рынка"
+
+  return (
+    <Link className="news-list-card-link" data-featured={featured || undefined} href={newsHref(article)} aria-label={`Открыть новость: ${article.title}`}>
+      <Card className="news-list-card" data-featured={featured || undefined} data-has-image={article.imageUrl ? true : undefined} radius="lg" p={0} withBorder>
+        {article.imageUrl && <Image className="news-list-card__image" src={article.imageUrl} alt="" h={featured ? 230 : 156} fit="cover" />}
+        <Stack className="news-list-card__content" gap="sm">
+          <Group className="news-list-card__meta" justify="space-between" gap="xs" wrap="nowrap">
+            <Badge className="news-list-card__source" size="xs" variant="light" color="indigo" radius="xl">{source}</Badge>
+            <Text size="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>{formatRelativeDate(article.publishedAt)}</Text>
+          </Group>
+
+          <Text component="h2" className="news-list-card__title" fw={featured ? 800 : 750} fz={featured ? "xl" : "md"} lh={1.24}>
+            {article.title}
+          </Text>
+
+          {article.excerpt && <Text className="news-list-card__excerpt" size="sm" c="dimmed" lh={1.5}>{article.excerpt}</Text>}
+
+          <Group className="news-list-card__footer" justify="space-between" mt="auto" pt="xs">
+            {(article._count?.comments || 0) > 0 ? <Group gap={4}><IconMessageCircle2 size={13} stroke={1.8} /><Text size="xs">{article._count?.comments}</Text></Group> : <Text size="xs" c="dimmed">Материал редакции</Text>}
+            <Group gap={4} className="news-list-card__read"><Text size="xs" fw={700}>Читать</Text><IconArrowUpRight size={14} /></Group>
+          </Group>
+        </Stack>
+      </Card>
+    </Link>
+  )
+}
 
 export default function NewsListClient() {
   const [page, setPage] = useState(1)
-  const [q, setQ] = useState("")
-  const { data, isLoading } = useSWR<{ news: any[]; pagination: any }>(`/api/news?page=${page}&limit=12${q ? `&q=${encodeURIComponent(q)}` : ""}`, fetcher)
+  const [query, setQuery] = useState("")
+  const deferredQuery = useDeferredValue(query.trim())
+  const newsUrl = `/api/news?page=${page}&limit=12${deferredQuery ? `&q=${encodeURIComponent(deferredQuery)}` : ""}`
+  const { data, error, isLoading, mutate } = useSWR<NewsResponse>(newsUrl, fetchJson)
+  const articles = data?.news || []
 
   return (
-    <Box p={{ base: "sm", md: "md" }}>
+    <Box className="news-list-page" p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
-        <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="indigo" size={40} radius="md"><IconNews size={20} /></ThemeIcon>
-          <Stack gap={0}>
-            <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} c="dark.9">Автомобильные новости</Text>
-            <Text size="xs" c="gray.5">{data?.pagination?.total || "—"} публикаций редакции и рынка</Text>
+        <Group className="news-list-page__heading" gap="sm" align="center">
+          <ThemeIcon variant="light" color="indigo" size={44} radius="lg"><IconNews size={22} /></ThemeIcon>
+          <Stack gap={1}>
+            <Text component="h1" ff="var(--font-display),sans-serif" fw={850} fz={{ base: 26, md: 32 }} lh={1.08}>Автомобильные новости</Text>
+            <Text size="sm" c="dimmed">Свежие публикации редакции и рынка{data?.pagination.total ? ` · ${data.pagination.total}` : ""}</Text>
           </Stack>
         </Group>
 
-        <TextInput placeholder="Поиск по новостям..." leftSection={<IconSearch size={16} />} value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} size="sm" radius="md" mb="sm" />
+        <TextInput
+          className="news-list-search"
+          placeholder="Поиск по новостям"
+          leftSection={<IconSearch size={17} />}
+          value={query}
+          onChange={(event) => { setQuery(event.currentTarget.value); setPage(1) }}
+          size="md"
+          radius="lg"
+          aria-label="Поиск по новостям"
+        />
 
-        {isLoading ? (
-          <Center py={60}><Loader color="indigo" size="sm" /></Center>
-        ) : (
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
-            {(data?.news || []).map((article) => (
-              <Link key={article.id} href={newsHref(article)} style={{ textDecoration: "none", color: "inherit" }}>
-                <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)", height: "100%", transition: "all 200ms ease", cursor: "pointer", overflow: "hidden" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#e4e4e7"; e.currentTarget.style.boxShadow = "0 8px 18px -10px rgba(0,0,0,0.18)" }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#f4f4f5"; e.currentTarget.style.boxShadow = "none" }}>
-                  <Stack gap="xs" style={{ height: "100%", justifyContent: "space-between" }}>
-                    {article.imageUrl && (
-                      <Image src={article.imageUrl} alt={article.title} h={150} radius="sm" fit="cover" fallbackSrc="/images/home/hero-marketplace.png" />
-                    )}
-                    <Group justify="space-between" gap="xs">
-                      {article.sourceChannel && <Badge size="xs" variant="light" color="indigo">@{article.sourceChannel}</Badge>}
-                      <Text size="xs" c="gray.4">{formatRelativeDate(article.publishedAt)}</Text>
-                    </Group>
-                    <Text size="sm" fw={650} c="dark.9" lh={1.3} style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                      {article.title}
-                    </Text>
-                    {article.excerpt && (
-                      <Text size="xs" c="gray.5" lh={1.4} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                        {article.excerpt}
-                      </Text>
-                    )}
-                    <Group gap="xs" mt="auto" pt="xs" style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
-                      <Group gap={3}>
-                        <IconClock size={11} stroke={1.8} color="gray.4" />
-                        <Text size="xs" c="gray.4">{formatRelativeDate(article.publishedAt)}</Text>
-                      </Group>
-                      {article._count?.comments > 0 && (
-                        <Group gap={3}>
-                          <IconMessageCircle2 size={11} stroke={1.8} color="gray.4" />
-                          <Text size="xs" c="gray.4">{article._count.comments}</Text>
-                        </Group>
-                      )}
-                    </Group>
-                  </Stack>
-                </Card>
-              </Link>
-            ))}
+        {error ? <AsyncErrorState title="Не удалось загрузить новости" description="Проверьте подключение и повторите попытку." onRetry={() => mutate()} /> : isLoading ? (
+          <ResultsGridSkeleton count={9} mediaHeight={156} />
+        ) : articles.length ? (
+          <SimpleGrid className="news-list-grid" cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+            {articles.map((article, index) => <NewsCard key={article.id} article={article} featured={index === 0 && page === 1 && !deferredQuery} />)}
           </SimpleGrid>
+        ) : (
+          <EmptyState title="Ничего не найдено" description="Попробуйте изменить запрос или посмотреть все новости." actionLabel="Сбросить поиск" onAction={() => { setQuery(""); setPage(1) }} />
         )}
 
         {data && data.pagination.pages > 1 && (
-          <Group justify="center" mt="md">
+          <Group justify="center" mt="sm">
             <Pagination value={page} onChange={setPage} total={data.pagination.pages} color="indigo" radius="md" size="sm" />
           </Group>
         )}
