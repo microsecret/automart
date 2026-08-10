@@ -14,6 +14,31 @@ type TelegramMessage = {
 
 type TelegramUpdate = { message?: TelegramMessage }
 
+function getMiniAppUrl() {
+  const value = process.env.TELEGRAM_MINI_APP_URL?.trim()
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    return url.protocol === "https:" ? url.toString() : null
+  } catch {
+    return null
+  }
+}
+
+async function sendMiniAppEntry(chatId: string, greeting: string) {
+  const miniAppUrl = getMiniAppUrl()
+  if (!miniAppUrl) return
+
+  await telegramApi("sendMessage", {
+    chat_id: chatId,
+    text: greeting,
+    reply_markup: {
+      inline_keyboard: [[{ text: "Открыть Авторынок", web_app: { url: miniAppUrl } }]],
+    },
+  })
+}
+
 async function sendContactRequest(chatId: string) {
   await telegramApi("sendMessage", {
     chat_id: chatId,
@@ -32,7 +57,14 @@ async function handleMessage(message: TelegramMessage) {
   const chatId = String(message.chat.id)
 
   if (message.text?.trim().toLowerCase().startsWith("/start")) {
-    if (message.chat.type === "private") await sendContactRequest(chatId)
+    if (message.chat.type === "private") {
+      const user = await prisma.user.findUnique({ where: { telegramId }, select: { telegramVerifiedAt: true, phone: true } })
+      if (isTelegramUserRegistered(user)) {
+        await sendMiniAppEntry(chatId, "Вы уже подтверждены. Откройте Авторынок, чтобы подать объявление, посмотреть АЗС или продолжить сделку.")
+        return
+      }
+      await sendContactRequest(chatId)
+    }
     else await telegramApi("sendMessage", { chat_id: chatId, text: "Для регистрации откройте личный чат с ботом и отправьте контакт." })
     return
   }
@@ -56,9 +88,10 @@ async function handleMessage(message: TelegramMessage) {
     })
     await telegramApi("sendMessage", {
       chat_id: chatId,
-      text: `Готово, ${user.name || "друг"}! Вы авторизованы в Авторынке. Теперь можно открыть сайт, Mini App и писать в наши чаты.`,
+      text: `Готово, ${user.name || "друг"}! Контакт подтверждён. Теперь можно войти на сайт, открыть Mini App и писать в наши чаты.`,
       reply_markup: { remove_keyboard: true },
     })
+    await sendMiniAppEntry(chatId, "Мини App готов: объявления, избранное, доставки и карта АЗС доступны в одном окне.")
     return
   }
 
