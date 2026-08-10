@@ -65,6 +65,7 @@ import CreditCalculator from "@/components/listings/CreditCalculator"
 import { getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 interface VehicleData {
   id: string
@@ -210,19 +211,24 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
     if (!data.listingId) return
     setReviewSubmitting(true)
     try {
-      const res = await fetch("/api/reviews", {
+      await fetchJson<{ id?: string }>("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rating: reviewRating, comment: reviewText, listingId: data.listingId }),
       })
-      if (res.ok) {
-        setReviewText("")
-        setReviewRating(5)
-        notifications.show({ title: "Спасибо!", message: "Отзыв добавлен", color: "green" })
-        setTimeout(() => window.location.reload(), 1000)
-      }
-    } catch {}
-    setReviewSubmitting(false)
+      setReviewText("")
+      setReviewRating(5)
+      notifications.show({ title: "Спасибо!", message: "Отзыв добавлен", color: "green" })
+      router.refresh()
+    } catch (reviewError) {
+      notifications.show({
+        title: "Не удалось добавить отзыв",
+        message: getApiClientErrorMessage(reviewError, "Проверьте подключение и повторите попытку."),
+        color: "red",
+      })
+    } finally {
+      setReviewSubmitting(false)
+    }
   }
 
   const isMobile = useMediaQuery("(max-width: 768px)")
