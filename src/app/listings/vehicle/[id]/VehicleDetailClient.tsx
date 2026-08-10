@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useSession } from "next-auth/react"
 import {
   Container,
-  Grid,
   Stack,
   Group,
   Text,
@@ -13,7 +12,6 @@ import {
   Badge,
   Card,
   Paper,
-  SimpleGrid,
   Avatar,
   ActionIcon,
   Box,
@@ -244,9 +242,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
     MOTORCYCLE: "motorcycleType", TRUCK: "truckBodyType", SPECIAL: "specialType", WATER: "waterType", AIR: "airType",
   }
   const additionalSpecs = Object.entries(typeDetails).filter(([key, value]) => value !== null && value !== "" && key !== typeDetailKey[data.vehicleType])
-  const primaryTypeValue = data.bodyTypeLabel || (typeDetailKey[data.vehicleType] && typeDetails[typeDetailKey[data.vehicleType]!]
-    ? formatDetailValue(typeDetailKey[data.vehicleType]!, typeDetails[typeDetailKey[data.vehicleType]!]!)
-    : "—")
+  const primaryTypeKey = typeDetailKey[data.vehicleType]
+  const primaryTypeValue = primaryTypeKey && typeDetails[primaryTypeKey]
+    ? formatDetailValue(primaryTypeKey, typeDetails[primaryTypeKey]!)
+    : data.bodyTypeLabel || "—"
   const statusItems = [
     { label: "Документы", value: data.documentsStatusLabel || "Не указано", state: data.documentsStatusLabel === "В порядке" ? "positive" : "attention" },
     { label: hasRoadVehicleDetails ? "Состояние кузова" : "Состояние", value: data.damageInfoLabel || "Не указано", state: data.damageInfoLabel === "Не битая" ? "positive" : "attention" },
@@ -286,9 +285,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         <Text size="sm" c="dark.9">{data.make} {data.model}</Text>
       </Breadcrumbs>
 
-      <Grid gutter="lg">
+      <Box className="vehicle-detail-layout">
         {/* Левая колонка — галерея + характеристики */}
-        <Grid.Col span={{ base: 12, md: 8 }}>
+        <Box className="vehicle-detail-layout__main">
           <Stack gap="md">
             {images.length >= 3 && <Photo360Viewer images={images} title={`${data.year} ${data.make} ${data.model} — 360° осмотр`} />}
 
@@ -379,7 +378,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 <Title order={3} size="h4">Характеристики</Title>
                 {identityValue && <Text className="vehicle-detail-specs__identity">{identityMeta.badgeLabel}: {identityValue}</Text>}
               </Group>
-              <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing={0} className="vehicle-detail-specs__grid">
+              <Box className="vehicle-detail-specs__grid">
                 {specs.map((spec, i) => (
                   <Box key={`${spec.label}-${i}`} className="vehicle-detail-specs__item">
                     <Group gap={5} wrap="nowrap" className="vehicle-detail-specs__label">
@@ -389,21 +388,21 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Text className="vehicle-detail-specs__value">{spec.value}</Text>
                   </Box>
                 ))}
-              </SimpleGrid>
+              </Box>
             </Card>
 
             {/* Состояние и документы */}
             <Card withBorder radius="lg" p="lg" className="vehicle-detail-statuses">
               <Stack gap="md">
                 <Title order={3} size="h4">Состояние и документы</Title>
-                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing={0} className="vehicle-detail-statuses__grid">
+                <Box className="vehicle-detail-statuses__grid">
                   {statusItems.map((item) => (
                     <Box key={item.label} className="vehicle-detail-statuses__item" data-state={item.state}>
                       <Text className="vehicle-detail-statuses__label">{item.label}</Text>
                       <Text className="vehicle-detail-statuses__value">{item.value}</Text>
                     </Box>
                   ))}
-                </SimpleGrid>
+                </Box>
               </Stack>
             </Card>
 
@@ -418,13 +417,13 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 </Group>
                 <Badge variant="light" color="gray" size="md">Данные объявления</Badge>
               </Group>
-              <SimpleGrid cols={{ base: 2, md: 3 }} spacing="sm">
+              <Box className="vehicle-detail-vin-grid">
                 <VinField label="VIN" value={data.vin} />
                 <VinField label={usageMeta.label} value={usageDisplay} status="ok" />
                 <VinField label="Владельцев по ПТС" value={data.ownersCount ? String(data.ownersCount) : "Не указано"} status="ok" />
                 <VinField label="Проверка ограничений" value="Подключается отдельно" />
                 <VinField label="История ДТП" value="Подключается отдельно" />
-              </SimpleGrid>
+              </Box>
               <Group mt="md" gap="xs">
                 <IconShieldCheck size={14} color="#16a34a" />
                 <Text size="xs" c="#16a34a">Проверка по внешним базам будет показана после подключения провайдера.</Text>
@@ -530,7 +529,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             {data.similar.length > 0 && (
               <Box>
                 <Title order={3} size="h4" mb="md">Похожие объявления</Title>
-                <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
+                <Box className="vehicle-detail-similar-grid">
                   {data.similar.map((item) => (
                     <Card
                       key={item.id}
@@ -547,14 +546,14 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       <Text size="md" fw={700} c="indigo" mt={4}>{formatPriceShort(item.price)}</Text>
                     </Card>
                   ))}
-                </SimpleGrid>
+                </Box>
               </Box>
             )}
           </Stack>
-        </Grid.Col>
+        </Box>
 
         {/* Правая колонка — цена + продавец + действия */}
-        <Grid.Col span={{ base: 12, md: 4 }}>
+        <Box className="vehicle-detail-layout__aside">
           <Box style={{ position: "sticky", top: 80 }}>
             <Stack gap="md">
               {/* Цена и заголовок */}
@@ -700,8 +699,8 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               </Card>
             </Stack>
           </Box>
-        </Grid.Col>
-      </Grid>
+        </Box>
+      </Box>
     </Container>
   )
 }

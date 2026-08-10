@@ -1119,6 +1119,18 @@ select {
   background: var(--market-field);
 }
 
+.vehicle-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.46fr);
+  gap: var(--mantine-spacing-lg);
+  align-items: start;
+}
+
+.vehicle-detail-layout__main,
+.vehicle-detail-layout__aside {
+  min-width: 0;
+}
+
 .vehicle-detail-gallery {
   overflow: hidden;
   border-color: var(--market-line);
@@ -1171,10 +1183,19 @@ select {
 
 .vehicle-detail-specs__grid,
 .vehicle-detail-statuses__grid {
+  display: grid;
   overflow: hidden;
   border-top: 1px solid var(--market-line);
   border-left: 1px solid var(--market-line);
   border-radius: 12px;
+}
+
+.vehicle-detail-specs__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.vehicle-detail-statuses__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .vehicle-detail-specs__item,
@@ -1240,15 +1261,64 @@ select {
   background: #f59e0b;
 }
 
+.vehicle-detail-vin-grid,
+.vehicle-detail-similar-grid {
+  display: grid;
+  gap: var(--mantine-spacing-sm);
+}
+
+.vehicle-detail-vin-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vehicle-detail-similar-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .moderation-listing-row {
   border: 1px solid var(--market-line);
   border-radius: 10px;
   background: var(--market-surface-subtle);
 }
 
+@media (max-width: 72em) {
+  .vehicle-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-detail-specs__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .vehicle-detail-statuses__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vehicle-detail-similar-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 48em) {
+  .vehicle-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
   .vehicle-detail-gallery__empty-state {
     min-height: 220px;
+  }
+
+  .vehicle-detail-specs__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vehicle-detail-statuses__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-detail-vin-grid,
+  .vehicle-detail-similar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .home-auctions {
@@ -1301,6 +1371,11 @@ select {
 }
 
 @media (max-width: 36em) {
+  .vehicle-detail-vin-grid,
+  .vehicle-detail-similar-grid {
+    grid-template-columns: 1fr;
+  }
+
   .market-directory__signals,
   .home-auctions__summary {
     width: 100%;
