@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -25,6 +25,7 @@ export default function AppHeader() {
     { href: "/parts-finder", label: "Запчасти", icon: <IconTools size={14} />, active: pathname.startsWith("/parts") },
     { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
     { href: "/services/safe-deal", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
+    { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
     { href: "/help", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
   ]
 
@@ -71,10 +72,11 @@ export default function AppHeader() {
                 component={Link}
                 href={item.href}
                 variant={item.active ? "light" : "subtle"}
-                color={item.active ? "indigo" : "gray"}
+                color="indigo"
                 size="compact-sm"
                 leftSection={item.icon}
                 aria-current={item.active ? "page" : undefined}
+                className={`market-app-header__link${item.active ? " market-app-header__link--active" : ""}`}
                 styles={{ root: { fontWeight: item.active ? 700 : 600 } }}
               >
                 {item.label}

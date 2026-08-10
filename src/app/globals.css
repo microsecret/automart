@@ -251,6 +251,33 @@ select {
   font-weight: 700;
 }
 
+.market-app-header__links {
+  min-width: 0;
+}
+
+.market-app-header__link {
+  color: var(--market-muted) !important;
+  border-radius: 8px;
+  transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.market-app-header__link:hover {
+  color: var(--market-ink) !important;
+  background: var(--market-primary-soft);
+}
+
+.market-app-header__link--active {
+  color: var(--mantine-color-indigo-7) !important;
+  background: var(--market-primary-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #818cf8 28%, transparent);
+}
+
+.market-app-header__link:focus-visible,
+.market-side-panel__title-link:focus-visible {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 2px;
+}
+
 .market-shell {
   display: flex;
   max-width: 1440px;
@@ -305,6 +332,17 @@ select {
   font-size: 0.74rem;
   font-weight: 500;
   color: var(--market-muted);
+}
+
+.market-side-panel__title-link {
+  display: block;
+  color: inherit;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.market-side-panel__title-link:hover {
+  background: var(--market-primary-soft);
 }
 
 /* Скроллбар — минималистичный, индиго при ховере */

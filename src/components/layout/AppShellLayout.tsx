@@ -24,7 +24,6 @@ const TRANSPORT = [
 ]
 
 const PARTS = [
-  { label: "Все запчасти", href: "/parts-finder", icon: <IconTools size={16} stroke={1.8} /> },
   { label: "Двигатель", href: "/parts-finder?partType=ENGINE" },
   { label: "Тормоза", href: "/parts-finder?partType=BRAKES" },
   { label: "Подвеска и ходовая", href: "/parts-finder?partType=SUSPENSION" },
@@ -33,7 +32,6 @@ const PARTS = [
 ]
 
 const AUCTIONS = [
-  { label: "Все аукционы", href: "/auctions" },
   { label: "Япония", href: "/auctions?country=JP" },
   { label: "Корея", href: "/auctions?country=KR" },
   { label: "Китай", href: "/auctions?country=CN" },
@@ -93,34 +91,30 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               </SidebarPanel>
 
               {!isPartsRoute && (
-                <SidebarPanel title="Запчасти" icon={<IconTools size={15} />}>
-                  {PARTS.map((item, index) => (
+                <SidebarPanel title="Запчасти" href="/parts-finder" icon={<IconTools size={15} />}>
+                  {PARTS.map((item) => (
                     <NavLink
                       key={item.href}
                       component={Link}
                       href={item.href}
                       label={item.label}
-                      leftSection={index === 0 ? item.icon : undefined}
-                      active={index === 0 && isPartsRoute}
                       color="indigo"
-                      className={`market-side-nav ${index > 0 ? "market-side-nav--nested" : ""}`}
+                      className="market-side-nav market-side-nav--nested"
                     />
                   ))}
                 </SidebarPanel>
               )}
 
               {!isAuctionsRoute && (
-                <SidebarPanel title="Мировые аукционы" icon={<IconGavel size={15} />}>
-                  {AUCTIONS.map((item, index) => (
+                <SidebarPanel title="Мировые аукционы" href="/auctions" icon={<IconGavel size={15} />}>
+                  {AUCTIONS.map((item) => (
                     <NavLink
                       key={item.href}
                       component={Link}
                       href={item.href}
                       label={item.label}
-                      leftSection={index === 0 ? <IconGavel size={16} stroke={1.8} /> : undefined}
-                      active={pathname === "/auctions" && index === 0}
                       color="orange"
-                      className={`market-side-nav ${index > 0 ? "market-side-nav--nested" : ""}`}
+                      className="market-side-nav market-side-nav--nested"
                     />
                   ))}
                 </SidebarPanel>
@@ -194,10 +188,16 @@ function AccountPanel({ session }: { session: ReturnType<typeof useSession>["dat
   return null
 }
 
-function SidebarPanel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function SidebarPanel({ title, href, icon, children }: { title: string; href?: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <Paper className="market-side-panel" radius="lg" p={6} withBorder>
-      <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={800} tt="uppercase" c="dimmed">{title}</Text></Group>
+      {href ? (
+        <Link href={href} className="market-side-panel__title-link">
+          <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={800} tt="uppercase" c="dimmed">{title}</Text></Group>
+        </Link>
+      ) : (
+        <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={800} tt="uppercase" c="dimmed">{title}</Text></Group>
+      )}
       <Stack gap={1} mt={2}>{children}</Stack>
     </Paper>
   )
