@@ -348,6 +348,34 @@ select {
   padding-left: 38px !important;
 }
 
+.market-header-search__suggestions {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--market-field-line) 82%, #c7d2fe) !important;
+  background: color-mix(in srgb, var(--market-surface) 94%, transparent) !important;
+  box-shadow: 0 20px 38px -24px rgba(15, 23, 42, 0.42) !important;
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.market-header-search__suggestion {
+  min-height: 40px;
+  padding-inline: 10px;
+  border-radius: 10px;
+  color: var(--market-ink) !important;
+}
+
+.market-header-search__suggestion:hover {
+  background: var(--market-primary-soft) !important;
+}
+
+.market-header-search__suggestion .mantine-Button-label {
+  min-width: 0;
+  text-align: left;
+}
+
+.market-header-search__suggestion .mantine-Button-section {
+  flex: 0 0 auto;
+}
+
 .auth-experience {
   position: relative;
   display: grid;

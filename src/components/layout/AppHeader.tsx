@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container } from "@mantine/core"
+import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
 import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2 } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
@@ -8,6 +8,16 @@ import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useColorScheme } from "@/components/providers/AppProviders"
 import { IconSun, IconMoon } from "@tabler/icons-react"
+
+type SearchSuggestion = {
+  id: string
+  title: string
+  price: number | null
+  vehicle?: { id: string; make: string; model: string; vehicleType?: string | null } | null
+  part?: { id: string; name: string } | null
+}
+
+type SearchSuggestionResponse = { listings?: SearchSuggestion[] }
 
 export default function AppHeader() {
   const { data: session } = useSession()
@@ -19,6 +29,9 @@ export default function AppHeader() {
   const router = useRouter()
   const pathname = usePathname()
   const [query, setQuery] = useState("")
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
 
   const catalogueNavigation = [
     { href: "/", label: "Объявления", icon: null, active: pathname === "/" || pathname.startsWith("/category") || pathname.startsWith("/search") },
@@ -34,6 +47,44 @@ export default function AppHeader() {
     e.preventDefault()
     if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`)
   }
+
+  const searchValue = query.trim()
+  const shouldShowSuggestions = isSearchFocused && searchValue.length >= 2
+
+  useEffect(() => {
+    if (searchValue.length < 2) {
+      setSuggestions([])
+      setIsSuggestionsLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    const timeout = window.setTimeout(async () => {
+      setIsSuggestionsLoading(true)
+      try {
+        const response = await fetch(`/api/listings?q=${encodeURIComponent(searchValue)}&limit=5`, {
+          signal: controller.signal,
+          cache: "no-store",
+        })
+        if (!response.ok) throw new Error("Search request failed")
+        const data = await response.json() as SearchSuggestionResponse
+        setSuggestions(Array.isArray(data.listings) ? data.listings : [])
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") setSuggestions([])
+      } finally {
+        if (!controller.signal.aborted) setIsSuggestionsLoading(false)
+      }
+    }, 220)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeout)
+    }
+  }, [searchValue])
+
+  const suggestionHref = (suggestion: SearchSuggestion) => suggestion.vehicle
+    ? `/listings/vehicle/${suggestion.vehicle.id}`
+    : `/listings/part/${suggestion.part?.id || suggestion.id}`
 
   return (
     <Box
@@ -101,25 +152,61 @@ export default function AppHeader() {
           </Group>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}
-          <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: 1, maxWidth: 360, minWidth: 230 }} visibleFrom="sm">
-            <TextInput
-              placeholder="Марка, модель или город"
-              leftSection={<IconSearch size={16} color="gray.4" />}
-              value={query}
-              onChange={(e) => setQuery(e.currentTarget.value)}
-              radius="md"
-              size="sm"
-              variant="filled"
-              styles={{
-                input: {
-                  background: "var(--mantine-color-gray-1)",
-                  border: "1px solid transparent",
-                  height: 38,
-                  transition: "all 200ms ease",
-                },
-              }}
-            />
-          </Box>
+          <Popover opened={shouldShowSuggestions} position="bottom-start" width="target" offset={8} shadow="lg" radius="lg" withinPortal>
+            <Popover.Target>
+              <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: 1, maxWidth: 360, minWidth: 230 }} visibleFrom="sm">
+                <TextInput
+                  placeholder="Марка, модель или город"
+                  leftSection={<IconSearch size={16} color="gray.4" />}
+                  rightSection={isSuggestionsLoading ? <Loader size={14} color="indigo" /> : undefined}
+                  value={query}
+                  onChange={(e) => setQuery(e.currentTarget.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => window.setTimeout(() => setIsSearchFocused(false), 120)}
+                  radius="md"
+                  size="sm"
+                  variant="filled"
+                  styles={{
+                    input: {
+                      background: "var(--mantine-color-gray-1)",
+                      border: "1px solid transparent",
+                      height: 38,
+                      transition: "all 200ms ease",
+                    },
+                  }}
+                />
+              </Box>
+            </Popover.Target>
+            <Popover.Dropdown className="market-header-search__suggestions" p={6}>
+              {isSuggestionsLoading && suggestions.length === 0 ? (
+                <Group gap="xs" px="sm" py={8}><Loader size="xs" color="indigo" /><Text size="xs" c="dimmed">Ищем объявления…</Text></Group>
+              ) : suggestions.length > 0 ? (
+                <Stack gap={2}>
+                  {suggestions.map((suggestion) => (
+                    <Button
+                      key={suggestion.id}
+                      component={Link}
+                      href={suggestionHref(suggestion)}
+                      onClick={() => setIsSearchFocused(false)}
+                      variant="subtle"
+                      color="dark"
+                      justify="space-between"
+                      className="market-header-search__suggestion"
+                      leftSection={<IconSearch size={14} stroke={1.8} />}
+                      rightSection={suggestion.price !== null ? <Text size="xs" fw={750} c="indigo.7">{new Intl.NumberFormat("ru-RU").format(suggestion.price)} ₽</Text> : undefined}
+                    >
+                      <Text component="span" size="sm" fw={650} truncate>{suggestion.title}</Text>
+                    </Button>
+                  ))}
+                </Stack>
+              ) : (
+                <Box px="sm" py={8}><Text size="xs" c="dimmed">По запросу «{searchValue}» пока ничего нет.</Text></Box>
+              )}
+              <Button component={Link} href={`/search?q=${encodeURIComponent(searchValue)}`} onClick={() => setIsSearchFocused(false)} variant="light" color="indigo" fullWidth size="xs" mt={5}>
+                Смотреть все результаты
+              </Button>
+            </Popover.Dropdown>
+          </Popover>
 
           {/* ПРАВО: Кнопки — разделены визуально */}
           <Group gap={6} wrap="nowrap" align="center">
