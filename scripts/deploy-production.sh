@@ -9,8 +9,8 @@ npx prisma migrate deploy
 # This safe sync only adds missing fields; it never accepts destructive changes.
 npx prisma db push --skip-generate
 npx prisma generate
-node scripts/audit-listing-integrity.mjs
 node scripts/reconcile-transport-categories.mjs
+node scripts/audit-listing-integrity.mjs
 if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-auction-rate-cron.sh || echo "Warning: auction-rate cron was not installed"
 fi
