@@ -454,12 +454,50 @@ select {
 }
 
 .home-auctions__summary {
-  width: min(100%, 270px);
-  padding: 16px;
+  width: min(100%, 286px);
+  padding: 15px 16px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 14px;
   background: rgba(3, 8, 22, 0.36);
   backdrop-filter: blur(10px);
+}
+
+.home-auctions__journey {
+  position: relative;
+}
+
+.home-auctions__journey-step {
+  position: relative;
+  min-height: 46px;
+}
+
+.home-auctions__journey-step + .home-auctions__journey-step {
+  margin-top: 9px;
+}
+
+.home-auctions__journey-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 24px;
+  left: 11px;
+  width: 1px;
+  height: 30px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.08));
+}
+
+.home-auctions__journey-mark {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .catalog-view-switch {
@@ -703,9 +741,13 @@ select {
 
 .parts-filter-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 1.65fr) minmax(180px, 1fr) repeat(3, minmax(128px, 0.72fr));
+  grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 1fr));
   gap: 10px;
   align-items: end;
+}
+
+.parts-filter-grid__search {
+  grid-column: span 2;
 }
 
 .parts-filter-grid > .mantine-InputWrapper-root,

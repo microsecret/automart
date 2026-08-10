@@ -171,11 +171,21 @@ export default function HomePage(p: HomePageProps = {}) {
                 </Group>
               </Box>
               <Box className="home-auctions__summary">
-                <Text size="xs" c="rgba(255,255,255,0.68)" tt="uppercase" fw={700}>В одном месте</Text>
-                <Stack gap={8} mt="sm">
-                  <Text size="sm" c="white" fw={600}>Каталог всех видов транспорта</Text>
-                  <Text size="sm" c="white" fw={600}>Запчасти с подбором по авто</Text>
-                  <Text size="sm" c="white" fw={600}>{auctionStats.auctions || "—"} лотов из пяти стран</Text>
+                <Text size="xs" c="rgba(255,255,255,0.68)" tt="uppercase" fw={700}>Маршрут сделки</Text>
+                <Stack gap={0} mt="sm" className="home-auctions__journey">
+                  {[
+                    ["Выбор и проверка", "Каталог, фото и история лота"],
+                    ["Договорённость", "Прозрачные условия с продавцом"],
+                    ["Доставка под контролем", `${auctionStats.auctions || "—"} лотов из пяти стран`],
+                  ].map(([title, description], index) => (
+                    <Group key={title} gap="sm" wrap="nowrap" align="flex-start" className="home-auctions__journey-step">
+                      <Box className="home-auctions__journey-mark">{index + 1}</Box>
+                      <Box>
+                        <Text size="sm" c="white" fw={700} lh={1.25}>{title}</Text>
+                        <Text size="xs" c="rgba(255,255,255,0.7)" mt={2} lh={1.3}>{description}</Text>
+                      </Box>
+                    </Group>
+                  ))}
                 </Stack>
               </Box>
             </Group>
