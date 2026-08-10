@@ -2,7 +2,7 @@
 
 import { Box, Text, Group, Stack, Container, Divider, Anchor, ActionIcon, ThemeIcon } from "@mantine/core"
 import Link from "next/link"
-import { IconBrandTelegram, IconBrandVk, IconBrandYoutube, IconCar } from "@tabler/icons-react"
+import { IconBrandTelegram, IconCar } from "@tabler/icons-react"
 
 const FOOTER_SECTIONS = [
   {
@@ -49,11 +49,10 @@ const FOOTER_SECTIONS = [
   },
 ]
 
-const SOCIALS = [
-  { icon: IconBrandTelegram, href: "#", label: "Telegram", color: "#0088cc" },
-  { icon: IconBrandVk, href: "#", label: "ВКонтакте", color: "#0077FF" },
-  { icon: IconBrandYoutube, href: "#", label: "YouTube", color: "#FF0000" },
-]
+const telegramBotUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "")
+const SOCIALS = telegramBotUsername
+  ? [{ icon: IconBrandTelegram, href: `https://t.me/${telegramBotUsername}`, label: "Telegram", color: "#0088cc" }]
+  : []
 
 export default function AppFooter() {
   return (
@@ -84,7 +83,7 @@ export default function AppFooter() {
               <Text size="xs" c="#a1a1aa" lh={1.6}>
                 Маркетплейс транспорта и запчастей с проверкой истории, безопасной сделкой и умным подбором.
               </Text>
-              <Group gap={8}>
+              {SOCIALS.length > 0 && <Group gap={8}>
                 {SOCIALS.map((s) => {
                   const Icon = s.icon
                   return (
@@ -97,12 +96,14 @@ export default function AppFooter() {
                       variant="filled"
                       style={{ background: s.color + "20", border: "1px solid " + s.color + "40" }}
                       aria-label={s.label}
+                      target="_blank"
+                      rel="noreferrer"
                     >
                       <Icon size={18} color={s.color} />
                     </ActionIcon>
                   )
                 })}
-              </Group>
+              </Group>}
             </Stack>
 
             {/* Колонки ссылок */}
