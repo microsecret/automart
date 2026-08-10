@@ -940,11 +940,18 @@ select {
 .vehicle-fallback[data-compact] { min-height: 110px; padding: 10px; }
 
 .listing-card {
+  --listing-accent: #6366f1;
   background: var(--market-surface);
   border-color: rgba(148, 163, 184, 0.28) !important;
   box-shadow: 0 8px 24px -22px rgba(15, 23, 42, 0.52);
   transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
+
+.listing-card[data-vehicle-type="motorcycle"] { --listing-accent: #8b5cf6; }
+.listing-card[data-vehicle-type="truck"],
+.listing-card[data-vehicle-type="special"] { --listing-accent: #d97706; }
+.listing-card[data-vehicle-type="water"] { --listing-accent: #0891b2; }
+.listing-card[data-vehicle-type="air"] { --listing-accent: #0284c7; }
 
 .listing-card:has(a:focus-visible) {
   outline: 3px solid var(--market-focus);
@@ -983,13 +990,29 @@ select {
 }
 
 .listing-card__media[data-empty-media] {
-  background: linear-gradient(145deg, #f8fafc 0%, #eef2ff 100%);
+  background:
+    radial-gradient(circle at 18% 85%, color-mix(in srgb, var(--listing-accent) 12%, transparent), transparent 38%),
+    radial-gradient(circle at 82% 16%, rgba(255, 255, 255, 0.95), transparent 30%),
+    linear-gradient(145deg, #f8fafc 0%, #eef2ff 100%);
 }
 
 .listing-card__media {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+}
+
+.listing-card__media[data-empty-media]::before {
+  position: absolute;
+  z-index: 0;
+  inset: auto -22% -66% 24%;
+  height: 120%;
+  content: "";
+  border: 1px solid color-mix(in srgb, var(--listing-accent) 15%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 34px color-mix(in srgb, var(--listing-accent) 4%, transparent),
+    0 0 0 70px color-mix(in srgb, var(--listing-accent) 3%, transparent);
+  pointer-events: none;
 }
 
 .listing-card__media img {
@@ -1126,6 +1149,16 @@ select {
 
 .listing-card__fact > span {
   color: #1e293b;
+}
+
+.listing-card__footer {
+  min-height: 20px;
+  border-top: 1px solid var(--mantine-color-border);
+}
+
+.listing-card__views {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
 }
 
 .news-article__body {

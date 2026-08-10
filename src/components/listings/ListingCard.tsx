@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, SimpleGrid } from "@mantine/core"
-import { IconHeart, IconMapPin } from "@tabler/icons-react"
+import { IconEye, IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
@@ -111,6 +111,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   return (
     <Card
         className="listing-card"
+        data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
         pos="relative"
         padding={0}
         radius="lg"
@@ -250,18 +251,26 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           )}
 
           {/* Низ — город и дата */}
-          <Group justify="space-between" gap={4} mt={6} pt={6} style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
+          <Group justify="space-between" gap={4} mt={6} pt={6} className="listing-card__footer">
             {listing.location ? (
               <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
                 <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
                 <Text fz="xs" c="gray.4" style={TRUNCATE_STYLE}>{listing.location}</Text>
               </Group>
             ) : <span />}
-            {listing.createdAt && (
-              <Text fz="xs" c="gray.4" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
-                {formatRelativeDate(listing.createdAt)}
-              </Text>
-            )}
+            <Group gap={7} wrap="nowrap" style={{ flexShrink: 0 }}>
+              {typeof listing.views === "number" && listing.views > 0 && (
+                <Group gap={3} wrap="nowrap" className="listing-card__views">
+                  <IconEye size={11} stroke={1.8} aria-hidden="true" />
+                  <Text fz="xs">{new Intl.NumberFormat("ru-RU", { notation: "compact", maximumFractionDigits: 1 }).format(listing.views)}</Text>
+                </Group>
+              )}
+              {listing.createdAt && (
+                <Text fz="xs" c="gray.4" style={{ whiteSpace: "nowrap" }}>
+                  {formatRelativeDate(listing.createdAt)}
+                </Text>
+              )}
+            </Group>
           </Group>
         </Box>
       </Card>
