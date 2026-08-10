@@ -1,10 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { Alert, Anchor, Button, Code, Group, Stack, Text, TextInput } from "@mantine/core"
 import { IconBrandTelegram, IconLock, IconPhone, IconRefresh } from "@tabler/icons-react"
+
+function getSafeCallbackUrl(value: string | null) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
+}
 
 export default function TelegramLoginForm() {
   const [phone, setPhone] = useState("")
@@ -13,7 +17,12 @@ export default function TelegramLoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
+  const [callbackUrl, setCallbackUrl] = useState("/dashboard")
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+
+  useEffect(() => {
+    setCallbackUrl(getSafeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl")))
+  }, [])
 
   const requestCode = async () => {
     setLoading(true)
@@ -43,9 +52,9 @@ export default function TelegramLoginForm() {
     setLoading(true)
     setError(null)
     try {
-      const result = await signIn("phone-otp", { phone, code, redirect: false })
+      const result = await signIn("phone-otp", { phone, code, redirect: false, callbackUrl })
       if (result?.ok) {
-        window.location.href = "/dashboard"
+        window.location.assign(callbackUrl)
       } else {
         setError("Код неверный или устарел")
       }
@@ -75,7 +84,7 @@ export default function TelegramLoginForm() {
         </>
       )}
       <Text size="xs" c="dimmed">Если вы ещё не регистрировались, сначала нажмите «Старт» в боте и отправьте свой контакт. Номер связывается с Telegram ID, а код действует 10 минут.</Text>
-      <Button component={Link} href="/auth/signin" variant="subtle" color="gray">Вернуться к входу по паролю</Button>
+      <Button component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} variant="subtle" color="gray">Вернуться к входу по паролю</Button>
       <Code block>После подключения домена добавьте NEXT_PUBLIC_TELEGRAM_BOT_USERNAME в окружение.</Code>
     </Stack>
   )

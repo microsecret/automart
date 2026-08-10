@@ -17,14 +17,21 @@ import {
 } from "@mantine/core"
 import { IconAlertCircle, IconAt, IconLock } from "@tabler/icons-react"
 
+function getSafeCallbackUrl(value: string | null) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
+}
+
 export default function SignInForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false)
   const [verificationState, setVerificationState] = useState<string | null>(null)
+  const [callbackUrl, setCallbackUrl] = useState("/dashboard")
   useEffect(() => {
-    setVerificationState(new URLSearchParams(window.location.search).get("verified"))
+    const params = new URLSearchParams(window.location.search)
+    setVerificationState(params.get("verified"))
+    setCallbackUrl(getSafeCallbackUrl(params.get("callbackUrl")))
   }, [])
 
   const form = useForm({
@@ -45,6 +52,7 @@ export default function SignInForm() {
         email: values.email,
         password: values.password,
         redirect: false,
+        callbackUrl,
       })
       if (res?.error === "EMAIL_NOT_VERIFIED") {
         setNeedsEmailVerification(true)
@@ -54,7 +62,7 @@ export default function SignInForm() {
       } else if (res?.error) {
         setError("Неверный email или пароль")
       } else if (res?.ok) {
-        window.location.href = "/dashboard"
+        window.location.assign(callbackUrl)
       }
     } catch {
       setError("Ошибка входа. Попробуйте позже.")
@@ -122,14 +130,14 @@ export default function SignInForm() {
 
       <Divider label="или" labelPosition="center" />
 
-      <Button component={Link} href="/auth/telegram" variant="light" color="indigo" leftSection={<span aria-hidden>✈️</span>} fullWidth>
+      <Button component={Link} href={`/auth/telegram?callbackUrl=${encodeURIComponent(callbackUrl)}`} variant="light" color="indigo" leftSection={<span aria-hidden>✈️</span>} fullWidth>
         Войти через Telegram
       </Button>
 
       <Group justify="center">
         <Text size="sm" c="gray.5">
           Нет аккаунта?{" "}
-          <Anchor href="/auth/signup" size="sm" c="indigo" fw={500}>
+          <Anchor component={Link} href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`} size="sm" c="indigo" fw={500}>
             Зарегистрироваться
           </Anchor>
         </Text>

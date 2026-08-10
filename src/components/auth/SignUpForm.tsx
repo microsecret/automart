@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "@mantine/form"
 import Link from "next/link"
 import {
@@ -16,10 +16,19 @@ import {
 } from "@mantine/core"
 import { IconAlertCircle, IconAt, IconLock, IconPhone, IconUser } from "@tabler/icons-react"
 
+function getSafeCallbackUrl(value: string | null) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
+}
+
 export default function SignUpForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
+  const [callbackUrl, setCallbackUrl] = useState("/dashboard")
+
+  useEffect(() => {
+    setCallbackUrl(getSafeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl")))
+  }, [])
 
   const form = useForm({
     initialValues: { name: "", email: "", phone: "", password: "", confirmPassword: "" },
@@ -66,7 +75,7 @@ export default function SignUpForm() {
           Письмо с подтверждением отправлено на <b>{submittedEmail}</b>.
         </Alert>
         <Text size="sm" c="gray.6">Перейдите по ссылке из письма, затем подтвердите номер через Telegram-бота для входа по коду.</Text>
-        <Button component={Link} href="/auth/signin" fullWidth color="indigo">Перейти ко входу</Button>
+        <Button component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} fullWidth color="indigo">Перейти ко входу</Button>
       </Stack>
     )
   }
@@ -134,7 +143,7 @@ export default function SignUpForm() {
       <Group justify="center">
         <Text size="sm" c="gray.5">
           Уже есть аккаунт?{" "}
-          <Anchor component={Link} href="/auth/signin" size="sm" c="indigo" fw={500}>
+          <Anchor component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} size="sm" c="indigo" fw={500}>
             Войти
           </Anchor>
         </Text>
