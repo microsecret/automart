@@ -141,15 +141,12 @@ async function main() {
     })
 
     // До разделения транспортных вертикалей авиационные записи получали
-    // автомобильный бензин. Исправляем только неавиационные/пустые значения,
+    // автомобильный бензин. Исправляем только неавиационные значения,
     // не перезаписывая уже корректно импортированные данные.
     const airFuelNeedsRepair = await tx.vehicle.findMany({
       where: {
         vehicleType: "AIR",
-        OR: [
-          { fuelType: null },
-          { fuelType: { notIn: ["JET_A1", "AVGAS", "DIESEL"] } },
-        ],
+        fuelType: { notIn: ["JET_A1", "AVGAS", "DIESEL"] },
       },
       select: { id: true, make: true },
     })
