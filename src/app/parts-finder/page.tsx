@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, SegmentedControl } from "@mantine/core"
+import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, Checkbox } from "@mantine/core"
 import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
 import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILABILITY_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory } from "@/lib/catalog"
@@ -32,6 +32,10 @@ type PartsResponse = {
 }
 
 const fetcher = fetchJson
+
+function parseMultiValue(value: string | null) {
+  return Array.from(new Set((value || "").split(",").map((item) => item.trim()).filter(Boolean)))
+}
 
 function PartMedia({ image, name }: { image: string; name: string }) {
   const [failed, setFailed] = useState(!image || image.includes("/placeholder"))
@@ -61,8 +65,8 @@ function PartsContent() {
   const [subcategory, setSubcategory] = useState<string | null>(sp.get("subcategory"))
   const [make, setMake] = useState<string | null>(sp.get("make"))
   const [model, setModel] = useState<string | null>(sp.get("model"))
-  const [condition, setCondition] = useState<string | null>(sp.get("condition"))
-  const [availability, setAvailability] = useState<string | null>(sp.get("availability"))
+  const [conditions, setConditions] = useState<string[]>(() => parseMultiValue(sp.get("conditions") || sp.get("condition")))
+  const [availability, setAvailability] = useState<string[]>(() => parseMultiValue(sp.get("availability")))
   const [saleFormat, setSaleFormat] = useState<string | null>(sp.get("saleFormat"))
   const [priceFrom, setPriceFrom] = useState(sp.get("priceFrom") || "")
   const [priceTo, setPriceTo] = useState(sp.get("priceTo") || "")
@@ -76,6 +80,19 @@ function PartsContent() {
     setPartType((current) => current === validPartType ? current : validPartType)
     setSubcategory((current) => current === validSubcategory ? current : validSubcategory)
   }, [urlPartType, urlSubcategory])
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchKey)
+    setQ(params.get("q") || "")
+    setMake(params.get("make"))
+    setModel(params.get("model"))
+    setConditions(parseMultiValue(params.get("conditions") || params.get("condition")))
+    setAvailability(parseMultiValue(params.get("availability")))
+    setSaleFormat(params.get("saleFormat"))
+    setPriceFrom(params.get("priceFrom") || "")
+    setPriceTo(params.get("priceTo") || "")
+    setPage(Number(params.get("page")) || 1)
+  }, [searchKey])
 
   const selectPartType = (nextPartType: string | null) => {
     setPartType(nextPartType)
@@ -106,13 +123,17 @@ function PartsContent() {
   const { data: modelsData, error: modelsError, isLoading: isModelsLoading } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
   const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
-  const filterKey = useMemo(() => [q, partType, subcategory, make, model, condition, availability, saleFormat, priceFrom, priceTo].join("|"), [q, partType, subcategory, make, model, condition, availability, saleFormat, priceFrom, priceTo])
+  const filterKey = useMemo(() => [q, partType, subcategory, make, model, conditions.join(","), availability.join(","), saleFormat, priceFrom, priceTo].join("|"), [q, partType, subcategory, make, model, conditions, availability, saleFormat, priceFrom, priceTo])
 
   useEffect(() => {
     setPage(1)
   }, [filterKey])
 
   const subcats = partType ? PART_SUBCATEGORIES[partType] || [] : []
+
+  const toggleMultiFilter = (value: string, values: string[], setValues: (next: string[]) => void) => {
+    setValues(values.includes(value) ? values.filter((item) => item !== value) : [...values, value])
+  }
 
   const buildQuery = () => {
     const u = new URLSearchParams()
@@ -123,8 +144,8 @@ function PartsContent() {
     if (subcategory) u.set("subcategory", subcategory)
     if (make) u.set("make", make)
     if (model) u.set("model", model)
-    if (condition) u.set("condition", condition)
-    if (availability) u.set("availability", availability)
+    if (conditions.length) u.set("conditions", conditions.join(","))
+    if (availability.length) u.set("availability", availability.join(","))
     if (saleFormat) u.set("saleFormat", saleFormat)
     if (priceFrom) u.set("priceFrom", priceFrom)
     if (priceTo) u.set("priceTo", priceTo)
@@ -135,9 +156,28 @@ function PartsContent() {
   const { data, error, isLoading, mutate } = useSWR<PartsResponse>(hasInvalidPriceRange ? null : "/api/parts?" + buildQuery(), fetcher)
   const parts: PartResult[] = data?.parts || []
 
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    if (partType) params.set("partType", partType)
+    if (subcategory) params.set("subcategory", subcategory)
+    if (make) params.set("make", make)
+    if (model) params.set("model", model)
+    if (conditions.length) params.set("conditions", conditions.join(","))
+    if (availability.length) params.set("availability", availability.join(","))
+    if (saleFormat) params.set("saleFormat", saleFormat)
+    if (priceFrom) params.set("priceFrom", priceFrom)
+    if (priceTo) params.set("priceTo", priceTo)
+    if (page > 1) params.set("page", String(page))
+    const nextSearchKey = params.toString()
+    if (nextSearchKey !== searchKey) {
+      router.replace(nextSearchKey ? `/parts-finder?${nextSearchKey}` : "/parts-finder", { scroll: false })
+    }
+  }, [availability, conditions, make, model, page, partType, priceFrom, priceTo, q, router, saleFormat, searchKey, subcategory])
+
   const resetFilters = () => {
     setQ(""); setPartType(null); setSubcategory(null); setMake(null); setModel(null)
-    setCondition(null); setAvailability(null); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1)
+    setConditions([]); setAvailability([]); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1)
     router.replace("/parts-finder", { scroll: false })
   }
 
@@ -205,18 +245,28 @@ function PartsContent() {
           <Box className="parts-filter-grid">
             <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
             <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
-            <Select label="Состояние" placeholder="Любое" data={PART_CONDITIONS.map((c) => ({ value: c.value, label: c.label }))} clearable value={condition} onChange={setCondition} size="sm" />
-            <Box className="parts-filter-field"><Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text><SegmentedControl size="xs" fullWidth value={availability || "ANY"} onChange={(value) => setAvailability(value === "ANY" ? null : value)} data={[{ value: "ANY", label: "Все" }, ...PART_AVAILABILITY_TYPES.map((item) => ({ value: item.value, label: item.label }))]} /></Box>
+            <Box className="parts-filter-field parts-filter-checks">
+              <Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Состояние</Text>
+              <Group gap={8} wrap="wrap">
+                {PART_CONDITIONS.map((item) => <Checkbox key={item.value} size="xs" label={item.label} checked={conditions.includes(item.value)} onChange={() => toggleMultiFilter(item.value, conditions, setConditions)} />)}
+              </Group>
+            </Box>
+            <Box className="parts-filter-field parts-filter-checks">
+              <Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text>
+              <Group gap={8} wrap="wrap">
+                {PART_AVAILABILITY_TYPES.map((item) => <Checkbox key={item.value} size="xs" label={item.label} checked={availability.includes(item.value)} onChange={() => toggleMultiFilter(item.value, availability, setAvailability)} />)}
+              </Group>
+            </Box>
             <Select label="Формат сделки" placeholder="Любой" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
           </Box>
         {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
-        {(partType || make || condition || availability || saleFormat || priceFrom || priceTo) && (
+        {(partType || make || conditions.length || availability.length || saleFormat || priceFrom || priceTo) && (
           <Group gap={6} wrap="wrap">
             <Text size="xs" c="gray.5">Активные:</Text>
             {partType && <Badge size="xs" variant="light" color="indigo">{PART_TYPES.find((t) => t.value === partType)?.label}</Badge>}
             {subcategory && <Badge size="xs" variant="light" color="violet">{subcategory}</Badge>}
-            {condition && <Badge size="xs" variant="light" color="green">{findLabel(PART_CONDITIONS, condition)}</Badge>}
-            {availability && <Badge size="xs" variant="light" color="teal">{findLabel(AVAILABILITY_TYPES, availability)}</Badge>}
+            {conditions.map((item) => <Badge key={item} size="xs" variant="light" color="green">{findLabel(PART_CONDITIONS, item)}</Badge>)}
+            {availability.map((item) => <Badge key={item} size="xs" variant="light" color="teal">{findLabel(AVAILABILITY_TYPES, item)}</Badge>)}
             {saleFormat && <Badge size="xs" variant="light" color="orange">{saleFormat === "AUCTION" ? "Аукцион" : "Цена"}</Badge>}
             {priceFrom && <Badge size="xs" variant="light" color="gray">от {priceFrom}₽</Badge>}
             {priceTo && <Badge size="xs" variant="light" color="gray">до {priceTo}₽</Badge>}

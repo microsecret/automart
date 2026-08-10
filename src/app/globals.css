@@ -898,6 +898,34 @@ select {
   font-weight: 600;
 }
 
+.parts-filter-grid__search .mantine-Input-input {
+  padding-left: 32px !important;
+}
+
+.parts-filter-checks .mantine-Checkbox-root {
+  min-height: 24px;
+  padding: 3px 7px;
+  border: 1px solid var(--market-field-line);
+  border-radius: 8px;
+  background: var(--market-surface);
+}
+
+.parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
+  border-color: #818cf8;
+  background: #eef2ff;
+}
+
+.parts-filter-checks .mantine-Checkbox-label {
+  padding-left: 5px;
+  color: var(--market-ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.parts-filter-checks .mantine-Checkbox-input {
+  cursor: pointer;
+}
+
 .parts-filter-grid .mantine-SegmentedControl-root {
   background: var(--market-primary-soft);
 }

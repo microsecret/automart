@@ -25,6 +25,10 @@ function parsePartYear(value: unknown) {
   return Number.isInteger(year) && year >= 1886 && year <= currentYear + 1 ? year : null
 }
 
+function parseFilterValues(...values: Array<string | null>) {
+  return Array.from(new Set(values.flatMap((value) => (value || "").split(",").map((item) => item.trim()).filter(Boolean))))
+}
+
 /** GET /api/parts — листинг запчастей с фильтрами */
 export async function GET(request: NextRequest) {
   try {
@@ -40,8 +44,9 @@ export async function GET(request: NextRequest) {
     const model = sp.get("model")
     const priceFrom = sp.get("priceFrom")
     const priceTo = sp.get("priceTo")
-    const condition = sp.get("condition")
-    const availability = sp.get("availability")
+    // `condition` is kept for old links; new filter controls can select several values.
+    const conditions = parseFilterValues(sp.get("conditions"), sp.get("condition"))
+    const availability = parseFilterValues(sp.get("availability"))
     const saleFormat = sp.get("saleFormat")
     const oemNumber = sp.get("oemNumber")
     const sort = sp.get("sort") || "newest"
@@ -68,10 +73,10 @@ export async function GET(request: NextRequest) {
     if (subcategory && (!partType || !(PART_SUBCATEGORIES[partType] || []).includes(subcategory))) {
       return NextResponse.json({ error: "Подкатегория не соответствует выбранной категории" }, { status: 400 })
     }
-    if (condition && !PART_CONDITION_VALUES.has(condition)) {
+    if (conditions.some((condition) => !PART_CONDITION_VALUES.has(condition))) {
       return NextResponse.json({ error: "Неизвестное состояние запчасти" }, { status: 400 })
     }
-    if (availability && !AVAILABILITY_VALUES.has(availability)) {
+    if (availability.some((item) => !AVAILABILITY_VALUES.has(item))) {
       return NextResponse.json({ error: "Неизвестный статус наличия" }, { status: 400 })
     }
     if (saleFormat && saleFormat !== "FIXED" && saleFormat !== "AUCTION") {
@@ -104,18 +109,21 @@ export async function GET(request: NextRequest) {
       if (make) where.make = { contains: make }
       if (model) where.model = { contains: model }
     }
-    if (condition === "USED") {
+    if (conditions.length) {
+      const conditionValues = new Set(conditions)
       // Поддерживаем неочищенные архивные записи до применения миграции.
-      where.condition = { in: ["USED", "LIKE_NEW", "EXCELLENT", "GOOD", "FAIR", "POOR"] }
-    } else if (condition) {
-      where.condition = condition
+      if (conditionValues.has("USED")) ["LIKE_NEW", "EXCELLENT", "GOOD", "FAIR", "POOR"].forEach((item) => conditionValues.add(item))
+      where.condition = { in: Array.from(conditionValues) }
     }
     // У старых записей availability не заполнялся: считаем их доступными,
     // не скрывая каталог при выборе «В наличии».
-    if (availability === "IN_STOCK") {
-      and.push({ OR: [{ availability: "IN_STOCK" }, { availability: null }] })
-    } else if (availability) {
-      where.availability = availability
+    if (availability.length) {
+      const availabilityValues = new Set(availability)
+      if (availabilityValues.has("IN_STOCK")) {
+        and.push({ OR: [{ availability: { in: Array.from(availabilityValues) } }, { availability: null }] })
+      } else {
+        where.availability = { in: Array.from(availabilityValues) }
+      }
     }
     if (saleFormat === "FIXED" || saleFormat === "AUCTION") where.saleFormat = saleFormat
     if (oemNumber) {
