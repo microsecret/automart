@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid } from "@mantine/core"
+import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl } from "@mantine/core"
 import { IconPlus, IconCheck, IconCar, IconTrash, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, PART_AVAILABILITY_TYPES } from "@/lib/constants"
@@ -71,27 +71,51 @@ export default function CreatePartPage() {
       if (!res.ok) throw new Error(data.error || "Ошибка")
       notifications.show({ title: "Отправлено на проверку", message: "Мы проверим карточку и опубликуем её после модерации.", color: "indigo" })
       router.push(`/listings/part/${data.id}`)
-    } catch (err: any) {
-      notifications.show({ title: "Ошибка", message: err.message, color: "red" })
+    } catch (err) {
+      notifications.show({ title: "Ошибка", message: err instanceof Error ? err.message : "Не удалось отправить объявление", color: "red" })
     } finally { setLoading(false) }
   }
 
   return (
-    <Container size="md" py="lg">
+    <Container className="create-listing-page" size="md" py="lg">
       <Stack gap="md">
         <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="green" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
+          <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Продать запчасть</Text>
-            <Text size="xs" c="gray.5">Укажите совместимость — больше продаж</Text>
+            <Text size="xs" c="gray.5">Заполните карточку — после проверки она появится в каталоге запчастей.</Text>
           </Stack>
         </Group>
 
+        <Paper className="create-listing__journey" radius="lg" p="sm" withBorder>
+          <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>
+            {[
+              { number: "01", label: "Данные товара", description: f.partType ? PART_TYPES.find((type) => type.value === f.partType)?.label || "Запчасть" : "Запчасть" },
+              { number: "02", label: "Совместимость", description: compat.length ? `Добавлено авто: ${compat.length}` : "Укажите подходящие модели" },
+              { number: "03", label: "Фото и публикация", description: images.length ? `Добавлено фото: ${images.length}` : "Добавьте реальные фотографии" },
+            ].map((step, index) => (
+              <Group className="create-listing__journey-step" data-current={index === 0 || undefined} gap="sm" key={step.number} wrap="nowrap">
+                <Text className="create-listing__journey-number">{step.number}</Text>
+                <Stack gap={1}>
+                  <Text size="xs" fw={800} c="dark.8">{step.label}</Text>
+                  <Text size="11px" c="dimmed">{step.description}</Text>
+                </Stack>
+              </Group>
+            ))}
+          </SimpleGrid>
+        </Paper>
+
         <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Paper radius="md" p="md" withBorder>
+          <Stack className="create-listing__form" gap="md">
+            <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
               <Stack gap="sm">
-                <Text fw={700} fz="sm" c="dark.9">Информация о запчасти</Text>
+                <Group justify="space-between" align="flex-start">
+                  <Stack gap={1}>
+                    <Text fw={700} fz="sm" c="dark.9">Информация о запчасти</Text>
+                    <Text size="xs" c="dimmed">Понятная карточка с артикулом, ценой и способом покупки.</Text>
+                  </Stack>
+                  <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
+                </Group>
                 <TextInput label="Название" placeholder="Колодки тормозные передние" required value={f.name} onChange={(e) => set("name", e.target.value)} size="sm" />
                 <Group gap="sm" grow>
                   <Select label="Категория" data={PART_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.partType} onChange={(v) => { set("partType", v || ""); set("subcategory", "") }} size="sm" />
@@ -99,13 +123,24 @@ export default function CreatePartPage() {
                 </Group>
                 <Group gap="sm" grow>
                   <NumberInput label="Цена, ₽" placeholder="4500" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />
-                  <Select label="Состояние" data={PART_CONDITIONS.map(c => ({ value: c.value, label: c.label }))} value={f.condition} onChange={(v) => set("condition", v || "")} size="sm" />
                   <TextInput label="OEM номер" placeholder="04465-0E040" value={f.oemNumber} onChange={(e) => set("oemNumber", e.target.value)} size="sm" />
                 </Group>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <Stack gap={6}>
+                    <Text size="xs" fw={700} c="dark.7">Состояние</Text>
+                    <SegmentedControl aria-label="Состояние запчасти" value={f.condition} onChange={(value) => set("condition", value)} data={PART_CONDITIONS} size="sm" radius="md" fullWidth />
+                  </Stack>
+                  <Stack gap={6}>
+                    <Text size="xs" fw={700} c="dark.7">Наличие</Text>
+                    <SegmentedControl aria-label="Наличие запчасти" value={f.availability} onChange={(value) => set("availability", value)} data={PART_AVAILABILITY_TYPES} size="sm" radius="md" fullWidth />
+                  </Stack>
+                </SimpleGrid>
                 <Group gap="sm" grow>
-                  <Select label="Формат продажи" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} value={f.saleFormat} onChange={(v) => set("saleFormat", v || "FIXED")} size="sm" />
+                  <Stack gap={6}>
+                    <Text size="xs" fw={700} c="dark.7">Формат сделки</Text>
+                    <SegmentedControl aria-label="Формат сделки" value={f.saleFormat} onChange={(value) => set("saleFormat", value)} data={[{ value: "FIXED", label: "Фикс. цена" }, { value: "AUCTION", label: "Аукцион" }]} size="sm" radius="md" fullWidth />
+                  </Stack>
                   <Select label="Продавец" data={SELLER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.sellerType} onChange={(v) => set("sellerType", v || "OWNER")} size="sm" />
-                  <Select label="Наличие" data={PART_AVAILABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.availability} onChange={(v) => set("availability", v || "IN_STOCK")} size="sm" />
                 </Group>
                 {f.saleFormat === "AUCTION" && (
                   <Group gap="sm" grow>
@@ -119,7 +154,7 @@ export default function CreatePartPage() {
               </Stack>
             </Paper>
 
-            <Paper radius="md" p="md" withBorder>
+            <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="center">
                   <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconPhoto size={18} /></ThemeIcon><Stack gap={0}><Text fw={700} fz="sm" c="dark.9">Фотографии товара</Text><Text size="xs" c="gray.5">Первое фото станет обложкой объявления. До 12 JPG, PNG или WebP.</Text></Stack></Group>
@@ -137,11 +172,17 @@ export default function CreatePartPage() {
               </Stack>
             </Paper>
 
-            <Paper radius="md" p="md" withBorder>
+            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
               <Stack gap="sm">
-                <Group gap="sm" align="center">
-                  <IconCar size={18} color="#4f46e5" />
-                  <Text fw={700} fz="sm" c="dark.9">Совместимость (на какие авто подходит)</Text>
+                <Group justify="space-between" align="center">
+                  <Group gap="sm" align="center">
+                    <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
+                    <Stack gap={0}>
+                      <Text fw={700} fz="sm" c="dark.9">Совместимость с автомобилями</Text>
+                      <Text size="xs" c="dimmed">Укажите модели — покупатели увидят деталь при подборе.</Text>
+                    </Stack>
+                  </Group>
+                  <Badge size="sm" color={compat.length ? "indigo" : "gray"} variant="light">{compat.length} авто</Badge>
                 </Group>
                 {compat.length > 0 && (
                   <Group gap="xs" wrap="wrap">
@@ -166,9 +207,14 @@ export default function CreatePartPage() {
               </Stack>
             </Paper>
 
-            <Button type="submit" size="lg" radius="md" color="green" loading={loading} leftSection={<IconCheck size={18} />}>
-              {loading ? "Публикация..." : "Опубликовать запчасть"}
-            </Button>
+            <Paper className="create-listing__submit" radius="lg" p="sm" withBorder>
+              <Stack gap={6}>
+                <Button fullWidth type="submit" size="md" radius="md" color="indigo" loading={loading} disabled={uploadingImages} leftSection={<IconCheck size={18} />}>
+                  {loading ? "Публикация..." : "Отправить на модерацию"}
+                </Button>
+                <Text size="xs" c="dimmed" ta="center">Сначала объявление проверит модератор. Статус появится в личном кабинете.</Text>
+              </Stack>
+            </Paper>
           </Stack>
         </form>
       </Stack>
