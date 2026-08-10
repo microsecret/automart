@@ -3,8 +3,8 @@ export const dynamic = "force-dynamic"
 
 
 import useSWR from "swr"
-import { Box, Stack, Text, Center, Loader, SimpleGrid, Card, ThemeIcon, Title, Group, Badge, Progress } from "@mantine/core"
-import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconCheck, IconActivity, IconWorld } from "@tabler/icons-react"
+import { Box, Stack, Text, Center, Loader, SimpleGrid, Card, ThemeIcon, Title, Group, Badge, Progress, Button } from "@mantine/core"
+import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld } from "@tabler/icons-react"
 import Link from "next/link"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
 
@@ -34,20 +34,36 @@ export default function AdminDashboard() {
   const total = c.listings || 1
 
   return (
-    <Box p={{ base: "sm", md: "md" }}>
+    <Box className="admin-workspace" p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
-        <Group justify="space-between" align="center">
-          <Stack gap={0}>
-            <Title order={2} size="h3" ff="var(--font-display),sans-serif">Дашборд</Title>
-            <Text size="xs" c="gray.5">Обзор платформы в реальном времени</Text>
-          </Stack>
-          <Badge variant="light" color="red" size="md" leftSection={<IconCheck size={12} />}>ADMIN</Badge>
+        <Card className="admin-workspace__hero" radius="lg" p={{ base: "md", sm: "lg" }}>
+          <Group justify="space-between" align="center" gap="md" wrap="wrap">
+            <Stack gap={5}>
+              <Group gap={6}>
+                <Badge variant="white" color="indigo" size="sm">ПАНЕЛЬ УПРАВЛЕНИЯ</Badge>
+                <Badge variant="dot" color="teal" size="sm">Система онлайн</Badge>
+              </Group>
+              <Title order={2} size="h3" c="white" ff="var(--font-display),sans-serif">Администрирование Авторынка</Title>
+              <Text size="sm" c="rgba(255,255,255,.74)">Пользователи, объявления и модерация — в одном рабочем пространстве.</Text>
+            </Stack>
+            <Group gap="xs">
+              <Button component={Link} href="/admin/users" variant="white" color="dark" size="sm">Пользователи</Button>
+              <Button component={Link} href="/moderation" variant="outline" color="gray" size="sm" styles={{ root: { color: "white", borderColor: "rgba(255,255,255,.48)" } }}>Очередь</Button>
+            </Group>
+          </Group>
+        </Card>
+
+        <Group className="admin-workspace__nav" gap={6} wrap="wrap">
+          <Button component={Link} href="/admin" variant="light" color="indigo" size="xs">Обзор</Button>
+          <Button component={Link} href="/admin/users" variant="subtle" color="gray" size="xs">Пользователи</Button>
+          <Button component={Link} href="/moderation" variant="subtle" color="gray" size="xs">Модерация</Button>
+          <Button component={Link} href="/admin/auctions" variant="subtle" color="gray" size="xs">Аукционы</Button>
         </Group>
 
         {/* Основные метрики */}
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
           {stats.map((s) => (
-            <Card key={s.label} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}
+            <Card className="admin-metric-card" key={s.label} withBorder radius="lg" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}
               component={(s.href ? Link : "div") as any} href={s.href || undefined}>
               <Group gap="sm" align="flex-start" justify="space-between">
                 <Stack gap={0}>

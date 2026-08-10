@@ -94,7 +94,7 @@ export default function ListingModerationPanel() {
   }
 
   return (
-    <Card withBorder radius="md" p="md">
+    <Card className="admin-moderation-panel" withBorder radius="lg" p="md">
       <Stack gap="sm">
         <Group justify="space-between" align="center">
           <Group gap="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconFlame size={18} /></ThemeIcon><Text fw={700} c="dark.9">Модерация объявлений</Text></Group>

@@ -169,7 +169,7 @@ export default function CreateVehiclePage() {
   }
 
   return (
-    <Container size="md" py="lg">
+    <Container className="create-listing-page" size="md" py="lg">
       <Stack gap="md">
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
@@ -179,18 +179,45 @@ export default function CreateVehiclePage() {
           </Stack>
         </Group>
 
+        <Paper className="create-listing__journey" radius="lg" p="sm" withBorder>
+          <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>
+            {[
+              { number: "01", label: "Категория", description: CATS.find((category) => category.value === f.vehicleType)?.label || "Транспорт" },
+              { number: "02", label: "Данные объявления", description: "Марка, цена и характеристики" },
+              { number: "03", label: "Фото и публикация", description: images.length ? `Добавлено фото: ${images.length}` : "Добавьте реальные фотографии" },
+            ].map((step, index) => (
+              <Group className="create-listing__journey-step" data-current={index === 0 || undefined} gap="sm" key={step.number} wrap="nowrap">
+                <Text className="create-listing__journey-number">{step.number}</Text>
+                <Stack gap={1}>
+                  <Text size="xs" fw={800} c="dark.8">{step.label}</Text>
+                  <Text size="11px" c="dimmed">{step.description}</Text>
+                </Stack>
+              </Group>
+            ))}
+          </SimpleGrid>
+        </Paper>
+
         <form onSubmit={handleSubmit}>
-          <Stack gap="md">
+          <Stack className="create-listing__form" gap="md">
             {/* Тип транспорта */}
-            <Paper radius="md" p="md" withBorder>
-              <Text fw={700} fz="sm" c="dark.9" mb="sm">Тип транспорта</Text>
+            <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
+              <Group justify="space-between" mb="sm">
+                <Text fw={700} fz="sm" c="dark.9">Тип транспорта</Text>
+                <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
+              </Group>
               <SegmentedControl value={f.vehicleType} onChange={setVehicleType} data={CATS} size="sm" radius="md" fullWidth />
             </Paper>
 
             {/* Основное */}
-            <Paper radius="md" p="md" withBorder>
+            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
               <Stack gap="sm">
-                <Text fw={700} fz="sm" c="dark.9">Основная информация</Text>
+                <Group justify="space-between" align="flex-start">
+                  <Stack gap={1}>
+                    <Text fw={700} fz="sm" c="dark.9">Основная информация</Text>
+                    <Text size="xs" c="dimmed">Данные, по которым покупатель найдёт транспорт.</Text>
+                  </Stack>
+                  <Badge size="sm" color="gray" variant="light">Шаг 2</Badge>
+                </Group>
                 <TextInput label="Заголовок" placeholder="2018 Toyota Camry" required value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />
                 <Group gap="sm" grow>
                   <TextInput
@@ -234,7 +261,7 @@ export default function CreateVehiclePage() {
             </Paper>
 
             {/* Характеристики */}
-            <Paper radius="md" p="md" withBorder>
+            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="dark.9">Характеристики</Text>
                 <Group gap="sm" grow>
@@ -312,7 +339,7 @@ export default function CreateVehiclePage() {
             </Paper>
 
             {/* Документы и состояние */}
-            <Paper radius="md" p="md" withBorder>
+            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="dark.9">Документы и состояние</Text>
                 <Group gap="sm" grow>
@@ -332,7 +359,7 @@ export default function CreateVehiclePage() {
             </Paper>
 
             {/* Описание */}
-            <Paper radius="md" p="md" withBorder>
+            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="dark.9">Описание</Text>
                 <Textarea label="Подробное описание" placeholder="Опишите состояние, историю, комплектацию..." value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={4} autosize />
@@ -341,7 +368,7 @@ export default function CreateVehiclePage() {
               </Stack>
             </Paper>
 
-            <Paper radius="md" p="md" withBorder>
+            <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="center">
                   <Group gap="sm">
@@ -379,9 +406,14 @@ export default function CreateVehiclePage() {
             </Paper>
 
             {/* Кнопка */}
-            <Button type="submit" size="lg" radius="md" color="indigo" loading={loading} disabled={!selectedCategory || uploadingImages} leftSection={<IconCheck size={18} />}>
-              {loading ? "Публикация..." : "Опубликовать объявление"}
-            </Button>
+            <Paper className="create-listing__submit" radius="lg" p="sm" withBorder>
+              <Stack gap={6}>
+                <Button fullWidth type="submit" size="md" radius="md" color="indigo" loading={loading} disabled={!selectedCategory || uploadingImages} leftSection={<IconCheck size={18} />}>
+                  {loading ? "Публикация..." : "Отправить на модерацию"}
+                </Button>
+                <Text size="xs" c="dimmed" ta="center">Сначала объявление проверит модератор. Статус появится в личном кабинете.</Text>
+              </Stack>
+            </Paper>
           </Stack>
         </form>
       </Stack>
