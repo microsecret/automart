@@ -23,10 +23,50 @@ const FUEL_TAG_LABELS: Record<string, string> = {
   "fuel:electricity": "Зарядка EV",
 }
 
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+]
+
 function getCoordinates(element: OverpassElement) {
   if (typeof element.lat === "number" && typeof element.lon === "number") return { latitude: element.lat, longitude: element.lon }
   if (element.center) return { latitude: element.center.lat, longitude: element.center.lon }
   return null
+}
+
+async function requestStations(query: string) {
+  const endpoints = Array.from(new Set([
+    process.env.OVERPASS_API_URL,
+    ...OVERPASS_ENDPOINTS,
+  ].filter((endpoint): endpoint is string => Boolean(endpoint))))
+  let lastError: unknown
+
+  for (const endpoint of endpoints) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 20_000)
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "user-agent": "AutoMarket fuel-map/1.0 (OSM attribution in product)",
+        },
+        body: new URLSearchParams({ data: query }).toString(),
+        signal: controller.signal,
+      })
+
+      if (!response.ok) throw new Error(`Overpass responded with ${response.status}`)
+      return await response.json() as { elements?: OverpassElement[] }
+    } catch (error) {
+      lastError = error
+      console.warn("Fuel stations source is temporarily unavailable", { endpoint, error: error instanceof Error ? error.message : "Unknown error" })
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  throw lastError || new Error("No fuel station sources are available")
 }
 
 /**
@@ -41,21 +81,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Выберите город из списка карты", cities: FUEL_MAP_CITIES }, { status: 400 })
   }
 
-  const query = `[out:json][timeout:20];(node["amenity"="fuel"](around:14000,${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:14000,${coordinates.latitude},${coordinates.longitude}););out center tags 160;`
+  const query = `[out:json][timeout:20];(node["amenity"="fuel"](around:14000,${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:14000,${coordinates.latitude},${coordinates.longitude}););out center tags 120;`
 
   try {
-    const response = await fetch(process.env.OVERPASS_API_URL || "https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: {
-        "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-        "user-agent": "AutoMarket fuel-map/1.0 (OSM attribution in product)",
-      },
-      body: new URLSearchParams({ data: query }).toString(),
-      next: { revalidate: 1800 },
-    })
-
-    if (!response.ok) throw new Error(`Overpass responded with ${response.status}`)
-    const payload = await response.json() as { elements?: OverpassElement[] }
+    const payload = await requestStations(query)
     const stations = (payload.elements || []).flatMap((element) => {
       const coords = getCoordinates(element)
       if (!coords) return []
@@ -97,4 +126,3 @@ export async function GET(request: NextRequest) {
     }, { status: 503 })
   }
 }
-

@@ -8,7 +8,7 @@ import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInp
 import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
-import { getBrandsByCategory } from "@/lib/catalog"
+import { COUNTRY_FLAGS, getBrandsByCategory } from "@/lib/catalog"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import { fetchJson } from "@/lib/api-client"
@@ -250,7 +250,7 @@ export default function HomePage(p: HomePageProps = {}) {
                   <Group gap="xs" wrap="nowrap">
                     <BrandIcon brand={option.value} size={24} variant="rounded" />
                     <Text size="sm" fw={650}>{option.label}</Text>
-                    {brand && <Text size="xs" c="dimmed" ml="auto">{brand.country}</Text>}
+                    {brand && <Text size="xs" c="dimmed" ml="auto" aria-label={`Страна марки: ${brand.country}`}>{COUNTRY_FLAGS[brand.country]}</Text>}
                   </Group>
                 )
               }}

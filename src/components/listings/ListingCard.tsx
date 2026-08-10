@@ -223,8 +223,8 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             <SimpleGrid cols={2} spacing={4} mb={6} className="listing-card__facts">
               <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
               {numericUsage != null && <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>}
-              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && <Text fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="dark.8" style={TRUNCATE_STYLE}>{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
-              {listing.vehicle!.fuelType && <Text fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="dark.8" style={TRUNCATE_STYLE}>{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
+              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && <Text className="listing-card__fact" fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="dark.8">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
+              {listing.vehicle!.fuelType && <Text className="listing-card__fact" fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="dark.8">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
             </SimpleGrid>
           )}
 

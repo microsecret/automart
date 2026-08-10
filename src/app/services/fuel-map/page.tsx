@@ -1,9 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
-import { Anchor, Badge, Box, Button, Center, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconExternalLink, IconGasStation, IconMapPin, IconRefresh, IconRoute } from "@tabler/icons-react"
+import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, ThemeIcon, Tooltip } from "@mantine/core"
+import { IconExternalLink, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconRoute } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
@@ -29,15 +29,70 @@ type FuelStationsResponse = {
   disclaimer: string
 }
 
+const TILE_SIZE = 256
+
+function coordinatesToWorld(latitude: number, longitude: number, zoom: number) {
+  const worldSize = TILE_SIZE * (2 ** zoom)
+  const latitudeRadians = latitude * Math.PI / 180
+  return {
+    x: ((longitude + 180) / 360) * worldSize,
+    y: (1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * worldSize,
+  }
+}
+
+function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect }: {
+  city: string
+  coordinates: { latitude: number; longitude: number }
+  stations: FuelStation[]
+  selectedStation: FuelStation | null
+  onSelect: (station: FuelStation) => void
+}) {
+  const [zoom, setZoom] = useState(11)
+  const center = useMemo(() => coordinatesToWorld(coordinates.latitude, coordinates.longitude, zoom), [coordinates.latitude, coordinates.longitude, zoom])
+  const centerTileX = Math.floor(center.x / TILE_SIZE)
+  const centerTileY = Math.floor(center.y / TILE_SIZE)
+  const tileCount = 2 ** zoom
+  const visibleStations = useMemo(() => stations.flatMap((station) => {
+    const point = coordinatesToWorld(station.latitude, station.longitude, zoom)
+    const left = ((point.x - (centerTileX - 1) * TILE_SIZE) / (TILE_SIZE * 3)) * 100
+    const top = ((point.y - (centerTileY - 1) * TILE_SIZE) / (TILE_SIZE * 3)) * 100
+    return left > -4 && left < 104 && top > -4 && top < 104 ? [{ station, left, top }] : []
+  }), [centerTileX, centerTileY, stations, zoom])
+
+  return (
+    <Paper id="fuel-station-map" className="fuel-map-canvas" radius="lg" withBorder>
+      <Box className="fuel-map-canvas__tiles" aria-label={`Карта точек АЗС: ${city}`} role="region">
+        {[-1, 0, 1].flatMap((row) => [-1, 0, 1].map((column) => {
+          const x = (centerTileX + column + tileCount) % tileCount
+          const y = Math.max(0, Math.min(tileCount - 1, centerTileY + row))
+          return <img key={`${zoom}-${x}-${y}`} src={`https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`} alt="" aria-hidden="true" />
+        }))}
+        {visibleStations.map(({ station, left, top }) => {
+          const isSelected = selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType
+          return <button key={`${station.sourceType}-${station.id}`} type="button" className="fuel-map-marker" data-selected={isSelected || undefined} style={{ left: `${left}%`, top: `${top}%` }} onClick={() => onSelect(station)} aria-label={`Показать ${station.name}: ${station.address || "адрес не указан"}`} title={station.name}><IconGasStation size={15} /></button>
+        })}
+      </Box>
+      <Group className="fuel-map-canvas__controls" gap={4}>
+        <Tooltip label="Уменьшить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => setZoom((value) => Math.max(9, value - 1))} aria-label="Уменьшить масштаб карты"><IconMinus size={15} /></ActionIcon></Tooltip>
+        <Tooltip label="Увеличить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => setZoom((value) => Math.min(14, value + 1))} aria-label="Увеличить масштаб карты"><IconPlus size={15} /></ActionIcon></Tooltip>
+      </Group>
+      <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · © OpenStreetMap contributors</Text></Box>
+      {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder><Text size="xs" fw={750} lineClamp={1}>{selectedStation.name}</Text><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || selectedStation.operator || "Адрес не указан в OSM"}</Text></Paper>}
+    </Paper>
+  )
+}
+
 export default function FuelMapPage() {
   const [city, setCity] = useState("Москва")
+  const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
   const { data, error, isLoading, mutate } = useSWR<FuelStationsResponse>(`/api/fuel-stations?city=${encodeURIComponent(city)}`, fetchJson, { revalidateOnFocus: false })
   const coordinates = data?.coordinates || CITY_COORDINATES[city]
-  const mapUrl = useMemo(() => {
-    const delta = city === "Москва" || city === "Санкт-Петербург" ? 0.18 : 0.13
-    const bbox = `${coordinates.latitude - delta},${coordinates.longitude - delta},${coordinates.latitude + delta},${coordinates.longitude + delta}`
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordinates.latitude},${coordinates.longitude}`
-  }, [city, coordinates.latitude, coordinates.longitude])
+  useEffect(() => setSelectedStation(null), [city])
+
+  const showStationOnMap = (station: FuelStation) => {
+    setSelectedStation(station)
+    document.getElementById("fuel-station-map")?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }
 
   return (
     <Box className="service-page service-page--fuel-map" p={{ base: "sm", md: "md" }}>
@@ -63,16 +118,13 @@ export default function FuelMapPage() {
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
-            <Paper className="fuel-map-canvas" radius="lg" withBorder style={{ gridColumn: "span 3", overflow: "hidden" }}>
-              <iframe src={mapUrl} title={`Карта АЗС: ${city}`} loading="lazy" />
-              <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">Базовая карта © OpenStreetMap contributors</Text></Box>
-            </Paper>
+            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={city} coordinates={coordinates} stations={data?.stations || []} selectedStation={selectedStation} onSelect={setSelectedStation} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : data?.stations.length ? <Stack gap="xs">{data.stations.map((station) => (
                 <Paper key={`${station.sourceType}-${station.id}`} className="fuel-station-card" radius="md" p="sm" withBorder>
                   <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap"><Group gap="sm" wrap="nowrap"><ThemeIcon variant="light" color="orange" radius="md"><IconGasStation size={17} /></ThemeIcon><Box style={{ minWidth: 0 }}><Text fw={750} size="sm" lineClamp={1}>{station.name}</Text><Text size="xs" c="dimmed" lineClamp={1}>{station.address || station.operator || "Адрес не указан в OSM"}</Text></Box></Group><Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor></Group>
                   <Group mt={8} gap={5} wrap="wrap">{station.fuels.length ? station.fuels.map((fuel) => <Badge key={fuel} size="xs" variant="light" color="indigo">{fuel}</Badge>) : <Badge size="xs" variant="outline" color="gray">Вид топлива не указан</Badge>}{station.openingHours && <Badge size="xs" variant="outline" color="gray">{station.openingHours}</Badge>}</Group>
-                  <Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" variant="subtle" color="indigo" size="compact-xs" mt={8} leftSection={<IconRoute size={13} />}>Построить маршрут</Button>
+                  <Group mt={8} gap={4}><Button variant="subtle" color="indigo" size="compact-xs" onClick={() => showStationOnMap(station)} leftSection={<IconMapPin size={13} />}>На карте</Button><Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" variant="subtle" color="indigo" size="compact-xs" leftSection={<IconRoute size={13} />}>Маршрут</Button></Group>
                 </Paper>
               ))}</Stack> : <Center h={460}><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={44} radius="xl"><IconGasStation size={22} /></ThemeIcon><Text fw={700}>Точки не найдены</Text><Text size="xs" c="dimmed" ta="center">Попробуйте выбрать другой город или обновить данные.</Text></Stack></Center>}
             </Paper>
