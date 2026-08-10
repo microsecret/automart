@@ -252,10 +252,12 @@ select {
 }
 
 .market-app-header__links {
+  flex: 0 0 auto;
   min-width: 0;
 }
 
 .market-app-header__link {
+  white-space: nowrap;
   color: var(--market-muted) !important;
   border-radius: 8px;
   transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;

@@ -48,7 +48,7 @@ export default function AppHeader() {
       }}
     >
       <Container size="xl" px={{ base: "sm", md: "md" }} style={{ height: "var(--app-header-height)" }}>
-        <Group h="100%" gap="md" wrap="nowrap" align="center" justify="space-between">
+        <Group h="100%" gap="sm" wrap="nowrap" align="center" justify="space-between">
           {/* ЛЕВО: Лого */}
           <Link href="/" style={{ textDecoration: "none", color: "inherit", flexShrink: 0 }}>
             <Group gap={8} wrap="nowrap" align="center">
@@ -85,7 +85,7 @@ export default function AppHeader() {
           </Group>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}
-          <Box component="form" onSubmit={handleSearch} style={{ flex: 1, maxWidth: 440 }} visibleFrom="sm">
+          <Box component="form" onSubmit={handleSearch} style={{ flex: 1, maxWidth: 280, minWidth: 180 }} visibleFrom="sm">
             <TextInput
               placeholder="Марка, модель, город..."
               leftSection={<IconSearch size={16} color="gray.4" />}
