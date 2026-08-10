@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Box, Paper, Stack, Group, Text, TextInput, Button, ActionIcon, ThemeIcon } from "@mantine/core"
+import { Box, Paper, Stack, Group, Text, TextInput, Button, ActionIcon, ThemeIcon, Loader } from "@mantine/core"
 import { IconMessageCircle2, IconX, IconSend, IconHeadset } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 interface Msg {
   id: string
@@ -14,6 +15,16 @@ interface Msg {
   isSupport?: boolean
 }
 
+interface SupportMessagesResponse {
+  ticketId?: string
+  messages?: Msg[]
+}
+
+interface SupportMessageResponse {
+  ticketId?: string
+  message?: Msg
+}
+
 export default function SupportChat() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Msg[]>([])
@@ -21,16 +32,19 @@ export default function SupportChat() {
   const [sending, setSending] = useState(false)
   const [ticketId, setTicketId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { data: session, status } = useSession()
 
   useEffect(() => {
     if (session?.user?.id) {
       setTicketId(session.user.id)
-      loadMessages(session.user.id)
+      void loadMessages(session.user.id)
     } else {
       setTicketId(null)
       setMessages([])
+      setLoadError(null)
     }
   }, [session?.user?.id])
 
@@ -39,11 +53,17 @@ export default function SupportChat() {
   }, [messages])
 
   const loadMessages = async (tId: string) => {
+    setIsLoadingMessages(true)
+    setLoadError(null)
     try {
-      const res = await fetch(`/api/support?ticketId=${tId}`)
-      const data = await res.json()
-      if (res.ok && data.messages) setMessages(data.messages)
-    } catch {}
+      const data = await fetchJson<SupportMessagesResponse>(`/api/support?ticketId=${encodeURIComponent(tId)}`)
+      setMessages(Array.isArray(data.messages) ? data.messages : [])
+      setTicketId(data.ticketId || tId)
+    } catch (requestError) {
+      setLoadError(getApiClientErrorMessage(requestError, "Не удалось загрузить переписку"))
+    } finally {
+      setIsLoadingMessages(false)
+    }
   }
 
   const send = async () => {
@@ -58,28 +78,23 @@ export default function SupportChat() {
     setMessages((p) => [...p, tempMsg])
 
     try {
-      const res = await fetch("/api/support", {
+      const data = await fetchJson<SupportMessageResponse>("/api/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: content, ticketId }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        setMessages((items) => items.filter((message) => message.id !== tempMsg.id))
-        setError(data.error || "Не удалось отправить сообщение")
-        return
-      }
       if (data.ticketId) {
         setTicketId(data.ticketId)
       }
       if (data.message) {
         setMessages((items) => items.map((message) => message.id === tempMsg.id ? data.message : message))
       }
-    } catch {
+    } catch (requestError) {
       setMessages((items) => items.filter((message) => message.id !== tempMsg.id))
-      setError("Не удалось отправить сообщение")
+      setError(getApiClientErrorMessage(requestError, "Не удалось отправить сообщение"))
+    } finally {
+      setSending(false)
     }
-    finally { setSending(false) }
   }
 
   return (
@@ -128,6 +143,21 @@ export default function SupportChat() {
                   <IconHeadset size={32} stroke={1.5} color="#a5b4fc" />
                   <Text size="sm" c="gray.5" ta="center">Войдите, чтобы поддержка могла безопасно вести переписку по вашему обращению.</Text>
                   <Button component={Link} href="/auth/signin" size="xs" color="indigo">Войти в кабинет</Button>
+                </Stack>
+              ) : status === "loading" || isLoadingMessages ? (
+                <Stack align="center" gap="sm" py={20}>
+                  <Loader size="sm" color="indigo" />
+                  <Text size="sm" c="dimmed" ta="center">Загружаем переписку…</Text>
+                </Stack>
+              ) : loadError ? (
+                <Stack align="center" gap="sm" py={20}>
+                  <IconMessageCircle2 size={32} stroke={1.5} color="#f87171" />
+                  <Text size="sm" c="red" ta="center">{loadError}</Text>
+                  {session?.user?.id && (
+                    <Button size="xs" variant="light" color="indigo" onClick={() => void loadMessages(session.user.id)}>
+                      Повторить
+                    </Button>
+                  )}
                 </Stack>
               ) : messages.length === 0 ? (
                 <Stack align="center" gap="sm" py={20}>
