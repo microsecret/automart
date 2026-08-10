@@ -4,7 +4,7 @@ import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Butto
 import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useColorScheme } from "@/components/providers/AppProviders"
 import { IconSun, IconMoon } from "@tabler/icons-react"
@@ -17,7 +17,16 @@ export default function AppHeader() {
   }, [session])
   const { colorScheme, toggleScheme } = useColorScheme()
   const router = useRouter()
+  const pathname = usePathname()
   const [query, setQuery] = useState("")
+
+  const navigation = [
+    { href: "/", label: "Объявления", icon: null, active: pathname === "/" || pathname.startsWith("/category") || pathname.startsWith("/search") },
+    { href: "/parts-finder", label: "Запчасти", icon: <IconTools size={14} />, active: pathname.startsWith("/parts") },
+    { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
+    { href: "/services/safe-deal", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
+    { href: "/help/safety", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
+  ]
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,11 +65,21 @@ export default function AppHeader() {
           </Link>
 
           <Group gap={2} visibleFrom="lg" wrap="nowrap" className="market-app-header__links">
-            <Button component={Link} href="/" variant="subtle" color="gray" size="compact-sm">Объявления</Button>
-            <Button component={Link} href="/parts-finder" variant="subtle" color="gray" size="compact-sm" leftSection={<IconTools size={14} />}>Запчасти</Button>
-            <Button component={Link} href="/auctions" variant="subtle" color="gray" size="compact-sm" leftSection={<IconGavel size={14} />}>Аукционы</Button>
-            <Button component={Link} href="/services/safe-deal" variant="subtle" color="gray" size="compact-sm" leftSection={<IconShieldCheck size={14} />}>Сервисы</Button>
-            <Button component={Link} href="/help/safety" variant="subtle" color="gray" size="compact-sm" leftSection={<IconHelpCircle size={14} />}>Помощь</Button>
+            {navigation.map((item) => (
+              <Button
+                key={item.href}
+                component={Link}
+                href={item.href}
+                variant={item.active ? "light" : "subtle"}
+                color={item.active ? "indigo" : "gray"}
+                size="compact-sm"
+                leftSection={item.icon}
+                aria-current={item.active ? "page" : undefined}
+                styles={{ root: { fontWeight: item.active ? 700 : 600 } }}
+              >
+                {item.label}
+              </Button>
+            ))}
           </Group>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}
