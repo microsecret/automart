@@ -7,6 +7,7 @@ import { Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Avatar, Simp
 import { IconStar, IconMessage2 } from "@tabler/icons-react"
 import { formatRelativeDate } from "@/lib/format"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { fetchJson } from "@/lib/api-client"
 
 type ReviewListing = {
   id: string
@@ -35,18 +36,6 @@ type ReviewsResponse = {
   pagination: { page: number; limit: number; total: number; pages: number }
 }
 
-async function fetcher<T>(url: string): Promise<T> {
-  const response = await fetch(url)
-  const payload: unknown = await response.json().catch(() => null)
-  if (!response.ok) {
-    const message = payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
-      ? payload.error
-      : "Не удалось загрузить отзывы"
-    throw new Error(message)
-  }
-  return payload as T
-}
-
 function getListingHref(listing: ReviewListing) {
   if (listing.vehicleId) return `/listings/vehicle/${listing.vehicleId}`
   if (listing.partId) return `/listings/part/${listing.partId}`
@@ -55,7 +44,7 @@ function getListingHref(listing: ReviewListing) {
 
 export default function ReviewsPage() {
   const [page, setPage] = useState(1)
-  const { data, error, isLoading, mutate } = useSWR<ReviewsResponse>(`/api/reviews?limit=15&page=${page}`, fetcher)
+  const { data, error, isLoading, mutate } = useSWR<ReviewsResponse>(`/api/reviews?limit=15&page=${page}`, fetchJson)
 
   const reviews = data?.reviews || []
   const summary = data?.summary
