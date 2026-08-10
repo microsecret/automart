@@ -131,6 +131,15 @@ async function main() {
     empty: media.filter((record) => record.state === "empty").length,
     invalid: media.filter((record) => record.state === "invalid").length,
   }
+  const isValid = orphanedListings.length === 0
+    && ambiguousListings.length === 0
+    && duplicateLiveSubjects.length === 0
+    && missingTriggers.length === 0
+    && missingIndexes.length === 0
+    && categoryMismatches.length === 0
+    && legacyTypeMismatches.length === 0
+    && identityMismatches.length === 0
+    && nonRoadMileageMismatches.length === 0
 
   const report = {
     checkedAt: new Date().toISOString(),
@@ -146,7 +155,7 @@ async function main() {
       orphanedListings: orphanedListings.length,
       ambiguousListings: ambiguousListings.length,
       duplicateLiveSubjects: duplicateLiveSubjects.length,
-      valid: orphanedListings.length === 0 && ambiguousListings.length === 0 && duplicateLiveSubjects.length === 0 && missingTriggers.length === 0 && missingIndexes.length === 0 && categoryMismatches.length === 0 && legacyTypeMismatches.length === 0 && identityMismatches.length === 0 && nonRoadMileageMismatches.length === 0,
+      valid: isValid,
     },
     databaseTriggers: {
       installed: REQUIRED_TRIGGERS.filter((name) => installedTriggers.includes(name)),
@@ -204,6 +213,7 @@ async function main() {
   }
 
   console.log(JSON.stringify(report, null, 2))
+  if (!isValid) process.exitCode = 1
 }
 
 main()
