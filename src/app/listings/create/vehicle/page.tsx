@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge } from "@mantine/core"
+import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
 import { IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
@@ -331,10 +331,25 @@ export default function CreateVehiclePage() {
                   <TextInput label="Мощность, л.с." placeholder="150" value={f.power} onChange={(e) => set("power", e.target.value)} size="sm" type="number" />
                   <TextInput label="Цвет" placeholder="Белый" value={f.color} onChange={(e) => set("color", e.target.value)} size="sm" />
                 </Group>
-                <Group gap="sm" grow>
-                  <Select label="Состояние" data={CONDITIONS.map(t => ({ value: t.value, label: t.label }))} value={f.condition} onChange={(v) => set("condition", v || "")} size="sm" />
-                  <Select label="Руль" data={STEERING_WHEELS.map(t => ({ value: t.value, label: t.label }))} value={f.steeringWheel} onChange={(v) => set("steeringWheel", v || "")} size="sm" />
-                </Group>
+                <Stack gap={6}>
+                  <Text size="xs" fw={700} c="dimmed">Состояние</Text>
+                  <Group gap={6}>
+                    {CONDITIONS.map((item) => (
+                      <Chip
+                        key={item.value}
+                        checked={f.condition === item.value}
+                        onChange={() => set("condition", item.value)}
+                        variant={f.condition === item.value ? "filled" : "outline"}
+                        color="indigo"
+                        size="sm"
+                        radius="xl"
+                      >
+                        {item.label}
+                      </Chip>
+                    ))}
+                  </Group>
+                </Stack>
+                <Select label="Руль" data={STEERING_WHEELS.map(t => ({ value: t.value, label: t.label }))} value={f.steeringWheel} onChange={(v) => set("steeringWheel", v || "")} size="sm" />
               </Stack>
             </Paper>
 
@@ -349,12 +364,32 @@ export default function CreateVehiclePage() {
                 <Group gap="sm" grow>
                   <NumberInput label="Владельцев" placeholder="2" value={f.ownersCount ? Number(f.ownersCount) : undefined} onChange={(v) => set("ownersCount", String(v || ""))} size="sm" min={1} max={10} />
                   <Select label="Продавец" data={SELLER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.sellerType} onChange={(v) => set("sellerType", v || "")} size="sm" />
-                  <Select label="Наличие" data={AVAILABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.availability} onChange={(v) => set("availability", v || "")} size="sm" />
-                </Group>
-                <Group gap="sm" grow>
-                  <Select label="Растаможен" data={[{ value: "true", label: "Да" }, { value: "false", label: "Нет" }]} value={f.customsCleared} onChange={(v) => set("customsCleared", v || "true")} size="sm" />
                   <TextInput label="Поколение" placeholder="VII (XV50)" value={f.generation} onChange={(e) => set("generation", e.target.value)} size="sm" />
                 </Group>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <Stack gap={6}>
+                    <Text size="xs" fw={700} c="dimmed">Наличие</Text>
+                    <SegmentedControl
+                      value={f.availability}
+                      onChange={(value) => set("availability", value)}
+                      data={AVAILABILITY_TYPES.map((item) => ({ value: item.value, label: item.label }))}
+                      size="sm"
+                      radius="md"
+                      fullWidth
+                    />
+                  </Stack>
+                  <Stack gap={6}>
+                    <Text size="xs" fw={700} c="dimmed">Растаможен</Text>
+                    <SegmentedControl
+                      value={f.customsCleared}
+                      onChange={(value) => set("customsCleared", value)}
+                      data={[{ value: "true", label: "Да" }, { value: "false", label: "Нет" }]}
+                      size="sm"
+                      radius="md"
+                      fullWidth
+                    />
+                  </Stack>
+                </SimpleGrid>
               </Stack>
             </Paper>
 
