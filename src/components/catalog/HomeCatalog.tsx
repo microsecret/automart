@@ -504,7 +504,7 @@ export default function HomePage(p: HomePageProps = {}) {
       ) : view === "grid" ? (
         <SimpleGrid cols={{base:1,sm:2,md:3,lg:4}} spacing="sm">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
-        <Stack gap="xs">{data.listings.map((listing: any) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
+        <Stack gap="xs">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}
 
       {data && data.pagination?.pages > 1 && (
