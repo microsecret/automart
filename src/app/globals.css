@@ -1612,6 +1612,12 @@ select {
   box-shadow: 0 12px 22px -22px rgba(49,46,129,.64);
 }
 
+.fuel-station-card[data-selected] {
+  border-color: #818cf8;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+  box-shadow: 0 14px 24px -20px rgba(79, 70, 229, 0.58);
+}
+
 .fuel-map-note {
   background: color-mix(in srgb, var(--market-surface) 80%, #ecfeff);
   border-color: #bae6fd;

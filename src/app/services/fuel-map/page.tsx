@@ -87,6 +87,15 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
     setZoom(11)
   }, [coordinates.latitude, coordinates.longitude])
 
+  useEffect(() => {
+    if (!selectedStation) return
+
+    const nextCenter = { latitude: selectedStation.latitude, longitude: selectedStation.longitude }
+    setViewportCenter(nextCenter)
+    viewportCenterRef.current = nextCenter
+    setZoom((current) => Math.max(current, 13))
+  }, [selectedStation?.id, selectedStation?.sourceType])
+
   const visibleStations = useMemo(() => stations.flatMap((station) => {
     const point = coordinatesToWorld(station.latitude, station.longitude, zoom)
     const worldSize = TILE_SIZE * (2 ** zoom)
@@ -290,7 +299,7 @@ export default function FuelMapPage() {
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={city} coordinates={coordinates} stations={data?.stations || []} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : data?.stations.length ? <Stack gap="xs">{data.stations.map((station) => (
-                <Paper key={`${station.sourceType}-${station.id}`} className="fuel-station-card" radius="md" p="sm" withBorder>
+                <Paper key={`${station.sourceType}-${station.id}`} className="fuel-station-card" data-selected={selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType || undefined} radius="md" p="sm" withBorder>
                   <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap"><Group gap="sm" wrap="nowrap"><ThemeIcon variant="light" color="orange" radius="md"><IconGasStation size={17} /></ThemeIcon><Box style={{ minWidth: 0 }}><Text fw={750} size="sm" lineClamp={1}>{station.name}</Text><Text size="xs" c="dimmed" lineClamp={1}>{station.address || station.operator || "Адрес не указан в OSM"}</Text></Box></Group><Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor></Group>
                   <Group mt={8} gap={5} wrap="wrap">{station.fuels.length ? station.fuels.map((fuel) => <Badge key={fuel} size="xs" variant="light" color="indigo">{fuel}</Badge>) : <Badge size="xs" variant="outline" color="gray">Вид топлива не указан</Badge>}{station.openingHours && <Badge size="xs" variant="outline" color="gray">{station.openingHours}</Badge>}</Group>
                   <Group mt={8} gap={4}><Button variant="subtle" color="indigo" size="compact-xs" onClick={() => showStationOnMap(station)} leftSection={<IconMapPin size={13} />}>На карте</Button><Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" variant="subtle" color="indigo" size="compact-xs" leftSection={<IconRoute size={13} />}>Маршрут</Button></Group>
