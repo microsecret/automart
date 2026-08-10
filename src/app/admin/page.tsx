@@ -7,17 +7,34 @@ import { Box, Stack, Text, Center, Loader, SimpleGrid, Card, ThemeIcon, Title, G
 import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld } from "@tabler/icons-react"
 import Link from "next/link"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(payload?.error || "Не удалось загрузить данные")
+  return payload
+}
 
 const VEHICLE_TYPE_LABELS: Record<string, string> = {
   CAR: "Легковые", MOTORCYCLE: "Мото", TRUCK: "Грузовики", SPECIAL: "Спецтехника", WATER: "Водный", AIR: "Авиа",
 }
 
 export default function AdminDashboard() {
-  const { data, isLoading } = useSWR<any>("/api/admin/stats", fetcher)
+  const { data, error, isLoading, mutate } = useSWR<any>("/api/admin/stats", fetcher)
 
   if (isLoading) return <Center py={80}><Loader color="indigo" /></Center>
+  if (error || !data) {
+    return (
+      <Box className="admin-workspace" p={{ base: "sm", md: "md" }}>
+        <AsyncErrorState
+          title="Не удалось загрузить админку"
+          description="Статистика и очередь модерации не изменены. Повторите запрос, когда соединение восстановится."
+          onRetry={() => void mutate()}
+        />
+      </Box>
+    )
+  }
 
   const c = data?.counts || {}
   const stats = [
@@ -84,17 +101,17 @@ export default function AdminDashboard() {
 
         {/* Посещаемость */}
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Посещения за 24 часа</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data?.traffic?.visits24h ?? 0}</Text>
             <Text size="xs" c="gray.4">все просмотры экранов</Text>
           </Card>
-          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · 7 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data?.traffic?.uniqueVisitors7d ?? 0}</Text>
             <Text size="xs" c="gray.4">по анонимной сессии</Text>
           </Card>
-          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Посещения за 7 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data?.traffic?.visits7d ?? 0}</Text>
             <Text size="xs" c="gray.4">путь пользователя по сайту</Text>
@@ -102,7 +119,7 @@ export default function AdminDashboard() {
         </SimpleGrid>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Text size="sm" fw={600} c="dark.9" mb="sm">Популярные экраны за 7 дней</Text>
             <Stack gap="xs">
               {(data?.traffic?.topPaths || []).map((item: { path: string; count: number }) => (
@@ -111,7 +128,7 @@ export default function AdminDashboard() {
               {!data?.traffic?.topPaths?.length && <Text size="xs" c="gray.4">Данные появятся после первых визитов.</Text>}
             </Stack>
           </Card>
-          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Text size="sm" fw={600} c="dark.9" mb="sm">Последние идентифицированные посетители</Text>
             <Stack gap="xs">
               {(data?.traffic?.recentVisitors || []).slice(0, 6).map((visit: any) => (
@@ -123,7 +140,7 @@ export default function AdminDashboard() {
         </SimpleGrid>
 
         {/* Распределение по категориям */}
-        <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+        <Card className="admin-insight-card" withBorder radius="lg" p="md">
           <Group justify="space-between" mb="sm">
             <Text size="sm" fw={600} c="dark.9">Объявления по категориям транспорта</Text>
             <Badge variant="light" color="indigo" size="sm">{c.listings} всего</Badge>
@@ -144,21 +161,21 @@ export default function AdminDashboard() {
 
         {/* Доп. статистика */}
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Stack gap="xs">
               <Group gap="sm"><IconFlame size={16} color="#f97316" /><Text size="xs" c="gray.5">Премиум-объявления</Text></Group>
               <Text size="xl" fw={700} c="dark.9">{data?.featured ?? 0}</Text>
               <Text size="xs" c="gray.4">{Math.round(((data?.featured ?? 0) / total) * 100)}% от всех</Text>
             </Stack>
           </Card>
-          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Stack gap="xs">
               <Group gap="sm"><IconTrendingUp size={16} color="#16a34a" /><Text size="xs" c="gray.5">Средняя цена</Text></Group>
               <Text size="xl" fw={700} c="dark.9">{data?.avgPrice?.toLocaleString("ru-RU") ?? 0} ₽</Text>
               <Text size="xs" c="gray.4">по всем объявлениям</Text>
             </Stack>
           </Card>
-          <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Stack gap="xs">
               <Group gap="sm"><IconUsers size={16} color="#4f46e5" /><Text size="xs" c="gray.5">Роли</Text></Group>
               {Object.entries(data?.byRole || {}).map(([role, count]) => (
@@ -172,19 +189,19 @@ export default function AdminDashboard() {
         </SimpleGrid>
 
         {/* Быстрые действия */}
-        <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
+        <Card className="admin-insight-card" withBorder radius="lg" p="md">
           <Text size="sm" fw={600} c="dark.9" mb="sm">Управление</Text>
           <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-            <Card component={Link} href="/admin/users" withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Card className="admin-action-card" component={Link} href="/admin/users" withBorder radius="lg" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconUsers size={16} /></ThemeIcon><Text size="xs" fw={500}>Пользователи</Text></Group>
             </Card>
-            <Card component={Link} href="/category/cars" withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Card className="admin-action-card" component={Link} href="/moderation" withBorder radius="lg" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="blue" size={32} radius="md"><IconCar size={16} /></ThemeIcon><Text size="xs" fw={500}>Объявления</Text></Group>
             </Card>
-            <Card component={Link} href="/category/parts" withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Card className="admin-action-card" component={Link} href="/parts-finder" withBorder radius="lg" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="green" size={32} radius="md"><IconTag size={16} /></ThemeIcon><Text size="xs" fw={500}>Запчасти</Text></Group>
             </Card>
-            <Card component={Link} href="/messages" withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
+            <Card className="admin-action-card" component={Link} href="/messages" withBorder radius="lg" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={32} radius="md"><IconMessageCircle2 size={16} /></ThemeIcon><Text size="xs" fw={500}>Сообщения</Text></Group>
             </Card>
           </SimpleGrid>

@@ -108,7 +108,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         className="listing-card"
         pos="relative"
         padding={0}
-        radius="md"
+        radius="lg"
         withBorder
         style={{
           overflow: "hidden",
@@ -126,7 +126,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           pos="relative"
           style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}
         >
-          <AspectRatio ratio={8 / 5}>
+          <AspectRatio ratio={hasDisplayImage ? 8 / 5 : 8 / 3}>
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
@@ -220,7 +220,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           </Group>
 
           {/* Заголовок */}
-          <Text className="listing-card__title" fz="xs" c="gray.6" lh={1.4} mb={6} style={TRUNCATE_STYLE}>
+          <Text className="listing-card__title" fz="sm" fw={700} c="dark.9" lh={1.35} mb={7} style={TRUNCATE_STYLE}>
             {listing.title}
           </Text>
 

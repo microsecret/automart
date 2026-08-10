@@ -12,12 +12,12 @@ const FEATURES = [
 
 export default function SignInPage() {
   return (
-    <Container size="md" py={48}>
-      <Group gap={48} align="center" wrap="nowrap" justify="center">
+    <Container className="auth-experience" size="md" py={48}>
+      <Group className="auth-experience__layout" gap={48} align="center" wrap="nowrap" justify="center">
         {/* Левая колонка — преимущества (десктоп) */}
-        <Stack gap="lg" visibleFrom="md" maw={300}>
+        <Stack className="auth-experience__context" gap="lg" visibleFrom="md" maw={300}>
           <Group gap="sm">
-            <Box style={{ width: 48, height: 48, borderRadius: 12, background: "linear-gradient(135deg, #4f46e5, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Box className="auth-experience__brand-mark">
               <IconCar size={24} color="white" />
             </Box>
             <Text fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Авторынок</Text>
@@ -37,13 +37,13 @@ export default function SignInPage() {
         </Stack>
 
         {/* Правая колонка — форма */}
-        <Stack gap="lg" align="center" maw={420} style={{ flexShrink: 0 }}>
+        <Stack className="auth-experience__form-area" gap="lg" align="center" maw={420} style={{ flexShrink: 0 }}>
           <Stack gap={4} align="center">
             <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Вход в аккаунт</Text>
             <Text size="sm" c="gray.5">Войдите, чтобы управлять объявлениями</Text>
           </Stack>
 
-          <Card withBorder radius="lg" p="xl" w={420} shadow="sm">
+          <Card className="auth-experience__form-card" withBorder radius="lg" p="xl" w={420} shadow="sm">
             <SignInForm />
           </Card>
         </Stack>

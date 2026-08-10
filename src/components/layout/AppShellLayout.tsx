@@ -219,7 +219,7 @@ function AccountPanel({ session }: { session: ReturnType<typeof useSession>["dat
           </Box>
         </Group>
         <Group grow mt="sm">
-          <Button component={Link} href="/dashboard" variant="filled" color="indigo" size="xs">Кабинет</Button>
+          <Button component={Link} href="/dashboard?tab=listings" variant="filled" color="indigo" size="xs">Кабинет</Button>
           <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" size="xs" leftSection={<IconTruckDelivery size={14} />}>Доставки</Button>
         </Group>
       </Paper>

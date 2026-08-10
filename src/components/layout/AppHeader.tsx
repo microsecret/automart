@@ -192,7 +192,7 @@ export default function AppHeader() {
                     <Menu.Divider />
                     <Menu.Item component={Link} href="/dashboard" leftSection={<IconLayoutDashboard size={15} />}>Личный кабинет</Menu.Item>
                     <Menu.Item component={Link} href="/favorites" leftSection={<IconHeart size={15} />}>Избранное</Menu.Item>
-                    <Menu.Item component={Link} href="/dashboard" leftSection={<IconSettings size={15} />}>Настройки</Menu.Item>
+                    <Menu.Item component={Link} href="/dashboard?tab=profile" leftSection={<IconSettings size={15} />}>Настройки профиля</Menu.Item>
                     {session.user?.role === "ADMIN" && (
                       <>
                         <Menu.Divider />

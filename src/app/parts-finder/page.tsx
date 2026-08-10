@@ -42,7 +42,7 @@ function PartMedia({ image, name }: { image: string; name: string }) {
   const [loaded, setLoaded] = useState(false)
 
   return (
-    <Box className="part-result-card__media">
+    <Box className="part-result-card__media" data-empty-media={failed || undefined}>
       <Stack gap={4} align="center" className="part-result-card__placeholder" style={{ opacity: !loaded || failed ? 1 : 0 }}>
         <ThemeIcon variant="light" color="indigo" size={50} radius="xl"><IconTools size={28} stroke={1.5} /></ThemeIcon>
       </Stack>
@@ -318,7 +318,7 @@ function PartsContent() {
                     const images = parseImages(p.images)
                     const image = images[0] || ""
                     return (
-                      <Paper key={p.id} radius="md" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)" }}>
+                      <Paper key={p.id} radius="lg" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)" }}>
                         <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                           <PartMedia image={image} name={p.name} />
                         </Link>
