@@ -2568,6 +2568,50 @@ select {
   outline-offset: 3px;
 }
 
+.admin-directory__search {
+  width: min(100%, 360px);
+}
+
+.admin-directory__search .mantine-Input-input {
+  min-height: 42px;
+  border-color: #dfe5f2;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
+  font-weight: 600;
+}
+
+.admin-directory__search .mantine-Input-input:focus {
+  border-color: var(--mantine-color-indigo-5);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.admin-directory__table {
+  overflow: hidden;
+  border-color: #dfe5f2;
+  box-shadow: 0 12px 30px rgba(32, 42, 90, 0.04);
+}
+
+.admin-directory__table .mantine-Table-table {
+  min-width: 760px;
+}
+
+.admin-directory__table .mantine-Table-th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-directory__table .mantine-Table-tr {
+  transition: background-color 150ms ease;
+}
+
+.admin-directory__table .mantine-Table-tr:hover {
+  background: #f8faff;
+}
+
 @media (max-width: 48em) {
   .create-listing__journey-step + .create-listing__journey-step::before {
     top: 0;
@@ -2580,5 +2624,9 @@ select {
 
   .create-listing__submit {
     bottom: 8px;
+  }
+
+  .admin-directory__search {
+    width: 100%;
   }
 }

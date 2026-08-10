@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { isAdmin } from "@/lib/permissions"
+
+function asPositiveInt(value: string | null, fallback: number, max: number) {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
+}
+
 // GET search users
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +21,59 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const q = searchParams.get("q") || ""
+    const q = (searchParams.get("q") || "").trim()
+    const scope = searchParams.get("scope")
 
-    if (!q.trim()) {
+    // The admin directory intentionally lives in the same route as the
+    // privacy-preserving message search, but is explicitly opt-in and guarded
+    // by an administrator role. Public messaging search must never expose an
+    // email address or a phone number.
+    if (scope === "admin") {
+      if (!isAdmin(session.user.role)) {
+        return NextResponse.json({ error: "Доступ только для администраторов" }, { status: 403 })
+      }
+
+      const page = asPositiveInt(searchParams.get("page"), 1, 10_000)
+      const limit = asPositiveInt(searchParams.get("limit"), 30, 100)
+      const where = q ? {
+        OR: [
+          { name: { contains: q } },
+          { email: { contains: q } },
+          { phone: { contains: q } },
+          { telegramUsername: { contains: q } },
+        ],
+      } : undefined
+
+      const [total, users] = await Promise.all([
+        prisma.user.count({ where }),
+        prisma.user.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            phone: true,
+            telegramUsername: true,
+            telegramVerifiedAt: true,
+            emailVerified: true,
+            role: true,
+            createdAt: true,
+            _count: { select: { listings: true, messagesSent: true } },
+          },
+        }),
+      ])
+
+      return NextResponse.json({
+        users,
+        pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
+      })
+    }
+
+    if (!q) {
       return NextResponse.json(
         { users: [] },
         { status: 200 }
