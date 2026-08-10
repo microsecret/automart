@@ -2,15 +2,20 @@
 export const dynamic = "force-dynamic"
 import { useSearchParams } from "next/navigation"
 import useSWR from "swr"
-import { Container, Stack, Title, Text, Center, Button, ThemeIcon, Box, SimpleGrid, Paper, Group, Loader, Image, Badge, Divider } from "@mantine/core"
+import { Container, Stack, Title, Text, Center, Button, ThemeIcon, Box, Paper, Group, Loader, Badge, Divider } from "@mantine/core"
 import { IconGitCompare, IconArrowLeft, IconX } from "@tabler/icons-react"
 import Link from "next/link"
 import { useState, useEffect, Suspense } from "react"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { formatPrice } from "@/lib/format"
-import { findLabel, BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CONDITIONS } from "@/lib/constants"
+import VehicleFallback from "@/components/listings/VehicleFallback"
+import { parseMarketplaceImages } from "@/lib/media-url"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = fetchJson
+
+type CompareResponse = { listings: Array<{ vehicle: Record<string, unknown> | null }> }
 
 const COMPARE_FIELDS = [
   { key: "price", label: "Цена", format: (v: any) => formatPrice(v) },
@@ -44,7 +49,7 @@ function CompareContent() {
   const urlIds = sp.get("ids")?.split(",").filter(Boolean) || []
   const ids = [...new Set([...urlIds, ...localIds])].slice(0, 4)
 
-  const { data, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR<CompareResponse>(
     ids.length > 0 ? "/api/listings?ids=" + ids.join(",") + "&limit=10" : null,
     fetcher
   )
@@ -79,6 +84,10 @@ function CompareContent() {
 
   if (isLoading) {
     return <Container size="xl" py="xl"><Center><Loader size="sm" color="indigo" /></Center></Container>
+  }
+
+  if (error) {
+    return <Container size="md" py="xl"><AsyncErrorState title="Не удалось загрузить сравнение" description="Карточки временно недоступны. Повторите запрос." onRetry={() => void mutate()} backHref="/" /></Container>
   }
 
   if (vehicles.length === 0) {
@@ -116,11 +125,16 @@ function CompareContent() {
               <Text size="xs" fw={700} c="gray.4" tt="uppercase" mt={60}>Характеристика</Text>
             </Box>
             {/* Колонки автомобилей */}
-            {vehicles.map((v) => (
-              <Box key={v.id} style={{ width: 200, flexShrink: 0 }}>
+            {vehicles.map((v) => {
+              const image = parseMarketplaceImages(v.images)?.[0]
+              return (
+                <Box key={v.id} style={{ width: 200, flexShrink: 0 }}>
                 <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", borderRadius: 8, overflow: "hidden", aspectRatio: "4/3", marginBottom: 8 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={v.images ? (JSON.parse(v.images)[0] || "/placeholder.svg") : "/placeholder.svg"} alt={v.make} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <VehicleFallback type={v.vehicleType} compact />
+                  {image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={image} alt={`${v.make} ${v.model}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  )}
                 </Box>
                 <Link href={`/listings/vehicle/${v.id}`} style={{ textDecoration: "none" }}>
                   <Group gap="sm" mb={4}>
@@ -131,8 +145,9 @@ function CompareContent() {
                     </Stack>
                   </Group>
                 </Link>
-              </Box>
-            ))}
+                </Box>
+              )
+            })}
           </Group>
 
           <Divider my="sm" />

@@ -5,7 +5,8 @@ import useSWR from "swr"
 import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box } from "@mantine/core"
 import { IconDatabaseOff, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
-import { formatPriceShort, parseImages } from "@/lib/format"
+import { formatPriceShort } from "@/lib/format"
+import { isSafeMediaUrl, parseMarketplaceImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
@@ -52,7 +53,7 @@ type AuctionResponse = {
 }
 function AuctionMedia({ listing }: { listing: any }) {
   const [failed, setFailed] = useState(false)
-  const image = listing.imageUrl || parseImages(listing.images)[0] || ""
+  const image = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseMarketplaceImages(listing.images)?.[0] || ""
   const hasImage = Boolean(image) && !failed
 
   return (

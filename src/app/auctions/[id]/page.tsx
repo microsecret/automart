@@ -10,6 +10,8 @@ import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import VehicleFallback from "@/components/listings/VehicleFallback"
+import { isSafeMediaUrl, parseMarketplaceImages } from "@/lib/media-url"
 import type { AuctionListing } from "@prisma/client"
 
 type AuctionDetailResponse = { listing: AuctionListing }
@@ -24,6 +26,7 @@ function AuctionDetail() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", city: "", comment: "" })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [imageFailed, setImageFailed] = useState(false)
 
   const listing = data?.listing
 
@@ -55,6 +58,7 @@ function AuctionDetail() {
   if (!listing) return <Container py={80}><Center><Text c="gray.5">Лот не найден</Text></Center></Container>
 
   const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇩🇪 Германия", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
+  const primaryImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseMarketplaceImages(listing.images)?.[0] || ""
 
   return (
     <Container size="xl" py="lg">
@@ -71,8 +75,11 @@ function AuctionDetail() {
             <Stack gap="md">
               <Paper radius="md" withBorder style={{ overflow: "hidden" }}>
                 <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={listing.imageUrl || "/placeholder.svg"} alt={listing.make} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <VehicleFallback type="CAR" />
+                  {primaryImage && !imageFailed && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={primaryImage} alt={`${listing.make} ${listing.model}`} onError={() => setImageFailed(true)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  )}
                   <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.source} · {listing.lotNumber}</Badge>
                   <Badge pos="absolute" top={16} right={16} color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
                 </Box>
