@@ -4,9 +4,9 @@ import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { notifications } from "@mantine/notifications"
-import { Badge, Button, Card, Center, Group, Loader, Modal, Stack, Text, Textarea, ThemeIcon } from "@mantine/core"
+import { Badge, Button, Card, Center, Group, Loader, Modal, SegmentedControl, Stack, Text, Textarea, ThemeIcon } from "@mantine/core"
 import { IconAlertTriangle, IconArchive, IconCheck, IconFlame, IconTag, IconX } from "@tabler/icons-react"
-import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
+import { isListingStatus, LISTING_STATUS, LISTING_STATUS_META, type ListingStatus } from "@/lib/listing-lifecycle"
 
 const fetcher = async (url: string) => {
   const response = await fetch(url)
@@ -21,12 +21,28 @@ type ModerationConfirmation = {
   title: string
 }
 
+type ModerationListing = {
+  id: string
+  title: string
+  price: number
+  status: string
+  deletedAt: string | null
+  user: { id: string; name: string | null; email: string | null } | null
+  vehicle: { id: string; make: string; model: string } | null
+  part: { id: string; name: string } | null
+}
+
+type ModerationResponse = { listings: ModerationListing[] }
+
 /** A deliberately narrow moderation workspace. It uses the API as the source
  * of truth, so moderators never receive broader admin data in the browser. */
 export default function ListingModerationPanel() {
-  const { data, error, isLoading, mutate } = useSWR<any>("/api/admin/listings", fetcher)
+  const { data, error, isLoading, mutate } = useSWR<ModerationResponse>("/api/admin/listings", fetcher)
   const listings = data?.listings || []
-  const visibleListings = listings.filter((listing: any) => !listing.deletedAt)
+  const visibleListings = listings.filter((listing) => !listing.deletedAt)
+  const pendingListings = visibleListings.filter((listing) => listing.status === LISTING_STATUS.PENDING_MODERATION)
+  const [view, setView] = useState<"pending" | "all">("pending")
+  const displayedListings = view === "pending" ? pendingListings : visibleListings
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [confirmation, setConfirmation] = useState<ModerationConfirmation | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
@@ -82,18 +98,32 @@ export default function ListingModerationPanel() {
       <Stack gap="sm">
         <Group justify="space-between" align="center">
           <Group gap="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconFlame size={18} /></ThemeIcon><Text fw={700} c="dark.9">Модерация объявлений</Text></Group>
-          <Badge size="sm" variant="light" color="gray">{visibleListings.length}</Badge>
+          <Badge size="sm" variant="light" color={pendingListings.length > 0 ? "orange" : "green"}>{pendingListings.length} на проверке</Badge>
         </Group>
+        <SegmentedControl
+          size="xs"
+          value={view}
+          onChange={(value) => setView(value as "pending" | "all")}
+          data={[
+            { label: `На проверке (${pendingListings.length})`, value: "pending" },
+            { label: `Все (${visibleListings.length})`, value: "all" },
+          ]}
+        />
         {isLoading ? <Center py={20}><Loader size="sm" color="indigo" /></Center> : error ? (
           <Center py="xl"><Stack align="center" gap="xs"><ThemeIcon variant="light" color="red" size={42} radius="xl"><IconAlertTriangle size={22} /></ThemeIcon><Text fw={600}>Не удалось загрузить очередь</Text><Text size="sm" c="dimmed" ta="center">Проверьте соединение и повторите попытку. Данные объявлений не изменены.</Text><Button size="xs" variant="light" color="indigo" onClick={() => void mutate()}>Повторить</Button></Stack></Center>
         ) : (
-          visibleListings.length === 0 ? (
-            <Center py="xl"><Stack align="center" gap={4}><ThemeIcon variant="light" color="green" size={42} radius="xl"><IconCheck size={22} /></ThemeIcon><Text fw={600}>Очередь разобрана</Text><Text size="sm" c="dimmed">Новые объявления появятся здесь после отправки на проверку.</Text></Stack></Center>
+          displayedListings.length === 0 ? (
+            <Center py="xl"><Stack align="center" gap={4}><ThemeIcon variant="light" color={view === "pending" ? "green" : "gray"} size={42} radius="xl"><IconCheck size={22} /></ThemeIcon><Text fw={600}>{view === "pending" ? "Очередь разобрана" : "Объявлений пока нет"}</Text><Text size="sm" c="dimmed">{view === "pending" ? "Новые объявления появятся здесь после отправки на проверку." : "Когда пользователи разместят объявления, они появятся в журнале модерации."}</Text></Stack></Center>
           ) : <Stack gap="xs" mah={520} style={{ overflow: "auto" }}>
-            {visibleListings.slice(0, 50).map((listing: any) => {
-              const statusMeta = LISTING_STATUS_META[listing.status as keyof typeof LISTING_STATUS_META] || LISTING_STATUS_META[LISTING_STATUS.DRAFT]
-              const isPending = listing.status === LISTING_STATUS.PENDING_MODERATION
-              const detailHref = listing.vehicle ? `/listings/vehicle/${listing.vehicle.id}` : `/listings/part/${listing.part?.id}`
+            {displayedListings.slice(0, 50).map((listing) => {
+              const status: ListingStatus = isListingStatus(listing.status) ? listing.status : LISTING_STATUS.DRAFT
+              const statusMeta = LISTING_STATUS_META[status]
+              const isPending = status === LISTING_STATUS.PENDING_MODERATION
+              const detailHref = listing.vehicle
+                ? `/listings/vehicle/${listing.vehicle.id}`
+                : listing.part
+                  ? `/listings/part/${listing.part.id}`
+                  : null
               return (
                 <Group key={listing.id} gap="sm" align="center" justify="space-between" p="xs" className="moderation-listing-row">
                   <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
@@ -105,7 +135,7 @@ export default function ListingModerationPanel() {
                   </Group>
                   <Group gap="xs" wrap="wrap" justify="flex-end">
                     <Text size="xs" fw={700} c="dark.9">{(listing.price || 0).toLocaleString("ru")} ₽</Text>
-                    <Button component={Link} href={detailHref} target="_blank" size="xs" variant="light" color="indigo">Открыть</Button>
+                    {detailHref && <Button component={Link} href={detailHref} target="_blank" size="xs" variant="light" color="indigo">Открыть</Button>}
                     {isPending && <Button size="xs" variant="light" color="green" loading={updatingId === listing.id} onClick={() => handleStatus(listing.id, LISTING_STATUS.ACTIVE)} leftSection={<IconCheck size={12} />}>Одобрить</Button>}
                     {isPending && <Button size="xs" variant="light" color="red" loading={updatingId === listing.id} onClick={() => { setRejectionReason(""); setConfirmation({ id: listing.id, kind: "reject", title: listing.title }) }} leftSection={<IconX size={12} />}>Отклонить</Button>}
                     {!isPending && listing.status !== LISTING_STATUS.ARCHIVED && <Button size="xs" variant="subtle" color="gray" loading={updatingId === listing.id} onClick={() => handleStatus(listing.id, LISTING_STATUS.ARCHIVED)} leftSection={<IconArchive size={12} />}>В архив</Button>}
