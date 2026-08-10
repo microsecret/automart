@@ -1141,6 +1141,56 @@ select {
   max-width: calc(100% - 12px);
 }
 
+.listing-card__row-layout {
+  min-height: 136px;
+}
+
+.listing-card__row-media {
+  border-right: 1px solid var(--market-line);
+}
+
+.listing-card__row-content {
+  gap: 8px;
+}
+
+.listing-card__row-eyebrow {
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--listing-accent);
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.listing-card__row-title {
+  letter-spacing: -0.012em;
+}
+
+.listing-card__row-facts {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--market-line);
+  border-radius: 10px;
+  background: var(--market-surface-subtle);
+}
+
+.listing-card__row-facts > .mantine-Text-root {
+  min-width: 0;
+  padding: 5px 8px;
+  overflow: hidden;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listing-card__row-facts > .mantine-Text-root + .mantine-Text-root {
+  border-left: 1px solid var(--market-line);
+}
+
 .listing-card__media[data-empty-media][data-vehicle-type="car"] .vehicle-fallback,
 .listing-card__media[data-empty-media][data-vehicle-type="part"] .vehicle-fallback {
   background:
@@ -2674,6 +2724,29 @@ select {
 }
 
 @media (max-width: 48em) {
+  .listing-card__row-layout {
+    flex-direction: column;
+  }
+
+  .listing-card__row-media {
+    width: 100% !important;
+    border-right: 0;
+    border-bottom: 1px solid var(--market-line);
+  }
+
+  .listing-card__row-media .mantine-AspectRatio-root {
+    width: 100% !important;
+    max-height: 190px;
+  }
+
+  .listing-card__row-content {
+    min-height: 0;
+  }
+
+  .listing-card__row-facts > .mantine-Text-root {
+    flex: 1 1 46%;
+  }
+
   .vehicle-detail-layout {
     grid-template-columns: 1fr;
   }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio } from "@mantine/core"
 import { IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
+import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
@@ -49,6 +49,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
     : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
   const isFav = favoriteIds.has(listing.id)
+  const monthlyPayment = formatMonthlyPayment(listing.price)
   const missingMediaLabel = isVehicle
     ? `${vehicleTypeLabel(vehicleType, listing.vehicle?.bodyType)} · без фото`
     : "Запчасть · без фото"
@@ -90,10 +91,10 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
       }}
     >
       <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
-        <Group gap={0} align="stretch" wrap="nowrap">
+        <Group className="listing-card__row-layout" gap={0} align="stretch" wrap="nowrap">
           {/* Фото */}
           <Box
-            className="listing-card__media"
+            className="listing-card__media listing-card__row-media"
             data-empty-media={!hasDisplayImage || undefined}
             data-image-loading={hasDisplayImage && !imageLoaded ? "true" : undefined}
             data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
@@ -133,33 +134,36 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
           </Box>
 
           {/* Контент */}
-          <Box p="sm" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <Box className="listing-card__row-content" p="sm" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <Stack gap={4}>
               <Group justify="space-between" gap="sm" align="flex-start" wrap="nowrap">
                 <Group gap="sm" align="center" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
                   {showBrandMark && <BrandIcon brand={listing.vehicle!.make} size={32} variant="rounded" />}
                   <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-                  <Text fw={500} fz="sm" c="dark.7" style={TRUNCATE}>{listing.title}</Text>
-                  <Text fz="xs" c="gray.4" style={TRUNCATE}>
-                    {isVehicle ? `${listing.vehicle!.make} ${listing.vehicle!.model}` : listing.part?.name}
-                  </Text>
+                    {isVehicle && <Text className="listing-card__row-eyebrow" fz="10px" fw={700}>{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>}
+                    <Text className="listing-card__row-title" fw={700} fz="sm" c="dark.9" style={TRUNCATE}>{listing.title}</Text>
+                    <Text fz="xs" c="gray.5" style={TRUNCATE}>
+                      {isVehicle ? `${listing.vehicle!.make} ${listing.vehicle!.model}` : listing.part?.name}
+                    </Text>
                   </Stack>
                 </Group>
-                <Text fw={700} fz="md" c="dark.9" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
-                  {formatPriceShort(listing.price)}
-                </Text>
+                <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
+                  <Text className="listing-card__price" fw={800} fz="md" c="dark.9" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap" }}>
+                    {formatPriceShort(listing.price)}
+                  </Text>
+                  {monthlyPayment && <Text className="listing-card__monthly-payment" fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>{monthlyPayment}</Text>}
+                </Stack>
               </Group>
 
               {isVehicle && (
-                <Group gap={12} wrap="wrap" mt={2}>
-                  <Text fz="xs" c="gray.6">{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>
-                  <Text fz="xs" c="gray.6">Год: <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
-                  <Text fz="xs" c="gray.6">{usageMeta.label}: <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>
+                <Group className="listing-card__row-facts" gap={0} wrap="wrap" mt={2}>
+                  <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
+                  <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>
                   {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
-                    <Text fz="xs" c="gray.6">КПП: <Text component="span" inherit fw={700} c="dark.8">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
+                    <Text fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="dark.8">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
                   )}
                   {listing.vehicle!.fuelType && (
-                    <Text fz="xs" c="gray.6">Топливо: <Text component="span" inherit fw={700} c="dark.8">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
+                    <Text fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="dark.8">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
                   )}
                 </Group>
               )}
