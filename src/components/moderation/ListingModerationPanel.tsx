@@ -7,13 +7,7 @@ import { notifications } from "@mantine/notifications"
 import { Badge, Button, Card, Center, Group, Loader, Modal, SegmentedControl, Stack, Text, Textarea, ThemeIcon } from "@mantine/core"
 import { IconAlertTriangle, IconArchive, IconCheck, IconFlame, IconTag, IconX } from "@tabler/icons-react"
 import { isListingStatus, LISTING_STATUS, LISTING_STATUS_META, type ListingStatus } from "@/lib/listing-lifecycle"
-
-const fetcher = async (url: string) => {
-  const response = await fetch(url)
-  const payload = await response.json().catch(() => null)
-  if (!response.ok) throw new Error(payload?.error || "Не удалось загрузить очередь модерации")
-  return payload
-}
+import { fetchJson } from "@/lib/api-client"
 
 type ModerationConfirmation = {
   id: string
@@ -33,11 +27,14 @@ type ModerationListing = {
 }
 
 type ModerationResponse = { listings: ModerationListing[] }
+type ModerationMutationResponse = { id: string }
+
+const fetchModerationQueue = (url: string) => fetchJson<ModerationResponse>(url)
 
 /** A deliberately narrow moderation workspace. It uses the API as the source
  * of truth, so moderators never receive broader admin data in the browser. */
 export default function ListingModerationPanel() {
-  const { data, error, isLoading, mutate } = useSWR<ModerationResponse>("/api/admin/listings", fetcher)
+  const { data, error, isLoading, mutate } = useSWR<ModerationResponse>("/api/admin/listings", fetchModerationQueue)
   const listings = data?.listings || []
   const visibleListings = listings.filter((listing) => !listing.deletedAt)
   const pendingListings = visibleListings.filter((listing) => listing.status === LISTING_STATUS.PENDING_MODERATION)
@@ -59,13 +56,11 @@ export default function ListingModerationPanel() {
 
     setUpdatingId(id)
     try {
-      const response = await fetch("/api/admin/listings", {
+      await fetchJson<ModerationMutationResponse>("/api/admin/listings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status, reason: reason?.trim() || undefined }),
       })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(payload?.error || "Не удалось обновить статус")
       notifications.show({ title: "Статус обновлён", message: "Решение сохранено в журнале модерации.", color: "green" })
       await mutate()
       setConfirmation(null)
@@ -80,9 +75,7 @@ export default function ListingModerationPanel() {
   const handleDelete = async (id: string) => {
     setUpdatingId(id)
     try {
-      const response = await fetch(`/api/admin/listings?id=${id}`, { method: "DELETE" })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(payload?.error || "Не удалось снять объявление")
+      await fetchJson<ModerationMutationResponse>(`/api/admin/listings?id=${id}`, { method: "DELETE" })
       notifications.show({ title: "Снято с публикации", message: "Объявление сохранено в архиве", color: "green" })
       await mutate()
       setConfirmation(null)
