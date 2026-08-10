@@ -8,7 +8,22 @@ import { IconBrandTelegram, IconCircleCheck, IconExternalLink, IconGasStation, I
 
 declare global {
   interface Window {
-    Telegram?: { WebApp?: { initData: string; ready: () => void; expand: () => void; setHeaderColor?: (color: string) => void } }
+    Telegram?: {
+      WebApp?: {
+        initData: string
+        ready: () => void
+        expand: () => void
+        setHeaderColor?: (color: string) => void
+        MainButton?: {
+          setText: (text: string) => void
+          show: () => void
+          hide: () => void
+          onClick: (callback: () => void) => void
+          offClick: (callback: () => void) => void
+        }
+        HapticFeedback?: { impactOccurred: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void }
+      }
+    }
   }
 }
 
@@ -25,6 +40,8 @@ export default function TelegramMiniApp() {
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
 
   useEffect(() => {
+    let disposed = false
+    let detachMainButton: (() => void) | undefined
     const webApp = window.Telegram?.WebApp
     if (!webApp) {
       setStatus("browser")
@@ -41,18 +58,39 @@ export default function TelegramMiniApp() {
     }
 
     signIn("telegram", { initData: webApp.initData, redirect: false }).then((result) => {
+      if (disposed) return
       if (result?.ok) {
         setStatus("ready")
         setMessage("Доступ подтверждён. Выберите, что хотите сделать сейчас.")
+
+        const createListing = () => {
+          webApp.HapticFeedback?.impactOccurred("light")
+          window.location.assign("/listings/create/vehicle?source=telegram")
+        }
+        webApp.MainButton?.setText("Подать объявление")
+        webApp.MainButton?.onClick(createListing)
+        webApp.MainButton?.show()
+        detachMainButton = () => {
+          webApp.MainButton?.offClick(createListing)
+          webApp.MainButton?.hide()
+        }
       } else {
         setStatus("error")
         setMessage("Не удалось подтвердить вход. Сначала нажмите «Старт» в боте и отправьте свой контакт, затем откройте Mini App ещё раз.")
       }
     }).catch(() => {
+      if (disposed) return
       setStatus("error")
       setMessage("Сервис авторизации временно недоступен.")
     })
+
+    return () => {
+      disposed = true
+      detachMainButton?.()
+    }
   }, [])
+
+  const triggerHaptic = () => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
 
   return (
     <Center mih="100vh" p="md" style={{ background: "linear-gradient(135deg,#11162f 0%,#312e81 52%,#e0e7ff 100%)" }}>
@@ -76,7 +114,7 @@ export default function TelegramMiniApp() {
               <SimpleGrid cols={2} spacing="sm">
                 {QUICK_ACTIONS.map((action) => {
                   const Icon = action.icon
-                  return <Button key={action.href} component={Link} href={action.href} variant="light" color="indigo" radius="md" size="sm" leftSection={<Icon size={16} />} justify="flex-start">{action.label}</Button>
+                  return <Button key={action.href} component={Link} href={action.href} onClick={triggerHaptic} variant="light" color="indigo" radius="md" size="sm" leftSection={<Icon size={16} />} justify="flex-start">{action.label}</Button>
                 })}
               </SimpleGrid>
               <Button component={Link} href="/dashboard" color="indigo" radius="md" fullWidth>Открыть полный кабинет</Button>
