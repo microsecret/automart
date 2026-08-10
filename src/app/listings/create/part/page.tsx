@@ -35,6 +35,8 @@ export default function CreatePartPage() {
 
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }))
   const subcats = f.partType ? PART_SUBCATEGORIES[f.partType] || [] : []
+  const isPartDetailsReady = Boolean(f.name.trim() && f.price)
+  const currentJourneyStep = images.length > 0 ? 2 : isPartDetailsReady ? 1 : 0
 
   const addCompat = () => {
     if (!newCompat.make) return
@@ -92,10 +94,17 @@ export default function CreatePartPage() {
           <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>
             {[
               { number: "01", label: "Данные товара", description: f.partType ? PART_TYPES.find((type) => type.value === f.partType)?.label || "Запчасть" : "Запчасть" },
-              { number: "02", label: "Совместимость", description: compat.length ? `Добавлено авто: ${compat.length}` : "Укажите подходящие модели" },
+              { number: "02", label: "Совместимость", description: compat.length ? `Добавлено авто: ${compat.length}` : isPartDetailsReady ? "Основные данные готовы" : "Укажите подходящие модели" },
               { number: "03", label: "Фото и публикация", description: images.length ? `Добавлено фото: ${images.length}` : "Добавьте реальные фотографии" },
             ].map((step, index) => (
-              <Group className="create-listing__journey-step" data-current={index === 0 || undefined} gap="sm" key={step.number} wrap="nowrap">
+              <Group
+                className="create-listing__journey-step"
+                data-current={index === currentJourneyStep || undefined}
+                data-complete={index < currentJourneyStep || undefined}
+                gap="sm"
+                key={step.number}
+                wrap="nowrap"
+              >
                 <Text className="create-listing__journey-number">{step.number}</Text>
                 <Stack gap={1}>
                   <Text size="xs" fw={800} c="dark.8">{step.label}</Text>

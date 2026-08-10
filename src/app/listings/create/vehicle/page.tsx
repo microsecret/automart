@@ -110,6 +110,8 @@ export default function CreateVehiclePage() {
   const brandCategory = BRAND_CATEGORY_BY_VEHICLE_TYPE[f.vehicleType as keyof typeof BRAND_CATEGORY_BY_VEHICLE_TYPE] || "cars"
   const brandOptions = getBrandsByCategory(brandCategory)
   const modelOptions = f.make.trim() ? getModels(f.make.trim(), brandCategory) : []
+  const isVehicleDetailsReady = Boolean(f.make && f.model && f.year && f.price && f.location.trim())
+  const currentJourneyStep = images.length > 0 ? 2 : isVehicleDetailsReady ? 1 : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -214,10 +216,17 @@ export default function CreateVehiclePage() {
           <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>
             {[
               { number: "01", label: "Категория", description: CATS.find((category) => category.value === f.vehicleType)?.label || "Транспорт" },
-              { number: "02", label: "Данные объявления", description: "Марка, цена и характеристики" },
+              { number: "02", label: "Данные объявления", description: isVehicleDetailsReady ? "Данные готовы" : "Марка, цена и характеристики" },
               { number: "03", label: "Фото и публикация", description: images.length ? `Добавлено фото: ${images.length}` : "Добавьте реальные фотографии" },
             ].map((step, index) => (
-              <Group className="create-listing__journey-step" data-current={index === 0 || undefined} gap="sm" key={step.number} wrap="nowrap">
+              <Group
+                className="create-listing__journey-step"
+                data-current={index === currentJourneyStep || undefined}
+                data-complete={index < currentJourneyStep || undefined}
+                gap="sm"
+                key={step.number}
+                wrap="nowrap"
+              >
                 <Text className="create-listing__journey-number">{step.number}</Text>
                 <Stack gap={1}>
                   <Text size="xs" fw={800} c="dark.8">{step.label}</Text>

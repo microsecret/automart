@@ -2788,6 +2788,8 @@ select {
   min-height: 52px;
   padding: 4px 14px;
   position: relative;
+  border-radius: 12px;
+  transition: background-color 180ms ease, box-shadow 180ms ease;
 }
 
 .create-listing__journey-step + .create-listing__journey-step::before {
@@ -2809,6 +2811,19 @@ select {
 
 .create-listing__journey-step[data-current] .create-listing__journey-number {
   color: var(--mantine-color-indigo-6);
+}
+
+.create-listing__journey-step[data-current] {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 16px rgba(63, 72, 155, 0.1);
+}
+
+.create-listing__journey-step[data-complete] {
+  background: rgba(236, 253, 245, 0.72);
+}
+
+.create-listing__journey-step[data-complete] .create-listing__journey-number {
+  color: var(--mantine-color-teal-6);
 }
 
 .create-listing__section,
