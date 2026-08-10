@@ -1,11 +1,21 @@
 "use client"
 export const dynamic = "force-dynamic"
 import useSWR, { useSWRConfig } from "swr"
-import Link from "next/link"
-import { Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Button, Badge, SimpleGrid } from "@mantine/core"
-import { IconBell, IconCircleCheck, IconAlertTriangle, IconInfoCircle, IconAlertCircle, IconTrash } from "@tabler/icons-react"
+import { useState } from "react"
+import { Alert, Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Button, Badge } from "@mantine/core"
+import { IconBell, IconCircleCheck, IconAlertTriangle, IconInfoCircle, IconAlertCircle } from "@tabler/icons-react"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { fetchJson } from "@/lib/api-client"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type Notification = {
+  id: string
+  type: keyof typeof TYPE_CONFIG
+  title: string
+  content: string
+  isRead: boolean
+}
+
+type NotificationsResponse = { notifications: Notification[] }
 
 const TYPE_CONFIG = {
   SUCCESS: { icon: IconCircleCheck, color: "#059669", bg: "#ecfdf5" },
@@ -15,16 +25,32 @@ const TYPE_CONFIG = {
 }
 
 export default function NotificationsPage() {
-  const { data, isLoading } = useSWR("/api/notifications?limit=50", fetcher)
+  const { data, error, isLoading } = useSWR<NotificationsResponse>("/api/notifications?limit=50", fetchJson)
   const { mutate } = useSWRConfig()
+  const [isMarkingAll, setIsMarkingAll] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const markAllRead = async () => {
-    await fetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ all: true }) })
-    mutate("/api/notifications?limit=50")
+    setIsMarkingAll(true)
+    setActionError(null)
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "Не удалось обновить уведомления")
+      mutate("/api/notifications?limit=50")
+    } catch (requestError) {
+      setActionError(requestError instanceof Error ? requestError.message : "Не удалось обновить уведомления")
+    } finally {
+      setIsMarkingAll(false)
+    }
   }
 
-  const notifications: any[] = data?.notifications || []
-  const unread = notifications.filter((n: any) => !n.isRead).length
+  const notifications = data?.notifications || []
+  const unread = notifications.filter((notification) => !notification.isRead).length
 
   return (
     <Box p={{ base: "sm", md: "md" }}>
@@ -37,11 +63,13 @@ export default function NotificationsPage() {
               {unread > 0 && <Badge size="sm" color="red" variant="filled">{unread} новых</Badge>}
             </Group>
           </Stack>
-          {unread > 0 && <Button variant="subtle" size="xs" color="indigo" onClick={markAllRead}>Отметить все прочитанными</Button>}
+          {unread > 0 && <Button variant="subtle" size="xs" color="indigo" onClick={markAllRead} loading={isMarkingAll}>Отметить все прочитанными</Button>}
         </Group>
 
         {isLoading ? (
           <Center py={80}><Loader size="sm" color="indigo" /></Center>
+        ) : error ? (
+          <AsyncErrorState title="Не удалось загрузить уведомления" description="Проверьте подключение и повторите запрос." onRetry={() => mutate()} />
         ) : notifications.length === 0 ? (
           <Paper radius="md" p="xl" withBorder>
             <Center>
@@ -53,8 +81,9 @@ export default function NotificationsPage() {
           </Paper>
         ) : (
           <Stack gap="xs">
-            {notifications.map((n: any) => {
-              const cfg = TYPE_CONFIG[n.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.INFO
+            {actionError && <Alert color="red" variant="light" icon={<IconAlertCircle size={16} />}>{actionError}</Alert>}
+            {notifications.map((n) => {
+              const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.INFO
               const Icon = cfg.icon
               return (
                 <Paper key={n.id} radius="md" p="sm" withBorder style={{

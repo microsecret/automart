@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
-import { Alert, Anchor, Button, Code, Group, Stack, Text, TextInput } from "@mantine/core"
+import { Alert, Anchor, Button, Group, Stack, Text, TextInput } from "@mantine/core"
 import { IconBrandTelegram, IconLock, IconPhone, IconRefresh } from "@tabler/icons-react"
 
 function getSafeCallbackUrl(value: string | null) {
@@ -83,9 +83,9 @@ export default function TelegramLoginForm() {
           </Group>
         </>
       )}
-      <Text size="xs" c="dimmed">Если вы ещё не регистрировались, сначала нажмите «Старт» в боте и отправьте свой контакт. Номер связывается с Telegram ID, а код действует 10 минут.</Text>
+      <Text size="xs" c="dimmed">Если вы ещё не регистрировались, сначала нажмите «Старт» в боте и отправьте свой контакт. После подтверждения номера можно входить по пятизначному коду; он действует 10 минут.</Text>
       <Button component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} variant="subtle" color="gray">Вернуться к входу по паролю</Button>
-      <Code block>После подключения домена добавьте NEXT_PUBLIC_TELEGRAM_BOT_USERNAME в окружение.</Code>
+      {!botUsername && <Text size="xs" c="dimmed">Ссылка на бота появится здесь после подключения канала.</Text>}
     </Stack>
   )
 }

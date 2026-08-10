@@ -3,14 +3,21 @@
 import { useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
-import { Alert, Badge, Button, Center, Paper, Stack, Text, Title } from "@mantine/core"
-import { IconBrandTelegram, IconCircleCheck, IconExternalLink } from "@tabler/icons-react"
+import { Alert, Badge, Button, Center, Paper, SimpleGrid, Stack, Text, Title } from "@mantine/core"
+import { IconBrandTelegram, IconCircleCheck, IconExternalLink, IconGasStation, IconHeart, IconPlus, IconTruckDelivery } from "@tabler/icons-react"
 
 declare global {
   interface Window {
     Telegram?: { WebApp?: { initData: string; ready: () => void; expand: () => void; setHeaderColor?: (color: string) => void } }
   }
 }
+
+const QUICK_ACTIONS = [
+  { href: "/listings/create/vehicle", label: "Подать объявление", icon: IconPlus },
+  { href: "/favorites", label: "Избранное", icon: IconHeart },
+  { href: "/dashboard/deliveries", label: "Мои доставки", icon: IconTruckDelivery },
+  { href: "/services/fuel-map", label: "Карта АЗС", icon: IconGasStation },
+]
 
 export default function TelegramMiniApp() {
   const [status, setStatus] = useState<"loading" | "ready" | "browser" | "error">("loading")
@@ -36,11 +43,10 @@ export default function TelegramMiniApp() {
     signIn("telegram", { initData: webApp.initData, redirect: false }).then((result) => {
       if (result?.ok) {
         setStatus("ready")
-        setMessage("Готово. Открываем ваш кабинет Авторынка…")
-        window.location.href = "/dashboard"
+        setMessage("Доступ подтверждён. Выберите, что хотите сделать сейчас.")
       } else {
         setStatus("error")
-        setMessage("Не удалось подтвердить Telegram-сессию. Запустите Mini App заново.")
+        setMessage("Не удалось подтвердить вход. Сначала нажмите «Старт» в боте и отправьте свой контакт, затем откройте Mini App ещё раз.")
       }
     }).catch(() => {
       setStatus("error")
@@ -65,12 +71,23 @@ export default function TelegramMiniApp() {
               Войти через Telegram на сайте
             </Button>
           )}
+          {status === "ready" && (
+            <Stack gap="sm">
+              <SimpleGrid cols={2} spacing="sm">
+                {QUICK_ACTIONS.map((action) => {
+                  const Icon = action.icon
+                  return <Button key={action.href} component={Link} href={action.href} variant="light" color="indigo" radius="md" size="sm" leftSection={<Icon size={16} />} justify="flex-start">{action.label}</Button>
+                })}
+              </SimpleGrid>
+              <Button component={Link} href="/dashboard" color="indigo" radius="md" fullWidth>Открыть полный кабинет</Button>
+            </Stack>
+          )}
           {status === "error" && botUsername && (
             <Button component="a" href={`https://t.me/${botUsername}`} target="_blank" rel="noreferrer" variant="light" color="indigo" rightSection={<IconExternalLink size={16} />}>
               Открыть бота @{botUsername}
             </Button>
           )}
-          <Text size="xs" c="dimmed">Telegram ID проверяется на сервере. Данные из небезопасного `initDataUnsafe` не используются.</Text>
+          <Text size="xs" c="dimmed">Вход доступен после подтверждения собственного контакта в боте. Telegram ID и подпись Mini App проверяются на сервере; небезопасный `initDataUnsafe` не используется.</Text>
         </Stack>
       </Paper>
     </Center>

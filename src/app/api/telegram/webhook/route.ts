@@ -62,7 +62,7 @@ async function handleMessage(message: TelegramMessage) {
     return
   }
 
-  const user = await prisma.user.findUnique({ where: { telegramId }, select: { telegramVerifiedAt: true } })
+  const user = await prisma.user.findUnique({ where: { telegramId }, select: { telegramVerifiedAt: true, phone: true } })
   if (isModeratedChat(chatId) && !isTelegramUserRegistered(user)) {
     try {
       await telegramApi("deleteMessage", { chat_id: chatId, message_id: message.message_id })

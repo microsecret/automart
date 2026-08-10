@@ -114,6 +114,16 @@ export async function linkTelegramIdentity(input: {
   })
 }
 
+export async function getVerifiedTelegramUser(telegramId: string) {
+  return prisma.user.findFirst({
+    where: {
+      telegramId,
+      telegramVerifiedAt: { not: null },
+      phone: { not: null },
+    },
+  })
+}
+
 function hashOtp(code: string) {
   return crypto.createHmac("sha256", getTelegramSecret()).update(code).digest("hex")
 }
@@ -181,6 +191,6 @@ export function isModeratedChat(chatId: string) {
   return chats.includes(chatId) || chats.includes("*")
 }
 
-export function isTelegramUserRegistered(user: { telegramVerifiedAt?: Date | null } | null) {
-  return Boolean(user?.telegramVerifiedAt)
+export function isTelegramUserRegistered(user: { telegramVerifiedAt?: Date | null; phone?: string | null } | null) {
+  return Boolean(user?.telegramVerifiedAt && user.phone)
 }

@@ -18,13 +18,12 @@ import {
   Group,
 } from "@mantine/core"
 import { IconSearch, IconMessageCirclePlus } from "@tabler/icons-react"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
+import { fetchJson } from "@/lib/api-client"
 
 interface User {
   id: string
   name: string | null
-  email: string | null
   image: string | null
 }
 
@@ -35,9 +34,9 @@ function NewMessageContent() {
   const listingId = sp.get("listingId")
   const [query, setQuery] = useState("")
 
-  const { data, isLoading } = useSWR<{ users: User[] }>(
+  const { data, error, isLoading, mutate } = useSWR<{ users: User[] }>(
     session ? `/api/users${query ? `?q=${encodeURIComponent(query)}` : ""}` : null,
-    fetcher
+    fetchJson
   )
 
   useEffect(() => {
@@ -66,7 +65,7 @@ function NewMessageContent() {
         </Stack>
 
         <TextInput
-          placeholder="Поиск по имени или email..."
+          placeholder="Введите имя пользователя"
           leftSection={<IconSearch size={16} />}
           value={query}
           onChange={(e) => setQuery(e.currentTarget.value)}
@@ -75,18 +74,25 @@ function NewMessageContent() {
 
         {isLoading ? (
           <Center py={40}><Loader color="indigo" /></Center>
+        ) : error ? (
+          <AsyncErrorState title="Не удалось найти пользователя" description="Попробуйте повторить поиск или откройте карточку нужного объявления." onRetry={() => mutate()} backHref="/" backLabel="К объявлениям" />
+        ) : !query.trim() ? (
+          <EmptyState title="Введите имя собеседника" description="Для нового диалога безопаснее открыть карточку объявления и нажать «Написать продавцу»." />
         ) : (
           <Stack gap="xs" className="av-fade-in">
             {(data?.users || []).filter((u) => u.id !== session!.user.id).map((user) => (
               <Card
                 key={user.id}
+                component="button"
+                type="button"
                 withBorder
                 radius="md"
                 p="sm"
-                style={{ cursor: "pointer", transition: "all 150ms ease" }}
+                style={{ cursor: "pointer", transition: "all 150ms ease", textAlign: "left" }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#c7d2fe" }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e4e4e7" }}
                 onClick={() => startConversation(user.id)}
+                aria-label={`Начать диалог с ${user.name || "пользователем"}`}
               >
                 <Group gap="sm">
                   <Avatar src={user.image} radius="xl" color="indigo">
@@ -94,7 +100,7 @@ function NewMessageContent() {
                   </Avatar>
                   <Stack gap={2} style={{ flex: 1 }}>
                     <Text size="sm" fw={500}>{user.name || "Пользователь"}</Text>
-                    <Text size="xs" c="gray.4">{user.email}</Text>
+                    <Text size="xs" c="gray.4">Открыть новый диалог</Text>
                   </Stack>
                   <IconMessageCirclePlus size={20} color="#4f46e5" />
                 </Group>

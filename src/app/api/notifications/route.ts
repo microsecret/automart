@@ -234,16 +234,21 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { id, all } = body
 
-    if (all) {
+    if (all === true) {
       await prisma.notification.updateMany({
         where: { userId: session.user.id, isRead: false },
         data: { isRead: true },
       })
-    } else if (id) {
-      await prisma.notification.update({
-        where: { id },
+    } else if (typeof id === "string" && id.trim()) {
+      const result = await prisma.notification.updateMany({
+        where: { id: id.trim(), userId: session.user.id, isRead: false },
         data: { isRead: true },
       })
+      if (result.count === 0) {
+        return NextResponse.json({ error: "Notification not found" }, { status: 404 })
+      }
+    } else {
+      return NextResponse.json({ error: "Notification id or all flag is required" }, { status: 400 })
     }
 
     return NextResponse.json({ success: true })

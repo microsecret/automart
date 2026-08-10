@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -35,6 +36,12 @@ export async function GET() {
     ])
 
     const totalViews = listings.reduce((sum, l) => sum + (l.views || 0), 0)
+    const workflow = {
+      drafts: listings.filter((listing) => listing.status === LISTING_STATUS.DRAFT).length,
+      pendingModeration: listings.filter((listing) => listing.status === LISTING_STATUS.PENDING_MODERATION).length,
+      active: listings.filter((listing) => listing.status === LISTING_STATUS.ACTIVE).length,
+      needsAttention: listings.filter((listing) => listing.status === LISTING_STATUS.REJECTED || listing.status === LISTING_STATUS.PAUSED).length,
+    }
 
     return NextResponse.json({
       stats: {
@@ -45,6 +52,7 @@ export async function GET() {
         garageCount: garageVehicles,
         avgRating: reviews.length > 0 ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length * 10) / 10 : 0,
       },
+      workflow,
       listings: listings.slice(0, 10).map((l) => ({
         id: l.id,
         title: l.title,

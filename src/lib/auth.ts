@@ -2,7 +2,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
-import { consumeTelegramOtp, linkTelegramIdentity, verifyTelegramInitData } from "@/lib/telegram"
+import { consumeTelegramOtp, getVerifiedTelegramUser, verifyTelegramInitData } from "@/lib/telegram"
 import { normalizeUserRole } from "@/lib/permissions"
 import { getClientIp, rateLimit } from "@/lib/rate-limit"
 
@@ -52,12 +52,8 @@ export const authOptions = {
         if (!botToken || !credentials?.initData) return null
         const telegramUser = verifyTelegramInitData(credentials.initData, botToken)
         if (!telegramUser) return null
-        const user = await linkTelegramIdentity({
-          telegramId: telegramUser.id,
-          username: telegramUser.username,
-          name: [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" "),
-          image: telegramUser.photo_url,
-        })
+        const user = await getVerifiedTelegramUser(telegramUser.id)
+        if (!user) return null
         return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role) }
       },
     }),
@@ -68,13 +64,17 @@ export const authOptions = {
       if (token) {
         session.user.id = token.id
         session.user.role = normalizeUserRole(token.role)
+        if (typeof token.name === "string") session.user.name = token.name
       }
       return session
     },
-    async jwt({ token, user }: any) {
+    async jwt({ token, user, trigger, session }: any) {
       if (user) {
         token.id = user.id
         token.role = normalizeUserRole((user as any).role)
+      }
+      if (trigger === "update" && typeof session?.name === "string") {
+        token.name = session.name
       }
       return token
     },
