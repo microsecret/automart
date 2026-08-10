@@ -29,6 +29,7 @@ import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
 import { parseImages } from "@/lib/format"
 import { LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type EditableSubject = { id: string; location: string; images: string | null }
 type EditableListing = {
@@ -44,19 +45,13 @@ type EditableListing = {
 
 type ListingResponse = { listing: EditableListing }
 type FormState = { title: string; description: string; price: string; location: string; reason: string }
-
-async function fetcher(url: string): Promise<ListingResponse> {
-  const response = await fetch(url)
-  const payload = await response.json().catch(() => ({})) as ListingResponse & { error?: string }
-  if (!response.ok) throw new Error(payload.error || "Не удалось загрузить объявление")
-  return payload
-}
+type UpdateListingResponse = { requiresRemoderation?: boolean }
 
 export default function EditListingPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const { data: session, status: sessionStatus } = useSession()
-  const { data, error, isLoading, mutate } = useSWR<ListingResponse>(params.id ? `/api/listings/${params.id}` : null, fetcher)
+  const { data, error, isLoading, mutate } = useSWR<ListingResponse>(params.id ? `/api/listings/${params.id}` : null, fetchJson)
   const { images, uploadingImages, uploadPhotos, removeImage, replaceImages } = useMarketplaceImageUpload()
   const [form, setForm] = useState<FormState | null>(null)
   const [saving, setSaving] = useState(false)
@@ -103,13 +98,11 @@ export default function EditListingPage() {
     }
     setSaving(true)
     try {
-      const response = await fetch(`/api/listings/${data.listing.id}`, {
+      const payload = await fetchJson<UpdateListingResponse>(`/api/listings/${data.listing.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: form.title, description: form.description, price, location: form.location, images, reason: form.reason }),
       })
-      const payload = await response.json().catch(() => ({})) as { error?: string; requiresRemoderation?: boolean }
-      if (!response.ok) throw new Error(payload.error || "Не удалось сохранить изменения")
       notifications.show({
         title: payload.requiresRemoderation ? "Изменения отправлены на проверку" : "Изменения сохранены",
         message: payload.requiresRemoderation ? "Карточка временно скрыта из поиска до решения модератора." : "Данные карточки обновлены.",
@@ -118,7 +111,7 @@ export default function EditListingPage() {
       router.push(detailHref)
       router.refresh()
     } catch (saveError) {
-      notifications.show({ title: "Не удалось сохранить", message: saveError instanceof Error ? saveError.message : "Повторите попытку.", color: "red" })
+      notifications.show({ title: "Не удалось сохранить", message: getApiClientErrorMessage(saveError, "Повторите попытку."), color: "red" })
     } finally {
       setSaving(false)
     }
