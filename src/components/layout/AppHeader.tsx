@@ -157,6 +157,8 @@ export default function AppHeader() {
             </Menu.Dropdown>
           </Menu>
 
+          <ServiceNavigationMenu serviceNavigation={serviceNavigation} />
+
           <Group gap={2} visibleFrom="xl" wrap="nowrap" className="market-app-header__links">
             {serviceNavigation.map((item) => (
               <Button
@@ -349,6 +351,36 @@ export default function AppHeader() {
           </Group>
         </Group>
       </Container>
+    </Box>
+  )
+}
+
+function ServiceNavigationMenu({ serviceNavigation }: { serviceNavigation: NavigationItem[] }) {
+  const activeItem = serviceNavigation.find((item) => item.active)
+
+  return (
+    <Box visibleFrom="md" hiddenFrom="xl">
+      <Menu shadow="md" width={224} position="bottom-start" radius="md" offset={6} withinPortal>
+        <Menu.Target>
+          <Button
+            variant={activeItem ? "light" : "subtle"}
+            color="indigo"
+            size="compact-sm"
+            leftSection={activeItem?.icon || <IconShieldCheck size={15} />}
+            aria-label="Открыть сервисы, новости и помощь"
+          >
+            {activeItem?.label || "Сервисы"}
+          </Button>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Label>Сервисы и информация</Menu.Label>
+          {serviceNavigation.map((item) => (
+            <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon} color={item.active ? "indigo" : undefined}>
+              {item.label}
+            </Menu.Item>
+          ))}
+        </Menu.Dropdown>
+      </Menu>
     </Box>
   )
 }
