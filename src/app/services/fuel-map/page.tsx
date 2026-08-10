@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import useSWR from "swr"
 import { Anchor, Badge, Box, Button, Center, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconExternalLink, IconFuel, IconMapPin, IconRefresh, IconRoute } from "@tabler/icons-react"
+import { IconExternalLink, IconGasStation, IconMapPin, IconRefresh, IconRoute } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
@@ -84,4 +84,3 @@ export default function FuelMapPage() {
     </Box>
   )
 }
-
