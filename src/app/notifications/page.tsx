@@ -5,7 +5,7 @@ import { useState } from "react"
 import { Alert, Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Button, Badge } from "@mantine/core"
 import { IconBell, IconCircleCheck, IconAlertTriangle, IconInfoCircle, IconAlertCircle } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
-import { fetchJson } from "@/lib/api-client"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type Notification = {
   id: string
@@ -34,16 +34,14 @@ export default function NotificationsPage() {
     setIsMarkingAll(true)
     setActionError(null)
     try {
-      const response = await fetch("/api/notifications", {
+      await fetchJson("/api/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ all: true }),
       })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "Не удалось обновить уведомления")
       mutate("/api/notifications?limit=50")
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : "Не удалось обновить уведомления")
+      setActionError(getApiClientErrorMessage(requestError, "Не удалось обновить уведомления"))
     } finally {
       setIsMarkingAll(false)
     }
