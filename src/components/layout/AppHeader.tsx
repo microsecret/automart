@@ -25,7 +25,7 @@ export default function AppHeader() {
     { href: "/parts-finder", label: "Запчасти", icon: <IconTools size={14} />, active: pathname.startsWith("/parts") },
     { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
     { href: "/services/safe-deal", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
-    { href: "/help/safety", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
+    { href: "/help", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
   ]
 
   const handleSearch = (e: React.FormEvent) => {
