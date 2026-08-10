@@ -24,8 +24,8 @@ const FUEL_TAG_LABELS: Record<string, string> = {
 }
 
 const OVERPASS_ENDPOINTS = [
+  "https://overpass.openstreetmap.fr/api/interpreter",
   "https://overpass-api.de/api/interpreter",
-  "https://overpass.private.coffee/api/interpreter",
 ]
 
 function getCoordinates(element: OverpassElement) {
@@ -43,7 +43,7 @@ async function requestStations(query: string) {
 
   for (const endpoint of endpoints) {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 20_000)
+    const timeout = setTimeout(() => controller.abort(), 12_000)
 
     try {
       const response = await fetch(endpoint, {
@@ -60,7 +60,7 @@ async function requestStations(query: string) {
       return await response.json() as { elements?: OverpassElement[] }
     } catch (error) {
       lastError = error
-      console.warn("Fuel stations source is temporarily unavailable", { endpoint, error: error instanceof Error ? error.message : "Unknown error" })
+      console.warn("Fuel stations source is temporarily unavailable", error instanceof Error ? error.message : "Unknown error")
     } finally {
       clearTimeout(timeout)
     }
