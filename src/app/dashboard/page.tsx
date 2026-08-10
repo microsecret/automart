@@ -91,6 +91,9 @@ type GarageVehicle = {
 }
 
 type GarageResponse = { vehicles: GarageVehicle[] }
+type ListingDeleteResponse = { success: boolean }
+type ProfileUpdateResponse = { user: { name: string } }
+type GarageMutationResponse = { success?: boolean; vehicle?: GarageVehicle }
 
 type GarageForm = {
   make: string
@@ -156,11 +159,7 @@ export default function DashboardPage() {
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Снять с публикации «${title}»? Данные останутся в архиве.`)) return
     try {
-      const response = await fetch(`/api/listings/${id}`, { method: "DELETE" })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) {
-        throw new Error(payload?.error || "Не удалось удалить объявление")
-      }
+      await fetchJson<ListingDeleteResponse>(`/api/listings/${id}`, { method: "DELETE" })
       notifications.show({ title: "Снято с публикации", message: "Объявление перенесено в архив", color: "green" })
       await mutate()
     } catch (error) {
@@ -180,13 +179,11 @@ export default function DashboardPage() {
   const handleProfileSave = async () => {
     setIsProfileSaving(true)
     try {
-      const response = await fetch("/api/users", {
+      const payload = await fetchJson<ProfileUpdateResponse>("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: profileName }),
       })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(payload?.error || "Не удалось обновить профиль")
 
       await updateSession({ name: payload.user.name })
       setIsProfileEditorOpen(false)
@@ -201,13 +198,11 @@ export default function DashboardPage() {
   const handleGarageSave = async () => {
     setIsGarageSaving(true)
     try {
-      const response = await fetch("/api/garage", {
+      await fetchJson<GarageMutationResponse>("/api/garage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(garageForm),
       })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(payload?.error || "Не удалось добавить автомобиль")
 
       setGarageForm(createGarageForm())
       setIsGarageModalOpen(false)
@@ -224,9 +219,7 @@ export default function DashboardPage() {
     if (!confirm(`Удалить ${vehicle.make} ${vehicle.model} из личного гаража?`)) return
     setGarageDeletingId(vehicle.id)
     try {
-      const response = await fetch(`/api/garage?id=${encodeURIComponent(vehicle.id)}`, { method: "DELETE" })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(payload?.error || "Не удалось удалить автомобиль")
+      await fetchJson<GarageMutationResponse>(`/api/garage?id=${encodeURIComponent(vehicle.id)}`, { method: "DELETE" })
 
       await Promise.all([mutateGarage(), mutate()])
       notifications.show({ title: "Удалено из гаража", message: "Автомобиль больше не отображается в личном кабинете.", color: "gray" })
