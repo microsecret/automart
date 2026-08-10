@@ -1,3 +1,5 @@
+import { parseMarketplaceImages } from "@/lib/media-url"
+
 /** Форматирование цены в рублях */
 export function formatPrice(price: number | null | undefined): string {
   if (price == null) return "Договорная"
@@ -95,15 +97,16 @@ export function listingsWord(n: number): string {
   return `${n} ${plural(n, "объявление", "объявления", "объявлений")}`
 }
 
-/** Парсит JSON-строку изображений (из Prisma/SQLite) */
+/**
+ * Parses stored listing images for rendering.
+ *
+ * Database values may have been created before the current upload validation
+ * existed, so the read path uses the same allow-list as the write path.  A
+ * malformed payload deliberately becomes an empty gallery instead of reaching
+ * an image `src` attribute on catalogue, dashboard or detail pages.
+ */
 export function parseImages(images: string | null | undefined): string[] {
-  if (!images) return []
-  try {
-    const parsed = JSON.parse(images)
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : []
-  } catch {
-    return []
-  }
+  return parseMarketplaceImages(images) ?? []
 }
 
 /** Первое изображение или fallback */

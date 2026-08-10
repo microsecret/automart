@@ -121,14 +121,14 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
 
               {isVehicle && (
                 <Group gap={12} wrap="wrap" mt={2}>
-                  <Text fz="xs" c="gray.5">{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>
-                  <Text fz="xs" c="gray.5">Год: {listing.vehicle!.year}</Text>
-                  <Text fz="xs" c="gray.5">{usageMeta.label}: {distanceValue}</Text>
+                  <Text fz="xs" c="gray.6">{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>
+                  <Text fz="xs" c="gray.6">Год: <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
+                  <Text fz="xs" c="gray.6">{usageMeta.label}: <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>
                   {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
-                    <Text fz="xs" c="gray.5">КПП: {findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>
+                    <Text fz="xs" c="gray.6">КПП: <Text component="span" inherit fw={700} c="dark.8">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
                   )}
                   {listing.vehicle!.fuelType && (
-                    <Text fz="xs" c="gray.5">Топливо: {findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>
+                    <Text fz="xs" c="gray.6">Топливо: <Text component="span" inherit fw={700} c="dark.8">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
                   )}
                 </Group>
               )}
