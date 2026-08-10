@@ -15,6 +15,7 @@ import { isSafeMediaUrl, parseMarketplaceImages } from "@/lib/media-url"
 import type { AuctionListing } from "@prisma/client"
 
 type AuctionDetailResponse = { listing: AuctionListing }
+type AuctionInquiryResponse = { success: true; inquiry: { id: string; createdAt: string } }
 
 function AuctionDetail() {
   const params = useParams()
@@ -35,13 +36,11 @@ function AuctionDetail() {
     if (!form.name || !form.phone) return
     setSubmitting(true)
     try {
-      const response = await fetch(`/api/auctions/${id}/inquiry`, {
+      await fetchJson<AuctionInquiryResponse>(`/api/auctions/${id}/inquiry`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       })
-      const payload = await response.json().catch(() => null) as { error?: string } | null
-      if (!response.ok) throw new Error(payload?.error || "Не удалось отправить заявку")
       setSubmitted(true)
       notifications.show({ title: "Заявка отправлена!", message: "Менеджер свяжется с вами в течение 1 часа", color: "green" })
     } catch (error) {
