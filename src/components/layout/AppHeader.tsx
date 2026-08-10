@@ -24,7 +24,7 @@ export default function AppHeader() {
     { href: "/", label: "Объявления", icon: null, active: pathname === "/" || pathname.startsWith("/category") || pathname.startsWith("/search") },
     { href: "/parts-finder", label: "Запчасти", icon: <IconTools size={14} />, active: pathname.startsWith("/parts") },
     { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
-    { href: "/services/safe-deal", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
+    { href: "/services", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
     { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
     { href: "/help", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
   ]

@@ -8,6 +8,7 @@ import Link from "next/link"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { formatPriceShort, parseImages } from "@/lib/format"
 import { POPULAR_CITIES } from "@/lib/constants"
+import { CITY_COORDINATES } from "@/lib/cities"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -16,18 +17,9 @@ export default function MapPage() {
   const { data, isLoading } = useSWR(`/api/listings?type=vehicle&city=${encodeURIComponent(city)}&limit=30`, fetcher)
   const listings: any[] = data?.listings || []
 
-  // Гео-координаты городов
-  const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
-    "Москва": { lat: 55.7558, lng: 37.6173 },
-    "Санкт-Петербург": { lat: 59.9343, lng: 30.3351 },
-    "Новосибирск": { lat: 55.0084, lng: 82.9357 },
-    "Екатеринбург": { lat: 56.8389, lng: 60.6057 },
-    "Казань": { lat: 55.8304, lng: 49.0661 },
-    "Краснодар": { lat: 45.0355, lng: 38.9753 },
-  }
-  const coords = CITY_COORDS[city] || CITY_COORDS["Москва"]
-  const bbox = `${coords.lat - 0.3},${coords.lng - 0.5},${coords.lat + 0.3},${coords.lng + 0.5}`
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat},${coords.lng}`
+  const coords = CITY_COORDINATES[city] || CITY_COORDINATES["Москва"]
+  const bbox = `${coords.latitude - 0.3},${coords.longitude - 0.5},${coords.latitude + 0.3},${coords.longitude + 0.5}`
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.latitude},${coords.longitude}`
 
   return (
     <Box p={{ base: "sm", md: "md" }}>
