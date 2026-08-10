@@ -35,6 +35,15 @@ const MIN_ZOOM = 9
 const MAX_ZOOM = 14
 const STATION_LIST_PAGE_SIZE = 24
 const EMPTY_STATIONS: FuelStation[] = []
+const FUEL_FILTERS = [
+  { value: "", label: "Все типы топлива" },
+  { value: "АИ‑92", label: "АИ‑92" },
+  { value: "АИ‑95", label: "АИ‑95" },
+  { value: "АИ‑98", label: "АИ‑98" },
+  { value: "ДТ", label: "ДТ" },
+  { value: "Газ", label: "Газ" },
+  { value: "Зарядка EV", label: "Зарядка EV" },
+]
 
 function coordinatesToWorld(latitude: number, longitude: number, zoom: number) {
   const worldSize = TILE_SIZE * (2 ** zoom)
@@ -249,6 +258,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
 
 export default function FuelMapPage() {
   const [city, setCity] = useState("Москва")
+  const [fuelFilter, setFuelFilter] = useState("")
   const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
   const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
   const [requestedCoordinates, setRequestedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
@@ -265,8 +275,9 @@ export default function FuelMapPage() {
   const coordinates = data?.coordinates || requestedCoordinates || CITY_COORDINATES[city]
   const isViewingMapArea = Boolean(requestedCoordinates)
   const allStations = data?.stations ?? EMPTY_STATIONS
-  const displayedStations = allStations.slice(0, visibleStationCount)
-  const hasMoreStations = displayedStations.length < allStations.length
+  const filteredStations = useMemo(() => fuelFilter ? allStations.filter((station) => station.fuels.includes(fuelFilter)) : allStations, [allStations, fuelFilter])
+  const displayedStations = filteredStations.slice(0, visibleStationCount)
+  const hasMoreStations = displayedStations.length < filteredStations.length
 
   useEffect(() => {
     setSelectedStation(null)
@@ -278,6 +289,11 @@ export default function FuelMapPage() {
   useEffect(() => {
     setVisibleStationCount(STATION_LIST_PAGE_SIZE)
   }, [fuelStationsUrl])
+
+  useEffect(() => {
+    setSelectedStation(null)
+    setVisibleStationCount(STATION_LIST_PAGE_SIZE)
+  }, [fuelFilter])
 
   useEffect(() => {
     if (!selectedStation) return
@@ -306,26 +322,28 @@ export default function FuelMapPage() {
             <Paper className="fuel-map-hero__control" radius="lg" p="md" withBorder>
               <Text size="xs" fw={750} tt="uppercase" c="gray.6" mb={6}>Город на карте</Text>
               <Select aria-label="Выберите город" data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))} value={city} onChange={(value) => setCity(value || "Москва")} searchable size="sm" />
+              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Показать топливо</Text>
+              <Select aria-label="Выберите тип топлива" data={FUEL_FILTERS} value={fuelFilter} onChange={(value) => setFuelFilter(value || "")} size="sm" />
             </Paper>
           </Group>
         </Paper>
 
         <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с центром ${city}`}</Text><Text size="xs" c="dimmed">{data ? `${data.stations.length} точек в подборке` : "Загружаем точки"}</Text></Box></Group>
+          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с центром ${city}`}</Text><Text size="xs" c="dimmed">{data ? `${filteredStations.length} из ${data.stations.length} точек в подборке` : "Загружаем точки"}</Text></Box></Group>
           <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => mutate()} loading={isLoading || isValidating}>Обновить</Button><Button color="indigo" size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>Загрузить этот участок</Button></Group>
         </Group>
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
-            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={city} coordinates={coordinates} stations={data?.stations || []} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
+            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={city} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
-              {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : allStations.length ? <Stack gap="xs">{displayedStations.map((station) => (
+              {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">{displayedStations.map((station) => (
                 <Paper key={`${station.sourceType}-${station.id}`} className="fuel-station-card" data-selected={selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType || undefined} radius="md" p="sm" withBorder>
                   <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap"><Group gap="sm" wrap="nowrap"><ThemeIcon variant="light" color="orange" radius="md"><IconGasStation size={17} /></ThemeIcon><Box style={{ minWidth: 0 }}><Text fw={750} size="sm" lineClamp={1}>{station.name}</Text><Text size="xs" c="dimmed" lineClamp={1}>{station.address || station.operator || "Адрес не указан в OSM"}</Text></Box></Group><Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor></Group>
                   <Group mt={8} gap={5} wrap="wrap">{station.fuels.length ? station.fuels.map((fuel) => <Badge key={fuel} size="xs" variant="light" color="indigo">{fuel}</Badge>) : <Badge size="xs" variant="outline" color="gray">Вид топлива не указан</Badge>}{station.openingHours && <Badge size="xs" variant="outline" color="gray">{station.openingHours}</Badge>}</Group>
                   <Group mt={8} gap={4}><Button variant="subtle" color="indigo" size="compact-xs" onClick={() => showStationOnMap(station)} leftSection={<IconMapPin size={13} />}>На карте</Button><Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" variant="subtle" color="indigo" size="compact-xs" leftSection={<IconRoute size={13} />}>Маршрут</Button></Group>
                 </Paper>
-              ))}{hasMoreStations && <Button variant="light" color="indigo" size="xs" fullWidth onClick={() => setVisibleStationCount((current) => current + STATION_LIST_PAGE_SIZE)}>Показать ещё {Math.min(STATION_LIST_PAGE_SIZE, allStations.length - displayedStations.length)} из {allStations.length}</Button>}</Stack> : <Center h={460}><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={44} radius="xl"><IconGasStation size={22} /></ThemeIcon><Text fw={700}>Точки не найдены</Text><Text size="xs" c="dimmed" ta="center">Попробуйте выбрать другой город или обновить данные.</Text></Stack></Center>}
+              ))}{hasMoreStations && <Button variant="light" color="indigo" size="xs" fullWidth onClick={() => setVisibleStationCount((current) => current + STATION_LIST_PAGE_SIZE)}>Показать ещё {Math.min(STATION_LIST_PAGE_SIZE, filteredStations.length - displayedStations.length)} из {filteredStations.length}</Button>}</Stack> : <Center h={460}><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={44} radius="xl"><IconGasStation size={22} /></ThemeIcon><Text fw={700}>Точки не найдены</Text><Text size="xs" c="dimmed" ta="center">Выберите другой тип топлива, город или обновите данные.</Text></Stack></Center>}
             </Paper>
           </SimpleGrid>
         )}

@@ -41,6 +41,10 @@ const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
 ]
 
+function hasPublishedFuelTag(value: string | undefined) {
+  return /^(yes|true|1)$/iu.test(value?.trim() || "")
+}
+
 function getCoordinates(element: OverpassElement) {
   if (typeof element.lat === "number" && typeof element.lon === "number") return { latitude: element.lat, longitude: element.lon }
   if (element.center) return { latitude: element.center.lat, longitude: element.center.lon }
@@ -134,7 +138,7 @@ export async function GET(request: NextRequest) {
       if (!coords) return []
       const tags = element.tags || {}
       const fuels = Object.entries(FUEL_TAG_LABELS)
-        .filter(([tag]) => tags[tag] === "yes")
+        .filter(([tag]) => hasPublishedFuelTag(tags[tag]))
         .map(([, label]) => label)
 
       return [{
