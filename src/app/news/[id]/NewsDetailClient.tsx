@@ -8,8 +8,39 @@ import { IconNews, IconClock, IconMessageCircle2, IconExternalLink, IconEye, Ico
 import Link from "next/link"
 import { formatRelativeDate, formatDate } from "@/lib/format"
 import { newsHref } from "@/lib/news"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { notifications } from "@mantine/notifications"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type NewsComment = {
+  id: string
+  content: string
+  createdAt: string
+  user: { id: string; name: string | null; image: string | null } | null
+}
+
+type NewsArticle = {
+  id: string
+  title: string
+  content: string
+  imageUrl: string | null
+  sourceChannel: string | null
+  sourceUrl: string | null
+  telegramUrl: string | null
+  tags: string | null
+  publishedAt: string
+  views: number
+  comments: NewsComment[]
+}
+
+type RelatedNews = {
+  id: string
+  title: string
+  slug: string | null
+  publishedAt: string
+}
+
+type RelatedNewsResponse = { news: RelatedNews[] }
 
 function renderInlineMarkdown(value: string) {
   return value.split(/(\*\*[^*]+\*\*)/g).map((fragment, index) => {
@@ -52,25 +83,37 @@ export default function NewsDetailClient({ id }: { id: string }) {
   const [comment, setComment] = useState("")
   const [sending, setSending] = useState(false)
 
-  const { data: article, isLoading } = useSWR<any>(`/api/news/${id}`, fetcher)
-  const { data: relatedData } = useSWR<any>("/api/news?limit=4", fetcher)
-  const relatedNews = (relatedData?.news || []).filter((n: any) => n.id !== article?.id).slice(0, 3)
+  const { data: article, error: articleError, isLoading, mutate } = useSWR<NewsArticle>(`/api/news/${id}`, fetchJson, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60_000,
+  })
+  const { data: relatedData } = useSWR<RelatedNewsResponse>("/api/news?limit=4", fetchJson, { revalidateOnFocus: false })
+  const relatedNews = (relatedData?.news || []).filter((news) => news.id !== article?.id).slice(0, 3)
 
   const submitComment = async () => {
     if (!comment.trim() || !session) return
     setSending(true)
     try {
-      await fetch(`/api/news/${id}`, {
+      const response = await fetch(`/api/news/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: comment.trim() }),
       })
+      const createdComment = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(createdComment?.error || "Не удалось отправить комментарий")
       setComment("")
-      globalMutate(`/api/news/${id}`)
+      await globalMutate<NewsArticle>(`/api/news/${id}`, (current) => current ? {
+        ...current,
+        comments: [createdComment as NewsComment, ...current.comments],
+      } : current, { revalidate: false })
+      notifications.show({ title: "Комментарий опубликован", message: "Он уже виден под новостью.", color: "teal" })
+    } catch (error) {
+      notifications.show({ title: "Не удалось отправить", message: error instanceof Error ? error.message : "Повторите попытку.", color: "red" })
     } finally { setSending(false) }
   }
 
   if (isLoading) return <Center py={60}><Loader color="indigo" /></Center>
+  if (articleError) return <Box p={{ base: "sm", md: "xl" }} maw={840} mx="auto"><AsyncErrorState title="Не удалось открыть новость" description="Материал временно недоступен. Повторите попытку." onRetry={() => void mutate()} backHref="/news" /></Box>
   if (!article) return <Center py={60}><Text c="gray.5">Новость не найдена</Text></Center>
   const tags = readTags(article.tags)
 
@@ -125,7 +168,7 @@ export default function NewsDetailClient({ id }: { id: string }) {
             </Card>
           )}
 
-          {(article.comments || []).map((commentItem: any) => (
+          {article.comments.map((commentItem) => (
             <Card key={commentItem.id} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start">
                 <Avatar src={commentItem.user?.image} size="sm" radius="xl" color="indigo">{commentItem.user?.name?.[0]?.toUpperCase()}</Avatar>
@@ -140,7 +183,7 @@ export default function NewsDetailClient({ id }: { id: string }) {
           {relatedNews.length > 0 && (
             <Stack gap="sm" mt="sm">
               <Text size="sm" fw={600} c="dark.9">Читайте также</Text>
-              {relatedNews.map((news: any) => (
+              {relatedNews.map((news) => (
                 <Link key={news.id} href={newsHref(news)} style={{ textDecoration: "none" }}>
                   <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)", transition: "all 150ms" }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4f46e5" }}

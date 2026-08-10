@@ -16,18 +16,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!found) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-    const news = await prisma.news.update({
-      where: { id: found.id },
-      data: { views: { increment: 1 } },
-      include: {
-        comments: {
-          orderBy: { createdAt: "desc" },
-          include: { user: { select: { id: true, name: true, image: true } } },
-        },
+    const include = {
+      comments: {
+        orderBy: { createdAt: "desc" as const },
+        include: { user: { select: { id: true, name: true, image: true } } },
       },
-    })
+    }
+    const viewCookieName = `news-view-${found.id}`
+    const alreadyCounted = request.cookies.get(viewCookieName)?.value === "1"
+    const news = alreadyCounted
+      ? await prisma.news.findUnique({ where: { id: found.id }, include })
+      : await prisma.news.update({ where: { id: found.id }, data: { views: { increment: 1 } }, include })
 
-    return NextResponse.json(news)
+    if (!news) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+    const response = NextResponse.json(news)
+    if (!alreadyCounted) {
+      response.cookies.set(viewCookieName, "1", {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 60 * 60,
+        path: "/",
+      })
+    }
+    return response
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 })
   }
@@ -40,8 +52,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const { content } = await request.json()
-    if (!content?.trim()) return NextResponse.json({ error: "Пустой комментарий" }, { status: 400 })
+    const body = await request.json().catch(() => null)
+    const content = typeof body?.content === "string" ? body.content.trim() : ""
+    if (!content) return NextResponse.json({ error: "Пустой комментарий" }, { status: 400 })
+    if (content.length > 2_000) return NextResponse.json({ error: "Комментарий не должен превышать 2 000 символов" }, { status: 400 })
 
     const news = await prisma.news.findFirst({
       where: { OR: [{ id }, { slug: id }] },
@@ -52,7 +66,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const comment = await prisma.comment.create({
       data: {
-        content: content.trim(),
+        content,
         userId: session.user.id,
         newsId: news.id,
       },
