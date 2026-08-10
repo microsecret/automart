@@ -103,7 +103,7 @@ function PartsContent() {
 
   const partBrandOptions = getBrandsByCategory("cars").map((brand) => ({ value: brand.name, label: brand.name }))
   const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}&category=cars` : null
-  const { data: modelsData } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
+  const { data: modelsData, error: modelsError, isLoading: isModelsLoading } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
   const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
   const filterKey = useMemo(() => [q, partType, subcategory, make, model, condition, availability, saleFormat, priceFrom, priceTo].join("|"), [q, partType, subcategory, make, model, condition, availability, saleFormat, priceFrom, priceTo])
@@ -175,7 +175,19 @@ function PartsContent() {
           </Stack>
         </Group>
         <Select label="Марка" placeholder="Выберите марку" data={partBrandOptions} searchable clearable value={make} onChange={(v) => { setMake(v); setModel(null) }} size="xs" />
-        <Select label="Модель" placeholder={make ? "Любая модель" : "Сначала марка"} data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="xs" />
+        <Select
+          label="Модель"
+          placeholder={make ? (isModelsLoading ? "Загружаем модели" : "Любая модель") : "Сначала марка"}
+          data={modelOptions}
+          searchable
+          clearable
+          disabled={!make || isModelsLoading}
+          rightSection={isModelsLoading ? <Loader size={13} aria-label="Загрузка моделей" /> : undefined}
+          error={modelsError ? "Не удалось загрузить модели" : undefined}
+          value={model}
+          onChange={setModel}
+          size="xs"
+        />
         {make && (
           <Badge variant="filled" color="violet" size="sm" radius="md">
             <Group gap={4}><IconCheck size={12} /> Совместимость: {make}{model ? " " + model : ""}</Group></Badge>

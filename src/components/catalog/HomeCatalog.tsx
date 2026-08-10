@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import NextImage from "next/image"
-import { Box, Text, Select, Group, Pagination, Stack, SegmentedControl, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip } from "@mantine/core"
+import { Box, Text, Select, Group, Pagination, Stack, SegmentedControl, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip, Loader } from "@mantine/core"
 import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
@@ -74,7 +74,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
   const brandOptions = getBrandsByCategory(brandCategory).map((b) => ({ value: b.name, label: b.name }))
   const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}&category=${brandCategory}` : null
-  const { data: modelsData } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
+  const { data: modelsData, error: modelsError, isLoading: isModelsLoading } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
   const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
   const { data: stats } = useSWR<{ auctions?: number; auctionByCountry?: Record<string, number> }>("/api/stats", fetcher)
   const auctionStats = stats || { auctions: 0, auctionByCountry: {} }
@@ -200,7 +200,20 @@ export default function HomePage(p: HomePageProps = {}) {
           <Box className="catalog-filter-grid">
             <TextInput className="catalog-filter-field catalog-filter-field--search" label="Что ищете" placeholder="Марка, модель, ключевое слово" leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
             <Select className="catalog-filter-field catalog-filter-field--make" label="Марка" placeholder="Любая" data={brandOptions} searchable clearable value={make} onChange={(v) => {setMake(v);setModel(null)}} size="sm" />
-            <Select className="catalog-filter-field catalog-filter-field--model" label="Модель" placeholder={make ? "Любая" : "Сначала марка"} data={modelOptions} searchable clearable disabled={!make} value={model} onChange={setModel} size="sm" />
+            <Select
+              className="catalog-filter-field catalog-filter-field--model"
+              label="Модель"
+              placeholder={make ? (isModelsLoading ? "Загружаем модели" : "Любая") : "Сначала марка"}
+              data={modelOptions}
+              searchable
+              clearable
+              disabled={!make || isModelsLoading}
+              rightSection={isModelsLoading ? <Loader size={14} aria-label="Загрузка моделей" /> : undefined}
+              error={modelsError ? "Не удалось загрузить модели" : undefined}
+              value={model}
+              onChange={setModel}
+              size="sm"
+            />
             <Select className="catalog-filter-field catalog-filter-field--sort" label="Сортировка" data={SORT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} value={sort} onChange={(v) => setSort(v || "newest")} size="sm" />
             <Box className="catalog-filter-field catalog-filter-field--price catalog-price-range">
               <Text size="10px" c="dimmed" fw={800} tt="uppercase">Цена, ₽</Text>
