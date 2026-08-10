@@ -374,6 +374,9 @@ model Message {
 model AIServiceLog {
   id            String   @id @default(uuid())
   serviceType   String   // VALUATION, HISTORY_CHECK, SIMILAR_SEARCH, PRICE_PREDICTION, DAMAGE_ASSESSMENT, SMART_MATCHING
+  status        String   @default("COMPLETED") // REQUESTED, PROCESSING, COMPLETED, FAILED
+  provider      String?  // Provider or calculation engine that produced the result
+  subjectVehicleId String?
   inputData     String?  // Input data for the AI service (stored as JSON string)
   resultData    String?  // Result from the AI service (stored as JSON string)
 
@@ -383,8 +386,10 @@ model AIServiceLog {
 
   // Timestamps
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([serviceType, createdAt])
+  @@index([userId, serviceType, status, createdAt])
 }
 
 // Session model for NextAuth

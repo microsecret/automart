@@ -1,113 +1,124 @@
 "use client"
-export const dynamic = "force-dynamic"
-import { useState } from "react"
-import { Box, Stack, Text, Paper, NumberInput, Button, Select, Group, ThemeIcon, Divider, SimpleGrid, Progress, Badge } from "@mantine/core"
-import { IconCalculator, IconTrendingUp, IconTrendingDown, IconCar, IconInfoCircle } from "@tabler/icons-react"
-import { BRAND_NAMES, getModels } from "@/lib/catalog"
-import { formatPrice } from "@/lib/format"
 
-interface ValuationResult { min: number; avg: number; max: number; factors: { label: string; impact: number; positive: boolean }[] }
+import { useEffect, useState } from "react"
+import useSWR from "swr"
+import Link from "next/link"
+import { useSession } from "next-auth/react"
+import { Alert, Box, Button, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
+import { IconCalculator, IconCar, IconInfoCircle, IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
+import { formatPrice } from "@/lib/format"
+import { fetchJson } from "@/lib/api-client"
+
+type OwnedVehicle = {
+  id: string
+  make: string
+  model: string
+  year: number
+  price: number
+  mileage: number
+  condition: string
+  location: string
+}
+
+type VehiclesResponse = { vehicles: OwnedVehicle[] }
+type ValuationResponse = {
+  estimatedValue: number
+  min: number
+  max: number
+  disclaimer: string
+  factors: { ageFactor: number; mileageFactor: number; stateFactor: number }
+}
+
+function percentage(value: number) {
+  return `${Math.round((value - 1) * 100)}%`
+}
 
 export default function ValuationPage() {
-  const [make, setMake] = useState("")
-  const [model, setModel] = useState("")
-  const [year, setYear] = useState(2020)
-  const [mileage, setMileage] = useState(50000)
-  const [condition, setCondition] = useState("EXCELLENT")
-  const [result, setResult] = useState<ValuationResult | null>(null)
+  const { status } = useSession()
+  const { data, error, isLoading } = useSWR<VehiclesResponse>(status === "authenticated" ? "/api/vehicles" : null, fetchJson)
+  const [vehicleId, setVehicleId] = useState<string | null>(null)
+  const [result, setResult] = useState<ValuationResponse | null>(null)
+  const [requestError, setRequestError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const calc = () => {
-    const base = 1800000
-    const yearFactor = (year - 2015) * 200000
-    const mileageFactor = -Math.min(mileage * 7, 700000)
-    const premiumBrands = ["BMW", "Mercedes-Benz", "Audi", "Lexus", "Porsche", "Land Rover"]
-    const brandBonus = premiumBrands.includes(make) ? 900000 : ["Lada (ВАЗ)", "УАЗ"].includes(make) ? -300000 : 0
-    const condMap: Record<string, number> = { NEW: 500000, LIKE_NEW: 200000, EXCELLENT: 0, GOOD: -150000, FAIR: -400000, POOR: -700000 }
-    const condFactor = condMap[condition] || 0
+  useEffect(() => {
+    if (!vehicleId && data?.vehicles[0]) setVehicleId(data.vehicles[0].id)
+  }, [data?.vehicles, vehicleId])
 
-    const avg = Math.max(200000, base + yearFactor + mileageFactor + brandBonus + condFactor)
-    const min = Math.round(avg * 0.85)
-    const max = Math.round(avg * 1.18)
-
-    setResult({
-      min, avg, max,
-      factors: [
-        { label: `Год (${year})`, impact: yearFactor, positive: yearFactor > 0 },
-        { label: `Пробег (${mileage.toLocaleString("ru")} км)`, impact: mileageFactor, positive: false },
-        { label: `Марка (${make})`, impact: brandBonus, positive: brandBonus >= 0 },
-        { label: `Состояние`, impact: condFactor, positive: condFactor >= 0 },
-      ].filter(f => f.impact !== 0),
-    })
+  const calculate = async () => {
+    if (!vehicleId) return
+    setSubmitting(true)
+    setRequestError(null)
+    setResult(null)
+    try {
+      const response = await fetch("/api/ai/valuation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vehicleId }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "Не удалось рассчитать оценку")
+      setResult(payload as ValuationResponse)
+    } catch (requestError) {
+      setRequestError(requestError instanceof Error ? requestError.message : "Не удалось рассчитать оценку")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
+  const selectedVehicle = data?.vehicles.find((vehicle) => vehicle.id === vehicleId)
+
   return (
-    <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 640, margin: "0 auto" }}>
+    <Box p={{ base: "sm", md: "md" }} maw={720} mx="auto">
       <Stack gap="md">
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconCalculator size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Оценка стоимости авто</Text>
-            <Text size="xs" c="gray.5">Рыночная цена за 10 секунд — на основе года, пробега и состояния</Text>
+            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Предварительная оценка</Text>
+            <Text size="xs" c="gray.5">Прозрачный ориентир по данным вашего объявления — без ложных обещаний рыночной экспертизы</Text>
           </Stack>
         </Group>
 
-        <Paper withBorder radius="md" p="lg">
-          <Stack gap="md">
-            <Select label="Марка" data={Array.from(new Set(BRAND_NAMES)).map((b) => ({ value: b, label: b }))} searchable value={make} onChange={(value) => setMake(value || "")} size="sm" placeholder="Выберите марку" />
-            {make && <Select label="Модель" data={getModels(make).map((m) => ({ value: m, label: m }))} searchable value={model} onChange={(value) => setModel(value || "")} size="sm" />}
-            <Group grow>
-              <NumberInput label="Год выпуска" value={year} onChange={(v) => setYear(Number(v) || 2020)} min={1990} max={2025} size="sm" />
-              <NumberInput label="Пробег, км" value={mileage} onChange={(v) => setMileage(Number(v) || 0)} min={0} size="sm" />
-            </Group>
-            <Select label="Состояние" data={[
-              { value: "NEW", label: "Новое" }, { value: "LIKE_NEW", label: "Как новое" },
-              { value: "EXCELLENT", label: "Отличное" }, { value: "GOOD", label: "Хорошее" },
-              { value: "FAIR", label: "Удовлетворительное" }, { value: "POOR", label: "Требует ремонта" },
-            ]} value={condition} onChange={(value) => setCondition(value || "EXCELLENT")} size="sm" />
-            <Button onClick={calc} color="indigo" radius="md" size="md" leftSection={<IconCalculator size={18} />} disabled={!make}>Рассчитать стоимость</Button>
-          </Stack>
-        </Paper>
+        {status === "unauthenticated" ? (
+          <Paper withBorder radius="lg" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="indigo"><IconCar size={25} /></ThemeIcon><Text fw={700}>Войдите, чтобы оценить свой автомобиль</Text><Text size="sm" c="dimmed" ta="center">Сервис работает только с вашими сохранёнными объявлениями или автомобилями в гараже.</Text><Button component={Link} href="/auth/signin?callbackUrl=%2Fservices%2Fvaluation" color="indigo">Войти</Button></Stack></Paper>
+        ) : status === "loading" || isLoading ? (
+          <Paper withBorder radius="lg" p="xl"><Group justify="center"><Loader color="indigo" size="sm" /><Text size="sm" c="dimmed">Загружаем ваши автомобили…</Text></Group></Paper>
+        ) : error ? (
+          <Alert color="red" radius="md">Не удалось загрузить ваши автомобили. Обновите страницу и повторите попытку.</Alert>
+        ) : !data || data.vehicles.length === 0 ? (
+          <Paper withBorder radius="lg" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="indigo"><IconCar size={25} /></ThemeIcon><Text fw={700}>Нет автомобиля для оценки</Text><Text size="sm" c="dimmed" ta="center">Сначала разместите легковой автомобиль или добавьте его в личный гараж.</Text><Button component={Link} href="/listings/create/vehicle" color="indigo">Разместить объявление</Button></Stack></Paper>
+        ) : (
+          <Paper withBorder radius="lg" p="lg">
+            <Stack gap="md">
+              <Select label="Ваш автомобиль" value={vehicleId} onChange={setVehicleId} data={data.vehicles.map((vehicle) => ({ value: vehicle.id, label: `${vehicle.make} ${vehicle.model}, ${vehicle.year}` }))} description={selectedVehicle ? `${selectedVehicle.mileage.toLocaleString("ru-RU")} км · ${selectedVehicle.location || "город не указан"}` : undefined} />
+              <Button onClick={calculate} loading={submitting} disabled={!vehicleId} color="indigo" radius="md" size="md" leftSection={<IconCalculator size={18} />}>Рассчитать ориентир</Button>
+            </Stack>
+          </Paper>
+        )}
+
+        {requestError && <Alert color="red" radius="md">{requestError}</Alert>}
 
         {result && (
           <Stack gap="md">
-            <Paper radius="md" p="lg" style={{ background: "linear-gradient(135deg, #eef2ff 0%, #fff 100%)", borderColor: "#c7d2fe", borderWidth: 1 }} withBorder>
+            <Paper radius="lg" p="xl" withBorder style={{ background: "linear-gradient(135deg, #eef2ff 0%, #fff 100%)", borderColor: "#c7d2fe" }}>
               <Stack gap="sm" align="center">
-                <Text size="xs" c="gray.5" tt="uppercase" fw={600}>Рыночная стоимость</Text>
-                <Text size="2.2rem" fw={800} c="#4f46e5" ff="var(--font-display),sans-serif" lh={1}>{formatPrice(result.avg)}</Text>
+                <Text size="xs" c="gray.5" tt="uppercase" fw={700}>Предварительный ориентир</Text>
+                <Text fz="2.2rem" fw={800} c="#4f46e5" ff="var(--font-display),sans-serif" lh={1}>{formatPrice(result.estimatedValue)}</Text>
                 <Group gap="xl">
-                  <Stack gap={0} align="center">
-                    <Group gap={4}><IconTrendingDown size={14} color="#e11d48" /><Text size="xs" c="gray.5">Минимум</Text></Group>
-                    <Text fw={700} fz="md" c="#e11d48">{formatPrice(result.min)}</Text>
-                  </Stack>
-                  <Stack gap={0} align="center">
-                    <Group gap={4}><IconTrendingUp size={14} color="#059669" /><Text size="xs" c="gray.5">Максимум</Text></Group>
-                    <Text fw={700} fz="md" c="#059669">{formatPrice(result.max)}</Text>
-                  </Stack>
+                  <Stack gap={0} align="center"><Group gap={4}><IconTrendingDown size={14} color="#e11d48" /><Text size="xs" c="gray.5">Нижняя граница</Text></Group><Text fw={700} fz="md" c="#e11d48">{formatPrice(result.min)}</Text></Stack>
+                  <Stack gap={0} align="center"><Group gap={4}><IconTrendingUp size={14} color="#059669" /><Text size="xs" c="gray.5">Верхняя граница</Text></Group><Text fw={700} fz="md" c="#059669">{formatPrice(result.max)}</Text></Stack>
                 </Group>
               </Stack>
             </Paper>
-
-            <Paper radius="md" p="md" withBorder>
-              <Stack gap="xs">
-                <Text size="sm" fw={700} c="dark.9">Факторы оценки</Text>
-                {result.factors.map((f) => (
-                  <Group key={f.label} justify="space-between">
-                    <Text size="xs" c="gray.6">{f.label}</Text>
-                    <Badge size="sm" color={f.positive ? "green" : "red"} variant="light">
-                      {f.positive ? "+" : ""}{(f.impact / 1000).toFixed(0)}к ₽
-                    </Badge>
-                  </Group>
-                ))}
-              </Stack>
-            </Paper>
-
-            <Group gap="xs" align="center">
-              <IconInfoCircle size={14} color="gray.4" />
-              <Text size="xs" c="gray.4">Расчёт приблизительный, на основе алгоритма. Для точной оценки нужна диагностика.</Text>
-            </Group>
+            <Paper radius="lg" p="md" withBorder><SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm"><Factor label="Возраст" value={percentage(result.factors.ageFactor)} /><Factor label="Пробег" value={percentage(result.factors.mileageFactor)} /><Factor label="Состояние" value={percentage(result.factors.stateFactor)} /></SimpleGrid></Paper>
+            <Alert icon={<IconInfoCircle size={16} />} color="gray" radius="md" variant="light">{result.disclaimer}</Alert>
           </Stack>
         )}
       </Stack>
     </Box>
   )
+}
+
+function Factor({ label, value }: { label: string; value: string }) {
+  return <Stack gap={2}><Text size="xs" c="gray.5">{label}</Text><Text fw={700} c="dark.9">{value}</Text></Stack>
 }

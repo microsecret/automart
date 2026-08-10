@@ -45,6 +45,35 @@ function normalizeTypeDetails(value: unknown, vehicleType: string) {
   return details
 }
 
+/** GET /api/vehicles — собственные легковые авто для защищённых сервисов. */
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const vehicles = await prisma.vehicle.findMany({
+      where: { userId: session.user.id, vehicleType: "CAR" },
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        year: true,
+        price: true,
+        mileage: true,
+        condition: true,
+        location: true,
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 100,
+    })
+
+    return NextResponse.json({ vehicles })
+  } catch (error) {
+    console.error("Owned vehicles GET error:", error)
+    return NextResponse.json({ error: "Не удалось загрузить ваши автомобили" }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

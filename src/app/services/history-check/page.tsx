@@ -1,137 +1,67 @@
 "use client"
-export const dynamic = "force-dynamic"
-import { useState } from "react"
-import { Box, Stack, Text, Paper, TextInput, Button, Group, ThemeIcon, SimpleGrid, Divider, Badge, Timeline, Center, Loader } from "@mantine/core"
-import { IconHistory, IconCheck, IconX, IconShieldCheck, IconCar, IconAlertTriangle, IconSearch, IconFileText } from "@tabler/icons-react"
 
-interface ReportItem { label: string; value: string; ok: boolean }
-interface HistoryEvent { date: string; title: string; type: "ok" | "warn" | "bad" }
+import { useEffect, useState } from "react"
+import useSWR from "swr"
+import Link from "next/link"
+import { useSession } from "next-auth/react"
+import { Alert, Box, Button, Group, Loader, Paper, Select, Stack, Text, ThemeIcon, Timeline } from "@mantine/core"
+import { IconCar, IconCheck, IconClock, IconHistory, IconInfoCircle, IconShieldCheck } from "@tabler/icons-react"
+import { fetchJson } from "@/lib/api-client"
 
-function generateReport(vin: string) {
-  const seed = vin.split("").reduce((s, c) => s + c.charCodeAt(0), 0)
-  const rnd = (salt: number) => ((seed * 9301 + salt * 49297) % 233280) / 233280
-
-  const hasAccident = rnd(1) < 0.25
-  const hasRestriction = rnd(2) < 0.12
-  const hasTaxi = rnd(3) < 0.1
-  const hasMileageRollback = rnd(4) < 0.18
-  const owners = 1 + Math.floor(rnd(5) * 4)
-
-  const items: ReportItem[] = [
-    { label: "ДТП", value: hasAccident ? "Найдено: 1 случай" : "Не найдено", ok: !hasAccident },
-    { label: "В розыске", value: "Нет", ok: true },
-    { label: "Залог", value: rnd(6) < 0.08 ? "В реестре залогов" : "Нет", ok: rnd(6) >= 0.08 },
-    { label: "Ограничения ГИБДД", value: hasRestriction ? "Есть ограничения" : "Нет", ok: !hasRestriction },
-    { label: "Такси / Каршеринг", value: hasTaxi ? "Использовалось в такси" : "Не использовалось", ok: !hasTaxi },
-    { label: "Утиль / Тотал", value: "Нет", ok: true },
-    { label: "Владельцев по ПТС", value: String(owners), ok: owners <= 3 },
-    { label: "Скрученный пробег", value: hasMileageRollback ? "Обнаружен откат" : "Не обнаружен", ok: !hasMileageRollback },
-  ]
-
-  const events: HistoryEvent[] = [
-    { date: `${2024 - Math.floor(rnd(7) * 5)}`, title: "Регистрация в ГИБДД", type: "ok" },
-    { date: `${2023 - Math.floor(rnd(8) * 3)}`, title: "Техосмотр пройден", type: "ok" },
-  ]
-  if (hasAccident) events.push({ date: `${2022 - Math.floor(rnd(9) * 2)}`, title: "ДТП — повреждение заднего бампера", type: "bad" })
-  if (hasMileageRollback) events.push({ date: "2021", title: "Подозрение на корректировку пробега", type: "warn" })
-  events.push({ date: `${2020 + Math.floor(rnd(10) * 2)}`, title: "Договор купли-продажи", type: "ok" })
-
-  const cleanScore = items.filter((i) => i.ok).length
-  return { items, events, cleanScore, total: items.length }
-}
+type OwnedVehicle = { id: string; make: string; model: string; year: number; mileage: number; location: string }
+type VehiclesResponse = { vehicles: OwnedVehicle[] }
+type HistoryRequestResponse = { request: { id: string; status: string; createdAt: string }; message: string }
 
 export default function HistoryCheckPage() {
-  const [vin, setVin] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [report, setReport] = useState<ReturnType<typeof generateReport> | null>(null)
+  const { status } = useSession()
+  const { data, error, isLoading } = useSWR<VehiclesResponse>(status === "authenticated" ? "/api/vehicles" : null, fetchJson)
+  const [vehicleId, setVehicleId] = useState<string | null>(null)
+  const [request, setRequest] = useState<HistoryRequestResponse | null>(null)
+  const [requestError, setRequestError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const check = () => {
-    if (vin.length < 10) return
-    setLoading(true)
-    setReport(null)
-    setTimeout(() => {
-      setReport(generateReport(vin))
-      setLoading(false)
-    }, 1500)
+  useEffect(() => {
+    if (!vehicleId && data?.vehicles[0]) setVehicleId(data.vehicles[0].id)
+  }, [data?.vehicles, vehicleId])
+
+  const createRequest = async () => {
+    if (!vehicleId) return
+    setSubmitting(true)
+    setRequestError(null)
+    setRequest(null)
+    try {
+      const response = await fetch("/api/ai/history-check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ vehicleId }) })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "Не удалось сохранить заявку")
+      setRequest(payload as HistoryRequestResponse)
+    } catch (requestError) {
+      setRequestError(requestError instanceof Error ? requestError.message : "Не удалось сохранить заявку")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const isClean = report && report.cleanScore === report.total
-
   return (
-    <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 640, margin: "0 auto" }}>
+    <Box p={{ base: "sm", md: "md" }} maw={720} mx="auto">
       <Stack gap="md">
-        <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="green" size={44} radius="md"><IconHistory size={22} /></ThemeIcon>
-          <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Проверка истории авто</Text>
-            <Text size="xs" c="gray.5">Полный отчёт по VIN: ДТП, пробег, ограничения, розыск, владельцы</Text>
-          </Stack>
-        </Group>
+        <Group gap="sm" align="center"><ThemeIcon variant="light" color="green" size={44} radius="md"><IconHistory size={22} /></ThemeIcon><Stack gap={0}><Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Проверка истории</Text><Text size="xs" c="gray.5">Заявка на проверку собственных автомобилей с прозрачным статусом</Text></Stack></Group>
 
-        <Paper withBorder radius="md" p="lg">
-          <Stack gap="md">
-            <TextInput label="VIN-номер" placeholder="Например: WAUZZZ8K9DA123456" value={vin} onChange={(e) => setVin(e.currentTarget.value.toUpperCase())} size="md" maxLength={17} leftSection={<IconSearch size={18} />} />
-            <Button onClick={check} color="green" radius="md" size="md" loading={loading} leftSection={<IconShieldCheck size={18} />} disabled={vin.length < 10}>
-              Проверить историю
-            </Button>
-            <Text size="xs" c="gray.4">Отчёт формируется 2-3 секунды</Text>
-          </Stack>
-        </Paper>
+        <Alert icon={<IconInfoCircle size={16} />} color="orange" radius="md" variant="light">Площадка пока не подключена к государственным и коммерческим реестрам. Мы не показываем вымышленные ДТП, ограничения или пробег: заявка сохранится и будет обработана только после подключения проверенного поставщика данных.</Alert>
 
-        {loading && <Center py={40}><Stack align="center"><Loader size="sm" color="green" /><Text size="sm" c="gray.5">Проверяем по базам ЕАЭС...</Text></Stack></Center>}
-
-        {report && (
-          <Stack gap="md">
-            {/* Итоговый вердикт */}
-            <Paper radius="md" p="lg" withBorder style={{
-              borderColor: isClean ? "#bbf7d0" : "#fde68a",
-              background: isClean ? "#f0fdf4" : "#fffbeb",
-            }}>
-              <Group gap="md" align="center">
-                <ThemeIcon size={52} radius="xl" color={isClean ? "green" : "orange"} variant="light">
-                  {isClean ? <IconShieldCheck size={28} /> : <IconAlertTriangle size={28} />}
-                </ThemeIcon>
-                <Stack gap={2}>
-                  <Text fw={700} fz="lg" c={isClean ? "#16a34a" : "#d97706"}>{isClean ? "Чистая история" : "Найдены проблемы"}</Text>
-                  <Text size="sm" c="gray.6">{report.cleanScore} из {report.total} проверок пройдено</Text>
-                  <Badge size="sm" color={isClean ? "green" : "orange"} variant="light">VIN: {vin.slice(0, 4)}...{vin.slice(-4)}</Badge>
-                </Stack>
-              </Group>
-            </Paper>
-
-            {/* Детальный отчёт */}
-            <Paper radius="md" p="md" withBorder>
-              <Group gap="xs" mb="sm"><IconFileText size={16} color="gray.6" /><Text fw={700} c="dark.9">Результаты проверок</Text></Group>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
-                {report.items.map((item) => (
-                  <Group key={item.label} gap="sm" align="flex-start">
-                    <ThemeIcon variant="light" color={item.ok ? "green" : "red"} size={28} radius="sm" style={{ flexShrink: 0 }}>
-                      {item.ok ? <IconCheck size={16} /> : <IconX size={16} />}
-                    </ThemeIcon>
-                    <Stack gap={0}>
-                      <Text size="xs" c="gray.5">{item.label}</Text>
-                      <Text size="sm" fw={600} c={item.ok ? "#16a34a" : "#dc2626"}>{item.value}</Text>
-                    </Stack>
-                  </Group>
-                ))}
-              </SimpleGrid>
-            </Paper>
-
-            {/* Хронология */}
-            <Paper radius="md" p="md" withBorder>
-              <Group gap="xs" mb="sm"><IconHistory size={16} color="gray.6" /><Text fw={700} c="dark.9">Хронология событий</Text></Group>
-              <Timeline bulletSize={20} lineWidth={2} color="green">
-                {report.events.map((e, i) => (
-                  <Timeline.Item key={i} bullet={<IconCar size={12} />} title={<Text size="sm" fw={600} c={e.type === "bad" ? "#dc2626" : e.type === "warn" ? "#d97706" : "var(--mantine-color-text)"}>{e.title}</Text>}>
-                    <Text size="xs" c="gray.4">{e.date}</Text>
-                  </Timeline.Item>
-                ))}
-              </Timeline>
-            </Paper>
-
-            <Text size="xs" c="gray.4" ta="center">Демонстрационный отчёт. В продакшене — данные из реестров ГИБДД, ФССП, НБКИ.</Text>
-          </Stack>
+        {status === "unauthenticated" ? (
+          <Paper withBorder radius="lg" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="green"><IconCar size={25} /></ThemeIcon><Text fw={700}>Войдите, чтобы создать заявку</Text><Text size="sm" c="dimmed" ta="center">Проверки доступны владельцу автомобиля, чтобы VIN и результаты не раскрывались посторонним.</Text><Button component={Link} href="/auth/signin?callbackUrl=%2Fservices%2Fhistory-check" color="green">Войти</Button></Stack></Paper>
+        ) : status === "loading" || isLoading ? (
+          <Paper withBorder radius="lg" p="xl"><Group justify="center"><Loader color="green" size="sm" /><Text size="sm" c="dimmed">Загружаем ваши автомобили…</Text></Group></Paper>
+        ) : error ? (
+          <Alert color="red" radius="md">Не удалось загрузить ваши автомобили. Обновите страницу и повторите попытку.</Alert>
+        ) : !data || data.vehicles.length === 0 ? (
+          <Paper withBorder radius="lg" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="green"><IconCar size={25} /></ThemeIcon><Text fw={700}>Нет автомобиля для проверки</Text><Text size="sm" c="dimmed" ta="center">Добавьте легковой автомобиль в объявление или личный гараж.</Text><Button component={Link} href="/listings/create/vehicle" color="green">Разместить объявление</Button></Stack></Paper>
+        ) : (
+          <Paper withBorder radius="lg" p="lg"><Stack gap="md"><Select label="Ваш автомобиль" value={vehicleId} onChange={setVehicleId} data={data.vehicles.map((vehicle) => ({ value: vehicle.id, label: `${vehicle.make} ${vehicle.model}, ${vehicle.year}` }))} /><Button onClick={createRequest} loading={submitting} disabled={!vehicleId} color="green" radius="md" size="md" leftSection={<IconShieldCheck size={18} />}>Создать заявку на проверку</Button></Stack></Paper>
         )}
+
+        {requestError && <Alert color="red" radius="md">{requestError}</Alert>}
+        {request && <Paper withBorder radius="lg" p="lg" style={{ borderColor: "#bbf7d0", background: "#f0fdf4" }}><Stack gap="md"><Group gap="sm"><ThemeIcon size={38} radius="xl" color="green" variant="light"><IconCheck size={20} /></ThemeIcon><Stack gap={0}><Text fw={700} c="green.9">Заявка сохранена</Text><Text size="xs" c="green.8">Статус: ожидает подключения проверенного источника</Text></Stack></Group><Timeline bulletSize={22} lineWidth={2} color="green"><Timeline.Item bullet={<IconCheck size={13} />} title="Заявка создана"><Text size="xs" c="dimmed">{new Date(request.request.createdAt).toLocaleString("ru-RU")}</Text></Timeline.Item><Timeline.Item bullet={<IconClock size={13} />} title="Источник данных не подключён"><Text size="xs" c="dimmed">Мы не подменяем этот этап случайным результатом.</Text></Timeline.Item></Timeline><Text size="xs" c="dimmed">Номер заявки: {request.request.id}</Text></Stack></Paper>}
       </Stack>
     </Box>
   )

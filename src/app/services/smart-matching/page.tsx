@@ -19,7 +19,7 @@ export default function SmartmatchingPage() {
   const [submitted, setSubmitted] = useState(false)
 
   const query = submitted
-    ? `/api/listings?type=vehicle&priceTo=${budget}&bodyType=${bodyType}&fuelType=${fuel}&transmission=${transmission}&sort=price_asc&limit=3`
+    ? `/api/listings?type=vehicle&vehicleType=CAR&priceTo=${budget}&bodyType=${bodyType}&fuelType=${fuel}&transmission=${transmission}&sort=price_asc&limit=3`
     : null
   const { data, isLoading } = useSWR(query, fetcher)
 

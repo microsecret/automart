@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -12,12 +14,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const { vehicleId } = body
+    const limit = rateLimit(`history-check:user:${session.user.id}:ip:${getClientIp(request)}`, { windowMs: 15 * 60_000, maxRequests: 5 })
+    if (!limit.success) return NextResponse.json({ error: "Слишком много заявок. Попробуйте через 15 минут." }, { status: 429, headers: rateLimitHeaders(limit) })
 
-    if (!vehicleId) {
+    const body = await request.json().catch(() => null)
+    const vehicleId = typeof body?.vehicleId === "string" ? body.vehicleId.trim() : ""
+
+    if (!vehicleId || vehicleId.length > 80) {
       return NextResponse.json(
-        { error: "Vehicle ID is required" },
+        { error: "Выберите автомобиль для проверки" },
         { status: 400 }
       )
     }
@@ -29,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     if (!vehicle) {
       return NextResponse.json(
-        { error: "Vehicle not found" },
+        { error: "Автомобиль не найден" },
         { status: 404 }
       )
     }
@@ -37,45 +42,25 @@ export async function POST(request: NextRequest) {
     // Check authorization (similar to valuation)
     if (vehicle.userId !== session.user.id) {
       return NextResponse.json(
-        { error: "Unauthorized to check history for this vehicle" },
+        { error: "Проверка доступна только владельцу автомобиля" },
         { status: 403 }
       )
     }
 
-    // Mock AI history check logic
-    // In a real implementation, this would check vehicle history databases
-    const hasAccidents = Math.random() > 0.7 // 30% chance of accident history
-    const hasTitleIssues = Math.random() > 0.9 // 10% chance of title issues
-    const hasServiceRecords = Math.random() > 0.4 // 60% chance of service records
-    const previousOwners = Math.floor(Math.random() * 4) + 1 // 1-4 previous owners
+    if (vehicle.vehicleType !== "CAR") {
+      return NextResponse.json({ error: "Проверка истории пока доступна для легковых автомобилей" }, { status: 400 })
+    }
 
-    const overallScore = Math.round(
-      (hasAccidents ? 30 : 100) *
-      (hasTitleIssues ? 50 : 100) / 100 *
-      (hasServiceRecords ? 100 : 70) / 100 *
-      (previousOwners <= 2 ? 100 : 80) / 100
-    )
-
-    const riskLevel = overallScore >= 80 ? "low" :
-                     overallScore >= 60 ? "medium" : "high"
-
-    // Create AI service log
     const aiLog = await prisma.aIServiceLog.create({
       data: {
         serviceType: "HISTORY_CHECK",
-        inputData: JSON.stringify({ vehicleId, vehicle }),
+        status: "REQUESTED",
+        provider: "NOT_CONNECTED",
+        subjectVehicleId: vehicle.id,
+        inputData: JSON.stringify({ vehicleId: vehicle.id, make: vehicle.make, model: vehicle.model, year: vehicle.year }),
         resultData: JSON.stringify({
-          overallScore,
-          riskLevel,
-          details: {
-            hasAccidents,
-            hasTitleIssues,
-            hasServiceRecords,
-            previousOwners,
-            lastServiceDate: hasServiceRecords
-              ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-              : null
-          },
+          status: "REQUESTED",
+          reason: "Проверка сохранена до подключения авторизованного провайдера данных",
           timestamp: new Date().toISOString()
         }),
         userId: session.user.id
@@ -83,16 +68,9 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({
-      overallScore,
-      riskLevel,
-      details: {
-        hasAccidents,
-        hasTitleIssues,
-        hasServiceRecords,
-        previousOwners
-      },
-      aiLogId: aiLog.id
-    })
+      request: { id: aiLog.id, status: aiLog.status, createdAt: aiLog.createdAt },
+      message: "Заявка сохранена. Автоматический отчёт появится только после подключения проверенного поставщика данных.",
+    }, { status: 201 })
   } catch (error) {
     console.error("Error in history check AI service:", error)
     return NextResponse.json(

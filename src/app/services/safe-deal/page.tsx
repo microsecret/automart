@@ -1,6 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { Box, Stack, Title, Text, Card, Group, ThemeIcon, SimpleGrid, Divider, Button, Alert } from "@mantine/core"
+import Link from "next/link"
+import { Box, Stack, Title, Text, Card, Group, ThemeIcon, SimpleGrid, Button, Alert } from "@mantine/core"
 import { IconShieldCheck, IconCheck, IconWallet, IconFileCheck, IconKey } from "@tabler/icons-react"
 
 const STEPS = [
@@ -55,6 +56,11 @@ export default function SafeDealPage() {
         <Alert color="indigo" variant="light" radius="md">
           <Text size="xs" c="#4f46e5">Сервис развивается. Банковское или платёжное сопровождение появится только после подключения лицензированного провайдера.</Text>
         </Alert>
+
+        <Group grow>
+          <Button component={Link} href="/dashboard/deliveries" color="indigo" radius="md">Открыть кабинет сделок</Button>
+          <Button component={Link} href="/auctions" variant="light" color="indigo" radius="md">Посмотреть аукционы</Button>
+        </Group>
       </Stack>
     </Box>
   )

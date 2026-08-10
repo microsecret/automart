@@ -2,107 +2,49 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { parseMarketplaceImages } from "@/lib/media-url"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const limit = rateLimit(`damage-assessment:user:${session.user.id}:ip:${getClientIp(request)}`, { windowMs: 15 * 60_000, maxRequests: 5 })
+    if (!limit.success) return NextResponse.json({ error: "Слишком много заявок. Попробуйте через 15 минут." }, { status: 429, headers: rateLimitHeaders(limit) })
+
+    const body = await request.json().catch(() => null)
+    const vehicleId = typeof body?.vehicleId === "string" ? body.vehicleId.trim() : ""
+    const imageUrl = typeof body?.imageUrl === "string" ? body.imageUrl.trim() : ""
+    if (!vehicleId || vehicleId.length > 80 || !imageUrl || imageUrl.length > 2048) {
+      return NextResponse.json({ error: "Выберите автомобиль и одну из его фотографий" }, { status: 400 })
     }
 
-    const body = await request.json()
-    const { vehicleId, imageUrl } = body
-
-    if (!vehicleId) {
-      return NextResponse.json(
-        { error: "Vehicle ID is required" },
-        { status: 400 }
-      )
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { id: true, userId: true, images: true } })
+    if (!vehicle) return NextResponse.json({ error: "Автомобиль не найден" }, { status: 404 })
+    if (vehicle.userId !== session.user.id) return NextResponse.json({ error: "Оценка доступна только владельцу автомобиля" }, { status: 403 })
+    if (!parseMarketplaceImages(vehicle.images).includes(imageUrl)) {
+      return NextResponse.json({ error: "Можно отправить только фотографию из собственной карточки" }, { status: 400 })
     }
 
-    if (!imageUrl) {
-      return NextResponse.json(
-        { error: "Image URL is required for damage assessment" },
-        { status: 400 }
-      )
-    }
-
-    // Get vehicle details
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId }
-    })
-
-    if (!vehicle) {
-      return NextResponse.json(
-        { error: "Vehicle not found" },
-        { status: 404 }
-      )
-    }
-
-    // Check authorization
-    if (vehicle.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Unauthorized to assess damage for this vehicle" },
-        { status: 403 }
-      )
-    }
-
-    // Mock AI damage assessment logic
-    // In a real implementation, this would analyze the image using computer vision
-    const damageSeverity = Math.floor(Math.random() * 4) // 0-3 scale
-    const damageLocations = []
-    const possibleLocations = ['front', 'rear', 'left side', 'right side', 'hood', 'roof', 'trunk']
-
-    // Randomly select 0-3 damage locations
-    const numLocations = Math.floor(Math.random() * 4)
-    for (let i = 0; i < numLocations; i++) {
-      const randomIndex = Math.floor(Math.random() * possibleLocations.length)
-      damageLocations.push(possibleLocations[randomIndex])
-    }
-
-    // Remove duplicates
-    const uniqueDamageLocations = [...new Set(damageLocations)]
-
-    const repairCostEstimate = damageSeverity * 500 + Math.random() * 1000 // $0-2500 estimate
-    const needsRepair = damageSeverity > 0
-
-    // Create AI service log
     const aiLog = await prisma.aIServiceLog.create({
       data: {
         serviceType: "DAMAGE_ASSESSMENT",
-        inputData: JSON.stringify({ vehicleId, imageUrl }),
-        resultData: JSON.stringify({
-          damageSeverity,
-          damageLocations: uniqueDamageLocations,
-          repairCostEstimate: Math.round(repairCostEstimate),
-          needsRepair,
-          assessmentDetails: {
-            severityLevel: damageSeverity === 0 ? "none" :
-                         damageSeverity === 1 ? "minor" :
-                         damageSeverity === 2 ? "moderate" : "severe",
-            affectedAreas: uniqueDamageLocations.length,
-            assessmentConfidence: 0.7 + Math.random() * 0.2 // 70-90% confidence
-          },
-          timestamp: new Date().toISOString()
-        }),
-        userId: session.user.id
-      }
+        status: "REQUESTED",
+        provider: "NOT_CONNECTED",
+        subjectVehicleId: vehicle.id,
+        inputData: JSON.stringify({ vehicleId: vehicle.id, imageUrl }),
+        resultData: JSON.stringify({ status: "REQUESTED", reason: "Подключение компьютерного зрения ещё не выполнено", timestamp: new Date().toISOString() }),
+        userId: session.user.id,
+      },
     })
 
     return NextResponse.json({
-      damageSeverity,
-      damageLocations: uniqueDamageLocations,
-      repairCostEstimate: Math.round(repairCostEstimate),
-      needsRepair,
-      aiLogId: aiLog.id
-    })
+      request: { id: aiLog.id, status: aiLog.status, createdAt: aiLog.createdAt },
+      message: "Заявка сохранена. Оценка повреждений будет доступна после подключения проверенного сервиса компьютерного зрения.",
+    }, { status: 202 })
   } catch (error) {
-    console.error("Error in damage assessment AI service:", error)
-    return NextResponse.json(
-      { error: "Failed to process damage assessment request" },
-      { status: 500 }
-    )
+    console.error("Damage assessment service error:", error)
+    return NextResponse.json({ error: "Не удалось сохранить заявку" }, { status: 500 })
   }
 }
