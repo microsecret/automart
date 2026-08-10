@@ -291,6 +291,10 @@ select {
   max-width: 1120px;
 }
 
+.market-shell--news {
+  max-width: 1440px;
+}
+
 .app-sidebar {
   width: 248px;
   flex-shrink: 0;

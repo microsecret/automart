@@ -20,15 +20,16 @@ export default function AppHeader() {
   const pathname = usePathname()
   const [query, setQuery] = useState("")
 
-  const navigation = [
+  const catalogueNavigation = [
     { href: "/", label: "Объявления", icon: null, active: pathname === "/" || pathname.startsWith("/category") || pathname.startsWith("/search") },
     { href: "/parts-finder", label: "Запчасти", icon: <IconTools size={14} />, active: pathname.startsWith("/parts") },
     { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
+  ]
+  const serviceNavigation = [
     { href: "/services", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
     { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
     { href: "/help", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
   ]
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`)
@@ -65,8 +66,23 @@ export default function AppHeader() {
             </Group>
           </Link>
 
+          <Menu shadow="md" width={210} position="bottom-start" radius="md" offset={6}>
+            <Menu.Target>
+              <Button visibleFrom="md" variant="light" color="indigo" size="compact-sm" leftSection={<IconMenu2 size={15} />}>
+                Разделы
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {catalogueNavigation.map((item) => (
+                <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon || <IconCar size={14} />} color={item.active ? "indigo" : undefined}>
+                  {item.label}
+                </Menu.Item>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
+
           <Group gap={2} visibleFrom="xl" wrap="nowrap" className="market-app-header__links">
-            {navigation.map((item) => (
+            {serviceNavigation.map((item) => (
               <Button
                 key={item.href}
                 component={Link}
@@ -83,21 +99,6 @@ export default function AppHeader() {
               </Button>
             ))}
           </Group>
-
-          <Menu shadow="md" width={210} position="bottom-start" radius="md" offset={6}>
-            <Menu.Target>
-              <Button hiddenFrom="xl" visibleFrom="md" variant="light" color="indigo" size="compact-sm" leftSection={<IconMenu2 size={15} />}>
-                Разделы
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {navigation.map((item) => (
-                <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon || <IconCar size={14} />} color={item.active ? "indigo" : undefined}>
-                  {item.label}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}
           <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: 1, maxWidth: 360, minWidth: 230 }} visibleFrom="sm">
@@ -153,7 +154,7 @@ export default function AppHeader() {
               visibleFrom="md"
               styles={{ root: { height: 38, fontWeight: 700 } }}
             >
-              Продать
+              Подать объявление
             </Button>
 
             {session ? (
