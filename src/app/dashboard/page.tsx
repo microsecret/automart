@@ -16,6 +16,45 @@ import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { BODY_TYPES, CAR_BRANDS, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 
+type DashboardVehicle = {
+  id: string
+  make: string
+  model: string
+  year: number
+  price: number
+  mileage: number | null
+  images: string | null
+  location: string
+  vehicleType: string
+  bodyType: string | null
+}
+
+type DashboardPart = {
+  id: string
+  name: string
+  price: number
+  images: string | null
+}
+
+type DashboardListing = {
+  id: string
+  title: string
+  price: number
+  status: string
+  statusReason: string | null
+  isFeatured: boolean
+  views: number
+  createdAt: string
+  vehicle: DashboardVehicle | null
+  part: DashboardPart | null
+}
+
+type DashboardFavorite = {
+  id: string
+  price: number
+  vehicle: DashboardVehicle | null
+}
+
 type DashboardResponse = {
   stats: {
     totalListings: number
@@ -31,8 +70,8 @@ type DashboardResponse = {
     active: number
     needsAttention: number
   }
-  listings: any[]
-  favorites: any[]
+  listings: DashboardListing[]
+  favorites: DashboardFavorite[]
 }
 
 type GarageVehicle = {
@@ -311,7 +350,7 @@ export default function DashboardPage() {
                 </Center>
               </Paper>
             ) : (
-              data.listings.map((l: any) => {
+              data.listings.map((l) => {
                 const isVehicle = !!l.vehicle
                 const images = parseImages(isVehicle ? l.vehicle?.images : l.part?.images)
                 const image = images[0]
@@ -383,7 +422,7 @@ export default function DashboardPage() {
               </Paper>
             ) : (
               <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
-                {data.favorites.map((fav: any) => {
+                {data.favorites.map((fav) => {
                   const v = fav.vehicle
                   if (!v) return null
                   const images = parseImages(v.images)

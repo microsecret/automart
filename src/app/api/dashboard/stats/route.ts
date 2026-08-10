@@ -18,14 +18,14 @@ export async function GET() {
       prisma.listing.findMany({
         where: { userId },
         include: {
-          vehicle: { select: { id: true, make: true, model: true, year: true, price: true, mileage: true, images: true, location: true } },
+          vehicle: { select: { id: true, make: true, model: true, year: true, price: true, mileage: true, images: true, location: true, vehicleType: true, bodyType: true } },
           part: { select: { id: true, name: true, price: true, images: true } },
         },
         orderBy: { createdAt: "desc" },
       }),
       prisma.user.findUnique({
         where: { id: userId },
-        select: { favoriteListings: { take: 10, orderBy: { createdAt: "desc" }, include: { vehicle: { select: { id: true, make: true, model: true, year: true, price: true, images: true, mileage: true } } } } },
+        select: { favoriteListings: { take: 10, orderBy: { createdAt: "desc" }, include: { vehicle: { select: { id: true, make: true, model: true, year: true, price: true, images: true, mileage: true, vehicleType: true, bodyType: true } } } } },
       }),
       prisma.review.findMany({
         where: { userId },
