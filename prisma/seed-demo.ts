@@ -48,7 +48,7 @@ async function main() {
       const basePrice = getBasePrice(brand.name, year)
       const price = basePrice + Math.floor(Math.random() * 500000) - 250000
       const fuel = brand.country === "CN" && Math.random() > 0.7 ? "ELECTRIC" : fuels[Math.floor(Math.random() * fuels.length)]
-      const vin = `DEMO${brand.name.replace(/\s/g, "").toUpperCase().substring(0, 5)}${year}${String(vCount).padStart(4, "0")}`.substring(0, 17)
+      const vin = createSeedVin("C", vCount)
 
       const vehicle = await prisma.vehicle.create({
         data: {
@@ -197,6 +197,10 @@ function getPhoto(brand: string): string {
   }
   const id = photos[brand] || "1503376780355-7e1b8d2c9e4a"
   return `https://images.unsplash.com/photo-${id}?w=1200&q=80`
+}
+
+function createSeedVin(segment: string, index: number) {
+  return `D${segment}${String(index).padStart(15, "0")}`
 }
 
 main().catch((e) => {

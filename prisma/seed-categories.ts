@@ -84,21 +84,39 @@ const CATEGORIES: CatData[] = [
 
 const CITIES = ["Москва", "Санкт-Петербург", "Сочи", "Краснодар", "Казань", "Екатеринбург", "Владивосток", "Ростов-на-Дону", "Самара", "Уфа"]
 const CONDITIONS = ["NEW", "LIKE_NEW", "EXCELLENT", "GOOD", "FAIR"]
-const TRANSMISSIONS = ["MANUAL", "AUTOMATIC", "VARIATOR", "ROBOTIC"]
 const DOCS = ["CLEAN", "CLEAN", "CLEAN", "ISSUES"]
 const DAMAGE = ["NONE", "NONE", "NONE", "REPAINTED", "DAMAGED"]
 const SELLERS = ["OWNER", "OWNER", "DEALER"]
 const COLORS = ["Белый", "Чёрный", "Красный", "Синий", "Оранжевый", "Жёлтый", "Зелёный"]
+const CATEGORY_META: Record<string, { name: string; description: string; icon: string }> = {
+  MOTORCYCLE: { name: "Мототехника", description: "Мотоциклы, скутеры и квадроциклы", icon: "Motorbike" },
+  TRUCK: { name: "Грузовой транспорт", description: "Коммерческий и грузовой транспорт", icon: "Truck" },
+  SPECIAL: { name: "Спецтехника", description: "Строительная, дорожная и сельскохозяйственная техника", icon: "Tractor" },
+  WATER: { name: "Водный транспорт", description: "Катера, яхты и гидроциклы", icon: "Speedboat" },
+  AIR: { name: "Воздушный транспорт", description: "Самолёты, вертолёты и другая авиация", icon: "Plane" },
+}
 
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)] }
 function randInt(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min }
+function createSeedVin(vehicleType: string, index: number) {
+  const segment = vehicleType === "MOTORCYCLE" ? "M" : vehicleType === "TRUCK" ? "T" : "C"
+  return `D${segment}${String(index).padStart(15, "0")}`
+}
 
 async function main() {
   const admin = await prisma.user.findFirst({ where: { email: "admin@automart.ru" } })
     || await prisma.user.findFirst({})
   if (!admin) { console.error("No user found"); return }
-  const categoryId = (await prisma.category.findFirst())?.id
-  if (!categoryId) { console.error("No category found"); return }
+  const categoryIds = new Map<string, string>()
+  for (const [vehicleType, category] of Object.entries(CATEGORY_META)) {
+    const record = await prisma.category.upsert({
+      where: { name: category.name },
+      update: { description: category.description, icon: category.icon },
+      create: category,
+      select: { id: true },
+    })
+    categoryIds.set(vehicleType, record.id)
+  }
 
   let created = 0
   for (const cat of CATEGORIES) {
@@ -107,32 +125,39 @@ async function main() {
       const [make, models] = pick(cat.brands)
       const model = pick(models)
       const year = randInt(2008, 2024)
-      const mileage = cat.type === "AIR" ? randInt(100, 5000) : randInt(1000, 150000)
+      const isRoadTransport = cat.type === "MOTORCYCLE" || cat.type === "TRUCK"
+      const mileage = isRoadTransport ? randInt(1000, 150000) : null
       const price = cat.type === "AIR" ? randInt(15, 500) * 1000000
         : cat.type === "WATER" ? randInt(500, 15000) * 1000
         : cat.type === "SPECIAL" ? randInt(2000, 25000) * 1000
         : cat.type === "TRUCK" ? randInt(1500, 20000) * 1000
         : randInt(200, 3500) * 1000
 
-      const vin = `${make.slice(0,3).toUpperCase()}${randInt(100000,999999)}${randInt(100000,999999)}`.slice(0, 17)
-      const existing = await prisma.vehicle.findUnique({ where: { vin } }).catch(() => null)
+      const vin = isRoadTransport ? createSeedVin(cat.type, i) : null
+      const existing = vin ? await prisma.vehicle.findUnique({ where: { vin } }).catch(() => null) : null
       if (existing) continue
+      const categoryId = categoryIds.get(cat.type)
+      if (!categoryId) throw new Error(`Missing category for ${cat.type}`)
 
       const vehicle = await prisma.vehicle.create({
         data: {
           make, model, year, price, mileage, vin,
-          fuelType: pick(cat.fuels),
-          transmission: pick(TRANSMISSIONS),
+          operatingHours: cat.type === "SPECIAL" || cat.type === "WATER" ? randInt(100, 10000) : null,
+          flightHours: cat.type === "AIR" ? randInt(100, 5000) : null,
+          serialNumber: cat.type === "SPECIAL" ? `SN-${String(i).padStart(8, "0")}` : null,
+          registrationNumber: cat.type === "WATER" ? `HIN-${String(i).padStart(8, "0")}` : cat.type === "AIR" ? `RA-${String(i).padStart(8, "0")}` : null,
+          fuelType: cat.type === "AIR" ? (/(Cessna|Piper|Beechcraft)/i.test(make) ? "AVGAS" : "JET_A1") : cat.type === "SPECIAL" || cat.type === "TRUCK" ? "DIESEL" : "GASOLINE",
+          transmission: cat.type === "MOTORCYCLE" ? "MANUAL" : cat.type === "TRUCK" ? pick(["MANUAL", "AUTOMATIC", "ROBOTIC"]) : "",
           bodyType: pick(cat.bodyTypes),
           color: pick(COLORS),
           engineVolume: cat.type === "AIR" ? null : parseFloat((randInt(10, 60) / 10).toFixed(1)),
           power: randInt(15, 600),
-          driveType: pick(["FWD", "RWD", "AWD"]),
+          driveType: isRoadTransport ? pick(["FWD", "RWD", "AWD"]) : null,
           condition: pick(CONDITIONS),
           vehicleType: cat.type,
           location: pick(CITIES),
           description: `${make} ${model} ${year} года. ${pick(["Отличное состояние", "Идеал", "Гаражное хранение", "Сервисная книжка"])}.`,
-          images: JSON.stringify([`https://cdn.autmart.ru/placeholder/${cat.type.toLowerCase()}-${randInt(1,5)}.jpg`]),
+          images: null,
           userId: admin.id,
           categoryId,
           steeringWheel: "LEFT",

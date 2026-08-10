@@ -1,14 +1,32 @@
 import { prisma } from "../src/lib/prisma"
 import { BRANDS, getBrandsByCategory } from "../src/lib/catalog"
 
+const CATEGORY_META: Record<string, { name: string; description: string; icon: string }> = {
+  MOTORCYCLE: { name: "Мототехника", description: "Мотоциклы, скутеры и квадроциклы", icon: "Motorbike" },
+  TRUCK: { name: "Грузовой транспорт", description: "Коммерческий и грузовой транспорт", icon: "Truck" },
+  SPECIAL: { name: "Спецтехника", description: "Строительная, дорожная и сельскохозяйственная техника", icon: "Tractor" },
+  WATER: { name: "Водный транспорт", description: "Катера, яхты и гидроциклы", icon: "Speedboat" },
+  AIR: { name: "Воздушный транспорт", description: "Самолёты, вертолёты и другая авиация", icon: "Plane" },
+}
+
+function createSeedVin(vehicleType: string, index: number) {
+  const segment = vehicleType === "MOTORCYCLE" ? "M" : vehicleType === "TRUCK" ? "T" : "C"
+  return `D${segment}${String(index).padStart(15, "0")}`
+}
+
 async function main() {
   console.log("Генерация объявлений всех категорий...")
 
-  const category = await prisma.category.upsert({
-    where: { name: "Легковые автомобили" },
-    update: {},
-    create: { name: "Легковые автомобили", description: "Все легковые", icon: "Car" },
-  })
+  const categoryIds = new Map<string, string>()
+  for (const [vehicleType, category] of Object.entries(CATEGORY_META)) {
+    const record = await prisma.category.upsert({
+      where: { name: category.name },
+      update: { description: category.description, icon: category.icon },
+      create: category,
+      select: { id: true },
+    })
+    categoryIds.set(vehicleType, record.id)
+  }
 
   const seller = await prisma.user.upsert({
     where: { email: "demo@avtorynok.ru" },
@@ -43,7 +61,10 @@ async function main() {
       for (const model of models) {
         const year = 2017 + Math.floor(Math.random() * 8)
         const price = getPriceForCategory(catSlug, brand.name)
-        const vin = `DEMO${brand.name.replace(/\s/g, "").toUpperCase().substring(0, 5)}${vehicleType.substring(0, 3)}${count.toString().padStart(4, "0")}`.substring(0, 17)
+        const isRoadTransport = vehicleType === "MOTORCYCLE" || vehicleType === "TRUCK"
+        const vin = isRoadTransport ? createSeedVin(vehicleType, count) : null
+        const categoryId = categoryIds.get(vehicleType)
+        if (!categoryId) throw new Error(`Missing category for ${vehicleType}`)
 
         const vehicle = await prisma.vehicle.create({
           data: {
@@ -51,21 +72,25 @@ async function main() {
             model,
             year,
             price,
-            mileage: Math.floor(Math.random() * 80000),
+            mileage: isRoadTransport ? Math.floor(Math.random() * 80000) : null,
+            operatingHours: vehicleType === "SPECIAL" || vehicleType === "WATER" ? Math.floor(Math.random() * 5000) : null,
+            flightHours: vehicleType === "AIR" ? Math.floor(Math.random() * 5000) : null,
             vin,
-            fuelType: catSlug === "water" || catSlug === "air" ? "GASOLINE" : "DIESEL",
-            transmission: "MANUAL",
+            serialNumber: vehicleType === "SPECIAL" ? `SN-${String(count).padStart(8, "0")}` : null,
+            registrationNumber: vehicleType === "WATER" ? `HIN-${String(count).padStart(8, "0")}` : vehicleType === "AIR" ? `RA-${String(count).padStart(8, "0")}` : null,
+            fuelType: vehicleType === "AIR" ? (/(Cessna|Piper|Beechcraft)/i.test(brand.name) ? "AVGAS" : "JET_A1") : vehicleType === "WATER" || vehicleType === "MOTORCYCLE" ? "GASOLINE" : "DIESEL",
+            transmission: vehicleType === "MOTORCYCLE" || vehicleType === "TRUCK" ? "MANUAL" : "",
             bodyType: null,
             color: null,
             power: 100 + Math.floor(Math.random() * 500),
-            driveType: null,
+            driveType: isRoadTransport ? "RWD" : null,
             condition: conditions[Math.floor(Math.random() * conditions.length)],
             vehicleType,
             location: cities[Math.floor(Math.random() * cities.length)],
             description: getDesc(brand.name, model),
             images: JSON.stringify([getPhoto()]),
             userId: seller.id,
-            categoryId: category.id,
+            categoryId,
           },
         })
 
