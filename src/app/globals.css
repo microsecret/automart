@@ -542,6 +542,26 @@ select {
   flex-shrink: 0;
 }
 
+.catalog-sort-control {
+  flex-shrink: 0;
+}
+
+.catalog-sort-control .mantine-Input-input,
+.catalog-sort-control .mantine-Select-input {
+  min-height: 32px;
+  border-color: var(--market-field-line);
+  border-radius: 9px;
+  background: var(--market-surface);
+  color: var(--market-control-text);
+  font-weight: 650;
+}
+
+.catalog-sort-control .mantine-Input-input:focus,
+.catalog-sort-control .mantine-Select-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px var(--market-focus);
+}
+
 .catalog-heading {
   scroll-margin-top: calc(var(--app-header-height) + 16px);
 }
@@ -565,9 +585,9 @@ select {
 .catalog-filter-field--make,
 .catalog-filter-field--model { grid-column: span 2; }
 .catalog-filter-field--sort { grid-column: span 4; }
-.catalog-filter-field--price { grid-column: span 3; }
+.catalog-filter-field--price { grid-column: span 2; }
 .catalog-filter-field--year { grid-column: span 2; }
-.catalog-filter-field--city { grid-column: span 3; }
+.catalog-filter-field--city { grid-column: span 2; }
 .catalog-filter-field--mileage { grid-column: span 2; }
 
 .catalog-filter-field {
@@ -1065,6 +1085,9 @@ select {
   border-color: color-mix(in srgb, var(--market-field-line) 92%, transparent);
   background: var(--market-field);
   font-weight: 650;
+  min-height: 29px;
+  padding: 4px 10px;
+  font-size: 12px;
 }
 
 .parts-workspace {
@@ -1171,10 +1194,18 @@ select {
     align-items: flex-start;
   }
 
-  .catalog-view-switch {
+  .catalog-heading > .mantine-Group-root:last-child {
     width: 100%;
   }
 
+  .catalog-sort-control,
+  .catalog-view-switch {
+    flex: 1;
+    width: auto;
+  }
+
+  .catalog-sort-control .mantine-Input-input,
+  .catalog-sort-control .mantine-Select-input,
   .catalog-view-switch .mantine-SegmentedControl-root,
   .catalog-view-switch .mantine-SegmentedControl-inner {
     width: 100%;

@@ -198,7 +198,18 @@ export default function HomePage(p: HomePageProps = {}) {
           <Text component={p.categorySlug ? "h1" : "h2"} fw={800} fz={{base:20,md:24}} c="dark.9">{p.pageTitle || "Все объявления"}</Text>
           {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} объявлений</Text>}
         </Stack>
-        <SegmentedControl className="catalog-view-switch" size="sm" value={view} onChange={(v) => setView(v)} radius="md" data={[{label:<Group gap={4} wrap="nowrap"><IconLayoutGrid size={15} stroke={1.8}/> <Text size="xs" fw={600}>Сетка</Text></Group>,value:"grid"},{label:<Group gap={4} wrap="nowrap"><IconList size={15} stroke={1.8}/> <Text size="xs" fw={600}>Список</Text></Group>,value:"list"}]} />
+        <Group gap="xs" wrap="nowrap">
+          <Select
+            className="catalog-sort-control"
+            aria-label="Сортировка объявлений"
+            data={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            value={sort}
+            onChange={(v) => setSort(v || "newest")}
+            size="xs"
+            w={160}
+          />
+          <SegmentedControl className="catalog-view-switch" size="sm" value={view} onChange={(v) => setView(v)} radius="md" data={[{label:<Group gap={4} wrap="nowrap"><IconLayoutGrid size={15} stroke={1.8}/> <Text size="xs" fw={600}>Сетка</Text></Group>,value:"grid"},{label:<Group gap={4} wrap="nowrap"><IconList size={15} stroke={1.8}/> <Text size="xs" fw={600}>Список</Text></Group>,value:"list"}]} />
+        </Group>
       </Group>
 
       <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="lg" p="md" withBorder>
@@ -224,7 +235,6 @@ export default function HomePage(p: HomePageProps = {}) {
               onChange={setModel}
               size="sm"
             />
-            <Select className="catalog-filter-field catalog-filter-field--sort" label="Сортировка" data={SORT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} value={sort} onChange={(v) => setSort(v || "newest")} size="sm" />
             <Box className="catalog-filter-field catalog-filter-field--price catalog-price-range">
               <Text size="10px" c="dimmed" fw={800} tt="uppercase">Цена, ₽</Text>
               <Group gap={4} wrap="nowrap">
@@ -232,10 +242,7 @@ export default function HomePage(p: HomePageProps = {}) {
                 <TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} />
               </Group>
             </Box>
-            <Select className="catalog-filter-field catalog-filter-field--year" label="Год от" placeholder="Любой" data={yearData} searchable clearable value={yearFrom} onChange={setYearFrom} size="sm" />
-            <Select className="catalog-filter-field catalog-filter-field--year" label="Год до" placeholder="Любой" data={yearData} searchable clearable value={yearTo} onChange={setYearTo} size="sm" />
             <Select className="catalog-filter-field catalog-filter-field--city" label="Город" placeholder="Все города" data={POPULAR_CITIES.map((c) => ({value:c,label:c}))} searchable clearable value={city} onChange={setCity} size="sm" />
-            <TextInput className="catalog-filter-field catalog-filter-field--mileage" label={`${usageMeta.label}, до ${usageMeta.unit}`} placeholder="Не ограничено" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" type="number" />
           </Box>
 
           {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
@@ -266,6 +273,15 @@ export default function HomePage(p: HomePageProps = {}) {
           <Collapse in={showAdvanced} id="catalog-advanced-filters">
             <Divider my="xs"/>
             <Stack gap="md" className="catalog-filter-advanced">
+              <Box className="catalog-advanced-usage">
+                <Text size="xs" fw={600} c="gray.6" mb={6}>Год и {usageMeta.label.toLowerCase()}</Text>
+                <Group gap="xs" align="flex-end" wrap="wrap">
+                  <Select aria-label="Год от" placeholder="Год от" data={yearData} searchable clearable value={yearFrom} onChange={setYearFrom} size="sm" w={118} />
+                  <Select aria-label="Год до" placeholder="Год до" data={yearData} searchable clearable value={yearTo} onChange={setYearTo} size="sm" w={118} />
+                  <TextInput aria-label={`${usageMeta.label}, от ${usageMeta.unit}`} placeholder={`${usageMeta.label}, от`} value={mileageFrom} onChange={(e) => setMileageFrom(e.target.value)} size="sm" w={130} type="number" />
+                  <TextInput aria-label={`${usageMeta.label}, до ${usageMeta.unit}`} placeholder={`${usageMeta.label}, до`} value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" w={130} type="number" />
+                </Group>
+              </Box>
               {supportsTransmission(vt) && (
               <Group gap="lg" wrap="wrap" align="flex-start">
                 <Box>
@@ -405,13 +421,6 @@ export default function HomePage(p: HomePageProps = {}) {
               </Group>
 
               <Group gap="lg" wrap="wrap" align="flex-end">
-                <Box>
-                  <Text size="xs" fw={600} c="gray.6" mb={6}>{usageMeta.label}, {usageMeta.unit}</Text>
-                  <Group gap="xs" align="flex-end">
-                    <TextInput placeholder="от" value={mileageFrom} onChange={(e) => setMileageFrom(e.target.value)} size="sm" w={90} type="number"/>
-                    <TextInput placeholder="до" value={mileageTo} onChange={(e) => setMileageTo(e.target.value)} size="sm" w={90} type="number"/>
-                  </Group>
-                </Box>
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Владельцев, до</Text>
                   <Select placeholder="Неважно" data={OWNERS_COUNT_OPTIONS.map((o) => ({value:o.value,label:o.label}))} clearable value={ownersCountTo || null} onChange={(value) => setOwnersCountTo(value || "")} size="sm" w={150}/>
