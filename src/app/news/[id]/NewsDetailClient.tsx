@@ -8,7 +8,7 @@ import { IconNews, IconClock, IconMessageCircle2, IconExternalLink, IconEye, Ico
 import Link from "next/link"
 import { formatRelativeDate, formatDate } from "@/lib/format"
 import { newsHref } from "@/lib/news"
-import { fetchJson } from "@/lib/api-client"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { notifications } from "@mantine/notifications"
 
@@ -94,21 +94,19 @@ export default function NewsDetailClient({ id }: { id: string }) {
     if (!comment.trim() || !session) return
     setSending(true)
     try {
-      const response = await fetch(`/api/news/${id}`, {
+      const createdComment = await fetchJson<NewsComment>(`/api/news/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: comment.trim() }),
       })
-      const createdComment = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(createdComment?.error || "Не удалось отправить комментарий")
       setComment("")
       await globalMutate<NewsArticle>(`/api/news/${id}`, (current) => current ? {
         ...current,
-        comments: [createdComment as NewsComment, ...current.comments],
+        comments: [createdComment, ...current.comments],
       } : current, { revalidate: false })
       notifications.show({ title: "Комментарий опубликован", message: "Он уже виден под новостью.", color: "teal" })
-    } catch (error) {
-      notifications.show({ title: "Не удалось отправить", message: error instanceof Error ? error.message : "Повторите попытку.", color: "red" })
+    } catch (commentError) {
+      notifications.show({ title: "Не удалось отправить", message: getApiClientErrorMessage(commentError, "Повторите попытку."), color: "red" })
     } finally { setSending(false) }
   }
 
