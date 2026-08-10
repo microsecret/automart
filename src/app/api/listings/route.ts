@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
-import { getFuelOptions, supportsTransmission } from "@/lib/constants"
+import { getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
 import { getVehicleSubtypeConfig, isValidVehicleSubtype } from "@/lib/vehicleSubtypes"
 import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 
@@ -124,6 +124,7 @@ export async function GET(request: NextRequest) {
     const vehicleType = sp.get("vehicleType") // CAR, MOTORCYCLE, TRUCK, SPECIAL, WATER, AIR
     const allowedVehicleTypes = new Set(["CAR", "MOTORCYCLE", "TRUCK", "SPECIAL", "WATER", "AIR"])
     if (vehicleType && !allowedVehicleTypes.has(vehicleType)) return NextResponse.json({ error: "Некорректный тип транспорта" }, { status: 400 })
+    if (type === "part" && vehicleType) return NextResponse.json({ error: "Тип транспорта нельзя использовать для выдачи запчастей" }, { status: 400 })
 
     const maxVehicleYear = new Date().getFullYear() + 1
     const yearRange = parseNumericRange({ from: yearFrom, to: yearTo, label: "Год выпуска", min: 1886, max: maxVehicleYear })
@@ -135,6 +136,36 @@ export async function GET(request: NextRequest) {
     const powerRange = parseNumericRange({ from: powerFrom, to: powerTo, label: "Мощность" })
     const invalidRange = [yearRange, ownersRange, mileageRange, operatingHoursRange, flightHoursRange, engineVolumeRange, powerRange].find((range) => range.error)
     if (invalidRange?.error) return NextResponse.json({ error: invalidRange.error }, { status: 400 })
+
+    // The public endpoint is also called directly from shared links. Do not
+    // silently apply car-only fields to water, air or heavy equipment when a
+    // visitor changes the URL by hand — those values make the result and UI
+    // contradict the category-specific form.
+    const hasMileageRange = mileageRange.from !== undefined || mileageRange.to !== undefined
+    const hasOperatingHoursRange = operatingHoursRange.from !== undefined || operatingHoursRange.to !== undefined
+    const hasFlightHoursRange = flightHoursRange.from !== undefined || flightHoursRange.to !== undefined
+    if (vehicleType && ["SPECIAL", "WATER", "AIR"].includes(vehicleType) && hasMileageRange) {
+      return NextResponse.json({ error: "Для выбранного типа используйте наработку или налёт, а не пробег" }, { status: 400 })
+    }
+    if (vehicleType && !["SPECIAL", "WATER"].includes(vehicleType) && hasOperatingHoursRange) {
+      return NextResponse.json({ error: "Наработка доступна только для спецтехники и водного транспорта" }, { status: 400 })
+    }
+    if (vehicleType && vehicleType !== "AIR" && hasFlightHoursRange) {
+      return NextResponse.json({ error: "Налёт доступен только для воздушного транспорта" }, { status: 400 })
+    }
+
+    const requestedFuelTypes = parseValues(fuelType)
+    if (vehicleType && requestedFuelTypes.some((value) => !getFuelOptions(vehicleType).some((item) => item.value === value))) {
+      return NextResponse.json({ error: "Выбранный тип топлива не подходит для этой категории транспорта" }, { status: 400 })
+    }
+    if (vehicleType && transmission) {
+      if (!supportsTransmission(vehicleType)) {
+        return NextResponse.json({ error: "Фильтр КПП неприменим к выбранной категории транспорта" }, { status: 400 })
+      }
+      if (!getTransmissionOptions(vehicleType).some((item) => item.value === transmission)) {
+        return NextResponse.json({ error: "Выбранный тип КПП не подходит для этой категории транспорта" }, { status: 400 })
+      }
+    }
 
     // Фильтры запчастей
     const partType = sp.get("partType")
