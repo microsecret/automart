@@ -375,9 +375,15 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
 
             {/* Характеристики */}
             <Card withBorder radius="lg" p="lg" className="vehicle-detail-specs">
-              <Group justify="space-between" mb="md" align="baseline">
-                <Title order={3} size="h4">Характеристики</Title>
-                {identityValue && <Text className="vehicle-detail-specs__identity">{identityMeta.badgeLabel}: {identityValue}</Text>}
+              <Group justify="space-between" mb="md" align="center" gap="sm" wrap="wrap">
+                <Group gap="sm" wrap="nowrap">
+                  <ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconEngine size={18} /></ThemeIcon>
+                  <Box>
+                    <Title order={3} size="h4">Характеристики</Title>
+                    <Text size="xs" c="dimmed">Параметры, указанные продавцом</Text>
+                  </Box>
+                </Group>
+                {identityValue && <Badge variant="light" color="gray" radius="xl" className="vehicle-detail-specs__identity">{identityMeta.badgeLabel}: {identityValue}</Badge>}
               </Group>
               <Box className="vehicle-detail-specs__grid">
                 {specs.map((spec, i) => (
@@ -403,7 +409,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       <Text size="xs" c="dimmed">Ключевые сведения из объявления продавца</Text>
                     </Box>
                   </Group>
-                  <Badge variant="light" color="gray" radius="xl">Проверка данных</Badge>
+                  <Badge variant="light" color="gray" radius="xl">Данные объявления</Badge>
                 </Group>
                 <Box className="vehicle-detail-statuses__grid">
                   {statusItems.map((item) => (

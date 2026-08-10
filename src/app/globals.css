@@ -1459,7 +1459,6 @@ select {
 .vehicle-detail-specs__identity {
   max-width: 50%;
   overflow: hidden;
-  color: var(--market-muted);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
@@ -1478,6 +1477,7 @@ select {
 
 .vehicle-detail-specs__grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: linear-gradient(135deg, rgba(238,242,255,.78), rgba(255,255,255,.92));
 }
 
 .vehicle-detail-statuses__grid {
@@ -1494,6 +1494,10 @@ select {
   background: color-mix(in srgb, var(--market-surface) 94%, var(--market-surface-subtle));
 }
 
+.vehicle-detail-specs__item {
+  background: rgba(255,255,255,.68);
+}
+
 .vehicle-detail-specs__label,
 .vehicle-detail-statuses__label {
   color: var(--market-muted);
@@ -1504,6 +1508,12 @@ select {
 
 .vehicle-detail-specs__icon {
   display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #eef2ff;
   color: #6366f1;
 }
 
