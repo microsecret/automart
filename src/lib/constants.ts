@@ -88,6 +88,72 @@ export const MOTORCYCLE_TRANSMISSIONS = [
 
 export type TransportVehicleType = "CAR" | "MOTORCYCLE" | "TRUCK" | "SPECIAL" | "WATER" | "AIR"
 
+export type VehicleIdentityField = "vin" | "serialNumber" | "registrationNumber"
+
+type VehicleIdentityMeta = {
+  field: VehicleIdentityField
+  label: string
+  badgeLabel: string
+  placeholder: string
+  description: string
+  maxLength: number
+}
+
+const VEHICLE_IDENTITY_META: Record<TransportVehicleType, VehicleIdentityMeta> = {
+  CAR: {
+    field: "vin",
+    label: "VIN",
+    badgeLabel: "VIN",
+    placeholder: "17 символов",
+    description: "Нужен для проверки истории и защиты от дублей.",
+    maxLength: 17,
+  },
+  MOTORCYCLE: {
+    field: "vin",
+    label: "VIN",
+    badgeLabel: "VIN",
+    placeholder: "17 символов",
+    description: "Нужен для проверки истории и защиты от дублей.",
+    maxLength: 17,
+  },
+  TRUCK: {
+    field: "vin",
+    label: "VIN",
+    badgeLabel: "VIN",
+    placeholder: "17 символов",
+    description: "Нужен для проверки истории и защиты от дублей.",
+    maxLength: 17,
+  },
+  SPECIAL: {
+    field: "serialNumber",
+    label: "Заводской номер или VIN",
+    badgeLabel: "Заводской №",
+    placeholder: "Например, CAT-320-2020-001",
+    description: "Используется для проверки техники и защиты от дублей.",
+    maxLength: 32,
+  },
+  WATER: {
+    field: "registrationNumber",
+    label: "Бортовой номер или HIN",
+    badgeLabel: "Бортовой № / HIN",
+    placeholder: "Например, RU-12345 или ABC12345D323",
+    description: "Номер корпуса или регистрации помогает подтвердить судно.",
+    maxLength: 32,
+  },
+  AIR: {
+    field: "registrationNumber",
+    label: "Регистрационный номер ВС",
+    badgeLabel: "Регистрационный №",
+    placeholder: "Например, RA-12345",
+    description: "Регистрационный или серийный номер воздушного судна.",
+    maxLength: 32,
+  },
+}
+
+export function getVehicleIdentityMeta(vehicleType: string | null | undefined): VehicleIdentityMeta {
+  return VEHICLE_IDENTITY_META[(vehicleType || "CAR") as TransportVehicleType] || VEHICLE_IDENTITY_META.CAR
+}
+
 export function supportsTransmission(vehicleType: string | null | undefined) {
   return vehicleType === "CAR" || vehicleType === "MOTORCYCLE" || vehicleType === "TRUCK"
 }

@@ -66,7 +66,7 @@ import Link from "next/link"
 import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
 import Photo360Viewer from "@/components/viewer/Photo360Viewer"
 import CreditCalculator from "@/components/listings/CreditCalculator"
-import { getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 
@@ -78,10 +78,12 @@ interface VehicleData {
   price: number
   vehicleType: string
   typeDetails: string | null
-  mileage: number
+  mileage: number | null
   operatingHours: number | null
   flightHours: number | null
-  vin: string
+  vin: string | null
+  serialNumber: string | null
+  registrationNumber: string | null
   fuelType: string | null
   fuelTypeLabel: string
   transmission: string | null
@@ -219,6 +221,8 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   }
   const typeMeta = VEHICLE_META[data.vehicleType] || VEHICLE_META.CAR
   const hasRoadVehicleDetails = ["CAR", "MOTORCYCLE", "TRUCK"].includes(data.vehicleType)
+  const identityMeta = getVehicleIdentityMeta(data.vehicleType)
+  const identityValue = identityMeta.field === "vin" ? data.vin : identityMeta.field === "serialNumber" ? data.serialNumber : data.registrationNumber
   const usageMeta = getUsageMeta(data.vehicleType)
   const usageValue = usageMeta.field === "flightHours" ? data.flightHours
     : usageMeta.field === "operatingHours" ? data.operatingHours
@@ -349,7 +353,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             <Card withBorder radius="lg" p="lg">
               <Group justify="space-between" mb="md">
                 <Title order={3} size="h4">Характеристики</Title>
-                {hasRoadVehicleDetails && data.vin && <Badge variant="light" color="gray" size="sm">VIN: {data.vin}</Badge>}
+                {identityValue && <Badge variant="light" color="gray" size="sm">{identityMeta.badgeLabel}: {identityValue}</Badge>}
               </Group>
               <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
                 {specs.map((spec, i) => (

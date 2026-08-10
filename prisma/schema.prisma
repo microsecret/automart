@@ -59,10 +59,12 @@ model Vehicle {
   model        String   // Model name (Camry, X5, etc.)
   year         Int
   price        Int      // Price in rubles
-  mileage      Int      // in kilometers
+  mileage      Int?     // in kilometers; not applicable to water, air and special equipment
   operatingHours Int?   // Engine hours for special equipment and water transport
   flightHours  Int?     // Airframe flight hours for aircraft
-  vin          String   @unique // Vehicle Identification Number
+  vin          String?  @unique // Vehicle Identification Number for road vehicles
+  serialNumber String?  // Factory serial number for special equipment
+  registrationNumber String? // Airframe or vessel registration / hull identification number
   fuelType     String   // GASOLINE, DIESEL, ELECTRIC, HYBRID, GAS, OTHER
   transmission String   // MANUAL, AUTOMATIC, VARIATOR, ROBOTIC
   bodyType     String?  // SEDAN, HATCHBACK, SUV, COUPE, CONVERTIBLE, WAGON, MINIVAN, PICKUP, OTHER
@@ -109,6 +111,8 @@ model Vehicle {
   @@index([price])
   @@index([location])
   @@index([vin])
+  @@index([serialNumber])
+  @@index([registrationNumber])
 }
 
 // Vehicle categories

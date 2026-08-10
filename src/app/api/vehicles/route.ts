@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import axios from "axios"
 import { prisma } from "@/lib/prisma"
-import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 import { parseMarketplaceImages } from "@/lib/media-url"
@@ -30,6 +30,45 @@ function normalizeOptionalText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return undefined
   const normalized = value.trim()
   return normalized ? normalized.slice(0, maxLength) : null
+}
+
+const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/
+const TRANSPORT_IDENTIFIER_PATTERN = /^[A-ZА-ЯЁ0-9][A-ZА-ЯЁ0-9 .\/-]{1,31}$/
+
+type VehicleIdentity = {
+  vin: string | null
+  serialNumber: string | null
+  registrationNumber: string | null
+}
+
+function normalizeVehicleIdentity(vehicleType: string, vin: unknown, serialNumber: unknown, registrationNumber: unknown): VehicleIdentity | { error: string } {
+  const identityMeta = getVehicleIdentityMeta(vehicleType)
+  const normalized = {
+    vin: typeof vin === "string" ? vin.trim().toUpperCase() : "",
+    serialNumber: typeof serialNumber === "string" ? serialNumber.trim().toUpperCase() : "",
+    registrationNumber: typeof registrationNumber === "string" ? registrationNumber.trim().toUpperCase() : "",
+  }
+  const selectedValue = normalized[identityMeta.field]
+
+  if (!selectedValue) return { error: `Укажите: ${identityMeta.label}` }
+  if (identityMeta.field === "vin") {
+    if (!VIN_PATTERN.test(selectedValue)) return { error: "VIN должен содержать 17 латинских символов и цифр без I, O и Q" }
+    return { vin: selectedValue, serialNumber: null, registrationNumber: null }
+  }
+  if (!TRANSPORT_IDENTIFIER_PATTERN.test(selectedValue)) {
+    return { error: `${identityMeta.label} должен содержать от 3 до 32 букв, цифр, пробелов, точек, слэшей или дефисов` }
+  }
+
+  // У спецтехники иногда указан полноценный VIN. Сохраняем его в отдельном
+  // уникальном поле, чтобы прежняя антидубль-проверка продолжала работать.
+  if (vehicleType === "SPECIAL" && VIN_PATTERN.test(selectedValue)) {
+    return { vin: selectedValue, serialNumber: null, registrationNumber: null }
+  }
+  return {
+    vin: null,
+    serialNumber: identityMeta.field === "serialNumber" ? selectedValue : null,
+    registrationNumber: identityMeta.field === "registrationNumber" ? selectedValue : null,
+  }
 }
 
 function normalizeTypeDetails(value: unknown, vehicleType: string) {
@@ -104,6 +143,8 @@ export async function POST(request: NextRequest) {
       operatingHours,
       flightHours,
       vin,
+      serialNumber,
+      registrationNumber,
       fuelType,
       transmission,
       bodyType,
@@ -233,7 +274,7 @@ export async function POST(request: NextRequest) {
     const normalizedOperatingHours = normalizeOptionalNonNegativeInteger(operatingHours)
     const normalizedFlightHours = normalizeOptionalNonNegativeInteger(flightHours)
     const normalizedImages = parseMarketplaceImages(images)
-    const normalizedVin = typeof vin === "string" ? vin.trim().toUpperCase() : ""
+    const normalizedIdentity = normalizeVehicleIdentity(normalizedVehicleType, vin, serialNumber, registrationNumber)
     const normalizedDescription = normalizeOptionalText(description, 10_000)
 
     if (normalizedMileage === undefined || normalizedOperatingHours === undefined || normalizedFlightHours === undefined) {
@@ -241,10 +282,7 @@ export async function POST(request: NextRequest) {
     }
     if (!normalizedImages) return NextResponse.json({ error: "Допустимы до 12 корректных изображений" }, { status: 400 })
     if (normalizedImages.length === 0) return NextResponse.json({ error: "Добавьте хотя бы одну фотографию транспорта" }, { status: 400 })
-    if (!normalizedVin) return NextResponse.json({ error: "Укажите VIN из 17 символов" }, { status: 400 })
-    if (normalizedVin && !/^[A-HJ-NPR-Z0-9]{17}$/.test(normalizedVin)) {
-      return NextResponse.json({ error: "VIN должен содержать 17 латинских символов и цифр без I, O и Q" }, { status: 400 })
-    }
+    if ("error" in normalizedIdentity) return NextResponse.json({ error: normalizedIdentity.error }, { status: 400 })
 
     const allowedFuelTypes = new Set<string>(getFuelOptions(normalizedVehicleType).map((item) => item.value))
     if (!fuelType || !allowedFuelTypes.has(String(fuelType))) {
@@ -274,11 +312,13 @@ export async function POST(request: NextRequest) {
         model: normalizedModel,
         year: normalizedYear,
         price: normalizedPrice,
-        mileage: ["SPECIAL", "WATER", "AIR"].includes(normalizedVehicleType) ? 0 : (normalizedMileage || 0),
+        mileage: ["SPECIAL", "WATER", "AIR"].includes(normalizedVehicleType) ? null : normalizedMileage,
         operatingHours: ["SPECIAL", "WATER"].includes(normalizedVehicleType) ? normalizedOperatingHours : null,
         flightHours: normalizedVehicleType === "AIR" ? normalizedFlightHours : null,
-        vin: normalizedVin,
-        fuelType: fuelType ? fuelType.trim() : null,
+        vin: normalizedIdentity.vin,
+        serialNumber: normalizedIdentity.serialNumber,
+        registrationNumber: normalizedIdentity.registrationNumber,
+        fuelType: String(fuelType).trim(),
         transmission: supportsTransmission(normalizedVehicleType) ? String(transmission).trim() : "NOT_APPLICABLE",
         bodyType: normalizedBodyType,
         color: color ? color.trim() : null,
@@ -329,6 +369,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(vehicle, { status: 201 })
   } catch (error) {
     console.error("Error creating vehicle:", error)
+    if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
+      return NextResponse.json({ error: "Транспорт с таким VIN уже размещён. Проверьте номер или обратитесь в поддержку." }, { status: 409 })
+    }
     return NextResponse.json(
       { error: "Failed to create vehicle" },
       { status: 500 }

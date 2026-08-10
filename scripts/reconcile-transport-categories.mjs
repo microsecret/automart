@@ -76,9 +76,10 @@ function repairLegacyVehicleData(vehicle, vehicleType, categoryId) {
   if (vehicleType === "AIR") {
     return {
       ...base,
-      mileage: 0,
+      mileage: null,
       flightHours: vehicle.flightHours ?? existingUsage,
       operatingHours: null,
+      registrationNumber: vehicle.registrationNumber ?? vehicle.vin,
       transmission: "",
       fuelType: vehicle.make === "Cessna" ? "AVGAS" : "JET_A1",
     }
@@ -87,9 +88,12 @@ function repairLegacyVehicleData(vehicle, vehicleType, categoryId) {
   if (vehicleType === "SPECIAL" || vehicleType === "WATER") {
     return {
       ...base,
-      mileage: 0,
+      mileage: null,
       operatingHours: vehicle.operatingHours ?? existingUsage,
       flightHours: null,
+      ...(vehicleType === "SPECIAL"
+        ? { serialNumber: vehicle.serialNumber ?? vehicle.vin }
+        : { registrationNumber: vehicle.registrationNumber ?? vehicle.vin }),
       transmission: "",
       fuelType: vehicleType === "SPECIAL" ? "DIESEL" : "GASOLINE",
     }
@@ -128,9 +132,17 @@ async function main() {
       await tx.vehicle.updateMany({ where: { vehicleType }, data: { categoryId } })
     }
 
+    // These segments measure operating or flight time, not road mileage.  A
+    // previous schema forced a synthetic zero into mileage; clear it for every
+    // already-classified record as well as for newly reclassified legacy data.
+    await tx.vehicle.updateMany({
+      where: { vehicleType: { in: ["SPECIAL", "WATER", "AIR"] } },
+      data: { mileage: null },
+    })
+
     const legacyVehicles = await tx.vehicle.findMany({
       where: { vehicleType: "CAR" },
-      select: { id: true, make: true, model: true, mileage: true, operatingHours: true, flightHours: true, transmission: true },
+      select: { id: true, make: true, model: true, mileage: true, operatingHours: true, flightHours: true, vin: true, serialNumber: true, registrationNumber: true, transmission: true },
     })
 
     let repaired = 0

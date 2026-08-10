@@ -11,6 +11,8 @@ const REQUIRED_TRIGGERS = [
 const REQUIRED_INDEXES = [
   "Listing_live_vehicle_subject_key",
   "Listing_live_part_subject_key",
+  "Vehicle_serialNumber_idx",
+  "Vehicle_registrationNumber_idx",
 ]
 const CATEGORY_NAME_BY_VEHICLE_TYPE = {
   CAR: "Легковые автомобили",
@@ -41,6 +43,16 @@ function inspectMedia(value) {
   } catch {
     return { state: "invalid" }
   }
+}
+
+function hasValidVehicleIdentity(vehicle) {
+  const hasVin = typeof vehicle.vin === "string" && /^[A-HJ-NPR-Z0-9]{17}$/.test(vehicle.vin)
+  const hasSerialNumber = typeof vehicle.serialNumber === "string" && vehicle.serialNumber.trim().length >= 3
+  const hasRegistrationNumber = typeof vehicle.registrationNumber === "string" && vehicle.registrationNumber.trim().length >= 3
+
+  if (["CAR", "MOTORCYCLE", "TRUCK"].includes(vehicle.vehicleType)) return hasVin
+  if (vehicle.vehicleType === "SPECIAL") return hasVin || hasSerialNumber
+  return hasVin || hasRegistrationNumber
 }
 
 async function main() {
@@ -79,7 +91,18 @@ async function main() {
       HAVING COUNT(*) > 1
     `),
     prisma.vehicle.findMany({
-      select: { id: true, make: true, model: true, vehicleType: true, images: true, category: { select: { name: true } } },
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        vehicleType: true,
+        mileage: true,
+        vin: true,
+        serialNumber: true,
+        registrationNumber: true,
+        images: true,
+        category: { select: { name: true } },
+      },
     }),
     prisma.part.findMany({
       select: { id: true, images: true },
@@ -98,6 +121,10 @@ async function main() {
     const inferredVehicleType = inferLegacyVehicleType(vehicle.make, vehicle.model)
     return inferredVehicleType !== null && inferredVehicleType !== vehicle.vehicleType
   })
+  const identityMismatches = vehicles.filter((vehicle) => !hasValidVehicleIdentity(vehicle))
+  const nonRoadMileageMismatches = vehicles.filter((vehicle) =>
+    ["SPECIAL", "WATER", "AIR"].includes(vehicle.vehicleType) && vehicle.mileage !== null,
+  )
   const media = [...vehicles, ...parts].map((record) => inspectMedia(record.images))
   const mediaSummary = {
     safe: media.filter((record) => record.state === "safe").length,
@@ -119,7 +146,7 @@ async function main() {
       orphanedListings: orphanedListings.length,
       ambiguousListings: ambiguousListings.length,
       duplicateLiveSubjects: duplicateLiveSubjects.length,
-      valid: orphanedListings.length === 0 && ambiguousListings.length === 0 && duplicateLiveSubjects.length === 0 && missingTriggers.length === 0 && missingIndexes.length === 0 && categoryMismatches.length === 0 && legacyTypeMismatches.length === 0,
+      valid: orphanedListings.length === 0 && ambiguousListings.length === 0 && duplicateLiveSubjects.length === 0 && missingTriggers.length === 0 && missingIndexes.length === 0 && categoryMismatches.length === 0 && legacyTypeMismatches.length === 0 && identityMismatches.length === 0 && nonRoadMileageMismatches.length === 0,
     },
     databaseTriggers: {
       installed: REQUIRED_TRIGGERS.filter((name) => installedTriggers.includes(name)),
@@ -146,6 +173,26 @@ async function main() {
         model: vehicle.model,
         vehicleType: vehicle.vehicleType,
         expectedVehicleType: inferLegacyVehicleType(vehicle.make, vehicle.model),
+      })),
+    },
+    vehicleIdentityIntegrity: {
+      mismatches: identityMismatches.length,
+      samples: identityMismatches.slice(0, 20).map((vehicle) => ({
+        id: vehicle.id,
+        make: vehicle.make,
+        model: vehicle.model,
+        vehicleType: vehicle.vehicleType,
+        vin: vehicle.vin,
+        serialNumber: vehicle.serialNumber,
+        registrationNumber: vehicle.registrationNumber,
+      })),
+    },
+    usageIntegrity: {
+      nonRoadMileageMismatches: nonRoadMileageMismatches.length,
+      samples: nonRoadMileageMismatches.slice(0, 20).map((vehicle) => ({
+        id: vehicle.id,
+        vehicleType: vehicle.vehicleType,
+        mileage: vehicle.mileage,
       })),
     },
     media: mediaSummary,

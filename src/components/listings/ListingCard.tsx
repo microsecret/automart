@@ -25,7 +25,7 @@ export interface ListingCardData {
     make: string
     model: string
     year: number
-    mileage: number
+    mileage: number | null
     operatingHours?: number | null
     flightHours?: number | null
     fuelType: string | null

@@ -7,7 +7,7 @@ import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Butt
 import { IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
-import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 
@@ -39,7 +39,7 @@ export default function CreateVehiclePage() {
   const [f, setF] = useState({
     title: "", make: "", model: "", year: "", price: "", mileage: "",
     operatingHours: "", flightHours: "",
-    vin: "", fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SEDAN",
+    vin: "", serialNumber: "", registrationNumber: "", fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SEDAN",
     color: "", doors: "", engineVolume: "", power: "", driveType: "FWD",
     condition: "EXCELLENT", location: "", description: "",
     vehicleType: "CAR",
@@ -70,12 +70,16 @@ export default function CreateVehiclePage() {
     vehicleType,
     make: "",
     model: "",
+    vin: "",
+    serialNumber: "",
+    registrationNumber: "",
     fuelType: getFuelOptions(vehicleType)[0]?.value || "OTHER",
     transmission: getTransmissionOptions(vehicleType)[0]?.value || "",
     bodyType: vehicleType === "CAR" ? previous.bodyType || "SEDAN" : "",
     driveType: vehicleType === "CAR" ? previous.driveType || "FWD" : "",
   }))
   const usageMeta = getUsageMeta(f.vehicleType)
+  const identityMeta = getVehicleIdentityMeta(f.vehicleType)
   const fuelOptions = getFuelOptions(f.vehicleType)
   const transmissionOptions = getTransmissionOptions(f.vehicleType)
   const selectedCategory = categories.find((category) => category.vehicleType === f.vehicleType)
@@ -107,10 +111,12 @@ export default function CreateVehiclePage() {
         body: JSON.stringify({
           title: f.title || `${f.year} ${f.make} ${f.model}`,
           make: f.make, model: f.model, year: Number(f.year), price: Number(f.price),
-          mileage: f.mileage ? Number(f.mileage) : 0,
+          mileage: f.mileage ? Number(f.mileage) : null,
           operatingHours: f.operatingHours ? Number(f.operatingHours) : null,
           flightHours: f.flightHours ? Number(f.flightHours) : null,
           vin: f.vin || null,
+          serialNumber: f.serialNumber || null,
+          registrationNumber: f.registrationNumber || null,
           fuelType: f.fuelType, transmission: f.transmission, bodyType: f.bodyType,
           color: f.color || null, doors: f.doors ? Number(f.doors) : null,
           engineVolume: f.engineVolume ? parseFloat(f.engineVolume) : null,
@@ -222,7 +228,7 @@ export default function CreateVehiclePage() {
                 </Group>
                 <Group gap="sm" grow>
                   <TextInput label="Город" placeholder="Москва" required value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
-                  <TextInput label="VIN" placeholder="17 символов" value={f.vin} onChange={(e) => set("vin", e.target.value.toUpperCase())} size="sm" maxLength={17} required description="Нужен для проверки истории и защиты от дублей." />
+                  <TextInput label={identityMeta.label} placeholder={identityMeta.placeholder} value={identityMeta.field === "vin" ? f.vin : identityMeta.field === "serialNumber" ? f.serialNumber : f.registrationNumber} onChange={(e) => set(identityMeta.field, e.target.value.toUpperCase())} size="sm" maxLength={identityMeta.maxLength} required description={identityMeta.description} />
                 </Group>
               </Stack>
             </Paper>

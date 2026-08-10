@@ -8,7 +8,7 @@ import { Alert, Box, Button, Group, Loader, Paper, Select, Stack, Text, ThemeIco
 import { IconCar, IconCheck, IconClock, IconHistory, IconInfoCircle, IconShieldCheck } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 
-type OwnedVehicle = { id: string; make: string; model: string; year: number; mileage: number; location: string }
+type OwnedVehicle = { id: string; make: string; model: string; year: number; mileage: number | null; location: string }
 type VehiclesResponse = { vehicles: OwnedVehicle[] }
 type HistoryRequestResponse = { request: { id: string; status: string; createdAt: string }; message: string }
 
