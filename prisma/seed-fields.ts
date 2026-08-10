@@ -17,7 +17,7 @@ async function main() {
   let updated = 0
   for (const v of vehicles) {
     const isRightWheel = Math.random() < 0.12 // 12% правый руль
-    const isNew = v.condition === "NEW" || v.mileage < 100
+    const isNew = v.condition === "NEW" || (v.mileage !== null && v.mileage < 100)
     const owners = isNew ? 1 : Math.floor(Math.random() * 4) + 1
     const isDamaged = Math.random() < 0.25 // 25% имеют повреждения
     const isDealer = Math.random() < 0.35 // 35% дилеры
