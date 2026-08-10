@@ -10,6 +10,10 @@ export class ApiClientError extends Error {
   }
 }
 
+export function getApiClientErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message.trim() ? error.message : fallback
+}
+
 function getErrorMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === "object" && "error" in payload) {
     const message = (payload as { error?: unknown }).error

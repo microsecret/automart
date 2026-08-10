@@ -16,6 +16,9 @@ import {
   Group,
 } from "@mantine/core"
 import { IconAlertCircle, IconAt, IconLock } from "@tabler/icons-react"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+
+type ResendVerificationResponse = { message?: string }
 
 function getSafeCallbackUrl(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
@@ -76,16 +79,14 @@ export default function SignInForm() {
     setError(null)
     setInfo(null)
     try {
-      const response = await fetch("/api/auth/resend-verification", {
+      const data = await fetchJson<ResendVerificationResponse>("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.values.email }),
       })
-      const data = await response.json()
-      if (response.ok) setInfo(data.message)
-      else setError(data.error || "Не удалось отправить письмо")
-    } catch {
-      setError("Не удалось отправить письмо")
+      setInfo(data.message || "Письмо с подтверждением отправлено.")
+    } catch (requestError) {
+      setError(getApiClientErrorMessage(requestError, "Не удалось отправить письмо"))
     } finally {
       setLoading(false)
     }

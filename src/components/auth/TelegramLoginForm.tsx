@@ -5,6 +5,9 @@ import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { Alert, Anchor, Button, Group, Stack, Text, TextInput } from "@mantine/core"
 import { IconBrandTelegram, IconLock, IconPhone, IconRefresh } from "@tabler/icons-react"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+
+type TelegramCodeResponse = { message?: string; retryAfter?: number }
 
 function getSafeCallbackUrl(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
@@ -29,20 +32,15 @@ export default function TelegramLoginForm() {
     setError(null)
     setInfo(null)
     try {
-      const response = await fetch("/api/auth/telegram/request-code", {
+      const data = await fetchJson<TelegramCodeResponse>("/api/auth/telegram/request-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       })
-      const data = await response.json()
-      if (!response.ok) {
-        setError(data.error || "Не удалось отправить код")
-        return
-      }
       setSent(true)
       setInfo(data.message || "Проверьте Telegram-бота")
-    } catch {
-      setError("Сервис временно недоступен")
+    } catch (requestError) {
+      setError(getApiClientErrorMessage(requestError, "Сервис временно недоступен"))
     } finally {
       setLoading(false)
     }

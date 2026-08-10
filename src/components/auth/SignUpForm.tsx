@@ -15,6 +15,9 @@ import {
   Group,
 } from "@mantine/core"
 import { IconAlertCircle, IconAt, IconLock, IconPhone, IconUser } from "@tabler/icons-react"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+
+type RegistrationResponse = { emailDeliveryPending?: boolean }
 
 function getSafeCallbackUrl(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
@@ -46,7 +49,7 @@ export default function SignUpForm() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/auth/register", {
+      const data = await fetchJson<RegistrationResponse>("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -56,15 +59,10 @@ export default function SignUpForm() {
           password: values.password,
         }),
       })
-      const data = await res.json().catch(() => null)
-      if (!res.ok) {
-        setError(data?.error || "Ошибка регистрации")
-        return
-      }
-      setEmailDeliveryPending(Boolean(data?.emailDeliveryPending))
+      setEmailDeliveryPending(Boolean(data.emailDeliveryPending))
       setSubmittedEmail(values.email.trim())
-    } catch {
-      setError("Ошибка регистрации. Попробуйте позже.")
+    } catch (requestError) {
+      setError(getApiClientErrorMessage(requestError, "Ошибка регистрации. Попробуйте позже."))
     } finally {
       setLoading(false)
     }
