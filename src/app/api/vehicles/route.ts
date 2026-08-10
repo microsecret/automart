@@ -8,6 +8,7 @@ import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -22,6 +23,13 @@ function normalizeOptionalNonNegativeInteger(value: unknown) {
   if (value === undefined || value === null || value === "") return null
   const parsed = Number(value)
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : undefined
+}
+
+function normalizeOptionalText(value: unknown, maxLength: number) {
+  if (value === undefined || value === null) return null
+  if (typeof value !== "string") return undefined
+  const normalized = value.trim()
+  return normalized ? normalized.slice(0, maxLength) : null
 }
 
 function normalizeTypeDetails(value: unknown, vehicleType: string) {
@@ -46,8 +54,18 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+    const createLimit = rateLimit(`vehicle-create:user:${session.user.id}:ip:${getClientIp(request)}`, { windowMs: 60 * 60 * 1000, maxRequests: 15 })
+    if (!createLimit.success) {
+      return NextResponse.json(
+        { error: "Слишком много новых объявлений. Попробуйте позднее." },
+        { status: 429, headers: rateLimitHeaders(createLimit) },
+      )
+    }
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Некорректные данные объявления" }, { status: 400 })
+    }
     const {
       make,
       model,
@@ -85,16 +103,18 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validation
-    if (!make || !make.trim()) {
+    const normalizedMake = normalizeOptionalText(make, 80)
+    const normalizedModel = normalizeOptionalText(model, 100)
+    if (!normalizedMake) {
       return NextResponse.json(
-        { error: "Make is required" },
+        { error: "Укажите марку" },
         { status: 400 }
       )
     }
 
-    if (!model || !model.trim()) {
+    if (!normalizedModel) {
       return NextResponse.json(
-        { error: "Model is required" },
+        { error: "Укажите модель" },
         { status: 400 }
       )
     }
@@ -108,9 +128,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (price === undefined || price === null || isNaN(Number(price)) || Number(price) < 0) {
+    const normalizedPrice = Number(price)
+    if (!Number.isSafeInteger(normalizedPrice) || normalizedPrice < 0) {
       return NextResponse.json(
-        { error: "Valid price is required" },
+        { error: "Укажите корректную цену в рублях" },
         { status: 400 }
       )
     }
@@ -131,22 +152,24 @@ export async function POST(request: NextRequest) {
     if (!category) {
       return NextResponse.json({ error: "Категория не найдена" }, { status: 404 })
     }
-    const normalizedTitle = typeof title === "string" ? title.trim() : `${normalizedYear} ${make} ${model}`.trim()
+    const normalizedTitle = typeof title === "string" ? title.trim() : `${normalizedYear} ${normalizedMake} ${normalizedModel}`.trim()
     if (normalizedTitle.length < 3 || normalizedTitle.length > 200) {
       return NextResponse.json({ error: "Заголовок должен содержать от 3 до 200 символов" }, { status: 400 })
     }
     if (!isVehicleCategoryCompatible(category.name, normalizedVehicleType)) {
       return NextResponse.json({ error: "Категория не соответствует типу транспорта" }, { status: 400 })
     }
+    const normalizedLocation = normalizeOptionalText(location, 120)
+    if (!normalizedLocation) return NextResponse.json({ error: "Укажите город размещения" }, { status: 400 })
 
     // Geocode location if provided
     let lat = null
     let lng = null
-    if (location && location.trim()) {
+    if (process.env.GOOGLE_MAPS_API_KEY) {
       try {
         const geocodeResponse = await axios.get("https://maps.googleapis.com/maps/api/geocode/json", {
           params: {
-            address: location.trim(),
+            address: normalizedLocation,
             key: process.env.GOOGLE_MAPS_API_KEY
           }
         })
@@ -165,7 +188,7 @@ export async function POST(request: NextRequest) {
     // Create the transport record and its moderation listing atomically. A
     // network error or a failed listing validation can no longer leave an
     // unpublished orphan vehicle in the catalogue database.
-    const inferredSubtype = inferVehicleSubtype(normalizedVehicleType, make.trim(), model.trim())
+    const inferredSubtype = inferVehicleSubtype(normalizedVehicleType, normalizedMake, normalizedModel)
     const submittedTypeDetails = normalizeTypeDetails(typeDetails, normalizedVehicleType)
     const subtypeConfig = getVehicleSubtypeConfig(normalizedVehicleType)
     const submittedSubtype = subtypeConfig && normalizedVehicleType !== "CAR"
@@ -181,11 +204,17 @@ export async function POST(request: NextRequest) {
     const normalizedOperatingHours = normalizeOptionalNonNegativeInteger(operatingHours)
     const normalizedFlightHours = normalizeOptionalNonNegativeInteger(flightHours)
     const normalizedImages = parseMarketplaceImages(images)
+    const normalizedVin = typeof vin === "string" ? vin.trim().toUpperCase() : ""
+    const normalizedDescription = normalizeOptionalText(description, 10_000)
 
     if (normalizedMileage === undefined || normalizedOperatingHours === undefined || normalizedFlightHours === undefined) {
       return NextResponse.json({ error: "Пробег и наработка должны быть неотрицательными целыми числами" }, { status: 400 })
     }
     if (!normalizedImages) return NextResponse.json({ error: "Допустимы до 12 корректных изображений" }, { status: 400 })
+    if (normalizedImages.length === 0) return NextResponse.json({ error: "Добавьте хотя бы одну фотографию транспорта" }, { status: 400 })
+    if (normalizedVin && !/^[A-HJ-NPR-Z0-9]{17}$/.test(normalizedVin)) {
+      return NextResponse.json({ error: "VIN должен содержать 17 латинских символов и цифр без I, O и Q" }, { status: 400 })
+    }
 
     const allowedFuelTypes = new Set<string>(getFuelOptions(normalizedVehicleType).map((item) => item.value))
     if (!fuelType || !allowedFuelTypes.has(String(fuelType))) {
@@ -211,14 +240,14 @@ export async function POST(request: NextRequest) {
 
     const vehicle = await prisma.vehicle.create({
       data: {
-        make: make.trim(),
-        model: model.trim(),
+        make: normalizedMake,
+        model: normalizedModel,
         year: normalizedYear,
-        price: parseInt(price),
+        price: normalizedPrice,
         mileage: ["SPECIAL", "WATER", "AIR"].includes(normalizedVehicleType) ? 0 : (normalizedMileage || 0),
         operatingHours: ["SPECIAL", "WATER"].includes(normalizedVehicleType) ? normalizedOperatingHours : null,
         flightHours: normalizedVehicleType === "AIR" ? normalizedFlightHours : null,
-        vin: vin ? vin.trim() : null,
+        vin: normalizedVin || null,
         fuelType: fuelType ? fuelType.trim() : null,
         transmission: supportsTransmission(normalizedVehicleType) ? String(transmission).trim() : "NOT_APPLICABLE",
         bodyType: normalizedBodyType,
@@ -239,8 +268,8 @@ export async function POST(request: NextRequest) {
         keywords: keywords ? keywords.trim() : null,
         vehicleType: normalizedVehicleType,
         typeDetails: normalizedTypeDetails,
-        location: location ? location.trim() : null,
-        description: description ? description.trim() : null,
+        location: normalizedLocation,
+        description: normalizedDescription,
         images: normalizedImages.length ? JSON.stringify(normalizedImages) : null,
         userId: session.user.id,
         categoryId,
@@ -249,8 +278,8 @@ export async function POST(request: NextRequest) {
         listings: {
           create: {
             title: normalizedTitle,
-            description: description ? description.trim() : null,
-            price: Math.trunc(Number(price)),
+            description: normalizedDescription,
+            price: normalizedPrice,
             userId: session.user.id,
             status: LISTING_STATUS.PENDING_MODERATION,
             lastStatusChangedAt: new Date(),

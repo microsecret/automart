@@ -71,8 +71,12 @@ export default function CreateVehiclePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!f.make || !f.model || !f.year || !f.price) {
+    if (!f.make || !f.model || !f.year || !f.price || !f.location.trim()) {
       notifications.show({ title: "Ошибка", message: "Заполните обязательные поля", color: "red" })
+      return
+    }
+    if (images.length === 0) {
+      notifications.show({ title: "Добавьте фото", message: "Для публикации транспорта нужна хотя бы одна фотография.", color: "orange" })
       return
     }
     if (!selectedCategory) {
@@ -92,12 +96,12 @@ export default function CreateVehiclePage() {
           mileage: f.mileage ? Number(f.mileage) : 0,
           operatingHours: f.operatingHours ? Number(f.operatingHours) : null,
           flightHours: f.flightHours ? Number(f.flightHours) : null,
-          vin: f.vin || `TEMP${Date.now()}`,
+          vin: f.vin || null,
           fuelType: f.fuelType, transmission: f.transmission, bodyType: f.bodyType,
           color: f.color || null, doors: f.doors ? Number(f.doors) : null,
           engineVolume: f.engineVolume ? parseFloat(f.engineVolume) : null,
           power: f.power ? Number(f.power) : null, driveType: f.driveType,
-          condition: f.condition, location: f.location || "Москва",
+          condition: f.condition, location: f.location,
           description: f.description, images: images.length > 0 ? JSON.stringify(images) : null,
           steeringWheel: f.steeringWheel, ownersCount: f.ownersCount || null,
           documentsStatus: f.documentsStatus, damageInfo: f.damageInfo,
@@ -137,8 +141,8 @@ export default function CreateVehiclePage() {
 
       notifications.show({ title: "Отправлено на проверку", message: "Мы проверим объявление и опубликуем его после модерации.", color: "indigo" })
       router.push(`/listings/vehicle/${veh.id}`)
-    } catch (err: any) {
-      notifications.show({ title: "Ошибка", message: err.message, color: "red" })
+    } catch (err) {
+      notifications.show({ title: "Ошибка", message: err instanceof Error ? err.message : "Не удалось создать объявление", color: "red" })
     } finally {
       setLoading(false)
     }
@@ -178,8 +182,8 @@ export default function CreateVehiclePage() {
                   <NumberInput label={`${usageMeta.label}, ${usageMeta.unit}`} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, String(v || ""))} size="sm" min={0} />
                 </Group>
                 <Group gap="sm" grow>
-                  <TextInput label="Город" placeholder="Москва" value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
-                  <TextInput label="VIN" placeholder="17 символов" value={f.vin} onChange={(e) => set("vin", e.target.value)} size="sm" maxLength={17} />
+                  <TextInput label="Город" placeholder="Москва" required value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
+                  <TextInput label="VIN" placeholder="17 символов (если есть)" value={f.vin} onChange={(e) => set("vin", e.target.value.toUpperCase())} size="sm" maxLength={17} />
                 </Group>
               </Stack>
             </Paper>
