@@ -42,7 +42,7 @@ const AUCTIONS = [
 const MOBILE_NAV = [
   { href: "/", label: "Главная", Icon: IconHome2 },
   { href: "/search", label: "Поиск", Icon: IconSearch },
-  { href: "/listings/create/vehicle", label: "Продать", Icon: IconPlus, accent: true },
+  { href: "/listings/create/vehicle", label: "Подать", Icon: IconPlus, accent: true },
   { href: "/favorites", label: "Избранное", Icon: IconHeart },
   { href: "/messages", label: "Чаты", Icon: IconMessageCircle2 },
 ]
@@ -158,7 +158,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
             <Link
               key={href}
               href={href}
-              aria-label={label === "Продать" ? "Разместить объявление" : label}
+              aria-label={label === "Подать" ? "Подать объявление" : label}
               aria-current={active ? "page" : undefined}
               className={`${accent ? "mobile-bottom-nav__accent" : ""}${active ? " mobile-bottom-nav__item--active" : ""}`}
             >
