@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useColorScheme } from "@/components/providers/AppProviders"
 import { IconSun, IconMoon } from "@tabler/icons-react"
+import { fetchJson } from "@/lib/api-client"
 
 type SearchSuggestion = {
   id: string
@@ -18,6 +19,7 @@ type SearchSuggestion = {
 }
 
 type SearchSuggestionResponse = { listings?: SearchSuggestion[] }
+type FavoriteCountResponse = { count?: number }
 
 type NavigationItem = {
   href: string
@@ -30,7 +32,17 @@ export default function AppHeader() {
   const { data: session } = useSession()
   const [favCount, setFavCount] = useState(0)
   useEffect(() => {
-    if (session) fetch("/api/favorites?countOnly=true").then(r => r.json()).then(d => setFavCount(d.count || 0)).catch(() => {})
+    if (!session) {
+      setFavCount(0)
+      return
+    }
+
+    let isCurrent = true
+    void fetchJson<FavoriteCountResponse>("/api/favorites?countOnly=true")
+      .then((payload) => { if (isCurrent) setFavCount(payload.count || 0) })
+      .catch(() => { if (isCurrent) setFavCount(0) })
+
+    return () => { isCurrent = false }
   }, [session])
   const { colorScheme, toggleScheme } = useColorScheme()
   const router = useRouter()
@@ -39,6 +51,8 @@ export default function AppHeader() {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
+  const [searchError, setSearchError] = useState(false)
+  const [searchRequestVersion, setSearchRequestVersion] = useState(0)
 
   const catalogueNavigation: NavigationItem[] = [
     { href: "/", label: "Объявления", icon: null, active: pathname === "/" || pathname.startsWith("/category") || pathname.startsWith("/search") },
@@ -62,22 +76,26 @@ export default function AppHeader() {
     if (searchValue.length < 2) {
       setSuggestions([])
       setIsSuggestionsLoading(false)
+      setSearchError(false)
       return
     }
 
     const controller = new AbortController()
     const timeout = window.setTimeout(async () => {
       setIsSuggestionsLoading(true)
+      setSearchError(false)
       try {
-        const response = await fetch(`/api/listings?q=${encodeURIComponent(searchValue)}&limit=5`, {
+        const data = await fetchJson<SearchSuggestionResponse>(`/api/listings?q=${encodeURIComponent(searchValue)}&limit=5`, {
           signal: controller.signal,
           cache: "no-store",
         })
-        if (!response.ok) throw new Error("Search request failed")
-        const data = await response.json() as SearchSuggestionResponse
         setSuggestions(Array.isArray(data.listings) ? data.listings : [])
       } catch (error) {
-        if ((error as Error).name !== "AbortError") setSuggestions([])
+        const requestWasAborted = controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")
+        if (!requestWasAborted) {
+          setSuggestions([])
+          setSearchError(true)
+        }
       } finally {
         if (!controller.signal.aborted) setIsSuggestionsLoading(false)
       }
@@ -87,7 +105,7 @@ export default function AppHeader() {
       controller.abort()
       window.clearTimeout(timeout)
     }
-  }, [searchValue])
+  }, [searchRequestVersion, searchValue])
 
   const suggestionHref = (suggestion: SearchSuggestion) => suggestion.vehicle
     ? `/listings/vehicle/${suggestion.vehicle.id}`
@@ -187,6 +205,11 @@ export default function AppHeader() {
             <Popover.Dropdown className="market-header-search__suggestions" p={6}>
               {isSuggestionsLoading && suggestions.length === 0 ? (
                 <Group gap="xs" px="sm" py={8}><Loader size="xs" color="indigo" /><Text size="xs" c="dimmed">Ищем объявления…</Text></Group>
+              ) : searchError ? (
+                <Stack gap={6} px="sm" py={8}>
+                  <Text size="xs" c="dimmed">Не удалось обновить подсказки. Полный поиск всё ещё доступен.</Text>
+                  <Button variant="subtle" color="indigo" size="compact-xs" onClick={() => setSearchRequestVersion((current) => current + 1)}>Повторить</Button>
+                </Stack>
               ) : suggestions.length > 0 ? (
                 <Stack gap={2}>
                   {suggestions.map((suggestion) => (
