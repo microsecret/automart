@@ -100,9 +100,9 @@ export default function AppHeader() {
           </Menu>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}
-          <Box component="form" onSubmit={handleSearch} style={{ flex: 1, maxWidth: 280, minWidth: 180 }} visibleFrom="sm">
+          <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: 1, maxWidth: 360, minWidth: 230 }} visibleFrom="sm">
             <TextInput
-              placeholder="Марка, модель, город..."
+              placeholder="Марка, модель или город"
               leftSection={<IconSearch size={16} color="gray.4" />}
               value={query}
               onChange={(e) => setQuery(e.currentTarget.value)}
@@ -212,12 +212,10 @@ export default function AppHeader() {
             ) : (
               <>
                 <Divider orientation="vertical" mx={2} h={26} />
-                {/* Войти — subtle gray */}
-                <Button component={Link} href="/auth/signin" variant="light" color="indigo" size="sm" radius="md" styles={{ root: { height: 38, fontWeight: 700 } }}>
+                <Button component={Link} href="/auth/signin" variant="default" color="gray" size="sm" radius="md" styles={{ root: { height: 38, fontWeight: 700 } }}>
                   Войти
                 </Button>
-                {/* Регистрация — outline indigo, отличается от «Войти» */}
-                <Button component={Link} href="/auth/signup" variant="filled" color="indigo" size="sm" radius="md" visibleFrom="xs" styles={{ root: { height: 38, fontWeight: 700 } }}>
+                <Button component={Link} href="/auth/signup" variant="light" color="indigo" size="sm" radius="md" visibleFrom="xs" styles={{ root: { height: 38, fontWeight: 700 } }}>
                   Регистрация
                 </Button>
                 <ActionIcon component={Link} href="/auth/signup" variant="light" color="indigo" size="md" radius="md" hiddenFrom="xs" aria-label="Регистрация">

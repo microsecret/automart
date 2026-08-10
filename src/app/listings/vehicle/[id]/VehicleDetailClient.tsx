@@ -243,8 +243,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   }
   const additionalSpecs = Object.entries(typeDetails).filter(([key, value]) => value !== null && value !== "" && key !== typeDetailKey[data.vehicleType])
   const primaryTypeKey = typeDetailKey[data.vehicleType]
-  const primaryTypeValue = primaryTypeKey && typeDetails[primaryTypeKey]
-    ? formatDetailValue(primaryTypeKey, typeDetails[primaryTypeKey]!)
+  const primaryTypeSource = primaryTypeKey ? typeDetails[primaryTypeKey] || data.bodyTypeLabel : data.bodyTypeLabel
+  const primaryTypeValue = primaryTypeKey && primaryTypeSource
+    ? formatDetailValue(primaryTypeKey, primaryTypeSource)
     : data.bodyTypeLabel || "—"
   const statusItems = [
     { label: "Документы", value: data.documentsStatusLabel || "Не указано", state: data.documentsStatusLabel === "В порядке" ? "positive" : "attention" },

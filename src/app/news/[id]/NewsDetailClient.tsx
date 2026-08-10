@@ -11,6 +11,32 @@ import { newsHref } from "@/lib/news"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
+function renderInlineMarkdown(value: string) {
+  return value.split(/(\*\*[^*]+\*\*)/g).map((fragment, index) => {
+    if (fragment.startsWith("**") && fragment.endsWith("**")) {
+      return <strong key={`${fragment}-${index}`}>{fragment.slice(2, -2)}</strong>
+    }
+    return fragment
+  })
+}
+
+function NewsBody({ content }: { content: string }) {
+  const paragraphs = content.replace(/\r\n/g, "\n").split(/\n\s*\n/).map((item) => item.trim()).filter(Boolean)
+
+  return (
+    <Stack className="news-article__content" gap="md">
+      {paragraphs.map((paragraph, index) => {
+        const lines = paragraph.split("\n").map((line) => line.trim()).filter(Boolean)
+        const isList = lines.length > 0 && lines.every((line) => /^[-•*]\s+/.test(line))
+        if (isList) {
+          return <Box component="ul" key={`${paragraph.slice(0, 24)}-${index}`}>{lines.map((line, lineIndex) => <li key={`${line}-${lineIndex}`}>{renderInlineMarkdown(line.replace(/^[-•*]\s+/, ""))}</li>)}</Box>
+        }
+        return <Text component="p" key={`${paragraph.slice(0, 24)}-${index}`}>{lines.map((line, lineIndex) => <span key={`${line}-${lineIndex}`}>{renderInlineMarkdown(line)}{lineIndex < lines.length - 1 && <br />}</span>)}</Text>
+      })}
+    </Stack>
+  )
+}
+
 function readTags(value?: string | null) {
   if (!value) return []
   try {
@@ -49,7 +75,7 @@ export default function NewsDetailClient({ id }: { id: string }) {
   const tags = readTags(article.tags)
 
   return (
-    <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 800, margin: "0 auto" }}>
+    <Box p={{ base: "sm", md: "xl" }} style={{ maxWidth: 840, margin: "0 auto" }}>
       <Stack gap="md">
         <Breadcrumbs separator="›">
           <Anchor component={Link} href="/" size="xs" c="gray.5">Главная</Anchor>
@@ -68,11 +94,9 @@ export default function NewsDetailClient({ id }: { id: string }) {
           </Group>
         </Stack>
 
-        <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)" }}>
-          {article.imageUrl && <Image src={article.imageUrl} alt={article.title} radius="sm" mb="lg" fit="cover" fallbackSrc="/images/home/hero-marketplace.png" />}
-          <Text size="sm" c="dark.7" lh={1.75} style={{ whiteSpace: "pre-wrap" }}>
-            {article.content}
-          </Text>
+        <Box className="news-article__body">
+          {article.imageUrl && <Image src={article.imageUrl} alt={article.title} className="news-article__image" mb="lg" fit="cover" fallbackSrc="/images/home/hero-marketplace.png" />}
+          <NewsBody content={article.content || ""} />
           {tags.length > 0 && (
             <Group gap="xs" mt="lg">
               {tags.map((tag: string) => <Badge key={tag} variant="light" color="gray">#{tag.replace(/^#/, "")}</Badge>)}
@@ -84,7 +108,7 @@ export default function NewsDetailClient({ id }: { id: string }) {
               {article.telegramUrl && <Anchor href={article.telegramUrl} target="_blank" rel="noreferrer" size="xs" c="#4f46e5"><IconBrandTelegram size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />Открыть в Telegram</Anchor>}
             </Group>
           )}
-        </Card>
+        </Box>
 
         <Stack gap="sm">
           <Text size="sm" fw={600} c="dark.9">Комментарии ({article.comments?.length || 0})</Text>

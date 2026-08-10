@@ -222,10 +222,12 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>Год</Text>
                 <Text fz="11px" c="dark.8" fw={700} style={TRUNCATE_STYLE}>{listing.vehicle!.year}</Text>
               </Stack>
-              <Stack gap={0}>
-                <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>{usageMeta.label}</Text>
-                <Text fz="11px" c="dark.8" fw={700} style={TRUNCATE_STYLE}>{distanceValue}</Text>
-              </Stack>
+              {usageValue != null && (
+                <Stack gap={0}>
+                  <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>{usageMeta.label}</Text>
+                  <Text fz="11px" c="dark.8" fw={700} style={TRUNCATE_STYLE}>{distanceValue}</Text>
+                </Stack>
+              )}
               {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
                 <Stack gap={0}>
                   <Text fz="9px" c="gray.5" tt="uppercase" fw={600}>Трансмиссия</Text>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import NextImage from "next/image"
-import { Box, Text, Select, Group, Pagination, Stack, SegmentedControl, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip, Loader } from "@mantine/core"
+import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip, Loader, Tooltip } from "@mantine/core"
 import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
@@ -90,7 +90,7 @@ export default function HomePage(p: HomePageProps = {}) {
     q.set("type", p.initialType || "vehicle")
     if (p.initialVehicleType) q.set("vehicleType", p.initialVehicleType)
     q.set("page", String(page))
-    q.set("limit", "18")
+    q.set("limit", "20")
     q.set("sort", sort)
     if(query) q.set("q", query)
     if(make) q.set("make", make)
@@ -208,7 +208,18 @@ export default function HomePage(p: HomePageProps = {}) {
             size="xs"
             w={160}
           />
-          <SegmentedControl className="catalog-view-switch" size="sm" value={view} onChange={(v) => setView(v)} radius="md" data={[{label:<Group gap={4} wrap="nowrap"><IconLayoutGrid size={15} stroke={1.8}/> <Text size="xs" fw={600}>Сетка</Text></Group>,value:"grid"},{label:<Group gap={4} wrap="nowrap"><IconList size={15} stroke={1.8}/> <Text size="xs" fw={600}>Список</Text></Group>,value:"list"}]} />
+          <Group className="catalog-view-switch" gap={2} role="group" aria-label="Вид объявлений">
+            <Tooltip label="Плитка" withArrow>
+              <ActionIcon variant={view === "grid" ? "light" : "subtle"} color="indigo" size="md" radius="md" onClick={() => setView("grid")} aria-label="Показать объявления плиткой" aria-pressed={view === "grid"}>
+                <IconLayoutGrid size={17} stroke={1.8} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Список" withArrow>
+              <ActionIcon variant={view === "list" ? "light" : "subtle"} color="indigo" size="md" radius="md" onClick={() => setView("list")} aria-label="Показать объявления списком" aria-pressed={view === "list"}>
+                <IconList size={17} stroke={1.8} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         </Group>
       </Group>
 

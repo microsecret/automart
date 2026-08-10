@@ -35,6 +35,8 @@ const AUCTIONS = [
   { label: "Япония", href: "/auctions?country=JP" },
   { label: "Корея", href: "/auctions?country=KR" },
   { label: "Китай", href: "/auctions?country=CN" },
+  { label: "США", href: "/auctions?country=US" },
+  { label: "Европа", href: "/auctions?country=EU" },
 ]
 
 const MOBILE_NAV = [
@@ -52,6 +54,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
   const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCategory === "parts"
   const isAuctionsRoute = pathname?.startsWith("/auctions")
+  const isContentRoute = pathname?.startsWith("/news") || pathname?.startsWith("/help")
   const isMobileNavActive = (href: string) => href === "/" ? pathname === "/" : pathname?.startsWith(href)
 
   if (isAuthRoute) {
@@ -68,8 +71,8 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       <AppAnalytics />
       <AppHeader />
 
-      <Box className="market-shell">
-        <Box component="aside" className="app-sidebar">
+      <Box className={`market-shell${isContentRoute ? " market-shell--content" : ""}`}>
+        {!isContentRoute && <Box component="aside" className="app-sidebar">
           <ScrollArea h="100%" type="hover" scrollbarSize={5}>
             <Stack gap="sm" p="sm">
               {/* Для гостя вход уже доступен в хедере: не дублируем две одинаковые пары кнопок. */}
@@ -137,9 +140,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               </Group>
             </Stack>
           </ScrollArea>
-        </Box>
+        </Box>}
 
-        <Box component="main" className="app-main-content">{children}</Box>
+        <Box component="main" className={`app-main-content${isContentRoute ? " app-main-content--content" : ""}`}>{children}</Box>
       </Box>
 
       <AppFooter />
