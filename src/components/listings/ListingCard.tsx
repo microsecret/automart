@@ -8,7 +8,7 @@ import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDa
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
-import VehicleFallback from "./VehicleFallback"
+import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
@@ -86,6 +86,9 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
     : `${new Intl.NumberFormat("ru-RU").format(numericUsage)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
   const isFav = favoriteIds.has(listing.id)
+  const missingMediaLabel = isVehicle
+    ? `${vehicleTypeLabel(vehicleType, listing.vehicle?.bodyType)} · без фото`
+    : "Запчасть · без фото"
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -177,7 +180,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
 
           {!hasDisplayImage && (
             <Box pos="absolute" top={8} left={listing.isFeatured ? 76 : 8} style={{ zIndex: 2 }}>
-              <Badge color="gray" variant="white" size="xs" radius="sm">Без фото</Badge>
+              <Badge color="gray" variant="white" size="xs" radius="sm">{missingMediaLabel}</Badge>
             </Box>
           )}
 

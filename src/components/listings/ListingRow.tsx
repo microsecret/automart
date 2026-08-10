@@ -47,6 +47,9 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
     : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
   const isFav = favoriteIds.has(listing.id)
+  const missingMediaLabel = isVehicle
+    ? `${vehicleTypeLabel(vehicleType, listing.vehicle?.bodyType)} · без фото`
+    : "Запчасть · без фото"
 
   useEffect(() => {
     setImageFailed(false)
@@ -96,7 +99,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
             )}
             {!hasDisplayImage && (
               <Box pos="absolute" top={6} right={6}>
-                <Badge color="gray" variant="white" size="xs" radius="sm">Без фото</Badge>
+                <Badge color="gray" variant="white" size="xs" radius="sm">{missingMediaLabel}</Badge>
               </Box>
             )}
           </Box>
