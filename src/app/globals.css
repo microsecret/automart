@@ -1001,14 +1001,33 @@ select {
 .fuel-map-canvas__tiles {
   position: absolute;
   inset: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
   overflow: hidden;
   background: #dce9df;
+  cursor: grab;
+  touch-action: none;
 }
 
-.fuel-map-canvas__tiles > img {
+.fuel-map-canvas__tiles:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.48);
+  outline-offset: -3px;
+}
+
+.fuel-map-canvas__tiles.is-dragging {
+  cursor: grabbing;
+}
+
+.fuel-map-canvas__tile-layer {
+  position: absolute;
+  width: 133.3334%;
+  height: 133.3334%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.fuel-map-canvas__tile-layer > img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1032,6 +1051,16 @@ select {
   cursor: pointer;
   transform: translate(-50%, -50%);
   transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.fuel-map-marker[data-cluster] {
+  width: 34px;
+  height: 34px;
+  border-color: rgba(255,255,255,.96);
+  background: #4338ca;
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .fuel-map-marker:hover,
@@ -1453,6 +1482,7 @@ select {
 
 .vehicle-detail-statuses__grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: linear-gradient(135deg, rgba(238,242,255,.78), rgba(255,255,255,.92));
 }
 
 .vehicle-detail-specs__item,
@@ -1497,6 +1527,7 @@ select {
 .vehicle-detail-statuses__item {
   position: relative;
   padding-left: 20px;
+  background: rgba(255,255,255,.68);
 }
 
 .vehicle-detail-statuses__item::before {

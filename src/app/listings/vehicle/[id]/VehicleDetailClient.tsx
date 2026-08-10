@@ -395,7 +395,16 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             {/* Состояние и документы */}
             <Card withBorder radius="lg" p="lg" className="vehicle-detail-statuses">
               <Stack gap="md">
-                <Title order={3} size="h4">Состояние и документы</Title>
+                <Group justify="space-between" align="center" gap="sm" wrap="wrap">
+                  <Group gap="sm" wrap="nowrap">
+                    <ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconShieldCheck size={18} /></ThemeIcon>
+                    <Box>
+                      <Title order={3} size="h4">Состояние и документы</Title>
+                      <Text size="xs" c="dimmed">Ключевые сведения из объявления продавца</Text>
+                    </Box>
+                  </Group>
+                  <Badge variant="light" color="gray" radius="xl">Проверка данных</Badge>
+                </Group>
                 <Box className="vehicle-detail-statuses__grid">
                   {statusItems.map((item) => (
                     <Box key={item.label} className="vehicle-detail-statuses__item" data-state={item.state}>

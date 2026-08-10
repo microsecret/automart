@@ -12,6 +12,19 @@ type OverpassElement = {
   tags?: Record<string, string>
 }
 
+type FuelStationPayload = {
+  id: number
+  sourceType: OverpassElement["type"]
+  name: string
+  brand: string | null
+  operator: string | null
+  address: string | null
+  openingHours: string | null
+  fuels: string[]
+  latitude: number
+  longitude: number
+}
+
 const FUEL_TAG_LABELS: Record<string, string> = {
   "fuel:diesel": "ДТ",
   "fuel:octane_92": "АИ‑92",
@@ -32,6 +45,22 @@ function getCoordinates(element: OverpassElement) {
   if (typeof element.lat === "number" && typeof element.lon === "number") return { latitude: element.lat, longitude: element.lon }
   if (element.center) return { latitude: element.center.lat, longitude: element.center.lon }
   return null
+}
+
+function getStationName(tags: Record<string, string>) {
+  const publishedName = tags.name?.trim()
+  const brandOrOperator = tags.brand?.trim() || tags.operator?.trim()
+  const hasGenericName = !publishedName || /^(азс|агзс|fuel)$/iu.test(publishedName)
+
+  if (brandOrOperator && hasGenericName) return brandOrOperator
+  return publishedName || brandOrOperator || "АЗС"
+}
+
+function stationPriority(station: FuelStationPayload) {
+  const namedOrBranded = station.name !== "АЗС" ? 10 : 0
+  const taggedFuels = Math.min(station.fuels.length, 5)
+  const hasAddress = station.address ? 1 : 0
+  return namedOrBranded + taggedFuels + hasAddress
 }
 
 async function requestStations(query: string) {
@@ -85,7 +114,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const payload = await requestStations(query)
-    const stations = (payload.elements || []).flatMap((element) => {
+    const stations: FuelStationPayload[] = (payload.elements || []).flatMap((element) => {
       const coords = getCoordinates(element)
       if (!coords) return []
       const tags = element.tags || {}
@@ -96,7 +125,7 @@ export async function GET(request: NextRequest) {
       return [{
         id: element.id,
         sourceType: element.type,
-        name: tags.name || tags.brand || "АЗС",
+        name: getStationName(tags),
         brand: tags.brand || null,
         operator: tags.operator || null,
         address: [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(", ") || null,
@@ -104,7 +133,7 @@ export async function GET(request: NextRequest) {
         fuels,
         ...coords,
       }]
-    }).sort((a, b) => a.name.localeCompare(b.name, "ru"))
+    }).sort((a, b) => stationPriority(b) - stationPriority(a) || a.name.localeCompare(b.name, "ru"))
 
     return NextResponse.json({
       city,
