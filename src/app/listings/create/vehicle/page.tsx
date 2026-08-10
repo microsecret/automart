@@ -1,15 +1,16 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
+import { Alert, Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
 import { IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
+import { fetchJson } from "@/lib/api-client"
 
 const CATS = [
   { value: "CAR", label: "Легковые" },
@@ -29,12 +30,23 @@ const BRAND_CATEGORY_BY_VEHICLE_TYPE = {
   AIR: "air",
 } as const
 
+type VehicleCategory = {
+  id: string
+  name: string
+  vehicleType: MarketplaceVehicleType | null
+}
+
+type CategoriesResponse = { categories: VehicleCategory[] }
+type CreateVehicleResponse = { id: string }
+
 export default function CreateVehiclePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const { images, uploadingImages, uploadPhotos, removeImage } = useMarketplaceImageUpload()
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; vehicleType: MarketplaceVehicleType | null }>>([])
+  const [categories, setCategories] = useState<VehicleCategory[]>([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
+  const [categoriesError, setCategoriesError] = useState<string | null>(null)
 
   const [f, setF] = useState({
     title: "", make: "", model: "", year: "", price: "", mileage: "",
@@ -55,11 +67,23 @@ export default function CreateVehiclePage() {
     if (status === "unauthenticated") router.push("/auth/signin")
   }, [status, router])
 
-  useEffect(() => {
-    fetch("/api/categories").then(r => r.json()).then(d => {
-      if (Array.isArray(d.categories)) setCategories(d.categories)
-    }).catch(() => {})
+  const loadCategories = useCallback(async () => {
+    setCategoriesLoading(true)
+    setCategoriesError(null)
+    try {
+      const data = await fetchJson<CategoriesResponse>("/api/categories")
+      setCategories(Array.isArray(data.categories) ? data.categories : [])
+    } catch (error) {
+      setCategories([])
+      setCategoriesError(error instanceof Error ? error.message : "Не удалось загрузить категории")
+    } finally {
+      setCategoriesLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    void loadCategories()
+  }, [loadCategories])
 
   if (status === "loading") return <Center py={100}><Loader color="indigo" /></Center>
   if (!session) return null
@@ -105,7 +129,7 @@ export default function CreateVehiclePage() {
     try {
       // Сервер создаёт ТС и объявление в одной транзакции: не оставляем
       // транспорт без объявления, если сеть оборвётся между запросами.
-      const vehRes = await fetch("/api/vehicles", {
+      const vehicle = await fetchJson<CreateVehicleResponse>("/api/vehicles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -156,11 +180,9 @@ export default function CreateVehiclePage() {
           categoryId: selectedCategory.id,
         }),
       })
-      const veh = await vehRes.json()
-      if (!vehRes.ok) throw new Error(veh.error || "Ошибка создания ТС")
 
       notifications.show({ title: "Отправлено на проверку", message: "Мы проверим объявление и опубликуем его после модерации.", color: "indigo" })
-      router.push(`/listings/vehicle/${veh.id}`)
+      router.push(`/listings/vehicle/${vehicle.id}`)
     } catch (err) {
       notifications.show({ title: "Ошибка", message: err instanceof Error ? err.message : "Не удалось создать объявление", color: "red" })
     } finally {
@@ -178,6 +200,15 @@ export default function CreateVehiclePage() {
             <Text size="xs" c="gray.5">Заполните данные — после проверки объявление появится в поиске</Text>
           </Stack>
         </Group>
+
+        {categoriesError && (
+          <Alert color="red" variant="light" title="Не удалось подготовить форму" withCloseButton onClose={() => setCategoriesError(null)}>
+            <Group justify="space-between" gap="sm" wrap="wrap">
+              <Text size="sm">{categoriesError}. Поля сохранены — повторите загрузку категорий.</Text>
+              <Button size="xs" variant="light" color="red" loading={categoriesLoading} onClick={() => void loadCategories()}>Повторить</Button>
+            </Group>
+          </Alert>
+        )}
 
         <Paper className="create-listing__journey" radius="lg" p="sm" withBorder>
           <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>

@@ -4,16 +4,54 @@ export const dynamic = "force-dynamic"
 
 import useSWR from "swr"
 import { Box, Stack, Text, Center, Loader, SimpleGrid, Card, ThemeIcon, Title, Group, Badge, Progress, Button } from "@mantine/core"
+import type { MantineColor } from "@mantine/core"
 import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld } from "@tabler/icons-react"
 import Link from "next/link"
+import type { ReactNode } from "react"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { fetchJson } from "@/lib/api-client"
 
-const fetcher = async (url: string) => {
-  const response = await fetch(url)
-  const payload = await response.json().catch(() => null)
-  if (!response.ok) throw new Error(payload?.error || "Не удалось загрузить данные")
-  return payload
+type AdminStats = {
+  counts: {
+    users: number
+    vehicles: number
+    parts: number
+    listings: number
+    reviews: number
+    messages: number
+    notifications: number
+    categories: number
+    sessions: number
+    aiLogs: number
+  }
+  byVehicleType: Record<string, number>
+  byRole: Record<string, number>
+  recent: { newListings: number; newUsers: number }
+  featured: number
+  avgPrice: number
+  traffic: {
+    visits24h: number
+    visits7d: number
+    uniqueVisitors7d: number
+    topPaths: Array<{ path: string; count: number }>
+    recentVisitors: Array<{
+      id: string
+      createdAt: string
+      user: { id: string; name: string | null; email: string | null; telegramUsername: string | null } | null
+    }>
+  }
+}
+
+const fetchAdminStats = (url: string) => fetchJson<AdminStats>(url)
+
+type AdminMetric = {
+  label: string
+  value: number
+  icon: ReactNode
+  color: MantineColor
+  href?: string
+  new?: number
 }
 
 const VEHICLE_TYPE_LABELS: Record<string, string> = {
@@ -21,7 +59,7 @@ const VEHICLE_TYPE_LABELS: Record<string, string> = {
 }
 
 export default function AdminDashboard() {
-  const { data, error, isLoading, mutate } = useSWR<any>("/api/admin/stats", fetcher)
+  const { data, error, isLoading, mutate } = useSWR<AdminStats>("/api/admin/stats", fetchAdminStats)
 
   if (isLoading) return <Center py={80}><Loader color="indigo" /></Center>
   if (error || !data) {
@@ -36,16 +74,16 @@ export default function AdminDashboard() {
     )
   }
 
-  const c = data?.counts || {}
-  const stats = [
-    { label: "Пользователи", value: c.users ?? 0, icon: <IconUsers size={18} />, color: "indigo", href: "/admin/users", new: data?.recent?.newUsers },
-    { label: "Объявления", value: c.listings ?? 0, icon: <IconTag size={18} />, color: "blue", new: data?.recent?.newListings },
-    { label: "Транспорт", value: c.vehicles ?? 0, icon: <IconCar size={18} />, color: "teal" },
-    { label: "Запчасти", value: c.parts ?? 0, icon: <IconCar size={18} />, color: "green" },
-    { label: "Сообщения", value: c.messages ?? 0, icon: <IconMessageCircle2 size={18} />, color: "cyan" },
-    { label: "Отзывы", value: c.reviews ?? 0, icon: <IconStar size={18} />, color: "orange" },
-    { label: "Уведомления", value: c.notifications ?? 0, icon: <IconBell size={18} />, color: "red" },
-    { label: "AI-запросы", value: c.aiLogs ?? 0, icon: <IconRobot size={18} />, color: "violet" },
+  const c = data.counts
+  const stats: AdminMetric[] = [
+    { label: "Пользователи", value: c.users, icon: <IconUsers size={18} />, color: "indigo", href: "/admin/users", new: data.recent.newUsers },
+    { label: "Объявления", value: c.listings, icon: <IconTag size={18} />, color: "blue", new: data.recent.newListings },
+    { label: "Транспорт", value: c.vehicles, icon: <IconCar size={18} />, color: "teal" },
+    { label: "Запчасти", value: c.parts, icon: <IconCar size={18} />, color: "green" },
+    { label: "Сообщения", value: c.messages, icon: <IconMessageCircle2 size={18} />, color: "cyan" },
+    { label: "Отзывы", value: c.reviews, icon: <IconStar size={18} />, color: "orange" },
+    { label: "Уведомления", value: c.notifications, icon: <IconBell size={18} />, color: "red" },
+    { label: "AI-запросы", value: c.aiLogs, icon: <IconRobot size={18} />, color: "violet" },
   ]
 
   const total = c.listings || 1
@@ -79,9 +117,9 @@ export default function AdminDashboard() {
 
         {/* Основные метрики */}
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-          {stats.map((s) => (
-            <Card className="admin-metric-card" key={s.label} withBorder radius="lg" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}
-              component={(s.href ? Link : "div") as any} href={s.href || undefined}>
+          {stats.map((s) => {
+            const metricCard = (
+              <Card className="admin-metric-card" withBorder radius="lg" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start" justify="space-between">
                 <Stack gap={0}>
                   <Text size="xl" fw={800} c="dark.9" ff="var(--font-display),sans-serif" lh={1}>{s.value}</Text>
@@ -95,8 +133,13 @@ export default function AdminDashboard() {
                 </Stack>
                 <ThemeIcon variant="light" color={s.color} size={36} radius="md">{s.icon}</ThemeIcon>
               </Group>
-            </Card>
-          ))}
+              </Card>
+            )
+
+            return s.href ? (
+              <Link className="admin-metric-card__link" href={s.href} key={s.label}>{metricCard}</Link>
+            ) : <Box key={s.label}>{metricCard}</Box>
+          })}
         </SimpleGrid>
 
         {/* Посещаемость */}
@@ -122,19 +165,19 @@ export default function AdminDashboard() {
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Text size="sm" fw={600} c="dark.9" mb="sm">Популярные экраны за 7 дней</Text>
             <Stack gap="xs">
-              {(data?.traffic?.topPaths || []).map((item: { path: string; count: number }) => (
+              {data.traffic.topPaths.map((item) => (
                 <Group key={item.path} justify="space-between"><Text size="xs" c="gray.6" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.path}</Text><Badge size="sm" variant="light" color="indigo">{item.count}</Badge></Group>
               ))}
-              {!data?.traffic?.topPaths?.length && <Text size="xs" c="gray.4">Данные появятся после первых визитов.</Text>}
+              {!data.traffic.topPaths.length && <Text size="xs" c="gray.4">Данные появятся после первых визитов.</Text>}
             </Stack>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Text size="sm" fw={600} c="dark.9" mb="sm">Последние идентифицированные посетители</Text>
             <Stack gap="xs">
-              {(data?.traffic?.recentVisitors || []).slice(0, 6).map((visit: any) => (
+              {data.traffic.recentVisitors.slice(0, 6).map((visit) => (
                 <Group key={visit.id} justify="space-between"><Text size="xs" c="gray.6">{visit.user?.name || visit.user?.email || "Пользователь"}</Text><Text size="xs" c="gray.4">{new Date(visit.createdAt).toLocaleDateString("ru-RU")}</Text></Group>
               ))}
-              {!data?.traffic?.recentVisitors?.length && <Text size="xs" c="gray.4">Пока нет авторизованных визитов.</Text>}
+              {!data.traffic.recentVisitors.length && <Text size="xs" c="gray.4">Пока нет авторизованных визитов.</Text>}
             </Stack>
           </Card>
         </SimpleGrid>
