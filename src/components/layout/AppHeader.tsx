@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2 } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -65,7 +65,7 @@ export default function AppHeader() {
             </Group>
           </Link>
 
-          <Group gap={2} visibleFrom="lg" wrap="nowrap" className="market-app-header__links">
+          <Group gap={2} visibleFrom="xl" wrap="nowrap" className="market-app-header__links">
             {navigation.map((item) => (
               <Button
                 key={item.href}
@@ -83,6 +83,21 @@ export default function AppHeader() {
               </Button>
             ))}
           </Group>
+
+          <Menu shadow="md" width={210} position="bottom-start" radius="md" offset={6}>
+            <Menu.Target>
+              <Button hiddenFrom="xl" visibleFrom="md" variant="light" color="indigo" size="compact-sm" leftSection={<IconMenu2 size={15} />}>
+                Разделы
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {navigation.map((item) => (
+                <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon || <IconCar size={14} />} color={item.active ? "indigo" : undefined}>
+                  {item.label}
+                </Menu.Item>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}
           <Box component="form" onSubmit={handleSearch} style={{ flex: 1, maxWidth: 280, minWidth: 180 }} visibleFrom="sm">
