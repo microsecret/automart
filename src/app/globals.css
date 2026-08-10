@@ -987,12 +987,43 @@ select {
 }
 
 .listing-card__media {
+  position: relative;
   isolation: isolate;
   overflow: hidden;
 }
 
 .listing-card__media img {
   transition: transform 280ms ease, filter 280ms ease;
+}
+
+.listing-card__image {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 180ms ease, transform 280ms ease, filter 280ms ease;
+}
+
+.listing-card__image[data-loaded] {
+  opacity: 1;
+}
+
+.listing-card__media[data-image-loading]::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(108deg, transparent 26%, rgba(255, 255, 255, 0.38) 44%, transparent 62%);
+  animation: listing-media-shimmer 1.45s ease-in-out infinite;
+}
+
+@keyframes listing-media-shimmer {
+  from { transform: translateX(-70%); }
+  to { transform: translateX(70%); }
 }
 
 .listing-card__media-label {

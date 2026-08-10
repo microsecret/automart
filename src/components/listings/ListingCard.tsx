@@ -57,11 +57,13 @@ const TRUNCATE_STYLE: React.CSSProperties = {
 export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const [activeImg, setActiveImg] = useState(0)
   const [imageFailed, setImageFailed] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
   const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
   useEffect(() => {
     setActiveImg(0)
     setImageFailed(false)
+    setImageLoaded(false)
   }, [listing.id])
   const isVehicle = !!listing.vehicle
   const detailHref = isVehicle
@@ -125,6 +127,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         <Box
           className="listing-card__media"
           data-empty-media={!hasDisplayImage || undefined}
+          data-image-loading={hasDisplayImage && !imageLoaded ? "true" : undefined}
           data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
           pos="relative"
           style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}
@@ -134,7 +137,16 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={displayImage} alt={listing.title} onError={() => setImageFailed(true)} loading="lazy" decoding="async" style={{ objectFit: "cover", width: "100%", height: "100%", transition: "opacity 200ms ease" }} />
+              <img
+                className="listing-card__image"
+                data-loaded={imageLoaded || undefined}
+                src={displayImage}
+                alt={listing.title}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => { setImageFailed(true); setImageLoaded(false) }}
+                loading="lazy"
+                decoding="async"
+              />
               )}
             </>
           </AspectRatio>
@@ -145,7 +157,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 {images.slice(0, 5).map((_, i) => (
                   <ActionIcon
                     key={i}
-                    onClick={() => { setActiveImg(i); setImageFailed(false) }}
+                    onClick={() => { setActiveImg(i); setImageFailed(false); setImageLoaded(false) }}
                     aria-label={`Фото ${i + 1}`}
                     variant="transparent"
                     style={{

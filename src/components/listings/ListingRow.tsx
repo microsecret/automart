@@ -26,6 +26,7 @@ const TRUNCATE: React.CSSProperties = {
 
 export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const [imageFailed, setImageFailed] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
   const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
 
@@ -54,6 +55,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
 
   useEffect(() => {
     setImageFailed(false)
+    setImageLoaded(false)
   }, [listing.id])
 
   const toggleFav = (e: React.MouseEvent) => {
@@ -92,14 +94,27 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
           <Box
             className="listing-card__media"
             data-empty-media={!hasDisplayImage || undefined}
+            data-image-loading={hasDisplayImage && !imageLoaded ? "true" : undefined}
             data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
             pos="relative"
             style={{ width: 180, flexShrink: 0, background: "var(--mantine-color-gray-1)", lineHeight: 0 }}
           >
             {hasDisplayImage ? (
               <AspectRatio ratio={4 / 3} w={180}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image} alt={listing.title} onError={() => setImageFailed(true)} loading="lazy" decoding="async" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+                <>
+                  <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className="listing-card__image"
+                    data-loaded={imageLoaded || undefined}
+                    src={image}
+                    alt={listing.title}
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => { setImageFailed(true); setImageLoaded(false) }}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </>
               </AspectRatio>
             ) : (
               <Box h="100%" className="listing-card__media" data-empty-media="true"><VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact /></Box>
