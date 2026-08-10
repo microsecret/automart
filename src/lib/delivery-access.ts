@@ -48,6 +48,7 @@ export function canManageDeliveryOrder(session: SessionLike, order: { partnerId:
 
 export function deliveryOrderPermissions(session: SessionLike, order: { buyerId: string; partnerId: string | null; managerId: string | null }) {
   return {
+    currentUserId: session?.user?.id || null,
     canRead: canReadDeliveryOrder(session, order),
     canManage: canManageDeliveryOrder(session, order),
     isBuyer: session?.user?.id === order.buyerId,
