@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     const [latestCandidates, unreadGroups] = await Promise.all([
       latestMessageFilters.length > 0
         ? prisma.message.findMany({
-            where: { OR: latestMessageFilters },
+            where: { AND: [participantWhere, { OR: latestMessageFilters }] },
             orderBy: { createdAt: "desc" },
             include: {
               listing: {
