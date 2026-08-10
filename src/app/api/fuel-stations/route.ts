@@ -63,6 +63,10 @@ function stationPriority(station: FuelStationPayload) {
   return namedOrBranded + taggedFuels + hasAddress
 }
 
+function isRussianMapCoordinate(latitude: number, longitude: number) {
+  return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= 41 && latitude <= 82 && longitude >= 19 && longitude <= 190
+}
+
 async function requestStations(query: string) {
   const endpoints = Array.from(new Set([
     process.env.OVERPASS_API_URL,
@@ -104,13 +108,24 @@ async function requestStations(query: string) {
  */
 export async function GET(request: NextRequest) {
   const city = request.nextUrl.searchParams.get("city") || "Москва"
-  const coordinates = CITY_COORDINATES[city]
+  const cityCoordinates = CITY_COORDINATES[city]
+  const latitudeParam = request.nextUrl.searchParams.get("latitude")
+  const longitudeParam = request.nextUrl.searchParams.get("longitude")
+  const hasCustomCoordinates = latitudeParam !== null || longitudeParam !== null
+  const requestedCoordinates = hasCustomCoordinates ? { latitude: Number(latitudeParam), longitude: Number(longitudeParam) } : null
 
-  if (!coordinates) {
+  if (!cityCoordinates) {
     return NextResponse.json({ error: "Выберите город из списка карты", cities: FUEL_MAP_CITIES }, { status: 400 })
   }
 
-  const query = `[out:json][timeout:20];(node["amenity"="fuel"](around:14000,${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:14000,${coordinates.latitude},${coordinates.longitude}););out center tags 120;`
+  if (requestedCoordinates && !isRussianMapCoordinate(requestedCoordinates.latitude, requestedCoordinates.longitude)) {
+    return NextResponse.json({ error: "Выберите участок на территории России" }, { status: 400 })
+  }
+
+  const coordinates = requestedCoordinates || cityCoordinates
+  const radius = requestedCoordinates ? 22_000 : 14_000
+
+  const query = `[out:json][timeout:20];(node["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude}););out center tags 120;`
 
   try {
     const payload = await requestStations(query)

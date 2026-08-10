@@ -61,17 +61,19 @@ type MapMarker = {
   stations: FuelStation[]
 }
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect, onViewportChange }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
   selectedStation: FuelStation | null
   onSelect: (station: FuelStation) => void
+  onViewportChange: (coordinates: { latitude: number; longitude: number }) => void
 }) {
   const [zoom, setZoom] = useState(11)
   const [viewportCenter, setViewportCenter] = useState(coordinates)
   const [isDragging, setIsDragging] = useState(false)
   const dragState = useRef<{ pointerId: number; clientX: number; clientY: number; center: { latitude: number; longitude: number }; width: number; height: number } | null>(null)
+  const viewportCenterRef = useRef(viewportCenter)
   const center = useMemo(() => coordinatesToWorld(viewportCenter.latitude, viewportCenter.longitude, zoom), [viewportCenter.latitude, viewportCenter.longitude, zoom])
   const centerTileX = Math.floor(center.x / TILE_SIZE)
   const centerTileY = Math.floor(center.y / TILE_SIZE)
@@ -81,6 +83,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
 
   useEffect(() => {
     setViewportCenter(coordinates)
+    viewportCenterRef.current = coordinates
     setZoom(11)
   }, [coordinates.latitude, coordinates.longitude])
 
@@ -137,13 +140,16 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
     const nextX = ((start.x - (deltaX / drag.width) * MAP_WORLD_SPAN) % worldSize + worldSize) % worldSize
     const edgePadding = TILE_SIZE / 2
     const nextY = Math.max(edgePadding, Math.min(worldSize - edgePadding, start.y - (deltaY / drag.height) * MAP_WORLD_SPAN))
-    setViewportCenter(worldToCoordinates(nextX, nextY, zoom))
+    const nextCenter = worldToCoordinates(nextX, nextY, zoom)
+    viewportCenterRef.current = nextCenter
+    setViewportCenter(nextCenter)
   }
 
   const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (dragState.current?.pointerId !== event.pointerId) return
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
     dragState.current = null
+    onViewportChange(viewportCenterRef.current)
     window.setTimeout(() => setIsDragging(false), 0)
   }
 
@@ -194,9 +200,24 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
 export default function FuelMapPage() {
   const [city, setCity] = useState("Москва")
   const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
-  const { data, error, isLoading, mutate } = useSWR<FuelStationsResponse>(`/api/fuel-stations?city=${encodeURIComponent(city)}`, fetchJson, { revalidateOnFocus: false })
-  const coordinates = data?.coordinates || CITY_COORDINATES[city]
-  useEffect(() => setSelectedStation(null), [city])
+  const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
+  const [requestedCoordinates, setRequestedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
+  const fuelStationsUrl = useMemo(() => {
+    const params = new URLSearchParams({ city })
+    if (requestedCoordinates) {
+      params.set("latitude", requestedCoordinates.latitude.toFixed(5))
+      params.set("longitude", requestedCoordinates.longitude.toFixed(5))
+    }
+    return `/api/fuel-stations?${params.toString()}`
+  }, [city, requestedCoordinates])
+  const { data, error, isLoading, isValidating, mutate } = useSWR<FuelStationsResponse>(fuelStationsUrl, fetchJson, { revalidateOnFocus: false })
+  const coordinates = data?.coordinates || requestedCoordinates || CITY_COORDINATES[city]
+  const isViewingMapArea = Boolean(requestedCoordinates)
+  useEffect(() => {
+    setSelectedStation(null)
+    setRequestedCoordinates(null)
+    setViewportCoordinates(CITY_COORDINATES[city])
+  }, [city])
 
   const showStationOnMap = (station: FuelStation) => {
     setSelectedStation(station)
@@ -221,13 +242,13 @@ export default function FuelMapPage() {
         </Paper>
 
         <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>Заправки рядом с центром {city}</Text><Text size="xs" c="dimmed">{data ? `${data.stations.length} точек в подборке` : "Загружаем точки"}</Text></Box></Group>
-          <Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => mutate()} loading={isLoading}>Обновить</Button>
+          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с центром ${city}`}</Text><Text size="xs" c="dimmed">{data ? `${data.stations.length} точек в подборке` : "Загружаем точки"}</Text></Box></Group>
+          <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => mutate()} loading={isLoading || isValidating}>Обновить</Button><Button color="indigo" size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>Загрузить этот участок</Button></Group>
         </Group>
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
-            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={city} coordinates={coordinates} stations={data?.stations || []} selectedStation={selectedStation} onSelect={setSelectedStation} /></Box>
+            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={city} coordinates={coordinates} stations={data?.stations || []} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : data?.stations.length ? <Stack gap="xs">{data.stations.map((station) => (
                 <Paper key={`${station.sourceType}-${station.id}`} className="fuel-station-card" radius="md" p="sm" withBorder>
