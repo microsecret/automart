@@ -1,17 +1,20 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import Link from "next/link"
-import { Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, SegmentedControl, Center, Avatar, Button, Divider, ActionIcon } from "@mantine/core"
-import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconChartBar, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit } from "@tabler/icons-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, SegmentedControl, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal, Select, NumberInput } from "@mantine/core"
+import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
+import VehicleFallback from "@/components/listings/VehicleFallback"
+import { BODY_TYPES, CAR_BRANDS, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 
 type DashboardResponse = {
   stats: {
@@ -22,14 +25,94 @@ type DashboardResponse = {
     garageCount: number
     avgRating: number
   }
+  workflow: {
+    drafts: number
+    pendingModeration: number
+    active: number
+    needsAttention: number
+  }
   listings: any[]
   favorites: any[]
 }
 
+type GarageVehicle = {
+  id: string
+  make: string
+  model: string
+  year: number
+  mileage: number | null
+  fuelType: string
+  transmission: string
+  bodyType: string | null
+  color: string | null
+  condition: string
+  location: string
+  images: string | null
+  createdAt: string
+}
+
+type GarageResponse = { vehicles: GarageVehicle[] }
+
+type GarageForm = {
+  make: string
+  model: string
+  year: number | ""
+  mileage: number | ""
+  fuelType: string
+  transmission: string
+  bodyType: string
+  location: string
+}
+
+const DASHBOARD_TABS = new Set(["listings", "favorites", "garage", "profile"])
+const createGarageForm = (): GarageForm => ({
+  make: "",
+  model: "",
+  year: new Date().getFullYear(),
+  mileage: "",
+  fuelType: "GASOLINE",
+  transmission: "AUTOMATIC",
+  bodyType: "",
+  location: "",
+})
+
 export default function DashboardPage() {
-  const { data: session } = useSession()
+  const { data: session, update: updateSession } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [tab, setTab] = useState("listings")
+  const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false)
+  const [profileName, setProfileName] = useState("")
+  const [isProfileSaving, setIsProfileSaving] = useState(false)
+  const [isGarageModalOpen, setIsGarageModalOpen] = useState(false)
+  const [garageForm, setGarageForm] = useState<GarageForm>(createGarageForm)
+  const [isGarageSaving, setIsGarageSaving] = useState(false)
+  const [garageDeletingId, setGarageDeletingId] = useState<string | null>(null)
   const { data, error, isLoading, mutate } = useSWR<DashboardResponse>("/api/dashboard/stats", fetchJson)
+  const { data: garageData, error: garageError, isLoading: isGarageLoading, mutate: mutateGarage } = useSWR<GarageResponse>(
+    tab === "garage" ? "/api/garage" : null,
+    fetchJson,
+    { revalidateOnFocus: false },
+  )
+
+  const selectTab = (nextTab: string) => {
+    setTab(nextTab)
+    const nextParams = new URLSearchParams(searchParams.toString())
+    if (nextTab === "listings") nextParams.delete("tab")
+    else nextParams.set("tab", nextTab)
+    router.replace(nextParams.size ? `/dashboard?${nextParams.toString()}` : "/dashboard", { scroll: false })
+  }
+
+  const openGarageModal = () => {
+    setGarageForm(createGarageForm())
+    setIsGarageModalOpen(true)
+  }
+
+  const closeGarageModal = () => {
+    if (isGarageSaving) return
+    setIsGarageModalOpen(false)
+    setGarageForm(createGarageForm())
+  }
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Снять с публикации «${title}»? Данные останутся в архиве.`)) return
@@ -46,10 +129,82 @@ export default function DashboardPage() {
     }
   }
 
+  useEffect(() => {
+    setProfileName(session?.user?.name || "")
+  }, [session?.user?.name])
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab")
+    if (requestedTab && DASHBOARD_TABS.has(requestedTab)) setTab(requestedTab)
+  }, [searchParams])
+
+  const handleProfileSave = async () => {
+    setIsProfileSaving(true)
+    try {
+      const response = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: profileName }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || "Не удалось обновить профиль")
+
+      await updateSession({ name: payload.user.name })
+      setIsProfileEditorOpen(false)
+      notifications.show({ title: "Профиль обновлён", message: "Отображаемое имя сохранено.", color: "teal" })
+    } catch (error) {
+      notifications.show({ title: "Не удалось сохранить", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
+    } finally {
+      setIsProfileSaving(false)
+    }
+  }
+
+  const handleGarageSave = async () => {
+    setIsGarageSaving(true)
+    try {
+      const response = await fetch("/api/garage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(garageForm),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || "Не удалось добавить автомобиль")
+
+      setGarageForm(createGarageForm())
+      setIsGarageModalOpen(false)
+      await Promise.all([mutateGarage(), mutate()])
+      notifications.show({ title: "Автомобиль добавлен", message: "Теперь можно отслеживать его в личном гараже.", color: "teal" })
+    } catch (error) {
+      notifications.show({ title: "Не удалось добавить автомобиль", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
+    } finally {
+      setIsGarageSaving(false)
+    }
+  }
+
+  const handleGarageDelete = async (vehicle: GarageVehicle) => {
+    if (!confirm(`Удалить ${vehicle.make} ${vehicle.model} из личного гаража?`)) return
+    setGarageDeletingId(vehicle.id)
+    try {
+      const response = await fetch(`/api/garage?id=${encodeURIComponent(vehicle.id)}`, { method: "DELETE" })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || "Не удалось удалить автомобиль")
+
+      await Promise.all([mutateGarage(), mutate()])
+      notifications.show({ title: "Удалено из гаража", message: "Автомобиль больше не отображается в личном кабинете.", color: "gray" })
+    } catch (error) {
+      notifications.show({ title: "Не удалось удалить автомобиль", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
+    } finally {
+      setGarageDeletingId(null)
+    }
+  }
+
   if (isLoading) return <Box p={{ base: "sm", md: "md" }}><ResultsGridSkeleton count={6} mediaHeight={44} /></Box>
   if (error || !data) return <Box p={{ base: "sm", md: "md" }}><AsyncErrorState title="Не удалось загрузить личный кабинет" description="Статистика и объявления временно недоступны. Повторите запрос." onRetry={() => mutate()} /></Box>
 
   const stats = data.stats
+  const workflow = data.workflow
+  const greetingName = session?.user?.name?.trim().split(" ")[0]
+  const hasAttentionItems = workflow.needsAttention > 0
 
   return (
     <Box p={{ base: "sm", md: "md" }}>
@@ -64,6 +219,45 @@ export default function DashboardPage() {
           </Group>
           <Button component={Link} href="/listings/create/vehicle" leftSection={<IconPlus size={16} />} color="indigo" radius="md" size="sm">Разместить</Button>
         </Group>
+
+        <Paper className="dashboard-workspace" radius="lg" p={{ base: "md", md: "lg" }} withBorder>
+          <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
+            <Stack gap={5} maw={560}>
+              <Badge className="dashboard-workspace__eyebrow" variant="light" color={hasAttentionItems ? "orange" : "indigo"} radius="xl">
+                {hasAttentionItems ? "Требуется внимание" : "Рабочее пространство"}
+              </Badge>
+              <Text fw={850} fz={{ base: 22, md: 28 }} lh={1.08} ff="var(--font-display),sans-serif">
+                {hasAttentionItems ? "Есть объявления, которым нужно ваше действие" : `Здравствуйте${greetingName ? `, ${greetingName}` : ""}. Всё под контролем.`}
+              </Text>
+              <Text size="sm" c="dimmed" maw={520}>
+                {hasAttentionItems
+                  ? "Откройте список объявлений: там есть карточки с причиной и следующим шагом."
+                  : "Здесь собраны публикации, отклики и инструменты для работы с транспортом — без лишней навигации."}
+              </Text>
+            </Stack>
+            <Group gap="xs" wrap="wrap">
+              <Button component={Link} href="/listings/create/vehicle" color="indigo" radius="md" size="sm" leftSection={<IconPlus size={16} />}>Новое объявление</Button>
+              <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" radius="md" size="sm" leftSection={<IconTruckDelivery size={16} />}>Мои доставки</Button>
+            </Group>
+          </Group>
+
+          <SimpleGrid className="dashboard-workspace__status-grid" cols={{ base: 2, sm: 4 }} spacing="xs" mt="lg">
+            {[
+              { label: "Черновики", value: workflow.drafts, icon: <IconFileDescription size={17} />, color: "gray" },
+              { label: "На проверке", value: workflow.pendingModeration, icon: <IconClipboardCheck size={17} />, color: "yellow" },
+              { label: "Активные", value: workflow.active, icon: <IconCircleCheck size={17} />, color: "teal" },
+              { label: "Нужно открыть", value: workflow.needsAttention, icon: <IconAlertCircle size={17} />, color: hasAttentionItems ? "orange" : "gray" },
+            ].map((item) => (
+              <Button key={item.label} variant="subtle" color={item.color} className="dashboard-workspace__status" onClick={() => selectTab("listings")} rightSection={<IconArrowRight size={14} />}>
+                <ThemeIcon size={30} radius="md" variant="light" color={item.color}>{item.icon}</ThemeIcon>
+                <Stack gap={0} align="flex-start" style={{ flex: 1 }}>
+                  <Text size="xs" c="dimmed" fw={650}>{item.label}</Text>
+                  <Text size="lg" c="dark.9" fw={850} lh={1}>{item.value}</Text>
+                </Stack>
+              </Button>
+            ))}
+          </SimpleGrid>
+        </Paper>
 
         {/* Карточки статистики */}
         <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="sm">
@@ -92,7 +286,7 @@ export default function DashboardPage() {
         {/* Табы */}
         <SegmentedControl
           value={tab}
-          onChange={setTab}
+          onChange={selectTab}
           size="sm"
           radius="md"
           data={[
@@ -105,7 +299,7 @@ export default function DashboardPage() {
 
         {/* Контент табов */}
         {tab === "listings" && (
-          <Stack gap="xs">
+          <Stack gap="xs" id="dashboard-listings">
             {data.listings.length === 0 ? (
               <Paper radius="md" p="xl" withBorder>
                 <Center>
@@ -211,15 +405,70 @@ export default function DashboardPage() {
         )}
 
         {tab === "garage" && (
-          <Paper radius="md" p="xl" withBorder>
-            <Center>
-              <Stack align="center" gap="sm">
-                <ThemeIcon variant="light" color="green" size={48} radius="md"><IconCar size={24} /></ThemeIcon>
-                <Text fw={600} c="dark.9">Гараж</Text>
-                <Text size="sm" c="gray.5" ta="center" maw={300}>В гараже {stats.garageCount} авто. Добавляйте машины для отслеживания обслуживания и истории.</Text>
-                <Button component={Link} href="/dashboard" size="sm" variant="light" color="green">Добавить в гараж</Button>
-              </Stack>
-            </Center>
+          <Paper className="dashboard-garage" radius="lg" p={{ base: "md", md: "lg" }} withBorder>
+            <Group justify="space-between" align="flex-start" mb="md" gap="md" wrap="wrap">
+              <Group gap="sm" align="center">
+                <ThemeIcon variant="light" color="teal" size={42} radius="md"><IconCar size={21} /></ThemeIcon>
+                <Stack gap={1}>
+                  <Text fw={800} fz="lg" c="dark.9" ff="var(--font-display),sans-serif">Личный гараж</Text>
+                  <Text size="sm" c="dimmed">Ваши автомобили не публикуются в каталоге и доступны только вам.</Text>
+                </Stack>
+              </Group>
+              <Button color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />} onClick={openGarageModal}>Добавить автомобиль</Button>
+            </Group>
+
+            {isGarageLoading ? (
+              <ResultsGridSkeleton count={3} mediaHeight={96} />
+            ) : garageError ? (
+              <AsyncErrorState title="Не удалось открыть гараж" description="Список автомобилей временно недоступен. Повторите запрос." onRetry={() => mutateGarage()} />
+            ) : garageData?.vehicles.length ? (
+              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+                {garageData.vehicles.map((vehicle) => {
+                  const vehicleImages = parseImages(vehicle.images)
+                  const vehicleImage = vehicleImages[0]
+                  return (
+                    <Paper key={vehicle.id} className="garage-vehicle-card" radius="md" withBorder overflow="hidden">
+                      <Box className="garage-vehicle-card__media">
+                        {vehicleImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={vehicleImage} alt={`${vehicle.make} ${vehicle.model}`} loading="lazy" />
+                        ) : <VehicleFallback type="CAR" bodyType={vehicle.bodyType} compact />}
+                        <Box className="garage-vehicle-card__brand"><BrandIcon brand={vehicle.make} size={30} /></Box>
+                      </Box>
+                      <Stack gap={8} p="sm">
+                        <Group justify="space-between" gap="xs" wrap="nowrap">
+                          <Stack gap={1} style={{ minWidth: 0 }}>
+                            <Text fw={800} fz="sm" c="dark.9" truncate>{vehicle.make} {vehicle.model}</Text>
+                            <Text size="xs" c="dimmed">{vehicle.year} г.{vehicle.mileage != null ? ` · ${formatMileage(vehicle.mileage)}` : ""}</Text>
+                          </Stack>
+                          <Badge color="teal" variant="light" radius="xl" size="sm">Личный</Badge>
+                        </Group>
+                        <Group gap={5} wrap="wrap">
+                          {vehicle.bodyType && <Badge color="gray" variant="light" size="xs">{findLabel(BODY_TYPES, vehicle.bodyType)}</Badge>}
+                          <Badge color="indigo" variant="light" size="xs">{findLabel(FUEL_TYPES, vehicle.fuelType)}</Badge>
+                          <Badge color="violet" variant="light" size="xs">{findLabel(TRANSMISSIONS, vehicle.transmission)}</Badge>
+                        </Group>
+                        <Group justify="space-between" align="center" mt={2}>
+                          <Text size="xs" c="gray.5" truncate>{vehicle.location || "Город не указан"}</Text>
+                          <ActionIcon color="red" variant="subtle" size="sm" aria-label={`Удалить ${vehicle.make} ${vehicle.model} из гаража`} loading={garageDeletingId === vehicle.id} onClick={() => handleGarageDelete(vehicle)}>
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Group>
+                      </Stack>
+                    </Paper>
+                  )
+                })}
+              </SimpleGrid>
+            ) : (
+              <Center py={{ base: "xl", md: 56 }}>
+                <Stack align="center" gap="sm" maw={420} ta="center">
+                  <ThemeIcon variant="light" color="teal" size={54} radius="xl"><IconCar size={27} /></ThemeIcon>
+                  <Text fw={750} fz="lg">В гараже пока нет автомобилей</Text>
+                  <Text size="sm" c="dimmed">Добавьте свою машину, чтобы позже получать напоминания об обслуживании и запускать проверку истории.</Text>
+                  <Button color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />} onClick={openGarageModal}>Добавить первый автомобиль</Button>
+                </Stack>
+              </Center>
+            )}
           </Paper>
         )}
 
@@ -246,11 +495,66 @@ export default function DashboardPage() {
                 <Box><Text size="xs" c="gray.4">Просмотров всего</Text><Text size="sm" fw={600} c="dark.9">{stats.totalViews}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Отзывов</Text><Text size="sm" fw={600} c="dark.9">{stats.reviewsCount}</Text></Box>
               </SimpleGrid>
-              <Button variant="light" color="indigo" size="sm" leftSection={<IconSettings size={16} />} radius="md">Редактировать профиль</Button>
+              {!isProfileEditorOpen ? (
+                <Button variant="light" color="indigo" size="sm" leftSection={<IconSettings size={16} />} radius="md" onClick={() => setIsProfileEditorOpen(true)}>Редактировать профиль</Button>
+              ) : (
+                <Stack gap="xs">
+                  <TextInput label="Отображаемое имя" value={profileName} onChange={(event) => setProfileName(event.currentTarget.value)} maxLength={60} />
+                  <Group gap="xs">
+                    <Button size="sm" color="indigo" loading={isProfileSaving} onClick={handleProfileSave}>Сохранить</Button>
+                    <Button size="sm" variant="subtle" color="gray" disabled={isProfileSaving} onClick={() => { setProfileName(session?.user?.name || ""); setIsProfileEditorOpen(false) }}>Отмена</Button>
+                  </Group>
+                </Stack>
+              )}
             </Stack>
           </Paper>
         )}
       </Stack>
+
+      <Modal opened={isGarageModalOpen} onClose={closeGarageModal} title="Добавить автомобиль в гараж" centered radius="lg" size="lg">
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">Это личная запись: она не появится в каталоге и доступна только владельцу кабинета.</Text>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <Select
+              required
+              searchable
+              label="Марка"
+              placeholder="Выберите марку"
+              data={CAR_BRANDS.map((brand) => ({ value: brand, label: brand }))}
+              value={garageForm.make || null}
+              onChange={(value) => setGarageForm((current) => ({ ...current, make: value || "" }))}
+            />
+            <TextInput required label="Модель" placeholder="Например, Camry" value={garageForm.model} onChange={(event) => setGarageForm((current) => ({ ...current, model: event.currentTarget.value }))} maxLength={80} />
+            <NumberInput
+              required
+              label="Год выпуска"
+              value={garageForm.year === "" ? undefined : garageForm.year}
+              min={1900}
+              max={new Date().getFullYear() + 1}
+              allowDecimal={false}
+              onChange={(value) => setGarageForm((current) => ({ ...current, year: typeof value === "number" ? value : "" }))}
+            />
+            <NumberInput
+              label="Пробег, км"
+              placeholder="Необязательно"
+              value={garageForm.mileage === "" ? undefined : garageForm.mileage}
+              min={0}
+              max={3_000_000}
+              allowDecimal={false}
+              thousandSeparator=" "
+              onChange={(value) => setGarageForm((current) => ({ ...current, mileage: typeof value === "number" ? value : "" }))}
+            />
+            <Select label="Топливо" data={FUEL_TYPES.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.fuelType} onChange={(value) => setGarageForm((current) => ({ ...current, fuelType: value || "GASOLINE" }))} />
+            <Select label="Коробка передач" data={TRANSMISSIONS.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.transmission} onChange={(value) => setGarageForm((current) => ({ ...current, transmission: value || "AUTOMATIC" }))} />
+            <Select clearable label="Кузов" placeholder="Выберите тип" data={BODY_TYPES.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.bodyType || null} onChange={(value) => setGarageForm((current) => ({ ...current, bodyType: value || "" }))} />
+            <TextInput label="Город" placeholder="Например, Уфа" value={garageForm.location} onChange={(event) => setGarageForm((current) => ({ ...current, location: event.currentTarget.value }))} maxLength={120} />
+          </SimpleGrid>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="subtle" color="gray" disabled={isGarageSaving} onClick={closeGarageModal}>Отмена</Button>
+            <Button color="teal" loading={isGarageSaving} leftSection={<IconPlus size={16} />} onClick={handleGarageSave}>Добавить в гараж</Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Box>
   )
 }
