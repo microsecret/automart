@@ -89,7 +89,13 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
       <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         <Group gap={0} align="stretch" wrap="nowrap">
           {/* Фото */}
-          <Box pos="relative" style={{ width: 180, flexShrink: 0, background: "var(--mantine-color-gray-1)", lineHeight: 0 }}>
+          <Box
+            className="listing-card__media"
+            data-empty-media={!hasDisplayImage || undefined}
+            data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
+            pos="relative"
+            style={{ width: 180, flexShrink: 0, background: "var(--mantine-color-gray-1)", lineHeight: 0 }}
+          >
             {hasDisplayImage ? (
               <AspectRatio ratio={4 / 3} w={180}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
