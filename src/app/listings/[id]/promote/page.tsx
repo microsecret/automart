@@ -2,12 +2,15 @@
 export const dynamic = "force-dynamic"
 import { useState, useTransition } from "react"
 import { useParams } from "next/navigation"
-import { Box, Stack, Text, Paper, Group, Button, SimpleGrid, ThemeIcon, Badge, Modal, Center, Loader, Divider, Alert } from "@mantine/core"
+import { Box, Stack, Text, Paper, Group, Button, SimpleGrid, ThemeIcon, Badge, Modal, Divider, Skeleton } from "@mantine/core"
 import { IconFlame, IconStar, IconArrowUp, IconCheck, IconCreditCard, IconShieldCheck, IconChartBar } from "@tabler/icons-react"
 import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { fetchJson } from "@/lib/api-client"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+type ListingViewsResponse = { views: number }
+type PromoteResponse = { success: true; listing: { id: string; isFeatured: boolean; promoType: string | null; promoUntil: string } }
 
 const PROMO_OPTIONS = [
   { id: "boost", title: "Поднятие в топ", desc: "Объявление поднимется на первое место в поиске", price: 499, icon: IconArrowUp, color: "#0891b2", bg: "#ecfeff", days: 3, features: ["Поднятие в топ выдачи", "Длительность: 3 дня", "Статистика просмотров"] },
@@ -21,7 +24,10 @@ export default function PromotePage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [paid, setPaid] = useState(false)
   const [pending, startTransition] = useTransition()
-  const { data: listing } = useSWR(`/api/listings/${id}/views`, fetcher)
+  const { data: listing, error: listingError, isLoading: isListingLoading, mutate: reloadViews } = useSWR<ListingViewsResponse>(
+    id ? `/api/listings/${id}/views` : null,
+    fetchJson,
+  )
 
   const selectedOption = PROMO_OPTIONS.find((o) => o.id === selected)
 
@@ -34,19 +40,31 @@ export default function PromotePage() {
   const handlePay = () => {
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/listings/${id}/promote`, {
+        await fetchJson<PromoteResponse>(`/api/listings/${id}/promote`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tariff: selected }),
         })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || "Ошибка")
         setPaid(true)
         notifications.show({ title: "Продвижение активировано", message: `Тариф «${selectedOption?.title}» активен`, color: "green" })
       } catch (e) {
         notifications.show({ title: "Ошибка", message: e instanceof Error ? e.message : "Не удалось активировать продвижение", color: "red" })
       }
     })
+  }
+
+  if (listingError) {
+    return (
+      <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 800, margin: "0 auto" }}>
+        <AsyncErrorState
+          title="Не удалось открыть продвижение"
+          description={listingError instanceof Error ? listingError.message : "Проверьте состояние объявления и попробуйте ещё раз."}
+          onRetry={() => void reloadViews()}
+          backHref="/dashboard"
+          backLabel="В кабинет"
+        />
+      </Box>
+    )
   }
 
   return (
@@ -60,6 +78,11 @@ export default function PromotePage() {
           </Stack>
         </Group>
 
+        {isListingLoading && (
+          <Paper radius="md" p="sm" withBorder>
+            <Stack align="center" gap={6}><Skeleton height={28} width={52} /><Skeleton height={12} width={116} /></Stack>
+          </Paper>
+        )}
         {listing?.views !== undefined && (
           <Paper radius="md" p="sm" withBorder style={{ background: "var(--mantine-color-gray-0)" }}>
             <Group gap="md" justify="center">
