@@ -180,7 +180,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
 
           {!hasDisplayImage && (
             <Box pos="absolute" top={8} left={listing.isFeatured ? 76 : 8} style={{ zIndex: 2 }}>
-              <Badge color="gray" variant="white" size="xs" radius="sm">{missingMediaLabel}</Badge>
+              <Badge className="listing-card__media-label" color="gray" variant="white" size="xs" radius="sm">{missingMediaLabel}</Badge>
             </Box>
           )}
 

@@ -111,7 +111,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
             )}
             {!hasDisplayImage && (
               <Box pos="absolute" top={6} right={6}>
-                <Badge color="gray" variant="white" size="xs" radius="sm">{missingMediaLabel}</Badge>
+                <Badge className="listing-card__media-label" color="gray" variant="white" size="xs" radius="sm">{missingMediaLabel}</Badge>
               </Box>
             )}
           </Box>

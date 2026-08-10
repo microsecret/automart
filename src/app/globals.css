@@ -995,6 +995,18 @@ select {
   transition: transform 280ms ease, filter 280ms ease;
 }
 
+.listing-card__media-label {
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.listing-card--row .listing-card__media-label {
+  max-width: calc(100% - 12px);
+}
+
 .listing-card__media[data-empty-media][data-vehicle-type="car"] .vehicle-fallback,
 .listing-card__media[data-empty-media][data-vehicle-type="part"] .vehicle-fallback {
   background:
