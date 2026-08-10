@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react"
 import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge } from "@mantine/core"
 import { IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
-import { POPULAR_BRANDS, getModels } from "@/lib/catalog"
+import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
@@ -19,6 +19,15 @@ const CATS = [
   { value: "WATER", label: "Водный транспорт" },
   { value: "AIR", label: "Авиа" },
 ]
+
+const BRAND_CATEGORY_BY_VEHICLE_TYPE = {
+  CAR: "cars",
+  MOTORCYCLE: "moto",
+  TRUCK: "trucks",
+  SPECIAL: "special",
+  WATER: "water",
+  AIR: "air",
+} as const
 
 export default function CreateVehiclePage() {
   const { data: session, status } = useSession()
@@ -59,6 +68,8 @@ export default function CreateVehiclePage() {
   const setVehicleType = (vehicleType: string) => setF((previous) => ({
     ...previous,
     vehicleType,
+    make: "",
+    model: "",
     fuelType: getFuelOptions(vehicleType)[0]?.value || "OTHER",
     transmission: getTransmissionOptions(vehicleType)[0]?.value || "",
     bodyType: vehicleType === "CAR" ? previous.bodyType || "SEDAN" : "",
@@ -68,6 +79,9 @@ export default function CreateVehiclePage() {
   const fuelOptions = getFuelOptions(f.vehicleType)
   const transmissionOptions = getTransmissionOptions(f.vehicleType)
   const selectedCategory = categories.find((category) => category.vehicleType === f.vehicleType)
+  const brandCategory = BRAND_CATEGORY_BY_VEHICLE_TYPE[f.vehicleType as keyof typeof BRAND_CATEGORY_BY_VEHICLE_TYPE] || "cars"
+  const brandOptions = getBrandsByCategory(brandCategory)
+  const modelOptions = f.make.trim() ? getModels(f.make.trim(), brandCategory) : []
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -173,9 +187,34 @@ export default function CreateVehiclePage() {
                 <Text fw={700} fz="sm" c="dark.9">Основная информация</Text>
                 <TextInput label="Заголовок" placeholder="2018 Toyota Camry" required value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />
                 <Group gap="sm" grow>
-                  <TextInput label="Марка" placeholder="Toyota" required value={f.make} onChange={(e) => set("make", e.target.value)} size="sm" list="brands" />
-                  <TextInput label="Модель" placeholder="Camry" required value={f.model} onChange={(e) => set("model", e.target.value)} size="sm" />
+                  <TextInput
+                    label="Марка"
+                    placeholder="Toyota"
+                    description="Начните вводить или выберите из каталога"
+                    required
+                    value={f.make}
+                    onChange={(e) => setF((previous) => ({ ...previous, make: e.currentTarget.value, model: "" }))}
+                    size="sm"
+                    list="vehicle-brands"
+                  />
+                  <TextInput
+                    label="Модель"
+                    placeholder={f.make ? "Выберите или введите модель" : "Сначала укажите марку"}
+                    description={f.make && modelOptions.length === 0 ? "Модель можно указать вручную" : undefined}
+                    required
+                    disabled={!f.make.trim()}
+                    value={f.model}
+                    onChange={(e) => set("model", e.currentTarget.value)}
+                    size="sm"
+                    list="vehicle-models"
+                  />
                 </Group>
+                <datalist id="vehicle-brands">
+                  {brandOptions.map((brand) => <option key={brand.name} value={brand.name} />)}
+                </datalist>
+                <datalist id="vehicle-models">
+                  {modelOptions.map((model) => <option key={model} value={model} />)}
+                </datalist>
                 <Group gap="sm" grow>
                   <NumberInput label="Год" placeholder="2018" required value={f.year ? Number(f.year) : undefined} onChange={(v) => set("year", String(v || ""))} size="sm" min={1886} max={new Date().getFullYear() + 1} />
                   <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />
