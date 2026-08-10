@@ -140,6 +140,26 @@ async function main() {
       data: { mileage: null },
     })
 
+    // До разделения транспортных вертикалей авиационные записи получали
+    // автомобильный бензин. Исправляем только неавиационные/пустые значения,
+    // не перезаписывая уже корректно импортированные данные.
+    const airFuelNeedsRepair = await tx.vehicle.findMany({
+      where: {
+        vehicleType: "AIR",
+        OR: [
+          { fuelType: null },
+          { fuelType: { notIn: ["JET_A1", "AVGAS", "DIESEL"] } },
+        ],
+      },
+      select: { id: true, make: true },
+    })
+    for (const vehicle of airFuelNeedsRepair) {
+      await tx.vehicle.update({
+        where: { id: vehicle.id },
+        data: { fuelType: /cessna|piper|beechcraft/i.test(vehicle.make) ? "AVGAS" : "JET_A1" },
+      })
+    }
+
     const legacyVehicles = await tx.vehicle.findMany({
       where: { vehicleType: "CAR" },
       select: { id: true, make: true, model: true, mileage: true, operatingHours: true, flightHours: true, vin: true, serialNumber: true, registrationNumber: true, transmission: true },
@@ -164,7 +184,7 @@ async function main() {
       await tx.category.update({ where: { id: categoryId }, data: { vehicleCount } })
     }
 
-    console.log(`Reclassified ${repaired} legacy transport records`)
+    console.log(`Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values`)
   })
 
   console.log("Transport categories reconciled")

@@ -167,7 +167,7 @@ model Part {
   name          String   // Part name
   description   String?
   price         Int      // Price in rubles
-  condition     String   // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
+  condition     String   // NEW, USED
   steeringWheel    String?  // LEFT, RIGHT (руль)
   ownersCount      Int?     // количество владельцев
   documentsStatus  String?  // CLEAN, ISSUES, MISSING

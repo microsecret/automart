@@ -52,8 +52,6 @@ import {
   IconChevronRight,
   IconEye,
   IconSteeringWheel,
-  IconAlertTriangle,
-  IconBuildingStore,
   IconTruckDelivery,
   IconCircleCheck,
   IconPlane,
@@ -170,6 +168,17 @@ function formatDetailLabel(value: string) {
     .replace(/^./, (letter) => letter.toUpperCase())
 }
 
+function formatDetailValue(key: string, value: string | number | boolean) {
+  const values: Record<string, Record<string, string>> = {
+    airType: { AIRPLANE: "Самолёт", HELICOPTER: "Вертолёт", JET: "Реактивный самолёт", TURBOPROP: "Турбовинтовой" },
+    waterType: { BOAT: "Катер", YACHT: "Яхта", JETSKI: "Гидроцикл", SAILBOAT: "Парусное судно" },
+    specialType: { EXCAVATOR: "Экскаватор", LOADER: "Погрузчик", BULLDOZER: "Бульдозер", CRANE: "Кран", OTHER: "Другая техника" },
+    motorcycleType: { SPORT: "Спортбайк", ADVENTURE: "Турэндуро", SCOOTER: "Скутер", CRUISER: "Круизер" },
+    truckBodyType: { DUMP: "Самосвал", VAN: "Фургон", TRACTOR: "Седельный тягач", REFRIGERATOR: "Рефрижератор" },
+  }
+  return values[key]?.[String(value)] || String(value)
+}
+
 export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const [showPhone, setShowPhone] = useState(false)
   const [reviewRating, setReviewRating] = useState(5)
@@ -231,13 +240,27 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
     : usageMeta.field === "mileage" ? formatMileage(usageValue)
     : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
   const typeDetails = parseTypeDetails(data.typeDetails)
-  const additionalSpecs = Object.entries(typeDetails).filter(([, value]) => value !== null && value !== "")
+  const typeDetailKey: Partial<Record<string, string>> = {
+    MOTORCYCLE: "motorcycleType", TRUCK: "truckBodyType", SPECIAL: "specialType", WATER: "waterType", AIR: "airType",
+  }
+  const additionalSpecs = Object.entries(typeDetails).filter(([key, value]) => value !== null && value !== "" && key !== typeDetailKey[data.vehicleType])
+  const primaryTypeValue = data.bodyTypeLabel || (typeDetailKey[data.vehicleType] && typeDetails[typeDetailKey[data.vehicleType]!]
+    ? formatDetailValue(typeDetailKey[data.vehicleType]!, typeDetails[typeDetailKey[data.vehicleType]!]!)
+    : "—")
+  const statusItems = [
+    { label: "Документы", value: data.documentsStatusLabel || "Не указано", state: data.documentsStatusLabel === "В порядке" ? "positive" : "attention" },
+    { label: hasRoadVehicleDetails ? "Состояние кузова" : "Состояние", value: data.damageInfoLabel || "Не указано", state: data.damageInfoLabel === "Не битая" ? "positive" : "attention" },
+    { label: "Таможенный статус", value: data.customsCleared === null ? "Не указано" : data.customsCleared ? "Растаможен" : "Не растаможен", state: data.customsCleared ? "positive" : "neutral" },
+    { label: hasRoadVehicleDetails ? "Владельцев по ПТС" : "Владельцев", value: data.ownersCount ? String(data.ownersCount) : "Не указано", state: "neutral" },
+    { label: "Продавец", value: data.sellerTypeLabel || "Не указан", state: "neutral" },
+    { label: "Наличие", value: data.availabilityLabel || "Уточните у продавца", state: data.availabilityLabel === "В наличии" ? "positive" : "neutral" },
+  ]
 
   const specs = [
     { icon: <IconCalendar size={20} />, label: "Год", value: String(data.year) },
     { icon: <IconGauge size={20} />, label: usageMeta.label, value: usageDisplay },
-    { icon: typeMeta.icon, label: typeMeta.detailLabel, value: data.bodyTypeLabel || "—" },
-    { icon: <IconGasStation size={20} />, label: "Двигатель", value: data.fuelTypeLabel },
+    { icon: typeMeta.icon, label: typeMeta.detailLabel, value: primaryTypeValue },
+    { icon: <IconGasStation size={20} />, label: "Топливо", value: data.fuelTypeLabel || "—" },
     ...(supportsTransmission(data.vehicleType) ? [
       { icon: <IconManualGearbox size={20} />, label: "Коробка", value: data.transmissionLabel },
     ] : []),
@@ -251,7 +274,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
       { icon: <IconUsers size={20} />, label: "Дверей", value: data.doors ? String(data.doors) : "—" },
       { icon: <IconSteeringWheel size={20} />, label: "Руль", value: data.steeringWheelLabel || "—" },
     ] : []),
-    ...additionalSpecs.map(([label, value]) => ({ icon: <IconCircleCheck size={20} />, label: formatDetailLabel(label), value: String(value) })),
+    ...additionalSpecs.map(([label, value]) => ({ icon: <IconCircleCheck size={20} />, label: formatDetailLabel(label), value: formatDetailValue(label, value) })),
   ]
 
   return (
@@ -270,11 +293,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             {images.length >= 3 && <Photo360Viewer images={images} title={`${data.year} ${data.make} ${data.model} — 360° осмотр`} />}
 
             {/* Галерея */}
-            <Card p={0} radius="lg" withBorder style={{ overflow: "hidden" }}>
+            <Card p={0} radius="lg" withBorder className={`vehicle-detail-gallery${hasImages ? "" : " vehicle-detail-gallery--empty"}`}>
               {hasImages ? (
                 <>
                   {/* Главное изображение */}
-                  <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
+                  <Box className="vehicle-detail-gallery__media">
                     {imageFailed ? (
                       <Stack align="center" justify="center" gap="xs" h="100%" c="dimmed">
                         <IconCar size={42} stroke={1.5} />
@@ -340,103 +363,46 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   )}
                 </>
               ) : (
-                <Box style={{ aspectRatio: "16/10", background: "var(--mantine-color-gray-1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Stack align="center" gap="xs">
-                    <IconCar size={48} color="#d4d4d8" />
-                    <Text size="sm" c="gray.4">Нет фото</Text>
+                <Box className="vehicle-detail-gallery__empty-state">
+                  <Stack align="center" gap={6}>
+                    <Box className="vehicle-detail-gallery__empty-icon">{typeMeta.icon}</Box>
+                    <Text size="sm" fw={700} c="dark.8">Фотографии ещё не добавлены</Text>
+                    <Text size="xs" c="dimmed" ta="center">Запросите фото у продавца перед договорённостью.</Text>
                   </Stack>
                 </Box>
               )}
             </Card>
 
             {/* Характеристики */}
-            <Card withBorder radius="lg" p="lg">
-              <Group justify="space-between" mb="md">
+            <Card withBorder radius="lg" p="lg" className="vehicle-detail-specs">
+              <Group justify="space-between" mb="md" align="baseline">
                 <Title order={3} size="h4">Характеристики</Title>
-                {identityValue && <Badge variant="light" color="gray" size="sm">{identityMeta.badgeLabel}: {identityValue}</Badge>}
+                {identityValue && <Text className="vehicle-detail-specs__identity">{identityMeta.badgeLabel}: {identityValue}</Text>}
               </Group>
-              <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
+              <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing={0} className="vehicle-detail-specs__grid">
                 {specs.map((spec, i) => (
-                  <Stack key={i} gap={6}>
-                    <Group gap={6}>
-                      <ThemeIcon variant="light" color="indigo" size={28} radius="md">
-                        {spec.icon}
-                      </ThemeIcon>
-                      <Text size="xs" c="gray.4">{spec.label}</Text>
+                  <Box key={`${spec.label}-${i}`} className="vehicle-detail-specs__item">
+                    <Group gap={5} wrap="nowrap" className="vehicle-detail-specs__label">
+                      <Box className="vehicle-detail-specs__icon">{spec.icon}</Box>
+                      <Text size="xs">{spec.label}</Text>
                     </Group>
-                    <Text size="sm" fw={500} c="dark.9" style={{ paddingLeft: 34 }}>
-                      {spec.value}
-                    </Text>
-                  </Stack>
+                    <Text className="vehicle-detail-specs__value">{spec.value}</Text>
+                  </Box>
                 ))}
               </SimpleGrid>
             </Card>
 
             {/* Состояние и документы */}
-            <Card withBorder radius="lg" p="lg">
+            <Card withBorder radius="lg" p="lg" className="vehicle-detail-statuses">
               <Stack gap="md">
                 <Title order={3} size="h4">Состояние и документы</Title>
-                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
-                  {/* Документы */}
-                  <Paper radius="md" p="sm" withBorder style={{ borderColor: data.documentsStatusLabel === "В порядке" ? "#bbf7d0" : "var(--mantine-color-border)", background: data.documentsStatusLabel === "В порядке" ? "#f0fdf4" : "transparent" }}>
-                    <Group gap="sm" align="flex-start">
-                      <ThemeIcon variant="light" color={data.documentsStatusLabel === "В порядке" ? "green" : "red"} size={32} radius="md"><IconShieldCheck size={18} /></ThemeIcon>
-                      <Stack gap={2}>
-                        <Text size="xs" c="gray.5">Документы</Text>
-                        <Text size="sm" fw={600} c="dark.9">{data.documentsStatusLabel || "—"}</Text>
-                      </Stack>
-                    </Group>
-                  </Paper>
-                  {/* Повреждения */}
-                  <Paper radius="md" p="sm" withBorder style={{ borderColor: data.damageInfoLabel === "Не битая" ? "#bbf7d0" : "#fecaca", background: data.damageInfoLabel === "Не битая" ? "#f0fdf4" : "#fef2f2" }}>
-                    <Group gap="sm" align="flex-start">
-                      <ThemeIcon variant="light" color={data.damageInfoLabel === "Не битая" ? "green" : "red"} size={32} radius="md"><IconAlertTriangle size={18} /></ThemeIcon>
-                      <Stack gap={2}>
-                        <Text size="xs" c="gray.5">Состояние кузова</Text>
-                        <Text size="sm" fw={600} c="dark.9">{data.damageInfoLabel || "—"}</Text>
-                      </Stack>
-                    </Group>
-                  </Paper>
-                  {/* Растаможен */}
-                  <Paper radius="md" p="sm" withBorder style={{ borderColor: data.customsCleared ? "#bbf7d0" : "#fde68a", background: data.customsCleared ? "#f0fdf4" : "#fffbeb" }}>
-                    <Group gap="sm" align="flex-start">
-                      <ThemeIcon variant="light" color={data.customsCleared ? "green" : "orange"} size={32} radius="md"><IconCheck size={18} /></ThemeIcon>
-                      <Stack gap={2}>
-                        <Text size="xs" c="gray.5">Растаможен</Text>
-                        <Text size="sm" fw={600} c="dark.9">{data.customsCleared === null ? "—" : data.customsCleared ? "Да" : "Нет"}</Text>
-                      </Stack>
-                    </Group>
-                  </Paper>
-                  {/* Владельцы */}
-                  <Paper radius="md" p="sm" withBorder>
-                    <Group gap="sm" align="flex-start">
-                      <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconUsers size={18} /></ThemeIcon>
-                      <Stack gap={2}>
-                        <Text size="xs" c="gray.5">Владельцев по ПТС</Text>
-                        <Text size="sm" fw={600} c="dark.9">{data.ownersCount ? String(data.ownersCount) : "—"}</Text>
-                      </Stack>
-                    </Group>
-                  </Paper>
-                  {/* Продавец */}
-                  <Paper radius="md" p="sm" withBorder>
-                    <Group gap="sm" align="flex-start">
-                      <ThemeIcon variant="light" color={data.sellerTypeLabel === "Дилер" ? "violet" : "blue"} size={32} radius="md"><IconBuildingStore size={18} /></ThemeIcon>
-                      <Stack gap={2}>
-                        <Text size="xs" c="gray.5">Продавец</Text>
-                        <Text size="sm" fw={600} c="dark.9">{data.sellerTypeLabel || "—"}</Text>
-                      </Stack>
-                    </Group>
-                  </Paper>
-                  {/* Наличие */}
-                  <Paper radius="md" p="sm" withBorder>
-                    <Group gap="sm" align="flex-start">
-                      <ThemeIcon variant="light" color={data.availabilityLabel === "В наличии" ? "green" : "gray"} size={32} radius="md"><IconTruckDelivery size={18} /></ThemeIcon>
-                      <Stack gap={2}>
-                        <Text size="xs" c="gray.5">Наличие</Text>
-                        <Text size="sm" fw={600} c="dark.9">{data.availabilityLabel || "—"}</Text>
-                      </Stack>
-                    </Group>
-                  </Paper>
+                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing={0} className="vehicle-detail-statuses__grid">
+                  {statusItems.map((item) => (
+                    <Box key={item.label} className="vehicle-detail-statuses__item" data-state={item.state}>
+                      <Text className="vehicle-detail-statuses__label">{item.label}</Text>
+                      <Text className="vehicle-detail-statuses__value">{item.value}</Text>
+                    </Box>
+                  ))}
                 </SimpleGrid>
               </Stack>
             </Card>
