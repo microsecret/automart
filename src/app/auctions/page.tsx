@@ -10,6 +10,7 @@ import { isSafeMediaUrl, parseMarketplaceImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import type { AuctionListing } from "@prisma/client"
 
 const fetcher = fetchJson
 
@@ -48,10 +49,10 @@ const auctionYears = Array.from(
 )
 
 type AuctionResponse = {
-  listings: any[]
+  listings: AuctionListing[]
   pagination: { total: number; pages: number; limit: number }
 }
-function AuctionMedia({ listing }: { listing: any }) {
+function AuctionMedia({ listing }: { listing: AuctionListing }) {
   const [failed, setFailed] = useState(false)
   const image = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseMarketplaceImages(listing.images)?.[0] || ""
   const hasImage = Boolean(image) && !failed
@@ -236,33 +237,34 @@ export default function AuctionsPage() {
           </Paper>
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm">
-            {listings.map((l: any) => (
+            {listings.map((l) => (
               <Link key={l.id} href={`/auctions/${l.id}`} style={{ textDecoration: "none" }}>
                 <Paper radius="lg" withBorder className="auction-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", cursor: "pointer" }}>
                   <AuctionMedia listing={l} />
-                  <Box p="sm">
-                    <Text fw={700} fz="sm" c="dark.9" mb={4}>{l.make} {l.model}</Text>
-                    <Group gap="xs" mb={4}>
-                      <Text size="xs" c="gray.5">{l.year} г.</Text>
-                      {l.mileage != null && <Text size="xs" c="gray.5">· {l.mileage.toLocaleString("ru")} км</Text>}
-                    </Group>
-                    <Group gap={4} mb={6}>
+                  <Box p="md" className="auction-result-card__content">
+                    <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{l.make} {l.model}</Text>
+                    <Text className="auction-result-card__summary" lineClamp={1}>
+                      {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
+                    </Text>
+                    <Group gap={4} mt={8} wrap="wrap">
                       {l.fuelType && <Badge size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "gray"}>{l.fuelType === "ELECTRIC" ? "⚡ Электро" : l.fuelType === "HYBRID" ? "🔋 Гибрид" : l.fuelType === "DIESEL" ? "⛽ Дизель" : "⛽ Бензин"}</Badge>}
                       {l.bodyType && <Badge size="xs" variant="light" color="indigo">{l.bodyType === "SUV" ? "SUV" : l.bodyType === "SEDAN" ? "Седан" : l.bodyType === "PICKUP" ? "Пикап" : l.bodyType === "WAGON" ? "Универсал" : l.bodyType === "HATCHBACK" ? "Хэтчбек" : l.bodyType}</Badge>}
-                      {l.engineVolume && <Text size="10px" c="gray.4">{l.engineVolume} л</Text>}
-                      {l.power && <Text size="10px" c="gray.4">· {l.power} л.с.</Text>}
+                      {l.engineVolume && <Badge size="xs" variant="default" color="gray">{l.engineVolume} л</Badge>}
+                      {l.power && <Badge size="xs" variant="default" color="gray">{l.power} л.с.</Badge>}
                     </Group>
-                    <Text fw={800} fz="md" c="orange" ff="var(--font-display),sans-serif">{formatPriceShort(l.finalPrice)}</Text>
-                    <Text size="10px" c="gray.4">ориентир: курс ЦБ + сервис</Text>
+                    <Box className="auction-result-card__price-row">
+                      <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(l.finalPrice)}</Text>
+                      <Text className="auction-result-card__price-note">Под ключ в РФ</Text>
+                    </Box>
                     {l.auctionDate && (
-                      <Group gap={4} mt={4} pt={4} style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
-                        <Text size="10px" fw={600} c={new Date(l.auctionDate) > new Date() ? "#059669" : "#a1a1aa"}>
+                      <Group gap={4} className="auction-result-card__date" wrap="nowrap">
+                        <Text size="xs" fw={700} c={new Date(l.auctionDate) > new Date() ? "teal.7" : "gray.5"}>
                           {new Date(l.auctionDate) > new Date() ? "Торги: " : "Торги были: "}
                         </Text>
-                        <Text size="10px" c="gray.5">
+                        <Text size="xs" c="gray.5">
                           {new Date(l.auctionDate).toLocaleDateString("ru", { day: "numeric", month: "short" })}
                         </Text>
-                        {l.lotNumber && <Text size="10px" c="gray.4">· #{l.lotNumber}</Text>}
+                        {l.lotNumber && <Text size="xs" c="gray.4" lineClamp={1}>· #{l.lotNumber}</Text>}
                       </Group>
                     )}
                   </Box>

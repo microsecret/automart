@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(50, Math.max(1, Number.parseInt(sp.get("limit") || "20", 10) || 20))
     const skip = (page - 1) * limit
 
-    const where: any = {
+    const where: Prisma.AuctionListingWhereInput = {
       status: "ACTIVE",
       OR: [{ auctionDate: null }, { auctionDate: { gte: new Date() } }],
     }
