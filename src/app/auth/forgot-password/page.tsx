@@ -5,6 +5,9 @@ import { Container, Card, Stack, Text, TextInput, Button, Alert, ThemeIcon, Box 
 import { IconCar, IconMail, IconCheck, IconArrowLeft } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import Link from "next/link"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+
+type ForgotPasswordResponse = { message?: string }
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -16,17 +19,15 @@ export default function ForgotPasswordPage() {
     if (!email) return
     setLoading(true)
     try {
-      const response = await fetch("/api/auth/forgot-password", {
+      const payload = await fetchJson<ForgotPasswordResponse>("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       })
-      const payload = await response.json()
-      if (!response.ok) throw new Error(payload?.error || "Не удалось отправить инструкцию")
       setSent(true)
       notifications.show({ title: "Проверьте почту", message: payload?.message || "Если аккаунт существует, инструкция уже отправлена.", color: "green" })
     } catch (error) {
-      notifications.show({ title: "Не удалось отправить инструкцию", message: error instanceof Error ? error.message : "Попробуйте позже.", color: "red" })
+      notifications.show({ title: "Не удалось отправить инструкцию", message: getApiClientErrorMessage(error, "Попробуйте позже."), color: "red" })
     } finally {
       setLoading(false)
     }

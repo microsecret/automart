@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Box, Button, Card, Center, Container, Loader, Stack, Text, TextInput, ThemeIcon } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { IconCar, IconCheck, IconLock, IconMailOff } from "@tabler/icons-react"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 export const dynamic = "force-dynamic"
 
@@ -30,18 +31,16 @@ function ResetPasswordWorkspace() {
     }
     setLoading(true)
     try {
-      const response = await fetch("/api/auth/reset-password", {
+      await fetchJson<{ ok: true }>("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
       })
-      const payload = await response.json()
-      if (!response.ok) throw new Error(payload?.error || "Не удалось обновить пароль")
       setCompleted(true)
       notifications.show({ title: "Пароль обновлён", message: "Теперь войдите с новым паролем.", color: "teal" })
       window.setTimeout(() => router.push("/auth/signin"), 1200)
     } catch (error) {
-      notifications.show({ title: "Не удалось обновить пароль", message: error instanceof Error ? error.message : "Попробуйте позже.", color: "red" })
+      notifications.show({ title: "Не удалось обновить пароль", message: getApiClientErrorMessage(error, "Попробуйте позже."), color: "red" })
     } finally {
       setLoading(false)
     }
