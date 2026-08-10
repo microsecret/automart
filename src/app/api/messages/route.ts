@@ -122,9 +122,11 @@ export async function GET(request: NextRequest) {
 
     const conversationDetails = conversations.map((conversation) => {
       const latestMessage = latestByConversation.get(conversation.conversationId)
-      const otherUserId = latestMessage?.senderId === session.user.id
-        ? latestMessage.receiverId
-        : latestMessage?.senderId
+      const otherUserId = latestMessage
+        ? latestMessage.senderId === session.user.id
+          ? latestMessage.receiverId
+          : latestMessage.senderId
+        : undefined
       const otherUser = otherUserId ? otherUserById.get(otherUserId) : null
 
       return {

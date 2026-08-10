@@ -18,7 +18,7 @@ export const authOptions = {
       async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null
         const email = credentials.email.trim().toLowerCase()
-        const ipLimit = rateLimit(`auth:password:ip:${getClientIp({ headers: request.headers })}`, { windowMs: 15 * 60_000, maxRequests: 15 })
+        const ipLimit = rateLimit(`auth:password:ip:${getClientIp({ headers: request.headers ?? new Headers() })}`, { windowMs: 15 * 60_000, maxRequests: 15 })
         const emailLimit = rateLimit(`auth:password:email:${email}`, { windowMs: 15 * 60_000, maxRequests: 8 })
         if (!ipLimit.success || !emailLimit.success) throw new Error("RATE_LIMITED")
 

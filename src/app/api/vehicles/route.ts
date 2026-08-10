@@ -241,6 +241,7 @@ export async function POST(request: NextRequest) {
     }
     if (!normalizedImages) return NextResponse.json({ error: "Допустимы до 12 корректных изображений" }, { status: 400 })
     if (normalizedImages.length === 0) return NextResponse.json({ error: "Добавьте хотя бы одну фотографию транспорта" }, { status: 400 })
+    if (!normalizedVin) return NextResponse.json({ error: "Укажите VIN из 17 символов" }, { status: 400 })
     if (normalizedVin && !/^[A-HJ-NPR-Z0-9]{17}$/.test(normalizedVin)) {
       return NextResponse.json({ error: "VIN должен содержать 17 латинских символов и цифр без I, O и Q" }, { status: 400 })
     }
@@ -276,7 +277,7 @@ export async function POST(request: NextRequest) {
         mileage: ["SPECIAL", "WATER", "AIR"].includes(normalizedVehicleType) ? 0 : (normalizedMileage || 0),
         operatingHours: ["SPECIAL", "WATER"].includes(normalizedVehicleType) ? normalizedOperatingHours : null,
         flightHours: normalizedVehicleType === "AIR" ? normalizedFlightHours : null,
-        vin: normalizedVin || null,
+        vin: normalizedVin,
         fuelType: fuelType ? fuelType.trim() : null,
         transmission: supportsTransmission(normalizedVehicleType) ? String(transmission).trim() : "NOT_APPLICABLE",
         bodyType: normalizedBodyType,

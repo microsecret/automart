@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { id: true, userId: true, images: true } })
     if (!vehicle) return NextResponse.json({ error: "Автомобиль не найден" }, { status: 404 })
     if (vehicle.userId !== session.user.id) return NextResponse.json({ error: "Оценка доступна только владельцу автомобиля" }, { status: 403 })
-    if (!parseMarketplaceImages(vehicle.images).includes(imageUrl)) {
+    const vehicleImages = parseMarketplaceImages(vehicle.images)
+    if (!vehicleImages || !vehicleImages.includes(imageUrl)) {
       return NextResponse.json({ error: "Можно отправить только фотографию из собственной карточки" }, { status: 400 })
     }
 

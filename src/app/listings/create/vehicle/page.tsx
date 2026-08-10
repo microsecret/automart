@@ -222,7 +222,7 @@ export default function CreateVehiclePage() {
                 </Group>
                 <Group gap="sm" grow>
                   <TextInput label="Город" placeholder="Москва" required value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
-                  <TextInput label="VIN" placeholder="17 символов (если есть)" value={f.vin} onChange={(e) => set("vin", e.target.value.toUpperCase())} size="sm" maxLength={17} />
+                  <TextInput label="VIN" placeholder="17 символов" value={f.vin} onChange={(e) => set("vin", e.target.value.toUpperCase())} size="sm" maxLength={17} required description="Нужен для проверки истории и защиты от дублей." />
                 </Group>
               </Stack>
             </Paper>

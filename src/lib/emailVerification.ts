@@ -131,8 +131,9 @@ export async function sendPasswordResetEmail(emailInput: string, name?: string |
 export async function resetPasswordByToken(rawToken: string, hashedPassword: string) {
   const token = tokenHash(rawToken)
   const record = await prisma.verificationToken.findUnique({ where: { token } })
-  if (!record || record.expires <= new Date()) {
-    if (record?.expires <= new Date()) await prisma.verificationToken.delete({ where: { token } })
+  const expiresAt = record?.expires
+  if (!record || !expiresAt || expiresAt <= new Date()) {
+    if (record && expiresAt && expiresAt <= new Date()) await prisma.verificationToken.delete({ where: { token } })
     return null
   }
   if (!record.identifier.startsWith(PASSWORD_RESET_IDENTIFIER_PREFIX)) {
