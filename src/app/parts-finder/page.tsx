@@ -322,21 +322,21 @@ function PartsContent() {
                         <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                           <PartMedia image={image} name={p.name} />
                         </Link>
-                        <Box p="sm">
+                        <Box p="sm" className="part-result-card__content">
                             <Stack gap={4}>
                               <Group gap="sm" align="flex-start" justify="space-between">
                                 <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none" }}>
-                                  <Text fw={700} fz="sm" c="dark.9">{p.name}</Text>
+                                  <Text fw={750} fz="sm" c="dark.9" className="part-result-card__title">{p.name}</Text>
                                 </Link>
-                                <Text fw={800} fz="md" c="dark.9" ff="var(--font-display),sans-serif">{formatPrice(p.price)}</Text>
+                                <Text fw={800} fz="md" c="dark.9" ff="var(--font-display),sans-serif" className="part-result-card__price">{formatPrice(p.price)}</Text>
                               </Group>
 
-                              <Group gap={6} wrap="wrap">
+                              <Group gap={5} wrap="wrap" className="part-result-card__badges">
                                 {p.condition && <Badge size="xs" variant="light" color={p.condition === "NEW" ? "green" : "gray"}>{findLabel(PART_CONDITIONS, p.condition)}</Badge>}
                                 {p.availability && <Badge size="xs" variant="light" color={p.availability === "ON_ORDER" ? "orange" : "teal"}>{findLabel(AVAILABILITY_TYPES, p.availability)}</Badge>}
                                 {p.saleFormat === "AUCTION" && <Badge size="xs" variant="filled" color="orange">Аукцион</Badge>}
-                                {p.subcategory && <Badge size="xs" variant="light" color="indigo">{p.subcategory}</Badge>}
-                                {p.oemNumber && <Badge size="xs" variant="light" color="dark"><Group gap={3}><IconHash size={9} /> {p.oemNumber}</Group></Badge>}
+                                {p.subcategory && <Badge className="part-result-card__meta-badge" size="xs" variant="light" color="gray">{p.subcategory}</Badge>}
+                                {p.oemNumber && <Badge className="part-result-card__meta-badge" size="xs" variant="light" color="gray"><Group gap={3}><IconHash size={9} /> {p.oemNumber}</Group></Badge>}
                               </Group>
 
                               {p.compatibility && p.compatibility.length > 0 && (
@@ -354,7 +354,7 @@ function PartsContent() {
                                 </Group>
                               )}
 
-                              <Group gap="xs" mt={4} justify="space-between">
+                              <Group gap="xs" mt={4} justify="space-between" className="part-result-card__footer">
                                 <Text size="xs" c="gray.4">{p.location || "Город не указан"}</Text>
                                 <Text size="xs" fw={700} c="indigo.6">Подробнее →</Text>
                               </Group>

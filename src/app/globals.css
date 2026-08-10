@@ -1930,6 +1930,8 @@ select {
 .part-result-card {
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
@@ -1960,6 +1962,44 @@ select {
 }
 
 .part-result-card__media img[data-loaded] { opacity: 1; }
+
+.part-result-card__content {
+  display: flex;
+  min-height: 126px;
+  flex: 1;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(255,255,255,.98), #ffffff);
+}
+
+.part-result-card__title {
+  min-width: 0;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+}
+
+.part-result-card__price {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+}
+
+.part-result-card__badges .mantine-Badge-root {
+  max-width: 100%;
+  border-radius: 7px;
+  font-weight: 700;
+}
+
+.part-result-card__meta-badge {
+  color: #475569 !important;
+  background: #f1f5f9 !important;
+}
+
+.part-result-card__footer {
+  margin-top: auto;
+  padding-top: 7px;
+  border-top: 1px solid color-mix(in srgb, var(--market-line) 84%, transparent);
+}
 
 .part-result-card__placeholder {
   position: relative;
@@ -2075,6 +2115,43 @@ select {
   padding-inline: 7px;
   font-size: 10px;
   white-space: nowrap;
+}
+
+/* Состояние и наличие — независимые фильтры. Компактные переключатели
+   сохраняют привычную галочку, но дают ясную тактильную зону нажатия. */
+.parts-filter-checks .mantine-Group-root {
+  gap: 6px;
+}
+
+.parts-filter-checks .mantine-Checkbox-root {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  margin: 0;
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--market-field-line) 86%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--market-surface) 92%, transparent);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
+  border-color: color-mix(in srgb, #6366f1 54%, var(--market-field-line));
+  background: #eef2ff;
+  box-shadow: 0 5px 12px -11px rgba(79, 70, 229, 0.86);
+}
+
+.parts-filter-checks .mantine-Checkbox-input {
+  cursor: pointer;
+}
+
+.parts-filter-checks .mantine-Checkbox-label {
+  padding-left: 6px;
+  color: var(--market-control-text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .auction-filter-grid .mantine-InputWrapper-label {
