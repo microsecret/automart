@@ -12,6 +12,7 @@ import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
 import type { ListingCardData } from "./ListingCard"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
+import { notifications } from "@mantine/notifications"
 
 export type ListingRowData = ListingCardData
 
@@ -59,6 +60,11 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
     e.preventDefault()
     e.stopPropagation()
     if (!isAuthenticated) {
+      notifications.show({
+        title: "Войдите, чтобы сохранить",
+        message: "Избранное синхронизируется между сайтом и Telegram после авторизации.",
+        color: "indigo",
+      })
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent(detailHref)}`)
       return
     }

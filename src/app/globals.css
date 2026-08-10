@@ -698,16 +698,8 @@ select {
 .catalog-filter-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
   align-items: end;
-}
-
-.catalog-filter-panel {
-  border-color: var(--market-field-line);
-  background:
-    radial-gradient(circle at 92% 0%, rgba(129, 140, 248, 0.15), transparent 30%),
-    linear-gradient(145deg, var(--market-surface) 0%, var(--market-surface-subtle) 100%);
-  box-shadow: 0 20px 46px -38px rgba(30, 41, 89, 0.78);
 }
 
 .catalog-filter-field--search { grid-column: span 4; }
@@ -721,23 +713,24 @@ select {
 
 .catalog-filter-field {
   min-width: 0;
-  padding: 9px 10px 10px;
-  border: 1px solid var(--market-field-line);
-  border-radius: 12px;
+  min-height: 58px;
+  padding: 6px 10px 7px;
+  border: 1px solid color-mix(in srgb, var(--market-field-line) 88%, transparent);
+  border-radius: 11px;
   background: var(--market-field);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.025), 0 8px 18px -20px rgba(15, 23, 42, 0.46);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .catalog-filter-field:hover {
   border-color: #a5b4fc;
-  background: var(--market-field-hover);
+  background: color-mix(in srgb, var(--market-field) 92%, #eef2ff);
 }
 
 .catalog-filter-field:focus-within {
   z-index: 1;
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px var(--market-focus);
+  box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(49, 46, 129, 0.72);
 }
 
 .catalog-filter-field .mantine-InputWrapper-label {
@@ -757,7 +750,8 @@ select {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 650;
   color: var(--market-control-text);
 }
 
@@ -830,19 +824,22 @@ select {
 }
 
 .catalog-price-range,
-.parts-price-range {
+.parts-price-range,
+.auction-price-range {
   display: grid;
   gap: 4px;
 }
 
 .catalog-price-range .mantine-TextInput-root,
-.parts-price-range .mantine-TextInput-root {
+.parts-price-range .mantine-TextInput-root,
+.auction-price-range .mantine-TextInput-root {
   min-width: 0;
   flex: 1;
 }
 
 .catalog-price-range .mantine-TextInput-input,
-.parts-price-range .mantine-TextInput-input {
+.parts-price-range .mantine-TextInput-input,
+.auction-price-range .mantine-TextInput-input {
   min-width: 0;
 }
 
@@ -1791,11 +1788,6 @@ select {
   letter-spacing: -0.01em;
 }
 
-.catalog-filter-grid {
-  gap: 10px;
-}
-
-.catalog-filter-field,
 .parts-filter-grid > .mantine-InputWrapper-root,
 .parts-filter-grid > .mantine-Box-root,
 .auction-filter-grid > .mantine-InputWrapper-root,
@@ -1808,7 +1800,6 @@ select {
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.025), 0 8px 18px -20px rgba(15, 23, 42, 0.46);
 }
 
-.catalog-filter-field:hover,
 .parts-filter-grid > .mantine-InputWrapper-root:hover,
 .parts-filter-grid > .mantine-Box-root:hover,
 .auction-filter-grid > .mantine-InputWrapper-root:hover,
@@ -1817,7 +1808,6 @@ select {
   background: color-mix(in srgb, var(--market-field) 92%, #eef2ff);
 }
 
-.catalog-filter-field:focus-within,
 .parts-filter-grid > .mantine-InputWrapper-root:focus-within,
 .parts-filter-grid > .mantine-Box-root:focus-within,
 .auction-filter-grid > .mantine-InputWrapper-root:focus-within,
@@ -1826,8 +1816,6 @@ select {
   box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(49, 46, 129, 0.72);
 }
 
-.catalog-filter-field .mantine-Input-input,
-.catalog-filter-field .mantine-Select-input,
 .parts-filter-grid .mantine-Input-input,
 .parts-filter-grid .mantine-Select-input,
 .auction-filter-grid .mantine-Input-input,
@@ -1861,7 +1849,6 @@ select {
   border-radius: 8px;
 }
 
-.catalog-price-range .mantine-TextInput-root,
 .parts-price-range .mantine-TextInput-root,
 .auction-price-range .mantine-TextInput-root {
   flex: 1;
