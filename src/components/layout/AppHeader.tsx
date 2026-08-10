@@ -19,6 +19,13 @@ type SearchSuggestion = {
 
 type SearchSuggestionResponse = { listings?: SearchSuggestion[] }
 
+type NavigationItem = {
+  href: string
+  label: string
+  icon: React.ReactNode
+  active: boolean
+}
+
 export default function AppHeader() {
   const { data: session } = useSession()
   const [favCount, setFavCount] = useState(0)
@@ -33,12 +40,12 @@ export default function AppHeader() {
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
 
-  const catalogueNavigation = [
+  const catalogueNavigation: NavigationItem[] = [
     { href: "/", label: "Объявления", icon: null, active: pathname === "/" || pathname.startsWith("/category") || pathname.startsWith("/search") },
     { href: "/parts-finder", label: "Запчасти", icon: <IconTools size={14} />, active: pathname.startsWith("/parts") },
     { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
   ]
-  const serviceNavigation = [
+  const serviceNavigation: NavigationItem[] = [
     { href: "/services", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
     { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
     { href: "/help", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
@@ -208,6 +215,14 @@ export default function AppHeader() {
             </Popover.Dropdown>
           </Popover>
 
+          <MobileNavigationMenu
+            catalogueNavigation={catalogueNavigation}
+            serviceNavigation={serviceNavigation}
+            authenticated={Boolean(session)}
+            colorScheme={colorScheme}
+            onToggleScheme={toggleScheme}
+          />
+
           {/* ПРАВО: Кнопки — разделены визуально */}
           <Group gap={6} wrap="nowrap" align="center">
             {/* Продать — яркая индиго */}
@@ -218,15 +233,12 @@ export default function AppHeader() {
               radius="md"
               onClick={toggleScheme}
               aria-label="Сменить тему"
+              visibleFrom="sm"
             >
               {colorScheme === "dark" ? <IconSun size={18} stroke={1.8} /> : <IconMoon size={18} stroke={1.8} />}
             </ActionIcon>
 
-            <ActionIcon component={Link} href="/search" variant="subtle" color="gray" size="md" radius="md" hiddenFrom="sm" aria-label="Открыть поиск">
-              <IconSearch size={18} stroke={1.8} />
-            </ActionIcon>
-
-            <ActionIcon component={Link} href="/listings/create/vehicle" variant="light" color="indigo" size="md" radius="md" hiddenFrom="md" aria-label="Разместить объявление">
+            <ActionIcon component={Link} href="/listings/create/vehicle" variant="light" color="indigo" size="md" radius="md" visibleFrom="sm" hiddenFrom="md" aria-label="Разместить объявление">
               <IconPlus size={18} stroke={1.8} />
             </ActionIcon>
 
@@ -246,22 +258,22 @@ export default function AppHeader() {
 
             {session ? (
               <>
-                <Indicator size={7} color="red" offset={4} disabled={favCount === 0}>
+                <Box visibleFrom="sm"><Indicator size={7} color="red" offset={4} disabled={favCount === 0}>
                   <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="lg" radius="md" aria-label="Избранное">
                     <IconHeart size={18} stroke={1.8} />
                   </ActionIcon>
-                </Indicator>
-                <Indicator size={7} color="violet" offset={4}>
+                </Indicator></Box>
+                <Box visibleFrom="sm"><Indicator size={7} color="violet" offset={4}>
                   <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="lg" radius="md" aria-label="Сообщения">
                     <IconMessageCircle2 size={18} stroke={1.8} />
                   </ActionIcon>
-                </Indicator>
-                <Indicator size={7} color="red" offset={4}>
+                </Indicator></Box>
+                <Box visibleFrom="sm"><Indicator size={7} color="red" offset={4}>
                   <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="lg" radius="md" aria-label="Уведомления">
                     <IconBell size={18} stroke={1.8} />
                   </ActionIcon>
-                </Indicator>
-                <Divider orientation="vertical" mx={2} h={26} />
+                </Indicator></Box>
+                <Box visibleFrom="sm"><Divider orientation="vertical" mx={2} h={26} /></Box>
                 <Menu shadow="md" width={220} position="bottom-end" radius="md" offset={4}>
                   <Menu.Target>
                     <ActionIcon variant="subtle" radius="xl" size={32}>
@@ -299,7 +311,7 @@ export default function AppHeader() {
               </>
             ) : (
               <>
-                <Divider orientation="vertical" mx={2} h={26} />
+                <Box visibleFrom="sm"><Divider orientation="vertical" mx={2} h={26} /></Box>
                 <Button component={Link} href="/auth/signin" variant="default" color="gray" size="sm" radius="md" styles={{ root: { height: 38, fontWeight: 700 } }}>
                   Войти
                 </Button>
@@ -315,5 +327,56 @@ export default function AppHeader() {
         </Group>
       </Container>
     </Box>
+  )
+}
+
+function MobileNavigationMenu({
+  catalogueNavigation,
+  serviceNavigation,
+  authenticated,
+  colorScheme,
+  onToggleScheme,
+}: {
+  catalogueNavigation: NavigationItem[]
+  serviceNavigation: NavigationItem[]
+  authenticated: boolean
+  colorScheme: "light" | "dark"
+  onToggleScheme: () => void
+}) {
+  return (
+    <Menu shadow="lg" width={248} position="bottom-start" radius="lg" offset={8} withinPortal>
+      <Menu.Target>
+        <ActionIcon hiddenFrom="sm" variant="light" color="indigo" size="md" radius="md" aria-label="Открыть разделы и сервисы">
+          <IconMenu2 size={19} stroke={1.9} />
+        </ActionIcon>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Label>Разделы</Menu.Label>
+        {catalogueNavigation.map((item) => (
+          <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon || <IconCar size={15} />} color={item.active ? "indigo" : undefined}>
+            {item.label}
+          </Menu.Item>
+        ))}
+        <Menu.Divider />
+        <Menu.Label>Сервисы</Menu.Label>
+        {serviceNavigation.map((item) => (
+          <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon} color={item.active ? "indigo" : undefined}>
+            {item.label}
+          </Menu.Item>
+        ))}
+        <Menu.Item component={Link} href="/search" leftSection={<IconSearch size={15} />}>Поиск</Menu.Item>
+        {authenticated && <>
+          <Menu.Divider />
+          <Menu.Label>Кабинет</Menu.Label>
+          <Menu.Item component={Link} href="/favorites" leftSection={<IconHeart size={15} />}>Избранное</Menu.Item>
+          <Menu.Item component={Link} href="/messages" leftSection={<IconMessageCircle2 size={15} />}>Сообщения</Menu.Item>
+          <Menu.Item component={Link} href="/notifications" leftSection={<IconBell size={15} />}>Уведомления</Menu.Item>
+        </>}
+        <Menu.Divider />
+        <Menu.Item leftSection={colorScheme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />} onClick={onToggleScheme}>
+          {colorScheme === "dark" ? "Светлая тема" : "Тёмная тема"}
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
   )
 }
