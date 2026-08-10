@@ -3,13 +3,34 @@ export const dynamic = "force-dynamic"
 import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Text, Paper, Select, NumberInput, Button, Group, ThemeIcon, SimpleGrid, Center, Loader, Divider, Badge, SegmentedControl } from "@mantine/core"
-import { IconTarget, IconSparkles, IconCheck, IconCar, IconBolt, IconShieldCheck } from "@tabler/icons-react"
+import { Box, Stack, Text, Paper, Select, NumberInput, Button, Group, ThemeIcon, Center, Loader, Divider, Badge } from "@mantine/core"
+import { IconTarget, IconSparkles, IconCar } from "@tabler/icons-react"
 import { formatPriceShort, formatMileage, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import VehicleFallback from "@/components/listings/VehicleFallback"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = fetchJson
+
+type SmartMatchingResponse = {
+  listings: Array<{
+    id: string
+    title: string
+    price: number | null
+    vehicle?: {
+      id: string
+      make: string
+      bodyType?: string | null
+      vehicleType?: string | null
+      images?: string | null
+      year?: number | null
+      mileage?: number | null
+      location?: string | null
+    } | null
+  }>
+}
 
 export default function SmartmatchingPage() {
   const [budget, setBudget] = useState(3000000)
@@ -21,9 +42,9 @@ export default function SmartmatchingPage() {
   const query = submitted
     ? `/api/listings?type=vehicle&vehicleType=CAR&priceTo=${budget}&bodyType=${bodyType}&fuelType=${fuel}&transmission=${transmission}&sort=price_asc&limit=3`
     : null
-  const { data, isLoading } = useSWR(query, fetcher)
+  const { data, error, isLoading, mutate } = useSWR<SmartMatchingResponse>(query, fetcher)
 
-  const results: any[] = data?.listings || []
+  const results = data?.listings || []
 
   return (
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -58,6 +79,12 @@ export default function SmartmatchingPage() {
 
             {isLoading ? (
               <Center py={40}><Loader size="sm" color="violet" /></Center>
+            ) : error ? (
+              <AsyncErrorState
+                title="Не удалось подобрать автомобили"
+                description="Проверьте параметры и повторите поиск — данные каталога временно недоступны."
+                onRetry={() => void mutate()}
+              />
             ) : results.length === 0 ? (
               <Paper radius="md" p="xl" withBorder>
                 <Center>
@@ -69,18 +96,21 @@ export default function SmartmatchingPage() {
               </Paper>
             ) : (
               <Stack gap="sm">
-                {results.map((l: any, i: number) => {
+                {results.map((l, i) => {
                   const v = l.vehicle
                   const images = parseImages(v?.images)
-                  const image = images[0] || "/placeholder.svg"
+                  const image = images[0] || ""
                   const matchScore = Math.max(70, 99 - i * 10)
                   return (
                     <Paper key={l.id} radius="md" p="md" withBorder style={{ borderColor: i === 0 ? "#7c3aed" : "#f4f4f5", background: i === 0 ? "#faf5ff" : "#fff" }}>
                       <Group gap="md" align="flex-start" wrap="nowrap">
                         <Box style={{ position: "relative", flexShrink: 0 }}>
-                          <Box style={{ width: 120, height: 90, borderRadius: 8, overflow: "hidden", background: "var(--mantine-color-gray-1)" }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={image} alt={l.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <Box style={{ width: 120, height: 90, borderRadius: 8, overflow: "hidden", background: "var(--mantine-color-gray-1)", position: "relative" }}>
+                            <VehicleFallback type={v?.vehicleType || "CAR"} bodyType={v?.bodyType} compact />
+                            {image && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={image} alt={l.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={(event) => { event.currentTarget.style.display = "none" }} />
+                            )}
                           </Box>
                           {i === 0 && <Badge pos="absolute" top={-8} left={-8} color="violet" variant="filled" size="xs" circle><IconSparkles size={10} /></Badge>}
                         </Box>

@@ -5,8 +5,42 @@ import { Box, Stack, Group, Text, Paper, Badge, Center, Loader, ThemeIcon, Selec
 import { IconDatabase, IconGavel, IconPhone, IconMail, IconMapPin, IconClock } from "@tabler/icons-react"
 import { formatRelativeDate } from "@/lib/format"
 import { useState } from "react"
+import { fetchJson } from "@/lib/api-client"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import VehicleFallback from "@/components/listings/VehicleFallback"
+import { isSafeMediaUrl } from "@/lib/media-url"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = fetchJson
+
+type AuctionInquiry = {
+  id: string
+  status: string
+  phone: string
+  name: string
+  email?: string | null
+  city?: string | null
+  comment?: string | null
+  createdAt: string
+  auctionListing?: {
+    imageUrl?: string | null
+    make: string
+    model: string
+    year: number
+    source: string
+    finalPrice?: number | null
+  } | null
+}
+
+type AuctionInquiryResponse = { inquiries: AuctionInquiry[] }
+type AuctionStatsResponse = {
+  total: number
+  visibleAuctions?: number
+  totalAuctions?: number
+  recent?: number
+  lastAuctionSync?: string | null
+  byStatus?: Partial<Record<(typeof STATUSES)[number]["value"], number>>
+}
+
 const STATUSES = [
   { value: "NEW", label: "Новые", color: "red" },
   { value: "CONTACTED", label: "Связались", color: "orange" },
@@ -17,8 +51,8 @@ const STATUSES = [
 
 export default function AdminAuctionsPage() {
   const [status, setStatus] = useState("NEW")
-  const { data, isLoading } = useSWR(`/api/admin/auctions/inquiries${status ? `?status=${status}` : ""}`, fetcher)
-  const { data: stats } = useSWR("/api/admin/auctions/stats", fetcher)
+  const { data, error, isLoading, mutate } = useSWR<AuctionInquiryResponse>(`/api/admin/auctions/inquiries${status ? `?status=${status}` : ""}`, fetcher)
+  const { data: stats } = useSWR<AuctionStatsResponse>("/api/admin/auctions/stats", fetcher)
   const inquiries = data?.inquiries || []
 
   return (
@@ -78,17 +112,22 @@ export default function AdminAuctionsPage() {
         />
 
         {isLoading ? <Center py={60}><Loader size="sm" color="orange" /></Center> :
+         error ? <AsyncErrorState title="Не удалось загрузить заявки" description="Проверьте соединение и повторите запрос." onRetry={() => void mutate()} /> :
          inquiries.length === 0 ? <Paper radius="md" p="xl" withBorder><Center><Text c="gray.5">Нет заявок</Text></Center></Paper> :
          <Stack gap="xs">
-          {inquiries.map((inq: any) => {
+          {inquiries.map((inq) => {
             const v = inq.auctionListing
+            const image = isSafeMediaUrl(v?.imageUrl) ? v.imageUrl : ""
             const statusCfg = STATUSES.find((s) => s.value === inq.status) || STATUSES[0]
             return (
               <Paper key={inq.id} radius="md" p="md" withBorder>
                 <Group gap="md" align="flex-start" wrap="nowrap">
-                  <Box style={{ width: 80, height: 60, borderRadius: 8, overflow: "hidden", background: "var(--mantine-color-gray-1)", flexShrink: 0 }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={v?.imageUrl || "/placeholder.svg"} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <Box style={{ width: 80, height: 60, borderRadius: 8, overflow: "hidden", background: "var(--mantine-color-gray-1)", flexShrink: 0, position: "relative" }}>
+                    <VehicleFallback type="CAR" compact />
+                    {image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={(event) => { event.currentTarget.style.display = "none" }} />
+                    )}
                   </Box>
                   <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
                     <Group gap="sm" align="center">
