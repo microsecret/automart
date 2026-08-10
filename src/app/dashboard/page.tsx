@@ -63,6 +63,7 @@ type DashboardResponse = {
     reviewsCount: number
     garageCount: number
     avgRating: number
+    memberSince: string | null
   }
   workflow: {
     drafts: number
@@ -117,6 +118,10 @@ const createGarageForm = (): GarageForm => ({
   bodyType: "",
   location: "",
 })
+
+const formatMemberSince = (value: string | null) => value
+  ? new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(new Date(value))
+  : "—"
 
 export default function DashboardPage() {
   const { data: session, update: updateSession } = useSession()
@@ -530,7 +535,7 @@ export default function DashboardPage() {
               </Group>
               <Divider />
               <SimpleGrid cols={2} spacing="sm">
-                <Box><Text size="xs" c="gray.4">На сайте с</Text><Text size="sm" fw={600} c="dark.9">2024</Text></Box>
+                <Box><Text size="xs" c="gray.4">На сайте с</Text><Text size="sm" fw={600} c="dark.9">{formatMemberSince(stats.memberSince)}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Всего объявлений</Text><Text size="sm" fw={600} c="dark.9">{stats.totalListings}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Просмотров всего</Text><Text size="sm" fw={600} c="dark.9">{stats.totalViews}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Отзывов</Text><Text size="sm" fw={600} c="dark.9">{stats.reviewsCount}</Text></Box>

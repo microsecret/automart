@@ -25,7 +25,10 @@ export async function GET() {
       }),
       prisma.user.findUnique({
         where: { id: userId },
-        select: { favoriteListings: { take: 10, orderBy: { createdAt: "desc" }, include: { vehicle: { select: { id: true, make: true, model: true, year: true, price: true, images: true, mileage: true, vehicleType: true, bodyType: true } } } } },
+        select: {
+          createdAt: true,
+          favoriteListings: { take: 10, orderBy: { createdAt: "desc" }, include: { vehicle: { select: { id: true, make: true, model: true, year: true, price: true, images: true, mileage: true, vehicleType: true, bodyType: true } } } },
+        },
       }),
       prisma.review.findMany({
         where: { userId },
@@ -51,6 +54,7 @@ export async function GET() {
         reviewsCount: reviews.length,
         garageCount: garageVehicles,
         avgRating: reviews.length > 0 ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length * 10) / 10 : 0,
+        memberSince: favorites?.createdAt ?? null,
       },
       workflow,
       listings: listings.slice(0, 10).map((l) => ({
