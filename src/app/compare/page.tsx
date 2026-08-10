@@ -12,29 +12,142 @@ import VehicleFallback from "@/components/listings/VehicleFallback"
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import {
+  BODY_TYPES,
+  CONDITIONS,
+  DAMAGE_INFO,
+  DOCUMENT_STATUSES,
+  DRIVE_TYPES,
+  getFuelOptions,
+  getTransmissionOptions,
+  getUsageMeta,
+  STEERING_WHEELS,
+  supportsTransmission,
+} from "@/lib/constants"
 
 const fetcher = fetchJson
 
-type CompareResponse = { listings: Array<{ vehicle: Record<string, unknown> | null }> }
+type CompareVehicle = {
+  id: string
+  make: string
+  model: string
+  year: number
+  vehicleType: string
+  images: string | null
+  mileage: number | null
+  operatingHours: number | null
+  flightHours: number | null
+  engineVolume: number | null
+  power: number | null
+  fuelType: string | null
+  transmission: string | null
+  driveType: string | null
+  bodyType: string | null
+  color: string | null
+  condition: string | null
+  steeringWheel: string | null
+  ownersCount: number | null
+  documentsStatus: string | null
+  damageInfo: string | null
+  customsCleared: boolean | null
+  location: string | null
+}
 
-const COMPARE_FIELDS = [
-  { key: "price", label: "Цена", format: (v: any) => formatPrice(v) },
-  { key: "year", label: "Год", format: (v: any) => String(v) },
-  { key: "mileage", label: "Пробег", format: (v: any) => v ? `${v.toLocaleString("ru")} км` : "—" },
-  { key: "engineVolume", label: "Объём двигателя", format: (v: any) => v ? `${v} л` : "—" },
-  { key: "power", label: "Мощность", format: (v: any) => v ? `${v} л.с.` : "—" },
-  { key: "fuelTypeLabel", label: "Топливо", format: (v: any) => v || "—" },
-  { key: "transmissionLabel", label: "КПП", format: (v: any) => v || "—" },
-  { key: "driveTypeLabel", label: "Привод", format: (v: any) => v || "—" },
-  { key: "bodyTypeLabel", label: "Кузов", format: (v: any) => v || "—" },
-  { key: "color", label: "Цвет", format: (v: any) => v || "—" },
-  { key: "conditionLabel", label: "Состояние", format: (v: any) => v || "—" },
-  { key: "steeringWheelLabel", label: "Руль", format: (v: any) => v || "—" },
-  { key: "ownersCount", label: "Владельцев", format: (v: any) => v ? String(v) : "—" },
-  { key: "documentsStatusLabel", label: "Документы", format: (v: any) => v || "—" },
-  { key: "damageInfoLabel", label: "Повреждения", format: (v: any) => v || "—" },
-  { key: "customsCleared", label: "Растаможен", format: (v: any) => v === null ? "—" : v ? "Да" : "Нет" },
-  { key: "location", label: "Город", format: (v: any) => v || "—" },
+type CompareListing = {
+  id: string
+  price: number
+  vehicle: CompareVehicle | null
+}
+
+type ComparedVehicle = CompareVehicle & { listingPrice: number }
+type CompareResponse = { listings: CompareListing[] }
+
+type LabelOption = { value: string; label: string }
+type CompareField = {
+  key: string
+  label: string
+  value: (vehicle: ComparedVehicle) => unknown
+  format: (value: unknown, vehicle: ComparedVehicle) => string
+  visible?: (vehicles: ComparedVehicle[]) => boolean
+}
+
+const getLabel = (options: readonly LabelOption[], value: string | null) => {
+  if (!value) return "—"
+  return options.find((option) => option.value === value)?.label || value
+}
+
+const formatNumber = (value: unknown, unit: string) =>
+  typeof value === "number" && Number.isFinite(value) ? `${value.toLocaleString("ru-RU")} ${unit}` : "—"
+
+const getCompareFields = (): CompareField[] => [
+  { key: "listingPrice", label: "Цена", value: (vehicle) => vehicle.listingPrice, format: (value) => typeof value === "number" ? formatPrice(value) : "—" },
+  { key: "year", label: "Год", value: (vehicle) => vehicle.year, format: (value) => typeof value === "number" ? String(value) : "—" },
+  {
+    key: "usage",
+    label: "Эксплуатация",
+    value: (vehicle) => vehicle,
+    format: (_value, vehicle) => {
+      const usage = getUsageMeta(vehicle.vehicleType)
+      const amount = vehicle[usage.field]
+      return formatNumber(amount, usage.unit)
+    },
+  },
+  { key: "engineVolume", label: "Объём двигателя", value: (vehicle) => vehicle.engineVolume, format: (value) => formatNumber(value, "л") },
+  { key: "power", label: "Мощность", value: (vehicle) => vehicle.power, format: (value) => formatNumber(value, "л.с.") },
+  { key: "fuelType", label: "Топливо", value: (vehicle) => vehicle.fuelType, format: (value, vehicle) => getLabel(getFuelOptions(vehicle.vehicleType), typeof value === "string" ? value : null) },
+  {
+    key: "transmission",
+    label: "КПП",
+    value: (vehicle) => vehicle.transmission,
+    format: (value, vehicle) => getLabel(getTransmissionOptions(vehicle.vehicleType), typeof value === "string" ? value : null),
+    visible: (vehicles) => vehicles.some((vehicle) => supportsTransmission(vehicle.vehicleType)),
+  },
+  {
+    key: "driveType",
+    label: "Привод",
+    value: (vehicle) => vehicle.driveType,
+    format: (value) => getLabel(DRIVE_TYPES, typeof value === "string" ? value : null),
+    visible: (vehicles) => vehicles.some((vehicle) => vehicle.vehicleType === "CAR" && vehicle.driveType),
+  },
+  { key: "bodyType", label: "Кузов / тип", value: (vehicle) => vehicle.bodyType, format: (value) => getLabel(BODY_TYPES, typeof value === "string" ? value : null) },
+  { key: "color", label: "Цвет", value: (vehicle) => vehicle.color, format: (value) => typeof value === "string" && value ? value : "—" },
+  { key: "condition", label: "Состояние", value: (vehicle) => vehicle.condition, format: (value) => getLabel(CONDITIONS, typeof value === "string" ? value : null) },
+  {
+    key: "steeringWheel",
+    label: "Руль",
+    value: (vehicle) => vehicle.steeringWheel,
+    format: (value) => getLabel(STEERING_WHEELS, typeof value === "string" ? value : null),
+    visible: (vehicles) => vehicles.some((vehicle) => vehicle.steeringWheel),
+  },
+  {
+    key: "ownersCount",
+    label: "Владельцев",
+    value: (vehicle) => vehicle.ownersCount,
+    format: (value) => typeof value === "number" ? String(value) : "—",
+    visible: (vehicles) => vehicles.some((vehicle) => vehicle.ownersCount !== null),
+  },
+  {
+    key: "documentsStatus",
+    label: "Документы",
+    value: (vehicle) => vehicle.documentsStatus,
+    format: (value) => getLabel(DOCUMENT_STATUSES, typeof value === "string" ? value : null),
+    visible: (vehicles) => vehicles.some((vehicle) => vehicle.documentsStatus),
+  },
+  {
+    key: "damageInfo",
+    label: "Повреждения",
+    value: (vehicle) => vehicle.damageInfo,
+    format: (value) => getLabel(DAMAGE_INFO, typeof value === "string" ? value : null),
+    visible: (vehicles) => vehicles.some((vehicle) => vehicle.damageInfo),
+  },
+  {
+    key: "customsCleared",
+    label: "Растаможен",
+    value: (vehicle) => vehicle.customsCleared,
+    format: (value) => value === null ? "—" : value ? "Да" : "Нет",
+    visible: (vehicles) => vehicles.some((vehicle) => vehicle.customsCleared !== null),
+  },
+  { key: "location", label: "Город", value: (vehicle) => vehicle.location, format: (value) => typeof value === "string" && value ? value : "—" },
 ]
 
 function CompareContent() {
@@ -54,7 +167,12 @@ function CompareContent() {
     fetcher
   )
 
-  const vehicles: any[] = data?.listings?.map((l: any) => l.vehicle).filter(Boolean) || []
+  const vehicles: ComparedVehicle[] = (data?.listings || []).flatMap((listing) =>
+    listing.vehicle ? [{ ...listing.vehicle, listingPrice: listing.price }] : []
+  )
+  const compareFields = getCompareFields().filter((field) => !field.visible || field.visible(vehicles))
+  const listedPrices = vehicles.map((vehicle) => vehicle.listingPrice).filter((price) => Number.isFinite(price))
+  const bestPrice = listedPrices.length > 0 ? Math.min(...listedPrices) : null
 
     const clearCompare = () => {
     localStorage.removeItem("compare-ids")
@@ -153,18 +271,18 @@ function CompareContent() {
           <Divider my="sm" />
 
           {/* Строки характеристик */}
-          {COMPARE_FIELDS.map((field, idx) => (
+          {compareFields.map((field, idx) => (
             <Group key={field.key} gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180, background: idx % 2 === 0 ? "transparent" : "#fafafa", padding: "6px 0", borderRadius: 4 }}>
               <Box style={{ width: 160, flexShrink: 0 }}>
                 <Text size="xs" fw={600} c="gray.6" pl="xs">{field.label}</Text>
               </Box>
               {vehicles.map((v) => {
-                const raw = v[field.key]
-                const isBest = field.key === "price" && raw === Math.min(...vehicles.map((x) => x.price).filter(Boolean))
+                const raw = field.value(v)
+                const isBest = field.key === "listingPrice" && raw === bestPrice
                 return (
                   <Box key={v.id} style={{ width: 200, flexShrink: 0 }}>
                     <Text size="sm" fw={isBest ? 700 : 400} c={isBest ? "#059669" : "var(--mantine-color-gray-7)"} pl="xs">
-                      {field.format(raw)}
+                      {field.format(raw, v)}
                     </Text>
                   </Box>
                 )
