@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest) {
   try {
     const { name, email: emailInput, phone: phoneInput, password } = await request.json()
+    const normalizedName = typeof name === "string" ? name.trim() : ""
     const email = String(emailInput || "").trim().toLowerCase()
     const phone = normalizePhone(phoneInput)
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Слишком много попыток регистрации. Повторите позже." }, { status: 429, headers: rateLimitHeaders(limit) })
     }
 
-    if (!email || !phone || !password) {
+    if (!normalizedName || !email || !phone || !password) {
       return NextResponse.json({ error: "Имя, email, телефон и пароль обязательны" }, { status: 400 })
     }
     if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12)
     const user = await prisma.user.create({
       data: {
-        name: name?.trim() || null,
+        name: normalizedName,
         email,
         phone,
         hashedPassword,
@@ -59,9 +60,10 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error("Registration email error:", emailError)
       return NextResponse.json({
-        error: "Аккаунт создан, но письмо не отправлено. Повторите отправку подтверждения позже.",
+        user,
         requiresEmailVerification: true,
-      }, { status: 503 })
+        emailDeliveryPending: true,
+      }, { status: 201 })
     }
 
     return NextResponse.json({ user, requiresEmailVerification: true }, { status: 201 })

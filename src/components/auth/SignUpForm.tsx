@@ -24,6 +24,7 @@ export default function SignUpForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
+  const [emailDeliveryPending, setEmailDeliveryPending] = useState(false)
   const [callbackUrl, setCallbackUrl] = useState("/dashboard")
 
   useEffect(() => {
@@ -55,11 +56,12 @@ export default function SignUpForm() {
           password: values.password,
         }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => null)
       if (!res.ok) {
-        setError(data.error || "Ошибка регистрации")
+        setError(data?.error || "Ошибка регистрации")
         return
       }
+      setEmailDeliveryPending(Boolean(data?.emailDeliveryPending))
       setSubmittedEmail(values.email.trim())
     } catch {
       setError("Ошибка регистрации. Попробуйте позже.")
@@ -71,10 +73,16 @@ export default function SignUpForm() {
   if (submittedEmail) {
     return (
       <Stack gap="md" align="center" ta="center">
-        <Alert color="green" variant="light" radius="md" w="100%">
-          Письмо с подтверждением отправлено на <b>{submittedEmail}</b>.
+        <Alert color={emailDeliveryPending ? "yellow" : "green"} variant="light" radius="md" w="100%">
+          {emailDeliveryPending
+            ? <>Аккаунт создан. Письмо на <b>{submittedEmail}</b> пока не отправлено.</>
+            : <>Письмо с подтверждением отправлено на <b>{submittedEmail}</b>.</>}
         </Alert>
-        <Text size="sm" c="gray.6">Перейдите по ссылке из письма, затем подтвердите номер через Telegram-бота для входа по коду.</Text>
+        <Text size="sm" c="gray.6">
+          {emailDeliveryPending
+            ? "Откройте вход: там можно повторно отправить подтверждение email, а затем подключить Telegram для входа по коду."
+            : "Перейдите по ссылке из письма, затем подтвердите номер через Telegram-бота для входа по коду."}
+        </Text>
         <Button component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} fullWidth color="indigo">Перейти ко входу</Button>
       </Stack>
     )
