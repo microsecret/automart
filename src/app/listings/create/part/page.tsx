@@ -9,6 +9,9 @@ import { notifications } from "@mantine/notifications"
 import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, PART_AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
+import { fetchJson } from "@/lib/api-client"
+
+type CreatedPartResponse = { id: string }
 
 export default function CreatePartPage() {
   const { data: session, status } = useSession()
@@ -47,7 +50,7 @@ export default function CreatePartPage() {
     }
     setLoading(true)
     try {
-      const res = await fetch("/api/parts", {
+      const data = await fetchJson<CreatedPartResponse>("/api/parts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,8 +70,6 @@ export default function CreatePartPage() {
           auctionMinStep: f.auctionMinStep ? Number(f.auctionMinStep) : null,
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Ошибка")
       notifications.show({ title: "Отправлено на проверку", message: "Мы проверим карточку и опубликуем её после модерации.", color: "indigo" })
       router.push(`/listings/part/${data.id}`)
     } catch (err) {
