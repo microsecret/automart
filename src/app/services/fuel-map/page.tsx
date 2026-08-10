@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react"
 import useSWR from "swr"
 import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, ThemeIcon, Tooltip } from "@mantine/core"
 import { IconExternalLink, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconRoute } from "@tabler/icons-react"
@@ -153,9 +153,48 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
     window.setTimeout(() => setIsDragging(false), 0)
   }
 
+  const moveCenterBy = (deltaX: number, deltaY: number) => {
+    const start = coordinatesToWorld(viewportCenter.latitude, viewportCenter.longitude, zoom)
+    const worldSize = TILE_SIZE * (2 ** zoom)
+    const nextX = ((start.x + deltaX) % worldSize + worldSize) % worldSize
+    const edgePadding = TILE_SIZE / 2
+    const nextY = Math.max(edgePadding, Math.min(worldSize - edgePadding, start.y + deltaY))
+    const nextCenter = worldToCoordinates(nextX, nextY, zoom)
+    viewportCenterRef.current = nextCenter
+    setViewportCenter(nextCenter)
+    onViewportChange(nextCenter)
+  }
+
   const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
     event.preventDefault()
     updateZoom(zoom + (event.deltaY < 0 ? 1 : -1))
+  }
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const step = TILE_SIZE * 0.26
+    const directions: Record<string, { x: number; y: number }> = {
+      ArrowLeft: { x: step, y: 0 },
+      ArrowRight: { x: -step, y: 0 },
+      ArrowUp: { x: 0, y: step },
+      ArrowDown: { x: 0, y: -step },
+    }
+
+    if (event.key === "+" || event.key === "=") {
+      event.preventDefault()
+      updateZoom(zoom + 1)
+      return
+    }
+
+    if (event.key === "-") {
+      event.preventDefault()
+      updateZoom(zoom - 1)
+      return
+    }
+
+    const direction = directions[event.key]
+    if (!direction) return
+    event.preventDefault()
+    moveCenterBy(direction.x, direction.y)
   }
 
   const handleMarkerClick = (marker: MapMarker) => {
@@ -171,7 +210,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
 
   return (
     <Paper id="fuel-station-map" className="fuel-map-canvas" radius="lg" withBorder>
-      <Box className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onWheel={handleWheel}>
+      <Box className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}. Стрелки перемещают карту, плюс и минус меняют масштаб.`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onWheel={handleWheel} onKeyDown={handleKeyDown}>
         <Box className="fuel-map-canvas__tile-layer" style={{ transform: `translate(${tileOffsetX}%, ${tileOffsetY}%)` }} aria-hidden="true">
         {[-1, 0, 1, 2].flatMap((row) => [-1, 0, 1, 2].map((column) => {
           const x = (centerTileX + column + tileCount) % tileCount
