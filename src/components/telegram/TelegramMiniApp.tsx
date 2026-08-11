@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { Alert, Badge, Button, Center, Paper, SimpleGrid, Stack, Text, Title } from "@mantine/core"
-import { IconBrandTelegram, IconCircleCheck, IconExternalLink, IconGasStation, IconHeart, IconPlus, IconTruckDelivery } from "@tabler/icons-react"
+import { IconBrandTelegram, IconCircleCheck, IconExternalLink, IconGasStation, IconGavel, IconHeart, IconPlus, IconTools, IconTruckDelivery } from "@tabler/icons-react"
 
 declare global {
   interface Window {
@@ -29,6 +29,8 @@ declare global {
 
 const QUICK_ACTIONS = [
   { href: "/listings/create/vehicle?source=telegram", label: "Подать объявление", icon: IconPlus },
+  { href: "/listings/create/part?source=telegram", label: "Продать запчасть", icon: IconTools },
+  { href: "/auctions", label: "Аукционы", icon: IconGavel },
   { href: "/favorites", label: "Избранное", icon: IconHeart },
   { href: "/dashboard/deliveries", label: "Мои доставки", icon: IconTruckDelivery },
   { href: "/services/fuel-map", label: "Карта АЗС", icon: IconGasStation },
