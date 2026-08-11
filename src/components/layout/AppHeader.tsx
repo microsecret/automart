@@ -277,6 +277,7 @@ export default function AppHeader() {
               color="gray"
               size="md"
               radius="md"
+              className="market-app-header__utility-action"
               onClick={toggleScheme}
               aria-label="Сменить тему"
               visibleFrom="sm"
@@ -305,24 +306,24 @@ export default function AppHeader() {
             {session ? (
               <>
                 <Box visibleFrom="sm"><Indicator size={7} color="red" offset={4} disabled={favCount === 0}>
-                  <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="lg" radius="md" aria-label="Избранное">
+                  <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Избранное">
                     <IconHeart size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator></Box>
                 <Box visibleFrom="sm"><Indicator size={7} color="violet" offset={4}>
-                  <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="lg" radius="md" aria-label="Сообщения">
+                  <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Сообщения">
                     <IconMessageCircle2 size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator></Box>
                 <Box visibleFrom="sm"><Indicator size={7} color="red" offset={4}>
-                  <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="lg" radius="md" aria-label="Уведомления">
+                  <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Уведомления">
                     <IconBell size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator></Box>
                 <Box visibleFrom="sm"><Divider orientation="vertical" mx={2} h={26} /></Box>
                 <Menu shadow="md" width={220} position="bottom-end" radius="md" offset={4}>
                   <Menu.Target>
-                    <ActionIcon variant="subtle" radius="xl" size={32}>
+                    <ActionIcon variant="subtle" radius="xl" size={32} className="market-app-header__utility-action market-app-header__utility-action--avatar">
                       <Avatar src={session.user?.image} size={28} radius="xl" color="indigo">
                         {session.user?.name?.[0]?.toUpperCase()}
                       </Avatar>

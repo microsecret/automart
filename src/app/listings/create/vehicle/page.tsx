@@ -286,7 +286,11 @@ function CreateVehicleWorkspace() {
                     description="Начните вводить или выберите из каталога"
                     required
                     value={f.make}
-                    onChange={(value) => setF((previous) => ({ ...previous, make: value, model: "" }))}
+                    onChange={(value) => setF((previous) => value === previous.make ? previous : ({ ...previous, make: value, model: "" }))}
+                    onClear={() => setF((previous) => ({ ...previous, make: "", model: "" }))}
+                    onOptionSubmit={(value) => setF((previous) => ({ ...previous, make: value, model: "" }))}
+                    clearable
+                    openOnFocus
                     size="sm"
                     data={brandOptions.map((brand) => brand.name)}
                     leftSection={f.make.trim() ? <BrandIcon brand={f.make.trim()} size={20} variant="rounded" /> : <IconCar size={16} />}
@@ -305,6 +309,9 @@ function CreateVehicleWorkspace() {
                     disabled={!f.make.trim()}
                     value={f.model}
                     onChange={(value) => set("model", value)}
+                    onClear={() => set("model", "")}
+                    clearable
+                    openOnFocus
                     size="sm"
                     data={modelOptions}
                     leftSection={f.make.trim() ? <BrandIcon brand={f.make.trim()} size={20} variant="rounded" /> : <IconCar size={16} />}
