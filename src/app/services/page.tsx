@@ -7,7 +7,7 @@ const SERVICES = [
   { href: "/services/history-check", title: "Проверка истории", description: "Заявка на проверку VIN и ключевых ограничений.", icon: IconFileSearch, color: "cyan", stage: "Проверить VIN" },
   { href: "/services/smart-matching", title: "Умный подбор", description: "Подбор транспорта по бюджету и параметрам.", icon: IconBrain, color: "violet", stage: "Подобрать авто" },
   { href: "/services/safe-deal", title: "Безопасная сделка", description: "Прозрачный сценарий оплаты и документов.", icon: IconShieldCheck, color: "teal", stage: "Провести сделку" },
-  { href: "/services/fuel-map", title: "Карта АЗС", description: "Точки заправок в крупных городах России.", icon: IconGasStation, color: "orange", stage: "Спланировать путь" },
+  { href: "/services/fuel-map", title: "Карта АЗС", description: "АЗС по городам и трассам России — с маршрутами и данными поставщиков.", icon: IconGasStation, color: "orange", stage: "Найти заправку" },
 ]
 
 export default function ServicesPage() {
