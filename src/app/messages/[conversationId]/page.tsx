@@ -13,13 +13,14 @@ import {
   Text,
   Center,
   Loader,
-  TextInput,
+  Textarea,
   Button,
   Avatar,
   Box,
   Paper,
+  ThemeIcon,
 } from "@mantine/core"
-import { IconArrowLeft, IconSend } from "@tabler/icons-react"
+import { IconArrowLeft, IconLock, IconMessageCircle2, IconSend } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
@@ -123,23 +124,29 @@ function ConversationWorkspace() {
   const userId = session.user.id
 
   return (
-    <Container size="md" py="lg" style={{ height: "calc(100vh - 64px - 80px)" }}>
+    <Container size="lg" py="xl" style={{ height: "calc(100vh - 72px - 80px)", minHeight: 620 }}>
       <Stack gap="md" style={{ height: "100%" }}>
-        {/* Шапка чата */}
-        <Group gap="sm">
-          <Button component={Link} href="/messages" variant="subtle" color="gray" p={6} aria-label="Назад">
+        <Paper withBorder radius="xl" px="sm" py="xs">
+        <Group gap="sm" justify="space-between" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap">
+          <Button component={Link} href="/messages" variant="default" color="gray" p={8} aria-label="К списку сообщений">
             <IconArrowLeft size={20} />
           </Button>
-          <Avatar src={data?.otherUser?.image} radius="xl" color="indigo" size="sm">
+          <Avatar src={data?.otherUser?.image} radius="xl" color="indigo" size="md">
             {data?.otherUser?.name?.[0]?.toUpperCase()}
           </Avatar>
           <Stack gap={0}>
-            <Text size="sm" fw={600}>{data?.otherUser?.name || (isNewConversation ? "Новый диалог" : "Диалог")}</Text>
-            <Text size="xs" c="gray.4">ID: {conversationId.substring(0, 12)}...</Text>
+            <Text size="sm" fw={700}>{data?.otherUser?.name || (isNewConversation ? "Новый диалог" : "Диалог")}</Text>
+            <Text size="xs" c="dimmed">Диалог по объявлению · отвечайте только внутри Авторынка</Text>
           </Stack>
+          </Group>
+          <ThemeIcon variant="light" color="green" radius="xl" size="lg" aria-label="Защищённый диалог">
+            <IconLock size={16} />
+          </ThemeIcon>
         </Group>
+        </Paper>
 
-        {/* Лента сообщений */}
+        <Paper withBorder radius="xl" p="md" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
         <Box ref={scrollRef} style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
           {isLoading ? (
             <Center py={40}><Loader color="indigo" /></Center>
@@ -147,10 +154,14 @@ function ConversationWorkspace() {
             <AsyncErrorState title="Не удалось загрузить диалог" description="Сообщения временно недоступны. Повторите запрос." onRetry={() => mutate()} backHref="/messages" backLabel="К сообщениям" />
           ) : isNewConversation || messages.length === 0 ? (
             <Center py={40}>
-              <Text size="sm" c="gray.4">Начните диалог — отправьте первое сообщение</Text>
+              <Stack align="center" gap="sm">
+                <ThemeIcon size={54} radius="xl" variant="light" color="indigo"><IconMessageCircle2 size={26} /></ThemeIcon>
+                <Text fw={700}>Начните диалог</Text>
+                <Text size="sm" c="dimmed" ta="center">Уточните состояние, документы или условия сделки. Не публикуйте личные данные в сообщениях.</Text>
+              </Stack>
             </Center>
           ) : (
-            <Stack gap="xs" p="xs">
+            <Stack gap="sm" p="xs">
               {messages.map((msg) => {
                 const isOwn = msg.senderId === userId
                 return (
@@ -160,9 +171,10 @@ function ConversationWorkspace() {
                       py="xs"
                       radius="lg"
                       style={{
-                        maxWidth: "75%",
-                        background: isOwn ? "#4f46e5" : "#f4f4f5",
+                        maxWidth: "78%",
+                        background: isOwn ? "var(--mantine-color-indigo-6)" : "var(--mantine-color-gray-0)",
                         color: isOwn ? "#fff" : "var(--mantine-color-text)",
+                        border: isOwn ? "1px solid transparent" : "1px solid var(--market-field-line)",
                       }}
                     >
                       <Stack gap={2}>
@@ -176,14 +188,17 @@ function ConversationWorkspace() {
             </Stack>
           )}
         </Box>
+        <Box mt="sm" ref={messagesEndRef} />
 
-        {/* Поле ввода */}
-        <Group gap="xs">
-          <TextInput
+        <Group gap="xs" align="flex-end">
+          <Textarea
             value={text}
             onChange={(e) => setText(e.currentTarget.value)}
-            placeholder="Сообщение..."
+            placeholder="Напишите сообщение…"
             radius="md"
+            autosize
+            minRows={1}
+            maxRows={4}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault()
@@ -203,6 +218,7 @@ function ConversationWorkspace() {
             <IconSend size={18} />
           </Button>
         </Group>
+        </Paper>
       </Stack>
     </Container>
   )

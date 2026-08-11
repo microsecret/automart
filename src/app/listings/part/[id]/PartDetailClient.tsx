@@ -354,7 +354,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Button size="lg" radius="md" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={`/messages/new?listingId=${data.listingId || data.id}`}>
                     Написать продавцу
                   </Button>
-                  <Button size="lg" radius="md" variant="subtle" color={isFav ? "red" : "gray"} leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />} onClick={toggleDetailFavorite} loading={data.listingId ? isPending(data.listingId) : false} disabled={!data.listingId}>
+                  <Button size="lg" radius="md" variant={isFav ? "light" : "default"} color={isFav ? "red" : "gray"} leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />} onClick={toggleDetailFavorite} loading={data.listingId ? isPending(data.listingId) : false} disabled={!data.listingId}>
                     {isFav ? "В избранном" : "В избранное"}
                   </Button>
                 </Stack>

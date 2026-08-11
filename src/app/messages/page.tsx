@@ -12,13 +12,14 @@ import {
   Title,
   Center,
   Loader,
-  Card,
   Avatar,
   Group,
-  Box,
   Badge,
+  Button,
+  Paper,
+  ThemeIcon,
 } from "@mantine/core"
-import { IconMessageCircleOff } from "@tabler/icons-react"
+import { IconArrowRight, IconMessageCircle2, IconMessageCircleOff } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
@@ -55,37 +56,58 @@ export default function MessagesPage() {
   const conversations = data?.conversations || []
 
   return (
-    <Container size="md" py="lg">
+    <Container size="lg" py="xl">
       <Stack gap="lg">
-        <Title order={1} size="h2">Сообщения</Title>
+        <Group justify="space-between" align="flex-end" gap="md">
+          <Stack gap={3}>
+            <Text size="xs" fw={800} tt="uppercase" c="indigo" style={{ letterSpacing: "0.08em" }}>Личный кабинет</Text>
+            <Title order={1} size="h2">Сообщения</Title>
+            <Text c="dimmed">Диалоги по объявлениям и договорённостям с продавцами.</Text>
+          </Stack>
+          <Button component={Link} href="/listings" variant="light" color="indigo" rightSection={<IconArrowRight size={16} />}>
+            Найти объявление
+          </Button>
+        </Group>
 
         {isLoading ? (
-          <Center py={60}><Loader color="indigo" /></Center>
+          <Paper withBorder radius="xl" p="xl"><Center py={56}><Loader color="indigo" /></Center></Paper>
         ) : error ? (
           <AsyncErrorState title="Не удалось загрузить сообщения" description="Диалоги временно недоступны. Повторите запрос." onRetry={() => mutate()} />
         ) : conversations.length === 0 ? (
-          <Center py={80}>
+          <Paper withBorder radius="xl" p="xl">
+          <Center py={44}>
             <Stack align="center" gap="md">
-              <IconMessageCircleOff size={48} color="#d4d4d8" />
+              <ThemeIcon size={64} radius="xl" variant="light" color="indigo">
+                <IconMessageCircleOff size={31} />
+              </ThemeIcon>
               <Stack gap={4} align="center">
-                <Text fw={500} c="gray.6">Нет диалогов</Text>
-                <Text size="sm" c="gray.4">Начните общение со страницы объявления</Text>
+                <Text fw={700} size="lg">Пока нет диалогов</Text>
+                <Text size="sm" c="dimmed" ta="center" maw={410}>Откройте подходящее объявление и нажмите «Написать продавцу». Диалог сразу появится здесь.</Text>
               </Stack>
+              <Button component={Link} href="/listings" color="indigo" leftSection={<IconMessageCircle2 size={18} />}>Перейти к объявлениям</Button>
             </Stack>
           </Center>
+          </Paper>
         ) : (
-          <Stack gap="xs" className="av-fade-in">
+          <Paper withBorder radius="xl" p="xs" className="av-fade-in">
+          <Stack gap={4}>
             {conversations.map((conv) => (
-              <Card
+              <Paper
                 key={conv.id}
                 component={Link}
                 href={`/messages/${conv.id}`}
                 withBorder
-                radius="md"
+                radius="lg"
                 p="md"
-                style={{ transition: "all 150ms ease", borderColor: conv.unreadCount > 0 ? "#c7d2fe" : "#e4e4e7" }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#a5b4fc" }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = conv.unreadCount > 0 ? "#c7d2fe" : "#e4e4e7" }}
+                style={{
+                  display: "block",
+                  textDecoration: "none",
+                  transition: "border-color 150ms ease, background-color 150ms ease, transform 150ms ease",
+                  borderColor: conv.unreadCount > 0 ? "var(--mantine-color-indigo-3)" : "var(--market-field-line)",
+                  background: conv.unreadCount > 0 ? "var(--mantine-color-indigo-0)" : "var(--mantine-color-body)",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-indigo-5)"; e.currentTarget.style.transform = "translateY(-1px)" }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = conv.unreadCount > 0 ? "var(--mantine-color-indigo-3)" : "var(--market-field-line)"; e.currentTarget.style.transform = "translateY(0)" }}
               >
                 <Group gap="sm" align="flex-start">
                   <Avatar src={conv.otherUser.image} radius="xl" color="indigo">
@@ -100,7 +122,7 @@ export default function MessagesPage() {
                       <Text size="xs" c="#4f46e5" className="line-clamp-1">{conv.listing.title}</Text>
                     )}
                     <Group gap="xs" align="center">
-                      <Text size="sm" c="gray.5" className="line-clamp-1" style={{ flex: 1 }}>
+                      <Text size="sm" c="dimmed" className="line-clamp-1" style={{ flex: 1 }}>
                         {conv.lastMessage?.content || "Нет сообщений"}
                       </Text>
                       {conv.unreadCount > 0 && (
@@ -111,9 +133,10 @@ export default function MessagesPage() {
                     </Group>
                   </Stack>
                 </Group>
-              </Card>
+              </Paper>
             ))}
           </Stack>
+          </Paper>
         )}
       </Stack>
     </Container>

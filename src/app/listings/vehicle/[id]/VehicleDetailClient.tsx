@@ -654,22 +654,23 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   <Button
                     size="lg"
                     radius="md"
-                    variant="subtle"
+                    variant={isFav ? "light" : "default"}
                     color={isFav ? "red" : "gray"}
                     leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />}
                     onClick={toggleDetailFavorite}
                     loading={data.listingId ? isPending(data.listingId) : false}
                     disabled={!data.listingId}
+                    fullWidth
                   >
                     {isFav ? "В избранном" : "В избранное"}
                   </Button>
-                  <Group gap="sm">
+                  <Group gap="sm" grow>
                     <Button
                       component={Link}
                       href={`/compare?ids=${data.id}`}
                       size="md"
                       radius="md"
-                      variant="subtle"
+                      variant="light"
                       color="indigo"
                       leftSection={<IconGitCompare size={18} />}
                     >
@@ -678,7 +679,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Button
                       size="md"
                       radius="md"
-                      variant="subtle"
+                      variant="default"
                       color="gray"
                       leftSection={<IconFlag size={18} />}
                       onClick={() => notifications.show({ title: "Жалоба отправлена", message: "Модератор рассмотрит объявление", color: "orange" })}
