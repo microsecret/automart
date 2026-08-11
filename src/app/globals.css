@@ -348,6 +348,20 @@ select {
   padding-left: 38px !important;
 }
 
+.market-header-search-trigger {
+  display: none;
+}
+
+@media (max-width: 1179px) {
+  .market-header-search {
+    display: none !important;
+  }
+
+  .market-header-search-trigger {
+    display: inline-flex;
+  }
+}
+
 .market-header-search__suggestions {
   overflow: hidden;
   border-color: color-mix(in srgb, var(--market-field-line) 82%, #c7d2fe) !important;
