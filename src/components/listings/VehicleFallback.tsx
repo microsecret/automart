@@ -1,7 +1,7 @@
 import { Box, ThemeIcon } from "@mantine/core"
-import { IconCar, IconHelicopter, IconMotorbike, IconPlane, IconSailboat, IconTractor, IconTruck } from "@tabler/icons-react"
+import { IconCar, IconHelicopter, IconMotorbike, IconPlane, IconSailboat, IconTools, IconTractor, IconTruck } from "@tabler/icons-react"
 
-type VehicleKind = "CAR" | "MOTORCYCLE" | "TRUCK" | "SPECIAL" | "WATER" | "AIR" | string | null | undefined
+type VehicleKind = "CAR" | "MOTORCYCLE" | "TRUCK" | "SPECIAL" | "WATER" | "AIR" | "PART" | string | null | undefined
 
 const FALLBACKS = {
   CAR: { label: "Автомобиль", Icon: IconCar, color: "indigo" },
@@ -10,6 +10,7 @@ const FALLBACKS = {
   SPECIAL: { label: "Спецтехника", Icon: IconTractor, color: "yellow" },
   WATER: { label: "Водный транспорт", Icon: IconSailboat, color: "cyan" },
   AIR: { label: "Воздушный транспорт", Icon: IconPlane, color: "blue" },
+  PART: { label: "Запчасть", Icon: IconTools, color: "indigo" },
 } as const
 
 export function vehicleTypeLabel(type: VehicleKind, bodyType?: string | null) {

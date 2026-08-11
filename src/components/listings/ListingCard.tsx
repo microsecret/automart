@@ -135,7 +135,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         >
           <AspectRatio ratio={hasDisplayImage ? 8 / 5 : 16 / 5}>
             <>
-              <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
+              <VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
