@@ -331,22 +331,27 @@ function PartsContent() {
                                 <Text fw={800} fz="md" c="dark.9" ff="var(--font-display),sans-serif" className="part-result-card__price">{formatPrice(p.price)}</Text>
                               </Group>
 
-                              <Group gap={5} wrap="wrap" className="part-result-card__badges">
-                                {p.condition && <Badge size="xs" variant="light" color={p.condition === "NEW" ? "green" : "gray"}>{findLabel(PART_CONDITIONS, p.condition)}</Badge>}
-                                {p.availability && <Badge size="xs" variant="light" color={p.availability === "ON_ORDER" ? "orange" : "teal"}>{findLabel(AVAILABILITY_TYPES, p.availability)}</Badge>}
-                                {p.saleFormat === "AUCTION" && <Badge size="xs" variant="filled" color="orange">Аукцион</Badge>}
-                                {p.subcategory && <Badge className="part-result-card__meta-badge" size="xs" variant="light" color="gray">{p.subcategory}</Badge>}
-                                {p.oemNumber && <Badge className="part-result-card__meta-badge" size="xs" variant="light" color="gray"><Group gap={3}><IconHash size={9} /> {p.oemNumber}</Group></Badge>}
+                              <Group gap={6} wrap="wrap" className="part-result-card__status">
+                                {p.condition && <Badge className="part-result-card__status-badge" data-tone={p.condition === "NEW" ? "success" : "neutral"} size="xs" variant="light">{findLabel(PART_CONDITIONS, p.condition)}</Badge>}
+                                {p.availability && <Badge className="part-result-card__status-badge" data-tone={p.availability === "ON_ORDER" ? "attention" : "available"} size="xs" variant="light">{findLabel(AVAILABILITY_TYPES, p.availability)}</Badge>}
+                                {p.saleFormat === "AUCTION" && <Badge className="part-result-card__status-badge" data-tone="auction" size="xs" variant="light">Аукцион</Badge>}
                               </Group>
 
+                              {(p.subcategory || p.oemNumber) && (
+                                <Group gap={7} wrap="wrap" className="part-result-card__metadata">
+                                  {p.subcategory && <Text size="xs" className="part-result-card__metadata-value">{p.subcategory}</Text>}
+                                  {p.oemNumber && <Group gap={3} className="part-result-card__metadata-value"><IconHash size={11} /> <span>{p.oemNumber}</span></Group>}
+                                </Group>
+                              )}
+
                               {p.compatibility && p.compatibility.length > 0 && (
-                                <Group gap={4} wrap="wrap" mt={2}>
+                                <Group gap={5} wrap="wrap" mt={2} className="part-result-card__compatibility">
                                   <Group gap={3}>
                                     <IconCircleCheck size={13} color="#059669" />
-                                    <Text size="xs" fw={600} c="gray.6">Подходит:</Text>
+                                    <Text size="xs" fw={650} c="gray.6">Подходит:</Text>
                                   </Group>
                                   {p.compatibility.slice(0, 4).map((c, i) => (
-                                    <Badge key={i} size="xs" variant="filled" color="indigo" radius="sm">{c.make} {c.model}</Badge>
+                                    <Badge key={i} className="part-result-card__compatibility-chip" size="xs" variant="light" color="indigo" radius="sm">{c.make} {c.model}</Badge>
                                   ))}
                                   {p.compatibility.length > 4 && (
                                     <Text size="xs" c="gray.5">+{p.compatibility.length - 4} ещё</Text>
