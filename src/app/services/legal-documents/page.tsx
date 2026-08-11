@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Group, List, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
+import { Alert, Box, Button, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
 import { IconAlertCircle, IconArrowRight, IconCar, IconChecklist, IconFileDescription, IconMotorbike, IconShieldCheck, IconSignature } from "@tabler/icons-react"
 import Link from "next/link"
 
@@ -53,9 +53,12 @@ export default function LegalDocumentsPage() {
               <Stack gap="md" h="100%">
                 <ThemeIcon size={44} radius="md" variant="light" color={document.color}><Icon size={22} /></ThemeIcon>
                 <Box><Text fw={800} fz="lg">{document.title}</Text><Text size="sm" c="dimmed" mt={5} lh={1.45}>{document.description}</Text></Box>
-                <List spacing={7} size="sm" icon={<ThemeIcon color={document.color} size={17} radius="xl" variant="light"><IconChecklist size={11} /></ThemeIcon>}>
-                  {document.fields.map((field) => <List.Item key={field}>{field}</List.Item>)}
-                </List>
+                <Stack gap={7}>
+                  {document.fields.map((field) => <Group key={field} gap={7} align="flex-start" wrap="nowrap">
+                    <ThemeIcon color={document.color} size={17} radius="xl" variant="light" mt={2}><IconChecklist size={11} /></ThemeIcon>
+                    <Text size="sm">{field}</Text>
+                  </Group>)}
+                </Stack>
               </Stack>
             </Paper>
           })}
