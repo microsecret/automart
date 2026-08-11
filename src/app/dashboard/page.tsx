@@ -352,7 +352,9 @@ export default function DashboardPage() {
                 const isVehicle = !!l.vehicle
                 const images = parseImages(isVehicle ? l.vehicle?.images : l.part?.images)
                 const image = images[0]
-                const href = isVehicle ? `/listings/vehicle/${l.vehicle.id}` : `/listings/part/${l.part.id}`
+                const listingTarget = l.vehicle || l.part
+                if (!listingTarget) return null
+                const href = isVehicle ? `/listings/vehicle/${listingTarget.id}` : `/listings/part/${listingTarget.id}`
                 const statusMeta = LISTING_STATUS_META[l.status as keyof typeof LISTING_STATUS_META] || LISTING_STATUS_META[LISTING_STATUS.DRAFT]
                 return (
                   <Paper key={l.id} className="dashboard-listing-card" radius="md" p="sm" withBorder>
@@ -472,7 +474,7 @@ export default function DashboardPage() {
                   const vehicleImages = parseImages(vehicle.images)
                   const vehicleImage = vehicleImages[0]
                   return (
-                    <Paper key={vehicle.id} className="garage-vehicle-card" radius="md" withBorder overflow="hidden">
+                    <Paper key={vehicle.id} className="garage-vehicle-card" radius="md" withBorder style={{ overflow: "hidden" }}>
                       <Box className="garage-vehicle-card__media">
                         {vehicleImage ? (
                           // eslint-disable-next-line @next/next/no-img-element

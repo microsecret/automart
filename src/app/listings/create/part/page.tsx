@@ -138,11 +138,11 @@ export default function CreatePartPage() {
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <Stack gap={6}>
                     <Text size="xs" fw={700} c="dark.7">Состояние</Text>
-                    <SegmentedControl aria-label="Состояние запчасти" value={f.condition} onChange={(value) => set("condition", value)} data={PART_CONDITIONS} size="sm" radius="md" fullWidth />
+                    <SegmentedControl aria-label="Состояние запчасти" value={f.condition} onChange={(value) => set("condition", value)} data={PART_CONDITIONS.map(({ value, label }) => ({ value, label }))} size="sm" radius="md" fullWidth />
                   </Stack>
                   <Stack gap={6}>
                     <Text size="xs" fw={700} c="dark.7">Наличие</Text>
-                    <SegmentedControl aria-label="Наличие запчасти" value={f.availability} onChange={(value) => set("availability", value)} data={PART_AVAILABILITY_TYPES} size="sm" radius="md" fullWidth />
+                    <SegmentedControl aria-label="Наличие запчасти" value={f.availability} onChange={(value) => set("availability", value)} data={PART_AVAILABILITY_TYPES.map(({ value, label }) => ({ value, label }))} size="sm" radius="md" fullWidth />
                   </Stack>
                 </SimpleGrid>
                 <Group gap="sm" grow>

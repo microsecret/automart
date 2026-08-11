@@ -87,7 +87,8 @@ export default function SupportChat() {
         setTicketId(data.ticketId)
       }
       if (data.message) {
-        setMessages((items) => items.map((message) => message.id === tempMsg.id ? data.message : message))
+        const persistedMessage = data.message
+        setMessages((items) => items.map((message) => message.id === tempMsg.id ? persistedMessage : message))
       }
     } catch (requestError) {
       setMessages((items) => items.filter((message) => message.id !== tempMsg.id))

@@ -98,13 +98,14 @@ export async function GET(request: NextRequest) {
       prisma.review.groupBy({
         by: ["rating"],
         where,
-        _count: { _all: true },
+        _count: { rating: true },
+        orderBy: { rating: "asc" },
       }),
     ])
 
     const distribution = [5, 4, 3, 2, 1].map((rating) => ({
       rating,
-      count: ratingGroups.find((group) => group.rating === rating)?._count._all || 0,
+      count: ratingGroups.find((group) => group.rating === rating)?._count.rating || 0,
     }))
     const ratingTotal = distribution.reduce((sum, item) => sum + item.count, 0)
     const averageRating = ratingTotal > 0

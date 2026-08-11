@@ -17,6 +17,7 @@ type PartResult = {
   name: string
   price: number | null
   images: string | null
+  partType?: string | null
   condition?: string | null
   availability?: string | null
   saleFormat?: string | null

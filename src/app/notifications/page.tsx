@@ -67,7 +67,7 @@ export default function NotificationsPage() {
         {isLoading ? (
           <Center py={80}><Loader size="sm" color="indigo" /></Center>
         ) : error ? (
-          <AsyncErrorState title="Не удалось загрузить уведомления" description="Проверьте подключение и повторите запрос." onRetry={() => mutate()} />
+          <AsyncErrorState title="Не удалось загрузить уведомления" description="Проверьте подключение и повторите запрос." onRetry={() => mutate("/api/notifications?limit=50")} />
         ) : notifications.length === 0 ? (
           <Paper radius="md" p="xl" withBorder>
             <Center>
