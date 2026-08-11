@@ -1281,12 +1281,17 @@ select {
 
 .listing-card__content {
   background:
+    radial-gradient(circle at 92% -14%, color-mix(in srgb, var(--listing-accent) 10%, transparent), transparent 38%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), #ffffff 100%),
     var(--market-surface);
 }
 
 .listing-card__price {
+  display: inline-flex;
+  align-items: baseline;
+  min-height: 24px;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
 }
 
 .listing-card__monthly-payment {
@@ -1322,7 +1327,9 @@ select {
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--market-line) 88%, transparent);
   border-radius: 11px;
-  background: color-mix(in srgb, var(--market-surface-subtle) 78%, #eef2ff);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--listing-accent) 5%, transparent), transparent 56%),
+    color-mix(in srgb, var(--market-surface-subtle) 78%, #eef2ff);
 }
 
 .listing-card__fact {
@@ -1347,6 +1354,17 @@ select {
 .listing-card__footer {
   min-height: 20px;
   border-top: 1px solid var(--mantine-color-border);
+}
+
+.listing-card[data-vehicle-type="part"] .listing-card__monthly-payment {
+  display: none;
+}
+
+.listing-card[data-vehicle-type="part"] .listing-card__content {
+  background:
+    radial-gradient(circle at 92% -14%, rgba(99, 102, 241, 0.1), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), #ffffff 100%),
+    var(--market-surface);
 }
 
 .listing-card__favorite {
