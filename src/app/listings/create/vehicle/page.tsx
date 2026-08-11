@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { Suspense, useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Alert, Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
+import { Alert, Autocomplete, Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
 import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
@@ -11,6 +11,7 @@ import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import { fetchJson } from "@/lib/api-client"
+import BrandIcon from "@/components/brands/BrandIcon"
 
 const CATS = [
   { value: "CAR", label: "Легковые" },
@@ -278,44 +279,46 @@ function CreateVehicleWorkspace() {
                   <Badge size="sm" color="gray" variant="light">Шаг 2</Badge>
                 </Group>
                 <TextInput label="Заголовок (необязательно)" description="Если оставить пустым, подставим год, марку и модель." placeholder="Например, Toyota Camry в отличном состоянии" value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />
-                <Group gap="sm" grow>
-                  <TextInput
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <Autocomplete
                     label="Марка"
                     placeholder="Toyota"
                     description="Начните вводить или выберите из каталога"
                     required
                     value={f.make}
-                    onChange={(e) => setF((previous) => ({ ...previous, make: e.currentTarget.value, model: "" }))}
+                    onChange={(value) => setF((previous) => ({ ...previous, make: value, model: "" }))}
                     size="sm"
-                    list="vehicle-brands"
+                    data={brandOptions.map((brand) => brand.name)}
+                    leftSection={f.make.trim() ? <BrandIcon brand={f.make.trim()} size={20} variant="rounded" /> : <IconCar size={16} />}
+                    renderOption={({ option }) => (
+                      <Group gap="xs" wrap="nowrap">
+                        <BrandIcon brand={option.value} size={24} variant="rounded" />
+                        <Text size="sm" fw={650}>{option.label}</Text>
+                      </Group>
+                    )}
                   />
-                  <TextInput
+                  <Autocomplete
                     label="Модель"
                     placeholder={f.make ? "Выберите или введите модель" : "Сначала укажите марку"}
                     description={f.make && modelOptions.length === 0 ? "Модель можно указать вручную" : undefined}
                     required
                     disabled={!f.make.trim()}
                     value={f.model}
-                    onChange={(e) => set("model", e.currentTarget.value)}
+                    onChange={(value) => set("model", value)}
                     size="sm"
-                    list="vehicle-models"
+                    data={modelOptions}
+                    leftSection={f.make.trim() ? <BrandIcon brand={f.make.trim()} size={20} variant="rounded" /> : <IconCar size={16} />}
                   />
-                </Group>
-                <datalist id="vehicle-brands">
-                  {brandOptions.map((brand) => <option key={brand.name} value={brand.name} />)}
-                </datalist>
-                <datalist id="vehicle-models">
-                  {modelOptions.map((model) => <option key={model} value={model} />)}
-                </datalist>
-                <Group gap="sm" grow>
+                </SimpleGrid>
+                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
                   <NumberInput label="Год" placeholder="2018" required value={f.year ? Number(f.year) : undefined} onChange={(v) => set("year", String(v || ""))} size="sm" min={1886} max={new Date().getFullYear() + 1} />
                   <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />
                   <NumberInput label={`${usageMeta.label}, ${usageMeta.unit}`} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, String(v || ""))} size="sm" min={0} />
-                </Group>
-                <Group gap="sm" grow>
+                </SimpleGrid>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <TextInput label="Город" placeholder="Москва" required value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
                   <TextInput label={identityMeta.label} placeholder={identityMeta.placeholder} value={identityMeta.field === "vin" ? f.vin : identityMeta.field === "serialNumber" ? f.serialNumber : f.registrationNumber} onChange={(e) => set(identityMeta.field, e.target.value.toUpperCase())} size="sm" maxLength={identityMeta.maxLength} required description={identityMeta.description} />
-                </Group>
+                </SimpleGrid>
               </Stack>
             </Paper>
 
