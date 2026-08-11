@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import axios from "axios"
 import { prisma } from "@/lib/prisma"
-import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, getVehicleIdentityMeta, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 import { parseMarketplaceImages } from "@/lib/media-url"
@@ -288,6 +288,14 @@ export async function POST(request: NextRequest) {
     if (!fuelType || !allowedFuelTypes.has(String(fuelType))) {
       return NextResponse.json({ error: "Выбранный тип топлива не подходит для этой категории транспорта" }, { status: 400 })
     }
+    const energyAndYearError = validateVehicleEnergyAndModelYear(
+      normalizedVehicleType,
+      normalizedMake,
+      normalizedModel,
+      normalizedYear,
+      String(fuelType),
+    )
+    if (energyAndYearError) return NextResponse.json({ error: energyAndYearError }, { status: 400 })
 
     const transmissionOptions = getTransmissionOptions(normalizedVehicleType)
     if (supportsTransmission(normalizedVehicleType) && (!transmission || !transmissionOptions.some((item) => item.value === transmission))) {

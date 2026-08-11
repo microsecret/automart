@@ -28,6 +28,7 @@ const TYPE_BY_LEGACY_MAKE = {
 }
 
 const MOTORCYCLE_MODEL_PATTERN = /africa twin|cbr|gold wing|burgman|gsx-|v-strom/i
+const ELECTRIC_ONLY_CAR_MAKES = ["Tesla", "Zeekr", "Nio", "Xpeng", "Avatr"]
 
 function initialTypeDetails(vehicleType, make, model) {
   const value = `${make} ${model}`.toLowerCase()
@@ -157,6 +158,25 @@ async function main() {
       })
     }
 
+    // Earlier demo imports treated every passenger vehicle as combustion
+    // powered.  Keep this repair deliberately narrow: these manufacturers
+    // are electric-only, unlike brands that legitimately sell hybrid ranges.
+    const electricFuelRepair = await tx.vehicle.updateMany({
+      where: {
+        vehicleType: "CAR",
+        make: { in: ELECTRIC_ONLY_CAR_MAKES },
+        fuelType: { not: "ELECTRIC" },
+      },
+      data: { fuelType: "ELECTRIC" },
+    })
+
+    // Tesla's own manual covers Model Y from the 2020 model year.  Correct a
+    // known pre-launch demo date rather than exposing a non-existent car.
+    const modelYYearRepair = await tx.vehicle.updateMany({
+      where: { vehicleType: "CAR", make: "Tesla", model: "Model Y", year: { lt: 2020 } },
+      data: { year: 2020 },
+    })
+
     const legacyVehicles = await tx.vehicle.findMany({
       where: { vehicleType: "CAR" },
       select: { id: true, make: true, model: true, mileage: true, operatingHours: true, flightHours: true, vin: true, serialNumber: true, registrationNumber: true, transmission: true },
@@ -181,7 +201,9 @@ async function main() {
       await tx.category.update({ where: { id: categoryId }, data: { vehicleCount } })
     }
 
-    console.log(`Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values`)
+    console.log(
+      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values and ${modelYYearRepair.count} Tesla Model Y years`,
+    )
   })
 
   console.log("Transport categories reconciled")

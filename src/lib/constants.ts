@@ -168,6 +168,45 @@ export function getFuelOptions(vehicleType: string | null | undefined) {
   return vehicleType === "AIR" ? AIR_FUEL_TYPES : FUEL_TYPES
 }
 
+/**
+ * Rules that protect the catalogue from physically impossible demo and user
+ * data.  They deliberately cover only manufacturers and model years with an
+ * unambiguous electric-only history, so hybrid-capable brands remain free to
+ * publish their valid petrol and hybrid models.
+ */
+const ELECTRIC_ONLY_CAR_MAKES = new Set([
+  "Tesla",
+  "Zeekr",
+  "Nio",
+  "Xpeng",
+  "Avatr",
+])
+
+const CAR_MODEL_YEAR_FLOORS: Record<string, number> = {
+  "Tesla::Model Y": 2020,
+}
+
+export function validateVehicleEnergyAndModelYear(
+  vehicleType: string | null | undefined,
+  make: string,
+  model: string,
+  year: number,
+  fuelType: string,
+) {
+  if (vehicleType !== "CAR") return null
+
+  if (ELECTRIC_ONLY_CAR_MAKES.has(make) && fuelType !== "ELECTRIC") {
+    return `${make} выпускает только электромобили. Выберите тип топлива «Электро».`
+  }
+
+  const firstModelYear = CAR_MODEL_YEAR_FLOORS[`${make}::${model}`]
+  if (firstModelYear && year < firstModelYear) {
+    return `${make} ${model} выпускается с ${firstModelYear} года. Проверьте год выпуска.`
+  }
+
+  return null
+}
+
 export function getUsageMeta(vehicleType: string | null | undefined) {
   if (vehicleType === "AIR") return { field: "flightHours", label: "Налёт", unit: "ч" } as const
   if (vehicleType === "SPECIAL" || vehicleType === "WATER") return { field: "operatingHours", label: "Наработка", unit: "м/ч" } as const
