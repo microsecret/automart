@@ -231,11 +231,11 @@ export async function POST(request: NextRequest) {
           exchangeRate, pricingUpdatedAt: new Date(),
           imageUrl: item.imageUrl || null,
           images: item.images ? JSON.stringify(item.images) : null,
-          descriptionOrig: item.descriptionOrig || null, descriptionRu, specsRu,
+          descriptionOrig: item.descriptionOrig || null, specsOrig: item.specsOrig || null, descriptionRu, specsRu,
           country: item.country,
           auctionDate: item.auctionDate,
           location: item.location || null,
-          isTranslated: !!descriptionRu, translatedAt: descriptionRu ? new Date() : null,
+          isTranslated: Boolean(descriptionRu || specsRu), translatedAt: descriptionRu || specsRu ? new Date() : null,
         },
       })
       created++

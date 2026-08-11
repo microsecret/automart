@@ -543,6 +543,7 @@ model AuctionListing {
   images          String?  // JSON массив
   // Перевод
   descriptionOrig String?
+  specsOrig       String?
   descriptionRu   String?
   specsRu         String?
   // Локация
