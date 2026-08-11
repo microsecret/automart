@@ -1,7 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import { Suspense, useEffect, useRef, useState, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import useSWR, { mutate as globalMutate } from "swr"
 import { useSession } from "next-auth/react"
@@ -43,6 +43,14 @@ type SendMessageResponse = {
 }
 
 export default function ConversationPage() {
+  return (
+    <Suspense fallback={<Center py={100}><Loader color="indigo" /></Center>}>
+      <ConversationWorkspace />
+    </Suspense>
+  )
+}
+
+function ConversationWorkspace() {
   const { conversationId } = useParams<{ conversationId: string }>()
   const searchParams = useSearchParams()
   const { data: session, status } = useSession() || { data: null, status: 'unauthenticated' }

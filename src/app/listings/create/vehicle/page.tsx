@@ -1,6 +1,6 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useCallback, useEffect, useState } from "react"
+import { Suspense, useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Alert, Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
@@ -40,6 +40,14 @@ type CategoriesResponse = { categories: VehicleCategory[] }
 type CreateVehicleResponse = { id: string }
 
 export default function CreateVehiclePage() {
+  return (
+    <Suspense fallback={<Center py={100}><Loader color="indigo" /></Center>}>
+      <CreateVehicleWorkspace />
+    </Suspense>
+  )
+}
+
+function CreateVehicleWorkspace() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
