@@ -30,9 +30,11 @@ export async function POST(request: NextRequest) {
     if (password.length < 6) {
       return NextResponse.json({ error: "Пароль минимум 6 символов" }, { status: 400 })
     }
-    if (!isEmailDeliveryConfigured()) {
-      return NextResponse.json({ error: "Подтверждение email ещё не настроено. Попробуйте позже." }, { status: 503 })
-    }
+    // Email is an additional verification channel. The account can still be
+    // created safely while mail delivery is temporarily unavailable: password
+    // login stays closed until email confirmation, and Telegram contact
+    // verification remains the secure way to enter the account.
+    const emailDeliveryConfigured = isEmailDeliveryConfigured()
 
     const [existingEmail, existingPhone] = await Promise.all([
       prisma.user.findUnique({ where: { email } }),
@@ -55,18 +57,17 @@ export async function POST(request: NextRequest) {
       select: { id: true, email: true, name: true, phone: true },
     })
 
-    try {
-      await sendEmailVerification(user.email, user.name)
-    } catch (emailError) {
-      console.error("Registration email error:", emailError)
-      return NextResponse.json({
-        user,
-        requiresEmailVerification: true,
-        emailDeliveryPending: true,
-      }, { status: 201 })
+    let emailDeliveryPending = !emailDeliveryConfigured
+    if (emailDeliveryConfigured) {
+      try {
+        await sendEmailVerification(user.email, user.name)
+      } catch (emailError) {
+        console.error("Registration email error:", emailError)
+        emailDeliveryPending = true
+      }
     }
 
-    return NextResponse.json({ user, requiresEmailVerification: true }, { status: 201 })
+    return NextResponse.json({ user, requiresEmailVerification: true, emailDeliveryPending }, { status: 201 })
   } catch (error) {
     console.error("Registration error:", error)
     return NextResponse.json({ error: "Ошибка регистрации" }, { status: 500 })

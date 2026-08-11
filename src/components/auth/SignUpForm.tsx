@@ -73,15 +73,16 @@ export default function SignUpForm() {
       <Stack gap="md" align="center" ta="center">
         <Alert color={emailDeliveryPending ? "yellow" : "green"} variant="light" radius="md" w="100%">
           {emailDeliveryPending
-            ? <>Аккаунт создан. Письмо на <b>{submittedEmail}</b> пока не отправлено.</>
+            ? <>Аккаунт создан. Подтвердите номер через Telegram, а письмо на <b>{submittedEmail}</b> отправим, когда почтовый канал будет доступен.</>
             : <>Письмо с подтверждением отправлено на <b>{submittedEmail}</b>.</>}
         </Alert>
         <Text size="sm" c="gray.6">
           {emailDeliveryPending
-            ? "Откройте вход: там можно повторно отправить подтверждение email, а затем подключить Telegram для входа по коду."
+            ? "Откройте бот Авторынка, отправьте свой контакт, затем вернитесь сюда и получите одноразовый код для входа. Пароль до подтверждения email не используется."
             : "Перейдите по ссылке из письма, затем подтвердите номер через Telegram-бота для входа по коду."}
         </Text>
-        <Button component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} fullWidth color="indigo">Перейти ко входу</Button>
+        <Button component={Link} href={`/auth/telegram?callbackUrl=${encodeURIComponent(callbackUrl)}`} fullWidth color="indigo">Продолжить через Telegram</Button>
+        <Anchor component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} size="sm" c="indigo">Войти по email после подтверждения</Anchor>
       </Stack>
     )
   }
