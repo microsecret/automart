@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
 import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, ThemeIcon, Tooltip } from "@mantine/core"
 import { IconExternalLink, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconRoute } from "@tabler/icons-react"
@@ -101,6 +101,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
   const [zoom, setZoom] = useState(11)
   const [viewportCenter, setViewportCenter] = useState(coordinates)
   const [isDragging, setIsDragging] = useState(false)
+  const mapInteractionRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ pointerId: number; clientX: number; clientY: number; center: { latitude: number; longitude: number }; width: number; height: number } | null>(null)
   const viewportCenterRef = useRef(viewportCenter)
   const center = useMemo(() => coordinatesToWorld(viewportCenter.latitude, viewportCenter.longitude, zoom), [viewportCenter.latitude, viewportCenter.longitude, zoom])
@@ -109,6 +110,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
   const tileCount = 2 ** zoom
   const tileOffsetX = -(((center.x / TILE_SIZE) - centerTileX) - 0.5) * (100 / 3)
   const tileOffsetY = -(((center.y / TILE_SIZE) - centerTileY) - 0.5) * (100 / 3)
+  const updateZoom = (nextZoom: number) => setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom)))
 
   useEffect(() => {
     setViewportCenter(coordinates)
@@ -124,6 +126,23 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
     viewportCenterRef.current = nextCenter
     setZoom((current) => Math.max(current, 13))
   }, [selectedStation?.id, selectedStation?.sourceType])
+
+  // React может зарегистрировать wheel-подписку на корне документа, а браузер
+  // в таком режиме вправе проигнорировать preventDefault. Для карты нужен
+  // гарантированно активный обработчик: колесо над полотном меняет масштаб,
+  // а не прокручивает страницу.
+  useEffect(() => {
+    const mapNode = mapInteractionRef.current
+    if (!mapNode) return
+
+    const handleNativeWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      setZoom((currentZoom) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + (event.deltaY < 0 ? 1 : -1))))
+    }
+
+    mapNode.addEventListener("wheel", handleNativeWheel, { passive: false })
+    return () => mapNode.removeEventListener("wheel", handleNativeWheel)
+  }, [])
 
   const visibleStations = useMemo(() => stations.flatMap((station) => {
     const point = coordinatesToWorld(station.latitude, station.longitude, zoom)
@@ -155,8 +174,6 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
 
     return Array.from(clusters.values())
   }, [visibleStations, zoom])
-
-  const updateZoom = (nextZoom: number) => setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom)))
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return
@@ -203,11 +220,6 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
     onViewportChange(nextCenter)
   }
 
-  const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    updateZoom(zoom + (event.deltaY < 0 ? 1 : -1))
-  }
-
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const step = TILE_SIZE * 0.26
     const directions: Record<string, { x: number; y: number }> = {
@@ -248,7 +260,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
 
   return (
     <Paper id="fuel-station-map" className="fuel-map-canvas" radius="lg" withBorder>
-      <Box className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}. Стрелки перемещают карту, плюс и минус меняют масштаб.`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onWheel={handleWheel} onKeyDown={handleKeyDown}>
+      <Box ref={mapInteractionRef} className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}. Стрелки перемещают карту, плюс и минус меняют масштаб.`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onKeyDown={handleKeyDown}>
         <Box className="fuel-map-canvas__tile-layer" style={{ transform: `translate(${tileOffsetX}%, ${tileOffsetY}%)` }} aria-hidden="true">
         {[-1, 0, 1, 2].flatMap((row) => [-1, 0, 1, 2].map((column) => {
           const x = (centerTileX + column + tileCount) % tileCount
