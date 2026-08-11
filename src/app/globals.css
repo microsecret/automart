@@ -2078,9 +2078,21 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
+.fuel-map-marker__network {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
 .fuel-map-marker[data-quality="fuel"] {
   background: #0f766e;
   box-shadow: 0 4px 12px rgba(15, 118, 110, 0.36);
+}
+
+.fuel-map-marker[data-quality="live"] {
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.86), 0 5px 14px rgba(22, 163, 74, 0.42);
 }
 
 .fuel-map-marker[data-quality="basic"] {
@@ -2162,6 +2174,7 @@ select {
 }
 
 .fuel-map-canvas__legend > span[data-quality="fuel"]::before { background: #0f766e; }
+.fuel-map-canvas__legend > span[data-quality="live"]::before { background: #16a34a; }
 .fuel-map-canvas__legend > span[data-quality="network"]::before { background: #ea580c; }
 
 .fuel-map-selected {

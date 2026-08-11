@@ -1,22 +1,26 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
-import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, ThemeIcon, Tooltip } from "@mantine/core"
-import { IconExternalLink, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconRoute } from "@tabler/icons-react"
+import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, TextInput, ThemeIcon, Tooltip } from "@mantine/core"
+import { IconExternalLink, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconRoute, IconSearch } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
 type FuelStation = {
-  id: number
-  sourceType: "node" | "way" | "relation"
+  id: string
+  sourceType: "node" | "way" | "relation" | "provider"
+  dataSource: "OPENSTREETMAP" | "ZAPRAVKIN" | "MERGED"
   name: string
   brand: string | null
   operator: string | null
   address: string | null
   openingHours: string | null
   fuels: string[]
+  prices: Array<{ fuel: string; price: number | null; updatedAt: string | null }>
+  status: "FUEL" | "NO_FUEL" | "UNKNOWN"
+  statusUpdatedAt: string | null
   latitude: number
   longitude: number
 }
@@ -27,6 +31,14 @@ type FuelStationsResponse = {
   stations: FuelStation[]
   source: string
   disclaimer: string
+  areaLabel?: string
+  coverage: {
+    dataMode: "LIVE" | "DIRECTORY"
+    liveProviderConfigured: boolean
+    liveStationCount: number
+    directoryStationCount: number
+    providerAttributionUrl: string | null
+  }
 }
 
 const TILE_SIZE = 256
@@ -72,22 +84,77 @@ type MapMarker = {
   stations: FuelStation[]
 }
 
-type StationDataQuality = "fuel" | "network" | "basic"
+type StationDataQuality = "live" | "fuel" | "network" | "basic"
+
+type NetworkIdentity = {
+  label: string
+  shortLabel: string
+  color: string
+  textColor: string
+}
 
 function getStationNetwork(station: FuelStation) {
   return station.brand || station.operator || null
 }
 
+function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
+  const source = `${station.name} ${station.brand || ""} ${station.operator || ""}`.toLocaleLowerCase("ru-RU")
+  if (source.includes("лукойл")) return { label: "Лукойл", shortLabel: "ЛК", color: "#d8202f", textColor: "#fff" }
+  if (source.includes("роснефть")) return { label: "Роснефть", shortLabel: "РН", color: "#f6c514", textColor: "#1f2937" }
+  if (source.includes("газпром")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff" }
+  if (source.includes("татнефть")) return { label: "Татнефть", shortLabel: "ТН", color: "#139b5a", textColor: "#fff" }
+  if (source.includes("башнефть")) return { label: "Башнефть", shortLabel: "БН", color: "#183b6d", textColor: "#fff" }
+  if (source.includes("teboil") || source.includes("тебойл")) return { label: "Teboil", shortLabel: "TB", color: "#d52331", textColor: "#fff" }
+  if (source.includes("нефтьмагистраль")) return { label: "Нефтьмагистраль", shortLabel: "НМ", color: "#1d1d1f", textColor: "#fff" }
+  if (source.includes("irbis") || source.includes("ирбис")) return { label: "Irbis", shortLabel: "IR", color: "#e65825", textColor: "#fff" }
+  return null
+}
+
+function getDistanceInKilometers(from: { latitude: number; longitude: number }, to: { latitude: number; longitude: number }) {
+  const radians = (value: number) => value * Math.PI / 180
+  const latitudeDelta = radians(to.latitude - from.latitude)
+  const longitudeDelta = radians(to.longitude - from.longitude)
+  const latitudeFrom = radians(from.latitude)
+  const latitudeTo = radians(to.latitude)
+  const value = Math.sin(latitudeDelta / 2) ** 2 + Math.cos(latitudeFrom) * Math.cos(latitudeTo) * Math.sin(longitudeDelta / 2) ** 2
+  return 6371 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value))
+}
+
+function formatDistance(distance: number) {
+  return distance < 1 ? `${Math.max(50, Math.round(distance * 1000 / 50) * 50)} м` : `${distance.toFixed(distance < 10 ? 1 : 0).replace(".", ",")} км`
+}
+
 function getStationDataQuality(station: FuelStation): StationDataQuality {
+  if (station.status !== "UNKNOWN" || station.prices.length) return "live"
   if (station.fuels.length) return "fuel"
   if (getStationNetwork(station)) return "network"
   return "basic"
 }
 
 function getStationDataSummary(station: FuelStation) {
+  if (station.status === "FUEL") return "Поставщик подтверждает наличие топлива"
+  if (station.status === "NO_FUEL") return "Поставщик сообщает: топлива сейчас нет"
+  if (station.prices.length) return "Цены опубликованы подключённым поставщиком"
   if (station.fuels.length) return "В OSM опубликованы типы топлива"
   if (getStationNetwork(station)) return "В OSM указана сеть АЗС"
   return "Точка АЗС без подробных тегов"
+}
+
+function getStationStatus(station: FuelStation) {
+  if (station.status === "FUEL") return { label: "Есть топливо", color: "teal" }
+  if (station.status === "NO_FUEL") return { label: "Нет топлива", color: "red" }
+  return { label: "Нет live-данных", color: "gray" }
+}
+
+function formatStationTimestamp(value: string | null) {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(date)
+}
+
+function formatFuelPrice(price: number | null) {
+  return price === null ? null : new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(price)
 }
 
 function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect, onViewportChange }: {
@@ -272,9 +339,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
           const isCluster = marker.stations.length > 1
           const firstStation = marker.stations[0]
           const dataQuality = getStationDataQuality(firstStation)
+          const networkIdentity = getNetworkIdentity(firstStation)
           const isSelected = marker.stations.some((station) => selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType)
-          const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${firstStation.address || "адрес не указан"}`
-          return <button key={isCluster ? `cluster-${index}` : `${firstStation.sourceType}-${firstStation.id}`} type="button" className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-selected={isSelected || undefined} style={{ left: `${marker.left}%`, top: `${marker.top}%` }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : <IconGasStation size={15} />}</button>
+          const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${getStationDataSummary(firstStation)}`
+          return <button key={isCluster ? `cluster-${index}` : firstStation.id} type="button" className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-selected={isSelected || undefined} style={{ left: `${marker.left}%`, top: `${marker.top}%`, ...(networkIdentity && !isCluster ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</button>
         })}
       </Box>
       <Group className="fuel-map-canvas__controls" gap={4}>
@@ -282,45 +350,52 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
         <Tooltip label="Увеличить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom + 1)} aria-label="Увеличить масштаб карты"><IconPlus size={15} /></ActionIcon></Tooltip>
       </Group>
       <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · тяните карту, масштабируйте колесом</Text></Box>
-      <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-quality="fuel">Топливо отмечено</Text><Text component="span" data-quality="network">Сеть указана</Text><Text component="span" data-quality="basic">Без тегов</Text></Box>
-      {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder><Text size="xs" fw={750} lineClamp={1}>{selectedStation.name}</Text><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || getStationNetwork(selectedStation) || "Адрес не указан в OSM"}</Text><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{getStationDataSummary(selectedStation)}</Text></Paper>}
+      <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-quality="live">Есть live-данные</Text><Text component="span" data-quality="fuel">Топливо отмечено</Text><Text component="span" data-quality="network">Сеть указана</Text><Text component="span" data-quality="basic">Без тегов</Text></Box>
+      {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder><Group justify="space-between" gap="xs" wrap="nowrap"><Text size="xs" fw={750} lineClamp={1}>{selectedStation.name}</Text><Badge size="xs" color={getStationStatus(selectedStation).color} variant="light">{getStationStatus(selectedStation).label}</Badge></Group><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || getStationNetwork(selectedStation) || "Адрес не указан"}</Text><Group gap={4} mt={4} wrap="wrap">{selectedStation.prices.slice(0, 3).map((price) => <Badge key={price.fuel} size="xs" color="teal" variant="light">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>)}</Group><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{formatStationTimestamp(selectedStation.statusUpdatedAt) ? `Обновлено: ${formatStationTimestamp(selectedStation.statusUpdatedAt)}` : getStationDataSummary(selectedStation)}</Text></Paper>}
     </Paper>
   )
 }
 
-function FuelStationCard({ station, isSelected, onShowOnMap }: {
+function FuelStationCard({ station, referenceCoordinates, isSelected, onShowOnMap }: {
   station: FuelStation
+  referenceCoordinates: { latitude: number; longitude: number }
   isSelected: boolean
   onShowOnMap: (station: FuelStation) => void
 }) {
   const dataQuality = getStationDataQuality(station)
   const network = getStationNetwork(station)
+  const networkIdentity = getNetworkIdentity(station)
   const networkLabel =
     network && network.toLocaleLowerCase("ru-RU") !== station.name.toLocaleLowerCase("ru-RU") ? network : null
-  const iconColor = dataQuality === "fuel" ? "teal" : dataQuality === "network" ? "orange" : "gray"
+  const stationStatus = getStationStatus(station)
+  const iconColor = dataQuality === "live" ? stationStatus.color : dataQuality === "fuel" ? "teal" : dataQuality === "network" ? "orange" : "gray"
+  const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
+  const distance = formatDistance(getDistanceInKilometers(referenceCoordinates, station))
 
   return (
     <Paper className="fuel-station-card" data-selected={isSelected || undefined} radius="md" p="sm" withBorder>
       <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
         <Group gap="sm" wrap="nowrap">
-          <ThemeIcon variant="light" color={iconColor} radius="md"><IconGasStation size={17} /></ThemeIcon>
+          <ThemeIcon variant={networkIdentity ? "filled" : "light"} color={iconColor} radius="md" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkIdentity ? networkIdentity.shortLabel : <IconGasStation size={17} />}</ThemeIcon>
           <Box style={{ minWidth: 0 }}>
             <Text fw={750} size="sm" lineClamp={1}>{station.name}</Text>
-            <Text size="xs" c="dimmed" lineClamp={1}>{station.address || network || "Адрес не указан в OSM"}</Text>
+            <Text size="xs" c="dimmed" lineClamp={1}>{station.address || network || "Адрес не указан"}</Text>
           </Box>
         </Group>
-        <Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${station.name} в OpenStreetMap`}>
-          <IconExternalLink size={16} />
-        </Anchor>
+        {station.sourceType !== "provider" && <Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id.replace(/^osm-[^-]+-/, "")}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor>}
       </Group>
       <Group mt={8} gap={5} wrap="wrap">
-        {networkLabel && <Badge size="xs" variant="outline" color="orange">{networkLabel}</Badge>}
-        {station.fuels.length
-          ? station.fuels.map((fuel) => <Badge key={fuel} size="xs" variant="light" color="teal">{fuel}</Badge>)
-          : <Badge size="xs" variant="outline" color="gray">Ассортимент не указан</Badge>}
+        {networkLabel && <Badge size="xs" variant={networkIdentity ? "filled" : "outline"} color="orange" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkLabel}</Badge>}
+        <Badge size="xs" variant="light" color={stationStatus.color}>{stationStatus.label}</Badge>
+        <Badge size="xs" variant="outline" color="gray">{distance} от центра</Badge>
+        {station.prices.length
+          ? station.prices.map((price) => <Badge key={`${price.fuel}-${price.price}`} size="xs" variant="light" color="teal">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>)
+          : station.fuels.length
+            ? station.fuels.map((fuel) => <Badge key={fuel} size="xs" variant="light" color="teal">{fuel}</Badge>)
+            : <Badge size="xs" variant="outline" color="gray">Ассортимент не указан</Badge>}
         {station.openingHours && <Badge size="xs" variant="outline" color="gray">{station.openingHours}</Badge>}
       </Group>
-      <Text size="10px" c="dimmed" mt={7}>{getStationDataSummary(station)}</Text>
+      <Text size="10px" c="dimmed" mt={7}>{statusUpdated ? `Данные обновлены: ${statusUpdated}` : getStationDataSummary(station)}</Text>
       <Group mt={8} gap={4}>
         <Button variant="subtle" color="indigo" size="compact-xs" onClick={() => onShowOnMap(station)} leftSection={<IconMapPin size={13} />}>На карте</Button>
         <Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" variant="subtle" color="indigo" size="compact-xs" leftSection={<IconRoute size={13} />}>Маршрут</Button>
@@ -331,33 +406,48 @@ function FuelStationCard({ station, isSelected, onShowOnMap }: {
 
 export default function FuelMapPage() {
   const [city, setCity] = useState("Москва")
+  const [placeQuery, setPlaceQuery] = useState("")
+  const [place, setPlace] = useState<string | null>(null)
   const [fuelFilter, setFuelFilter] = useState("")
   const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
   const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
   const [requestedCoordinates, setRequestedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
   const [visibleStationCount, setVisibleStationCount] = useState(STATION_LIST_PAGE_SIZE)
+  const cityCoordinates = CITY_COORDINATES[city] || CITY_COORDINATES["Москва"]
   const fuelStationsUrl = useMemo(() => {
     const params = new URLSearchParams({ city })
+    if (place) params.set("place", place)
     if (requestedCoordinates) {
       params.set("latitude", requestedCoordinates.latitude.toFixed(5))
       params.set("longitude", requestedCoordinates.longitude.toFixed(5))
     }
     return `/api/fuel-stations?${params.toString()}`
-  }, [city, requestedCoordinates])
+  }, [city, place, requestedCoordinates])
   const { data, error, isLoading, isValidating, mutate } = useSWR<FuelStationsResponse>(fuelStationsUrl, fetchJson, { revalidateOnFocus: false })
-  const coordinates = data?.coordinates || requestedCoordinates || CITY_COORDINATES[city]
+  const coordinates = data?.coordinates || requestedCoordinates || cityCoordinates
+  const areaLabel = data?.areaLabel || place || city
   const isViewingMapArea = Boolean(requestedCoordinates)
   const allStations = data?.stations ?? EMPTY_STATIONS
-  const filteredStations = useMemo(() => fuelFilter ? allStations.filter((station) => station.fuels.includes(fuelFilter)) : allStations, [allStations, fuelFilter])
+  const filteredStations = useMemo(() => {
+    const matchingStations = fuelFilter
+      ? allStations.filter((station) => station.fuels.includes(fuelFilter))
+      : allStations
+
+    // В списке первыми показываем ближайшие АЗС — именно так пользователь
+    // выбирает точку для поездки, а не только по алфавиту сети.
+    return [...matchingStations].sort((first, second) => (
+      getDistanceInKilometers(coordinates, first) - getDistanceInKilometers(coordinates, second)
+    ))
+  }, [allStations, coordinates.latitude, coordinates.longitude, fuelFilter])
   const displayedStations = filteredStations.slice(0, visibleStationCount)
   const hasMoreStations = displayedStations.length < filteredStations.length
 
   useEffect(() => {
     setSelectedStation(null)
     setRequestedCoordinates(null)
-    setViewportCoordinates(CITY_COORDINATES[city])
+    setViewportCoordinates(cityCoordinates)
     setVisibleStationCount(STATION_LIST_PAGE_SIZE)
-  }, [city])
+  }, [city, cityCoordinates])
 
   useEffect(() => {
     setVisibleStationCount(STATION_LIST_PAGE_SIZE)
@@ -382,6 +472,22 @@ export default function FuelMapPage() {
     document.getElementById("fuel-station-map")?.scrollIntoView({ behavior: "smooth", block: "center" })
   }
 
+  const handleCityChange = (value: string | null) => {
+    setCity(value || "Москва")
+    setPlace(null)
+    setPlaceQuery("")
+  }
+
+  const handlePlaceSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const nextPlace = placeQuery.trim().replace(/\s+/g, " ")
+    if (nextPlace.length < 2) return
+    setRequestedCoordinates(null)
+    setSelectedStation(null)
+    if (nextPlace === place) void mutate()
+    else setPlace(nextPlace)
+  }
+
   return (
     <Box className="service-page service-page--fuel-map" p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
@@ -390,11 +496,13 @@ export default function FuelMapPage() {
             <Stack gap="sm" maw={680}>
               <Group gap="sm"><ThemeIcon size={44} radius="lg" variant="white" color="indigo"><IconGasStation size={23} /></ThemeIcon><Badge variant="white" color="dark" radius="xl">СЕРВИС ДЛЯ ПОЕЗДКИ</Badge></Group>
               <Box><Text component="h1" fz={{ base: 28, md: 38 }} fw={850} lh={1.08} c="white" ff="var(--font-display),sans-serif">Карта АЗС России</Text><Text c="rgba(255,255,255,0.8)" mt={8} maw={620}>Выберите город, посмотрите открытые точки заправок и сразу постройте маршрут в привычном картографическом сервисе.</Text></Box>
-              <Text size="xs" c="rgba(255,255,255,0.64)">Данные о точках обновляются с кэшем. Цены и фактическое наличие топлива не публикуются без подтверждённого поставщика.</Text>
+              <Text size="xs" c="rgba(255,255,255,0.64)">Ищите любой населённый пункт или участок трассы по России. Цены и фактическое наличие показываются только от подтверждённого поставщика.</Text>
             </Stack>
             <Paper className="fuel-map-hero__control" radius="lg" p="md" withBorder>
-              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mb={6}>Город на карте</Text>
-              <Select aria-label="Выберите город" data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))} value={city} onChange={(value) => setCity(value || "Москва")} searchable size="sm" />
+              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mb={6}>Населённый пункт или трасса</Text>
+              <Box component="form" onSubmit={handlePlaceSearch}><TextInput aria-label="Введите населённый пункт или трассу" placeholder="Например: Уфа или М-5 Урал" value={placeQuery} onChange={(event) => setPlaceQuery(event.currentTarget.value)} rightSection={<ActionIcon type="submit" size="sm" variant="subtle" color="indigo" aria-label="Открыть место на карте"><IconSearch size={16} /></ActionIcon>} /></Box>
+              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Быстрый выбор города</Text>
+              <Select aria-label="Выберите город" data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))} value={place ? null : city} onChange={handleCityChange} searchable size="sm" placeholder="Выберите город" />
               <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Показать топливо</Text>
               <Select aria-label="Выберите тип топлива" data={FUEL_FILTERS} value={fuelFilter} onChange={(value) => setFuelFilter(value || "")} size="sm" />
             </Paper>
@@ -402,18 +510,19 @@ export default function FuelMapPage() {
         </Paper>
 
         <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с центром ${city}`}</Text><Text size="xs" c="dimmed">{data ? `${filteredStations.length} из ${data.stations.length} точек в подборке` : "Загружаем точки"}</Text></Box></Group>
+          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с ${areaLabel}`}</Text><Text size="xs" c="dimmed">{data ? `${filteredStations.length} из ${data.stations.length} точек в подборке${data.coverage.dataMode === "LIVE" ? " · статусы от поставщика" : " · справочник OSM"}` : "Загружаем точки"}</Text></Box></Group>
           <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => mutate()} loading={isLoading || isValidating}>Обновить</Button><Button color="indigo" size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>Загрузить этот участок</Button></Group>
         </Group>
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
-            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={city} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
+            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">{displayedStations.map((station) => (
                 <FuelStationCard
                   key={`${station.sourceType}-${station.id}`}
                   station={station}
+                  referenceCoordinates={coordinates}
                   isSelected={selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType}
                   onShowOnMap={showStationOnMap}
                 />
@@ -422,7 +531,7 @@ export default function FuelMapPage() {
           </SimpleGrid>
         )}
 
-        <Paper radius="lg" p="md" withBorder className="fuel-map-note"><Group gap="sm" wrap="nowrap"><ThemeIcon variant="light" color="cyan" radius="md"><IconMapPin size={18} /></ThemeIcon><Text size="sm" c="dimmed">{data?.disclaimer || "Точки и открытые теги предоставлены OpenStreetMap. Ассортимент, цены и наличие топлива уточняйте на АЗС."}</Text></Group></Paper>
+        <Paper radius="lg" p="md" withBorder className="fuel-map-note"><Group gap="sm" align="flex-start" wrap="nowrap"><ThemeIcon variant="light" color="cyan" radius="md"><IconMapPin size={18} /></ThemeIcon><Stack gap={2}><Text size="sm" c="dimmed">{data?.disclaimer || "Точки и открытые теги предоставлены OpenStreetMap. Ассортимент, цены и наличие топлива уточняйте на АЗС."}</Text>{data?.coverage.dataMode === "LIVE" && data.coverage.providerAttributionUrl && <Anchor size="xs" href={data.coverage.providerAttributionUrl} target="_blank" rel="noreferrer">Данные об АЗС: Заправкин</Anchor>}</Stack></Group></Paper>
       </Stack>
     </Box>
   )
