@@ -291,10 +291,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   return (
     <Container size="xl" py="lg">
       {/* Хлебные крошки */}
-      <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="gray.4" />}>
-        <Anchor component={Link} href="/" size="sm" c="gray.5">Главная</Anchor>
-        <Anchor component={Link} href={`/search?type=vehicle&vehicleType=${data.vehicleType}`} size="sm" c="gray.5">{typeMeta.label}</Anchor>
-        <Text size="sm" c="dark.9">{data.make} {data.model}</Text>
+      <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="var(--market-muted)" />}>
+        <Anchor component={Link} href="/" size="sm" c="var(--market-muted)">Главная</Anchor>
+        <Anchor component={Link} href={`/search?type=vehicle&vehicleType=${data.vehicleType}`} size="sm" c="var(--market-muted)">{typeMeta.label}</Anchor>
+        <Text size="sm" c="var(--market-ink)">{data.make} {data.model}</Text>
       </Breadcrumbs>
 
       <Box className="vehicle-detail-layout">
@@ -377,7 +377,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 <Box className="vehicle-detail-gallery__empty-state">
                   <Stack align="center" gap={6}>
                     <Box className="vehicle-detail-gallery__empty-icon">{typeMeta.icon}</Box>
-                    <Text size="sm" fw={700} c="dark.8">Фотографии ещё не добавлены</Text>
+                    <Text size="sm" fw={700} c="var(--market-ink)">Фотографии ещё не добавлены</Text>
                     <Text size="xs" c="dimmed" ta="center">Запросите фото у продавца перед договорённостью.</Text>
                   </Stack>
                 </Box>
@@ -434,7 +434,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             </Card>
 
             {/* VIN-паспорт выводится только для дорожного транспорта и без демо-утверждений. */}
-            {hasRoadVehicleDetails && data.vin && <Card withBorder radius="lg" p="lg" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 60%)", borderColor: "#bbf7d0" }}>
+            {hasRoadVehicleDetails && data.vin && <Card withBorder radius="lg" p="lg" className="vehicle-detail-feature-card vehicle-detail-feature-card--vin">
               <Group justify="space-between" mb="sm">
                 <Group gap={8}>
                   <ThemeIcon variant="light" color="green" size={32} radius="md">
@@ -458,14 +458,14 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             </Card>}
 
             {/* Безопасная сделка */}
-            <Card withBorder radius="lg" p="lg" style={{ background: "linear-gradient(135deg, #eef2ff 0%, #ffffff 60%)", borderColor: "#c7d2fe" }}>
+            <Card withBorder radius="lg" p="lg" className="vehicle-detail-feature-card vehicle-detail-feature-card--deal">
               <Group gap="md" align="flex-start">
                 <ThemeIcon variant="light" color="indigo" size={44} radius="md">
                   <IconShieldCheck size={24} />
                 </ThemeIcon>
                 <Stack gap={6} style={{ flex: 1 }}>
                   <Title order={3} size="h4">Сопровождаемая сделка</Title>
-                  <Text size="sm" c="gray.6">
+                  <Text size="sm" c="var(--market-muted)">
                     Проверка продавца и документов, прозрачные этапы и поддержка до передачи ключей.
                     Платформа не удерживает деньги: платежи оформляются по согласованным сторонами реквизитам.
                   </Text>
@@ -490,7 +490,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             {data.description && (
               <Card withBorder radius="lg" p="lg">
                 <Title order={3} size="h4" mb="sm">Описание</Title>
-                <Text size="sm" c="gray.6" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>
+                <Text size="sm" c="var(--market-muted)" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>
                   {data.description}
                 </Text>
               </Card>
@@ -504,10 +504,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
 
               {/* Форма отзыва */}
               {session ? (
-                <Paper radius="md" p="md" withBorder mb="md" style={{ background: "var(--mantine-color-gray-0)" }}>
+                <Paper radius="md" p="md" withBorder mb="md" style={{ background: "var(--market-surface-subtle)" }}>
                   <Stack gap="sm">
                     <Group gap="sm">
-                      <Text size="sm" fw={600} c="dark.9">Ваш отзыв</Text>
+                      <Text size="sm" fw={600} c="var(--market-ink)">Ваш отзыв</Text>
                       <Rating value={reviewRating} onChange={setReviewRating} size="md" />
                     </Group>
                     <Textarea placeholder="Поделитесь впечатлениями об авто..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} size="sm" minRows={2} autosize />
@@ -519,9 +519,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </Stack>
                 </Paper>
               ) : (
-                <Paper radius="md" p="md" withBorder mb="md" style={{ background: "var(--mantine-color-gray-0)" }}>
+                <Paper radius="md" p="md" withBorder mb="md" style={{ background: "var(--market-surface-subtle)" }}>
                   <Group gap="sm" justify="center">
-                    <Text size="sm" c="gray.5">Чтобы оставить отзыв,</Text>
+                    <Text size="sm" c="var(--market-muted)">Чтобы оставить отзыв,</Text>
                     <Anchor component={Link} href="/auth/signin" size="sm" c="indigo" fw={600}>войдите</Anchor>
                   </Group>
                 </Paper>
@@ -539,16 +539,16 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                           <Text size="sm" fw={500}>{review.user.name || "Аноним"}</Text>
                           <Rating value={review.rating} size="xs" readOnly />
                         </Stack>
-                        <Text size="xs" c="gray.4" ml="auto">{formatRelativeDate(review.createdAt)}</Text>
+                        <Text size="xs" c="var(--market-muted)" ml="auto">{formatRelativeDate(review.createdAt)}</Text>
                       </Group>
                       {review.comment && (
-                        <Text size="sm" c="gray.6" pl={36}>{review.comment}</Text>
+                        <Text size="sm" c="var(--market-muted)" pl={36}>{review.comment}</Text>
                       )}
                     </Box>
                   ))}
                 </Stack>
               ) : (
-                <Text size="sm" c="gray.5" ta="center" py="md">Пока нет отзывов. Будьте первым!</Text>
+                <Text size="sm" c="var(--market-muted)" ta="center" py="md">Пока нет отзывов. Будьте первым!</Text>
               )}
             </Card>
 
@@ -592,14 +592,14 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   ff="var(--font-display), sans-serif"
                   fw={700}
                   lh={1.2}
-                  c="dark.9"
+                  c="var(--market-ink)"
                 >
                   {data.year} {data.make} {data.model}
                 </Title>
                 <Text
                   size="1.75rem"
                   fw={800}
-                  c="dark.9"
+                  c="var(--market-ink)"
                   ff="var(--font-display), sans-serif"
                   lh={1.1}
                   mb="xs"
@@ -611,14 +611,14 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   Справедливая цена
                 </Badge>
                 <Group gap={6} mb="xs">
-                  <Text size="xs" c="gray.5">в кредит от</Text>
+                  <Text size="xs" c="var(--market-muted)">в кредит от</Text>
                   <Text size="sm" fw={700} c="indigo">{Math.round(data.price * 0.025 / 1000)}к ₽/мес</Text>
                 </Group>
                 <Group gap={6}>
-                  <IconMapPin size={13} color="gray.4" />
-                  <Text size="xs" c="gray.5">{data.location}</Text>
-                  <Text size="xs" c="gray.3">·</Text>
-                  <Group gap={3}><IconEye size={12} color="gray.4" /><Text size="xs" c="gray.5">{data.views} просмотров</Text></Group>
+                  <IconMapPin size={13} color="var(--market-muted)" />
+                  <Text size="xs" c="var(--market-muted)">{data.location}</Text>
+                  <Text size="xs" c="var(--market-muted)">·</Text>
+                  <Group gap={3}><IconEye size={12} color="var(--market-muted)" /><Text size="xs" c="var(--market-muted)">{data.views} просмотров</Text></Group>
                 </Group>
               </Card>
 
@@ -698,17 +698,17 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </Avatar>
                   <Stack gap={2}>
                     <Text fw={600}>{data.seller.name || "Продавец"}</Text>
-                    <Text size="xs" c="gray.4">На Авторынке с {formatDate(data.seller.memberSince)}</Text>
+                    <Text size="xs" c="var(--market-muted)">На Авторынке с {formatDate(data.seller.memberSince)}</Text>
                   </Stack>
                 </Group>
                 <Divider mb="sm" />
                 <Group gap={6} mb="xs">
                   <IconShieldCheck size={16} color="#10b981" />
-                  <Text size="sm" c="gray.6">Проверенный продавец</Text>
+                  <Text size="sm" c="var(--market-muted)">Проверенный продавец</Text>
                 </Group>
                 {data.seller.otherVehicles.length > 0 && (
                   <Box mt="sm">
-                    <Text size="xs" c="gray.5" mb={6}>Другие объявления ({data.seller.otherVehicles.length})</Text>
+                    <Text size="xs" c="var(--market-muted)" mb={6}>Другие объявления ({data.seller.otherVehicles.length})</Text>
                     {data.seller.otherVehicles.slice(0, 3).map((v) => (
                       <Anchor
                         key={v.id}
@@ -735,7 +735,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
 function VinField({ label, value, status }: { label: string; value: string; status?: "ok" | "warn" }) {
   return (
     <Stack gap={2}>
-      <Text size="xs" c="gray.5">{label}</Text>
+      <Text size="xs" c="var(--market-muted)">{label}</Text>
       <Group gap={4}>
         {status === "ok" && <IconCheck size={13} color="#16a34a" />}
         <Text size="sm" fw={500} c={status === "ok" ? "#16a34a" : "var(--mantine-color-text)"}>{value}</Text>

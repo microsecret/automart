@@ -2791,12 +2791,12 @@ select {
 
 .vehicle-detail-specs__grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  background: linear-gradient(135deg, rgba(238,242,255,.78), rgba(255,255,255,.92));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--market-primary-soft) 76%, var(--market-surface)), var(--market-surface));
 }
 
 .vehicle-detail-statuses__grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  background: linear-gradient(135deg, rgba(238,242,255,.78), rgba(255,255,255,.92));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--market-primary-soft) 76%, var(--market-surface)), var(--market-surface));
 }
 
 .vehicle-detail-specs__item,
@@ -2809,7 +2809,7 @@ select {
 }
 
 .vehicle-detail-specs__item {
-  background: rgba(255,255,255,.68);
+  background: color-mix(in srgb, var(--market-surface) 88%, transparent);
 }
 
 .vehicle-detail-specs__label,
@@ -2851,7 +2851,21 @@ select {
 .vehicle-detail-statuses__item {
   position: relative;
   padding-left: 20px;
-  background: rgba(255,255,255,.68);
+  background: color-mix(in srgb, var(--market-surface) 88%, transparent);
+}
+
+.vehicle-detail-feature-card {
+  box-shadow: 0 18px 34px -38px rgba(15, 23, 42, 0.64);
+}
+
+.vehicle-detail-feature-card--vin {
+  background: linear-gradient(135deg, color-mix(in srgb, #dcfce7 62%, var(--market-surface)), var(--market-surface) 62%);
+  border-color: color-mix(in srgb, #86efac 58%, var(--market-line));
+}
+
+.vehicle-detail-feature-card--deal {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--market-primary-soft) 84%, var(--market-surface)), var(--market-surface) 64%);
+  border-color: color-mix(in srgb, var(--market-primary) 26%, var(--market-line));
 }
 
 .vehicle-detail-statuses__item::before {
