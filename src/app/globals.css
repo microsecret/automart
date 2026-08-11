@@ -2287,6 +2287,23 @@ select {
   align-items: end;
 }
 
+.auction-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.auction-detail-layout__main,
+.auction-detail-layout__aside {
+  min-width: 0;
+}
+
+.auction-detail-layout__aside > .mantine-Paper-root {
+  position: sticky;
+  top: 80px;
+}
+
 .auction-price-range {
   display: grid;
   gap: 4px;
@@ -3150,6 +3167,16 @@ select {
 
   .catalog-filter-panel__intro {
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 62em) {
+  .auction-detail-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .auction-detail-layout__aside > .mantine-Paper-root {
+    position: static;
   }
 }
 

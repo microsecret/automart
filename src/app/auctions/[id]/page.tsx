@@ -68,9 +68,9 @@ function AuctionDetail() {
           <Text size="sm" c="dark.9">{listing.make} {listing.model}</Text>
         </Breadcrumbs>
 
-        <Group gap="md" align="flex-start" wrap="nowrap">
+        <Box className="auction-detail-layout">
           {/* Левая — фото + характеристики */}
-          <Box style={{ flex: 1, minWidth: 0 }}>
+          <Box className="auction-detail-layout__main">
             <Stack gap="md">
               <Paper radius="md" withBorder style={{ overflow: "hidden" }}>
                 <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
@@ -127,8 +127,8 @@ function AuctionDetail() {
           </Box>
 
           {/* Правая — заявка */}
-          <Box style={{ width: 340, flexShrink: 0 }}>
-            <Paper radius="md" p="lg" withBorder style={{ position: "sticky", top: 80, borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
+          <Box className="auction-detail-layout__aside">
+            <Paper radius="md" p="lg" withBorder style={{ borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
               {submitted ? (
                 <Stack gap="md" align="center" py="md">
                   <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>
@@ -157,7 +157,7 @@ function AuctionDetail() {
               )}
             </Paper>
           </Box>
-        </Group>
+        </Box>
       </Stack>
     </Container>
   )
