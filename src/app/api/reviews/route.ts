@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       prisma.review.count({
         where
       }),
-      Promise.all(ratings.map((rating) => prisma.review.count({ where: { AND: [where, { rating }] } })),
+      Promise.all(ratings.map((rating) => prisma.review.count({ where: { AND: [where, { rating }] } }))),
     ])
 
     const distribution = ratings.map((rating, index) => ({
