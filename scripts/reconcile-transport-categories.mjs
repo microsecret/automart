@@ -217,6 +217,21 @@ async function main() {
       data: { year: 2020 },
     })
 
+    // Keep a machine-generated demo title in sync with the corrected model
+    // year. The exact pattern intentionally excludes titles edited by a user.
+    const modelYTitleCandidates = await tx.listing.findMany({
+      where: { vehicle: { is: { vehicleType: "CAR", make: "Tesla", model: "Model Y" } } },
+      select: { id: true, title: true, vehicle: { select: { year: true, make: true, model: true } } },
+    })
+    let modelYTitleRepair = 0
+    for (const listing of modelYTitleCandidates) {
+      const expectedTitle = `${listing.vehicle.year} ${listing.vehicle.make} ${listing.vehicle.model}`
+      if (/^\d{4}\s+Tesla\s+Model Y$/.test(listing.title) && listing.title !== expectedTitle) {
+        await tx.listing.update({ where: { id: listing.id }, data: { title: expectedTitle } })
+        modelYTitleRepair += 1
+      }
+    }
+
     // Seed data used a couple of stock Unsplash images for many unrelated
     // listings. They look like real seller photos in a marketplace and damage
     // buyer trust (the same image appeared on cars and motorcycles). The UI
@@ -265,7 +280,7 @@ async function main() {
     }
 
     console.log(
-      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values, ${electricTransmissionRepair.count} EV transmissions, ${dusterElectricRepair.count} invalid Duster fuel values and ${modelYYearRepair.count} Tesla Model Y years; cleared ${clearedVehicleMedia} vehicle and ${clearedPartMedia} part demo media records`,
+      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values, ${electricTransmissionRepair.count} EV transmissions, ${dusterElectricRepair.count} invalid Duster fuel values, ${modelYYearRepair.count} Tesla Model Y years and ${modelYTitleRepair} generated titles; cleared ${clearedVehicleMedia} vehicle and ${clearedPartMedia} part demo media records`,
     )
   })
 
