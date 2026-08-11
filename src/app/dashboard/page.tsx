@@ -1,6 +1,6 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import Link from "next/link"
@@ -124,6 +124,14 @@ const formatMemberSince = (value: string | null) => value
   : "—"
 
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<Box p={{ base: "sm", md: "md" }}><ResultsGridSkeleton count={6} mediaHeight={44} /></Box>}>
+      <DashboardContent />
+    </Suspense>
+  )
+}
+
+function DashboardContent() {
   const { data: session, update: updateSession } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
