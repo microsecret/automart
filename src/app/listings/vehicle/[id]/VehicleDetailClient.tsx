@@ -245,9 +245,12 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const usageValue = usageMeta.field === "flightHours" ? data.flightHours
     : usageMeta.field === "operatingHours" ? data.operatingHours
     : data.mileage
-  const usageDisplay = usageValue == null ? "Не указано"
-    : usageMeta.field === "mileage" ? formatMileage(usageValue)
-    : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
+  const numericUsage = typeof usageValue === "number" && Number.isFinite(usageValue)
+    ? usageValue
+    : null
+  const usageDisplay = numericUsage === null ? null
+    : usageMeta.field === "mileage" ? formatMileage(numericUsage)
+    : `${new Intl.NumberFormat("ru-RU").format(numericUsage)} ${usageMeta.unit}`
   const typeDetails = parseTypeDetails(data.typeDetails)
   const typeDetailKey: Partial<Record<string, string>> = {
     MOTORCYCLE: "motorcycleType", TRUCK: "truckBodyType", SPECIAL: "specialType", WATER: "waterType", AIR: "airType",
@@ -269,7 +272,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
 
   const specs = [
     { icon: <IconCalendar size={20} />, label: "Год", value: String(data.year) },
-    { icon: <IconGauge size={20} />, label: usageMeta.label, value: usageDisplay },
+    ...(usageDisplay ? [{ icon: <IconGauge size={20} />, label: usageMeta.label, value: usageDisplay }] : []),
     { icon: typeMeta.icon, label: typeMeta.detailLabel, value: primaryTypeValue },
     { icon: <IconGasStation size={20} />, label: "Топливо", value: data.fuelTypeLabel || "—" },
     ...(supportsTransmission(data.vehicleType) ? [
@@ -446,7 +449,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               </Group>
               <Box className="vehicle-detail-vin-grid">
                 <VinField label="VIN" value={data.vin} />
-                <VinField label={usageMeta.label} value={usageDisplay} status="ok" />
+                {usageDisplay && <VinField label={usageMeta.label} value={usageDisplay} status="ok" />}
                 <VinField label="Владельцев по ПТС" value={data.ownersCount ? String(data.ownersCount) : "Не указано"} status="ok" />
                 <VinField label="Проверка ограничений" value="Подключается отдельно" />
                 <VinField label="История ДТП" value="Подключается отдельно" />

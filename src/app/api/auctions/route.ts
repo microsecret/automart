@@ -12,6 +12,15 @@ const SOURCE_COUNTRY: Record<string, string> = {
 const VALID_COUNTRIES = new Set(["JP", "KR", "CN", "US", "DE"])
 const VALID_BODY_TYPES = new Set(["SEDAN", "SUV", "HATCHBACK", "COUPE", "PICKUP", "WAGON"])
 
+/**
+ * The public navigation used the human-facing "EU" alias before auctions
+ * adopted ISO country codes. Keep old bookmarks working, but use one
+ * canonical value for validation and filtering below.
+ */
+function normalizeCountry(value: string | null) {
+  return value === "EU" ? "DE" : value
+}
+
 export async function GET(request: NextRequest) {
   try {
     const sp = request.nextUrl.searchParams
@@ -23,7 +32,7 @@ export async function GET(request: NextRequest) {
       status: "ACTIVE",
       OR: [{ auctionDate: null }, { auctionDate: { gte: new Date() } }],
     }
-    const country = sp.get("country")
+    const country = normalizeCountry(sp.get("country"))
     const source = sp.get("source")
     const make = sp.get("make")
     const priceFrom = sp.get("priceFrom")

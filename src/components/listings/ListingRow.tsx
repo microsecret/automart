@@ -44,9 +44,12 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const usageValue = usageMeta.field === "flightHours" ? listing.vehicle?.flightHours
     : usageMeta.field === "operatingHours" ? listing.vehicle?.operatingHours
     : listing.vehicle?.mileage
-  const distanceValue = usageValue == null ? "Не указано"
-    : usageMeta.field === "mileage" ? formatMileage(usageValue)
-    : `${new Intl.NumberFormat("ru-RU").format(usageValue)} ${usageMeta.unit}`
+  const numericUsage = typeof usageValue === "number" && Number.isFinite(usageValue)
+    ? usageValue
+    : null
+  const distanceValue = numericUsage === null ? null
+    : usageMeta.field === "mileage" ? formatMileage(numericUsage)
+    : `${new Intl.NumberFormat("ru-RU").format(numericUsage)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
   const isFav = favoriteIds.has(listing.id)
   const monthlyPayment = formatMonthlyPayment(listing.price)
@@ -158,7 +161,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
               {isVehicle && (
                 <Group className="listing-card__row-facts" gap={0} wrap="wrap" mt={2}>
                   <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
-                  <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>
+                  {distanceValue && <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>}
                   {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
                     <Text fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="dark.8">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
                   )}

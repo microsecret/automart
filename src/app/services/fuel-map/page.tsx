@@ -491,6 +491,7 @@ export default function FuelMapPage() {
   const coordinates = data?.coordinates || requestedCoordinates || cityCoordinates
   const areaLabel = data?.areaLabel || place || city
   const isViewingMapArea = Boolean(requestedCoordinates)
+  const hasUnloadedMapArea = getDistanceInKilometers(coordinates, viewportCoordinates) > 0.35
   const allStations = data?.stations ?? EMPTY_STATIONS
   const networkFilters = useMemo(() => {
     const networks = allStations
@@ -526,9 +527,6 @@ export default function FuelMapPage() {
   }, [selectedStation?.id, selectedStation?.sourceType, selectedStation?.address, selectedStation?.latitude, selectedStation?.longitude])
   const { data: selectedStationAddressData, isLoading: isStationAddressLoading } = useSWR<FuelStationAddressResponse>(selectedStationAddressUrl, fetchJson, { revalidateOnFocus: false })
   const selectedStationAddress = selectedStation?.address || selectedStationAddressData?.address || null
-  const selectedStationInResults = selectedStation && filteredStations.some((station) => `${station.sourceType}-${station.id}` === selectedStationKey)
-    ? selectedStation
-    : null
   const listedStations = selectedStationKey
     ? displayedStations.filter((station) => `${station.sourceType}-${station.id}` !== selectedStationKey)
     : displayedStations
@@ -606,15 +604,17 @@ export default function FuelMapPage() {
 
         <Group justify="space-between" align="center" gap="sm" wrap="wrap">
           <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с ${areaLabel}`}</Text><Text size="xs" c="dimmed">{data ? `${filteredStations.length} из ${data.stations.length} точек в подборке${data.coverage.dataMode === "LIVE" ? " · статусы от поставщика" : " · справочник OSM"}` : "Загружаем точки"}</Text></Box></Group>
-          <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button><Button color="indigo" size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>Загрузить этот участок</Button></Group>
+          <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button><Button color={hasUnloadedMapArea ? "indigo" : "gray"} variant={hasUnloadedMapArea ? "filled" : "light"} size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>{hasUnloadedMapArea ? "Загрузить текущий участок" : "Участок загружен"}</Button></Group>
         </Group>
+
+        {hasUnloadedMapArea && <Paper radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-indigo-2)", background: "var(--mantine-color-indigo-0)" }}><Group gap="xs" wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="indigo" variant="light"><IconMapPin size={14} /></ThemeIcon><Text size="sm" c="indigo.9">Вы переместили карту. Загрузите текущий участок, чтобы обновить список АЗС, расстояния и доступные справочные данные.</Text></Group></Paper>}
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">
-                {selectedStationInResults && <Box className="fuel-map-list__selection" aria-live="polite"><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Выбранная АЗС</Text><FuelStationCard station={selectedStationInResults} referenceCoordinates={coordinates} isSelected resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} /></Box>}
+                {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationCard station={selectedStation} referenceCoordinates={coordinates} isSelected resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} /></Box>}
                 {listedStations.map((station) => (
                 <FuelStationCard
                   key={`${station.sourceType}-${station.id}`}

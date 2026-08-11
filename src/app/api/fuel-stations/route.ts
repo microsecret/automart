@@ -313,10 +313,35 @@ function getDistanceSquared(first: FuelStationPayload, second: FuelStationPayloa
   return latitude ** 2 + longitude ** 2
 }
 
+const STATION_MATCH_DISTANCE_SQUARED = (35 / 111_000) ** 2
+
+function getStationIdentity(station: FuelStationPayload) {
+  const source = station.brand || station.operator || (station.name !== "АЗС" ? station.name : null)
+  return source
+    ?.toLocaleLowerCase("ru-RU")
+    .replace(/[«»'"`]/g, "")
+    .replace(/\b(азс|агзс|fuel|station)\b/giu, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "") || null
+}
+
+function canMergeStations(liveStation: FuelStationPayload, directoryStation: FuelStationPayload) {
+  if (getDistanceSquared(liveStation, directoryStation) > STATION_MATCH_DISTANCE_SQUARED) return false
+
+  const liveIdentity = getStationIdentity(liveStation)
+  const directoryIdentity = getStationIdentity(directoryStation)
+  if (!liveIdentity || !directoryIdentity) return true
+
+  return liveIdentity === directoryIdentity
+    || liveIdentity.includes(directoryIdentity)
+    || directoryIdentity.includes(liveIdentity)
+}
+
 function mergeStations(liveStations: FuelStationPayload[], directoryStations: FuelStationPayload[]) {
   const unmatchedDirectoryStations = [...directoryStations]
   const mergedLiveStations = liveStations.map((liveStation) => {
-    const directoryIndex = unmatchedDirectoryStations.findIndex((directoryStation) => getDistanceSquared(liveStation, directoryStation) < 0.000001)
+    // В городе несколько АЗС могут стоять рядом. Нельзя присваивать live-цены
+    // и наличие первой попавшейся OSM-точке только по близости координат.
+    const directoryIndex = unmatchedDirectoryStations.findIndex((directoryStation) => canMergeStations(liveStation, directoryStation))
     if (directoryIndex < 0) return liveStation
 
     const directoryStation = unmatchedDirectoryStations.splice(directoryIndex, 1)[0]

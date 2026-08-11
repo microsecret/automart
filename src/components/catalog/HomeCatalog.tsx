@@ -179,7 +179,12 @@ export default function HomePage(p: HomePageProps = {}) {
                   {[
                     ["Выбор и проверка", "Каталог, фото и история лота"],
                     ["Договорённость", "Прозрачные условия с продавцом"],
-                    ["Доставка под контролем", `${auctionStats.auctions || "—"} лотов из пяти стран`],
+                    [
+                      "Доставка под контролем",
+                      auctionStats.auctions
+                        ? `${auctionStats.auctions} лотов из пяти стран`
+                        : "Аукционы и доставка из пяти стран",
+                    ],
                   ].map(([title, description], index) => (
                     <Group key={title} gap="sm" wrap="nowrap" align="flex-start" className="home-auctions__journey-step">
                       <Box className="home-auctions__journey-mark">{index + 1}</Box>

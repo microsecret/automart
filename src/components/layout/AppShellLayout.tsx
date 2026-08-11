@@ -37,7 +37,7 @@ const AUCTIONS = [
   { label: "Корея", href: "/auctions?country=KR" },
   { label: "Китай", href: "/auctions?country=CN" },
   { label: "США", href: "/auctions?country=US" },
-  { label: "Европа", href: "/auctions?country=EU" },
+  { label: "Европа", href: "/auctions?country=DE" },
 ]
 
 const SERVICES = [
