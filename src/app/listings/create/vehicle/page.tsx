@@ -269,7 +269,7 @@ export default function CreateVehiclePage() {
                   </Stack>
                   <Badge size="sm" color="gray" variant="light">Шаг 2</Badge>
                 </Group>
-                <TextInput label="Заголовок" placeholder="2018 Toyota Camry" required value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />
+                <TextInput label="Заголовок (необязательно)" description="Если оставить пустым, подставим год, марку и модель." placeholder="Например, Toyota Camry в отличном состоянии" value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />
                 <Group gap="sm" grow>
                   <TextInput
                     label="Марка"
