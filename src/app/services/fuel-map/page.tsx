@@ -41,6 +41,11 @@ type FuelStationsResponse = {
   }
 }
 
+type FuelStationAddressResponse = {
+  address: string | null
+  source: "OPENSTREETMAP"
+}
+
 const TILE_SIZE = 256
 const MAP_WORLD_SPAN = TILE_SIZE * 3
 const MIN_ZOOM = 9
@@ -161,11 +166,12 @@ function formatFuelPrice(price: number | null) {
   return price === null ? null : new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(price)
 }
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect, onViewportChange }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
   selectedStation: FuelStation | null
+  selectedStationAddress: string | null
   onSelect: (station: FuelStation) => void
   onViewportChange: (coordinates: { latitude: number; longitude: number }) => void
 }) {
@@ -355,15 +361,17 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, onSelect
       </Group>
       <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · тяните карту, масштабируйте колесом</Text></Box>
       <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-quality="live">Есть live-данные</Text><Text component="span" data-quality="fuel">Топливо отмечено</Text><Text component="span" data-quality="network">Сеть указана</Text><Text component="span" data-quality="basic">Без тегов</Text></Box>
-      {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite"><Group justify="space-between" gap="xs" wrap="nowrap"><Text size="xs" fw={750} lineClamp={1}>{selectedStation.name}</Text><Badge size="xs" color={getStationStatus(selectedStation).color} variant="light">{getStationStatus(selectedStation).label}</Badge></Group><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || getStationNetwork(selectedStation) || "Адрес не указан"}</Text><Group gap={4} mt={4} wrap="wrap">{selectedStation.prices.length ? selectedStation.prices.slice(0, 3).map((price) => <Badge key={price.fuel} size="xs" color="teal" variant="light">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>) : selectedStation.fuels.length ? selectedStation.fuels.slice(0, 4).map((fuel) => <Badge key={fuel} size="xs" color="teal" variant="light">{fuel}</Badge>) : <Badge size="xs" color="gray" variant="light">Ассортимент не указан</Badge>}</Group><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{formatStationTimestamp(selectedStation.statusUpdatedAt) ? `Обновлено: ${formatStationTimestamp(selectedStation.statusUpdatedAt)}` : selectedStation.fuels.length ? "Топливо отмечено в OpenStreetMap" : getStationDataSummary(selectedStation)}</Text></Paper>}
+      {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite"><Group justify="space-between" gap="xs" wrap="nowrap"><Text size="xs" fw={750} lineClamp={1}>{selectedStation.name}</Text><Badge size="xs" color={getStationStatus(selectedStation).color} variant="light">{getStationStatus(selectedStation).label}</Badge></Group><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || selectedStationAddress || getStationNetwork(selectedStation) || "Уточняем адрес по OSM…"}</Text><Group gap={4} mt={4} wrap="wrap">{selectedStation.prices.length ? selectedStation.prices.slice(0, 3).map((price) => <Badge key={price.fuel} size="xs" color="teal" variant="light">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>) : selectedStation.fuels.length ? selectedStation.fuels.slice(0, 4).map((fuel) => <Badge key={fuel} size="xs" color="teal" variant="light">{fuel}</Badge>) : <Badge size="xs" color="gray" variant="light">Ассортимент не указан</Badge>}</Group><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{formatStationTimestamp(selectedStation.statusUpdatedAt) ? `Обновлено: ${formatStationTimestamp(selectedStation.statusUpdatedAt)}` : selectedStation.fuels.length ? "Топливо отмечено в OpenStreetMap" : getStationDataSummary(selectedStation)}</Text></Paper>}
     </Paper>
   )
 }
 
-function FuelStationCard({ station, referenceCoordinates, isSelected, onShowOnMap }: {
+function FuelStationCard({ station, referenceCoordinates, isSelected, resolvedAddress, isAddressLoading, onShowOnMap }: {
   station: FuelStation
   referenceCoordinates: { latitude: number; longitude: number }
   isSelected: boolean
+  resolvedAddress?: string | null
+  isAddressLoading?: boolean
   onShowOnMap: (station: FuelStation) => void
 }) {
   const dataQuality = getStationDataQuality(station)
@@ -375,6 +383,7 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, onShowOnMa
   const iconColor = dataQuality === "live" ? stationStatus.color : dataQuality === "fuel" ? "teal" : dataQuality === "network" ? "orange" : "gray"
   const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
   const distance = formatDistance(getDistanceInKilometers(referenceCoordinates, station))
+  const displayAddress = station.address || resolvedAddress
   const selectStation = () => onShowOnMap(station)
 
   return (
@@ -392,7 +401,7 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, onShowOnMa
           <ThemeIcon variant={networkIdentity ? "filled" : "light"} color={iconColor} radius="md" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkIdentity ? networkIdentity.shortLabel : <IconGasStation size={17} />}</ThemeIcon>
           <Box style={{ minWidth: 0 }}>
             <Text fw={750} size="sm" lineClamp={1}>{station.name}</Text>
-            <Text size="xs" c="dimmed" lineClamp={1}>{station.address || network || "Адрес не указан"}</Text>
+            <Text size="xs" c="dimmed" lineClamp={1}>{displayAddress || network || (isAddressLoading ? "Уточняем адрес по OSM…" : "Адрес не указан")}</Text>
           </Box>
         </Group>
         {station.sourceType !== "provider" && <Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id.replace(/^osm-[^-]+-/, "")}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor>}
@@ -407,6 +416,7 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, onShowOnMa
             ? station.fuels.map((fuel) => <Badge key={fuel} size="xs" variant="light" color="teal">{fuel}</Badge>)
             : <Badge size="xs" variant="outline" color="gray">Ассортимент не указан</Badge>}
         {station.openingHours && <Badge size="xs" variant="outline" color="gray">{station.openingHours}</Badge>}
+        {isSelected && !station.address && resolvedAddress && <Badge size="xs" variant="outline" color="blue">Адрес OSM</Badge>}
       </Group>
       <Text size="10px" c="dimmed" mt={7}>{statusUpdated ? `Данные обновлены: ${statusUpdated}` : getStationDataSummary(station)}</Text>
       <Group mt={8} gap={4}>
@@ -469,6 +479,13 @@ export default function FuelMapPage() {
   const displayedStations = filteredStations.slice(0, visibleStationCount)
   const hasMoreStations = displayedStations.length < filteredStations.length
   const selectedStationKey = selectedStation ? `${selectedStation.sourceType}-${selectedStation.id}` : null
+  const selectedStationAddressUrl = useMemo(() => {
+    if (!selectedStation || selectedStation.address) return null
+    const params = new URLSearchParams({ detail: "address", latitude: selectedStation.latitude.toFixed(6), longitude: selectedStation.longitude.toFixed(6) })
+    return `/api/fuel-stations?${params.toString()}`
+  }, [selectedStation?.id, selectedStation?.sourceType, selectedStation?.address, selectedStation?.latitude, selectedStation?.longitude])
+  const { data: selectedStationAddressData, isLoading: isStationAddressLoading } = useSWR<FuelStationAddressResponse>(selectedStationAddressUrl, fetchJson, { revalidateOnFocus: false })
+  const selectedStationAddress = selectedStation?.address || selectedStationAddressData?.address || null
   const selectedStationInResults = selectedStation && filteredStations.some((station) => `${station.sourceType}-${station.id}` === selectedStationKey)
     ? selectedStation
     : null
@@ -552,10 +569,10 @@ export default function FuelMapPage() {
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
-            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
+            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">
-                {selectedStationInResults && <Box className="fuel-map-list__selection" aria-live="polite"><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Выбранная АЗС</Text><FuelStationCard station={selectedStationInResults} referenceCoordinates={coordinates} isSelected onShowOnMap={showStationOnMap} /></Box>}
+                {selectedStationInResults && <Box className="fuel-map-list__selection" aria-live="polite"><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Выбранная АЗС</Text><FuelStationCard station={selectedStationInResults} referenceCoordinates={coordinates} isSelected resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} /></Box>}
                 {listedStations.map((station) => (
                 <FuelStationCard
                   key={`${station.sourceType}-${station.id}`}

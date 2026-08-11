@@ -55,6 +55,11 @@ type CachedDirectoryStations = {
   expiresAt: number
 }
 
+type CachedStationAddress = {
+  address: string | null
+  expiresAt: number
+}
+
 const FUEL_TAG_LABELS: Record<string, string> = {
   "fuel:diesel": "ДТ",
   "fuel:octane_92": "АИ‑92",
@@ -101,9 +106,12 @@ const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search"
 const ZAPRAVKIN_BASE_URL = (process.env.ZAPRAVKIN_API_URL || "https://api.zapravkin24.ru/v1").replace(/\/$/, "")
 const PLACE_CACHE_TTL = 1000 * 60 * 60 * 12
 const DIRECTORY_STATION_CACHE_TTL = 1000 * 60 * 20
+const STATION_ADDRESS_CACHE_TTL = 1000 * 60 * 60 * 24 * 7
 const MAX_DIRECTORY_CACHE_ENTRIES = 80
+const MAX_STATION_ADDRESS_CACHE_ENTRIES = 600
 const placeCache = new Map<string, CachedPlace>()
 const directoryStationCache = new Map<string, CachedDirectoryStations>()
+const stationAddressCache = new Map<string, CachedStationAddress>()
 let lastNominatimRequestAt = 0
 
 function hasPublishedFuelTag(value: string | undefined) {
@@ -148,6 +156,15 @@ function cacheDirectoryStations(key: string, stations: FuelStationPayload[]) {
   directoryStationCache.set(key, { stations, expiresAt: Date.now() + DIRECTORY_STATION_CACHE_TTL })
 }
 
+function cacheStationAddress(key: string, address: string | null) {
+  if (stationAddressCache.size >= MAX_STATION_ADDRESS_CACHE_ENTRIES) {
+    const oldestKey = stationAddressCache.keys().next().value
+    if (oldestKey) stationAddressCache.delete(oldestKey)
+  }
+
+  stationAddressCache.set(key, { address, expiresAt: Date.now() + STATION_ADDRESS_CACHE_TTL })
+}
+
 function isRussianMapCoordinate(latitude: number, longitude: number) {
   return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= 41 && latitude <= 82 && longitude >= 19 && longitude <= 190
 }
@@ -163,6 +180,12 @@ function asString(value: unknown) {
 function asNumber(value: unknown) {
   const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value.replace(",", ".")) : Number.NaN
   return Number.isFinite(parsed) ? parsed : null
+}
+
+async function waitForNominatimPolicy() {
+  const waitForPolicy = Math.max(0, 1_000 - (Date.now() - lastNominatimRequestAt))
+  if (waitForPolicy) await new Promise((resolve) => setTimeout(resolve, waitForPolicy))
+  lastNominatimRequestAt = Date.now()
 }
 
 function normalizeFuel(value: unknown) {
@@ -328,8 +351,7 @@ async function resolveRussianPlace(value: string) {
   const cached = placeCache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) return cached
 
-  const waitForPolicy = Math.max(0, 1_000 - (Date.now() - lastNominatimRequestAt))
-  if (waitForPolicy) await new Promise((resolve) => setTimeout(resolve, waitForPolicy))
+  await waitForNominatimPolicy()
 
   const search = new URLSearchParams({
     q: `${place}, Россия`,
@@ -343,7 +365,6 @@ async function resolveRussianPlace(value: string) {
     headers: { "user-agent": contact ? `AutoMarket fuel-map/1.0 (${contact})` : "AutoMarket fuel-map/1.0" },
     next: { revalidate: 0 },
   })
-  lastNominatimRequestAt = Date.now()
   if (!response.ok) throw new Error(`Nominatim responded with ${response.status}`)
 
   const result = (await response.json() as NominatimResult[])[0]
@@ -358,6 +379,33 @@ async function resolveRussianPlace(value: string) {
   }
   placeCache.set(cacheKey, resolved)
   return resolved
+}
+
+async function resolveStationAddress(coordinates: Coordinates) {
+  const cacheKey = `${coordinates.latitude.toFixed(5)}:${coordinates.longitude.toFixed(5)}`
+  const cached = stationAddressCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.address
+
+  await waitForNominatimPolicy()
+  const search = new URLSearchParams({
+    lat: coordinates.latitude.toFixed(6),
+    lon: coordinates.longitude.toFixed(6),
+    format: "jsonv2",
+    zoom: "18",
+    addressdetails: "1",
+    "accept-language": "ru",
+  })
+  const contact = process.env.FUEL_MAP_CONTACT_EMAIL?.trim()
+  const response = await fetch(`${NOMINATIM_ENDPOINT.replace(/\/search$/, "/reverse")}?${search.toString()}`, {
+    headers: { "user-agent": contact ? `AutoMarket fuel-map/1.0 (${contact})` : "AutoMarket fuel-map/1.0" },
+    next: { revalidate: 0 },
+  })
+  if (!response.ok) throw new Error(`Nominatim reverse geocoding responded with ${response.status}`)
+
+  const result = await response.json() as NominatimResult
+  const address = result.display_name?.split(",").slice(0, 4).map((part) => part.trim()).filter(Boolean).join(", ") || null
+  cacheStationAddress(cacheKey, address)
+  return address
 }
 
 async function requestLiveStations(coordinates: Coordinates, radius: number) {
@@ -434,12 +482,29 @@ function normalizeDirectoryStations(elements: OverpassElement[]) {
  * Мы сознательно не подменяем справочные OSM-теги "онлайн"-данными.
  */
 export async function GET(request: NextRequest) {
+  const detail = request.nextUrl.searchParams.get("detail")
   const city = request.nextUrl.searchParams.get("city") || "Москва"
   const place = request.nextUrl.searchParams.get("place")?.trim() || null
   const latitudeParam = request.nextUrl.searchParams.get("latitude")
   const longitudeParam = request.nextUrl.searchParams.get("longitude")
   const hasCustomCoordinates = latitudeParam !== null || longitudeParam !== null
   const requestedCoordinates = hasCustomCoordinates ? { latitude: Number(latitudeParam), longitude: Number(longitudeParam) } : null
+
+  if (detail === "address") {
+    if (!requestedCoordinates || !isRussianMapCoordinate(requestedCoordinates.latitude, requestedCoordinates.longitude)) {
+      return NextResponse.json({ error: "Выберите точку АЗС на территории России" }, { status: 400 })
+    }
+
+    try {
+      const address = await resolveStationAddress(requestedCoordinates)
+      return NextResponse.json({ address, source: "OPENSTREETMAP" }, {
+        headers: { "Cache-Control": "public, max-age=3600, s-maxage=604800, stale-while-revalidate=86400" },
+      })
+    } catch (error) {
+      console.warn("Fuel station reverse geocoding failed", error instanceof Error ? error.message : "Unknown error")
+      return NextResponse.json({ error: "Адрес точки временно недоступен. Попробуйте позже." }, { status: 503 })
+    }
+  }
 
   if (place && (place.length < 2 || place.length > 120)) {
     return NextResponse.json({ error: "Укажите населённый пункт или трассу от 2 до 120 символов" }, { status: 400 })
