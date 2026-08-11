@@ -85,8 +85,8 @@ export default function CreatePartPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Продать запчасть</Text>
-            <Text size="xs" c="gray.5">Заполните карточку — после проверки она появится в каталоге запчастей.</Text>
+            <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Продать запчасть</Text>
+            <Text size="xs" c="var(--market-muted)">Заполните карточку — после проверки она появится в каталоге запчастей.</Text>
           </Stack>
         </Group>
 
@@ -107,7 +107,7 @@ export default function CreatePartPage() {
               >
                 <Text className="create-listing__journey-number">{step.number}</Text>
                 <Stack gap={1}>
-                  <Text size="xs" fw={800} c="dark.8">{step.label}</Text>
+                  <Text size="xs" fw={800} c="var(--market-ink)">{step.label}</Text>
                   <Text size="11px" c="dimmed">{step.description}</Text>
                 </Stack>
               </Group>
@@ -121,7 +121,7 @@ export default function CreatePartPage() {
               <Stack gap="sm">
                 <Group justify="space-between" align="flex-start">
                   <Stack gap={1}>
-                    <Text fw={700} fz="sm" c="dark.9">Информация о запчасти</Text>
+                    <Text fw={700} fz="sm" c="var(--market-ink)">Информация о запчасти</Text>
                     <Text size="xs" c="dimmed">Понятная карточка с артикулом, ценой и способом покупки.</Text>
                   </Stack>
                   <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
@@ -137,17 +137,17 @@ export default function CreatePartPage() {
                 </Group>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="dark.7">Состояние</Text>
+                    <Text size="xs" fw={700} c="var(--market-ink)">Состояние</Text>
                     <SegmentedControl aria-label="Состояние запчасти" value={f.condition} onChange={(value) => set("condition", value)} data={PART_CONDITIONS.map(({ value, label }) => ({ value, label }))} size="sm" radius="md" fullWidth />
                   </Stack>
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="dark.7">Наличие</Text>
+                    <Text size="xs" fw={700} c="var(--market-ink)">Наличие</Text>
                     <SegmentedControl aria-label="Наличие запчасти" value={f.availability} onChange={(value) => set("availability", value)} data={PART_AVAILABILITY_TYPES.map(({ value, label }) => ({ value, label }))} size="sm" radius="md" fullWidth />
                   </Stack>
                 </SimpleGrid>
                 <Group gap="sm" grow>
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="dark.7">Формат сделки</Text>
+                    <Text size="xs" fw={700} c="var(--market-ink)">Формат сделки</Text>
                     <SegmentedControl aria-label="Формат сделки" value={f.saleFormat} onChange={(value) => set("saleFormat", value)} data={[{ value: "FIXED", label: "Фикс. цена" }, { value: "AUCTION", label: "Аукцион" }]} size="sm" radius="md" fullWidth />
                   </Stack>
                   <Select label="Продавец" data={SELLER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.sellerType} onChange={(v) => set("sellerType", v || "OWNER")} size="sm" />
@@ -167,7 +167,7 @@ export default function CreatePartPage() {
             <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="center">
-                  <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconPhoto size={18} /></ThemeIcon><Stack gap={0}><Text fw={700} fz="sm" c="dark.9">Фотографии товара</Text><Text size="xs" c="gray.5">Первое фото станет обложкой объявления. До 12 JPG, PNG или WebP.</Text></Stack></Group>
+                  <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconPhoto size={18} /></ThemeIcon><Stack gap={0}><Text fw={700} fz="sm" c="var(--market-ink)">Фотографии товара</Text><Text size="xs" c="var(--market-muted)">Первое фото станет обложкой объявления. До 12 JPG, PNG или WebP.</Text></Stack></Group>
                   <Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge>
                 </Group>
                 <FileInput accept="image/jpeg,image/png,image/webp" multiple clearable disabled={uploadingImages || images.length >= 12} placeholder="Выберите фотографии" onChange={uploadPhotos} leftSection={<IconPhoto size={16} />} />
@@ -188,7 +188,7 @@ export default function CreatePartPage() {
                   <Group gap="sm" align="center">
                     <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
                     <Stack gap={0}>
-                      <Text fw={700} fz="sm" c="dark.9">Совместимость с автомобилями</Text>
+                      <Text fw={700} fz="sm" c="var(--market-ink)">Совместимость с автомобилями</Text>
                       <Text size="xs" c="dimmed">Укажите модели — покупатели увидят деталь при подборе.</Text>
                     </Stack>
                   </Group>
@@ -213,7 +213,7 @@ export default function CreatePartPage() {
                   <TextInput label="Год до" placeholder="2020" value={newCompat.yearTo} onChange={(e) => setNewCompat({ ...newCompat, yearTo: e.target.value })} size="xs" type="number" />
                 </SimpleGrid>
                 <Group justify="flex-end"><Button type="button" variant="light" color="indigo" size="sm" onClick={addCompat} leftSection={<IconPlus size={14} />}>Добавить автомобиль</Button></Group>
-                <Text size="xs" c="gray.5">Добавьте все совместимые авто — запчасть найдут больше покупателей</Text>
+                <Text size="xs" c="var(--market-muted)">Добавьте все совместимые авто — запчасть найдут больше покупателей</Text>
               </Stack>
             </Paper>
 

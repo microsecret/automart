@@ -209,10 +209,10 @@ function CreateVehicleWorkspace() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Group gap={7} align="center">
-              <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Новое объявление</Text>
+              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Новое объявление</Text>
               {isTelegramMiniApp && <Badge leftSection={<IconBrandTelegram size={12} />} color="indigo" variant="light" radius="xl">Mini App</Badge>}
             </Group>
-            <Text size="xs" c="gray.5">Заполните данные — после проверки объявление появится в поиске</Text>
+            <Text size="xs" c="var(--market-muted)">Заполните данные — после проверки объявление появится в поиске</Text>
           </Stack>
         </Group>
 
@@ -248,7 +248,7 @@ function CreateVehicleWorkspace() {
               >
                 <Text className="create-listing__journey-number">{step.number}</Text>
                 <Stack gap={1}>
-                  <Text size="xs" fw={800} c="dark.8">{step.label}</Text>
+                  <Text size="xs" fw={800} c="var(--market-ink)">{step.label}</Text>
                   <Text size="11px" c="dimmed">{step.description}</Text>
                 </Stack>
               </Group>
@@ -261,7 +261,7 @@ function CreateVehicleWorkspace() {
             {/* Тип транспорта */}
             <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
               <Group justify="space-between" mb="sm">
-                <Text fw={700} fz="sm" c="dark.9">Тип транспорта</Text>
+                <Text fw={700} fz="sm" c="var(--market-ink)">Тип транспорта</Text>
                 <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
               </Group>
               <SegmentedControl value={f.vehicleType} onChange={setVehicleType} data={CATS} size="sm" radius="md" fullWidth />
@@ -272,7 +272,7 @@ function CreateVehicleWorkspace() {
               <Stack gap="sm">
                 <Group justify="space-between" align="flex-start">
                   <Stack gap={1}>
-                    <Text fw={700} fz="sm" c="dark.9">Основная информация</Text>
+                    <Text fw={700} fz="sm" c="var(--market-ink)">Основная информация</Text>
                     <Text size="xs" c="dimmed">Данные, по которым покупатель найдёт транспорт.</Text>
                   </Stack>
                   <Badge size="sm" color="gray" variant="light">Шаг 2</Badge>
@@ -322,7 +322,7 @@ function CreateVehicleWorkspace() {
             {/* Характеристики */}
             <Paper className="create-listing__section" radius="lg" p="md" withBorder>
               <Stack gap="sm">
-                <Text fw={700} fz="sm" c="dark.9">Характеристики</Text>
+                <Text fw={700} fz="sm" c="var(--market-ink)">Характеристики</Text>
                 <Group gap="sm" grow>
                   <Select label={f.vehicleType === "AIR" ? "Тип топлива" : "Топливо"} data={fuelOptions.map(t => ({ value: t.value, label: t.label }))} value={f.fuelType} onChange={(v) => set("fuelType", v || "")} size="sm" />
                   {supportsTransmission(f.vehicleType) && <Select label="КПП" data={transmissionOptions.map(t => ({ value: t.value, label: t.label }))} value={f.transmission} onChange={(v) => set("transmission", v || "")} size="sm" />}
@@ -415,7 +415,7 @@ function CreateVehicleWorkspace() {
             {/* Документы и состояние */}
             <Paper className="create-listing__section" radius="lg" p="md" withBorder>
               <Stack gap="sm">
-                <Text fw={700} fz="sm" c="dark.9">Документы и состояние</Text>
+                <Text fw={700} fz="sm" c="var(--market-ink)">Документы и состояние</Text>
                 <Group gap="sm" grow>
                   <Select label="Документы" data={DOCUMENT_STATUSES.map(t => ({ value: t.value, label: t.label }))} value={f.documentsStatus} onChange={(v) => set("documentsStatus", v || "")} size="sm" />
                   <Select label="Повреждения" data={DAMAGE_INFO.map(t => ({ value: t.value, label: t.label }))} value={f.damageInfo} onChange={(v) => set("damageInfo", v || "")} size="sm" />
@@ -455,10 +455,10 @@ function CreateVehicleWorkspace() {
             {/* Описание */}
             <Paper className="create-listing__section" radius="lg" p="md" withBorder>
               <Stack gap="sm">
-                <Text fw={700} fz="sm" c="dark.9">Описание</Text>
+                <Text fw={700} fz="sm" c="var(--market-ink)">Описание</Text>
                 <Textarea label="Подробное описание" placeholder="Опишите состояние, историю, комплектацию..." value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={4} autosize />
                 <TextInput label="Ключевые слова" placeholder='"один хозяин", ксенон, панорама...' value={f.keywords} onChange={(e) => set("keywords", e.target.value)} size="sm" />
-                <Text size="xs" c="gray.5">Ключевые слова помогают найти ваше объявление</Text>
+                <Text size="xs" c="var(--market-muted)">Ключевые слова помогают найти ваше объявление</Text>
               </Stack>
             </Paper>
 
@@ -468,8 +468,8 @@ function CreateVehicleWorkspace() {
                   <Group gap="sm">
                     <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconPhoto size={18} /></ThemeIcon>
                     <Stack gap={0}>
-                      <Text fw={700} fz="sm" c="dark.9">Фотографии транспорта</Text>
-                      <Text size="xs" c="gray.5">{isTelegramMiniApp ? "Можно снять авто камерой или выбрать фото из галереи. " : ""}Первая фотография станет обложкой. До 12 JPG, PNG или WebP — до 10 МБ каждая.</Text>
+                      <Text fw={700} fz="sm" c="var(--market-ink)">Фотографии транспорта</Text>
+                      <Text size="xs" c="var(--market-muted)">{isTelegramMiniApp ? "Можно снять авто камерой или выбрать фото из галереи. " : ""}Первая фотография станет обложкой. До 12 JPG, PNG или WebP — до 10 МБ каждая.</Text>
                     </Stack>
                   </Group>
                   <Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge>

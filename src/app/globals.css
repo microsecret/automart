@@ -3071,10 +3071,10 @@ select {
 
 .create-listing__journey {
   overflow: hidden;
-  border-color: #dce6ff;
+  border-color: color-mix(in srgb, var(--market-primary) 20%, var(--market-line));
   background:
     radial-gradient(circle at 92% 20%, rgba(96, 92, 255, 0.14), transparent 32%),
-    linear-gradient(135deg, #ffffff, #f5f7ff);
+    linear-gradient(135deg, var(--market-surface), color-mix(in srgb, var(--market-primary-soft) 48%, var(--market-surface)));
 }
 
 .create-listing__journey-step {
@@ -3092,12 +3092,12 @@ select {
   bottom: 8px;
   left: 0;
   width: 1px;
-  background: #dfe5f5;
+  background: var(--market-line);
   content: "";
 }
 
 .create-listing__journey-number {
-  color: #9aa7c1;
+  color: var(--market-muted);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -3108,12 +3108,12 @@ select {
 }
 
 .create-listing__journey-step[data-current] {
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--market-surface) 90%, transparent);
   box-shadow: 0 6px 16px rgba(63, 72, 155, 0.1);
 }
 
 .create-listing__journey-step[data-complete] {
-  background: rgba(236, 253, 245, 0.72);
+  background: color-mix(in srgb, #dcfce7 42%, var(--market-surface));
 }
 
 .create-listing__journey-step[data-complete] .create-listing__journey-number {
@@ -3122,13 +3122,13 @@ select {
 
 .create-listing__section,
 .create-listing__submit {
-  border-color: #e1e6f1;
+  border-color: var(--market-line);
   box-shadow: 0 10px 26px rgba(27, 39, 87, 0.035);
 }
 
 .create-listing__section[data-accent="indigo"] {
-  border-color: #cfd9ff;
-  background: linear-gradient(110deg, #ffffff, #f8f9ff);
+  border-color: color-mix(in srgb, var(--market-primary) 26%, var(--market-line));
+  background: linear-gradient(110deg, var(--market-surface), color-mix(in srgb, var(--market-primary-soft) 52%, var(--market-surface)));
 }
 
 .create-listing__section .mantine-Input-input:focus,
@@ -3143,7 +3143,7 @@ select {
   position: sticky;
   z-index: 4;
   bottom: 12px;
-  background: rgba(255, 255, 255, 0.92);
+  background: color-mix(in srgb, var(--market-surface) 92%, transparent);
   backdrop-filter: blur(16px);
 }
 
