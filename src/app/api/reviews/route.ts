@@ -64,8 +64,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get reviews
-    const [reviews, total, ratingGroups] = await prisma.$transaction([
+    // The generated Prisma client represents groupBy counters as a broad union.
+    // Fixed, bounded counts keep the public distribution stable and type-safe.
+    const ratings = [5, 4, 3, 2, 1] as const
+    const [reviews, total, ratingCounts] = await Promise.all([
       prisma.review.findMany({
         where,
         include: {
@@ -95,17 +97,12 @@ export async function GET(request: NextRequest) {
       prisma.review.count({
         where
       }),
-      prisma.review.groupBy({
-        by: ["rating"],
-        where,
-        _count: { rating: true },
-        orderBy: { rating: "asc" },
-      }),
+      Promise.all(ratings.map((rating) => prisma.review.count({ where: { AND: [where, { rating }] } })),
     ])
 
-    const distribution = [5, 4, 3, 2, 1].map((rating) => ({
+    const distribution = ratings.map((rating, index) => ({
       rating,
-      count: ratingGroups.find((group) => group.rating === rating)?._count.rating || 0,
+      count: ratingCounts[index] ?? 0,
     }))
     const ratingTotal = distribution.reduce((sum, item) => sum + item.count, 0)
     const averageRating = ratingTotal > 0
