@@ -293,7 +293,7 @@ function CreateVehicleWorkspace() {
                     renderOption={({ option }) => (
                       <Group gap="xs" wrap="nowrap">
                         <BrandIcon brand={option.value} size={24} variant="rounded" />
-                        <Text size="sm" fw={650}>{option.label}</Text>
+                        <Text size="sm" fw={650}>{option.value}</Text>
                       </Group>
                     )}
                   />
