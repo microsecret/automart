@@ -161,10 +161,10 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
   return (
     <Container size="xl" py="lg">
-      <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="gray.4" />}>
-        <Anchor component={Link} href="/" size="sm" c="gray.5">Главная</Anchor>
-        <Anchor component={Link} href="/search?type=part" size="sm" c="gray.5">Запчасти</Anchor>
-        <Text size="sm" c="dark.9" className="line-clamp-1">{data.name}</Text>
+      <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="var(--market-muted)" />}>
+        <Anchor component={Link} href="/" size="sm" c="var(--market-muted)">Главная</Anchor>
+        <Anchor component={Link} href="/search?type=part" size="sm" c="var(--market-muted)">Запчасти</Anchor>
+        <Text size="sm" c="var(--market-ink)" className="line-clamp-1">{data.name}</Text>
       </Breadcrumbs>
 
       <Grid gutter="lg">
@@ -175,7 +175,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             <Card p={0} radius="lg" withBorder style={{ overflow: "hidden" }}>
               {hasImages ? (
                 <>
-                  <Box style={{ position: "relative", background: "linear-gradient(145deg, #f8fafc, #eef2ff)", aspectRatio: "4/3", maxHeight: 520 }}>
+                  <Box className="part-detail__gallery" style={{ position: "relative", aspectRatio: "4/3", maxHeight: 520 }}>
                     {imageFailed ? (
                       <Stack align="center" justify="center" gap="xs" h="100%" c="dimmed">
                         <ThemeIcon variant="light" color="gray" size={52} radius="xl"><IconPhoto size={25} /></ThemeIcon>
@@ -207,7 +207,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                             aria-current={activeImage === i ? "true" : undefined}
                             style={{
                               width: 110, height: 80, borderRadius: 8, overflow: "hidden", cursor: "pointer",
-                              border: activeImage === i ? "2px solid #4f46e5" : "2px solid transparent",
+                              border: activeImage === i ? "2px solid var(--market-primary)" : "2px solid transparent",
                             }}
                             onClick={() => selectImage(i)}
                           >
@@ -220,10 +220,10 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   )}
                 </>
               ) : (
-                <Box style={{ aspectRatio: "16/10", background: "var(--mantine-color-gray-1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Box className="part-detail__gallery part-detail__gallery--empty" style={{ aspectRatio: "16/10", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Stack align="center" gap="xs">
                     <ThemeIcon variant="light" color="gray" size={56} radius="xl"><IconPhoto size={28} /></ThemeIcon>
-                    <Text size="sm" c="gray.5">Продавец ещё не добавил фото</Text>
+                    <Text size="sm" c="var(--market-muted)">Продавец ещё не добавил фото</Text>
                   </Stack>
                 </Box>
               )}
@@ -253,17 +253,18 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                     <ThemeIcon variant="light" color="green" size={32} radius="md"><IconCheck size={18} /></ThemeIcon>
                     <Stack gap={0}>
                       <Title order={3} size="h4">Совместимость</Title>
-                      <Text size="xs" c="gray.5">Подходит на {data.compatibility.length} авто</Text>
+                      <Text size="xs" c="var(--market-muted)">Подходит на {data.compatibility.length} авто</Text>
                     </Stack>
                   </Group>
                   <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
                     {data.compatibility.map((c) => (
                       <Group key={c.id} gap="sm" align="center"
-                        style={{ background: "var(--mantine-color-gray-0)", borderRadius: 10, padding: "10px 12px", border: "1px solid var(--mantine-color-border)" }}>
+                        className="part-detail__compatibility-item"
+                        style={{ borderRadius: 10, padding: "10px 12px" }}>
                         <ThemeIcon variant="light" color="blue" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
                         <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-                          <Text size="sm" fw={600} c="dark.9">{c.make} {c.model}</Text>
-                          <Text size="xs" c="gray.5">
+                          <Text size="sm" fw={600} c="var(--market-ink)">{c.make} {c.model}</Text>
+                          <Text size="xs" c="var(--market-muted)">
                             {c.generation ? c.generation + " · " : ""}
                             {c.yearFrom || "?"}{c.yearTo ? `-${c.yearTo}` : "+"}
                             {c.engine ? " · " + c.engine : ""}
@@ -280,7 +281,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             {data.description && (
               <Card withBorder radius="lg" p="lg">
                 <Title order={3} size="h4" mb="sm">Описание</Title>
-                <Text size="sm" c="gray.6" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>{data.description}</Text>
+                <Text size="sm" c="var(--market-muted)" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>{data.description}</Text>
               </Card>
             )}
 
@@ -297,9 +298,9 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                           <Text size="sm" fw={500}>{review.user.name || "Аноним"}</Text>
                           <Rating value={review.rating} size="xs" readOnly />
                         </Stack>
-                        <Text size="xs" c="gray.4" ml="auto">{formatRelativeDate(review.createdAt)}</Text>
+                        <Text size="xs" c="var(--market-muted)" ml="auto">{formatRelativeDate(review.createdAt)}</Text>
                       </Group>
-                      {review.comment && <Text size="sm" c="gray.6" pl={36}>{review.comment}</Text>}
+                      {review.comment && <Text size="sm" c="var(--market-muted)" pl={36}>{review.comment}</Text>}
                     </Box>
                   ))}
                 </Stack>
@@ -312,14 +313,14 @@ export default function PartDetailClient({ data }: { data: PartData }) {
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Box style={{ position: "sticky", top: 80 }}>
             <Stack gap="md">
-              <Card withBorder radius="lg" p="lg" style={{ borderColor: "#c7d2fe", background: "linear-gradient(135deg, #ffffff 0%, #eef2ff 100%)" }}>
+              <Card withBorder radius="lg" p="lg" className="part-detail__price-card">
                 <Title order={1} size="h4" mb={4}>{data.name}</Title>
                 <Text size="1.75rem" fw={800} c={data.saleFormat === "AUCTION" ? "orange" : "indigo"} lh={1.1} mb="xs">{formatPrice(data.price)}</Text>
                 <Group gap={6}>
-                  <IconMapPin size={14} color="gray.5" />
-                  <Text size="sm" c="gray.5">{data.location}</Text>
-                  <Text size="sm" c="gray.4">·</Text>
-                  <Text size="sm" c="gray.5">{formatRelativeDate(data.createdAt)}</Text>
+                  <IconMapPin size={14} color="var(--market-muted)" />
+                  <Text size="sm" c="var(--market-muted)">{data.location}</Text>
+                  <Text size="sm" c="var(--market-muted)">·</Text>
+                  <Text size="sm" c="var(--market-muted)">{formatRelativeDate(data.createdAt)}</Text>
                 </Group>
                 {data.saleFormat === "AUCTION" && (
                   <Badge mt="sm" color="orange" variant="light" leftSection={<IconGavel size={13} />}>Аукцион · {data.auctionStatus === "ACTIVE" ? "идёт" : "завершён"}</Badge>
@@ -327,12 +328,12 @@ export default function PartDetailClient({ data }: { data: PartData }) {
               </Card>
 
               {data.saleFormat === "AUCTION" && (
-                <Card withBorder radius="lg" p="lg" style={{ borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)" }}>
+                <Card withBorder radius="lg" p="lg" className="part-detail__bid-card">
                   <Group justify="space-between" mb="xs"><Text fw={700}>Сделать ставку</Text><IconGavel size={18} color="#f97316" /></Group>
-                  <Text size="xs" c="gray.5">Минимум: {formatPrice((data.auctionCurrentPrice || data.price) + (data.auctionMinStep || 1))}</Text>
-                  {data.auctionEndsAt && <Text size="xs" c="gray.5" mb="sm">Окончание: {new Date(data.auctionEndsAt).toLocaleString("ru-RU")}</Text>}
+                  <Text size="xs" c="var(--market-muted)">Минимум: {formatPrice((data.auctionCurrentPrice || data.price) + (data.auctionMinStep || 1))}</Text>
+                  {data.auctionEndsAt && <Text size="xs" c="var(--market-muted)" mb="sm">Окончание: {new Date(data.auctionEndsAt).toLocaleString("ru-RU")}</Text>}
                   {isSeller ? (
-                    <Text size="sm" c="gray.6">Это ваш лот. Ставки владельца недоступны.</Text>
+                    <Text size="sm" c="var(--market-muted)">Это ваш лот. Ставки владельца недоступны.</Text>
                   ) : (
                     <>
                       <TextInput placeholder="Сумма ставки, ₽" type="number" value={bidAmount} onChange={(event) => setBidAmount(event.currentTarget.value)} mb="sm" />
@@ -340,7 +341,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                     </>
                   )}
                   {bidMessage && <Text size="xs" c={bidMessage.includes("принята") ? "green" : "red"} mt="sm">{bidMessage}</Text>}
-                  {data.bids.length > 0 && <Text size="xs" c="gray.5" mt="md">Последние ставки: {data.bids.slice(0, 3).map((bid) => `${bid.amount.toLocaleString("ru-RU")} ₽`).join(" · ")}</Text>}
+                  {data.bids.length > 0 && <Text size="xs" c="var(--market-muted)" mt="md">Последние ставки: {data.bids.slice(0, 3).map((bid) => `${bid.amount.toLocaleString("ru-RU")} ₽`).join(" · ")}</Text>}
                 </Card>
               )}
 
@@ -364,17 +365,17 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">{data.seller.name?.[0]?.toUpperCase()}</Avatar>
                   <Stack gap={2}>
                     <Text fw={600}>{data.seller.name || "Продавец"}</Text>
-                    <Text size="xs" c="gray.4">На Авторынке с {formatDate(data.seller.memberSince)}</Text>
+                    <Text size="xs" c="var(--market-muted)">На Авторынке с {formatDate(data.seller.memberSince)}</Text>
                   </Stack>
                 </Group>
                 <Divider mb="sm" />
                 <Group gap={6}>
                   <IconShieldCheck size={16} color="#10b981" />
-                  <Text size="sm" c="gray.6">Проверенный продавец</Text>
+                  <Text size="sm" c="var(--market-muted)">Проверенный продавец</Text>
                 </Group>
                 {data.seller.otherParts.length > 0 && (
                   <Box mt="sm">
-                    <Text size="xs" c="gray.5" mb={6}>Другие запчасти ({data.seller.otherParts.length})</Text>
+                    <Text size="xs" c="var(--market-muted)" mb={6}>Другие запчасти ({data.seller.otherParts.length})</Text>
                     {data.seller.otherParts.slice(0, 3).map((p) => (
                       <Anchor key={p.id} component={Link} href={`/listings/part/${p.id}`} size="xs" c="indigo" display="block">
                         {p.name} — {formatPriceShort(p.price)}
@@ -396,9 +397,9 @@ function SpecRow({ icon, label, value }: { icon: React.ReactNode; label: string;
     <Group gap="sm" justify="space-between">
       <Group gap={8}>
         <ThemeIcon variant="light" color="indigo" size={30} radius="md">{icon}</ThemeIcon>
-        <Text size="sm" c="gray.5">{label}</Text>
+        <Text size="sm" c="var(--market-muted)">{label}</Text>
       </Group>
-      <Text size="sm" fw={500} c="dark.9">{value}</Text>
+      <Text size="sm" fw={500} c="var(--market-ink)">{value}</Text>
     </Group>
   )
 }
