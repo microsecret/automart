@@ -18,6 +18,8 @@ type ListingReportRow = {
   listingId: string
   listingTitle: string
   listingStatus: string
+  vehicleId: string | null
+  partId: string | null
   reporterId: string
   reporterName: string | null
   reporterEmail: string | null
@@ -40,6 +42,7 @@ export async function GET() {
       SELECT
         r."id", r."reason", r."comment", r."status", r."createdAt", r."reviewedAt",
         l."id" AS "listingId", l."title" AS "listingTitle", l."status" AS "listingStatus",
+        l."vehicleId" AS "vehicleId", l."partId" AS "partId",
         reporter."id" AS "reporterId", reporter."name" AS "reporterName", reporter."email" AS "reporterEmail",
         reviewer."name" AS "reviewerName"
       FROM "ListingReport" r

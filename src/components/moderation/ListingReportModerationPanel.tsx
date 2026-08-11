@@ -32,6 +32,8 @@ type ListingReport = {
   listingId: string
   listingTitle: string
   listingStatus: string
+  vehicleId: string | null
+  partId: string | null
   reporterName: string | null
   reporterEmail: string | null
   reviewerName: string | null
@@ -95,6 +97,11 @@ export default function ListingReportModerationPanel() {
           <Stack gap="xs" mah={520} style={{ overflow: "auto" }}>
             {displayedReports.map((report) => {
               const meta = STATUS_META[report.status] || STATUS_META.OPEN
+              const detailHref = report.vehicleId
+                ? `/listings/vehicle/${report.vehicleId}`
+                : report.partId
+                  ? `/listings/part/${report.partId}`
+                  : null
               return (
                 <Card key={report.id} withBorder radius="md" p="sm" className="moderation-listing-row">
                   <Stack gap="xs">
@@ -109,7 +116,7 @@ export default function ListingReportModerationPanel() {
                         {report.comment && <Text size="sm" c="gray.7">{report.comment}</Text>}
                       </Stack>
                       <Group gap="xs" wrap="wrap" justify="flex-end">
-                        <Button component={Link} href={`/listings/${report.listingId}/edit`} size="xs" variant="light" color="indigo">Проверить</Button>
+                        {detailHref && <Button component={Link} href={detailHref} target="_blank" size="xs" variant="light" color="indigo">Открыть карточку</Button>}
                         {report.status === "OPEN" && <Button size="xs" variant="light" color="orange" loading={updatingId === report.id} onClick={() => void updateStatus(report.id, "IN_REVIEW")} leftSection={<IconGavel size={12} />}>В работу</Button>}
                         {(report.status === "OPEN" || report.status === "IN_REVIEW") && <Button size="xs" variant="light" color="green" loading={updatingId === report.id} onClick={() => void updateStatus(report.id, "RESOLVED")} leftSection={<IconCheck size={12} />}>Решена</Button>}
                         {(report.status === "OPEN" || report.status === "IN_REVIEW") && <Button size="xs" variant="subtle" color="gray" loading={updatingId === report.id} onClick={() => void updateStatus(report.id, "DISMISSED")} leftSection={<IconX size={12} />}>Отклонить</Button>}
