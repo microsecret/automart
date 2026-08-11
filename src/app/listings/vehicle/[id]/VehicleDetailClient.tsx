@@ -581,7 +581,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
 
         {/* Правая колонка — цена + продавец + действия */}
         <Box className="vehicle-detail-layout__aside">
-          <Box style={{ position: "sticky", top: 80 }}>
+          <Box className="vehicle-detail-layout__sticky-aside">
             <Stack gap="md">
               {/* Цена и заголовок */}
               <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)" }}>

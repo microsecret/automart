@@ -2837,6 +2837,12 @@ select {
   min-width: 0;
 }
 
+.vehicle-detail-layout__sticky-aside,
+.part-detail__sticky-aside {
+  position: sticky;
+  top: calc(var(--app-header-height) + var(--mantine-spacing-md));
+}
+
 .vehicle-detail-gallery {
   overflow: hidden;
   border-color: var(--market-line);
@@ -3016,6 +3022,11 @@ select {
 @media (max-width: 72em) {
   .vehicle-detail-layout {
     grid-template-columns: 1fr;
+  }
+
+  .vehicle-detail-layout__sticky-aside,
+  .part-detail__sticky-aside {
+    position: static;
   }
 
   .vehicle-detail-specs__grid {

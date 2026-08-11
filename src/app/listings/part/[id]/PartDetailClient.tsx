@@ -311,7 +311,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
         {/* Правая колонка */}
         <Grid.Col span={{ base: 12, md: 4 }}>
-          <Box style={{ position: "sticky", top: 80 }}>
+          <Box className="part-detail__sticky-aside">
             <Stack gap="md">
               <Card withBorder radius="lg" p="lg" className="part-detail__price-card">
                 <Title order={1} size="h4" mb={4}>{data.name}</Title>
