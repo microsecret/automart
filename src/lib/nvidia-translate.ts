@@ -15,6 +15,15 @@ function getNextKey(): string | null {
 
 // Простой кэш (in-memory, для одного процесса)
 const cache = new Map<string, string>()
+const MAX_TRANSLATION_CACHE_ENTRIES = 1_000
+
+function rememberTranslation(source: string, translated: string) {
+  if (!cache.has(source) && cache.size >= MAX_TRANSLATION_CACHE_ENTRIES) {
+    const oldest = cache.keys().next().value as string | undefined
+    if (oldest) cache.delete(oldest)
+  }
+  cache.set(source, translated)
+}
 
 export async function translateToRussian(text: string): Promise<string> {
   if (!text || text.trim().length === 0) return text
@@ -38,6 +47,7 @@ export async function translateToRussian(text: string): Promise<string> {
     try {
       const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
+        signal: AbortSignal.timeout(20_000),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`,
@@ -71,7 +81,7 @@ export async function translateToRussian(text: string): Promise<string> {
       const translated = data?.choices?.[0]?.message?.content?.trim()
 
       if (translated && translated.length > 0) {
-        cache.set(text, translated)
+        rememberTranslation(text, translated)
         return translated
       }
 

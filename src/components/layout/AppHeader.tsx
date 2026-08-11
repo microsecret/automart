@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2, IconBrain, IconChartBar, IconFileSearch, IconGasStation } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2, IconBrain, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -69,6 +69,7 @@ export default function AppHeader() {
     { href: "/services/history-check", label: "Проверка истории", icon: <IconFileSearch size={15} />, active: pathname.startsWith("/services/history-check") },
     { href: "/services/valuation", label: "Оценка стоимости", icon: <IconChartBar size={15} />, active: pathname.startsWith("/services/valuation") },
     { href: "/services/smart-matching", label: "Умный подбор", icon: <IconBrain size={15} />, active: pathname.startsWith("/services/smart-matching") },
+    { href: "/services/legal-documents", label: "Документы сделки", icon: <IconFileDescription size={15} />, active: pathname.startsWith("/services/legal-documents") },
   ]
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

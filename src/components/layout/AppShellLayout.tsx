@@ -3,7 +3,7 @@
 import { Avatar, Box, Button, Group, NavLink, Paper, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core"
 import { useSession } from "next-auth/react"
 import {
-  IconBrain, IconCar, IconChartBar, IconFileSearch, IconGasStation,
+  IconBrain, IconCar, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation,
   IconGavel, IconHeart, IconHome2, IconMessageCircle2, IconMotorbike, IconNews,
   IconPlane, IconPlus, IconSearch, IconShieldCheck, IconSpeedboat, IconTools,
   IconTractor, IconTruck, IconTruckDelivery,
@@ -46,6 +46,7 @@ const SERVICES = [
   { label: "Оценка стоимости", href: "/services/valuation", icon: <IconChartBar size={16} stroke={1.8} />, color: "indigo" },
   { label: "Умный подбор", href: "/services/smart-matching", icon: <IconBrain size={16} stroke={1.8} />, color: "violet" },
   { label: "Безопасная сделка", href: "/services/safe-deal", icon: <IconShieldCheck size={16} stroke={1.8} />, color: "teal" },
+  { label: "Документы сделки", href: "/services/legal-documents", icon: <IconFileDescription size={16} stroke={1.8} />, color: "grape" },
 ]
 
 const MOBILE_NAV = [

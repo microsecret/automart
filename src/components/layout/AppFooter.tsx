@@ -36,6 +36,7 @@ const FOOTER_SECTIONS = [
       { label: "Проверка истории", href: "/services/history-check" },
       { label: "Умный подбор", href: "/services/smart-matching" },
       { label: "Безопасная сделка", href: "/services/safe-deal" },
+      { label: "Документы сделки", href: "/services/legal-documents" },
       { label: "Карта АЗС", href: "/services/fuel-map" },
     ],
   },
