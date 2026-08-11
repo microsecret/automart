@@ -29,6 +29,26 @@ const TYPE_BY_LEGACY_MAKE = {
 
 const MOTORCYCLE_MODEL_PATTERN = /africa twin|cbr|gold wing|burgman|gsx-|v-strom/i
 const ELECTRIC_ONLY_CAR_MAKES = ["Tesla", "Zeekr", "Nio", "Xpeng", "Avatr"]
+const DEMO_MEDIA_HOST = "images.unsplash.com"
+
+function withoutDemoMedia(rawImages) {
+  if (!rawImages) return null
+
+  try {
+    const images = JSON.parse(rawImages)
+    if (!Array.isArray(images)) return null
+
+    const trustedImages = images.filter((image) => (
+      typeof image === "string"
+      && !image.includes(DEMO_MEDIA_HOST)
+      && !image.includes("/placeholder")
+    ))
+
+    return trustedImages.length ? JSON.stringify(trustedImages) : null
+  } catch {
+    return null
+  }
+}
 
 function initialTypeDetails(vehicleType, make, model) {
   const value = `${make} ${model}`.toLowerCase()
@@ -177,6 +197,29 @@ async function main() {
       data: { year: 2020 },
     })
 
+    // Seed data used a couple of stock Unsplash images for many unrelated
+    // listings. They look like real seller photos in a marketplace and damage
+    // buyer trust (the same image appeared on cars and motorcycles). The UI
+    // has an honest category-specific fallback until the owner uploads media.
+    const vehicleDemoMedia = await tx.vehicle.findMany({
+      where: { images: { contains: DEMO_MEDIA_HOST } },
+      select: { id: true, images: true },
+    })
+    const partDemoMedia = await tx.part.findMany({
+      where: { OR: [{ images: { contains: DEMO_MEDIA_HOST } }, { images: { contains: "/placeholder" } }] },
+      select: { id: true, images: true },
+    })
+    let clearedVehicleMedia = 0
+    let clearedPartMedia = 0
+    for (const vehicle of vehicleDemoMedia) {
+      await tx.vehicle.update({ where: { id: vehicle.id }, data: { images: withoutDemoMedia(vehicle.images) } })
+      clearedVehicleMedia += 1
+    }
+    for (const part of partDemoMedia) {
+      await tx.part.update({ where: { id: part.id }, data: { images: withoutDemoMedia(part.images) } })
+      clearedPartMedia += 1
+    }
+
     const legacyVehicles = await tx.vehicle.findMany({
       where: { vehicleType: "CAR" },
       select: { id: true, make: true, model: true, mileage: true, operatingHours: true, flightHours: true, vin: true, serialNumber: true, registrationNumber: true, transmission: true },
@@ -202,7 +245,7 @@ async function main() {
     }
 
     console.log(
-      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values and ${modelYYearRepair.count} Tesla Model Y years`,
+      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values, ${modelYYearRepair.count} Tesla Model Y years; cleared ${clearedVehicleMedia} vehicle and ${clearedPartMedia} part demo media records`,
     )
   })
 
