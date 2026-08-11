@@ -8,7 +8,7 @@ import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDa
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
-import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
+import VehicleFallback from "./VehicleFallback"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
@@ -88,9 +88,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
     : `${new Intl.NumberFormat("ru-RU").format(numericUsage)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
   const isFav = favoriteIds.has(listing.id)
-  const missingMediaLabel = isVehicle
-    ? `${vehicleTypeLabel(vehicleType, listing.vehicle?.bodyType)} · без фото`
-    : "Запчасть · без фото"
+  const missingMediaLabel = "Без фото"
 
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -133,7 +131,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           pos="relative"
           style={{ background: "var(--market-surface-subtle)", lineHeight: 0 }}
         >
-          <AspectRatio ratio={hasDisplayImage ? 8 / 5 : 16 / 5}>
+          <AspectRatio ratio={4 / 3}>
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
