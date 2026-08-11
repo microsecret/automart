@@ -50,6 +50,11 @@ type CachedPlace = {
   expiresAt: number
 }
 
+type CachedDirectoryStations = {
+  stations: FuelStationPayload[]
+  expiresAt: number
+}
+
 const FUEL_TAG_LABELS: Record<string, string> = {
   "fuel:diesel": "ДТ",
   "fuel:octane_92": "АИ‑92",
@@ -95,7 +100,10 @@ const OVERPASS_ENDPOINTS = [
 const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search"
 const ZAPRAVKIN_BASE_URL = (process.env.ZAPRAVKIN_API_URL || "https://api.zapravkin24.ru/v1").replace(/\/$/, "")
 const PLACE_CACHE_TTL = 1000 * 60 * 60 * 12
+const DIRECTORY_STATION_CACHE_TTL = 1000 * 60 * 20
+const MAX_DIRECTORY_CACHE_ENTRIES = 80
 const placeCache = new Map<string, CachedPlace>()
+const directoryStationCache = new Map<string, CachedDirectoryStations>()
 let lastNominatimRequestAt = 0
 
 function hasPublishedFuelTag(value: string | undefined) {
@@ -123,6 +131,21 @@ function stationPriority(station: FuelStationPayload) {
   const taggedFuels = Math.min(station.fuels.length, 5)
   const hasAddress = station.address ? 1 : 0
   return namedOrBranded + publishedLiveStatus + taggedFuels + hasAddress
+}
+
+function getDirectoryCacheKey(coordinates: Coordinates, radius: number) {
+  // Координаты намеренно округляются примерно до километра: для соседних
+  // точек карты набор АЗС совпадает, а повторный запрос к Overpass не нужен.
+  return `${coordinates.latitude.toFixed(2)}:${coordinates.longitude.toFixed(2)}:${radius}`
+}
+
+function cacheDirectoryStations(key: string, stations: FuelStationPayload[]) {
+  if (directoryStationCache.size >= MAX_DIRECTORY_CACHE_ENTRIES) {
+    const oldestKey = directoryStationCache.keys().next().value
+    if (oldestKey) directoryStationCache.delete(oldestKey)
+  }
+
+  directoryStationCache.set(key, { stations, expiresAt: Date.now() + DIRECTORY_STATION_CACHE_TTL })
 }
 
 function isRussianMapCoordinate(latitude: number, longitude: number) {
@@ -448,11 +471,20 @@ export async function GET(request: NextRequest) {
 
   const radius = requestedCoordinates ? 30_000 : place ? 26_000 : 22_000
   const query = `[out:json][timeout:24];(node["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude}););out center tags 180;`
+  const directoryCacheKey = getDirectoryCacheKey(coordinates, radius)
+  const cachedDirectory = directoryStationCache.get(directoryCacheKey)
+  const directoryPromise = cachedDirectory && cachedDirectory.expiresAt > Date.now()
+    ? Promise.resolve(cachedDirectory.stations)
+    : requestStations(query).then((result) => {
+        const stations = normalizeDirectoryStations(result.elements || [])
+        cacheDirectoryStations(directoryCacheKey, stations)
+        return stations
+      })
   const [directoryResult, liveResult] = await Promise.allSettled([
-    requestStations(query),
+    directoryPromise,
     requestLiveStations(coordinates, radius),
   ])
-  const directoryStations = directoryResult.status === "fulfilled" ? normalizeDirectoryStations(directoryResult.value.elements || []) : []
+  const directoryStations = directoryResult.status === "fulfilled" ? directoryResult.value : []
   const liveStations = liveResult.status === "fulfilled" ? liveResult.value : []
   const hasProviderKey = Boolean(process.env.ZAPRAVKIN_API_KEY?.trim())
 
