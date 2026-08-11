@@ -47,7 +47,6 @@ type FuelStationAddressResponse = {
 }
 
 const TILE_SIZE = 256
-const MAP_WORLD_SPAN = TILE_SIZE * 3
 const MIN_ZOOM = 9
 const MAX_ZOOM = 14
 const STATION_LIST_PAGE_SIZE = 24
@@ -177,16 +176,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 }) {
   const [zoom, setZoom] = useState(11)
   const [viewportCenter, setViewportCenter] = useState(coordinates)
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const mapInteractionRef = useRef<HTMLDivElement>(null)
-  const dragState = useRef<{ pointerId: number; clientX: number; clientY: number; center: { latitude: number; longitude: number }; width: number; height: number } | null>(null)
+  const dragState = useRef<{ pointerId: number; clientX: number; clientY: number; center: { latitude: number; longitude: number } } | null>(null)
   const viewportCenterRef = useRef(viewportCenter)
+  const mapViewport = viewportSize.width > 0 && viewportSize.height > 0 ? viewportSize : { width: 768, height: 460 }
   const center = useMemo(() => coordinatesToWorld(viewportCenter.latitude, viewportCenter.longitude, zoom), [viewportCenter.latitude, viewportCenter.longitude, zoom])
-  const centerTileX = Math.floor(center.x / TILE_SIZE)
-  const centerTileY = Math.floor(center.y / TILE_SIZE)
   const tileCount = 2 ** zoom
-  const tileOffsetX = -(((center.x / TILE_SIZE) - centerTileX) - 0.5) * (100 / 3)
-  const tileOffsetY = -(((center.y / TILE_SIZE) - centerTileY) - 0.5) * (100 / 3)
+  const mapOrigin = useMemo(() => ({
+    x: center.x - mapViewport.width / 2,
+    y: center.y - mapViewport.height / 2,
+  }), [center.x, center.y, mapViewport.height, mapViewport.width])
   const updateZoom = (nextZoom: number) => setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom)))
 
   useEffect(() => {
@@ -221,23 +222,63 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     return () => mapNode.removeEventListener("wheel", handleNativeWheel)
   }, [])
 
+  useEffect(() => {
+    const mapNode = mapInteractionRef.current
+    if (!mapNode) return
+
+    const syncViewportSize = () => {
+      const bounds = mapNode.getBoundingClientRect()
+      setViewportSize({ width: Math.max(1, Math.round(bounds.width)), height: Math.max(1, Math.round(bounds.height)) })
+    }
+
+    syncViewportSize()
+    if (typeof ResizeObserver === "undefined") return
+
+    const observer = new ResizeObserver(syncViewportSize)
+    observer.observe(mapNode)
+    return () => observer.disconnect()
+  }, [])
+
+  const tiles = useMemo(() => {
+    const startX = Math.floor(mapOrigin.x / TILE_SIZE) - 1
+    const endX = Math.ceil((mapOrigin.x + mapViewport.width) / TILE_SIZE) + 1
+    const startY = Math.max(0, Math.floor(mapOrigin.y / TILE_SIZE) - 1)
+    const endY = Math.min(tileCount - 1, Math.ceil((mapOrigin.y + mapViewport.height) / TILE_SIZE) + 1)
+    const visibleTiles: Array<{ key: string; x: number; y: number; left: number; top: number }> = []
+
+    for (let sourceY = startY; sourceY <= endY; sourceY += 1) {
+      for (let sourceX = startX; sourceX <= endX; sourceX += 1) {
+        const x = ((sourceX % tileCount) + tileCount) % tileCount
+        visibleTiles.push({
+          key: `${zoom}-${sourceX}-${sourceY}`,
+          x,
+          y: sourceY,
+          left: sourceX * TILE_SIZE - mapOrigin.x,
+          top: sourceY * TILE_SIZE - mapOrigin.y,
+        })
+      }
+    }
+
+    return visibleTiles
+  }, [mapOrigin.x, mapOrigin.y, mapViewport.height, mapViewport.width, tileCount, zoom])
+
   const visibleStations = useMemo(() => stations.flatMap((station) => {
     const point = coordinatesToWorld(station.latitude, station.longitude, zoom)
     const worldSize = TILE_SIZE * (2 ** zoom)
     let deltaX = point.x - center.x
     if (deltaX > worldSize / 2) deltaX -= worldSize
     if (deltaX < -worldSize / 2) deltaX += worldSize
-    const left = ((deltaX + MAP_WORLD_SPAN / 2) / MAP_WORLD_SPAN) * 100
-    const top = ((point.y - center.y + MAP_WORLD_SPAN / 2) / MAP_WORLD_SPAN) * 100
-    return left > -4 && left < 104 && top > -4 && top < 104 ? [{ station, left, top }] : []
-  }), [center.x, center.y, stations, zoom])
+    const left = deltaX + mapViewport.width / 2
+    const top = point.y - center.y + mapViewport.height / 2
+    return left > -48 && left < mapViewport.width + 48 && top > -48 && top < mapViewport.height + 48 ? [{ station, left, top }] : []
+  }), [center.x, center.y, mapViewport.height, mapViewport.width, stations, zoom])
 
   const markers = useMemo<MapMarker[]>(() => {
     if (zoom > 11) return visibleStations.map(({ station, left, top }) => ({ left, top, stations: [station] }))
 
     const clusters = new Map<string, MapMarker>()
     visibleStations.forEach(({ station, left, top }) => {
-      const key = `${Math.round(left / 5)}:${Math.round(top / 5)}`
+      const key = `${Math.round(left / 56)}:${Math.round(top / 56)}`
       const existing = clusters.get(key)
       if (existing) {
         const count = existing.stations.length
@@ -254,8 +295,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return
-    const bounds = event.currentTarget.getBoundingClientRect()
-    dragState.current = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, center: viewportCenter, width: bounds.width, height: bounds.height }
+    dragState.current = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, center: viewportCenter }
     event.currentTarget.setPointerCapture(event.pointerId)
     setIsDragging(false)
   }
@@ -269,9 +309,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 
     const start = coordinatesToWorld(drag.center.latitude, drag.center.longitude, zoom)
     const worldSize = TILE_SIZE * (2 ** zoom)
-    const nextX = ((start.x - (deltaX / drag.width) * MAP_WORLD_SPAN) % worldSize + worldSize) % worldSize
+    const nextX = ((start.x - deltaX) % worldSize + worldSize) % worldSize
     const edgePadding = TILE_SIZE / 2
-    const nextY = Math.max(edgePadding, Math.min(worldSize - edgePadding, start.y - (deltaY / drag.height) * MAP_WORLD_SPAN))
+    const nextY = Math.max(edgePadding, Math.min(worldSize - edgePadding, start.y - deltaY))
     const nextCenter = worldToCoordinates(nextX, nextY, zoom)
     viewportCenterRef.current = nextCenter
     setViewportCenter(nextCenter)
@@ -338,12 +378,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   return (
     <Paper id="fuel-station-map" className="fuel-map-canvas" radius="lg" withBorder>
       <Box ref={mapInteractionRef} className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}. Стрелки перемещают карту, плюс и минус меняют масштаб.`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onKeyDown={handleKeyDown}>
-        <Box className="fuel-map-canvas__tile-layer" style={{ transform: `translate(${tileOffsetX}%, ${tileOffsetY}%)` }} aria-hidden="true">
-        {[-1, 0, 1, 2].flatMap((row) => [-1, 0, 1, 2].map((column) => {
-          const x = (centerTileX + column + tileCount) % tileCount
-          const y = Math.max(0, Math.min(tileCount - 1, centerTileY + row))
-          return <img key={`${zoom}-${x}-${y}`} src={`https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`} alt="" aria-hidden="true" />
-        }))}
+        <Box className="fuel-map-canvas__tile-layer" aria-hidden="true">
+        {tiles.map((tile) => (
+          <img key={tile.key} src={`https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`} style={{ left: tile.left, top: tile.top }} alt="" aria-hidden="true" />
+        ))}
         </Box>
         {markers.map((marker, index) => {
           const isCluster = marker.stations.length > 1
@@ -352,7 +390,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           const networkIdentity = getNetworkIdentity(firstStation)
           const isSelected = marker.stations.some((station) => selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType)
           const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${getStationDataSummary(firstStation)}`
-          return <button key={isCluster ? `cluster-${index}` : firstStation.id} type="button" className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-selected={isSelected || undefined} style={{ left: `${marker.left}%`, top: `${marker.top}%`, ...(networkIdentity && !isCluster ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</button>
+          return <button key={isCluster ? `cluster-${index}` : firstStation.id} type="button" className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-selected={isSelected || undefined} style={{ left: marker.left, top: marker.top, ...(networkIdentity && !isCluster ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</button>
         })}
       </Box>
       <Group className="fuel-map-canvas__controls" gap={4}>
