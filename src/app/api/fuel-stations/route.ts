@@ -145,7 +145,12 @@ function asNumber(value: unknown) {
 function normalizeFuel(value: unknown) {
   const source = asString(value)
   if (!source) return null
-  const key = source.toLocaleUpperCase("ru-RU").replace(/\s+/g, "")
+  // Data providers use several Unicode dash characters in values such as "АИ‑92".
+  // Canonicalize them before the lookup so filters and station cards stay in sync.
+  const key = source
+    .toLocaleUpperCase("ru-RU")
+    .replace(/[‐‑‒–—−]/g, "-")
+    .replace(/\s+/g, "")
   return LIVE_FUEL_LABELS[key] || source
 }
 
