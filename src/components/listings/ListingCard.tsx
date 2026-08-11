@@ -118,7 +118,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         withBorder
         style={{
           overflow: "hidden",
-          borderColor: "var(--mantine-color-border)",
+          borderColor: "var(--market-line)",
           transition: "border-color 200ms ease, box-shadow 200ms ease",
           cursor: "pointer",
         }}
@@ -131,7 +131,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           data-image-loading={hasDisplayImage && !imageLoaded ? "true" : undefined}
           data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
           pos="relative"
-          style={{ background: "var(--mantine-color-gray-1)", lineHeight: 0 }}
+          style={{ background: "var(--market-surface-subtle)", lineHeight: 0 }}
         >
           <AspectRatio ratio={hasDisplayImage ? 8 / 5 : 16 / 5}>
             <>
@@ -226,28 +226,28 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         <Box p="sm" className="listing-card__content">
           {/* Цена + цена в месяц */}
           <Group justify="space-between" align="baseline" mb={4}>
-            <Text className="listing-card__price" fw={800} fz="md" lh={1.1} c="dark.9" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.01em" }}>
+            <Text className="listing-card__price" fw={800} fz="md" lh={1.1} c="var(--market-ink)" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.01em" }}>
               {formatPriceShort(listing.price)}
             </Text>
             {monthlyPayment && (
-              <Text className="listing-card__monthly-payment" fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>
+              <Text className="listing-card__monthly-payment" fz="10px" c="var(--market-muted)" style={{ whiteSpace: "nowrap" }}>
                 {monthlyPayment}
               </Text>
             )}
           </Group>
 
           {/* Заголовок */}
-          <Text className="listing-card__title" fz="sm" fw={700} c="dark.9" lh={1.35} mb={7}>
+          <Text className="listing-card__title" fz="sm" fw={700} c="var(--market-ink)" lh={1.35} mb={7}>
             {listing.title}
           </Text>
 
           {/* Краткие факты: без капслока и повторения типа категории. */}
           {isVehicle && (
             <SimpleGrid cols={2} spacing={4} mb={6} className="listing-card__facts">
-              <Text className="listing-card__fact" fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
-              {numericUsage != null && <Text className="listing-card__fact" fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>}
-              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && <Text className="listing-card__fact" fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="dark.8">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
-              {listing.vehicle!.fuelType && <Text className="listing-card__fact" fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="dark.8">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
+              <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Год <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text></Text>
+              {numericUsage != null && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">{usageMeta.label} <Text component="span" inherit fw={700} c="var(--market-ink)">{distanceValue}</Text></Text>}
+              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
+              {listing.vehicle!.fuelType && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
             </SimpleGrid>
           )}
 
@@ -256,7 +256,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             {listing.location ? (
               <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
                 <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
-                <Text fz="xs" c="gray.4" style={TRUNCATE_STYLE}>{listing.location}</Text>
+                <Text fz="xs" c="var(--market-muted)" style={TRUNCATE_STYLE}>{listing.location}</Text>
               </Group>
             ) : <span />}
             <Group gap={7} wrap="nowrap" style={{ flexShrink: 0 }}>
@@ -267,7 +267,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 </Group>
               )}
               {listing.createdAt && (
-                <Text fz="xs" c="gray.4" style={{ whiteSpace: "nowrap" }}>
+                <Text fz="xs" c="var(--market-muted)" style={{ whiteSpace: "nowrap" }}>
                   {formatRelativeDate(listing.createdAt)}
                 </Text>
               )}
