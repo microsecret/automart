@@ -441,6 +441,13 @@ export default function FuelMapPage() {
   }, [allStations, coordinates.latitude, coordinates.longitude, fuelFilter])
   const displayedStations = filteredStations.slice(0, visibleStationCount)
   const hasMoreStations = displayedStations.length < filteredStations.length
+  const selectedStationKey = selectedStation ? `${selectedStation.sourceType}-${selectedStation.id}` : null
+  const selectedStationInResults = selectedStation && filteredStations.some((station) => `${station.sourceType}-${station.id}` === selectedStationKey)
+    ? selectedStation
+    : null
+  const listedStations = selectedStationKey
+    ? displayedStations.filter((station) => `${station.sourceType}-${station.id}` !== selectedStationKey)
+    : displayedStations
 
   useEffect(() => {
     setSelectedStation(null)
@@ -518,7 +525,9 @@ export default function FuelMapPage() {
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
-              {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">{displayedStations.map((station) => (
+              {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">
+                {selectedStationInResults && <Box className="fuel-map-list__selection" aria-live="polite"><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Выбранная АЗС</Text><FuelStationCard station={selectedStationInResults} referenceCoordinates={coordinates} isSelected onShowOnMap={showStationOnMap} /></Box>}
+                {listedStations.map((station) => (
                 <FuelStationCard
                   key={`${station.sourceType}-${station.id}`}
                   station={station}

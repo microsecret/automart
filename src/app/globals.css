@@ -2236,6 +2236,13 @@ select {
   background: linear-gradient(150deg, var(--market-surface), var(--market-surface-subtle));
 }
 
+.fuel-map-list__selection {
+  display: grid;
+  gap: 6px;
+  padding: 2px 2px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 72%, #818cf8);
+}
+
 .fuel-station-card {
   background: var(--market-surface);
   border-color: var(--market-line);
