@@ -9,6 +9,7 @@ import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, Ic
 import Link from "next/link"
 import type { ReactNode } from "react"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
+import ListingReportModerationPanel from "@/components/moderation/ListingReportModerationPanel"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
@@ -251,6 +252,7 @@ export default function AdminDashboard() {
         </Card>
         {/* Модерация объявлений */}
         <ListingModerationPanel />
+        <ListingReportModerationPanel />
       </Stack>
     </Box>
   )

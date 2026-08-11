@@ -21,6 +21,8 @@ import {
   Breadcrumbs,
   Anchor,
   Textarea,
+  Modal,
+  Select,
   Skeleton,
   UnstyledButton,
 } from "@mantine/core"
@@ -184,6 +186,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewText, setReviewText] = useState("")
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reportOpened, setReportOpened] = useState(false)
+  const [reportReason, setReportReason] = useState("MISLEADING")
+  const [reportComment, setReportComment] = useState("")
+  const [reportSubmitting, setReportSubmitting] = useState(false)
   const { data: session } = useSession()
   const [activeImage, setActiveImage] = useState(0)
   const [imageFailed, setImageFailed] = useState(false)
@@ -262,6 +268,45 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
       setReviewSubmitting(false)
     }
   }
+  const openReport = () => {
+    if (!data.listingId) return
+    if (!session) {
+      notifications.show({
+        title: "Войдите, чтобы пожаловаться",
+        message: "Так мы защищаем модерацию от автоматических и анонимных жалоб.",
+        color: "indigo",
+      })
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/vehicle/${data.id}`)}`)
+      return
+    }
+    setReportOpened(true)
+  }
+  const submitReport = async () => {
+    if (!data.listingId || reportSubmitting) return
+    setReportSubmitting(true)
+    try {
+      await fetchJson<{ id: string }>(`/api/listings/${data.listingId}/reports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reportReason, comment: reportComment }),
+      })
+      setReportOpened(false)
+      setReportComment("")
+      notifications.show({
+        title: "Жалоба принята",
+        message: "Она сохранена и передана в очередь модерации.",
+        color: "orange",
+      })
+    } catch (reportError) {
+      notifications.show({
+        title: "Не удалось отправить жалобу",
+        message: getApiClientErrorMessage(reportError, "Повторите попытку позже."),
+        color: "red",
+      })
+    } finally {
+      setReportSubmitting(false)
+    }
+  }
 
   const isMobile = useMediaQuery("(max-width: 768px)")
   const images = parseImages(data.images)
@@ -324,6 +369,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   ]
 
   return (
+    <>
     <Container size="xl" py="lg">
       {/* Хлебные крошки */}
       <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="var(--market-muted)" />}>
@@ -733,7 +779,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       variant="default"
                       color="gray"
                       leftSection={<IconFlag size={18} />}
-                      onClick={() => notifications.show({ title: "Жалоба отправлена", message: "Модератор рассмотрит объявление", color: "orange" })}
+                      onClick={openReport}
                       fullWidth
                     >
                       Пожаловаться
@@ -782,6 +828,49 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         </Box>
       </Box>
     </Container>
+    <Modal
+      opened={reportOpened}
+      onClose={() => !reportSubmitting && setReportOpened(false)}
+      title="Пожаловаться на объявление"
+      centered
+      radius="lg"
+    >
+      <Stack gap="md">
+        <Text size="sm" c="var(--market-muted)">
+          Жалобы рассматривает модерация. Укажите причину — это поможет быстрее проверить объявление.
+        </Text>
+        <Select
+          label="Причина"
+          value={reportReason}
+          onChange={(value) => setReportReason(value || "MISLEADING")}
+          data={[
+            { value: "MISLEADING", label: "Недостоверная информация" },
+            { value: "FRAUD", label: "Подозрение на мошенничество" },
+            { value: "PROHIBITED", label: "Запрещённый контент" },
+            { value: "DUPLICATE", label: "Повторное объявление" },
+            { value: "OTHER", label: "Другая причина" },
+          ]}
+          allowDeselect={false}
+        />
+        <Textarea
+          label="Комментарий"
+          description="Необязательно, до 1000 символов"
+          placeholder="Что именно требует проверки?"
+          value={reportComment}
+          onChange={(event) => setReportComment(event.currentTarget.value)}
+          maxLength={1000}
+          autosize
+          minRows={3}
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={() => setReportOpened(false)} disabled={reportSubmitting}>Отмена</Button>
+          <Button color="orange" leftSection={<IconFlag size={16} />} loading={reportSubmitting} onClick={() => void submitReport()}>
+            Отправить жалобу
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+    </>
   )
 }
 

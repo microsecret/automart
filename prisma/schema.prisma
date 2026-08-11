@@ -48,6 +48,8 @@ model User {
   deliveryDocuments       DeliveryDocument[]     @relation("DeliveryDocumentUploader")
   deliveryMessages        DeliveryMessage[]      @relation("DeliveryMessageSender")
   deliveryOrganizations   DeliveryOrganization[] @relation("DeliveryOrganizationOwner")
+  reportsCreated          ListingReport[]        @relation("ListingReportReporter")
+  reportsReviewed         ListingReport[]        @relation("ListingReportReviewer")
 
   @@index([email])
 }
@@ -267,6 +269,7 @@ model Listing {
   reviews       Review[] @relation("ListingReviews")
   statusEvents  ListingStatusEvent[]
   revisions     ListingRevision[]
+  reports       ListingReport[]
 
   // Timestamps
   createdAt     DateTime @default(now())
@@ -315,6 +318,29 @@ model ListingRevision {
   createdAt     DateTime @default(now())
 
   @@index([listingId, createdAt])
+}
+
+// A user can report a listing once. Reports are intentionally separate from
+// lifecycle events: moderation can investigate a complaint without changing
+// the public status of an otherwise active listing.
+model ListingReport {
+  id          String   @id @default(uuid())
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reporterId  String
+  reporter    User     @relation("ListingReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reason      String
+  comment     String?
+  status      String   @default("OPEN") // OPEN, IN_REVIEW, RESOLVED, DISMISSED
+  reviewedAt  DateTime?
+  reviewerId  String?
+  reviewer    User?    @relation("ListingReportReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([listingId, reporterId])
+  @@index([status, createdAt])
+  @@index([reporterId, createdAt])
 }
 
 // Review model for transaction feedback
