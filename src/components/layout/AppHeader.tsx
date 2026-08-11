@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2 } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2, IconBrain, IconChartBar, IconFileSearch, IconGasStation } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -63,6 +63,12 @@ export default function AppHeader() {
     { href: "/services", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
     { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
     { href: "/help", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
+  ]
+  const serviceShortcuts: NavigationItem[] = [
+    { href: "/services/fuel-map", label: "Карта АЗС", icon: <IconGasStation size={15} />, active: pathname.startsWith("/services/fuel-map") },
+    { href: "/services/history-check", label: "Проверка истории", icon: <IconFileSearch size={15} />, active: pathname.startsWith("/services/history-check") },
+    { href: "/services/valuation", label: "Оценка стоимости", icon: <IconChartBar size={15} />, active: pathname.startsWith("/services/valuation") },
+    { href: "/services/smart-matching", label: "Умный подбор", icon: <IconBrain size={15} />, active: pathname.startsWith("/services/smart-matching") },
   ]
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -157,10 +163,10 @@ export default function AppHeader() {
             </Menu.Dropdown>
           </Menu>
 
-          <ServiceNavigationMenu serviceNavigation={serviceNavigation} />
+          <ServiceNavigationMenu serviceNavigation={serviceNavigation} serviceShortcuts={serviceShortcuts} />
 
           <Group gap={2} visibleFrom="xl" wrap="nowrap" className="market-app-header__links">
-            {serviceNavigation.map((item) => (
+            {serviceNavigation.filter((item) => item.href !== "/services").map((item) => (
               <Button
                 key={item.href}
                 component={Link}
@@ -257,6 +263,7 @@ export default function AppHeader() {
           <MobileNavigationMenu
             catalogueNavigation={catalogueNavigation}
             serviceNavigation={serviceNavigation}
+            serviceShortcuts={serviceShortcuts}
             authenticated={Boolean(session)}
             colorScheme={colorScheme}
             onToggleScheme={toggleScheme}
@@ -369,28 +376,35 @@ export default function AppHeader() {
   )
 }
 
-function ServiceNavigationMenu({ serviceNavigation }: { serviceNavigation: NavigationItem[] }) {
-  const activeItem = serviceNavigation.find((item) => item.active)
+function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts }: { serviceNavigation: NavigationItem[]; serviceShortcuts: NavigationItem[] }) {
+  const serviceIsActive = serviceNavigation[0]?.active || serviceShortcuts.some((item) => item.active)
 
   return (
-    <Box visibleFrom="md" hiddenFrom="xl">
-      <Menu shadow="md" width={224} position="bottom-start" radius="md" offset={6} withinPortal>
+    <Box visibleFrom="md">
+      <Menu shadow="md" width={244} position="bottom-start" radius="md" offset={6} withinPortal>
         <Menu.Target>
           <Button
-            variant={activeItem ? "light" : "subtle"}
+            variant={serviceIsActive ? "light" : "subtle"}
             color="indigo"
             size="compact-sm"
-            leftSection={activeItem?.icon || <IconShieldCheck size={15} />}
-            aria-label="Открыть сервисы, новости и помощь"
+            leftSection={<IconShieldCheck size={15} />}
+            aria-label="Открыть сервисы площадки"
           >
-            {activeItem?.label || "Сервисы"}
+            Сервисы
           </Button>
         </Menu.Target>
         <Menu.Dropdown>
-          <Menu.Label>Сервисы и информация</Menu.Label>
-          {serviceNavigation.map((item) => (
+          <Menu.Label>Инструменты водителя</Menu.Label>
+          {serviceShortcuts.map((item) => (
             <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon} color={item.active ? "indigo" : undefined}>
               {item.label}
+            </Menu.Item>
+          ))}
+          <Menu.Divider />
+          <Menu.Label>Площадка и поддержка</Menu.Label>
+          {serviceNavigation.map((item) => (
+            <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon} color={item.active ? "indigo" : undefined}>
+              {item.href === "/services" ? "Все сервисы" : item.label}
             </Menu.Item>
           ))}
         </Menu.Dropdown>
@@ -402,12 +416,14 @@ function ServiceNavigationMenu({ serviceNavigation }: { serviceNavigation: Navig
 function MobileNavigationMenu({
   catalogueNavigation,
   serviceNavigation,
+  serviceShortcuts,
   authenticated,
   colorScheme,
   onToggleScheme,
 }: {
   catalogueNavigation: NavigationItem[]
   serviceNavigation: NavigationItem[]
+  serviceShortcuts: NavigationItem[]
   authenticated: boolean
   colorScheme: "light" | "dark"
   onToggleScheme: () => void
@@ -427,10 +443,17 @@ function MobileNavigationMenu({
           </Menu.Item>
         ))}
         <Menu.Divider />
-        <Menu.Label>Сервисы</Menu.Label>
-        {serviceNavigation.map((item) => (
+        <Menu.Label>Инструменты водителя</Menu.Label>
+        {serviceShortcuts.map((item) => (
           <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon} color={item.active ? "indigo" : undefined}>
             {item.label}
+          </Menu.Item>
+        ))}
+        <Menu.Divider />
+        <Menu.Label>Площадка и поддержка</Menu.Label>
+        {serviceNavigation.map((item) => (
+          <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon} color={item.active ? "indigo" : undefined}>
+            {item.href === "/services" ? "Все сервисы" : item.label}
           </Menu.Item>
         ))}
         <Menu.Item component={Link} href="/search" leftSection={<IconSearch size={15} />}>Поиск</Menu.Item>
