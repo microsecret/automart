@@ -97,6 +97,10 @@ function getStationNetwork(station: FuelStation) {
   return station.brand || station.operator || null
 }
 
+function getStationNetworkKey(station: FuelStation) {
+  return getNetworkIdentity(station)?.label || getStationNetwork(station) || null
+}
+
 function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
   const source = `${station.name} ${station.brand || ""} ${station.operator || ""}`.toLocaleLowerCase("ru-RU")
   if (source.includes("лукойл")) return { label: "Лукойл", shortLabel: "ЛК", color: "#d8202f", textColor: "#fff" }
@@ -409,6 +413,7 @@ export default function FuelMapPage() {
   const [placeQuery, setPlaceQuery] = useState("")
   const [place, setPlace] = useState<string | null>(null)
   const [fuelFilter, setFuelFilter] = useState("")
+  const [networkFilter, setNetworkFilter] = useState("")
   const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
   const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
   const [requestedCoordinates, setRequestedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
@@ -428,17 +433,30 @@ export default function FuelMapPage() {
   const areaLabel = data?.areaLabel || place || city
   const isViewingMapArea = Boolean(requestedCoordinates)
   const allStations = data?.stations ?? EMPTY_STATIONS
+  const networkFilters = useMemo(() => {
+    const networks = allStations
+      .map(getStationNetworkKey)
+      .filter((value): value is string => Boolean(value))
+
+    return [
+      { value: "", label: "Все сети" },
+      ...Array.from(new Set(networks))
+        .sort((first, second) => first.localeCompare(second, "ru-RU"))
+        .map((value) => ({ value, label: value })),
+    ]
+  }, [allStations])
   const filteredStations = useMemo(() => {
-    const matchingStations = fuelFilter
-      ? allStations.filter((station) => station.fuels.includes(fuelFilter))
-      : allStations
+    const matchingStations = allStations.filter((station) => (
+      (!fuelFilter || station.fuels.includes(fuelFilter))
+      && (!networkFilter || getStationNetworkKey(station) === networkFilter)
+    ))
 
     // В списке первыми показываем ближайшие АЗС — именно так пользователь
     // выбирает точку для поездки, а не только по алфавиту сети.
     return [...matchingStations].sort((first, second) => (
       getDistanceInKilometers(coordinates, first) - getDistanceInKilometers(coordinates, second)
     ))
-  }, [allStations, coordinates.latitude, coordinates.longitude, fuelFilter])
+  }, [allStations, coordinates.latitude, coordinates.longitude, fuelFilter, networkFilter])
   const displayedStations = filteredStations.slice(0, visibleStationCount)
   const hasMoreStations = displayedStations.length < filteredStations.length
   const selectedStationKey = selectedStation ? `${selectedStation.sourceType}-${selectedStation.id}` : null
@@ -463,7 +481,7 @@ export default function FuelMapPage() {
   useEffect(() => {
     setSelectedStation(null)
     setVisibleStationCount(STATION_LIST_PAGE_SIZE)
-  }, [fuelFilter])
+  }, [fuelFilter, networkFilter])
 
   useEffect(() => {
     if (!selectedStation) return
@@ -512,6 +530,8 @@ export default function FuelMapPage() {
               <Select aria-label="Выберите город" data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))} value={place ? null : city} onChange={handleCityChange} searchable size="sm" placeholder="Выберите город" />
               <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Показать топливо</Text>
               <Select aria-label="Выберите тип топлива" data={FUEL_FILTERS} value={fuelFilter} onChange={(value) => setFuelFilter(value || "")} size="sm" />
+              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Сеть АЗС</Text>
+              <Select aria-label="Выберите сеть АЗС" data={networkFilters} value={networkFilter} onChange={(value) => setNetworkFilter(value || "")} size="sm" searchable nothingFoundMessage="Сеть не найдена" />
             </Paper>
           </Group>
         </Paper>
