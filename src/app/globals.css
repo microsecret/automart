@@ -64,6 +64,22 @@ body {
   outline-offset: 2px;
 }
 
+/* Одинаковый отклик у системных действий: интерфейс остаётся спокойным,
+   но нажатие ощущается как у нативного приложения, а не как у набора ссылок. */
+:where(.mantine-Button-root, .mantine-ActionIcon-root):not([data-disabled]) {
+  transition: transform 150ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.mantine-Button-root, .mantine-ActionIcon-root):not([data-disabled]):hover {
+    transform: translateY(-1px);
+  }
+}
+
+:where(.mantine-Button-root, .mantine-ActionIcon-root):not([data-disabled]):active {
+  transform: translateY(1px) scale(0.985);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
