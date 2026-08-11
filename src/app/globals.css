@@ -804,8 +804,8 @@ select {
 
 .catalog-filter-field {
   min-width: 0;
-  min-height: 58px;
-  padding: 6px 10px 7px;
+  min-height: 56px;
+  padding: 5px 10px 6px;
   border: 1px solid color-mix(in srgb, var(--market-field-line) 88%, transparent);
   border-radius: 11px;
   background: var(--market-field);
@@ -825,7 +825,8 @@ select {
 }
 
 .catalog-filter-field .mantine-InputWrapper-label {
-  margin-bottom: 5px;
+  margin-bottom: 3px;
+  line-height: 12px;
   color: var(--market-label);
   font-size: 11px;
   font-weight: 800;
@@ -835,22 +836,35 @@ select {
 
 .catalog-filter-field .mantine-Input-input,
 .catalog-filter-field .mantine-Select-input {
-  min-height: 30px;
+  min-height: 28px !important;
+  height: 28px !important;
   /* Поля живут внутри компактной оболочки: оставляем достаточно места
      для встроенных иконок, текста и стрелки Select. */
-  padding-left: 8px;
-  padding-right: 30px;
+  padding-left: 8px !important;
+  padding-right: 30px !important;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   font-size: 13px;
   font-weight: 650;
+  line-height: 28px !important;
   color: var(--market-control-text);
 }
 
 .catalog-filter-field--search .mantine-Input-input {
   padding-left: 32px !important;
+}
+
+/* Mantine resets Select padding after the global stylesheet.  Keep text clear
+   of the make icon and its dropdown chevron on every catalog page. */
+.catalog-filter-field--make .mantine-Select-input {
+  padding-left: 34px !important;
+}
+
+.catalog-filter-field .mantine-Input-section,
+.catalog-filter-field .mantine-Select-section {
+  height: 28px;
 }
 
 .catalog-filter-field .mantine-Input-input:focus,
