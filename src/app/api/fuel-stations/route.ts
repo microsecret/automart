@@ -60,6 +60,11 @@ type CachedStationAddress = {
   expiresAt: number
 }
 
+type CachedLiveStations = {
+  stations: FuelStationPayload[]
+  expiresAt: number
+}
+
 const FUEL_TAG_LABELS: Record<string, string> = {
   "fuel:diesel": "ДТ",
   "fuel:octane_92": "АИ‑92",
@@ -107,12 +112,18 @@ const ZAPRAVKIN_BASE_URL = (process.env.ZAPRAVKIN_API_URL || "https://api.zaprav
 const PLACE_CACHE_TTL = 1000 * 60 * 60 * 12
 const DIRECTORY_STATION_CACHE_TTL = 1000 * 60 * 20
 const STATION_ADDRESS_CACHE_TTL = 1000 * 60 * 60 * 24 * 7
+const LIVE_STATION_CACHE_TTL = 1000 * 45
 const MAX_DIRECTORY_CACHE_ENTRIES = 80
 const MAX_STATION_ADDRESS_CACHE_ENTRIES = 600
+const MAX_LIVE_STATION_CACHE_ENTRIES = 80
+const LIVE_STATION_PAGE_LIMIT = 200
+const MAX_LIVE_STATION_PAGES = 5
 const placeCache = new Map<string, CachedPlace>()
 const directoryStationCache = new Map<string, CachedDirectoryStations>()
 const stationAddressCache = new Map<string, CachedStationAddress>()
-let lastNominatimRequestAt = 0
+const liveStationCache = new Map<string, CachedLiveStations>()
+let nextNominatimRequestAt = 0
+let nominatimRequestQueue = Promise.resolve()
 
 function hasPublishedFuelTag(value: string | undefined) {
   return /^(yes|true|1)$/iu.test(value?.trim() || "")
@@ -147,6 +158,10 @@ function getDirectoryCacheKey(coordinates: Coordinates, radius: number) {
   return `${coordinates.latitude.toFixed(2)}:${coordinates.longitude.toFixed(2)}:${radius}`
 }
 
+function getLiveStationsCacheKey(coordinates: Coordinates, radius: number) {
+  return `${coordinates.latitude.toFixed(2)}:${coordinates.longitude.toFixed(2)}:${radius}`
+}
+
 function cacheDirectoryStations(key: string, stations: FuelStationPayload[]) {
   if (directoryStationCache.size >= MAX_DIRECTORY_CACHE_ENTRIES) {
     const oldestKey = directoryStationCache.keys().next().value
@@ -163,6 +178,15 @@ function cacheStationAddress(key: string, address: string | null) {
   }
 
   stationAddressCache.set(key, { address, expiresAt: Date.now() + STATION_ADDRESS_CACHE_TTL })
+}
+
+function cacheLiveStations(key: string, stations: FuelStationPayload[]) {
+  if (liveStationCache.size >= MAX_LIVE_STATION_CACHE_ENTRIES) {
+    const oldestKey = liveStationCache.keys().next().value
+    if (oldestKey) liveStationCache.delete(oldestKey)
+  }
+
+  liveStationCache.set(key, { stations, expiresAt: Date.now() + LIVE_STATION_CACHE_TTL })
 }
 
 function isRussianMapCoordinate(latitude: number, longitude: number) {
@@ -182,10 +206,15 @@ function asNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-async function waitForNominatimPolicy() {
-  const waitForPolicy = Math.max(0, 1_000 - (Date.now() - lastNominatimRequestAt))
-  if (waitForPolicy) await new Promise((resolve) => setTimeout(resolve, waitForPolicy))
-  lastNominatimRequestAt = Date.now()
+function waitForNominatimPolicy() {
+  const scheduledRequest = nominatimRequestQueue.then(async () => {
+    const delay = Math.max(0, nextNominatimRequestAt - Date.now())
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay))
+    nextNominatimRequestAt = Date.now() + 1_000
+  })
+
+  nominatimRequestQueue = scheduledRequest.catch(() => undefined)
+  return scheduledRequest
 }
 
 function normalizeFuel(value: unknown) {
@@ -408,9 +437,13 @@ async function resolveStationAddress(coordinates: Coordinates) {
   return address
 }
 
-async function requestLiveStations(coordinates: Coordinates, radius: number) {
+async function requestLiveStations(coordinates: Coordinates, radius: number, forceRefresh = false) {
   const apiKey = process.env.ZAPRAVKIN_API_KEY?.trim()
   if (!apiKey) return []
+
+  const cacheKey = getLiveStationsCacheKey(coordinates, radius)
+  const cached = liveStationCache.get(cacheKey)
+  if (!forceRefresh && cached && cached.expiresAt > Date.now()) return cached.stations
 
   const latitudeDelta = radius / 111_000
   const longitudeDelta = radius / Math.max(25_000, 111_000 * Math.cos(coordinates.latitude * Math.PI / 180))
@@ -420,33 +453,53 @@ async function requestLiveStations(coordinates: Coordinates, radius: number) {
     coordinates.longitude + longitudeDelta,
     coordinates.latitude + latitudeDelta,
   ].map((value) => value.toFixed(5)).join(",")
-  const endpoint = `${ZAPRAVKIN_BASE_URL}/stations?${new URLSearchParams({ bbox, limit: "200" }).toString()}`
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 8_000)
+  const stations: FuelStationPayload[] = []
+  let cursor: string | null = null
 
   try {
-    const response = await fetch(endpoint, {
-      headers: { authorization: `Bearer ${apiKey}`, accept: "application/json" },
-      signal: controller.signal,
-      next: { revalidate: 0 },
-    })
-    if (!response.ok) throw new Error(`Live fuel provider responded with ${response.status}`)
-    const payload = await response.json() as unknown
-    const payloadRecord = asRecord(payload)
-    const stations = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payloadRecord?.data)
-        ? payloadRecord.data
-        : Array.isArray(payloadRecord?.stations)
-          ? payloadRecord.stations
-          : []
-    return stations.map(normalizeLiveStation).filter((station): station is FuelStationPayload => Boolean(station))
+    for (let page = 0; page < MAX_LIVE_STATION_PAGES; page += 1) {
+      const query = new URLSearchParams({ bbox, limit: String(LIVE_STATION_PAGE_LIMIT) })
+      if (cursor) query.set("cursor", cursor)
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 8_000)
+      let payload: unknown
+
+      try {
+        const response = await fetch(`${ZAPRAVKIN_BASE_URL}/stations?${query.toString()}`, {
+          headers: { authorization: `Bearer ${apiKey}`, accept: "application/json" },
+          signal: controller.signal,
+          next: { revalidate: 0 },
+        })
+        if (!response.ok) throw new Error(`Live fuel provider responded with ${response.status}`)
+        payload = await response.json() as unknown
+      } finally {
+        clearTimeout(timeout)
+      }
+
+      const payloadRecord = asRecord(payload)
+      const pageStations = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payloadRecord?.data)
+          ? payloadRecord.data
+          : Array.isArray(payloadRecord?.stations)
+            ? payloadRecord.stations
+            : []
+      stations.push(...pageStations.map(normalizeLiveStation).filter((station): station is FuelStationPayload => Boolean(station)))
+
+      const metadata = asRecord(payloadRecord?.meta)
+      const nextCursor = asString(metadata?.cursor)
+      if (!nextCursor || !pageStations.length) break
+      cursor = nextCursor
+    }
   } catch (error) {
     console.warn("Live fuel provider is temporarily unavailable", error instanceof Error ? error.message : "Unknown error")
     return []
-  } finally {
-    clearTimeout(timeout)
   }
+
+  const uniqueStations = Array.from(new Map(stations.map((station) => [station.id, station])).values())
+  cacheLiveStations(cacheKey, uniqueStations)
+  return uniqueStations
 }
 
 function normalizeDirectoryStations(elements: OverpassElement[]) {
@@ -483,6 +536,8 @@ function normalizeDirectoryStations(elements: OverpassElement[]) {
  */
 export async function GET(request: NextRequest) {
   const detail = request.nextUrl.searchParams.get("detail")
+  const refreshTimestamp = Number(request.nextUrl.searchParams.get("refresh"))
+  const forceRefresh = Number.isFinite(refreshTimestamp) && Math.abs(Date.now() - refreshTimestamp) < 15_000
   const city = request.nextUrl.searchParams.get("city") || "Москва"
   const place = request.nextUrl.searchParams.get("place")?.trim() || null
   const latitudeParam = request.nextUrl.searchParams.get("latitude")
@@ -547,7 +602,7 @@ export async function GET(request: NextRequest) {
       })
   const [directoryResult, liveResult] = await Promise.allSettled([
     directoryPromise,
-    requestLiveStations(coordinates, radius),
+    requestLiveStations(coordinates, radius, forceRefresh),
   ])
   const directoryStations = directoryResult.status === "fulfilled" ? directoryResult.value : []
   const liveStations = liveResult.status === "fulfilled" ? liveResult.value : []

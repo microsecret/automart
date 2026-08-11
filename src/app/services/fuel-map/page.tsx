@@ -437,6 +437,7 @@ export default function FuelMapPage() {
   const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
   const [requestedCoordinates, setRequestedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
   const [visibleStationCount, setVisibleStationCount] = useState(STATION_LIST_PAGE_SIZE)
+  const [liveRefreshTimestamp, setLiveRefreshTimestamp] = useState<number | null>(null)
   const cityCoordinates = CITY_COORDINATES[city] || CITY_COORDINATES["Москва"]
   const fuelStationsUrl = useMemo(() => {
     const params = new URLSearchParams({ city })
@@ -445,8 +446,9 @@ export default function FuelMapPage() {
       params.set("latitude", requestedCoordinates.latitude.toFixed(5))
       params.set("longitude", requestedCoordinates.longitude.toFixed(5))
     }
+    if (liveRefreshTimestamp && Date.now() - liveRefreshTimestamp < 12_000) params.set("refresh", String(liveRefreshTimestamp))
     return `/api/fuel-stations?${params.toString()}`
-  }, [city, place, requestedCoordinates])
+  }, [city, place, requestedCoordinates, liveRefreshTimestamp])
   const { data, error, isLoading, isValidating, mutate } = useSWR<FuelStationsResponse>(fuelStationsUrl, fetchJson, { revalidateOnFocus: false })
   const coordinates = data?.coordinates || requestedCoordinates || cityCoordinates
   const areaLabel = data?.areaLabel || place || city
@@ -539,6 +541,8 @@ export default function FuelMapPage() {
     else setPlace(nextPlace)
   }
 
+  const handleRefresh = () => setLiveRefreshTimestamp(Date.now())
+
   return (
     <Box className="service-page service-page--fuel-map" p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
@@ -564,7 +568,7 @@ export default function FuelMapPage() {
 
         <Group justify="space-between" align="center" gap="sm" wrap="wrap">
           <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с ${areaLabel}`}</Text><Text size="xs" c="dimmed">{data ? `${filteredStations.length} из ${data.stations.length} точек в подборке${data.coverage.dataMode === "LIVE" ? " · статусы от поставщика" : " · справочник OSM"}` : "Загружаем точки"}</Text></Box></Group>
-          <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => mutate()} loading={isLoading || isValidating}>Обновить</Button><Button color="indigo" size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>Загрузить этот участок</Button></Group>
+          <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button><Button color="indigo" size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>Загрузить этот участок</Button></Group>
         </Group>
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
