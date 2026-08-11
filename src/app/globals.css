@@ -297,14 +297,17 @@ select {
 
 .market-app-header__link {
   white-space: nowrap;
-  color: var(--market-muted) !important;
+  /* Primary navigation is a first-class control, not secondary metadata.
+     Keep it legible before hover so that the header remains scannable. */
+  color: var(--market-control-text) !important;
   border-radius: 8px;
   transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
 .market-app-header__link:hover {
   color: var(--market-ink) !important;
-  background: var(--market-primary-soft);
+  background: color-mix(in srgb, var(--market-primary-soft) 72%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #818cf8 15%, transparent);
 }
 
 .market-app-header__link--active {
