@@ -1715,7 +1715,8 @@ select {
 .auction-filter-grid .mantine-Input-input,
 .auction-filter-grid .mantine-Select-input {
   min-height: 30px;
-  padding-inline: 2px;
+  padding-left: 8px;
+  padding-right: 30px;
   border: 0;
   border-radius: 0;
   background: transparent;
