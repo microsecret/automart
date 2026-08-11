@@ -179,7 +179,8 @@ function formatDetailValue(key: string, value: string | number | boolean) {
 }
 
 export default function VehicleDetailClient({ data }: { data: VehicleData }) {
-  const [showPhone, setShowPhone] = useState(false)
+  const [phone, setPhone] = useState<string | null>(null)
+  const [contactRevealing, setContactRevealing] = useState(false)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewText, setReviewText] = useState("")
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
@@ -201,6 +202,37 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
       return
     }
     void toggleFavorite(data.listingId)
+  }
+  const revealPhone = async () => {
+    if (!data.listingId || phone || contactRevealing) return
+    if (!session) {
+      notifications.show({
+        title: "Войдите, чтобы увидеть телефон",
+        message: "Так контакты продавцов защищены от автоматического сбора.",
+        color: "indigo",
+      })
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/vehicle/${data.id}`)}`)
+      return
+    }
+
+    setContactRevealing(true)
+    try {
+      const response = await fetch(`/api/listings/${data.listingId}`, { method: "POST" })
+      const payload = await response.json().catch(() => null) as { phone?: string; error?: string } | null
+      if (!response.ok || !payload?.phone) {
+        throw new Error(payload?.error || "Не удалось получить номер")
+      }
+      setPhone(payload.phone)
+      notifications.show({ title: "Контакт продавца открыт", message: "Нажмите на номер, чтобы позвонить.", color: "green" })
+    } catch (contactError) {
+      notifications.show({
+        title: "Не удалось открыть телефон",
+        message: getApiClientErrorMessage(contactError, "Повторите попытку позже."),
+        color: "red",
+      })
+    } finally {
+      setContactRevealing(false)
+    }
   }
   const selectImage = (index: number) => {
     setActiveImage(index)
@@ -628,16 +660,31 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               {/* Действия */}
               <Card withBorder radius="lg" p="lg">
                 <Stack gap="sm">
-                  <Button
-                    size="lg"
-                    radius="md"
-                    leftSection={<IconPhone size={18} />}
-                    variant={showPhone ? "light" : "filled"}
-                    color="indigo"
-                    onClick={() => setShowPhone(true)}
-                  >
-                    {showPhone ? "+7 (XXX) XXX-XX-XX" : "Показать телефон"}
-                  </Button>
+                  {phone ? (
+                    <Button
+                      component="a"
+                      href={`tel:${phone}`}
+                      size="lg"
+                      radius="md"
+                      leftSection={<IconPhone size={18} />}
+                      variant="light"
+                      color="indigo"
+                    >
+                      {phone}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      radius="md"
+                      leftSection={<IconPhone size={18} />}
+                      color="indigo"
+                      onClick={() => void revealPhone()}
+                      loading={contactRevealing}
+                      disabled={!data.listingId}
+                    >
+                      Показать телефон
+                    </Button>
+                  )}
                   {session?.user?.id === data.seller.id && data.listingId && (
                     <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>
                       Редактировать объявление

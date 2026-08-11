@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getOwnerTransition, isListingModerator, LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { parseListingEditInput, parseStoredImages } from "@/lib/listing-edit"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -28,6 +29,53 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     console.error("GET listing error:", error)
     return NextResponse.json({ error: "Не удалось загрузить объявление" }, { status: 500 })
+  }
+}
+
+/**
+ * POST /api/listings/[id] — раскрыть контакт продавца авторизованному покупателю.
+ *
+ * Номер не включается в публичный JSON карточки: это защищает его от массового
+ * сбора. Ограничение запросов дополнительно не даёт использовать действие как
+ * каталог номеров, а владелец видит свой контакт без ограничений по статусу.
+ */
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ error: "Войдите, чтобы увидеть телефон продавца" }, { status: 401 })
+
+    const userLimit = rateLimit(`listing:contact:user:${session.user.id}`, { windowMs: 60 * 60_000, maxRequests: 20 })
+    const ipLimit = rateLimit(`listing:contact:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 60 })
+    if (!userLimit.success || !ipLimit.success) {
+      const limit = !userLimit.success ? userLimit : ipLimit
+      return NextResponse.json(
+        { error: "Слишком много запросов контактов. Повторите попытку позже." },
+        { status: 429, headers: rateLimitHeaders(limit) },
+      )
+    }
+
+    const listing = await prisma.listing.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        deletedAt: true,
+        user: { select: { phone: true } },
+      },
+    })
+    if (!listing || listing.deletedAt || listing.status !== LISTING_STATUS.ACTIVE) {
+      return NextResponse.json({ error: "Объявление недоступно" }, { status: 404 })
+    }
+    if (!listing.user.phone) {
+      return NextResponse.json({ error: "Продавец пока не добавил номер для связи" }, { status: 409 })
+    }
+
+    return NextResponse.json({ phone: listing.user.phone })
+  } catch (error) {
+    console.error("POST listing contact error:", error)
+    return NextResponse.json({ error: "Не удалось получить номер. Повторите попытку позже." }, { status: 500 })
   }
 }
 
