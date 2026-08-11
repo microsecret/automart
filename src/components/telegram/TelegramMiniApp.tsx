@@ -28,7 +28,7 @@ declare global {
 }
 
 const QUICK_ACTIONS = [
-  { href: "/listings/create/vehicle", label: "Подать объявление", icon: IconPlus },
+  { href: "/listings/create/vehicle?source=telegram", label: "Подать объявление", icon: IconPlus },
   { href: "/favorites", label: "Избранное", icon: IconHeart },
   { href: "/dashboard/deliveries", label: "Мои доставки", icon: IconTruckDelivery },
   { href: "/services/fuel-map", label: "Карта АЗС", icon: IconGasStation },

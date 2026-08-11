@@ -1,10 +1,10 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Alert, Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Divider, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
-import { IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
+import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
@@ -42,6 +42,8 @@ type CreateVehicleResponse = { id: string }
 export default function CreateVehiclePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isTelegramMiniApp = searchParams.get("source") === "telegram"
   const [loading, setLoading] = useState(false)
   const { images, uploadingImages, uploadPhotos, removeImage } = useMarketplaceImageUpload()
   const [categories, setCategories] = useState<VehicleCategory[]>([])
@@ -198,10 +200,19 @@ export default function CreateVehiclePage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Новое объявление</Text>
+            <Group gap={7} align="center">
+              <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Новое объявление</Text>
+              {isTelegramMiniApp && <Badge leftSection={<IconBrandTelegram size={12} />} color="indigo" variant="light" radius="xl">Mini App</Badge>}
+            </Group>
             <Text size="xs" c="gray.5">Заполните данные — после проверки объявление появится в поиске</Text>
           </Stack>
         </Group>
+
+        {isTelegramMiniApp && (
+          <Alert color="indigo" variant="light" title="Быстрая подача из Telegram" icon={<IconBrandTelegram size={18} />}>
+            Добавьте данные и снимите фото прямо с телефона — номер и аккаунт уже подтверждены ботом.
+          </Alert>
+        )}
 
         {categoriesError && (
           <Alert color="red" variant="light" title="Не удалось подготовить форму" withCloseButton onClose={() => setCategoriesError(null)}>
@@ -450,7 +461,7 @@ export default function CreateVehiclePage() {
                     <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconPhoto size={18} /></ThemeIcon>
                     <Stack gap={0}>
                       <Text fw={700} fz="sm" c="dark.9">Фотографии транспорта</Text>
-                      <Text size="xs" c="gray.5">Первая фотография станет обложкой. До 12 JPG, PNG или WebP — до 10 МБ каждая.</Text>
+                      <Text size="xs" c="gray.5">{isTelegramMiniApp ? "Можно снять авто камерой или выбрать фото из галереи. " : ""}Первая фотография станет обложкой. До 12 JPG, PNG или WebP — до 10 МБ каждая.</Text>
                     </Stack>
                   </Group>
                   <Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge>
@@ -459,8 +470,9 @@ export default function CreateVehiclePage() {
                   accept="image/jpeg,image/png,image/webp"
                   multiple
                   clearable
+                  capture={isTelegramMiniApp ? "environment" : undefined}
                   disabled={uploadingImages || images.length >= 12}
-                  placeholder="Выберите фотографии"
+                  placeholder={isTelegramMiniApp ? "Снять или выбрать фотографии" : "Выберите фотографии"}
                   onChange={uploadPhotos}
                   leftSection={<IconPhoto size={16} />}
                 />
