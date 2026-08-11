@@ -17,6 +17,39 @@ import type { AuctionListing } from "@prisma/client"
 type AuctionDetailResponse = { listing: AuctionListing }
 type AuctionInquiryResponse = { success: true; inquiry: { id: string; createdAt: string } }
 
+const AUCTION_VALUE_LABELS = {
+  fuel: {
+    GASOLINE: "Бензин",
+    DIESEL: "Дизель",
+    ELECTRIC: "Электро",
+    HYBRID: "Гибрид",
+    GAS: "Газ",
+    OTHER: "Другое",
+  },
+  transmission: {
+    MANUAL: "Механика",
+    AUTOMATIC: "Автомат",
+    VARIATOR: "Вариатор",
+    ROBOTIC: "Роботизированная",
+  },
+  body: {
+    SEDAN: "Седан",
+    HATCHBACK: "Хэтчбек",
+    SUV: "Кроссовер / внедорожник",
+    COUPE: "Купе",
+    CONVERTIBLE: "Кабриолет",
+    WAGON: "Универсал",
+    MINIVAN: "Минивэн",
+    PICKUP: "Пикап",
+    OTHER: "Другой",
+  },
+} as const
+
+function auctionValueLabel(value: string, group: keyof typeof AUCTION_VALUE_LABELS) {
+  const labels = AUCTION_VALUE_LABELS[group] as Record<string, string>
+  return labels[value] || value
+}
+
 function AuctionDetail() {
   const params = useParams()
   const id = params.id as string
@@ -79,7 +112,7 @@ function AuctionDetail() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={primaryImage} alt={`${listing.make} ${listing.model}`} onError={() => setImageFailed(true)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   )}
-                  <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.source} · {listing.lotNumber}</Badge>
+                  <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.lotNumber ? `${listing.source} · ${listing.lotNumber}` : listing.source}</Badge>
                   <Badge pos="absolute" top={16} right={16} color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
                 </Box>
               </Paper>
@@ -87,12 +120,12 @@ function AuctionDetail() {
               <Paper radius="md" p="md" withBorder>
                 <Stack gap="sm">
                   <Group gap="sm"><IconCar size={18} color="#4f46e5" /><Text fw={700} c="dark.9">Характеристики</Text></Group>
-                  <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
+                  <SimpleGrid className="auction-detail-specs" cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
                     <SpecRow icon={<IconCalendar size={16} />} label="Год" value={String(listing.year)} />
                     {listing.mileage && <SpecRow icon={<IconGauge size={16} />} label="Пробег" value={`${listing.mileage.toLocaleString("ru")} км`} />}
-                    {listing.fuelType && <SpecRow icon={<IconGasStation size={16} />} label="Топливо" value={listing.fuelType} />}
-                    {listing.transmission && <SpecRow icon={<IconManualGearbox size={16} />} label="КПП" value={listing.transmission} />}
-                    {listing.bodyType && <SpecRow icon={<IconCar size={16} />} label="Кузов" value={listing.bodyType} />}
+                    {listing.fuelType && <SpecRow icon={<IconGasStation size={16} />} label="Топливо" value={auctionValueLabel(listing.fuelType, "fuel")} />}
+                    {listing.transmission && <SpecRow icon={<IconManualGearbox size={16} />} label="КПП" value={auctionValueLabel(listing.transmission, "transmission")} />}
+                    {listing.bodyType && <SpecRow icon={<IconCar size={16} />} label="Кузов" value={auctionValueLabel(listing.bodyType, "body")} />}
                     {listing.color && <SpecRow icon={<IconPalette size={16} />} label="Цвет" value={listing.color} />}
                     {listing.engineVolume && <SpecRow icon={<IconCar size={16} />} label="Объём" value={`${listing.engineVolume} л`} />}
                     {listing.power && <SpecRow icon={<IconCar size={16} />} label="Мощность" value={`${listing.power} л.с.`} />}
@@ -165,10 +198,10 @@ function AuctionDetail() {
 
 function SpecRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <Group gap="sm" justify="space-between">
-      <Group gap={6}><Box c="gray.5">{icon}</Box><Text size="xs" c="gray.5">{label}</Text></Group>
-      <Text size="xs" fw={600} c="dark.9">{value}</Text>
-    </Group>
+    <Box className="auction-detail-spec">
+      <Group gap={6}><Box c="indigo.5">{icon}</Box><Text className="auction-detail-spec__label">{label}</Text></Group>
+      <Text className="auction-detail-spec__value">{value}</Text>
+    </Box>
   )
 }
 

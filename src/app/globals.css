@@ -2304,6 +2304,42 @@ select {
   top: 80px;
 }
 
+.auction-detail-spec {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  min-height: 84px;
+  padding: 12px;
+  border: 1px solid var(--market-border-soft);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.auction-detail-spec:hover {
+  border-color: color-mix(in srgb, var(--market-accent) 34%, var(--market-border-soft));
+  box-shadow: 0 8px 20px rgb(79 70 229 / 8%);
+  transform: translateY(-1px);
+}
+
+.auction-detail-spec__label {
+  color: var(--market-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.auction-detail-spec__value {
+  overflow: hidden;
+  color: var(--market-text-primary);
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .auction-price-range {
   display: grid;
   gap: 4px;
