@@ -294,6 +294,7 @@ export async function POST(request: NextRequest) {
       normalizedModel,
       normalizedYear,
       String(fuelType),
+      typeof transmission === "string" ? transmission : null,
     )
     if (energyAndYearError) return NextResponse.json({ error: energyAndYearError }, { status: 400 })
 

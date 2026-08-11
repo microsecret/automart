@@ -190,6 +190,26 @@ async function main() {
       data: { fuelType: "ELECTRIC" },
     })
 
+    // EVs do not have a gearbox type exposed as manual/CVT/robotic in the
+    // marketplace form. Older demo imports selected it at random, which made
+    // Tesla cards look technically implausible.
+    const electricTransmissionRepair = await tx.vehicle.updateMany({
+      where: {
+        vehicleType: "CAR",
+        make: { in: ELECTRIC_ONLY_CAR_MAKES },
+        transmission: { not: "AUTOMATIC" },
+      },
+      data: { transmission: "AUTOMATIC" },
+    })
+
+    // A Duster can be petrol, diesel or hybrid depending on generation, but
+    // it is not a battery-electric model. This only fixes the known invalid
+    // legacy demo value without applying a broad rule to the Renault range.
+    const dusterElectricRepair = await tx.vehicle.updateMany({
+      where: { vehicleType: "CAR", make: "Renault", model: "Duster", fuelType: "ELECTRIC" },
+      data: { fuelType: "GASOLINE" },
+    })
+
     // Tesla's own manual covers Model Y from the 2020 model year.  Correct a
     // known pre-launch demo date rather than exposing a non-existent car.
     const modelYYearRepair = await tx.vehicle.updateMany({
@@ -245,7 +265,7 @@ async function main() {
     }
 
     console.log(
-      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values, ${modelYYearRepair.count} Tesla Model Y years; cleared ${clearedVehicleMedia} vehicle and ${clearedPartMedia} part demo media records`,
+      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values, ${electricTransmissionRepair.count} EV transmissions, ${dusterElectricRepair.count} invalid Duster fuel values and ${modelYYearRepair.count} Tesla Model Y years; cleared ${clearedVehicleMedia} vehicle and ${clearedPartMedia} part demo media records`,
     )
   })
 

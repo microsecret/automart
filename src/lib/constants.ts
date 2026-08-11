@@ -174,7 +174,7 @@ export function getFuelOptions(vehicleType: string | null | undefined) {
  * unambiguous electric-only history, so hybrid-capable brands remain free to
  * publish their valid petrol and hybrid models.
  */
-const ELECTRIC_ONLY_CAR_MAKES = new Set([
+export const ELECTRIC_ONLY_CAR_MAKES = new Set([
   "Tesla",
   "Zeekr",
   "Nio",
@@ -192,11 +192,23 @@ export function validateVehicleEnergyAndModelYear(
   model: string,
   year: number,
   fuelType: string,
+  transmission?: string | null,
 ) {
   if (vehicleType !== "CAR") return null
 
   if (ELECTRIC_ONLY_CAR_MAKES.has(make) && fuelType !== "ELECTRIC") {
     return `${make} выпускает только электромобили. Выберите тип топлива «Электро».`
+  }
+
+  if (ELECTRIC_ONLY_CAR_MAKES.has(make) && transmission && transmission !== "AUTOMATIC") {
+    return `${make} не использует механическую, вариаторную или роботизированную КПП. Выберите «Автомат».`
+  }
+
+  // The current-generation Duster is sold with combustion and hybrid
+  // powertrains, but never as a battery-electric vehicle. Keep this
+  // deliberately model-specific so we do not block valid EVs from Renault.
+  if (make === "Renault" && model === "Duster" && fuelType === "ELECTRIC") {
+    return "Renault Duster не выпускается в электрической версии. Выберите фактический тип топлива."
   }
 
   const firstModelYear = CAR_MODEL_YEAR_FLOORS[`${make}::${model}`]

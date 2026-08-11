@@ -1,5 +1,6 @@
 import { prisma } from "../src/lib/prisma"
 import { BRANDS, TRANSPORT_CATEGORIES } from "../src/lib/catalog"
+import { ELECTRIC_ONLY_CAR_MAKES } from "../src/lib/constants"
 
 async function main() {
   console.log("Генерация объявлений из каталога...")
@@ -43,11 +44,20 @@ async function main() {
   for (const brand of BRANDS.filter((b) => b.popular)) {
     const models = brand.models.slice(0, 3)
     for (const model of models) {
-      const year = 2018 + Math.floor(Math.random() * 7) // 2018-2024
+      const rawYear = 2018 + Math.floor(Math.random() * 7) // 2018-2024
+      const year = brand.name === "Tesla" && model === "Model Y" ? Math.max(2020, rawYear) : rawYear
       const mileage = Math.floor(Math.random() * 120000)
       const basePrice = getBasePrice(brand.name, year)
       const price = basePrice + Math.floor(Math.random() * 500000) - 250000
-      const fuel = brand.country === "CN" && Math.random() > 0.7 ? "ELECTRIC" : fuels[Math.floor(Math.random() * fuels.length)]
+      const randomFuel = brand.country === "CN" && Math.random() > 0.7 ? "ELECTRIC" : fuels[Math.floor(Math.random() * fuels.length)]
+      const fuel = ELECTRIC_ONLY_CAR_MAKES.has(brand.name)
+        ? "ELECTRIC"
+        : brand.name === "Renault" && model === "Duster" && randomFuel === "ELECTRIC"
+          ? "GASOLINE"
+          : randomFuel
+      const transmission = ELECTRIC_ONLY_CAR_MAKES.has(brand.name)
+        ? "AUTOMATIC"
+        : transmissions[Math.floor(Math.random() * transmissions.length)]
       const vin = createSeedVin("C", vCount)
 
       const vehicle = await prisma.vehicle.create({
@@ -59,7 +69,7 @@ async function main() {
           mileage,
           vin,
           fuelType: fuel,
-          transmission: transmissions[Math.floor(Math.random() * transmissions.length)],
+          transmission,
           bodyType: bodies[Math.floor(Math.random() * bodies.length)],
           color: colors[Math.floor(Math.random() * colors.length)],
           engineVolume: fuel === "ELECTRIC" ? null : parseFloat((1.4 + Math.random() * 2.5).toFixed(1)),
