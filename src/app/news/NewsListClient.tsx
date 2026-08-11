@@ -3,7 +3,7 @@
 import { useDeferredValue, useState } from "react"
 import useSWR from "swr"
 import { Badge, Box, Card, Group, Image, Pagination, SimpleGrid, Stack, Text, TextInput, ThemeIcon } from "@mantine/core"
-import { IconArrowUpRight, IconMessageCircle2, IconNews, IconSearch } from "@tabler/icons-react"
+import { IconArrowUpRight, IconMessageCircle2, IconNews, IconSearch, IconSparkles } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
 import { newsHref } from "@/lib/news"
@@ -30,8 +30,17 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
 
   return (
     <Link className="news-list-card-link" data-featured={featured || undefined} href={newsHref(article)} aria-label={`Открыть новость: ${article.title}`}>
-      <Card className="news-list-card" data-featured={featured || undefined} data-has-image={article.imageUrl ? true : undefined} radius="lg" p={0} withBorder>
-        {article.imageUrl && <Image className="news-list-card__image" src={article.imageUrl} alt="" h={featured ? 230 : 156} fit="cover" />}
+      <Card className="news-list-card" data-featured={featured || undefined} radius="lg" p={0} withBorder>
+        {article.imageUrl ? (
+          <Image className="news-list-card__image" src={article.imageUrl} alt="" h={featured ? 230 : 156} fit="cover" />
+        ) : (
+          <Box className="news-list-card__cover" data-featured={featured || undefined} aria-hidden="true">
+            <ThemeIcon className="news-list-card__cover-icon" color="indigo" variant="white" radius="xl" size={featured ? 54 : 42}>
+              {featured ? <IconSparkles size={featured ? 27 : 21} /> : <IconNews size={21} />}
+            </ThemeIcon>
+            <Text className="news-list-card__cover-label" fw={800} size={featured ? "sm" : "xs"}>{featured ? "Главное сегодня" : "Новости авторынка"}</Text>
+          </Box>
+        )}
         <Stack className="news-list-card__content" gap="sm">
           <Group className="news-list-card__meta" justify="space-between" gap="xs" wrap="nowrap">
             <Badge className="news-list-card__source" size="xs" variant="light" color="indigo" radius="xl">{source}</Badge>
