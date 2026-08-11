@@ -664,7 +664,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   >
                     {isFav ? "В избранном" : "В избранное"}
                   </Button>
-                  <Group gap="sm" grow>
+                  <Stack gap="xs">
                     <Button
                       component={Link}
                       href={`/compare?ids=${data.id}`}
@@ -673,6 +673,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       variant="light"
                       color="indigo"
                       leftSection={<IconGitCompare size={18} />}
+                      fullWidth
                     >
                       Сравнить
                     </Button>
@@ -683,10 +684,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       color="gray"
                       leftSection={<IconFlag size={18} />}
                       onClick={() => notifications.show({ title: "Жалоба отправлена", message: "Модератор рассмотрит объявление", color: "orange" })}
+                      fullWidth
                     >
                       Пожаловаться
                     </Button>
-                  </Group>
+                  </Stack>
                 </Stack>
               <CreditCalculator price={data.price} />
               </Card>
