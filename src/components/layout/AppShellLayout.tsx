@@ -3,9 +3,10 @@
 import { Avatar, Box, Button, Group, NavLink, Paper, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core"
 import { useSession } from "next-auth/react"
 import {
-  IconCar, IconHeart, IconHome2, IconMessageCircle2, IconMotorbike, IconPlane,
-  IconPlus, IconSearch, IconSpeedboat, IconTools, IconTractor, IconTruck,
-  IconTruckDelivery, IconUserCircle, IconGavel, IconNews, IconShieldCheck,
+  IconBrain, IconCar, IconChartBar, IconFileSearch, IconGasStation,
+  IconGavel, IconHeart, IconHome2, IconMessageCircle2, IconMotorbike, IconNews,
+  IconPlane, IconPlus, IconSearch, IconShieldCheck, IconSpeedboat, IconTools,
+  IconTractor, IconTruck, IconTruckDelivery,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -37,6 +38,14 @@ const AUCTIONS = [
   { label: "Китай", href: "/auctions?country=CN" },
   { label: "США", href: "/auctions?country=US" },
   { label: "Европа", href: "/auctions?country=EU" },
+]
+
+const SERVICES = [
+  { label: "Карта АЗС", href: "/services/fuel-map", icon: <IconGasStation size={16} stroke={1.8} />, color: "orange" },
+  { label: "Проверка истории", href: "/services/history-check", icon: <IconFileSearch size={16} stroke={1.8} />, color: "cyan" },
+  { label: "Оценка стоимости", href: "/services/valuation", icon: <IconChartBar size={16} stroke={1.8} />, color: "indigo" },
+  { label: "Умный подбор", href: "/services/smart-matching", icon: <IconBrain size={16} stroke={1.8} />, color: "violet" },
+  { label: "Безопасная сделка", href: "/services/safe-deal", icon: <IconShieldCheck size={16} stroke={1.8} />, color: "teal" },
 ]
 
 const MOBILE_NAV = [
@@ -124,16 +133,20 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 </SidebarPanel>
               )}
 
-              <Paper className="market-side-service" radius="lg" p="sm" withBorder>
-                <Group gap="xs" wrap="nowrap" align="flex-start">
-                  <ThemeIcon variant="light" color="indigo" radius="md" size={30}><IconShieldCheck size={17} /></ThemeIcon>
-                  <Box>
-                    <Text size="xs" fw={700}>Безопасная сделка</Text>
-                    <Text size="10px" c="dimmed">Проверка, документы и доставка</Text>
-                  </Box>
-                </Group>
-                <Button component={Link} href="/services/safe-deal" variant="subtle" color="indigo" size="compact-sm" mt={6}>Как это работает →</Button>
-              </Paper>
+              <SidebarPanel title="Сервисы" href="/services" icon={<IconShieldCheck size={15} />}>
+                {SERVICES.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    component={Link}
+                    href={item.href}
+                    label={item.label}
+                    leftSection={item.icon}
+                    active={pathname === item.href}
+                    color={item.color}
+                    className="market-side-nav market-side-nav--service"
+                  />
+                ))}
+              </SidebarPanel>
 
               <Group justify="space-between" px={4} pt={2}>
                 <Button component={Link} href="/news" variant="subtle" color="gray" size="compact-xs" leftSection={<IconNews size={14} />}>Новости</Button>

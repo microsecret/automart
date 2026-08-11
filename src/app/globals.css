@@ -483,6 +483,15 @@ select {
   color: var(--market-muted);
 }
 
+.market-side-nav--service {
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.market-side-nav--service + .market-side-nav--service {
+  margin-top: 1px;
+}
+
 .market-side-panel__title-link {
   display: block;
   color: inherit;
