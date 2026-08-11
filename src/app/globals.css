@@ -1265,9 +1265,14 @@ select {
 }
 
 .listing-card__title {
+  display: -webkit-box;
+  min-height: 2.7em;
+  overflow: hidden;
   color: #172033;
   font-weight: 700;
   letter-spacing: -0.012em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .listing-card__facts > .mantine-Text-root,

@@ -237,7 +237,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           </Group>
 
           {/* Заголовок */}
-          <Text className="listing-card__title" fz="sm" fw={700} c="dark.9" lh={1.35} mb={7} style={TRUNCATE_STYLE}>
+          <Text className="listing-card__title" fz="sm" fw={700} c="dark.9" lh={1.35} mb={7}>
             {listing.title}
           </Text>
 
