@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, Checkbox } from "@mantine/core"
-import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools } from "@tabler/icons-react"
+import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake } from "@tabler/icons-react"
 import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILABILITY_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
@@ -37,14 +37,34 @@ function parseMultiValue(value: string | null) {
   return Array.from(new Set((value || "").split(",").map((item) => item.trim()).filter(Boolean)))
 }
 
-function PartMedia({ image, name }: { image: string; name: string }) {
+const PART_FALLBACKS = {
+  ENGINE: { icon: IconEngine, color: "orange" },
+  TRANSMISSION: { icon: IconSettings, color: "violet" },
+  SUSPENSION: { icon: IconSettings, color: "blue" },
+  BRAKES: { icon: IconDisc, color: "red" },
+  ELECTRICAL: { icon: IconBatteryAutomotive, color: "indigo" },
+  BODY: { icon: IconCar, color: "cyan" },
+  INTERIOR: { icon: IconArmchair, color: "grape" },
+  WHEELS: { icon: IconDisc, color: "gray" },
+  LIGHTING: { icon: IconBulb, color: "yellow" },
+  COOLING: { icon: IconSnowflake, color: "cyan" },
+  EXHAUST: { icon: IconSettings, color: "orange" },
+  STEERING: { icon: IconSettings, color: "blue" },
+  ACCESSORIES: { icon: IconTools, color: "teal" },
+  CONSUMABLES: { icon: IconTools, color: "lime" },
+  OTHER: { icon: IconTools, color: "indigo" },
+} as const
+
+function PartMedia({ image, name, partType }: { image: string; name: string; partType?: string | null }) {
   const [failed, setFailed] = useState(!image || image.includes("/placeholder"))
   const [loaded, setLoaded] = useState(false)
+  const fallback = PART_FALLBACKS[partType as keyof typeof PART_FALLBACKS] || PART_FALLBACKS.OTHER
+  const FallbackIcon = fallback.icon
 
   return (
-    <Box className="part-result-card__media" data-empty-media={failed || undefined}>
+    <Box className="part-result-card__media" data-empty-media={failed || undefined} data-part-type={partType || "OTHER"}>
       <Stack gap={4} align="center" className="part-result-card__placeholder" style={{ opacity: !loaded || failed ? 1 : 0 }}>
-        <ThemeIcon variant="light" color="indigo" size={50} radius="xl"><IconTools size={28} stroke={1.5} /></ThemeIcon>
+        <ThemeIcon variant="light" color={fallback.color} size={50} radius="xl"><FallbackIcon size={28} stroke={1.5} /></ThemeIcon>
       </Stack>
       {!failed && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -320,7 +340,7 @@ function PartsContent() {
                     return (
                       <Paper key={p.id} radius="lg" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)" }}>
                         <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                          <PartMedia image={image} name={p.name} />
+                          <PartMedia image={image} name={p.name} partType={p.partType} />
                         </Link>
                         <Box p="sm" className="part-result-card__content">
                             <Stack gap={4}>
