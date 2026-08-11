@@ -80,6 +80,13 @@ body {
   transform: translateY(1px) scale(0.985);
 }
 
+/* A single calm focus treatment keeps keyboard navigation discoverable without
+   competing with the compact visual language of the marketplace controls. */
+:where(a, button, input, select, textarea, [role="button"], [tabindex="0"]):focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.42);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
