@@ -836,7 +836,10 @@ select {
 .catalog-filter-field .mantine-Input-input,
 .catalog-filter-field .mantine-Select-input {
   min-height: 30px;
-  padding-inline: 2px;
+  /* Поля живут внутри компактной оболочки: оставляем достаточно места
+     для встроенных иконок, текста и стрелки Select. */
+  padding-left: 8px;
+  padding-right: 30px;
   border: 0;
   border-radius: 0;
   background: transparent;

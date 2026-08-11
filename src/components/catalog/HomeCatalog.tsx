@@ -254,6 +254,7 @@ export default function HomePage(p: HomePageProps = {}) {
                   </Group>
                 )
               }}
+              styles={{ input: { paddingLeft: 34 } }}
               size="sm"
             />
             <Select
