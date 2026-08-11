@@ -2253,6 +2253,10 @@ select {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.fuel-station-card[data-clickable] {
+  cursor: pointer;
+}
+
 .fuel-station-card:hover {
   border-color: #a5b4fc;
   box-shadow: 0 12px 22px -22px rgba(49,46,129,.64);

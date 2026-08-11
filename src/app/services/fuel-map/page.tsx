@@ -375,9 +375,18 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, onShowOnMa
   const iconColor = dataQuality === "live" ? stationStatus.color : dataQuality === "fuel" ? "teal" : dataQuality === "network" ? "orange" : "gray"
   const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
   const distance = formatDistance(getDistanceInKilometers(referenceCoordinates, station))
+  const selectStation = () => onShowOnMap(station)
 
   return (
-    <Paper className="fuel-station-card" data-selected={isSelected || undefined} radius="md" p="sm" withBorder>
+    <Paper
+      className="fuel-station-card"
+      data-selected={isSelected || undefined}
+      radius="md"
+      p="sm"
+      withBorder
+      onClick={selectStation}
+      data-clickable
+    >
       <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
         <Group gap="sm" wrap="nowrap">
           <ThemeIcon variant={networkIdentity ? "filled" : "light"} color={iconColor} radius="md" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkIdentity ? networkIdentity.shortLabel : <IconGasStation size={17} />}</ThemeIcon>
@@ -386,7 +395,7 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, onShowOnMa
             <Text size="xs" c="dimmed" lineClamp={1}>{station.address || network || "Адрес не указан"}</Text>
           </Box>
         </Group>
-        {station.sourceType !== "provider" && <Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id.replace(/^osm-[^-]+-/, "")}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor>}
+        {station.sourceType !== "provider" && <Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id.replace(/^osm-[^-]+-/, "")}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor>}
       </Group>
       <Group mt={8} gap={5} wrap="wrap">
         {networkLabel && <Badge size="xs" variant={networkIdentity ? "filled" : "outline"} color="orange" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkLabel}</Badge>}
@@ -401,8 +410,8 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, onShowOnMa
       </Group>
       <Text size="10px" c="dimmed" mt={7}>{statusUpdated ? `Данные обновлены: ${statusUpdated}` : getStationDataSummary(station)}</Text>
       <Group mt={8} gap={4}>
-        <Button variant="subtle" color="indigo" size="compact-xs" onClick={() => onShowOnMap(station)} leftSection={<IconMapPin size={13} />}>На карте</Button>
-        <Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" variant="subtle" color="indigo" size="compact-xs" leftSection={<IconRoute size={13} />}>Маршрут</Button>
+        <Button variant="subtle" color="indigo" size="compact-xs" onClick={(event) => { event.stopPropagation(); selectStation() }} leftSection={<IconMapPin size={13} />}>На карте</Button>
+        <Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} variant="subtle" color="indigo" size="compact-xs" leftSection={<IconRoute size={13} />}>Маршрут</Button>
       </Group>
     </Paper>
   )
