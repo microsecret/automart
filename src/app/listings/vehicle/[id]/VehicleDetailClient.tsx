@@ -743,7 +743,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     color="indigo"
                     leftSection={<IconMessageCircle2 size={18} />}
                     component={Link}
-                    href={`/messages/new?listingId=${data.listingId || data.id}`}
+                    href={`/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}`}
                   >
                     Написать продавцу
                   </Button>

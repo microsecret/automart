@@ -1,119 +1,59 @@
 "use client"
-export const dynamic = "force-dynamic"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect } from "react"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import useSWR from "swr"
 import { useSession } from "next-auth/react"
-import {
-  Container,
-  Stack,
-  Text,
-  Title,
-  Center,
-  Loader,
-  TextInput,
-  Card,
-  Avatar,
-  Group,
-} from "@mantine/core"
-import { IconSearch, IconMessageCirclePlus } from "@tabler/icons-react"
-import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
-import { fetchJson } from "@/lib/api-client"
+import { Button, Center, Container, Loader, Paper, Stack, Text, ThemeIcon, Title } from "@mantine/core"
+import { IconArrowRight, IconShieldCheck } from "@tabler/icons-react"
 import { createConversationId } from "@/lib/messages"
 
-interface User {
-  id: string
-  name: string | null
-  image: string | null
-}
+export const dynamic = "force-dynamic"
 
 function NewMessageContent() {
-  const { data: session, status } = useSession() || { data: null, status: 'unauthenticated' }
+  const { data: session, status } = useSession() || { data: null, status: "unauthenticated" }
   const router = useRouter()
-  const sp = useSearchParams()
-  const listingId = sp.get("listingId")
-  const [query, setQuery] = useState("")
-
-  const { data, error, isLoading, mutate } = useSWR<{ users: User[] }>(
-    session ? `/api/users${query ? `?q=${encodeURIComponent(query)}` : ""}` : null,
-    fetchJson
-  )
+  const searchParams = useSearchParams()
+  const listingId = searchParams.get("listingId")
+  const recipientId = searchParams.get("recipientId")
 
   useEffect(() => {
-    if (status === "loading") return
-    if (!session) router.push("/auth/signin")
-  }, [session, status, router])
+    if (status !== "loading" && !session) {
+      router.replace("/auth/signin")
+    }
+  }, [router, session, status])
 
-  const startConversation = (userId: string) => {
-    const conversationId = createConversationId(session!.user.id, userId, listingId)
-    const params = new URLSearchParams({ recipientId: userId })
+  useEffect(() => {
+    if (!session || !recipientId) return
+
+    const conversationId = createConversationId(session.user.id, recipientId, listingId)
+    const params = new URLSearchParams({ recipientId })
     if (listingId) params.set("listingId", listingId)
-    router.push(`/messages/${conversationId}?${params.toString()}`)
-  }
+    router.replace(`/messages/${conversationId}?${params.toString()}`)
+  }, [listingId, recipientId, router, session])
 
-  if (status === "loading" || !session) {
+  if (status === "loading" || !session || recipientId) {
     return <Container py={80}><Center><Loader color="indigo" /></Center></Container>
   }
 
   return (
-    <Container size="sm" py="lg">
-      <Stack gap="lg">
-        <Stack gap={4}>
-          <Title order={1} size="h2">Новое сообщение</Title>
-          <Text size="sm" c="gray.5">Выберите пользователя для начала диалога</Text>
-        </Stack>
-
-        <TextInput
-          placeholder="Введите имя пользователя"
-          leftSection={<IconSearch size={16} />}
-          value={query}
-          onChange={(e) => setQuery(e.currentTarget.value)}
-          radius="md"
-        />
-
-        {isLoading ? (
-          <Center py={40}><Loader color="indigo" /></Center>
-        ) : error ? (
-          <AsyncErrorState title="Не удалось найти пользователя" description="Попробуйте повторить поиск или откройте карточку нужного объявления." onRetry={() => mutate()} backHref="/" backLabel="К объявлениям" />
-        ) : !query.trim() ? (
-          <EmptyState title="Введите имя собеседника" description="Для нового диалога безопаснее открыть карточку объявления и нажать «Написать продавцу»." />
-        ) : (
-          <Stack gap="xs" className="av-fade-in">
-            {(data?.users || []).filter((u) => u.id !== session!.user.id).map((user) => (
-              <Card
-                key={user.id}
-                component="button"
-                type="button"
-                withBorder
-                radius="md"
-                p="sm"
-                style={{ cursor: "pointer", transition: "all 150ms ease", textAlign: "left" }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#c7d2fe" }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e4e4e7" }}
-                onClick={() => startConversation(user.id)}
-                aria-label={`Начать диалог с ${user.name || "пользователем"}`}
-              >
-                <Group gap="sm">
-                  <Avatar src={user.image} radius="xl" color="indigo">
-                    {user.name?.[0]?.toUpperCase()}
-                  </Avatar>
-                  <Stack gap={2} style={{ flex: 1 }}>
-                    <Text size="sm" fw={500}>{user.name || "Пользователь"}</Text>
-                    <Text size="xs" c="gray.4">Открыть новый диалог</Text>
-                  </Stack>
-                  <IconMessageCirclePlus size={20} color="#4f46e5" />
-                </Group>
-              </Card>
-            ))}
-            {data?.users?.length === 0 && (
-              <Center py={40}>
-                <Text size="sm" c="gray.4">Пользователи не найдены</Text>
-              </Center>
-            )}
+    <Container size="sm" py={{ base: 42, sm: 72 }}>
+      <Paper withBorder radius="xl" p={{ base: "xl", sm: 44 }} className="av-fade-in" style={{ textAlign: "center" }}>
+        <Stack align="center" gap="md">
+          <ThemeIcon size={58} radius="xl" variant="light" color="indigo">
+            <IconShieldCheck size={29} />
+          </ThemeIcon>
+          <Stack gap={4}>
+            <Title order={1} fz={{ base: 26, sm: 32 }}>Безопасный диалог начинается с объявления</Title>
+            <Text c="dimmed" maw={470}>
+              Так покупатель сразу видит предмет обсуждения, а продавец получает защищённую переписку по своему объявлению.
+            </Text>
           </Stack>
-        )}
-      </Stack>
+          <Button component={Link} href="/listings" size="md" radius="md" rightSection={<IconArrowRight size={17} />}>
+            Открыть объявления
+          </Button>
+        </Stack>
+      </Paper>
     </Container>
   )
 }

@@ -214,7 +214,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const conversationId = createConversationId(session.user.id, receiverId, typeof listingId === "string" ? listingId : null)
+    const normalizedRequestedListingId = typeof listingId === "string" ? listingId : null
+    const conversationId = createConversationId(session.user.id, receiverId, normalizedRequestedListingId)
 
     // New contacts are only allowed through a public card and its real owner.
     // A buyer and seller who have already begun a dialogue can still settle
@@ -243,6 +244,23 @@ export async function POST(request: NextRequest) {
         if (!existingDialogue) return NextResponse.json({ error: "Объявление недоступно для новых сообщений" }, { status: 404 })
       }
       normalizedListingId = listingId
+    } else {
+      // New contact must originate from a public listing. This keeps the
+      // endpoint from becoming a way to message arbitrary user accounts.
+      const existingDialogue = await prisma.message.findFirst({
+        where: {
+          conversationId,
+          listingId: null,
+          OR: [
+            { senderId: session.user.id, receiverId },
+            { senderId: receiverId, receiverId: session.user.id },
+          ],
+        },
+        select: { id: true },
+      })
+      if (!existingDialogue) {
+        return NextResponse.json({ error: "Новый диалог можно начать только из карточки объявления" }, { status: 400 })
+      }
     }
 
     // Create the message
