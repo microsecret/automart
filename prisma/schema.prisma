@@ -578,7 +578,7 @@ model AuctionListing {
   auctionDate     DateTime?
   location        String?
   // Статус
-  status          String   @default("ACTIVE") // ACTIVE, SOLD, EXPIRED
+  status          String   @default("ACTIVE") // ACTIVE, SOLD, EXPIRED, POLICY_EXCLUDED
   isTranslated    Boolean  @default(false)
   translatedAt    DateTime?
   lastChecked     DateTime @default(now()) // последняя попытка проверки источника
@@ -618,6 +618,7 @@ model AuctionSyncRun {
   updated        Int      @default(0)
   failed         Int      @default(0)
   skippedByPolicy Int     @default(0)
+  excludedByPolicy Int    @default(0)
   expired        Int      @default(0)
   error          String?
   startedAt      DateTime @default(now())

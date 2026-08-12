@@ -44,6 +44,14 @@ function asInteger(value: unknown) {
   return Number.isSafeInteger(parsed) ? parsed : null
 }
 
+function firstPositiveInteger(...values: unknown[]) {
+  for (const value of values) {
+    const parsed = asInteger(value)
+    if (parsed && parsed > 0) return parsed
+  }
+  return null
+}
+
 function asYearMonth(value: unknown) {
   const match = asText(value)?.match(/^(\d{4})(0[1-9]|1[0-2])$/)
   return match ? `${match[1]}-${match[2]}` : null
@@ -246,7 +254,9 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
       const displacement = asInteger(spec.displacement)
       return displacement && displacement > 0 ? Number((displacement / 1000).toFixed(1)) : null
     })(),
-    power: asInteger(spec.power),
+    // Some Encar records include power in a source field, while many public
+    // listings omit it entirely. Never infer horsepower from displacement.
+    power: firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower),
     driveType: normalizeAuctionDriveType(rawDrive),
     vin: asText(base.vin),
     lotNumber: requestedId,

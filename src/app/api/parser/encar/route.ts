@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems, type AuctionImportItem } from "@/lib/auction-import"
 import { scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
-import { assessImportAge, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
+import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
 
 export const dynamic = "force-dynamic"
 
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     const urls = [...new Set(body.urls.filter((url): url is string => typeof url === "string").map((url) => url.trim()).filter(Boolean))]
     if (!urls.length) return NextResponse.json({ error: "Передайте публичные ссылки Encar" }, { status: 400 })
     const maxAgeYears = resolveMaximumImportAgeYears(body.maxAgeYears)
+    const excludedByPolicy = await excludeListingsOutsideImportAgePolicy("ENCAR", maxAgeYears)
 
     const items: AuctionImportItem[] = []
     const failed: Array<{ url: string; error: string }> = []
@@ -37,10 +38,10 @@ export async function POST(request: NextRequest) {
         failed.push({ url, error: error instanceof Error ? error.message : "Не удалось разобрать карточку Encar" })
       }
     }
-    if (!items.length) return NextResponse.json({ success: true, requested: urls.length, imported: 0, maxAgeYears, skippedByAge, failed })
+    if (!items.length) return NextResponse.json({ success: true, requested: urls.length, imported: 0, maxAgeYears, skippedByAge, excludedByPolicy, failed })
 
     const result = await saveAuctionImportItems(items)
-    return NextResponse.json({ success: true, requested: urls.length, imported: items.length, maxAgeYears, skippedByAge, failed, ...result })
+    return NextResponse.json({ success: true, requested: urls.length, imported: items.length, maxAgeYears, skippedByAge, excludedByPolicy, failed, ...result })
   } catch (error) {
     console.error("Encar parser error:", error)
     return NextResponse.json({ error: "Failed" }, { status: 500 })

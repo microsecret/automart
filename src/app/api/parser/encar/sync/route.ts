@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems, type AuctionImportItem } from "@/lib/auction-import"
 import { discoverEncarPublicListingUrls, scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
-import { assessImportAge, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
+import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     })
     syncRunId = syncRun.id
+    const excludedByPolicy = await excludeListingsOutsideImportAgePolicy("ENCAR", maxAgeYears)
     // The public catalogue occasionally contains links that now resolve to a
     // different vehicle. Gather a bounded set of candidates, then only save
     // records whose ID is confirmed by the detail page itself.
@@ -56,11 +57,11 @@ export async function POST(request: NextRequest) {
       await prisma.auctionSyncRun.update({
         where: { id: syncRun.id },
         data: {
-          status, discovered: urls.length, failed: failed.length, skippedByPolicy: skippedByAge.length,
+          status, discovered: urls.length, failed: failed.length, skippedByPolicy: skippedByAge.length, excludedByPolicy,
           error: failed.length ? "В выдаче нет пригодных карточек" : null, completedAt: new Date(),
         },
       })
-      return NextResponse.json({ success: true, status, discovered: urls.length, imported: 0, maxAgeYears, skippedByAge, failed })
+      return NextResponse.json({ success: true, status, discovered: urls.length, imported: 0, maxAgeYears, skippedByAge, excludedByPolicy, failed })
     }
 
     const result = await saveAuctionImportItems(items)
@@ -69,10 +70,10 @@ export async function POST(request: NextRequest) {
       where: { id: syncRun.id },
       data: {
         status, discovered: urls.length, imported: items.length, created: result.created,
-        updated: result.updated, failed: failed.length, skippedByPolicy: skippedByAge.length, completedAt: new Date(),
+        updated: result.updated, failed: failed.length, skippedByPolicy: skippedByAge.length, excludedByPolicy, completedAt: new Date(),
       },
     })
-    return NextResponse.json({ success: true, status, discovered: urls.length, imported: items.length, maxAgeYears, skippedByAge, failed, ...result })
+    return NextResponse.json({ success: true, status, discovered: urls.length, imported: items.length, maxAgeYears, skippedByAge, excludedByPolicy, failed, ...result })
   } catch (error) {
     console.error("Encar sync error:", error)
     if (syncRunId) {

@@ -1,7 +1,7 @@
-import type { AuctionImportItem } from "@/lib/auction-import"
+import { prisma } from "@/lib/prisma"
 
 const DEFAULT_MAX_IMPORT_AGE_YEARS = 5
-const MAX_CONFIGURABLE_IMPORT_AGE_YEARS = 20
+const MAX_CONFIGURABLE_IMPORT_AGE_YEARS = 5
 
 function parseMaximumAge(value: unknown) {
   const parsed = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : Number.NaN
@@ -29,7 +29,7 @@ export type ImportAgeAssessment = {
  * This avoids falsely discarding a vehicle whose actual release day is still
  * within the configured horizon; the calculator then asks for verification.
  */
-export function assessImportAge(item: Pick<AuctionImportItem, "year" | "manufacturedMonth">, maxAgeYears: number, now = new Date()): ImportAgeAssessment {
+export function assessImportAge(item: { year: number; manufacturedMonth?: string | null }, maxAgeYears: number, now = new Date()): ImportAgeAssessment {
   const cutoff = new Date(now.getFullYear() - maxAgeYears, now.getMonth(), now.getDate())
   const monthMatch = item.manufacturedMonth?.match(/^(\d{4})-(0[1-9]|1[0-2])$/)
   const exactMonthKnown = Boolean(monthMatch)
@@ -42,4 +42,22 @@ export function assessImportAge(item: Pick<AuctionImportItem, "year" | "manufact
     : new Date(sourceYear, 11, 31)
 
   return { eligible: latestPossibleRelease >= cutoff, maxAgeYears, exactMonthKnown }
+}
+
+/** Hides previously imported stock that no longer matches the active policy. */
+export async function excludeListingsOutsideImportAgePolicy(source: string, maxAgeYears: number) {
+  const activeListings = await prisma.auctionListing.findMany({
+    where: { source, status: "ACTIVE" },
+    select: { id: true, year: true, manufacturedMonth: true },
+  })
+  const ids = activeListings
+    .filter((listing) => !assessImportAge(listing, maxAgeYears).eligible)
+    .map((listing) => listing.id)
+  if (!ids.length) return 0
+
+  const result = await prisma.auctionListing.updateMany({
+    where: { id: { in: ids }, status: "ACTIVE" },
+    data: { status: "POLICY_EXCLUDED" },
+  })
+  return result.count
 }

@@ -9,6 +9,7 @@ npx prisma migrate deploy
 # This safe sync only adds missing fields; it never accepts destructive changes.
 npx prisma db push --skip-generate
 npx prisma generate
+node scripts/enforce-encar-import-age-policy.mjs
 node scripts/reconcile-transport-categories.mjs
 node scripts/audit-listing-integrity.mjs
 if command -v crontab >/dev/null 2>&1; then
