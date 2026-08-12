@@ -26,7 +26,7 @@ function sourceUrlFrom(value: unknown) {
   const url = new URL(value)
   const match = url.hostname === ENCAR_HOST && url.protocol === "https:" ? url.pathname.match(ENCAR_DETAIL_PATH) : null
   if (!match) throw new Error("Поддерживаются только ссылки вида fem.encar.com/cars/detail/{id}")
-  return { sourceUrl: `${url.origin}${url.pathname}`, sourceId: match[1] }
+  return { sourceUrl: `${url.origin}${url.pathname}`, requestedId: match[1] }
 }
 
 function catalogUrlFrom(value: unknown) {
@@ -109,7 +109,7 @@ export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: num
 }
 
 export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<AuctionImportItem> {
-  const { sourceUrl, sourceId } = sourceUrlFrom(rawUrl)
+  const { sourceUrl, requestedId } = sourceUrlFrom(rawUrl)
   const response = await fetch(sourceUrl, {
     cache: "no-store",
     redirect: "follow",
@@ -135,7 +135,13 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   if (!base || !category || !advertisement || !spec) throw new Error("В карточке Encar отсутствуют обязательные данные автомобиля")
 
   const vehicleId = asInteger(base.vehicleId)
-  if (!vehicleId || String(vehicleId) !== sourceId) throw new Error("ID карточки Encar не совпадает с полученными данными")
+  const queryCarId = asInteger(base.queryCarId) || asInteger(asRecord(base.manage)?.dummyVehicleId)
+  // Encar's catalogue uses its public advertisement ID, while the detail
+  // payload stores a different physical vehicle ID. Accept that documented
+  // relation only when the payload explicitly confirms the requested ID.
+  if (!vehicleId || !queryCarId || String(queryCarId) !== requestedId) {
+    throw new Error("Публичный ID Encar не подтверждён данными карточки")
+  }
 
   const year = asInteger(category.formYear) || Number.parseInt(asText(category.yearMonth)?.slice(0, 4) || "", 10)
   const listedPrice = asInteger(advertisement.price)
@@ -167,7 +173,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
 
   return {
     source: "ENCAR",
-    sourceId,
+    sourceId: requestedId,
     sourceUrl,
     make,
     model: modelParts.join(" "),
@@ -188,7 +194,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     power: asInteger(spec.power),
     driveType: normalizeAuctionDriveType(rawDrive),
     vin: asText(base.vin),
-    lotNumber: sourceId,
+    lotNumber: requestedId,
     imageUrl: photos[0] || null,
     images: photos.length ? photos : null,
     descriptionOrig: asText(advertisement.oneLineText),
