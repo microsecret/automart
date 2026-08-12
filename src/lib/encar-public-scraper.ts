@@ -5,6 +5,7 @@ const ENCAR_HOST = "fem.encar.com"
 const ENCAR_DETAIL_PATH = /^\/cars\/detail\/(\d+)$/
 const ENCAR_CATALOG_HOST = "car.encar.com"
 const ENCAR_CATALOG_PATH = "/list/car"
+const ENCAR_SEDAN_SIZE_CATEGORIES = new Set(["경차", "소형차", "준중형차", "중형차", "대형차"])
 
 type UnknownRecord = Record<string, unknown>
 
@@ -78,6 +79,14 @@ function extractPreloadedState(html: string): UnknownRecord {
 function photoUrl(photo: unknown) {
   const path = asText(asRecord(photo)?.path)
   return path?.startsWith("/carpicture") ? `https://ci.encar.com/carpicture${path}` : null
+}
+
+function normalizeEncarBodyType(value: unknown) {
+  const body = normalizeAuctionBodyType(value)
+  if (body) return body
+  // Encar denotes sedan-class passenger cars by size, while SUVs and vans
+  // use their own body labels. Preserve an unknown value instead of guessing.
+  return typeof value === "string" && ENCAR_SEDAN_SIZE_CATEGORIES.has(value.trim()) ? "SEDAN" : null
 }
 
 /** Extracts deduplicated public detail links from one Encar catalogue page. */
@@ -185,7 +194,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     mileage: asInteger(spec.mileage),
     fuelType: normalizeAuctionFuelType(rawFuel),
     transmission: normalizeAuctionTransmission(rawTransmission),
-    bodyType: normalizeAuctionBodyType(rawBody),
+    bodyType: normalizeEncarBodyType(rawBody),
     color: rawColor,
     engineVolume: (() => {
       const displacement = asInteger(spec.displacement)

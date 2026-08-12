@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box } from "@mantine/core"
 import { IconDatabaseOff, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
@@ -64,9 +65,13 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
 }
 
 export default function AuctionsPage() {
+  const searchParams = useSearchParams()
+  const requestedSource = searchParams.get("source") || ""
+  const initialSource = AUCTION_SOURCE_COUNTRY[requestedSource] ? requestedSource : ""
+  const initialCountry = searchParams.get("country") || AUCTION_SOURCE_COUNTRY[initialSource] || ""
   const [page, setPage] = useState(1)
-  const [country, setCountry] = useState("")
-  const [source, setSource] = useState("")
+  const [country, setCountry] = useState(initialCountry)
+  const [source, setSource] = useState(initialSource)
   const [make, setMake] = useState("")
   const [priceFrom, setPriceFrom] = useState("")
   const [priceTo, setPriceTo] = useState("")
