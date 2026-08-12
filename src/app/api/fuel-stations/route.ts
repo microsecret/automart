@@ -153,13 +153,14 @@ function stationPriority(station: FuelStationPayload) {
 }
 
 function getDirectoryCacheKey(coordinates: Coordinates, radius: number) {
-  // Координаты намеренно округляются примерно до километра: для соседних
-  // точек карты набор АЗС совпадает, а повторный запрос к Overpass не нужен.
-  return `${coordinates.latitude.toFixed(2)}:${coordinates.longitude.toFixed(2)}:${radius}`
+  // Карта предлагает обновлять участок уже после сдвига примерно на 350 м.
+  // Точность ~100 м не позволяет вернуть набор АЗС от другой видимой области,
+  // но всё ещё объединяет повторные запросы из одной точки.
+  return `${coordinates.latitude.toFixed(3)}:${coordinates.longitude.toFixed(3)}:${radius}`
 }
 
 function getLiveStationsCacheKey(coordinates: Coordinates, radius: number) {
-  return `${coordinates.latitude.toFixed(2)}:${coordinates.longitude.toFixed(2)}:${radius}`
+  return `${coordinates.latitude.toFixed(3)}:${coordinates.longitude.toFixed(3)}:${radius}`
 }
 
 function cacheDirectoryStations(key: string, stations: FuelStationPayload[]) {
@@ -618,7 +619,7 @@ export async function GET(request: NextRequest) {
   const query = `[out:json][timeout:24];(node["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude}););out center tags 180;`
   const directoryCacheKey = getDirectoryCacheKey(coordinates, radius)
   const cachedDirectory = directoryStationCache.get(directoryCacheKey)
-  const directoryPromise = cachedDirectory && cachedDirectory.expiresAt > Date.now()
+  const directoryPromise = !forceRefresh && cachedDirectory && cachedDirectory.expiresAt > Date.now()
     ? Promise.resolve(cachedDirectory.stations)
     : requestStations(query).then((result) => {
         const stations = normalizeDirectoryStations(result.elements || [])
