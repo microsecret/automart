@@ -7,6 +7,14 @@ set -u
 base_url="${1:-http://127.0.0.1:4000}"
 passed=0
 failed=0
+curl_options=()
+
+# Lets a freshly delegated HTTPS hostname be audited against the local
+# virtual host before every resolver's negative DNS cache has expired.
+# Example: CURL_RESOLVE=lewheel.ru:443:127.0.0.1 bash scripts/server-smoke-audit.sh https://lewheel.ru
+if [[ -n "${CURL_RESOLVE:-}" ]]; then
+  curl_options+=(--resolve "$CURL_RESOLVE")
+fi
 
 probe() {
   local name="$1"
@@ -16,7 +24,7 @@ probe() {
   shift 4
 
   local code
-  code="$(curl -sS -o /tmp/automart-smoke-response -w '%{http_code}' -X "$method" "$base_url$path" "$@" || true)"
+  code="$(curl -sS "${curl_options[@]}" -o /tmp/automart-smoke-response -w '%{http_code}' -X "$method" "$base_url$path" "$@" || true)"
   if [[ "|$expected|" == *"|$code|"* ]]; then
     printf 'PASS %-48s %s\n' "$name" "$code"
     passed=$((passed + 1))
@@ -64,7 +72,7 @@ probe 'payment webhook unsigned' POST '/api/payment/webhook' '400|503' -H 'Conte
 probe 'Telegram webhook without secret' POST '/api/telegram/webhook' '401|503' -H 'Content-Type: application/json' --data '{}'
 probe 'invalid registration rejected or rate-limited' POST '/api/auth/register' '400|429' -H 'Content-Type: application/json' --data '{"email":"not-an-email","password":"x","name":""}'
 
-headers="$(curl -sSI "$base_url/api/news?limit=1" || true)"
+headers="$(curl -sSI "${curl_options[@]}" "$base_url/api/news?limit=1" || true)"
 for header in 'x-content-type-options: nosniff' 'x-frame-options: deny' 'content-security-policy:'; do
   if grep -qi "^$header" <<< "$headers"; then
     printf 'PASS security header: %s\n' "$header"
