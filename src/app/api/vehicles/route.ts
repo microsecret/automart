@@ -88,7 +88,7 @@ function normalizeTypeDetails(value: unknown, vehicleType: string) {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
 
     const vehicles = await prisma.vehicle.findMany({
       where: { userId: session.user.id, vehicleType: "CAR" },
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Необходимо войти в аккаунт" },
         { status: 401 }
       )
     }
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
 
     if (!categoryId) {
       return NextResponse.json(
-        { error: "Category is required" },
+        { error: "Укажите категорию транспорта" },
         { status: 400 }
       )
     }
@@ -382,7 +382,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Транспорт с таким VIN уже размещён. Проверьте номер или обратитесь в поддержку." }, { status: 409 })
     }
     return NextResponse.json(
-      { error: "Failed to create vehicle" },
+      { error: "Не удалось создать объявление" },
       { status: 500 }
     )
   }

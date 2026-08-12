@@ -19,7 +19,7 @@ function optionalText(value: unknown, maxLength: number) {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
 
     const vehicles = await prisma.vehicle.findMany({
       where: { userId: session.user.id, category: { name: "Личный гараж" } },
@@ -33,7 +33,7 @@ export async function GET() {
 
     return NextResponse.json({ vehicles })
   } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 })
+    return NextResponse.json({ error: "Не удалось загрузить автомобили из гаража" }, { status: 500 })
   }
 }
 
@@ -41,7 +41,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
 
     const body = await request.json().catch(() => null)
     const make = optionalText(body?.make, 60)
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
 
     const id = request.nextUrl.searchParams.get("id")?.trim()
     if (!id) return NextResponse.json({ error: "Не указан автомобиль" }, { status: 400 })
