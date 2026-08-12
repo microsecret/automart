@@ -143,6 +143,11 @@ export default function HomePage(p: HomePageProps = {}) {
     setQuery(""); setPage(1)
   }
 
+  const clearSelectedMake = () => {
+    setMake(null)
+    setModel(null)
+  }
+
   const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(subtype.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(keywords?1:0)
   const filterKey = useMemo(() => [
     p.initialType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo,
@@ -249,6 +254,20 @@ export default function HomePage(p: HomePageProps = {}) {
               value={make}
               onChange={(value) => { setMake(value); setModel(null) }}
               leftSection={make ? <BrandIcon brand={make} size={20} variant="rounded" /> : <IconCar size={15} />}
+              rightSection={make ? (
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  radius="xl"
+                  aria-label="Очистить выбранную марку"
+                  onMouseDown={(event) => { event.preventDefault(); event.stopPropagation() }}
+                  onClick={(event) => { event.preventDefault(); event.stopPropagation(); clearSelectedMake() }}
+                >
+                  <IconX size={14} stroke={2.2} />
+                </ActionIcon>
+              ) : undefined}
+              rightSectionWidth={make ? 38 : undefined}
               renderOption={({ option }) => {
                 const brand = brandByName.get(option.value)
                 return (
@@ -259,7 +278,10 @@ export default function HomePage(p: HomePageProps = {}) {
                   </Group>
                 )
               }}
-              styles={{ input: { paddingLeft: 34 } }}
+              styles={{
+                input: { paddingLeft: 34, paddingRight: make ? 38 : undefined },
+                section: { pointerEvents: make ? "auto" : undefined },
+              }}
               size="sm"
             />
             <Select
@@ -508,7 +530,7 @@ export default function HomePage(p: HomePageProps = {}) {
           onAction={activeFilterCount > 0 ? resetFilters : undefined}
         />
       ) : view === "grid" ? (
-        <SimpleGrid cols={{base:1,sm:2,md:3,lg:4}} spacing="sm">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
+        <SimpleGrid cols={{base:1,sm:2,lg:3}} spacing="sm">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
         <Stack gap="xs">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}

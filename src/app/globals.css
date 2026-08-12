@@ -880,6 +880,15 @@ select {
   padding-left: 34px !important;
 }
 
+.catalog-filter-field--make .mantine-Select-section[data-position="right"] {
+  right: 5px;
+  pointer-events: auto;
+}
+
+.catalog-filter-field--make .mantine-ActionIcon-root {
+  color: var(--market-muted);
+}
+
 .catalog-filter-field .mantine-Input-section,
 .catalog-filter-field .mantine-Select-section {
   height: 28px;
@@ -1420,7 +1429,7 @@ select {
 }
 
 .listing-card__fact {
-  padding: 6px 7px;
+  padding: 7px 8px;
   font-variant-numeric: tabular-nums;
   line-height: 1.25;
 }

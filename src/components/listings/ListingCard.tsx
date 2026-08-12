@@ -131,7 +131,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           pos="relative"
           style={{ background: "var(--market-surface-subtle)", lineHeight: 0 }}
         >
-          <AspectRatio ratio={4 / 3}>
+          <AspectRatio ratio={5 / 4}>
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
