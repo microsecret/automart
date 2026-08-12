@@ -80,6 +80,7 @@ probe 'listing wizard requires login' GET '/listings/create/vehicle' '307|308'
 
 # Boundary checks: invalid or unauthorized requests must not be accepted.
 probe 'auction validation' GET '/api/auctions?country=INVALID' 400
+probe 'generic auction detail hidden' GET '/api/auctions/26cc45ec-c63f-496c-b15a-4a5232c1fc0f' 404
 probe 'news import without token' POST '/api/news/import' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'parser import without token' POST '/api/parser/auctions' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'Encar parser without token' POST '/api/parser/encar' 401 -H 'Content-Type: application/json' --data '{}'

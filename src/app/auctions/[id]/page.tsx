@@ -13,6 +13,7 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { auctionThumbnailImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
+import { auctionMakeLabel } from "@/lib/auction-normalization"
 import type { AuctionListing } from "@prisma/client"
 import styles from "./auction-detail.module.css"
 
@@ -212,7 +213,7 @@ function AuctionDetail() {
         <Breadcrumbs separator={<IconChevronRight size={14} color="gray.4" />}>
           <Anchor component={Link} href="/" size="sm" c="gray.5">Главная</Anchor>
           <Anchor component={Link} href="/auctions" size="sm" c="gray.5">Аукционы</Anchor>
-          <Text size="sm" c="dark.9">{listing.make} {listing.model}</Text>
+          <Text size="sm" c="dark.9">{auctionMakeLabel(listing.make)} {listing.model}</Text>
         </Breadcrumbs>
 
         <Box className="auction-detail-layout" style={hasWideAuctionLayout ? undefined : { gridTemplateColumns: "minmax(0, 1fr)" }}>
@@ -228,7 +229,7 @@ function AuctionDetail() {
                       className={styles.galleryImage}
                       data-loading={isActiveImageLoading || undefined}
                       src={activeImageHighQuality}
-                      alt={`${listing.make} ${listing.model}, фото ${activeImageIndex + 1}`}
+                      alt={`${auctionMakeLabel(listing.make)} ${listing.model}, фото ${activeImageIndex + 1}`}
                       decoding="async"
                       onLoad={() => setLoadedImageUrls((previous) => new Set(previous).add(activeImageHighQuality))}
                       onError={() => {
@@ -338,7 +339,7 @@ function AuctionDetail() {
 
               {/* Умный калькулятор */}
               <AuctionCalculator
-                make={listing.make}
+                make={auctionMakeLabel(listing.make)}
                 model={listing.model}
                 year={listing.year}
                 manufacturedMonth={listing.manufacturedMonth}
@@ -368,7 +369,7 @@ function AuctionDetail() {
                 <form onSubmit={handleSubmit}>
                   <Stack gap="sm">
                     <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="dark.9">Заказать авто</Text></Group>
-                    <Text size="xs" c="gray.5">{listing.make} {listing.model} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
+                    <Text size="xs" c="gray.5">{auctionMakeLabel(listing.make)} {listing.model} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
                     <Button component={Link} href={`/dashboard/deliveries?auctionListingId=${listing.id}`} variant="light" color="indigo" radius="md" size="sm" leftSection={<IconTruckDelivery size={16} />} fullWidth>Открыть сделку в кабинете</Button>
                     <Text size="xs" c="gray.5" ta="center">Для отслеживания маршрута, счетов и документов после входа.</Text>
                     <TextInput label="Ваше имя" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="sm" />

@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic"
 
 const VALID_COUNTRIES = new Set(["JP", "KR", "CN", "US", "DE"])
 const VALID_BODY_TYPES = new Set<string>(AUCTION_BODY_TYPES)
+const UNIDENTIFIABLE_LEGACY_MAKES = ["Others", "Other", "Unknown", "Etc", "기타"]
 
 /**
  * The public navigation used the human-facing "EU" alias before auctions
@@ -68,13 +69,16 @@ export async function GET(request: NextRequest) {
     // `manufacturedMonth` is optional. A record without a precise month stays
     // in the boundary year and is explicitly marked for documentary review;
     // a record with a known older month is reliably excluded here.
-    where.AND = [{
-      OR: [
-        { year: { gt: minimumImportYear } },
-        { year: minimumImportYear, manufacturedMonth: null },
-        { year: minimumImportYear, manufacturedMonth: { gte: earliestBoundaryMonth } },
-      ],
-    }]
+    where.AND = [
+      { make: { notIn: UNIDENTIFIABLE_LEGACY_MAKES } },
+      {
+        OR: [
+          { year: { gt: minimumImportYear } },
+          { year: minimumImportYear, manufacturedMonth: null },
+          { year: minimumImportYear, manufacturedMonth: { gte: earliestBoundaryMonth } },
+        ],
+      },
+    ]
     const bodyType = sp.get("bodyType")
     if (bodyType && !VALID_BODY_TYPES.has(bodyType)) return NextResponse.json({ error: "Некорректный тип кузова" }, { status: 400 })
     if (bodyType) where.bodyType = bodyType

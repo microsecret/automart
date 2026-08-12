@@ -1,5 +1,41 @@
 export const AUCTION_BODY_TYPES = ["SEDAN", "SUV", "HATCHBACK", "COUPE", "PICKUP", "WAGON", "MINIVAN"] as const
 
+const AUCTION_MAKE_ALIASES: Readonly<Record<string, string>> = {
+  ChevroletGMDaewoo: "Chevrolet / GM Daewoo",
+  "쉐보레GM대우": "Chevrolet / GM Daewoo",
+  KG_Mobility_Ssangyong: "KGM / SsangYong",
+  "KG Mobility Ssangyong": "KGM / SsangYong",
+  "Renault-KoreaSamsung": "Renault Korea Motors",
+  "Renault Korea Samsung": "Renault Korea Motors",
+  "르노코리아삼성": "Renault Korea Motors",
+}
+
+const UNIDENTIFIABLE_AUCTION_MAKES = new Set([
+  "others",
+  "other",
+  "unknown",
+  "etc",
+  "기타",
+])
+
+/** Turns provider-specific manufacturer keys into a readable public label. */
+export function normalizeAuctionMake(value: unknown) {
+  if (typeof value !== "string") return null
+  const make = value.trim().replace(/\s+/g, " ")
+  return make ? AUCTION_MAKE_ALIASES[make] || make : null
+}
+
+/** A generic provider bucket is not enough to present a trustworthy vehicle. */
+export function isIdentifiableAuctionMake(value: unknown) {
+  const make = normalizeAuctionMake(value)
+  return Boolean(make && !UNIDENTIFIABLE_AUCTION_MAKES.has(make.toLocaleLowerCase("en-US")))
+}
+
+/** Public-facing label for old records imported before normalisation existed. */
+export function auctionMakeLabel(value: string) {
+  return normalizeAuctionMake(value) || value.replace(/_/g, " ")
+}
+
 const bodyAliases: Record<(typeof AUCTION_BODY_TYPES)[number], readonly string[]> = {
   SEDAN: ["SEDAN", "SALOON", "BERLINE", "세단", "轿车", "三厢"],
   SUV: ["SUV", "CUV", "JEEP", "SPORT UTILITY", "CROSSOVER", "지프", "越野", "越野车"],

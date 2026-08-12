@@ -12,6 +12,7 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import type { AuctionListing } from "@prisma/client"
 import { AUCTION_SOURCE_COUNTRY, AUCTION_SOURCE_OPTIONS } from "@/lib/auction-sources"
+import { auctionMakeLabel } from "@/lib/auction-normalization"
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "./auctions.module.css"
 
@@ -59,12 +60,6 @@ type AuctionResponse = {
 
 const FUEL_LABELS: Record<string, string> = { GASOLINE: "Бензин", DIESEL: "Дизель", ELECTRIC: "Электро", HYBRID: "Гибрид", GAS: "Газ" }
 const BODY_LABELS: Record<string, string> = { SUV: "Кроссовер", SEDAN: "Седан", PICKUP: "Пикап", WAGON: "Универсал", HATCHBACK: "Хэтчбек", MINIVAN: "Минивэн", COUPE: "Купе" }
-const MAKE_LABELS: Record<string, string> = { KG_Mobility_Ssangyong: "KGM / SsangYong" }
-
-function auctionMakeLabel(make: string) {
-  return MAKE_LABELS[make] || make.replace(/_/g, " ")
-}
-
 // Remote auction photos remain on the source CDN. A short user intent
 // (hover, focus or touch) is enough to warm the first full-size image in the
 // browser cache, so opening a lot does not wait for a cold CDN request.

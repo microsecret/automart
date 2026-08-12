@@ -1,4 +1,4 @@
-import { normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionTransmission } from "@/lib/auction-normalization"
+import { isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
 import type { AuctionConditionCheck, AuctionConditionInfo, AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
 import { translateToRussian } from "@/lib/nvidia-translate"
 
@@ -342,13 +342,13 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   const manufacturedMonth = asYearMonth(category.yearMonth)
   const year = manufacturedMonth ? Number.parseInt(manufacturedMonth.slice(0, 4), 10) : asInteger(category.formYear)
   const listedPrice = asInteger(advertisement.price)
-  const make = asText(category.manufacturerEnglishName) || asText(category.manufacturerName)
+  const make = normalizeAuctionMake(asText(category.manufacturerEnglishName) || asText(category.manufacturerName))
   const modelParts = [
     asText(category.modelGroupEnglishName) || asText(category.modelGroupName) || asText(category.modelEnglishName) || asText(category.modelName),
     asText(category.gradeEnglishName) || asText(category.gradeName),
     asText(category.gradeDetailEnglishName) || asText(category.gradeDetailName),
   ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index)
-  if (!make || !modelParts.length || year === null || year < 1886 || year > new Date().getFullYear() + 1 || !listedPrice || listedPrice < 1) {
+  if (!make || !isIdentifiableAuctionMake(make) || !modelParts.length || year === null || year < 1886 || year > new Date().getFullYear() + 1 || !listedPrice || listedPrice < 1) {
     throw new Error("В карточке Encar нет корректных марки, модели, года или цены")
   }
 

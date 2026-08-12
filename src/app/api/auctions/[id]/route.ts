@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
+const UNIDENTIFIABLE_LEGACY_MAKES = ["Others", "Other", "Unknown", "Etc", "기타"]
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,6 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       where: {
         id,
         status: "ACTIVE",
+        make: { notIn: UNIDENTIFIABLE_LEGACY_MAKES },
         OR: [{ auctionDate: null }, { auctionDate: { gte: new Date() } }],
       },
     })
