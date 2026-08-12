@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Необходимо войти в аккаунт" },
         { status: 401 }
       )
     }
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching favorites:", error)
     return NextResponse.json(
-      { error: "Failed to fetch favorites" },
+      { error: "Не удалось загрузить избранное" },
       { status: 500 }
     )
   }
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Необходимо войти в аккаунт" },
         { status: 401 }
       )
     }
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     // Validation
     if (!listingId) {
       return NextResponse.json(
-        { error: "Listing ID is required" },
+        { error: "Не указан идентификатор объявления" },
         { status: 400 }
       )
     }
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
     if (!listing) {
       return NextResponse.json(
-        { error: "Listing not found" },
+        { error: "Объявление не найдено" },
         { status: 404 }
       )
     }
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
 
     if (existingFavorite) {
       return NextResponse.json(
-        { error: "Listing is already in favorites" },
+        { error: "Объявление уже в избранном" },
         { status: 409 } // Conflict
       )
     }
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error adding to favorites:", error)
     return NextResponse.json(
-      { error: "Failed to add to favorites" },
+      { error: "Не удалось добавить в избранное" },
       { status: 500 }
     )
   }
@@ -182,7 +182,7 @@ export async function DELETE(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Необходимо войти в аккаунт" },
         { status: 401 }
       )
     }
@@ -193,7 +193,7 @@ export async function DELETE(request: NextRequest) {
     // Validation
     if (!listingId) {
       return NextResponse.json(
-        { error: "Listing ID is required" },
+        { error: "Не указан идентификатор объявления" },
         { status: 400 }
       )
     }
@@ -206,7 +206,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!listing) {
       return NextResponse.json(
-        { error: "Listing not found" },
+        { error: "Объявление не найдено" },
         { status: 404 }
       )
     }
@@ -227,7 +227,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error("Error removing from favorites:", error)
     return NextResponse.json(
-      { error: "Failed to remove from favorites" },
+      { error: "Не удалось убрать из избранного" },
       { status: 500 }
     )
   }
