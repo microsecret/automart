@@ -1,5 +1,5 @@
 import { normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionTransmission } from "@/lib/auction-normalization"
-import type { AuctionConditionInfo, AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
+import type { AuctionConditionCheck, AuctionConditionInfo, AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
 import { translateToRussian } from "@/lib/nvidia-translate"
 
 const ENCAR_HOST = "fem.encar.com"
@@ -195,6 +195,26 @@ function sourceButtonText(html: string, eventName: string) {
   return match ? sourceHtmlText(match[1]) : null
 }
 
+/**
+ * Encar renders two high-level checks in the public page. Keep them separate
+ * from a damage report: neither one gives a repair percentage or a list of
+ * replaced panels. Only show the exact positive checks published by Encar.
+ */
+function extractEncarVerifiedConditionItems(html: string): AuctionConditionCheck[] {
+  const checks: AuctionConditionCheck[] = []
+  const buttons = Array.from(html.matchAll(/<button[^>]*data-enlog-dt-eventnamegroup="엔카진단"[^>]*>([\s\S]*?)<\/button>/g))
+    .map((match) => sourceHtmlText(match[1]))
+
+  if (buttons.some((text) => text.includes("프레임") && text.includes("무사고 확인"))) {
+    checks.push({ label: "Силовой каркас", status: "ДТП не выявлено" })
+  }
+  if (buttons.some((text) => text.includes("내외부") && text.includes("차량 관리 상태 확인"))) {
+    checks.push({ label: "Внешнее и внутреннее состояние", status: "Проверено Encar" })
+  }
+
+  return checks
+}
+
 function extractEncarConditionInfo(html: string): AuctionConditionInfo | null {
   const insuranceText = sourceButtonText(html, "보험이력")
   const inspectionText = sourceButtonText(html, "성능점검내역")
@@ -208,12 +228,14 @@ function extractEncarConditionInfo(html: string): AuctionConditionInfo | null {
   const inspectionSummary = inspectionText?.includes("일반")
     ? inspectionText.includes("엔카직영") ? "Общая проверка · Encar Direct" : "Общая проверка"
     : null
+  const verifiedItems = extractEncarVerifiedConditionItems(html)
   const result = {
     insuranceRecordCount: Number.isInteger(insuranceRecordCount) ? insuranceRecordCount : null,
     inspectionSummary,
     newCarPriceRatioPct: Number.isInteger(newCarPriceRatioPct) && newCarPriceRatioPct >= 0 && newCarPriceRatioPct <= 100 ? newCarPriceRatioPct : null,
+    verifiedItems,
   }
-  return result.insuranceRecordCount !== null || result.inspectionSummary || result.newCarPriceRatioPct !== null ? result : null
+  return result.insuranceRecordCount !== null || result.inspectionSummary || result.newCarPriceRatioPct !== null || result.verifiedItems.length ? result : null
 }
 
 /** Extracts deduplicated public detail links from one Encar catalogue page. */

@@ -80,12 +80,13 @@ type AuctionConditionInfo = {
   insuranceRecordCount: number | null
   inspectionSummary: string | null
   newCarPriceRatioPct: number | null
+  verifiedItems: Array<{ label: string; status: string }>
 }
 
 function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo | null {
   if (!value) return null
   try {
-    const parsed = JSON.parse(value) as { insuranceRecordCount?: unknown; inspectionSummary?: unknown; newCarPriceRatioPct?: unknown }
+    const parsed = JSON.parse(value) as { insuranceRecordCount?: unknown; inspectionSummary?: unknown; newCarPriceRatioPct?: unknown; verifiedItems?: unknown }
     const insuranceRecordCount = typeof parsed.insuranceRecordCount === "number" && Number.isInteger(parsed.insuranceRecordCount) && parsed.insuranceRecordCount >= 0
       ? parsed.insuranceRecordCount
       : null
@@ -93,8 +94,17 @@ function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo |
     const newCarPriceRatioPct = typeof parsed.newCarPriceRatioPct === "number" && Number.isInteger(parsed.newCarPriceRatioPct) && parsed.newCarPriceRatioPct >= 0 && parsed.newCarPriceRatioPct <= 100
       ? parsed.newCarPriceRatioPct
       : null
-    return insuranceRecordCount !== null || inspectionSummary || newCarPriceRatioPct !== null
-      ? { insuranceRecordCount, inspectionSummary, newCarPriceRatioPct }
+    const verifiedItems = Array.isArray(parsed.verifiedItems)
+      ? parsed.verifiedItems.flatMap((item) => {
+          if (!item || typeof item !== "object") return []
+          const record = item as { label?: unknown; status?: unknown }
+          return typeof record.label === "string" && record.label.trim().length <= 80 && typeof record.status === "string" && record.status.trim().length <= 100
+            ? [{ label: record.label.trim(), status: record.status.trim() }]
+            : []
+        }).slice(0, 4)
+      : []
+    return insuranceRecordCount !== null || inspectionSummary || newCarPriceRatioPct !== null || verifiedItems.length
+      ? { insuranceRecordCount, inspectionSummary, newCarPriceRatioPct, verifiedItems }
       : null
   } catch {
     return null
@@ -260,7 +270,10 @@ function AuctionDetail() {
                       {conditionInfo.inspectionSummary && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Техосмотр</Text><Text fw={700} size="sm" mt={4}>{conditionInfo.inspectionSummary}</Text></Paper>}
                       {conditionInfo.insuranceRecordCount !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Страховые записи</Text><Text fw={800} size="lg" c="teal.8" mt={1}>{conditionInfo.insuranceRecordCount}</Text></Paper>}
                     </SimpleGrid>
-                    <Text size="xs" c="dimmed">Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт. Детали осмотра и актуальность сведений сверяются с первоисточником перед заказом.</Text>
+                    {conditionInfo.verifiedItems.length > 0 && <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
+                      {conditionInfo.verifiedItems.map((item) => <Paper key={`${item.label}-${item.status}`} p="xs" radius="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}><Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="teal" variant="light"><IconCheck size={13} /></ThemeIcon><Box><Text size="xs" c="dimmed">{item.label}</Text><Text fw={750} size="sm" c="teal.9">{item.status}</Text></Box></Group></Paper>)}
+                    </SimpleGrid>}
+                    <Text size="xs" c="dimmed">Карточки состояния — только открытые подтверждения Encar. Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт; для перечня работ нужен полный отчёт/акт осмотра из первоисточника.</Text>
                   </Stack>
                 </Paper>
               )}

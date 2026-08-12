@@ -25,6 +25,12 @@ export type AuctionConditionInfo = {
   insuranceRecordCount: number | null
   inspectionSummary: string | null
   newCarPriceRatioPct: number | null
+  verifiedItems: AuctionConditionCheck[]
+}
+
+export type AuctionConditionCheck = {
+  label: string
+  status: string
 }
 
 export type AuctionImportItem = {
