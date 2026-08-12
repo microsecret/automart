@@ -19,6 +19,18 @@ const ENCAR_LOCATION_LABELS: ReadonlyArray<readonly [string, string]> = [
 
 type UnknownRecord = Record<string, unknown>
 
+/** A source-confirmed absence is safe to use for expiry decisions. */
+export class EncarListingUnavailableError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "EncarListingUnavailableError"
+  }
+}
+
+export function isEncarListingUnavailableError(error: unknown): error is EncarListingUnavailableError {
+  return error instanceof EncarListingUnavailableError
+}
+
 function asRecord(value: unknown): UnknownRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as UnknownRecord : null
 }
@@ -157,6 +169,9 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
       "User-Agent": "AutoMarket-Importer/1.0",
     },
   })
+  if (response.status === 404 || response.status === 410) {
+    throw new EncarListingUnavailableError(`Лот Encar больше недоступен (HTTP ${response.status})`)
+  }
   if (!response.ok) throw new Error(`Encar вернул HTTP ${response.status}`)
   if (new URL(response.url).hostname !== ENCAR_HOST) throw new Error("Encar перенаправил запрос на неподдерживаемый адрес")
 
@@ -178,7 +193,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   // payload stores a different physical vehicle ID. Accept that documented
   // relation only when the payload explicitly confirms the requested ID.
   if (!vehicleId || !queryCarId || String(queryCarId) !== requestedId) {
-    throw new Error("Публичный ID Encar не подтверждён данными карточки")
+    throw new EncarListingUnavailableError("Публичный ID Encar больше не подтверждён данными карточки")
   }
 
   const manufacturedMonth = asYearMonth(category.yearMonth)

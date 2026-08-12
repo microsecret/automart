@@ -18,7 +18,7 @@ export async function GET() {
       prisma.auctionInquiry.count(),
       prisma.auctionListing.count({ where: { status: "ACTIVE" } }),
       prisma.auctionListing.count({ where: { status: "ACTIVE", OR: [{ auctionDate: null }, { auctionDate: { gte: now } }] } }),
-      prisma.auctionListing.aggregate({ _max: { lastChecked: true } }),
+      prisma.auctionListing.aggregate({ _max: { sourceLastSeenAt: true } }),
       prisma.auctionInquiry.count({ where: { createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } } }),
     ])
 
@@ -31,7 +31,7 @@ export async function GET() {
       total,
       totalAuctions,
       visibleAuctions,
-      lastAuctionSync: latestAuctionCheck._max.lastChecked,
+      lastAuctionSync: latestAuctionCheck._max.sourceLastSeenAt,
       recent,
       byStatus: {
         NEW: statusCounts.NEW || 0,

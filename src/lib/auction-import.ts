@@ -102,6 +102,9 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           exchangeRate,
           pricingUpdatedAt: new Date(),
           lastChecked: new Date(),
+          sourceLastSeenAt: new Date(),
+          sourceMissingChecks: 0,
+          status: "ACTIVE",
           auctionDate: item.auctionDate,
         },
       })
@@ -145,6 +148,8 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         country: item.country,
         auctionDate: item.auctionDate,
         location: item.location || null,
+        sourceLastSeenAt: new Date(),
+        sourceMissingChecks: 0,
         isTranslated: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu),
         translatedAt: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu) ? new Date() : null,
       },

@@ -84,7 +84,6 @@ async function main() {
         priceRub,
         finalPrice: priceRub + Math.max(0, lot.markup),
         pricingUpdatedAt: refreshedAt,
-        lastChecked: refreshedAt,
       },
     })
   })
