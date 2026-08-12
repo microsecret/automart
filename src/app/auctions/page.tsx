@@ -172,6 +172,7 @@ export default function AuctionsPage() {
                   { value: "COUPE", label: "Купе" },
                   { value: "PICKUP", label: "Пикап" },
                   { value: "WAGON", label: "Универсал" },
+                  { value: "MINIVAN", label: "Минивэн" },
                 ]}
                 value={bodyType || null}
                 onChange={(value) => { setBodyType(value || ""); setPage(1) }}
@@ -234,7 +235,7 @@ export default function AuctionsPage() {
                     </Text>
                     <Group gap={4} mt={8} wrap="wrap">
                       {l.fuelType && <Badge size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "gray"}>{l.fuelType === "ELECTRIC" ? "⚡ Электро" : l.fuelType === "HYBRID" ? "🔋 Гибрид" : l.fuelType === "DIESEL" ? "⛽ Дизель" : "⛽ Бензин"}</Badge>}
-                      {l.bodyType && <Badge size="xs" variant="light" color="indigo">{l.bodyType === "SUV" ? "SUV" : l.bodyType === "SEDAN" ? "Седан" : l.bodyType === "PICKUP" ? "Пикап" : l.bodyType === "WAGON" ? "Универсал" : l.bodyType === "HATCHBACK" ? "Хэтчбек" : l.bodyType}</Badge>}
+                      {l.bodyType && <Badge size="xs" variant="light" color="indigo">{l.bodyType === "SUV" ? "SUV" : l.bodyType === "SEDAN" ? "Седан" : l.bodyType === "PICKUP" ? "Пикап" : l.bodyType === "WAGON" ? "Универсал" : l.bodyType === "HATCHBACK" ? "Хэтчбек" : l.bodyType === "MINIVAN" ? "Минивэн" : l.bodyType}</Badge>}
                       {l.engineVolume && <Badge size="xs" variant="default" color="gray">{l.engineVolume} л</Badge>}
                       {l.power && <Badge size="xs" variant="default" color="gray">{l.power} л.с.</Badge>}
                     </Group>

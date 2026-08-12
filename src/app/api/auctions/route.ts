@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
+import { AUCTION_BODY_TYPES } from "@/lib/auction-normalization"
 
 export const dynamic = "force-dynamic"
 
 const VALID_COUNTRIES = new Set(["JP", "KR", "CN", "US", "DE"])
-const VALID_BODY_TYPES = new Set(["SEDAN", "SUV", "HATCHBACK", "COUPE", "PICKUP", "WAGON"])
+const VALID_BODY_TYPES = new Set<string>(AUCTION_BODY_TYPES)
 
 /**
  * The public navigation used the human-facing "EU" alias before auctions

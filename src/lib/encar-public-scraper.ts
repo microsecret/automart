@@ -1,0 +1,198 @@
+import { normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionTransmission } from "@/lib/auction-normalization"
+import type { AuctionImportItem } from "@/lib/auction-import"
+
+const ENCAR_HOST = "fem.encar.com"
+const ENCAR_DETAIL_PATH = /^\/cars\/detail\/(\d+)$/
+const ENCAR_CATALOG_HOST = "car.encar.com"
+const ENCAR_CATALOG_PATH = "/list/car"
+
+type UnknownRecord = Record<string, unknown>
+
+function asRecord(value: unknown): UnknownRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as UnknownRecord : null
+}
+
+function asText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null
+}
+
+function asInteger(value: unknown) {
+  const parsed = Number(value)
+  return Number.isSafeInteger(parsed) ? parsed : null
+}
+
+function sourceUrlFrom(value: unknown) {
+  if (typeof value !== "string") throw new Error("Нужна ссылка на публичную карточку Encar")
+  const url = new URL(value)
+  const match = url.hostname === ENCAR_HOST && url.protocol === "https:" ? url.pathname.match(ENCAR_DETAIL_PATH) : null
+  if (!match) throw new Error("Поддерживаются только ссылки вида fem.encar.com/cars/detail/{id}")
+  return { sourceUrl: `${url.origin}${url.pathname}`, sourceId: match[1] }
+}
+
+function catalogUrlFrom(value: unknown) {
+  const url = value == null || value === "" ? new URL("https://car.encar.com/list/car?page=1") : new URL(String(value))
+  if (url.protocol !== "https:" || url.hostname !== ENCAR_CATALOG_HOST || url.pathname !== ENCAR_CATALOG_PATH) {
+    throw new Error("Поддерживаются только публичные страницы car.encar.com/list/car")
+  }
+  return url.toString()
+}
+
+/** Safely extracts the JSON assigned to Encar's public, server-rendered state. */
+function extractPreloadedState(html: string): UnknownRecord {
+  const marker = "__PRELOADED_STATE__ = "
+  const markerIndex = html.indexOf(marker)
+  if (markerIndex < 0) throw new Error("Публичная карточка Encar не содержит данных автомобиля")
+
+  const start = html.indexOf("{", markerIndex + marker.length)
+  if (start < 0) throw new Error("Не удалось найти данные автомобиля Encar")
+
+  let depth = 0
+  let inString = false
+  let escaped = false
+  for (let index = start; index < html.length; index += 1) {
+    const character = html[index]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (character === "\\") escaped = true
+      else if (character === '"') inString = false
+      continue
+    }
+    if (character === '"') {
+      inString = true
+      continue
+    }
+    if (character === "{") depth += 1
+    if (character === "}") {
+      depth -= 1
+      if (depth === 0) {
+        const state = asRecord(JSON.parse(html.slice(start, index + 1)))
+        if (!state) break
+        return state
+      }
+    }
+  }
+
+  throw new Error("Данные Encar повреждены или имеют неизвестный формат")
+}
+
+function photoUrl(photo: unknown) {
+  const path = asText(asRecord(photo)?.path)
+  return path?.startsWith("/carpicture") ? `https://ci.encar.com/carpicture${path}` : null
+}
+
+/** Extracts deduplicated public detail links from one Encar catalogue page. */
+export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: number) {
+  const catalogUrl = catalogUrlFrom(rawUrl)
+  const response = await fetch(catalogUrl, {
+    cache: "no-store",
+    redirect: "follow",
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7",
+      "User-Agent": "AutoMarket-Importer/1.0",
+    },
+  })
+  if (!response.ok) throw new Error(`Encar вернул HTTP ${response.status}`)
+  if (new URL(response.url).hostname !== ENCAR_CATALOG_HOST) throw new Error("Encar перенаправил каталог на неподдерживаемый адрес")
+
+  const html = await response.text()
+  if (html.length > 2_000_000) throw new Error("Страница каталога Encar превышает допустимый размер")
+
+  const urls = new Set<string>()
+  const matcher = /https:\/\/fem\.encar\.com\/cars\/detail\/(\d+)/g
+  for (const match of html.matchAll(matcher)) {
+    urls.add(`https://${ENCAR_HOST}/cars/detail/${match[1]}`)
+    if (urls.size >= limit) break
+  }
+  if (!urls.size) throw new Error("В публичной выдаче Encar не найдены ссылки на автомобили")
+  return [...urls]
+}
+
+export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<AuctionImportItem> {
+  const { sourceUrl, sourceId } = sourceUrlFrom(rawUrl)
+  const response = await fetch(sourceUrl, {
+    cache: "no-store",
+    redirect: "follow",
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7",
+      "User-Agent": "AutoMarket-Importer/1.0",
+    },
+  })
+  if (!response.ok) throw new Error(`Encar вернул HTTP ${response.status}`)
+  if (new URL(response.url).hostname !== ENCAR_HOST) throw new Error("Encar перенаправил запрос на неподдерживаемый адрес")
+
+  const html = await response.text()
+  if (html.length > 1_500_000) throw new Error("Карточка Encar превышает допустимый размер")
+
+  const state = extractPreloadedState(html)
+  const cars = asRecord(state.cars)
+  const base = asRecord(cars?.base)
+  const category = asRecord(base?.category)
+  const advertisement = asRecord(base?.advertisement)
+  const spec = asRecord(base?.spec)
+  const contact = asRecord(base?.contact)
+  if (!base || !category || !advertisement || !spec) throw new Error("В карточке Encar отсутствуют обязательные данные автомобиля")
+
+  const vehicleId = asInteger(base.vehicleId)
+  if (!vehicleId || String(vehicleId) !== sourceId) throw new Error("ID карточки Encar не совпадает с полученными данными")
+
+  const year = asInteger(category.formYear) || Number.parseInt(asText(category.yearMonth)?.slice(0, 4) || "", 10)
+  const listedPrice = asInteger(advertisement.price)
+  const make = asText(category.manufacturerEnglishName) || asText(category.manufacturerName)
+  const modelParts = [
+    asText(category.modelGroupEnglishName) || asText(category.modelGroupName) || asText(category.modelEnglishName) || asText(category.modelName),
+    asText(category.gradeEnglishName) || asText(category.gradeName),
+    asText(category.gradeDetailEnglishName) || asText(category.gradeDetailName),
+  ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index)
+  if (!make || !modelParts.length || !Number.isInteger(year) || year < 1886 || year > new Date().getFullYear() + 1 || !listedPrice || listedPrice < 1) {
+    throw new Error("В карточке Encar нет корректных марки, модели, года или цены")
+  }
+
+  const photos = Array.isArray(base.photos)
+    ? base.photos
+        .slice()
+        .sort((left, right) => Number(asText(asRecord(right)?.code) === "001") - Number(asText(asRecord(left)?.code) === "001"))
+        .map(photoUrl)
+        .filter((url): url is string => Boolean(url))
+        .slice(0, 20)
+    : []
+
+  const rawBody = asText(spec.bodyName)
+  const rawFuel = asText(spec.fuelName)
+  const rawTransmission = asText(spec.transmissionName)
+  const rawDrive = asText(spec.driveName)
+  const rawColor = asText(spec.colorName)
+  const originalSpecs = [rawBody, rawFuel, rawTransmission, rawDrive, rawColor].filter(Boolean).join(" · ") || null
+
+  return {
+    source: "ENCAR",
+    sourceId,
+    sourceUrl,
+    make,
+    model: modelParts.join(" "),
+    year,
+    sourcePrice: listedPrice * 10_000,
+    sourceCurrency: "KRW",
+    country: "KR",
+    auctionDate: null,
+    mileage: asInteger(spec.mileage),
+    fuelType: normalizeAuctionFuelType(rawFuel),
+    transmission: normalizeAuctionTransmission(rawTransmission),
+    bodyType: normalizeAuctionBodyType(rawBody),
+    color: rawColor,
+    engineVolume: (() => {
+      const displacement = asInteger(spec.displacement)
+      return displacement && displacement > 0 ? Number((displacement / 1000).toFixed(1)) : null
+    })(),
+    power: asInteger(spec.power),
+    driveType: normalizeAuctionDriveType(rawDrive),
+    vin: asText(base.vin),
+    lotNumber: sourceId,
+    imageUrl: photos[0] || null,
+    images: photos.length ? photos : null,
+    descriptionOrig: asText(advertisement.oneLineText),
+    specsOrig: originalSpecs,
+    location: asText(contact?.address),
+  }
+}
