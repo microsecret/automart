@@ -53,3 +53,25 @@ export function parseMarketplaceImages(value: unknown, maxItems = 12): string[] 
   const images = Array.from(new Set(raw))
   return images.every(isSafeMediaUrl) ? images : null
 }
+
+/**
+ * Auction sources can expose substantially more inspection photos than a
+ * marketplace listing. They are only shown after the same HTTPS validation,
+ * while keeping the stricter 12-photo limit for user-uploaded listings.
+ */
+export function parseAuctionImages(value: unknown, maxItems = 100): string[] | null {
+  if (value === undefined || value === null || value === "") return []
+
+  let raw = value
+  if (typeof value === "string") {
+    try {
+      raw = JSON.parse(value)
+    } catch {
+      return null
+    }
+  }
+  if (!Array.isArray(raw) || raw.length > maxItems) return null
+
+  const images = Array.from(new Set(raw))
+  return images.every(isSafeMediaUrl) ? images : null
+}

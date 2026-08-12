@@ -1,6 +1,6 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState, Suspense } from "react"
+import { useEffect, useMemo, useState, Suspense } from "react"
 import { useParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
@@ -11,7 +11,7 @@ import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import { isSafeMediaUrl, parseMarketplaceImages } from "@/lib/media-url"
+import { isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import type { AuctionListing } from "@prisma/client"
 
 type AuctionDetailResponse = { listing: AuctionListing }
@@ -60,9 +60,22 @@ function AuctionDetail() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", city: "", comment: "" })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [imageFailed, setImageFailed] = useState(false)
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(() => new Set())
 
   const listing = data?.listing
+  const listingImageUrl = listing?.imageUrl
+  const listingImages = listing?.images
+  const galleryImages = useMemo(() => Array.from(new Set([
+    ...(isSafeMediaUrl(listingImageUrl) ? [listingImageUrl] : []),
+    ...(parseAuctionImages(listingImages) || []),
+  ])), [listingImageUrl, listingImages])
+  const activeImage = galleryImages[activeImageIndex] || ""
+
+  useEffect(() => {
+    setActiveImageIndex(0)
+    setFailedImageUrls(new Set())
+  }, [listing?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,7 +103,6 @@ function AuctionDetail() {
   if (!listing) return <Container py={80}><Center><Text c="gray.5">Лот не найден</Text></Center></Container>
 
   const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇩🇪 Германия", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
-  const primaryImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseMarketplaceImages(listing.images)?.[0] || ""
 
   return (
     <Container size="xl" py="lg">
@@ -108,13 +120,33 @@ function AuctionDetail() {
               <Paper radius="md" withBorder style={{ overflow: "hidden" }}>
                 <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
                   <VehicleFallback type="CAR" />
-                  {primaryImage && !imageFailed && (
+                  {activeImage && !failedImageUrls.has(activeImage) && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={primaryImage} alt={`${listing.make} ${listing.model}`} onError={() => setImageFailed(true)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={activeImage} alt={`${listing.make} ${listing.model}, фото ${activeImageIndex + 1}`} onError={() => setFailedImageUrls((previous) => new Set(previous).add(activeImage))} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   )}
                   <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.lotNumber ? `${listing.source} · ${listing.lotNumber}` : listing.source}</Badge>
                   <Badge pos="absolute" top={16} right={16} color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
                 </Box>
+                {galleryImages.length > 1 && (
+                  <Box p="sm" style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+                    <Group gap="xs" wrap="nowrap" style={{ overflowX: "auto", paddingBottom: 2 }}>
+                      {galleryImages.map((image, index) => (
+                        <button
+                          key={image}
+                          type="button"
+                          onClick={() => setActiveImageIndex(index)}
+                          aria-label={`Показать фото ${index + 1}`}
+                          aria-current={index === activeImageIndex ? "true" : undefined}
+                          style={{ flex: "0 0 auto", width: 76, height: 56, padding: 0, border: index === activeImageIndex ? "2px solid var(--mantine-color-orange-6)" : "1px solid var(--mantine-color-gray-3)", borderRadius: 8, background: "var(--mantine-color-gray-1)", overflow: "hidden", cursor: "pointer" }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={image} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.opacity = "0.25" }} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                        </button>
+                      ))}
+                    </Group>
+                    <Text size="xs" c="dimmed" mt={6}>Фото {activeImageIndex + 1} из {galleryImages.length}</Text>
+                  </Box>
+                )}
               </Paper>
 
               <Paper radius="md" p="md" withBorder>

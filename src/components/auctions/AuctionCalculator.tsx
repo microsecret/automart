@@ -68,57 +68,66 @@ function auctionFee(priceRub: number): number {
   return 90000
 }
 
-// Таможенная пошлина для физических лиц (старше 3 лет)
-// Источник: ЕАЭС, единые ставки для физлиц
-function customsDuty(year: number, volume: number, priceRub: number, eurRate: number): { duty: number; category: string; ageLabel: string; isProkhodnoy: boolean } {
-  const age = CURRENT_YEAR - year
+type CustomsScenario = {
+  duty: number
+  label: string
+  formula: string
+}
 
-  // Возрастные категории
-  let rate: number // € за куб.см
-  let category = ""
-  let ageLabel = ""
+function engineRate(volume: number, rates: readonly [number, number][]) {
+  return rates.find(([limit]) => volume <= limit)?.[1] || rates[rates.length - 1][1]
+}
 
-  if (age <= 3) {
-    // До 3 лет — 48% от стоимости, но не менее €2.5-5.7 за куб.см
-    category = "до 3 лет"
-    ageLabel = `${age} ${age === 1 ? "год" : "года"}`
-    const minRate = volume <= 1000 ? 1.5 : volume <= 1500 ? 2.2 : volume <= 1800 ? 2.7 : volume <= 2300 ? 3.7 : 5.7
-    const byValue = priceRub * 0.48
-    const byVolume = volume * minRate * eurRate
-    return { duty: Math.round(Math.max(byValue, byVolume)), category, ageLabel, isProkhodnoy: true }
-  } else if (age <= 5) {
-    // 3-5 лет
-    category = "3-5 лет"
-    ageLabel = `${age} лет`
-    if (volume <= 1000) rate = 1.5
-    else if (volume <= 1500) rate = 1.7
-    else if (volume <= 1800) rate = 2.5
-    else if (volume <= 2300) rate = 2.7
-    else if (volume <= 3000) rate = 3.0
-    else rate = 3.6
-    return { duty: Math.round(volume * rate * eurRate), category, ageLabel, isProkhodnoy: age === 5 ? false : true }
-  } else if (age <= 7) {
-    // 5-7 лет
-    category = "5-7 лет"
-    ageLabel = `${age} лет`
-    if (volume <= 1000) rate = 1.7
-    else if (volume <= 1500) rate = 1.9
-    else if (volume <= 1800) rate = 2.8
-    else if (volume <= 2300) rate = 3.0
-    else if (volume <= 3000) rate = 3.4
-    else rate = 5.7
-    return { duty: Math.round(volume * rate * eurRate), category, ageLabel, isProkhodnoy: false }
-  } else {
-    // Старше 7 лет
-    category = "старше 7 лет"
-    ageLabel = `${age} лет`
-    if (volume <= 1000) rate = 3.0
-    else if (volume <= 1500) rate = 3.2
-    else if (volume <= 1800) rate = 3.5
-    else if (volume <= 2300) rate = 4.8
-    else if (volume <= 3000) rate = 5.0
-    else rate = 5.7
-    return { duty: Math.round(volume * rate * eurRate), category, ageLabel, isProkhodnoy: false }
+function customsDutyForAgeGroup(group: "UP_TO_3" | "OVER_3_TO_5" | "OVER_5", volume: number, priceRub: number, eurRate: number): CustomsScenario {
+  if (group === "UP_TO_3") {
+    const priceEur = priceRub / eurRate
+    const [ratePercent, minimumRate] = priceEur <= 8_500 ? [0.54, 2.5]
+      : priceEur <= 16_700 ? [0.48, 3.5]
+        : priceEur <= 42_300 ? [0.48, 5.5]
+          : priceEur <= 84_500 ? [0.48, 7.5]
+            : priceEur <= 169_000 ? [0.48, 15]
+              : [0.48, 20]
+    return {
+      duty: Math.round(Math.max(priceRub * ratePercent, volume * minimumRate * eurRate)),
+      label: "до 3 лет",
+      formula: `${Math.round(ratePercent * 100)}% от стоимости, но не менее €${minimumRate}/см³`,
+    }
+  }
+
+  const rate = group === "OVER_3_TO_5"
+    ? engineRate(volume, [[1_000, 1.5], [1_500, 1.7], [1_800, 2.5], [2_300, 2.7], [3_000, 3], [Infinity, 3.6]])
+    : engineRate(volume, [[1_000, 3], [1_500, 3.2], [1_800, 3.5], [2_300, 4.8], [3_000, 5], [Infinity, 5.7]])
+  return {
+    duty: Math.round(volume * rate * eurRate),
+    label: group === "OVER_3_TO_5" ? "более 3, не более 5 лет" : "более 5 лет",
+    formula: `${volume.toLocaleString("ru")} см³ × €${rate}/см³ × курс EUR`,
+  }
+}
+
+/**
+ * A listing stores only its year, not its exact release date. At a 3- or
+ * 5-year boundary the calculator must disclose a range instead of choosing a
+ * favourable customs rate. Rates: EEC Council Decision No. 107, Appendix 2.
+ */
+function customsDuty(year: number, volume: number, priceRub: number, eurRate: number) {
+  const yearDifference = Math.max(0, CURRENT_YEAR - year)
+  const groups: Array<"UP_TO_3" | "OVER_3_TO_5" | "OVER_5"> = yearDifference <= 2
+    ? ["UP_TO_3"]
+    : yearDifference === 3
+      ? ["UP_TO_3", "OVER_3_TO_5"]
+      : yearDifference <= 4
+        ? ["OVER_3_TO_5"]
+        : yearDifference === 5
+          ? ["OVER_3_TO_5", "OVER_5"]
+          : ["OVER_5"]
+  const scenarios = groups.map((group) => customsDutyForAgeGroup(group, volume, priceRub, eurRate))
+  const duties = scenarios.map((scenario) => scenario.duty)
+  return {
+    dutyMin: Math.min(...duties),
+    dutyMax: Math.max(...duties),
+    category: scenarios.map((scenario) => scenario.label).join(" / "),
+    formula: scenarios.map((scenario) => scenario.formula).join("; "),
+    requiresManufactureDate: scenarios.length > 1,
   }
 }
 
@@ -126,18 +135,18 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
   const [city, setCity] = useState("Москва")
   const { data: exchangeRateData, error: exchangeRateError } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetchJson, { revalidateOnFocus: false })
   const volume = Math.round((engineVolume || 2.0) * 1000) // куб.см
-  const age = CURRENT_YEAR - year
   const sourceRate = exchangeRateData?.rates[sourceCurrency]?.rateToRub
   const eurRate = exchangeRateData?.rates.EUR?.rateToRub || 102
   const effectivePriceRub = sourceRate && sourcePrice >= 0 ? Math.round(sourcePrice * sourceRate) : priceRub
 
   const calc = useMemo(() => {
+    const customs = customsDuty(year, volume, effectivePriceRub, eurRate)
     const c = {
       auctionPrice: effectivePriceRub,
       auctionFee: auctionFee(effectivePriceRub),
       inlandDelivery: INLAND_DELIVERY[country] || 45000,
       seaDelivery: SEA_TO_VLAD[country] || 100000,
-      ...customsDuty(year, volume, effectivePriceRub, eurRate),
+      ...customs,
       utilFee: 3400, // Утилизационный сбор для физлиц (3400₽)
       customsProcess: 15000, // Оформление на СВХ
       brokerFee: 30000, // Брокерские услуги
@@ -146,11 +155,11 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
       ourCommission: effectivePriceRub > 2000000 ? 150000 : 80000,
     }
 
-    const total =
+    const totalWithoutDuty =
       c.auctionPrice + c.auctionFee + c.inlandDelivery + c.seaDelivery +
-      c.duty + c.utilFee + c.customsProcess + c.brokerFee + c.svh + c.rfDelivery + c.ourCommission
+      c.utilFee + c.customsProcess + c.brokerFee + c.svh + c.rfDelivery + c.ourCommission
 
-    return { ...c, total }
+    return { ...c, totalMin: totalWithoutDuty + c.dutyMin, totalMax: totalWithoutDuty + c.dutyMax }
   }, [effectivePriceRub, country, year, volume, city, eurRate])
 
   const currencySymbol = sourceCurrency === "JPY" || sourceCurrency === "CNY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : sourceCurrency === "RUB" ? "₽" : "€"
@@ -185,23 +194,21 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
           </Alert>
         )}
 
-        {/* Предупреждение о проходном годе */}
-        {calc.isProkhodnoy === false && !isElectric && (
+        {!isElectric && calc.requiresManufactureDate && (
           <Paper radius="sm" p="xs" style={{ background: "#fef3c7", borderColor: "#fde68a", borderWidth: 1, borderStyle: "solid" }}>
             <Group gap="sm">
               <IconAlertTriangle size={18} color="#d97706" />
               <Text size="xs" c="#92400e">
-                <b>Непроходной год!</b> Авто {calc.ageLabel} — повышенная пошлина (категория {calc.category}).
-                Регистрация возможна после {CURRENT_YEAR - year + 3} года.
+                <b>Пограничный год.</b> В источнике указан только {year} год выпуска. До подтверждения месяца выпуска показываем диапазон пошлины: {calc.category}.
               </Text>
             </Group>
           </Paper>
         )}
-        {calc.isProkhodnoy === true && age <= 5 && !isElectric && (
+        {!isElectric && !calc.requiresManufactureDate && (
           <Paper radius="sm" p="xs" style={{ background: "#f0fdf4", borderColor: "#bbf7d0", borderWidth: 1, borderStyle: "solid" }}>
             <Group gap="sm">
               <IconCheck size={18} color="#059669" />
-              <Text size="xs" c="#15803d"><b>Проходной год!</b> {calc.ageLabel} — льготная пошлина.</Text>
+              <Text size="xs" c="#15803d"><b>Таможенная категория:</b> {calc.category}. Расчёт предварительный и требует сверки даты выпуска и документов.</Text>
             </Group>
           </Paper>
         )}
@@ -221,12 +228,12 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
               label={
                 <Group gap={4}>
                   <Text size="sm" c="gray.6">Таможенная пошлина</Text>
-                  <Tooltip label={`Возраст: ${calc.ageLabel} (${calc.category}). Объём: ${volume} см³. Расчёт: ${volume} × ставка × ${eurRate.toFixed(2)} ₽`}>
+                  <Tooltip label={`Категория: ${calc.category}. Объём: ${volume} см³. Формула: ${calc.formula}. Курс EUR: ${eurRate.toFixed(2)} ₽.`}>
                     <IconInfoCircle size={13} color="#a1a1aa" style={{ cursor: "help" }} />
                   </Tooltip>
                 </Group>
               }
-              value={formatPrice(calc.duty)}
+              value={calc.dutyMin === calc.dutyMax ? formatPrice(calc.dutyMin) : `${formatPrice(calc.dutyMin)} — ${formatPrice(calc.dutyMax)}`}
               highlight
             />
           )}
@@ -244,16 +251,16 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
         <Paper radius="md" p="md" style={{ background: "linear-gradient(135deg, #ea580c, #f97316)" }}>
           <Group justify="space-between" align="center">
             <Stack gap={0}>
-              <Text size="xs" c="rgba(255,255,255,0.85)">Итого под ключ в {city}</Text>
-              <Text size="xs" c="rgba(255,255,255,0.7)">цена авто + доставка + таможня + РФ</Text>
+              <Text size="xs" c="rgba(255,255,255,0.85)">Предварительно под ключ в {city}</Text>
+              <Text size="xs" c="rgba(255,255,255,0.7)">цена авто + логистика + таможенный сценарий + РФ</Text>
             </Stack>
-            <Text fw={800} fz="1.5rem" c="white" ff="var(--font-display),sans-serif" lh={1}>{formatPrice(calc.total)}</Text>
+            <Text fw={800} fz="1.1rem" c="white" ff="var(--font-display),sans-serif" lh={1}>{calc.totalMin === calc.totalMax ? formatPrice(calc.totalMin) : `${formatPrice(calc.totalMin)} — ${formatPrice(calc.totalMax)}`}</Text>
           </Group>
         </Paper>
 
         <Group gap={6}>
           <IconInfoCircle size={14} color="#a1a1aa" />
-          <Text size="10px" c="gray.4">Предварительный расчёт. {sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}. ` : "Использован курс из снимка лота. "}Точная стоимость подтверждается после заявки.</Text>
+          <Text size="10px" c="gray.4">Плановый расчёт, не оферта и не платёжное требование. {sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}. ` : "Использован курс из снимка лота. "}Таможенная стоимость, тарифы перевозчика, брокера и СВХ подтверждаются перед сделкой.</Text>
         </Group>
       </Stack>
     </Paper>

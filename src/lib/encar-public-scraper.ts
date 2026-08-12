@@ -6,6 +6,16 @@ const ENCAR_DETAIL_PATH = /^\/cars\/detail\/(\d+)$/
 const ENCAR_CATALOG_HOST = "car.encar.com"
 const ENCAR_CATALOG_PATH = "/list/car"
 const ENCAR_SEDAN_SIZE_CATEGORIES = new Set(["경차", "소형차", "준중형차", "중형차", "대형차"])
+const ENCAR_COLOR_LABELS: ReadonlyArray<readonly [string, string]> = [
+  ["검정색", "чёрный"], ["은색", "серебристый"], ["흰색", "белый"], ["회색", "серый"],
+  ["빨간색", "красный"], ["파란색", "синий"], ["갈색", "коричневый"], ["베이지색", "бежевый"],
+  ["초록색", "зелёный"], ["노란색", "жёлтый"], ["주황색", "оранжевый"], ["보라색", "фиолетовый"],
+]
+const ENCAR_LOCATION_LABELS: ReadonlyArray<readonly [string, string]> = [
+  ["경기", "пров. Кёнгидо"], ["서울", "Сеул"], ["인천", "Инчхон"], ["부산", "Пусан"], ["대구", "Тэгу"], ["대전", "Тэджон"], ["광주", "Кванджу"], ["울산", "Ульсан"], ["제주", "Чеджу"],
+  ["수원시", "Сувон"], ["성남시", "Соннам"], ["용인시", "Ёнин"], ["고양시", "Коян"], ["화성시", "Хвасон"], ["부천시", "Пучхон"], ["안산시", "Ансан"], ["평택시", "Пхёнтхэк"], ["김포시", "Кимпхо"], ["파주시", "Пхаджу"],
+  ["권선구", "район Квонсон"], ["권선로", "ул. Квонсон-ро"],
+]
 
 type UnknownRecord = Record<string, unknown>
 
@@ -89,6 +99,16 @@ function normalizeEncarBodyType(value: unknown) {
   return typeof value === "string" && ENCAR_SEDAN_SIZE_CATEGORIES.has(value.trim()) ? "SEDAN" : null
 }
 
+function translateEncarColor(value: string | null) {
+  if (!value) return null
+  return ENCAR_COLOR_LABELS.reduce((translated, [source, russian]) => translated.replace(source, russian), value)
+}
+
+function translateEncarLocation(value: string | null) {
+  if (!value) return null
+  return ENCAR_LOCATION_LABELS.reduce((translated, [source, russian]) => translated.replace(source, russian), value)
+}
+
 /** Extracts deduplicated public detail links from one Encar catalogue page. */
 export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: number) {
   const catalogUrl = catalogUrlFrom(rawUrl)
@@ -165,12 +185,12 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   }
 
   const photos = Array.isArray(base.photos)
-    ? base.photos
+    ? Array.from(new Set(base.photos
         .slice()
         .sort((left, right) => Number(asText(asRecord(right)?.code) === "001") - Number(asText(asRecord(left)?.code) === "001"))
         .map(photoUrl)
         .filter((url): url is string => Boolean(url))
-        .slice(0, 20)
+      ))
     : []
 
   const rawBody = asText(spec.bodyName)
@@ -195,7 +215,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     fuelType: normalizeAuctionFuelType(rawFuel),
     transmission: normalizeAuctionTransmission(rawTransmission),
     bodyType: normalizeEncarBodyType(rawBody),
-    color: rawColor,
+    color: translateEncarColor(rawColor),
     engineVolume: (() => {
       const displacement = asInteger(spec.displacement)
       return displacement && displacement > 0 ? Number((displacement / 1000).toFixed(1)) : null
@@ -208,6 +228,6 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     images: photos.length ? photos : null,
     descriptionOrig: asText(advertisement.oneLineText),
     specsOrig: originalSpecs,
-    location: asText(contact?.address),
+    location: translateEncarLocation(asText(contact?.address)),
   }
 }
