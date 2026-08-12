@@ -1,6 +1,6 @@
 import { prisma } from "../src/lib/prisma"
 import { BRANDS, TRANSPORT_CATEGORIES } from "../src/lib/catalog"
-import { ELECTRIC_ONLY_CAR_MAKES } from "../src/lib/constants"
+import { ELECTRIC_ONLY_CAR_MAKES, isKnownInvalidCarFuel } from "../src/lib/constants"
 
 async function main() {
   console.log("Генерация объявлений из каталога...")
@@ -52,7 +52,7 @@ async function main() {
       const randomFuel = brand.country === "CN" && Math.random() > 0.7 ? "ELECTRIC" : fuels[Math.floor(Math.random() * fuels.length)]
       const fuel = ELECTRIC_ONLY_CAR_MAKES.has(brand.name)
         ? "ELECTRIC"
-        : brand.name === "Renault" && model === "Duster" && randomFuel === "ELECTRIC"
+        : isKnownInvalidCarFuel(brand.name, model, year, randomFuel)
           ? "GASOLINE"
           : randomFuel
       const transmission = ELECTRIC_ONLY_CAR_MAKES.has(brand.name)

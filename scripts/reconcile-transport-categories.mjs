@@ -30,6 +30,10 @@ const TYPE_BY_LEGACY_MAKE = {
 const MOTORCYCLE_MODEL_PATTERN = /africa twin|cbr|gold wing|burgman|gsx-|v-strom/i
 const ELECTRIC_ONLY_CAR_MAKES = ["Tesla", "Zeekr", "Nio", "Xpeng", "Avatr"]
 const DEMO_MEDIA_HOST = "images.unsplash.com"
+const CAR_MODEL_FUEL_RESTRICTIONS = [
+  { make: "Renault", model: "Duster", disallowed: ["ELECTRIC"] },
+  { make: "Renault", model: "Sandero", disallowed: ["ELECTRIC", "HYBRID"], beforeYear: 2026 },
+]
 
 function withoutDemoMedia(rawImages) {
   if (!rawImages) return null
@@ -69,6 +73,15 @@ function initialTypeDetails(vehicleType, make, model) {
     return { motorcycleType: /burgman/i.test(value) ? "SCOOTER" : /gsx-|cbr/i.test(value) ? "SPORT" : /africa twin|v-strom/i.test(value) ? "ADVENTURE" : "CRUISER" }
   }
   return null
+}
+
+function invalidKnownCarFuel(vehicle) {
+  return CAR_MODEL_FUEL_RESTRICTIONS.some((restriction) => (
+    vehicle.make === restriction.make
+    && vehicle.model === restriction.model
+    && (!restriction.beforeYear || vehicle.year < restriction.beforeYear)
+    && restriction.disallowed.includes(vehicle.fuelType)
+  ))
 }
 
 export function inferLegacyVehicleType(make, model) {
@@ -202,13 +215,24 @@ async function main() {
       data: { transmission: "AUTOMATIC" },
     })
 
-    // A Duster can be petrol, diesel or hybrid depending on generation, but
-    // it is not a battery-electric model. This only fixes the known invalid
-    // legacy demo value without applying a broad rule to the Renault range.
-    const dusterElectricRepair = await tx.vehicle.updateMany({
-      where: { vehicleType: "CAR", make: "Renault", model: "Duster", fuelType: "ELECTRIC" },
-      data: { fuelType: "GASOLINE" },
+    // Repair only a small, explicit set of known impossible powertrains.
+    // Query records before changing them to make the year-based restrictions
+    // transparent and avoid a broad update across the Renault catalogue.
+    const knownFuelCandidates = await tx.vehicle.findMany({
+      where: { vehicleType: "CAR", make: "Renault", model: { in: ["Duster", "Sandero"] } },
+      select: { id: true, make: true, model: true, year: true, fuelType: true },
     })
+    const knownFuelRepairIds = knownFuelCandidates
+      .filter(invalidKnownCarFuel)
+      .map((vehicle) => vehicle.id)
+    let knownFuelRepair = 0
+    if (knownFuelRepairIds.length) {
+      const result = await tx.vehicle.updateMany({
+        where: { id: { in: knownFuelRepairIds } },
+        data: { fuelType: "GASOLINE" },
+      })
+      knownFuelRepair = result.count
+    }
 
     // Tesla's own manual covers Model Y from the 2020 model year.  Correct a
     // known pre-launch demo date rather than exposing a non-existent car.
@@ -280,7 +304,7 @@ async function main() {
     }
 
     console.log(
-      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values, ${electricTransmissionRepair.count} EV transmissions, ${dusterElectricRepair.count} invalid Duster fuel values, ${modelYYearRepair.count} Tesla Model Y years and ${modelYTitleRepair} generated titles; cleared ${clearedVehicleMedia} vehicle and ${clearedPartMedia} part demo media records`,
+      `Reclassified ${repaired} legacy transport records; repaired ${airFuelNeedsRepair.length} aviation fuel values, ${electricFuelRepair.count} electric fuel values, ${electricTransmissionRepair.count} EV transmissions, ${knownFuelRepair} invalid model/fuel values, ${modelYYearRepair.count} Tesla Model Y years and ${modelYTitleRepair} generated titles; cleared ${clearedVehicleMedia} vehicle and ${clearedPartMedia} part demo media records`,
     )
   })
 

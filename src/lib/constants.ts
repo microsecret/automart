@@ -186,6 +186,33 @@ const CAR_MODEL_YEAR_FLOORS: Record<string, number> = {
   "Tesla::Model Y": 2020,
 }
 
+type ModelFuelRestriction = {
+  /** Reject only combinations that are impossible for the specified model years. */
+  disallowed: readonly string[]
+  beforeYear?: number
+}
+
+// This is intentionally a very small, evidence-led list. It guards the demo
+// catalogue and user submissions from known impossible combinations without
+// trying to maintain a full vehicle-specification database in application
+// code. The date condition leaves room for future model generations.
+const CAR_MODEL_FUEL_RESTRICTIONS: Record<string, ModelFuelRestriction> = {
+  "Renault::Duster": { disallowed: ["ELECTRIC"] },
+  "Renault::Sandero": { disallowed: ["ELECTRIC", "HYBRID"], beforeYear: 2026 },
+}
+
+export function isKnownInvalidCarFuel(
+  make: string,
+  model: string,
+  year: number,
+  fuelType: string,
+) {
+  const restriction = CAR_MODEL_FUEL_RESTRICTIONS[`${make}::${model}`]
+  if (!restriction) return false
+  if (restriction.beforeYear && year >= restriction.beforeYear) return false
+  return restriction.disallowed.includes(fuelType)
+}
+
 export function validateVehicleEnergyAndModelYear(
   vehicleType: string | null | undefined,
   make: string,
@@ -204,11 +231,8 @@ export function validateVehicleEnergyAndModelYear(
     return `${make} не использует механическую, вариаторную или роботизированную КПП. Выберите «Автомат».`
   }
 
-  // The current-generation Duster is sold with combustion and hybrid
-  // powertrains, but never as a battery-electric vehicle. Keep this
-  // deliberately model-specific so we do not block valid EVs from Renault.
-  if (make === "Renault" && model === "Duster" && fuelType === "ELECTRIC") {
-    return "Renault Duster не выпускается в электрической версии. Выберите фактический тип топлива."
+  if (isKnownInvalidCarFuel(make, model, year, fuelType)) {
+    return `${make} ${model} с указанным годом не выпускается с типом топлива «${FUEL_TYPES.find((option) => option.value === fuelType)?.label || fuelType}». Выберите фактический тип топлива.`
   }
 
   const firstModelYear = CAR_MODEL_YEAR_FLOORS[`${make}::${model}`]
