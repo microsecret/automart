@@ -440,6 +440,8 @@ select {
   min-height: calc(100dvh - var(--app-header-height));
   place-items: center;
   isolation: isolate;
+  /* Decorative glow pseudo-elements must not create a horizontal scrollbar. */
+  overflow: clip;
 }
 
 .auth-experience::before,
