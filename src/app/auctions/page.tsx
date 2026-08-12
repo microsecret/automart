@@ -3,8 +3,8 @@ export const dynamic = "force-dynamic"
 import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box } from "@mantine/core"
-import { IconDatabaseOff, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
+import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box, Divider } from "@mantine/core"
+import { IconBolt, IconCar, IconDatabaseOff, IconEngine, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
 import { highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
@@ -12,6 +12,8 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import type { AuctionListing } from "@prisma/client"
 import { AUCTION_SOURCE_COUNTRY, AUCTION_SOURCE_OPTIONS } from "@/lib/auction-sources"
+import BrandIcon from "@/components/brands/BrandIcon"
+import styles from "./auctions.module.css"
 
 const fetcher = fetchJson
 
@@ -37,7 +39,22 @@ const auctionYears = Array.from(
 type AuctionResponse = {
   listings: AuctionListing[]
   pagination: { total: number; pages: number; limit: number }
+  analytics?: {
+    total: number
+    averageFinalPrice: number | null
+    minFinalPrice: number | null
+    maxFinalPrice: number | null
+    averageYear: number | null
+    averageMileage: number | null
+    powerKnown: number
+    mileageKnown: number
+    popularMakes: Array<{ make: string; count: number }>
+    sources: Array<{ source: string; count: number }>
+  }
 }
+
+const FUEL_LABELS: Record<string, string> = { GASOLINE: "Бензин", DIESEL: "Дизель", ELECTRIC: "Электро", HYBRID: "Гибрид", GAS: "Газ" }
+const BODY_LABELS: Record<string, string> = { SUV: "Кроссовер", SEDAN: "Седан", PICKUP: "Пикап", WAGON: "Универсал", HATCHBACK: "Хэтчбек", MINIVAN: "Минивэн", COUPE: "Купе" }
 function AuctionMedia({ listing }: { listing: AuctionListing }) {
   const [failed, setFailed] = useState(false)
   const originalImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0] || ""
@@ -105,6 +122,8 @@ export default function AuctionsPage() {
     setCountry(""); setSource(""); setMake(""); setPriceFrom(""); setPriceTo(""); setBodyType(""); setYearFrom(""); setPage(1)
   }
   const hasActiveFilters = Boolean(country || source || make || priceFrom || priceTo || bodyType || yearFrom)
+  const analytics = data?.analytics
+  const sourceSummary = analytics?.sources.map((item) => `${item.source}: ${item.count}`).join(" · ")
 
   return (
     <Container size="xl" p={{ base: "sm", md: "md" }}>
@@ -202,6 +221,59 @@ export default function AuctionsPage() {
           </Stack>
         </Paper>
 
+        {analytics && analytics.total > 0 && (
+          <Paper radius="lg" p="md" withBorder className={styles.brandDiscovery}>
+            <Stack gap="sm">
+              <Group justify="space-between" gap="sm" wrap="wrap">
+                <Box>
+                  <Text fw={800} size="sm">Быстрый выбор марки</Text>
+                  <Text size="xs" c="dimmed">Марки и показатели рассчитаны по текущей выдаче, а не по рекламному каталогу.</Text>
+                </Box>
+                {sourceSummary && <Text className={styles.sourceSummary}>{sourceSummary}</Text>}
+              </Group>
+
+              <Box className={styles.brandShortcuts} aria-label="Быстрый выбор марки">
+                {analytics.popularMakes.map((item) => (
+                  <Button
+                    key={item.make}
+                    className={styles.brandShortcut}
+                    data-active={make === item.make || undefined}
+                    variant="default"
+                    color="indigo"
+                    size="sm"
+                    radius="md"
+                    leftSection={<BrandIcon brand={item.make} size={28} variant="rounded" />}
+                    rightSection={<Badge size="xs" variant={make === item.make ? "filled" : "light"} color="indigo">{item.count}</Badge>}
+                    onClick={() => { setMake(make === item.make ? "" : item.make); setPage(1) }}
+                  >
+                    {item.make}
+                  </Button>
+                ))}
+              </Box>
+
+              <Divider color="gray.2" />
+              <Box className={styles.insights} aria-label="Аналитика текущей выдачи">
+                <Box className={styles.insight}>
+                  <Text className={styles.insightValue}>{analytics.averageFinalPrice ? formatPriceShort(analytics.averageFinalPrice) : "—"}</Text>
+                  <Text className={styles.insightLabel}>средняя цена под ключ</Text>
+                </Box>
+                <Box className={styles.insight}>
+                  <Text className={styles.insightValue}>{analytics.averageYear || "—"}</Text>
+                  <Text className={styles.insightLabel}>средний год выпуска</Text>
+                </Box>
+                <Box className={styles.insight}>
+                  <Text className={styles.insightValue}>{analytics.averageMileage ? `${Math.round(analytics.averageMileage / 1000).toLocaleString("ru")} тыс. км` : "—"}</Text>
+                  <Text className={styles.insightLabel}>средний пробег</Text>
+                </Box>
+                <Box className={styles.insight}>
+                  <Text className={styles.insightValue}>{analytics.powerKnown}/{analytics.total}</Text>
+                  <Text className={styles.insightLabel}>мощность; пробег: {analytics.mileageKnown}/{analytics.total}</Text>
+                </Box>
+              </Box>
+            </Stack>
+          </Paper>
+        )}
+
         {isLoading ? (
           <ResultsGridSkeleton count={8} />
         ) : error ? (
@@ -244,14 +316,15 @@ export default function AuctionsPage() {
                       {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
                     </Text>
                     <Group gap={4} mt={8} wrap="wrap">
-                      {l.fuelType && <Badge size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "gray"}>{l.fuelType === "ELECTRIC" ? "⚡ Электро" : l.fuelType === "HYBRID" ? "🔋 Гибрид" : l.fuelType === "DIESEL" ? "⛽ Дизель" : "⛽ Бензин"}</Badge>}
-                      {l.bodyType && <Badge size="xs" variant="light" color="indigo">{l.bodyType === "SUV" ? "SUV" : l.bodyType === "SEDAN" ? "Седан" : l.bodyType === "PICKUP" ? "Пикап" : l.bodyType === "WAGON" ? "Универсал" : l.bodyType === "HATCHBACK" ? "Хэтчбек" : l.bodyType === "MINIVAN" ? "Минивэн" : l.bodyType}</Badge>}
-                      {l.engineVolume && <Badge size="xs" variant="default" color="gray">{l.engineVolume} л</Badge>}
-                      {l.power && <Badge size="xs" variant="default" color="gray">{l.power} л.с.</Badge>}
+                      {l.fuelType && <Badge className={styles.resultSpec} size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "orange"} leftSection={<IconGasStation size={12} />}>Топливо: {FUEL_LABELS[l.fuelType] || l.fuelType}</Badge>}
+                      {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconCar size={12} />}>Кузов: {BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
+                      {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {l.engineVolume} л</Badge>}
+                      {l.power && <Badge className={styles.resultSpec} size="xs" variant="light" color="violet" leftSection={<IconBolt size={12} />}>Мощность: {l.power} л.с.</Badge>}
+                      {(parseAuctionImages(l.images)?.length || 0) > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue" leftSection={<IconPhoto size={12} />}>Фото: {parseAuctionImages(l.images)?.length}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">
                       <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(l.finalPrice)}</Text>
-                      <Text className="auction-result-card__price-note">Под ключ в РФ</Text>
+                      <Text className="auction-result-card__price-note">Предварительно под ключ в РФ</Text>
                     </Box>
                     {l.auctionDate && (
                       <Group gap={4} className="auction-result-card__date" wrap="nowrap">

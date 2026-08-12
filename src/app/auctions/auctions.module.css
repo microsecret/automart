@@ -1,0 +1,97 @@
+.brandDiscovery {
+  border: 1px solid #dbe4f3;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(79, 70, 229, 0.1), transparent 28%),
+    linear-gradient(145deg, #ffffff, #f8faff);
+}
+
+.brandShortcuts {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 7px;
+  scrollbar-width: thin;
+}
+
+.brandShortcut {
+  min-width: max-content;
+  min-height: 48px;
+  padding-right: 10px;
+  border: 1px solid #dce4f2;
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+}
+
+.brandShortcut:hover {
+  border-color: #a5b4fc;
+  background: #f5f3ff;
+}
+
+.brandShortcut[data-active] {
+  border-color: #6366f1;
+  background: #eef2ff;
+  color: #3730a3;
+  box-shadow: 0 5px 14px rgba(79, 70, 229, 0.14);
+}
+
+.insights {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.insight {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.insightValue {
+  overflow: hidden;
+  color: #172033;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insightLabel {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 0.69rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sourceSummary {
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.resultSpec {
+  max-width: 100%;
+  min-height: 22px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .brandDiscovery {
+    margin-inline: -2px;
+  }
+
+  .insight {
+    padding: 9px;
+  }
+}

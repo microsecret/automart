@@ -60,17 +60,50 @@ export async function GET(request: NextRequest) {
     if (bodyType && !VALID_BODY_TYPES.has(bodyType)) return NextResponse.json({ error: "Некорректный тип кузова" }, { status: 400 })
     if (bodyType) where.bodyType = bodyType
 
-    const [listings, total] = await prisma.$transaction([
+    const [listings, total, aggregates, popularMakes, sourceDistribution, powerKnown, mileageKnown] = await prisma.$transaction([
       prisma.auctionListing.findMany({
         where, skip, take: limit,
         orderBy: { createdAt: "desc" },
       }),
       prisma.auctionListing.count({ where }),
+      prisma.auctionListing.aggregate({
+        where,
+        _avg: { finalPrice: true, year: true, mileage: true },
+        _min: { finalPrice: true },
+        _max: { finalPrice: true },
+      }),
+      prisma.auctionListing.groupBy({
+        by: ["make"],
+        where,
+        _count: true,
+        orderBy: { _count: { make: "desc" } },
+        take: 8,
+      }),
+      prisma.auctionListing.groupBy({
+        by: ["source"],
+        where,
+        _count: true,
+        orderBy: { _count: { source: "desc" } },
+      }),
+      prisma.auctionListing.count({ where: { ...where, power: { not: null } } }),
+      prisma.auctionListing.count({ where: { ...where, mileage: { not: null } } }),
     ])
 
     return NextResponse.json({
       listings,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      analytics: {
+        total,
+        averageFinalPrice: aggregates._avg.finalPrice ? Math.round(aggregates._avg.finalPrice) : null,
+        minFinalPrice: aggregates._min.finalPrice,
+        maxFinalPrice: aggregates._max.finalPrice,
+        averageYear: aggregates._avg.year ? Math.round(aggregates._avg.year) : null,
+        averageMileage: aggregates._avg.mileage ? Math.round(aggregates._avg.mileage) : null,
+        powerKnown,
+        mileageKnown,
+        popularMakes: popularMakes.map((item) => ({ make: item.make, count: item._count })),
+        sources: sourceDistribution.map((item) => ({ source: item.source, count: item._count })),
+      },
     })
   } catch (error) {
     console.error("Auctions GET error:", error)
