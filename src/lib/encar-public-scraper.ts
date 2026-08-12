@@ -8,15 +8,21 @@ const ENCAR_CATALOG_HOST = "car.encar.com"
 const ENCAR_CATALOG_PATH = "/list/car"
 const ENCAR_SEDAN_SIZE_CATEGORIES = new Set(["경차", "소형차", "준중형차", "중형차", "대형차"])
 const ENCAR_COLOR_LABELS: ReadonlyArray<readonly [string, string]> = [
+  ["은회색", "серебристо-серый"], ["담녹색", "тёмно-зелёный"], ["진주색", "жемчужный"],
   ["검정색", "чёрный"], ["은색", "серебристый"], ["흰색", "белый"], ["회색", "серый"],
-  ["빨간색", "красный"], ["파란색", "синий"], ["갈색", "коричневый"], ["베이지색", "бежевый"],
-  ["초록색", "зелёный"], ["노란색", "жёлтый"], ["주황색", "оранжевый"], ["보라색", "фиолетовый"],
+  ["빨간색", "красный"], ["파란색", "синий"], ["청색", "синий"], ["남색", "тёмно-синий"],
+  ["갈색", "коричневый"], ["베이지색", "бежевый"], ["초록색", "зелёный"], ["녹색", "зелёный"],
+  ["노란색", "жёлтый"], ["주황색", "оранжевый"], ["보라색", "фиолетовый"], ["금색", "золотистый"],
 ]
 const ENCAR_LOCATION_LABELS: ReadonlyArray<readonly [string, string]> = [
-  ["경기", "пров. Кёнгидо"], ["서울", "Сеул"], ["인천", "Инчхон"], ["부산", "Пусан"], ["대구", "Тэгу"], ["대전", "Тэджон"], ["광주", "Кванджу"], ["울산", "Ульсан"], ["제주", "Чеджу"],
-  ["수원시", "Сувон"], ["성남시", "Соннам"], ["용인시", "Ёнин"], ["고양시", "Коян"], ["화성시", "Хвасон"], ["부천시", "Пучхон"], ["안산시", "Ансан"], ["평택시", "Пхёнтхэк"], ["김포시", "Кимпхо"], ["파주시", "Пхаджу"],
+  ["전북특별자치도", "пров. Чолла-Пукто"], ["전라북도", "пров. Чолла-Пукто"], ["전남특별자치도", "пров. Чолла-Намдо"], ["전라남도", "пров. Чолла-Намдо"],
+  ["경기도", "пров. Кёнгидо"], ["강원특별자치도", "пров. Канвондо"], ["강원도", "пров. Канвондо"], ["충청북도", "пров. Чхунчхон-Пукто"], ["충청남도", "пров. Чхунчхон-Намдо"],
+  ["경상북도", "пров. Кёнсан-Пукто"], ["경상남도", "пров. Кёнсан-Намдо"], ["제주특별자치도", "Чеджу"],
+  ["서울특별시", "Сеул"], ["부산광역시", "Пусан"], ["대구광역시", "Тэгу"], ["인천광역시", "Инчхон"], ["광주광역시", "Кванджу"], ["대전광역시", "Тэджон"], ["울산광역시", "Ульсан"], ["세종특별자치시", "Седжон"],
+  ["전북", "пров. Чолла-Пукто"], ["전남", "пров. Чолла-Намдо"], ["충북", "пров. Чхунчхон-Пукто"], ["충남", "пров. Чхунчхон-Намдо"], ["경북", "пров. Кёнсан-Пукто"], ["경남", "пров. Кёнсан-Намдо"], ["경기", "пров. Кёнгидо"], ["서울", "Сеул"], ["인천", "Инчхон"], ["부산", "Пусан"], ["대구", "Тэгу"], ["대전", "Тэджон"], ["광주", "Кванджу"], ["울산", "Ульсан"], ["제주", "Чеджу"],
+  ["전주시", "Чонджу"], ["수원시", "Сувон"], ["성남시", "Соннам"], ["용인시", "Ёнин"], ["고양시", "Коян"], ["화성시", "Хвасон"], ["부천시", "Пучхон"], ["안산시", "Ансан"], ["평택시", "Пхёнтхэк"], ["김포시", "Кимпхо"], ["파주시", "Пхаджу"],
   ["권선구", "район Квонсон"], ["권선로", "ул. Квонсон-ро"],
-  ["금정구", "район Кымджон"], ["반송로", "ул. Бансона-ро"],
+  ["금정구", "район Кымджон"], ["덕진구", "район Токчин"], ["서구", "район Со"], ["반송로", "ул. Бансона-ро"], ["온고을로", "ул. Онгыль-ро"],
 ]
 const ENCAR_PRIMARY_OPTION_LABELS: Readonly<Record<string, string>> = {
   "선루프": "Люк",
@@ -147,11 +153,40 @@ function translateEncarColor(value: string | null) {
   return ENCAR_COLOR_LABELS.reduce((translated, [source, russian]) => translated.replace(source, russian), value)
 }
 
+const HANGUL_INITIAL_RU = ["г", "кк", "н", "д", "тт", "р", "м", "б", "пп", "с", "сс", "", "ч", "чч", "ч", "к", "т", "п", "х"]
+const HANGUL_VOWEL_RU = ["а", "э", "я", "яэ", "о", "е", "ё", "е", "о", "ва", "вэ", "ве", "ё", "у", "во", "ве", "ви", "ю", "ы", "уи", "и"]
+const HANGUL_FINAL_RU = ["", "к", "к", "к", "н", "н", "н", "т", "ль", "к", "м", "ль", "ль", "ль", "ль", "ль", "м", "п", "п", "т", "т", "нг", "т", "т", "к", "т", "п", "т"]
+
+function transliterateHangul(value: string) {
+  return value.replace(/[\uAC00-\uD7AF]/g, (syllable) => {
+    const offset = syllable.charCodeAt(0) - 0xac00
+    const initial = Math.floor(offset / 588)
+    const vowel = Math.floor((offset % 588) / 28)
+    const final = offset % 28
+    return `${HANGUL_INITIAL_RU[initial]}${HANGUL_VOWEL_RU[vowel]}${HANGUL_FINAL_RU[final]}`
+  })
+}
+
+function translateKnownEncarLocation(value: string) {
+  const known = ENCAR_LOCATION_LABELS.reduce((translated, [source, russian]) => translated.replaceAll(source, russian), value)
+  return /[\uAC00-\uD7AF]/.test(known) ? transliterateHangul(known) : known
+}
+
+function isUnreliableLocationTranslation(source: string, translated: string) {
+  return translated.trim() === source.trim()
+    || /[\uAC00-\uD7AF]/.test(translated)
+    || /(?:это\s+(?:не\s+)?автомобильный\s+текст|корейский\s+текст|перевод(?:ится|\s+на\s+русский)|не\s+требуется)/i.test(translated)
+}
+
 async function translateEncarLocation(value: string | null) {
   if (!value) return null
+  const deterministic = translateKnownEncarLocation(value)
+  // Korean addresses are structured data. When all of their parts are known,
+  // do not send them to an LLM: deterministic labels avoid explanatory prose
+  // being stored in a location field.
+  if (!/[\uAC00-\uD7AF]/.test(deterministic)) return deterministic
   const translated = await translateToRussian(value)
-  if (!/[\uAC00-\uD7AF]/.test(translated)) return translated
-  return ENCAR_LOCATION_LABELS.reduce((fallback, [source, russian]) => fallback.replace(source, russian), translated)
+  return isUnreliableLocationTranslation(value, translated) ? deterministic : translated
 }
 
 /**
