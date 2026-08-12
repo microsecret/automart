@@ -173,6 +173,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
   const currencySymbol = sourceCurrency === "JPY" || sourceCurrency === "CNY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : sourceCurrency === "RUB" ? "₽" : "€"
   const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : country === "CN" ? "Китай" : country === "DE" ? "Германия" : "Европа"
   const isElectric = fuelType === "ELECTRIC"
+  const hasManufacturedMonth = Boolean(manufacturedMonth?.match(/^\d{4}-(0[1-9]|1[0-2])$/))
 
   return (
     <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #fff7ed 0%, #fff 50%)" }}>
@@ -207,7 +208,10 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
             <Group gap="sm">
               <IconAlertTriangle size={18} color="#d97706" />
               <Text size="xs" c="#92400e">
-                <b>Пограничный год.</b> В источнике указан только {year} год выпуска. До подтверждения месяца выпуска показываем диапазон пошлины: {calc.category}.
+                <b>{hasManufacturedMonth ? "Пограничный месяц." : "Пограничный год."}</b>{" "}
+                {hasManufacturedMonth
+                  ? `В источнике указан ${manufacturedMonth}; день выпуска не указан. Поэтому показываем диапазон пошлины: ${calc.category}.`
+                  : `В источнике указан только ${year} год выпуска. До подтверждения месяца выпуска показываем диапазон пошлины: ${calc.category}.`}
               </Text>
             </Group>
           </Paper>
