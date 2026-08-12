@@ -65,7 +65,10 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCategory === "parts"
   const isAuctionsRoute = pathname?.startsWith("/auctions")
   const isNewsRoute = pathname?.startsWith("/news")
-  const isContentRoute = pathname?.startsWith("/news") || pathname?.startsWith("/help")
+  // News is part of the marketplace flow, so it keeps the same full sidebar
+  // as the home page, categories and services. Only reference/help pages use
+  // the narrow content layout without marketplace navigation.
+  const isContentRoute = pathname?.startsWith("/help")
   const isMobileNavActive = (href: string) => href === "/" ? pathname === "/" : pathname?.startsWith(href)
 
   if (isAuthRoute) {
@@ -157,9 +160,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
           </ScrollArea>
         </Box>}
 
-        {isNewsRoute && <NewsSidebar />}
-
-        <Box component="main" className={`app-main-content${isContentRoute && !isNewsRoute ? " app-main-content--content" : ""}`}>{children}</Box>
+        <Box component="main" className={`app-main-content${isContentRoute ? " app-main-content--content" : ""}`}>{children}</Box>
       </Box>
 
       <AppFooter />
@@ -182,41 +183,6 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
           )
         })}
       </nav>
-    </Box>
-  )
-}
-
-function NewsSidebar() {
-  return (
-    <Box component="aside" className="app-sidebar app-sidebar--news">
-      <ScrollArea h="100%" type="hover" scrollbarSize={5}>
-        <Stack gap="sm" p="sm">
-          <SidebarPanel title="Новости" href="/news" icon={<IconNews size={15} />}>
-            <NavLink component={Link} href="/news" label="Все новости" leftSection={<IconNews size={16} />} active color="indigo" className="market-side-nav" />
-            <NavLink component={Link} href="/auctions" label="Импорт и аукционы" leftSection={<IconGavel size={16} />} color="indigo" className="market-side-nav" />
-          </SidebarPanel>
-
-          <Paper className="market-side-service" radius="lg" p="sm" withBorder>
-            <Group gap="xs" wrap="nowrap" align="flex-start">
-              <ThemeIcon variant="light" color="cyan" radius="md" size={30}><IconTruckDelivery size={17} /></ThemeIcon>
-              <Box>
-                <Text size="xs" fw={700}>Инструменты водителя</Text>
-                <Text size="10px" c="dimmed">Маршруты, АЗС и расчёты</Text>
-              </Box>
-            </Group>
-            <Stack gap={2} mt={6}>
-              <Button component={Link} href="/services/fuel-map" variant="subtle" color="indigo" size="compact-sm" justify="flex-start">Карта АЗС →</Button>
-              <Button component={Link} href="/services/history-check" variant="subtle" color="indigo" size="compact-sm" justify="flex-start">Проверка истории →</Button>
-            </Stack>
-          </Paper>
-
-          <Paper className="market-side-service" radius="lg" p="sm" withBorder>
-            <Text size="xs" fw={700}>Нужна помощь?</Text>
-            <Text size="10px" c="dimmed" mt={2}>Правила, безопасность и ответы команды.</Text>
-            <Button component={Link} href="/help" variant="light" color="indigo" size="compact-sm" mt="sm">Открыть помощь</Button>
-          </Paper>
-        </Stack>
-      </ScrollArea>
     </Box>
   )
 }
