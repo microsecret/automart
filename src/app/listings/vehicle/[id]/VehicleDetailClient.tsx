@@ -62,7 +62,7 @@ import {
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
-import Photo360Viewer from "@/components/viewer/Photo360Viewer"
+import PhotoAngleViewer from "@/components/viewer/Photo360Viewer"
 import CreditCalculator from "@/components/listings/CreditCalculator"
 import { getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import { useFavorites } from "@/hooks/useFavorites"
@@ -382,7 +382,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         {/* Левая колонка — галерея + характеристики */}
         <Box className="vehicle-detail-layout__main">
           <Stack gap="md">
-            {images.length >= 3 && <Photo360Viewer images={images} title={`${data.year} ${data.make} ${data.model} — 360° осмотр`} />}
+            {images.length >= 3 && <PhotoAngleViewer images={images} title={`${data.year} ${data.make} ${data.model} — просмотр ракурсов`} />}
 
             {/* Галерея */}
             <Card p={0} radius="lg" withBorder className={`vehicle-detail-gallery${hasImages ? "" : " vehicle-detail-gallery--empty"}`}>

@@ -1,62 +1,52 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { Box, Text, Center, ActionIcon, Tooltip, AspectRatio, Group } from "@mantine/core"
-import { Icon360, IconMaximize, IconX, IconRotate360 } from "@tabler/icons-react"
+import { Box, Text, Center, ActionIcon, Tooltip, Group } from "@mantine/core"
+import { IconArrowsHorizontal, IconMaximize, IconPhoto, IconX } from "@tabler/icons-react"
 
 interface Photo360ViewerProps {
-  /** Серия ракурсов авто (8-16 фото) */
+  /** Серия опубликованных ракурсов автомобиля */
   images: string[]
-  /** Заголовок для полноэкранного режима */
+  /** Заголовок полноэкранного просмотра */
   title?: string
 }
 
 /**
- * 360° просмотр авто на основе серии фотографий.
- * Поворот мышью/тачем (drag horizontally).
- * Демо-режим: если <3 фото, показываем заглушку с кнопкой "360° осмотр".
+ * Интерактивный просмотр ракурсов на основе опубликованных фотографий.
+ * Горизонтальное перетаскивание последовательно показывает ракурсы, но не
+ * выдаёт произвольную серию снимков за подтверждённую 360°-съёмку.
  */
-export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
+export default function PhotoAngleViewer({ images, title }: Photo360ViewerProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [fullscreen, setFullscreen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const dragStart = useRef<{ x: number; idx: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Минимум 3 ракурса для 360°
-  const has360 = images.length >= 3
+  const hasMultipleAngles = images.length >= 3
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (!has360) return
+    if (!hasMultipleAngles) return
     setIsDragging(true)
     dragStart.current = { x: e.clientX, idx: activeIndex }
     ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-  }, [activeIndex, has360])
+  }, [activeIndex, hasMultipleAngles])
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging || !dragStart.current || !has360) return
+    if (!isDragging || !dragStart.current || !hasMultipleAngles) return
     const dx = e.clientX - dragStart.current.x
     const step = 24 // px per frame
     const frames = Math.round(dx / step)
     const newIndex = (dragStart.current.idx + frames + images.length * 100) % images.length
     setActiveIndex(newIndex)
-  }, [isDragging, has360, images.length])
+  }, [isDragging, hasMultipleAngles, images.length])
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false)
     dragStart.current = null
   }, [])
 
-  // Автовращение в полноэкранном режиме (демо)
-  useEffect(() => {
-    if (!fullscreen || !has360) return
-    const interval = setInterval(() => {
-      setActiveIndex((i) => (i + 1) % images.length)
-    }, 80)
-    return () => clearInterval(interval)
-  }, [fullscreen, has360, images.length])
-
-  // Управление с клавиатуры в полноэкранном
+  // Управление с клавиатуры в полноэкранном режиме.
   useEffect(() => {
     if (!fullscreen) return
     const onKey = (e: KeyboardEvent) => {
@@ -68,8 +58,8 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
     return () => window.removeEventListener("keydown", onKey)
   }, [fullscreen, images.length])
 
-  if (!has360) {
-    // Заглушка — нет серии фото, но показываем кнопку как индикатор функции
+  if (!hasMultipleAngles) {
+    // Для одного-двух снимков обычная галерея информативнее интерактивного блока.
     return (
       <Box
         style={{
@@ -85,9 +75,9 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
       >
         <Center>
           <Box style={{ textAlign: "center" }}>
-            <IconRotate360 size={56} color="#4f46e5" style={{ margin: "0 auto 12px" }} />
-            <Text size="sm" c="gray.4" fw={500}>360° осмотр недоступен</Text>
-            <Text size="xs" c="gray.6" mt={4}>Продавец не загрузил серию фото</Text>
+            <IconPhoto size={56} color="#4f46e5" style={{ margin: "0 auto 12px" }} />
+            <Text size="sm" c="gray.4" fw={500}>Мало ракурсов для просмотра</Text>
+            <Text size="xs" c="gray.6" mt={4}>Используйте основную галерею</Text>
           </Box>
         </Center>
       </Box>
@@ -120,7 +110,7 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={currentImage}
-        alt={title || "360° view"}
+        alt={title || "Просмотр ракурсов автомобиля"}
         draggable={false}
         style={{
           width: "100%",
@@ -130,7 +120,7 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
         }}
       />
 
-      {/* Индикатор 360° в углу */}
+      {/* Индикатор интерактивного просмотра в углу */}
       <Box
         pos="absolute"
         top={12}
@@ -145,8 +135,8 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
           gap: 6,
         }}
       >
-        <Icon360 size={16} color="white" />
-        <Text size="xs" fw={600} c="white">360°</Text>
+        <IconArrowsHorizontal size={16} color="white" />
+        <Text size="xs" fw={600} c="white">Ракурсы</Text>
       </Box>
 
       {/* Подсказка */}
@@ -164,7 +154,7 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
           }}
         >
           <Text size="xs" c="white" style={{ opacity: 0.9 }}>
-            ← Потяните для поворота →
+            ← Тяните, чтобы листать ракурсы →
           </Text>
         </Box>
       )}
@@ -187,7 +177,7 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
 
       {/* Кнопка полноэкранного режима */}
       {!fullscreen && (
-        <Tooltip label="3D-осмотр во весь экран">
+        <Tooltip label="Открыть просмотр фото">
           <ActionIcon
             pos="absolute"
             top={12}
@@ -229,10 +219,10 @@ export default function Photo360Viewer({ images, title }: Photo360ViewerProps) {
         }}
       >
         <Text size="lg" fw={600} c="white">
-          {title || "360° осмотр"}
+          {title || "Просмотр ракурсов"}
         </Text>
         <Group gap="sm">
-          <Text size="xs" c="gray.4">← → для поворота · ESC для выхода</Text>
+          <Text size="xs" c="gray.4">← → для переключения фото · ESC для выхода</Text>
           <ActionIcon variant="subtle" color="gray" size="lg" onClick={() => setFullscreen(false)} aria-label="Закрыть">
             <IconX size={20} color="white" />
           </ActionIcon>

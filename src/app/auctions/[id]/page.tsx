@@ -276,8 +276,8 @@ function AuctionDetail() {
                     {listing.bodyType && <SpecRow icon={<IconCar size={16} />} label="Кузов" value={auctionValueLabel(listing.bodyType, "body")} />}
                     {listing.color && <SpecRow icon={<IconPalette size={16} />} label="Цвет" value={listing.color} />}
                     {listing.engineVolume && <SpecRow icon={<IconCar size={16} />} label="Объём" value={`${listing.engineVolume} л`} />}
-                    <SpecRow icon={<IconCar size={16} />} label="Мощность" value={listing.power ? `${listing.power} л.с.` : "Не опубликована источником"} />
-                    {listing.location && <SpecRow icon={<IconMapPin size={16} />} label="Локация" value={listing.location} />}
+                    <SpecRow icon={<IconCar size={16} />} label="Мощность" value={listing.power ? `${listing.power} л.с.` : "Не опубликована источником"} multiline={!listing.power} />
+                    {listing.location && <SpecRow icon={<IconMapPin size={16} />} label="Локация" value={listing.location} multiline />}
                   </SimpleGrid>
                   <Group gap={6} mt={2}>
                     <Text size="xs" c="dimmed">Данные автомобиля:</Text>
@@ -391,11 +391,11 @@ function AuctionDetail() {
   )
 }
 
-function SpecRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function SpecRow({ icon, label, value, multiline = false }: { icon: React.ReactNode; label: string; value: string; multiline?: boolean }) {
   return (
     <Box className="auction-detail-spec">
       <Group gap={6}><Box c="indigo.5">{icon}</Box><Text className="auction-detail-spec__label">{label}</Text></Group>
-      <Text className="auction-detail-spec__value">{value}</Text>
+      <Text className="auction-detail-spec__value" title={value} style={multiline ? { whiteSpace: "normal", overflowWrap: "anywhere" } : undefined}>{value}</Text>
     </Box>
   )
 }

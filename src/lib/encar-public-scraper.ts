@@ -167,9 +167,23 @@ function transliterateHangul(value: string) {
   })
 }
 
+function transliterateKoreanPlaceName(value: string) {
+  const transliterated = transliterateHangul(value)
+  return transliterated ? `${transliterated[0].toUpperCase()}${transliterated.slice(1)}` : transliterated
+}
+
 function translateKnownEncarLocation(value: string) {
   const known = ENCAR_LOCATION_LABELS.reduce((translated, [source, russian]) => translated.replaceAll(source, russian), value)
-  return /[\uAC00-\uD7AF]/.test(known) ? transliterateHangul(known) : known
+  // Keep structured Korean address suffixes readable when the exact district
+  // or street is not part of the deterministic dictionary. Transliteration is
+  // still used for the name itself, but the result no longer looks like an
+  // untranslated concatenation such as "данвонгу пунгчонро".
+  const structured = known
+    .replace(/([\uAC00-\uD7AF]+)구(?=\s|$)/g, (_, district: string) => `район ${transliterateKoreanPlaceName(district)}`)
+    .replace(/([\uAC00-\uD7AF]+)동(?=\s|$)/g, (_, neighborhood: string) => `квартал ${transliterateKoreanPlaceName(neighborhood)}`)
+    .replace(/([\uAC00-\uD7AF]+)로(?=\s|$)/g, (_, street: string) => `ул. ${transliterateKoreanPlaceName(street)}-ро`)
+    .replace(/([\uAC00-\uD7AF]+)길(?=\s|$)/g, (_, lane: string) => `пер. ${transliterateKoreanPlaceName(lane)}-гиль`)
+  return /[\uAC00-\uD7AF]/.test(structured) ? transliterateHangul(structured) : structured
 }
 
 function isUnreliableLocationTranslation(source: string, translated: string) {
