@@ -111,7 +111,7 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
 
   return (
     <Box className="auction-card__media" data-empty-media={!hasImage || undefined}>
-      <VehicleFallback type="CAR" compact={!hasImage} />
+      {!hasImage && <VehicleFallback type="CAR" compact />}
       {hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt={`${listing.make} ${listing.model}`} onError={() => setFailed(true)} loading="lazy" decoding="async" />

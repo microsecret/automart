@@ -221,7 +221,7 @@ function AuctionDetail() {
             <Stack gap="md">
               <Paper radius="md" withBorder style={{ overflow: "hidden" }}>
                 <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
-                  <VehicleFallback type="CAR" />
+                  {(!activeImage || failedImageUrls.has(activeImage)) && <VehicleFallback type="CAR" />}
                   {activeImage && !failedImageUrls.has(activeImage) && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
