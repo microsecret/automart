@@ -20,6 +20,7 @@ import {
 import { IconSearch, IconMessageCirclePlus } from "@tabler/icons-react"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
+import { createConversationId } from "@/lib/messages"
 
 interface User {
   id: string
@@ -45,8 +46,7 @@ function NewMessageContent() {
   }, [session, status, router])
 
   const startConversation = (userId: string) => {
-    const ids = [session!.user.id, userId].sort()
-    const conversationId = `${ids[0]}-${ids[1]}-${listingId || "no-listing"}`
+    const conversationId = createConversationId(session!.user.id, userId, listingId)
     const params = new URLSearchParams({ recipientId: userId })
     if (listingId) params.set("listingId", listingId)
     router.push(`/messages/${conversationId}?${params.toString()}`)

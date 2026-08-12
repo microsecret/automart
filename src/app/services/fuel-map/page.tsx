@@ -547,6 +547,24 @@ export default function FuelMapPage() {
     setVisibleStationCount(STATION_LIST_PAGE_SIZE)
   }, [fuelFilter, networkFilter])
 
+  // A refresh can replace an OSM/provider record with a newer snapshot. Keep
+  // the opened card aligned with that snapshot instead of showing stale fuel
+  // tags, prices or an address from the previous response.
+  useEffect(() => {
+    if (!selectedStation) return
+
+    const refreshedStation = allStations.find((station) => (
+      station.id === selectedStation.id && station.sourceType === selectedStation.sourceType
+    ))
+
+    if (!refreshedStation) {
+      setSelectedStation(null)
+      return
+    }
+
+    if (refreshedStation !== selectedStation) setSelectedStation(refreshedStation)
+  }, [allStations, selectedStation])
+
   useEffect(() => {
     if (!selectedStation) return
 
