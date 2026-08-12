@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -13,6 +14,14 @@ function hashIp(value: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const limit = rateLimit(`analytics:visit:ip:${getClientIp(request)}`, { windowMs: 5 * 60_000, maxRequests: 120 })
+    if (!limit.success) {
+      return NextResponse.json(
+        { error: "Слишком много событий. Попробуйте позже." },
+        { status: 429, headers: rateLimitHeaders(limit) },
+      )
+    }
+
     const body = await request.json().catch(() => ({})) as { path?: unknown; sessionKey?: unknown }
     const path = String(body.path || "").slice(0, 200)
     if (!path.startsWith("/")) return NextResponse.json({ error: "Invalid path" }, { status: 400 })

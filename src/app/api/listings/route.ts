@@ -215,7 +215,13 @@ export async function GET(request: NextRequest) {
     if (fuelTypes) vehicleFilters.fuelType = fuelTypes
     if (transmission) vehicleFilters.transmission = transmission
     const bodyTypes = oneOrMany(bodyType)
-    if (bodyTypes) vehicleFilters.bodyType = bodyTypes
+    if (bodyTypes) {
+      // Body styles are a passenger-car vocabulary.  The homepage exposes
+      // this filter before a category is selected, so keep equipment, water
+      // and aircraft out of the result even if legacy data has a bodyType.
+      if (!vehicleType) vehicleFilters.vehicleType = "CAR"
+      vehicleFilters.bodyType = bodyTypes
+    }
     const subtypeValues = parseValues(subtype)
     if (subtypeValues.length > 0 && vehicleType && vehicleType !== "CAR") {
       const subtypeConfig = getVehicleSubtypeConfig(vehicleType)
@@ -228,7 +234,10 @@ export async function GET(request: NextRequest) {
       if (typeDetailChecks.length === 1) vehicleFilters.typeDetails = typeDetailChecks[0].typeDetails
       else vehicleFilters.OR = typeDetailChecks
     }
-    if (driveType && vehicleType === "CAR") vehicleFilters.driveType = driveType
+    if (driveType && (!vehicleType || vehicleType === "CAR")) {
+      if (!vehicleType) vehicleFilters.vehicleType = "CAR"
+      vehicleFilters.driveType = driveType
+    }
     if (color) vehicleFilters.color = { contains: color }
     const conditions = oneOrMany(condition)
     if (conditions) vehicleFilters.condition = conditions

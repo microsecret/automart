@@ -53,11 +53,16 @@ export function cleanupRateLimit() {
   }
 }
 
-/** Берём первый адрес из доверенного reverse proxy или прямой адрес клиента. */
+/**
+ * Prefer the address normalized by the trusted reverse proxy.  Reading the
+ * first X-Forwarded-For value first lets a client choose its own limiter key
+ * by sending that header before Nginx appends the real remote address.
+ */
 export function getClientIp(request: RequestWithHeaders) {
+  const realIp = readHeader(request.headers, "x-real-ip")?.trim()
   const forwarded = readHeader(request.headers, "x-forwarded-for")
-  const candidate = forwarded?.split(",")[0]?.trim()
-    || readHeader(request.headers, "x-real-ip")?.trim()
+  const candidate = realIp
+    || forwarded?.split(",")[0]?.trim()
     || "unknown"
   return candidate.slice(0, 128)
 }

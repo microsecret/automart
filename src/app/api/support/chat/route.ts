@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { translateToRussian } from "@/lib/nvidia-translate"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -13,8 +14,18 @@ const SYSTEM_PROMPT = `Ты — помощник сайта Авторынок (
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json()
-    if (!message?.trim()) return NextResponse.json({ error: "Empty message" }, { status: 400 })
+    const limit = rateLimit(`support-chat:ip:${getClientIp(request)}`, { windowMs: 10 * 60_000, maxRequests: 12 })
+    if (!limit.success) {
+      return NextResponse.json(
+        { error: "Слишком много сообщений. Попробуйте через несколько минут." },
+        { status: 429, headers: rateLimitHeaders(limit) },
+      )
+    }
+
+    const body = await request.json().catch(() => null)
+    const message = typeof body?.message === "string" ? body.message.trim() : ""
+    if (!message) return NextResponse.json({ error: "Введите сообщение" }, { status: 400 })
+    if (message.length > 2_000) return NextResponse.json({ error: "Сообщение не должно превышать 2000 символов" }, { status: 400 })
 
     // Простой fallback если нет ключей
     if (KEYS.length === 0) {

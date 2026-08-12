@@ -376,7 +376,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconCar size={14}/> Тип кузова</Text>
                 <Group gap={6}>{BODY_TYPES.map((b) => (
-                  <Chip key={b.value} checked={subtype.includes(b.value)} onChange={(c) => { setSubtype(c ? [...subtype, b.value] : subtype.filter((v) => v !== b.value)); setPage(1) }} variant={subtype.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
+                  <Chip key={b.value} checked={bodyType.includes(b.value)} onChange={(c) => { setBodyType(c ? [...bodyType, b.value] : bodyType.filter((v) => v !== b.value)); setPage(1) }} variant={bodyType.includes(b.value) ? "filled" : "outline"} color="indigo" size="md" radius="xl">{b.label}</Chip>
                 ))}</Group>
               </Box>
               )}
