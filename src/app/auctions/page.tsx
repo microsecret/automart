@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box, Divider } from "@mantine/core"
 import { IconBolt, IconCar, IconDatabaseOff, IconEngine, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
-import { auctionCardImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
+import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
@@ -61,6 +61,48 @@ const MAKE_LABELS: Record<string, string> = { KG_Mobility_Ssangyong: "KGM / Ssan
 function auctionMakeLabel(make: string) {
   return MAKE_LABELS[make] || make.replace(/_/g, " ")
 }
+
+// Remote auction photos remain on the source CDN. A short user intent
+// (hover, focus or touch) is enough to warm the first full-size image in the
+// browser cache, so opening a lot does not wait for a cold CDN request.
+const preloadedDetailImages = new Set<string>()
+const scheduledDetailImageWarmups = new Map<string, number>()
+
+function detailImageForListing(listing: AuctionListing) {
+  const originalImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0] || ""
+  return highQualityAuctionImageUrl(originalImage)
+}
+
+function warmAuctionDetailImage(listing: AuctionListing, delay = 0) {
+  if (typeof window === "undefined") return
+  const imageUrl = detailImageForListing(listing)
+  if (!imageUrl || preloadedDetailImages.has(imageUrl) || scheduledDetailImageWarmups.has(imageUrl)) return
+
+  const preload = () => {
+    scheduledDetailImageWarmups.delete(imageUrl)
+    if (preloadedDetailImages.has(imageUrl)) return
+    preloadedDetailImages.add(imageUrl)
+    const image = new window.Image()
+    image.decoding = "async"
+    image.src = imageUrl
+  }
+
+  if (delay > 0) {
+    scheduledDetailImageWarmups.set(imageUrl, window.setTimeout(preload, delay))
+  } else {
+    preload()
+  }
+}
+
+function cancelAuctionDetailImageWarmup(listing: AuctionListing) {
+  if (typeof window === "undefined") return
+  const imageUrl = detailImageForListing(listing)
+  const timer = imageUrl ? scheduledDetailImageWarmups.get(imageUrl) : undefined
+  if (timer === undefined || !imageUrl) return
+  window.clearTimeout(timer)
+  scheduledDetailImageWarmups.delete(imageUrl)
+}
+
 function AuctionMedia({ listing }: { listing: AuctionListing }) {
   const [failed, setFailed] = useState(false)
   const originalImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0] || ""
@@ -320,7 +362,16 @@ export default function AuctionsPage() {
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm">
             {listings.map((l) => (
-              <Link key={l.id} href={`/auctions/${l.id}`} style={{ textDecoration: "none" }}>
+              <Link
+                key={l.id}
+                href={`/auctions/${l.id}`}
+                style={{ textDecoration: "none" }}
+                onPointerEnter={() => warmAuctionDetailImage(l, 140)}
+                onPointerLeave={() => cancelAuctionDetailImageWarmup(l)}
+                onFocus={() => warmAuctionDetailImage(l)}
+                onPointerDown={() => warmAuctionDetailImage(l)}
+                onTouchStart={() => warmAuctionDetailImage(l)}
+              >
                 <Paper radius="lg" withBorder className="auction-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", cursor: "pointer" }}>
                   <AuctionMedia listing={l} />
                   <Box p="md" className="auction-result-card__content">

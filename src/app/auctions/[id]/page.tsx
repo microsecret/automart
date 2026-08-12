@@ -150,13 +150,33 @@ function AuctionDetail() {
 
   useEffect(() => {
     if (galleryImages.length < 2 || typeof window === "undefined") return
-    const nextImage = galleryImages[(activeImageIndex + 1) % galleryImages.length]
-    const nextImageUrl = highQualityAuctionImageUrl(nextImage)
-    if (!nextImageUrl || loadedImageUrls.has(nextImageUrl)) return
 
-    const preloaded = new window.Image()
-    preloaded.decoding = "async"
-    preloaded.src = nextImageUrl
+    // Two following photos are enough for quick browsing while avoiding a
+    // full gallery download. Images stay only in the visitor's browser cache;
+    // no remote CDN files are copied to our server or database.
+    const preloadUrls = [1, 2]
+      .map((offset) => galleryImages[(activeImageIndex + offset) % galleryImages.length])
+      .map(highQualityAuctionImageUrl)
+      .filter((imageUrl) => imageUrl && imageUrl !== activeImageHighQuality && !loadedImageUrls.has(imageUrl))
+
+    let cancelled = false
+    const preloadedImages = preloadUrls.map((imageUrl) => {
+      const preloaded = new window.Image()
+      preloaded.decoding = "async"
+      preloaded.onload = () => {
+        if (cancelled) return
+        setLoadedImageUrls((previous) => previous.has(imageUrl) ? previous : new Set(previous).add(imageUrl))
+      }
+      preloaded.src = imageUrl
+      return preloaded
+    })
+
+    return () => {
+      cancelled = true
+      preloadedImages.forEach((image) => {
+        image.onload = null
+      })
+    }
   }, [activeImageIndex, galleryImages, loadedImageUrls])
 
   const handleSubmit = async (e: React.FormEvent) => {

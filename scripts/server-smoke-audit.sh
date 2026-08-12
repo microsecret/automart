@@ -36,6 +36,8 @@ probe() {
 
 # Public pages and APIs: no mutations.
 probe 'home page' GET '/' 200
+probe 'about page' GET '/about' 200
+probe 'brands page' GET '/brands' 200
 probe 'news page' GET '/news' 200
 probe 'auctions page' GET '/auctions' 200
 probe 'services hub' GET '/services' 200
@@ -46,21 +48,51 @@ probe 'smart matching page' GET '/services/smart-matching' 200
 probe 'safe-deal page' GET '/services/safe-deal' 200
 probe 'legal documents page' GET '/services/legal-documents' 200
 probe 'parts finder page' GET '/parts-finder' 200
+probe 'reviews page' GET '/reviews' 200
+probe 'map page' GET '/map' 200
 probe 'help page' GET '/help' 200
+probe 'help rules page' GET '/help/rules' 200
+probe 'help safety page' GET '/help/safety' 200
+probe 'help selling page' GET '/help/sell' 200
+probe 'help support page' GET '/help/support' 200
 probe 'privacy page' GET '/legal/privacy' 200
+probe 'terms page' GET '/legal/terms' 200
+probe 'sign-in page' GET '/auth/signin' 200
+probe 'sign-up page' GET '/auth/signup' 200
+probe 'password recovery page' GET '/auth/forgot-password' 200
 probe 'news API' GET '/api/news?limit=3' 200
 probe 'auctions API' GET '/api/auctions?limit=2' 200
 probe 'exchange-rate API' GET '/api/exchange-rates' 200
 probe 'fuel-stations API' GET '/api/fuel-stations?city=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0' 200
+probe 'vehicle brand directory API' GET '/api/v1/brands' 200
+probe 'listing categories API' GET '/api/categories' 200
+probe 'parts catalogue API' GET '/api/parts?limit=2' 200
+probe 'public review feed API' GET '/api/reviews?limit=2' 200
+
+# Browser routes guarded by middleware must always send an unauthenticated
+# visitor to the public sign-in page rather than render private content.
+probe 'dashboard page requires login' GET '/dashboard' '307|308'
+probe 'favorites page requires login' GET '/favorites' '307|308'
+probe 'messages page requires login' GET '/messages' '307|308'
+probe 'notification page requires login' GET '/notifications' '307|308'
+probe 'listing wizard requires login' GET '/listings/create/vehicle' '307|308'
 
 # Boundary checks: invalid or unauthorized requests must not be accepted.
 probe 'auction validation' GET '/api/auctions?country=INVALID' 400
 probe 'news import without token' POST '/api/news/import' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'parser import without token' POST '/api/parser/auctions' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'Encar parser without token' POST '/api/parser/encar' 401 -H 'Content-Type: application/json' --data '{}'
+probe 'Encar refresh without token' POST '/api/parser/encar/refresh' 401 -H 'Content-Type: application/json' --data '{}'
+probe 'Encar sync without token' POST '/api/parser/encar/sync' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'admin stats without session' GET '/api/admin/stats' '401|403'
 probe 'delivery orders without session' GET '/api/delivery-orders' 401
 probe 'delivery order detail without session' GET '/api/delivery-orders/not-a-real-order' 401
+probe 'favorites API without session' GET '/api/favorites' 401
+probe 'garage API without session' GET '/api/garage' 401
+probe 'messages API without session' GET '/api/messages' 401
+probe 'notifications API without session' GET '/api/notifications' 401
+probe 'dashboard statistics without session' GET '/api/dashboard/stats' 401
+probe 'vehicle garage API without session' GET '/api/vehicles' 401
 probe 'upload without session' POST '/api/upload' 401
 probe 'AI valuation without session' POST '/api/ai/valuation' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'AI smart matching without session' POST '/api/ai/smart-matching' 401 -H 'Content-Type: application/json' --data '{}'
