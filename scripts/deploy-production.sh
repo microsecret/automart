@@ -18,5 +18,4 @@ if command -v crontab >/dev/null 2>&1; then
 fi
 npm run type-check
 npm run build
-systemctl restart automart
-systemctl is-active --quiet automart
+bash scripts/install-production-network.sh
