@@ -154,6 +154,12 @@ function getStationStatus(station: FuelStation) {
   return { label: "Нет live-данных", color: "gray" }
 }
 
+function getStationSourceLabel(station: FuelStation) {
+  if (station.dataSource === "MERGED") return { label: "OSM + поставщик", color: "indigo" }
+  if (station.dataSource === "ZAPRAVKIN") return { label: "Поставщик", color: "indigo" }
+  return { label: "Справочник OSM", color: "gray" }
+}
+
 function formatStationTimestamp(value: string | null) {
   if (!value) return null
   const date = new Date(value)
@@ -178,6 +184,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   const [viewportCenter, setViewportCenter] = useState(coordinates)
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [isDragging, setIsDragging] = useState(false)
+  const [clusterHint, setClusterHint] = useState<string | null>(null)
   const mapInteractionRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ pointerId: number; clientX: number; clientY: number; center: { latitude: number; longitude: number } } | null>(null)
   const viewportCenterRef = useRef(viewportCenter)
@@ -366,6 +373,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 
   const handleMarkerClick = (marker: MapMarker) => {
     if (marker.stations.length === 1) {
+      setClusterHint(null)
       onSelect(marker.stations[0])
       return
     }
@@ -373,6 +381,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     const average = marker.stations.reduce((result, station) => ({ latitude: result.latitude + station.latitude, longitude: result.longitude + station.longitude }), { latitude: 0, longitude: 0 })
     setViewportCenter({ latitude: average.latitude / marker.stations.length, longitude: average.longitude / marker.stations.length })
     updateZoom(zoom + 2)
+    setClusterHint(`Здесь ${marker.stations.length} АЗС. Карта приближена — выберите конкретную точку, чтобы увидеть топливо, цены и адрес.`)
   }
 
   return (
@@ -399,6 +408,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
       </Group>
       <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · тяните карту, масштабируйте колесом</Text></Box>
       <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-quality="live">Есть live-данные</Text><Text component="span" data-quality="fuel">Топливо отмечено</Text><Text component="span" data-quality="network">Сеть указана</Text><Text component="span" data-quality="basic">Без тегов</Text></Box>
+      {clusterHint && <Paper className="fuel-map-cluster-hint" radius="md" p="xs" withBorder aria-live="polite"><Text size="xs" fw={650}>{clusterHint}</Text><Button size="compact-xs" variant="subtle" color="indigo" onClick={() => setClusterHint(null)}>Понятно</Button></Paper>}
       {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite"><Group justify="space-between" gap="xs" wrap="nowrap"><Text size="xs" fw={750} lineClamp={1}>{selectedStation.name}</Text><Badge size="xs" color={getStationStatus(selectedStation).color} variant="light">{getStationStatus(selectedStation).label}</Badge></Group><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || selectedStationAddress || getStationNetwork(selectedStation) || "Уточняем адрес по OSM…"}</Text><Group gap={4} mt={4} wrap="wrap">{selectedStation.prices.length ? selectedStation.prices.slice(0, 3).map((price) => <Badge key={price.fuel} size="xs" color="teal" variant="light">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>) : selectedStation.fuels.length ? selectedStation.fuels.slice(0, 4).map((fuel) => <Badge key={fuel} size="xs" color="teal" variant="light">{fuel}</Badge>) : <Badge size="xs" color="gray" variant="light">Ассортимент не указан</Badge>}</Group><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{formatStationTimestamp(selectedStation.statusUpdatedAt) ? `Обновлено: ${formatStationTimestamp(selectedStation.statusUpdatedAt)}` : selectedStation.fuels.length ? "Топливо отмечено в OpenStreetMap" : getStationDataSummary(selectedStation)}</Text></Paper>}
     </Paper>
   )
@@ -418,6 +428,7 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, resolvedAd
   const networkLabel =
     network && network.toLocaleLowerCase("ru-RU") !== station.name.toLocaleLowerCase("ru-RU") ? network : null
   const stationStatus = getStationStatus(station)
+  const sourceLabel = getStationSourceLabel(station)
   const iconColor = dataQuality === "live" ? stationStatus.color : dataQuality === "fuel" ? "teal" : dataQuality === "network" ? "orange" : "gray"
   const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
   const distance = formatDistance(getDistanceInKilometers(referenceCoordinates, station))
@@ -447,6 +458,7 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, resolvedAd
       <Group mt={8} gap={5} wrap="wrap">
         {networkLabel && <Badge size="xs" variant={networkIdentity ? "filled" : "outline"} color="orange" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkLabel}</Badge>}
         <Badge size="xs" variant="light" color={stationStatus.color}>{stationStatus.label}</Badge>
+        <Badge size="xs" variant="outline" color={sourceLabel.color}>{sourceLabel.label}</Badge>
         <Badge size="xs" variant="outline" color="gray">{distance} от центра</Badge>
         {station.prices.length
           ? station.prices.map((price) => <Badge key={`${price.fuel}-${price.price}`} size="xs" variant="light" color="teal">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>)

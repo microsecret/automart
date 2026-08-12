@@ -2263,6 +2263,22 @@ select {
 .fuel-map-canvas__legend > span[data-quality="live"]::before { background: #16a34a; }
 .fuel-map-canvas__legend > span[data-quality="network"]::before { background: #ea580c; }
 
+.fuel-map-cluster-hint {
+  position: absolute;
+  z-index: 6;
+  top: 92px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(390px, calc(100% - 24px));
+  padding: 8px 10px;
+  border-color: color-mix(in srgb, #818cf8 38%, var(--market-line));
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 14px 28px -22px rgb(49 46 129 / 64%);
+  backdrop-filter: blur(10px);
+}
+
 .fuel-map-selected {
   position: absolute;
   z-index: 5;
