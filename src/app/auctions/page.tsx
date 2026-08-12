@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box, Divider } from "@mantine/core"
 import { IconBolt, IconCar, IconDatabaseOff, IconEngine, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
-import { highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
+import { auctionCardImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
@@ -63,7 +63,7 @@ function auctionMakeLabel(make: string) {
 function AuctionMedia({ listing }: { listing: AuctionListing }) {
   const [failed, setFailed] = useState(false)
   const originalImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0] || ""
-  const image = highQualityAuctionImageUrl(originalImage)
+  const image = auctionCardImageUrl(originalImage)
   const hasImage = Boolean(image) && !failed
 
   return (

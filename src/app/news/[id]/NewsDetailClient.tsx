@@ -11,6 +11,7 @@ import { newsHref } from "@/lib/news"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { notifications } from "@mantine/notifications"
+import styles from "./news-article.module.css"
 
 type NewsComment = {
   id: string
@@ -51,18 +52,63 @@ function renderInlineMarkdown(value: string) {
   })
 }
 
-function NewsBody({ content }: { content: string }) {
-  const paragraphs = content.replace(/\r\n/g, "\n").split(/\n\s*\n/).map((item) => item.trim()).filter(Boolean)
+function normalizeNewsContent(content: string, title: string) {
+  let normalized = content
+    .replace(/\r\n/g, "\n")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/?(?:b|strong)>/gi, "**")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim()
+
+  const escapedTitle = title.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  if (escapedTitle) normalized = normalized.replace(new RegExp(`^${escapedTitle}(?:[.!…—:-]+)?\\s*`, "i"), "")
+
+  // Source widgets and subscription prompts do not form part of the article.
+  normalized = normalized.replace(/\s*РЕСУРСНЫЙ ТЕСТ МОТОРНЫХ МАСЕЛ[\s\S]*?СМОТРЕТЬ РЕЗУЛЬТАТЫ ТЕСТА\s*/gi, " ")
+  normalized = normalized.replace(/\s*Понравилась публикация\?[\s\S]*$/i, "")
+  return normalized.trim()
+}
+
+function splitLongParagraph(value: string) {
+  if (value.length <= 520 || /\n/.test(value)) return [value]
+  const sentences = value.match(/[^.!?…]+(?:[.!?…]+[»”"]?\s*|$)/g)?.map((sentence) => sentence.trim()).filter(Boolean) || [value]
+  const result: string[] = []
+  let current = ""
+  let sentenceCount = 0
+
+  for (const sentence of sentences) {
+    const shouldSplit = current && (current.length + sentence.length + 1 > 460 || sentenceCount >= 3)
+    if (shouldSplit) {
+      result.push(current)
+      current = ""
+      sentenceCount = 0
+    }
+    current = current ? `${current} ${sentence}` : sentence
+    sentenceCount += 1
+  }
+  if (current) result.push(current)
+  return result
+}
+
+function NewsBody({ content, title }: { content: string; title: string }) {
+  const paragraphs = normalizeNewsContent(content, title)
+    .split(/\n\s*\n/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .flatMap(splitLongParagraph)
 
   return (
-    <Stack className="news-article__content" gap="md">
+    <Stack className={styles.content} gap="md">
       {paragraphs.map((paragraph, index) => {
         const lines = paragraph.split("\n").map((line) => line.trim()).filter(Boolean)
-        const isList = lines.length > 0 && lines.every((line) => /^[-•*]\s+/.test(line))
+        const isList = lines.length > 0 && lines.every((line) => /^(?:[-•*]|\d+[.)])\s+/.test(line))
         if (isList) {
-          return <Box component="ul" key={`${paragraph.slice(0, 24)}-${index}`}>{lines.map((line, lineIndex) => <li key={`${line}-${lineIndex}`}>{renderInlineMarkdown(line.replace(/^[-•*]\s+/, ""))}</li>)}</Box>
+          return <Box component="ul" className={styles.list} key={`${paragraph.slice(0, 24)}-${index}`}>{lines.map((line, lineIndex) => <li key={`${line}-${lineIndex}`}>{renderInlineMarkdown(line.replace(/^(?:[-•*]|\d+[.)])\s+/, ""))}</li>)}</Box>
         }
-        return <Text component="p" key={`${paragraph.slice(0, 24)}-${index}`}>{lines.map((line, lineIndex) => <span key={`${line}-${lineIndex}`}>{renderInlineMarkdown(line)}{lineIndex < lines.length - 1 && <br />}</span>)}</Text>
+        return <Text component="p" className={index === 0 ? styles.lead : styles.paragraph} key={`${paragraph.slice(0, 24)}-${index}`}>{lines.map((line, lineIndex) => <span key={`${line}-${lineIndex}`}>{renderInlineMarkdown(line)}{lineIndex < lines.length - 1 && <br />}</span>)}</Text>
       })}
     </Stack>
   )
@@ -135,9 +181,9 @@ export default function NewsDetailClient({ id }: { id: string }) {
           </Group>
         </Stack>
 
-        <Box className="news-article__body">
+        <Box className={`${styles.body} news-article__body`}>
           {article.imageUrl && <Image src={article.imageUrl} alt={article.title} className="news-article__image" mb="lg" fit="cover" fallbackSrc="/images/home/hero-marketplace.png" />}
-          <NewsBody content={article.content || ""} />
+          <NewsBody content={article.content || ""} title={article.title} />
           {tags.length > 0 && (
             <Group gap="xs" mt="lg">
               {tags.map((tag: string) => <Badge key={tag} variant="light" color="gray">#{tag.replace(/^#/, "")}</Badge>)}

@@ -33,13 +33,9 @@ export function safeHttpsUrl(value: unknown, maxLength = MAX_MEDIA_URL_LENGTH): 
   }
 }
 
-/**
- * Encar's unparameterized links are 640px previews. The public CDN provides
- * a higher-resolution rendition on the same image path. Keep this narrowly
- * scoped to the known image host, so arbitrary imported URLs never gain
- * source-specific query parameters.
- */
-export function highQualityAuctionImageUrl(value: string): string {
+type EncarRendition = { rh: number; cw: number; ch: number }
+
+function encarImageUrl(value: string, rendition: EncarRendition): string {
   if (!isSafeMediaUrl(value)) return value
 
   try {
@@ -47,14 +43,32 @@ export function highQualityAuctionImageUrl(value: string): string {
     if (url.hostname !== "ci.encar.com" || !url.pathname.startsWith("/carpicture/")) return value
 
     url.searchParams.set("impolicy", "heightRate")
-    url.searchParams.set("rh", "1600")
-    url.searchParams.set("cw", "2560")
-    url.searchParams.set("ch", "1600")
+    url.searchParams.set("rh", String(rendition.rh))
+    url.searchParams.set("cw", String(rendition.cw))
+    url.searchParams.set("ch", String(rendition.ch))
     url.searchParams.set("cg", "Center")
     return url.toString()
   } catch {
     return value
   }
+}
+
+/** A compact rendition for the thumbnail rail; never request full gallery files there. */
+export function auctionThumbnailImageUrl(value: string): string {
+  return encarImageUrl(value, { rh: 320, cw: 480, ch: 320 })
+}
+
+/** A balanced image for auction-result cards. */
+export function auctionCardImageUrl(value: string): string {
+  return encarImageUrl(value, { rh: 720, cw: 1120, ch: 720 })
+}
+
+/**
+ * The detail gallery is displayed below 1600px wide. Keep it sharp without
+ * fetching the former 2560px variant again after a 1600px source preview.
+ */
+export function highQualityAuctionImageUrl(value: string): string {
+  return encarImageUrl(value, { rh: 1024, cw: 1600, ch: 1024 })
 }
 
 /**

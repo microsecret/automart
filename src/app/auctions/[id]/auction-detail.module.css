@@ -1,0 +1,15 @@
+.galleryImage {
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+
+.galleryImage[data-loading] {
+  filter: blur(3px);
+  opacity: 0.42;
+}
+
+.galleryLoader {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}

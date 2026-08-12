@@ -12,8 +12,9 @@ import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import { highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
+import { auctionThumbnailImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import type { AuctionListing } from "@prisma/client"
+import styles from "./auction-detail.module.css"
 
 type AuctionDetailResponse = { listing: AuctionListing }
 type AuctionInquiryResponse = { success: true; inquiry: { id: string; createdAt: string } }
@@ -123,6 +124,7 @@ function AuctionDetail() {
   const [submitted, setSubmitted] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(() => new Set())
+  const [loadedImageUrls, setLoadedImageUrls] = useState<Set<string>>(() => new Set())
   // Keep the detail usable even if a webview reports an unusual viewport to
   // CSS: the 340px enquiry panel must never squeeze the vehicle content.
   const hasWideAuctionLayout = useMediaQuery("(min-width: 62em)", false, { getInitialValueInEffect: false })
@@ -136,13 +138,26 @@ function AuctionDetail() {
   ])), [listingImageUrl, listingImages])
   const activeImage = galleryImages[activeImageIndex] || ""
   const activeImageHighQuality = highQualityAuctionImageUrl(activeImage)
+  const isActiveImageLoading = Boolean(activeImageHighQuality) && !loadedImageUrls.has(activeImageHighQuality)
   const equipment = listing ? parseAuctionEquipment(listing.equipment) : null
   const conditionInfo = listing ? parseAuctionConditionInfo(listing.conditionInfo) : null
 
   useEffect(() => {
     setActiveImageIndex(0)
     setFailedImageUrls(new Set())
+    setLoadedImageUrls(new Set())
   }, [listing?.id])
+
+  useEffect(() => {
+    if (galleryImages.length < 2 || typeof window === "undefined") return
+    const nextImage = galleryImages[(activeImageIndex + 1) % galleryImages.length]
+    const nextImageUrl = highQualityAuctionImageUrl(nextImage)
+    if (!nextImageUrl || loadedImageUrls.has(nextImageUrl)) return
+
+    const preloaded = new window.Image()
+    preloaded.decoding = "async"
+    preloaded.src = nextImageUrl
+  }, [activeImageIndex, galleryImages, loadedImageUrls])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -189,8 +204,21 @@ function AuctionDetail() {
                   <VehicleFallback type="CAR" />
                   {activeImage && !failedImageUrls.has(activeImage) && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={activeImageHighQuality} alt={`${listing.make} ${listing.model}, фото ${activeImageIndex + 1}`} onError={() => setFailedImageUrls((previous) => new Set(previous).add(activeImage))} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img
+                      className={styles.galleryImage}
+                      data-loading={isActiveImageLoading || undefined}
+                      src={activeImageHighQuality}
+                      alt={`${listing.make} ${listing.model}, фото ${activeImageIndex + 1}`}
+                      decoding="async"
+                      onLoad={() => setLoadedImageUrls((previous) => new Set(previous).add(activeImageHighQuality))}
+                      onError={() => {
+                        setFailedImageUrls((previous) => new Set(previous).add(activeImage))
+                        setLoadedImageUrls((previous) => new Set(previous).add(activeImageHighQuality))
+                      }}
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                    />
                   )}
+                  {isActiveImageLoading && <Center className={styles.galleryLoader}><Loader size="sm" color="orange" /></Center>}
                   <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.lotNumber ? `${listing.source} · ${listing.lotNumber}` : listing.source}</Badge>
                   <Badge pos="absolute" top={16} right={16} color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
                 </Box>
@@ -207,7 +235,7 @@ function AuctionDetail() {
                           style={{ flex: "0 0 auto", width: 76, height: 56, padding: 0, border: index === activeImageIndex ? "2px solid var(--mantine-color-orange-6)" : "1px solid var(--mantine-color-gray-3)", borderRadius: 8, background: "var(--mantine-color-gray-1)", overflow: "hidden", cursor: "pointer" }}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={image} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.opacity = "0.25" }} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={auctionThumbnailImageUrl(image)} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.style.opacity = "0.25" }} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
                         </button>
                       ))}
                     </Group>
