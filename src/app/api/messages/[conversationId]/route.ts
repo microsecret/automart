@@ -61,6 +61,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         },
       }),
     ])
+    if (!conversationMeta) {
+      return NextResponse.json({ error: "Диалог не найден" }, { status: 404 })
+    }
     const pages = Math.max(1, Math.ceil(total / limit))
     const page = Math.min(requestedPage, pages)
     const skip = (page - 1) * limit
@@ -117,9 +120,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // The header must not depend on the currently requested page: a stale URL
     // still needs the participant and listing context in order to keep the
     // conversation usable.
-    const otherUserId = conversationMeta?.senderId === session.user.id
+    const otherUserId = conversationMeta.senderId === session.user.id
       ? conversationMeta.receiverId
-      : conversationMeta?.senderId
+      : conversationMeta.senderId
     const otherUser = otherUserId ? await prisma.user.findUnique({
       where: { id: otherUserId },
       select: { id: true, name: true, image: true },
@@ -128,8 +131,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({
       messages,
       otherUser,
-      listingId: conversationMeta?.listingId || null,
-      listing: conversationMeta?.listing ? {
+      listingId: conversationMeta.listingId || null,
+      listing: conversationMeta.listing ? {
         id: conversationMeta.listing.id,
         title: conversationMeta.listing.title,
         target: conversationMeta.listing.vehicle ? "vehicle" : "part",
