@@ -48,7 +48,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
 import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
-import { fetchJson } from "@/lib/api-client"
+import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { useFavorites } from "@/hooks/useFavorites"
 
 const PART_TYPES_MAP: Record<string, string> = {
@@ -109,7 +109,8 @@ type BidResponse = { bid: { amount: number } }
 
 export default function PartDetailClient({ data }: { data: PartData }) {
   const { data: session } = useSession()
-  const [showPhone, setShowPhone] = useState(false)
+  const [phone, setPhone] = useState<string | null>(null)
+  const [contactRevealing, setContactRevealing] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
   const [imageFailed, setImageFailed] = useState(false)
   const [bidAmount, setBidAmount] = useState("")
@@ -138,6 +139,33 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const selectImage = (index: number) => {
     setActiveImage(index)
     setImageFailed(false)
+  }
+  const revealPhone = async () => {
+    if (!data.listingId || phone || contactRevealing) return
+    if (!session) {
+      notifications.show({
+        title: "Войдите, чтобы увидеть телефон",
+        message: "Так контакты продавцов защищены от автоматического сбора.",
+        color: "indigo",
+      })
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/part/${data.id}`)}`)
+      return
+    }
+
+    setContactRevealing(true)
+    try {
+      const payload = await fetchJson<{ phone: string }>(`/api/listings/${data.listingId}`, { method: "POST" })
+      setPhone(payload.phone)
+      notifications.show({ title: "Контакт продавца открыт", message: "Нажмите на номер, чтобы позвонить.", color: "green" })
+    } catch (contactError) {
+      notifications.show({
+        title: "Не удалось открыть телефон",
+        message: getApiClientErrorMessage(contactError, "Повторите попытку позже."),
+        color: "red",
+      })
+    } finally {
+      setContactRevealing(false)
+    }
   }
   const moveImage = (direction: number) => selectImage((activeImage + direction + images.length) % images.length)
   const submitBid = async () => {
@@ -347,9 +375,15 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
               <Card withBorder radius="lg" p="lg">
                 <Stack gap="sm">
-                  <Button size="lg" radius="md" leftSection={<IconPhone size={18} />} variant={showPhone ? "light" : "filled"} color="indigo" onClick={() => setShowPhone(true)}>
-                    {showPhone ? "+7 (XXX) XXX-XX-XX" : "Показать телефон"}
-                  </Button>
+                  {phone ? (
+                    <Button component="a" href={`tel:${phone}`} size="lg" radius="md" leftSection={<IconPhone size={18} />} variant="light" color="indigo">
+                      {phone}
+                    </Button>
+                  ) : (
+                    <Button size="lg" radius="md" leftSection={<IconPhone size={18} />} color="indigo" onClick={() => void revealPhone()} loading={contactRevealing} disabled={!data.listingId}>
+                      Показать телефон
+                    </Button>
+                  )}
                   {isSeller && data.listingId && <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>Редактировать объявление</Button>}
                   <Button size="lg" radius="md" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={`/messages/new?listingId=${data.listingId || data.id}`}>
                     Написать продавцу
