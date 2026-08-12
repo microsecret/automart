@@ -39,8 +39,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { searchParams } = new URL(request.url)
-    const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1)
+    const requestedPage = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1)
     const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || String(CONVERSATION_PAGE_SIZE), 10) || CONVERSATION_PAGE_SIZE))
+    const [total, conversationMeta] = await Promise.all([
+      prisma.message.count({ where: { conversationId } }),
+      prisma.message.findFirst({
+        where: { conversationId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          senderId: true,
+          receiverId: true,
+          listingId: true,
+          listing: {
+            select: {
+              id: true,
+              title: true,
+              vehicle: { select: { id: true } },
+              part: { select: { id: true } },
+            },
+          },
+        },
+      }),
+    ])
+    const pages = Math.max(1, Math.ceil(total / limit))
+    const page = Math.min(requestedPage, pages)
     const skip = (page - 1) * limit
 
     // Page one is the most recent page. We return each page in chronological
@@ -92,15 +114,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     })
 
-    // Get total count for pagination
-    const total = await prisma.message.count({
-      where: {
-        conversationId
-      }
-    })
-
-    const firstMessage = messages[0]
-    const otherUserId = firstMessage?.senderId === session.user.id ? firstMessage.receiverId : firstMessage?.senderId
+    // The header must not depend on the currently requested page: a stale URL
+    // still needs the participant and listing context in order to keep the
+    // conversation usable.
+    const otherUserId = conversationMeta?.senderId === session.user.id
+      ? conversationMeta.receiverId
+      : conversationMeta?.senderId
     const otherUser = otherUserId ? await prisma.user.findUnique({
       where: { id: otherUserId },
       select: { id: true, name: true, image: true },
@@ -109,12 +128,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({
       messages,
       otherUser,
-      listingId: firstMessage?.listingId || null,
+      listingId: conversationMeta?.listingId || null,
+      listing: conversationMeta?.listing ? {
+        id: conversationMeta.listing.id,
+        title: conversationMeta.listing.title,
+        target: conversationMeta.listing.vehicle ? "vehicle" : "part",
+        targetId: conversationMeta.listing.vehicle?.id || conversationMeta.listing.part?.id || conversationMeta.listing.id,
+      } : null,
       pagination: {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
+        pages
       }
     })
   } catch (error) {

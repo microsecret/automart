@@ -37,6 +37,7 @@ type ConversationResponse = {
   messages: Message[]
   otherUser: { id: string; name: string | null; image: string | null } | null
   listingId: string | null
+  listing: { id: string; title: string; target: "vehicle" | "part"; targetId: string } | null
   pagination: {
     page: number
     pages: number
@@ -149,7 +150,20 @@ function ConversationWorkspace() {
           </Avatar>
           <Stack gap={0}>
             <Text size="sm" fw={700}>{latestPage?.otherUser?.name || (isNewConversation ? "Новый диалог" : "Диалог")}</Text>
-            <Text size="xs" c="dimmed">Диалог по объявлению · отвечайте только внутри Авторынка</Text>
+            {latestPage?.listing ? (
+              <Text
+                component={Link}
+                href={`/listings/${latestPage.listing.target}/${latestPage.listing.targetId}`}
+                size="xs"
+                c="indigo"
+                className="line-clamp-1"
+                style={{ textDecoration: "none", maxWidth: 360 }}
+              >
+                По объявлению: {latestPage.listing.title}
+              </Text>
+            ) : (
+              <Text size="xs" c="dimmed">Отвечайте только внутри Авторынка</Text>
+            )}
           </Stack>
           </Group>
           <ThemeIcon variant="light" color="green" radius="xl" size="lg" aria-label="Защищённый диалог">
