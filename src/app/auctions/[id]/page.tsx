@@ -12,7 +12,7 @@ import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import { isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
+import { highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import type { AuctionListing } from "@prisma/client"
 
 type AuctionDetailResponse = { listing: AuctionListing }
@@ -135,6 +135,7 @@ function AuctionDetail() {
     ...(parseAuctionImages(listingImages) || []),
   ])), [listingImageUrl, listingImages])
   const activeImage = galleryImages[activeImageIndex] || ""
+  const activeImageHighQuality = highQualityAuctionImageUrl(activeImage)
   const equipment = listing ? parseAuctionEquipment(listing.equipment) : null
   const conditionInfo = listing ? parseAuctionConditionInfo(listing.conditionInfo) : null
 
@@ -188,7 +189,7 @@ function AuctionDetail() {
                   <VehicleFallback type="CAR" />
                   {activeImage && !failedImageUrls.has(activeImage) && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={activeImage} alt={`${listing.make} ${listing.model}, фото ${activeImageIndex + 1}`} onError={() => setFailedImageUrls((previous) => new Set(previous).add(activeImage))} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={activeImageHighQuality} alt={`${listing.make} ${listing.model}, фото ${activeImageIndex + 1}`} onError={() => setFailedImageUrls((previous) => new Set(previous).add(activeImage))} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   )}
                   <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.lotNumber ? `${listing.source} · ${listing.lotNumber}` : listing.source}</Badge>
                   <Badge pos="absolute" top={16} right={16} color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>

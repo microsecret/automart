@@ -34,6 +34,30 @@ export function safeHttpsUrl(value: unknown, maxLength = MAX_MEDIA_URL_LENGTH): 
 }
 
 /**
+ * Encar's unparameterized links are 640px previews. The public CDN provides
+ * a higher-resolution rendition on the same image path. Keep this narrowly
+ * scoped to the known image host, so arbitrary imported URLs never gain
+ * source-specific query parameters.
+ */
+export function highQualityAuctionImageUrl(value: string): string {
+  if (!isSafeMediaUrl(value)) return value
+
+  try {
+    const url = new URL(value)
+    if (url.hostname !== "ci.encar.com" || !url.pathname.startsWith("/carpicture/")) return value
+
+    url.searchParams.set("impolicy", "heightRate")
+    url.searchParams.set("rh", "1600")
+    url.searchParams.set("cw", "2560")
+    url.searchParams.set("ch", "1600")
+    url.searchParams.set("cg", "Center")
+    return url.toString()
+  } catch {
+    return value
+  }
+}
+
+/**
  * Parses the JSON payload sent by listing forms and rejects malformed or
  * unsafe image values before they can be persisted.
  */
