@@ -100,6 +100,10 @@ function CreateVehicleWorkspace() {
   if (!session) return null
 
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }))
+  const setMake = (value: string) => setF((previous) => {
+    const make = value.trimStart()
+    return make === previous.make ? previous : { ...previous, make, model: "" }
+  })
   const setVehicleType = (vehicleType: string) => setF((previous) => ({
     ...previous,
     vehicleType,
@@ -281,15 +285,17 @@ function CreateVehicleWorkspace() {
                 <TextInput label="Заголовок (необязательно)" description="Если оставить пустым, подставим год, марку и модель." placeholder="Например, Toyota Camry в отличном состоянии" value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <Autocomplete
+                    className="create-listing__catalog-autocomplete"
                     label="Марка"
                     placeholder="Toyota"
                     description="Начните вводить или выберите из каталога"
                     required
                     value={f.make}
-                    onChange={(value) => setF((previous) => value === previous.make ? previous : ({ ...previous, make: value, model: "" }))}
+                    onChange={setMake}
                     onClear={() => setF((previous) => ({ ...previous, make: "", model: "" }))}
-                    onOptionSubmit={(value) => setF((previous) => ({ ...previous, make: value, model: "" }))}
+                    onOptionSubmit={setMake}
                     clearable
+                    clearButtonProps={{ "aria-label": "Сбросить марку", title: "Сбросить марку" }}
                     openOnFocus
                     size="sm"
                     data={brandOptions.map((brand) => brand.name)}
@@ -302,6 +308,7 @@ function CreateVehicleWorkspace() {
                     )}
                   />
                   <Autocomplete
+                    className="create-listing__catalog-autocomplete"
                     label="Модель"
                     placeholder={f.make ? "Выберите или введите модель" : "Сначала укажите марку"}
                     description={f.make && modelOptions.length === 0 ? "Модель можно указать вручную" : undefined}
@@ -311,6 +318,7 @@ function CreateVehicleWorkspace() {
                     onChange={(value) => set("model", value)}
                     onClear={() => set("model", "")}
                     clearable
+                    clearButtonProps={{ "aria-label": "Сбросить модель", title: "Сбросить модель" }}
                     openOnFocus
                     size="sm"
                     data={modelOptions}

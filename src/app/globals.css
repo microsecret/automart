@@ -3352,6 +3352,27 @@ select {
   box-shadow: 0 16px 30px -20px rgba(30, 41, 59, 0.48);
 }
 
+/* A selected catalog value must be reversible without relying on a hover-only icon. */
+.create-listing__catalog-autocomplete .mantine-Input-section[data-position="right"] {
+  pointer-events: auto;
+}
+
+.create-listing__catalog-autocomplete .mantine-Input-clearButton {
+  width: 22px;
+  height: 22px;
+  border: 1px solid color-mix(in srgb, var(--market-primary) 26%, var(--market-field-line));
+  border-radius: 7px;
+  color: var(--market-muted);
+  background: var(--market-primary-soft);
+  opacity: 1;
+}
+
+.create-listing__catalog-autocomplete .mantine-Input-clearButton:hover {
+  color: var(--market-primary-strong);
+  border-color: color-mix(in srgb, var(--market-primary) 52%, var(--market-field-line));
+  background: color-mix(in srgb, var(--market-primary-soft) 72%, var(--market-surface));
+}
+
 .create-listing__section[data-accent="indigo"] {
   border-color: color-mix(in srgb, var(--market-primary) 26%, var(--market-line));
   background: linear-gradient(110deg, var(--market-surface), color-mix(in srgb, var(--market-primary-soft) 52%, var(--market-surface)));
