@@ -21,6 +21,12 @@ export type AuctionEquipmentSnapshot = {
   items: AuctionEquipmentItem[]
 }
 
+export type AuctionConditionInfo = {
+  insuranceRecordCount: number | null
+  inspectionSummary: string | null
+  newCarComparisonPct: number | null
+}
+
 export type AuctionImportItem = {
   source: string
   sourceId: string
@@ -48,6 +54,7 @@ export type AuctionImportItem = {
   descriptionOrig: string | null
   specsOrig: string | null
   equipment?: AuctionEquipmentSnapshot | null
+  conditionInfo?: AuctionConditionInfo | null
   location: string | null
 }
 
@@ -101,6 +108,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           descriptionOrig: item.descriptionOrig,
           specsOrig: item.specsOrig,
           ...(item.equipment !== undefined ? { equipment: item.equipment ? JSON.stringify(item.equipment) : null } : {}),
+          ...(item.conditionInfo !== undefined ? { conditionInfo: item.conditionInfo ? JSON.stringify(item.conditionInfo) : null } : {}),
           ...(translatedFields ? {
             descriptionRu: translatedFields.descriptionRu,
             specsRu: translatedFields.specsRu,
@@ -159,6 +167,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         images: item.images ? JSON.stringify(item.images) : null,
         descriptionOrig: item.descriptionOrig || null, specsOrig: item.specsOrig || null, descriptionRu, specsRu,
         equipment: item.equipment ? JSON.stringify(item.equipment) : null,
+        conditionInfo: item.conditionInfo ? JSON.stringify(item.conditionInfo) : null,
         country: item.country,
         auctionDate: item.auctionDate,
         location: item.location || null,

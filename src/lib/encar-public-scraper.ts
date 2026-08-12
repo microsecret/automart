@@ -1,5 +1,5 @@
 import { normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionTransmission } from "@/lib/auction-normalization"
-import type { AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
+import type { AuctionConditionInfo, AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
 import { translateToRussian } from "@/lib/nvidia-translate"
 
 const ENCAR_HOST = "fem.encar.com"
@@ -180,6 +180,39 @@ function extractEncarPrimaryEquipment(html: string): AuctionEquipmentItem[] {
   })
 }
 
+function sourceHtmlText(value: string) {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function sourceButtonText(html: string, eventName: string) {
+  const escapedName = eventName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const match = html.match(new RegExp(`<button[^>]*data-enlog-dt-eventname="${escapedName}"[^>]*>([\\s\\S]*?)<\\/button>`))
+  return match ? sourceHtmlText(match[1]) : null
+}
+
+function extractEncarConditionInfo(html: string): AuctionConditionInfo | null {
+  const insuranceText = sourceButtonText(html, "보험이력")
+  const inspectionText = sourceButtonText(html, "성능점검내역")
+  const comparisonIndex = html.indexOf("신차대비")
+  const comparisonSection = comparisonIndex < 0 ? "" : html.slice(comparisonIndex, comparisonIndex + 1_500)
+  const insuranceRecordCount = Number(insuranceText?.match(/(\d+)\s*건/)?.[1])
+  const newCarComparisonPct = Number(comparisonSection.match(/(\d{1,3})\s*%/)?.[1])
+  const inspectionSummary = inspectionText?.includes("일반")
+    ? inspectionText.includes("엔카직영") ? "Общая проверка · Encar Direct" : "Общая проверка"
+    : null
+  const result = {
+    insuranceRecordCount: Number.isInteger(insuranceRecordCount) ? insuranceRecordCount : null,
+    inspectionSummary,
+    newCarComparisonPct: Number.isInteger(newCarComparisonPct) && newCarComparisonPct >= 0 && newCarComparisonPct <= 100 ? newCarComparisonPct : null,
+  }
+  return result.insuranceRecordCount !== null || result.inspectionSummary || result.newCarComparisonPct !== null ? result : null
+}
+
 /** Extracts deduplicated public detail links from one Encar catalogue page. */
 export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: number) {
   const catalogUrl = catalogUrlFrom(rawUrl)
@@ -270,6 +303,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   const equipmentCodes = asRecord(base.options)?.standard
   const equipment = extractEncarPrimaryEquipment(html)
   const equipmentTotal = Array.isArray(equipmentCodes) ? equipmentCodes.length : null
+  const conditionInfo = extractEncarConditionInfo(html)
 
   const rawBody = asText(spec.bodyName)
   const rawFuel = asText(spec.fuelName)
@@ -310,6 +344,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     descriptionOrig: asText(advertisement.oneLineText),
     specsOrig: originalSpecs,
     equipment: equipment.length ? { totalReported: equipmentTotal && equipmentTotal >= equipment.length ? equipmentTotal : equipment.length, items: equipment } : null,
+    conditionInfo,
     location: await translateEncarLocation(asText(contact?.address)),
   }
 }

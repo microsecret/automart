@@ -574,6 +574,7 @@ model AuctionListing {
   descriptionRu   String?
   specsRu         String?
   equipment       String?  // JSON: source-confirmed options and their availability
+  conditionInfo   String?  // JSON: source-confirmed inspection, insurance and new-car comparison
   // Локация
   country         String   // JP, KR, US, DE
   auctionDate     DateTime?
