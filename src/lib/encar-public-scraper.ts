@@ -190,7 +190,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     asText(category.gradeEnglishName) || asText(category.gradeName),
     asText(category.gradeDetailEnglishName) || asText(category.gradeDetailName),
   ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index)
-  if (!make || !modelParts.length || !Number.isInteger(year) || year < 1886 || year > new Date().getFullYear() + 1 || !listedPrice || listedPrice < 1) {
+  if (!make || !modelParts.length || year === null || year < 1886 || year > new Date().getFullYear() + 1 || !listedPrice || listedPrice < 1) {
     throw new Error("В карточке Encar нет корректных марки, модели, года или цены")
   }
 
