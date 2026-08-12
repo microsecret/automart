@@ -1,10 +1,14 @@
 /**
  * ИИ-перевод текста на русский через NVIDIA API.
- * Ротация 5 ключей при rate limit (429).
+ * Ротация ключей применяется только при rate limit (429). Ошибка авторизации
+ * ставит короткую паузу, чтобы импорт не создавал лишний трафик и шум в логах.
  */
 
-const KEYS = (process.env.NVIDIA_KEYS || "").split(",").filter(Boolean)
+const KEYS = (process.env.NVIDIA_KEYS || "").split(",").map((key) => key.trim()).filter(Boolean)
+const NVIDIA_MODEL = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.1-70b-instruct"
+const AUTH_FAILURE_COOLDOWN_MS = 5 * 60 * 1000
 let currentKeyIdx = 0
+let authUnavailableUntil = 0
 
 function getNextKey(): string | null {
   if (KEYS.length === 0) return null
@@ -59,6 +63,8 @@ export async function translateToRussian(text: string): Promise<string> {
     return text
   }
 
+  if (Date.now() < authUnavailableUntil) return text
+
   const maxRetries = KEYS.length || 1
   let lastError: Error | null = null
 
@@ -78,7 +84,7 @@ export async function translateToRussian(text: string): Promise<string> {
           "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "nvidia/llama-3.1-nemotron-70b-instruct",
+          model: NVIDIA_MODEL,
           messages: [
             {
               role: "system",
@@ -96,9 +102,19 @@ export async function translateToRussian(text: string): Promise<string> {
         continue
       }
 
+      if (res.status === 401 || res.status === 403) {
+        // An invalid or revoked credential cannot be solved by cycling all
+        // configured keys. Cool down, keep importing, and use the local
+        // terminology fallback until the operator fixes the secret.
+        authUnavailableUntil = Date.now() + AUTH_FAILURE_COOLDOWN_MS
+        lastError = new Error(`NVIDIA API ${res.status}: authorization failed`)
+        break
+      }
+
       if (!res.ok) {
         const errText = await res.text().catch(() => "unknown")
         lastError = new Error(`NVIDIA API ${res.status}: ${errText}`)
+        if (res.status >= 400 && res.status < 500) break
         continue
       }
 
