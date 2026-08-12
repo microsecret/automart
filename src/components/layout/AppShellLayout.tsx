@@ -64,11 +64,6 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
   const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCategory === "parts"
   const isAuctionsRoute = pathname?.startsWith("/auctions")
-  const isNewsRoute = pathname?.startsWith("/news")
-  // News is part of the marketplace flow, so it keeps the same full sidebar
-  // as the home page, categories and services. Only reference/help pages use
-  // the narrow content layout without marketplace navigation.
-  const isContentRoute = pathname?.startsWith("/help")
   const isMobileNavActive = (href: string) => href === "/" ? pathname === "/" : pathname?.startsWith(href)
 
   if (isAuthRoute) {
@@ -85,8 +80,8 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       <AppAnalytics />
       <AppHeader />
 
-      <Box className={`market-shell${isContentRoute ? " market-shell--content" : ""}${isNewsRoute ? " market-shell--news" : ""}`}>
-        {!isContentRoute && <Box component="aside" className="app-sidebar">
+      <Box className="market-shell">
+        <Box component="aside" className="app-sidebar">
           <ScrollArea h="100%" type="hover" scrollbarSize={5}>
             <Stack gap="sm" p="sm">
               {/* Для гостя вход уже доступен в хедере: не дублируем две одинаковые пары кнопок. */}
@@ -158,9 +153,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               </Group>
             </Stack>
           </ScrollArea>
-        </Box>}
+        </Box>
 
-        <Box component="main" className={`app-main-content${isContentRoute ? " app-main-content--content" : ""}`}>{children}</Box>
+        <Box component="main" className="app-main-content">{children}</Box>
       </Box>
 
       <AppFooter />
