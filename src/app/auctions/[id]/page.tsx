@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, Divider, TextInput, Textarea, ThemeIcon, Center, Loader, Breadcrumbs, Anchor } from "@mantine/core"
+import { useMediaQuery } from "@mantine/hooks"
 import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconGasStation, IconManualGearbox, IconPalette, IconChevronRight, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
@@ -62,6 +63,9 @@ function AuctionDetail() {
   const [submitted, setSubmitted] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(() => new Set())
+  // Keep the detail usable even if a webview reports an unusual viewport to
+  // CSS: the 340px enquiry panel must never squeeze the vehicle content.
+  const hasWideAuctionLayout = useMediaQuery("(min-width: 62em)", false, { getInitialValueInEffect: false })
 
   const listing = data?.listing
   const listingImageUrl = listing?.imageUrl
@@ -113,7 +117,7 @@ function AuctionDetail() {
           <Text size="sm" c="dark.9">{listing.make} {listing.model}</Text>
         </Breadcrumbs>
 
-        <Box className="auction-detail-layout">
+        <Box className="auction-detail-layout" style={hasWideAuctionLayout ? undefined : { gridTemplateColumns: "minmax(0, 1fr)" }}>
           {/* Левая — фото + характеристики */}
           <Box className="auction-detail-layout__main">
             <Stack gap="md">
@@ -194,7 +198,7 @@ function AuctionDetail() {
 
           {/* Правая — заявка */}
           <Box className="auction-detail-layout__aside">
-            <Paper radius="md" p="lg" withBorder style={{ borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
+            <Paper radius="md" p="lg" withBorder style={{ position: hasWideAuctionLayout ? undefined : "static", borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
               {submitted ? (
                 <Stack gap="md" align="center" py="md">
                   <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>
