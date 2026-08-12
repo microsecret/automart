@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     if (bodyType && !VALID_BODY_TYPES.has(bodyType)) return NextResponse.json({ error: "Некорректный тип кузова" }, { status: 400 })
     if (bodyType) where.bodyType = bodyType
 
-    const [listings, total, aggregates, popularMakes, sourceDistribution, powerKnown, mileageKnown] = await prisma.$transaction([
+    const [listings, total, aggregates, popularMakes, sourceDistribution, fuelDistribution, bodyDistribution, powerKnown, mileageKnown] = await prisma.$transaction([
       prisma.auctionListing.findMany({
         where, skip, take: limit,
         orderBy: { createdAt: "desc" },
@@ -104,9 +104,38 @@ export async function GET(request: NextRequest) {
         _count: true,
         orderBy: { _count: { source: "desc" } },
       }),
+      prisma.auctionListing.groupBy({
+        by: ["fuelType"],
+        where,
+        _count: true,
+        orderBy: { _count: { fuelType: "desc" } },
+      }),
+      prisma.auctionListing.groupBy({
+        by: ["bodyType"],
+        where,
+        _count: true,
+        orderBy: { _count: { bodyType: "desc" } },
+      }),
       prisma.auctionListing.count({ where: { ...where, power: { not: null } } }),
       prisma.auctionListing.count({ where: { ...where, mileage: { not: null } } }),
     ])
+
+    // Average price is sensitive to premium lots. The median is an additional
+    // factual reference for the active filters, calculated without guessing a
+    // market price or using listings outside the current result set.
+    const middleOffset = Math.floor(Math.max(0, total - 1) / 2)
+    const medianRows = total > 0
+      ? await prisma.auctionListing.findMany({
+          where,
+          orderBy: { finalPrice: "asc" },
+          skip: middleOffset,
+          take: total % 2 === 0 ? 2 : 1,
+          select: { finalPrice: true },
+        })
+      : []
+    const medianFinalPrice = medianRows.length
+      ? Math.round(medianRows.reduce((sum, row) => sum + row.finalPrice, 0) / medianRows.length)
+      : null
 
     return NextResponse.json({
       listings,
@@ -119,6 +148,7 @@ export async function GET(request: NextRequest) {
       analytics: {
         total,
         averageFinalPrice: aggregates._avg.finalPrice ? Math.round(aggregates._avg.finalPrice) : null,
+        medianFinalPrice,
         minFinalPrice: aggregates._min.finalPrice,
         maxFinalPrice: aggregates._max.finalPrice,
         averageYear: aggregates._avg.year ? Math.round(aggregates._avg.year) : null,
@@ -127,6 +157,8 @@ export async function GET(request: NextRequest) {
         mileageKnown,
         popularMakes: popularMakes.map((item) => ({ make: item.make, count: item._count })),
         sources: sourceDistribution.map((item) => ({ source: item.source, count: item._count })),
+        fuelDistribution: fuelDistribution.flatMap((item) => item.fuelType ? [{ fuelType: item.fuelType, count: item._count }] : []),
+        bodyDistribution: bodyDistribution.flatMap((item) => item.bodyType ? [{ bodyType: item.bodyType, count: item._count }] : []),
       },
     })
   } catch (error) {

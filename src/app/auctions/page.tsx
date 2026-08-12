@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box, Divider } from "@mantine/core"
+import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box, Divider, Progress } from "@mantine/core"
 import { IconBolt, IconCar, IconDatabaseOff, IconEngine, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
@@ -43,6 +43,7 @@ type AuctionResponse = {
   analytics?: {
     total: number
     averageFinalPrice: number | null
+    medianFinalPrice: number | null
     minFinalPrice: number | null
     maxFinalPrice: number | null
     averageYear: number | null
@@ -51,6 +52,8 @@ type AuctionResponse = {
     mileageKnown: number
     popularMakes: Array<{ make: string; count: number }>
     sources: Array<{ source: string; count: number }>
+    fuelDistribution: Array<{ fuelType: string; count: number }>
+    bodyDistribution: Array<{ bodyType: string; count: number }>
   }
 }
 
@@ -174,6 +177,8 @@ export default function AuctionsPage() {
   const sourceSummary = analytics?.sources.map((item) => `${item.source}: ${item.count}`).join(" · ")
   const powerCoverage = analytics?.total ? Math.round((analytics.powerKnown / analytics.total) * 100) : 0
   const mileageCoverage = analytics?.total ? Math.round((analytics.mileageKnown / analytics.total) * 100) : 0
+  const topFuelDistribution = analytics?.fuelDistribution.slice(0, 3) || []
+  const topBodyDistribution = analytics?.bodyDistribution.slice(0, 3) || []
   const importPolicy = data?.importPolicy
 
   return (
@@ -307,14 +312,18 @@ export default function AuctionsPage() {
               </Box>
 
               <Divider color="gray.2" />
-              <Box className={styles.insights} aria-label="Аналитика текущей выдачи">
-                <Box className={styles.insight}>
-                  <Text className={styles.insightValue}>{analytics.averageFinalPrice ? formatPriceShort(analytics.averageFinalPrice) : "—"}</Text>
-                  <Text className={styles.insightLabel}>средняя цена под ключ</Text>
-                </Box>
-                <Box className={styles.insight}>
-                  <Text className={styles.insightValue}>{analytics.averageYear || "—"}</Text>
-                  <Text className={styles.insightLabel}>средний год выпуска</Text>
+                <Box className={styles.insights} aria-label="Аналитика текущей выдачи">
+                  <Box className={styles.insight}>
+                    <Text className={styles.insightValue}>{analytics.averageFinalPrice ? formatPriceShort(analytics.averageFinalPrice) : "—"}</Text>
+                    <Text className={styles.insightLabel}>средняя цена под ключ</Text>
+                  </Box>
+                  <Box className={styles.insight}>
+                    <Text className={styles.insightValue}>{analytics.medianFinalPrice ? formatPriceShort(analytics.medianFinalPrice) : "—"}</Text>
+                    <Text className={styles.insightLabel}>медианная цена под ключ</Text>
+                  </Box>
+                  <Box className={styles.insight}>
+                    <Text className={styles.insightValue}>{analytics.averageYear || "—"}</Text>
+                    <Text className={styles.insightLabel}>средний год выпуска</Text>
                 </Box>
                 <Box className={styles.insight}>
                   <Text className={styles.insightValue}>{analytics.averageMileage ? `${Math.round(analytics.averageMileage / 1000).toLocaleString("ru")} тыс. км` : "—"}</Text>
@@ -322,11 +331,38 @@ export default function AuctionsPage() {
                 </Box>
                 <Box className={styles.insight}>
                   <Text className={styles.insightValue}>{powerCoverage}%</Text>
-                  <Text className={styles.insightLabel}>мощность указана · пробег: {mileageCoverage}%</Text>
+                    <Text className={styles.insightLabel}>мощность указана · пробег: {mileageCoverage}%</Text>
+                  </Box>
                 </Box>
-              </Box>
-            </Stack>
-          </Paper>
+
+                {(topFuelDistribution.length > 0 || topBodyDistribution.length > 0) && (
+                  <>
+                    <Divider color="gray.2" />
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" className={styles.marketMix} aria-label="Структура текущей выдачи">
+                      <Box>
+                        <Text size="xs" fw={800} tt="uppercase" c="gray.6" mb={7}>Топливо в выдаче</Text>
+                        <Stack gap={7}>
+                          {topFuelDistribution.map((item) => {
+                            const share = analytics.total ? Math.round((item.count / analytics.total) * 100) : 0
+                            return <Box key={item.fuelType} className={styles.mixRow}><Group justify="space-between" gap="xs"><Text size="sm" fw={700}>{FUEL_LABELS[item.fuelType] || item.fuelType}</Text><Text size="xs" c="dimmed">{item.count} · {share}%</Text></Group><Progress value={share} color="orange" size="sm" radius="xl" mt={4} /></Box>
+                          })}
+                        </Stack>
+                      </Box>
+                      <Box>
+                        <Text size="xs" fw={800} tt="uppercase" c="gray.6" mb={7}>Тип кузова в выдаче</Text>
+                        <Stack gap={7}>
+                          {topBodyDistribution.map((item) => {
+                            const share = analytics.total ? Math.round((item.count / analytics.total) * 100) : 0
+                            return <Box key={item.bodyType} className={styles.mixRow}><Group justify="space-between" gap="xs"><Text size="sm" fw={700}>{BODY_LABELS[item.bodyType] || item.bodyType}</Text><Text size="xs" c="dimmed">{item.count} · {share}%</Text></Group><Progress value={share} color="indigo" size="sm" radius="xl" mt={4} /></Box>
+                          })}
+                        </Stack>
+                      </Box>
+                    </SimpleGrid>
+                    <Text size="xs" c="dimmed">Структура отражает только текущую отфильтрованную выдачу. Это не прогноз спроса, ликвидности или конечной цены сделки.</Text>
+                  </>
+                )}
+              </Stack>
+            </Paper>
         )}
 
         {isLoading ? (

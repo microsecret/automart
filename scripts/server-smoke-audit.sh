@@ -65,6 +65,7 @@ probe 'auctions API' GET '/api/auctions?limit=2' 200
 probe 'exchange-rate API' GET '/api/exchange-rates' 200
 probe 'fuel-stations API' GET '/api/fuel-stations?city=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0' 200
 probe 'vehicle brand directory API' GET '/api/v1/brands' 200
+probe 'vehicle brand category validation' GET '/api/v1/brands?category=INVALID' 400
 probe 'listing categories API' GET '/api/categories' 200
 probe 'parts catalogue API' GET '/api/parts?limit=2' 200
 probe 'public review feed API' GET '/api/reviews?limit=2' 200

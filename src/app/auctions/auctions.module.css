@@ -37,7 +37,7 @@
 
 .insights {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 8px;
 }
 
@@ -73,17 +73,22 @@
   font-size: 0.72rem;
 }
 
+.marketMix {
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.mixRow {
+  min-width: 0;
+}
+
 .resultSpec {
   max-width: 100%;
   min-height: 22px;
   border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
   font-weight: 700;
-}
-
-@media (max-width: 900px) {
-  .insights {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 480px) {
