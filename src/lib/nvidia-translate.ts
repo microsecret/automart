@@ -17,12 +17,37 @@ function getNextKey(): string | null {
 const cache = new Map<string, string>()
 const MAX_TRANSLATION_CACHE_ENTRIES = 1_000
 
+const KOREAN_AUTOMOTIVE_FALLBACKS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/중형차/g, "седан среднего класса"],
+  [/대형차/g, "седан представительского класса"],
+  [/준중형차/g, "седан компактного класса"],
+  [/소형차/g, "компактный автомобиль"],
+  [/경차/g, "малолитражный автомобиль"],
+  [/디젤/g, "дизель"],
+  [/가솔린/g, "бензин"],
+  [/하이브리드/g, "гибрид"],
+  [/전기차|전기/g, "электро"],
+  [/오토/g, "АКПП"],
+  [/수동/g, "МКПП"],
+  [/검정색/g, "чёрный"],
+  [/은색/g, "серебристый"],
+  [/흰색/g, "белый"],
+  [/회색/g, "серый"],
+  [/사륜구동|사륜/g, "полный привод"],
+  [/전륜구동|전륜/g, "передний привод"],
+  [/후륜구동|후륜/g, "задний привод"],
+]
+
 function rememberTranslation(source: string, translated: string) {
   if (!cache.has(source) && cache.size >= MAX_TRANSLATION_CACHE_ENTRIES) {
     const oldest = cache.keys().next().value as string | undefined
     if (oldest) cache.delete(oldest)
   }
   cache.set(source, translated)
+}
+
+function translateKnownKoreanAutomotiveTerms(text: string) {
+  return KOREAN_AUTOMOTIVE_FALLBACKS.reduce((translated, [pattern, replacement]) => translated.replace(pattern, replacement), text)
 }
 
 export async function translateToRussian(text: string): Promise<string> {
@@ -100,9 +125,19 @@ export async function translateListingFields(fields: {
   description?: string | null
   specs?: string | null
 }): Promise<{ descriptionRu: string | null; specsRu: string | null }> {
+  const translateField = async (value: string | null | undefined) => {
+    if (!value) return null
+    const translated = await translateToRussian(value)
+    // A provider/network failure deliberately returns the original. For Encar's
+    // common Korean technical fields, show a deterministic Russian fallback
+    // rather than storing the original as a successful translation.
+    return translated.trim() === value.trim() && /[\uAC00-\uD7AF]/.test(value)
+      ? translateKnownKoreanAutomotiveTerms(value)
+      : translated
+  }
   const [descriptionRu, specsRu] = await Promise.all([
-    fields.description ? translateToRussian(fields.description) : Promise.resolve(null),
-    fields.specs ? translateToRussian(fields.specs) : Promise.resolve(null),
+    translateField(fields.description),
+    translateField(fields.specs),
   ])
   return { descriptionRu, specsRu }
 }

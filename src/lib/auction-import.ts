@@ -2,6 +2,14 @@ import { prisma } from "@/lib/prisma"
 import { translateListingFields } from "@/lib/nvidia-translate"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
 
+function hasUntranslatedForeignText(original: string | null, translated: string | null) {
+  return Boolean(original && translated && original.trim() === translated.trim() && /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(original))
+}
+
+function hasUsableTranslation(original: string | null, translated: string | null) {
+  return Boolean(original && translated && !hasUntranslatedForeignText(original, translated))
+}
+
 export type AuctionImportItem = {
   source: string
   sourceId: string
@@ -43,15 +51,17 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
 
     if (existing) {
       const sourceTextChanged = item.descriptionOrig !== existing.descriptionOrig || item.specsOrig !== existing.specsOrig
+      const needsTranslationRefresh = sourceTextChanged || hasUntranslatedForeignText(existing.descriptionOrig, existing.descriptionRu) || hasUntranslatedForeignText(existing.specsOrig, existing.specsRu)
       let translatedFields: { descriptionRu: string | null; specsRu: string | null } | null = null
-      if (sourceTextChanged && (item.descriptionOrig || item.specsOrig)) {
+      if (needsTranslationRefresh && (item.descriptionOrig || item.specsOrig)) {
         try {
           translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig })
         } catch {
           // A translation failure must not prevent the source inventory refresh.
         }
       }
-      if (translatedFields?.descriptionRu || translatedFields?.specsRu) translated++
+      const hasTranslation = hasUsableTranslation(item.descriptionOrig, translatedFields?.descriptionRu || null) || hasUsableTranslation(item.specsOrig, translatedFields?.specsRu || null)
+      if (hasTranslation) translated++
 
       const exchangeRate = getAuctionRateToRub(item.sourceCurrency, exchangeRates)
       const price = calculateAuctionRubPricing(item.sourcePrice, exchangeRate, existing.markup)
@@ -79,8 +89,8 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           ...(translatedFields ? {
             descriptionRu: translatedFields.descriptionRu,
             specsRu: translatedFields.specsRu,
-            isTranslated: Boolean(translatedFields.descriptionRu || translatedFields.specsRu),
-            translatedAt: translatedFields.descriptionRu || translatedFields.specsRu ? new Date() : null,
+            isTranslated: hasTranslation,
+            translatedAt: hasTranslation ? new Date() : null,
           } : {}),
           location: item.location,
           sourcePrice: item.sourcePrice,
@@ -109,7 +119,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         const translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig })
         descriptionRu = translatedFields.descriptionRu
         specsRu = translatedFields.specsRu
-        if (descriptionRu || specsRu) translated++
+        if (hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu)) translated++
       } catch {
         // The source listing is still useful without an automated translation.
       }
@@ -133,7 +143,8 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         country: item.country,
         auctionDate: item.auctionDate,
         location: item.location || null,
-        isTranslated: Boolean(descriptionRu || specsRu), translatedAt: descriptionRu || specsRu ? new Date() : null,
+        isTranslated: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu),
+        translatedAt: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu) ? new Date() : null,
       },
     })
     created++
