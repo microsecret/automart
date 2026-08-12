@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Необходимо войти в аккаунт" },
         { status: 401 }
       )
     }
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!hasAccess) {
       return NextResponse.json(
-        { error: "Unauthorized to access this conversation" },
+        { error: "Нет доступа к этому диалогу" },
         { status: 403 }
       )
     }
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error) {
     console.error("Error fetching messages:", error)
     return NextResponse.json(
-      { error: "Failed to fetch messages" },
+      { error: "Не удалось загрузить сообщения" },
       { status: 500 }
     )
   }
@@ -158,7 +158,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Необходимо войти в аккаунт" },
         { status: 401 }
       )
     }
@@ -179,7 +179,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!hasAccess) {
       return NextResponse.json(
-        { error: "Unauthorized to access this conversation" },
+        { error: "Нет доступа к этому диалогу" },
         { status: 403 }
       )
     }
@@ -204,7 +204,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error) {
     console.error("Error marking messages as read:", error)
     return NextResponse.json(
-      { error: "Failed to mark messages as read" },
+      { error: "Не удалось отметить сообщения прочитанными" },
       { status: 500 }
     )
   }

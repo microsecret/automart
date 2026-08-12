@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Необходимо войти в аккаунт" },
         { status: 401 }
       )
     }
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching conversations:", error)
     return NextResponse.json(
-      { error: "Failed to fetch conversations" },
+      { error: "Не удалось загрузить диалоги" },
       { status: 500 }
     )
   }
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Необходимо войти в аккаунт" },
         { status: 401 }
       )
     }
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
 
     if (!receiver) {
       return NextResponse.json(
-        { error: "Receiver not found" },
+        { error: "Получатель не найден" },
         { status: 404 }
       )
     }
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error sending message:", error)
     return NextResponse.json(
-      { error: "Failed to send message" },
+      { error: "Не удалось отправить сообщение" },
       { status: 500 }
     )
   }
