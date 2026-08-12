@@ -62,7 +62,7 @@ export default function MessagesPage() {
   const pagination = data?.pagination
 
   useEffect(() => {
-    if (pagination && page > pagination.pages) setPage(pagination.pages)
+    if (pagination && pagination.pages > 0 && page > pagination.pages) setPage(pagination.pages)
   }, [page, pagination])
 
   if (status === "loading" || !session) {
