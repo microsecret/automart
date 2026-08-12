@@ -1,5 +1,6 @@
 import { normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionTransmission } from "@/lib/auction-normalization"
-import type { AuctionImportItem } from "@/lib/auction-import"
+import type { AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
+import { translateToRussian } from "@/lib/nvidia-translate"
 
 const ENCAR_HOST = "fem.encar.com"
 const ENCAR_DETAIL_PATH = /^\/cars\/detail\/(\d+)$/
@@ -15,7 +16,20 @@ const ENCAR_LOCATION_LABELS: ReadonlyArray<readonly [string, string]> = [
   ["경기", "пров. Кёнгидо"], ["서울", "Сеул"], ["인천", "Инчхон"], ["부산", "Пусан"], ["대구", "Тэгу"], ["대전", "Тэджон"], ["광주", "Кванджу"], ["울산", "Ульсан"], ["제주", "Чеджу"],
   ["수원시", "Сувон"], ["성남시", "Соннам"], ["용인시", "Ёнин"], ["고양시", "Коян"], ["화성시", "Хвасон"], ["부천시", "Пучхон"], ["안산시", "Ансан"], ["평택시", "Пхёнтхэк"], ["김포시", "Кимпхо"], ["파주시", "Пхаджу"],
   ["권선구", "район Квонсон"], ["권선로", "ул. Квонсон-ро"],
+  ["금정구", "район Кымджон"], ["반송로", "ул. Бансона-ро"],
 ]
+const ENCAR_PRIMARY_OPTION_LABELS: Readonly<Record<string, string>> = {
+  "선루프": "Люк",
+  "헤드램프 (HID)": "Фары HID",
+  "주차감지센서": "Парктроники",
+  "후방카메라": "Камера заднего вида",
+  "자동에어컨": "Климат-контроль",
+  "스마트키": "Бесключевой доступ",
+  "내비게이션": "Навигация",
+  "열선시트": "Подогрев сидений",
+  "통풍시트": "Вентиляция сидений",
+  "가죽시트": "Кожаный салон",
+}
 
 type UnknownRecord = Record<string, unknown>
 
@@ -133,9 +147,37 @@ function translateEncarColor(value: string | null) {
   return ENCAR_COLOR_LABELS.reduce((translated, [source, russian]) => translated.replace(source, russian), value)
 }
 
-function translateEncarLocation(value: string | null) {
+async function translateEncarLocation(value: string | null) {
   if (!value) return null
-  return ENCAR_LOCATION_LABELS.reduce((translated, [source, russian]) => translated.replace(source, russian), value)
+  const translated = await translateToRussian(value)
+  if (!/[\uAC00-\uD7AF]/.test(translated)) return translated
+  return ENCAR_LOCATION_LABELS.reduce((fallback, [source, russian]) => fallback.replace(source, russian), translated)
+}
+
+/**
+ * The public Encar page renders its primary equipment as accessible list
+ * items. The state only carries option IDs, so parse the source-rendered
+ * labels and their explicit present/absent flag instead of guessing by trim.
+ */
+function extractEncarPrimaryEquipment(html: string): AuctionEquipmentItem[] {
+  const sectionStart = html.indexOf("주요옵션")
+  const listEnd = sectionStart < 0 ? -1 : html.indexOf("</ul>", sectionStart)
+  if (sectionStart < 0 || listEnd < 0) return []
+
+  const section = html.slice(sectionStart, listEnd + "</ul>".length)
+  return Array.from(section.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/g)).flatMap((match) => {
+    const text = match[1]
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ")
+      .trim()
+    const status = text.match(/\s+(있음|없음)$/)
+    if (!status) return []
+    const sourceLabel = text.slice(0, -status[0].length).trim()
+    const label = ENCAR_PRIMARY_OPTION_LABELS[sourceLabel]
+    // Never display an untranslated equipment name as if it were Russian.
+    return label ? [{ label, available: status[1] === "있음" }] : []
+  })
 }
 
 /** Extracts deduplicated public detail links from one Encar catalogue page. */
@@ -225,6 +267,9 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
         .filter((url): url is string => Boolean(url))
       ))
     : []
+  const equipmentCodes = asRecord(base.options)?.standard
+  const equipment = extractEncarPrimaryEquipment(html)
+  const equipmentTotal = Array.isArray(equipmentCodes) ? equipmentCodes.length : null
 
   const rawBody = asText(spec.bodyName)
   const rawFuel = asText(spec.fuelName)
@@ -264,6 +309,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     images: photos.length ? photos : null,
     descriptionOrig: asText(advertisement.oneLineText),
     specsOrig: originalSpecs,
-    location: translateEncarLocation(asText(contact?.address)),
+    equipment: equipment.length ? { totalReported: equipmentTotal && equipmentTotal >= equipment.length ? equipmentTotal : equipment.length, items: equipment } : null,
+    location: await translateEncarLocation(asText(contact?.address)),
   }
 }

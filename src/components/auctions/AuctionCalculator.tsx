@@ -5,6 +5,7 @@ import { Alert, Paper, Stack, Group, Text, Select, Divider, ThemeIcon, Box, Tool
 import { IconCalculator, IconInfoCircle, IconShip, IconBuildingBank, IconTruckDelivery, IconCar, IconCheck, IconAlertTriangle, IconCoin } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
+import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
 
 interface Props {
   make: string
@@ -67,13 +68,6 @@ function auctionFee(priceRub: number): number {
   if (priceRub < 1500000) return 40000
   if (priceRub < 3000000) return 60000
   return 90000
-}
-
-// The service fee is shown only as an estimate. It is deliberately kept
-// separate from statutory charges so a customer can see what must be
-// confirmed before a deal is opened.
-function estimatedServiceCommission(priceRub: number): number {
-  return priceRub >= 3_000_000 ? 200_000 : 150_000
 }
 
 type CustomsScenario = {
@@ -167,7 +161,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
       brokerFee: 30000, // Брокерские услуги
       svh: 25000, // Склад временного хранения (2 недели)
       rfDelivery: RF_CITIES.find((c) => c.value === city)?.deliveryFromVlad || 180000,
-      ourCommission: estimatedServiceCommission(effectivePriceRub),
+      ourCommission: estimatedAuctionServiceFee(effectivePriceRub),
     }
 
     const totalWithoutDuty =

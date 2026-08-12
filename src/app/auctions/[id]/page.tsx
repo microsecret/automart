@@ -6,7 +6,7 @@ import useSWR from "swr"
 import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, Divider, TextInput, Textarea, ThemeIcon, Center, Loader, Breadcrumbs, Anchor } from "@mantine/core"
 import { useMediaQuery } from "@mantine/hooks"
-import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconGasStation, IconManualGearbox, IconPalette, IconChevronRight, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
+import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconGasStation, IconManualGearbox, IconPalette, IconChevronRight, IconShieldCheck, IconTruckDelivery, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import { fetchJson } from "@/lib/api-client"
@@ -51,6 +51,31 @@ function auctionValueLabel(value: string, group: keyof typeof AUCTION_VALUE_LABE
   return labels[value] || value
 }
 
+type AuctionEquipment = {
+  totalReported: number | null
+  items: Array<{ label: string; available: boolean }>
+}
+
+function parseAuctionEquipment(value: string | null): AuctionEquipment | null {
+  if (!value) return null
+  try {
+    const parsed = JSON.parse(value) as { totalReported?: unknown; items?: unknown }
+    const items = Array.isArray(parsed.items)
+      ? parsed.items.flatMap((item) => {
+          if (!item || typeof item !== "object") return []
+          const record = item as { label?: unknown; available?: unknown }
+          return typeof record.label === "string" && record.label.trim() && typeof record.available === "boolean"
+            ? [{ label: record.label.trim(), available: record.available }]
+            : []
+        })
+      : []
+    if (!items.length) return null
+    return { totalReported: typeof parsed.totalReported === "number" && Number.isInteger(parsed.totalReported) ? parsed.totalReported : null, items }
+  } catch {
+    return null
+  }
+}
+
 function AuctionDetail() {
   const params = useParams()
   const id = params.id as string
@@ -75,6 +100,7 @@ function AuctionDetail() {
     ...(parseAuctionImages(listingImages) || []),
   ])), [listingImageUrl, listingImages])
   const activeImage = galleryImages[activeImageIndex] || ""
+  const equipment = listing ? parseAuctionEquipment(listing.equipment) : null
 
   useEffect(() => {
     setActiveImageIndex(0)
@@ -175,6 +201,26 @@ function AuctionDetail() {
                   </Group>
                 </Stack>
               </Paper>
+
+              {equipment && (
+                <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f8fafc 0%, #fff 56%)" }}>
+                  <Stack gap="sm">
+                    <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
+                      <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {listing.source}</Text></Box></Group>
+                      {equipment.totalReported && <Badge variant="light" color="indigo">В источнике: {equipment.totalReported} опции</Badge>}
+                    </Group>
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
+                      {equipment.items.map((item) => (
+                        <Group key={item.label} gap="sm" justify="space-between" wrap="nowrap" p="xs" style={{ border: `1px solid ${item.available ? "#bbf7d0" : "#e2e8f0"}`, borderRadius: 10, background: item.available ? "#f0fdf4" : "#f8fafc" }}>
+                          <Group gap={7} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color={item.available ? "teal" : "gray"} variant="light">{item.available ? <IconCheck size={13} /> : <IconX size={13} />}</ThemeIcon><Text size="sm" fw={600}>{item.label}</Text></Group>
+                          <Badge size="xs" color={item.available ? "teal" : "gray"} variant="light">{item.available ? "Есть" : "Нет"}</Badge>
+                        </Group>
+                      ))}
+                    </SimpleGrid>
+                    <Text size="xs" c="dimmed">Статусы взяты из первоисточника на момент обновления. Комплектацию и её состояние подтвердим перед сделкой.</Text>
+                  </Stack>
+                </Paper>
+              )}
 
               {listing.descriptionRu && (
                 <Paper radius="md" p="md" withBorder>

@@ -1,0 +1,42 @@
+.listingCreateForm :global(.mantine-Input-input),
+.listingCreateForm :global(.mantine-Select-input),
+.listingCreateForm :global(.mantine-Textarea-input),
+.listingCreateForm :global(.mantine-NumberInput-input),
+.listingCreateForm :global(.mantine-Autocomplete-input),
+.listingCreateForm :global(.mantine-FileInput-input) {
+  min-height: 42px;
+  border: 1px solid #b8c4d6 !important;
+  background: #ffffff !important;
+  color: #172033 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.listingCreateForm :global(.mantine-Textarea-input) {
+  min-height: 92px;
+}
+
+.listingCreateForm :global(.mantine-Input-input::placeholder),
+.listingCreateForm :global(.mantine-Textarea-input::placeholder) {
+  color: #64748b !important;
+  opacity: 1;
+}
+
+.listingCreateForm :global(.mantine-Input-input:focus),
+.listingCreateForm :global(.mantine-Select-input:focus),
+.listingCreateForm :global(.mantine-Textarea-input:focus),
+.listingCreateForm :global(.mantine-NumberInput-input:focus),
+.listingCreateForm :global(.mantine-Autocomplete-input:focus),
+.listingCreateForm :global(.mantine-FileInput-input:focus) {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16) !important;
+}
+
+.listingCreateForm :global(.mantine-NumberInput-controls) {
+  border-left: 1px solid #d6deeb;
+  background: #f8fafc;
+  opacity: 1;
+}
+
+.listingCreateForm :global(.mantine-NumberInput-control) {
+  color: #4338ca;
+}

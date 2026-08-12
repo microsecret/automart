@@ -10,6 +10,7 @@ import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, PART_AVA
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import { fetchJson } from "@/lib/api-client"
+import styles from "../listing-create-form.module.css"
 
 type CreatedPartResponse = { id: string }
 
@@ -116,7 +117,7 @@ export default function CreatePartPage() {
         </Paper>
 
         <form onSubmit={handleSubmit}>
-          <Stack className="create-listing__form" gap="md">
+          <Stack className={`${styles.listingCreateForm} create-listing__form`} gap="md">
             <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="flex-start">

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { translateListingFields } from "@/lib/nvidia-translate"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
+import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
 
 function hasUntranslatedForeignText(original: string | null, translated: string | null) {
   return Boolean(original && translated && original.trim() === translated.trim() && /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(original))
@@ -8,6 +9,16 @@ function hasUntranslatedForeignText(original: string | null, translated: string 
 
 function hasUsableTranslation(original: string | null, translated: string | null) {
   return Boolean(original && translated && !hasUntranslatedForeignText(original, translated))
+}
+
+export type AuctionEquipmentItem = {
+  label: string
+  available: boolean
+}
+
+export type AuctionEquipmentSnapshot = {
+  totalReported: number | null
+  items: AuctionEquipmentItem[]
 }
 
 export type AuctionImportItem = {
@@ -36,6 +47,7 @@ export type AuctionImportItem = {
   images: string[] | null
   descriptionOrig: string | null
   specsOrig: string | null
+  equipment?: AuctionEquipmentSnapshot | null
   location: string | null
 }
 
@@ -88,6 +100,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           images: item.images ? JSON.stringify(item.images) : null,
           descriptionOrig: item.descriptionOrig,
           specsOrig: item.specsOrig,
+          ...(item.equipment !== undefined ? { equipment: item.equipment ? JSON.stringify(item.equipment) : null } : {}),
           ...(translatedFields ? {
             descriptionRu: translatedFields.descriptionRu,
             specsRu: translatedFields.specsRu,
@@ -114,7 +127,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
 
     const exchangeRate = getAuctionRateToRub(item.sourceCurrency, exchangeRates)
     const basePriceRub = Math.max(0, Math.round(item.sourcePrice * exchangeRate))
-    const markup = basePriceRub > 2_000_000 ? 150_000 : 80_000
+    const markup = estimatedAuctionServiceFee(basePriceRub)
     const price = calculateAuctionRubPricing(item.sourcePrice, exchangeRate, markup)
 
     let descriptionRu: string | null = null
@@ -145,6 +158,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         imageUrl: item.imageUrl || null,
         images: item.images ? JSON.stringify(item.images) : null,
         descriptionOrig: item.descriptionOrig || null, specsOrig: item.specsOrig || null, descriptionRu, specsRu,
+        equipment: item.equipment ? JSON.stringify(item.equipment) : null,
         country: item.country,
         auctionDate: item.auctionDate,
         location: item.location || null,

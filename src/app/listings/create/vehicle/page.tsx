@@ -12,6 +12,7 @@ import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import { fetchJson } from "@/lib/api-client"
 import BrandIcon from "@/components/brands/BrandIcon"
+import styles from "../listing-create-form.module.css"
 
 const CATS = [
   { value: "CAR", label: "Легковые" },
@@ -262,7 +263,7 @@ function CreateVehicleWorkspace() {
         </Paper>
 
         <form onSubmit={handleSubmit}>
-          <Stack className="create-listing__form" gap="md">
+          <Stack className={`${styles.listingCreateForm} create-listing__form`} gap="md">
             {/* Тип транспорта */}
             <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
               <Group justify="space-between" mb="sm">

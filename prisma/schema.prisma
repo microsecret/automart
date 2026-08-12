@@ -573,6 +573,7 @@ model AuctionListing {
   specsOrig       String?
   descriptionRu   String?
   specsRu         String?
+  equipment       String?  // JSON: source-confirmed options and their availability
   // Локация
   country         String   // JP, KR, US, DE
   auctionDate     DateTime?
