@@ -69,6 +69,13 @@ function auctionFee(priceRub: number): number {
   return 90000
 }
 
+// The service fee is shown only as an estimate. It is deliberately kept
+// separate from statutory charges so a customer can see what must be
+// confirmed before a deal is opened.
+function estimatedServiceCommission(priceRub: number): number {
+  return priceRub >= 3_000_000 ? 200_000 : 150_000
+}
+
 type CustomsScenario = {
   duty: number
   label: string
@@ -160,7 +167,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
       brokerFee: 30000, // Брокерские услуги
       svh: 25000, // Склад временного хранения (2 недели)
       rfDelivery: RF_CITIES.find((c) => c.value === city)?.deliveryFromVlad || 180000,
-      ourCommission: effectivePriceRub > 2000000 ? 150000 : 80000,
+      ourCommission: estimatedServiceCommission(effectivePriceRub),
     }
 
     const totalWithoutDuty =
@@ -185,6 +192,12 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
             <Text size="xs" c="gray.5">{make} {model} · {year} · {volume} см³ · {countryLabel}</Text>
           </Stack>
         </Group>
+
+        <Alert color="orange" variant="light" icon={<IconInfoCircle size={17} />}>
+          <Text size="xs">
+            <b>Предварительный просмотр стоимости.</b> Сумма ниже — ориентировочная цена под ключ, а не оферта: курс, фрахт, таможенная стоимость и тарифы подтверждаются перед сделкой.
+          </Text>
+        </Alert>
 
         {/* Выбор города */}
         <Select
@@ -254,7 +267,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
           <CostRow icon={<IconBuildingBank size={14} />} label="Брокерские услуги" value={formatPrice(calc.brokerFee)} />
           <CostRow icon={<IconBuildingBank size={14} />} label="Склад временного хранения" value={formatPrice(calc.svh)} />
           <CostRow icon={<IconTruckDelivery size={14} />} label={`Доставка Владивосток → ${city}`} value={formatPrice(calc.rfDelivery)} />
-          <CostRow icon={<IconCheck size={14} />} label="Комиссия сервиса" value={formatPrice(calc.ourCommission)} />
+          <CostRow icon={<IconCheck size={14} />} label="Ориентировочная комиссия сервиса" value={formatPrice(calc.ourCommission)} />
         </Stack>
 
         <Divider my="xs" />
@@ -263,7 +276,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
         <Paper radius="md" p="md" style={{ background: "linear-gradient(135deg, #ea580c, #f97316)" }}>
           <Group justify="space-between" align="center">
             <Stack gap={0}>
-              <Text size="xs" c="rgba(255,255,255,0.85)">Предварительно под ключ в {city}</Text>
+              <Text size="xs" c="rgba(255,255,255,0.85)">Ориентировочная цена под ключ в {city}</Text>
               <Text size="xs" c="rgba(255,255,255,0.7)">цена авто + логистика + таможенный сценарий + РФ</Text>
             </Stack>
             <Text fw={800} fz="1.1rem" c="white" ff="var(--font-display),sans-serif" lh={1}>{calc.totalMin === calc.totalMax ? formatPrice(calc.totalMin) : `${formatPrice(calc.totalMin)} — ${formatPrice(calc.totalMax)}`}</Text>

@@ -164,9 +164,15 @@ function AuctionDetail() {
                     {listing.bodyType && <SpecRow icon={<IconCar size={16} />} label="Кузов" value={auctionValueLabel(listing.bodyType, "body")} />}
                     {listing.color && <SpecRow icon={<IconPalette size={16} />} label="Цвет" value={listing.color} />}
                     {listing.engineVolume && <SpecRow icon={<IconCar size={16} />} label="Объём" value={`${listing.engineVolume} л`} />}
-                    <SpecRow icon={<IconCar size={16} />} label="Мощность" value={listing.power ? `${listing.power} л.с.` : "Нет данных у Encar"} />
+                    <SpecRow icon={<IconCar size={16} />} label="Мощность" value={listing.power ? `${listing.power} л.с.` : "Не опубликована источником"} />
                     {listing.location && <SpecRow icon={<IconMapPin size={16} />} label="Локация" value={listing.location} />}
                   </SimpleGrid>
+                  <Group gap={6} mt={2}>
+                    <Text size="xs" c="dimmed">Данные автомобиля:</Text>
+                    <Anchor href={listing.sourceUrl} target="_blank" rel="noreferrer" size="xs" fw={600}>
+                      Открыть оригинальное объявление на {listing.source}
+                    </Anchor>
+                  </Group>
                 </Stack>
               </Paper>
 
