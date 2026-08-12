@@ -170,6 +170,22 @@ const LOGOS: Record<string, LogoFn> = {
     <path d="M18 6 H30 L32 14 H26 V20 H38 L36 28 H26 V42 H22 V28 H12 L10 20 H22 V14 H16 Z" fill={c} />
   ),
 
+  // Cadillac — строгий щит, адаптированный для компактного шильдика.
+  cadillac: (c) => (
+    <>
+      <path d="M24 5 L39 11 V25 C39 35 33 41 24 44 C15 41 9 35 9 25 V11 Z" fill="none" stroke={c} strokeWidth="2.5" />
+      <path d="M13 17 H35 M13 24 H35 M17 31 H31" stroke={c} strokeWidth="2.5" strokeLinecap="round" />
+    </>
+  ),
+
+  // Chrysler — лаконичный крылатый знак для мелких размеров.
+  chrysler: (c) => (
+    <>
+      <path d="M5 24 C12 15 18 15 24 21 C30 15 36 15 43 24 C36 30 30 30 24 27 C18 30 12 30 5 24 Z" fill="none" stroke={c} strokeWidth="2.4" strokeLinejoin="round" />
+      <path d="M19 21 H29 V27 H19 Z" fill={c} />
+    </>
+  ),
+
   // Opel — молния в круге
   opel: (c) => (
     <>

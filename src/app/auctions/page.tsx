@@ -55,6 +55,11 @@ type AuctionResponse = {
 
 const FUEL_LABELS: Record<string, string> = { GASOLINE: "Бензин", DIESEL: "Дизель", ELECTRIC: "Электро", HYBRID: "Гибрид", GAS: "Газ" }
 const BODY_LABELS: Record<string, string> = { SUV: "Кроссовер", SEDAN: "Седан", PICKUP: "Пикап", WAGON: "Универсал", HATCHBACK: "Хэтчбек", MINIVAN: "Минивэн", COUPE: "Купе" }
+const MAKE_LABELS: Record<string, string> = { KG_Mobility_Ssangyong: "KGM / SsangYong" }
+
+function auctionMakeLabel(make: string) {
+  return MAKE_LABELS[make] || make.replace(/_/g, " ")
+}
 function AuctionMedia({ listing }: { listing: AuctionListing }) {
   const [failed, setFailed] = useState(false)
   const originalImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0] || ""
@@ -124,6 +129,8 @@ export default function AuctionsPage() {
   const hasActiveFilters = Boolean(country || source || make || priceFrom || priceTo || bodyType || yearFrom)
   const analytics = data?.analytics
   const sourceSummary = analytics?.sources.map((item) => `${item.source}: ${item.count}`).join(" · ")
+  const powerCoverage = analytics?.total ? Math.round((analytics.powerKnown / analytics.total) * 100) : 0
+  const mileageCoverage = analytics?.total ? Math.round((analytics.mileageKnown / analytics.total) * 100) : 0
 
   return (
     <Container size="xl" p={{ base: "sm", md: "md" }}>
@@ -229,7 +236,7 @@ export default function AuctionsPage() {
                   <Text fw={800} size="sm">Быстрый выбор марки</Text>
                   <Text size="xs" c="dimmed">Марки и показатели рассчитаны по текущей выдаче, а не по рекламному каталогу.</Text>
                 </Box>
-                {sourceSummary && <Text className={styles.sourceSummary}>{sourceSummary}</Text>}
+                {sourceSummary && <Text className={styles.sourceSummary}>Источники: {sourceSummary}</Text>}
               </Group>
 
               <Box className={styles.brandShortcuts} aria-label="Быстрый выбор марки">
@@ -242,11 +249,11 @@ export default function AuctionsPage() {
                     color="indigo"
                     size="sm"
                     radius="md"
-                    leftSection={<BrandIcon brand={item.make} size={28} variant="rounded" />}
+                    leftSection={<BrandIcon brand={auctionMakeLabel(item.make)} size={28} variant="rounded" />}
                     rightSection={<Badge size="xs" variant={make === item.make ? "filled" : "light"} color="indigo">{item.count}</Badge>}
                     onClick={() => { setMake(make === item.make ? "" : item.make); setPage(1) }}
                   >
-                    {item.make}
+                    {auctionMakeLabel(item.make)}
                   </Button>
                 ))}
               </Box>
@@ -266,8 +273,8 @@ export default function AuctionsPage() {
                   <Text className={styles.insightLabel}>средний пробег</Text>
                 </Box>
                 <Box className={styles.insight}>
-                  <Text className={styles.insightValue}>{analytics.powerKnown}/{analytics.total}</Text>
-                  <Text className={styles.insightLabel}>мощность; пробег: {analytics.mileageKnown}/{analytics.total}</Text>
+                  <Text className={styles.insightValue}>{powerCoverage}%</Text>
+                  <Text className={styles.insightLabel}>мощность указана · пробег: {mileageCoverage}%</Text>
                 </Box>
               </Box>
             </Stack>
@@ -311,7 +318,7 @@ export default function AuctionsPage() {
                 <Paper radius="lg" withBorder className="auction-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", cursor: "pointer" }}>
                   <AuctionMedia listing={l} />
                   <Box p="md" className="auction-result-card__content">
-                    <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{l.make} {l.model}</Text>
+                    <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{auctionMakeLabel(l.make)} {l.model}</Text>
                     <Text className="auction-result-card__summary" lineClamp={1}>
                       {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
                     </Text>

@@ -45,11 +45,14 @@ const BRAND_COLORS: Record<string, string> = {
   // Американцы
   "Ford": "#003478",
   "Chevrolet": "#CD9836",
+  "Cadillac": "#24364B",
+  "Chrysler": "#334155",
   "Tesla": "#CC0000",
   "Jeep": "#000000",
   // Европа
   "Renault": "#FFCC33",
   "Peugeot": "#00A3E0",
+  "Citroen": "#314A7E",
   "Skoda": "#0E3A2F",
   "Volvo": "#1A57A5",
   "Land Rover": "#00563F",
@@ -57,7 +60,7 @@ const BRAND_COLORS: Record<string, string> = {
 
 /** Получить цвет бренда (fallback — серый) */
 export function getBrandColor(brand: string): string {
-  return BRAND_COLORS[brand] || "var(--mantine-color-dimmed)"
+  return BRAND_COLORS[brand] || "#475569"
 }
 
 /** Генерирует контрастный текст (белый/чёрный) по фоновому цвету */
