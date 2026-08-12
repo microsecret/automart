@@ -62,8 +62,6 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const { data: session } = useSession()
   const isAuthRoute = pathname?.startsWith("/auth/")
   const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
-  const isPartsRoute = pathname?.startsWith("/parts-finder") || activeCategory === "parts"
-  const isAuctionsRoute = pathname?.startsWith("/auctions")
   const isMobileNavActive = (href: string) => href === "/" ? pathname === "/" : pathname?.startsWith(href)
 
   if (isAuthRoute) {
@@ -102,35 +100,31 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </SidebarPanel>
 
-              {!isPartsRoute && (
-                <SidebarPanel title="Запчасти" href="/parts-finder" icon={<IconTools size={15} />}>
-                  {PARTS.map((item) => (
-                    <NavLink
-                      key={item.href}
-                      component={Link}
-                      href={item.href}
-                      label={item.label}
-                      color="indigo"
-                      className="market-side-nav market-side-nav--nested"
-                    />
-                  ))}
-                </SidebarPanel>
-              )}
+              <SidebarPanel title="Запчасти" href="/parts-finder" icon={<IconTools size={15} />}>
+                {PARTS.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    component={Link}
+                    href={item.href}
+                    label={item.label}
+                    color="indigo"
+                    className="market-side-nav market-side-nav--nested"
+                  />
+                ))}
+              </SidebarPanel>
 
-              {!isAuctionsRoute && (
-                <SidebarPanel title="Мировые аукционы" href="/auctions" icon={<IconGavel size={15} />}>
-                  {AUCTIONS.map((item) => (
-                    <NavLink
-                      key={item.href}
-                      component={Link}
-                      href={item.href}
-                      label={item.label}
-                      color="orange"
-                      className="market-side-nav market-side-nav--nested"
-                    />
-                  ))}
-                </SidebarPanel>
-              )}
+              <SidebarPanel title="Мировые аукционы" href="/auctions" icon={<IconGavel size={15} />}>
+                {AUCTIONS.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    component={Link}
+                    href={item.href}
+                    label={item.label}
+                    color="orange"
+                    className="market-side-nav market-side-nav--nested"
+                  />
+                ))}
+              </SidebarPanel>
 
               <SidebarPanel title="Сервисы" href="/services" icon={<IconShieldCheck size={15} />}>
                 {SERVICES.map((item) => (
