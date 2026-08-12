@@ -546,6 +546,7 @@ model AuctionListing {
   make            String
   model           String
   year            Int
+  manufacturedMonth String? // YYYY-MM from the source when it is available
   mileage         Int?
   fuelType        String?
   transmission    String?

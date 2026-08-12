@@ -17,6 +17,7 @@ export type AuctionImportItem = {
   make: string
   model: string
   year: number
+  manufacturedMonth?: string | null
   sourcePrice: number
   sourceCurrency: string
   country: string
@@ -72,6 +73,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           make: item.make,
           model: item.model,
           year: item.year,
+          manufacturedMonth: item.manufacturedMonth || null,
           mileage: item.mileage,
           fuelType: item.fuelType,
           transmission: item.transmission,
@@ -128,7 +130,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
     await prisma.auctionListing.create({
       data: {
         sourceId: String(item.sourceId), source: item.source, sourceUrl: item.sourceUrl,
-        make: item.make, model: item.model, year: item.year,
+        make: item.make, model: item.model, year: item.year, manufacturedMonth: item.manufacturedMonth || null,
         mileage: item.mileage || null, fuelType: item.fuelType || null,
         transmission: item.transmission || null, bodyType: item.bodyType || null,
         color: item.color || null, engineVolume: item.engineVolume || null,

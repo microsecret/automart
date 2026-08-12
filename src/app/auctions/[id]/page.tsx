@@ -153,7 +153,7 @@ function AuctionDetail() {
                 <Stack gap="sm">
                   <Group gap="sm"><IconCar size={18} color="#4f46e5" /><Text fw={700} c="dark.9">Характеристики</Text></Group>
                   <SimpleGrid className="auction-detail-specs" cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
-                    <SpecRow icon={<IconCalendar size={16} />} label="Год" value={String(listing.year)} />
+                    <SpecRow icon={<IconCalendar size={16} />} label="Выпуск" value={listing.manufacturedMonth ? `${listing.manufacturedMonth.slice(5)}.${listing.manufacturedMonth.slice(0, 4)}` : String(listing.year)} />
                     {listing.mileage && <SpecRow icon={<IconGauge size={16} />} label="Пробег" value={`${listing.mileage.toLocaleString("ru")} км`} />}
                     {listing.fuelType && <SpecRow icon={<IconGasStation size={16} />} label="Топливо" value={auctionValueLabel(listing.fuelType, "fuel")} />}
                     {listing.transmission && <SpecRow icon={<IconManualGearbox size={16} />} label="КПП" value={auctionValueLabel(listing.transmission, "transmission")} />}
@@ -180,6 +180,7 @@ function AuctionDetail() {
                 make={listing.make}
                 model={listing.model}
                 year={listing.year}
+                manufacturedMonth={listing.manufacturedMonth}
                 engineVolume={listing.engineVolume}
                 power={listing.power}
                 fuelType={listing.fuelType}

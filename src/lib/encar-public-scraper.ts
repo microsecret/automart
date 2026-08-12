@@ -32,6 +32,11 @@ function asInteger(value: unknown) {
   return Number.isSafeInteger(parsed) ? parsed : null
 }
 
+function asYearMonth(value: unknown) {
+  const match = asText(value)?.match(/^(\d{4})(0[1-9]|1[0-2])$/)
+  return match ? `${match[1]}-${match[2]}` : null
+}
+
 function sourceUrlFrom(value: unknown) {
   if (typeof value !== "string") throw new Error("Нужна ссылка на публичную карточку Encar")
   const url = new URL(value)
@@ -88,7 +93,11 @@ function extractPreloadedState(html: string): UnknownRecord {
 
 function photoUrl(photo: unknown) {
   const path = asText(asRecord(photo)?.path)
-  return path?.startsWith("/carpicture") ? `https://ci.encar.com/carpicture${path}` : null
+  // Encar's raw link is a 640px preview. Its public CDN accepts this image
+  // policy and returns a 1600px rendition for the detail gallery.
+  return path?.startsWith("/carpicture")
+    ? `https://ci.encar.com/carpicture${path}?impolicy=heightRate&rh=1024&cw=1600&ch=1024&cg=Center`
+    : null
 }
 
 function normalizeEncarBodyType(value: unknown) {
@@ -172,7 +181,8 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     throw new Error("Публичный ID Encar не подтверждён данными карточки")
   }
 
-  const year = asInteger(category.formYear) || Number.parseInt(asText(category.yearMonth)?.slice(0, 4) || "", 10)
+  const manufacturedMonth = asYearMonth(category.yearMonth)
+  const year = manufacturedMonth ? Number.parseInt(manufacturedMonth.slice(0, 4), 10) : asInteger(category.formYear)
   const listedPrice = asInteger(advertisement.price)
   const make = asText(category.manufacturerEnglishName) || asText(category.manufacturerName)
   const modelParts = [
@@ -207,6 +217,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     make,
     model: modelParts.join(" "),
     year,
+    manufacturedMonth,
     sourcePrice: listedPrice * 10_000,
     sourceCurrency: "KRW",
     country: "KR",

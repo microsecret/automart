@@ -10,6 +10,7 @@ interface Props {
   make: string
   model: string
   year: number
+  manufacturedMonth?: string | null
   engineVolume: number | null
   power: number | null
   fuelType: string | null
@@ -109,16 +110,23 @@ function customsDutyForAgeGroup(group: "UP_TO_3" | "OVER_3_TO_5" | "OVER_5", vol
  * 5-year boundary the calculator must disclose a range instead of choosing a
  * favourable customs rate. Rates: EEC Council Decision No. 107, Appendix 2.
  */
-function customsDuty(year: number, volume: number, priceRub: number, eurRate: number) {
+function customsDuty(year: number, manufacturedMonth: string | null | undefined, volume: number, priceRub: number, eurRate: number) {
   const yearDifference = Math.max(0, CURRENT_YEAR - year)
+  const currentMonth = new Date().getMonth() + 1
+  const month = manufacturedMonth?.match(/^\d{4}-(\d{2})$/)?.[1]
+  const manufacturedMonthNumber = month ? Number(month) : null
   const groups: Array<"UP_TO_3" | "OVER_3_TO_5" | "OVER_5"> = yearDifference <= 2
     ? ["UP_TO_3"]
     : yearDifference === 3
-      ? ["UP_TO_3", "OVER_3_TO_5"]
+      ? manufacturedMonthNumber === null || manufacturedMonthNumber === currentMonth
+        ? ["UP_TO_3", "OVER_3_TO_5"]
+        : manufacturedMonthNumber < currentMonth ? ["OVER_3_TO_5"] : ["UP_TO_3"]
       : yearDifference <= 4
         ? ["OVER_3_TO_5"]
         : yearDifference === 5
-          ? ["OVER_3_TO_5", "OVER_5"]
+          ? manufacturedMonthNumber === null || manufacturedMonthNumber === currentMonth
+            ? ["OVER_3_TO_5", "OVER_5"]
+            : manufacturedMonthNumber < currentMonth ? ["OVER_5"] : ["OVER_3_TO_5"]
           : ["OVER_5"]
   const scenarios = groups.map((group) => customsDutyForAgeGroup(group, volume, priceRub, eurRate))
   const duties = scenarios.map((scenario) => scenario.duty)
@@ -131,7 +139,7 @@ function customsDuty(year: number, volume: number, priceRub: number, eurRate: nu
   }
 }
 
-export default function AuctionCalculator({ make, model, year, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country }: Props) {
+export default function AuctionCalculator({ make, model, year, manufacturedMonth, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country }: Props) {
   const [city, setCity] = useState("Москва")
   const { data: exchangeRateData, error: exchangeRateError } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetchJson, { revalidateOnFocus: false })
   const volume = Math.round((engineVolume || 2.0) * 1000) // куб.см
@@ -140,7 +148,7 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
   const effectivePriceRub = sourceRate && sourcePrice >= 0 ? Math.round(sourcePrice * sourceRate) : priceRub
 
   const calc = useMemo(() => {
-    const customs = customsDuty(year, volume, effectivePriceRub, eurRate)
+    const customs = customsDuty(year, manufacturedMonth, volume, effectivePriceRub, eurRate)
     const c = {
       auctionPrice: effectivePriceRub,
       auctionFee: auctionFee(effectivePriceRub),
@@ -160,7 +168,7 @@ export default function AuctionCalculator({ make, model, year, engineVolume, pow
       c.utilFee + c.customsProcess + c.brokerFee + c.svh + c.rfDelivery + c.ourCommission
 
     return { ...c, totalMin: totalWithoutDuty + c.dutyMin, totalMax: totalWithoutDuty + c.dutyMax }
-  }, [effectivePriceRub, country, year, volume, city, eurRate])
+  }, [effectivePriceRub, country, year, manufacturedMonth, volume, city, eurRate])
 
   const currencySymbol = sourceCurrency === "JPY" || sourceCurrency === "CNY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : sourceCurrency === "RUB" ? "₽" : "€"
   const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : country === "CN" ? "Китай" : country === "DE" ? "Германия" : "Европа"
