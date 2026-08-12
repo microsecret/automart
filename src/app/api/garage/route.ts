@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -62,6 +63,11 @@ export async function POST(request: NextRequest) {
 
     if (mileage != null && (!Number.isInteger(mileage) || mileage < 0 || mileage > 3_000_000)) {
       return NextResponse.json({ error: "Проверьте пробег автомобиля" }, { status: 400 })
+    }
+
+    const energyAndYearError = validateVehicleEnergyAndModelYear("CAR", make, model, year, fuelType)
+    if (energyAndYearError) {
+      return NextResponse.json({ error: energyAndYearError }, { status: 400 })
     }
 
     const garageCategory = await prisma.category.upsert({
