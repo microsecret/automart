@@ -45,6 +45,37 @@ function inspectMedia(value) {
   }
 }
 
+function isSafeExternalMediaUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return false
+  try {
+    const url = new URL(value)
+    return url.protocol === "https:" && !url.username && !url.password
+  } catch {
+    return false
+  }
+}
+
+function inspectAuctionMedia(listing) {
+  if (listing.imageUrl !== null && !isSafeExternalMediaUrl(listing.imageUrl)) {
+    return { state: "invalid", imageCount: 0 }
+  }
+
+  if (!listing.images) {
+    return { state: listing.imageUrl ? "safe" : "empty", imageCount: listing.imageUrl ? 1 : 0 }
+  }
+
+  try {
+    const images = JSON.parse(listing.images)
+    if (!Array.isArray(images) || images.length > 100 || images.some((image) => !isSafeExternalMediaUrl(image))) {
+      return { state: "invalid", imageCount: 0 }
+    }
+    const imageCount = new Set([listing.imageUrl, ...images].filter(Boolean)).size
+    return { state: imageCount > 0 ? "safe" : "empty", imageCount }
+  } catch {
+    return { state: "invalid", imageCount: 0 }
+  }
+}
+
 function hasValidVehicleIdentity(vehicle) {
   const hasVin = typeof vehicle.vin === "string" && /^[A-HJ-NPR-Z0-9]{17}$/.test(vehicle.vin)
   const hasSerialNumber = typeof vehicle.serialNumber === "string" && vehicle.serialNumber.trim().length >= 3
@@ -56,7 +87,7 @@ function hasValidVehicleIdentity(vehicle) {
 }
 
 async function main() {
-  const [orphanedListings, ambiguousListings, vehicleCount, partCount, listingCount, userCount, auctionCount, newsCount, triggers, indexes, duplicateLiveSubjects, vehicles, parts] = await Promise.all([
+  const [orphanedListings, ambiguousListings, vehicleCount, partCount, listingCount, userCount, auctionCount, newsCount, triggers, indexes, duplicateLiveSubjects, vehicles, parts, auctionListings] = await Promise.all([
     prisma.listing.findMany({
       where: { vehicleId: null, partId: null },
       select: { id: true, title: true, status: true, createdAt: true },
@@ -107,6 +138,9 @@ async function main() {
     prisma.part.findMany({
       select: { id: true, images: true },
     }),
+    prisma.auctionListing.findMany({
+      select: { id: true, imageUrl: true, images: true, sourceUrl: true },
+    }),
   ])
 
   const installedTriggers = triggers.map((trigger) => trigger.name).filter((name) => typeof name === "string")
@@ -131,6 +165,15 @@ async function main() {
     empty: media.filter((record) => record.state === "empty").length,
     invalid: media.filter((record) => record.state === "invalid").length,
   }
+  const auctionMedia = auctionListings.map(inspectAuctionMedia)
+  const invalidAuctionSourceUrls = auctionListings.filter((listing) => !isSafeExternalMediaUrl(listing.sourceUrl))
+  const auctionMediaSummary = {
+    safe: auctionMedia.filter((record) => record.state === "safe").length,
+    empty: auctionMedia.filter((record) => record.state === "empty").length,
+    invalid: auctionMedia.filter((record) => record.state === "invalid").length,
+    withGallery: auctionMedia.filter((record) => record.imageCount > 1).length,
+    totalImages: auctionMedia.reduce((total, record) => total + record.imageCount, 0),
+  }
   const isValid = orphanedListings.length === 0
     && ambiguousListings.length === 0
     && duplicateLiveSubjects.length === 0
@@ -140,6 +183,8 @@ async function main() {
     && legacyTypeMismatches.length === 0
     && identityMismatches.length === 0
     && nonRoadMileageMismatches.length === 0
+    && auctionMediaSummary.invalid === 0
+    && invalidAuctionSourceUrls.length === 0
 
   const report = {
     checkedAt: new Date().toISOString(),
@@ -205,6 +250,14 @@ async function main() {
       })),
     },
     media: mediaSummary,
+    auctionMedia: {
+      ...auctionMediaSummary,
+      invalidSourceUrls: invalidAuctionSourceUrls.length,
+      invalidSamples: auctionListings
+        .filter((listing, index) => auctionMedia[index].state === "invalid" || !isSafeExternalMediaUrl(listing.sourceUrl))
+        .slice(0, 20)
+        .map((listing) => ({ id: listing.id, sourceUrl: listing.sourceUrl })),
+    },
     samples: {
       orphanedListings,
       ambiguousListings,

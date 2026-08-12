@@ -5,6 +5,10 @@ const prisma = new PrismaClient()
 const RATES: Record<string, number> = { JPY: 0.62, KRW: 0.072, USD: 95, EUR: 102, CNY: 13.2 }
 
 async function main() {
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("Demo auction fixtures are disabled. Use real importer data; set ALLOW_DEMO_SEED=true only in an isolated development database.")
+  }
+
   let created = 0
   for (const item of items as any[]) {
     const existing = await prisma.auctionListing.findUnique({
@@ -42,4 +46,9 @@ async function main() {
   console.log("Created " + created + " auction listings")
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect())
+main()
+  .catch((error) => {
+    console.error(error)
+    process.exitCode = 1
+  })
+  .finally(() => prisma.$disconnect())

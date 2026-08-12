@@ -3,6 +3,10 @@ import { BRANDS, TRANSPORT_CATEGORIES } from "../src/lib/catalog"
 import { ELECTRIC_ONLY_CAR_MAKES, isKnownInvalidCarFuel } from "../src/lib/constants"
 
 async function main() {
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("Demo marketplace fixtures are disabled. Use ALLOW_DEMO_SEED=true only in an isolated development database.")
+  }
+
   console.log("Генерация объявлений из каталога...")
 
   // Категория
