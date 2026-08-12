@@ -19,5 +19,12 @@ systemctl is-active --quiet automart
 
 # The application is now on 127.0.0.1:4001, so Nginx can safely claim the
 # public :4000 entry point without changing customer-facing URLs.
+for _attempt in $(seq 1 15); do
+  if curl --fail --silent --show-error http://127.0.0.1:4001/api/exchange-rates >/dev/null; then
+    break
+  fi
+  sleep 1
+done
 curl --fail --silent --show-error http://127.0.0.1:4001/api/exchange-rates >/dev/null
 systemctl reload nginx
+curl --fail --silent --show-error http://127.0.0.1:4000/api/exchange-rates >/dev/null
