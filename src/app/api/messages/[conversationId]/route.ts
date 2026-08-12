@@ -43,8 +43,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || String(CONVERSATION_PAGE_SIZE), 10) || CONVERSATION_PAGE_SIZE))
     const skip = (page - 1) * limit
 
-    // Get messages in this conversation using the conversationId index
-    const messages = await prisma.message.findMany({
+    // Page one is the most recent page. We return each page in chronological
+    // order so the client can prepend older pages without reordering bubbles.
+    const newestFirstMessages = await prisma.message.findMany({
       where: {
         conversationId
       },
@@ -71,11 +72,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
       },
       orderBy: {
-        createdAt: 'asc'
+        createdAt: 'desc'
       },
       skip,
       take: limit
     })
+    const messages = [...newestFirstMessages].reverse()
 
     // Mark unread messages as read
     await prisma.message.updateMany({

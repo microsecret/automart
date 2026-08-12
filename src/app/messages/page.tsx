@@ -1,7 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import useSWR from "swr"
 import { useSession } from "next-auth/react"
@@ -17,6 +17,7 @@ import {
   Badge,
   Button,
   Paper,
+  Pagination,
   ThemeIcon,
 } from "@mantine/core"
 import { IconArrowRight, IconMessageCircle2, IconMessageCircleOff } from "@tabler/icons-react"
@@ -33,13 +34,23 @@ interface Conversation {
   listing: { title: string } | null
 }
 
+interface ConversationsResponse {
+  conversations: Conversation[]
+  pagination: {
+    page: number
+    pages: number
+    total: number
+  }
+}
+
 export default function MessagesPage() {
   const { data: session, status } = useSession() || { data: null, status: 'unauthenticated' }
   const router = useRouter()
-  const { data, error, isLoading, mutate } = useSWR<{ conversations: Conversation[] }>(
-    session ? "/api/messages" : null,
+  const [page, setPage] = useState(1)
+  const { data, error, isLoading, mutate } = useSWR<ConversationsResponse>(
+    session ? `/api/messages?page=${page}&limit=20` : null,
     fetchJson,
-    { refreshInterval: 5000 }
+    { refreshInterval: 5000, keepPreviousData: true }
   )
 
   useEffect(() => {
@@ -47,13 +58,18 @@ export default function MessagesPage() {
     if (!session) router.push("/auth/signin")
   }, [session, status, router])
 
+  const conversations = data?.conversations || []
+  const pagination = data?.pagination
+
+  useEffect(() => {
+    if (pagination && page > pagination.pages) setPage(pagination.pages)
+  }, [page, pagination])
+
   if (status === "loading" || !session) {
     return (
       <Container py={80}><Center><Loader color="indigo" /></Center></Container>
     )
   }
-
-  const conversations = data?.conversations || []
 
   return (
     <Container size="lg" py="xl">
@@ -136,6 +152,20 @@ export default function MessagesPage() {
               </Paper>
             ))}
           </Stack>
+          {pagination && pagination.pages > 1 && (
+            <Center py="sm">
+              <Pagination
+                total={pagination.pages}
+                value={pagination.page}
+                onChange={setPage}
+                siblings={1}
+                boundaries={1}
+                color="indigo"
+                radius="md"
+                aria-label="Страницы диалогов"
+              />
+            </Center>
+          )}
           </Paper>
         )}
       </Stack>

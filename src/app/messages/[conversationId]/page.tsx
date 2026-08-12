@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 
 import { Suspense, useEffect, useRef, useState, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import useSWR, { mutate as globalMutate } from "swr"
+import useSWRInfinite from "swr/infinite"
 import { useSession } from "next-auth/react"
 import { notifications } from "@mantine/notifications"
 import {
@@ -37,6 +37,11 @@ type ConversationResponse = {
   messages: Message[]
   otherUser: { id: string; name: string | null; image: string | null } | null
   listingId: string | null
+  pagination: {
+    page: number
+    pages: number
+    total: number
+  }
 }
 
 type SendMessageResponse = {
@@ -59,8 +64,8 @@ function ConversationWorkspace() {
   const [text, setText] = useState("")
   const [sending, setSending] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const hasScrolledToLatest = useRef(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -69,13 +74,17 @@ function ConversationWorkspace() {
   const recipientId = searchParams.get("recipientId")
   const requestedListingId = searchParams.get("listingId")
   const isNewConversation = Boolean(recipientId)
-  const { data, error, isLoading, mutate } = useSWR<ConversationResponse>(
-    session && !isNewConversation ? `/api/messages/${conversationId}` : null,
+  const { data: messagePages, error, isLoading, isValidating, mutate, size, setSize } = useSWRInfinite<ConversationResponse>(
+    (pageIndex) => session && !isNewConversation ? `/api/messages/${conversationId}?page=${pageIndex + 1}` : null,
     fetchJson,
-    { refreshInterval: 5000 }
+    { refreshInterval: 5000, revalidateFirstPage: true }
   )
 
-  useEffect(() => { scrollToBottom() }, [data])
+  const latestPage = messagePages?.[0]
+  const messages = (messagePages ? [...messagePages].reverse().flatMap((page) => page.messages) : [])
+    .filter((message, index, allMessages) => allMessages.findIndex((candidate) => candidate.id === message.id) === index)
+  const hasOlderMessages = Boolean(latestPage && size < latestPage.pagination.pages)
+  const loadingOlderMessages = Boolean(messagePages && isValidating && size > messagePages.length)
 
   useEffect(() => {
     if (status === "loading") return
@@ -83,8 +92,11 @@ function ConversationWorkspace() {
   }, [session, status, router])
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
-  }, [data?.messages])
+    if (hasScrolledToLatest.current || messages.length === 0) return
+    hasScrolledToLatest.current = true
+    scrollToBottom()
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
+  }, [messages.length])
 
   const send = useCallback(async () => {
     if (!text.trim() || !session) return
@@ -92,17 +104,18 @@ function ConversationWorkspace() {
     const content = text.trim()
     setText("")
     try {
-      const receiverId = recipientId || data?.otherUser?.id
+      const receiverId = recipientId || latestPage?.otherUser?.id
       if (!receiverId) throw new Error("Не удалось определить собеседника")
       const payload = await fetchJson<SendMessageResponse>("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, receiverId, listingId: requestedListingId || data?.listingId || null }),
+        body: JSON.stringify({ content, receiverId, listingId: requestedListingId || latestPage?.listingId || null }),
       })
       if (isNewConversation && payload.conversationId) {
         router.replace(`/messages/${payload.conversationId}`)
       } else {
-        void globalMutate(`/api/messages/${conversationId}`)
+        await mutate()
+        scrollToBottom()
       }
     } catch (requestError) {
       setText(content)
@@ -114,13 +127,12 @@ function ConversationWorkspace() {
     } finally {
       setSending(false)
     }
-  }, [text, session, recipientId, data?.otherUser?.id, requestedListingId, data?.listingId, isNewConversation, conversationId, router])
+  }, [text, session, recipientId, latestPage?.otherUser?.id, requestedListingId, latestPage?.listingId, isNewConversation, mutate, router])
 
   if (status === "loading" || !session) {
     return <Container py={80}><Center><Loader color="indigo" /></Center></Container>
   }
 
-  const messages = data?.messages || []
   const userId = session.user.id
 
   return (
@@ -132,11 +144,11 @@ function ConversationWorkspace() {
           <Button component={Link} href="/messages" variant="default" color="gray" p={8} aria-label="К списку сообщений">
             <IconArrowLeft size={20} />
           </Button>
-          <Avatar src={data?.otherUser?.image} radius="xl" color="indigo" size="md">
-            {data?.otherUser?.name?.[0]?.toUpperCase()}
+          <Avatar src={latestPage?.otherUser?.image} radius="xl" color="indigo" size="md">
+            {latestPage?.otherUser?.name?.[0]?.toUpperCase()}
           </Avatar>
           <Stack gap={0}>
-            <Text size="sm" fw={700}>{data?.otherUser?.name || (isNewConversation ? "Новый диалог" : "Диалог")}</Text>
+            <Text size="sm" fw={700}>{latestPage?.otherUser?.name || (isNewConversation ? "Новый диалог" : "Диалог")}</Text>
             <Text size="xs" c="dimmed">Диалог по объявлению · отвечайте только внутри Авторынка</Text>
           </Stack>
           </Group>
@@ -162,6 +174,19 @@ function ConversationWorkspace() {
             </Center>
           ) : (
             <Stack gap="sm" p="xs">
+              {hasOlderMessages && (
+                <Center>
+                  <Button
+                    variant="light"
+                    color="indigo"
+                    size="xs"
+                    loading={loadingOlderMessages}
+                    onClick={() => void setSize(size + 1)}
+                  >
+                    Показать предыдущие сообщения
+                  </Button>
+                </Center>
+              )}
               {messages.map((msg) => {
                 const isOwn = msg.senderId === userId
                 return (
