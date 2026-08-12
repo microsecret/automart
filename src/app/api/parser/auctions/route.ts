@@ -3,15 +3,11 @@ import { prisma } from "@/lib/prisma"
 import { translateListingFields } from "@/lib/nvidia-translate"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
 import { safeHttpsUrl } from "@/lib/media-url"
+import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
 
 export const dynamic = "force-dynamic"
 
 const PARSER_TOKEN = process.env.PARSER_TOKEN
-
-const SOURCE_COUNTRY: Record<string, string> = {
-  USS: "JP", TAA: "JP", EMARAAT: "KR", AJ: "KR", COPART: "US", IAAI: "US",
-  MOBILE_DE: "DE", YCHEZHAI: "CN", GUAZI: "CN", TAOCHE: "CN", UCAR: "CN",
-}
 
 const VALID_CURRENCIES = new Set(["RUB", "USD", "EUR", "JPY", "KRW", "CNY"])
 
@@ -78,7 +74,7 @@ function normalizeImportItem(item: unknown, index: number): AuctionImportItem {
   const sourceUrl = optionalUrl(value.sourceUrl)
   const images = Array.isArray(value.images) ? value.images.map(optionalUrl).filter((url): url is string => Boolean(url)).slice(0, 20) : null
 
-  if (!SOURCE_COUNTRY[source] || SOURCE_COUNTRY[source] !== country) throw new Error(`Лот ${index + 1}: площадка не соответствует стране`)
+  if (!isAuctionSource(source) || auctionSourceCountry(source) !== country) throw new Error(`Лот ${index + 1}: площадка не соответствует стране`)
   if (!sourceId || sourceId.length > 120) throw new Error(`Лот ${index + 1}: некорректный ID источника`)
   if (!VALID_CURRENCIES.has(sourceCurrency)) throw new Error(`Лот ${index + 1}: неподдерживаемая валюта`)
   if (!Number.isSafeInteger(sourcePrice) || sourcePrice < 0) throw new Error(`Лот ${index + 1}: некорректная цена`)

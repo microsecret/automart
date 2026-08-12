@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
 
 export const dynamic = "force-dynamic"
-
-const SOURCE_COUNTRY: Record<string, string> = {
-  USS: "JP", TAA: "JP", EMARAAT: "KR", AJ: "KR", COPART: "US", IAAI: "US",
-  MOBILE_DE: "DE", YCHEZHAI: "CN", GUAZI: "CN", TAOCHE: "CN", UCAR: "CN",
-}
 
 const VALID_COUNTRIES = new Set(["JP", "KR", "CN", "US", "DE"])
 const VALID_BODY_TYPES = new Set(["SEDAN", "SUV", "HATCHBACK", "COUPE", "PICKUP", "WAGON"])
@@ -40,8 +36,8 @@ export async function GET(request: NextRequest) {
     const yearFrom = sp.get("yearFrom")
 
     if (country && !VALID_COUNTRIES.has(country)) return NextResponse.json({ error: "Некорректная страна" }, { status: 400 })
-    if (source && !SOURCE_COUNTRY[source]) return NextResponse.json({ error: "Некорректная площадка" }, { status: 400 })
-    if (country && source && SOURCE_COUNTRY[source] !== country) return NextResponse.json({ error: "Площадка не относится к выбранной стране" }, { status: 400 })
+    if (source && !isAuctionSource(source)) return NextResponse.json({ error: "Некорректная площадка" }, { status: 400 })
+    if (country && source && auctionSourceCountry(source) !== country) return NextResponse.json({ error: "Площадка не относится к выбранной стране" }, { status: 400 })
     if (country) where.country = country
     if (source) where.source = source
     if (make) where.make = { contains: make }

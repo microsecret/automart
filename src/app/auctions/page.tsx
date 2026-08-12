@@ -11,6 +11,7 @@ import VehicleFallback from "@/components/listings/VehicleFallback"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import type { AuctionListing } from "@prisma/client"
+import { AUCTION_SOURCE_COUNTRY, AUCTION_SOURCE_OPTIONS } from "@/lib/auction-sources"
 
 const fetcher = fetchJson
 
@@ -25,23 +26,8 @@ const COUNTRIES = [
 
 const SOURCES = [
   { value: "", label: "Все площадки" },
-  { value: "USS", label: "USS (Япония)" },
-  { value: "TAA", label: "TAA (Япония)" },
-  { value: "EMARAAT", label: "Emaraat (Корея)" },
-  { value: "AJ", label: "AJ (Корея)" },
-  { value: "COPART", label: "Copart (США)" },
-  { value: "IAAI", label: "IAAI (США)" },
-  { value: "MOBILE_DE", label: "Mobile.de (Европа)" },
-  { value: "YCHEZHAI", label: "YCheZhai (Китай)" },
-  { value: "GUAZI", label: "Guazi (Китай)" },
-  { value: "TAOCHE", label: "Taoche (Китай)" },
-  { value: "UCAR", label: "Ucar (Китай)" },
+  ...AUCTION_SOURCE_OPTIONS,
 ]
-
-const SOURCE_COUNTRY: Record<string, string> = {
-  USS: "JP", TAA: "JP", EMARAAT: "KR", AJ: "KR", COPART: "US", IAAI: "US",
-  MOBILE_DE: "DE", YCHEZHAI: "CN", GUAZI: "CN", TAOCHE: "CN", UCAR: "CN",
-}
 
 const auctionYears = Array.from(
   { length: 15 },
@@ -86,7 +72,7 @@ export default function AuctionsPage() {
   const [priceTo, setPriceTo] = useState("")
   const [bodyType, setBodyType] = useState("")
   const [yearFrom, setYearFrom] = useState("")
-  const sourceOptions = useMemo(() => SOURCES.filter((item) => !item.value || !country || SOURCE_COUNTRY[item.value] === country), [country])
+  const sourceOptions = useMemo(() => SOURCES.filter((item) => !item.value || !country || AUCTION_SOURCE_COUNTRY[item.value] === country), [country])
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
 
   const buildQ = () => {
