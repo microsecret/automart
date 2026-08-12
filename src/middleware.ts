@@ -17,8 +17,25 @@ function withSecurityHeaders(response: NextResponse, request: NextRequest) {
   return response
 }
 
+function publicOrigin(request: NextRequest) {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL
+  if (configuredUrl) {
+    try {
+      const url = new URL(configuredUrl)
+      if (url.protocol === "https:" || url.protocol === "http:") return url.origin
+    } catch {
+      // A malformed deployment setting must not block access to protected pages.
+    }
+  }
+
+  return request.nextUrl.origin
+}
+
 function signInRedirect(request: NextRequest) {
-  const signInUrl = new URL("/auth/signin", request.url)
+  // Next.js receives this request from the internal proxy on :4001. Build
+  // customer-facing redirects from the configured public origin, never from
+  // that private listener.
+  const signInUrl = new URL("/auth/signin", publicOrigin(request))
   signInUrl.searchParams.set("callbackUrl", `${request.nextUrl.pathname}${request.nextUrl.search}`)
   return withSecurityHeaders(NextResponse.redirect(signInUrl), request)
 }
@@ -28,7 +45,7 @@ export async function middleware(request: NextRequest) {
   if (!token) return signInRedirect(request)
 
   if (request.nextUrl.pathname.startsWith(ADMIN_PREFIX) && !can(token.role, "admin:access")) {
-    return withSecurityHeaders(NextResponse.redirect(new URL("/?access=denied", request.url)), request)
+    return withSecurityHeaders(NextResponse.redirect(new URL("/?access=denied", publicOrigin(request))), request)
   }
 
   return withSecurityHeaders(NextResponse.next(), request)
