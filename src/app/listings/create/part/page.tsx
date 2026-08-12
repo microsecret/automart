@@ -218,7 +218,7 @@ export default function CreatePartPage() {
               </Stack>
             </Paper>
 
-            <Paper className="create-listing__submit" radius="lg" p="sm" withBorder>
+            <Paper className={styles.submitPanel} radius="lg" p="sm" withBorder>
               <Stack gap={6}>
                 <Button fullWidth type="submit" size="md" radius="md" color="indigo" loading={loading} disabled={uploadingImages} leftSection={<IconCheck size={18} />}>
                   {loading ? "Публикация..." : "Отправить на модерацию"}
