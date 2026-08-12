@@ -79,22 +79,22 @@ function parseAuctionEquipment(value: string | null): AuctionEquipment | null {
 type AuctionConditionInfo = {
   insuranceRecordCount: number | null
   inspectionSummary: string | null
-  newCarComparisonPct: number | null
+  newCarPriceRatioPct: number | null
 }
 
 function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo | null {
   if (!value) return null
   try {
-    const parsed = JSON.parse(value) as { insuranceRecordCount?: unknown; inspectionSummary?: unknown; newCarComparisonPct?: unknown }
+    const parsed = JSON.parse(value) as { insuranceRecordCount?: unknown; inspectionSummary?: unknown; newCarPriceRatioPct?: unknown }
     const insuranceRecordCount = typeof parsed.insuranceRecordCount === "number" && Number.isInteger(parsed.insuranceRecordCount) && parsed.insuranceRecordCount >= 0
       ? parsed.insuranceRecordCount
       : null
     const inspectionSummary = typeof parsed.inspectionSummary === "string" && parsed.inspectionSummary.trim() ? parsed.inspectionSummary.trim() : null
-    const newCarComparisonPct = typeof parsed.newCarComparisonPct === "number" && Number.isInteger(parsed.newCarComparisonPct) && parsed.newCarComparisonPct >= 0 && parsed.newCarComparisonPct <= 100
-      ? parsed.newCarComparisonPct
+    const newCarPriceRatioPct = typeof parsed.newCarPriceRatioPct === "number" && Number.isInteger(parsed.newCarPriceRatioPct) && parsed.newCarPriceRatioPct >= 0 && parsed.newCarPriceRatioPct <= 100
+      ? parsed.newCarPriceRatioPct
       : null
-    return insuranceRecordCount !== null || inspectionSummary || newCarComparisonPct !== null
-      ? { insuranceRecordCount, inspectionSummary, newCarComparisonPct }
+    return insuranceRecordCount !== null || inspectionSummary || newCarPriceRatioPct !== null
+      ? { insuranceRecordCount, inspectionSummary, newCarPriceRatioPct }
       : null
   } catch {
     return null
@@ -252,15 +252,15 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #fff 58%)", borderColor: "#99f6e4" }}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
-                      <Group gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Состояние по данным Encar</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
+                      <Group gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Проверка и история по данным Encar</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
                       <Badge variant="light" color="teal">Проверяйте перед сделкой</Badge>
                     </Group>
-                    <SimpleGrid cols={{ base: 1, sm: conditionInfo.newCarComparisonPct !== null ? 3 : 2 }} spacing="xs">
-                      {conditionInfo.newCarComparisonPct !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Сходство с новым авто</Text><Group justify="space-between" mt={3}><Text fw={800} c="teal.8">{conditionInfo.newCarComparisonPct}%</Text><Text size="xs" c="dimmed">оценка Encar</Text></Group><Progress value={conditionInfo.newCarComparisonPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
+                    <SimpleGrid cols={{ base: 1, sm: conditionInfo.newCarPriceRatioPct !== null ? 3 : 2 }} spacing="xs">
+                      {conditionInfo.newCarPriceRatioPct !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Цена относительно нового авто</Text><Group justify="space-between" mt={3}><Text fw={800} c="teal.8">{conditionInfo.newCarPriceRatioPct}%</Text><Text size="xs" c="dimmed">сравнение Encar</Text></Group><Progress value={conditionInfo.newCarPriceRatioPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
                       {conditionInfo.inspectionSummary && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Техосмотр</Text><Text fw={700} size="sm" mt={4}>{conditionInfo.inspectionSummary}</Text></Paper>}
                       {conditionInfo.insuranceRecordCount !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Страховые записи</Text><Text fw={800} size="lg" c="teal.8" mt={1}>{conditionInfo.insuranceRecordCount}</Text></Paper>}
                     </SimpleGrid>
-                    <Text size="xs" c="dimmed">Количество страховых записей само по себе не описывает повреждения или ремонт. Детали и актуальность сведений сверяются с первоисточником перед заказом.</Text>
+                    <Text size="xs" c="dimmed">Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт. Детали осмотра и актуальность сведений сверяются с первоисточником перед заказом.</Text>
                   </Stack>
                 </Paper>
               )}

@@ -204,16 +204,16 @@ function extractEncarConditionInfo(html: string): AuctionConditionInfo | null {
   // Only accept the number rendered in Encar's visible comparison gauge.
   // URL-encoded links in the same block can contain sequences such as %22.
   const comparisonGauge = comparisonSection.match(/<span[^>]*class="[^"]*num_graph[^"]*"[^>]*>\s*(\d{1,3}|-)\s*%\s*<\/span>/)
-  const newCarComparisonPct = Number(comparisonGauge?.[1])
+  const newCarPriceRatioPct = Number(comparisonGauge?.[1])
   const inspectionSummary = inspectionText?.includes("일반")
     ? inspectionText.includes("엔카직영") ? "Общая проверка · Encar Direct" : "Общая проверка"
     : null
   const result = {
     insuranceRecordCount: Number.isInteger(insuranceRecordCount) ? insuranceRecordCount : null,
     inspectionSummary,
-    newCarComparisonPct: Number.isInteger(newCarComparisonPct) && newCarComparisonPct >= 0 && newCarComparisonPct <= 100 ? newCarComparisonPct : null,
+    newCarPriceRatioPct: Number.isInteger(newCarPriceRatioPct) && newCarPriceRatioPct >= 0 && newCarPriceRatioPct <= 100 ? newCarPriceRatioPct : null,
   }
-  return result.insuranceRecordCount !== null || result.inspectionSummary || result.newCarComparisonPct !== null ? result : null
+  return result.insuranceRecordCount !== null || result.inspectionSummary || result.newCarPriceRatioPct !== null ? result : null
 }
 
 /** Extracts deduplicated public detail links from one Encar catalogue page. */

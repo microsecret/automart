@@ -24,7 +24,7 @@ export type AuctionEquipmentSnapshot = {
 export type AuctionConditionInfo = {
   insuranceRecordCount: number | null
   inspectionSummary: string | null
-  newCarComparisonPct: number | null
+  newCarPriceRatioPct: number | null
 }
 
 export type AuctionImportItem = {
