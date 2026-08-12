@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
 import { AUCTION_BODY_TYPES } from "@/lib/auction-normalization"
+import { resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
 
 export const dynamic = "force-dynamic"
 
@@ -35,6 +36,12 @@ export async function GET(request: NextRequest) {
     const priceFrom = sp.get("priceFrom")
     const priceTo = sp.get("priceTo")
     const yearFrom = sp.get("yearFrom")
+    const maxImportAgeYears = resolveMaximumImportAgeYears(undefined)
+    // The parser excludes over-age lots on import, but the public read path
+    // must enforce the same catalogue policy too. This keeps an old record
+    // from becoming visible if it originated from a different importer.
+    const minimumImportYear = new Date().getFullYear() - maxImportAgeYears
+    const earliestBoundaryMonth = `${minimumImportYear}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
 
     if (country && !VALID_COUNTRIES.has(country)) return NextResponse.json({ error: "Некорректная страна" }, { status: 400 })
     if (source && !isAuctionSource(source)) return NextResponse.json({ error: "Некорректная площадка" }, { status: 400 })
@@ -51,11 +58,23 @@ export async function GET(request: NextRequest) {
       if (minPrice !== undefined) where.finalPrice.gte = minPrice
       if (maxPrice !== undefined) where.finalPrice.lte = maxPrice
     }
+    let requestedYearFrom: number | undefined
     if (yearFrom) {
       const parsedYear = Number.parseInt(yearFrom, 10)
       if (!Number.isInteger(parsedYear) || parsedYear < 1886 || parsedYear > new Date().getFullYear() + 1) return NextResponse.json({ error: "Некорректный год" }, { status: 400 })
-      where.year = { gte: parsedYear }
+      requestedYearFrom = parsedYear
     }
+    where.year = { gte: Math.max(minimumImportYear, requestedYearFrom ?? minimumImportYear) }
+    // `manufacturedMonth` is optional. A record without a precise month stays
+    // in the boundary year and is explicitly marked for documentary review;
+    // a record with a known older month is reliably excluded here.
+    where.AND = [{
+      OR: [
+        { year: { gt: minimumImportYear } },
+        { year: minimumImportYear, manufacturedMonth: null },
+        { year: minimumImportYear, manufacturedMonth: { gte: earliestBoundaryMonth } },
+      ],
+    }]
     const bodyType = sp.get("bodyType")
     if (bodyType && !VALID_BODY_TYPES.has(bodyType)) return NextResponse.json({ error: "Некорректный тип кузова" }, { status: 400 })
     if (bodyType) where.bodyType = bodyType
@@ -92,6 +111,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       listings,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      importPolicy: {
+        maxAgeYears: maxImportAgeYears,
+        minimumYear: minimumImportYear,
+        note: "Правило каталога для предварительного импорта; таможенную категорию и дату выпуска необходимо сверить по документам.",
+      },
       analytics: {
         total,
         averageFinalPrice: aggregates._avg.finalPrice ? Math.round(aggregates._avg.finalPrice) : null,

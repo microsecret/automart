@@ -32,13 +32,14 @@ const SOURCES = [
 ]
 
 const auctionYears = Array.from(
-  { length: 15 },
+  { length: 7 },
   (_, index) => String(new Date().getFullYear() + 1 - index),
 )
 
 type AuctionResponse = {
   listings: AuctionListing[]
   pagination: { total: number; pages: number; limit: number }
+  importPolicy?: { maxAgeYears: number; minimumYear: number; note: string }
   analytics?: {
     total: number
     averageFinalPrice: number | null
@@ -131,6 +132,7 @@ export default function AuctionsPage() {
   const sourceSummary = analytics?.sources.map((item) => `${item.source}: ${item.count}`).join(" · ")
   const powerCoverage = analytics?.total ? Math.round((analytics.powerKnown / analytics.total) * 100) : 0
   const mileageCoverage = analytics?.total ? Math.round((analytics.mileageKnown / analytics.total) * 100) : 0
+  const importPolicy = data?.importPolicy
 
   return (
     <Container size="xl" p={{ base: "sm", md: "md" }}>
@@ -148,6 +150,10 @@ export default function AuctionsPage() {
             <Group justify="space-between" align="center">
               <Box><Text size="sm" fw={750}>Подберите лот под импорт</Text><Text size="xs" c="dimmed">Площадка зависит от страны, цена лота пересчитывается по курсу ЦБ.</Text></Box>
               {hasActiveFilters && <Button variant="subtle" color="gray" size="compact-sm" leftSection={<IconX size={14} />} onClick={resetFilters}>Сбросить</Button>}
+            </Group>
+            <Group gap="xs" align="center" wrap="wrap">
+              <Badge color="teal" variant="light">Импорт-фильтр: не старше {importPolicy?.maxAgeYears ?? 5} лет</Badge>
+              <Text size="xs" c="dimmed">Год выпуска сверяется с карточкой; итоговую таможенную категорию подтвердим по документам.</Text>
             </Group>
           <Box className="auction-filter-grid">
             <Select label="Страна" data={COUNTRIES} value={country} onChange={(value) => { setCountry(value || ""); setSource(""); setPage(1) }} size="sm" />
