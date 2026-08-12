@@ -201,7 +201,10 @@ function extractEncarConditionInfo(html: string): AuctionConditionInfo | null {
   const comparisonIndex = html.indexOf("신차대비")
   const comparisonSection = comparisonIndex < 0 ? "" : html.slice(comparisonIndex, comparisonIndex + 1_500)
   const insuranceRecordCount = Number(insuranceText?.match(/(\d+)\s*건/)?.[1])
-  const newCarComparisonPct = Number(comparisonSection.match(/(\d{1,3})\s*%/)?.[1])
+  // Only accept the number rendered in Encar's visible comparison gauge.
+  // URL-encoded links in the same block can contain sequences such as %22.
+  const comparisonGauge = comparisonSection.match(/<span[^>]*class="[^"]*num_graph[^"]*"[^>]*>\s*(\d{1,3}|-)\s*%\s*<\/span>/)
+  const newCarComparisonPct = Number(comparisonGauge?.[1])
   const inspectionSummary = inspectionText?.includes("일반")
     ? inspectionText.includes("엔카직영") ? "Общая проверка · Encar Direct" : "Общая проверка"
     : null
