@@ -16,9 +16,11 @@ flowchart LR
   Parser --> Translate["Russian localization"]
   Parser --> Rates["CBR exchange-rate snapshot"]
   Parser --> Inspection["Normalized damage report + remote photo URLs"]
+  Parser --> UnifiedSpecs["Canonical source detail rows for every country"]
   Parser --> Prisma
   Next --> Media["Direct source photo URLs"]
   Next --> IautosMedia["Allow-listed transient iAutos media relay"]
+  Next --> SEO["SSR metadata + JSON-LD + sitemap + manifest"]
 ```
 
 ## Task routing graph
@@ -27,6 +29,7 @@ flowchart LR
 |---|---|---|
 | Auction catalogue UI | `src/app/auctions/page.tsx` | `src/app/api/auctions/route.ts`, auction components |
 | Auction detail and galleries | `src/app/auctions/[id]/page.tsx` | `src/lib/auction-media.ts`, source collector |
+| Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |
 | Admin analytics and charts | `src/app/admin/page.tsx` | `src/app/api/admin/stats/route.ts`, analytics visit route |
 | Sidebar/header/footer | `src/components/layout/` | app shell and responsive styles |
@@ -37,6 +40,8 @@ flowchart LR
 | Freshness/removal | source refresh route | `auction-crawl-policy.ts`, `auction-source-freshness.ts`, listing status fields |
 | Production schedule | `scripts/run-encar-collector.sh` | cron installer and deployment script |
 | Delivery partner onboarding | `src/app/api/delivery-organizations/route.ts` | delivery workspace, admin partner registry |
+| Garage to moderated listing | `src/app/api/garage/route.ts` | dashboard garage, vehicle creation workspace |
+| Search metadata and structured data | `src/app/layout.tsx` | route layouts, `StructuredData.tsx`, sitemap/robots/manifest |
 
 ## Auction ingestion graph
 
@@ -47,7 +52,8 @@ flowchart TD
   Seen -->|yes| Skip["Skip repeated detail request"]
   Seen -->|new or due| Detail["Fetch public detail page"]
   Detail --> Normalize["Normalize make/model/specifications"]
-  Normalize --> Russian["Keep only Russian-safe public text"]
+  Normalize --> Canonical["Build one ordered source-detail schema"]
+  Canonical --> Russian["Keep only Russian-safe public text"]
   Russian --> CBR["Apply current CBR rate"]
   Russian --> Damage["Normalize source damage zones, kinds and coordinates"]
   Damage --> Upsert
@@ -76,10 +82,29 @@ are used next, and untranslated foreign prose is never published. Only defect
 text, normalized coordinates and allow-listed HTTPS URLs are stored. Diagram
 and defect image bytes load on demand from the source into the browser cache.
 The detail widget navigates across every defect photo in the active inspection
-section, even when the selected defect itself has only one photo. Imported lots
-with normalized source attributes render the detailed source table as the
-single specification block; the compact legacy characteristics grid remains
-only as a fallback for listings without source attributes.
+section, even when the selected defect itself has only one photo. Imported and
+legacy lots both render the same ordered source-detail table. Known database
+columns fill canonical rows first, translated source attributes enrich them,
+and an unavailable source value is stated explicitly instead of changing the
+layout by country. The browser decodes only the active full-size photo and one
+card-size neighbour; long galleries render a moving window of thumbnails.
+
+## Personal listing workflow
+
+```mermaid
+flowchart LR
+  Garage["Private garage vehicle"] --> Prefill["Owner-only prefilled listing form"]
+  Prefill --> Photos["Price, photos and description"]
+  Photos --> Pending["PENDING_MODERATION"]
+  Pending --> Dashboard["My listings status and reason"]
+  Pending -->|approved| Public["Public catalogue"]
+  Pending -->|changes required| Dashboard
+```
+
+The garage endpoint can return one selected vehicle only when it belongs to the
+current user and remains in the private garage category. Creating an advert
+still creates a new transport record and listing atomically; it never publishes
+the private garage record directly.
 
 ## Source inventory
 

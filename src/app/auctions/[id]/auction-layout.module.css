@@ -1,0 +1,48 @@
+.heading {
+  width: min(calc(100% - 32px), 1320px);
+  margin: 24px auto 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  color: #172033;
+  font: 850 clamp(1.5rem, 3vw, 2rem) / 1.08 var(--font-display), sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.subtitle {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.price {
+  flex-shrink: 0;
+  color: #3730a3;
+  font: 850 clamp(1.4rem, 3vw, 1.75rem) / 1 var(--font-display), sans-serif;
+}
+
+@media (max-width: 600px) {
+  .heading {
+    width: min(calc(100% - 24px), 1320px);
+    margin-top: 16px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .subtitle {
+    font-size: 0.78rem;
+  }
+}

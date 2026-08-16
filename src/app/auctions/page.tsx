@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Divider, Progress } from "@mantine/core"
-import { IconBolt, IconCar, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
+import { IconArrowRight, IconBolt, IconCar, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
@@ -12,7 +12,7 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import type { AuctionListing } from "@prisma/client"
 import { AUCTION_SOURCE_COUNTRY, AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceLabel } from "@/lib/auction-sources"
-import { auctionMakeLabel, normalizeAuctionModel } from "@/lib/auction-normalization"
+import { auctionMakeLabel, auctionVehicleIdentity } from "@/lib/auction-normalization"
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "./auctions.module.css"
 
@@ -81,6 +81,14 @@ function isRentalTransferListing(conditionInfo: string | null) {
     return false
   }
 }
+
+function auctionPriceSignal(price: number, median: number | null | undefined) {
+  if (!median || median <= 0 || price <= 0) return null
+  const ratio = price / median
+  if (ratio <= 0.88) return { label: "Отличная цена", color: "green" }
+  if (ratio <= 1.08) return { label: "Рыночная цена", color: "teal" }
+  return { label: "Выше медианы", color: "orange" }
+}
 // Remote auction photos remain on the source CDN. A short user intent
 // (hover, focus or touch) is enough to warm the first full-size image in the
 // browser cache, so opening a lot does not wait for a cold CDN request.
@@ -128,13 +136,14 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
   const originalImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0] || ""
   const image = auctionCardImageUrl(originalImage)
   const hasImage = Boolean(image) && !failed
+  const identity = auctionVehicleIdentity(listing.make, listing.model)
 
   return (
     <Box className="auction-card__media" data-empty-media={!hasImage || undefined}>
       {!hasImage && <VehicleFallback type="CAR" compact />}
       {hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={`${auctionMakeLabel(listing.make)} ${normalizeAuctionModel(listing.model) || "автомобиль"}`} referrerPolicy="no-referrer" onError={() => setFailed(true)} loading="lazy" decoding="async" />
+        <img src={image} alt={identity.title} referrerPolicy="no-referrer" onError={() => setFailed(true)} loading="lazy" decoding="async" />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
           <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
@@ -446,7 +455,12 @@ export default function AuctionsPage() {
           </Paper>
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm">
-            {listings.map((l) => (
+            {listings.map((l) => {
+              const identity = auctionVehicleIdentity(l.make, l.model)
+              const rentalTransfer = isRentalTransferListing(l.conditionInfo)
+              const displayedPrice = rentalTransfer ? l.priceRub : l.finalPrice
+              const priceSignal = rentalTransfer ? null : auctionPriceSignal(displayedPrice, analytics?.medianFinalPrice)
+              return (
               <Link
                 key={l.id}
                 href={`/auctions/${l.id}`}
@@ -461,9 +475,9 @@ export default function AuctionsPage() {
                   <AuctionMedia listing={l} />
                   <Box p="md" className="auction-result-card__content">
                     <Group gap="sm" wrap="nowrap" align="center">
-                      <BrandIcon brand={auctionMakeLabel(l.make)} size={34} variant="rounded" />
+                      <BrandIcon brand={identity.make} size={34} variant="rounded" />
                       <Box style={{ minWidth: 0, flex: 1 }}>
-                        <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{auctionMakeLabel(l.make)} {normalizeAuctionModel(l.model) || "Модель уточняется"}</Text>
+                        <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{identity.title}</Text>
                         <Text className="auction-result-card__summary" lineClamp={1}>
                           {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
                         </Text>
@@ -474,13 +488,16 @@ export default function AuctionsPage() {
                       {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconCar size={12} />}>Кузов: {BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
                       <Badge className={styles.resultSpec} size="xs" variant="light" color={l.power ? "violet" : "gray"} leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
-                      {isRentalTransferListing(l.conditionInfo) && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue">Переоформление аренды</Badge>}
+                      {rentalTransfer && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue">Переоформление аренды</Badge>}
                       {(parseAuctionImages(l.images)?.length || 0) > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue" leftSection={<IconPhoto size={12} />}>Фото: {parseAuctionImages(l.images)?.length}</Badge>}
                       {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">
-                      <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(isRentalTransferListing(l.conditionInfo) ? l.priceRub : l.finalPrice)}</Text>
-                      <Text className="auction-result-card__price-note">{isRentalTransferListing(l.conditionInfo) ? "Остаток регулярных платежей" : "Предварительно под ключ в РФ"}</Text>
+                      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+                        <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(displayedPrice)}</Text>
+                        {priceSignal && <Badge size="xs" variant="light" color={priceSignal.color}>{priceSignal.label}</Badge>}
+                      </Group>
+                      <Text className="auction-result-card__price-note">{rentalTransfer ? "Остаток регулярных платежей" : "Предварительно под ключ в РФ · оценка относительно медианы выдачи"}</Text>
                     </Box>
                     {l.auctionDate && (
                       <Group gap={4} className="auction-result-card__date" wrap="nowrap">
@@ -493,10 +510,15 @@ export default function AuctionsPage() {
                         {l.lotNumber && <Text size="xs" c="gray.4" lineClamp={1}>· #{l.lotNumber}</Text>}
                       </Group>
                     )}
+                    <Group className={styles.detailCta} justify="space-between" mt="sm" gap="xs">
+                      <Text size="sm" fw={800}>Подробнее</Text>
+                      <IconArrowRight size={17} />
+                    </Group>
                   </Box>
                 </Paper>
               </Link>
-            ))}
+              )
+            })}
           </SimpleGrid>
         )}
 

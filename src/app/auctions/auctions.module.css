@@ -89,6 +89,35 @@
   font-weight: 700;
 }
 
+.detailCta {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--mantine-color-indigo-0);
+  color: var(--mantine-color-indigo-7);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.detailCta svg {
+  transition: transform 160ms ease;
+}
+
+:global(.auction-result-card:hover) .detailCta {
+  background: var(--mantine-color-indigo-6);
+  color: white;
+}
+
+:global(.auction-result-card:hover) .detailCta svg {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detailCta,
+  .detailCta svg {
+    transition: none;
+  }
+}
+
 @media (max-width: 480px) {
   .brandDiscovery {
     margin-inline: -2px;

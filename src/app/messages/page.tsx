@@ -80,7 +80,7 @@ export default function MessagesPage() {
             <Title order={1} size="h2">Сообщения</Title>
             <Text c="dimmed">Диалоги по объявлениям и договорённостям с продавцами.</Text>
           </Stack>
-          <Button component={Link} href="/listings" variant="light" color="indigo" rightSection={<IconArrowRight size={16} />}>
+          <Button component={Link} href="/" variant="light" color="indigo" rightSection={<IconArrowRight size={16} />}>
             Найти объявление
           </Button>
         </Group>
@@ -100,7 +100,7 @@ export default function MessagesPage() {
                 <Text fw={700} size="lg">Пока нет диалогов</Text>
                 <Text size="sm" c="dimmed" ta="center" maw={410}>Откройте подходящее объявление и нажмите «Написать продавцу». Диалог сразу появится здесь.</Text>
               </Stack>
-              <Button component={Link} href="/listings" color="indigo" leftSection={<IconMessageCircle2 size={18} />}>Перейти к объявлениям</Button>
+              <Button component={Link} href="/" color="indigo" leftSection={<IconMessageCircle2 size={18} />}>Перейти к объявлениям</Button>
             </Stack>
           </Center>
           </Paper>

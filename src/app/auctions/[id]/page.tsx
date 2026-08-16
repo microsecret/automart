@@ -4,56 +4,26 @@ import { useEffect, useMemo, useState, Suspense } from "react"
 import { useParams, useRouter } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
-import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, TextInput, Textarea, ThemeIcon, Center, Loader, Anchor, Progress, UnstyledButton } from "@mantine/core"
+import { ActionIcon, Anchor, Badge, Box, Button, Center, Container, Group, Loader, Paper, Progress, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, UnstyledButton } from "@mantine/core"
 import { useMediaQuery } from "@mantine/hooks"
-import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconEye, IconGasStation, IconManualGearbox, IconPalette, IconShieldCheck, IconTruckDelivery, IconX, IconArrowLeft, IconHome, IconListDetails, IconPhotoOff } from "@tabler/icons-react"
+import { IconArrowLeft, IconArrowRight, IconCheck, IconChevronLeft, IconChevronRight, IconEye, IconGavel, IconHome, IconListDetails, IconPhotoOff, IconShieldCheck, IconTruckDelivery, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import AuctionDamageReport from "@/components/auctions/AuctionDamageReport"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { auctionCardImageUrl, auctionThumbnailImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
-import { auctionMakeLabel, isCustomerFacingRussianText, normalizeAuctionModel } from "@/lib/auction-normalization"
+import { auctionVehicleIdentity, isCustomerFacingRussianText } from "@/lib/auction-normalization"
 import { auctionSourceLabel } from "@/lib/auction-sources"
 import { AUCTION_DAMAGE_KINDS, type AuctionDamageKind, type AuctionDamageReport as AuctionDamageReportValue } from "@/lib/auction-damage"
+import { buildAuctionSourceSpecs } from "@/lib/auction-source-details"
+import { formatPriceShort } from "@/lib/format"
+import BrandIcon from "@/components/brands/BrandIcon"
 import type { AuctionListing } from "@prisma/client"
 import styles from "./auction-detail.module.css"
 
-type AuctionDetailResponse = { listing: AuctionListing }
+type AuctionDetailResponse = { listing: AuctionListing; similar: AuctionListing[] }
 type AuctionInquiryResponse = { success: true; inquiry: { id: string; createdAt: string } }
-
-const AUCTION_VALUE_LABELS = {
-  fuel: {
-    GASOLINE: "Бензин",
-    DIESEL: "Дизель",
-    ELECTRIC: "Электро",
-    HYBRID: "Гибрид",
-    GAS: "Газ",
-    OTHER: "Другое",
-  },
-  transmission: {
-    MANUAL: "Механика",
-    AUTOMATIC: "Автомат",
-    VARIATOR: "Вариатор",
-    ROBOTIC: "Роботизированная",
-  },
-  body: {
-    SEDAN: "Седан",
-    HATCHBACK: "Хэтчбек",
-    SUV: "Кроссовер / внедорожник",
-    COUPE: "Купе",
-    CONVERTIBLE: "Кабриолет",
-    WAGON: "Универсал",
-    MINIVAN: "Минивэн",
-    PICKUP: "Пикап",
-    OTHER: "Другой",
-  },
-} as const
-
-function auctionValueLabel(value: string, group: keyof typeof AUCTION_VALUE_LABELS) {
-  const labels = AUCTION_VALUE_LABELS[group] as Record<string, string>
-  return labels[value] || value
-}
 
 type AuctionEquipment = {
   totalReported: number | null
@@ -165,18 +135,6 @@ function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo |
   }
 }
 
-function parseAuctionSpecs(value: string | null) {
-  if (!value || !isCustomerFacingRussianText(value)) return []
-  return value.split(/[;\n]+/).flatMap((entry) => {
-    const separator = entry.indexOf(":")
-    if (separator <= 0) return []
-    const label = entry.slice(0, separator).trim()
-    const detail = entry.slice(separator + 1).trim()
-    if (!label || !detail || label.length > 80 || detail.length > 180 || !isCustomerFacingRussianText(`${label}: ${detail}`)) return []
-    return [{ label, detail }]
-  }).slice(0, 24)
-}
-
 function AuctionDetail() {
   const params = useParams()
   const router = useRouter()
@@ -214,10 +172,33 @@ function AuctionDetail() {
   const equipment = listing ? parseAuctionEquipment(listing.equipment) : null
   const conditionInfo = listing ? parseAuctionConditionInfo(listing.conditionInfo) : null
   const isRentalTransfer = conditionInfo?.verifiedItems.some((item) => item.label === "Тип предложения" && /аренд/i.test(item.status)) || false
-  const publicModel = listing ? normalizeAuctionModel(listing.model) || "Модель уточняется" : ""
+  const identity = listing ? auctionVehicleIdentity(listing.make, listing.model) : null
   const publicLotNumber = listing && isCustomerFacingRussianText(listing.lotNumber) ? listing.lotNumber : null
   const publicDescription = listing && isCustomerFacingRussianText(listing.descriptionRu) ? listing.descriptionRu : null
-  const publicSpecs = listing ? parseAuctionSpecs(listing.specsRu) : []
+  const publicSpecs = listing ? buildAuctionSourceSpecs({
+    sourceId: listing.sourceId,
+    year: listing.year,
+    manufacturedMonth: listing.manufacturedMonth,
+    mileage: listing.mileage,
+    lotNumber: listing.lotNumber,
+    sourcePrice: listing.sourcePrice,
+    sourceCurrency: listing.sourceCurrency,
+    engineVolume: listing.engineVolume,
+    power: listing.power,
+    fuelType: listing.fuelType,
+    transmission: listing.transmission,
+    bodyType: listing.bodyType,
+    driveType: listing.driveType,
+    color: listing.color,
+    vin: listing.vin,
+    location: listing.location,
+    conditionInfo: listing.conditionInfo,
+  }, listing.specsRu) : []
+  const thumbnailIndexes = useMemo(() => {
+    if (galleryImages.length <= 30) return galleryImages.map((_, index) => index)
+    const start = Math.max(0, Math.min(activeImageIndex - 12, galleryImages.length - 30))
+    return Array.from({ length: 30 }, (_, offset) => start + offset)
+  }, [activeImageIndex, galleryImages])
 
   useEffect(() => {
     setActiveImageIndex(0)
@@ -228,13 +209,13 @@ function AuctionDetail() {
   useEffect(() => {
     if (galleryImages.length < 2 || typeof window === "undefined") return
 
-    // Warm both browsing directions. A visitor often checks the previous
-    // inspection photo after zooming into a detail, so preloading only the
-    // following images made backwards navigation depend on the remote CDN.
-    // Images stay only in the browser cache; our server stores URLs, not files.
+    // Decode only the active full-size image and one card-size neighbour.
+    // Damage reports often contain dozens of remote photos; preloading several
+    // 1600px renditions per click made the gallery compete with the UI itself.
+    const nextImage = galleryImages[(activeImageIndex + 1) % galleryImages.length]
     const preloadUrls = [
       activeImageHighQuality,
-      ...[-1, 1, 2].map((offset) => highQualityAuctionImageUrl(galleryImages[(activeImageIndex + offset + galleryImages.length) % galleryImages.length])),
+      auctionCardImageUrl(nextImage),
     ].filter((imageUrl) => imageUrl && !loadedImageUrls.has(imageUrl))
 
     let cancelled = false
@@ -302,6 +283,7 @@ function AuctionDetail() {
   if (!listing) return <Container py={80}><Center><Text c="gray.5">Лот не найден</Text></Center></Container>
 
   const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇪🇺 Европа", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
+  const publicIdentity = identity || auctionVehicleIdentity(listing.make, listing.model)
 
   return (
     <Container size="xl" py="lg">
@@ -320,7 +302,7 @@ function AuctionDetail() {
           <Button component={Link} href="/" variant="default" radius="xl" size="compact-sm" leftSection={<IconHome size={14} />}>Главная</Button>
           <Button component={Link} href="/auctions" variant="light" color="indigo" radius="xl" size="compact-sm" leftSection={<IconGavel size={14} />}>Все аукционы</Button>
           <Paper px="sm" py={5} radius="xl" withBorder style={{ minWidth: 0, background: "#f8fafc" }}>
-            <Text size="xs" fw={700} c="dark.7" lineClamp={1}>{auctionMakeLabel(listing.make)} {publicModel}</Text>
+            <Text size="xs" fw={700} c="dark.7" lineClamp={1}>{publicIdentity.title}</Text>
           </Paper>
         </Group>
 
@@ -360,7 +342,7 @@ function AuctionDetail() {
                         key={displayedActiveImage}
                         className={styles.galleryImage}
                         src={displayedActiveImage}
-                        alt={`${auctionMakeLabel(listing.make)} ${publicModel}, фото ${activeImageIndex + 1}`}
+                        alt={`${publicIdentity.title}, фото ${activeImageIndex + 1}`}
                         referrerPolicy="no-referrer"
                         decoding="async"
                         fetchPriority={activeImageIndex === 0 ? "high" : "auto"}
@@ -376,6 +358,12 @@ function AuctionDetail() {
                       />
                     </>
                   )}
+                  {galleryImages.length > 1 && (
+                    <>
+                      <ActionIcon aria-label="Предыдущее фото" variant="filled" color="dark" radius="xl" size="lg" pos="absolute" left={12} top="50%" style={{ zIndex: 3, transform: "translateY(-50%)", opacity: 0.82 }} onClick={() => setActiveImageIndex((activeImageIndex - 1 + galleryImages.length) % galleryImages.length)}><IconChevronLeft size={20} /></ActionIcon>
+                      <ActionIcon aria-label="Следующее фото" variant="filled" color="dark" radius="xl" size="lg" pos="absolute" right={12} top="50%" style={{ zIndex: 3, transform: "translateY(-50%)", opacity: 0.82 }} onClick={() => setActiveImageIndex((activeImageIndex + 1) % galleryImages.length)}><IconChevronRight size={20} /></ActionIcon>
+                    </>
+                  )}
                   <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{publicLotNumber ? `${auctionSourceLabel(listing.source)} · ${publicLotNumber}` : auctionSourceLabel(listing.source)}</Badge>
                   <Stack pos="absolute" top={16} right={16} gap={6} align="flex-end">
                     <Badge color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
@@ -385,7 +373,9 @@ function AuctionDetail() {
                 {galleryImages.length > 1 && (
                   <Box p="sm" style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
                     <Group gap="xs" wrap="nowrap" style={{ overflowX: "auto", paddingBottom: 2 }}>
-                      {galleryImages.map((image, index) => (
+                      {thumbnailIndexes.map((index) => {
+                        const image = galleryImages[index]
+                        return (
                         <UnstyledButton
                           key={image}
                           onClick={() => setActiveImageIndex(index)}
@@ -399,45 +389,22 @@ function AuctionDetail() {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={auctionThumbnailImageUrl(image)} alt="" referrerPolicy="no-referrer" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.style.opacity = "0.25" }} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
                         </UnstyledButton>
-                      ))}
+                        )
+                      })}
                     </Group>
-                    <Text size="xs" c="dimmed" mt={6}>Фото {activeImageIndex + 1} из {galleryImages.length}</Text>
+                    <Text size="xs" c="dimmed" mt={6}>Фото {activeImageIndex + 1} из {galleryImages.length}{galleryImages.length > 30 ? " · показаны ближайшие миниатюры" : ""}</Text>
                   </Box>
                 )}
               </Paper>
 
-              {publicSpecs.length === 0 && <Paper radius="md" p="md" withBorder>
-                <Stack gap="sm">
-                  <Group gap="sm"><IconCar size={18} color="#4f46e5" /><Text fw={700} c="dark.9">Характеристики</Text></Group>
-                  <SimpleGrid className="auction-detail-specs" cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
-                    <SpecRow icon={<IconCalendar size={16} />} label="Выпуск" value={listing.manufacturedMonth ? `${listing.manufacturedMonth.slice(5)}.${listing.manufacturedMonth.slice(0, 4)}` : String(listing.year)} />
-                    {listing.mileage && <SpecRow icon={<IconGauge size={16} />} label="Пробег" value={`${listing.mileage.toLocaleString("ru")} км`} />}
-                    {listing.fuelType && <SpecRow icon={<IconGasStation size={16} />} label="Топливо" value={auctionValueLabel(listing.fuelType, "fuel")} />}
-                    {listing.transmission && <SpecRow icon={<IconManualGearbox size={16} />} label="КПП" value={auctionValueLabel(listing.transmission, "transmission")} />}
-                    {listing.bodyType && <SpecRow icon={<IconCar size={16} />} label="Кузов" value={auctionValueLabel(listing.bodyType, "body")} />}
-                    {listing.color && <SpecRow icon={<IconPalette size={16} />} label="Цвет" value={listing.color} />}
-                    {listing.engineVolume && <SpecRow icon={<IconCar size={16} />} label="Объём" value={`${Math.round(listing.engineVolume).toLocaleString("ru-RU")} см³`} />}
-                    <SpecRow icon={<IconCar size={16} />} label="Мощность" value={listing.power ? `${listing.power} л.с.` : "Не опубликована источником"} multiline={!listing.power} />
-                    {listing.location && <SpecRow icon={<IconMapPin size={16} />} label="Локация" value={listing.location} multiline />}
-                  </SimpleGrid>
-                  <Group gap={6} mt={2}>
-                    <Text size="xs" c="dimmed">Данные автомобиля:</Text>
-                    <Anchor href={listing.sourceUrl} target="_blank" rel="noreferrer" size="xs" fw={600}>
-                      Открыть оригинальное объявление на {auctionSourceLabel(listing.source)}
-                    </Anchor>
-                  </Group>
-                </Stack>
-              </Paper>}
-
-              {publicSpecs.length > 0 && (
-                <Paper radius="md" p="md" withBorder>
+              <Paper radius="md" p="md" withBorder>
                   <Stack gap="sm">
-                    <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconListDetails size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и переведены на русский язык</Text></Box></Group>
+                    <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconListDetails size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и приведены к единому формату для всех площадок</Text></Box></Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={0} verticalSpacing={0}>
                       {publicSpecs.map((item) => (
                         <Group key={`${item.label}-${item.detail}`} justify="space-between" align="flex-start" gap="md" py="xs" px={{ base: 0, sm: "xs" }} wrap="nowrap" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
                           <Text size="sm" c="dimmed">{item.label}</Text>
-                          <Text size="sm" fw={700} ta="right" c="dark.8" style={{ overflowWrap: "anywhere" }}>{item.detail}</Text>
+                          <Text size="sm" fw={item.available ? 700 : 500} ta="right" c={item.available ? "dark.8" : "gray.5"} style={{ overflowWrap: "anywhere" }}>{item.detail}</Text>
                         </Group>
                       ))}
                     </SimpleGrid>
@@ -449,7 +416,6 @@ function AuctionDetail() {
                     </Group>
                   </Stack>
                 </Paper>
-              )}
 
               {equipment && (
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f8fafc 0%, #fff 56%)" }}>
@@ -504,8 +470,8 @@ function AuctionDetail() {
 
               {/* Умный калькулятор */}
               <AuctionCalculator
-                make={auctionMakeLabel(listing.make)}
-                model={publicModel}
+                make={publicIdentity.make}
+                model={publicIdentity.model}
                 year={listing.year}
                 manufacturedMonth={listing.manufacturedMonth}
                 engineVolume={listing.engineVolume}
@@ -535,7 +501,7 @@ function AuctionDetail() {
                 <form onSubmit={handleSubmit}>
                   <Stack gap="sm">
                     <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="dark.9">Заказать авто</Text></Group>
-                    <Text size="xs" c="gray.5">{auctionMakeLabel(listing.make)} {publicModel} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
+                    <Text size="xs" c="gray.5">{publicIdentity.title} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
                     <Button component={Link} href={`/dashboard/deliveries?auctionListingId=${listing.id}`} variant="light" color="indigo" radius="md" size="sm" leftSection={<IconTruckDelivery size={16} />} fullWidth>Открыть сделку в кабинете</Button>
                     <Text size="xs" c="gray.5" ta="center">Для отслеживания маршрута, счетов и документов после входа.</Text>
                     <TextInput label="Ваше имя" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="sm" />
@@ -552,17 +518,42 @@ function AuctionDetail() {
             </Paper>
           </Box>
         </Box>
+
+        {data?.similar && data.similar.length > 0 && (
+          <Stack gap="sm" mt="md">
+            <Group justify="space-between" align="flex-end" gap="sm">
+              <Box>
+                <Text component="h2" fz={{ base: 21, sm: 25 }} fw={850} c="dark.9">Похожие автомобили</Text>
+                <Text size="sm" c="dimmed">Близкие по марке, году и бюджету предложения из той же страны</Text>
+              </Box>
+              <Button component={Link} href={`/auctions?make=${encodeURIComponent(publicIdentity.make)}&country=${listing.country}`} variant="subtle" color="indigo" radius="xl" rightSection={<IconArrowRight size={16} />}>Смотреть все</Button>
+            </Group>
+            <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
+              {data.similar.map((similarListing) => {
+                const similarIdentity = auctionVehicleIdentity(similarListing.make, similarListing.model)
+                const similarImages = parseAuctionImages(similarListing.images) || []
+                const similarImage = isSafeMediaUrl(similarListing.imageUrl) ? similarListing.imageUrl : similarImages[0]
+                return (
+                  <Paper key={similarListing.id} component={Link} href={`/auctions/${similarListing.id}`} radius="lg" withBorder className={styles.similarCard}>
+                    <Box h={150} bg="gray.1" pos="relative" style={{ overflow: "hidden" }}>
+                      {similarImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={auctionCardImageUrl(similarImage)} alt={similarIdentity.title} loading="lazy" decoding="async" referrerPolicy="no-referrer" className={styles.similarImage} />
+                      ) : <Center h="100%"><IconPhotoOff size={28} color="var(--mantine-color-gray-5)" /></Center>}
+                      <Badge pos="absolute" top={10} left={10} color="dark" variant="filled">{similarListing.year}</Badge>
+                    </Box>
+                    <Stack gap={7} p="md">
+                      <Group gap="xs" wrap="nowrap"><BrandIcon brand={similarIdentity.make} size={30} /><Text fw={800} c="dark.9" lineClamp={1}>{similarIdentity.title}</Text></Group>
+                      <Group justify="space-between" gap="xs" wrap="nowrap"><Text fw={850} c="indigo.8">{formatPriceShort(similarListing.finalPrice)}</Text><IconArrowRight size={16} color="var(--mantine-color-indigo-6)" /></Group>
+                    </Stack>
+                  </Paper>
+                )
+              })}
+            </SimpleGrid>
+          </Stack>
+        )}
       </Stack>
     </Container>
-  )
-}
-
-function SpecRow({ icon, label, value, multiline = false }: { icon: React.ReactNode; label: string; value: string; multiline?: boolean }) {
-  return (
-    <Box className="auction-detail-spec">
-      <Group gap={6}><Box c="indigo.5">{icon}</Box><Text className="auction-detail-spec__label">{label}</Text></Group>
-      <Text className="auction-detail-spec__value" title={value} style={multiline ? { whiteSpace: "normal", overflowWrap: "anywhere" } : undefined}>{value}</Text>
-    </Box>
   )
 }
 

@@ -88,6 +88,40 @@ export function auctionMakeLabel(value: string) {
   return normalizeAuctionMake(value) || value.replace(/_/g, " ")
 }
 
+export type AuctionVehicleIdentity = {
+  make: string
+  model: string
+  title: string
+}
+
+/**
+ * Produces one stable public identity for cards, detail pages and stored
+ * imports. Some sources repeat the manufacturer inside `model` ("KIA Kia
+ * K8"), while a few JSON-LD feeds expose a one-letter brand and keep the real
+ * manufacturer at the beginning of the model. Keeping the repair here avoids
+ * source-specific presentation hacks and also fixes legacy rows immediately.
+ */
+export function auctionVehicleIdentity(makeValue: unknown, modelValue: unknown): AuctionVehicleIdentity {
+  let make = normalizeAuctionMake(makeValue) || (typeof makeValue === "string" ? makeValue.replace(/_/g, " ").trim() : "")
+  let model = normalizeAuctionModel(modelValue) || (typeof modelValue === "string" ? modelValue.trim() : "")
+
+  const firstModelToken = model.match(/^([A-Za-z][A-Za-z-]{2,})(?:\s+|$)/)?.[1]
+  if (make.length === 1 && firstModelToken) make = normalizeAuctionMake(firstModelToken) || firstModelToken
+
+  if (make && model) {
+    const escapedMake = make.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    model = model.replace(new RegExp(`^${escapedMake}(?:\\s+|[-–—:/]+\\s*)`, "i"), "").trim()
+  }
+
+  if (!make && firstModelToken) {
+    make = normalizeAuctionMake(firstModelToken) || firstModelToken
+    model = model.slice(firstModelToken.length).trim()
+  }
+
+  const title = [make, model].filter(Boolean).join(" ") || "Автомобиль"
+  return { make: make || "Марка уточняется", model: model || "Модель уточняется", title }
+}
+
 const EAST_ASIAN_SCRIPT = /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/
 const LATIN_SCRIPT = /[A-Za-z]/
 const CYRILLIC_SCRIPT = /[\u0400-\u04FF]/

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit } from "@/lib/rate-limit"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
+import { auctionVehicleIdentity } from "@/lib/auction-normalization"
 
 export const dynamic = "force-dynamic"
 
@@ -27,7 +28,31 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }).catch(() => listing)
       : listing
 
-    const response = NextResponse.json({ listing: viewedListing })
+    const identity = auctionVehicleIdentity(listing.make, listing.model)
+    const candidates = await prisma.auctionListing.findMany({
+      where: {
+        ...publicPolicy.where,
+        id: { not: listing.id },
+        country: listing.country,
+      },
+      orderBy: [{ updatedAt: "desc" }],
+      take: 60,
+    })
+    const similar = candidates
+      .map((candidate) => {
+        const candidateIdentity = auctionVehicleIdentity(candidate.make, candidate.model)
+        const makePenalty = candidateIdentity.make.toLocaleLowerCase("ru-RU") === identity.make.toLocaleLowerCase("ru-RU") ? 0 : 8
+        const yearPenalty = Math.abs(candidate.year - listing.year)
+        const pricePenalty = listing.finalPrice > 0
+          ? Math.min(4, Math.abs(candidate.finalPrice - listing.finalPrice) / listing.finalPrice * 4)
+          : 0
+        return { candidate, score: makePenalty + yearPenalty + pricePenalty }
+      })
+      .sort((left, right) => left.score - right.score)
+      .slice(0, 4)
+      .map(({ candidate }) => candidate)
+
+    const response = NextResponse.json({ listing: viewedListing, similar })
     if (!alreadyCounted) response.cookies.set(viewCookieName, "1", { httpOnly: true, sameSite: "lax", maxAge: 60 * 60, path: "/" })
     return response
   } catch {

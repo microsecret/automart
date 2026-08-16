@@ -102,6 +102,16 @@ async function run() {
       make: "Hyundai", model: "Tucson", year: new Date().getFullYear(), mileage: 12_000,
       sourcePrice: 25_000_000, sourceCurrency: "KRW", priceRub: 1_500_000, markup: 200_000,
       finalPrice: 1_700_000, country: "KR", status: "ACTIVE", sourceLastSeenAt: new Date(),
+      engineVolume: 1998, power: 180, lotNumber: `${marker}-lot-1`, location: "Сеул",
+      specsRu: "Количество ключей: 2\nЭкологический стандарт: Евро-6",
+    },
+  })
+  const similarAuctionListing = await prisma.auctionListing.create({
+    data: {
+      sourceId: `${marker}-kcar-similar`, source: "KCAR", sourceUrl: `https://www.kcar.com/${marker}-similar`,
+      make: "Hyundai", model: "Santa Fe", year: new Date().getFullYear(), mileage: 15_000,
+      sourcePrice: 27_000_000, sourceCurrency: "KRW", priceRub: 1_620_000, markup: 200_000,
+      finalPrice: 1_820_000, country: "KR", status: "ACTIVE", sourceLastSeenAt: new Date(),
     },
   })
   const staleAuctionListing = await prisma.auctionListing.create({
@@ -277,7 +287,8 @@ async function run() {
   record("manager can update inquiry status and notes", updatedInquiry?.inquiry?.status === "CONTACTED" && Boolean(updatedInquiry?.inquiry?.managerNotes), updatedInquiry?.inquiry?.status || "missing")
   await expect("/api/admin/auctions/stats", adminCookie, 200)
   await expect("/api/auctions?country=KR&limit=10", null, 200)
-  await expect(`/api/auctions/${auctionListing.id}`, null, 200)
+  const auctionDetail = await expect(`/api/auctions/${auctionListing.id}`, null, 200)
+  record("auction detail returns ranked similar vehicles", auctionDetail?.similar?.some((item) => item.id === similarAuctionListing.id), `${auctionDetail?.similar?.length ?? 0} similar`)
   await expect(`/api/auctions/${staleAuctionListing.id}`, null, 404)
   await expect("/api/users", cookie, 200)
   await expect("/api/users", cookie, 200, { method: "PATCH", body: JSON.stringify({ name: "Покупатель Проверен" }) })
@@ -380,6 +391,9 @@ async function run() {
   record("sitemap includes the active marketplace listing", sitemapXml.includes(`/listings/vehicle/${sellerVehicle.id}`), sellerVehicle.id)
   record("sitemap excludes listings awaiting moderation", !sitemapXml.includes(`/listings/vehicle/${vehicle.id}`) && !sitemapXml.includes(`/listings/part/${part.id}`), "pending vehicle and part hidden")
   record("sitemap includes only fresh import lots", sitemapXml.includes(`/auctions/${auctionListing.id}`) && !sitemapXml.includes(`/auctions/${staleAuctionListing.id}`), "fresh visible, stale hidden")
+  const auctionPageResponse = await request(`/auctions/${auctionListing.id}`, null)
+  const auctionPageHtml = await auctionPageResponse.text()
+  record("auction page renders semantic heading and vehicle structured data", auctionPageResponse.status === 200 && auctionPageHtml.includes("<h1") && auctionPageHtml.includes("application/ld+json") && auctionPageHtml.includes("BreadcrumbList"), `HTTP ${auctionPageResponse.status}`)
   const auctionPart = await prisma.part.create({
     data: {
       name: `${marker} аукционная турбина`, description: "Изолированный аукцион запчасти", price: 20_000,
@@ -401,6 +415,8 @@ async function run() {
     body: JSON.stringify({ make: "Hyundai", model: "Tucson", year: 2022, mileage: 30_000, fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SUV", color: "Синий", location: "Екатеринбург" }),
   })
   await expect("/api/garage", cookie, 200)
+  const garagePrefill = await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200)
+  record("garage exposes only the owner's selected vehicle for listing prefill", garagePrefill?.vehicle?.id === garage.id && garagePrefill?.vehicle?.make === "Hyundai" && garagePrefill?.vehicle?.vin === null, garagePrefill?.vehicle?.id || "missing")
   await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200, { method: "DELETE" })
 
   await expect("/api/favorites", cookie, 201, { method: "POST", body: JSON.stringify({ listingId: publicListingId }) })

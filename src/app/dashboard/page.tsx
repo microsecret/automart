@@ -14,7 +14,7 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import { BODY_TYPES, CAR_BRANDS, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
+import { BODY_TYPES, CAR_BRANDS, CONDITIONS, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 
 type DashboardVehicle = {
   id: string
@@ -23,6 +23,7 @@ type DashboardVehicle = {
   year: number
   price: number
   mileage: number | null
+  vin: string | null
   images: string | null
   location: string
   vehicleType: string
@@ -122,6 +123,9 @@ type GarageForm = {
   fuelType: string
   transmission: string
   bodyType: string
+  color: string
+  vin: string
+  condition: string
   location: string
 }
 
@@ -134,6 +138,9 @@ const createGarageForm = (): GarageForm => ({
   fuelType: "GASOLINE",
   transmission: "AUTOMATIC",
   bodyType: "",
+  color: "",
+  vin: "",
+  condition: "EXCELLENT",
   location: "",
 })
 
@@ -174,6 +181,7 @@ function DashboardContent() {
   const { data: session, update: updateSession } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const createdListingId = searchParams.get("created")?.trim() || ""
   const [tab, setTab] = useState("listings")
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false)
   const [profileName, setProfileName] = useState("")
@@ -405,6 +413,11 @@ function DashboardContent() {
         {/* Контент табов */}
         {tab === "listings" && (
           <Stack gap="xs" id="dashboard-listings">
+            {createdListingId && (
+              <Alert color="teal" variant="light" title="Объявление отправлено на модерацию" icon={<IconCircleCheck size={18} />}>
+                Карточка сохранена в «Моих объявлениях». Здесь будет виден результат проверки и причина, если понадобятся исправления.
+              </Alert>
+            )}
             {data.listings.length === 0 ? (
               <Paper radius="md" p="xl" withBorder>
                 <Center>
@@ -643,6 +656,7 @@ function DashboardContent() {
                           {vehicle.bodyType && <Badge color="gray" variant="light" size="xs">{findLabel(BODY_TYPES, vehicle.bodyType)}</Badge>}
                           <Badge color="indigo" variant="light" size="xs">{findLabel(FUEL_TYPES, vehicle.fuelType)}</Badge>
                           <Badge color="violet" variant="light" size="xs">{findLabel(TRANSMISSIONS, vehicle.transmission)}</Badge>
+                          {vehicle.color && <Badge color="gray" variant="outline" size="xs">{vehicle.color}</Badge>}
                         </Group>
                         <Group justify="space-between" align="center" mt={2}>
                           <Text size="xs" c="gray.5" truncate>{vehicle.location || "Город не указан"}</Text>
@@ -650,6 +664,7 @@ function DashboardContent() {
                             <IconTrash size={16} />
                           </ActionIcon>
                         </Group>
+                        <Button component={Link} href={`/listings/create/vehicle?garageId=${encodeURIComponent(vehicle.id)}`} variant="light" color="teal" size="xs" radius="md" fullWidth rightSection={<IconArrowRight size={14} />}>Создать объявление из гаража</Button>
                       </Stack>
                     </Paper>
                   )
@@ -660,7 +675,7 @@ function DashboardContent() {
                 <Stack align="center" gap="sm" maw={420} ta="center">
                   <ThemeIcon variant="light" color="teal" size={54} radius="xl"><IconCar size={27} /></ThemeIcon>
                   <Text fw={750} fz="lg">В гараже пока нет автомобилей</Text>
-                  <Text size="sm" c="dimmed">Добавьте свою машину, чтобы позже получать напоминания об обслуживании и запускать проверку истории.</Text>
+                  <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно, а когда понадобится — создать из неё объявление без повторного ввода.</Text>
                   <Button color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />} onClick={openGarageModal}>Добавить первый автомобиль</Button>
                 </Stack>
               </Center>
@@ -743,6 +758,9 @@ function DashboardContent() {
             <Select label="Топливо" data={FUEL_TYPES.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.fuelType} onChange={(value) => setGarageForm((current) => ({ ...current, fuelType: value || "GASOLINE" }))} />
             <Select label="Коробка передач" data={TRANSMISSIONS.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.transmission} onChange={(value) => setGarageForm((current) => ({ ...current, transmission: value || "AUTOMATIC" }))} />
             <Select clearable label="Кузов" placeholder="Выберите тип" data={BODY_TYPES.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.bodyType || null} onChange={(value) => setGarageForm((current) => ({ ...current, bodyType: value || "" }))} />
+            <Select label="Состояние" data={CONDITIONS.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.condition} onChange={(value) => setGarageForm((current) => ({ ...current, condition: value || "EXCELLENT" }))} />
+            <TextInput label="Цвет" placeholder="Например, белый" value={garageForm.color} onChange={(event) => setGarageForm((current) => ({ ...current, color: event.currentTarget.value }))} maxLength={40} />
+            <TextInput label="VIN" placeholder="Необязательно" value={garageForm.vin} onChange={(event) => setGarageForm((current) => ({ ...current, vin: event.currentTarget.value.toUpperCase() }))} maxLength={32} />
             <TextInput label="Город" placeholder="Например, Уфа" value={garageForm.location} onChange={(event) => setGarageForm((current) => ({ ...current, location: event.currentTarget.value }))} maxLength={120} />
           </SimpleGrid>
           <Group justify="flex-end" gap="xs">

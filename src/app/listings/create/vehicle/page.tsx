@@ -1,6 +1,6 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { Suspense, useCallback, useEffect, useState } from "react"
+import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Alert, Autocomplete, Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
@@ -39,7 +39,23 @@ type VehicleCategory = {
 }
 
 type CategoriesResponse = { categories: VehicleCategory[] }
-type CreateVehicleResponse = { id: string }
+type CreateVehicleResponse = { id: string; listings: Array<{ id: string; status: string }> }
+type GarageVehicleResponse = {
+  vehicle: {
+    id: string
+    make: string
+    model: string
+    year: number
+    mileage: number | null
+    vin: string | null
+    fuelType: string
+    transmission: string
+    bodyType: string | null
+    color: string | null
+    condition: string | null
+    location: string
+  }
+}
 
 export default function CreateVehiclePage() {
   return (
@@ -54,6 +70,9 @@ function CreateVehicleWorkspace() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isTelegramMiniApp = searchParams.get("source") === "telegram"
+  const garageId = searchParams.get("garageId")?.trim() || ""
+  const garagePrefillAttempted = useRef(false)
+  const [garagePrefillState, setGaragePrefillState] = useState<"loading" | "loaded" | "error" | null>(null)
   const [loading, setLoading] = useState(false)
   const { images, uploadingImages, uploadPhotos, removeImage } = useMarketplaceImageUpload()
   const [categories, setCategories] = useState<VehicleCategory[]>([])
@@ -96,6 +115,33 @@ function CreateVehicleWorkspace() {
   useEffect(() => {
     void loadCategories()
   }, [loadCategories])
+
+  useEffect(() => {
+    if (!garageId || status !== "authenticated" || garagePrefillAttempted.current) return
+    garagePrefillAttempted.current = true
+    setGaragePrefillState("loading")
+    void fetchJson<GarageVehicleResponse>(`/api/garage?id=${encodeURIComponent(garageId)}`)
+      .then(({ vehicle }) => {
+        setF((previous) => ({
+          ...previous,
+          title: previous.title || `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: String(vehicle.year),
+          mileage: vehicle.mileage == null ? "" : String(vehicle.mileage),
+          vin: vehicle.vin || "",
+          fuelType: vehicle.fuelType || "GASOLINE",
+          transmission: vehicle.transmission || "AUTOMATIC",
+          bodyType: vehicle.bodyType || "SEDAN",
+          color: vehicle.color || "",
+          condition: vehicle.condition || "EXCELLENT",
+          location: vehicle.location || "",
+          vehicleType: "CAR",
+        }))
+        setGaragePrefillState("loaded")
+      })
+      .catch(() => setGaragePrefillState("error"))
+  }, [garageId, status])
 
   if (status === "loading") return <Center py={100}><Loader color="indigo" /></Center>
   if (!session) return null
@@ -200,7 +246,8 @@ function CreateVehicleWorkspace() {
       })
 
       notifications.show({ title: "Отправлено на проверку", message: "Мы проверим объявление и опубликуем его после модерации.", color: "indigo" })
-      router.push(`/listings/vehicle/${vehicle.id}`)
+      const listingId = vehicle.listings[0]?.id
+      router.push(`/dashboard?tab=listings${listingId ? `&created=${encodeURIComponent(listingId)}` : ""}`)
     } catch (err) {
       notifications.show({ title: "Ошибка", message: err instanceof Error ? err.message : "Не удалось создать объявление", color: "red" })
     } finally {
@@ -221,6 +268,10 @@ function CreateVehicleWorkspace() {
             <Text size="xs" c="var(--market-muted)">Заполните данные — после проверки объявление появится в поиске</Text>
           </Stack>
         </Group>
+
+        {garagePrefillState === "loading" && <Alert color="teal" variant="light" title="Загружаем автомобиль из гаража">Основные характеристики будут заполнены автоматически.</Alert>}
+        {garagePrefillState === "loaded" && <Alert color="teal" variant="light" title="Данные из гаража подставлены" icon={<IconCheck size={18} />}>Добавьте цену, фотографии и описание — после отправки объявление попадёт на модерацию.</Alert>}
+        {garagePrefillState === "error" && <Alert color="orange" variant="light" title="Не удалось прочитать запись гаража">Можно заполнить объявление вручную; приватная запись в гараже не изменилась.</Alert>}
 
         {isTelegramMiniApp && (
           <Alert color="indigo" variant="light" title="Быстрая подача из Telegram" icon={<IconBrandTelegram size={18} />}>

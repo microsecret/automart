@@ -8,6 +8,11 @@ export const dynamic = "force-dynamic"
 
 const FUEL_TYPES = new Set(["GASOLINE", "DIESEL", "ELECTRIC", "HYBRID", "GAS", "OTHER"])
 const TRANSMISSION_TYPES = new Set(["MANUAL", "AUTOMATIC", "VARIATOR", "ROBOTIC"])
+const GARAGE_VEHICLE_SELECT = {
+  id: true, make: true, model: true, year: true, mileage: true, vin: true,
+  fuelType: true, transmission: true, bodyType: true, color: true,
+  condition: true, location: true, images: true, createdAt: true,
+} as const
 
 function optionalText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return null
@@ -15,23 +20,32 @@ function optionalText(value: unknown, maxLength: number) {
   return normalized ? normalized.slice(0, maxLength) : null
 }
 
-/** GET /api/garage — список авто пользователя в гараже */
-export async function GET() {
+/** GET /api/garage — список или одна личная запись пользователя. */
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
 
+    const id = request.nextUrl.searchParams.get("id")?.trim()
+    if (id) {
+      const vehicle = await prisma.vehicle.findFirst({
+        where: { id, userId: session.user.id, category: { name: "Личный гараж" } },
+        select: GARAGE_VEHICLE_SELECT,
+      })
+      return vehicle
+        ? NextResponse.json({ vehicle: { ...vehicle, vin: vehicle.vin?.startsWith("GARAGE-") ? null : vehicle.vin } })
+        : NextResponse.json({ error: "Автомобиль не найден в вашем гараже" }, { status: 404 })
+    }
+
     const vehicles = await prisma.vehicle.findMany({
       where: { userId: session.user.id, category: { name: "Личный гараж" } },
-      select: {
-        id: true, make: true, model: true, year: true, mileage: true,
-        fuelType: true, transmission: true, bodyType: true, color: true,
-        condition: true, location: true, images: true, createdAt: true,
-      },
+      select: GARAGE_VEHICLE_SELECT,
       orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json({ vehicles })
+    return NextResponse.json({
+      vehicles: vehicles.map((vehicle) => ({ ...vehicle, vin: vehicle.vin?.startsWith("GARAGE-") ? null : vehicle.vin })),
+    })
   } catch {
     return NextResponse.json({ error: "Не удалось загрузить автомобили из гаража" }, { status: 500 })
   }

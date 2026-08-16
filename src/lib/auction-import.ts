@@ -2,8 +2,9 @@ import { prisma } from "@/lib/prisma"
 import { translateListingFields, translateToRussian } from "@/lib/nvidia-translate"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
 import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
-import { normalizeAuctionEngineVolumeCc } from "@/lib/auction-normalization"
+import { auctionVehicleIdentity, normalizeAuctionEngineVolumeCc } from "@/lib/auction-normalization"
 import type { AuctionDamageReport } from "@/lib/auction-damage"
+import { serializeAuctionSourceSpecs } from "@/lib/auction-source-details"
 
 function hasUntranslatedForeignText(original: string | null, translated: string | null) {
   if (!original) return false
@@ -120,6 +121,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
   let translated = 0
 
   for (const item of items) {
+    const identity = auctionVehicleIdentity(item.make, item.model)
     const engineVolume = normalizeAuctionEngineVolumeCc(item.engineVolume, item.fuelType)
     const [displayColor, displayLocation] = await Promise.all([
       localizeImportedDisplayValue(item.color, "color", item.country),
@@ -143,14 +145,34 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
       const hasTranslation = hasUsableTranslation(item.descriptionOrig, translatedFields?.descriptionRu || null) || hasUsableTranslation(item.specsOrig, translatedFields?.specsRu || null)
       if (hasTranslation) translated++
 
+      const specsRu = serializeAuctionSourceSpecs({
+        sourceId: item.sourceId,
+        year: item.year,
+        manufacturedMonth: item.manufacturedMonth,
+        mileage: item.mileage,
+        lotNumber: item.lotNumber,
+        sourcePrice: item.sourcePrice,
+        sourceCurrency: item.sourceCurrency,
+        engineVolume,
+        power: item.power,
+        fuelType: item.fuelType,
+        transmission: item.transmission,
+        bodyType: item.bodyType,
+        driveType: item.driveType,
+        color: displayColor,
+        vin: item.vin,
+        location: displayLocation,
+        conditionInfo: item.conditionInfo,
+      }, translatedFields?.specsRu || existing.specsRu)
+
       const exchangeRate = getAuctionRateToRub(item.sourceCurrency, exchangeRates)
       const price = calculateAuctionRubPricing(item.sourcePrice, exchangeRate, existing.markup)
       await prisma.auctionListing.update({
         where: { id: existing.id },
         data: {
           sourceUrl: item.sourceUrl,
-          make: item.make,
-          model: item.model,
+          make: identity.make,
+          model: identity.model,
           year: item.year,
           manufacturedMonth: item.manufacturedMonth || null,
           mileage: item.mileage,
@@ -171,10 +193,10 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           ...(item.conditionInfo !== undefined ? { conditionInfo: item.conditionInfo ? JSON.stringify(item.conditionInfo) : null } : {}),
           ...(translatedFields ? {
             descriptionRu: translatedFields.descriptionRu,
-            specsRu: translatedFields.specsRu,
             isTranslated: hasTranslation,
             translatedAt: hasTranslation ? new Date() : null,
           } : {}),
+          specsRu,
           location: displayLocation,
           sourcePrice: item.sourcePrice,
           sourceCurrency: item.sourceCurrency,
@@ -199,22 +221,42 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
     const price = calculateAuctionRubPricing(item.sourcePrice, exchangeRate, markup)
 
     let descriptionRu: string | null = null
-    let specsRu: string | null = null
+    let translatedSpecsRu: string | null = null
     if (item.descriptionOrig || item.specsOrig) {
       try {
         const translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig })
         descriptionRu = translatedFields.descriptionRu
-        specsRu = translatedFields.specsRu
-        if (hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu)) translated++
+        translatedSpecsRu = translatedFields.specsRu
+        if (hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, translatedSpecsRu)) translated++
       } catch {
         // The source listing is still useful without an automated translation.
       }
     }
 
+    const specsRu = serializeAuctionSourceSpecs({
+      sourceId: item.sourceId,
+      year: item.year,
+      manufacturedMonth: item.manufacturedMonth,
+      mileage: item.mileage,
+      lotNumber: item.lotNumber,
+      sourcePrice: item.sourcePrice,
+      sourceCurrency: item.sourceCurrency,
+      engineVolume,
+      power: item.power,
+      fuelType: item.fuelType,
+      transmission: item.transmission,
+      bodyType: item.bodyType,
+      driveType: item.driveType,
+      color: displayColor,
+      vin: item.vin,
+      location: displayLocation,
+      conditionInfo: item.conditionInfo,
+    }, translatedSpecsRu)
+
     await prisma.auctionListing.create({
       data: {
         sourceId: String(item.sourceId), source: item.source, sourceUrl: item.sourceUrl,
-        make: item.make, model: item.model, year: item.year, manufacturedMonth: item.manufacturedMonth || null,
+        make: identity.make, model: identity.model, year: item.year, manufacturedMonth: item.manufacturedMonth || null,
         mileage: item.mileage || null, fuelType: item.fuelType || null,
         transmission: item.transmission || null, bodyType: item.bodyType || null,
         color: displayColor, engineVolume,
@@ -233,8 +275,8 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         location: displayLocation,
         sourceLastSeenAt: new Date(),
         sourceMissingChecks: 0,
-        isTranslated: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu),
-        translatedAt: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu) ? new Date() : null,
+        isTranslated: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, translatedSpecsRu),
+        translatedAt: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, translatedSpecsRu) ? new Date() : null,
       },
     })
     created++
