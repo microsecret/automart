@@ -19,7 +19,9 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
       model: true,
       year: true,
       mileage: true,
+      priceRub: true,
       finalPrice: true,
+      conditionInfo: true,
       source: true,
       imageUrl: true,
       images: true,
@@ -32,7 +34,22 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
 
   const title = `${listing.make} ${listing.model} ${listing.year} — ${auctionSourceLabel(listing.source)}`
   const mileage = listing.mileage === null ? "пробег не опубликован" : `${listing.mileage.toLocaleString("ru-RU")} км`
-  const description = `${title}, ${mileage}. Предварительная стоимость под ключ ${listing.finalPrice.toLocaleString("ru-RU")} ₽, фотографии и расчёт доставки в Россию.`
+  const isRentalTransfer = (() => {
+    if (!listing.conditionInfo) return false
+    try {
+      const parsed = JSON.parse(listing.conditionInfo) as { verifiedItems?: unknown }
+      return Array.isArray(parsed.verifiedItems) && parsed.verifiedItems.some((item) => {
+        if (!item || typeof item !== "object") return false
+        const record = item as { label?: unknown; status?: unknown }
+        return record.label === "Тип предложения" && typeof record.status === "string" && /аренд/i.test(record.status)
+      })
+    } catch {
+      return false
+    }
+  })()
+  const description = isRentalTransfer
+    ? `${title}, ${mileage}. Расчётный остаток регулярных платежей ${listing.priceRub.toLocaleString("ru-RU")} ₽ — не цена продажи автомобиля; условия выкупа и экспорта требуют подтверждения.`
+    : `${title}, ${mileage}. Предварительная стоимость под ключ ${listing.finalPrice.toLocaleString("ru-RU")} ₽, фотографии и расчёт доставки в Россию.`
   const canonical = `/auctions/${id}`
   const image = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0]
 

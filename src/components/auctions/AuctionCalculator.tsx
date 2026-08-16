@@ -19,6 +19,7 @@ interface Props {
   sourceCurrency: string
   priceRub: number
   country: string
+  pricingMode?: "PURCHASE" | "RENTAL_TRANSFER"
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -172,7 +173,7 @@ function preferentialUtilizationFee(year: number, manufacturedMonth: string | nu
   }
 }
 
-export default function AuctionCalculator({ make, model, year, manufacturedMonth, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country }: Props) {
+export default function AuctionCalculator({ make, model, year, manufacturedMonth, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country, pricingMode = "PURCHASE" }: Props) {
   const [city, setCity] = useState("Москва")
   const { data: exchangeRateData, error: exchangeRateError } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetchJson, { revalidateOnFocus: false })
   // Не подставляем вымышленный объём: от него напрямую зависит таможенная пошлина.
@@ -221,6 +222,49 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
   const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : country === "CN" ? "Китай" : country === "DE" ? "Германия" : "Европа"
   const hasManufacturedMonth = Boolean(manufacturedMonth?.match(/^\d{4}-(0[1-9]|1[0-2])$/))
   const volumeLabel = isElectric ? "электро" : volume ? `${volume} см³` : "объём не указан"
+
+  if (pricingMode === "RENTAL_TRANSFER") {
+    return (
+      <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #eff6ff 0%, #fff 58%)", borderColor: "#bfdbfe" }}>
+        <Stack gap="sm">
+          <Group gap="sm" align="center">
+            <ThemeIcon variant="light" color="blue" size={36} radius="md"><IconCalculator size={20} /></ThemeIcon>
+            <Stack gap={0}>
+              <Text fw={800} fz="md" c="dark.9">Расчёт регулярных платежей по аренде</Text>
+              <Text size="xs" c="gray.5">{make} {model} · {year} · {countryLabel}</Text>
+            </Stack>
+          </Group>
+
+          <Alert color="blue" variant="light" icon={<IconInfoCircle size={17} />}>
+            <Text size="xs"><b>Это не цена продажи автомобиля.</b> Источник предлагает переоформление действующего договора аренды. Ниже показан расчётный остаток платежей с учётом опубликованной компенсации.</Text>
+          </Alert>
+
+          {(exchangeRateError || exchangeRateData?.stale) && (
+            <Alert color="orange" variant="light" icon={<IconAlertTriangle size={17} />}>
+              Курс ЦБ сейчас не подтверждён как свежий. Рублёвый эквивалент нужно перепроверить перед оформлением.
+            </Alert>
+          )}
+
+          <Divider my="xs" />
+          <Stack gap={6}>
+            <CostRow icon={<IconCoin size={14} />} label={`Расчётный остаток регулярных платежей (${sourceCurrency})`} value={`${sourcePrice.toLocaleString("ru-RU")} ${currencySymbol}`} muted />
+            <CostRow icon={<IconCoin size={14} />} label="Эквивалент в рублях по курсу ЦБ" value={formatPrice(effectivePriceRub)} muted />
+            <CostRow icon={<IconBuildingBank size={14} />} label="Выкуп автомобиля" value="Нужно подтвердить" highlight />
+            <CostRow icon={<IconShip size={14} />} label="Экспорт, таможня и доставка" value="Не рассчитаны" highlight />
+          </Stack>
+
+          <Alert color="red" variant="light" icon={<IconAlertTriangle size={17} />}>
+            <Text size="xs"><b>Итог «под ключ» не показывается.</b> Сначала нужно подтвердить право выкупа, переход собственности и возможность экспорта этого автомобиля из Кореи.</Text>
+          </Alert>
+
+          <Group gap={6}>
+            <IconInfoCircle size={14} color="#94a3b8" />
+            <Text size="10px" c="gray.5">{sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}${exchangeRateData?.asOf ? `, обновлён ${new Date(exchangeRateData.asOf).toLocaleString("ru-RU")}` : ""}.` : "Использован рублёвый снимок лота; курс требует проверки."}</Text>
+          </Group>
+        </Stack>
+      </Paper>
+    )
+  }
 
   return (
     <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #fff7ed 0%, #fff 50%)" }}>

@@ -1,12 +1,12 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useEffect, useMemo, useState, Suspense } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
-import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, TextInput, Textarea, ThemeIcon, Center, Loader, Breadcrumbs, Anchor, Progress, UnstyledButton } from "@mantine/core"
+import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, TextInput, Textarea, ThemeIcon, Center, Loader, Anchor, Progress, UnstyledButton } from "@mantine/core"
 import { useMediaQuery } from "@mantine/hooks"
-import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconEye, IconGasStation, IconManualGearbox, IconPalette, IconChevronRight, IconShieldCheck, IconTruckDelivery, IconX } from "@tabler/icons-react"
+import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconEye, IconGasStation, IconManualGearbox, IconPalette, IconShieldCheck, IconTruckDelivery, IconX, IconArrowLeft, IconHome } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import { fetchJson } from "@/lib/api-client"
@@ -116,6 +116,7 @@ function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo |
 
 function AuctionDetail() {
   const params = useParams()
+  const router = useRouter()
   const id = params.id as string
   const { data, error, isLoading, mutate } = useSWR<AuctionDetailResponse>(
     `/api/auctions/${id}`,
@@ -149,6 +150,7 @@ function AuctionDetail() {
   const displayedActiveImage = isActiveImageLoading ? activeImagePreview : activeImageHighQuality
   const equipment = listing ? parseAuctionEquipment(listing.equipment) : null
   const conditionInfo = listing ? parseAuctionConditionInfo(listing.conditionInfo) : null
+  const isRentalTransfer = conditionInfo?.verifiedItems.some((item) => item.label === "Тип предложения" && /аренд/i.test(item.status)) || false
   const publicModel = listing ? normalizeAuctionModel(listing.model) || "Модель уточняется" : ""
   const publicLotNumber = listing && isCustomerFacingRussianText(listing.lotNumber) ? listing.lotNumber : null
   const publicDescription = listing && isCustomerFacingRussianText(listing.descriptionRu) ? listing.descriptionRu : null
@@ -238,11 +240,23 @@ function AuctionDetail() {
   return (
     <Container size="xl" py="lg">
       <Stack gap="md">
-        <Breadcrumbs separator={<IconChevronRight size={14} color="gray.4" />}>
-          <Anchor component={Link} href="/" size="sm" c="gray.5">Главная</Anchor>
-          <Anchor component={Link} href="/auctions" size="sm" c="gray.5">Аукционы</Anchor>
-          <Text size="sm" c="dark.9">{auctionMakeLabel(listing.make)} {publicModel}</Text>
-        </Breadcrumbs>
+        <Group gap="xs" align="center" wrap="wrap">
+          <Button
+            variant="filled"
+            color="indigo"
+            radius="xl"
+            size="compact-sm"
+            leftSection={<IconArrowLeft size={15} />}
+            onClick={() => window.history.length > 1 ? router.back() : router.push("/auctions")}
+          >
+            Вернуться назад
+          </Button>
+          <Button component={Link} href="/" variant="default" radius="xl" size="compact-sm" leftSection={<IconHome size={14} />}>Главная</Button>
+          <Button component={Link} href="/auctions" variant="light" color="indigo" radius="xl" size="compact-sm" leftSection={<IconGavel size={14} />}>Все аукционы</Button>
+          <Paper px="sm" py={5} radius="xl" withBorder style={{ minWidth: 0, background: "#f8fafc" }}>
+            <Text size="xs" fw={700} c="dark.7" lineClamp={1}>{auctionMakeLabel(listing.make)} {publicModel}</Text>
+          </Paper>
+        </Group>
 
         <Box className="auction-detail-layout" style={hasWideAuctionLayout ? undefined : { gridTemplateColumns: "minmax(0, 1fr)" }}>
           {/* Левая — фото + характеристики */}
@@ -362,8 +376,8 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #fff 58%)", borderColor: "#99f6e4" }}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
-                      <Group gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Проверка и история по данным {auctionSourceLabel(listing.source)}</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
-                      <Badge variant="light" color="teal">Проверяйте перед сделкой</Badge>
+                      <Group gap="sm"><ThemeIcon variant="light" color={isRentalTransfer ? "blue" : "teal"} radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">{isRentalTransfer ? "Условия договора по данным" : "Проверка и история по данным"} {auctionSourceLabel(listing.source)}</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
+                      <Badge variant="light" color={isRentalTransfer ? "blue" : "teal"}>{isRentalTransfer ? "Не является ценой продажи" : "Проверяйте перед сделкой"}</Badge>
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: conditionInfo.newCarPriceRatioPct !== null ? 3 : 2 }} spacing="xs">
                       {conditionInfo.newCarPriceRatioPct !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Цена относительно нового авто</Text><Group justify="space-between" mt={3}><Text fw={800} c="teal.8">{conditionInfo.newCarPriceRatioPct}%</Text><Text size="xs" c="dimmed">сравнение {auctionSourceLabel(listing.source)}</Text></Group><Progress value={conditionInfo.newCarPriceRatioPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
@@ -373,7 +387,7 @@ function AuctionDetail() {
                     {conditionInfo.verifiedItems.length > 0 && <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                       {conditionInfo.verifiedItems.map((item) => <Paper key={`${item.label}-${item.status}`} p="xs" radius="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}><Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="teal" variant="light"><IconCheck size={13} /></ThemeIcon><Box><Text size="xs" c="dimmed">{item.label}</Text><Text fw={750} size="sm" c="teal.9">{item.status}</Text></Box></Group></Paper>)}
                     </SimpleGrid>}
-                    <Text size="xs" c="dimmed">Карточки состояния — только открытые подтверждения {auctionSourceLabel(listing.source)}. Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт; для перечня работ нужен полный отчёт/акт осмотра из первоисточника.</Text>
+                    <Text size="xs" c="dimmed">{isRentalTransfer ? `Показаны опубликованные условия переоформления аренды ${auctionSourceLabel(listing.source)}. Право выкупа, переход собственности и экспорт подтверждаются отдельно.` : `Карточки состояния — только открытые подтверждения ${auctionSourceLabel(listing.source)}. Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт; для перечня работ нужен полный отчёт/акт осмотра из первоисточника.`}</Text>
                   </Stack>
                 </Paper>
               )}
@@ -381,7 +395,7 @@ function AuctionDetail() {
               {publicDescription && (
                 <Paper radius="md" p="md" withBorder>
                   <Stack gap="xs">
-                    <Group gap="sm"><IconCheck size={18} color="#059669" /><Text fw={700} c="dark.9">Описание (ИИ-перевод)</Text></Group>
+                    <Group gap="sm"><IconCheck size={18} color="#059669" /><Text fw={700} c="dark.9">Описание объявления</Text></Group>
                     <Text size="sm" c="gray.6" lh={1.6}>{publicDescription}</Text>
                   </Stack>
                 </Paper>
@@ -400,6 +414,7 @@ function AuctionDetail() {
                 sourceCurrency={listing.sourceCurrency}
                 priceRub={listing.priceRub}
                 country={listing.country}
+                pricingMode={isRentalTransfer ? "RENTAL_TRANSFER" : "PURCHASE"}
               />
             </Stack>
           </Box>

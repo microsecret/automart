@@ -67,6 +67,20 @@ type AuctionResponse = {
 
 const FUEL_LABELS: Record<string, string> = { GASOLINE: "Бензин", DIESEL: "Дизель", ELECTRIC: "Электро", HYBRID: "Гибрид", GAS: "Газ" }
 const BODY_LABELS: Record<string, string> = { SUV: "Кроссовер", SEDAN: "Седан", PICKUP: "Пикап", WAGON: "Универсал", HATCHBACK: "Хэтчбек", MINIVAN: "Минивэн", COUPE: "Купе" }
+
+function isRentalTransferListing(conditionInfo: string | null) {
+  if (!conditionInfo) return false
+  try {
+    const parsed = JSON.parse(conditionInfo) as { verifiedItems?: unknown }
+    return Array.isArray(parsed.verifiedItems) && parsed.verifiedItems.some((item) => {
+      if (!item || typeof item !== "object") return false
+      const record = item as { label?: unknown; status?: unknown }
+      return record.label === "Тип предложения" && typeof record.status === "string" && /аренд/i.test(record.status)
+    })
+  } catch {
+    return false
+  }
+}
 // Remote auction photos remain on the source CDN. A short user intent
 // (hover, focus or touch) is enough to warm the first full-size image in the
 // browser cache, so opening a lot does not wait for a cold CDN request.
@@ -459,12 +473,13 @@ export default function AuctionsPage() {
                       {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconCar size={12} />}>Кузов: {BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
                       <Badge className={styles.resultSpec} size="xs" variant="light" color={l.power ? "violet" : "gray"} leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
+                      {isRentalTransferListing(l.conditionInfo) && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue">Переоформление аренды</Badge>}
                       {(parseAuctionImages(l.images)?.length || 0) > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue" leftSection={<IconPhoto size={12} />}>Фото: {parseAuctionImages(l.images)?.length}</Badge>}
                       {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">
-                      <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(l.finalPrice)}</Text>
-                      <Text className="auction-result-card__price-note">Предварительно под ключ в РФ</Text>
+                      <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(isRentalTransferListing(l.conditionInfo) ? l.priceRub : l.finalPrice)}</Text>
+                      <Text className="auction-result-card__price-note">{isRentalTransferListing(l.conditionInfo) ? "Остаток регулярных платежей" : "Предварительно под ключ в РФ"}</Text>
                     </Box>
                     {l.auctionDate && (
                       <Group gap={4} className="auction-result-card__date" wrap="nowrap">

@@ -109,6 +109,87 @@ const CHINESE_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
   [/\(国Ⅵ\)|\(国VI\)/gi, "экостандарт China VI"], [/\(国Ⅴ\)|\(国V\)/gi, "экостандарт China V"],
 ]
 
+const BOBAEDREAM_EQUIPMENT_LABELS: Readonly<Record<string, string>> = {
+  "선루프": "Люк",
+  "파노라마선루프": "Панорамная крыша",
+  "알루미늄휠": "Легкосплавные диски",
+  "전동사이드미러": "Электропривод зеркал",
+  "HID램프": "Ксеноновые фары",
+  "LED헤드램프": "Светодиодные фары",
+  "어댑티드헤드램프": "Адаптивные фары",
+  "LED리어램프": "Светодиодные задние фонари",
+  "데이라이트": "Дневные ходовые огни",
+  "하이빔어시스트": "Автоматический дальний свет",
+  "압축도어": "Доводчики дверей",
+  "자동슬라이딩도어": "Автоматические сдвижные двери",
+  "전동사이드스탭": "Электрические подножки",
+  "루프랙": "Рейлинги на крыше",
+  "가죽시트": "Кожаный салон",
+  "전동시트(운전석)": "Электропривод сиденья водителя",
+  "전동시트(동승석)": "Электропривод сиденья пассажира",
+  "열선시트(앞좌석)": "Подогрев передних сидений",
+  "열선시트(뒷좌석)": "Подогрев задних сидений",
+  "통풍시트": "Вентиляция сидений",
+  "메모리시트": "Память настроек сидений",
+  "폴딩시트": "Складные сиденья",
+  "마사지시트": "Массаж сидений",
+  "워크인시트": "Сиденье с облегчённым доступом",
+  "요추받침": "Поясничная поддержка",
+  "하이패스룸미러": "Зеркало с системой Hi-Pass",
+  "ECM룸미러": "Зеркало с автозатемнением",
+  "뒷좌석에어벤트": "Воздуховоды для задних пассажиров",
+  "패들쉬프트": "Подрулевые переключатели",
+  "전동햇빛가리개": "Электрические солнцезащитные шторки",
+  "엠비언트라이트": "Контурная подсветка салона",
+  "동승석에어백": "Подушка безопасности пассажира",
+  "측면에어백": "Боковые подушки безопасности",
+  "커튼에어백": "Шторки безопасности",
+  "무릎에어백": "Коленная подушка безопасности",
+  "승객감지에어백": "Система распознавания пассажира",
+  "브레이크잠김방지(ABS)": "Антиблокировочная система",
+  "차체자세제어장치(ESC)": "Система стабилизации",
+  "후방센서": "Задние парктроники",
+  "전방센서": "Передние парктроники",
+  "후방카메라": "Камера заднего вида",
+  "전방카메라": "Передняя камера",
+  "어라운드뷰": "Круговой обзор",
+  "타이어공기압감지(TPMS)": "Контроль давления в шинах",
+  "차선이탈경보(LDWS)": "Контроль полосы движения",
+  "자동긴급제동": "Автоматическое экстренное торможение",
+  "전자제어서스펜션(ECS)": "Электронноуправляемая подвеска",
+  "후측방경보": "Контроль слепых зон",
+  "미끄럼방지(TCS)": "Противобуксовочная система",
+  "스마트키": "Бесключевой доступ",
+  "열선핸들": "Подогрев рулевого колеса",
+  "리모컨핸들": "Управление мультимедиа на руле",
+  "자동에어컨": "Климат-контроль",
+  "좌우독립에어컨": "Раздельный климат-контроль",
+  "오토라이트": "Автоматическое включение света",
+  "크루즈컨트롤": "Круиз-контроль",
+  "스마트크루즈컨트롤": "Адаптивный круиз-контроль",
+  "스탑앤고": "Система старт-стоп",
+  "전동트렁크": "Электропривод багажника",
+  "스마트트렁크": "Бесконтактное открытие багажника",
+  "전자주차브레이크(EPB)": "Электронный стояночный тормоз",
+  "경사로밀림방지": "Помощь при старте на подъёме",
+  "헤드업디스플레이(HUD)": "Проекционный дисплей",
+  "무선충전": "Беспроводная зарядка",
+  "자동주차": "Автоматическая парковка",
+  "냉장고": "Холодильник",
+  "네비게이션(순정)": "Штатная навигация",
+  "네비게이션(비순정)": "Дополнительная навигация",
+  "USB": "USB-разъёмы",
+  "AUX": "Аудиовход AUX",
+  "블루투스": "Bluetooth",
+  "MP3": "Поддержка MP3",
+  "DMB": "Цифровое телевидение",
+  "CD플레이어": "CD-проигрыватель",
+  "AV시스템": "Мультимедийная система",
+  "뒷좌석TV": "Экраны для задних пассажиров",
+  "텔레매틱스": "Телематическая система",
+  "스마트폰미러링": "Интеграция со смартфоном",
+}
+
 export class PublicListingUnavailableError extends Error {
   constructor(message: string) {
     super(message)
@@ -156,6 +237,23 @@ function htmlText(value: string | null | undefined) {
     .replace(/[ \t]+/g, " ")
     .replace(/\n\s+/g, "\n")
     .trim() || null
+}
+
+function bobaedreamWon(value: string | null | undefined) {
+  const tenThousands = asNumber(value?.match(/([\d,]+)\s*만원/)?.[1]?.replace(/,/g, ""))
+  return tenThousands === null ? null : Math.round(tenThousands * 10_000)
+}
+
+function bobaedreamEquipment(html: string) {
+  const items = [...html.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)].flatMap((match) => {
+    const block = match[1]
+    if (!/\bchecked(?:\s*=|\s|>)/i.test(block)) return []
+    const rawLabel = htmlText(firstMatch(block, /<button[^>]*>([\s\S]*?)<\/button>/i))
+    const label = rawLabel ? BOBAEDREAM_EQUIPMENT_LABELS[rawLabel] : null
+    return label ? [{ label, available: true }] : []
+  })
+  const uniqueItems = [...new Map(items.map((item) => [item.label, item])).values()]
+  return uniqueItems.length ? { totalReported: uniqueItems.length, items: uniqueItems.slice(0, 60) } : null
 }
 
 function firstMatch(value: string, pattern: RegExp) {
@@ -489,7 +587,7 @@ async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promis
   const titleBlock = firstMatch(html, /<div class="title-area">[\s\S]*?<h3 class="tit">([\s\S]*?)<\/h3>/i)
   const title = htmlText(titleBlock)?.split("-")[0]?.trim() || null
   const priceTenThousandWon = asNumber(firstMatch(html, /<div class="price-area">[\s\S]*?<span class="price">\s*<b[^>]*>\s*([\d,]+)\s*<\/b>\s*만원/i)?.replace(/,/g, ""))
-  if (!title || !priceTenThousandWon) throw new PublicListingUnavailableError(`Bobaedream: карточка ${candidate.sourceId} снята с публикации`)
+  if (!title) throw new PublicListingUnavailableError(`Bobaedream: карточка ${candidate.sourceId} снята с публикации`)
 
   const [rawMake, ...modelParts] = title.split(/\s+/)
   const make = normalizeAuctionMake(rawMake)
@@ -509,6 +607,29 @@ async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promis
   const mileage = asNumber(pairs.get("주행거리")?.replace(/[^\d]/g, ""))
   const fuelType = normalizeAuctionFuelType(pairs.get("연료"))
   const transmission = normalizeAuctionTransmission(pairs.get("변속기"))
+  const monthlyRentWon = bobaedreamWon(pairs.get("월렌트료"))
+  const transferSupportWon = bobaedreamWon(pairs.get("승계지원금")) || 0
+  const depositWon = bobaedreamWon(pairs.get("보증금"))
+  const residualValueWon = bobaedreamWon(pairs.get("잔존가치"))
+  const rentalPeriod = pairs.get("렌트기간") || ""
+  const remainingMonths = asNumber(rentalPeriod.match(/잔여\s*(\d+)\s*개월/)?.[1])
+  const totalMonths = asNumber(rentalPeriod.match(/총\s*(\d+)\s*개월/)?.[1])
+  const isRentalTransfer = monthlyRentWon !== null && monthlyRentWon > 0 && remainingMonths !== null && remainingMonths > 0
+  const estimatedRemainingContractWon = isRentalTransfer
+    ? Math.max(1, Math.round(monthlyRentWon * remainingMonths - transferSupportWon))
+    : null
+  const regularSalePriceWon = priceTenThousandWon !== null ? Math.round(priceTenThousandWon * 10_000) : null
+  const sourcePrice = estimatedRemainingContractWon || regularSalePriceWon
+  if (!sourcePrice || sourcePrice <= 0) throw new Error(`Bobaedream: в карточке ${candidate.sourceId} не удалось определить стоимость`)
+
+  const ownershipAfterEnd = /소유/.test(pairs.get("만기 후") || "")
+  const warranty = pairs.get("보증정보") || null
+  const equipment = bobaedreamEquipment(html)
+  const bodyType = /카니발|Carnival/i.test(title) ? "MINIVAN"
+    : /팰리세이드|GV\d+|SUV|Range Rover|싼타페|쏘렌토/i.test(title) ? "SUV"
+      : normalizeAuctionBodyType(pairs.get("차종"))
+  const driveType = /\bAWD\b|4WD|사륜/i.test(title) ? "AWD" : null
+  const location = /서울/.test(html) ? "Сеул" : /부산/.test(html) ? "Пусан" : "Корея"
   const russianSpecs = [
     `Год выпуска: ${fullYear}`,
     mileage !== null ? `Пробег: ${mileage.toLocaleString("ru-RU")} км` : null,
@@ -516,19 +637,41 @@ async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promis
     transmission ? `КПП: ${transmission}` : null,
     engineVolume ? `Объём: ${engineVolume.toLocaleString("ru-RU")} см³` : null,
     power ? `Мощность: ${Math.round(power)} л.с.` : null,
+    isRentalTransfer ? `Тип предложения: переоформление долгосрочной аренды` : null,
+    isRentalTransfer ? `Ежемесячный платёж: ${monthlyRentWon.toLocaleString("ru-RU")} ₩` : null,
+    isRentalTransfer && totalMonths ? `Осталось по договору: ${remainingMonths} из ${totalMonths} месяцев` : null,
+    isRentalTransfer && transferSupportWon ? `Компенсация при переоформлении: ${transferSupportWon.toLocaleString("ru-RU")} ₩` : null,
+    isRentalTransfer && depositWon !== null ? `Депозит: ${depositWon.toLocaleString("ru-RU")} ₩` : null,
+    isRentalTransfer && residualValueWon !== null ? `Остаточная стоимость: ${residualValueWon.toLocaleString("ru-RU")} ₩` : null,
+    isRentalTransfer ? `Расчётный остаток регулярных платежей: ${estimatedRemainingContractWon?.toLocaleString("ru-RU")} ₩ — это не цена продажи автомобиля` : null,
   ].filter(Boolean).join("; ")
+  const conditionInfo = isRentalTransfer ? {
+    insuranceRecordCount: null,
+    inspectionSummary: warranty ? `Гарантия источника: ${warranty.replace(/개월/g, " месяцев").replace(/km/gi, "км")}` : null,
+    newCarPriceRatioPct: null,
+    verifiedItems: [
+      { label: "Тип предложения", status: "Переоформление долгосрочной аренды" },
+      { label: "Ежемесячный платёж", status: `${monthlyRentWon.toLocaleString("ru-RU")} ₩` },
+      { label: "Осталось по договору", status: totalMonths ? `${remainingMonths} из ${totalMonths} месяцев` : `${remainingMonths} месяцев` },
+      { label: "Переход собственности", status: ownershipAfterEnd ? "После окончания договора" : "Условия нужно подтвердить" },
+    ],
+  } : null
   return {
     source: "BOBAEDREAM", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
     make, model, year: fullYear, manufacturedMonth: `${fullYear}-${month}`,
-    sourcePrice: Math.round(priceTenThousandWon * 10_000), sourceCurrency: "KRW", country: "KR", auctionDate: null,
+    sourcePrice, sourceCurrency: "KRW", country: "KR", auctionDate: null,
     mileage, fuelType,
-    transmission, bodyType: null,
+    transmission, bodyType,
     color: pairs.get("색상") || null, engineVolume, power: power ? Math.round(power) : null,
-    driveType: null, vin: null, lotNumber: candidate.sourceId,
+    driveType, vin: null, lotNumber: candidate.sourceId,
     imageUrl: images[0] || null, images,
-    descriptionOrig: `${make} ${model}. Автомобиль опубликован в открытом каталоге Bobaedream; данные проверяются по первоисточнику.`,
+    descriptionOrig: isRentalTransfer
+      ? `${make} ${model}. Переоформление долгосрочной аренды Bobaedream. Расчётный остаток регулярных платежей ${estimatedRemainingContractWon?.toLocaleString("ru-RU")} ₩; остаточная стоимость опубликована отдельно. Это не цена продажи автомобиля. Возможность выкупа и экспорта нужно подтвердить до расчёта доставки и таможенных платежей.`
+      : `${make} ${model}. Автомобиль опубликован в открытом каталоге Bobaedream; данные проверяются по первоисточнику.`,
     specsOrig: russianSpecs || null,
-    location: "Корея",
+    equipment,
+    conditionInfo,
+    location,
   }
 }
 
