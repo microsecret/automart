@@ -103,7 +103,7 @@ const KOREAN_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
   [/크루즈/gi, "Cruze"], [/콜로라도/gi, "Colorado"], [/이쿼녹스/gi, "Equinox"], [/임팔라/gi, "Impala"],
   [/올란도/gi, "Orlando"], [/티볼리/gi, "Tivoli"], [/토레스/gi, "Torres"], [/렉스턴/gi, "Rexton"],
   [/코란도/gi, "Korando"], [/액티언/gi, "Actyon"], [/무쏘/gi, "Musso"], [/체어맨/gi, "Chairman"],
-  [/하이브리드/gi, "Hybrid"], [/(\d+)세대/gi, "$1-е поколение"], [/페이스리프트/gi, "рестайлинг"],
+  [/클래스/gi, "Class"], [/하이브리드/gi, "Hybrid"], [/(\d+)세대/gi, "$1-е поколение"], [/페이스리프트/gi, "рестайлинг"],
 ]
 
 const HANGUL_INITIAL_RU = ["г", "кк", "н", "д", "тт", "р", "м", "б", "пп", "с", "сс", "", "ч", "чч", "ч", "к", "т", "п", "х"]
