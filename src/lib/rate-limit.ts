@@ -3,6 +3,9 @@
  * Для продакшена лучше использовать Redis.
  */
 const requests = new Map<string, { count: number; resetTime: number }>()
+const RATE_LIMIT_SWEEP_INTERVAL_MS = 60_000
+const MAX_RATE_LIMIT_BUCKETS = 10_000
+let lastRateLimitSweepAt = Date.now()
 
 interface RateLimitOptions {
   windowMs: number
@@ -29,9 +32,24 @@ export function rateLimit(
   options: RateLimitOptions = { windowMs: 60_000, maxRequests: 60 }
 ): RateLimitResult {
   const now = Date.now()
+  if (now - lastRateLimitSweepAt >= RATE_LIMIT_SWEEP_INTERVAL_MS || requests.size >= MAX_RATE_LIMIT_BUCKETS) {
+    cleanupRateLimit(now)
+    lastRateLimitSweepAt = now
+  }
   const record = requests.get(identifier)
 
   if (!record || now > record.resetTime) {
+    if (requests.size >= MAX_RATE_LIMIT_BUCKETS) {
+      let earliestKey: string | null = null
+      let earliestReset = Number.POSITIVE_INFINITY
+      for (const [key, value] of requests) {
+        if (value.resetTime < earliestReset) {
+          earliestKey = key
+          earliestReset = value.resetTime
+        }
+      }
+      if (earliestKey) requests.delete(earliestKey)
+    }
     requests.set(identifier, { count: 1, resetTime: now + options.windowMs })
     return { success: true, remaining: options.maxRequests - 1, resetIn: options.windowMs }
   }
@@ -46,8 +64,7 @@ export function rateLimit(
 }
 
 /** Очистка старых записей (вызывать периодически) */
-export function cleanupRateLimit() {
-  const now = Date.now()
+export function cleanupRateLimit(now = Date.now()) {
   for (const [key, val] of requests.entries()) {
     if (now > val.resetTime) requests.delete(key)
   }

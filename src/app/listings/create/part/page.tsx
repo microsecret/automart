@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl } from "@mantine/core"
+import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl, Image } from "@mantine/core"
 import { IconPlus, IconCheck, IconCar, IconTrash, IconPhoto, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, PART_AVAILABILITY_TYPES } from "@/lib/constants"
@@ -175,7 +175,7 @@ export default function CreatePartPage() {
                 {uploadingImages && <Text size="xs" c="indigo">Загружаем фотографии…</Text>}
                 {images.length > 0 && <SimpleGrid cols={{ base: 3, sm: 4, md: 6 }} spacing="xs">
                   {images.map((image, index) => <Box key={image} pos="relative" style={{ aspectRatio: "1", overflow: "hidden", borderRadius: 10, border: index === 0 ? "2px solid var(--mantine-color-indigo-5)" : "1px solid var(--mantine-color-gray-3)" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}<img src={image} alt={`Фото ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <Image src={image} alt={`Фото ${index + 1}`} w="100%" h="100%" fit="cover" />
                     <ActionIcon aria-label={`Удалить фото ${index + 1}`} type="button" size="sm" color="dark" variant="filled" pos="absolute" top={5} right={5} onClick={() => removeImage(index)}><IconX size={13} /></ActionIcon>
                     {index === 0 && <Badge size="xs" color="indigo" variant="filled" pos="absolute" left={5} bottom={5}>Обложка</Badge>}
                   </Box>)}
@@ -198,7 +198,7 @@ export default function CreatePartPage() {
                 {compat.length > 0 && (
                   <Group gap="xs" wrap="wrap">
                     {compat.map((c, i) => (
-                      <Badge key={i} size="md" variant="light" color="blue" rightSection={<button type="button" aria-label={`Убрать ${c.make} ${c.model}`} onClick={() => setCompat(compat.filter((_, idx) => idx !== i))} style={{ border: "none", background: "transparent", cursor: "pointer" }}><IconTrash size={10} /></button>}>
+                      <Badge key={i} size="md" variant="light" color="blue" rightSection={<ActionIcon type="button" aria-label={`Убрать ${c.make} ${c.model}`} onClick={() => setCompat(compat.filter((_, idx) => idx !== i))} size="xs" variant="transparent" color="blue"><IconTrash size={11} /></ActionIcon>}>
                         {c.make} {c.model} {c.generation ? `· ${c.generation}` : ""} {c.yearFrom ? `${c.yearFrom}-${c.yearTo || ""}` : ""}
                       </Badge>
                     ))}

@@ -4,16 +4,17 @@ import { useEffect, useMemo, useState, Suspense } from "react"
 import { useParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
-import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, Divider, TextInput, Textarea, ThemeIcon, Center, Loader, Breadcrumbs, Anchor, Progress } from "@mantine/core"
+import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, TextInput, Textarea, ThemeIcon, Center, Loader, Breadcrumbs, Anchor, Progress, UnstyledButton } from "@mantine/core"
 import { useMediaQuery } from "@mantine/hooks"
-import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconGasStation, IconManualGearbox, IconPalette, IconChevronRight, IconShieldCheck, IconTruckDelivery, IconX } from "@tabler/icons-react"
+import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconEye, IconGasStation, IconManualGearbox, IconPalette, IconChevronRight, IconShieldCheck, IconTruckDelivery, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import { auctionThumbnailImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
+import { auctionCardImageUrl, auctionThumbnailImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import { auctionMakeLabel } from "@/lib/auction-normalization"
+import { auctionSourceLabel } from "@/lib/auction-sources"
 import type { AuctionListing } from "@prisma/client"
 import styles from "./auction-detail.module.css"
 
@@ -138,8 +139,14 @@ function AuctionDetail() {
     ...(parseAuctionImages(listingImages) || []),
   ])), [listingImageUrl, listingImages])
   const activeImage = galleryImages[activeImageIndex] || ""
+  const activeImageThumbnail = auctionThumbnailImageUrl(activeImage)
+  const activeImagePreview = auctionCardImageUrl(activeImage)
   const activeImageHighQuality = highQualityAuctionImageUrl(activeImage)
   const isActiveImageLoading = Boolean(activeImageHighQuality) && !loadedImageUrls.has(activeImageHighQuality)
+  // Render a sharp card-sized rendition immediately, then replace it only
+  // after the 1600px image is fully decoded. This avoids the old blank/spinner
+  // wait for visitors who open a listing before the remote CDN is warm.
+  const displayedActiveImage = isActiveImageLoading ? activeImagePreview : activeImageHighQuality
   const equipment = listing ? parseAuctionEquipment(listing.equipment) : null
   const conditionInfo = listing ? parseAuctionConditionInfo(listing.conditionInfo) : null
 
@@ -152,13 +159,14 @@ function AuctionDetail() {
   useEffect(() => {
     if (galleryImages.length < 2 || typeof window === "undefined") return
 
-    // Two following photos are enough for quick browsing while avoiding a
-    // full gallery download. Images stay only in the visitor's browser cache;
-    // no remote CDN files are copied to our server or database.
-    const preloadUrls = [1, 2]
-      .map((offset) => galleryImages[(activeImageIndex + offset) % galleryImages.length])
-      .map(highQualityAuctionImageUrl)
-      .filter((imageUrl) => imageUrl && imageUrl !== activeImageHighQuality && !loadedImageUrls.has(imageUrl))
+    // Warm both browsing directions. A visitor often checks the previous
+    // inspection photo after zooming into a detail, so preloading only the
+    // following images made backwards navigation depend on the remote CDN.
+    // Images stay only in the browser cache; our server stores URLs, not files.
+    const preloadUrls = [
+      activeImageHighQuality,
+      ...[-1, 1, 2].map((offset) => highQualityAuctionImageUrl(galleryImages[(activeImageIndex + offset + galleryImages.length) % galleryImages.length])),
+    ].filter((imageUrl) => imageUrl && !loadedImageUrls.has(imageUrl))
 
     let cancelled = false
     const preloadedImages = preloadUrls.map((imageUrl) => {
@@ -178,7 +186,24 @@ function AuctionDetail() {
         image.onload = null
       })
     }
-  }, [activeImageIndex, galleryImages, loadedImageUrls])
+  }, [activeImageHighQuality, activeImageIndex, galleryImages, loadedImageUrls])
+
+  const warmGalleryImage = (imageUrl: string) => {
+    if (typeof window === "undefined") return
+
+    const highQualityUrl = highQualityAuctionImageUrl(imageUrl)
+    for (const renditionUrl of [auctionCardImageUrl(imageUrl), highQualityUrl]) {
+      if (!renditionUrl || (renditionUrl === highQualityUrl && loadedImageUrls.has(highQualityUrl))) continue
+      const preloaded = new window.Image()
+      preloaded.decoding = "async"
+      if (renditionUrl === highQualityUrl) {
+        preloaded.onload = () => {
+          setLoadedImageUrls((previous) => previous.has(highQualityUrl) ? previous : new Set(previous).add(highQualityUrl))
+        }
+      }
+      preloaded.src = renditionUrl
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -224,40 +249,62 @@ function AuctionDetail() {
                 <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
                   {(!activeImage || failedImageUrls.has(activeImage)) && <VehicleFallback type="CAR" />}
                   {activeImage && !failedImageUrls.has(activeImage) && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      className={styles.galleryImage}
-                      data-loading={isActiveImageLoading || undefined}
-                      src={activeImageHighQuality}
-                      alt={`${auctionMakeLabel(listing.make)} ${listing.model}, фото ${activeImageIndex + 1}`}
-                      decoding="async"
-                      onLoad={() => setLoadedImageUrls((previous) => new Set(previous).add(activeImageHighQuality))}
-                      onError={() => {
-                        setFailedImageUrls((previous) => new Set(previous).add(activeImage))
-                        setLoadedImageUrls((previous) => new Set(previous).add(activeImageHighQuality))
-                      }}
-                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+                    <>
+                      {/* The rail thumbnail is normally already cached. Keep it
+                          below the larger rendition so a click changes the photo
+                          immediately even during a cold ENCAR CDN response. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        key={`instant-${activeImage}`}
+                        src={activeImageThumbnail}
+                        alt=""
+                        aria-hidden="true"
+                        decoding="sync"
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "blur(1px)", transform: "scale(1.005)" }}
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        key={displayedActiveImage}
+                        className={styles.galleryImage}
+                        src={displayedActiveImage}
+                        alt={`${auctionMakeLabel(listing.make)} ${listing.model}, фото ${activeImageIndex + 1}`}
+                        decoding="async"
+                        fetchPriority={activeImageIndex === 0 ? "high" : "auto"}
+                        onLoad={() => {
+                          if (displayedActiveImage !== activeImageHighQuality) return
+                          setLoadedImageUrls((previous) => new Set(previous).add(activeImageHighQuality))
+                        }}
+                        onError={() => {
+                          setFailedImageUrls((previous) => new Set(previous).add(activeImage))
+                          setLoadedImageUrls((previous) => new Set(previous).add(activeImageHighQuality))
+                        }}
+                        style={{ position: "absolute", zIndex: 1, inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </>
                   )}
-                  {isActiveImageLoading && <Center className={styles.galleryLoader}><Loader size="sm" color="orange" /></Center>}
-                  <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.lotNumber ? `${listing.source} · ${listing.lotNumber}` : listing.source}</Badge>
-                  <Badge pos="absolute" top={16} right={16} color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
+                  <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.lotNumber ? `${auctionSourceLabel(listing.source)} · ${listing.lotNumber}` : auctionSourceLabel(listing.source)}</Badge>
+                  <Stack pos="absolute" top={16} right={16} gap={6} align="flex-end">
+                    <Badge color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
+                    <Badge color="gray" variant="filled" leftSection={<IconEye size={13} />}>{listing.viewCount.toLocaleString("ru")} просмотров</Badge>
+                  </Stack>
                 </Box>
                 {galleryImages.length > 1 && (
                   <Box p="sm" style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
                     <Group gap="xs" wrap="nowrap" style={{ overflowX: "auto", paddingBottom: 2 }}>
                       {galleryImages.map((image, index) => (
-                        <button
+                        <UnstyledButton
                           key={image}
-                          type="button"
                           onClick={() => setActiveImageIndex(index)}
+                          onPointerEnter={() => warmGalleryImage(image)}
+                          onPointerDown={() => warmGalleryImage(image)}
+                          onFocus={() => warmGalleryImage(image)}
                           aria-label={`Показать фото ${index + 1}`}
                           aria-current={index === activeImageIndex ? "true" : undefined}
                           style={{ flex: "0 0 auto", width: 76, height: 56, padding: 0, border: index === activeImageIndex ? "2px solid var(--mantine-color-orange-6)" : "1px solid var(--mantine-color-gray-3)", borderRadius: 8, background: "var(--mantine-color-gray-1)", overflow: "hidden", cursor: "pointer" }}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={auctionThumbnailImageUrl(image)} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.style.opacity = "0.25" }} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
-                        </button>
+                        </UnstyledButton>
                       ))}
                     </Group>
                     <Text size="xs" c="dimmed" mt={6}>Фото {activeImageIndex + 1} из {galleryImages.length}</Text>
@@ -282,7 +329,7 @@ function AuctionDetail() {
                   <Group gap={6} mt={2}>
                     <Text size="xs" c="dimmed">Данные автомобиля:</Text>
                     <Anchor href={listing.sourceUrl} target="_blank" rel="noreferrer" size="xs" fw={600}>
-                      Открыть оригинальное объявление на {listing.source}
+                      Открыть оригинальное объявление на {auctionSourceLabel(listing.source)}
                     </Anchor>
                   </Group>
                 </Stack>
@@ -292,7 +339,7 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f8fafc 0%, #fff 56%)" }}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
-                      <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {listing.source}</Text></Box></Group>
+                      <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {auctionSourceLabel(listing.source)}</Text></Box></Group>
                       {equipment.totalReported && <Badge variant="light" color="indigo">В источнике: {equipment.totalReported} опции</Badge>}
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">

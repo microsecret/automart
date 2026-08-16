@@ -1,0 +1,28 @@
+[Unit]
+Description=LeWheel Telegram long-polling bridge
+Wants=network-online.target
+After=network-online.target automart.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/AutoMart
+Environment=NODE_ENV=production
+Environment=PORT=4001
+Environment=TELEGRAM_POLLING_STATE_PATH=/var/lib/automart-telegram/offset
+EnvironmentFile=-/root/AutoMart/.env
+ExecStart=/usr/bin/node /root/AutoMart/scripts/telegram-polling.mjs
+Restart=always
+RestartSec=5
+TimeoutStopSec=45
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+StateDirectory=automart-telegram
+ReadWritePaths=/var/lib/automart-telegram
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

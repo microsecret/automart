@@ -1,6 +1,7 @@
 import { Alert, Box, Button, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
 import { IconAlertCircle, IconArrowRight, IconCar, IconChecklist, IconFileDescription, IconMotorbike, IconShieldCheck, IconSignature } from "@tabler/icons-react"
 import Link from "next/link"
+import LegalDocumentBuilder from "@/components/services/LegalDocumentBuilder"
 
 const DOCUMENTS = [
   {
@@ -59,10 +60,13 @@ export default function LegalDocumentsPage() {
                     <Text size="sm">{field}</Text>
                   </Group>)}
                 </Stack>
+                <Button component="a" href="#document-builder" mt="auto" variant="light" color={document.color}>Заполнить шаблон</Button>
               </Stack>
             </Paper>
           })}
         </SimpleGrid>
+
+        <LegalDocumentBuilder />
 
         <Paper withBorder radius="lg" p={{ base: "md", md: "lg" }}>
           <Group gap="sm" align="flex-start" wrap="nowrap">

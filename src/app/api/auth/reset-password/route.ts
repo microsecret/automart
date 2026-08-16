@@ -7,9 +7,11 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const token = typeof body.token === "string" ? body.token.trim() : ""
-    const password = typeof body.password === "string" ? body.password : ""
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object") return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
+    const payload = body as Record<string, unknown>
+    const token = typeof payload.token === "string" ? payload.token.trim() : ""
+    const password = typeof payload.password === "string" ? payload.password : ""
 
     const ipLimit = rateLimit(`auth:password-reset-confirm:ip:${getClientIp(request)}`, { windowMs: 15 * 60_000, maxRequests: 15 })
     if (!ipLimit.success) {

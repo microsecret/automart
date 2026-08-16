@@ -8,7 +8,7 @@ import { can } from "@/lib/permissions"
 export const dynamic = "force-dynamic"
 
 /** GET /api/admin/listings — все объявления для модерации */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session || !can(session.user?.role, "listing:moderate")) {
@@ -119,6 +119,7 @@ export async function DELETE(request: NextRequest) {
     ])
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error("Admin listing removal error:", error)
     return NextResponse.json({ error: "Failed" }, { status: 500 })
   }
 }

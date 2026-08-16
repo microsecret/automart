@@ -3,8 +3,9 @@ import { timingSafeEqual } from "crypto"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
-import { cleanNewsTitle, makeExcerpt, makeImportedNewsSlug, makeSeoDescription, normalizeNewsText } from "@/lib/news"
+import { cleanNewsTitle, makeExcerpt, makeImportedNewsSlug, makeSeoDescription } from "@/lib/news"
 import { safeHttpsUrl } from "@/lib/media-url"
+import { cleanNewsArticleContent, extractNewsHashtags, extractTelegramActions, serializeNewsContentMetadata } from "@/lib/news-content"
 
 export const runtime = "nodejs"
 
@@ -44,7 +45,12 @@ export async function POST(request: NextRequest) {
   try {
     const parsed = importPayloadSchema.parse(await request.json())
     const title = cleanNewsTitle(parsed.title)
-    const content = normalizeNewsText(parsed.content)
+    const content = cleanNewsArticleContent(parsed.content)
+    const tags = extractNewsHashtags(parsed.content, parsed.tags || [])
+    const telegramActions = extractTelegramActions(parsed.content)
+    const contentMetadata = tags.length || telegramActions.length
+      ? serializeNewsContentMetadata(tags, telegramActions)
+      : null
 
     if (title.length < 3 || content.length < 20) {
       return NextResponse.json({ error: "Invalid editorial content" }, { status: 422 })
@@ -74,7 +80,7 @@ export async function POST(request: NextRequest) {
         sourceChannel,
         sourceMessageId: parsed.source.messageId,
         author: parsed.author || null,
-        tags: parsed.tags?.length ? JSON.stringify(parsed.tags) : null,
+        tags: contentMetadata,
         seoTitle,
         seoDescription,
         publishedAt: parsed.publishedAt,
@@ -90,7 +96,7 @@ export async function POST(request: NextRequest) {
         sourceChannel,
         sourceMessageId: parsed.source.messageId,
         author: parsed.author || null,
-        tags: parsed.tags?.length ? JSON.stringify(parsed.tags) : null,
+        tags: contentMetadata,
         seoTitle,
         seoDescription,
         publishedAt: parsed.publishedAt,

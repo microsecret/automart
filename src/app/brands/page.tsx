@@ -2,16 +2,10 @@
 export const dynamic = "force-dynamic"
 
 import { useState } from "react"
-import { Container, Stack, Text, Group, SegmentedControl, SimpleGrid, Paper, Anchor, Box } from "@mantine/core"
+import { Container, Stack, Text, Group, SegmentedControl, SimpleGrid, Paper, Anchor } from "@mantine/core"
 import Link from "next/link"
-import { BRANDS, COUNTRY_FLAGS, TRANSPORT_CATEGORIES } from "@/lib/catalog"
-import BrandBadge from "@/components/brands/BrandBadge"
+import { BRANDS, COUNTRY_FLAGS } from "@/lib/catalog"
 import BrandIcon from "@/components/brands/BrandIcon"
-import { getBrandColor, getContrastText } from "@/lib/brand-colors"
-
-const CAT_LABELS: Record<string, string> = {
-  cars: "Легковые", moto: "Мото", trucks: "Грузовики", special: "Спецтехника", water: "Водный", air: "Авиа",
-}
 
 export default function BrandsPage() {
   const [cat, setCat] = useState<string>("cars")

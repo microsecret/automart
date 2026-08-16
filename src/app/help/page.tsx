@@ -19,7 +19,7 @@ export default function HelpPage() {
       <Stack gap="lg" maw={1000} mx="auto">
         <Box>
           <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={32} c="dark.9" mb={4}>Помощь и поддержка</Text>
-          <Text size="md" c="#64748b">Всё, что нужно для безопасной сделки на AutoMart</Text>
+          <Text size="md" c="#64748b">Помощь по объявлениям, безопасности и сделкам на LeWheel</Text>
         </Box>
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
           {SECTIONS.map((s) => {
@@ -47,7 +47,7 @@ export default function HelpPage() {
           <Group justify="space-between" align="center" wrap="wrap">
             <Stack gap={0}>
               <Text fw={800} fz="lg" c="white">Не нашли ответ?</Text>
-              <Text size="sm" c="rgba(255,255,255,0.85)">Наша поддержка ответит в течение 15 минут</Text>
+              <Text size="sm" c="rgba(255,255,255,0.85)">Создайте обращение — ответ появится в личном кабинете</Text>
             </Stack>
             <Anchor href="/help/support" c="white" fw={700} style={{ textDecoration: "underline" }}>Написать в поддержку →</Anchor>
           </Group>

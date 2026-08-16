@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
-import { Alert, Badge, Button, Center, Paper, SimpleGrid, Stack, Text, Title } from "@mantine/core"
+import { Alert, Avatar, Badge, Button, Center, Group, Paper, SimpleGrid, Stack, Text, Title } from "@mantine/core"
 import { IconBrandTelegram, IconCircleCheck, IconExternalLink, IconGasStation, IconGavel, IconHeart, IconPlus, IconTools, IconTruckDelivery } from "@tabler/icons-react"
 
 declare global {
@@ -95,14 +95,17 @@ export default function TelegramMiniApp() {
   const triggerHaptic = () => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
 
   return (
-    <Center mih="100vh" p="md" style={{ background: "linear-gradient(135deg,#11162f 0%,#312e81 52%,#e0e7ff 100%)" }}>
-      <Paper maw={460} w="100%" radius="xl" p={{ base: "lg", sm: "xl" }} shadow="xl">
+    <Center mih="100vh" w="100%" p={{ base: "sm", sm: "md" }} style={{ background: "linear-gradient(135deg,#11162f 0%,#312e81 52%,#e0e7ff 100%)", overflow: "hidden" }}>
+      <Paper maw={460} w="100%" miw={0} radius="xl" p={{ base: "lg", sm: "xl" }} shadow="xl" style={{ maxWidth: "calc(100vw - 24px)" }}>
         <Stack gap="lg">
-          <Badge leftSection={<IconBrandTelegram size={14} />} color="indigo" variant="light" w="fit-content">Авторынок · Telegram</Badge>
-          <div>
-            <Title order={1} fz={{ base: 28, sm: 34 }}>Транспорт всегда под рукой</Title>
-            <Text c="dimmed" mt="xs">Единый кабинет для объявлений, избранного, аукционов и безопасных сделок.</Text>
-          </div>
+          <Group gap="sm" wrap="nowrap" align="center">
+            <Avatar src="/images/telegram-bot-avatar-v1.png" size={52} radius="xl" color="indigo" style={{ flexShrink: 0 }}>LW</Avatar>
+            <Stack gap={4} miw={0}>
+              <Badge leftSection={<IconBrandTelegram size={14} />} color="indigo" variant="light" maw="100%">LeWheel · Telegram</Badge>
+              <Title order={1} fz={{ base: 24, sm: 34 }} lh={1.08} style={{ overflowWrap: "anywhere" }}>Транспорт всегда под рукой</Title>
+            </Stack>
+          </Group>
+          <Text c="dimmed">LeWheel объединяет объявления, избранное, зарубежные аукционы и безопасные сделки.</Text>
           <Alert color={status === "error" ? "red" : status === "ready" ? "green" : "indigo"} icon={status === "ready" ? <IconCircleCheck size={18} /> : <IconBrandTelegram size={18} />}>
             {message}
           </Alert>

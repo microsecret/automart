@@ -3,6 +3,7 @@ import { saveAuctionImportItems, type AuctionImportItem } from "@/lib/auction-im
 import { discoverEncarPublicListingUrls, scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
 import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
 import { prisma } from "@/lib/prisma"
+import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
 
 export const dynamic = "force-dynamic"
 
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
     const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), MAX_LISTINGS_PER_SYNC) : MAX_LISTINGS_PER_SYNC
     const maxAgeYears = resolveMaximumImportAgeYears(body?.maxAgeYears)
     const catalogUrl = typeof body?.catalogUrl === "string" && body.catalogUrl.length <= 2_000 ? body.catalogUrl : null
+    await closeStaleAuctionSyncRuns("ENCAR")
     const syncRun = await prisma.auctionSyncRun.create({
       data: { source: "ENCAR", syncKind: "DISCOVERY", requestedLimit: limit, catalogUrl },
       select: { id: true },

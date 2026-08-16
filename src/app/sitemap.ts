@@ -2,6 +2,8 @@ import { MetadataRoute } from "next"
 import { prisma } from "@/lib/prisma"
 import { newsHref } from "@/lib/news"
 import { getSiteUrl } from "@/lib/site-url"
+import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
+import { publicListingWhere } from "@/lib/listing-lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -11,11 +13,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Статические страницы
   const staticPages = [
-    "", "/search", "/brands", "/compare", "/news",
+    "", "/search", "/brands", "/compare", "/news", "/about", "/help",
     "/category/cars", "/category/moto", "/category/trucks", "/category/special",
     "/category/water", "/category/air",
     "/services", "/services/valuation", "/services/history-check", "/services/smart-matching", "/services/safe-deal", "/services/legal-documents", "/services/fuel-map",
-    "/help/sell", "/help/safety", "/help/rules", "/help/support",
+    "/help/sell", "/help/safety", "/help/rules", "/help/support", "/legal/privacy", "/legal/terms",
     "/parts-finder", "/auctions",
   ]
 
@@ -29,24 +31,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    const [news, vehicles, parts, auctions] = await Promise.all([
+    const auctionPolicy = buildPublicAuctionPolicy(now)
+    const [news, vehicleListings, partListings, auctions] = await Promise.all([
       prisma.news.findMany({
+        where: { publishedAt: { lte: now } },
         select: { id: true, slug: true, publishedAt: true, updatedAt: true },
         orderBy: { publishedAt: "desc" },
         take: 10_000,
       }),
-      prisma.vehicle.findMany({
-        select: { id: true, updatedAt: true },
+      prisma.listing.findMany({
+        where: { ...publicListingWhere, vehicleId: { not: null } },
+        select: { vehicleId: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
+        distinct: ["vehicleId"],
         take: 10_000,
       }),
-      prisma.part.findMany({
-        select: { id: true, updatedAt: true },
+      prisma.listing.findMany({
+        where: { ...publicListingWhere, partId: { not: null } },
+        select: { partId: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
+        distinct: ["partId"],
         take: 10_000,
       }),
       prisma.auctionListing.findMany({
-        where: { status: "ACTIVE" },
+        where: auctionPolicy.where,
         select: { id: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
         take: 10_000,
@@ -61,18 +69,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "weekly" as const,
         priority: 0.8,
       })),
-      ...vehicles.map((vehicle) => ({
-        url: `${baseUrl}/listings/vehicle/${vehicle.id}`,
-        lastModified: vehicle.updatedAt,
+      ...vehicleListings.flatMap((listing) => listing.vehicleId ? [{
+        url: `${baseUrl}/listings/vehicle/${listing.vehicleId}`,
+        lastModified: listing.updatedAt,
         changeFrequency: "weekly" as const,
         priority: 0.8,
-      })),
-      ...parts.map((part) => ({
-        url: `${baseUrl}/listings/part/${part.id}`,
-        lastModified: part.updatedAt,
+      }] : []),
+      ...partListings.flatMap((listing) => listing.partId ? [{
+        url: `${baseUrl}/listings/part/${listing.partId}`,
+        lastModified: listing.updatedAt,
         changeFrequency: "weekly" as const,
         priority: 0.75,
-      })),
+      }] : []),
       ...auctions.map((auction) => ({
         url: `${baseUrl}/auctions/${auction.id}`,
         lastModified: auction.updatedAt,

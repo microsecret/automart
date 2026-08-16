@@ -4,13 +4,13 @@ import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import NextImage from "next/image"
-import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Anchor, Divider, Chip, Loader, SegmentedControl, Tooltip } from "@mantine/core"
+import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Divider, Chip, Loader, SegmentedControl, Tooltip } from "@mantine/core"
 import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { COUNTRY_FLAGS, getBrandsByCategory } from "@/lib/catalog"
 import BrandIcon from "@/components/brands/BrandIcon"
-import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, SPECIAL_TYPES, WATER_TYPES, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
@@ -165,7 +165,7 @@ export default function HomePage(p: HomePageProps = {}) {
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
       {!p.categorySlug && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
-          <NextImage src="/images/home/automarket-hero.png" alt="Авторынок — транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
+          <NextImage src="/images/home/automarket-hero.png" alt="LeWheel — транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
           <Box className="home-auctions__scrim" />
           <Box className="home-auctions__content">
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">

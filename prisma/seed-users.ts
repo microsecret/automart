@@ -24,6 +24,10 @@ const REVIEW_TEXTS = [
 ]
 
 async function main() {
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("Demo users and reviews are disabled. Set ALLOW_DEMO_SEED=true only for an isolated development database.")
+  }
+
   let created = 0
   for (const u of USERS) {
     const ex = await prisma.user.findUnique({ where: { email: u.email } }).catch(() => null)

@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
+import { Box, Burger, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
 import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2, IconBrain, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
@@ -28,7 +28,7 @@ type NavigationItem = {
   active: boolean
 }
 
-export default function AppHeader() {
+export default function AppHeader({ navigationOpened = false, onNavigationToggle }: { navigationOpened?: boolean; onNavigationToggle?: () => void }) {
   const { data: session } = useSession()
   const [favCount, setFavCount] = useState(0)
   useEffect(() => {
@@ -120,12 +120,9 @@ export default function AppHeader() {
 
   return (
     <Box
-      component="header"
-      pos="sticky"
-      top={0}
       className="market-app-header"
+      h="100%"
       style={{
-        zIndex: 200,
         background: "var(--mantine-color-body)",
         borderBottom: "1px solid var(--mantine-color-border)",
         boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
@@ -134,6 +131,7 @@ export default function AppHeader() {
       <Container size="xl" px={{ base: "sm", md: "md" }} style={{ height: "var(--app-header-height)" }}>
         <Group h="100%" gap="sm" wrap="nowrap" align="center" justify="space-between">
           {/* ЛЕВО: Лого */}
+          {onNavigationToggle && <Burger hiddenFrom="md" opened={navigationOpened} onClick={onNavigationToggle} size="sm" aria-label={navigationOpened ? "Закрыть навигацию" : "Открыть навигацию"} />}
           <Link href="/" style={{ textDecoration: "none", color: "inherit", flexShrink: 0 }}>
             <Group gap={8} wrap="nowrap" align="center">
               <Box style={{
@@ -144,7 +142,7 @@ export default function AppHeader() {
                 <IconCar size={19} color="white" />
               </Box>
               <Text ff="var(--font-display),sans-serif" fw={800} fz={18} lh={1} c="var(--mantine-color-text)" style={{ letterSpacing: "-0.025em" }}>
-                Авторынок
+                LeWheel
               </Text>
             </Group>
           </Link>
@@ -261,15 +259,6 @@ export default function AppHeader() {
             <IconSearch size={18} stroke={1.8} />
           </ActionIcon>
 
-          <MobileNavigationMenu
-            catalogueNavigation={catalogueNavigation}
-            serviceNavigation={serviceNavigation}
-            serviceShortcuts={serviceShortcuts}
-            authenticated={Boolean(session)}
-            colorScheme={colorScheme}
-            onToggleScheme={toggleScheme}
-          />
-
           {/* ПРАВО: Кнопки — разделены визуально */}
           <Group gap={6} wrap="nowrap" align="center">
             {/* Продать — яркая индиго */}
@@ -324,19 +313,21 @@ export default function AppHeader() {
                 <Box visibleFrom="sm"><Divider orientation="vertical" mx={2} h={26} /></Box>
                 <Menu shadow="md" width={220} position="bottom-end" radius="md" offset={4}>
                   <Menu.Target>
-                    <ActionIcon variant="subtle" radius="xl" size={32} className="market-app-header__utility-action market-app-header__utility-action--avatar">
+                    <ActionIcon variant="subtle" radius="xl" size={32} aria-label="Открыть меню профиля" className="market-app-header__utility-action market-app-header__utility-action--avatar">
                       <Avatar src={session.user?.image} size={28} radius="xl" color="indigo">
                         {session.user?.name?.[0]?.toUpperCase()}
                       </Avatar>
                     </ActionIcon>
                   </Menu.Target>
                   <Menu.Dropdown>
+                    <Menu.Label>Профиль</Menu.Label>
                     <Box px="sm" py={6}>
                       <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {session.user?.name || session.user?.email}
                       </Text>
                     </Box>
                     <Menu.Divider />
+                    <Menu.Label>Кабинет</Menu.Label>
                     <Menu.Item component={Link} href="/dashboard" leftSection={<IconLayoutDashboard size={15} />}>Личный кабинет</Menu.Item>
                     <Menu.Item component={Link} href="/dashboard?tab=listings" leftSection={<IconCar size={15} />}>Мои объявления</Menu.Item>
                     <Menu.Item component={Link} href="/messages" leftSection={<IconMessageCircle2 size={15} />}>Сообщения</Menu.Item>
@@ -415,65 +406,5 @@ function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts }: { servic
         </Menu.Dropdown>
       </Menu>
     </Box>
-  )
-}
-
-function MobileNavigationMenu({
-  catalogueNavigation,
-  serviceNavigation,
-  serviceShortcuts,
-  authenticated,
-  colorScheme,
-  onToggleScheme,
-}: {
-  catalogueNavigation: NavigationItem[]
-  serviceNavigation: NavigationItem[]
-  serviceShortcuts: NavigationItem[]
-  authenticated: boolean
-  colorScheme: "light" | "dark"
-  onToggleScheme: () => void
-}) {
-  return (
-    <Menu shadow="lg" width={248} position="bottom-start" radius="lg" offset={8} withinPortal>
-      <Menu.Target>
-        <ActionIcon hiddenFrom="sm" variant="light" color="indigo" size="md" radius="md" aria-label="Открыть разделы и сервисы">
-          <IconMenu2 size={19} stroke={1.9} />
-        </ActionIcon>
-      </Menu.Target>
-      <Menu.Dropdown>
-        <Menu.Label>Разделы</Menu.Label>
-        {catalogueNavigation.map((item) => (
-          <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon || <IconCar size={15} />} color={item.active ? "indigo" : undefined}>
-            {item.label}
-          </Menu.Item>
-        ))}
-        <Menu.Divider />
-        <Menu.Label>Инструменты водителя</Menu.Label>
-        {serviceShortcuts.map((item) => (
-          <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon} color={item.active ? "indigo" : undefined}>
-            {item.label}
-          </Menu.Item>
-        ))}
-        <Menu.Divider />
-        <Menu.Label>Площадка и поддержка</Menu.Label>
-        {serviceNavigation.map((item) => (
-          <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon} color={item.active ? "indigo" : undefined}>
-            {item.href === "/services" ? "Все сервисы" : item.label}
-          </Menu.Item>
-        ))}
-        <Menu.Item component={Link} href="/search" leftSection={<IconSearch size={15} />}>Поиск</Menu.Item>
-        {authenticated && <>
-          <Menu.Divider />
-          <Menu.Label>Кабинет</Menu.Label>
-          <Menu.Item component={Link} href="/favorites" leftSection={<IconHeart size={15} />}>Избранное</Menu.Item>
-          <Menu.Item component={Link} href="/messages" leftSection={<IconMessageCircle2 size={15} />}>Сообщения</Menu.Item>
-          <Menu.Item component={Link} href="/notifications" leftSection={<IconBell size={15} />}>Уведомления</Menu.Item>
-        </>}
-        <Menu.Divider />
-        <Menu.Item leftSection={colorScheme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />} onClick={onToggleScheme}>
-          {colorScheme === "dark" ? "Светлая тема" : "Тёмная тема"}
-        </Menu.Item>
-      </Menu.Dropdown>
-    </Menu>
   )
 }

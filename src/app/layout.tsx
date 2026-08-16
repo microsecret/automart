@@ -11,24 +11,31 @@ const manrope = Manrope({ subsets: ["latin", "cyrillic"], variable: "--font-disp
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: { default: "Авторынок — купить и продать авто, мото, спецтехнику, запчасти", template: "%s | Авторынок" },
-  description: "Маркетплейс автомобилей и спецтехники: легковые, мото, грузовики, водный транспорт, запчасти. Проверка истории, оценка стоимости, безопасная сделка.",
+  applicationName: "LeWheel — Авторынок",
+  title: { default: "Авторынок LeWheel — купить и продать транспорт, найти авто из-за рубежа", template: "%s | LeWheel" },
+  description: "LeWheel — маркетплейс транспорта и импорта авто: легковые, мото, грузовики, спецтехника и запчасти. Проверка истории, расчёт доставки и безопасная сделка.",
   openGraph: {
-    title: "Авторынок — маркетплейс транспорта и запчастей",
-    description: "300+ авто, 50+ запчастей, VIN-проверка, безопасные сделки. Легковые, мото, грузовики, спецтехника.",
+    title: "LeWheel — маркетплейс транспорта и авто из-за рубежа",
+    description: "Транспорт, запчасти, подбор лотов с зарубежных площадок, расчёт доставки и безопасные сделки.",
     locale: "ru_RU",
     type: "website",
-    siteName: "Авторынок",
+    siteName: "LeWheel",
   },
-  twitter: { card: "summary_large_image", title: "Авторынок", description: "Маркетплейс транспорта и запчастей" },
-  keywords: "авторынок, купить авто, продать авто, запчасти, мото, грузовики, спецтехника, vin проверка",
+  twitter: { card: "summary_large_image", title: "LeWheel — Авторынок", description: "Маркетплейс транспорта, запчастей и авто из-за рубежа" },
+  keywords: "LeWheel, авторынок, купить авто, авто из-за рубежа, импорт авто, запчасти, мото, грузовики, спецтехника, VIN проверка",
   robots: { index: true, follow: true },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru" suppressHydrationWarning className={`${inter.variable} ${manrope.variable}`}>
-      <head><ColorSchemeScript defaultColorScheme="light" /></head>
+      <head>
+        <ColorSchemeScript defaultColorScheme="light" />
+        {/* Auction cards use Encar's public CDN directly, so start DNS/TLS
+            negotiation before a visitor opens an individual photo gallery. */}
+        <link rel="preconnect" href="https://ci.encar.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://ci.encar.com" />
+      </head>
       <body>
         <AppProviders>
           <AppShellLayout>{children}</AppShellLayout>

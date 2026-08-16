@@ -104,6 +104,10 @@ function createSeedVin(vehicleType: string, index: number) {
 }
 
 async function main() {
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("Demo transport listings are disabled. Set ALLOW_DEMO_SEED=true only for an isolated development database.")
+  }
+
   const admin = await prisma.user.findFirst({ where: { email: "admin@automart.ru" } })
     || await prisma.user.findFirst({})
   if (!admin) { console.error("No user found"); return }

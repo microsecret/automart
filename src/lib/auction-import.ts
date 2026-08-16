@@ -1,14 +1,59 @@
 import { prisma } from "@/lib/prisma"
-import { translateListingFields } from "@/lib/nvidia-translate"
+import { translateListingFields, translateToRussian } from "@/lib/nvidia-translate"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
 import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
 
 function hasUntranslatedForeignText(original: string | null, translated: string | null) {
-  return Boolean(original && translated && original.trim() === translated.trim() && /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(original))
+  if (!original) return false
+  const hasForeignOriginal = /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(original)
+  // A partial fallback such as `명серебристый` is not a usable Russian
+  // translation either. Keeping it marked as translated would stop the next
+  // source refresh from repairing the customer-visible field.
+  return !translated
+    || (hasForeignOriginal && original.trim() === translated.trim())
+    || /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(translated)
 }
 
 function hasUsableTranslation(original: string | null, translated: string | null) {
   return Boolean(original && translated && !hasUntranslatedForeignText(original, translated))
+}
+
+const FOREIGN_DISPLAY_TEXT = /[A-Za-z\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/
+const CYRILLIC_TEXT = /[\u0400-\u04FF]/
+const IMPORT_COLOR_LABELS: Readonly<Record<string, string>> = {
+  white: "белый", black: "чёрный", silver: "серебристый", gray: "серый", grey: "серый",
+  red: "красный", blue: "синий", green: "зелёный", yellow: "жёлтый", orange: "оранжевый",
+  brown: "коричневый", beige: "бежевый", gold: "золотистый", purple: "фиолетовый",
+  "흰색": "белый", "검정색": "чёрный", "은색": "серебристый", "회색": "серый", "빨간색": "красный", "파란색": "синий",
+  "白色": "белый", "黑色": "чёрный", "银色": "серебристый", "灰色": "серый", "红色": "красный", "蓝色": "синий",
+  "ホワイト": "белый", "ブラック": "чёрный", "シルバー": "серебристый", "グレー": "серый", "レッド": "красный", "ブルー": "синий",
+}
+const IMPORT_LOCATION_LABELS: Readonly<Record<string, string>> = {
+  seoul: "Сеул", busan: "Пусан", incheon: "Инчхон", daegu: "Тэгу", daejeon: "Тэджон",
+  beijing: "Пекин", shanghai: "Шанхай", guangzhou: "Гуанчжоу", shenzhen: "Шэньчжэнь", tianjin: "Тяньцзинь", chongqing: "Чунцин",
+  tokyo: "Токио", osaka: "Осака", yokohama: "Иокогама", nagoya: "Нагоя", kobe: "Кобе",
+}
+const IMPORT_COUNTRY_LABELS: Readonly<Record<string, string>> = {
+  KR: "Корея", CN: "Китай", JP: "Япония", US: "США", DE: "Германия", EU: "Европа", AE: "ОАЭ",
+}
+
+async function localizeImportedDisplayValue(value: string | null, field: "color" | "location", country: string) {
+  const source = value?.trim()
+  if (!source) return null
+  if (CYRILLIC_TEXT.test(source) && !/[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(source)) return source
+
+  const known = field === "color"
+    ? IMPORT_COLOR_LABELS[source.toLocaleLowerCase("en-US")]
+    : IMPORT_LOCATION_LABELS[source.toLocaleLowerCase("en-US")]
+  if (known) return known
+  if (!FOREIGN_DISPLAY_TEXT.test(source)) return source
+
+  const translated = (await translateToRussian(source)).trim()
+  if (translated && CYRILLIC_TEXT.test(translated) && !/[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(translated)) return translated
+
+  // Never publish an untranslated source string in a Russian customer card.
+  // The original listing remains available through sourceUrl for verification.
+  return field === "location" ? `${IMPORT_COUNTRY_LABELS[country] || country} — точный адрес у источника` : null
 }
 
 export type AuctionEquipmentItem = {
@@ -71,6 +116,10 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
   let translated = 0
 
   for (const item of items) {
+    const [displayColor, displayLocation] = await Promise.all([
+      localizeImportedDisplayValue(item.color, "color", item.country),
+      localizeImportedDisplayValue(item.location, "location", item.country),
+    ])
     const existing = await prisma.auctionListing.findUnique({
       where: { source_sourceId: { source: item.source, sourceId: String(item.sourceId) } },
     }).catch(() => null)
@@ -103,7 +152,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           fuelType: item.fuelType,
           transmission: item.transmission,
           bodyType: item.bodyType,
-          color: item.color,
+          color: displayColor,
           engineVolume: item.engineVolume,
           power: item.power,
           driveType: item.driveType,
@@ -121,7 +170,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
             isTranslated: hasTranslation,
             translatedAt: hasTranslation ? new Date() : null,
           } : {}),
-          location: item.location,
+          location: displayLocation,
           sourcePrice: item.sourcePrice,
           sourceCurrency: item.sourceCurrency,
           priceRub: price.priceRub,
@@ -163,7 +212,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         make: item.make, model: item.model, year: item.year, manufacturedMonth: item.manufacturedMonth || null,
         mileage: item.mileage || null, fuelType: item.fuelType || null,
         transmission: item.transmission || null, bodyType: item.bodyType || null,
-        color: item.color || null, engineVolume: item.engineVolume || null,
+        color: displayColor, engineVolume: item.engineVolume || null,
         power: item.power || null, driveType: item.driveType || null,
         vin: item.vin || null, lotNumber: item.lotNumber || null,
         sourcePrice: item.sourcePrice, sourceCurrency: item.sourceCurrency,
@@ -176,7 +225,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         conditionInfo: item.conditionInfo ? JSON.stringify(item.conditionInfo) : null,
         country: item.country,
         auctionDate: item.auctionDate,
-        location: item.location || null,
+        location: displayLocation,
         sourceLastSeenAt: new Date(),
         sourceMissingChecks: 0,
         isTranslated: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, specsRu),

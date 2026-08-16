@@ -8,10 +8,12 @@ import { prisma } from "@/lib/prisma"
 import { asTrimmedString, canManageDeliveryOrder, canReadDeliveryOrder } from "@/lib/delivery-access"
 import { canTransitionDeliveryPayment } from "@/lib/delivery"
 import { hasExpectedFileSignature } from "@/lib/file-signature"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
 const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024
+const MAX_MULTIPART_DOCUMENT_SIZE = MAX_DOCUMENT_SIZE + 2 * 1024 * 1024
 const acceptedMimeTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"])
 const buyerDocumentCategories = new Set(["RECEIPT", "BUYER_DOCUMENT", "OTHER"])
 const allDocumentCategories = new Set(["INVOICE", "RECEIPT", "EXPORT", "CUSTOMS", "LABORATORY", "EPTS", "CONTRACT", "BUYER_DOCUMENT", "OTHER"])
@@ -28,6 +30,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+    const userLimit = rateLimit(`delivery-document:user:${session.user.id}`, { windowMs: 60 * 60_000, maxRequests: 12 })
+    const ipLimit = rateLimit(`delivery-document:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 40 })
+    const limit = !userLimit.success ? userLimit : ipLimit
+    if (!limit.success) {
+      return NextResponse.json(
+        { error: "Слишком много загрузок документов. Попробуйте позже." },
+        { status: 429, headers: rateLimitHeaders(limit) },
+      )
+    }
+
+    const declaredLength = Number(request.headers.get("content-length"))
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_MULTIPART_DOCUMENT_SIZE) {
+      return NextResponse.json({ error: "Документ и служебные поля не должны превышать 22 МБ" }, { status: 413 })
+    }
+    const contentType = request.headers.get("content-type") || ""
+    if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
+      return NextResponse.json({ error: "Ожидается multipart/form-data" }, { status: 415 })
+    }
+
     const order = await prisma.deliveryOrder.findUnique({
       where: { id },
       select: { id: true, buyerId: true, partnerId: true, managerId: true },
@@ -35,7 +56,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!order) return NextResponse.json({ error: "Сделка не найдена" }, { status: 404 })
     if (!canReadDeliveryOrder(session, order)) return NextResponse.json({ error: "Нет доступа к документам" }, { status: 403 })
 
-    const formData = await request.formData()
+    const formData = await request.formData().catch(() => null)
+    if (!formData) return NextResponse.json({ error: "Некорректные multipart-данные" }, { status: 400 })
     const file = formData.get("file")
     const category = asTrimmedString(formData.get("category"), 30) || "OTHER"
     const title = asTrimmedString(formData.get("title"), 160)

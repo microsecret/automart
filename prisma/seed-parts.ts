@@ -3,13 +3,17 @@ import partsData from "./parts-data.json"
 const prisma = new PrismaClient()
 const C = ["Москва","Санкт-Петербург","Екатеринбург","Казань","Краснодар"]
 function ri(a:number,b:number){return Math.floor(Math.random()*(b-a+1))+a}
-function pk(a:any[]){return a[Math.floor(Math.random()*a.length)]}
+function pk<T>(a:T[]){return a[Math.floor(Math.random()*a.length)]}
 
 async function main() {
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("Demo parts are disabled. Set ALLOW_DEMO_SEED=true only for an isolated development database.")
+  }
+
   const user = await prisma.user.findFirst({})
   if (!user) { console.error("No user"); return }
   let created = 0
-  for (const p of partsData as any[]) {
+  for (const p of partsData) {
     const ex = await prisma.part.findFirst({ where: { oemNumber: p.oem } }).catch(() => null)
     if (ex) continue
     const part = await prisma.part.create({
@@ -29,11 +33,11 @@ async function main() {
         keywords: p.name + " " + p.oem,
         subcategory: p.sub,
         oemNumber: p.oem,
-        compatibility: { create: p.compat.map((c:any) => ({
-          make: c.make, model: c.model, generation: c.gen || null,
-          yearFrom: c.yf || null, yearTo: c.yt || null, engine: c.eng || null,
+        compatibility: { create: p.compat.map((c) => ({
+          make: c.make, model: c.model, generation: "gen" in c ? c.gen || null : null,
+          yearFrom: c.yf || null, yearTo: c.yt || null, engine: "eng" in c ? c.eng || null : null,
         }))},
-      } as any,
+      },
     })
     await prisma.listing.create({
       data: { title: p.name, description: p.d, price: p.price, userId: user.id, partId: part.id, views: ri(10, 200) },

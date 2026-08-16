@@ -3,15 +3,15 @@ export const dynamic = "force-dynamic"
 import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Center, Loader, Badge, ThemeIcon, Button, Pagination, Box, Divider, Progress } from "@mantine/core"
-import { IconBolt, IconCar, IconDatabaseOff, IconEngine, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
+import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Divider, Progress } from "@mantine/core"
+import { IconBolt, IconCar, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import type { AuctionListing } from "@prisma/client"
-import { AUCTION_SOURCE_COUNTRY, AUCTION_SOURCE_OPTIONS } from "@/lib/auction-sources"
+import { AUCTION_SOURCE_COUNTRY, AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceLabel } from "@/lib/auction-sources"
 import { auctionMakeLabel } from "@/lib/auction-normalization"
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "./auctions.module.css"
@@ -36,6 +36,13 @@ const auctionYears = Array.from(
   { length: 7 },
   (_, index) => String(new Date().getFullYear() + 1 - index),
 )
+const validAuctionCountries = new Set(COUNTRIES.map((item) => item.value))
+const validAuctionBodyTypes = new Set(["SEDAN", "SUV", "HATCHBACK", "COUPE", "PICKUP", "WAGON", "MINIVAN"])
+const validAuctionYears = new Set(auctionYears)
+
+function readNonNegativeIntegerParam(value: string | null) {
+  return value && /^\d+$/.test(value) ? value : ""
+}
 
 type AuctionResponse = {
   listings: AuctionListing[]
@@ -119,7 +126,7 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
           <Badge size="xs" variant="white" color="gray">Фото ожидается</Badge>
         </Stack>
       )}
-      <Badge pos="absolute" top={8} left={8} color="orange" variant="filled" size="sm">{listing.source}</Badge>
+      <Badge pos="absolute" top={8} left={8} color="orange" variant="filled" size="sm">{auctionSourceLabel(listing.source)}</Badge>
       <Badge pos="absolute" top={8} right={8} color="dark" variant="filled" size="sm">
         {listing.country === "JP" ? "🇯🇵" : listing.country === "KR" ? "🇰🇷" : listing.country === "US" ? "🇺🇸" : listing.country === "DE" ? "🇩🇪" : listing.country === "CN" ? "🇨🇳" : listing.country}
       </Badge>
@@ -141,8 +148,21 @@ export default function AuctionsPage() {
     const params = new URLSearchParams(window.location.search)
     const requestedSource = params.get("source") || ""
     const sourceFromUrl = AUCTION_SOURCE_COUNTRY[requestedSource] ? requestedSource : ""
+    const requestedCountry = params.get("country") || ""
+    const countryFromUrl = validAuctionCountries.has(requestedCountry)
+      ? requestedCountry
+      : AUCTION_SOURCE_COUNTRY[sourceFromUrl] || ""
+    const requestedBodyType = params.get("bodyType") || ""
+    const requestedYear = params.get("yearFrom") || ""
+    const requestedPage = Number.parseInt(params.get("page") || "1", 10)
     setSource(sourceFromUrl)
-    setCountry(params.get("country") || AUCTION_SOURCE_COUNTRY[sourceFromUrl] || "")
+    setCountry(countryFromUrl)
+    setMake(params.get("make")?.trim() || "")
+    setPriceFrom(readNonNegativeIntegerParam(params.get("priceFrom")))
+    setPriceTo(readNonNegativeIntegerParam(params.get("priceTo")))
+    setBodyType(validAuctionBodyTypes.has(requestedBodyType) ? requestedBodyType : "")
+    setYearFrom(validAuctionYears.has(requestedYear) ? requestedYear : "")
+    setPage(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1)
   }, [])
 
   const sourceOptions = useMemo(() => SOURCES.filter((item) => !item.value || !country || AUCTION_SOURCE_COUNTRY[item.value] === country), [country])
@@ -169,12 +189,23 @@ export default function AuctionsPage() {
   }
   const hasActiveFilters = Boolean(country || source || make || priceFrom || priceTo || bodyType || yearFrom)
   const analytics = data?.analytics
-  const sourceSummary = analytics?.sources.map((item) => `${item.source}: ${item.count}`).join(" · ")
+  const sourceSummary = analytics?.sources.map((item) => `${auctionSourceLabel(item.source)}: ${item.count}`).join(" · ")
   const powerCoverage = analytics?.total ? Math.round((analytics.powerKnown / analytics.total) * 100) : 0
   const mileageCoverage = analytics?.total ? Math.round((analytics.mileageKnown / analytics.total) * 100) : 0
+  const powerCoverageValue = analytics?.total ? (powerCoverage > 0 ? `${powerCoverage}%` : "Нет данных") : "—"
+  const powerCoverageNote = analytics?.total
+    ? powerCoverage > 0
+      ? `мощность указана · пробег: ${mileageCoverage}%`
+      : `источник не публикует мощность · пробег: ${mileageCoverage}%`
+    : "данные появятся после загрузки лотов"
   const topFuelDistribution = analytics?.fuelDistribution.slice(0, 3) || []
   const topBodyDistribution = analytics?.bodyDistribution.slice(0, 3) || []
   const importPolicy = data?.importPolicy
+  const countryLabel = COUNTRIES.find((item) => item.value === country)?.label.replace(/^\S+\s/, "") || "этой страны"
+  const selectedSourceIds = source
+    ? [source]
+    : AUCTION_SOURCE_OPTIONS.filter((item) => !country || AUCTION_SOURCE_COUNTRY[item.value] === country).map((item) => item.value)
+  const countryAwaitingConnection = Boolean(country && selectedSourceIds.length && selectedSourceIds.every((sourceId) => AUCTION_SOURCE_PIPELINES[sourceId]?.pipeline !== "PUBLIC_COLLECTOR"))
 
   return (
     <Container size="xl" p={{ base: "sm", md: "md" }}>
@@ -183,7 +214,7 @@ export default function AuctionsPage() {
           <ThemeIcon variant="light" color="orange" size={44} radius="md"><IconGavel size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Аукционы мира</Text>
-            <Text size="xs" c="gray.5">{data?.pagination?.total || 0} авто · Япония · Корея · США · Европа · доставка в РФ</Text>
+            <Text size="xs" c="gray.5">{data?.pagination?.total || 0} авто · Япония · Корея · Китай · США · Европа · доставка в РФ</Text>
           </Stack>
         </Group>
 
@@ -287,7 +318,7 @@ export default function AuctionsPage() {
                 {sourceSummary && <Text className={styles.sourceSummary}>Источники: {sourceSummary}</Text>}
               </Group>
 
-              <Box className={styles.brandShortcuts} aria-label="Быстрый выбор марки">
+              <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, lg: 5 }} spacing="sm" aria-label="Быстрый выбор марки">
                 {analytics.popularMakes.map((item) => (
                   <Button
                     key={item.make}
@@ -295,16 +326,18 @@ export default function AuctionsPage() {
                     data-active={make === item.make || undefined}
                     variant="default"
                     color="indigo"
-                    size="sm"
-                    radius="md"
-                    leftSection={<BrandIcon brand={auctionMakeLabel(item.make)} size={28} variant="rounded" />}
+                    size="md"
+                    radius="lg"
+                    fullWidth
+                    justify="space-between"
+                    leftSection={<BrandIcon brand={auctionMakeLabel(item.make)} size={34} variant="rounded" />}
                     rightSection={<Badge size="xs" variant={make === item.make ? "filled" : "light"} color="indigo">{item.count}</Badge>}
                     onClick={() => { setMake(make === item.make ? "" : item.make); setPage(1) }}
                   >
                     {auctionMakeLabel(item.make)}
                   </Button>
                 ))}
-              </Box>
+              </SimpleGrid>
 
               <Divider color="gray.2" />
                 <Box className={styles.insights} aria-label="Аналитика текущей выдачи">
@@ -325,8 +358,8 @@ export default function AuctionsPage() {
                   <Text className={styles.insightLabel}>средний пробег</Text>
                 </Box>
                 <Box className={styles.insight}>
-                  <Text className={styles.insightValue}>{powerCoverage}%</Text>
-                    <Text className={styles.insightLabel}>мощность указана · пробег: {mileageCoverage}%</Text>
+                  <Text className={styles.insightValue} fz={powerCoverage > 0 ? undefined : "lg"}>{powerCoverageValue}</Text>
+                    <Text className={styles.insightLabel}>{powerCoverageNote}</Text>
                   </Box>
                 </Box>
 
@@ -374,14 +407,18 @@ export default function AuctionsPage() {
               <ThemeIcon size={52} radius="xl" variant="light" color={hasActiveFilters ? "gray" : "orange"}>
                 <IconDatabaseOff size={26} />
               </ThemeIcon>
-              <Text fw={750}>{hasActiveFilters ? "По этим параметрам лотов не найдено" : "Каталог аукционов обновляется"}</Text>
+              <Text fw={750}>{countryAwaitingConnection ? `${countryLabel}: подключение источников готовится` : hasActiveFilters ? "По этим параметрам лотов не найдено" : "Каталог аукционов обновляется"}</Text>
               <Text size="sm" c="dimmed">
-                {hasActiveFilters
+                {countryAwaitingConnection
+                  ? "Для этой страны нет активного автоматического сборщика: публикации появятся только после проверки и подключения разрешённого источника. Оставьте заявку — команда подберёт автомобиль вручную."
+                  : hasActiveFilters
                   ? "Сбросьте часть условий или выберите другую страну и площадку."
                   : "Поставщики ещё не передали актуальные лоты. Можно оставить заявку на подбор — специалист сообщит, когда появится подходящий вариант."}
               </Text>
               <Group justify="center" gap="xs">
-                {hasActiveFilters ? (
+                {countryAwaitingConnection ? (
+                  <Button component={Link} href={`/services/smart-matching${country ? `?country=${country}` : ""}`} color="orange" size="sm" leftSection={<IconGavel size={15} />}>Оставить заявку на подбор</Button>
+                ) : hasActiveFilters ? (
                   <Button variant="light" color="orange" size="sm" leftSection={<IconX size={15} />} onClick={resetFilters}>Сбросить фильтры</Button>
                 ) : (
                   <Button component={Link} href="/services/smart-matching" color="orange" size="sm" leftSection={<IconGavel size={15} />}>Оставить заявку на подбор</Button>
@@ -406,16 +443,22 @@ export default function AuctionsPage() {
                 <Paper radius="lg" withBorder className="auction-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", cursor: "pointer" }}>
                   <AuctionMedia listing={l} />
                   <Box p="md" className="auction-result-card__content">
-                    <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{auctionMakeLabel(l.make)} {l.model}</Text>
-                    <Text className="auction-result-card__summary" lineClamp={1}>
-                      {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
-                    </Text>
+                    <Group gap="sm" wrap="nowrap" align="center">
+                      <BrandIcon brand={auctionMakeLabel(l.make)} size={34} variant="rounded" />
+                      <Box style={{ minWidth: 0, flex: 1 }}>
+                        <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{auctionMakeLabel(l.make)} {l.model}</Text>
+                        <Text className="auction-result-card__summary" lineClamp={1}>
+                          {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
+                        </Text>
+                      </Box>
+                    </Group>
                     <Group gap={4} mt={8} wrap="wrap">
                       {l.fuelType && <Badge className={styles.resultSpec} size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "orange"} leftSection={<IconGasStation size={12} />}>Топливо: {FUEL_LABELS[l.fuelType] || l.fuelType}</Badge>}
                       {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconCar size={12} />}>Кузов: {BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {l.engineVolume} л</Badge>}
                       {l.power && <Badge className={styles.resultSpec} size="xs" variant="light" color="violet" leftSection={<IconBolt size={12} />}>Мощность: {l.power} л.с.</Badge>}
                       {(parseAuctionImages(l.images)?.length || 0) > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue" leftSection={<IconPhoto size={12} />}>Фото: {parseAuctionImages(l.images)?.length}</Badge>}
+                      {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">
                       <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(l.finalPrice)}</Text>

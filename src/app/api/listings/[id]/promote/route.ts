@@ -1,29 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import Stripe from "stripe"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
+import { absoluteUrl } from "@/lib/site-url"
+import { getPromotionTariff } from "@/lib/promotion-tariffs"
 
 export const dynamic = "force-dynamic"
 
-const TARIFFS: Record<string, { price: number; days: number; isFeatured: boolean }> = {
-  boost: { price: 499, days: 3, isFeatured: false },
-  premium: { price: 1490, days: 7, isFeatured: true },
-  vip: { price: 3990, days: 30, isFeatured: true },
-}
-
-/** POST /api/listings/[id]/promote — применить продвижение (демо: без оплаты) */
+/** POST /api/listings/[id]/promote — создать защищённую оплату продвижения. */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const body = await request.json()
-    const { tariff } = body as { tariff: string }
-
-    const t = TARIFFS[tariff]
-    if (!t) return NextResponse.json({ error: "Неизвестный тариф" }, { status: 400 })
+    const body = await request.json().catch(() => null)
+    const tariff = getPromotionTariff(body?.tariff)
+    if (!tariff) return NextResponse.json({ error: "Неизвестный тариф" }, { status: 400 })
 
     // Проверяем владельца
     const listing = await prisma.listing.findUnique({
@@ -36,31 +31,70 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Продвижение доступно только активному объявлению" }, { status: 409 })
     }
 
-    const promoUntil = new Date(Date.now() + t.days * 24 * 60 * 60 * 1000)
+    const stripeSecret = process.env.STRIPE_SECRET_KEY
+    if (!stripeSecret) {
+      return NextResponse.json(
+        { error: "Онлайн-оплата пока не подключена. Продвижение не активировано." },
+        { status: 503 },
+      )
+    }
 
-    const updated = await prisma.listing.update({
-      where: { id },
+    const stripe = new Stripe(stripeSecret)
+    const order = await prisma.promotionOrder.create({
       data: {
-        isFeatured: t.isFeatured,
-        promoType: tariff,
-        promoUntil,
-      },
-      select: { id: true, isFeatured: true, promoType: true, promoUntil: true },
-    })
-
-    // Создаём уведомление
-    await prisma.notification.create({
-      data: {
+        listingId: listing.id,
         userId: session.user.id,
-        title: "Продвижение активировано",
-        content: `Тариф «${tariff === "vip" ? "VIP" : tariff === "premium" ? "Премиум" : "Поднятие в топ"}» активен до ${promoUntil.toLocaleDateString("ru")}`,
-        type: "SUCCESS",
-        relatedId: listing.id,
-        relatedType: "LISTING",
+        tariffId: tariff.id,
+        amountRub: tariff.amountRub,
+        durationDays: tariff.durationDays,
+        provider: "STRIPE",
       },
-    }).catch(() => {})
+      select: { id: true },
+    })
+    const metadata = {
+      orderId: order.id,
+      listingId: listing.id,
+      userId: session.user.id,
+      promotionType: tariff.id.toUpperCase(),
+    }
+    try {
+      const checkout = await stripe.checkout.sessions.create({
+        mode: "payment",
+        client_reference_id: order.id,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "rub",
+              unit_amount: tariff.amountRub * 100,
+              product_data: {
+                name: `${tariff.title}: ${listing.title}`,
+                description: `${tariff.description}. Срок: ${tariff.durationDays} дн.`,
+              },
+            },
+          },
+        ],
+        success_url: absoluteUrl(`/listings/${listing.id}/promote?payment=success`),
+        cancel_url: absoluteUrl(`/listings/${listing.id}/promote?payment=canceled`),
+        metadata,
+        payment_intent_data: { metadata },
+      })
 
-    return NextResponse.json({ success: true, listing: updated })
+      if (!checkout.url) throw new Error("Stripe Checkout session has no URL")
+
+      await prisma.promotionOrder.update({
+        where: { id: order.id },
+        data: { providerCheckoutId: checkout.id },
+      })
+
+      return NextResponse.json({ checkoutUrl: checkout.url })
+    } catch (error) {
+      await prisma.promotionOrder.updateMany({
+        where: { id: order.id, status: "PENDING" },
+        data: { status: "FAILED" },
+      })
+      throw error
+    }
   } catch (error) {
     console.error("Promote error:", error)
     return NextResponse.json({ error: "Failed to promote" }, { status: 500 })

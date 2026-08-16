@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Box, Text } from "@mantine/core"
+import { Badge } from "@mantine/core"
 import { getBrandColor, getContrastText } from "@/lib/brand-colors"
 
 interface BrandBadgeProps {

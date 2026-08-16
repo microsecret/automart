@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
-import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Loader, Paper, Select, SimpleGrid, Stack, Text, TextInput, ThemeIcon, Tooltip } from "@mantine/core"
+import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Image, Loader, Paper, Select, SimpleGrid, Stack, Text, TextInput, ThemeIcon, Tooltip, UnstyledButton } from "@mantine/core"
 import { IconCheck, IconClock, IconExternalLink, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconRoute, IconSearch, IconX } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
@@ -210,19 +210,22 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   const updateZoom = (nextZoom: number) => setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom)))
 
   useEffect(() => {
-    setViewportCenter(coordinates)
-    viewportCenterRef.current = coordinates
+    const nextCenter = { latitude: coordinates.latitude, longitude: coordinates.longitude }
+    setViewportCenter(nextCenter)
+    viewportCenterRef.current = nextCenter
     setZoom(11)
   }, [coordinates.latitude, coordinates.longitude])
 
+  const selectedLatitude = selectedStation?.latitude
+  const selectedLongitude = selectedStation?.longitude
   useEffect(() => {
-    if (!selectedStation) return
+    if (selectedLatitude == null || selectedLongitude == null) return
 
-    const nextCenter = { latitude: selectedStation.latitude, longitude: selectedStation.longitude }
+    const nextCenter = { latitude: selectedLatitude, longitude: selectedLongitude }
     setViewportCenter(nextCenter)
     viewportCenterRef.current = nextCenter
     setZoom((current) => Math.max(current, 13))
-  }, [selectedStation?.id, selectedStation?.sourceType])
+  }, [selectedLatitude, selectedLongitude])
 
   // React может зарегистрировать wheel-подписку на корне документа, а браузер
   // в таком режиме вправе проигнорировать preventDefault. Для карты нужен
@@ -401,7 +404,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
       <Box ref={mapInteractionRef} className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}. Стрелки перемещают карту, плюс и минус меняют масштаб.`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onKeyDown={handleKeyDown}>
         <Box className="fuel-map-canvas__tile-layer" aria-hidden="true">
         {tiles.map((tile) => (
-          <img key={tile.key} src={`https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`} style={{ left: tile.left, top: tile.top }} alt="" aria-hidden="true" />
+          <Image key={tile.key} src={`https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`} style={{ left: tile.left, top: tile.top }} alt="" aria-hidden="true" />
         ))}
         </Box>
         {markers.map((marker, index) => {
@@ -411,7 +414,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           const networkIdentity = getNetworkIdentity(firstStation)
           const isSelected = marker.stations.some((station) => selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType)
           const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${getStationDataSummary(firstStation)}`
-          return <button key={isCluster ? `cluster-${index}` : firstStation.id} type="button" className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-selected={isSelected || undefined} style={{ left: marker.left, top: marker.top, ...(networkIdentity && !isCluster ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</button>
+          return <UnstyledButton key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-selected={isSelected || undefined} style={{ left: marker.left, top: marker.top, ...(networkIdentity && !isCluster ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
         })}
       </Box>
       <Group className="fuel-map-canvas__controls" gap={4}>
@@ -568,6 +571,8 @@ export default function FuelMapPage() {
   const isViewingMapArea = Boolean(requestedCoordinates)
   const hasUnloadedMapArea = getDistanceInKilometers(coordinates, viewportCoordinates) > 0.35
   const allStations = data?.stations ?? EMPTY_STATIONS
+  const centerLatitude = coordinates.latitude
+  const centerLongitude = coordinates.longitude
   const networkFilters = useMemo(() => {
     const networks = allStations
       .map(getStationNetworkKey)
@@ -589,17 +594,21 @@ export default function FuelMapPage() {
     // В списке первыми показываем ближайшие АЗС — именно так пользователь
     // выбирает точку для поездки, а не только по алфавиту сети.
     return [...matchingStations].sort((first, second) => (
-      getDistanceInKilometers(coordinates, first) - getDistanceInKilometers(coordinates, second)
+      getDistanceInKilometers({ latitude: centerLatitude, longitude: centerLongitude }, first)
+      - getDistanceInKilometers({ latitude: centerLatitude, longitude: centerLongitude }, second)
     ))
-  }, [allStations, coordinates.latitude, coordinates.longitude, fuelFilter, networkFilter])
+  }, [allStations, centerLatitude, centerLongitude, fuelFilter, networkFilter])
   const displayedStations = filteredStations.slice(0, visibleStationCount)
   const hasMoreStations = displayedStations.length < filteredStations.length
   const selectedStationKey = selectedStation ? `${selectedStation.sourceType}-${selectedStation.id}` : null
+  const selectedAddress = selectedStation?.address
+  const selectedAddressLatitude = selectedStation?.latitude
+  const selectedAddressLongitude = selectedStation?.longitude
   const selectedStationAddressUrl = useMemo(() => {
-    if (!selectedStation || selectedStation.address) return null
-    const params = new URLSearchParams({ detail: "address", latitude: selectedStation.latitude.toFixed(6), longitude: selectedStation.longitude.toFixed(6) })
+    if (selectedAddress || selectedAddressLatitude == null || selectedAddressLongitude == null) return null
+    const params = new URLSearchParams({ detail: "address", latitude: selectedAddressLatitude.toFixed(6), longitude: selectedAddressLongitude.toFixed(6) })
     return `/api/fuel-stations?${params.toString()}`
-  }, [selectedStation?.id, selectedStation?.sourceType, selectedStation?.address, selectedStation?.latitude, selectedStation?.longitude])
+  }, [selectedAddress, selectedAddressLatitude, selectedAddressLongitude])
   const { data: selectedStationAddressData, isLoading: isStationAddressLoading } = useSWR<FuelStationAddressResponse>(selectedStationAddressUrl, fetchJson, { revalidateOnFocus: false })
   const selectedStationAddress = selectedStation?.address || selectedStationAddressData?.address || null
   const listedStations = selectedStationKey

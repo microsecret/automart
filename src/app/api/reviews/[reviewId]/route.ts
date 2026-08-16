@@ -2,18 +2,21 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { publicListingWhere } from "@/lib/listing-lifecycle"
 // GET a specific review
-export async function GET(request: NextRequest, { params }: { params: Promise<{ reviewId: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ reviewId: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
-    // Note: We don't require authentication for reading a review
-    // but we might want to show different info based on auth status
-
     const { reviewId } = await params
 
     // Get the review
-    const review = await prisma.review.findUnique({
-      where: { id: reviewId },
+    const review = await prisma.review.findFirst({
+      where: {
+        id: reviewId,
+        OR: [
+          { listingId: null },
+          { listing: { is: publicListingWhere } },
+        ],
+      },
       include: {
         user: {
           select: {
@@ -80,23 +83,34 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       )
     }
 
-    const body = await request.json()
-    const { rating, comment } = body
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Некорректные данные отзыва" }, { status: 400 })
+    }
+    const { rating, comment } = body as Record<string, unknown>
 
     // Validation
-    if (rating === undefined || rating === null || rating < 1 || rating > 5) {
+    const normalizedRating = Number(rating)
+    if (!Number.isInteger(normalizedRating) || normalizedRating < 1 || normalizedRating > 5) {
       return NextResponse.json(
-        { error: "Rating must be between 1 and 5" },
+        { error: "Рейтинг должен быть целым числом от 1 до 5" },
         { status: 400 }
       )
+    }
+    if (comment !== undefined && typeof comment !== "string") {
+      return NextResponse.json({ error: "Текст отзыва должен быть строкой" }, { status: 400 })
+    }
+    const normalizedComment = typeof comment === "string" ? comment.trim() : ""
+    if (normalizedComment.length > 2_000) {
+      return NextResponse.json({ error: "Текст отзыва не должен превышать 2000 символов" }, { status: 400 })
     }
 
     // Update the review
     const review = await prisma.review.update({
       where: { id: reviewId },
       data: {
-        rating: parseInt(rating),
-        comment: comment?.trim() || null
+        rating: normalizedRating,
+        comment: normalizedComment || null
       },
       include: {
         user: {

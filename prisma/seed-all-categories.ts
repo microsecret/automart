@@ -1,5 +1,5 @@
 import { prisma } from "../src/lib/prisma"
-import { BRANDS, getBrandsByCategory } from "../src/lib/catalog"
+import { getBrandsByCategory, type BrandCategory } from "../src/lib/catalog"
 
 const CATEGORY_META: Record<string, { name: string; description: string; icon: string }> = {
   MOTORCYCLE: { name: "Мототехника", description: "Мотоциклы, скутеры и квадроциклы", icon: "Motorbike" },
@@ -15,6 +15,10 @@ function createSeedVin(vehicleType: string, index: number) {
 }
 
 async function main() {
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("Demo category listings are disabled. Set ALLOW_DEMO_SEED=true only for an isolated development database.")
+  }
+
   console.log("Генерация объявлений всех категорий...")
 
   const categoryIds = new Map<string, string>()
@@ -53,7 +57,7 @@ async function main() {
   let count = 0
 
   for (const [catSlug, vehicleType] of Object.entries(catMap)) {
-    const brands = getBrandsByCategory(catSlug as any)
+    const brands = getBrandsByCategory(catSlug as BrandCategory)
     console.log(`${catSlug}: ${brands.length} брендов`)
 
     for (const brand of brands.slice(0, 12)) { // топ-12 брендов в каждой категории

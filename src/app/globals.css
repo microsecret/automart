@@ -157,16 +157,6 @@ select {
   display: none;
 }
 
-/* На широком экране помощь живёт в основной навигации: плавающая кнопка не
-   должна перекрывать карточки, фильтры или CTA. На мобильном виджет остаётся
-   быстрым способом написать в поддержку и получает безопасный offset ниже. */
-@media (min-width: 641px) {
-  .support-chat__launcher,
-  .support-chat__panel {
-    display: none !important;
-  }
-}
-
 @media (max-width: 1060px) {
   .market-search-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -388,6 +378,23 @@ select {
   width: 100%;
 }
 
+/* Footer is the closing bar for the whole desktop marketplace, including the
+   area below Mantine's fixed navbar. Below the desktop breakpoint there is no
+   navbar offset, so the footer returns to the natural main-column width. */
+.market-app-footer {
+  position: relative;
+  z-index: 210;
+  width: calc(100% + 280px);
+  margin-left: -280px;
+}
+
+@media (max-width: 61.99em) {
+  .market-app-footer {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
 .market-header-search .mantine-Input-input {
   padding-left: 38px !important;
 }
@@ -529,6 +536,27 @@ select {
 
 .market-side-account--user {
   background: linear-gradient(145deg, var(--market-primary-soft) 0%, var(--market-surface) 78%);
+}
+
+.market-side-account__summary {
+  border-color: color-mix(in srgb, var(--market-primary) 15%, var(--market-line));
+  background: color-mix(in srgb, var(--market-surface) 74%, var(--market-primary-soft));
+}
+
+.market-side-account__link {
+  min-height: 34px;
+  margin-inline: 1px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.market-side-account__link .mantine-NavLink-label {
+  min-width: 0;
+}
+
+.market-side-account__link:hover {
+  background: color-mix(in srgb, var(--market-primary-soft) 82%, transparent);
 }
 
 .market-side-nav {
@@ -808,19 +836,27 @@ select {
 
 .catalog-filter-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  /* The catalog lives next to a persistent sidebar on desktop.  Explicit
+     columns keep every primary control usable at 1200–1440px instead of
+     squeezing five unrelated fields into twelve equal fragments. */
+  grid-template-columns:
+    minmax(220px, 2.15fr)
+    minmax(142px, 1.15fr)
+    minmax(142px, 1.15fr)
+    minmax(150px, 1.1fr)
+    minmax(154px, 1.2fr);
   gap: 10px;
   align-items: end;
 }
 
-.catalog-filter-field--search { grid-column: span 4; }
+.catalog-filter-field--search,
 .catalog-filter-field--make,
-.catalog-filter-field--model { grid-column: span 2; }
-.catalog-filter-field--sort { grid-column: span 4; }
-.catalog-filter-field--price { grid-column: span 2; }
-.catalog-filter-field--year { grid-column: span 2; }
-.catalog-filter-field--city { grid-column: span 2; }
-.catalog-filter-field--mileage { grid-column: span 2; }
+.catalog-filter-field--model,
+.catalog-filter-field--sort,
+.catalog-filter-field--price,
+.catalog-filter-field--year,
+.catalog-filter-field--city,
+.catalog-filter-field--mileage { grid-column: auto; }
 
 .catalog-filter-field {
   min-width: 0;

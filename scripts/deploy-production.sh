@@ -9,6 +9,11 @@ npx prisma migrate deploy
 # This safe sync only adds missing fields; it never accepts destructive changes.
 npx prisma db push --skip-generate
 npx prisma generate
+# A fresh database must not wait for the morning cron before import prices can
+# be calculated. Fail the deployment if the official CBR snapshot cannot be
+# loaded: silently using guessed or missing rates would make landed-cost totals
+# misleading.
+node scripts/refresh-auction-rates.mjs
 node scripts/enforce-encar-import-age-policy.mjs
 node scripts/reconcile-transport-categories.mjs
 node scripts/audit-listing-integrity.mjs

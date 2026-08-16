@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client"
 import { getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
 import { getVehicleSubtypeConfig, isValidVehicleSubtype } from "@/lib/vehicleSubtypes"
 import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -331,39 +332,57 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { title, description, price, vehicleId, partId } = body
+    const limit = rateLimit(`listing:create:user:${session.user.id}:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 20 })
+    if (!limit.success) return NextResponse.json({ error: "Слишком много объявлений. Повторите позже." }, { status: 429, headers: rateLimitHeaders(limit) })
+
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
+    const { title, description, price, vehicleId, partId } = body as Record<string, unknown>
     const normalizedTitle = typeof title === "string" ? title.trim() : ""
     const normalizedDescription = typeof description === "string" ? description.trim() : null
     const normalizedPrice = Number(price)
+    const normalizedVehicleId = typeof vehicleId === "string" && vehicleId.length <= 100 ? vehicleId : null
+    const normalizedPartId = typeof partId === "string" && partId.length <= 100 ? partId : null
 
-    if ((vehicleId && partId) || (!vehicleId && !partId)) {
+    if ((normalizedVehicleId && normalizedPartId) || (!normalizedVehicleId && !normalizedPartId)) {
       return NextResponse.json(
         { error: "Укажите либо vehicleId, либо partId" },
         { status: 400 }
       )
     }
-    if (!normalizedTitle) {
-      return NextResponse.json({ error: "Заголовок обязателен" }, { status: 400 })
+    if (normalizedTitle.length < 2 || normalizedTitle.length > 160) {
+      return NextResponse.json({ error: "Заголовок должен содержать от 2 до 160 символов" }, { status: 400 })
     }
-    if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
+    if (normalizedDescription && normalizedDescription.length > 10_000) {
+      return NextResponse.json({ error: "Описание не должно превышать 10 000 символов" }, { status: 400 })
+    }
+    if (!Number.isSafeInteger(normalizedPrice) || normalizedPrice < 0 || normalizedPrice > 2_000_000_000) {
       return NextResponse.json({ error: "Цена обязательна" }, { status: 400 })
     }
 
-    if (vehicleId) {
-      const v = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { id: true, userId: true } })
+    if (normalizedVehicleId) {
+      const v = await prisma.vehicle.findUnique({ where: { id: normalizedVehicleId }, select: { id: true, userId: true } })
       if (!v) return NextResponse.json({ error: "ТС не найдено" }, { status: 404 })
       if (v.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
     }
-    if (partId) {
-      const p = await prisma.part.findUnique({ where: { id: partId }, select: { id: true, userId: true } })
+    if (normalizedPartId) {
+      const p = await prisma.part.findUnique({ where: { id: normalizedPartId }, select: { id: true, userId: true } })
       if (!p) return NextResponse.json({ error: "Запчасть не найдена" }, { status: 404 })
       if (p.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
     }
+
+    const duplicate = await prisma.listing.findFirst({
+      where: {
+        deletedAt: null,
+        ...(normalizedVehicleId ? { vehicleId: normalizedVehicleId } : { partId: normalizedPartId }),
+      },
+      select: { id: true },
+    })
+    if (duplicate) return NextResponse.json({ error: "Для этого объекта объявление уже создано", listingId: duplicate.id }, { status: 409 })
 
     const listing = await prisma.listing.create({
       data: {
@@ -373,8 +392,8 @@ export async function POST(request: NextRequest) {
         status: LISTING_STATUS.PENDING_MODERATION,
         lastStatusChangedAt: new Date(),
         userId: session.user.id,
-        vehicleId: vehicleId || null,
-        partId: partId || null,
+        vehicleId: normalizedVehicleId,
+        partId: normalizedPartId,
         statusEvents: {
           create: {
             toStatus: LISTING_STATUS.PENDING_MODERATION,

@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email: emailInput, phone: phoneInput, password } = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object") return NextResponse.json({ error: "Некорректные данные регистрации" }, { status: 400 })
+    const { name, email: emailInput, phone: phoneInput, password } = body as Record<string, unknown>
     const normalizedName = typeof name === "string" ? name.trim() : ""
     const email = String(emailInput || "").trim().toLowerCase()
     const phone = normalizePhone(phoneInput)
@@ -21,14 +23,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Слишком много попыток регистрации. Повторите позже." }, { status: 429, headers: rateLimitHeaders(limit) })
     }
 
-    if (!normalizedName || !email || !phone || !password) {
+    if (!normalizedName || !email || !phone || typeof password !== "string") {
       return NextResponse.json({ error: "Имя, email, телефон и пароль обязательны" }, { status: 400 })
     }
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
+    if (normalizedName.length < 2 || normalizedName.length > 80) {
+      return NextResponse.json({ error: "Имя должно содержать от 2 до 80 символов" }, { status: 400 })
+    }
+    if (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) {
       return NextResponse.json({ error: "Некорректный email" }, { status: 400 })
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: "Пароль минимум 6 символов" }, { status: 400 })
+    if (password.length < 8 || password.length > 128) {
+      return NextResponse.json({ error: "Пароль должен содержать от 8 до 128 символов" }, { status: 400 })
     }
     // Email is an additional verification channel. The account can still be
     // created safely while mail delivery is temporarily unavailable: password
@@ -69,6 +74,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ user, requiresEmailVerification: true, emailDeliveryPending }, { status: 201 })
   } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+      return NextResponse.json({ error: "Email или телефон уже связан с аккаунтом" }, { status: 409 })
+    }
     console.error("Registration error:", error)
     return NextResponse.json({ error: "Ошибка регистрации" }, { status: 500 })
   }

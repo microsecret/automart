@@ -25,6 +25,9 @@ const CURRENT_YEAR = new Date().getFullYear()
 
 type ExchangeRateResponse = {
   rates: Record<string, { rateToRub: number; source: string; updatedAt: string | null }>
+  asOf: string | null
+  stale: boolean
+  missingCurrencies: string[]
 }
 
 // Города РФ с ценой доставки из Владивостока (в рублях)
@@ -140,19 +143,50 @@ function customsDuty(year: number, manufacturedMonth: string | null | undefined,
   }
 }
 
+/**
+ * Preferential recycling fee for a vehicle imported by an individual for
+ * personal use. Since 01.12.2025 the preferential coefficients also depend
+ * on power. Above 160 hp (and when power is missing) the exact fee must be
+ * calculated from the official table and confirmed from vehicle documents.
+ */
+function preferentialUtilizationFee(year: number, manufacturedMonth: string | null | undefined, power: number | null, isElectric: boolean) {
+  if (isElectric || !power || power > 160) return null
+
+  const yearDifference = Math.max(0, CURRENT_YEAR - year)
+  const currentMonth = new Date().getMonth() + 1
+  const month = manufacturedMonth?.match(/^\d{4}-(\d{2})$/)?.[1]
+  const manufacturedMonthNumber = month ? Number(month) : null
+  const ageGroups: Array<"UP_TO_3" | "OVER_3"> = yearDifference <= 2
+    ? ["UP_TO_3"]
+    : yearDifference === 3
+      ? manufacturedMonthNumber === null || manufacturedMonthNumber === currentMonth
+        ? ["UP_TO_3", "OVER_3"]
+        : manufacturedMonthNumber < currentMonth ? ["OVER_3"] : ["UP_TO_3"]
+      : ["OVER_3"]
+  const amounts = ageGroups.map((group) => group === "UP_TO_3" ? 3_400 : 5_200)
+
+  return {
+    min: Math.min(...amounts),
+    max: Math.max(...amounts),
+    boundary: amounts.length > 1,
+  }
+}
+
 export default function AuctionCalculator({ make, model, year, manufacturedMonth, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country }: Props) {
   const [city, setCity] = useState("Москва")
   const { data: exchangeRateData, error: exchangeRateError } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetchJson, { revalidateOnFocus: false })
   // Не подставляем вымышленный объём: от него напрямую зависит таможенная пошлина.
   const volume = typeof engineVolume === "number" && engineVolume > 0 ? Math.round(engineVolume * 1000) : null
   const sourceRate = exchangeRateData?.rates[sourceCurrency]?.rateToRub
-  const eurRate = exchangeRateData?.rates.EUR?.rateToRub || 102
+  const eurRate = exchangeRateData?.rates.EUR?.rateToRub
   const effectivePriceRub = sourceRate && sourcePrice >= 0 ? Math.round(sourcePrice * sourceRate) : priceRub
   const isElectric = fuelType === "ELECTRIC"
-  const canCalculateCustomsDuty = !isElectric && volume !== null
+  const hasEngineData = !isElectric && volume !== null
+  const canCalculateCustomsDuty = hasEngineData && typeof eurRate === "number"
+  const utilizationFee = preferentialUtilizationFee(year, manufacturedMonth, power, isElectric)
 
   const calc = useMemo(() => {
-    const customs = canCalculateCustomsDuty && volume !== null
+    const customs = canCalculateCustomsDuty && volume !== null && eurRate !== undefined
       ? customsDuty(year, manufacturedMonth, volume, effectivePriceRub, eurRate)
       : null
     const c = {
@@ -160,7 +194,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
       auctionFee: auctionFee(effectivePriceRub),
       inlandDelivery: INLAND_DELIVERY[country] || 45000,
       seaDelivery: SEA_TO_VLAD[country] || 100000,
-      utilFee: 3400, // Утилизационный сбор для физлиц (3400₽)
+      utilizationFee,
       customsProcess: 15000, // Оформление на СВХ
       brokerFee: 30000, // Брокерские услуги
       svh: 25000, // Склад временного хранения (2 недели)
@@ -170,16 +204,16 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
 
     const totalWithoutDuty =
       c.auctionPrice + c.auctionFee + c.inlandDelivery + c.seaDelivery +
-      c.utilFee + c.customsProcess + c.brokerFee + c.svh + c.rfDelivery + c.ourCommission
+      (c.utilizationFee?.min || 0) + c.customsProcess + c.brokerFee + c.svh + c.rfDelivery + c.ourCommission
 
     return {
       ...c,
       customs,
       totalWithoutDuty,
-      totalMin: customs ? totalWithoutDuty + customs.dutyMin : null,
-      totalMax: customs ? totalWithoutDuty + customs.dutyMax : null,
+      totalMin: customs && c.utilizationFee ? totalWithoutDuty + customs.dutyMin : null,
+      totalMax: customs && c.utilizationFee ? totalWithoutDuty + customs.dutyMax + (c.utilizationFee.max - c.utilizationFee.min) : null,
     }
-  }, [effectivePriceRub, country, year, manufacturedMonth, volume, city, eurRate, canCalculateCustomsDuty])
+  }, [effectivePriceRub, country, year, manufacturedMonth, volume, city, eurRate, canCalculateCustomsDuty, utilizationFee])
 
   const currencySymbol = sourceCurrency === "JPY" || sourceCurrency === "CNY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : sourceCurrency === "RUB" ? "₽" : "€"
   const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : country === "CN" ? "Китай" : country === "DE" ? "Германия" : "Европа"
@@ -220,7 +254,13 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
           </Alert>
         )}
 
-        {!canCalculateCustomsDuty && (
+        {exchangeRateData?.stale && (
+          <Alert color="orange" variant="light" icon={<IconAlertTriangle size={17} />}>
+            Курсы ЦБ старше 36 часов или набор валют неполный. Итог не используйте для оплаты до автоматического обновления курса.
+          </Alert>
+        )}
+
+        {!hasEngineData && (
           <Alert color="red" variant="light" icon={<IconAlertTriangle size={17} />}>
             <Text size="xs">
               <b>{isElectric ? "Электромобиль." : "Объём двигателя не указан."}</b>{" "}
@@ -228,6 +268,12 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
                 ? "Для электромобиля правила и платежи зависят от подтверждённых характеристик и статуса ввоза. Не показываем недостоверную сумму «под ключ»."
                 : "Не подставляем условные 2,0 л: без подтверждённого объёма нельзя корректно рассчитать таможенную пошлину."}
             </Text>
+          </Alert>
+        )}
+
+        {hasEngineData && eurRate === undefined && (
+          <Alert color="red" variant="light" icon={<IconAlertTriangle size={17} />}>
+            <Text size="xs"><b>Нет актуального курса EUR от ЦБ.</b> Таможенная пошлина и итог «под ключ» не рассчитываются до обновления официального курса.</Text>
           </Alert>
         )}
 
@@ -268,7 +314,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
               label={
                 <Group gap={4}>
                   <Text size="sm" c="gray.6">Таможенная пошлина</Text>
-                  <Tooltip label={`Категория: ${calc.customs.category}. Объём: ${volume} см³. Формула: ${calc.customs.formula}. Курс EUR: ${eurRate.toFixed(2)} ₽.`}>
+                  <Tooltip label={`Категория: ${calc.customs.category}. Объём: ${volume} см³. Формула: ${calc.customs.formula}. Курс EUR: ${eurRate?.toFixed(2)} ₽.`}>
                     <IconInfoCircle size={13} color="#a1a1aa" style={{ cursor: "help" }} />
                   </Tooltip>
                 </Group>
@@ -279,7 +325,23 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
           ) : (
             <CostRow icon={<IconBuildingBank size={14} />} label="Таможенная пошлина" value="Требуется сверка" highlight />
           )}
-          <CostRow icon={<IconBuildingBank size={14} />} label="Утилизационный сбор" value={formatPrice(calc.utilFee)} />
+          <CostRow
+            icon={<IconBuildingBank size={14} />}
+            label={
+              <Group gap={4}>
+                <Text size="sm" c="gray.6">Утилизационный сбор</Text>
+                <Tooltip label="Льготные 3 400/5 200 ₽ применимы к личному ввозу автомобиля мощностью не более 160 л.с. при соблюдении условий владения. С 01.12.2025 для большей мощности действуют иные коэффициенты.">
+                  <IconInfoCircle size={13} color="#a1a1aa" style={{ cursor: "help" }} />
+                </Tooltip>
+              </Group>
+            }
+            value={calc.utilizationFee
+              ? calc.utilizationFee.min === calc.utilizationFee.max
+                ? formatPrice(calc.utilizationFee.min)
+                : `${formatPrice(calc.utilizationFee.min)} — ${formatPrice(calc.utilizationFee.max)}`
+              : "Требуется проверка"}
+            highlight={!calc.utilizationFee}
+          />
           <CostRow icon={<IconBuildingBank size={14} />} label="Таможенное оформление (СВХ)" value={formatPrice(calc.customsProcess)} />
           <CostRow icon={<IconBuildingBank size={14} />} label="Брокерские услуги" value={formatPrice(calc.brokerFee)} />
           <CostRow icon={<IconBuildingBank size={14} />} label="Склад временного хранения" value={formatPrice(calc.svh)} />
@@ -293,8 +355,8 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
         <Paper radius="md" p="md" style={{ background: "linear-gradient(135deg, #ea580c, #f97316)" }}>
           <Group justify="space-between" align="center">
             <Stack gap={0}>
-              <Text size="xs" c="rgba(255,255,255,0.85)">{calc.totalMin === null ? `Сумма без таможенной пошлины в ${city}` : `Ориентировочная цена под ключ в ${city}`}</Text>
-              <Text size="xs" c="rgba(255,255,255,0.7)">{calc.totalMin === null ? "для точного итога нужны характеристики автомобиля" : "цена авто + логистика + таможенный сценарий + РФ"}</Text>
+              <Text size="xs" c="rgba(255,255,255,0.85)">{calc.totalMin === null ? `Известная часть расходов в ${city}` : `Ориентировочная цена под ключ в ${city}`}</Text>
+              <Text size="xs" c="rgba(255,255,255,0.7)">{calc.totalMin === null ? "для полного итога нужны пошлина и утильсбор по документам" : "цена авто + логистика + таможенный сценарий + РФ"}</Text>
             </Stack>
             <Text fw={800} fz="1.1rem" c="white" ff="var(--font-display),sans-serif" lh={1}>{calc.totalMin === null || calc.totalMax === null ? formatPrice(calc.totalWithoutDuty) : calc.totalMin === calc.totalMax ? formatPrice(calc.totalMin) : `${formatPrice(calc.totalMin)} — ${formatPrice(calc.totalMax)}`}</Text>
           </Group>
@@ -302,7 +364,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
 
         <Group gap={6}>
           <IconInfoCircle size={14} color="#a1a1aa" />
-          <Text size="10px" c="gray.4">Плановый расчёт, не оферта и не платёжное требование. {sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}. ` : "Использован курс из снимка лота. "}Таможенная стоимость, тарифы перевозчика, брокера и СВХ подтверждаются перед сделкой.</Text>
+          <Text size="10px" c="gray.4">Плановый расчёт, не оферта и не платёжное требование. {sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}${exchangeRateData?.asOf ? `, обновлён ${new Date(exchangeRateData.asOf).toLocaleString("ru-RU")}` : ""}. ` : "Использован курс из снимка лота. "}Таможенная стоимость, утильсбор, тарифы перевозчика, брокера и СВХ подтверждаются перед сделкой.</Text>
         </Group>
       </Stack>
     </Paper>

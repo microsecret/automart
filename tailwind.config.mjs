@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+const tailwindConfig = {
   // Tailwind используется ТОЛЬКО для layout/spacing/типографики.
   // Стилизация компонентов — через Mantine (theme.ts).
   // Избежание конфликтов: отключаем preflight (Mantine даёт свой reset).
@@ -23,3 +23,5 @@ export default {
   },
   plugins: [],
 }
+
+export default tailwindConfig

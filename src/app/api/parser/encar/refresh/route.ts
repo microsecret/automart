@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems } from "@/lib/auction-import"
 import { isEncarListingUnavailableError, scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
 import { prisma } from "@/lib/prisma"
+import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
 
 export const dynamic = "force-dynamic"
 
 const PARSER_TOKEN = process.env.PARSER_TOKEN
-const MAX_LISTINGS_PER_REFRESH = 10
+// The collector processes one source card at a time. With the public catalogue
+// already containing hundreds of eligible lots, 40 items every 20 minutes
+// keeps a complete confirmation cycle below seven hours without parallelism.
+const MAX_LISTINGS_PER_REFRESH = 40
 
 export async function POST(request: NextRequest) {
   let syncRunId: string | null = null
@@ -22,6 +26,7 @@ export async function POST(request: NextRequest) {
     const limit = Number.isInteger(requestedLimit)
       ? Math.min(Math.max(requestedLimit, 1), MAX_LISTINGS_PER_REFRESH)
       : MAX_LISTINGS_PER_REFRESH
+    await closeStaleAuctionSyncRuns("ENCAR")
     const syncRun = await prisma.auctionSyncRun.create({
       data: { source: "ENCAR", syncKind: "REFRESH", requestedLimit: limit },
       select: { id: true },

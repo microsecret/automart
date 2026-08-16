@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Container, Text, Center, Loader } from "@mantine/core"
+import AdminWorkspaceNavigation from "@/components/admin/AdminWorkspaceNavigation"
 
 export default function AdminLayout({
   children,
@@ -43,5 +44,10 @@ export default function AdminLayout({
     )
   }
 
-  return <>{children}</>
+  return (
+    <>
+      <AdminWorkspaceNavigation />
+      {children}
+    </>
+  )
 }

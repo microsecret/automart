@@ -13,7 +13,7 @@ const BENEFITS = [
 
 export default function SignUpPage() {
   return (
-    <Container className="auth-experience" size="md" py={48}>
+    <Container className="auth-experience" size="md" py={{ base: 24, sm: 48 }} px={{ base: "sm", sm: "md" }}>
       <Group className="auth-experience__layout" gap={48} align="center" wrap="nowrap" justify="center">
         {/* Преимущества */}
         <Stack className="auth-experience__context" gap="lg" visibleFrom="md" maw={300}>
@@ -21,7 +21,7 @@ export default function SignUpPage() {
             <Box className="auth-experience__brand-mark">
               <IconCar size={24} color="white" />
             </Box>
-            <Text fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Авторынок</Text>
+            <Text fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">LeWheel</Text>
           </Group>
           <Text size="sm" c="gray.5" lh={1.6}>Создайте защищённый аккаунт за минуту.</Text>
           <Stack gap="sm">
@@ -35,13 +35,13 @@ export default function SignUpPage() {
         </Stack>
 
         {/* Форма */}
-        <Stack className="auth-experience__form-area" gap="lg" align="center" maw={420} style={{ flexShrink: 0 }}>
+        <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0 }}>
           <Stack gap={4} align="center">
             <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Регистрация</Text>
             <Text size="sm" c="gray.5">Бесплатно и быстро</Text>
           </Stack>
 
-          <Card className="auth-experience__form-card" withBorder radius="lg" p="xl" w={420} shadow="sm">
+          <Card className="auth-experience__form-card" withBorder radius="lg" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
             <SignUpForm />
           </Card>
 

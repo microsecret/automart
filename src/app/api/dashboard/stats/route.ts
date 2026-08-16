@@ -14,7 +14,15 @@ export async function GET() {
 
     const userId = session.user.id
 
-    const [listings, favorites, reviews, garageVehicles] = await Promise.all([
+    const deliveryAccess = {
+      OR: [
+        { buyerId: userId },
+        { partnerId: userId },
+        { managerId: userId },
+      ],
+    }
+
+    const [listings, favorites, reviews, garageVehicles, deliveryTotal, activeDeliveries, unreadMessages, unreadNotifications, promotionSummary, promotionOrders] = await Promise.all([
       prisma.listing.findMany({
         where: { userId },
         include: {
@@ -36,6 +44,36 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
       }),
       prisma.vehicle.count({ where: { userId, category: { name: "Личный гараж" } } }),
+      prisma.deliveryOrder.count({ where: deliveryAccess }),
+      prisma.deliveryOrder.count({
+        where: {
+          AND: [deliveryAccess, { status: { notIn: ["COMPLETED", "CANCELED"] } }],
+        },
+      }),
+      prisma.message.count({ where: { receiverId: userId, isRead: false } }),
+      prisma.notification.count({ where: { userId, isRead: false } }),
+      prisma.promotionOrder.aggregate({
+        where: { userId, status: "PAID" },
+        _count: true,
+        _sum: { amountRub: true },
+      }),
+      prisma.promotionOrder.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          tariffId: true,
+          amountRub: true,
+          durationDays: true,
+          status: true,
+          provider: true,
+          promoUntil: true,
+          paidAt: true,
+          createdAt: true,
+          listing: { select: { id: true, title: true, status: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
     ])
 
     const totalViews = listings.reduce((sum, l) => sum + (l.views || 0), 0)
@@ -55,6 +93,13 @@ export async function GET() {
         garageCount: garageVehicles,
         avgRating: reviews.length > 0 ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length * 10) / 10 : 0,
         memberSince: favorites?.createdAt ?? null,
+        deliveryTotal,
+        activeDeliveries,
+        unreadMessages,
+        unreadNotifications,
+        promotionPaidCount: promotionSummary._count,
+        promotionSpentRub: promotionSummary._sum.amountRub ?? 0,
+        activePromotions: listings.filter((listing) => listing.promoUntil && listing.promoUntil > new Date()).length,
       },
       workflow,
       listings: listings.slice(0, 10).map((l) => ({
@@ -70,6 +115,7 @@ export async function GET() {
         part: l.part,
       })),
       favorites: favorites?.favoriteListings || [],
+      promotionOrders,
     })
   } catch (error) {
     console.error("Dashboard stats error:", error)

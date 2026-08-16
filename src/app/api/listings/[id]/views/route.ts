@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { publicListingWhere } from "@/lib/listing-lifecycle"
+import { getClientIp, rateLimit } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -8,14 +9,21 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const result = await prisma.listing.updateMany({
-      where: { id, ...publicListingWhere },
-      data: { views: { increment: 1 } },
-    })
-    if (!result.count) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    const listing = await prisma.listing.findUnique({ where: { id }, select: { views: true } })
+    const viewCookieName = `listing-view-${id}`
+    const alreadyCounted = request.cookies.get(viewCookieName)?.value === "1"
+    const uniqueView = rateLimit(`listing-view:${id}:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 1 })
+    if (!alreadyCounted && uniqueView.success) {
+      const result = await prisma.listing.updateMany({
+        where: { id, ...publicListingWhere },
+        data: { views: { increment: 1 } },
+      })
+      if (!result.count) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    }
+    const listing = await prisma.listing.findFirst({ where: { id, ...publicListingWhere }, select: { views: true } })
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    return NextResponse.json({ views: listing.views })
+    const response = NextResponse.json({ views: listing.views })
+    if (!alreadyCounted) response.cookies.set(viewCookieName, "1", { httpOnly: true, sameSite: "lax", maxAge: 60 * 60, path: "/" })
+    return response
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 })
   }

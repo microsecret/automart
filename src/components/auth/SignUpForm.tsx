@@ -40,7 +40,7 @@ export default function SignUpForm() {
       name: (v) => (v.trim().length < 2 ? "Минимум 2 символа" : null),
       email: (v) => (/^\S+@\S+\.\S+$/.test(v) ? null : "Введите корректный email"),
       phone: (v) => (v.replace(/\D/g, "").length >= 10 ? null : "Введите номер телефона"),
-      password: (v) => (v.length < 6 ? "Минимум 6 символов" : null),
+      password: (v) => (v.length < 8 ? "Минимум 8 символов" : null),
       confirmPassword: (v, values) => (v !== values.password ? "Пароли не совпадают" : null),
     },
   })
@@ -125,7 +125,7 @@ export default function SignUpForm() {
           />
           <PasswordInput
             label="Пароль"
-            placeholder="Минимум 6 символов"
+            placeholder="Минимум 8 символов"
             leftSection={<IconLock size={18} />}
             size="md"
             radius="md"

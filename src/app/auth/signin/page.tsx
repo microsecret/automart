@@ -20,7 +20,7 @@ export default function SignInPage() {
             <Box className="auth-experience__brand-mark">
               <IconCar size={24} color="white" />
             </Box>
-            <Text fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Авторынок</Text>
+            <Text fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">LeWheel</Text>
           </Group>
           <Text size="sm" c="gray.5" lh={1.6}>Маркетплейс транспорта и запчастей с проверкой истории и безопасными сделками.</Text>
           <Stack gap="sm">

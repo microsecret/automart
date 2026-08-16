@@ -8,6 +8,30 @@ const AUCTION_MAKE_ALIASES: Readonly<Record<string, string>> = {
   "Renault-KoreaSamsung": "Renault Korea Motors",
   "Renault Korea Samsung": "Renault Korea Motors",
   "르노코리아삼성": "Renault Korea Motors",
+  "吉利汽车": "Geely",
+  "奇瑞汽车": "Chery",
+  "长城汽车": "Great Wall",
+  "长安汽车": "Changan",
+  "比亚迪": "BYD",
+  "红旗": "Hongqi",
+  "理想汽车": "Li Auto",
+  "理想": "Li Auto",
+  "极氪": "Zeekr",
+  "岚图": "Voyah",
+  "零跑汽车": "Leapmotor",
+  "零跑": "Leapmotor",
+  "广汽": "GAC",
+  "蔚来": "Nio",
+  "小鹏汽车": "Xpeng",
+  "小鹏": "Xpeng",
+  "阿维塔": "Avatr",
+  "问界": "Aito",
+  "腾势": "Denza",
+  "欧拉": "Ora",
+  "魏牌": "Wey",
+  "荣威": "Roewe",
+  "小米汽车": "Xiaomi Auto",
+  "五菱汽车": "Wuling",
 }
 
 const UNIDENTIFIABLE_AUCTION_MAKES = new Set([
@@ -43,15 +67,15 @@ const bodyAliases: Record<(typeof AUCTION_BODY_TYPES)[number], readonly string[]
   COUPE: ["COUPE", "쿠페", "跑车"],
   PICKUP: ["PICKUP", "PICK-UP", "TRUCK", "픽업", "皮卡"],
   WAGON: ["WAGON", "ESTATE", "STATION WAGON", "UNIVERSAL", "왜건", "универсал", "旅行车"],
-  MINIVAN: ["MINIVAN", "MINI VAN", "VAN", "MPV", "MINIBUS", "미니밴", "승합", "面包车", "商务车"],
+  MINIVAN: ["MINIVAN", "MINI VAN", "VAN", "MPV", "MINIBUS", "RV", "미니밴", "승합", "승합차", "面包车", "商务车"],
 }
 
 const fuelAliases: Record<string, readonly string[]> = {
   GASOLINE: ["GASOLINE", "PETROL", "BENZINE", "가솔린", "휘발유", "汽油"],
   DIESEL: ["DIESEL", "디젤", "경유", "柴油"],
   ELECTRIC: ["ELECTRIC", "EV", "전기", "전기차", "纯电", "电动"],
-  HYBRID: ["HYBRID", "HEV", "PHEV", "하이브리드", "플러그인 하이브리드", "混动", "插电混动"],
-  GAS: ["GAS", "LPG", "CNG", "LNG", "가스", "액화석유가스", "天然气"],
+  HYBRID: ["HYBRID", "HEV", "PHEV", "하이브리드", "플러그인 하이브리드", "가솔린+전기", "가솔린 + 전기", "전기+가솔린", "混动", "插电混动"],
+  GAS: ["GAS", "LPG", "LPG(일반인 구입)", "LPG (일반인 구입)", "CNG", "LNG", "가스", "액화석유가스", "天然气"],
 }
 
 const transmissionAliases: Record<string, readonly string[]> = {

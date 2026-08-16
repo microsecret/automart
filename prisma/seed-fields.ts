@@ -1,10 +1,8 @@
 import { PrismaClient } from "@prisma/client"
 const prisma = new PrismaClient()
 
-const STEERING = ["LEFT", "RIGHT"]
 const DOCS = ["CLEAN", "CLEAN", "CLEAN", "ISSUES", "MISSING"] // взвешенно
 const DAMAGE = ["NONE", "NONE", "NONE", "NONE", "REPAINTED", "DAMAGED", "SEVERE"]
-const SELLER = ["OWNER", "OWNER", "OWNER", "DEALER", "DEALER"]
 const AVAIL = ["IN_STOCK", "IN_STOCK", "IN_STOCK", "IN_TRANSIT", "ON_ORDER"]
 const COLORS = ["Белый", "Чёрный", "Серебристый", "Серый", "Синий", "Красный", "Зелёный", "Коричневый", "Бордовый", "Золотистый"]
 

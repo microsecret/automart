@@ -2,11 +2,12 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
-import { consumeTelegramOtp, getVerifiedTelegramUser, verifyTelegramInitData } from "@/lib/telegram"
+import { consumeTelegramOtp, getVerifiedTelegramUser, isInternalTelegramEmail, verifyTelegramInitData } from "@/lib/telegram"
 import { normalizeUserRole } from "@/lib/permissions"
 import { getClientIp, rateLimit } from "@/lib/rate-limit"
+import type { NextAuthOptions } from "next-auth"
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
@@ -37,7 +38,8 @@ export const authOptions = {
         phone: { label: "Телефон", type: "tel" },
         code: { label: "Код из Telegram", type: "text" },
       },
-      async authorize(credentials: any) {
+      async authorize(credentials) {
+        if (!credentials?.phone || !credentials.code) return null
         const user = await consumeTelegramOtp(credentials?.phone, credentials?.code)
         if (!user?.telegramVerifiedAt) return null
         return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role) }
@@ -47,7 +49,7 @@ export const authOptions = {
       id: "telegram",
       name: "Telegram Mini App",
       credentials: { initData: { label: "Telegram initData", type: "text" } },
-      async authorize(credentials: any) {
+      async authorize(credentials) {
         const botToken = process.env.TELEGRAM_BOT_TOKEN
         if (!botToken || !credentials?.initData) return null
         const telegramUser = verifyTelegramInitData(credentials.initData, botToken)
@@ -60,18 +62,40 @@ export const authOptions = {
   ],
   session: { strategy: "jwt" as const },
   callbacks: {
-    async session({ session, token }: any) {
-      if (token) {
-        session.user.id = token.id
-        session.user.role = normalizeUserRole(token.role)
-        if (typeof token.name === "string") session.user.name = token.name
+    async session({ session, token }) {
+      if (token?.id) {
+        // Роль в JWT не является источником полномочий: администратор может
+        // изменить её в БД между двумя запросами. Перечитываем минимум полей,
+        // чтобы снятие доступа сработало сразу, а не после истечения токена.
+        const currentUser = await prisma.user.findUnique({
+          where: { id: String(token.id) },
+          select: { id: true, name: true, email: true, image: true, role: true },
+        })
+
+        if (!currentUser) {
+          // A deleted account must not keep the identity or privileges embedded
+          // in an older JWT. Routes that require a user id will reject this
+          // invalidated session, while role checks always see the lowest role.
+          session.user.id = ""
+          session.user.role = normalizeUserRole(null)
+          session.user.name = null
+          session.user.email = ""
+          session.user.image = null
+          return session
+        }
+
+        session.user.id = currentUser.id
+        session.user.role = normalizeUserRole(currentUser.role)
+        session.user.name = currentUser.name || session.user.name
+        session.user.email = isInternalTelegramEmail(currentUser.email) ? null : currentUser.email || session.user.email
+        session.user.image = currentUser.image || session.user.image
       }
       return session
     },
-    async jwt({ token, user, trigger, session }: any) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
-        token.role = normalizeUserRole((user as any).role)
+        token.role = normalizeUserRole(user.role)
       }
       if (trigger === "update" && typeof session?.name === "string") {
         token.name = session.name
@@ -81,6 +105,5 @@ export const authOptions = {
   },
   pages: {
     signIn: "/auth/signin",
-    signUp: "/auth/signup",
   },
 }

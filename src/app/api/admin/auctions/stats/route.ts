@@ -13,13 +13,24 @@ export async function GET() {
     }
 
     const now = new Date()
-    const [byStatus, total, totalAuctions, visibleAuctions, latestAuctionCheck, recent] = await Promise.all([
+    const freshnessBoundary = new Date(now.getTime() - 8 * 60 * 60 * 1000)
+    const sourceState = { source: "ENCAR", status: "ACTIVE" }
+    const [byStatus, total, totalAuctions, visibleAuctions, latestAuctionCheck, recent, activeEncar, freshEncar, staleEncar, pendingRemoval, latestSyncRun] = await Promise.all([
       prisma.auctionInquiry.groupBy({ by: ["status"], _count: true }),
       prisma.auctionInquiry.count(),
       prisma.auctionListing.count({ where: { status: "ACTIVE" } }),
       prisma.auctionListing.count({ where: { status: "ACTIVE", OR: [{ auctionDate: null }, { auctionDate: { gte: now } }] } }),
       prisma.auctionListing.aggregate({ _max: { sourceLastSeenAt: true } }),
       prisma.auctionInquiry.count({ where: { createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } } }),
+      prisma.auctionListing.count({ where: sourceState }),
+      prisma.auctionListing.count({ where: { ...sourceState, sourceLastSeenAt: { gte: freshnessBoundary } } }),
+      prisma.auctionListing.count({ where: { ...sourceState, OR: [{ sourceLastSeenAt: null }, { sourceLastSeenAt: { lt: freshnessBoundary } }] } }),
+      prisma.auctionListing.count({ where: { ...sourceState, sourceMissingChecks: { gte: 1 } } }),
+      prisma.auctionSyncRun.findFirst({
+        where: { source: "ENCAR" },
+        orderBy: { startedAt: "desc" },
+        select: { startedAt: true, completedAt: true, status: true, syncKind: true, failed: true, expired: true },
+      }),
     ])
 
     const statusCounts = byStatus.reduce((acc, s) => {
@@ -33,6 +44,14 @@ export async function GET() {
       visibleAuctions,
       lastAuctionSync: latestAuctionCheck._max.sourceLastSeenAt,
       recent,
+      catalogHealth: {
+        source: "ENCAR",
+        active: activeEncar,
+        freshWithin8Hours: freshEncar,
+        staleMoreThan8Hours: staleEncar,
+        pendingRemoval,
+        latestRun: latestSyncRun,
+      },
       byStatus: {
         NEW: statusCounts.NEW || 0,
         CONTACTED: statusCounts.CONTACTED || 0,

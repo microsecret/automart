@@ -3,13 +3,12 @@ import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
 import { AUCTION_BODY_TYPES } from "@/lib/auction-normalization"
-import { resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
+import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 
 export const dynamic = "force-dynamic"
 
 const VALID_COUNTRIES = new Set(["JP", "KR", "CN", "US", "DE"])
 const VALID_BODY_TYPES = new Set<string>(AUCTION_BODY_TYPES)
-const UNIDENTIFIABLE_LEGACY_MAKES = ["Others", "Other", "Unknown", "Etc", "기타"]
 
 /**
  * The public navigation used the human-facing "EU" alias before auctions
@@ -27,22 +26,19 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(50, Math.max(1, Number.parseInt(sp.get("limit") || "20", 10) || 20))
     const skip = (page - 1) * limit
 
-    const where: Prisma.AuctionListingWhereInput = {
-      status: "ACTIVE",
-      OR: [{ auctionDate: null }, { auctionDate: { gte: new Date() } }],
-    }
+    const publicPolicy = buildPublicAuctionPolicy()
+    const where: Prisma.AuctionListingWhereInput = { ...publicPolicy.where }
     const country = normalizeCountry(sp.get("country"))
     const source = sp.get("source")
     const make = sp.get("make")
     const priceFrom = sp.get("priceFrom")
     const priceTo = sp.get("priceTo")
     const yearFrom = sp.get("yearFrom")
-    const maxImportAgeYears = resolveMaximumImportAgeYears(undefined)
+    const maxImportAgeYears = publicPolicy.maxImportAgeYears
     // The parser excludes over-age lots on import, but the public read path
     // must enforce the same catalogue policy too. This keeps an old record
     // from becoming visible if it originated from a different importer.
-    const minimumImportYear = new Date().getFullYear() - maxImportAgeYears
-    const earliestBoundaryMonth = `${minimumImportYear}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
+    const minimumImportYear = publicPolicy.minimumImportYear
 
     if (country && !VALID_COUNTRIES.has(country)) return NextResponse.json({ error: "Некорректная страна" }, { status: 400 })
     if (source && !isAuctionSource(source)) return NextResponse.json({ error: "Некорректная площадка" }, { status: 400 })
@@ -69,16 +65,6 @@ export async function GET(request: NextRequest) {
     // `manufacturedMonth` is optional. A record without a precise month stays
     // in the boundary year and is explicitly marked for documentary review;
     // a record with a known older month is reliably excluded here.
-    where.AND = [
-      { make: { notIn: UNIDENTIFIABLE_LEGACY_MAKES } },
-      {
-        OR: [
-          { year: { gt: minimumImportYear } },
-          { year: minimumImportYear, manufacturedMonth: null },
-          { year: minimumImportYear, manufacturedMonth: { gte: earliestBoundaryMonth } },
-        ],
-      },
-    ]
     const bodyType = sp.get("bodyType")
     if (bodyType && !VALID_BODY_TYPES.has(bodyType)) return NextResponse.json({ error: "Некорректный тип кузова" }, { status: 400 })
     if (bodyType) where.bodyType = bodyType

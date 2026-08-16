@@ -6,9 +6,14 @@ const ENCAR_HOST = "fem.encar.com"
 const ENCAR_DETAIL_PATH = /^\/cars\/detail\/(\d+)$/
 const ENCAR_CATALOG_HOST = "car.encar.com"
 const ENCAR_CATALOG_PATH = "/list/car"
+const ENCAR_REQUEST_TIMEOUT_MS = 20_000
 const ENCAR_SEDAN_SIZE_CATEGORIES = new Set(["경차", "소형차", "준중형차", "중형차", "대형차"])
 const ENCAR_COLOR_LABELS: ReadonlyArray<readonly [string, string]> = [
-  ["은회색", "серебристо-серый"], ["담녹색", "тёмно-зелёный"], ["진주색", "жемчужный"], ["쥐색", "мышино-серый"],
+  // Compound source names go before their shorter suffixes. Otherwise, for
+  // example, `명은색` becomes the broken mixed-language `명серебристый`.
+  ["은회색", "серебристо-серый"], ["명은색", "ярко-серебристый"], ["연금색", "светло-золотистый"], ["청옥색", "бирюзовый"],
+  ["은하색", "серо-металлический"], ["하늘색", "голубой"], ["갈대색", "песочно-бежевый"], ["연두색", "салатовый"],
+  ["담녹색", "тёмно-зелёный"], ["진주색", "жемчужный"], ["쥐색", "мышино-серый"],
   ["검정색", "чёрный"], ["은색", "серебристый"], ["흰색", "белый"], ["회색", "серый"],
   ["빨간색", "красный"], ["파란색", "синий"], ["청색", "синий"], ["남색", "тёмно-синий"],
   ["갈색", "коричневый"], ["베이지색", "бежевый"], ["초록색", "зелёный"], ["녹색", "зелёный"],
@@ -293,6 +298,7 @@ export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: num
   const response = await fetch(catalogUrl, {
     cache: "no-store",
     redirect: "follow",
+    signal: AbortSignal.timeout(ENCAR_REQUEST_TIMEOUT_MS),
     headers: {
       Accept: "text/html,application/xhtml+xml",
       "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7",
@@ -320,6 +326,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   const response = await fetch(sourceUrl, {
     cache: "no-store",
     redirect: "follow",
+    signal: AbortSignal.timeout(ENCAR_REQUEST_TIMEOUT_MS),
     headers: {
       Accept: "text/html,application/xhtml+xml",
       "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7",
@@ -343,6 +350,11 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   const spec = asRecord(base?.spec)
   const contact = asRecord(base?.contact)
   if (!base || !category || !advertisement || !spec) throw new Error("В карточке Encar отсутствуют обязательные данные автомобиля")
+
+  const advertisementStatus = asText(advertisement.status)
+  if (advertisementStatus && advertisementStatus !== "ADVERTISE") {
+    throw new EncarListingUnavailableError(`Публикация Encar снята со статуса продажи (${advertisementStatus})`)
+  }
 
   const vehicleId = asInteger(base.vehicleId)
   const queryCarId = asInteger(base.queryCarId) || asInteger(asRecord(base.manage)?.dummyVehicleId)
@@ -386,6 +398,8 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   const rawColor = asText(spec.colorName)
   const originalSpecs = [rawBody, rawFuel, rawTransmission, rawDrive, rawColor].filter(Boolean).join(" · ") || null
 
+  const fuelType = normalizeAuctionFuelType(rawFuel)
+
   return {
     source: "ENCAR",
     sourceId: requestedId,
@@ -399,11 +413,11 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     country: "KR",
     auctionDate: null,
     mileage: asInteger(spec.mileage),
-    fuelType: normalizeAuctionFuelType(rawFuel),
+    fuelType,
     transmission: normalizeAuctionTransmission(rawTransmission),
     bodyType: normalizeEncarBodyType(rawBody),
     color: translateEncarColor(rawColor),
-    engineVolume: (() => {
+    engineVolume: fuelType === "ELECTRIC" ? null : (() => {
       const displacement = asInteger(spec.displacement)
       return displacement && displacement > 0 ? Number((displacement / 1000).toFixed(1)) : null
     })(),

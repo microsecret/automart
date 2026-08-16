@@ -1,9 +1,11 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
 import { authOptions } from "@/lib/auth"
 import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import PartDetailClient from "./PartDetailClient"
+import { parseImages } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
@@ -11,17 +13,24 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const listing = await prisma.listing.findFirst({
     where: { partId: id, ...publicListingWhere },
-    select: { part: { select: { name: true, make: true, model: true } } },
+    select: { part: { select: { name: true, make: true, model: true, price: true, images: true, location: true } } },
   })
   const part = listing?.part
-  if (!part) return { title: "Запчасть не найдена" }
+  if (!part) return { title: "Запчасть не найдена", robots: { index: false, follow: false } }
+  const title = `${part.name} для ${part.make} ${part.model}`
+  const description = `${part.name} для ${part.make} ${part.model} в ${part.location}, цена ${part.price.toLocaleString("ru-RU")} ₽. Совместимость и фотографии.`
+  const canonical = `/listings/part/${id}`
+  const images = parseImages(part.images)
   return {
-    title: `${part.name} для ${part.make} ${part.model}`,
-    description: `${part.name} — совместимость: ${part.make} ${part.model}. Проверенные запчасти на Авторынке.`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { type: "website", title, description, url: canonical, images: images.length ? [{ url: images[0], alt: title }] : undefined },
+    twitter: { card: "summary_large_image", title, description, images: images.length ? [images[0]] : undefined },
   }
 }
 
@@ -127,7 +136,7 @@ export default async function PartDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <PartDetailClient data={data} />
     </>
   )

@@ -4,15 +4,6 @@ export const AUCTION_CURRENCIES = ["USD", "EUR", "JPY", "KRW", "CNY"] as const
 
 export type AuctionCurrency = typeof AUCTION_CURRENCIES[number]
 
-const FALLBACK_RATES: Record<string, number> = {
-  RUB: 1,
-  USD: 95,
-  EUR: 102,
-  JPY: 0.62,
-  KRW: 0.072,
-  CNY: 13.2,
-}
-
 export type ExchangeRateMap = Record<string, { rateToRub: number; updatedAt: Date | null; source: string }>
 
 export async function getAuctionExchangeRates(): Promise<ExchangeRateMap> {
@@ -29,7 +20,12 @@ export async function getAuctionExchangeRates(): Promise<ExchangeRateMap> {
 
 export function getAuctionRateToRub(currency: string | null | undefined, rates: ExchangeRateMap): number {
   const normalized = (currency || "RUB").trim().toUpperCase()
-  return rates[normalized]?.rateToRub ?? FALLBACK_RATES[normalized] ?? 1
+  if (normalized === "RUB") return 1
+  const officialRate = rates[normalized]?.rateToRub
+  if (!Number.isFinite(officialRate) || officialRate <= 0) {
+    throw new Error(`Official exchange rate is unavailable for ${normalized}`)
+  }
+  return officialRate
 }
 
 export function calculateAuctionRubPricing(sourcePrice: number, exchangeRate: number, markup: number) {

@@ -35,7 +35,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Max 10MB" }, { status: 413 })
     }
 
-    const formData = await request.formData()
+    const contentType = request.headers.get("content-type") || ""
+    if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
+      return NextResponse.json({ error: "Expected multipart form data" }, { status: 415 })
+    }
+
+    const formData = await request.formData().catch(() => null)
+    if (!formData) return NextResponse.json({ error: "Invalid multipart form data" }, { status: 400 })
     const file = formData.get("file") as File | null
     if (!file) return NextResponse.json({ error: "No file" }, { status: 400 })
 

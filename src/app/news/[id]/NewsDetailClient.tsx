@@ -3,24 +3,25 @@
 import { useState } from "react"
 import useSWR, { mutate as globalMutate } from "swr"
 import { useSession } from "next-auth/react"
-import { Box, Stack, Text, Group, Center, Loader, Card, ThemeIcon, Avatar, Textarea, Button, Anchor, Breadcrumbs, Image, Badge } from "@mantine/core"
-import { IconNews, IconClock, IconMessageCircle2, IconExternalLink, IconEye, IconSend, IconBrandTelegram } from "@tabler/icons-react"
+import { Box, Stack, Text, Group, Center, Loader, Card, ThemeIcon, Avatar, Textarea, Button, Anchor, Breadcrumbs, Image, Badge, Blockquote } from "@mantine/core"
+import { IconNews, IconClock, IconMessageCircle2, IconEye, IconSend, IconBrandTelegram, IconQuote, IconShieldCheck } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate, formatDate } from "@/lib/format"
 import { newsHref } from "@/lib/news"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { notifications } from "@mantine/notifications"
+import { cleanNewsArticleContent, extractNewsHashtags, extractTelegramActions, LEGACY_VEHICLE_CHECK_TELEGRAM_URL, readNewsContentMetadata, safeTelegramUrl, type NewsTelegramAction } from "@/lib/news-content"
 import styles from "./news-article.module.css"
 
-type NewsComment = {
+export type NewsComment = {
   id: string
   content: string
   createdAt: string
   user: { id: string; name: string | null; image: string | null } | null
 }
 
-type NewsArticle = {
+export type NewsArticle = {
   id: string
   title: string
   content: string
@@ -53,15 +54,7 @@ function renderInlineMarkdown(value: string) {
 }
 
 function normalizeNewsContent(content: string, title: string) {
-  let normalized = content
-    .replace(/\r\n/g, "\n")
-    .replace(/<br\s*\/?\s*>/gi, "\n")
-    .replace(/<\/?(?:b|strong)>/gi, "**")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\u00a0/g, " ")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/[ \t]{2,}/g, " ")
-    .trim()
+  let normalized = cleanNewsArticleContent(content.replace(/<\/?(?:b|strong)>/gi, "**"))
 
   const escapedTitle = title.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   if (escapedTitle) normalized = normalized.replace(new RegExp(`^${escapedTitle}(?:[.!…—:-]+)?\\s*`, "i"), "")
@@ -98,11 +91,26 @@ function NewsBody({ content, title }: { content: string; title: string }) {
     .split(/\n\s*\n/)
     .map((item) => item.trim())
     .filter(Boolean)
-    .flatMap(splitLongParagraph)
+    .flatMap((item) => /^(?:🧠\s*)?мнение\s+редакции\s*[:—-]/i.test(item) ? [item] : splitLongParagraph(item))
 
   return (
     <Stack className={styles.content} gap="md">
       {paragraphs.map((paragraph, index) => {
+        const editorialOpinion = paragraph.match(/^(?:🧠\s*)?мнение\s+редакции\s*[:—-]\s*([\s\S]+)$/i)
+        if (editorialOpinion) {
+          const quote = editorialOpinion[1].trim().replace(/^[«“"]+|[»”"]+$/g, "").trim()
+          return (
+            <Blockquote
+              key={`editorial-opinion-${index}`}
+              className={styles.editorialOpinion}
+              color="indigo"
+              icon={<IconQuote size={22} />}
+              cite="Редакция Авторынка"
+            >
+              {renderInlineMarkdown(quote)}
+            </Blockquote>
+          )
+        }
         const lines = paragraph.split("\n").map((line) => line.trim()).filter(Boolean)
         const isList = lines.length > 0 && lines.every((line) => /^(?:[-•*]|\d+[.)])\s+/.test(line))
         if (isList) {
@@ -114,25 +122,42 @@ function NewsBody({ content, title }: { content: string; title: string }) {
   )
 }
 
-function readTags(value?: string | null) {
-  if (!value) return []
-  try {
-    const tags = JSON.parse(value)
-    return Array.isArray(tags) ? tags.filter((tag) => typeof tag === "string").slice(0, 8) : []
-  } catch {
-    return []
-  }
+function telegramChannelUrl(sourceChannel?: string | null) {
+  const channel = sourceChannel?.replace(/^@/, "").trim()
+  return channel && /^[a-zA-Z0-9_]{5,64}$/.test(channel) ? `https://t.me/${channel}` : null
 }
 
-export default function NewsDetailClient({ id }: { id: string }) {
+function articleTelegramActions(article: NewsArticle, storedActions: NewsTelegramAction[]) {
+  const actions = [...storedActions, ...extractTelegramActions(article.content)]
+  const channelUrl = telegramChannelUrl(article.sourceChannel)
+  const isOneCarNews = article.sourceChannel?.replace(/^@/, "").toLowerCase() === "onecarnews"
+  if (channelUrl && !actions.some((action) => action.kind === "channel")) {
+    actions.unshift({ kind: "channel", label: "Подписаться на канал", url: channelUrl })
+  }
+  if ((isOneCarNews || /^(?:\s*)проверка\s+авто(?:мобиля)?\s*[.!…]*(?:\s*)$/im.test(article.content)) && !actions.some((action) => action.kind === "vehicle-check")) {
+    actions.push({ kind: "vehicle-check", label: "Проверка авто", url: LEGACY_VEHICLE_CHECK_TELEGRAM_URL })
+  }
+
+  const seen = new Set<string>()
+  return actions.filter((action) => {
+    if (seen.has(action.url)) return false
+    seen.add(action.url)
+    return true
+  }).slice(0, 4)
+}
+
+export default function NewsDetailClient({ id, initialArticle }: { id: string; initialArticle: NewsArticle }) {
   const { data: session } = useSession()
   const [comment, setComment] = useState("")
   const [sending, setSending] = useState(false)
 
-  const { data: article, error: articleError, isLoading, mutate } = useSWR<NewsArticle>(`/api/news/${id}`, fetchJson, {
+  const { data: liveArticle, error: articleError, isLoading, mutate } = useSWR<NewsArticle>(`/api/news/${id}`, fetchJson, {
+    fallbackData: initialArticle,
+    revalidateOnMount: true,
     revalidateOnFocus: false,
     dedupingInterval: 60_000,
   })
+  const article = liveArticle || initialArticle
   const { data: relatedData } = useSWR<RelatedNewsResponse>("/api/news?limit=4", fetchJson, { revalidateOnFocus: false })
   const relatedNews = (relatedData?.news || []).filter((news) => news.id !== article?.id).slice(0, 3)
 
@@ -156,10 +181,13 @@ export default function NewsDetailClient({ id }: { id: string }) {
     } finally { setSending(false) }
   }
 
-  if (isLoading) return <Center py={60}><Loader color="indigo" /></Center>
+  if (isLoading && !article) return <Center py={60}><Loader color="indigo" /></Center>
   if (articleError) return <Box p={{ base: "sm", md: "xl" }} maw={840} mx="auto"><AsyncErrorState title="Не удалось открыть новость" description="Материал временно недоступен. Повторите попытку." onRetry={() => void mutate()} backHref="/news" /></Box>
   if (!article) return <Center py={60}><Text c="gray.5">Новость не найдена</Text></Center>
-  const tags = readTags(article.tags)
+  const metadata = readNewsContentMetadata(article.tags)
+  const tags = extractNewsHashtags(article.content, metadata.tags)
+  const telegramActions = articleTelegramActions(article, metadata.telegramActions)
+  const telegramPostUrl = article.telegramUrl ? safeTelegramUrl(article.telegramUrl) : null
 
   return (
     <Box p={{ base: "sm", md: "xl" }} style={{ maxWidth: 840, margin: "0 auto" }}>
@@ -185,15 +213,45 @@ export default function NewsDetailClient({ id }: { id: string }) {
           {article.imageUrl && <Image src={article.imageUrl} alt={article.title} className="news-article__image" mb="lg" fit="cover" fallbackSrc="/images/home/hero-marketplace.png" />}
           <NewsBody content={article.content || ""} title={article.title} />
           {tags.length > 0 && (
-            <Group gap="xs" mt="lg">
-              {tags.map((tag: string) => <Badge key={tag} variant="light" color="gray">#{tag.replace(/^#/, "")}</Badge>)}
-            </Group>
+            <Stack gap="xs" mt="xl">
+              <Text size="xs" fw={700} tt="uppercase" c="dimmed" lts="0.05em">Темы материала</Text>
+              <Group gap="xs">
+                {tags.map((tag) => <Badge key={tag.toLocaleLowerCase("ru")} variant="light" color="indigo" radius="md" size="md">#{tag.replace(/^#/, "")}</Badge>)}
+              </Group>
+            </Stack>
           )}
-          {(article.sourceUrl || article.telegramUrl) && (
-            <Group gap="md" mt="md" pt="md" style={{ borderTop: "1px solid var(--mantine-color-border)" }}>
-              {article.sourceUrl && <Anchor href={article.sourceUrl} target="_blank" rel="noreferrer" size="xs" c="#4f46e5"><IconExternalLink size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />Первоисточник</Anchor>}
-              {article.telegramUrl && <Anchor href={article.telegramUrl} target="_blank" rel="noreferrer" size="xs" c="#4f46e5"><IconBrandTelegram size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />Открыть в Telegram</Anchor>}
-            </Group>
+          {(telegramActions.length > 0 || telegramPostUrl) && (
+            <Stack className={styles.telegramPanel} gap="sm" mt="xl">
+              <Group gap="sm" wrap="nowrap">
+                <ThemeIcon size={38} radius="xl" color="blue"><IconBrandTelegram size={21} /></ThemeIcon>
+                <Box>
+                  <Text fw={750} size="sm">Продолжить в Telegram</Text>
+                  <Text size="xs" c="dimmed">Канал редакции и сервисы для автомобилистов</Text>
+                </Box>
+              </Group>
+              <Group gap="sm">
+                {telegramActions.map((action) => (
+                  <Button
+                    component="a"
+                    href={action.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    key={`${action.kind}-${action.url}`}
+                    variant={action.kind === "channel" ? "filled" : "light"}
+                    color={action.kind === "channel" ? "blue" : "indigo"}
+                    leftSection={action.kind === "vehicle-check" ? <IconShieldCheck size={18} /> : <IconBrandTelegram size={18} />}
+                    radius="md"
+                  >
+                    {action.kind === "vehicle-check" ? "Проверить автомобиль" : "Подписаться на канал"}
+                  </Button>
+                ))}
+                {telegramPostUrl && !telegramActions.some((action) => action.url === telegramPostUrl) && (
+                  <Button component="a" href={telegramPostUrl} target="_blank" rel="noopener noreferrer" variant="subtle" color="blue" leftSection={<IconBrandTelegram size={18} />} radius="md">
+                    Открыть публикацию
+                  </Button>
+                )}
+              </Group>
+            </Stack>
           )}
         </Box>
 

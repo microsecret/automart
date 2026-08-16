@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Card, Stack, Group, Text, Slider, NumberInput, Select, Box, Divider } from "@mantine/core"
+import { Card, Stack, Group, Text, Slider, Select, Box, Divider } from "@mantine/core"
 import { IconCalculator } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
 
@@ -96,6 +96,7 @@ export default function CreditCalculator({ price }: { price: number }) {
           <Stack gap={0} align="flex-end">
             <Text size="xs" c="gray.5">Сумма кредита</Text>
             <Text size="sm" fw={600} c="dark.9">{formatPrice(totalLoan)}</Text>
+            <Text size="xs" c="gray.5">Всего с первым взносом: {formatPrice(totalCost)}</Text>
           </Stack>
         </Group>
 

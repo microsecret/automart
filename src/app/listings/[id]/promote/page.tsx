@@ -1,6 +1,6 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { useParams } from "next/navigation"
 import { Box, Stack, Text, Paper, Group, Button, SimpleGrid, ThemeIcon, Badge, Modal, Divider, Skeleton } from "@mantine/core"
 import { IconFlame, IconStar, IconArrowUp, IconCheck, IconCreditCard, IconShieldCheck, IconChartBar } from "@tabler/icons-react"
@@ -8,21 +8,22 @@ import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
+import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
 
 type ListingViewsResponse = { views: number }
-type PromoteResponse = { success: true; listing: { id: string; isFeatured: boolean; promoType: string | null; promoUntil: string } }
+type PromoteResponse = { checkoutUrl: string }
 
 const PROMO_OPTIONS = [
-  { id: "boost", title: "Поднятие в топ", desc: "Объявление поднимется на первое место в поиске", price: 499, icon: IconArrowUp, color: "#0891b2", bg: "#ecfeff", days: 3, features: ["Поднятие в топ выдачи", "Длительность: 3 дня", "Статистика просмотров"] },
-  { id: "premium", title: "Премиум", desc: "Выделение цветом, бейдж «Премиум», приоритет в выдаче", price: 1490, icon: IconFlame, color: "#ea580c", bg: "#fff7ed", days: 7, features: ["Всё из «Поднятия»", "Бейдж Премиум на карточке", "Выделение цветом", "Длительность: 7 дней"] },
-  { id: "vip", title: "VIP-размещение", desc: "Закрепление на главной + топ поиска + бейдж VIP", price: 3990, icon: IconStar, color: "#7c3aed", bg: "#f5f3ff", days: 30, features: ["Всё из «Премиум»", "Закрепление на главной", "Максимальный приоритет", "Бейдж VIP", "Длительность: 30 дней"] },
+  { ...PROMOTION_TARIFFS.BOOST, desc: PROMOTION_TARIFFS.BOOST.description, price: PROMOTION_TARIFFS.BOOST.amountRub, days: PROMOTION_TARIFFS.BOOST.durationDays, icon: IconArrowUp, color: "#0891b2", bg: "#ecfeff", features: ["Поднятие в топ выдачи", "Статистика просмотров"] },
+  { ...PROMOTION_TARIFFS.PREMIUM, desc: PROMOTION_TARIFFS.PREMIUM.description, price: PROMOTION_TARIFFS.PREMIUM.amountRub, days: PROMOTION_TARIFFS.PREMIUM.durationDays, icon: IconFlame, color: "#ea580c", bg: "#fff7ed", features: ["Всё из «Поднятия»", "Бейдж Премиум на карточке", "Выделение цветом"] },
+  { ...PROMOTION_TARIFFS.VIP, desc: PROMOTION_TARIFFS.VIP.description, price: PROMOTION_TARIFFS.VIP.amountRub, days: PROMOTION_TARIFFS.VIP.durationDays, icon: IconStar, color: "#7c3aed", bg: "#f5f3ff", features: ["Всё из «Премиум»", "Закрепление на главной", "Максимальный приоритет", "Бейдж VIP"] },
 ]
 
 export default function PromotePage() {
   const { id } = useParams<{ id: string }>()
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [paid, setPaid] = useState(false)
   const [pending, startTransition] = useTransition()
   const { data: listing, error: listingError, isLoading: isListingLoading, mutate: reloadViews } = useSWR<ListingViewsResponse>(
     id ? `/api/listings/${id}/views` : null,
@@ -31,24 +32,26 @@ export default function PromotePage() {
 
   const selectedOption = PROMO_OPTIONS.find((o) => o.id === selected)
 
+  useEffect(() => {
+    setPaymentStatus(new URLSearchParams(window.location.search).get("payment"))
+  }, [])
+
   const handleSelect = (id: string) => {
     setSelected(id)
-    setPaid(false)
     setModalOpen(true)
   }
 
   const handlePay = () => {
     startTransition(async () => {
       try {
-        await fetchJson<PromoteResponse>(`/api/listings/${id}/promote`, {
+        const result = await fetchJson<PromoteResponse>(`/api/listings/${id}/promote`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tariff: selected }),
         })
-        setPaid(true)
-        notifications.show({ title: "Продвижение активировано", message: `Тариф «${selectedOption?.title}» активен`, color: "green" })
+        window.location.assign(result.checkoutUrl)
       } catch (e) {
-        notifications.show({ title: "Ошибка", message: e instanceof Error ? e.message : "Не удалось активировать продвижение", color: "red" })
+        notifications.show({ title: "Оплата недоступна", message: e instanceof Error ? e.message : "Не удалось открыть безопасную оплату", color: "red" })
       }
     })
   }
@@ -74,9 +77,20 @@ export default function PromotePage() {
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconChartBar size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Продвижение объявления</Text>
-            <Text size="xs" c="gray.5">Увеличьте просмотры и продажи в 3-10 раз</Text>
+            <Text size="xs" c="gray.5">Поднимите активное объявление выше в каталоге</Text>
           </Stack>
         </Group>
+
+        {paymentStatus === "success" && (
+          <Paper radius="md" p="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+            <Group gap="sm"><IconCheck size={20} color="#059669" /><Text size="sm" c="#15803d">Платёж принят. Продвижение включится после подтверждения платёжной системой.</Text></Group>
+          </Paper>
+        )}
+        {paymentStatus === "canceled" && (
+          <Paper radius="md" p="md" withBorder style={{ background: "#fff7ed", borderColor: "#fed7aa" }}>
+            <Text size="sm" c="#c2410c">Оплата отменена. Объявление не продвигалось, средства не списаны.</Text>
+          </Paper>
+        )}
 
         {isListingLoading && (
           <Paper radius="md" p="sm" withBorder>
@@ -129,23 +143,13 @@ export default function PromotePage() {
         <Paper radius="md" p="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
           <Group gap="sm" align="center">
             <IconShieldCheck size={20} color="#059669" />
-            <Text size="xs" c="#15803d">Гарантия возврата средств, если не будет просмотров. Безопасная оплата.</Text>
+            <Text size="xs" c="#15803d">Продвижение включается только после подтверждения оплаты платёжной системой.</Text>
           </Group>
         </Paper>
       </Stack>
 
       {/* Модалка оплаты */}
-      <Modal opened={modalOpen} onClose={() => { setModalOpen(false); setPaid(false) }} title={paid ? "Готово!" : "Оплата продвижения"} centered size="sm">
-        {paid ? (
-          <Stack gap="md" align="center" py="md">
-            <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>
-            <Stack gap={0} align="center">
-              <Text fw={700} fz="lg" c="dark.9">Продвижение активировано!</Text>
-              <Text size="sm" c="gray.5" ta="center">Тариф «{selectedOption?.title}» активен {selectedOption?.days} дней</Text>
-            </Stack>
-            <Button fullWidth radius="md" onClick={() => { setModalOpen(false); setPaid(false) }}>Отлично</Button>
-          </Stack>
-        ) : (
+      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title="Оплата продвижения" centered size="sm">
           <Stack gap="md">
             {selectedOption && (
               <>
@@ -158,11 +162,10 @@ export default function PromotePage() {
                 <Button fullWidth size="md" radius="md" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} leftSection={<IconCreditCard size={18} />} loading={pending} onClick={handlePay}>
                   Оплатить {selectedOption.price} ₽
                 </Button>
-                <Text size="xs" c="gray.4" ta="center">Демо-режим: оплата не списывается</Text>
+                <Text size="xs" c="gray.5" ta="center">После нажатия откроется защищённая платёжная страница. Тариф активируется только после подтверждённой оплаты.</Text>
               </>
             )}
           </Stack>
-        )}
       </Modal>
     </Box>
   )

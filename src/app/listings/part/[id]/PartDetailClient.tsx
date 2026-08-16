@@ -35,7 +35,6 @@ import {
   IconHash,
   IconAdjustments,
   IconCircleDot,
-  IconCalendar,
   IconCar,
   IconChevronLeft,
   IconChevronRight,

@@ -134,8 +134,9 @@ export async function POST(request: NextRequest) {
           include: deliveryOrderInclude,
         })
         break
-      } catch (error: any) {
-        if (error?.code !== "P2002" || attempt === 2) throw error
+      } catch (error) {
+        const isNumberCollision = error && typeof error === "object" && "code" in error && error.code === "P2002"
+        if (!isNumberCollision || attempt === 2) throw error
       }
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getClientIp, rateLimit } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -24,21 +25,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
     const viewCookieName = `news-view-${found.id}`
     const alreadyCounted = request.cookies.get(viewCookieName)?.value === "1"
-    const news = alreadyCounted
-      ? await prisma.news.findUnique({ where: { id: found.id }, include })
-      : await prisma.news.update({ where: { id: found.id }, data: { views: { increment: 1 } }, include })
+    const uniqueView = rateLimit(`news-view:${found.id}:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 1 })
+    const news = !alreadyCounted && uniqueView.success
+      ? await prisma.news.update({ where: { id: found.id }, data: { views: { increment: 1 } }, include })
+      : await prisma.news.findUnique({ where: { id: found.id }, include })
 
     if (!news) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
     const response = NextResponse.json(news)
-    if (!alreadyCounted) {
-      response.cookies.set(viewCookieName, "1", {
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 60 * 60,
-        path: "/",
-      })
-    }
+    if (!alreadyCounted) response.cookies.set(viewCookieName, "1", { httpOnly: true, sameSite: "lax", maxAge: 60 * 60, path: "/" })
     return response
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 })

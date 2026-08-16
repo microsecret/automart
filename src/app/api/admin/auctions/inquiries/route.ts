@@ -27,8 +27,12 @@ export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user?.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    const { id, status, managerNotes } = await request.json()
-    if (!id || typeof id !== "string" || !INQUIRY_STATUSES.has(status)) return NextResponse.json({ error: "Некорректные данные заявки" }, { status: 400 })
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object") return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
+    const { id, status, managerNotes } = body as Record<string, unknown>
+    if (typeof id !== "string" || typeof status !== "string" || !INQUIRY_STATUSES.has(status)) {
+      return NextResponse.json({ error: "Некорректные данные заявки" }, { status: 400 })
+    }
     if (managerNotes !== undefined && (typeof managerNotes !== "string" || managerNotes.length > 4_000)) return NextResponse.json({ error: "Комментарий менеджера не должен превышать 4000 символов" }, { status: 400 })
 
     const updated = await prisma.auctionInquiry.update({
@@ -36,8 +40,10 @@ export async function PATCH(request: NextRequest) {
       data: { status, ...(managerNotes !== undefined ? { managerNotes: managerNotes.trim() || null } : {}) },
     })
     return NextResponse.json({ success: true, inquiry: updated })
-  } catch (error: any) {
-    if (error?.code === "P2025") return NextResponse.json({ error: "Заявка не найдена" }, { status: 404 })
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
+      return NextResponse.json({ error: "Заявка не найдена" }, { status: 404 })
+    }
     return NextResponse.json({ error: "Failed" }, { status: 500 })
   }
 }

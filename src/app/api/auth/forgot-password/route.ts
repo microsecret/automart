@@ -10,8 +10,9 @@ const emailPattern = /^\S+@\S+\.\S+$/
 /** Sends a neutral reset response to avoid revealing whether an email exists. */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const email = String(body.email || "").trim().toLowerCase()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object") return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
+    const email = String((body as Record<string, unknown>).email || "").trim().toLowerCase()
 
     const ipLimit = rateLimit(`auth:password-reset:ip:${getClientIp(request)}`, { windowMs: 15 * 60_000, maxRequests: 10 })
     const emailLimit = rateLimit(`auth:password-reset:email:${email || "unknown"}`, { windowMs: 60 * 60_000, maxRequests: 5 })

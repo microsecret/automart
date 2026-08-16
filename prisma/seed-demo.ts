@@ -1,5 +1,5 @@
 import { prisma } from "../src/lib/prisma"
-import { BRANDS, TRANSPORT_CATEGORIES } from "../src/lib/catalog"
+import { BRANDS } from "../src/lib/catalog"
 import { ELECTRIC_ONLY_CAR_MAKES, isKnownInvalidCarFuel } from "../src/lib/constants"
 
 async function main() {

@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
 import NewsListClient from "./NewsListClient"
+import { getNewsPage } from "@/lib/news-feed"
+
+export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: "Автомобильные новости России и мира",
@@ -12,6 +15,17 @@ export const metadata: Metadata = {
   },
 }
 
-export default function NewsPage() {
-  return <NewsListClient />
+export default async function NewsPage() {
+  const initialPage = await getNewsPage({ page: 1, limit: 12 })
+  return (
+    <NewsListClient
+      initialData={{
+        ...initialPage,
+        news: initialPage.news.map((article) => ({
+          ...article,
+          publishedAt: article.publishedAt.toISOString(),
+        })),
+      }}
+    />
+  )
 }

@@ -1,4 +1,5 @@
 import crypto from "crypto"
+import https from "node:https"
 import { prisma } from "@/lib/prisma"
 
 const OTP_PURPOSE = "LOGIN"
@@ -13,6 +14,14 @@ export type TelegramIdentity = {
   username?: string
   photo_url?: string
 }
+
+type TelegramBotProfile = { id: number | string; username?: string }
+type TelegramChatMember = { status?: string; can_delete_messages?: boolean }
+type TelegramApiResponse<T> = { ok?: boolean; description?: string; result?: T }
+
+const CHAT_MODERATION_CACHE_TTL_MS = 5 * 60 * 1000
+const moderatedChatCapability = new Map<string, { allowed: boolean; expiresAt: number }>()
+let botProfilePromise: Promise<TelegramBotProfile> | null = null
 
 export class TelegramIdentityConflictError extends Error {}
 
@@ -38,6 +47,10 @@ export function normalizePhone(value: unknown) {
   if (digits.length === 10) return `+7${digits}`
   if (digits.length >= 10 && digits.length <= 15) return `+${digits}`
   return null
+}
+
+export function isInternalTelegramEmail(value: unknown) {
+  return typeof value === "string" && /^tg_\d+@telegram\.local$/i.test(value)
 }
 
 export function verifyTelegramInitData(initData: string, botToken: string, maxAgeSeconds = 24 * 60 * 60): TelegramIdentity | null {
@@ -175,20 +188,98 @@ export async function consumeTelegramOtp(phoneInput: string, codeInput: string) 
 export async function telegramApi<T = unknown>(method: string, payload: Record<string, unknown>) {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not configured")
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+  const requestBody = JSON.stringify(payload)
+  return new Promise<T>((resolve, reject) => {
+    const request = https.request({
+      hostname: "api.telegram.org",
+      family: 4,
+      port: 443,
+      path: `/bot${token}/${method}`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(requestBody),
+      },
+      timeout: 20_000,
+    }, (response) => {
+      let responseBody = ""
+      response.setEncoding("utf8")
+      response.on("data", (chunk) => {
+        responseBody += chunk
+        if (responseBody.length > 2_000_000) request.destroy(new Error("Telegram API response is too large"))
+      })
+      response.on("end", () => {
+        let body: TelegramApiResponse<T> | null = null
+        try { body = JSON.parse(responseBody) as TelegramApiResponse<T> } catch { /* handled below */ }
+        if ((response.statusCode || 500) >= 400 || !body?.ok) {
+          reject(new Error(body?.description || `Telegram API ${response.statusCode || 500}`))
+          return
+        }
+        resolve(body.result as T)
+      })
+    })
+    request.on("error", reject)
+    request.on("timeout", () => request.destroy(new Error(`Telegram API ${method} timed out`)))
+    request.end(requestBody)
   })
-  const body = await response.json().catch(() => null) as { ok?: boolean; description?: string; result?: T } | null
-  if (!response.ok || !body?.ok) throw new Error(body?.description || `Telegram API ${response.status}`)
-  return body.result as T
+}
+
+export function getTelegramMiniAppUrl() {
+  const value = process.env.TELEGRAM_MINI_APP_URL?.trim()
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    return url.protocol === "https:" ? url.toString() : null
+  } catch {
+    return null
+  }
+}
+
+export function getTelegramBotUsername() {
+  const raw = (process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME || "").trim().replace(/^@/, "")
+  return /^[A-Za-z0-9_]{5,}$/.test(raw) ? raw : null
 }
 
 export function isModeratedChat(chatId: string) {
   if (process.env.TELEGRAM_MODERATION_ENABLED !== "true") return false
   const chats = (process.env.TELEGRAM_MODERATION_CHAT_IDS || "").split(",").map((value) => value.trim()).filter(Boolean)
   return chats.includes(chatId) || chats.includes("*")
+}
+
+async function getTelegramBotProfile() {
+  if (!botProfilePromise) botProfilePromise = telegramApi<TelegramBotProfile>("getMe", {})
+  try {
+    return await botProfilePromise
+  } catch (error) {
+    botProfilePromise = null
+    throw error
+  }
+}
+
+/**
+ * `TELEGRAM_MODERATION_CHAT_IDS` scopes groups that may be moderated, while
+ * this check confirms the bot has Telegram's delete permission in that group.
+ * A failed API check always denies moderation rather than attempting deletion.
+ */
+export async function canModerateTelegramChat(chatId: string) {
+  if (!isModeratedChat(chatId)) return false
+
+  const cached = moderatedChatCapability.get(chatId)
+  if (cached && cached.expiresAt > Date.now()) return cached.allowed
+
+  try {
+    const bot = await getTelegramBotProfile()
+    const membership = await telegramApi<TelegramChatMember>("getChatMember", { chat_id: chatId, user_id: bot.id })
+    const owner = membership.status === "creator" || membership.status === "owner"
+    const allowed = owner || (membership.status === "administrator" && membership.can_delete_messages === true)
+    moderatedChatCapability.set(chatId, { allowed, expiresAt: Date.now() + CHAT_MODERATION_CACHE_TTL_MS })
+    return allowed
+  } catch (error) {
+    console.error("Telegram moderation permission check failed:", error)
+    moderatedChatCapability.set(chatId, { allowed: false, expiresAt: Date.now() + 30_000 })
+    return false
+  }
 }
 
 export function isTelegramUserRegistered(user: { telegramVerifiedAt?: Date | null; phone?: string | null } | null) {

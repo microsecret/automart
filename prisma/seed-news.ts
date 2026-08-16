@@ -11,6 +11,10 @@ interface NewsItem {
 }
 
 async function main() {
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("Destructive news seed is disabled. Set ALLOW_DEMO_SEED=true only for an isolated development database.")
+  }
+
   console.log("Импорт авто-новостей...")
 
   const raw = readFileSync("./prisma/news-export.json", "utf8")

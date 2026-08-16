@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@prisma/client"
 // GET all notifications for the current user
 export async function GET(request: NextRequest) {
   try {
@@ -27,24 +28,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ count: unreadCount })
     }
 
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "20")
+    const page = Number(searchParams.get("page") || "1")
+    const limit = Number(searchParams.get("limit") || "20")
+    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
+      return NextResponse.json({ error: "Некорректная пагинация" }, { status: 400 })
+    }
     const skip = (page - 1) * limit
 
     // Get where clause for filtering
-    const where: any = {
+    const where: Prisma.NotificationWhereInput = {
       userId: session.user.id
     }
 
     // Filter by read status if specified
     const isReadParam = searchParams.get("isRead")
     if (isReadParam !== null) {
+      if (isReadParam !== "true" && isReadParam !== "false") {
+        return NextResponse.json({ error: "Параметр isRead должен быть true или false" }, { status: 400 })
+      }
       where.isRead = isReadParam === "true"
     }
 
     // Filter by type if specified
     const type = searchParams.get("type")
     if (type) {
+      if (type.length > 80) return NextResponse.json({ error: "Тип уведомления слишком длинный" }, { status: 400 })
       where.type = type
     }
 
@@ -192,7 +200,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 // POST mark all notifications as read
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {

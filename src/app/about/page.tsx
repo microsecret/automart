@@ -1,7 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { Box, Stack, Title, Text, Card, Group, ThemeIcon, SimpleGrid, Divider, Badge } from "@mantine/core"
-import { IconCar, IconShieldCheck, IconUsers, IconNews, IconSparkles, IconHeart, IconTarget, IconCheck } from "@tabler/icons-react"
+import { IconCar, IconShieldCheck, IconUsers, IconNews, IconSparkles, IconHeart, IconCheck } from "@tabler/icons-react"
 import { COUNTRIES } from "@/lib/geo"
 
 const FEATURES = [
@@ -29,7 +29,7 @@ export default function AboutPage() {
         <Stack gap="xs" align="center" ta="center" py="md">
           <Badge variant="light" color="indigo" size="md">О проекте</Badge>
           <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="dark.9" style={{ letterSpacing: "-0.02em" }}>
-            Авторынок — маркетплейс транспорта
+            LeWheel — маркетплейс транспорта
           </Title>
           <Text size="sm" c="gray.5" maw={500} lh={1.6}>
             Полноценная экосистема для покупки и продажи автомобилей, мото, спецтехники,

@@ -6,7 +6,12 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, code } = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object") return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
+    const { phone, code } = body as Record<string, unknown>
+    if (typeof phone !== "string" || typeof code !== "string") {
+      return NextResponse.json({ error: "Телефон и код обязательны" }, { status: 400 })
+    }
     const phoneKey = String(phone || "").replace(/[^\d+]/g, "") || "unknown"
     const ipLimit = rateLimit(`auth:telegram-otp-verify:ip:${getClientIp(request)}`, { windowMs: 15 * 60_000, maxRequests: 15 })
     const phoneLimit = rateLimit(`auth:telegram-otp-verify:phone:${phoneKey}`, { windowMs: 15 * 60_000, maxRequests: 5 })

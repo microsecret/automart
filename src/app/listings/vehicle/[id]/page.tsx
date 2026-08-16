@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
@@ -5,6 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import VehicleDetailClient from "./VehicleDetailClient"
 import { findLabel, BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { parseImages } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
@@ -12,17 +14,24 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const listing = await prisma.listing.findFirst({
     where: { vehicleId: id, ...publicListingWhere },
-    select: { vehicle: { select: { make: true, model: true, year: true, price: true } } },
+    select: { vehicle: { select: { make: true, model: true, year: true, price: true, images: true, location: true } } },
   })
   const vehicle = listing?.vehicle
-  if (!vehicle) return { title: "Объявление не найдено" }
+  if (!vehicle) return { title: "Объявление не найдено", robots: { index: false, follow: false } }
+  const title = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+  const description = `${vehicle.make} ${vehicle.model} ${vehicle.year} года в ${vehicle.location}: характеристики, фото и цена ${vehicle.price.toLocaleString("ru-RU")} ₽.`
+  const canonical = `/listings/vehicle/${id}`
+  const images = parseImages(vehicle.images)
   return {
-    title: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
-    description: `${vehicle.make} ${vehicle.model} ${vehicle.year} года — характеристики, фото, цена. Проверенные объявления на Авторынке.`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { type: "website", title, description, url: canonical, images: images.length ? [{ url: images[0], alt: title }] : undefined },
+    twitter: { card: "summary_large_image", title, description, images: images.length ? [images[0]] : undefined },
   }
 }
 
@@ -155,9 +164,6 @@ export default async function VehicleDetailPage({ params }: PageProps) {
   }
 
   const usageMeta = getUsageMeta(vehicle.vehicleType)
-  const usageValue = usageMeta.field === "flightHours" ? vehicle.flightHours
-    : usageMeta.field === "operatingHours" ? vehicle.operatingHours
-    : vehicle.mileage
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Vehicle",
@@ -181,7 +187,7 @@ export default async function VehicleDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <VehicleDetailClient data={data} />
     </>
   )

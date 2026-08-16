@@ -12,6 +12,10 @@ function privateDocumentsDirectory() {
   return process.env.DELIVERY_DOCUMENTS_PATH || path.join(process.cwd(), "data", "delivery-documents")
 }
 
+function isSafeStorageKey(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:pdf|jpg|png|webp)$/i.test(value)
+}
+
 /** GET /api/delivery-orders/[id]/documents/[documentId] — закрытая отдача файла. */
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string; documentId: string }> }) {
   try {
@@ -31,6 +35,10 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     if (document.visibility === "TEAM_ONLY" && !canManageDeliveryOrder(session, order)) {
       return NextResponse.json({ error: "Нет доступа к служебному документу" }, { status: 403 })
     }
+    if (!isSafeStorageKey(document.storageKey)) {
+      console.error("Rejected invalid delivery document storage key", { documentId: document.id })
+      return NextResponse.json({ error: "Документ повреждён" }, { status: 500 })
+    }
 
     const file = await readFile(path.join(privateDocumentsDirectory(), document.storageKey))
     const filename = encodeURIComponent(document.fileName.replace(/[\\/:*?"<>|]/g, "_"))
@@ -38,12 +46,14 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
       headers: {
         "Content-Type": document.mimeType,
         "Content-Length": String(file.byteLength),
-        "Content-Disposition": `inline; filename*=UTF-8''${filename}`,
+        "Content-Disposition": `attachment; filename*=UTF-8''${filename}`,
         "Cache-Control": "private, no-store",
       },
     })
-  } catch (error: any) {
-    if (error?.code === "ENOENT") return NextResponse.json({ error: "Файл не найден в защищённом хранилище" }, { status: 404 })
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return NextResponse.json({ error: "Файл не найден в защищённом хранилище" }, { status: 404 })
+    }
     console.error("Delivery document GET error:", error)
     return NextResponse.json({ error: "Не удалось открыть документ" }, { status: 500 })
   }

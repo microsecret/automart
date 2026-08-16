@@ -1,213 +1,295 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Box, Paper, Stack, Group, Text, TextInput, Button, ActionIcon, ThemeIcon, Loader } from "@mantine/core"
-import { IconMessageCircle2, IconX, IconSend, IconHeadset } from "@tabler/icons-react"
-import { useSession } from "next-auth/react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { useSession } from "next-auth/react"
+import useSWR from "swr"
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Collapse,
+  Divider,
+  Group,
+  Loader,
+  Paper,
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+  ThemeIcon,
+  Tooltip,
+} from "@mantine/core"
+import {
+  IconCheck,
+  IconChevronDown,
+  IconHeadset,
+  IconMessageCircle2,
+  IconRobot,
+  IconSend,
+  IconUser,
+  IconX,
+} from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
-interface Msg {
+type SupportArticle = {
   id: string
+  title: string
+  actionLabel: string | null
+  actionUrl: string | null
+}
+
+type SupportMessage = {
+  id: string
+  authorType: "GUEST" | "USER" | "AI" | "OPERATOR" | "SYSTEM" | string
   content: string
-  senderId: string
+  metadata: { article?: SupportArticle } | null
   createdAt: string
-  isSupport?: boolean
 }
 
-interface SupportMessagesResponse {
-  ticketId?: string
-  messages?: Msg[]
+type SupportChatResponse = {
+  ticket: {
+    id: string
+    subject: string
+    status: string
+    mode: string
+    priority: string
+    operatorName: string | null
+    createdAt: string
+    updatedAt: string
+  } | null
+  messages: SupportMessage[]
+  quickReplies: string[]
 }
 
-interface SupportMessageResponse {
-  ticketId?: string
-  message?: Msg
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  OPEN: { label: "Автопомощник", color: "indigo" },
+  WAITING_OPERATOR: { label: "В очереди", color: "orange" },
+  IN_PROGRESS: { label: "Оператор в диалоге", color: "teal" },
+  CLOSED: { label: "Обращение закрыто", color: "gray" },
+}
+
+function safeArticleUrl(value: string | null | undefined) {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : null
 }
 
 export default function SupportChat() {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Msg[]>([])
   const [text, setText] = useState("")
   const [sending, setSending] = useState(false)
-  const [ticketId, setTicketId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const { data: session, status } = useSession()
+  const [contactOpen, setContactOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const scrollViewport = useRef<HTMLDivElement>(null)
+  const { data: session } = useSession()
+  const chat = useSWR<SupportChatResponse>(open ? "/api/support/chat" : null, fetchJson, {
+    refreshInterval: open ? 5_000 : 0,
+    revalidateOnFocus: true,
+  })
 
   useEffect(() => {
-    if (session?.user?.id) {
-      setTicketId(session.user.id)
-      void loadMessages(session.user.id)
-    } else {
-      setTicketId(null)
-      setMessages([])
-      setLoadError(null)
-    }
-  }, [session?.user?.id])
+    if (!open) return
+    requestAnimationFrame(() => {
+      scrollViewport.current?.scrollTo({ top: scrollViewport.current.scrollHeight, behavior: "smooth" })
+    })
+  }, [open, chat.data?.messages.length])
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
-  }, [messages])
+    const openSupport = () => setOpen(true)
+    window.addEventListener("lewheel:open-support", openSupport)
+    return () => window.removeEventListener("lewheel:open-support", openSupport)
+  }, [])
 
-  const loadMessages = async (tId: string) => {
-    setIsLoadingMessages(true)
-    setLoadError(null)
-    try {
-      const data = await fetchJson<SupportMessagesResponse>(`/api/support?ticketId=${encodeURIComponent(tId)}`)
-      setMessages(Array.isArray(data.messages) ? data.messages : [])
-      setTicketId(data.ticketId || tId)
-    } catch (requestError) {
-      setLoadError(getApiClientErrorMessage(requestError, "Не удалось загрузить переписку"))
-    } finally {
-      setIsLoadingMessages(false)
-    }
-  }
-
-  const send = async () => {
-    if (!session?.user?.id || !text.trim()) return
+  const post = async (payload: Record<string, unknown>) => {
     setSending(true)
     setError(null)
-    const content = text.trim()
-    setText("")
-
-    // Оптимистичное обновление
-    const tempMsg: Msg = { id: `temp-${Date.now()}`, content, senderId: "me", createdAt: new Date().toISOString() }
-    setMessages((p) => [...p, tempMsg])
-
     try {
-      const data = await fetchJson<SupportMessageResponse>("/api/support", {
+      const data = await fetchJson<SupportChatResponse>("/api/support/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: content, ticketId }),
+        body: JSON.stringify(payload),
       })
-      if (data.ticketId) {
-        setTicketId(data.ticketId)
-      }
-      if (data.message) {
-        const persistedMessage = data.message
-        setMessages((items) => items.map((message) => message.id === tempMsg.id ? persistedMessage : message))
-      }
+      await chat.mutate(data, { revalidate: false })
+      return true
     } catch (requestError) {
-      setMessages((items) => items.filter((message) => message.id !== tempMsg.id))
-      setError(getApiClientErrorMessage(requestError, "Не удалось отправить сообщение"))
+      setError(getApiClientErrorMessage(requestError, "Не удалось сохранить сообщение"))
+      return false
     } finally {
       setSending(false)
     }
   }
 
+  const send = async (message = text) => {
+    const content = message.trim()
+    if (!content || sending) return
+    if (message === text) setText("")
+    const sent = await post({ action: "MESSAGE", message: content })
+    if (!sent && message === text) setText(content)
+  }
+
+  const saveContact = async () => {
+    const saved = await post({ action: "UPDATE_CONTACT", name, email, phone })
+    if (saved) setContactOpen(false)
+  }
+
+  const ticket = chat.data?.ticket
+  const messages = chat.data?.messages || []
+  const quickReplies = chat.data?.quickReplies || []
+  const statusMeta = STATUS_META[ticket?.status || "OPEN"] || STATUS_META.OPEN
+
   return (
     <>
-      {/* Кнопка открытия — fixed в правом нижнем углу */}
       <Box className="support-chat__launcher" pos="fixed" bottom={20} right={20} style={{ zIndex: 500 }}>
         {!open && (
-          <ActionIcon
-            color="indigo"
-            variant="filled"
-            size={52}
-            radius="xl"
-            onClick={() => setOpen(true)}
-            aria-label="Поддержка"
-            style={{ boxShadow: "0 8px 24px rgba(79,70,229,0.3)" }}
-          >
-            <IconHeadset size={24} />
-          </ActionIcon>
+          <Tooltip label="Задать вопрос" position="left">
+            <ActionIcon
+              color="indigo"
+              variant="filled"
+              size={54}
+              radius="xl"
+              onClick={() => setOpen(true)}
+              aria-label="Открыть поддержку"
+              style={{ boxShadow: "0 12px 30px -12px rgba(79,70,229,0.72)" }}
+            >
+              <IconHeadset size={25} />
+            </ActionIcon>
+          </Tooltip>
         )}
       </Box>
 
-      {/* Окно чата */}
       {open && (
-        <Box className="support-chat__panel" pos="fixed" bottom={20} right={20} style={{ zIndex: 500, width: 340, maxWidth: "calc(100vw - 40px)" }}>
-          <Paper radius="md" withBorder shadow="lg" style={{ borderColor: "var(--mantine-color-border)", overflow: "hidden" }}>
-            {/* Шапка */}
-            <Group justify="space-between" p="sm" style={{ background: "var(--mantine-color-text)" }}>
-              <Group gap="sm">
-                <ThemeIcon variant="light" color="indigo" size={32} radius="md">
-                  <IconHeadset size={18} />
-                </ThemeIcon>
-                <Stack gap={0}>
-                  <Text size="sm" fw={600} c="white">Поддержка</Text>
-                  <Text size="10px" c="gray.4">Обычно отвечает за минуты</Text>
+        <Box className="support-chat__panel" pos="fixed" bottom={20} right={20} style={{ zIndex: 500, width: 390, maxWidth: "calc(100vw - 40px)" }}>
+          <Paper radius="xl" withBorder shadow="xl" style={{ overflow: "hidden" }}>
+            <Group justify="space-between" p="md" bg="indigo.9">
+              <Group gap="sm" wrap="nowrap">
+                <ThemeIcon variant="white" color="indigo" size={38} radius="xl"><IconHeadset size={20} /></ThemeIcon>
+                <Stack gap={2}>
+                  <Text size="sm" fw={800} c="white">Поддержка LeWheel</Text>
+                  <Group gap={5}>
+                    <Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>
+                    {ticket?.operatorName && <Text size="10px" c="indigo.1">{ticket.operatorName}</Text>}
+                  </Group>
                 </Stack>
               </Group>
-              <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setOpen(false)} aria-label="Закрыть">
-                <IconX size={16} color="white" />
-              </ActionIcon>
+              <ActionIcon variant="subtle" color="gray" onClick={() => setOpen(false)} aria-label="Закрыть чат"><IconX size={18} color="white" /></ActionIcon>
             </Group>
 
-            {/* Лента */}
-            <Box ref={scrollRef} style={{ height: 320, overflowY: "auto", padding: 12, background: "var(--mantine-color-body)" }}>
-              {!session?.user?.id && status !== "loading" ? (
-                <Stack align="center" gap="sm" py={20}>
-                  <IconHeadset size={32} stroke={1.5} color="#a5b4fc" />
-                  <Text size="sm" c="gray.5" ta="center">Войдите, чтобы поддержка могла безопасно вести переписку по вашему обращению.</Text>
-                  <Button component={Link} href="/auth/signin" size="xs" color="indigo">Войти в кабинет</Button>
-                </Stack>
-              ) : status === "loading" || isLoadingMessages ? (
-                <Stack align="center" gap="sm" py={20}>
-                  <Loader size="sm" color="indigo" />
-                  <Text size="sm" c="dimmed" ta="center">Загружаем переписку…</Text>
-                </Stack>
-              ) : loadError ? (
-                <Stack align="center" gap="sm" py={20}>
-                  <IconMessageCircle2 size={32} stroke={1.5} color="#f87171" />
-                  <Text size="sm" c="red" ta="center">{loadError}</Text>
-                  {session?.user?.id && (
-                    <Button size="xs" variant="light" color="indigo" onClick={() => void loadMessages(session.user.id)}>
-                      Повторить
-                    </Button>
-                  )}
-                </Stack>
-              ) : messages.length === 0 ? (
-                <Stack align="center" gap="sm" py={20}>
-                  <IconMessageCircle2 size={32} stroke={1.5} color="#d4d4d8" />
-                  <Text size="sm" c="gray.5" ta="center">Напишите нам — поможем с любым вопросом</Text>
-                </Stack>
-              ) : (
-                <Stack gap="xs">
-                  {messages.map((msg) => {
-                    const isMe = msg.senderId === session?.user?.id
+            <ScrollArea h={360} viewportRef={scrollViewport} type="auto" bg="gray.0">
+              <Stack gap="sm" p="sm">
+                {chat.isLoading ? (
+                  <Stack align="center" py="xl"><Loader size="sm" /><Text size="xs" c="dimmed">Загружаем обращение…</Text></Stack>
+                ) : chat.error ? (
+                  <Stack align="center" py="xl"><IconMessageCircle2 size={30} color="gray" /><Text size="sm" c="red" ta="center">Не удалось загрузить переписку</Text><Button size="xs" variant="light" onClick={() => void chat.mutate()}>Повторить</Button></Stack>
+                ) : messages.length === 0 ? (
+                  <Paper withBorder radius="lg" p="md" bg="white">
+                    <Group gap="sm" align="flex-start" wrap="nowrap">
+                      <ThemeIcon variant="light" color="indigo" radius="xl"><IconRobot size={17} /></ThemeIcon>
+                      <Stack gap={5}>
+                        <Text size="sm" fw={750}>Здравствуйте! Я помощник LeWheel.</Text>
+                        <Text size="xs" c="dimmed">Подскажу по регистрации, объявлениям, доставке и аукционам. Если инструкции недостаточно, приглашу оператора и сохраню всю переписку.</Text>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                ) : (
+                  messages.map((message) => {
+                    const visitor = message.authorType === "GUEST" || message.authorType === "USER"
+                    const system = message.authorType === "SYSTEM"
+                    const article = message.metadata?.article
+                    const actionUrl = safeArticleUrl(article?.actionUrl)
                     return (
-                      <Box key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
+                      <Box key={message.id} ml={visitor ? "auto" : 0} maw={system ? "100%" : "84%"} w={system ? "100%" : undefined}>
                         <Paper
+                          withBorder={!system}
+                          radius="lg"
                           px="sm"
                           py="xs"
-                          radius="md"
-                          style={{
-                            maxWidth: "80%",
-                            background: isMe ? "#4f46e5" : "#fff",
-                            color: isMe ? "#fff" : "var(--mantine-color-text)",
-                            border: isMe ? "none" : "1px solid #f4f4f5",
-                          }}
+                          bg={system ? "gray.2" : visitor ? "indigo.6" : "white"}
+                          c={visitor ? "white" : undefined}
                         >
-                          <Text size="xs" style={{ whiteSpace: "pre-wrap", lineHeight: 1.4 }}>{msg.content}</Text>
+                          {!system && (
+                            <Text size="10px" fw={750} c={visitor ? "indigo.0" : message.authorType === "OPERATOR" ? "teal" : "indigo"} mb={3}>
+                              {visitor ? "Вы" : message.authorType === "OPERATOR" ? "Оператор" : "Помощник LeWheel"}
+                            </Text>
+                          )}
+                          <Text size="xs" style={{ whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{message.content}</Text>
+                          {actionUrl && (
+                            <Button component={Link} href={actionUrl} size="compact-xs" variant={visitor ? "white" : "light"} mt="xs">
+                              {article?.actionLabel || "Открыть"}
+                            </Button>
+                          )}
                         </Paper>
                       </Box>
                     )
-                  })}
-                </Stack>
-              )}
-            </Box>
+                  })
+                )}
 
-            {/* Поле ввода */}
-            {error && <Text px="sm" pt="xs" size="xs" c="red">{error}</Text>}
-            <Group gap="xs" p="sm" style={{ borderTop: "1px solid var(--mantine-color-border)", background: "var(--mantine-color-body)" }}>
-              <TextInput
-                value={text}
-                onChange={(e) => setText(e.currentTarget.value)}
-                placeholder="Сообщение..."
-                disabled={!session?.user?.id}
-                size="xs"
-                radius="md"
-                style={{ flex: 1 }}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send() } }}
-              />
-              <ActionIcon color="indigo" variant="filled" size="md" radius="md" onClick={send} loading={sending} disabled={!text.trim() || !session?.user?.id} aria-label="Отправить">
-                <IconSend size={14} />
-              </ActionIcon>
-            </Group>
+                {quickReplies.length > 0 && ticket?.mode !== "OPERATOR" && ticket?.status !== "CLOSED" && (
+                  <Group gap={5}>
+                    {quickReplies.map((reply) => (
+                      <Button key={reply} size="compact-xs" variant="white" color="indigo" radius="xl" onClick={() => void send(reply)} disabled={sending}>{reply}</Button>
+                    ))}
+                  </Group>
+                )}
+              </Stack>
+            </ScrollArea>
+
+            <Box p="sm">
+              {error && <Text size="xs" c="red" mb="xs">{error}</Text>}
+              {!session?.user && (
+                <>
+                  <Button
+                    size="compact-xs"
+                    variant="subtle"
+                    color="gray"
+                    leftSection={<IconUser size={14} />}
+                    rightSection={<IconChevronDown size={13} />}
+                    onClick={() => setContactOpen((value) => !value)}
+                    mb={contactOpen ? "xs" : 0}
+                  >
+                    Оставить контакт для ответа
+                  </Button>
+                  <Collapse in={contactOpen}>
+                    <Stack gap="xs" mb="sm">
+                      <Group gap="xs" grow><TextInput size="xs" label="Имя" value={name} onChange={(event) => setName(event.currentTarget.value)} /><TextInput size="xs" label="Телефон" value={phone} onChange={(event) => setPhone(event.currentTarget.value)} /></Group>
+                      <TextInput size="xs" label="Email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
+                      <Button size="xs" variant="light" loading={sending} onClick={() => void saveContact()}>Сохранить контакт</Button>
+                    </Stack>
+                  </Collapse>
+                </>
+              )}
+
+              <Divider mb="sm" />
+              <Group gap="xs" wrap="nowrap" align="flex-end">
+                <TextInput
+                  value={text}
+                  onChange={(event) => setText(event.currentTarget.value)}
+                  placeholder={ticket?.status === "CLOSED" ? "Новое сообщение откроет обращение" : "Напишите вопрос…"}
+                  size="sm"
+                  radius="lg"
+                  style={{ flex: 1 }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault()
+                      void send()
+                    }
+                  }}
+                />
+                <ActionIcon color="indigo" variant="filled" size={36} radius="lg" onClick={() => void send()} loading={sending} disabled={!text.trim()} aria-label="Отправить"><IconSend size={16} /></ActionIcon>
+              </Group>
+
+              <Group justify="space-between" mt="xs" gap="xs">
+                <Button size="compact-xs" variant="subtle" color="orange" leftSection={<IconHeadset size={13} />} disabled={ticket?.mode === "OPERATOR" || sending} onClick={() => void post({ action: "REQUEST_OPERATOR" })}>
+                  Позвать оператора
+                </Button>
+                {ticket && ticket.status !== "CLOSED" && (
+                  <Button size="compact-xs" variant="subtle" color="gray" leftSection={<IconCheck size={13} />} disabled={sending} onClick={() => void post({ action: "CLOSE" })}>Закрыть</Button>
+                )}
+              </Group>
+              <Text size="10px" c="dimmed" ta="center" mt={4}>Помощник отвечает по базе знаний. Срок живого ответа зависит от загрузки операторов.</Text>
+            </Box>
           </Paper>
         </Box>
       )}

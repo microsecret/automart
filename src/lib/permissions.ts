@@ -40,6 +40,7 @@ export type Permission =
   | "delivery:manage:any"
   | "delivery:manage:assigned"
   | "delivery:document:team"
+  | "support:manage"
 
 const permissions: Record<Permission, readonly UserRole[]> = {
   "admin:access": [USER_ROLE.ADMIN],
@@ -49,6 +50,7 @@ const permissions: Record<Permission, readonly UserRole[]> = {
   "delivery:manage:any": [USER_ROLE.ADMIN],
   "delivery:manage:assigned": [USER_ROLE.PARTNER, USER_ROLE.MODERATOR, USER_ROLE.ADMIN],
   "delivery:document:team": [USER_ROLE.PARTNER, USER_ROLE.MODERATOR, USER_ROLE.ADMIN],
+  "support:manage": [USER_ROLE.ADMIN],
 }
 
 export function can(role: unknown, permission: Permission) {

@@ -5,22 +5,20 @@
     linear-gradient(145deg, #ffffff, #f8faff);
 }
 
-.brandShortcuts {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 2px 2px 7px;
-  scrollbar-width: thin;
-}
-
 .brandShortcut {
-  min-width: max-content;
-  min-height: 48px;
-  padding-right: 10px;
+  min-width: 0;
+  min-height: 58px;
+  padding-inline: 10px;
   border: 1px solid #dce4f2;
   background: #ffffff;
   color: #1e293b;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.045);
+}
+
+.brandShortcut :global(.mantine-Button-label) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brandShortcut:hover {

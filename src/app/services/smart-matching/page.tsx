@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Text, Paper, Select, NumberInput, Button, Group, ThemeIcon, Center, Loader, Divider, Badge } from "@mantine/core"
+import { Box, Stack, Text, Paper, Select, NumberInput, Button, Group, ThemeIcon, Center, Loader, Divider, Badge, SimpleGrid } from "@mantine/core"
 import { IconTarget, IconSparkles, IconCar } from "@tabler/icons-react"
 import { formatPriceShort, formatMileage, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -23,6 +23,8 @@ type SmartMatchingResponse = {
       id: string
       make: string
       bodyType?: string | null
+      fuelType?: string | null
+      transmission?: string | null
       vehicleType?: string | null
       images?: string | null
       year?: number | null
@@ -60,11 +62,11 @@ export default function SmartmatchingPage() {
         <Paper withBorder radius="md" p="lg">
           <Stack gap="md">
             <NumberInput label="Бюджет, ₽" value={budget} onChange={(v) => setBudget(Number(v) || 0)} size="sm" min={100000} step={100000} />
-            <Group gap="md" grow>
+            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
               <Select label="Кузов" data={BODY_TYPES.map((b) => ({ value: b.value, label: b.label }))} value={bodyType} onChange={(value) => setBodyType(value || "SUV")} size="sm" />
               <Select label="Двигатель" data={FUEL_TYPES.map((f) => ({ value: f.value, label: f.label }))} value={fuel} onChange={(value) => setFuel(value || "GASOLINE")} size="sm" />
               <Select label="КПП" data={TRANSMISSIONS.map((t) => ({ value: t.value, label: t.label }))} value={transmission} onChange={(value) => setTransmission(value || "AUTOMATIC")} size="sm" />
-            </Group>
+            </SimpleGrid>
             <Button onClick={() => setSubmitted(true)} color="violet" radius="md" size="md" leftSection={<IconSparkles size={18} />}>Подобрать автомобиль</Button>
           </Stack>
         </Paper>
@@ -100,7 +102,6 @@ export default function SmartmatchingPage() {
                   const v = l.vehicle
                   const images = parseImages(v?.images)
                   const image = images[0] || ""
-                  const matchScore = Math.max(70, 99 - i * 10)
                   return (
                     <Paper key={l.id} radius="md" p="md" withBorder style={{ borderColor: i === 0 ? "#7c3aed" : "#f4f4f5", background: i === 0 ? "#faf5ff" : "#fff" }}>
                       <Group gap="md" align="flex-start" wrap="nowrap">
@@ -124,7 +125,7 @@ export default function SmartmatchingPage() {
                           <Text fz="xs" c="gray.5">{v ? `${v.year} г. · ${formatMileage(v.mileage)} · ${v.location || "—"}` : ""}</Text>
                           <Group gap="sm" mt={2}>
                             <Text fw={800} fz="lg" c="dark.9" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
-                            <Badge size="xs" color={matchScore >= 90 ? "green" : matchScore >= 80 ? "orange" : "gray"} variant="light">Совпадение {matchScore}%</Badge>
+                            <Badge size="xs" color="green" variant="light">Подходит по 4 критериям</Badge>
                           </Group>
                         </Stack>
                         <Button component={Link} href={v ? `/listings/vehicle/${v.id}` : "/"} variant="light" color="violet" size="xs" radius="md">Открыть</Button>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import axios from "axios"
 import { prisma } from "@/lib/prisma"
 import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, getVehicleIdentityMeta, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
@@ -237,17 +236,25 @@ export async function POST(request: NextRequest) {
     let lng = null
     if (process.env.GOOGLE_MAPS_API_KEY) {
       try {
-        const geocodeResponse = await axios.get("https://maps.googleapis.com/maps/api/geocode/json", {
-          params: {
-            address: normalizedLocation,
-            key: process.env.GOOGLE_MAPS_API_KEY
-          }
+        const geocodeUrl = new URL("https://maps.googleapis.com/maps/api/geocode/json")
+        geocodeUrl.search = new URLSearchParams({
+          address: normalizedLocation,
+          key: process.env.GOOGLE_MAPS_API_KEY,
+        }).toString()
+        const geocodeResponse = await fetch(geocodeUrl, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(5_000),
         })
-
-        if (geocodeResponse.data.status === "OK" && geocodeResponse.data.results.length > 0) {
-          const { lat: latitude, lng: longitude } = geocodeResponse.data.results[0].geometry.location
-          lat = latitude
-          lng = longitude
+        if (geocodeResponse.ok) {
+          const geocode = await geocodeResponse.json() as {
+            status?: string
+            results?: Array<{ geometry?: { location?: { lat?: number; lng?: number } } }>
+          }
+          const location = geocode.results?.[0]?.geometry?.location
+          if (geocode.status === "OK" && Number.isFinite(location?.lat) && Number.isFinite(location?.lng)) {
+            lat = location!.lat!
+            lng = location!.lng!
+          }
         }
       } catch (geocodeError) {
         console.error("Geocoding error:", geocodeError)

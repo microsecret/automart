@@ -6,6 +6,7 @@ import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import { Prisma } from "@prisma/client"
 import { PART_AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPES, SELLER_TYPES } from "@/lib/constants"
 import { parseMarketplaceImages } from "@/lib/media-url"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,12 @@ function parsePartYear(value: unknown) {
 
 function parseFilterValues(...values: Array<string | null>) {
   return Array.from(new Set(values.flatMap((value) => (value || "").split(",").map((item) => item.trim()).filter(Boolean))))
+}
+
+function normalizeOptionalText(value: unknown, maxLength: number) {
+  if (typeof value !== "string") return null
+  const normalized = value.trim().replace(/\s+/g, " ")
+  return normalized ? normalized.slice(0, maxLength) : null
 }
 
 /** GET /api/parts — листинг запчастей с фильтрами */
@@ -173,17 +180,28 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const body = await request.json()
-    const { name, description, price, condition, partType, make, model, yearFrom, yearTo, location, images, subcategory, oemNumber, crossNumbers, suspensionType, brakeType, compatibility, sellerType, availability, saleFormat, auctionEndsAt, auctionStartPrice, auctionMinStep } = body
+    const limit = rateLimit(`part:create:user:${session.user.id}:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 20 })
+    if (!limit.success) return NextResponse.json({ error: "Слишком много объявлений. Повторите позже." }, { status: 429, headers: rateLimitHeaders(limit) })
+
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
+    const { name, description, price, condition, partType, make, model, yearFrom, yearTo, location, images, subcategory, oemNumber, crossNumbers, suspensionType, brakeType, compatibility, sellerType, availability, saleFormat, auctionEndsAt, auctionStartPrice, auctionMinStep } = body as Record<string, unknown>
 
     const normalizedName = typeof name === "string" ? name.trim() : ""
+    const normalizedDescription = normalizeOptionalText(description, 10_000)
+    const normalizedPartType = typeof partType === "string" ? partType : "OTHER"
+    const normalizedSubcategory = normalizeOptionalText(subcategory, 100)
+    const normalizedMake = normalizeOptionalText(make, 80) || "Universal"
+    const normalizedModel = normalizeOptionalText(model, 100) || "Universal"
+    const normalizedLocation = normalizeOptionalText(location, 160) || "Москва"
+    const normalizedOemNumber = normalizeOptionalText(oemNumber, 80)
     if (normalizedName.length < 2 || normalizedName.length > 200) return NextResponse.json({ error: "Название запчасти должно содержать от 2 до 200 символов" }, { status: 400 })
     const normalizedPrice = Math.trunc(Number(price))
     if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) return NextResponse.json({ error: "Укажите корректную цену" }, { status: 400 })
-    if (partType && !PART_TYPE_VALUES.has(partType)) return NextResponse.json({ error: "Неизвестная категория запчасти" }, { status: 400 })
-    if (subcategory && (!partType || !(PART_SUBCATEGORIES[partType] || []).includes(subcategory))) return NextResponse.json({ error: "Подкатегория не соответствует выбранному типу запчасти" }, { status: 400 })
+    if (!PART_TYPE_VALUES.has(normalizedPartType)) return NextResponse.json({ error: "Неизвестная категория запчасти" }, { status: 400 })
+    if (normalizedSubcategory && !(PART_SUBCATEGORIES[normalizedPartType] || []).includes(normalizedSubcategory)) return NextResponse.json({ error: "Подкатегория не соответствует выбранному типу запчасти" }, { status: 400 })
     const normalizedImages = parseMarketplaceImages(images)
     if (!normalizedImages) return NextResponse.json({ error: "Допустимы до 12 корректных изображений" }, { status: 400 })
 
@@ -207,7 +225,7 @@ export async function POST(request: NextRequest) {
       .slice(0, 40)))
 
     const normalizedSaleFormat = saleFormat === "AUCTION" ? "AUCTION" : "FIXED"
-    const parsedEnd = auctionEndsAt ? new Date(auctionEndsAt) : null
+    const parsedEnd = typeof auctionEndsAt === "string" && auctionEndsAt.length <= 64 ? new Date(auctionEndsAt) : null
     if (normalizedSaleFormat === "AUCTION" && (!parsedEnd || Number.isNaN(parsedEnd.getTime()) || parsedEnd <= new Date())) {
       return NextResponse.json({ error: "Для аукциона укажите дату окончания в будущем" }, { status: 400 })
     }
@@ -236,7 +254,7 @@ export async function POST(request: NextRequest) {
         const compatibleYearTo = item.yearTo ? Number.parseInt(String(item.yearTo), 10) : null
         if (!compatibleMake) return null
         if ((compatibleYearFrom !== null && !Number.isFinite(compatibleYearFrom)) || (compatibleYearTo !== null && !Number.isFinite(compatibleYearTo)) || (compatibleYearFrom !== null && compatibleYearTo !== null && compatibleYearFrom > compatibleYearTo)) return null
-        return { make: compatibleMake, model: compatibleModel || "Все модели", generation: compatibleGeneration || null, engine: compatibleEngine || null, yearFrom: compatibleYearFrom, yearTo: compatibleYearTo }
+        return { make: compatibleMake.slice(0, 80), model: (compatibleModel || "Все модели").slice(0, 100), generation: compatibleGeneration.slice(0, 100) || null, engine: compatibleEngine.slice(0, 100) || null, yearFrom: compatibleYearFrom, yearTo: compatibleYearTo }
       })
       .filter((item): item is { make: string; model: string; generation: string | null; engine: string | null; yearFrom: number | null; yearTo: number | null } => item !== null)
       .map((item) => [`${item.make}|${item.model}|${item.generation || ""}|${item.engine || ""}|${item.yearFrom || ""}|${item.yearTo || ""}`, item])).values())
@@ -244,7 +262,7 @@ export async function POST(request: NextRequest) {
     const part = await prisma.part.create({
       data: {
         name: normalizedName,
-        description: description?.trim() || null,
+        description: normalizedDescription,
         price: normalizedSaleFormat === "AUCTION" ? startPrice! : normalizedPrice,
         condition: normalizedCondition,
         sellerType: normalizedSellerType,
@@ -255,17 +273,17 @@ export async function POST(request: NextRequest) {
         auctionStartPrice: startPrice,
         auctionCurrentPrice: startPrice,
         auctionMinStep: minStep,
-        partType: partType || "OTHER",
-        make: make || "Universal",
-        model: model || "Universal",
+        partType: normalizedPartType,
+        make: normalizedMake,
+        model: normalizedModel,
         yearFrom: parsedYearFrom,
         yearTo: parsedYearTo,
-        location: location || "Москва",
+        location: normalizedLocation,
         images: normalizedImages.length ? JSON.stringify(normalizedImages) : null,
-        subcategory: subcategory || null,
-        oemNumber: oemNumber || null,
-        suspensionType: suspensionType || null,
-        brakeType: brakeType || null,
+        subcategory: normalizedSubcategory,
+        oemNumber: normalizedOemNumber,
+        suspensionType: normalizeOptionalText(suspensionType, 80),
+        brakeType: normalizeOptionalText(brakeType, 80),
         crossReferences: normalizedCrossNumbers.length > 0 ? {
           create: normalizedCrossNumbers.map((number) => ({ number, normalizedNumber: normalizeOem(number) })),
         } : undefined,
@@ -285,7 +303,7 @@ export async function POST(request: NextRequest) {
         listings: {
           create: {
             title: normalizedName,
-            description: description?.trim() || null,
+            description: normalizedDescription,
             price: normalizedSaleFormat === "AUCTION" ? startPrice! : normalizedPrice,
             userId: session.user.id,
             status: LISTING_STATUS.PENDING_MODERATION,

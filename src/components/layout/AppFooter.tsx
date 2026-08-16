@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Text, Group, Stack, Container, Divider, Anchor, ActionIcon, ThemeIcon } from "@mantine/core"
+import { Box, Text, Group, Stack, Container, Divider, Anchor, ActionIcon, SimpleGrid } from "@mantine/core"
 import Link from "next/link"
 import { IconBrandTelegram, IconCar } from "@tabler/icons-react"
 
@@ -58,18 +58,15 @@ const SOCIALS = telegramBotUsername
 
 export default function AppFooter() {
   return (
-    <Box component="footer" style={{
-      width: "100%",
+    <Box component="footer" className="market-app-footer" style={{
       background: "linear-gradient(180deg, #09090b 0%, #000000 100%)",
       borderTop: "3px solid #4f46e5",
       marginTop: 60,
     }}>
       <Container size="xl" py="xl">
         <Stack gap="lg">
-          {/* Верхняя секция — бренд + колонки */}
-          <Group justify="space-between" align="flex-start" wrap="wrap" gap="xl">
-            {/* Бренд */}
-            <Stack maw={280} gap="sm">
+          <SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 5 }} spacing={{ base: "xl", md: "lg" }} verticalSpacing="xl">
+            <Stack gap="sm" miw={0}>
               <Group gap={8} align="center">
                 <Box style={{
                   width: 36, height: 36, borderRadius: 8,
@@ -79,11 +76,11 @@ export default function AppFooter() {
                   <IconCar size={20} color="white" />
                 </Box>
                 <Text ff="var(--font-display),sans-serif" fw={800} fz={22} c="white" style={{ letterSpacing: "-0.02em" }}>
-                  Авторынок
+                  LeWheel
                 </Text>
               </Group>
-              <Text size="xs" c="#a1a1aa" lh={1.6}>
-                Маркетплейс транспорта и запчастей с проверкой истории, безопасной сделкой и умным подбором.
+              <Text size="sm" c="#a1a1aa" lh={1.6}>
+                Маркетплейс транспорта и запчастей с инструментами проверки, подбора и сопровождения.
               </Text>
               {SOCIALS.length > 0 && <Group gap={8}>
                 {SOCIALS.map((s) => {
@@ -108,11 +105,9 @@ export default function AppFooter() {
               </Group>}
             </Stack>
 
-            {/* Колонки ссылок */}
-            <Group gap={32} wrap="wrap">
-              {FOOTER_SECTIONS.map((section) => (
-                <Stack key={section.title} gap={8}>
-                  <Text size="xs" fw={700} c="#a1a1aa" tt="uppercase" style={{ letterSpacing: "0.06em" }}>
+            {FOOTER_SECTIONS.map((section) => (
+              <Stack key={section.title} gap={8} miw={0}>
+                  <Text size="xs" fw={800} c="#d4d4d8" tt="uppercase" style={{ letterSpacing: "0.06em" }}>
                     {section.title}
                   </Text>
                   {section.links.map((link) => (
@@ -120,26 +115,27 @@ export default function AppFooter() {
                       key={link.href}
                       component={Link}
                       href={link.href}
-                      size="xs"
-                      c="#71717a"
-                      style={{ transition: "color 150ms ease" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "#fff" }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = "#71717a" }}
+                      size="sm"
+                      c="#a1a1aa"
+                      display="block"
+                      style={{ lineHeight: 1.45, transition: "color 150ms ease" }}
+                      styles={{ root: { overflowWrap: "anywhere" } }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = "#ffffff" }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = "#a1a1aa" }}
                     >
                       {link.label}
                     </Anchor>
                   ))}
-                </Stack>
-              ))}
-            </Group>
-          </Group>
+              </Stack>
+            ))}
+          </SimpleGrid>
 
           <Divider color="#27272a" />
 
           {/* Нижняя секция */}
-          <Group justify="space-between" wrap="wrap" gap="md">
-            <Text size="xs" c="#52525b">© {new Date().getFullYear()} Авторынок</Text>
-            <Group gap="lg">
+          <Group justify="space-between" align="center" wrap="wrap" gap="md">
+            <Text size="xs" c="#52525b">© {new Date().getFullYear()} LeWheel</Text>
+            <Group gap="lg" wrap="wrap">
               <Anchor component={Link} href="/about" size="xs" c="#71717a">О проекте</Anchor>
               <Anchor component={Link} href="/news" size="xs" c="#71717a">Новости</Anchor>
               <Anchor component={Link} href="/legal/privacy" size="xs" c="gray.5">Конфиденциальность</Anchor>

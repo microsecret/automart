@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Center, Container, Loader, Stack, Text, Title } from "@mantine/core"
+import AdminWorkspaceNavigation from "@/components/admin/AdminWorkspaceNavigation"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
 
 function canModerate(role?: string | null) {
@@ -28,6 +29,7 @@ export default function ModerationPage() {
   return (
     <Container size="xl" py={{ base: "sm", md: "lg" }}>
       <Stack gap="md">
+        <AdminWorkspaceNavigation canManageUsers={session.user.role === "ADMIN"} />
         <Stack gap={2}>
           <Title order={1} size="h2" ff="var(--font-display),sans-serif">Модерация объявлений</Title>
           <Text size="sm" c="dimmed">Проверяйте публикации, оставляйте понятную причину отклонения и ведите решения в журнале.</Text>

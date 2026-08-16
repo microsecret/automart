@@ -23,12 +23,10 @@ import {
   Textarea,
   Modal,
   Select,
-  Skeleton,
   UnstyledButton,
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { Carousel } from "@mantine/carousel"
-import { useMediaQuery } from "@mantine/hooks"
 import {
   IconHeart,
   IconGitCompare,
@@ -308,7 +306,6 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
     }
   }
 
-  const isMobile = useMediaQuery("(max-width: 768px)")
   const images = parseImages(data.images)
   const hasImages = images.length > 0
   const moveImage = (direction: number) => {

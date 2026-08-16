@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone: phoneInput } = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object") return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
+    const { phone: phoneInput } = body as Record<string, unknown>
     const phone = normalizePhone(phoneInput)
     if (!phone) return NextResponse.json({ error: "Введите телефон в формате +7 900 000-00-00" }, { status: 400 })
 
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
     if (result.status === "issued" && result.user?.telegramId && result.code) {
       await telegramApi("sendMessage", {
         chat_id: result.user.telegramId,
-        text: `Код входа в Авторынок: ${result.code}\nОн действует 10 минут. Никому его не сообщайте.`,
+        text: `Код входа в LeWheel: ${result.code}\nОн действует 10 минут. Никому его не сообщайте.`,
       })
     }
 

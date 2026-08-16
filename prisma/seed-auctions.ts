@@ -10,7 +10,7 @@ async function main() {
   }
 
   let created = 0
-  for (const item of items as any[]) {
+  for (const item of items) {
     const existing = await prisma.auctionListing.findUnique({
       where: { source_sourceId: { source: item.source, sourceId: item.sourceId } },
     }).catch(() => null)
@@ -27,7 +27,8 @@ async function main() {
         mileage: item.mileage || null, fuelType: item.fuelType || null,
         transmission: item.transmission || null, bodyType: item.bodyType || null,
         color: item.color || null, engineVolume: item.engineVolume || null,
-        power: item.power || null, driveType: item.driveType || null,
+        power: item.power || null,
+        driveType: "driveType" in item && typeof item.driveType === "string" ? item.driveType : null,
         lotNumber: item.lotNumber || null,
         sourcePrice: item.sourcePrice, sourceCurrency: item.sourceCurrency,
         priceRub, markup, finalPrice: priceRub + markup,

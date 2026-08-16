@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { prisma } from "@/lib/prisma"
+import { LISTING_STATUS } from "@/lib/listing-lifecycle"
+import { getPromotionTariff } from "@/lib/promotion-tariffs"
 export const dynamic = "force-dynamic"
-
-const PROMOTION_DURATIONS: Record<string, number> = { BOOST: 7, PREMIUM: 14, VIP: 30 }
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,31 +30,112 @@ export async function POST(request: NextRequest) {
 
     // Handle the event
     switch (event.type) {
-      case 'payment_intent.succeeded':
+      case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
+        const orderId = paymentIntent.metadata.orderId
         const listingId = paymentIntent.metadata.listingId
         const userId = paymentIntent.metadata.userId
-        const promotionType = paymentIntent.metadata.promotionType
-        const durationDays = PROMOTION_DURATIONS[promotionType]
+        const tariff = getPromotionTariff(paymentIntent.metadata.promotionType)
 
-        if (listingId && userId && durationDays) {
-          await prisma.listing.updateMany({
-            where: { id: listingId, userId },
+        if (!orderId || !listingId || !userId || !tariff) {
+          console.error(`Payment ${paymentIntent.id} has invalid promotion metadata`)
+          break
+        }
+        if (paymentIntent.currency !== "rub" || paymentIntent.amount_received !== tariff.amountRub * 100) {
+          console.error(`Payment ${paymentIntent.id} amount or currency does not match the tariff`)
+          break
+        }
+
+        const order = await prisma.promotionOrder.findUnique({ where: { id: orderId } })
+        if (
+          !order
+          || order.listingId !== listingId
+          || order.userId !== userId
+          || order.tariffId !== tariff.id
+          || order.amountRub !== tariff.amountRub
+          || order.durationDays !== tariff.durationDays
+        ) {
+          console.error(`Payment ${paymentIntent.id} does not match promotion order ${orderId}`)
+          break
+        }
+        if (order.status === "PAID" && order.providerPaymentId === paymentIntent.id) break
+
+        // The end date is anchored to Stripe's immutable creation timestamp.
+        // Replayed webhooks therefore cannot extend a promotion.
+        const promoUntil = new Date((paymentIntent.created + tariff.durationDays * 86_400) * 1_000)
+        const activated = await prisma.$transaction(async (tx) => {
+          const claimed = await tx.promotionOrder.updateMany({
+            where: { id: orderId, status: { in: ["PENDING", "FAILED"] }, providerPaymentId: null },
+            data: { status: "PAID", providerPaymentId: paymentIntent.id, promoUntil, paidAt: new Date() },
+          })
+          if (!claimed.count) return false
+
+          const updated = await tx.listing.updateMany({
+            where: { id: listingId, userId, status: LISTING_STATUS.ACTIVE, deletedAt: null },
             data: {
-              isFeatured: true,
-              promoType: promotionType.toLowerCase(),
-              promoUntil: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
+              isFeatured: tariff.isFeatured,
+              promoType: tariff.id,
+              promoUntil,
             },
           })
+          if (!updated.count) {
+            await tx.promotionOrder.update({ where: { id: orderId }, data: { status: "REVIEW_REQUIRED" } })
+            await tx.notification.create({
+              data: {
+                userId,
+                title: "Платёж требует проверки",
+                content: "Оплата получена, но объявление уже не активно. Поддержка проверит активацию или возврат.",
+                type: "WARNING",
+                relatedId: listingId,
+                relatedType: "LISTING",
+              },
+            })
+            return false
+          }
+
+          await tx.notification.create({
+            data: {
+              userId,
+              title: "Продвижение активировано",
+              content: `Тариф «${tariff.title}» активен до ${promoUntil.toLocaleDateString("ru-RU")}`,
+              type: "SUCCESS",
+              relatedId: listingId,
+              relatedType: "LISTING",
+            },
+          })
+          return true
+        })
+
+        if (activated) {
           console.log(`Listing ${listingId} has been featured via payment ${paymentIntent.id}`)
         }
         break
+      }
 
-      case 'payment_intent.payment_failed':
+      case "payment_intent.payment_failed": {
         const failedIntent = event.data.object as Stripe.PaymentIntent
+        const orderId = failedIntent.metadata.orderId
+        if (orderId) {
+          await prisma.promotionOrder.updateMany({
+            where: { id: orderId, status: "PENDING" },
+            data: { status: "FAILED" },
+          })
+        }
         console.log(`Payment failed for intent: ${failedIntent.id}`)
-        // Optionally notify the user about failed payment
         break
+      }
+
+      case "checkout.session.expired": {
+        const checkout = event.data.object as Stripe.Checkout.Session
+        const orderId = checkout.metadata?.orderId
+        if (orderId) {
+          await prisma.promotionOrder.updateMany({
+            where: { id: orderId, status: "PENDING" },
+            data: { status: "CANCELED" },
+          })
+        }
+        break
+      }
 
       default:
         console.log(`Unhandled event type: ${event.type}`)

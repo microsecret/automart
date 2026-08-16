@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    const { email: emailInput } = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
+    }
+    const { email: emailInput } = body as Record<string, unknown>
     const email = String(emailInput || "").trim().toLowerCase()
     const ipLimit = rateLimit(`auth:email-resend:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 5 })
     const emailLimit = rateLimit(`auth:email-resend:email:${email || "unknown"}`, { windowMs: 60 * 60_000, maxRequests: 3 })

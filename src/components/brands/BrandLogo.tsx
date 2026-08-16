@@ -29,12 +29,47 @@ export default function BrandLogo({ brand, size = 24, color = "currentColor" }: 
   )
 }
 
+const BRAND_KEY_ALIASES: Record<string, string> = {
+  "mercedes": "mercedesbenz",
+  "mercedesbenz": "mercedesbenz",
+  "理想": "liauto",
+  "理想汽车": "liauto",
+  "蔚来": "nio",
+  "小鹏": "xpeng",
+  "小鹏汽车": "xpeng",
+  "比亚迪": "byd",
+  "吉利": "geely",
+  "吉利汽车": "geely",
+  "奇瑞": "chery",
+  "奇瑞汽车": "chery",
+  "长安": "changan",
+  "长安汽车": "changan",
+  "长城": "greatwall",
+  "长城汽车": "greatwall",
+  "红旗": "hongqi",
+  "极氪": "zeekr",
+  "岚图": "voyah",
+  "零跑": "leapmotor",
+  "零跑汽车": "leapmotor",
+  "广汽": "gac",
+  "阿维塔": "avatr",
+  "问界": "aito",
+  "腾势": "denza",
+  "欧拉": "ora",
+  "魏牌": "wey",
+  "荣威": "roewe",
+  "小米汽车": "xiaomiauto",
+  "五菱": "wuling",
+  "五菱汽车": "wuling",
+}
+
 function normalizeBrand(brand: string): string {
-  return brand
+  const normalized = brand
     .toLowerCase()
     .replace(/\(ваз\)/g, "")
-    .replace(/[\s\-]/g, "")
+    .replace(/[\s\-_/]/g, "")
     .trim()
+  return BRAND_KEY_ALIASES[normalized] || normalized
 }
 
 type LogoFn = (color: string) => React.ReactNode
@@ -274,6 +309,87 @@ const LOGOS: Record<string, LogoFn> = {
       <rect x="22" y="18" width="4" height="24" fill={c} />
       <path d="M22 18 L32 14 V22 L22 18 Z" fill={c} />
     </>
+  ),
+
+  // Voyah — парящий симметричный знак.
+  voyah: (c) => (
+    <path d="M6 17 L20 24 L24 36 L28 24 L42 17 L31 31 L24 43 L17 31 Z" fill="none" stroke={c} strokeWidth="2.8" strokeLinejoin="round" />
+  ),
+
+  // Leapmotor — две динамичные дуги.
+  leapmotor: (c) => (
+    <>
+      <path d="M8 29 C14 11 34 11 40 29" stroke={c} strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M14 31 C19 23 29 23 34 31" stroke={c} strokeWidth="3" fill="none" strokeLinecap="round" />
+    </>
+  ),
+
+  // GAC — компактная фирменная G-форма.
+  gac: (c) => (
+    <path d="M38 15 H20 C10 15 7 24 12 32 C15 37 21 39 28 37 H38 V25 H25" stroke={c} strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  ),
+
+  // JAC — пятиконечная звезда в эллипсе.
+  jac: (c) => (
+    <>
+      <ellipse cx="24" cy="24" rx="20" ry="14" stroke={c} strokeWidth="2.5" />
+      <path d="M24 12 L27 21 H37 L29 27 L32 36 L24 30 L16 36 L19 27 L11 21 H21 Z" fill={c} />
+    </>
+  ),
+
+  // Nio — небо и дорога.
+  nio: (c) => (
+    <>
+      <path d="M8 24 Q24 4 40 24 Q24 17 8 24 Z" fill={c} />
+      <path d="M11 29 Q24 41 37 29 L31 40 H17 Z" fill={c} />
+    </>
+  ),
+
+  // Xpeng — симметричный X-знак.
+  xpeng: (c) => (
+    <path d="M8 11 L21 21 L14 28 L6 20 M40 11 L27 21 L34 28 L42 20 M14 37 L24 27 L34 37" stroke={c} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  ),
+
+  avatr: (c) => (
+    <path d="M7 34 L19 10 H29 L41 34 M14 27 H34 M24 10 V39" stroke={c} strokeWidth="2.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  ),
+
+  aito: (c) => (
+    <text x="24" y="30" fontSize="12" fontWeight="800" fill={c} textAnchor="middle" fontFamily="sans-serif">AITO</text>
+  ),
+
+  denza: (c) => (
+    <>
+      <circle cx="24" cy="24" r="19" stroke={c} strokeWidth="2.5" />
+      <path d="M16 34 V14 H24 C32 14 36 18 36 24 C36 30 32 34 24 34 Z" stroke={c} strokeWidth="2.5" fill="none" />
+    </>
+  ),
+
+  ora: (c) => (
+    <>
+      <circle cx="24" cy="24" r="18" stroke={c} strokeWidth="2.5" />
+      <circle cx="24" cy="24" r="7" stroke={c} strokeWidth="2.5" />
+      <path d="M8 24 H16 M32 24 H40" stroke={c} strokeWidth="2.5" />
+    </>
+  ),
+
+  wey: (c) => (
+    <path d="M12 8 H36 L31 40 H17 Z M18 14 L21 34 H27 L30 14 Z" fill={c} fillRule="evenodd" />
+  ),
+
+  roewe: (c) => (
+    <>
+      <path d="M24 5 L39 12 V25 C39 35 33 41 24 44 C15 41 9 35 9 25 V12 Z" stroke={c} strokeWidth="2.5" fill="none" />
+      <path d="M16 16 L24 35 L32 16 M19 25 H29" stroke={c} strokeWidth="2.5" fill="none" />
+    </>
+  ),
+
+  xiaomiauto: (c) => (
+    <path d="M8 33 V15 H28 C36 15 40 19 40 27 V33 H34 V27 C34 23 32 21 28 21 H14 V33 Z M18 23 H24 V33 H18 Z" fill={c} />
+  ),
+
+  wuling: (c) => (
+    <path d="M5 17 L15 11 L24 17 L33 11 L43 17 L33 37 L24 31 L15 37 Z M13 18 L17 27 L24 23 L31 27 L35 18 L29 22 L24 19 L19 22 Z" fill={c} fillRule="evenodd" />
   ),
 
   // ===== ЯПОНСКИЕ премиум/прочие =====

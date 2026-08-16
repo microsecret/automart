@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isAdmin } from "@/lib/permissions"
+import { isInternalTelegramEmail } from "@/lib/telegram"
 
 function asPositiveInt(value: string | null, fallback: number, max: number) {
   const parsed = Number(value)
@@ -68,7 +69,11 @@ export async function GET(request: NextRequest) {
       ])
 
       return NextResponse.json({
-        users,
+        users: users.map((user) => ({
+          ...user,
+          email: isInternalTelegramEmail(user.email) ? null : user.email,
+          registrationChannel: isInternalTelegramEmail(user.email) ? "TELEGRAM" : "WEB",
+        })),
         pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
       })
     }
