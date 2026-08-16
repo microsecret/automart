@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 
 export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
+    const publicAuctionWhere = buildPublicAuctionPolicy().where
     const [vehicles, parts, auctions, listings, users, news] = await Promise.all([
       prisma.vehicle.count(),
       prisma.part.count(),
-      prisma.auctionListing.count({ where: { status: "ACTIVE" } }),
+      prisma.auctionListing.count({ where: publicAuctionWhere }),
       prisma.listing.count(),
       prisma.user.count(),
       prisma.news.count(),
@@ -17,7 +19,7 @@ export async function GET() {
     // Статистика аукционов по странам
     const auctionByCountry = await prisma.auctionListing.groupBy({
       by: ["country"],
-      where: { status: "ACTIVE" },
+      where: publicAuctionWhere,
       _count: true,
     })
 
