@@ -3,7 +3,8 @@
 import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
-const suspiciousPattern = /(?:demo|test|fake|example|seed|audit|демо|тест|пример)/iu
+const suspiciousAccountPattern = /(?:demo|test|fake|example|seed|audit|демо|тест|пример)/iu
+const suspiciousNewsPattern = /(?:\b(?:demo|test|fake|example|seed|audit)\b|демо(?:-|\s+)?новост|тестов(?:ая|ые|ое)\s+новост|пример\s+новост)/iu
 
 async function main() {
   const [users, news, newsByChannel, auctionViews] = await Promise.all([
@@ -22,8 +23,8 @@ async function main() {
     titleCounts.set(key, (titleCounts.get(key) || 0) + 1)
   }
   const futureCutoff = new Date(Date.now() + 5 * 60_000)
-  const suspiciousUsers = users.filter((user) => suspiciousPattern.test(`${user.name || ""} ${user.email || ""}`))
-  const suspiciousNews = news.filter((article) => suspiciousPattern.test(article.title))
+  const suspiciousUsers = users.filter((user) => suspiciousAccountPattern.test(`${user.name || ""} ${user.email || ""}`))
+  const suspiciousNews = news.filter((article) => suspiciousNewsPattern.test(article.title))
   const duplicateTitles = [...titleCounts.values()].filter((count) => count > 1).length
 
   console.log(JSON.stringify({

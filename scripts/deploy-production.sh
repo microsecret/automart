@@ -4,7 +4,26 @@ set -euo pipefail
 # Run on the production host from the repository root. Secrets stay in the
 # server environment; this script deliberately never writes them to the repo.
 git pull --ff-only origin master
-npx prisma migrate deploy
+if ! migration_output="$(npx prisma migrate deploy 2>&1)"; then
+  printf '%s\n' "$migration_output" >&2
+
+  # The first production database predates migration tracking and already has
+  # every object from this reconcile migration. Prisma records the attempted
+  # duplicate ADD COLUMN as failed. Resolve only this known case and only when
+  # the live schema is proven identical to the current data model.
+  if [[ "$migration_output" == *"20260816013000_reconcile_clean_schema"* ]] \
+    && npx prisma migrate diff \
+      --from-schema-datasource prisma/schema.prisma \
+      --to-schema-datamodel prisma/schema.prisma \
+      --exit-code; then
+    npx prisma migrate resolve --applied 20260816013000_reconcile_clean_schema
+    npx prisma migrate deploy
+  else
+    exit 1
+  fi
+else
+  printf '%s\n' "$migration_output"
+fi
 # The project has legacy schema fields created before migration tracking.
 # This safe sync only adds missing fields; it never accepts destructive changes.
 npx prisma db push --skip-generate
