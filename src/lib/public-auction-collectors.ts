@@ -178,9 +178,18 @@ function titleCaseSlug(value: string) {
 }
 
 function romanizeJapanese(value: string) {
+  const normalized = value.normalize("NFKC")
+    .replace(/\u30b7\u30ea\u30fc\u30ba/g, " Series")
+    .replace(/\u30cf\u30a4\u30d6\u30ea\u30c3\u30c9/g, " Hybrid")
+    .replace(/\u30ab\u30b9\u30bf\u30e0/g, " Custom")
+    .replace(/\u30c4\u30fc\u30ea\u30f3\u30b0/g, " Touring")
+    .replace(/\u30b9\u30dd\u30fc\u30c4/g, " Sport")
+    .replace(/\u30bf\u30fc\u30dc/g, " Turbo")
+    .replace(/\u30a8\u30c7\u30a3\u30b7\u30e7\u30f3/g, " Edition")
+    .replace(/\u30d1\u30c3\u30b1\u30fc\u30b8/g, " Package")
   let result = ""
   let doubleNext = false
-  for (const character of value) {
+  for (const character of normalized) {
     if (character === "ッ") {
       doubleNext = true
       continue
@@ -498,18 +507,28 @@ async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promis
   const power = asNumber(engineText?.match(/([\d,]+)\s*마력/)?.[1]?.replace(/,/g, ""))
   const engineVolume = asNumber(engineText?.match(/([\d,]+)\s*cc/i)?.[1]?.replace(/,/g, ""))
   const mileage = asNumber(pairs.get("주행거리")?.replace(/[^\d]/g, ""))
+  const fuelType = normalizeAuctionFuelType(pairs.get("연료"))
+  const transmission = normalizeAuctionTransmission(pairs.get("변속기"))
+  const russianSpecs = [
+    `Год выпуска: ${fullYear}`,
+    mileage !== null ? `Пробег: ${mileage.toLocaleString("ru-RU")} км` : null,
+    fuelType ? `Топливо: ${fuelType}` : null,
+    transmission ? `КПП: ${transmission}` : null,
+    engineVolume ? `Объём: ${engineVolume.toLocaleString("ru-RU")} см³` : null,
+    power ? `Мощность: ${Math.round(power)} л.с.` : null,
+  ].filter(Boolean).join("; ")
   return {
     source: "BOBAEDREAM", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
     make, model, year: fullYear, manufacturedMonth: `${fullYear}-${month}`,
     sourcePrice: Math.round(priceTenThousandWon * 10_000), sourceCurrency: "KRW", country: "KR", auctionDate: null,
-    mileage, fuelType: normalizeAuctionFuelType(pairs.get("연료")),
-    transmission: normalizeAuctionTransmission(pairs.get("변속기")), bodyType: null,
+    mileage, fuelType,
+    transmission, bodyType: null,
     color: pairs.get("색상") || null, engineVolume, power: power ? Math.round(power) : null,
     driveType: null, vin: null, lotNumber: candidate.sourceId,
     imageUrl: images[0] || null, images,
-    descriptionOrig: htmlText(firstMatch(html, /<meta\s+name="description"\s+content="([^"]+)"/i)) || title,
-    specsOrig: [...pairs.entries()].slice(0, 8).map(([key, value]) => `${key}: ${value}`).join("; ") || null,
-    location: "Korea",
+    descriptionOrig: `${make} ${model}. Автомобиль опубликован в открытом каталоге Bobaedream; данные проверяются по первоисточнику.`,
+    specsOrig: russianSpecs || null,
+    location: "Корея",
   }
 }
 
@@ -522,7 +541,9 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
   const make = normalizeAuctionMake(titleCaseSlug(path[1]))
   const model = normalizeAuctionModel(titleCaseSlug(path[2]))
   const pairs = tablePairs(html)
-  const registrationText = pairs.get("Registration Year/month") || htmlText(firstMatch(html, /Registration Year\/month[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/i))
+  const registrationText = pairs.get("Registration Year/month")
+    || [...pairs.entries()].find(([key]) => key.replace(/\s+/g, "") === "RegistrationYear/month")?.[1]
+    || htmlText(firstMatch(html, /Registration(?:\s|<br\s*\/?\s*>|<[^>]+>)*Year\/month[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/i))
   const registered = registrationText?.match(/(\d{4})\/(\d{2})/)
   if (!sourcePrice || !make || !model || !registered) {
     const missing = [!sourcePrice && "цена", !make && "марка", !model && "модель", !registered && "дата"].filter(Boolean).join(", ")
@@ -541,9 +562,9 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
     color: pairs.get("Ext. Color") || null, engineVolume, power: null,
     driveType: normalizeAuctionDriveType(pairs.get("Drive")), vin: pairs.get("Chassis No.") || null,
     lotNumber: pairs.get("Ref. No.") || path[3].toUpperCase(), imageUrl: images[0] || null, images,
-    descriptionOrig: htmlText(firstMatch(html, /"description"\s*:\s*"([^"]+)"/i)),
-    specsOrig: [...pairs.entries()].filter(([key]) => /Ref|Mileage|Chassis|Engine|Color|Location|Fuel|Drive|Transmission|Year/i.test(key)).map(([key, value]) => `${key}: ${value}`).join("; ") || null,
-    location: pairs.get("Location") || "Japan",
+    descriptionOrig: `${make} ${model}. Автомобиль из открытого экспортного каталога BE FORWARD.`,
+    specsOrig: `Год выпуска: ${registered[1]}; пробег: ${asNumber(pairs.get("Mileage")?.replace(/[^\d]/g, ""))?.toLocaleString("ru-RU") || "уточняется"} км; номер лота: ${pairs.get("Ref. No.") || path[3].toUpperCase()}`,
+    location: "Япония",
   }
 }
 
@@ -555,7 +576,8 @@ async function fetchCarsensorListing(candidate: PublicAuctionCandidate): Promise
   const brands = Array.isArray(product.brand) ? product.brand.map(asRecord).filter((value): value is UnknownRecord => Boolean(value)) : []
   const rawMake = asText(brands[0]?.name)
   const rawModel = asText(brands[1]?.name) || asText(product.model)
-  const make = rawMake ? normalizeAuctionMake(JAPANESE_MAKES[rawMake] || rawMake) : null
+  const normalizedRawMake = rawMake?.normalize("NFKC") || null
+  const make = normalizedRawMake ? normalizeAuctionMake(JAPANESE_MAKES[normalizedRawMake] || normalizedRawMake) : null
   const model = normalizeAuctionModel(rawModel ? romanizeJapanese(rawModel) : null)
   const offers = Array.isArray(product.offers) ? asRecord(product.offers[0]) : asRecord(product.offers)
   const sourcePrice = asNumber(asText(offers?.price)?.replace(/,/g, ""))
@@ -576,9 +598,9 @@ async function fetchCarsensorListing(candidate: PublicAuctionCandidate): Promise
     color: pairs.get("色") || asText(product.color), engineVolume: asNumber(pairs.get("排気量")?.replace(/[^\d.]/g, "")),
     power: null, driveType: normalizeAuctionDriveType(pairs.get("駆動方式")), vin: null, lotNumber: candidate.sourceId,
     imageUrl: images[0] || null, images,
-    descriptionOrig: asText(product.name),
-    specsOrig: [...pairs.entries()].filter(([key]) => /年式|走行距離|駆動方式|色|ミッション|排気量|使用燃料/.test(key)).map(([key, value]) => `${key}: ${value}`).join("; ") || null,
-    location: "Japan",
+    descriptionOrig: `${make} ${model}. Автомобиль из открытого каталога CarSensor.`,
+    specsOrig: `Год выпуска: ${year[1]}; пробег: ${mileageKm?.toLocaleString("ru-RU") || "уточняется"} км; номер лота: ${candidate.sourceId}`,
+    location: "Япония",
   }
 }
 
@@ -602,9 +624,10 @@ async function fetchAutosaleListing(candidate: PublicAuctionCandidate): Promise<
     mileage: asNumber(asRecord(car.mileageFromOdometer)?.value), fuelType: normalizeAuctionFuelType(car.fuelType),
     transmission: normalizeAuctionTransmission(car.vehicleTransmission), bodyType: normalizeAuctionBodyType(car.bodyType),
     color: asText(car.color), engineVolume: null, power: null, driveType: null, vin: null, lotNumber: candidate.sourceId,
-    imageUrl: images[0] || null, images, descriptionOrig: asText(car.description),
-    specsOrig: `${make} ${model}; ${Math.round(year)}; ${asNumber(asRecord(car.mileageFromOdometer)?.value) || "—"} km`,
-    location: "Estonia",
+    imageUrl: images[0] || null, images,
+    descriptionOrig: `${make} ${model}. Автомобиль из открытого европейского каталога AutoSale.`,
+    specsOrig: `Год выпуска: ${Math.round(year)}; пробег: ${asNumber(asRecord(car.mileageFromOdometer)?.value)?.toLocaleString("ru-RU") || "уточняется"} км; номер лота: ${candidate.sourceId}`,
+    location: "Эстония",
   }
 }
 
@@ -635,9 +658,9 @@ async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise
     mileage: active.mileage ?? null, fuelType: active.fuelType || null, transmission: active.transmission || null,
     bodyType: active.bodyType || null, color: null, engineVolume, power: null, driveType: null, vin: null,
     lotNumber: active.sourceId, imageUrl: active.imageUrl || null, images,
-    descriptionOrig: `${active.make} ${active.model}. Vehicle listed in the official YouXinPai export auction catalogue.`,
-    specsOrig: `Mileage: ${active.mileage ?? "—"} km; auction lot: ${active.sourceId}`,
-    location: "China",
+    descriptionOrig: `${active.make} ${active.model}. Автомобиль опубликован в официальном экспортном аукционном каталоге YouXinPai.`,
+    specsOrig: `Год выпуска: ${active.year}; пробег: ${active.mileage?.toLocaleString("ru-RU") || "уточняется"} км; номер лота: ${active.sourceId}`,
+    location: "Китай",
   }
 }
 

@@ -73,7 +73,7 @@ const UNIDENTIFIABLE_AUCTION_MAKES = new Set([
 /** Turns provider-specific manufacturer keys into a readable public label. */
 export function normalizeAuctionMake(value: unknown) {
   if (typeof value !== "string") return null
-  const make = value.trim().replace(/\s+/g, " ")
+  const make = value.normalize("NFKC").trim().replace(/\s+/g, " ")
   return make ? AUCTION_MAKE_ALIASES[make] || make : null
 }
 
@@ -99,6 +99,9 @@ const KOREAN_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
   [/싼타페/gi, "Santa Fe"], [/카니발/gi, "Carnival"], [/아반떼/gi, "Avante"], [/쏘나타/gi, "Sonata"],
   [/투싼/gi, "Tucson"], [/스포티지/gi, "Sportage"], [/셀토스/gi, "Seltos"], [/니로/gi, "Niro"],
   [/스타리아/gi, "Staria"], [/스타렉스/gi, "Starex"], [/포터/gi, "Porter"], [/봉고/gi, "Bongo"],
+  [/노블레스/gi, "Noblesse"], [/플래티넘/gi, "Platinum"], [/시그니처/gi, "Signature"],
+  [/프레스티지/gi, "Prestige"], [/스탠다드/gi, "Standard"], [/익스클루시브/gi, "Exclusive"],
+  [/캘리그래피/gi, "Calligraphy"], [/스포츠/gi, "Sport"], [/터보/gi, "Turbo"],
   [/레이/gi, "Ray"], [/스파크/gi, "Spark"], [/말리부/gi, "Malibu"], [/트랙스/gi, "Trax"],
   [/크루즈/gi, "Cruze"], [/콜로라도/gi, "Colorado"], [/이쿼녹스/gi, "Equinox"], [/임팔라/gi, "Impala"],
   [/올란도/gi, "Orlando"], [/티볼리/gi, "Tivoli"], [/토레스/gi, "Torres"], [/렉스턴/gi, "Rexton"],
@@ -123,7 +126,7 @@ function transliterateHangul(value: string) {
 /** Customer-facing model label without Korean/Japanese/Chinese script. */
 export function normalizeAuctionModel(value: unknown) {
   if (typeof value !== "string") return null
-  let model = value.trim()
+  let model = value.normalize("NFKC").trim()
   if (!model) return null
   for (const [pattern, replacement] of KOREAN_MODEL_TERMS) model = model.replace(pattern, replacement)
   model = transliterateHangul(model).replace(/\s+/g, " ").trim()

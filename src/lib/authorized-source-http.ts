@@ -7,6 +7,7 @@ const DEFAULT_PROXY_TCP_CAP = 4
 const DIRECT_TCP_CAP = 4
 const MAX_REDIRECTS = 2
 const PROXY_FAILURE_THRESHOLD = 2
+const MAX_PROXY_ATTEMPTS_PER_REQUEST = 2
 const PROXY_QUARANTINE_MS = 5 * 60_000
 const MAX_PROXY_QUARANTINE_MS = 30 * 60_000
 const RETRYABLE_SOURCE_STATUSES = new Set([403, 407, 408, 425, 429, 500, 502, 503, 504])
@@ -125,6 +126,7 @@ function transportCandidates(hostname: string) {
     const proxyCandidates = available
       .map((agent, index) => ({ agent, index, activeRequests: proxyHealth.get(agent)?.activeRequests || 0 }))
       .sort((left, right) => left.activeRequests - right.activeRequests || left.index - right.index)
+      .slice(0, MAX_PROXY_ATTEMPTS_PER_REQUEST)
       .map(({ agent }) => agent)
     // Some public catalogues reject the shared proxy region even though the
     // same allow-listed URL is available from the application server. Keep a
