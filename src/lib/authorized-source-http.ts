@@ -122,12 +122,20 @@ function transportCandidates(hostname: string) {
   const ordered = [...agents.slice(start), ...agents.slice(0, start)]
   const available = ordered.filter((agent) => (proxyHealth.get(agent)?.retryAfter || 0) <= Date.now())
   if (available.length) {
-    return available
+    const proxyCandidates = available
       .map((agent, index) => ({ agent, index, activeRequests: proxyHealth.get(agent)?.activeRequests || 0 }))
       .sort((left, right) => left.activeRequests - right.activeRequests || left.index - right.index)
       .map(({ agent }) => agent)
+    // Some public catalogues reject the shared proxy region even though the
+    // same allow-listed URL is available from the application server. Keep a
+    // single bounded direct attempt last so proxies remain the primary route
+    // without turning a regional proxy error into an empty country catalogue.
+    return [...proxyCandidates, directAgent]
   }
-  return ordered.sort((left, right) => (proxyHealth.get(left)?.retryAfter || 0) - (proxyHealth.get(right)?.retryAfter || 0)).slice(0, 1)
+  return [
+    ...ordered.sort((left, right) => (proxyHealth.get(left)?.retryAfter || 0) - (proxyHealth.get(right)?.retryAfter || 0)).slice(0, 1),
+    directAgent,
+  ]
 }
 
 function markProxySuccess(agent: https.Agent) {
