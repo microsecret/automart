@@ -150,6 +150,7 @@ function AuctionDetail() {
   const equipment = listing ? parseAuctionEquipment(listing.equipment) : null
   const conditionInfo = listing ? parseAuctionConditionInfo(listing.conditionInfo) : null
   const publicModel = listing ? normalizeAuctionModel(listing.model) || "Модель уточняется" : ""
+  const publicLotNumber = listing && isCustomerFacingRussianText(listing.lotNumber) ? listing.lotNumber : null
   const publicDescription = listing && isCustomerFacingRussianText(listing.descriptionRu) ? listing.descriptionRu : null
 
   useEffect(() => {
@@ -284,7 +285,7 @@ function AuctionDetail() {
                       />
                     </>
                   )}
-                  <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{listing.lotNumber ? `${auctionSourceLabel(listing.source)} · ${listing.lotNumber}` : auctionSourceLabel(listing.source)}</Badge>
+                  <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{publicLotNumber ? `${auctionSourceLabel(listing.source)} · ${publicLotNumber}` : auctionSourceLabel(listing.source)}</Badge>
                   <Stack pos="absolute" top={16} right={16} gap={6} align="flex-end">
                     <Badge color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
                     <Badge color="gray" variant="filled" leftSection={<IconEye size={13} />}>{listing.viewCount.toLocaleString("ru")} просмотров</Badge>
@@ -342,7 +343,7 @@ function AuctionDetail() {
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
                       <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {auctionSourceLabel(listing.source)}</Text></Box></Group>
-                      {equipment.totalReported && <Badge variant="light" color="indigo">В источнике: {equipment.totalReported} опции</Badge>}
+                      {equipment.totalReported && <Badge variant="light" color="indigo">Опций в источнике: {equipment.totalReported}</Badge>}
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                       {equipment.items.map((item) => (
