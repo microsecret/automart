@@ -322,7 +322,7 @@ function AuctionDetail() {
                     {listing.transmission && <SpecRow icon={<IconManualGearbox size={16} />} label="КПП" value={auctionValueLabel(listing.transmission, "transmission")} />}
                     {listing.bodyType && <SpecRow icon={<IconCar size={16} />} label="Кузов" value={auctionValueLabel(listing.bodyType, "body")} />}
                     {listing.color && <SpecRow icon={<IconPalette size={16} />} label="Цвет" value={listing.color} />}
-                    {listing.engineVolume && <SpecRow icon={<IconCar size={16} />} label="Объём" value={`${listing.engineVolume} л`} />}
+                    {listing.engineVolume && <SpecRow icon={<IconCar size={16} />} label="Объём" value={`${Math.round(listing.engineVolume).toLocaleString("ru-RU")} см³`} />}
                     <SpecRow icon={<IconCar size={16} />} label="Мощность" value={listing.power ? `${listing.power} л.с.` : "Не опубликована источником"} multiline={!listing.power} />
                     {listing.location && <SpecRow icon={<IconMapPin size={16} />} label="Локация" value={listing.location} multiline />}
                   </SimpleGrid>

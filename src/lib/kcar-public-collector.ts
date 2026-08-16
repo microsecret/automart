@@ -74,6 +74,19 @@ function publicModelName(value: unknown) {
     .replace(/^올 뉴\s+/, "All-New ")
     .replace(/^더 뉴\s+/, "The New ")
     .replace(/^뉴\s+/, "New ")
+    .replace(/하이브리드/g, "Hybrid")
+    .replace(/그랜저/g, "Grandeur")
+    .replace(/팰리세이드/g, "Palisade")
+    .replace(/트래버스/g, "Traverse")
+    .replace(/모닝/g, "Morning")
+    .replace(/어반/g, "Urban")
+    .replace(/쏘렌토/g, "Sorento")
+    .replace(/싼타페/g, "Santa Fe")
+    .replace(/카니발/g, "Carnival")
+    .replace(/아반떼/g, "Avante")
+    .replace(/쏘나타/g, "Sonata")
+    .replace(/투싼/g, "Tucson")
+    .replace(/스포티지/g, "Sportage")
 }
 
 function encryptCatalogParams(value: UnknownRecord) {
