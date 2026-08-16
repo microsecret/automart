@@ -35,8 +35,18 @@ type AdminStats = {
   traffic: {
     visits24h: number
     visits7d: number
+    pageViews24h: number
+    pageViews7d: number
+    uniqueVisitors24h: number
     uniqueVisitors7d: number
-    daily: Array<{ date: string; visits: number; registrations: number }>
+    sessions7d: number
+    authenticatedVisitors7d: number
+    attributedRegistrations7d: number
+    pagesPerVisitor7d: number
+    registrationConversion7d: number
+    daily: Array<{ date: string; visits: number; uniqueVisitors: number; registrations: number }>
+    devices: Array<{ key: string; count: number }>
+    sources: Array<{ key: string; count: number }>
     topPaths: Array<{ path: string; count: number }>
     recentVisitors: Array<{
       id: string
@@ -99,6 +109,14 @@ type AdminStats = {
     lastStatus: string | null
     lastSyncAt: string | null
   }>
+  sourceTransport: {
+    configured: number
+    active: number
+    quarantined: number
+    maxConnectionsPerProxy: number
+    hardLimit: number
+    configurationValid: boolean
+  }
 }
 
 const fetchAdminStats = (url: string) => fetchJson<AdminStats>(url)
@@ -123,6 +141,12 @@ type AuctionAdminStats = {
 
 const VEHICLE_TYPE_LABELS: Record<string, string> = {
   CAR: "Легковые", MOTORCYCLE: "Мото", TRUCK: "Грузовики", SPECIAL: "Спецтехника", WATER: "Водный", AIR: "Авиа",
+}
+
+const DEVICE_LABELS: Record<string, string> = { DESKTOP: "Компьютеры", MOBILE: "Смартфоны", TABLET: "Планшеты", UNKNOWN: "Старые события" }
+const SOURCE_LABELS: Record<string, string> = {
+  DIRECT: "Прямые заходы", ORGANIC_SEARCH: "Поиск", SOCIAL: "Соцсети / Telegram",
+  REFERRAL: "Другие сайты", INTERNAL: "Внутренние переходы", UNKNOWN: "Старые события",
 }
 
 const SYNC_STATUS_META: Record<string, { label: string; color: MantineColor; icon: ReactNode }> = {
@@ -178,6 +202,7 @@ export default function AdminDashboard() {
   const total = c.listings || 1
   const dailyTraffic = data.traffic.daily || []
   const maxDailyVisits = Math.max(1, ...dailyTraffic.map((point) => point.visits))
+  const maxDailyVisitors = Math.max(1, ...dailyTraffic.map((point) => point.uniqueVisitors))
   const maxDailyRegistrations = Math.max(1, ...dailyTraffic.map((point) => point.registrations))
   const operationItems = [
     { label: "Объявления на проверке", value: data.operations.pendingListings, href: "/moderation", icon: <IconListCheck size={17} />, color: "orange" as MantineColor, description: "Проверить и принять решение" },
@@ -306,8 +331,19 @@ export default function AdminDashboard() {
                 <Text size="xs" c="dimmed">Статус отражает фактический способ получения данных, а не только доступность страны в фильтре.</Text>
               </Stack>
             </Group>
-            <Badge variant="light" color="teal">Активных сборщиков: {data.sourceCoverage.filter((source) => source.pipeline === "PUBLIC_COLLECTOR").length}</Badge>
+            <Group gap="xs" wrap="wrap">
+              <Badge variant="light" color="teal">Активных сборщиков: {data.sourceCoverage.filter((source) => source.pipeline === "PUBLIC_COLLECTOR").length}</Badge>
+              <Badge variant="light" color={data.sourceTransport.configurationValid ? "blue" : "red"}>
+                Прокси: {data.sourceTransport.active}/{data.sourceTransport.configured} активны · TCP до {data.sourceTransport.maxConnectionsPerProxy}/{data.sourceTransport.hardLimit}
+              </Badge>
+              {data.sourceTransport.quarantined > 0 && <Badge variant="light" color="orange">Карантин: {data.sourceTransport.quarantined}</Badge>}
+            </Group>
           </Group>
+          {!data.sourceTransport.configurationValid && (
+            <Alert color="red" variant="light" mb="sm" title="Пул прокси настроен некорректно">
+              Проверьте server env. Учётные данные намеренно не выводятся в интерфейс или журнал.
+            </Alert>
+          )}
           <SimpleGrid cols={{ base: 1, xs: 2, lg: 3 }} spacing="xs">
             {data.sourceCoverage.map((source) => {
               const isCollector = source.pipeline === "PUBLIC_COLLECTOR"
@@ -468,21 +504,36 @@ export default function AdminDashboard() {
         </SimpleGrid>
 
         {/* Посещаемость */}
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+        <Alert color="indigo" variant="light" title="Как считается посещаемость">
+          Просмотр — открытие отдельного экрана один раз за сессию. Уникальный посетитель — анонимный идентификатор браузера;
+          один человек на разных устройствах считается отдельно, а после очистки данных браузера получит новый идентификатор.
+          Сессия завершается вместе с вкладкой браузера. Автоматические bot/headless-запросы не учитываются.
+        </Alert>
+        <SimpleGrid cols={{ base: 1, xs: 2, lg: 5 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Посещения за 24 часа</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data?.traffic?.visits24h ?? 0}</Text>
-            <Text size="xs" c="gray.4">все просмотры экранов</Text>
+            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Просмотры · 24 часа</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.pageViews24h}</Text>
+            <Text size="xs" c="gray.4">открытые экраны</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · 7 дней</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data?.traffic?.uniqueVisitors7d ?? 0}</Text>
-            <Text size="xs" c="gray.4">по анонимной сессии</Text>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitors7d}</Text>
+            <Text size="xs" c="gray.4">по анонимному browser-ID</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Посещения за 7 дней</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data?.traffic?.visits7d ?? 0}</Text>
-            <Text size="xs" c="gray.4">путь пользователя по сайту</Text>
+            <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Сессии · 7 дней</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.sessions7d}</Text>
+            <Text size="xs" c="gray.4">сеансы работы с сайтом</Text>
+          </Card>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+            <Group gap="sm"><ThemeIcon variant="light" color="teal" size={34} radius="md"><IconUsers size={17} /></ThemeIcon><Text size="xs" c="gray.5">Вошли в аккаунт · 7 дней</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.authenticatedVisitors7d}</Text>
+            <Text size="xs" c="gray.4">уникальные пользователи</Text>
+          </Card>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+            <Group gap="sm"><ThemeIcon variant="light" color="orange" size={34} radius="md"><IconTrendingUp size={17} /></ThemeIcon><Text size="xs" c="gray.5">Конверсия · 7 дней</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.registrationConversion7d}%</Text>
+            <Text size="xs" c="gray.4">{data.traffic.attributedRegistrations7d} новых аккаунтов с визитом</Text>
           </Card>
         </SimpleGrid>
 
@@ -495,18 +546,23 @@ export default function AdminDashboard() {
                 <Text size="xs" c="dimmed">Только реальные события аналитики и даты создания учётных записей.</Text>
               </Stack>
             </Group>
-            <Badge variant="light" color="teal">Регистраций: {dailyTraffic.reduce((sum, point) => sum + point.registrations, 0)}</Badge>
+            <Group gap="xs">
+              <Badge variant="light" color="indigo">{data.traffic.pagesPerVisitor7d} стр. / посетителя</Badge>
+              <Badge variant="light" color="teal">Регистраций: {dailyTraffic.reduce((sum, point) => sum + point.registrations, 0)}</Badge>
+            </Group>
           </Group>
           <Paper withBorder radius="md" p={{ base: "xs", sm: "md" }} bg="gray.0">
             <Group h={170} align="flex-end" gap="xs" wrap="nowrap" role="img" aria-label="График посещений и регистраций за семь дней">
               {dailyTraffic.map((point) => {
                 const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
                 const visitHeight = Math.max(6, Math.round((point.visits / maxDailyVisits) * 118))
+                const visitorHeight = point.uniqueVisitors ? Math.max(6, Math.round((point.uniqueVisitors / maxDailyVisitors) * 118)) : 3
                 const registrationHeight = point.registrations ? Math.max(6, Math.round((point.registrations / maxDailyRegistrations) * 118)) : 3
                 return (
                   <Stack key={point.date} gap={5} align="center" style={{ flex: 1, minWidth: 0 }}>
                     <Group h={122} gap={3} align="flex-end" wrap="nowrap">
                       <Tooltip label={`${point.visits} посещений`} withArrow><Box h={visitHeight} bg="indigo.5" style={{ width: "clamp(10px, 2vw, 18px)", borderRadius: "6px 6px 2px 2px" }} /></Tooltip>
+                      <Tooltip label={`${point.uniqueVisitors} уникальных`} withArrow><Box h={visitorHeight} bg={point.uniqueVisitors ? "cyan.5" : "gray.3"} style={{ width: "clamp(8px, 1.5vw, 13px)", borderRadius: "5px 5px 2px 2px" }} /></Tooltip>
                       <Tooltip label={`${point.registrations} регистраций`} withArrow><Box h={registrationHeight} bg={point.registrations ? "teal.5" : "gray.3"} style={{ width: "clamp(6px, 1.2vw, 10px)", borderRadius: "5px 5px 2px 2px" }} /></Tooltip>
                     </Group>
                     <Text size="10px" c="dimmed" fw={650} ta="center">{label}</Text>
@@ -514,7 +570,7 @@ export default function AdminDashboard() {
                 )
               })}
             </Group>
-            <Group gap="md" justify="center" mt="xs"><Badge variant="dot" color="indigo">Посещения</Badge><Badge variant="dot" color="teal">Регистрации</Badge></Group>
+            <Group gap="md" justify="center" mt="xs"><Badge variant="dot" color="indigo">Просмотры</Badge><Badge variant="dot" color="cyan">Уникальные</Badge><Badge variant="dot" color="teal">Регистрации</Badge></Group>
           </Paper>
 
           <SimpleGrid cols={{ base: 2, xs: 4, sm: 7 }} spacing="xs">
@@ -524,7 +580,7 @@ export default function AdminDashboard() {
                 <Paper key={point.date} withBorder radius="md" p="xs">
                   <Text size="xs" c="dimmed" fw={700}>{label}</Text>
                   <Text size="lg" fw={850} mt={4}>{point.visits}</Text>
-                  <Text size="10px" c="dimmed">визитов</Text>
+                  <Text size="10px" c="dimmed">просмотров · {point.uniqueVisitors} уник.</Text>
                   <Progress value={(point.visits / maxDailyVisits) * 100} color="indigo" size="sm" radius="xl" mt="xs" aria-label={`${label}: ${point.visits} визитов`} />
                   <Group justify="space-between" gap={4} mt={6}>
                     <Text size="10px" c="dimmed">регистрации</Text>
@@ -553,6 +609,25 @@ export default function AdminDashboard() {
                 <Group key={visit.id} justify="space-between"><Text size="xs" c="gray.6">{visit.user?.name || visit.user?.email || "Пользователь"}</Text><Text size="xs" c="gray.4">{new Date(visit.createdAt).toLocaleDateString("ru-RU")}</Text></Group>
               ))}
               {!data.traffic.recentVisitors.length && <Text size="xs" c="gray.4">Пока нет авторизованных визитов.</Text>}
+            </Stack>
+          </Card>
+        </SimpleGrid>
+
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+            <Text size="sm" fw={700} mb="sm">Устройства · 7 дней</Text>
+            <Stack gap="xs">
+              {data.traffic.devices.map((item) => (
+                <Group key={item.key} justify="space-between"><Text size="xs" c="gray.6">{DEVICE_LABELS[item.key] || item.key}</Text><Badge variant="light" color="cyan">{item.count}</Badge></Group>
+              ))}
+            </Stack>
+          </Card>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+            <Text size="sm" fw={700} mb="sm">Источники трафика · 7 дней</Text>
+            <Stack gap="xs">
+              {data.traffic.sources.map((item) => (
+                <Group key={item.key} justify="space-between"><Text size="xs" c="gray.6">{item.key.startsWith("UTM:") ? item.key : SOURCE_LABELS[item.key] || item.key}</Text><Badge variant="light" color="violet">{item.count}</Badge></Group>
+              ))}
             </Stack>
           </Card>
         </SimpleGrid>

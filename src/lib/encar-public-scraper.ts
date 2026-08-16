@@ -1,12 +1,19 @@
 import { isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
 import type { AuctionConditionCheck, AuctionConditionInfo, AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
 import { translateToRussian } from "@/lib/nvidia-translate"
+import { authorizedSourceGet } from "@/lib/authorized-source-http"
 
 const ENCAR_HOST = "fem.encar.com"
 const ENCAR_DETAIL_PATH = /^\/cars\/detail\/(\d+)$/
 const ENCAR_CATALOG_HOST = "car.encar.com"
 const ENCAR_CATALOG_PATH = "/list/car"
 const ENCAR_REQUEST_TIMEOUT_MS = 20_000
+const ENCAR_ALLOWED_HOSTS = new Set([ENCAR_HOST, ENCAR_CATALOG_HOST])
+const ENCAR_REQUEST_HEADERS = {
+  Accept: "text/html,application/xhtml+xml",
+  "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7",
+  "User-Agent": "LeWheel-Authorized-Importer/1.0 (+https://lewheel.ru)",
+}
 const ENCAR_SEDAN_SIZE_CATEGORIES = new Set(["경차", "소형차", "준중형차", "중형차", "대형차"])
 const ENCAR_COLOR_LABELS: ReadonlyArray<readonly [string, string]> = [
   // Compound source names go before their shorter suffixes. Otherwise, for
@@ -295,22 +302,16 @@ function extractEncarConditionInfo(html: string): AuctionConditionInfo | null {
 /** Extracts deduplicated public detail links from one Encar catalogue page. */
 export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: number) {
   const catalogUrl = catalogUrlFrom(rawUrl)
-  const response = await fetch(catalogUrl, {
-    cache: "no-store",
-    redirect: "follow",
-    signal: AbortSignal.timeout(ENCAR_REQUEST_TIMEOUT_MS),
-    headers: {
-      Accept: "text/html,application/xhtml+xml",
-      "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7",
-      "User-Agent": "AutoMarket-Importer/1.0",
-    },
+  const response = await authorizedSourceGet(catalogUrl, {
+    allowedHosts: ENCAR_ALLOWED_HOSTS,
+    headers: ENCAR_REQUEST_HEADERS,
+    timeoutMs: ENCAR_REQUEST_TIMEOUT_MS,
+    maxBytes: 2_000_000,
   })
   if (!response.ok) throw new Error(`Encar вернул HTTP ${response.status}`)
   if (new URL(response.url).hostname !== ENCAR_CATALOG_HOST) throw new Error("Encar перенаправил каталог на неподдерживаемый адрес")
 
   const html = await response.text()
-  if (html.length > 2_000_000) throw new Error("Страница каталога Encar превышает допустимый размер")
-
   const urls = new Set<string>()
   const matcher = /https:\/\/fem\.encar\.com\/cars\/detail\/(\d+)/g
   for (const match of html.matchAll(matcher)) {
@@ -323,15 +324,11 @@ export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: num
 
 export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<AuctionImportItem> {
   const { sourceUrl, requestedId } = sourceUrlFrom(rawUrl)
-  const response = await fetch(sourceUrl, {
-    cache: "no-store",
-    redirect: "follow",
-    signal: AbortSignal.timeout(ENCAR_REQUEST_TIMEOUT_MS),
-    headers: {
-      Accept: "text/html,application/xhtml+xml",
-      "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7",
-      "User-Agent": "AutoMarket-Importer/1.0",
-    },
+  const response = await authorizedSourceGet(sourceUrl, {
+    allowedHosts: ENCAR_ALLOWED_HOSTS,
+    headers: ENCAR_REQUEST_HEADERS,
+    timeoutMs: ENCAR_REQUEST_TIMEOUT_MS,
+    maxBytes: 1_500_000,
   })
   if (response.status === 404 || response.status === 410) {
     throw new EncarListingUnavailableError(`Лот Encar больше недоступен (HTTP ${response.status})`)
@@ -340,8 +337,6 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   if (new URL(response.url).hostname !== ENCAR_HOST) throw new Error("Encar перенаправил запрос на неподдерживаемый адрес")
 
   const html = await response.text()
-  if (html.length > 1_500_000) throw new Error("Карточка Encar превышает допустимый размер")
-
   const state = extractPreloadedState(html)
   const cars = asRecord(state.cars)
   const base = asRecord(cars?.base)

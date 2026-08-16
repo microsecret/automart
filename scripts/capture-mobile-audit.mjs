@@ -11,6 +11,8 @@ const captures = [
   ["auctions-desktop.png", "/auctions?country=KR&audit=cdp-desktop", 1440, 1000, false],
   ["news-desktop.png", "/news?sort=popular&audit=cdp-desktop", 1440, 1000, false],
   ["smart-matching-desktop.png", "/services/smart-matching?audit=cdp-desktop", 1440, 1000, false],
+  ["history-check-desktop.png", "/services/history-check?audit=cdp-desktop", 1440, 1000, false],
+  ["history-check-wide.png", "/services/history-check?audit=cdp-wide", 2520, 1696, false],
   ["support-mobile.png", "/help/support?audit=cdp-mobile", 390, 844, true],
   ["signup-mobile.png", "/auth/signup?audit=cdp-mobile", 390, 844, true],
   ["telegram-mobile.png", "/telegram?audit=cdp-mobile", 390, 844, true],
@@ -101,9 +103,19 @@ try {
     })
   }
 
-  const waitForEvent = (method) => new Promise((resolve) => {
+  const waitForEvent = (method, timeoutMs = 45_000) => new Promise((resolve, reject) => {
     const queue = listeners.get(method) || []
-    queue.push(resolve)
+    const onEvent = (params) => {
+      clearTimeout(timeout)
+      resolve(params)
+    }
+    const timeout = setTimeout(() => {
+      const activeQueue = listeners.get(method) || []
+      const index = activeQueue.indexOf(onEvent)
+      if (index >= 0) activeQueue.splice(index, 1)
+      reject(new Error(`Timed out waiting for ${method} after ${timeoutMs}ms`))
+    }, timeoutMs)
+    queue.push(onEvent)
     listeners.set(method, queue)
   })
 
@@ -145,12 +157,38 @@ try {
     await loaded
     await new Promise((resolve) => setTimeout(resolve, 4500))
     const layout = await send("Runtime.evaluate", {
-      expression: "JSON.stringify({url:location.pathname,title:document.title,viewport:innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth})",
+      expression: `(() => {
+        const footer = document.querySelector(".market-app-footer")?.getBoundingClientRect()
+        return JSON.stringify({
+          url: location.pathname,
+          title: document.title,
+          viewport: innerWidth,
+          viewportHeight: innerHeight,
+          scrollWidth: document.documentElement.scrollWidth,
+          scrollHeight: document.documentElement.scrollHeight,
+          bodyWidth: document.body.scrollWidth,
+          footer: footer ? {
+            left: Math.round(footer.left),
+            right: Math.round(footer.right),
+            top: Math.round(footer.top + scrollY),
+            bottom: Math.round(footer.bottom + scrollY),
+          } : null,
+        })
+      })()`,
       returnByValue: true,
     })
     const layoutMetrics = JSON.parse(layout.result.value)
     if (layoutMetrics.scrollWidth > layoutMetrics.viewport || layoutMetrics.bodyWidth > layoutMetrics.viewport) {
       throw new Error(`${route} has horizontal overflow: viewport=${layoutMetrics.viewport}, document=${layoutMetrics.scrollWidth}, body=${layoutMetrics.bodyWidth}`)
+    }
+    if (!route.startsWith("/auth/") && !route.startsWith("/telegram")) {
+      if (!layoutMetrics.footer) throw new Error(`${route} does not render the marketplace footer`)
+      if (Math.abs(layoutMetrics.footer.left) > 1 || Math.abs(layoutMetrics.footer.right - layoutMetrics.viewport) > 1) {
+        throw new Error(`${route} footer does not span the viewport: left=${layoutMetrics.footer.left}, right=${layoutMetrics.footer.right}, viewport=${layoutMetrics.viewport}`)
+      }
+      if (Math.abs(layoutMetrics.scrollHeight - layoutMetrics.footer.bottom) > 4) {
+        throw new Error(`${route} leaves space after the footer: footerBottom=${layoutMetrics.footer.bottom}, document=${layoutMetrics.scrollHeight}`)
+      }
     }
     const screenshot = await send("Page.captureScreenshot", {
       format: "png",
@@ -159,7 +197,43 @@ try {
     })
     const outputPath = path.join(resolvedOutputDirectory, filename)
     await writeFile(outputPath, Buffer.from(screenshot.data, "base64"))
-    process.stdout.write(`${outputPath} · ${layoutMetrics.title} · ${layoutMetrics.viewport}px\n`)
+    process.stdout.write(`${outputPath} · ${layoutMetrics.title} · ${layoutMetrics.viewport}×${layoutMetrics.viewportHeight}px · document ${layoutMetrics.scrollHeight}px\n`)
+
+    if (filename === "support-mobile.png") {
+      const opened = await send("Runtime.evaluate", {
+        expression: `(() => {
+          const launcher = document.querySelector('[aria-label="Открыть поддержку"]')
+          if (!(launcher instanceof HTMLElement)) return false
+          launcher.click()
+          return true
+        })()`,
+        returnByValue: true,
+      })
+      if (!opened.result.value) throw new Error("Guest support launcher is not interactive on mobile")
+      await new Promise((resolve) => setTimeout(resolve, 800))
+
+      const panelLayout = await send("Runtime.evaluate", {
+        expression: `(() => {
+          const panel = document.querySelector(".support-chat__panel")?.getBoundingClientRect()
+          return panel ? JSON.stringify({ left: panel.left, top: panel.top, right: panel.right, bottom: panel.bottom }) : null
+        })()`,
+        returnByValue: true,
+      })
+      if (!panelLayout.result.value) throw new Error("Guest support panel did not open on mobile")
+      const panel = JSON.parse(panelLayout.result.value)
+      if (panel.left < 0 || panel.top < 0 || panel.right > width || panel.bottom > height) {
+        throw new Error(`Guest support panel leaves the mobile viewport: ${JSON.stringify(panel)}`)
+      }
+
+      const openedChat = await send("Page.captureScreenshot", {
+        format: "png",
+        fromSurface: true,
+        captureBeyondViewport: false,
+      })
+      const chatOutputPath = path.join(resolvedOutputDirectory, "support-chat-mobile.png")
+      await writeFile(chatOutputPath, Buffer.from(openedChat.data, "base64"))
+      process.stdout.write(`${chatOutputPath} · guest support opened within ${width}×${height}px\n`)
+    }
   }
 
   await send("Browser.close")

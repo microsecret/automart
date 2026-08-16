@@ -183,11 +183,25 @@ async function run() {
   await expectOneOf("/api/payment/webhook", null, [400, 503], { method: "POST", body: "{}" })
   await expect("/api/analytics/visit", cookie, 204, {
     method: "POST",
-    headers: { "x-forwarded-for": "203.0.113.42", "user-agent": "LeWheel isolated audit" },
-    body: JSON.stringify({ path: "/audit/functional", sessionKey: marker }),
+    headers: { "x-forwarded-for": "203.0.113.42", "user-agent": "Mozilla/5.0 (iPhone) LeWheel isolated audit" },
+    body: JSON.stringify({ path: "/audit/functional", visitorKey: marker, sessionKey: marker, utmSource: "telegram", campaign: "production-audit" }),
+  })
+  await expect("/api/analytics/visit", cookie, 204, {
+    method: "POST",
+    headers: { "x-forwarded-for": "203.0.113.42", "user-agent": "Mozilla/5.0 (iPhone) LeWheel isolated audit" },
+    body: JSON.stringify({ path: "/audit/functional", visitorKey: marker, sessionKey: marker, utmSource: "telegram" }),
+  })
+  await expect("/api/analytics/visit", null, 204, {
+    method: "POST",
+    headers: { "x-forwarded-for": "203.0.113.43", "user-agent": "Googlebot/2.1" },
+    body: JSON.stringify({ path: "/audit/bot", visitorKey: `${marker}-bot`, sessionKey: `${marker}-bot` }),
   })
   const visit = await prisma.visitEvent.findFirst({ where: { sessionKey: marker } })
+  const duplicateVisits = await prisma.visitEvent.count({ where: { sessionKey: marker, path: "/audit/functional" } })
+  const botVisits = await prisma.visitEvent.count({ where: { path: "/audit/bot" } })
   record("analytics stores only a salted IP hash", Boolean(visit?.ipHash && visit.ipHash !== "203.0.113.42" && visit.userId === primary.id), visit?.id || "missing")
+  record("analytics records visitor, session, device and acquisition dimensions", visit?.visitorKey === marker && visit?.deviceType === "MOBILE" && visit?.trafficSource === "UTM:TELEGRAM" && visit?.campaign === "production-audit", `${visit?.deviceType || "missing"} · ${visit?.trafficSource || "missing"}`)
+  record("analytics deduplicates retries and ignores bots", duplicateVisits === 1 && botVisits === 0, `${duplicateVisits} page view · ${botVisits} bot events`)
 
   await prisma.news.createMany({
     data: [
@@ -200,6 +214,8 @@ async function run() {
   await expect("/api/dashboard/stats", cookie, 200)
   const adminStats = await expect("/api/admin/stats", adminCookie, 200)
   record("admin dashboard exposes real support counters", Number.isSafeInteger(adminStats?.operations?.openSupportTickets) && Number.isSafeInteger(adminStats?.counts?.supportTickets), `${adminStats?.operations?.openSupportTickets ?? "missing"} open`)
+  record("admin dashboard separates views, visitors, sessions and authenticated users", adminStats?.traffic?.pageViews7d >= 1 && adminStats?.traffic?.uniqueVisitors7d >= 1 && adminStats?.traffic?.sessions7d >= 1 && adminStats?.traffic?.authenticatedVisitors7d >= 1 && adminStats?.traffic?.attributedRegistrations7d >= 0 && adminStats?.traffic?.registrationConversion7d <= 100 && adminStats?.traffic?.devices?.some((item) => item.key === "MOBILE") && adminStats?.traffic?.sources?.some((item) => item.key === "UTM:TELEGRAM"), `${adminStats?.traffic?.pageViews7d ?? 0} views · ${adminStats?.traffic?.uniqueVisitors7d ?? 0} visitors · ${adminStats?.traffic?.registrationConversion7d ?? 0}% conversion`)
+  record("source transport reports a valid bounded TCP pool", adminStats?.sourceTransport?.configurationValid === true && adminStats?.sourceTransport?.active + adminStats?.sourceTransport?.quarantined === adminStats?.sourceTransport?.configured && adminStats?.sourceTransport?.maxConnectionsPerProxy >= 1 && adminStats?.sourceTransport?.maxConnectionsPerProxy <= 50 && adminStats?.sourceTransport?.hardLimit === 50, `${adminStats?.sourceTransport?.active ?? 0}/${adminStats?.sourceTransport?.configured ?? 0} active · cap ${adminStats?.sourceTransport?.maxConnectionsPerProxy ?? "missing"}`)
   await prisma.user.update({ where: { id: revocableAdministrator.id }, data: { role: "USER" } })
   await expect("/api/admin/stats", revocableAdminCookie, 403)
   record("administrator role revocation takes effect on the next request", true, revocableAdministrator.id)
@@ -514,7 +530,7 @@ async function run() {
   await expectOneOf("/api/telegram/webhook", null, [401, 503], { method: "POST", body: JSON.stringify({ update_id: 1 }) })
 
   const sourceCountries = {
-    USS: "JP", TAA: "JP", EMARAAT: "KR", AJ: "KR", ENCAR: "KR",
+    USS: "JP", TAA: "JP", EMARAAT: "KR", AJ: "KR", KCAR: "KR", KB_CHA_CHA_CHA: "KR", ENCAR: "KR",
     COPART: "US", IAAI: "US", MOBILE_DE: "DE", YCHEZHAI: "CN",
     GUAZI: "CN", CHE168: "CN", AUTOHOME: "CN", DONGCHEDI: "CN", TAOCHE: "CN", UCAR: "CN",
   }

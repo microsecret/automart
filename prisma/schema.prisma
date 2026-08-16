@@ -563,17 +563,24 @@ model VerificationToken {
 model VisitEvent {
   id         String   @id @default(uuid())
   path       String
+  visitorKey String?
   sessionKey String?
   ipHash     String?
   userAgent  String?
   referer    String?
+  deviceType String?
+  trafficSource String?
+  campaign   String?
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], name: "UserVisitEvents")
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
   @@index([path, createdAt])
+  @@index([visitorKey, createdAt])
   @@index([sessionKey, createdAt])
+  @@index([deviceType, createdAt])
+  @@index([trafficSource, createdAt])
   @@index([userId, createdAt])
 }
 

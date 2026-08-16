@@ -3,36 +3,61 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceCountry } from "@/lib/auction-sources"
+import { sourceProxyPoolStatus } from "@/lib/authorized-source-http"
 
 export const dynamic = "force-dynamic"
 
 type DailyTrafficPoint = {
   date: string
   visits: number
+  uniqueVisitors: number
   registrations: number
+}
+
+type TrafficEvent = {
+  createdAt: Date
+  visitorKey: string | null
+  sessionKey: string | null
+  ipHash: string | null
 }
 
 function utcDayKey(value: Date) {
   return value.toISOString().slice(0, 10)
 }
 
-function createDailyTraffic(events: Array<{ createdAt: Date }>, users: Array<{ createdAt: Date }>, start: Date): DailyTrafficPoint[] {
+function visitorIdentity(event: Pick<TrafficEvent, "visitorKey" | "sessionKey" | "ipHash">) {
+  if (event.visitorKey) return `visitor:${event.visitorKey}`
+  if (event.sessionKey) return `legacy-session:${event.sessionKey}`
+  return event.ipHash ? `ip:${event.ipHash}` : null
+}
+
+function countByDimension(values: Array<string | null>) {
+  const counts = new Map<string, number>()
+  for (const value of values) counts.set(value || "UNKNOWN", (counts.get(value || "UNKNOWN") || 0) + 1)
+  return [...counts.entries()].map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count)
+}
+
+function createDailyTraffic(events: TrafficEvent[], users: Array<{ createdAt: Date }>, start: Date): DailyTrafficPoint[] {
   const points = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(start)
     date.setUTCDate(start.getUTCDate() + index)
-    return { date: utcDayKey(date), visits: 0, registrations: 0 }
+    return { date: utcDayKey(date), visits: 0, uniqueVisitors: 0, registrations: 0, visitorKeys: new Set<string>() }
   })
   const byDate = new Map(points.map((point) => [point.date, point]))
 
   for (const event of events) {
     const point = byDate.get(utcDayKey(event.createdAt))
-    if (point) point.visits += 1
+    if (point) {
+      point.visits += 1
+      const identity = visitorIdentity(event)
+      if (identity) point.visitorKeys.add(identity)
+    }
   }
   for (const user of users) {
     const point = byDate.get(utcDayKey(user.createdAt))
     if (point) point.registrations += 1
   }
-  return points
+  return points.map(({ visitorKeys, ...point }) => ({ ...point, uniqueVisitors: visitorKeys.size }))
 }
 
 export async function GET() {
@@ -80,14 +105,16 @@ export async function GET() {
     const dailyTrafficStart = new Date()
     dailyTrafficStart.setUTCHours(0, 0, 0, 0)
     dailyTrafficStart.setUTCDate(dailyTrafficStart.getUTCDate() - 6)
-    const [visits24h, visits7d, uniqueSessions7d, topPaths, recentVisitors, dailyVisitEvents, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, latestAuctionSyncRuns, sourceSyncRuns] = await Promise.all([
+    const [visits24h, visits7d, topPaths, recentVisitors, trafficEvents7d, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, latestAuctionSyncRuns, sourceSyncRuns] = await Promise.all([
       prisma.visitEvent.count({ where: { createdAt: { gte: dayAgo } } }),
       prisma.visitEvent.count({ where: { createdAt: { gte: weekAgo } } }),
-      prisma.visitEvent.findMany({ where: { createdAt: { gte: weekAgo }, sessionKey: { not: null } }, select: { sessionKey: true }, distinct: ["sessionKey"] }),
       prisma.visitEvent.groupBy({ by: ["path"], where: { createdAt: { gte: weekAgo } }, _count: { path: true }, orderBy: { _count: { path: "desc" } }, take: 8 }),
       prisma.visitEvent.findMany({ where: { createdAt: { gte: weekAgo }, userId: { not: null } }, orderBy: { createdAt: "desc" }, take: 10, include: { user: { select: { id: true, name: true, email: true, telegramUsername: true } } } }),
-      prisma.visitEvent.findMany({ where: { createdAt: { gte: dailyTrafficStart } }, select: { createdAt: true } }),
-      prisma.user.findMany({ where: { createdAt: { gte: dailyTrafficStart } }, select: { createdAt: true } }),
+      prisma.visitEvent.findMany({
+        where: { createdAt: { gte: weekAgo } },
+        select: { createdAt: true, visitorKey: true, sessionKey: true, ipHash: true, userId: true, deviceType: true, trafficSource: true },
+      }),
+      prisma.user.findMany({ where: { createdAt: { gte: dailyTrafficStart } }, select: { id: true, createdAt: true } }),
       prisma.listing.count({ where: { status: "PENDING_MODERATION", deletedAt: null } }),
       prisma.listingReport.count({ where: { status: { in: ["OPEN", "IN_REVIEW"] } } }),
       prisma.auctionInquiry.count({ where: { status: "NEW" } }),
@@ -123,6 +150,19 @@ export async function GET() {
         select: { source: true, status: true, startedAt: true },
       }),
     ])
+
+    const uniqueVisitors7d = new Set(trafficEvents7d.map(visitorIdentity).filter((value): value is string => Boolean(value))).size
+    const uniqueVisitors24h = new Set(trafficEvents7d.filter((event) => event.createdAt >= dayAgo).map(visitorIdentity).filter((value): value is string => Boolean(value))).size
+    const sessions7d = new Set(trafficEvents7d.map((event) => event.sessionKey).filter((value): value is string => Boolean(value))).size
+    const authenticatedVisitors7d = new Set(trafficEvents7d.map((event) => event.userId).filter((value): value is string => Boolean(value))).size
+    const newRegistrationIds7d = new Set(dailyRegistrations.filter((user) => user.createdAt >= weekAgo).map((user) => user.id))
+    const attributedRegistrations7d = new Set(
+      trafficEvents7d
+        .map((event) => event.userId)
+        .filter((value): value is string => typeof value === "string" && newRegistrationIds7d.has(value)),
+    ).size
+    const pagesPerVisitor7d = uniqueVisitors7d ? Math.round(visits7d / uniqueVisitors7d * 10) / 10 : 0
+    const registrationConversion7d = uniqueVisitors7d ? Math.round(attributedRegistrations7d / uniqueVisitors7d * 1_000) / 10 : 0
 
     // Featured
     const featured = await prisma.listing.count({ where: { isFeatured: true } })
@@ -205,8 +245,18 @@ export async function GET() {
       traffic: {
         visits24h,
         visits7d,
-        uniqueVisitors7d: uniqueSessions7d.length,
-        daily: createDailyTraffic(dailyVisitEvents, dailyRegistrations, dailyTrafficStart),
+        pageViews24h: visits24h,
+        pageViews7d: visits7d,
+        uniqueVisitors24h,
+        uniqueVisitors7d,
+        sessions7d,
+        authenticatedVisitors7d,
+        attributedRegistrations7d,
+        pagesPerVisitor7d,
+        registrationConversion7d,
+        daily: createDailyTraffic(trafficEvents7d, dailyRegistrations, dailyTrafficStart),
+        devices: countByDimension(trafficEvents7d.map((event) => event.deviceType)),
+        sources: countByDimension(trafficEvents7d.map((event) => event.trafficSource)),
         topPaths: topPaths.map((item) => ({ path: item.path, count: item._count.path })),
         recentVisitors: recentVisitors.map((visit) => ({
           id: visit.id,
@@ -226,6 +276,7 @@ export async function GET() {
       },
       auctionSyncRuns: latestAuctionSyncRuns,
       sourceCoverage,
+      sourceTransport: sourceProxyPoolStatus(),
     })
   } catch (error) {
     console.error("Admin stats error:", error)
