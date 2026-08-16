@@ -52,6 +52,15 @@ const CHINESE_MAKES: ReadonlyArray<readonly [string, string]> = [
   ["小鹏", "Xpeng"], ["极氪", "Zeekr"], ["五菱", "Wuling"], ["荣威", "Roewe"],
 ]
 
+const CHINESE_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(\d{4})款/g, "$1"], [/([A-Z])级/gi, "$1-Class"], [/(\d+)系/g, "$1 Series"],
+  [/自动/g, "АКПП"], [/手动/g, "МКПП"], [/前驱/g, "передний привод"], [/后驱/g, "задний привод"],
+  [/四驱|全驱/g, "полный привод"], [/运动版/g, "Sport"], [/时尚版/g, "Style"],
+  [/豪华版/g, "Luxury"], [/尊贵版/g, "Premium"], [/旗舰版/g, "Flagship"], [/标准版/g, "Standard"],
+  [/舒适版/g, "Comfort"], [/卓越版/g, "Excellence"], [/臻享版/g, "Premium"],
+  [/\(国Ⅵ\)|\(国VI\)/gi, "экостандарт China VI"], [/\(国Ⅴ\)|\(国V\)/gi, "экостандарт China V"],
+]
+
 export class PublicListingUnavailableError extends Error {
   constructor(message: string) {
     super(message)
@@ -113,6 +122,12 @@ function safeImage(value: string | null, allowedHosts: ReadonlySet<string>) {
   } catch {
     return null
   }
+}
+
+function localizeChineseModel(value: string) {
+  return CHINESE_MODEL_TERMS.reduce((model, [pattern, replacement]) => model.replace(pattern, replacement), value)
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 async function sourceHtml(source: PublicAuctionSource, url: string) {
@@ -210,8 +225,8 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   const makeEntry = CHINESE_MAKES.find(([label]) => title.includes(label))
   if (!makeEntry) throw new Error(`Iautos: не распознана марка карточки ${candidate.sourceId}`)
   const modelOriginal = title.replace(makeEntry[0], "").trim()
-  const modelTranslated = await translateToRussian(modelOriginal)
-  const model = normalizeAuctionModel(modelTranslated)
+  const deterministicModel = normalizeAuctionModel(localizeChineseModel(modelOriginal))
+  const model = deterministicModel || normalizeAuctionModel(await translateToRussian(modelOriginal))
   if (!model) throw new Error(`Iautos: не переведена модель карточки ${candidate.sourceId}`)
 
   const pairs = tablePairs(html)
