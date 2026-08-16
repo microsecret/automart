@@ -14,6 +14,7 @@ type DailyTrafficPoint = {
   pageViews: number
   uniqueVisitors: number
   registrations: number
+  newListings: number
 }
 
 type TrafficEvent = {
@@ -43,11 +44,11 @@ function countUniqueByDimension(events: TrafficEvent[], key: "deviceType" | "tra
   return [...identities.entries()].map(([dimension, values]) => ({ key: dimension, count: values.size })).sort((a, b) => b.count - a.count)
 }
 
-function createDailyTraffic(events: TrafficEvent[], users: Array<{ createdAt: Date }>, start: Date): DailyTrafficPoint[] {
+function createDailyTraffic(events: TrafficEvent[], users: Array<{ createdAt: Date }>, listings: Array<{ createdAt: Date }>, start: Date): DailyTrafficPoint[] {
   const points = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(start)
     date.setUTCDate(start.getUTCDate() + index)
-    return { date: utcDayKey(date), pageViews: 0, uniqueVisitors: 0, registrations: 0, visitorKeys: new Set<string>() }
+    return { date: utcDayKey(date), pageViews: 0, uniqueVisitors: 0, registrations: 0, newListings: 0, visitorKeys: new Set<string>() }
   })
   const byDate = new Map(points.map((point) => [point.date, point]))
 
@@ -62,6 +63,10 @@ function createDailyTraffic(events: TrafficEvent[], users: Array<{ createdAt: Da
   for (const user of users) {
     const point = byDate.get(utcDayKey(user.createdAt))
     if (point) point.registrations += 1
+  }
+  for (const listing of listings) {
+    const point = byDate.get(utcDayKey(listing.createdAt))
+    if (point) point.newListings += 1
   }
   return points.map(({ visitorKeys, ...point }) => ({ ...point, uniqueVisitors: visitorKeys.size }))
 }
@@ -348,7 +353,7 @@ export async function GET() {
         attributedRegistrations7d,
         pagesPerVisitor7d,
         registrationConversion7d,
-        daily: createDailyTraffic(trafficEvents7d, dailyRegistrations, dailyTrafficStart),
+        daily: createDailyTraffic(trafficEvents7d, dailyRegistrations, listingInventory, dailyTrafficStart),
         devices: countUniqueByDimension(trafficEvents7d, "deviceType"),
         sources: countUniqueByDimension(trafficEvents7d, "trafficSource"),
         topPaths: topPaths.map((item) => ({ path: item.path, count: item._count.path })),

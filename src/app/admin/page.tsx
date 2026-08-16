@@ -7,7 +7,7 @@ import { ActionIcon, Alert, Box, Stack, Text, Center, Loader, SimpleGrid, Card, 
 import type { MantineColor } from "@mantine/core"
 import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld, IconRefresh, IconDatabase, IconGavel, IconAlertTriangle, IconBuildingWarehouse, IconCheck, IconClock, IconListCheck, IconShieldCheck, IconCreditCard, IconCoins, IconReceipt, IconLockCheck, IconHeadset } from "@tabler/icons-react"
 import Link from "next/link"
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
 import ListingReportModerationPanel from "@/components/moderation/ListingReportModerationPanel"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
@@ -49,7 +49,7 @@ type AdminStats = {
     attributedRegistrations7d: number
     pagesPerVisitor7d: number
     registrationConversion7d: number
-    daily: Array<{ date: string; pageViews: number; uniqueVisitors: number; registrations: number }>
+    daily: Array<{ date: string; pageViews: number; uniqueVisitors: number; registrations: number; newListings: number }>
     devices: Array<{ key: string; count: number }>
     sources: Array<{ key: string; count: number }>
     topPaths: Array<{ path: string; count: number }>
@@ -226,23 +226,37 @@ function curvedLinePath(points: Array<{ x: number; y: number }>) {
 }
 
 function TrafficLineChart({ points }: { points: TrafficChartPoint[] }) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const width = 760
   const height = 210
   const padding = { top: 14, right: 18, bottom: 34, left: 42 }
   const chartWidth = width - padding.left - padding.right
   const chartHeight = height - padding.top - padding.bottom
-  const maximum = Math.max(1, ...points.flatMap((point) => [point.pageViews, point.uniqueVisitors]))
+  const maximum = Math.max(1, ...points.flatMap((point) => [point.pageViews, point.uniqueVisitors, point.registrations, point.newListings]))
   const x = (index: number) => padding.left + (points.length > 1 ? (index / (points.length - 1)) * chartWidth : chartWidth / 2)
   const y = (value: number) => padding.top + chartHeight - (value / maximum) * chartHeight
   const pageViewPoints = points.map((point, index) => ({ x: x(index), y: y(point.pageViews) }))
   const visitorPoints = points.map((point, index) => ({ x: x(index), y: y(point.uniqueVisitors) }))
+  const registrationPoints = points.map((point, index) => ({ x: x(index), y: y(point.registrations) }))
+  const listingPoints = points.map((point, index) => ({ x: x(index), y: y(point.newListings) }))
   const pageViewPath = curvedLinePath(pageViewPoints)
   const visitorPath = curvedLinePath(visitorPoints)
+  const registrationPath = curvedLinePath(registrationPoints)
+  const listingPath = curvedLinePath(listingPoints)
   const areaPath = pageViewPoints.length ? `${pageViewPath} L ${pageViewPoints.at(-1)?.x} ${padding.top + chartHeight} L ${pageViewPoints[0].x} ${padding.top + chartHeight} Z` : ""
+  const activePoint = activeIndex === null ? null : points[activeIndex]
+  const activeX = activeIndex === null ? 0 : x(activeIndex)
+  const interactionWidth = points.length > 1 ? chartWidth / (points.length - 1) : chartWidth
+  const tooltipPosition = activeIndex === 0
+    ? { left: 8 }
+    : activeIndex === points.length - 1
+      ? { right: 8 }
+      : { left: `${(activeX / width) * 100}%`, transform: "translateX(-50%)" }
 
   return (
     <Box className="admin-traffic-chart">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Линейный график просмотров страниц и уникальных посетителей за семь дней" preserveAspectRatio="xMidYMid meet">
+      <Box className="admin-traffic-chart__plot">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Интерактивный график просмотров, уникальных посетителей, регистраций и новых объявлений за семь дней" preserveAspectRatio="xMidYMid meet" onPointerLeave={() => setActiveIndex(null)}>
         <defs>
           <linearGradient id="admin-page-view-area" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#6366f1" stopOpacity="0.24" />
@@ -256,22 +270,63 @@ function TrafficLineChart({ points }: { points: TrafficChartPoint[] }) {
         {areaPath && <path d={areaPath} fill="url(#admin-page-view-area)" />}
         {pageViewPath && <path d={pageViewPath} fill="none" stroke="#5b5cf0" strokeWidth="4" strokeLinecap="round" />}
         {visitorPath && <path d={visitorPath} fill="none" stroke="#16a3b6" strokeWidth="3" strokeLinecap="round" strokeDasharray="8 5" />}
+        {registrationPath && <path d={registrationPath} fill="none" stroke="#16a36a" strokeWidth="2.5" strokeLinecap="round" />}
+        {listingPath && <path d={listingPath} fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="5 4" />}
+        {activeIndex !== null && <line x1={activeX} x2={activeX} y1={padding.top} y2={padding.top + chartHeight} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4 4" />}
         {points.map((point, index) => {
           const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
+          const active = activeIndex === index
           return (
             <g key={point.date}>
-              <circle cx={x(index)} cy={y(point.pageViews)} r="5" fill="#5b5cf0" stroke="white" strokeWidth="2"><title>{label}: {point.pageViews} просмотров страниц</title></circle>
-              <circle cx={x(index)} cy={y(point.uniqueVisitors)} r="4" fill="#16a3b6" stroke="white" strokeWidth="2"><title>{label}: {point.uniqueVisitors} уникальных посетителей</title></circle>
+              <circle cx={x(index)} cy={y(point.pageViews)} r={active ? 6 : 4} fill="#5b5cf0" stroke="white" strokeWidth="2" />
+              <circle cx={x(index)} cy={y(point.uniqueVisitors)} r={active ? 5 : 3} fill="#16a3b6" stroke="white" strokeWidth="2" />
+              {active && <circle cx={x(index)} cy={y(point.registrations)} r="4" fill="#16a36a" stroke="white" strokeWidth="2" />}
+              {active && <circle cx={x(index)} cy={y(point.newListings)} r="4" fill="#7c3aed" stroke="white" strokeWidth="2" />}
               <text x={x(index)} y={height - 10} textAnchor="middle" fill="#64748b" fontSize="12" fontWeight="650">{label}</text>
+              <rect
+                x={Math.max(0, x(index) - interactionWidth / 2)}
+                y="0"
+                width={Math.min(interactionWidth, width - Math.max(0, x(index) - interactionWidth / 2))}
+                height={height}
+                fill="transparent"
+                tabIndex={0}
+                role="button"
+                aria-label={`${label}: открыть показатели`}
+                onPointerEnter={() => setActiveIndex(index)}
+                onPointerMove={() => setActiveIndex(index)}
+                onFocus={() => setActiveIndex(index)}
+                onBlur={() => setActiveIndex(null)}
+              />
             </g>
           )
         })}
         <text x="6" y={padding.top + 5} fill="#64748b" fontSize="11">{maximum}</text>
         <text x="28" y={padding.top + chartHeight + 4} fill="#94a3b8" fontSize="11">0</text>
       </svg>
-      <Group gap="md" justify="center" mt={4}>
+      {activePoint && (
+        <Paper className="admin-traffic-tooltip" withBorder shadow="lg" radius="md" p="sm" style={tooltipPosition}>
+          <Text className="admin-traffic-tooltip__date" size="xs" fw={800} c="gray.6">
+            📅 {new Intl.DateTimeFormat("ru-RU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${activePoint.date}T00:00:00Z`))}
+          </Text>
+          {[
+            ["Просмотры страниц", activePoint.pageViews, "#5b5cf0"],
+            ["Уникальные посетители", activePoint.uniqueVisitors, "#16a3b6"],
+            ["Регистрации", activePoint.registrations, "#16a36a"],
+            ["Новые объявления", activePoint.newListings, "#7c3aed"],
+          ].map(([label, value, color]) => (
+            <Group key={String(label)} justify="space-between" gap="lg" wrap="nowrap" className="admin-traffic-tooltip__row">
+              <Group gap={6} wrap="nowrap"><Box w={8} h={8} bg={String(color)} style={{ borderRadius: "50%", flex: "0 0 auto" }} /><Text size="xs" c="gray.6" style={{ whiteSpace: "nowrap" }}>{label}</Text></Group>
+              <Text size="sm" fw={850} style={{ color: String(color), fontVariantNumeric: "tabular-nums" }}>{Number(value).toLocaleString("ru-RU")}</Text>
+            </Group>
+          ))}
+        </Paper>
+      )}
+      </Box>
+      <Group gap="md" justify="center" mt={4} wrap="wrap">
         <Badge variant="dot" color="indigo">Просмотры страниц</Badge>
         <Badge variant="dot" color="cyan">Уникальные посетители</Badge>
+        <Badge variant="dot" color="teal">Регистрации</Badge>
+        <Badge variant="dot" color="violet">Новые объявления</Badge>
       </Group>
     </Box>
   )
@@ -767,10 +822,10 @@ export default function AdminDashboard() {
                   <Text size="lg" fw={850} mt={4}>{point.pageViews}</Text>
                   <Text size="10px" c="dimmed">просмотров · {point.uniqueVisitors} уник.</Text>
                   <Progress value={(point.pageViews / maxDailyPageViews) * 100} color="indigo" size="sm" radius="xl" mt="xs" aria-label={`${label}: ${point.pageViews} просмотров страниц`} />
-                  <Group justify="space-between" gap={4} mt={6}>
-                    <Text size="10px" c="dimmed">регистрации</Text>
-                    <Badge size="xs" variant="light" color={point.registrations ? "teal" : "gray"}>{point.registrations}</Badge>
-                  </Group>
+                    <Group justify="space-between" gap={4} mt={6} wrap="nowrap">
+                      <Text size="10px" c="dimmed">рег. {point.registrations}</Text>
+                      <Badge size="xs" variant="light" color={point.newListings ? "violet" : "gray"}>{point.newListings} объявл.</Badge>
+                    </Group>
                 </Paper>
               )
             })}
