@@ -6,12 +6,11 @@ import useSWR from "swr"
 import Link from "next/link"
 import { Container, Stack, Group, Text, Paper, Box, Badge, Button, SimpleGrid, TextInput, Textarea, ThemeIcon, Center, Loader, Anchor, Progress, UnstyledButton } from "@mantine/core"
 import { useMediaQuery } from "@mantine/hooks"
-import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconEye, IconGasStation, IconManualGearbox, IconPalette, IconShieldCheck, IconTruckDelivery, IconX, IconArrowLeft, IconHome } from "@tabler/icons-react"
+import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconEye, IconGasStation, IconManualGearbox, IconPalette, IconShieldCheck, IconTruckDelivery, IconX, IconArrowLeft, IconHome, IconListDetails, IconPhotoOff } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
-import VehicleFallback from "@/components/listings/VehicleFallback"
 import { auctionCardImageUrl, auctionThumbnailImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import { auctionMakeLabel, isCustomerFacingRussianText, normalizeAuctionModel } from "@/lib/auction-normalization"
 import { auctionSourceLabel } from "@/lib/auction-sources"
@@ -114,6 +113,18 @@ function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo |
   }
 }
 
+function parseAuctionSpecs(value: string | null) {
+  if (!value || !isCustomerFacingRussianText(value)) return []
+  return value.split(/[;\n]+/).flatMap((entry) => {
+    const separator = entry.indexOf(":")
+    if (separator <= 0) return []
+    const label = entry.slice(0, separator).trim()
+    const detail = entry.slice(separator + 1).trim()
+    if (!label || !detail || label.length > 80 || detail.length > 180 || !isCustomerFacingRussianText(`${label}: ${detail}`)) return []
+    return [{ label, detail }]
+  }).slice(0, 24)
+}
+
 function AuctionDetail() {
   const params = useParams()
   const router = useRouter()
@@ -154,6 +165,7 @@ function AuctionDetail() {
   const publicModel = listing ? normalizeAuctionModel(listing.model) || "Модель уточняется" : ""
   const publicLotNumber = listing && isCustomerFacingRussianText(listing.lotNumber) ? listing.lotNumber : null
   const publicDescription = listing && isCustomerFacingRussianText(listing.descriptionRu) ? listing.descriptionRu : null
+  const publicSpecs = listing ? parseAuctionSpecs(listing.specsRu) : []
 
   useEffect(() => {
     setActiveImageIndex(0)
@@ -235,7 +247,7 @@ function AuctionDetail() {
   if (error) return <Container py={80}><AsyncErrorState title="Лот недоступен" description="Возможно, он уже завершён или снят с публикации." onRetry={() => void mutate()} /></Container>
   if (!listing) return <Container py={80}><Center><Text c="gray.5">Лот не найден</Text></Center></Container>
 
-  const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇩🇪 Германия", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
+  const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇪🇺 Европа", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
 
   return (
     <Container size="xl" py="lg">
@@ -264,7 +276,16 @@ function AuctionDetail() {
             <Stack gap="md">
               <Paper radius="md" withBorder style={{ overflow: "hidden" }}>
                 <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
-                  {(!activeImage || failedImageUrls.has(activeImage)) && <VehicleFallback type="CAR" />}
+                  {(!activeImage || failedImageUrls.has(activeImage)) && (
+                    <Center h="100%" px="lg">
+                      <Stack gap="xs" align="center" ta="center" maw={420}>
+                        <ThemeIcon variant="light" color="indigo" radius="xl" size={58}><IconPhotoOff size={28} /></ThemeIcon>
+                        <Text fw={800} c="dark.8">Фото временно недоступны</Text>
+                        <Text size="sm" c="dimmed">Источник не передал изображение или временно запретил его загрузку. Характеристики ниже уже доступны.</Text>
+                        <Button component="a" href={listing.sourceUrl} target="_blank" rel="noreferrer" variant="light" color="indigo" size="compact-sm" radius="xl">Проверить фото у источника</Button>
+                      </Stack>
+                    </Center>
+                  )}
                   {activeImage && !failedImageUrls.has(activeImage) && (
                     <>
                       {/* The rail thumbnail is normally already cached. Keep it
@@ -351,6 +372,22 @@ function AuctionDetail() {
                   </Group>
                 </Stack>
               </Paper>
+
+              {publicSpecs.length > 0 && (
+                <Paper radius="md" p="md" withBorder>
+                  <Stack gap="sm">
+                    <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconListDetails size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и переведены на русский язык</Text></Box></Group>
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={0} verticalSpacing={0}>
+                      {publicSpecs.map((item) => (
+                        <Group key={`${item.label}-${item.detail}`} justify="space-between" align="flex-start" gap="md" py="xs" px={{ base: 0, sm: "xs" }} wrap="nowrap" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+                          <Text size="sm" c="dimmed">{item.label}</Text>
+                          <Text size="sm" fw={700} ta="right" c="dark.8" style={{ overflowWrap: "anywhere" }}>{item.detail}</Text>
+                        </Group>
+                      ))}
+                    </SimpleGrid>
+                  </Stack>
+                </Paper>
+              )}
 
               {equipment && (
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f8fafc 0%, #fff 56%)" }}>

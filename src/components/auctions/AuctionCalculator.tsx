@@ -219,7 +219,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
   }, [effectivePriceRub, country, year, manufacturedMonth, volume, city, eurRate, canCalculateCustomsDuty, utilizationFee])
 
   const currencySymbol = sourceCurrency === "JPY" || sourceCurrency === "CNY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : sourceCurrency === "RUB" ? "₽" : "€"
-  const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : country === "CN" ? "Китай" : country === "DE" ? "Германия" : "Европа"
+  const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : country === "CN" ? "Китай" : "Европа"
   const hasManufacturedMonth = Boolean(manufacturedMonth?.match(/^\d{4}-(0[1-9]|1[0-2])$/))
   const volumeLabel = isElectric ? "электро" : volume ? `${volume} см³` : "объём не указан"
 

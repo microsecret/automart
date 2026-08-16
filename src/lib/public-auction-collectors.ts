@@ -190,6 +190,72 @@ const BOBAEDREAM_EQUIPMENT_LABELS: Readonly<Record<string, string>> = {
   "스마트폰미러링": "Интеграция со смартфоном",
 }
 
+const PUBLIC_EQUIPMENT_LABELS: Readonly<Record<string, string>> = {
+  "power-folding exterior mirrors": "Складные наружные зеркала с электроприводом",
+  "automatic climate control": "Климат-контроль",
+  "rear independent climate control": "Отдельный климат-контроль для заднего ряда",
+  "multimedia screen": "Мультимедийный экран",
+  "360° surround-view camera system": "Система кругового обзора 360°",
+  "driver's seat heating": "Подогрев сиденья водителя",
+  "passenger seat heating": "Подогрев сиденья пассажира",
+  "rear seat heating": "Подогрев задних сидений",
+  "driver's seat ventilation": "Вентиляция сиденья водителя",
+  "front passenger seat ventilation": "Вентиляция переднего пассажирского сиденья",
+  "rear seat ventilation": "Вентиляция задних сидений",
+  "driver's power seat": "Электропривод сиденья водителя",
+  "front passenger power seat": "Электропривод переднего пассажирского сиденья",
+  "driver's seat massage": "Массаж сиденья водителя",
+  "co-driver seat massage": "Массаж переднего пассажирского сиденья",
+  "rear seat massage": "Массаж задних сидений",
+  "rear parking sensors": "Задние парктроники",
+  "front parking sensors": "Передние парктроники",
+  "power steering": "Усилитель рулевого управления",
+  "head-up display (hud)": "Проекционный дисплей",
+  "keyless start": "Бесключевой запуск двигателя",
+  "electronic parking brake (epb)": "Электронный стояночный тормоз",
+  "front door keyless entry": "Бесключевой доступ через передние двери",
+  "multi-function steering wheel": "Многофункциональное рулевое колесо",
+  "heated steering wheel": "Подогрев рулевого колеса",
+  "steering wheel adjustment": "Регулировка рулевого колеса",
+  "tire pressure monitoring": "Контроль давления в шинах",
+  "drive type 4wd": "Полный привод",
+  "cruise control": "Круиз-контроль",
+  "backup camera": "Камера заднего вида",
+  "panoramic sunroof": "Панорамная крыша",
+  "manual air conditioning": "Кондиционер",
+  "android auto": "Поддержка Android Auto",
+  "armrest front": "Передний подлокотник",
+  "assisted driving": "Системы помощи водителю",
+  "bluetooth": "Поддержка Bluetooth",
+  "led headlights": "Светодиодные фары",
+  "induction charging for smartphones": "Беспроводная зарядка смартфона",
+  "internet connection": "Подключение к интернету",
+  "keyless entry": "Бесключевой доступ",
+  "leather steering wheel": "Кожаное рулевое колесо",
+  "multifunctional steering wheel": "Многофункциональное рулевое колесо",
+  "navigation system": "Навигационная система",
+  "power assisted steering": "Усилитель рулевого управления",
+  "rain sensor": "Датчик дождя",
+  "rear seats isofix points": "Крепления ISOFIX заднего ряда",
+  "electrically heated side mirrors": "Обогрев наружных зеркал",
+  "side mirrors with electric adjustment": "Электрорегулировка наружных зеркал",
+  "touch screen": "Сенсорный экран",
+  "traffic sign recognition": "Распознавание дорожных знаков",
+  "usb": "USB-разъёмы",
+}
+
+const CARVAGO_COUNTRY_LABELS: Readonly<Record<string, string>> = {
+  AT: "Австрия", BE: "Бельгия", BG: "Болгария", CH: "Швейцария", CZ: "Чехия",
+  DE: "Германия", DK: "Дания", EE: "Эстония", ES: "Испания", FI: "Финляндия",
+  FR: "Франция", HR: "Хорватия", HU: "Венгрия", IT: "Италия", LT: "Литва",
+  LV: "Латвия", NL: "Нидерланды", PL: "Польша", PT: "Португалия", RO: "Румыния",
+  SE: "Швеция", SI: "Словения", SK: "Словакия",
+}
+
+const CARVAGO_CITY_LABELS: Readonly<Record<string, string>> = {
+  bragadiru: "Брагадиру",
+}
+
 export class PublicListingUnavailableError extends Error {
   constructor(message: string) {
     super(message)
@@ -254,6 +320,16 @@ function bobaedreamEquipment(html: string) {
   })
   const uniqueItems = [...new Map(items.map((item) => [item.label, item])).values()]
   return uniqueItems.length ? { totalReported: uniqueItems.length, items: uniqueItems.slice(0, 60) } : null
+}
+
+function publicEquipment(labels: Array<string | null>) {
+  const reported = labels.filter((label): label is string => Boolean(label))
+  const items = reported.flatMap((label) => {
+    const translated = PUBLIC_EQUIPMENT_LABELS[label.normalize("NFKC").trim().toLocaleLowerCase("en-US")]
+    return translated ? [{ label: translated, available: true }] : []
+  })
+  const uniqueItems = [...new Map(items.map((item) => [item.label, item])).values()]
+  return uniqueItems.length ? { totalReported: reported.length, items: uniqueItems.slice(0, 60) } : null
 }
 
 function firstMatch(value: string, pattern: RegExp) {
@@ -450,8 +526,12 @@ function parseYouxinpaiCatalog(json: string, pageNumber: number) {
     const price = asNumber(record?.startPrice) || asNumber(record?.currentHighestBid) || asNumber(record?.refPriceLow)
     const registered = asText(record?.registerDate)?.match(/^(\d{4})-(\d{2})-/)
     const make = normalizeAuctionMake(asText(record?.brandName))
-    const model = normalizeAuctionModel(asText(record?.modelName) || asText(record?.serialName))
-    const image = asText(record?.mainImage)?.replace("/paipic/small/", "/paipic/").replace(/\?format=webp$/i, "") || null
+    const serialName = asText(record?.serialName)
+    const modelName = asText(record?.modelName)
+    const model = normalizeAuctionModel([serialName, modelName && modelName !== serialName ? modelName : null].filter(Boolean).join(" "))
+    // The catalogue thumbnail is a valid signed/public rendition. Rewriting
+    // `/small/` to the guessed original path makes YouXinPai answer with 403.
+    const image = asText(record?.mainImage)
     if (!sourceId || !price || !registered || !make || !model || asNumber(record?.auctionStatus) !== 1) continue
     const bodyCode = asNumber(record?.bodyType)
     const fuelCode = asNumber(record?.fuelType)
@@ -796,22 +876,107 @@ async function activeYouxinpaiCandidate(sourceId: string) {
   return null
 }
 
+async function fetchYouxinpaiReport(sourceId: string) {
+  const reportFieldsJson = await sourceHtml("YOUXINPAI", `https://api.youxinpai.cn/api/auction/detail/reportFields?publishId=${sourceId}`)
+  let reportFields: UnknownRecord | null = null
+  try {
+    reportFields = asRecord(asRecord(JSON.parse(reportFieldsJson))?.data)
+  } catch {
+    throw new Error(`YouXinPai: повреждены поля отчёта ${sourceId}`)
+  }
+  if (!reportFields) throw new Error(`YouXinPai: отсутствуют поля отчёта ${sourceId}`)
+
+  const reportUrlValue = asText(reportFields?.reportUrl)
+  if (!reportUrlValue) return null
+  const reportUrl = new URL(reportUrlValue)
+  if (reportUrl.protocol !== "https:" || reportUrl.hostname !== "wos.youxinpai.cn") throw new Error(`YouXinPai: небезопасная ссылка отчёта ${sourceId}`)
+  const response = await authorizedSourceGet(reportUrl.toString(), {
+    allowedHosts: new Set(["wos.youxinpai.cn"]), headers: SOURCE_HEADERS,
+    timeoutMs: SOURCE_TIMEOUT_MS, maxBytes: SOURCE_MAX_BYTES,
+  })
+  if (!response.ok) throw new Error(`YouXinPai: отчёт ${sourceId} вернул HTTP ${response.status}`)
+  const jsonp = await response.text()
+  const start = jsonp.indexOf("(")
+  const end = jsonp.lastIndexOf(")")
+  if (start < 0 || end <= start) throw new Error(`YouXinPai: повреждён отчёт ${sourceId}`)
+  let reportData: UnknownRecord | null = null
+  try {
+    reportData = asRecord(asRecord(JSON.parse(jsonp.slice(start + 1, end)))?.data)
+  } catch {
+    throw new Error(`YouXinPai: повреждены данные отчёта ${sourceId}`)
+  }
+  return reportData ? { fields: reportFields, data: reportData } : null
+}
+
 async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise<AuctionImportItem> {
   if (!/^\d+$/.test(candidate.sourceId)) throw new Error("Некорректная карточка YouXinPai")
   const active = candidate.make && candidate.model && candidate.sourcePrice ? candidate : await activeYouxinpaiCandidate(candidate.sourceId)
   if (!active?.make || !active.model || !active.sourcePrice || !active.year) throw new PublicListingUnavailableError(`YouXinPai: карточка ${candidate.sourceId} снята с публикации`)
-  const engineVolume = asNumber(active.model.match(/(\d+(?:\.\d+)?)\s*[LT]\b/i)?.[1])
-  const images = active.imageUrl ? [active.imageUrl] : []
+  const report = await fetchYouxinpaiReport(active.sourceId).catch(() => null)
+  const basicInfo = asRecord(report?.data.basicInfo)
+  const carInfo = asRecord(basicInfo?.carInfo)
+  const certificate = asRecord(report?.data.certificateInfo)
+  const carBaseInfo = asRecord(report?.data.carBaseInfo)
+  const modelInfo = asRecord(report?.data.modelInfo)
+  const detailInfo = asRecord(report?.data.detailInfo)
+  const reportImages = (Array.isArray(basicInfo?.carImages) ? basicInfo.carImages : []).flatMap((entry) => {
+    const image = safeImage(asText(asRecord(entry)?.url), new Set(["img.youxinpai.cn"]))
+    return image ? [image] : []
+  })
+  const images = [...new Set([...reportImages, ...(active.imageUrl ? [active.imageUrl] : [])])].slice(0, 60)
+  const equipment = publicEquipment((Array.isArray(modelInfo?.configInfo) ? modelInfo.configInfo : []).flatMap((entry) => {
+    const record = asRecord(entry)
+    return asNumber(record?.status) === 0 ? [asText(record?.itemName)] : []
+  }))
+  const engineVolume = asNumber(certificate?.exhaust) || asNumber(active.model.match(/(\d+(?:\.\d+)?)\s*[LT]\b/i)?.[1])
+  const power = asNumber(report?.fields.horsePower)
+  const color = asText(carInfo?.carBodyColor) || asText(carBaseInfo?.carBodyColor)
+  const city = asText(carInfo?.locationCityName) || asText(carBaseInfo?.cityName)
+  const location = /^fuzhou$/i.test(city || "") ? "Фучжоу, Китай" : "Китай"
+  const defectGroups = Array.isArray(detailInfo?.defects) ? detailInfo.defects : []
+  const seriousDefects = defectGroups.reduce((total, value) => total + (asNumber(asRecord(value)?.seriousDefectItemCount) || 0), 0)
+  const commonDefects = defectGroups.reduce((total, value) => total + (asNumber(asRecord(value)?.commonDefectItemCount) || 0), 0)
+  const skeletonLevel = asText(carBaseInfo?.skeletonLevel)
+  const appearanceLevel = asText(carBaseInfo?.appearanceLevel)
+  const interiorLevel = asText(carBaseInfo?.interiorLevel)
+  const reportSummary = report
+    ? [appearanceLevel ? `кузов ${appearanceLevel}` : null, skeletonLevel ? `силовой каркас ${skeletonLevel}` : null, interiorLevel ? `салон ${interiorLevel}` : null].filter(Boolean).join(", ")
+    : null
+  const specs = [
+    `Год выпуска: ${active.year}`,
+    `Пробег: ${active.mileage?.toLocaleString("ru-RU") || "уточняется"} км`,
+    `Номер лота: ${active.sourceId}`,
+    engineVolume ? `Объём двигателя: ${engineVolume} л` : null,
+    power ? `Мощность: ${Math.round(power)} л.с.` : null,
+    asNumber(carInfo?.motorPower) ? `Мощность электромотора: ${Math.round(asNumber(carInfo?.motorPower) || 0)} кВт` : null,
+    asNumber(carInfo?.enginePower) ? `Мощность ДВС: ${Math.round(asNumber(carInfo?.enginePower) || 0)} кВт` : null,
+    asNumber(carInfo?.seatCount) ? `Количество мест: ${Math.round(asNumber(carInfo?.seatCount) || 0)}` : null,
+    asNumber(carInfo?.keyCount) ? `Количество ключей: ${Math.round(asNumber(carInfo?.keyCount) || 0)}` : null,
+    asText(carInfo?.effluentStandard) ? `Экологический стандарт: Китай VI` : null,
+    `Местонахождение: ${location}`,
+    seriousDefects === 0 && report ? "Серьёзные дефекты отчёта: не выявлены" : report ? `Серьёзные дефекты отчёта: ${seriousDefects}` : null,
+    report ? `Замечания осмотра: ${commonDefects}` : null,
+  ].filter((value): value is string => Boolean(value))
   return {
     source: "YOUXINPAI", sourceId: active.sourceId, sourceUrl: active.sourceUrl,
     make: active.make, model: active.model, year: active.year, manufacturedMonth: active.manufacturedMonth || null,
     sourcePrice: active.sourcePrice, sourceCurrency: "CNY", country: "CN", auctionDate: active.auctionDate || null,
     mileage: active.mileage ?? null, fuelType: active.fuelType || null, transmission: active.transmission || null,
-    bodyType: active.bodyType || null, color: null, engineVolume, power: null, driveType: null, vin: null,
-    lotNumber: active.sourceId, imageUrl: active.imageUrl || null, images,
-    descriptionOrig: `${active.make} ${active.model}. Автомобиль опубликован в официальном экспортном аукционном каталоге YouXinPai.`,
-    specsOrig: `Год выпуска: ${active.year}; пробег: ${active.mileage?.toLocaleString("ru-RU") || "уточняется"} км; номер лота: ${active.sourceId}`,
-    location: "Китай",
+    bodyType: active.bodyType || null, color, engineVolume, power, driveType: equipment?.items.some((item) => item.label === "Полный привод") ? "AWD" : null, vin: null,
+    lotNumber: active.sourceId, imageUrl: images[0] || null, images,
+    descriptionOrig: `${active.make} ${active.model}, ${active.year} года. В открытом отчёте YouXinPai опубликованы ${reportImages.length || "доступные"} фотографий автомобиля${equipment ? ` и ${equipment.items.length} распознанных опций` : ""}. Данные осмотра и комплектацию необходимо подтвердить перед сделкой.`,
+    specsOrig: specs.join("; "), equipment,
+    conditionInfo: report ? {
+      insuranceRecordCount: null,
+      inspectionSummary: reportSummary ? `Отчёт YouXinPai: ${reportSummary}` : "Открытый отчёт осмотра YouXinPai",
+      newCarPriceRatioPct: null,
+      verifiedItems: [
+        { label: "Серьёзные дефекты", status: seriousDefects === 0 ? "Не выявлены в открытом отчёте" : `Указано: ${seriousDefects}` },
+        { label: "Замечания осмотра", status: commonDefects === 0 ? "Не указаны" : `Указано: ${commonDefects}` },
+        { label: "Пробег по отчёту", status: report.fields.isMileageTampered === 0 ? "Признаков корректировки не указано" : "Требуется дополнительная проверка" },
+      ],
+    } : null,
+    location,
   }
 }
 
@@ -853,20 +1018,76 @@ async function fetchCarvagoListing(candidate: PublicAuctionCandidate): Promise<A
     return url ? [url] : []
   }).slice(0, 60)
   const metaDescription = decodeHtml(firstMatch(html, /<meta\s+name="description"\s+content="([^"]*)"/i) || "") || null
-  const electric = Boolean(asRecord(car.electric_vehicle_feature)?.battery_capacity_kwh)
-  const fuelType = electric ? "ELECTRIC" : normalizeAuctionFuelType(metaDescription?.match(/\b(Electric|Diesel|Petrol|Hybrid)\b/i)?.[1])
-  const transmission = normalizeAuctionTransmission(metaDescription?.match(/\b(Automatic|Manual)\b/i)?.[1])
+  const catalogFeatures = (Array.isArray(car.catalog_features) ? car.catalog_features : []).flatMap((entry) => {
+    const record = asRecord(entry)
+    return record ? [record] : []
+  })
+  const featureByPrefix = (prefix: string) => catalogFeatures.find((entry) => asText(entry.const_key)?.startsWith(prefix)) || null
+  const electricInfo = asRecord(car.electric_vehicle_feature)
+  const electric = Boolean(asNumber(electricInfo?.battery_capacity_kwh))
+  const fuelFeature = featureByPrefix("FUELTYPE_")
+  const transmissionFeature = featureByPrefix("TRANSMISSION_")
+  const bodyFeature = featureByPrefix("CARSTYLE_")
+  const colorFeature = featureByPrefix("COLOR_")
+  const driveFeature = featureByPrefix("DRIVE_")
+  const fuelType = electric ? "ELECTRIC" : normalizeAuctionFuelType(asText(fuelFeature?.label) || metaDescription?.match(/\b(Electric|Diesel|Petrol|Hybrid)\b/i)?.[1])
+  const transmission = normalizeAuctionTransmission(asText(transmissionFeature?.label) || metaDescription?.match(/\b(Automatic|Manual)\b/i)?.[1])
+  const bodyType = normalizeAuctionBodyType(asText(bodyFeature?.label)) || carBodyFromClass(asText(car.vehicle_class))
+  const equipment = publicEquipment(catalogFeatures.flatMap((entry) => asText(entry.const_key)?.startsWith("FEATURE_") ? [asText(entry.label)] : []))
+  const locationCountry = asRecord(car.location_country)
+  const locationCountryCode = asText(locationCountry?.iso_code)?.toLocaleUpperCase("en-US") || ""
+  const countryLabel = CARVAGO_COUNTRY_LABELS[locationCountryCode] || "Европа"
+  const sourceCity = asText(car.location_city)?.toLocaleLowerCase("en-US") || ""
+  const cityLabel = CARVAGO_CITY_LABELS[sourceCity]
+  const location = cityLabel ? `${cityLabel}, ${countryLabel}` : countryLabel
+  const seller = asRecord(car.seller)
+  const sellerType = asText(asRecord(seller?.type)?.const_key) === "SELLERTYPE_DEALERSHIP" ? "Автодилер" : "Продавец"
+  const priceInformation = asRecord(car.price_information)
+  const nicePrice = asRecord(priceInformation?.nice_price_data)
+  const discount = asRecord(priceInformation?.discount_data)
+  const emission = asRecord(car.emission)
+  const driveLabel = asText(driveFeature?.label)?.replace(/4x2/i, "4×2") || null
+  const interior = asText(featureByPrefix("INTERIORMATERIAL_")?.label)
+  const specs = [
+    `Год выпуска: ${Number(date[1])}`,
+    `Пробег: ${(asNumber(car.mileage) || 0).toLocaleString("ru-RU")} км`,
+    `Номер лота: ${candidate.sourceId}`,
+    asNumber(car.power_hp) ? `Мощность: ${Math.round(asNumber(car.power_hp) || 0)} л.с.` : null,
+    asNumber(car.power_kw) || asNumber(electricInfo?.power_electric_engine) ? `Мощность: ${Math.round(asNumber(car.power_kw) || asNumber(electricInfo?.power_electric_engine) || 0)} кВт` : null,
+    driveLabel ? `Колёсная формула: ${driveLabel}` : null,
+    interior ? `Материал салона: ${/cloth/i.test(interior) ? "ткань" : interior}` : null,
+    asNumber(electricInfo?.battery_capacity_kwh) ? `Ёмкость батареи: ${asNumber(electricInfo?.battery_capacity_kwh)} кВт·ч` : null,
+    asNumber(electricInfo?.electric_range_min) ? `Запас хода: ${asNumber(electricInfo?.electric_range_min)}–${asNumber(electricInfo?.electric_range_max) || asNumber(electricInfo?.electric_range_min)} км` : null,
+    asNumber(electricInfo?.charging_time_dc_min) ? `Быстрая зарядка: ${asNumber(electricInfo?.charging_time_dc_min)}–${asNumber(electricInfo?.charging_time_dc_max) || asNumber(electricInfo?.charging_time_dc_min)} мин` : null,
+    asNumber(electricInfo?.charging_time_ac) ? `Зарядка переменным током: ${asNumber(electricInfo?.charging_time_ac)} ч` : null,
+    asNumber(emission?.fuel_consumption) ? `Расход энергии: ${asNumber(emission?.fuel_consumption)} кВт·ч/100 км` : null,
+    asText(emission?.co2_class) ? `Экологический класс: ${asText(emission?.co2_class)}` : null,
+    `Местонахождение: ${location}`,
+    priceInformation?.vat_reclaimable === true ? "НДС: доступен к возмещению" : null,
+    asNumber(nicePrice?.price_without_vat) ? `Цена без НДС: ${Math.round(asNumber(nicePrice?.price_without_vat) || 0).toLocaleString("ru-RU")} €` : null,
+  ].filter((value): value is string => Boolean(value))
   return {
     source: "CARVAGO", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
     make, model, year: Number(date[1]), manufacturedMonth: `${date[1]}-${date[2]}`,
     sourcePrice: Math.round(price), sourceCurrency: "EUR", country: "DE", auctionDate: null,
-    mileage: asNumber(car.mileage), fuelType, transmission, bodyType: carBodyFromClass(asText(car.vehicle_class)),
-    color: null, engineVolume: electric ? null : asNumber(car.cubic_capacity), power: asNumber(car.power_hp),
-    driveType: null, vin: asText(car.vin), lotNumber: candidate.sourceId,
+    mileage: asNumber(car.mileage), fuelType, transmission, bodyType,
+    color: asText(colorFeature?.label), engineVolume: electric ? null : asNumber(car.cubic_capacity), power: asNumber(car.power_hp),
+    driveType: normalizeAuctionDriveType(asText(driveFeature?.label)), vin: asText(car.vin), lotNumber: candidate.sourceId,
     imageUrl: images[0] || safeImage(asText(asRecord(car.image)?.path), new Set(["storage.alpha-analytics.cz"])), images,
-    descriptionOrig: asText(car.description) || metaDescription,
-    specsOrig: [`Power: ${asNumber(car.power_hp) || "—"} hp`, `Mileage: ${asNumber(car.mileage) || "—"} km`, `Seller country: ${asText(asRecord(car.location_country)?.name) || "Europe"}`].join("; "),
-    location: [asText(car.location_city), asText(asRecord(car.location_country)?.name)].filter(Boolean).join(", ") || "Europe",
+    descriptionOrig: `${electric ? "Электромобиль" : "Автомобиль"} ${make} ${model}, ${Number(date[1])} года, пробег ${(asNumber(car.mileage) || 0).toLocaleString("ru-RU")} км. ${sellerType} находится в ${location}. В открытой карточке Carvago опубликованы ${images.length} фотографий${equipment ? ` и ${equipment.items.length} распознанных опций` : ""}.`,
+    specsOrig: specs.join("; "), equipment,
+    conditionInfo: {
+      insuranceRecordCount: null,
+      inspectionSummary: "Публичные данные продавца и комплектации Carvago",
+      newCarPriceRatioPct: null,
+      verifiedItems: [
+        { label: "Местонахождение", status: location },
+        { label: "Тип продавца", status: sellerType },
+        { label: "НДС", status: priceInformation?.vat_reclaimable === true ? "Доступен к возмещению" : "Уточняется у продавца" },
+        ...(asNumber(discount?.price) ? [{ label: "Снижение цены", status: `${Math.round(asNumber(discount?.price) || 0).toLocaleString("ru-RU")} €` }] : []),
+      ],
+    },
+    location,
   }
 }
 

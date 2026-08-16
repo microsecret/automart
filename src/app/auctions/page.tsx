@@ -142,7 +142,7 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
       )}
       <Badge pos="absolute" top={8} left={8} color="orange" variant="filled" size="sm">{auctionSourceLabel(listing.source)}</Badge>
       <Badge pos="absolute" top={8} right={8} color="dark" variant="filled" size="sm">
-        {listing.country === "JP" ? "🇯🇵" : listing.country === "KR" ? "🇰🇷" : listing.country === "US" ? "🇺🇸" : listing.country === "DE" ? "🇩🇪" : listing.country === "CN" ? "🇨🇳" : listing.country}
+        {listing.country === "JP" ? "🇯🇵" : listing.country === "KR" ? "🇰🇷" : listing.country === "US" ? "🇺🇸" : listing.country === "DE" ? "🇪🇺" : listing.country === "CN" ? "🇨🇳" : listing.country}
       </Badge>
     </Box>
   )
