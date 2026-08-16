@@ -1,0 +1,239 @@
+.report {
+  overflow: hidden;
+  border-color: #fed7aa;
+  background: #fffdf9;
+}
+
+.sectionTabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #c7d2fe transparent;
+}
+
+.sectionTab {
+  min-height: 40px;
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  color: #475569;
+  background: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+
+.sectionTab:hover {
+  border-color: #a5b4fc;
+  color: #4338ca;
+}
+
+.sectionTab:focus-visible,
+.marker:focus-visible,
+.defectRow:focus-visible,
+.photoControl:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.28);
+  outline-offset: 2px;
+}
+
+.sectionTab[data-active="true"] {
+  border-color: #4f46e5;
+  color: #ffffff;
+  background: #4f46e5;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.diagram {
+  position: relative;
+  min-height: 390px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.diagramImage {
+  width: 100%;
+  height: 100%;
+  min-height: 390px;
+  object-fit: contain;
+}
+
+.diagramEmpty {
+  min-height: 390px;
+  color: #64748b;
+}
+
+.marker {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  border: 4px solid #ffffff;
+  border-radius: 50%;
+  background: var(--damage-marker-color, #f59e0b);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.22);
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms ease;
+}
+
+.marker:hover,
+.marker[data-active="true"] {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.3);
+}
+
+.marker[data-active="true"]::after {
+  position: absolute;
+  inset: -8px;
+  border: 2px solid var(--damage-marker-color, #f59e0b);
+  border-radius: 50%;
+  content: "";
+}
+
+.detailPane {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.detailCopy {
+  padding: 16px 16px 12px;
+}
+
+.photoStage {
+  position: relative;
+  min-height: 260px;
+  flex: 1;
+  overflow: hidden;
+  border-top: 1px solid #e2e8f0;
+  background: #111827;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  object-fit: contain;
+}
+
+.photoEmpty {
+  min-height: 260px;
+  color: #cbd5e1;
+}
+
+.photoCounter {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.84);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.photoControl {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  transform: translateY(-50%);
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 50%;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.78);
+  cursor: pointer;
+}
+
+.photoControl:first-of-type {
+  left: 12px;
+}
+
+.photoControl:last-of-type {
+  right: 12px;
+}
+
+.defectList {
+  border-top: 1px solid #e2e8f0;
+}
+
+.defectRow {
+  display: grid;
+  width: 100%;
+  min-height: 56px;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 4px;
+  border-bottom: 1px solid #eef2f7;
+  color: inherit;
+  text-align: left;
+}
+
+.defectRow:hover,
+.defectRow[data-active="true"] {
+  background: #f8fafc;
+}
+
+.severityDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--damage-marker-color, #f59e0b);
+}
+
+@media (max-width: 62em) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .diagram,
+  .diagramImage,
+  .diagramEmpty {
+    min-height: 330px;
+  }
+}
+
+@media (max-width: 36em) {
+  .diagram,
+  .diagramImage,
+  .diagramEmpty {
+    min-height: 270px;
+  }
+
+  .marker {
+    width: 26px;
+    height: 26px;
+    border-width: 3px;
+  }
+
+  .photoStage,
+  .photo,
+  .photoEmpty {
+    min-height: 230px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sectionTab,
+  .marker {
+    transition: none;
+  }
+}

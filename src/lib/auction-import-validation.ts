@@ -1,11 +1,13 @@
 import { safeHttpsUrl } from "@/lib/media-url"
+import { AUCTION_DAMAGE_KINDS, type AuctionDamageKind, type AuctionDamageReport } from "@/lib/auction-damage"
 import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
 import type { AuctionConditionInfo, AuctionEquipmentSnapshot, AuctionImportItem } from "@/lib/auction-import"
 import { assessImportAge, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
-import { isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
+import { isCustomerFacingRussianText, isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
 
 const VALID_CURRENCIES = new Set(["RUB", "USD", "EUR", "JPY", "KRW", "CNY"])
 const MAX_IMAGES_PER_LISTING = 80
+const VALID_DAMAGE_KINDS = new Set<string>(AUCTION_DAMAGE_KINDS)
 
 function optionalText(value: unknown, maxLength = 500) {
   if (typeof value !== "string") return null
@@ -25,6 +27,73 @@ function optionalNumber(value: unknown) {
 
 function optionalUrl(value: unknown) {
   return safeHttpsUrl(optionalText(value, 2_000))
+}
+
+function optionalRussianText(value: unknown, maxLength: number) {
+  const normalized = optionalText(value, maxLength)
+  return normalized && isCustomerFacingRussianText(normalized) ? normalized : null
+}
+
+function optionalRatio(value: unknown) {
+  const normalized = Number(value)
+  return Number.isFinite(normalized) && normalized >= 0 && normalized <= 1 ? normalized : null
+}
+
+function normalizeDamageKinds(value: unknown): AuctionDamageKind[] {
+  if (!Array.isArray(value)) return []
+  return Array.from(new Set(value.filter((kind): kind is AuctionDamageKind => typeof kind === "string" && VALID_DAMAGE_KINDS.has(kind))))
+}
+
+function normalizeDamageReport(value: unknown): AuctionDamageReport | null {
+  if (!value || typeof value !== "object") return null
+  const input = value as Record<string, unknown>
+  const sourceLabel = optionalRussianText(input.sourceLabel, 100)
+  if (!sourceLabel || !Array.isArray(input.sections)) return null
+
+  let totalItems = 0
+  const sections = input.sections.flatMap((sectionValue) => {
+    if (!sectionValue || typeof sectionValue !== "object" || totalItems >= 80) return []
+    const section = sectionValue as Record<string, unknown>
+    const code = optionalText(section.code, 40)
+    const label = optionalRussianText(section.label, 100)
+    if (!code || !label || !Array.isArray(section.items)) return []
+
+    const items = section.items.flatMap((itemValue) => {
+      if (!itemValue || typeof itemValue !== "object" || totalItems >= 80) return []
+      const item = itemValue as Record<string, unknown>
+      const id = optionalText(item.id, 120)
+      const part = optionalRussianText(item.part, 160)
+      const note = optionalRussianText(item.note, 500)
+      const kinds = normalizeDamageKinds(item.kinds)
+      if (!id || !part || !note || kinds.length === 0) return []
+
+      const photos = Array.isArray(item.photos)
+        ? item.photos.flatMap((photoValue) => {
+            if (!photoValue || typeof photoValue !== "object") return []
+            const photo = photoValue as Record<string, unknown>
+            const url = optionalUrl(photo.url)
+            const photoNote = optionalRussianText(photo.note, 500)
+            const photoKinds = normalizeDamageKinds(photo.kinds)
+            return url && photoNote && photoKinds.length > 0 ? [{ url, note: photoNote, kinds: photoKinds }] : []
+          }).slice(0, 8)
+        : []
+
+      totalItems += 1
+      return [{
+        id,
+        part,
+        note,
+        kinds,
+        x: item.x == null ? null : optionalRatio(item.x),
+        y: item.y == null ? null : optionalRatio(item.y),
+        photos,
+      }]
+    })
+
+    return items.length > 0 ? [{ code, label, diagramUrl: optionalUrl(section.diagramUrl), items }] : []
+  }).slice(0, 12)
+
+  return sections.length > 0 ? { sourceLabel, sections } : null
 }
 
 function normalizeEquipment(value: unknown): AuctionEquipmentSnapshot | null | undefined {
@@ -63,6 +132,7 @@ function normalizeConditionInfo(value: unknown): AuctionConditionInfo | null | u
     inspectionSummary: optionalText(input.inspectionSummary, 2_000),
     newCarPriceRatioPct: ratio != null && ratio <= 100 ? ratio : null,
     verifiedItems,
+    damageReport: normalizeDamageReport(input.damageReport),
   }
 }
 

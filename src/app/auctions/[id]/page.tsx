@@ -9,11 +9,13 @@ import { useMediaQuery } from "@mantine/hooks"
 import { IconGavel, IconCheck, IconMapPin, IconCalendar, IconGauge, IconCar, IconEye, IconGasStation, IconManualGearbox, IconPalette, IconShieldCheck, IconTruckDelivery, IconX, IconArrowLeft, IconHome, IconListDetails, IconPhotoOff } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
+import AuctionDamageReport from "@/components/auctions/AuctionDamageReport"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { auctionCardImageUrl, auctionThumbnailImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import { auctionMakeLabel, isCustomerFacingRussianText, normalizeAuctionModel } from "@/lib/auction-normalization"
 import { auctionSourceLabel } from "@/lib/auction-sources"
+import { AUCTION_DAMAGE_KINDS, type AuctionDamageKind, type AuctionDamageReport as AuctionDamageReportValue } from "@/lib/auction-damage"
 import type { AuctionListing } from "@prisma/client"
 import styles from "./auction-detail.module.css"
 
@@ -83,12 +85,61 @@ type AuctionConditionInfo = {
   inspectionSummary: string | null
   newCarPriceRatioPct: number | null
   verifiedItems: Array<{ label: string; status: string }>
+  damageReport: AuctionDamageReportValue | null
+}
+
+const VALID_DAMAGE_KINDS = new Set<string>(AUCTION_DAMAGE_KINDS)
+
+function parseDamageKinds(value: unknown): AuctionDamageKind[] {
+  return Array.isArray(value)
+    ? Array.from(new Set(value.filter((kind): kind is AuctionDamageKind => typeof kind === "string" && VALID_DAMAGE_KINDS.has(kind))))
+    : []
+}
+
+function parseAuctionDamageReport(value: unknown): AuctionDamageReportValue | null {
+  if (!value || typeof value !== "object") return null
+  const report = value as { sourceLabel?: unknown; sections?: unknown }
+  if (!isCustomerFacingRussianText(report.sourceLabel) || !Array.isArray(report.sections)) return null
+
+  let totalItems = 0
+  const sections = report.sections.flatMap((sectionValue) => {
+    if (!sectionValue || typeof sectionValue !== "object" || totalItems >= 80) return []
+    const section = sectionValue as { code?: unknown; label?: unknown; diagramUrl?: unknown; items?: unknown }
+    if (typeof section.code !== "string" || !section.code.trim() || !isCustomerFacingRussianText(section.label) || !Array.isArray(section.items)) return []
+    const items = section.items.flatMap((itemValue) => {
+      if (!itemValue || typeof itemValue !== "object" || totalItems >= 80) return []
+      const item = itemValue as { id?: unknown; part?: unknown; note?: unknown; kinds?: unknown; x?: unknown; y?: unknown; photos?: unknown }
+      const kinds = parseDamageKinds(item.kinds)
+      if (typeof item.id !== "string" || !item.id.trim() || !isCustomerFacingRussianText(item.part) || !isCustomerFacingRussianText(item.note) || kinds.length === 0) return []
+      const photos = Array.isArray(item.photos) ? item.photos.flatMap((photoValue) => {
+        if (!photoValue || typeof photoValue !== "object") return []
+        const photo = photoValue as { url?: unknown; note?: unknown; kinds?: unknown }
+        const photoKinds = parseDamageKinds(photo.kinds)
+        return isSafeMediaUrl(photo.url) && isCustomerFacingRussianText(photo.note) && photoKinds.length > 0
+          ? [{ url: photo.url, note: photo.note.trim(), kinds: photoKinds }]
+          : []
+      }).slice(0, 8) : []
+      const x = typeof item.x === "number" && item.x >= 0 && item.x <= 1 ? item.x : null
+      const y = typeof item.y === "number" && item.y >= 0 && item.y <= 1 ? item.y : null
+      totalItems += 1
+      return [{ id: item.id.trim(), part: item.part.trim(), note: item.note.trim(), kinds, x, y, photos }]
+    })
+    if (!items.length) return []
+    return [{
+      code: section.code.trim(),
+      label: section.label.trim(),
+      diagramUrl: isSafeMediaUrl(section.diagramUrl) ? section.diagramUrl : null,
+      items,
+    }]
+  }).slice(0, 12)
+
+  return sections.length ? { sourceLabel: report.sourceLabel.trim(), sections } : null
 }
 
 function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo | null {
   if (!value) return null
   try {
-    const parsed = JSON.parse(value) as { insuranceRecordCount?: unknown; inspectionSummary?: unknown; newCarPriceRatioPct?: unknown; verifiedItems?: unknown }
+    const parsed = JSON.parse(value) as { insuranceRecordCount?: unknown; inspectionSummary?: unknown; newCarPriceRatioPct?: unknown; verifiedItems?: unknown; damageReport?: unknown }
     const insuranceRecordCount = typeof parsed.insuranceRecordCount === "number" && Number.isInteger(parsed.insuranceRecordCount) && parsed.insuranceRecordCount >= 0
       ? parsed.insuranceRecordCount
       : null
@@ -105,8 +156,9 @@ function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo |
             : []
         }).slice(0, 4)
       : []
-    return insuranceRecordCount !== null || inspectionSummary || newCarPriceRatioPct !== null || verifiedItems.length
-      ? { insuranceRecordCount, inspectionSummary, newCarPriceRatioPct, verifiedItems }
+    const damageReport = parseAuctionDamageReport(parsed.damageReport)
+    return insuranceRecordCount !== null || inspectionSummary || newCarPriceRatioPct !== null || verifiedItems.length || damageReport
+      ? { insuranceRecordCount, inspectionSummary, newCarPriceRatioPct, verifiedItems, damageReport }
       : null
   } catch {
     return null
@@ -412,6 +464,8 @@ function AuctionDetail() {
                   </Stack>
                 </Paper>
               )}
+
+              {conditionInfo?.damageReport && <AuctionDamageReport report={conditionInfo.damageReport} />}
 
               {conditionInfo && (
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #fff 58%)", borderColor: "#99f6e4" }}>

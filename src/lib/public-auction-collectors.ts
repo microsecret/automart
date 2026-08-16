@@ -1,4 +1,5 @@
 import type { AuctionImportItem } from "@/lib/auction-import"
+import type { AuctionDamageKind, AuctionDamageReport } from "@/lib/auction-damage"
 import {
   normalizeAuctionBodyType,
   normalizeAuctionDriveType,
@@ -112,6 +113,69 @@ const CHINESE_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
   [/舒适版/g, "Comfort"], [/卓越版/g, "Excellence"], [/臻享版/g, "Premium"],
   [/\(国Ⅵ\)|\(国VI\)/gi, "экостандарт China VI"], [/\(国Ⅴ\)|\(国V\)/gi, "экостандарт China V"],
 ]
+
+const YOUXIN_DAMAGE_SECTION_LABELS: Readonly<Record<string, string>> = {
+  exterior: "Кузов",
+  "structural frame": "Силовой каркас",
+  interior: "Салон",
+  "water and fire damage inspection": "Следы воды и огня",
+  "consumable parts": "Расходные элементы",
+  "start-up inspection": "Запуск и работа агрегатов",
+  "modification inspection": "Изменения конструкции",
+  "electrical system inspection": "Электрика",
+  "on-board tools": "Комплектность",
+}
+
+const YOUXIN_DAMAGE_PART_LABELS: Readonly<Record<string, string>> = {
+  "front bumper": "Передний бампер",
+  "rear bumper": "Задний бампер",
+  "hood exterior": "Капот, наружная сторона",
+  "left front door exterior": "Левая передняя дверь, наружная сторона",
+  "right front door exterior": "Правая передняя дверь, наружная сторона",
+  "left rear door exterior": "Левая задняя дверь, наружная сторона",
+  "right rear door exterior": "Правая задняя дверь, наружная сторона",
+  "left front door interior trim": "Обшивка левой передней двери",
+  "right front door interior trim": "Обшивка правой передней двери",
+  "right rear door interior trim": "Обшивка правой задней двери",
+  "left front door rocker panel interior": "Внутренняя сторона порога левой передней двери",
+  "right front door rocker panel interior": "Внутренняя сторона порога правой передней двери",
+  "right front door rocker panel exterior": "Наружная сторона порога правой передней двери",
+  "left rear door rocker panel interior": "Внутренняя сторона порога левой задней двери",
+  "right rear door rocker panel interior": "Внутренняя сторона порога правой задней двери",
+  "left rear fender outer side": "Левое заднее крыло, наружная сторона",
+  "right rear fender outer side": "Правое заднее крыло, наружная сторона",
+  "left c-pillar interior": "Левая задняя стойка, внутренняя сторона",
+  "right c-pillar interior": "Правая задняя стойка, внутренняя сторона",
+  "left c-pillar interior trim panel": "Обшивка левой задней стойки",
+  "driver's instrument panel": "Панель приборов водителя",
+  "front passenger instrument panel": "Передняя панель пассажира",
+  "driver's seat area": "Зона сиденья водителя",
+  "left rear seat area": "Зона левого заднего сиденья",
+  "driver's seatbelt": "Ремень безопасности водителя",
+  "left front carpet": "Ковровое покрытие слева спереди",
+  "center armrest area": "Центральный подлокотник",
+  "center console area": "Центральная консоль",
+  "steering wheel": "Рулевое колесо",
+  "trunk interior trim": "Обшивка багажника",
+  "engine transmission and accessories": "Двигатель, трансмиссия и навесное оборудование",
+}
+
+const YOUXIN_DAMAGE_LABELS: Readonly<Record<string, string>> = {
+  scratch: "Царапина",
+  "scratches within 5cm": "Царапины до 5 см",
+  "scratches 5-10cm": "Царапины 5–10 см",
+  "dent within 5cm": "Вмятина до 5 см",
+  "deformation 5-10cm": "Деформация 5–10 см",
+  "damage within 3cm (inclusive)": "Повреждение до 3 см",
+  "stains within 10cm (inclusive)": "Загрязнение до 10 см",
+  "oil seepage": "Следы запотевания маслом",
+  "paint surface abnormality": "Дефект лакокрасочного покрытия",
+  replaced: "Элемент заменён",
+  "standard repaint": "Обычная окраска",
+  wear: "Следы износа",
+  film: "Защитная или декоративная плёнка",
+  "body repair and paint": "Кузовной ремонт и окраска",
+}
 
 const BOBAEDREAM_EQUIPMENT_LABELS: Readonly<Record<string, string>> = {
   "선루프": "Люк",
@@ -349,6 +413,155 @@ function safeImage(value: string | null, allowedHosts: ReadonlySet<string>) {
   } catch {
     return null
   }
+}
+
+function sourceRussianText(value: string | null) {
+  return value && /[\u0400-\u04FF]/.test(value) && !/[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(value) ? value : null
+}
+
+function localizeYouxinDamageSection(value: string | null) {
+  const nativeRussian = sourceRussianText(value)
+  if (nativeRussian) return nativeRussian
+  return value ? YOUXIN_DAMAGE_SECTION_LABELS[value.normalize("NFKC").trim().toLocaleLowerCase("en-US")] || "Дополнительная проверка" : "Дополнительная проверка"
+}
+
+function localizeYouxinDamagePart(value: string | null) {
+  const nativeRussian = sourceRussianText(value)
+  if (nativeRussian) return nativeRussian
+  if (!value) return "Деталь автомобиля"
+  const normalized = value.normalize("NFKC").trim().toLocaleLowerCase("en-US")
+  const exact = YOUXIN_DAMAGE_PART_LABELS[normalized]
+  if (exact) return exact
+
+  const translated = normalized
+    .replace(/driver's/g, "водителя")
+    .replace(/front passenger/g, "переднего пассажира")
+    .replace(/left/g, "левая")
+    .replace(/right/g, "правая")
+    .replace(/front/g, "передняя")
+    .replace(/rear/g, "задняя")
+    .replace(/rocker panel/g, "порог")
+    .replace(/trim panel|interior trim/g, "обшивка")
+    .replace(/fender/g, "крыло")
+    .replace(/[a-d]-pillar/g, "стойка кузова")
+    .replace(/door/g, "дверь")
+    .replace(/bumper/g, "бампер")
+    .replace(/hood/g, "капот")
+    .replace(/seatbelt/g, "ремень безопасности")
+    .replace(/seat/g, "сиденье")
+    .replace(/instrument panel/g, "панель приборов")
+    .replace(/steering wheel/g, "рулевое колесо")
+    .replace(/center console/g, "центральная консоль")
+    .replace(/center armrest/g, "центральный подлокотник")
+    .replace(/trunk/g, "багажник")
+    .replace(/carpet/g, "ковровое покрытие")
+    .replace(/outer side|exterior/g, "наружная сторона")
+    .replace(/interior/g, "внутренняя сторона")
+    .replace(/area/g, "зона")
+    .replace(/\s+/g, " ")
+    .trim()
+  return /[a-z]/i.test(translated) ? "Деталь автомобиля по отчёту" : `${translated[0]?.toLocaleUpperCase("ru-RU") || ""}${translated.slice(1)}`
+}
+
+function localizeYouxinDamageNote(value: string | null) {
+  const nativeRussian = sourceRussianText(value)
+  if (nativeRussian) return nativeRussian
+  if (!value) return "Замечание осмотра"
+  const entries = value.split(/[|、]+/).map((entry) => entry.normalize("NFKC").trim()).filter(Boolean)
+  const translated = entries.flatMap((entry) => {
+    const normalized = entry.toLocaleLowerCase("en-US")
+    const exact = YOUXIN_DAMAGE_LABELS[normalized]
+    if (exact) return [exact]
+    const scratchWithin = normalized.match(/^scratches? within (\d+)cm(?: \(inclusive\))?$/)
+    if (scratchWithin) return [`Царапины до ${scratchWithin[1]} см`]
+    const scratchRange = normalized.match(/^scratches? (\d+)-(\d+)cm$/)
+    if (scratchRange) return [`Царапины ${scratchRange[1]}–${scratchRange[2]} см`]
+    const dentWithin = normalized.match(/^dent within (\d+)cm$/)
+    if (dentWithin) return [`Вмятина до ${dentWithin[1]} см`]
+    const deformationRange = normalized.match(/^deformation (\d+)-(\d+)cm$/)
+    if (deformationRange) return [`Деформация ${deformationRange[1]}–${deformationRange[2]} см`]
+    return ["Замечание осмотра"]
+  })
+  return [...new Set(translated)].join("; ") || "Замечание осмотра"
+}
+
+function youxinDamageKinds(values: Array<string | null>, seriousCount: number, level: number): AuctionDamageKind[] {
+  const kinds = new Set<AuctionDamageKind>([seriousCount > 0 || level >= 2 ? "SERIOUS" : "COMMON"])
+  const source = values.filter((value): value is string => Boolean(value)).join(" ").toLocaleLowerCase("en-US")
+  if (/body repair|repair and paint|sheet metal/.test(source)) kinds.add("BODY_REPAIR_PAINT")
+  if (/repaint|standard paint/.test(source)) kinds.add("REPAINT")
+  if (/\bfilm\b|\bwrap(?:ped)?\b/.test(source)) kinds.add("FILM")
+  if (/replaced|replacement/.test(source)) kinds.add("REPLACED")
+  return [...kinds]
+}
+
+function youxinDamagePoint(value: string | null) {
+  if (!value) return { x: null, y: null }
+  const [x, y] = value.split(",").map(Number)
+  return Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= 1 && y >= 0 && y <= 1
+    ? { x, y }
+    : { x: null, y: null }
+}
+
+function youxinDamageReport(detailInfo: UnknownRecord | null): AuctionDamageReport | null {
+  const groups = Array.isArray(detailInfo?.defects) ? detailInfo.defects : []
+  const grades = asRecord(detailInfo?.grades)
+  const diagramByCode: Readonly<Record<string, string | null>> = {
+    "1": safeImage(asText(grades?.facadeImage), new Set(["img.youxinpai.cn"])),
+    "2": safeImage(asText(grades?.skeletonImage), new Set(["img.youxinpai.cn"])),
+    "3": safeImage(asText(grades?.interiorImage), new Set(["img.youxinpai.cn"])),
+  }
+
+  let totalItems = 0
+  const sections = groups.flatMap((groupValue, sectionIndex) => {
+    const group = asRecord(groupValue)
+    if (!group || totalItems >= 80) return []
+    const code = String(Math.round(asNumber(group.moduleCode) || sectionIndex + 1))
+    const abnormalItems = Array.isArray(group.abnormalDefectItems) ? group.abnormalDefectItems : []
+    const items = abnormalItems.flatMap((itemValue, itemIndex) => {
+      const item = asRecord(itemValue)
+      if (!item || totalItems >= 80) return []
+      const detectItems = Array.isArray(item.detectItems) ? item.detectItems : []
+      const rawNotes = [asText(item.desc), ...detectItems.map((entry) => asText(asRecord(entry)?.name))]
+      const seriousCount = Math.round(asNumber(item.seriousFlawCount) || 0)
+      const level = Math.round(asNumber(item.level) || 0)
+      const itemKinds = youxinDamageKinds(rawNotes, seriousCount, level)
+      const note = [...new Set(rawNotes.flatMap((value) => value ? [localizeYouxinDamageNote(value)] : []))].join("; ") || "Замечание осмотра"
+      const fallbackPoint = asText(asRecord(detectItems[0])?.positionMap)
+      const point = youxinDamagePoint(asText(item.ratioLocation) || fallbackPoint)
+      const photos = detectItems.flatMap((photoValue) => {
+        const photo = asRecord(photoValue)
+        const url = safeImage(asText(photo?.originPic), new Set(["img.youxinpai.cn"]))
+        if (!photo || !url) return []
+        const photoRawNote = asText(photo.name) || asText(item.desc)
+        const photoLevel = Math.round(asNumber(photo.level) || level)
+        return [{
+          url,
+          note: localizeYouxinDamageNote(photoRawNote),
+          kinds: youxinDamageKinds([photoRawNote], seriousCount, photoLevel),
+        }]
+      }).slice(0, 8)
+
+      totalItems += 1
+      return [{
+        id: `${code}-${asText(item.key) || itemIndex + 1}`,
+        part: localizeYouxinDamagePart(asText(item.name)),
+        note,
+        kinds: itemKinds,
+        ...point,
+        photos,
+      }]
+    })
+
+    return items.length > 0 ? [{
+      code,
+      label: localizeYouxinDamageSection(asText(group.moduleName)),
+      diagramUrl: diagramByCode[code] || null,
+      items,
+    }] : []
+  })
+
+  return sections.length > 0 ? { sourceLabel: "Открытый отчёт осмотра YouXinPai", sections } : null
 }
 
 function titleCaseSlug(value: string) {
@@ -941,6 +1154,7 @@ async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise
   const modelInfoValue = report?.data.modelInfo
   const modelInfo = Array.isArray(modelInfoValue) ? asRecord(modelInfoValue[0]) : asRecord(modelInfoValue)
   const detailInfo = asRecord(report?.data.detailInfo)
+  const damageReport = youxinDamageReport(detailInfo)
   const reportImages = (Array.isArray(basicInfo?.carImages) ? basicInfo.carImages : []).flatMap((entry) => {
     const image = safeImage(asText(asRecord(entry)?.url), new Set(["img.youxinpai.cn"]))
     return image ? [image] : []
@@ -1003,6 +1217,7 @@ async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise
         { label: "Замечания осмотра", status: commonDefects === 0 ? "Не указаны" : `Указано: ${commonDefects}` },
         { label: "Пробег по отчёту", status: report.fields.isMileageTampered === 0 ? "Признаков корректировки не указано" : "Требуется дополнительная проверка" },
       ],
+      damageReport,
     } : null,
     location,
   }

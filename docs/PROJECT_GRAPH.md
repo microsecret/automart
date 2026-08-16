@@ -15,6 +15,7 @@ flowchart LR
   Parser --> SeenStore["Database seen-ID cooldown"]
   Parser --> Translate["Russian localization"]
   Parser --> Rates["CBR exchange-rate snapshot"]
+  Parser --> Inspection["Normalized damage report + remote photo URLs"]
   Parser --> Prisma
   Next --> Media["Direct source photo URLs"]
   Next --> IautosMedia["Allow-listed transient iAutos media relay"]
@@ -26,6 +27,7 @@ flowchart LR
 |---|---|---|
 | Auction catalogue UI | `src/app/auctions/page.tsx` | `src/app/api/auctions/route.ts`, auction components |
 | Auction detail and galleries | `src/app/auctions/[id]/page.tsx` | `src/lib/auction-media.ts`, source collector |
+| Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |
 | Admin analytics and charts | `src/app/admin/page.tsx` | `src/app/api/admin/stats/route.ts`, analytics visit route |
 | Sidebar/header/footer | `src/components/layout/` | app shell and responsive styles |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
@@ -47,6 +49,8 @@ flowchart TD
   Detail --> Normalize["Normalize make/model/specifications"]
   Normalize --> Russian["Keep only Russian-safe public text"]
   Russian --> CBR["Apply current CBR rate"]
+  Russian --> Damage["Normalize source damage zones, kinds and coordinates"]
+  Damage --> Upsert
   CBR --> Upsert["Upsert by source + sourceId"]
   Upsert --> Gallery["Store URLs, not image binaries"]
   Schedule --> Refresh["Refresh only listings due by source interval"]
@@ -66,6 +70,12 @@ is unreachable from some client regions, so only its four fixed image hosts use
 a bounded, cached, allow-listed relay; bytes are streamed through memory and are
 never written to disk.
 
+Structured inspection sources use the shared `AuctionDamageReport` payload.
+Native Russian source labels are kept first; deterministic source dictionaries
+are used next, and untranslated foreign prose is never published. Only defect
+text, normalized coordinates and allow-listed HTTPS URLs are stored. Diagram
+and defect image bytes load on demand from the source into the browser cache.
+
 ## Source inventory
 
 | Region | Source | Pipeline | Operational entry point |
@@ -74,7 +84,7 @@ never written to disk.
 | Korea | K Car | Public collector | `/api/parser/kcar/*` |
 | Korea | Bobaedream | Public HTML collector | `/api/parser/public/BOBAEDREAM/*` |
 | China | Iautos | Public HTML collector | `/api/parser/public/IAUTOS/*` |
-| China | YouXinPai export | Public storefront JSON collector | `/api/parser/public/YOUXINPAI/*` |
+| China | YouXinPai export | Public storefront JSON + structured inspection collector | `/api/parser/public/YOUXINPAI/*` |
 | Japan | Goo-net Exchange | Public HTML collector | `/api/parser/public/GOONET/*` |
 | Japan | BE FORWARD | Public sitemap and HTML collector | `/api/parser/public/BEFORWARD/*` |
 | Japan | CarSensor | Public sitemap and HTML collector | `/api/parser/public/CARSENSOR/*` |

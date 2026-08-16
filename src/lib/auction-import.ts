@@ -3,6 +3,7 @@ import { translateListingFields, translateToRussian } from "@/lib/nvidia-transla
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
 import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
 import { normalizeAuctionEngineVolumeCc } from "@/lib/auction-normalization"
+import type { AuctionDamageReport } from "@/lib/auction-damage"
 
 function hasUntranslatedForeignText(original: string | null, translated: string | null) {
   if (!original) return false
@@ -73,6 +74,7 @@ export type AuctionConditionInfo = {
   inspectionSummary: string | null
   newCarPriceRatioPct: number | null
   verifiedItems: AuctionConditionCheck[]
+  damageReport?: AuctionDamageReport | null
 }
 
 export type AuctionConditionCheck = {
