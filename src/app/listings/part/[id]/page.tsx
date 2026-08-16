@@ -108,6 +108,7 @@ export default async function PartDetailPage({ params }: PageProps) {
     auctionMinStep: part.auctionMinStep,
     bids: part.bids,
     listingId: listing?.id,
+    views: listing?.views || 0,
     seller: {
       id: part.user.id,
       name: part.user.name,

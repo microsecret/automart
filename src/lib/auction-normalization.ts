@@ -1,6 +1,32 @@
 export const AUCTION_BODY_TYPES = ["SEDAN", "SUV", "HATCHBACK", "COUPE", "PICKUP", "WAGON", "MINIVAN"] as const
 
 const AUCTION_MAKE_ALIASES: Readonly<Record<string, string>> = {
+  "현대": "Hyundai",
+  "기아": "Kia",
+  "제네시스": "Genesis",
+  "르노코리아": "Renault Korea Motors",
+  "르노삼성": "Renault Korea Motors",
+  "KG모빌리티": "KGM / SsangYong",
+  "쌍용": "KGM / SsangYong",
+  "쉐보레": "Chevrolet",
+  "한국GM": "Chevrolet / GM Korea",
+  "아우디": "Audi",
+  "폭스바겐": "Volkswagen",
+  "메르세데스-벤츠": "Mercedes-Benz",
+  "벤츠": "Mercedes-Benz",
+  "비엠더블유": "BMW",
+  "볼보": "Volvo",
+  "포르쉐": "Porsche",
+  "랜드로버": "Land Rover",
+  "렉서스": "Lexus",
+  "토요타": "Toyota",
+  "혼다": "Honda",
+  "닛산": "Nissan",
+  "미니": "MINI",
+  "포드": "Ford",
+  "지프": "Jeep",
+  "푸조": "Peugeot",
+  "테슬라": "Tesla",
   ChevroletGMDaewoo: "Chevrolet / GM Daewoo",
   "쉐보레GM대우": "Chevrolet / GM Daewoo",
   KG_Mobility_Ssangyong: "KGM / SsangYong",
@@ -73,22 +99,22 @@ const bodyAliases: Record<(typeof AUCTION_BODY_TYPES)[number], readonly string[]
 const fuelAliases: Record<string, readonly string[]> = {
   GASOLINE: ["GASOLINE", "PETROL", "BENZINE", "가솔린", "휘발유", "汽油"],
   DIESEL: ["DIESEL", "디젤", "경유", "柴油"],
-  ELECTRIC: ["ELECTRIC", "EV", "전기", "전기차", "纯电", "电动"],
-  HYBRID: ["HYBRID", "HEV", "PHEV", "하이브리드", "플러그인 하이브리드", "가솔린+전기", "가솔린 + 전기", "전기+가솔린", "混动", "插电混动"],
+  ELECTRIC: ["ELECTRIC", "ELECTRICITY", "EV", "전기", "전기차", "纯电", "电动"],
+  HYBRID: ["HYBRID", "HYBRID_DIESEL", "HYBRID_PETROL", "PLUGIN_HYBRID", "HEV", "PHEV", "하이브리드", "플러그인 하이브리드", "가솔린+전기", "가솔린 + 전기", "전기+가솔린", "混动", "插电混动"],
   GAS: ["GAS", "LPG", "LPG(일반인 구입)", "LPG (일반인 구입)", "CNG", "LNG", "가스", "액화석유가스", "天然气"],
 }
 
 const transmissionAliases: Record<string, readonly string[]> = {
-  AUTOMATIC: ["AUTOMATIC", "AUTO", "AT", "A/T", "오토", "自动"],
-  MANUAL: ["MANUAL", "MT", "M/T", "수동", "手动"],
+  AUTOMATIC: ["AUTOMATIC", "AUTOMATIC_GEAR", "AUTO", "AT", "A/T", "오토", "自动"],
+  MANUAL: ["MANUAL", "MANUAL_GEAR", "MT", "M/T", "수동", "手动"],
   VARIATOR: ["VARIATOR", "CVT", "무단변속", "无级"],
-  ROBOTIC: ["ROBOTIC", "DCT", "DSG", "ROBOT", "듀얼클러치", "双离合"],
+  ROBOTIC: ["ROBOTIC", "SEMIAUTOMATIC_GEAR", "DCT", "DSG", "ROBOT", "듀얼클러치", "双离合"],
 }
 
 const driveAliases: Record<string, readonly string[]> = {
-  FWD: ["FWD", "2WD FRONT", "전륜", "전륜구동", "前驱"],
-  RWD: ["RWD", "2WD REAR", "후륜", "后驱"],
-  AWD: ["AWD", "4WD", "4X4", "사륜", "四驱", "全轮"],
+  FWD: ["FWD", "FRONT", "2WD FRONT", "전륜", "전륜구동", "前驱"],
+  RWD: ["RWD", "REAR", "2WD REAR", "후륜", "后驱"],
+  AWD: ["AWD", "ALL_WHEEL", "FOUR_WHEEL_DRIVE", "4WD", "4X4", "사륜", "四驱", "全轮"],
 }
 
 function normalizedAlias(value: string) {

@@ -42,6 +42,7 @@ import {
   IconGavel,
   IconPhoto,
   IconEdit,
+  IconEye,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -49,6 +50,7 @@ import { notifications } from "@mantine/notifications"
 import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { useFavorites } from "@/hooks/useFavorites"
+import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 
 const PART_TYPES_MAP: Record<string, string> = {
   ENGINE: "Двигатель", TRANSMISSION: "Трансмиссия", SUSPENSION: "Подвеска",
@@ -94,6 +96,7 @@ interface PartData {
   auctionMinStep: number | null
   bids: { id: string; amount: number; createdAt: Date; user: { name: string | null } }[]
   listingId?: string
+  views: number
   seller: {
     id: string
     name: string | null
@@ -107,6 +110,7 @@ interface PartData {
 type BidResponse = { bid: { amount: number } }
 
 export default function PartDetailClient({ data }: { data: PartData }) {
+  const [viewCount, setViewCount] = useState(data.views)
   const { data: session } = useSession()
   const [phone, setPhone] = useState<string | null>(null)
   const [contactRevealing, setContactRevealing] = useState(false)
@@ -188,6 +192,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
   return (
     <Container size="xl" py="lg">
+      <ListingViewTracker listingId={data.listingId} onCount={setViewCount} />
       <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="var(--market-muted)" />}>
         <Anchor component={Link} href="/" size="sm" c="var(--market-muted)">Главная</Anchor>
         <Anchor component={Link} href="/search?type=part" size="sm" c="var(--market-muted)">Запчасти</Anchor>
@@ -348,6 +353,8 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Text size="sm" c="var(--market-muted)">{data.location}</Text>
                   <Text size="sm" c="var(--market-muted)">·</Text>
                   <Text size="sm" c="var(--market-muted)">{formatRelativeDate(data.createdAt)}</Text>
+                  <Text size="sm" c="var(--market-muted)">·</Text>
+                  <Group gap={3}><IconEye size={13} color="var(--market-muted)" /><Text size="sm" c="var(--market-muted)">{viewCount} просмотров</Text></Group>
                 </Group>
                 {data.saleFormat === "AUCTION" && (
                   <Badge mt="sm" color="orange" variant="light" leftSection={<IconGavel size={13} />}>Аукцион · {data.auctionStatus === "ACTIVE" ? "идёт" : "завершён"}</Badge>

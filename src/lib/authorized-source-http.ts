@@ -8,6 +8,8 @@ const DIRECT_TCP_CAP = 4
 const MAX_REDIRECTS = 2
 const PROXY_FAILURE_THRESHOLD = 2
 const PROXY_QUARANTINE_MS = 5 * 60_000
+const MAX_PROXY_QUARANTINE_MS = 30 * 60_000
+const RETRYABLE_SOURCE_STATUSES = new Set([403, 407, 408, 425, 429, 500, 502, 503, 504])
 
 type ProxyEndpoint = {
   host: string
@@ -21,6 +23,13 @@ type SourceResponse = {
   ok: boolean
   url: string
   text: () => Promise<string>
+}
+
+type ProxyHealth = {
+  activeRequests: number
+  failures: number
+  retryAfter: number
+  completedRequests: number
 }
 
 function boundedProxyCap(value: string | undefined) {
@@ -77,7 +86,12 @@ function connectProxyAgent(proxy: ProxyEndpoint, maxSockets: number) {
 
 const directAgent = new https.Agent({ keepAlive: true, maxSockets: DIRECT_TCP_CAP, maxTotalSockets: DIRECT_TCP_CAP, maxFreeSockets: 2 })
 let cachedProxyPool: { source: string; cap: number; agents: https.Agent[] } | null = null
-const proxyHealth = new WeakMap<https.Agent, { failures: number; retryAfter: number }>()
+const proxyHealth = new WeakMap<https.Agent, ProxyHealth>()
+const hostRotation = new Map<string, number>()
+
+function initialProxyHealth(): ProxyHealth {
+  return { activeRequests: 0, failures: 0, retryAfter: 0, completedRequests: 0 }
+}
 
 function proxyAgents() {
   const source = process.env.AUCTION_PROXY_POOL?.trim() || ""
@@ -85,7 +99,7 @@ function proxyAgents() {
   if (cachedProxyPool?.source === source && cachedProxyPool.cap === cap) return cachedProxyPool.agents
   const agents = configuredProxyEndpoints().map((endpoint) => {
     const agent = connectProxyAgent(endpoint, cap)
-    proxyHealth.set(agent, { failures: 0, retryAfter: 0 })
+    proxyHealth.set(agent, initialProxyHealth())
     return agent
   })
   cachedProxyPool = { source, cap, agents }
@@ -102,30 +116,48 @@ function stableStartIndex(hostname: string, length: number) {
 function transportCandidates(hostname: string) {
   const agents = proxyAgents()
   if (!agents.length) return [directAgent]
-  const start = stableStartIndex(hostname, agents.length)
+  const rotation = hostRotation.get(hostname) || 0
+  hostRotation.set(hostname, (rotation + 1) % agents.length)
+  const start = (stableStartIndex(hostname, agents.length) + rotation) % agents.length
   const ordered = [...agents.slice(start), ...agents.slice(0, start)]
   const available = ordered.filter((agent) => (proxyHealth.get(agent)?.retryAfter || 0) <= Date.now())
-  if (available.length) return available
+  if (available.length) {
+    return available
+      .map((agent, index) => ({ agent, index, activeRequests: proxyHealth.get(agent)?.activeRequests || 0 }))
+      .sort((left, right) => left.activeRequests - right.activeRequests || left.index - right.index)
+      .map(({ agent }) => agent)
+  }
   return ordered.sort((left, right) => (proxyHealth.get(left)?.retryAfter || 0) - (proxyHealth.get(right)?.retryAfter || 0)).slice(0, 1)
 }
 
 function markProxySuccess(agent: https.Agent) {
-  if (agent !== directAgent) proxyHealth.set(agent, { failures: 0, retryAfter: 0 })
+  if (agent === directAgent) return
+  const current = proxyHealth.get(agent) || initialProxyHealth()
+  proxyHealth.set(agent, { ...current, failures: 0, retryAfter: 0, completedRequests: current.completedRequests + 1 })
 }
 
-function markProxyFailure(agent: https.Agent) {
+function markProxyFailure(agent: https.Agent, retryAfterMs?: number) {
   if (agent === directAgent) return
-  const current = proxyHealth.get(agent) || { failures: 0, retryAfter: 0 }
+  const current = proxyHealth.get(agent) || initialProxyHealth()
   const failures = current.failures + 1
+  const exponentialDelay = Math.min(PROXY_QUARANTINE_MS * 2 ** Math.max(0, failures - PROXY_FAILURE_THRESHOLD), MAX_PROXY_QUARANTINE_MS)
   proxyHealth.set(agent, {
+    ...current,
     failures,
-    retryAfter: failures >= PROXY_FAILURE_THRESHOLD ? Date.now() + PROXY_QUARANTINE_MS : 0,
+    retryAfter: failures >= PROXY_FAILURE_THRESHOLD ? Date.now() + Math.max(retryAfterMs || 0, exponentialDelay) : 0,
   })
 }
 
-function requestTextOnce(url: URL, agent: https.Agent, headers: Record<string, string>, timeoutMs: number, maxBytes: number) {
+function updateActiveRequests(agent: https.Agent, delta: 1 | -1) {
+  if (agent === directAgent) return
+  const current = proxyHealth.get(agent) || initialProxyHealth()
+  proxyHealth.set(agent, { ...current, activeRequests: Math.max(0, current.activeRequests + delta) })
+}
+
+function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "POST", headers: Record<string, string>, body: string | undefined, timeoutMs: number, maxBytes: number) {
   return new Promise<{ status: number; headers: IncomingHttpHeaders; body: string }>((resolve, reject) => {
-    const request = https.request(url, { method: "GET", agent, headers }, (response) => {
+    const requestHeaders = body === undefined ? headers : { ...headers, "Content-Length": String(Buffer.byteLength(body)) }
+    const request = https.request(url, { method, agent, headers: requestHeaders }, (response) => {
       const chunks: Buffer[] = []
       let size = 0
       response.on("data", (chunk: Buffer) => {
@@ -144,33 +176,58 @@ function requestTextOnce(url: URL, agent: https.Agent, headers: Record<string, s
     })
     request.setTimeout(timeoutMs, () => request.destroy(new Error("Источник не ответил вовремя")))
     request.once("error", reject)
-    request.end()
+    request.end(body)
   })
 }
 
-async function requestWithRedirects(rawUrl: URL, agent: https.Agent, allowedHosts: ReadonlySet<string>, headers: Record<string, string>, timeoutMs: number, maxBytes: number) {
+async function requestWithRedirects(rawUrl: URL, agent: https.Agent, method: "GET" | "POST", allowedHosts: ReadonlySet<string>, headers: Record<string, string>, body: string | undefined, timeoutMs: number, maxBytes: number) {
   let url = rawUrl
+  let currentMethod = method
+  let currentBody = body
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
     if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) throw new Error("Источник перенаправил запрос на неподдерживаемый адрес")
-    const result = await requestTextOnce(url, agent, headers, timeoutMs, maxBytes)
+    const result = await requestTextOnce(url, agent, currentMethod, headers, currentBody, timeoutMs, maxBytes)
     const location = result.headers.location
     if (result.status < 300 || result.status >= 400 || !location) return { ...result, url: url.toString() }
     url = new URL(location, url)
+    if (result.status === 303) {
+      currentMethod = "GET"
+      currentBody = undefined
+    }
   }
   throw new Error("Источник превысил допустимое число перенаправлений")
 }
 
-export async function authorizedSourceGet(rawUrl: string, options: {
+function retryAfterMs(headers: IncomingHttpHeaders) {
+  const value = headers["retry-after"]
+  const raw = Array.isArray(value) ? value[0] : value
+  if (!raw) return 0
+  const seconds = Number(raw)
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1_000)
+  const date = new Date(raw).getTime()
+  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : 0
+}
+
+export async function authorizedSourceRequest(rawUrl: string, options: {
   allowedHosts: ReadonlySet<string>
   headers: Record<string, string>
+  method?: "GET" | "POST"
+  body?: string
   timeoutMs: number
   maxBytes: number
 }): Promise<SourceResponse> {
   const url = new URL(rawUrl)
   let lastError: unknown = null
+  let lastResponse: Awaited<ReturnType<typeof requestWithRedirects>> | null = null
   for (const agent of transportCandidates(url.hostname)) {
+    updateActiveRequests(agent, 1)
     try {
-      const response = await requestWithRedirects(url, agent, options.allowedHosts, options.headers, options.timeoutMs, options.maxBytes)
+      const response = await requestWithRedirects(url, agent, options.method || "GET", options.allowedHosts, options.headers, options.body, options.timeoutMs, options.maxBytes)
+      lastResponse = response
+      if (agent !== directAgent && RETRYABLE_SOURCE_STATUSES.has(response.status)) {
+        markProxyFailure(agent, retryAfterMs(response.headers))
+        continue
+      }
       markProxySuccess(agent)
       return {
         status: response.status,
@@ -181,19 +238,42 @@ export async function authorizedSourceGet(rawUrl: string, options: {
     } catch (error) {
       markProxyFailure(agent)
       lastError = error
+    } finally {
+      updateActiveRequests(agent, -1)
+    }
+  }
+  if (lastResponse) {
+    return {
+      status: lastResponse.status,
+      ok: lastResponse.status >= 200 && lastResponse.status < 300,
+      url: lastResponse.url,
+      text: async () => lastResponse.body,
     }
   }
   throw lastError instanceof Error ? lastError : new Error("Не удалось получить страницу источника")
+}
+
+export function authorizedSourceGet(rawUrl: string, options: {
+  allowedHosts: ReadonlySet<string>
+  headers: Record<string, string>
+  timeoutMs: number
+  maxBytes: number
+}) {
+  return authorizedSourceRequest(rawUrl, { ...options, method: "GET" })
 }
 
 export function sourceProxyPoolStatus() {
   try {
     const agents = proxyAgents()
     const quarantined = agents.filter((agent) => (proxyHealth.get(agent)?.retryAfter || 0) > Date.now()).length
+    const activeRequests = agents.reduce((total, agent) => total + (proxyHealth.get(agent)?.activeRequests || 0), 0)
+    const completedRequests = agents.reduce((total, agent) => total + (proxyHealth.get(agent)?.completedRequests || 0), 0)
     return {
       configured: agents.length,
       active: agents.length - quarantined,
       quarantined,
+      activeRequests,
+      completedRequests,
       maxConnectionsPerProxy: boundedProxyCap(process.env.AUCTION_PROXY_MAX_CONNECTIONS),
       hardLimit: HARD_PROXY_TCP_CAP,
       configurationValid: true,
@@ -203,6 +283,8 @@ export function sourceProxyPoolStatus() {
       configured: 0,
       active: 0,
       quarantined: 0,
+      activeRequests: 0,
+      completedRequests: 0,
       maxConnectionsPerProxy: boundedProxyCap(process.env.AUCTION_PROXY_MAX_CONNECTIONS),
       hardLimit: HARD_PROXY_TCP_CAP,
       configurationValid: false,

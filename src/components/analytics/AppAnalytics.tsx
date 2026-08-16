@@ -21,11 +21,6 @@ export default function AppAnalytics() {
 
   useEffect(() => {
     if (!pathname || typeof window === "undefined") return
-    const marker = `automarket-visited:${pathname}`
-    try {
-      if (sessionStorage.getItem(marker)) return
-      sessionStorage.setItem(marker, "1")
-    } catch { /* Privacy modes may block session storage; server deduplication remains active. */ }
     let visitorKey: string | null = null
     let sessionKey: string | null = null
     try { visitorKey = storageValue(localStorage, VISITOR_KEY) } catch { /* Privacy modes may block persistent storage. */ }

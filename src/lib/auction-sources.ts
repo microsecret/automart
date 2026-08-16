@@ -46,7 +46,7 @@ export const AUCTION_SOURCE_OPTIONS = [
   { value: "UCAR", label: "Ucar (Китай)" },
 ] as const
 
-export type AuctionSourcePipeline = "PUBLIC_COLLECTOR" | "PARTNER_FEED"
+export type AuctionSourcePipeline = "PUBLIC_COLLECTOR" | "OFFICIAL_API" | "PARTNER_FEED"
 
 /**
  * Operational status of every source listed in the product. A source may be
@@ -59,17 +59,17 @@ export const AUCTION_SOURCE_PIPELINES: Record<string, { pipeline: AuctionSourceP
   TAA: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
   EMARAAT: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
   AJ: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
-  KCAR: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
+  KCAR: { pipeline: "PUBLIC_COLLECTOR", label: "Штатный публичный каталог" },
   KB_CHA_CHA_CHA: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
   ENCAR: { pipeline: "PUBLIC_COLLECTOR", label: "Штатный публичный каталог" },
   COPART: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
-  IAAI: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
-  MOBILE_DE: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
+  IAAI: { pipeline: "OFFICIAL_API", label: "Официальный B2B API" },
+  MOBILE_DE: { pipeline: "OFFICIAL_API", label: "Официальный Search API" },
   YCHEZHAI: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
   GUAZI: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
   CHE168: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
-  AUTOHOME: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
-  DONGCHEDI: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
+  AUTOHOME: { pipeline: "OFFICIAL_API", label: "Одобренный business API / feed" },
+  DONGCHEDI: { pipeline: "OFFICIAL_API", label: "Одобренный business API / feed" },
   TAOCHE: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
   UCAR: { pipeline: "PARTNER_FEED", label: "Защищённый партнёрский feed" },
 }

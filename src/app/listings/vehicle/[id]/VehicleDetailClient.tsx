@@ -66,6 +66,7 @@ import { getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/li
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 
 interface VehicleData {
   id: string
@@ -179,6 +180,7 @@ function formatDetailValue(key: string, value: string | number | boolean) {
 }
 
 export default function VehicleDetailClient({ data }: { data: VehicleData }) {
+  const [viewCount, setViewCount] = useState(data.views)
   const [phone, setPhone] = useState<string | null>(null)
   const [contactRevealing, setContactRevealing] = useState(false)
   const [reviewRating, setReviewRating] = useState(5)
@@ -367,6 +369,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
 
   return (
     <>
+    <ListingViewTracker listingId={data.listingId} onCount={setViewCount} />
     <Container size="xl" py="lg">
       {/* Хлебные крошки */}
       <Breadcrumbs mb="md" separator={<IconChevronRight size={14} color="var(--market-muted)" />}>
@@ -696,7 +699,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   <IconMapPin size={13} color="var(--market-muted)" />
                   <Text size="xs" c="var(--market-muted)">{data.location}</Text>
                   <Text size="xs" c="var(--market-muted)">·</Text>
-                  <Group gap={3}><IconEye size={12} color="var(--market-muted)" /><Text size="xs" c="var(--market-muted)">{data.views} просмотров</Text></Group>
+                  <Group gap={3}><IconEye size={12} color="var(--market-muted)" /><Text size="xs" c="var(--market-muted)">{viewCount} просмотров</Text></Group>
                 </Group>
               </Card>
 

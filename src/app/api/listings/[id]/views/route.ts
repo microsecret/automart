@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { publicListingWhere } from "@/lib/listing-lifecycle"
-import { getClientIp, rateLimit } from "@/lib/rate-limit"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { hashAnalyticsIp, isAutomatedUserAgent } from "@/lib/analytics-identity"
 
 export const dynamic = "force-dynamic"
 
@@ -9,21 +12,20 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const viewCookieName = `listing-view-${id}`
-    const alreadyCounted = request.cookies.get(viewCookieName)?.value === "1"
-    const uniqueView = rateLimit(`listing-view:${id}:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 1 })
-    if (!alreadyCounted && uniqueView.success) {
-      const result = await prisma.listing.updateMany({
-        where: { id, ...publicListingWhere },
-        data: { views: { increment: 1 } },
-      })
-      if (!result.count) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    }
-    const listing = await prisma.listing.findFirst({ where: { id, ...publicListingWhere }, select: { views: true } })
+    const userAgent = request.headers.get("user-agent")?.slice(0, 500) || ""
+    const listing = await prisma.listing.findFirst({ where: { id, ...publicListingWhere }, select: { id: true, views: true } })
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    const response = NextResponse.json({ views: listing.views })
-    if (!alreadyCounted) response.cookies.set(viewCookieName, "1", { httpOnly: true, sameSite: "lax", maxAge: 60 * 60, path: "/" })
-    return response
+    if (isAutomatedUserAgent(userAgent)) return NextResponse.json({ views: listing.views })
+
+    const clientIp = getClientIp(request)
+    const limit = rateLimit(`listing-view:${id}:${clientIp}`, { windowMs: 5 * 60_000, maxRequests: 120 })
+    if (!limit.success) return NextResponse.json({ views: listing.views }, { status: 429, headers: rateLimitHeaders(limit) })
+    const session = await getServerSession(authOptions).catch(() => null)
+    const [, updated] = await prisma.$transaction([
+      prisma.listingViewEvent.create({ data: { listingId: id, ipHash: hashAnalyticsIp(clientIp), userId: session?.user?.id || null } }),
+      prisma.listing.update({ where: { id }, data: { views: { increment: 1 } }, select: { views: true } }),
+    ])
+    return NextResponse.json({ views: updated.views })
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 })
   }

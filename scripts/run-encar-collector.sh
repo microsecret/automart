@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This bounded, serialized job uses Encar's public HTML only. It intentionally
-# uses one declared service identity and does not rotate proxies or headers.
+# Bounded, serialized source collection. The application rotates only the
+# explicitly configured shared proxy pool and applies per-proxy caps/cooldowns.
 cd "$(dirname "$0")/.."
 set -a
 # The production .env is managed on the server and is never committed.
@@ -27,4 +27,21 @@ echo "[$(date -Is)] Encar freshness refresh"
 # current catalogue in under seven hours while keeping the source request rate
 # bounded and independent of proxies or header rotation.
 "${CURL[@]}" -X POST "${BASE_URL}/api/parser/encar/refresh" --data '{"limit":40}'
+echo
+echo "[$(date -Is)] K Car discovery"
+"${CURL[@]}" -X POST "${BASE_URL}/api/parser/kcar/sync" --data '{"limit":8}'
+echo
+echo "[$(date -Is)] K Car freshness refresh"
+"${CURL[@]}" -X POST "${BASE_URL}/api/parser/kcar/refresh" --data '{"limit":40}'
+echo
+if [[ -n "${MOBILE_DE_API_USERNAME:-}" && -n "${MOBILE_DE_API_PASSWORD:-}" ]]; then
+  echo "[$(date -Is)] mobile.de official API discovery"
+  "${CURL[@]}" -X POST "${BASE_URL}/api/parser/mobile-de/sync" --data '{"limit":5}'
+  echo
+  echo "[$(date -Is)] mobile.de freshness refresh"
+  "${CURL[@]}" -X POST "${BASE_URL}/api/parser/mobile-de/refresh" --data '{"limit":30}'
+  echo
+fi
+echo "[$(date -Is)] Configured partner/API feeds"
+"${CURL[@]}" -X POST "${BASE_URL}/api/parser/partner-feeds/sync" --data '{}'
 echo

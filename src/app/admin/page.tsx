@@ -37,9 +37,16 @@ type AdminStats = {
     visits7d: number
     pageViews24h: number
     pageViews7d: number
+    pageViews30d: number
     uniqueVisitors24h: number
     uniqueVisitors7d: number
+    uniqueVisitors30d: number
+    pageViewsTrend7d: number
+    uniqueVisitorsTrend7d: number
+    returningVisitors7d: number
+    newVisitors7d: number
     sessions7d: number
+    bounceRate7d: number
     authenticatedVisitors7d: number
     attributedRegistrations7d: number
     pagesPerVisitor7d: number
@@ -50,8 +57,34 @@ type AdminStats = {
     topPaths: Array<{ path: string; count: number }>
     recentVisitors: Array<{
       id: string
+      href: string | null
       createdAt: string
       user: { id: string; name: string | null; email: string | null; telegramUsername: string | null } | null
+    }>
+  }
+  listingPerformance: {
+    statusCounts: Record<string, number>
+    active: number
+    pending: number
+    sold: number
+    published7d: number
+    sold7d: number
+    totalViews: number
+    views7d: number
+    uniqueViewers7d: number
+    viewsTrend7d: number
+    favorites: number
+    messageLeads7d: number
+    leadConversion7d: number
+    daily: Array<{ date: string; views: number; uniqueViewers: number }>
+    topListings: Array<{
+      id: string
+      href: string | null
+      title: string
+      status: string
+      views7d: number
+      uniqueViewers7d: number
+      favorites: number
     }>
   }
   operations: {
@@ -104,8 +137,9 @@ type AdminStats = {
     source: string
     label: string
     country: string | null
-    pipeline: "PUBLIC_COLLECTOR" | "PARTNER_FEED"
+    pipeline: "PUBLIC_COLLECTOR" | "OFFICIAL_API" | "PARTNER_FEED"
     pipelineLabel: string
+    configured: boolean
     lastStatus: string | null
     lastSyncAt: string | null
   }>
@@ -113,10 +147,13 @@ type AdminStats = {
     configured: number
     active: number
     quarantined: number
+    activeRequests: number
+    completedRequests: number
     maxConnectionsPerProxy: number
     hardLimit: number
     configurationValid: boolean
   }
+  partnerFeedConfigurationValid: boolean
 }
 
 const fetchAdminStats = (url: string) => fetchJson<AdminStats>(url)
@@ -204,6 +241,8 @@ export default function AdminDashboard() {
   const maxDailyVisits = Math.max(1, ...dailyTraffic.map((point) => point.visits))
   const maxDailyVisitors = Math.max(1, ...dailyTraffic.map((point) => point.uniqueVisitors))
   const maxDailyRegistrations = Math.max(1, ...dailyTraffic.map((point) => point.registrations))
+  const dailyListingViews = data.listingPerformance.daily || []
+  const maxDailyListingViews = Math.max(1, ...dailyListingViews.map((point) => point.views))
   const operationItems = [
     { label: "Объявления на проверке", value: data.operations.pendingListings, href: "/moderation", icon: <IconListCheck size={17} />, color: "orange" as MantineColor, description: "Проверить и принять решение" },
     { label: "Открытые жалобы", value: data.operations.openReports, href: "/moderation", icon: <IconAlertTriangle size={17} />, color: "red" as MantineColor, description: "Разобрать обращения пользователей" },
@@ -332,9 +371,9 @@ export default function AdminDashboard() {
               </Stack>
             </Group>
             <Group gap="xs" wrap="wrap">
-              <Badge variant="light" color="teal">Активных сборщиков: {data.sourceCoverage.filter((source) => source.pipeline === "PUBLIC_COLLECTOR").length}</Badge>
+              <Badge variant="light" color="teal">Подключено: {data.sourceCoverage.filter((source) => source.configured).length}/{data.sourceCoverage.length}</Badge>
               <Badge variant="light" color={data.sourceTransport.configurationValid ? "blue" : "red"}>
-                Прокси: {data.sourceTransport.active}/{data.sourceTransport.configured} активны · TCP до {data.sourceTransport.maxConnectionsPerProxy}/{data.sourceTransport.hardLimit}
+                Прокси: {data.sourceTransport.active}/{data.sourceTransport.configured} активны · занято {data.sourceTransport.activeRequests} · лимит {data.sourceTransport.maxConnectionsPerProxy}
               </Badge>
               {data.sourceTransport.quarantined > 0 && <Badge variant="light" color="orange">Карантин: {data.sourceTransport.quarantined}</Badge>}
             </Group>
@@ -344,9 +383,14 @@ export default function AdminDashboard() {
               Проверьте server env. Учётные данные намеренно не выводятся в интерфейс или журнал.
             </Alert>
           )}
+          {!data.partnerFeedConfigurationValid && (
+            <Alert color="red" variant="light" mb="sm" title="Конфигурация партнёрских feeds некорректна">
+              Проверьте AUCTION_PARTNER_FEEDS_JSON. Токены и URL в интерфейсе не раскрываются.
+            </Alert>
+          )}
           <SimpleGrid cols={{ base: 1, xs: 2, lg: 3 }} spacing="xs">
             {data.sourceCoverage.map((source) => {
-              const isCollector = source.pipeline === "PUBLIC_COLLECTOR"
+              const isCollector = source.configured
               const statusMeta = source.lastStatus ? SYNC_STATUS_META[source.lastStatus] : null
               return (
                 <Paper key={source.source} withBorder radius="md" p="sm">
@@ -356,7 +400,7 @@ export default function AdminDashboard() {
                   </Group>
                   <Text size="xs" c="dimmed" mt={4}>{source.pipelineLabel}</Text>
                   <Group gap={5} mt="xs" wrap="wrap">
-                    <Badge size="xs" variant="dot" color={isCollector ? "teal" : "gray"}>{isCollector ? "Сборщик включён" : "Ожидает подключение"}</Badge>
+                    <Badge size="xs" variant="dot" color={isCollector ? "teal" : "gray"}>{isCollector ? "Источник подключён" : "Нужен доступ / feed"}</Badge>
                     {statusMeta && <Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>}
                     {source.lastSyncAt && <Text size="10px" c="dimmed">{new Date(source.lastSyncAt).toLocaleDateString("ru-RU")}</Text>}
                   </Group>
@@ -505,11 +549,11 @@ export default function AdminDashboard() {
 
         {/* Посещаемость */}
         <Alert color="indigo" variant="light" title="Как считается посещаемость">
-          Просмотр — открытие отдельного экрана один раз за сессию. Уникальный посетитель — анонимный идентификатор браузера;
-          один человек на разных устройствах считается отдельно, а после очистки данных браузера получит новый идентификатор.
-          Сессия завершается вместе с вкладкой браузера. Автоматические bot/headless-запросы не учитываются.
+          Просмотр — каждое фактическое открытие экрана, повторные открытия тоже учитываются. Уникальный посетитель — один IP-адрес за выбранный период:
+          переходы по разным страницам и сервисам не создают новых уникальных посетителей. Сохраняется только необратимый хеш IP;
+          исходный адрес и автоматические bot/headless-запросы не учитываются.
         </Alert>
-        <SimpleGrid cols={{ base: 1, xs: 2, lg: 5 }} spacing="sm">
+        <SimpleGrid cols={{ base: 1, xs: 2, lg: 6 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Просмотры · 24 часа</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.pageViews24h}</Text>
@@ -518,12 +562,12 @@ export default function AdminDashboard() {
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · 7 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitors7d}</Text>
-            <Text size="xs" c="gray.4">по анонимному browser-ID</Text>
+            <Text size="xs" c={data.traffic.uniqueVisitorsTrend7d >= 0 ? "teal.6" : "red.6"}>{data.traffic.uniqueVisitorsTrend7d >= 0 ? "+" : ""}{data.traffic.uniqueVisitorsTrend7d}% к прошлой неделе</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Сессии · 7 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.sessions7d}</Text>
-            <Text size="xs" c="gray.4">сеансы работы с сайтом</Text>
+            <Text size="xs" c="gray.4">отказы: {data.traffic.bounceRate7d}%</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="teal" size={34} radius="md"><IconUsers size={17} /></ThemeIcon><Text size="xs" c="gray.5">Вошли в аккаунт · 7 дней</Text></Group>
@@ -535,7 +579,77 @@ export default function AdminDashboard() {
             <Text size="xl" fw={800} mt="sm">{data.traffic.registrationConversion7d}%</Text>
             <Text size="xs" c="gray.4">{data.traffic.attributedRegistrations7d} новых аккаунтов с визитом</Text>
           </Card>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+            <Group gap="sm"><ThemeIcon variant="light" color="blue" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные · 30 дней</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitors30d}</Text>
+            <Text size="xs" c="gray.4">{data.traffic.newVisitors7d} новых · {data.traffic.returningVisitors7d} вернулись</Text>
+          </Card>
         </SimpleGrid>
+
+        <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Group justify="space-between" align="flex-start" gap="md" wrap="wrap" mb="md">
+            <Group gap="sm" wrap="nowrap">
+              <ThemeIcon variant="light" color="orange" size={38} radius="md"><IconTag size={19} /></ThemeIcon>
+              <Stack gap={1}>
+                <Text size="sm" fw={750}>Эффективность объявлений · 7 дней</Text>
+                <Text size="xs" c="dimmed">Просмотры карточек считаются отдельно от общей посещаемости сайта.</Text>
+              </Stack>
+            </Group>
+            <Badge variant="light" color={data.listingPerformance.viewsTrend7d >= 0 ? "teal" : "red"}>
+              {data.listingPerformance.viewsTrend7d >= 0 ? "+" : ""}{data.listingPerformance.viewsTrend7d}% просмотров
+            </Badge>
+          </Group>
+
+          <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="xs">
+            {[
+              ["Активные", data.listingPerformance.active],
+              ["Опубликовано", data.listingPerformance.published7d],
+              ["Просмотры", data.listingPerformance.views7d],
+              ["Уникальные", data.listingPerformance.uniqueViewers7d],
+              ["Сообщения", data.listingPerformance.messageLeads7d],
+              ["Продано", data.listingPerformance.sold7d],
+            ].map(([label, value]) => (
+              <Paper key={String(label)} withBorder radius="md" p="sm">
+                <Text size="lg" fw={850}>{value}</Text>
+                <Text size="10px" c="dimmed">{label}</Text>
+              </Paper>
+            ))}
+          </SimpleGrid>
+
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md" mt="md">
+            <Paper withBorder radius="md" p="sm">
+              <Text size="xs" fw={700} mb="sm">Просмотры по дням</Text>
+              <Group h={120} align="flex-end" gap="xs" wrap="nowrap" role="img" aria-label="Просмотры объявлений за семь дней">
+                {dailyListingViews.map((point) => {
+                  const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
+                  const height = point.views ? Math.max(6, Math.round((point.views / maxDailyListingViews) * 88)) : 3
+                  return (
+                    <Stack key={point.date} gap={4} align="center" style={{ flex: 1, minWidth: 0 }}>
+                      <Tooltip label={`${point.views} просмотров · ${point.uniqueViewers} уникальных`} withArrow>
+                        <Box h={height} bg={point.views ? "orange.5" : "gray.3"} style={{ width: "clamp(12px, 3vw, 26px)", borderRadius: "6px 6px 2px 2px" }} />
+                      </Tooltip>
+                      <Text size="9px" c="dimmed">{label}</Text>
+                    </Stack>
+                  )
+                })}
+              </Group>
+            </Paper>
+            <Paper withBorder radius="md" p="sm">
+              <Group justify="space-between" mb="sm"><Text size="xs" fw={700}>Лучшие объявления</Text><Badge size="xs" variant="light" color="orange">конверсия {data.listingPerformance.leadConversion7d}%</Badge></Group>
+              <Stack gap="xs">
+                {data.listingPerformance.topListings.map((listing) => (
+                  <Group key={listing.id} justify="space-between" gap="xs" wrap="nowrap">
+                    {listing.href
+                      ? <Text component={Link} href={listing.href} size="xs" c="dark.7" truncate style={{ flex: 1 }}>{listing.title}</Text>
+                      : <Text size="xs" c="dimmed" truncate style={{ flex: 1 }}>{listing.title}</Text>}
+                    <Badge size="xs" variant="light" color="orange">{listing.views7d} / {listing.uniqueViewers7d}</Badge>
+                  </Group>
+                ))}
+                {!data.listingPerformance.topListings.length && <Text size="xs" c="dimmed">Данные появятся после открытий карточек объявлений.</Text>}
+              </Stack>
+            </Paper>
+          </SimpleGrid>
+        </Card>
 
         <Card className="admin-insight-card" withBorder radius="lg" p="md">
           <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
@@ -615,7 +729,7 @@ export default function AdminDashboard() {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
-            <Text size="sm" fw={700} mb="sm">Устройства · 7 дней</Text>
+            <Text size="sm" fw={700} mb="sm">Устройства уникальных посетителей · 7 дней</Text>
             <Stack gap="xs">
               {data.traffic.devices.map((item) => (
                 <Group key={item.key} justify="space-between"><Text size="xs" c="gray.6">{DEVICE_LABELS[item.key] || item.key}</Text><Badge variant="light" color="cyan">{item.count}</Badge></Group>
@@ -623,7 +737,7 @@ export default function AdminDashboard() {
             </Stack>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
-            <Text size="sm" fw={700} mb="sm">Источники трафика · 7 дней</Text>
+            <Text size="sm" fw={700} mb="sm">Источники уникальных посетителей · 7 дней</Text>
             <Stack gap="xs">
               {data.traffic.sources.map((item) => (
                 <Group key={item.key} justify="space-between"><Text size="xs" c="gray.6">{item.key.startsWith("UTM:") ? item.key : SOURCE_LABELS[item.key] || item.key}</Text><Badge variant="light" color="violet">{item.count}</Badge></Group>

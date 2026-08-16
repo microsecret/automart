@@ -41,6 +41,7 @@ model User {
   notifications  Notification[] @relation("UserNotifications")
   comments     Comment[]
   visitEvents  VisitEvent[] @relation("UserVisitEvents")
+  listingViewEvents ListingViewEvent[] @relation("UserListingViewEvents")
   deliveryOrdersAsBuyer   DeliveryOrder[]        @relation("DeliveryBuyer")
   deliveryOrdersAsPartner DeliveryOrder[]        @relation("DeliveryPartner")
   deliveryOrdersManaged   DeliveryOrder[]        @relation("DeliveryManager")
@@ -275,6 +276,7 @@ model Listing {
   revisions     ListingRevision[]
   reports       ListingReport[]
   promotionOrders PromotionOrder[]
+  viewEvents     ListingViewEvent[]
 
   // Timestamps
   createdAt     DateTime @default(now())
@@ -292,6 +294,24 @@ model Listing {
   @@index([status, createdAt])
   @@index([userId, status, updatedAt])
   @@index([deletedAt])
+}
+
+// Individual listing opens for time-based seller/admin analytics. Raw IP
+// addresses are never stored: ipHash uses the same server-side salted hash as
+// the platform traffic counter. Unlike unique visitors, every accepted event
+// remains a page view so repeated interest is visible in the funnel.
+model ListingViewEvent {
+  id         String   @id @default(uuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  ipHash     String
+  userId     String?
+  user       User?    @relation("UserListingViewEvents", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([listingId, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([userId, createdAt])
 }
 
 // Provider-neutral ledger for paid listing promotion. A row is created before
