@@ -103,6 +103,7 @@ function warmAuctionDetailImage(listing: AuctionListing, delay = 0) {
     preloadedDetailImages.add(imageUrl)
     const image = new window.Image()
     image.decoding = "async"
+    image.referrerPolicy = "no-referrer"
     image.src = imageUrl
   }
 
@@ -133,7 +134,7 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
       {!hasImage && <VehicleFallback type="CAR" compact />}
       {hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={`${auctionMakeLabel(listing.make)} ${normalizeAuctionModel(listing.model) || "автомобиль"}`} onError={() => setFailed(true)} loading="lazy" decoding="async" />
+        <img src={image} alt={`${auctionMakeLabel(listing.make)} ${normalizeAuctionModel(listing.model) || "автомобиль"}`} referrerPolicy="no-referrer" onError={() => setFailed(true)} loading="lazy" decoding="async" />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
           <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>

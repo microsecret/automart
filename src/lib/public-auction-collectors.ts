@@ -526,9 +526,12 @@ function parseYouxinpaiCatalog(json: string, pageNumber: number) {
     const price = asNumber(record?.startPrice) || asNumber(record?.currentHighestBid) || asNumber(record?.refPriceLow)
     const registered = asText(record?.registerDate)?.match(/^(\d{4})-(\d{2})-/)
     const make = normalizeAuctionMake(asText(record?.brandName))
-    const serialName = asText(record?.serialName)
-    const modelName = asText(record?.modelName)
-    const model = normalizeAuctionModel([serialName, modelName && modelName !== serialName ? modelName : null].filter(Boolean).join(" "))
+    const serialName = asText(record?.serialName) || ""
+    const modelName = asText(record?.modelName) || ""
+    const serialWithoutMake = make && serialName.toLocaleLowerCase().startsWith(`${make.toLocaleLowerCase()} `)
+      ? serialName.slice(make.length).trim()
+      : serialName
+    const model = normalizeAuctionModel([serialWithoutMake, modelName && modelName !== serialName ? modelName : null].filter(Boolean).join(" "))
     // The catalogue thumbnail is a valid signed/public rendition. Rewriting
     // `/small/` to the guessed original path makes YouXinPai answer with 403.
     const image = asText(record?.mainImage)

@@ -189,6 +189,7 @@ function AuctionDetail() {
     const preloadedImages = preloadUrls.map((imageUrl) => {
       const preloaded = new window.Image()
       preloaded.decoding = "async"
+      preloaded.referrerPolicy = "no-referrer"
       preloaded.onload = () => {
         if (cancelled) return
         setLoadedImageUrls((previous) => previous.has(imageUrl) ? previous : new Set(previous).add(imageUrl))
@@ -213,6 +214,7 @@ function AuctionDetail() {
       if (!renditionUrl || (renditionUrl === highQualityUrl && loadedImageUrls.has(highQualityUrl))) continue
       const preloaded = new window.Image()
       preloaded.decoding = "async"
+      preloaded.referrerPolicy = "no-referrer"
       if (renditionUrl === highQualityUrl) {
         preloaded.onload = () => {
           setLoadedImageUrls((previous) => previous.has(highQualityUrl) ? previous : new Set(previous).add(highQualityUrl))
@@ -297,6 +299,7 @@ function AuctionDetail() {
                         src={activeImageThumbnail}
                         alt=""
                         aria-hidden="true"
+                        referrerPolicy="no-referrer"
                         decoding="sync"
                         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "blur(1px)", transform: "scale(1.005)" }}
                       />
@@ -306,6 +309,7 @@ function AuctionDetail() {
                         className={styles.galleryImage}
                         src={displayedActiveImage}
                         alt={`${auctionMakeLabel(listing.make)} ${publicModel}, фото ${activeImageIndex + 1}`}
+                        referrerPolicy="no-referrer"
                         decoding="async"
                         fetchPriority={activeImageIndex === 0 ? "high" : "auto"}
                         onLoad={() => {
@@ -341,7 +345,7 @@ function AuctionDetail() {
                           style={{ flex: "0 0 auto", width: 76, height: 56, padding: 0, border: index === activeImageIndex ? "2px solid var(--mantine-color-orange-6)" : "1px solid var(--mantine-color-gray-3)", borderRadius: 8, background: "var(--mantine-color-gray-1)", overflow: "hidden", cursor: "pointer" }}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={auctionThumbnailImageUrl(image)} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.style.opacity = "0.25" }} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={auctionThumbnailImageUrl(image)} alt="" referrerPolicy="no-referrer" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.style.opacity = "0.25" }} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
                         </UnstyledButton>
                       ))}
                     </Group>
