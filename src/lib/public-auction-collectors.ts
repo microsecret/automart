@@ -917,7 +917,8 @@ async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise
   const carInfo = asRecord(basicInfo?.carInfo)
   const certificate = asRecord(report?.data.certificateInfo)
   const carBaseInfo = asRecord(report?.data.carBaseInfo)
-  const modelInfo = asRecord(report?.data.modelInfo)
+  const modelInfoValue = report?.data.modelInfo
+  const modelInfo = Array.isArray(modelInfoValue) ? asRecord(modelInfoValue[0]) : asRecord(modelInfoValue)
   const detailInfo = asRecord(report?.data.detailInfo)
   const reportImages = (Array.isArray(basicInfo?.carImages) ? basicInfo.carImages : []).flatMap((entry) => {
     const image = safeImage(asText(asRecord(entry)?.url), new Set(["img.youxinpai.cn"]))
