@@ -5,8 +5,8 @@ import { Alert, Box, Button, Card, Group, List, SimpleGrid, Stack, Text, ThemeIc
 import { IconBook2, IconHeadset, IconLock, IconMessageCircle2, IconRobot, IconUserCheck } from "@tabler/icons-react"
 
 const HELP_LINKS = [
-  { href: "/auth/signup", label: "Регистрация на сайте" },
-  { href: "/auth/telegram", label: "Вход через Telegram" },
+  { href: "/auth/signup", label: "Регистрация через Telegram-бота" },
+  { href: "/auth/signin", label: "Вход по почте или телефону" },
   { href: "/listings/create/vehicle", label: "Подача объявления" },
   { href: "/auctions", label: "Автомобили из-за рубежа" },
   { href: "/help/safety", label: "Безопасность сделки" },

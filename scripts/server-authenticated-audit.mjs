@@ -3,6 +3,7 @@
 import crypto from "node:crypto"
 import { PrismaClient } from "@prisma/client"
 import { encode } from "next-auth/jwt"
+import bcrypt from "bcryptjs"
 
 const baseUrl = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 const databaseUrl = process.env.DATABASE_URL || ""
@@ -61,13 +62,14 @@ async function sessionCookie(user) {
 }
 
 async function run() {
+  const auditPasswordHash = await bcrypt.hash("AuditPass-2026", 4)
   const category = await prisma.category.upsert({
     where: { name: "Легковые" },
     update: {},
     create: { name: "Легковые", description: "Изолированная серверная проверка", icon: "car" },
   })
   const primary = await prisma.user.create({
-    data: { email: `${marker}-buyer@audit.lewheel.invalid`, phone: `+7997${String(Date.now()).slice(-7)}`, name: "Покупатель Аудит", role: "USER", emailVerified: new Date() },
+    data: { email: `${marker}-buyer@audit.lewheel.invalid`, phone: `+7997${String(Date.now()).slice(-7)}`, name: "Покупатель Аудит", role: "USER", emailVerified: new Date(), hashedPassword: auditPasswordHash },
   })
   const seller = await prisma.user.create({
     data: { email: `${marker}-seller@audit.lewheel.invalid`, phone: `+7996${String(Date.now()).slice(-7)}`, name: "Продавец Аудит", role: "USER", emailVerified: new Date() },
@@ -118,15 +120,15 @@ async function run() {
 
   const registrationEmail = `${marker}-web@audit.lewheel.invalid`
   const registrationPhone = `+7998${String(Date.now()).slice(-7)}`
-  const registration = await expect("/api/auth/register", null, 201, {
+  const registration = await expect("/api/auth/register", null, 410, {
     method: "POST",
     body: JSON.stringify({ name: "Веб Регистрация", email: registrationEmail, phone: registrationPhone, password: "AuditPass-2026" }),
   })
   const registeredUser = await prisma.user.findUnique({ where: { email: registrationEmail } })
   record(
-    "web registration persists a protected unverified account",
-    registration?.requiresEmailVerification === true && registeredUser?.role === "USER" && registeredUser.emailVerified === null && registeredUser.hashedPassword?.startsWith("$2"),
-    registeredUser?.id || "missing",
+    "web registration is closed in favor of the Telegram onboarding flow",
+    registration?.error === "Регистрация доступна только через Telegram-бота" && registeredUser === null,
+    registration?.registrationUrl || "bot link unavailable",
   )
   await expect("/api/auth/telegram", null, 400, { method: "POST", body: "{" })
   const auditTelegramId = String(Date.now())
@@ -150,23 +152,9 @@ async function run() {
     body: JSON.stringify({ initData: telegramParams.toString() }),
   })
   record("signed Telegram Mini App identity resolves the verified account", telegramSession?.user?.id === primary.id, telegramSession?.user?.id || "missing")
-  const otpCode = "73195"
-  await prisma.telegramAuthCode.create({
-    data: {
-      phone: primary.phone,
-      codeHash: crypto.createHmac("sha256", process.env.NEXTAUTH_SECRET).update(otpCode).digest("hex"),
-      purpose: "LOGIN",
-      expiresAt: new Date(Date.now() + 10 * 60_000),
-    },
-  })
-  const telegramOtp = await expect("/api/auth/telegram/verify-code", null, 200, {
-    method: "POST",
-    body: JSON.stringify({ phone: primary.phone, code: otpCode }),
-  })
-  record("Telegram phone OTP consumes once and returns the linked account", telegramOtp?.user?.id === primary.id, telegramOtp?.user?.id || "missing")
   await expect("/api/auth/resend-verification", null, 400, { method: "POST", body: "{" })
-  await expect("/api/auth/telegram/request-code", null, 400, { method: "POST", body: JSON.stringify({ phone: "123" }) })
-  await expect("/api/auth/telegram/verify-code", null, 400, { method: "POST", body: JSON.stringify({ phone: registrationPhone }) })
+  await expect("/api/auth/telegram/request-code", null, 410, { method: "POST", body: JSON.stringify({ phone: "123" }) })
+  await expect("/api/auth/telegram/verify-code", null, 410, { method: "POST", body: JSON.stringify({ phone: registrationPhone }) })
   await expect("/api/auth/verify-email?token=invalid-audit-token", null, 307, { redirect: "manual" })
 
   const brands = await expect("/api/v1/brands?category=CAR", null, 200)

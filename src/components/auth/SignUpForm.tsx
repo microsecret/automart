@@ -1,151 +1,73 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useForm } from "@mantine/form"
 import Link from "next/link"
-import {
-  TextInput,
-  PasswordInput,
-  Button,
-  Stack,
-  Text,
-  Alert,
-  Anchor,
-  Divider,
-  Group,
-} from "@mantine/core"
-import { IconAlertCircle, IconAt, IconLock, IconPhone, IconUser } from "@tabler/icons-react"
-import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
-
-type RegistrationResponse = { emailDeliveryPending?: boolean }
+import { Alert, Anchor, Button, Group, Paper, Stack, Text, ThemeIcon } from "@mantine/core"
+import { IconAt, IconBrandTelegram, IconCircleCheck, IconLock, IconPhone } from "@tabler/icons-react"
 
 function getSafeCallbackUrl(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard"
 }
 
+const STEPS = [
+  { icon: IconPhone, title: "Подтвердите телефон", text: "Отправьте свой контакт одной кнопкой" },
+  { icon: IconAt, title: "Укажите почту", text: "Она понадобится для входа на сайт" },
+  { icon: IconLock, title: "Придумайте пароль", text: "Минимум 8 символов — хранится только хэш" },
+]
+
 export default function SignUpForm() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
-  const [emailDeliveryPending, setEmailDeliveryPending] = useState(false)
   const [callbackUrl, setCallbackUrl] = useState("/dashboard")
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
 
   useEffect(() => {
     setCallbackUrl(getSafeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl")))
   }, [])
 
-  const form = useForm({
-    initialValues: { name: "", email: "", phone: "", password: "", confirmPassword: "" },
-    validate: {
-      name: (v) => (v.trim().length < 2 ? "Минимум 2 символа" : null),
-      email: (v) => (/^\S+@\S+\.\S+$/.test(v) ? null : "Введите корректный email"),
-      phone: (v) => (v.replace(/\D/g, "").length >= 10 ? null : "Введите номер телефона"),
-      password: (v) => (v.length < 8 ? "Минимум 8 символов" : null),
-      confirmPassword: (v, values) => (v !== values.password ? "Пароли не совпадают" : null),
-    },
-  })
-
-  const handleSubmit = async (values: typeof form.values) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await fetchJson<RegistrationResponse>("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name,
-          email: values.email,
-          phone: values.phone,
-          password: values.password,
-        }),
-      })
-      setEmailDeliveryPending(Boolean(data.emailDeliveryPending))
-      setSubmittedEmail(values.email.trim())
-    } catch (requestError) {
-      setError(getApiClientErrorMessage(requestError, "Ошибка регистрации. Попробуйте позже."))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (submittedEmail) {
-    return (
-      <Stack gap="md" align="center" ta="center">
-        <Alert color={emailDeliveryPending ? "yellow" : "green"} variant="light" radius="md" w="100%">
-          {emailDeliveryPending
-            ? <>Аккаунт создан. Подтвердите номер через Telegram, а письмо на <b>{submittedEmail}</b> отправим, когда почтовый канал будет доступен.</>
-            : <>Письмо с подтверждением отправлено на <b>{submittedEmail}</b>.</>}
-        </Alert>
-        <Text size="sm" c="gray.6">
-          {emailDeliveryPending
-            ? "Откройте бот Авторынка, отправьте свой контакт, затем вернитесь сюда и получите одноразовый код для входа. Пароль до подтверждения email не используется."
-            : "Перейдите по ссылке из письма, затем подтвердите номер через Telegram-бота для входа по коду."}
-        </Text>
-        <Button component={Link} href={`/auth/telegram?callbackUrl=${encodeURIComponent(callbackUrl)}`} fullWidth color="indigo">Продолжить через Telegram</Button>
-        <Anchor component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} size="sm" c="indigo">Войти по email после подтверждения</Anchor>
-      </Stack>
-    )
-  }
-
   return (
     <Stack gap="md">
-      {error && (
-        <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light" radius="md">
-          {error}
-        </Alert>
+      <Alert color="indigo" variant="light" radius="md" icon={<IconBrandTelegram size={18} />}>
+        Регистрация проходит в официальном Telegram-боте LeWheel. Бот сохранит ваш Telegram ID и проведёт по трём коротким шагам.
+      </Alert>
+
+      <Stack gap="sm">
+        {STEPS.map((step, index) => {
+          const Icon = step.icon
+          return (
+            <Paper key={step.title} withBorder radius="md" p="sm">
+              <Group wrap="nowrap" gap="sm">
+                <ThemeIcon color="indigo" variant="light" radius="xl" size={38}><Icon size={19} /></ThemeIcon>
+                <div style={{ flex: 1 }}>
+                  <Text size="sm" fw={750}>{index + 1}. {step.title}</Text>
+                  <Text size="xs" c="dimmed">{step.text}</Text>
+                </div>
+                <IconCircleCheck size={18} color="#94a3b8" aria-hidden />
+              </Group>
+            </Paper>
+          )
+        })}
+      </Stack>
+
+      {botUsername ? (
+        <Button
+          component="a"
+          href={`https://t.me/${botUsername}?start=register`}
+          target="_blank"
+          rel="noreferrer"
+          color="indigo"
+          size="md"
+          radius="md"
+          leftSection={<IconBrandTelegram size={20} />}
+          fullWidth
+        >
+          Начать регистрацию в Telegram
+        </Button>
+      ) : (
+        <Alert color="yellow" variant="light">Бот временно не подключён. Попробуйте немного позже.</Alert>
       )}
 
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap="md">
-          <TextInput
-            label="Имя"
-            placeholder="Как вас зовут"
-            leftSection={<IconUser size={18} />}
-            size="md"
-            radius="md"
-            {...form.getInputProps("name")}
-          />
-          <TextInput
-            label="Email"
-            placeholder="you@example.com"
-            leftSection={<IconAt size={18} />}
-            size="md"
-            radius="md"
-            {...form.getInputProps("email")}
-          />
-          <TextInput
-            label="Телефон"
-            placeholder="+7 900 000-00-00"
-            description="Нужен для входа по коду в Telegram и защиты аккаунта"
-            leftSection={<IconPhone size={18} />}
-            inputMode="tel"
-            size="md"
-            radius="md"
-            {...form.getInputProps("phone")}
-          />
-          <PasswordInput
-            label="Пароль"
-            placeholder="Минимум 8 символов"
-            leftSection={<IconLock size={18} />}
-            size="md"
-            radius="md"
-            {...form.getInputProps("password")}
-          />
-          <PasswordInput
-            label="Повторите пароль"
-            placeholder="Подтвердите пароль"
-            leftSection={<IconLock size={18} />}
-            size="md"
-            radius="md"
-            {...form.getInputProps("confirmPassword")}
-          />
-          <Button type="submit" loading={loading} fullWidth size="md" radius="md" color="indigo">
-            Создать аккаунт
-          </Button>
-        </Stack>
-      </form>
-
-      <Divider label="или" labelPosition="center" />
+      <Text size="xs" c="dimmed" ta="center">
+        После регистрации Mini App войдёт автоматически, а на сайте можно будет использовать почту или телефон и пароль.
+      </Text>
 
       <Group justify="center">
         <Text size="sm" c="gray.5">

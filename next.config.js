@@ -18,7 +18,7 @@ if (process.env.NODE_ENV === "production") {
       "object-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' https://telegram.org",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
@@ -48,6 +48,10 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Next's Windows prerender workers can terminate with 0xC0000409 when this
+  // large route set is generated in parallel. Keep local Windows builds
+  // deterministic; Linux production builds retain Next's normal concurrency.
+  ...(process.platform === 'win32' ? { experimental: { cpus: 1 } } : {}),
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }]
   },

@@ -193,12 +193,12 @@ probe 'AI damage assessment without session' POST '/api/ai/damage-assessment' 40
 probe 'payment intent without session' POST '/api/payment/create-intent' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'payment webhook unsigned' POST '/api/payment/webhook' '400|503' -H 'Content-Type: application/json' --data '{}'
 probe 'Telegram webhook without secret' POST '/api/telegram/webhook' '401|503' -H 'Content-Type: application/json' --data '{}'
-probe 'registration malformed JSON rejected' POST '/api/auth/register' 400 -H 'Content-Type: application/json' --data '{'
+probe 'web registration is closed in favor of Telegram' POST '/api/auth/register' 410 -H 'Content-Type: application/json' --data '{'
 probe 'password recovery malformed JSON rejected' POST '/api/auth/forgot-password' 400 -H 'Content-Type: application/json' --data '{'
 probe 'password reset malformed JSON rejected' POST '/api/auth/reset-password' 400 -H 'Content-Type: application/json' --data '{'
-probe 'Telegram code request malformed JSON rejected' POST '/api/auth/telegram/request-code' 400 -H 'Content-Type: application/json' --data '{'
-probe 'Telegram code verify malformed JSON rejected' POST '/api/auth/telegram/verify-code' 400 -H 'Content-Type: application/json' --data '{'
-probe 'invalid registration rejected or rate-limited' POST '/api/auth/register' '400|429' -H 'Content-Type: application/json' --data '{"email":"not-an-email","password":"x","name":""}'
+probe 'Telegram OTP request endpoint is retired' POST '/api/auth/telegram/request-code' 410 -H 'Content-Type: application/json' --data '{'
+probe 'Telegram OTP verification endpoint is retired' POST '/api/auth/telegram/verify-code' 410 -H 'Content-Type: application/json' --data '{'
+probe 'web registration remains closed for invalid payloads' POST '/api/auth/register' 410 -H 'Content-Type: application/json' --data '{"email":"not-an-email","password":"x","name":""}'
 
 headers="$(curl -sSI "${curl_options[@]}" "$base_url/api/news?limit=1" || true)"
 for header in 'x-content-type-options: nosniff' 'x-frame-options: deny' 'content-security-policy:'; do

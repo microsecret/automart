@@ -37,13 +37,13 @@ export default function SignInPage() {
         </Stack>
 
         {/* Правая колонка — форма */}
-        <Stack className="auth-experience__form-area" gap="lg" align="center" maw={420} style={{ flexShrink: 0 }}>
+        <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0, flexShrink: 0 }}>
           <Stack gap={4} align="center">
             <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Вход в аккаунт</Text>
-            <Text size="sm" c="gray.5">Войдите, чтобы управлять объявлениями</Text>
+            <Text size="sm" c="gray.5">Почта или телефон и ваш пароль</Text>
           </Stack>
 
-          <Card className="auth-experience__form-card" withBorder radius="lg" p="xl" w={420} shadow="sm">
+          <Card className="auth-experience__form-card" withBorder radius="lg" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
             <SignInForm />
           </Card>
         </Stack>

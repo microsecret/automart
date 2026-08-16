@@ -5,7 +5,7 @@ import { IconCar, IconCheck } from "@tabler/icons-react"
 import SignUpForm from "@/components/auth/SignUpForm"
 
 const BENEFITS = [
-  "Подтверждение email и телефона",
+  "Телефон, почта и пароль за 3 шага",
   "Доступ к проверке истории авто",
   "Сопровождение сделки и статусы покупки",
   "Сохранение избранных объявлений",
@@ -23,7 +23,7 @@ export default function SignUpPage() {
             </Box>
             <Text fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">LeWheel</Text>
           </Group>
-          <Text size="sm" c="gray.5" lh={1.6}>Создайте защищённый аккаунт за минуту.</Text>
+          <Text size="sm" c="gray.5" lh={1.6}>Создайте защищённый аккаунт через Telegram-бота за минуту.</Text>
           <Stack gap="sm">
             {BENEFITS.map((b) => (
               <Group key={b} gap="sm">
@@ -38,7 +38,7 @@ export default function SignUpPage() {
         <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0 }}>
           <Stack gap={4} align="center">
             <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Регистрация</Text>
-            <Text size="sm" c="gray.5">Бесплатно и быстро</Text>
+            <Text size="sm" c="gray.5">Три шага в Telegram-боте</Text>
           </Stack>
 
           <Card className="auth-experience__form-card" withBorder radius="lg" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">

@@ -1,6 +1,20 @@
 import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { canModerateTelegramChat, getTelegramBotUsername, getTelegramMiniAppUrl, isTelegramUserRegistered, linkTelegramIdentity, normalizePhone, telegramApi } from "@/lib/telegram"
+import {
+  canModerateTelegramChat,
+  completeTelegramRegistration,
+  getTelegramBotUsername,
+  getTelegramMiniAppUrl,
+  getTelegramRegistrationStep,
+  isTelegramUserRegistered,
+  linkTelegramIdentity,
+  normalizePhone,
+  saveTelegramRegistrationEmail,
+  TelegramIdentityConflictError,
+  TelegramRegistrationError,
+  telegramApi,
+  type TelegramRegistrationStep,
+} from "@/lib/telegram"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -8,9 +22,22 @@ export const dynamic = "force-dynamic"
 type TelegramMessage = {
   message_id: number
   text?: string
+  caption?: string
   from?: { id: number | string; is_bot?: boolean; first_name?: string; last_name?: string; username?: string }
   chat: { id: number | string; type: string }
   contact?: { phone_number?: string; user_id?: number | string; first_name?: string; last_name?: string }
+  photo?: unknown
+  video?: unknown
+  animation?: unknown
+  document?: unknown
+  audio?: unknown
+  voice?: unknown
+  sticker?: unknown
+  video_note?: unknown
+  location?: unknown
+  venue?: unknown
+  poll?: unknown
+  dice?: unknown
 }
 
 type TelegramUpdate = { message?: TelegramMessage }
@@ -41,37 +68,138 @@ function canSendModerationNotice(chatId: string, telegramId: string) {
 
 function getBotStartUrl() {
   const username = getTelegramBotUsername()
-  return username ? `https://t.me/${username}?start=authorize` : null
+  return username ? `https://t.me/${username}?start=register` : null
 }
 
 async function sendMiniAppEntry(chatId: string, greeting: string) {
   const miniAppUrl = getTelegramMiniAppUrl()
-  if (!miniAppUrl) return
+  if (!miniAppUrl) {
+    await telegramApi("sendMessage", { chat_id: chatId, text: greeting, parse_mode: "HTML" })
+    return
+  }
 
   const catalogueUrl = new URL("/auctions", miniAppUrl).toString()
 
   await telegramApi("sendMessage", {
     chat_id: chatId,
     text: greeting,
+    parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Открыть Mini App", web_app: { url: miniAppUrl } }],
-        [{ text: "Смотреть автомобили", url: catalogueUrl }],
+        [{ text: "🚘 Открыть LeWheel", style: "success", web_app: { url: miniAppUrl } }],
+        [{ text: "🌍 Смотреть автомобили", style: "primary", url: catalogueUrl }],
       ],
     },
   })
 }
 
-async function sendContactRequest(chatId: string) {
+async function sendContactRequest(chatId: string, firstName?: string) {
+  const safeName = escapeTelegramHtml(firstName?.trim() || "друг")
   await telegramApi("sendMessage", {
     chat_id: chatId,
-    text: "Добро пожаловать! Подтвердите номер одной кнопкой — это откроет безопасный вход, Mini App, объявления и доступ к чатам.",
+    text: [
+      `🚘 <b>Добро пожаловать в LeWheel, ${safeName}!</b>`,
+      "",
+      "Регистрация займёт около минуты — всего <b>3 простых шага</b>.",
+      "",
+      "<b>Шаг 1 из 3 — подтвердите телефон</b> 📱",
+      "Нажмите кнопку ниже и отправьте свой контакт. Номер будет привязан к вашему Telegram ID.",
+      "",
+      "🔒 <i>Мы принимаем только ваш собственный контакт.</i>",
+    ].join("\n"),
+    parse_mode: "HTML",
     reply_markup: {
-      keyboard: [[{ text: "Отправить мой контакт", request_contact: true }]],
+      keyboard: [[{ text: "📱 Отправить мой контакт", style: "success", request_contact: true }]],
       resize_keyboard: true,
       one_time_keyboard: true,
+      input_field_placeholder: "Нажмите кнопку для шага 1",
     },
   })
+}
+
+async function sendEmailRequest(chatId: string) {
+  await telegramApi("sendMessage", {
+    chat_id: chatId,
+    text: [
+      "📧 <b>Шаг 2 из 3 — укажите почту</b>",
+      "",
+      "Отправьте email одним сообщением. Он понадобится для входа на сайт и восстановления доступа.",
+      "",
+      "<i>Пример: name@example.com</i>",
+    ].join("\n"),
+    parse_mode: "HTML",
+    reply_markup: {
+      force_reply: true,
+      selective: true,
+      input_field_placeholder: "name@example.com",
+    },
+  })
+}
+
+async function sendPasswordRequest(chatId: string) {
+  await telegramApi("sendMessage", {
+    chat_id: chatId,
+    text: [
+      "🔐 <b>Шаг 3 из 3 — придумайте пароль</b>",
+      "",
+      "Отправьте пароль длиной от <b>8 до 128 символов</b>. Он будет использоваться вместе с почтой или телефоном для входа на сайт.",
+      "",
+      "🛡 <i>В базе хранится только защищённый хэш пароля.</i>",
+    ].join("\n"),
+    parse_mode: "HTML",
+    reply_markup: {
+      force_reply: true,
+      selective: true,
+      input_field_placeholder: "Минимум 8 символов",
+    },
+  })
+}
+
+async function sendRegistrationComplete(chatId: string, name?: string | null) {
+  const safeName = escapeTelegramHtml(name?.trim() || "друг")
+  await sendMiniAppEntry(chatId, [
+    `🎉 <b>${safeName}, регистрация завершена!</b>`,
+    "",
+    "✅ Телефон подтверждён",
+    "✅ Почта сохранена",
+    "✅ Пароль защищён",
+    "",
+    "Теперь Mini App будет узнавать вас по Telegram ID и входить автоматически. На сайте используйте почту или телефон и свой пароль.",
+  ].join("\n"))
+}
+
+function escapeTelegramHtml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+}
+
+function hasModeratableContent(message: TelegramMessage) {
+  return Boolean(
+    message.text || message.caption || message.photo || message.video || message.animation ||
+    message.document || message.audio || message.voice || message.sticker || message.video_note ||
+    message.contact || message.location || message.venue || message.poll || message.dice,
+  )
+}
+
+async function getTelegramUser(telegramId: string) {
+  return prisma.user.findUnique({
+    where: { telegramId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      emailVerified: true,
+      phone: true,
+      telegramVerifiedAt: true,
+      hashedPassword: true,
+    },
+  })
+}
+
+async function sendRegistrationStep(chatId: string, step: TelegramRegistrationStep, firstName?: string, accountName?: string | null) {
+  if (step === "contact") return sendContactRequest(chatId, firstName)
+  if (step === "email") return sendEmailRequest(chatId)
+  if (step === "password") return sendPasswordRequest(chatId)
+  return sendRegistrationComplete(chatId, accountName || firstName)
 }
 
 async function handleMessage(message: TelegramMessage) {
@@ -81,59 +209,119 @@ async function handleMessage(message: TelegramMessage) {
 
   if (message.text?.trim().toLowerCase().startsWith("/start")) {
     if (message.chat.type === "private") {
-      const user = await prisma.user.findUnique({ where: { telegramId }, select: { telegramVerifiedAt: true, phone: true } })
-      if (isTelegramUserRegistered(user)) {
-        await sendMiniAppEntry(chatId, "Вы уже подтверждены. В Mini App можно подать объявление, посмотреть аукционы, АЗС и продолжить сделку.")
-        return
-      }
-      await sendContactRequest(chatId)
+      const user = await getTelegramUser(telegramId)
+      await sendRegistrationStep(chatId, getTelegramRegistrationStep(user), message.from.first_name, user?.name)
     }
     else await telegramApi("sendMessage", {
       chat_id: chatId,
-      text: "Для доступа к этому чату откройте личный диалог с ботом, нажмите «Старт» и подтвердите свой контакт.",
-      reply_markup: getBotStartUrl() ? { inline_keyboard: [[{ text: "Авторизоваться в боте", url: getBotStartUrl()! }]] } : undefined,
+      text: "🔐 <b>Регистрация проходит в личном чате с ботом.</b>\n\nПодтвердите телефон, укажите почту и придумайте пароль — после этого доступ к чату откроется автоматически.",
+      parse_mode: "HTML",
+      reply_markup: getBotStartUrl() ? { inline_keyboard: [[{ text: "🚀 Пройти регистрацию", style: "primary", url: getBotStartUrl()! }]] } : undefined,
     })
     return
   }
 
   if (message.text?.trim().toLowerCase().startsWith("/help") && message.chat.type === "private") {
-    const user = await prisma.user.findUnique({ where: { telegramId }, select: { telegramVerifiedAt: true, phone: true } })
-    if (isTelegramUserRegistered(user)) {
-      await sendMiniAppEntry(chatId, "Доступ активен. Откройте Mini App для объявлений, аукционов, избранного и доставок.")
-    } else {
-      await sendContactRequest(chatId)
-    }
+    const user = await getTelegramUser(telegramId)
+    await sendRegistrationStep(chatId, getTelegramRegistrationStep(user), message.from.first_name, user?.name)
     return
   }
 
   if (message.contact) {
     if (message.chat.type !== "private" || String(message.contact.user_id) !== telegramId) {
-      await telegramApi("sendMessage", { chat_id: chatId, text: "Отправьте именно свой контакт из личного чата с ботом." })
+      await telegramApi("sendMessage", { chat_id: chatId, text: "⚠️ Отправьте именно <b>свой контакт</b> из личного чата с ботом.", parse_mode: "HTML" })
       return
     }
     const phone = normalizePhone(message.contact.phone_number)
     if (!phone) {
-      await telegramApi("sendMessage", { chat_id: chatId, text: "Не удалось распознать номер. Попробуйте отправить контакт ещё раз." })
+      await telegramApi("sendMessage", { chat_id: chatId, text: "⚠️ Не удалось распознать номер. Попробуйте отправить контакт ещё раз." })
       return
     }
 
-    const user = await linkTelegramIdentity({
-      telegramId,
-      phone,
-      username: message.from.username,
-      name: [message.contact.first_name || message.from.first_name, message.contact.last_name || message.from.last_name].filter(Boolean).join(" "),
-    })
-    await telegramApi("sendMessage", {
-      chat_id: chatId,
-      text: `Готово, ${user.name || "друг"}! Контакт подтверждён. Теперь доступны вход на сайт, Mini App и чаты.`,
-      reply_markup: { remove_keyboard: true },
-    })
-    await sendMiniAppEntry(chatId, "Mini App готов: объявления, избранное, доставки и карта АЗС доступны в одном окне.")
+    try {
+      const user = await linkTelegramIdentity({
+        telegramId,
+        phone,
+        username: message.from.username,
+        name: [message.contact.first_name || message.from.first_name, message.contact.last_name || message.from.last_name].filter(Boolean).join(" "),
+      })
+      const step = getTelegramRegistrationStep(user)
+      if (step === "complete") {
+        await telegramApi("sendMessage", {
+          chat_id: chatId,
+          text: "✅ <b>Контакт подтверждён.</b> Ваш Telegram ID уже связан с аккаунтом.",
+          parse_mode: "HTML",
+          reply_markup: { remove_keyboard: true },
+        })
+        await sendRegistrationComplete(chatId, user.name)
+        return
+      }
+      await telegramApi("sendMessage", {
+        chat_id: chatId,
+        text: "✅ <b>Шаг 1 выполнен!</b> Телефон подтверждён и Telegram ID сохранён.",
+        parse_mode: "HTML",
+        reply_markup: { remove_keyboard: true },
+      })
+      await sendEmailRequest(chatId)
+    } catch (error) {
+      if (error instanceof TelegramIdentityConflictError) {
+        await telegramApi("sendMessage", {
+          chat_id: chatId,
+          text: "⚠️ Этот Telegram ID и номер уже относятся к разным аккаунтам. Напишите в поддержку, чтобы безопасно объединить данные.",
+          reply_markup: { remove_keyboard: true },
+        })
+        return
+      }
+      throw error
+    }
     return
   }
 
-  const user = await prisma.user.findUnique({ where: { telegramId }, select: { telegramVerifiedAt: true, phone: true } })
-  if ((message.chat.type === "group" || message.chat.type === "supergroup") && !isTelegramUserRegistered(user) && await canModerateTelegramChat(chatId)) {
+  if (message.chat.type === "private" && message.text) {
+    const user = await getTelegramUser(telegramId)
+    const step = getTelegramRegistrationStep(user)
+    if (step === "email") {
+      try {
+        await saveTelegramRegistrationEmail(telegramId, message.text)
+        await telegramApi("sendMessage", {
+          chat_id: chatId,
+          text: "✅ <b>Шаг 2 выполнен!</b> Почта сохранена.",
+          parse_mode: "HTML",
+        })
+        await sendPasswordRequest(chatId)
+      } catch (error) {
+        const text = error instanceof TelegramRegistrationError
+          ? `⚠️ ${escapeTelegramHtml(error.message)}\n\nОтправьте другую почту одним сообщением.`
+          : "⚠️ Не удалось сохранить почту. Попробуйте ещё раз немного позже."
+        await telegramApi("sendMessage", { chat_id: chatId, text, parse_mode: "HTML" })
+      }
+      return
+    }
+    if (step === "password") {
+      try {
+        await completeTelegramRegistration(telegramId, message.text.trim())
+        await telegramApi("deleteMessage", { chat_id: chatId, message_id: message.message_id }).catch(() => undefined)
+        const completedUser = await getTelegramUser(telegramId)
+        await sendRegistrationComplete(chatId, completedUser?.name)
+      } catch (error) {
+        const text = error instanceof TelegramRegistrationError
+          ? `⚠️ ${escapeTelegramHtml(error.message)}. Придумайте другой пароль и отправьте его одним сообщением.`
+          : "⚠️ Не удалось сохранить пароль. Попробуйте ещё раз немного позже."
+        await telegramApi("sendMessage", { chat_id: chatId, text, parse_mode: "HTML" })
+      }
+      return
+    }
+    await sendRegistrationStep(chatId, step, message.from.first_name, user?.name)
+    return
+  }
+
+  const user = await getTelegramUser(telegramId)
+  if (
+    (message.chat.type === "group" || message.chat.type === "supergroup") &&
+    hasModeratableContent(message) &&
+    !isTelegramUserRegistered(user) &&
+    await canModerateTelegramChat(chatId)
+  ) {
     let wasDeleted = false
     try {
       await telegramApi("deleteMessage", { chat_id: chatId, message_id: message.message_id })
@@ -144,8 +332,9 @@ async function handleMessage(message: TelegramMessage) {
     if (wasDeleted && canSendModerationNotice(chatId, telegramId)) {
       await telegramApi("sendMessage", {
         chat_id: chatId,
-        text: "Сообщение удалено: сначала подтвердите контакт в личном чате с ботом. После этого доступ в группу откроется автоматически.",
-        reply_markup: getBotStartUrl() ? { inline_keyboard: [[{ text: "Авторизоваться", url: getBotStartUrl()! }]] } : undefined,
+        text: "🔐 <b>Сообщение скрыто: регистрация не завершена.</b>\n\nОткройте личный чат с ботом и пройдите 3 шага: телефон → почта → пароль. После этого текст и медиа будут проходить автоматически.",
+        parse_mode: "HTML",
+        reply_markup: getBotStartUrl() ? { inline_keyboard: [[{ text: "🚀 Завершить регистрацию", style: "primary", url: getBotStartUrl()! }]] } : undefined,
       }).catch((error) => console.error("Telegram moderation notice failed:", error))
     }
   }

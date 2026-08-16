@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Script from "next/script"
 import TelegramMiniApp from "@/components/telegram/TelegramMiniApp"
 
 export const metadata: Metadata = {
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 }
 
 export default function TelegramPage() {
-  return <TelegramMiniApp />
+  return (
+    <>
+      <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
+      <TelegramMiniApp />
+    </>
+  )
 }

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     const user = await getVerifiedTelegramUser(telegramUser.id)
     if (!user) {
-      return NextResponse.json({ error: "Сначала откройте бота, нажмите «Старт» и отправьте свой контакт." }, { status: 403 })
+      return NextResponse.json({ error: "Завершите регистрацию в боте: подтвердите телефон, укажите почту и придумайте пароль." }, { status: 403 })
     }
 
     return NextResponse.json({

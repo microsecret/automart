@@ -33,18 +33,18 @@ async function api(method, payload) {
 const bot = await api("getMe", {})
 await api("setMyCommands", {
   commands: [
-    { command: "start", description: "Регистрация и Mini App" },
-    { command: "help", description: "Как работает доступ" },
+    { command: "start", description: "🚀 Регистрация и вход в LeWheel" },
+    { command: "help", description: "💬 Продолжить регистрацию или открыть приложение" },
   ],
 })
 await api("setMyDescription", {
-  description: "Автомобильная площадка: объявления, импорт, аукционы, доставка и безопасные сделки.",
+  description: "🚘 LeWheel — автомобильная площадка. Регистрация за 3 шага: телефон, почта и пароль. После неё Mini App входит автоматически по Telegram ID.",
 })
 await api("setMyShortDescription", {
-  short_description: "Автомобили, аукционы и доставка в одном Mini App.",
+  short_description: "🚘 Автомобили, аукционы и сделки в одном Mini App.",
 })
 await api("setChatMenuButton", {
-  menu_button: { type: "web_app", text: "Открыть площадку", web_app: { url: miniApp.toString() } },
+  menu_button: { type: "web_app", text: "🚘 Открыть LeWheel", web_app: { url: miniApp.toString() } },
 })
 await api("setWebhook", {
   url: webhookUrl,

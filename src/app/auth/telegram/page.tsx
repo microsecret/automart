@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Box, Paper, Stack, Text, Title } from "@mantine/core"
-import TelegramLoginForm from "@/components/auth/TelegramLoginForm"
+import { Alert, Box, Button, Paper, Stack, Text, Title } from "@mantine/core"
 
-export const metadata: Metadata = { title: "Вход через Telegram" }
+export const metadata: Metadata = { title: "Вход в аккаунт" }
 
 export default function TelegramAuthPage() {
   return (
@@ -11,11 +10,14 @@ export default function TelegramAuthPage() {
       <Paper withBorder radius="lg" p={{ base: "lg", md: "xl" }}>
         <Stack gap="lg">
           <div>
-            <Title order={1} fz={28}>Вход через Telegram</Title>
-            <Text c="dimmed" mt="xs">Без пароля: подтверждаем номер через бота Авторынка.</Text>
+            <Title order={1} fz={28}>Вход в аккаунт</Title>
+            <Text c="dimmed" mt="xs">На сайте вход выполняется по почте или телефону и паролю.</Text>
           </div>
-          <TelegramLoginForm />
-          <Text size="sm" ta="center" c="dimmed">Нет аккаунта? <Link href="/auth/signup" style={{ color: "#4f46e5" }}>Зарегистрироваться</Link></Text>
+          <Alert color="indigo" variant="light">
+            Автоматический вход по Telegram ID работает внутри Mini App. Отдельная кнопка Telegram-входа на сайте больше не требуется.
+          </Alert>
+          <Button component={Link} href="/auth/signin" color="indigo" fullWidth>Войти по почте или телефону</Button>
+          <Text size="sm" ta="center" c="dimmed">Нет аккаунта? <Link href="/auth/signup" style={{ color: "#4f46e5" }}>Регистрация через Telegram-бота</Link></Text>
         </Stack>
       </Paper>
     </Box>

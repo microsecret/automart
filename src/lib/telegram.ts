@@ -1,11 +1,7 @@
 import crypto from "crypto"
 import https from "node:https"
+import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
-
-const OTP_PURPOSE = "LOGIN"
-const OTP_TTL_MS = 10 * 60 * 1000
-const OTP_COOLDOWN_MS = 60 * 1000
-const MAX_OTP_ATTEMPTS = 5
 
 export type TelegramIdentity = {
   id: string
@@ -25,16 +21,29 @@ let botProfilePromise: Promise<TelegramBotProfile> | null = null
 
 export class TelegramIdentityConflictError extends Error {}
 
+export class TelegramRegistrationError extends Error {
+  constructor(
+    public readonly code: "NOT_FOUND" | "INVALID_EMAIL" | "EMAIL_TAKEN" | "INVALID_PASSWORD" | "WRONG_STEP",
+    message: string,
+  ) {
+    super(message)
+  }
+}
+
+export type TelegramRegistrationStep = "contact" | "email" | "password" | "complete"
+
+type TelegramRegistrationUser = {
+  email?: string | null
+  emailVerified?: Date | null
+  phone?: string | null
+  telegramVerifiedAt?: Date | null
+  hashedPassword?: string | null
+}
+
 function timingSafeEqualHex(left: string, right: string) {
   const leftBuffer = Buffer.from(left, "hex")
   const rightBuffer = Buffer.from(right, "hex")
   return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer)
-}
-
-function getTelegramSecret() {
-  const secret = process.env.NEXTAUTH_SECRET || process.env.TELEGRAM_BOT_TOKEN
-  if (!secret) throw new Error("NEXTAUTH_SECRET or TELEGRAM_BOT_TOKEN is required")
-  return secret
 }
 
 export function normalizePhone(value: unknown) {
@@ -51,6 +60,21 @@ export function normalizePhone(value: unknown) {
 
 export function isInternalTelegramEmail(value: unknown) {
   return typeof value === "string" && /^tg_\d+@telegram\.local$/i.test(value)
+}
+
+function isPasswordHash(value: unknown) {
+  return typeof value === "string" && /^\$2[aby]\$\d{2}\$/.test(value)
+}
+
+export function getTelegramRegistrationStep(user: TelegramRegistrationUser | null): TelegramRegistrationStep {
+  if (!user?.telegramVerifiedAt || !user.phone) return "contact"
+  if (!user.email || isInternalTelegramEmail(user.email)) return "email"
+  if (!user.emailVerified || !isPasswordHash(user.hashedPassword)) return "password"
+  return "complete"
+}
+
+export function isTelegramUserRegistered(user: TelegramRegistrationUser | null) {
+  return getTelegramRegistrationStep(user) === "complete"
 }
 
 export function verifyTelegramInitData(initData: string, botToken: string, maxAgeSeconds = 24 * 60 * 60): TelegramIdentity | null {
@@ -128,61 +152,55 @@ export async function linkTelegramIdentity(input: {
 }
 
 export async function getVerifiedTelegramUser(telegramId: string) {
-  return prisma.user.findFirst({
+  const user = await prisma.user.findFirst({
     where: {
       telegramId,
       telegramVerifiedAt: { not: null },
       phone: { not: null },
     },
   })
+  return isTelegramUserRegistered(user) ? user : null
 }
 
-function hashOtp(code: string) {
-  return crypto.createHmac("sha256", getTelegramSecret()).update(code).digest("hex")
-}
-
-export async function issueTelegramOtp(phoneInput: string) {
-  const phone = normalizePhone(phoneInput)
-  if (!phone) return { status: "invalid" as const, phone: null, user: null }
-
-  const user = await prisma.user.findUnique({ where: { phone } })
-  if (!user?.telegramId || !user.telegramVerifiedAt) {
-    return { status: "unavailable" as const, phone, user: null }
+export async function saveTelegramRegistrationEmail(telegramId: string, emailInput: string) {
+  const email = emailInput.trim().toLowerCase()
+  if (email.length > 254 || isInternalTelegramEmail(email) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new TelegramRegistrationError("INVALID_EMAIL", "Введите корректную почту, например name@example.com")
   }
 
-  const since = new Date(Date.now() - OTP_COOLDOWN_MS)
-  const recent = await prisma.telegramAuthCode.findFirst({
-    where: { phone, purpose: OTP_PURPOSE, createdAt: { gt: since }, consumedAt: null },
-    orderBy: { createdAt: "desc" },
-  })
-  if (recent) return { status: "cooldown" as const, phone, user }
-
-  const code = crypto.randomInt(0, 100000).toString().padStart(5, "0")
-  await prisma.telegramAuthCode.create({
-    data: { phone, codeHash: hashOtp(code), purpose: OTP_PURPOSE, expiresAt: new Date(Date.now() + OTP_TTL_MS) },
-  })
-  return { status: "issued" as const, phone, user, code }
-}
-
-export async function consumeTelegramOtp(phoneInput: string, codeInput: string) {
-  const phone = normalizePhone(phoneInput)
-  const code = String(codeInput || "").trim()
-  if (!phone || !/^\d{5}$/.test(code)) return null
-
-  const record = await prisma.telegramAuthCode.findFirst({
-    where: { phone, purpose: OTP_PURPOSE, consumedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: "desc" },
-  })
-  if (!record || record.attempts >= MAX_OTP_ATTEMPTS) return null
-
-  const valid = timingSafeEqualHex(hashOtp(code), record.codeHash)
-  if (!valid) {
-    await prisma.telegramAuthCode.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } })
-    return null
+  const user = await prisma.user.findUnique({ where: { telegramId } })
+  if (!user) throw new TelegramRegistrationError("NOT_FOUND", "Сначала подтвердите телефон")
+  if (getTelegramRegistrationStep(user) !== "email") {
+    throw new TelegramRegistrationError("WRONG_STEP", "Этот шаг уже завершён")
   }
 
-  await prisma.telegramAuthCode.update({ where: { id: record.id }, data: { consumedAt: new Date() } })
-  return prisma.user.findUnique({ where: { phone } })
+  const existing = await prisma.user.findUnique({ where: { email } })
+  if (existing && existing.id !== user.id) {
+    throw new TelegramRegistrationError("EMAIL_TAKEN", "Эта почта уже связана с другим аккаунтом")
+  }
+
+  return prisma.user.update({
+    where: { id: user.id },
+    data: { email, emailVerified: null },
+  })
+}
+
+export async function completeTelegramRegistration(telegramId: string, password: string) {
+  if (password.length < 8 || password.length > 128) {
+    throw new TelegramRegistrationError("INVALID_PASSWORD", "Пароль должен содержать от 8 до 128 символов")
+  }
+
+  const user = await prisma.user.findUnique({ where: { telegramId } })
+  if (!user) throw new TelegramRegistrationError("NOT_FOUND", "Сначала подтвердите телефон")
+  if (getTelegramRegistrationStep(user) !== "password") {
+    throw new TelegramRegistrationError("WRONG_STEP", "Сначала укажите почту")
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12)
+  return prisma.user.update({
+    where: { id: user.id },
+    data: { hashedPassword, emailVerified: new Date() },
+  })
 }
 
 export async function telegramApi<T = unknown>(method: string, payload: Record<string, unknown>) {
@@ -280,8 +298,4 @@ export async function canModerateTelegramChat(chatId: string) {
     moderatedChatCapability.set(chatId, { allowed: false, expiresAt: Date.now() + 30_000 })
     return false
   }
-}
-
-export function isTelegramUserRegistered(user: { telegramVerifiedAt?: Date | null; phone?: string | null } | null) {
-  return Boolean(user?.telegramVerifiedAt && user.phone)
 }

@@ -12,7 +12,6 @@ import {
   Text,
   Alert,
   Anchor,
-  Divider,
   Group,
 } from "@mantine/core"
 import { IconAlertCircle, IconAt, IconLock } from "@tabler/icons-react"
@@ -38,28 +37,35 @@ export default function SignInForm() {
   }, [])
 
   const form = useForm({
-    initialValues: { email: "", password: "" },
+    initialValues: { identifier: "", password: "" },
     validate: {
-      email: (v) => (/^\S+@\S+\.\S+$/.test(v) ? null : "Введите корректный email"),
-      password: (v) => (v.length < 6 ? "Минимум 6 символов" : null),
+      identifier: (value) => {
+        const normalized = value.trim()
+        if (/^\S+@\S+\.\S+$/.test(normalized)) return null
+        return normalized.replace(/\D/g, "").length >= 10 ? null : "Введите корректную почту или телефон"
+      },
+      password: (v) => (v.length < 8 ? "Минимум 8 символов" : null),
     },
   })
 
-  const handleSubmit = async (values: { email: string; password: string }) => {
+  const handleSubmit = async (values: { identifier: string; password: string }) => {
     setLoading(true)
     setError(null)
     setInfo(null)
     setNeedsEmailVerification(false)
     try {
       const res = await signIn("credentials", {
-        email: values.email,
+        identifier: values.identifier,
         password: values.password,
         redirect: false,
         callbackUrl,
       })
       if (res?.error === "EMAIL_NOT_VERIFIED") {
-        setNeedsEmailVerification(true)
-        setError("Сначала подтвердите email по ссылке из письма.")
+        const enteredEmail = values.identifier.includes("@")
+        setNeedsEmailVerification(enteredEmail)
+        setError(enteredEmail
+          ? "Сначала подтвердите почту по ссылке из письма."
+          : "Почта не подтверждена. Повторите вход, указав почту, и запросите новое письмо.")
       } else if (res?.error === "RATE_LIMITED") {
         setError("Слишком много попыток входа. Подождите 15 минут и попробуйте снова.")
       } else if (res?.error) {
@@ -82,7 +88,7 @@ export default function SignInForm() {
       const data = await fetchJson<ResendVerificationResponse>("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.values.email }),
+        body: JSON.stringify({ email: form.values.identifier }),
       })
       setInfo(data.message || "Письмо с подтверждением отправлено.")
     } catch (requestError) {
@@ -107,17 +113,20 @@ export default function SignInForm() {
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
           <TextInput
-            label="Email"
-            placeholder="you@example.com"
+            label="Почта или телефон"
+            placeholder="you@example.com или +7 900 000-00-00"
             leftSection={<IconAt size={18} />}
+            autoComplete="username"
+            inputMode="text"
             size="md"
             radius="md"
-            {...form.getInputProps("email")}
+            {...form.getInputProps("identifier")}
           />
           <PasswordInput
             label="Пароль"
             placeholder="Ваш пароль"
             leftSection={<IconLock size={18} />}
+            autoComplete="current-password"
             size="md"
             radius="md"
             {...form.getInputProps("password")}
@@ -128,12 +137,6 @@ export default function SignInForm() {
         </Stack>
       <Text size="xs" c="gray.5" ta="right"><Link href="/auth/forgot-password" style={{ color: "#4f46e5" }}>Забыли пароль?</Link></Text>
     </form>
-
-      <Divider label="или" labelPosition="center" />
-
-      <Button component={Link} href={`/auth/telegram?callbackUrl=${encodeURIComponent(callbackUrl)}`} variant="light" color="indigo" leftSection={<span aria-hidden>✈️</span>} fullWidth>
-        Войти через Telegram
-      </Button>
 
       <Group justify="center">
         <Text size="sm" c="gray.5">

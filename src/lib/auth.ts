@@ -1,8 +1,9 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
+import crypto from "node:crypto"
 import { prisma } from "@/lib/prisma"
-import { consumeTelegramOtp, getVerifiedTelegramUser, isInternalTelegramEmail, verifyTelegramInitData } from "@/lib/telegram"
+import { getVerifiedTelegramUser, isInternalTelegramEmail, normalizePhone, verifyTelegramInitData } from "@/lib/telegram"
 import { normalizeUserRole } from "@/lib/permissions"
 import { getClientIp, rateLimit } from "@/lib/rate-limit"
 import type { NextAuthOptions } from "next-auth"
@@ -13,36 +14,29 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
+        identifier: { label: "Почта или телефон", type: "text" },
         email: { label: "Email", type: "email" },
         password: { label: "Пароль", type: "password" },
       },
       async authorize(credentials, request) {
-        if (!credentials?.email || !credentials?.password) return null
-        const email = credentials.email.trim().toLowerCase()
+        const identifier = String(credentials?.identifier || credentials?.email || "").trim()
+        if (!identifier || !credentials?.password) return null
+        const email = identifier.includes("@") ? identifier.toLowerCase() : null
+        const phone = email ? null : normalizePhone(identifier)
+        if (!email && !phone) return null
+        const identifierKey = crypto.createHash("sha256").update(email || phone || "invalid").digest("hex")
         const ipLimit = rateLimit(`auth:password:ip:${getClientIp({ headers: request.headers ?? new Headers() })}`, { windowMs: 15 * 60_000, maxRequests: 15 })
-        const emailLimit = rateLimit(`auth:password:email:${email}`, { windowMs: 15 * 60_000, maxRequests: 8 })
-        if (!ipLimit.success || !emailLimit.success) throw new Error("RATE_LIMITED")
+        const identifierLimit = rateLimit(`auth:password:identifier:${identifierKey}`, { windowMs: 15 * 60_000, maxRequests: 8 })
+        if (!ipLimit.success || !identifierLimit.success) throw new Error("RATE_LIMITED")
 
-        const user = await prisma.user.findUnique({ where: { email } })
+        const user = email
+          ? await prisma.user.findUnique({ where: { email } })
+          : await prisma.user.findUnique({ where: { phone: phone! } })
         if (!user) return null
         const valid = await bcrypt.compare(credentials.password, user.hashedPassword || "")
         if (!valid) return null
         if (!user.emailVerified) throw new Error("EMAIL_NOT_VERIFIED")
         return { id: user.id, email: user.email, name: user.name, role: normalizeUserRole(user.role) }
-      },
-    }),
-    CredentialsProvider({
-      id: "phone-otp",
-      name: "Telegram OTP",
-      credentials: {
-        phone: { label: "Телефон", type: "tel" },
-        code: { label: "Код из Telegram", type: "text" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.phone || !credentials.code) return null
-        const user = await consumeTelegramOtp(credentials?.phone, credentials?.code)
-        if (!user?.telegramVerifiedAt) return null
-        return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role) }
       },
     }),
     CredentialsProvider({
