@@ -247,7 +247,7 @@ function bobaedreamWon(value: string | null | undefined) {
 function bobaedreamEquipment(html: string) {
   const items = [...html.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)].flatMap((match) => {
     const block = match[1]
-    if (!/\bchecked(?:\s*=|\s|>)/i.test(block)) return []
+    if (!/\bchecked\b/i.test(block)) return []
     const rawLabel = htmlText(firstMatch(block, /<button[^>]*>([\s\S]*?)<\/button>/i))
     const label = rawLabel ? BOBAEDREAM_EQUIPMENT_LABELS[rawLabel] : null
     return label ? [{ label, available: true }] : []
@@ -607,13 +607,21 @@ async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promis
   const mileage = asNumber(pairs.get("주행거리")?.replace(/[^\d]/g, ""))
   const fuelType = normalizeAuctionFuelType(pairs.get("연료"))
   const transmission = normalizeAuctionTransmission(pairs.get("변속기"))
-  const monthlyRentWon = bobaedreamWon(pairs.get("월렌트료"))
-  const transferSupportWon = bobaedreamWon(pairs.get("승계지원금")) || 0
-  const depositWon = bobaedreamWon(pairs.get("보증금"))
-  const residualValueWon = bobaedreamWon(pairs.get("잔존가치"))
-  const rentalPeriod = pairs.get("렌트기간") || ""
-  const remainingMonths = asNumber(rentalPeriod.match(/잔여\s*(\d+)\s*개월/)?.[1])
-  const totalMonths = asNumber(rentalPeriod.match(/총\s*(\d+)\s*개월/)?.[1])
+  const rentalSummary = firstMatch(html, /<div class="price-area">([\s\S]*?)<\/div>\s*<div class="btn-area">/i) || ""
+  const monthlyRentFromSummary = asNumber(firstMatch(rentalSummary, /<span class="stit">\s*월렌트료\s*<\/span>[\s\S]*?<span class="price">\s*<b[^>]*>\s*([\d,]+)\s*<\/b>\s*만원/i)?.replace(/,/g, ""))
+  const rentalMonthsFromSummary = rentalSummary.match(/<span class="stit">\s*잔여개월\s*<\/span>[\s\S]*?<b[^>]*>\s*(\d+)\s*\/\s*(\d+)\s*<\/b>/i)
+  const tableValue = (label: string) => {
+    const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    return htmlText(firstMatch(html, new RegExp(`<th[^>]*>\\s*${escapedLabel}\\s*<\\/th>\\s*<td[^>]*>([\\s\\S]*?)<\\/td>`, "i")))
+  }
+  const monthlyRentWon = bobaedreamWon(pairs.get("월렌트료") || tableValue("월렌트료"))
+    || (monthlyRentFromSummary !== null ? Math.round(monthlyRentFromSummary * 10_000) : null)
+  const transferSupportWon = bobaedreamWon(pairs.get("승계지원금") || tableValue("승계지원금")) || 0
+  const depositWon = bobaedreamWon(pairs.get("보증금") || tableValue("보증금"))
+  const residualValueWon = bobaedreamWon(pairs.get("잔존가치") || tableValue("잔존가치"))
+  const rentalPeriod = pairs.get("렌트기간") || tableValue("렌트기간") || ""
+  const remainingMonths = asNumber(rentalPeriod.match(/잔여\s*(\d+)\s*개월/)?.[1]) || asNumber(rentalMonthsFromSummary?.[1])
+  const totalMonths = asNumber(rentalPeriod.match(/총\s*(\d+)\s*개월/)?.[1]) || asNumber(rentalMonthsFromSummary?.[2])
   const isRentalTransfer = monthlyRentWon !== null && monthlyRentWon > 0 && remainingMonths !== null && remainingMonths > 0
   const estimatedRemainingContractWon = isRentalTransfer
     ? Math.max(1, Math.round(monthlyRentWon * remainingMonths - transferSupportWon))
@@ -622,7 +630,7 @@ async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promis
   const sourcePrice = estimatedRemainingContractWon || regularSalePriceWon
   if (!sourcePrice || sourcePrice <= 0) throw new Error(`Bobaedream: в карточке ${candidate.sourceId} не удалось определить стоимость`)
 
-  const ownershipAfterEnd = /소유/.test(pairs.get("만기 후") || "")
+  const ownershipAfterEnd = /소유/.test(pairs.get("만기 후") || tableValue("만기 후") || "")
   const warranty = pairs.get("보증정보") || null
   const equipment = bobaedreamEquipment(html)
   const bodyType = /카니발|Carnival/i.test(title) ? "MINIVAN"
