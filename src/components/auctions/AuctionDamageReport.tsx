@@ -41,6 +41,12 @@ export default function AuctionDamageReport({ report }: { report: AuctionDamageR
     report.sections.reduce((total, section) => total + section.items.filter((item) => item.kinds.includes(kind as AuctionDamageKind)).length, 0),
   ])) as Record<AuctionDamageKind, number>, [report])
 
+  const sectionPhotos = useMemo(() => activeSection?.items.flatMap((item) => item.photos.map((photo, itemPhotoIndex) => ({
+    item,
+    photo,
+    itemPhotoIndex,
+  }))) || [], [activeSection])
+
   const selectSection = (code: string) => {
     const section = report.sections.find((entry) => entry.code === code)
     setSectionCode(code)
@@ -59,10 +65,14 @@ export default function AuctionDamageReport({ report }: { report: AuctionDamageR
   const activePhoto = photos[photoIndex]
   const displayedPhotoUrl = activePhoto ? highQualityAuctionImageUrl(activePhoto.url) : ""
   const photoAvailable = Boolean(displayedPhotoUrl) && failedPhotoUrl !== displayedPhotoUrl
+  const sectionPhotoIndex = sectionPhotos.findIndex((entry) => entry.item.id === activeItem?.id && entry.itemPhotoIndex === photoIndex)
 
   const changePhoto = (offset: number) => {
-    if (photos.length < 2) return
-    setPhotoIndex((current) => (current + offset + photos.length) % photos.length)
+    if (sectionPhotos.length < 2) return
+    const current = sectionPhotoIndex >= 0 ? sectionPhotoIndex : offset > 0 ? -1 : 0
+    const next = sectionPhotos[(current + offset + sectionPhotos.length) % sectionPhotos.length]
+    setItemId(next.item.id)
+    setPhotoIndex(next.itemPhotoIndex)
     setFailedPhotoUrl(null)
   }
 
@@ -144,10 +154,10 @@ export default function AuctionDamageReport({ report }: { report: AuctionDamageR
               ) : (
                 <Center className={styles.photoEmpty}><Stack align="center" gap={6}><IconPhotoOff size={40} stroke={1.5} /><Text size="sm">Источник не приложил фото к этому замечанию</Text></Stack></Center>
               )}
-              {photos.length > 1 && <>
-                <button type="button" className={styles.photoControl} aria-label="Предыдущее фото повреждения" onClick={() => changePhoto(-1)}><IconChevronLeft size={22} /></button>
-                <button type="button" className={styles.photoControl} aria-label="Следующее фото повреждения" onClick={() => changePhoto(1)}><IconChevronRight size={22} /></button>
-                <span className={styles.photoCounter}>{photoIndex + 1} / {photos.length}</span>
+              {sectionPhotos.length > 1 && <>
+                <button type="button" className={styles.photoControl} aria-label="Предыдущее фото отчёта" onClick={() => changePhoto(-1)}><IconChevronLeft size={22} /></button>
+                <button type="button" className={styles.photoControl} aria-label="Следующее фото отчёта" onClick={() => changePhoto(1)}><IconChevronRight size={22} /></button>
+                <span className={styles.photoCounter}>{Math.max(sectionPhotoIndex, 0) + 1} / {sectionPhotos.length}</span>
               </>}
             </Box>
           </Box>

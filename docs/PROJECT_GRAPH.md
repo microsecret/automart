@@ -75,6 +75,11 @@ Native Russian source labels are kept first; deterministic source dictionaries
 are used next, and untranslated foreign prose is never published. Only defect
 text, normalized coordinates and allow-listed HTTPS URLs are stored. Diagram
 and defect image bytes load on demand from the source into the browser cache.
+The detail widget navigates across every defect photo in the active inspection
+section, even when the selected defect itself has only one photo. Imported lots
+with normalized source attributes render the detailed source table as the
+single specification block; the compact legacy characteristics grid remains
+only as a fallback for listings without source attributes.
 
 ## Source inventory
 

@@ -419,6 +419,16 @@ function sourceRussianText(value: string | null) {
   return value && /[\u0400-\u04FF]/.test(value) && !/[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(value) ? value : null
 }
 
+function uniqueDamagePhrases(values: string | string[]) {
+  const source = Array.isArray(values) ? values : [values]
+  const unique = new Map<string, string>()
+  for (const phrase of source.flatMap((value) => value.split(/\s*[;|、]+\s*/)).map((value) => value.trim()).filter(Boolean)) {
+    const key = phrase.normalize("NFKC").toLocaleLowerCase("ru-RU")
+    if (!unique.has(key)) unique.set(key, phrase)
+  }
+  return [...unique.values()].join("; ")
+}
+
 function localizeYouxinDamageSection(value: string | null) {
   const nativeRussian = sourceRussianText(value)
   if (nativeRussian) return nativeRussian
@@ -465,7 +475,7 @@ function localizeYouxinDamagePart(value: string | null) {
 
 function localizeYouxinDamageNote(value: string | null) {
   const nativeRussian = sourceRussianText(value)
-  if (nativeRussian) return nativeRussian
+  if (nativeRussian) return uniqueDamagePhrases(nativeRussian)
   if (!value) return "Замечание осмотра"
   const entries = value.split(/[|、]+/).map((entry) => entry.normalize("NFKC").trim()).filter(Boolean)
   const translated = entries.flatMap((entry) => {
@@ -482,7 +492,7 @@ function localizeYouxinDamageNote(value: string | null) {
     if (deformationRange) return [`Деформация ${deformationRange[1]}–${deformationRange[2]} см`]
     return ["Замечание осмотра"]
   })
-  return [...new Set(translated)].join("; ") || "Замечание осмотра"
+  return uniqueDamagePhrases(translated) || "Замечание осмотра"
 }
 
 function youxinDamageKinds(values: Array<string | null>, seriousCount: number, level: number): AuctionDamageKind[] {
@@ -526,7 +536,7 @@ function youxinDamageReport(detailInfo: UnknownRecord | null): AuctionDamageRepo
       const seriousCount = Math.round(asNumber(item.seriousFlawCount) || 0)
       const level = Math.round(asNumber(item.level) || 0)
       const itemKinds = youxinDamageKinds(rawNotes, seriousCount, level)
-      const note = [...new Set(rawNotes.flatMap((value) => value ? [localizeYouxinDamageNote(value)] : []))].join("; ") || "Замечание осмотра"
+      const note = uniqueDamagePhrases(rawNotes.flatMap((value) => value ? [localizeYouxinDamageNote(value)] : [])) || "Замечание осмотра"
       const fallbackPoint = asText(asRecord(detectItems[0])?.positionMap)
       const point = youxinDamagePoint(asText(item.ratioLocation) || fallbackPoint)
       const photos = detectItems.flatMap((photoValue) => {

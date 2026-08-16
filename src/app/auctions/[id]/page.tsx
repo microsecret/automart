@@ -406,7 +406,7 @@ function AuctionDetail() {
                 )}
               </Paper>
 
-              <Paper radius="md" p="md" withBorder>
+              {publicSpecs.length === 0 && <Paper radius="md" p="md" withBorder>
                 <Stack gap="sm">
                   <Group gap="sm"><IconCar size={18} color="#4f46e5" /><Text fw={700} c="dark.9">Характеристики</Text></Group>
                   <SimpleGrid className="auction-detail-specs" cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
@@ -427,7 +427,7 @@ function AuctionDetail() {
                     </Anchor>
                   </Group>
                 </Stack>
-              </Paper>
+              </Paper>}
 
               {publicSpecs.length > 0 && (
                 <Paper radius="md" p="md" withBorder>
@@ -441,6 +441,12 @@ function AuctionDetail() {
                         </Group>
                       ))}
                     </SimpleGrid>
+                    <Group gap={6} mt={2}>
+                      <Text size="xs" c="dimmed">Первоисточник:</Text>
+                      <Anchor href={listing.sourceUrl} target="_blank" rel="noreferrer" size="xs" fw={600}>
+                        Открыть объявление на {auctionSourceLabel(listing.source)}
+                      </Anchor>
+                    </Group>
                   </Stack>
                 </Paper>
               )}
