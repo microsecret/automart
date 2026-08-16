@@ -166,7 +166,7 @@ const fuelAliases: Record<string, readonly string[]> = {
 }
 
 const transmissionAliases: Record<string, readonly string[]> = {
-  AUTOMATIC: ["AUTOMATIC", "AUTOMATIC_GEAR", "AUTO", "AT", "A/T", "오토", "自动"],
+  AUTOMATIC: ["AUTOMATIC", "AUTOMATIC_GEAR", "AUTO", "AT", "A/T", "오토", "자동", "自动"],
   MANUAL: ["MANUAL", "MANUAL_GEAR", "MT", "M/T", "수동", "手动"],
   VARIATOR: ["VARIATOR", "CVT", "무단변속", "无级"],
   ROBOTIC: ["ROBOTIC", "SEMIAUTOMATIC_GEAR", "DCT", "DSG", "ROBOT", "듀얼클러치", "双离合"],

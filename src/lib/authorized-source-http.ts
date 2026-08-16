@@ -157,7 +157,10 @@ function updateActiveRequests(agent: https.Agent, delta: 1 | -1) {
 function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "POST", headers: Record<string, string>, body: string | undefined, timeoutMs: number, maxBytes: number) {
   return new Promise<{ status: number; headers: IncomingHttpHeaders; body: string }>((resolve, reject) => {
     const requestHeaders = body === undefined ? headers : { ...headers, "Content-Length": String(Buffer.byteLength(body)) }
-    const request = https.request(url, { method, agent, headers: requestHeaders }, (response) => {
+    // Several East-Asian catalogue hosts publish an unreachable AAAA record
+    // from our production network. Explicit IPv4 keeps source checks bounded;
+    // HTTP CONNECT proxies still resolve through their configured IPv4 host.
+    const request = https.request(url, { method, agent, headers: requestHeaders, family: 4 }, (response) => {
       const chunks: Buffer[] = []
       let size = 0
       response.on("data", (chunk: Buffer) => {
@@ -168,14 +171,21 @@ function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "POST", h
         }
         chunks.push(chunk)
       })
-      response.once("end", () => resolve({
-        status: response.statusCode || 0,
-        headers: response.headers,
-        body: Buffer.concat(chunks).toString("utf8"),
-      }))
+      response.once("end", () => {
+        clearTimeout(hardDeadline)
+        resolve({
+          status: response.statusCode || 0,
+          headers: response.headers,
+          body: Buffer.concat(chunks).toString("utf8"),
+        })
+      })
     })
+    const hardDeadline = setTimeout(() => request.destroy(new Error("Источник превысил общий лимит времени")), timeoutMs)
     request.setTimeout(timeoutMs, () => request.destroy(new Error("Источник не ответил вовремя")))
-    request.once("error", reject)
+    request.once("error", (error) => {
+      clearTimeout(hardDeadline)
+      reject(error)
+    })
     request.end(body)
   })
 }

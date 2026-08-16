@@ -10,7 +10,16 @@ import {
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { translateToRussian } from "@/lib/nvidia-translate"
 
-export const PUBLIC_AUCTION_SOURCES = ["IAUTOS", "GOONET", "CARVAGO"] as const
+export const PUBLIC_AUCTION_SOURCES = [
+  "IAUTOS",
+  "YOUXINPAI",
+  "GOONET",
+  "BEFORWARD",
+  "CARSENSOR",
+  "CARVAGO",
+  "AUTOSALE",
+  "BOBAEDREAM",
+] as const
 export type PublicAuctionSource = (typeof PUBLIC_AUCTION_SOURCES)[number]
 
 export type PublicAuctionCandidate = {
@@ -21,6 +30,12 @@ export type PublicAuctionCandidate = {
   manufacturedMonth?: string | null
   mileage?: number | null
   imageUrl?: string | null
+  make?: string | null
+  model?: string | null
+  fuelType?: string | null
+  transmission?: string | null
+  bodyType?: string | null
+  auctionDate?: Date | null
 }
 
 type UnknownRecord = Record<string, unknown>
@@ -34,8 +49,36 @@ const SOURCE_HEADERS = {
 }
 const SOURCE_HOSTS: Record<PublicAuctionSource, ReadonlySet<string>> = {
   IAUTOS: new Set(["so.iautos.cn", "www.iautos.cn"]),
+  YOUXINPAI: new Set(["api.youxinpai.cn", "www.youxinpai.cn"]),
   GOONET: new Set(["www.goo-net-exchange.com"]),
+  BEFORWARD: new Set(["www.beforward.jp"]),
+  CARSENSOR: new Set(["www.carsensor.net"]),
   CARVAGO: new Set(["carvago.com", "www.carvago.com"]),
+  AUTOSALE: new Set(["autosale.ee"]),
+  BOBAEDREAM: new Set(["www.bobaedream.co.kr"]),
+}
+
+const JAPANESE_MAKES: Readonly<Record<string, string>> = {
+  "トヨタ": "Toyota", "ホンダ": "Honda", "日産": "Nissan", "ニッサン": "Nissan",
+  "スズキ": "Suzuki", "ダイハツ": "Daihatsu", "三菱": "Mitsubishi", "マツダ": "Mazda",
+  "スバル": "Subaru", "レクサス": "Lexus", "いすゞ": "Isuzu", "日野自動車": "Hino",
+  "メルセデス・ベンツ": "Mercedes-Benz", "フォルクスワーゲン": "Volkswagen",
+  "アウディ": "Audi", "ポルシェ": "Porsche", "ボルボ": "Volvo", "プジョー": "Peugeot",
+  "ルノー": "Renault", "シトロエン": "Citroen", "フィアット": "Fiat", "ミニ": "MINI",
+  "ランドローバー": "Land Rover", "ジャガー": "Jaguar", "ジープ": "Jeep",
+  "シボレー": "Chevrolet", "フォード": "Ford", "ヒョンデ": "Hyundai", "起亜": "Kia",
+}
+
+const KATAKANA_ROMAJI: Readonly<Record<string, string>> = {
+  ア: "a", イ: "i", ウ: "u", エ: "e", オ: "o", カ: "ka", キ: "ki", ク: "ku", ケ: "ke", コ: "ko",
+  サ: "sa", シ: "shi", ス: "su", セ: "se", ソ: "so", タ: "ta", チ: "chi", ツ: "tsu", テ: "te", ト: "to",
+  ナ: "na", ニ: "ni", ヌ: "nu", ネ: "ne", ノ: "no", ハ: "ha", ヒ: "hi", フ: "fu", ヘ: "he", ホ: "ho",
+  マ: "ma", ミ: "mi", ム: "mu", メ: "me", モ: "mo", ヤ: "ya", ユ: "yu", ヨ: "yo", ラ: "ra", リ: "ri",
+  ル: "ru", レ: "re", ロ: "ro", ワ: "wa", ヲ: "o", ン: "n", ガ: "ga", ギ: "gi", グ: "gu", ゲ: "ge",
+  ゴ: "go", ザ: "za", ジ: "ji", ズ: "zu", ゼ: "ze", ゾ: "zo", ダ: "da", ヂ: "ji", ヅ: "zu", デ: "de",
+  ド: "do", バ: "ba", ビ: "bi", ブ: "bu", ベ: "be", ボ: "bo", パ: "pa", ピ: "pi", プ: "pu", ペ: "pe",
+  ポ: "po", ヴ: "vu", ァ: "a", ィ: "i", ゥ: "u", ェ: "e", ォ: "o", ャ: "ya", ュ: "yu", ョ: "yo",
+  ー: "-",
 }
 
 const CHINESE_MAKES: ReadonlyArray<readonly [string, string]> = [
@@ -122,11 +165,54 @@ function firstMatch(value: string, pattern: RegExp) {
 function safeImage(value: string | null, allowedHosts: ReadonlySet<string>) {
   if (!value) return null
   try {
-    const url = new URL(decodeHtml(value))
+    const decoded = decodeHtml(value)
+    const url = new URL(decoded.startsWith("//") ? `https:${decoded}` : decoded)
     return url.protocol === "https:" && allowedHosts.has(url.hostname) ? url.toString() : null
   } catch {
     return null
   }
+}
+
+function titleCaseSlug(value: string) {
+  return value.split("-").filter(Boolean).map((part) => part ? `${part[0].toUpperCase()}${part.slice(1).toLowerCase()}` : "").join(" ")
+}
+
+function romanizeJapanese(value: string) {
+  let result = ""
+  let doubleNext = false
+  for (const character of value) {
+    if (character === "ッ") {
+      doubleNext = true
+      continue
+    }
+    const syllable = KATAKANA_ROMAJI[character]
+    if (!syllable) {
+      result += character
+      doubleNext = false
+      continue
+    }
+    result += doubleNext && /^[a-z]/.test(syllable) ? `${syllable[0]}${syllable}` : syllable
+    doubleNext = false
+  }
+  return result.replace(/([aeiou])-+/g, "$1").replace(/[\u3040-\u30FF\u3400-\u9FFF]+/g, " ").replace(/\s+/g, " ").trim()
+}
+
+function jsonLdObjects(html: string) {
+  const objects: UnknownRecord[] = []
+  for (const match of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const parsed = JSON.parse(match[1]) as unknown
+      const values = Array.isArray(parsed) ? parsed : [parsed]
+      for (const value of values) {
+        const record = asRecord(value)
+        if (record) objects.push(record)
+      }
+    } catch {
+      // Some providers publish almost-JSON with trailing commas. Their stable
+      // fields are parsed from the HTML below instead of trusting broken data.
+    }
+  }
+  return objects
 }
 
 function localizeChineseModel(value: string) {
@@ -136,9 +222,12 @@ function localizeChineseModel(value: string) {
 }
 
 async function sourceHtml(source: PublicAuctionSource, url: string) {
+  const rangeHeaders = source === "BEFORWARD" && /\/detail\d+\.xml$/i.test(url)
+    ? { ...SOURCE_HEADERS, Range: "bytes=0-999999" }
+    : SOURCE_HEADERS
   const response = await authorizedSourceGet(url, {
-    allowedHosts: SOURCE_HOSTS[source], headers: SOURCE_HEADERS,
-    timeoutMs: SOURCE_TIMEOUT_MS, maxBytes: SOURCE_MAX_BYTES,
+    allowedHosts: SOURCE_HOSTS[source], headers: rangeHeaders,
+    timeoutMs: source === "BOBAEDREAM" ? 45_000 : SOURCE_TIMEOUT_MS, maxBytes: SOURCE_MAX_BYTES,
   })
   if (response.status === 404 || response.status === 410) throw new PublicListingUnavailableError(`Карточка ${source} снята с публикации`)
   if (!response.ok) throw new Error(`${source} вернул HTTP ${response.status}`)
@@ -147,12 +236,22 @@ async function sourceHtml(source: PublicAuctionSource, url: string) {
 
 export function publicSourceCatalogUrl(source: PublicAuctionSource, page: number) {
   if (source === "IAUTOS") return page <= 1 ? "https://so.iautos.cn/quanguo/" : `https://so.iautos.cn/quanguo/p${page}asdsvepcatcpbnscac/#buyCars`
+  if (source === "YOUXINPAI") return `https://api.youxinpai.cn/api/auction/list?pageNum=${page}&pageSize=20&auctionType=1`
   if (source === "GOONET") return "https://www.goo-net-exchange.com/php/search/summary.php?year_min=2021&search_type=year_search"
+  if (source === "BEFORWARD") return `https://www.beforward.jp/detail${String(page).padStart(3, "0")}.xml`
+  if (source === "CARSENSOR") return `https://www.carsensor.net/usedcar-detail-${page % 10 + 1}.xml`
+  if (source === "AUTOSALE") return "https://autosale.ee/sitemap.php"
+  if (source === "BOBAEDREAM") return `https://www.bobaedream.co.kr/mycar/mycar_list.php?gubun=K&page=${page}`
   return "https://carvago.com/sitemap-listed-cars.xml"
 }
 
 export function publicSourceMaximumPage(source: PublicAuctionSource) {
-  return source === "IAUTOS" ? 50 : source === "GOONET" ? 20 : 200
+  if (source === "IAUTOS" || source === "BOBAEDREAM") return 50
+  if (source === "GOONET" || source === "BEFORWARD") return 20
+  if (source === "CARSENSOR") return 10
+  if (source === "YOUXINPAI") return 5
+  if (source === "AUTOSALE") return 1
+  return 200
 }
 
 function parseIautosCatalog(html: string): PublicAuctionCandidate[] {
@@ -191,11 +290,94 @@ function parseCarvagoSitemap(xml: string): PublicAuctionCandidate[] {
   return candidates
 }
 
+function uniqueCandidates(candidates: PublicAuctionCandidate[]) {
+  return [...new Map(candidates.map((candidate) => [candidate.sourceId, candidate])).values()]
+}
+
+function parseBobaedreamCatalog(html: string) {
+  const candidates: PublicAuctionCandidate[] = []
+  for (const match of html.matchAll(/(?:href=["'])?(?:https:\/\/www\.bobaedream\.co\.kr)?\/mycar\/mycar_view\.php\?no=(\d+)(?:&amp;|&)gubun=K/gi)) {
+    candidates.push({
+      sourceId: match[1],
+      sourceUrl: `https://www.bobaedream.co.kr/mycar/mycar_view.php?no=${match[1]}&gubun=K`,
+    })
+  }
+  return uniqueCandidates(candidates)
+}
+
+function parseBeforwardSitemap(xml: string) {
+  const candidates: PublicAuctionCandidate[] = []
+  for (const match of xml.matchAll(/<loc>(https:\/\/www\.beforward\.jp\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+\/id\/(\d+)\/)<\/loc>/gi)) {
+    candidates.push({ sourceId: match[2], sourceUrl: decodeHtml(match[1]) })
+  }
+  return uniqueCandidates(candidates)
+}
+
+function parseCarsensorSitemap(xml: string) {
+  const candidates: PublicAuctionCandidate[] = []
+  for (const match of xml.matchAll(/<loc>(https:\/\/www\.carsensor\.net\/usedcar\/detail\/(AU\d+)\/index\.html)<\/loc>/gi)) {
+    candidates.push({ sourceId: match[2], sourceUrl: match[1] })
+  }
+  return uniqueCandidates(candidates)
+}
+
+function parseAutosaleSitemap(xml: string) {
+  const candidates: PublicAuctionCandidate[] = []
+  for (const match of xml.matchAll(/<loc>(https:\/\/autosale\.ee\/listings\/view\.php\?id=(\d+))<\/loc>/gi)) {
+    candidates.push({ sourceId: match[2], sourceUrl: decodeHtml(match[1]) })
+  }
+  return uniqueCandidates(candidates)
+}
+
+const youxinpaiCatalogCache = new Map<number, { expiresAt: number; candidates: PublicAuctionCandidate[] }>()
+
+function parseYouxinpaiCatalog(json: string, pageNumber: number) {
+  let root: UnknownRecord
+  try { root = JSON.parse(json) as UnknownRecord } catch { throw new Error("YOUXINPAI: повреждены данные каталога") }
+  const page = asRecord(asRecord(root.data)?.page)
+  const records = Array.isArray(page?.records) ? page.records : []
+  const candidates: PublicAuctionCandidate[] = []
+  for (const value of records) {
+    const record = asRecord(value)
+    const sourceId = asNumber(record?.publishId)
+    const price = asNumber(record?.startPrice) || asNumber(record?.currentHighestBid) || asNumber(record?.refPriceLow)
+    const registered = asText(record?.registerDate)?.match(/^(\d{4})-(\d{2})-/)
+    const make = normalizeAuctionMake(asText(record?.brandName))
+    const model = normalizeAuctionModel(asText(record?.modelName) || asText(record?.serialName))
+    const image = asText(record?.mainImage)?.replace("/paipic/small/", "/paipic/").replace(/\?format=webp$/i, "") || null
+    if (!sourceId || !price || !registered || !make || !model || asNumber(record?.auctionStatus) !== 1) continue
+    const bodyCode = asNumber(record?.bodyType)
+    const fuelCode = asNumber(record?.fuelType)
+    candidates.push({
+      sourceId: String(sourceId), sourceUrl: `https://www.youxinpai.cn/auction/detail?publishId=${sourceId}`,
+      sourcePrice: Math.round(price), year: Number(registered[1]), manufacturedMonth: `${registered[1]}-${registered[2]}`,
+      mileage: asNumber(record?.mileage), imageUrl: safeImage(image, new Set(["img.youxinpai.cn"])), make, model,
+      fuelType: fuelCode === 1 ? "DIESEL" : fuelCode === 2 ? "HYBRID" : fuelCode === 3 ? "ELECTRIC" : "GASOLINE",
+      transmission: asNumber(record?.gearbox) === 1 ? "AUTOMATIC" : null,
+      bodyType: bodyCode === 1 ? "SEDAN" : bodyCode === 3 ? "SUV" : null,
+      auctionDate: (() => {
+        const timestamp = asNumber(record?.priceStopTime)
+        return timestamp ? new Date(timestamp) : null
+      })(),
+    })
+  }
+  const unique = uniqueCandidates(candidates)
+  youxinpaiCatalogCache.set(pageNumber, { expiresAt: Date.now() + 2 * 60_000, candidates: unique })
+  return unique
+}
+
 export async function discoverPublicAuctionCandidates(source: PublicAuctionSource, page: number, limit: number) {
   const html = await sourceHtml(source, publicSourceCatalogUrl(source, page))
-  const all = source === "IAUTOS" ? parseIautosCatalog(html) : source === "GOONET" ? parseGoonetCatalog(html) : parseCarvagoSitemap(html)
+  const all = source === "IAUTOS" ? parseIautosCatalog(html)
+    : source === "YOUXINPAI" ? parseYouxinpaiCatalog(html, page)
+      : source === "GOONET" ? parseGoonetCatalog(html)
+        : source === "BEFORWARD" ? parseBeforwardSitemap(html)
+          : source === "CARSENSOR" ? parseCarsensorSitemap(html)
+            : source === "AUTOSALE" ? parseAutosaleSitemap(html)
+              : source === "BOBAEDREAM" ? parseBobaedreamCatalog(html)
+                : parseCarvagoSitemap(html)
   if (!all.length) throw new Error(`${source}: публичный каталог не содержит распознаваемых карточек`)
-  if (source === "IAUTOS") return { total: all.length, candidates: all.slice(0, limit) }
+  if (source === "IAUTOS" || source === "YOUXINPAI" || source === "BOBAEDREAM") return { total: all.length, candidates: all.slice(0, limit) }
   const start = ((page - 1) * limit) % all.length
   return { total: all.length, candidates: [...all.slice(start), ...all.slice(0, start)].slice(0, limit) }
 }
@@ -292,6 +474,173 @@ async function fetchGoonetListing(candidate: PublicAuctionCandidate): Promise<Au
   }
 }
 
+async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promise<AuctionImportItem> {
+  if (!/^\d+$/.test(candidate.sourceId) || !candidate.sourceUrl.startsWith("https://www.bobaedream.co.kr/mycar/mycar_view.php?no=")) throw new Error("Некорректная карточка Bobaedream")
+  const html = await sourceHtml("BOBAEDREAM", candidate.sourceUrl)
+  const titleBlock = firstMatch(html, /<div class="title-area">[\s\S]*?<h3 class="tit">([\s\S]*?)<\/h3>/i)
+  const title = htmlText(titleBlock)?.split("-")[0]?.trim() || null
+  const priceTenThousandWon = asNumber(firstMatch(html, /<div class="price-area">[\s\S]*?<span class="price">\s*<b[^>]*>\s*([\d,]+)\s*<\/b>\s*만원/i)?.replace(/,/g, ""))
+  if (!title || !priceTenThousandWon) throw new PublicListingUnavailableError(`Bobaedream: карточка ${candidate.sourceId} снята с публикации`)
+
+  const [rawMake, ...modelParts] = title.split(/\s+/)
+  const make = normalizeAuctionMake(rawMake)
+  const model = normalizeAuctionModel(modelParts.join(" "))
+  if (!make || !model || /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(make)) throw new Error(`Bobaedream: не распознаны марка или модель карточки ${candidate.sourceId}`)
+  const pairs = tablePairs(html)
+  const registration = pairs.get("연식")?.match(/(\d{4})\.(\d{2})/) || htmlText(firstMatch(html, /<p class="state">([\s\S]*?)<\/p>/i))?.match(/(\d{2})년\s*(\d{2})월/)
+  if (!registration) throw new Error(`Bobaedream: нет даты выпуска карточки ${candidate.sourceId}`)
+  const fullYear = registration[1].length === 2 ? 2000 + Number(registration[1]) : Number(registration[1])
+  const month = registration[2]
+  const bobaImageHosts = new Set(["file1.bobaedream.co.kr", "file2.bobaedream.co.kr", "file3.bobaedream.co.kr", "file4.bobaedream.co.kr", "file5.bobaedream.co.kr"])
+  const images = [...new Set([...html.matchAll(/(?:https?:)?\/\/file[1-5]\.bobaedream\.co\.kr\/[^"]+?\.(?:jpg|jpeg|png)/gi)]
+    .map((match) => safeImage(match[0], bobaImageHosts)).filter((url): url is string => Boolean(url)))].slice(0, 60)
+  const engineText = pairs.get("배기량") || null
+  const power = asNumber(engineText?.match(/([\d,]+)\s*마력/)?.[1]?.replace(/,/g, ""))
+  const engineVolume = asNumber(engineText?.match(/([\d,]+)\s*cc/i)?.[1]?.replace(/,/g, ""))
+  const mileage = asNumber(pairs.get("주행거리")?.replace(/[^\d]/g, ""))
+  return {
+    source: "BOBAEDREAM", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    make, model, year: fullYear, manufacturedMonth: `${fullYear}-${month}`,
+    sourcePrice: Math.round(priceTenThousandWon * 10_000), sourceCurrency: "KRW", country: "KR", auctionDate: null,
+    mileage, fuelType: normalizeAuctionFuelType(pairs.get("연료")),
+    transmission: normalizeAuctionTransmission(pairs.get("변속기")), bodyType: null,
+    color: pairs.get("색상") || null, engineVolume, power: power ? Math.round(power) : null,
+    driveType: null, vin: null, lotNumber: candidate.sourceId,
+    imageUrl: images[0] || null, images,
+    descriptionOrig: htmlText(firstMatch(html, /<meta\s+name="description"\s+content="([^"]+)"/i)) || title,
+    specsOrig: [...pairs.entries()].slice(0, 8).map(([key, value]) => `${key}: ${value}`).join("; ") || null,
+    location: "Korea",
+  }
+}
+
+async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise<AuctionImportItem> {
+  const path = candidate.sourceUrl.match(/^https:\/\/www\.beforward\.jp\/([a-z0-9-]+)\/([a-z0-9-]+)\/([a-z0-9-]+)\/id\/(\d+)\/$/i)
+  if (!path || path[4] !== candidate.sourceId) throw new Error("Некорректная карточка BE FORWARD")
+  const html = await sourceHtml("BEFORWARD", candidate.sourceUrl)
+  if (!/"availability"\s*:\s*"https:\/\/schema\.org\/InStock"/i.test(html)) throw new PublicListingUnavailableError(`BE FORWARD: карточка ${candidate.sourceId} снята с публикации`)
+  const sourcePrice = asNumber(firstMatch(html, /"price"\s*:\s*"([\d.]+)"/i))
+  const make = normalizeAuctionMake(titleCaseSlug(path[1]))
+  const model = normalizeAuctionModel(titleCaseSlug(path[2]))
+  const pairs = tablePairs(html)
+  const registrationText = pairs.get("Registration Year/month") || htmlText(firstMatch(html, /Registration Year\/month[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/i))
+  const registered = registrationText?.match(/(\d{4})\/(\d{2})/)
+  if (!sourcePrice || !make || !model || !registered) {
+    const missing = [!sourcePrice && "цена", !make && "марка", !model && "модель", !registered && "дата"].filter(Boolean).join(", ")
+    throw new Error(`BE FORWARD: в карточке ${candidate.sourceId} отсутствуют обязательные поля: ${missing}`)
+  }
+  const beforwardImageHosts = new Set(["image-cdn.beforward.jp"])
+  const images = [...new Set([...html.matchAll(/(?:https?:)?\/\/image-cdn\.beforward\.jp\/[^"]+?\.(?:jpg|jpeg|png|webp)/gi)]
+    .map((match) => safeImage(match[0], beforwardImageHosts)).filter((url): url is string => Boolean(url)))].slice(0, 60)
+  const engineVolume = asNumber(pairs.get("Engine Size")?.replace(/[^\d.]/g, ""))
+  return {
+    source: "BEFORWARD", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    make, model, year: Number(registered[1]), manufacturedMonth: `${registered[1]}-${registered[2]}`,
+    sourcePrice: Math.round(sourcePrice), sourceCurrency: "USD", country: "JP", auctionDate: null,
+    mileage: asNumber(pairs.get("Mileage")?.replace(/[^\d]/g, "")), fuelType: normalizeAuctionFuelType(pairs.get("Fuel")),
+    transmission: normalizeAuctionTransmission(pairs.get("Transmission")), bodyType: null,
+    color: pairs.get("Ext. Color") || null, engineVolume, power: null,
+    driveType: normalizeAuctionDriveType(pairs.get("Drive")), vin: pairs.get("Chassis No.") || null,
+    lotNumber: pairs.get("Ref. No.") || path[3].toUpperCase(), imageUrl: images[0] || null, images,
+    descriptionOrig: htmlText(firstMatch(html, /"description"\s*:\s*"([^"]+)"/i)),
+    specsOrig: [...pairs.entries()].filter(([key]) => /Ref|Mileage|Chassis|Engine|Color|Location|Fuel|Drive|Transmission|Year/i.test(key)).map(([key, value]) => `${key}: ${value}`).join("; ") || null,
+    location: pairs.get("Location") || "Japan",
+  }
+}
+
+async function fetchCarsensorListing(candidate: PublicAuctionCandidate): Promise<AuctionImportItem> {
+  if (!/^AU\d+$/.test(candidate.sourceId) || candidate.sourceUrl !== `https://www.carsensor.net/usedcar/detail/${candidate.sourceId}/index.html`) throw new Error("Некорректная карточка CarSensor")
+  const html = await sourceHtml("CARSENSOR", candidate.sourceUrl)
+  const product = jsonLdObjects(html).find((value) => value["@type"] === "Product")
+  if (!product) throw new PublicListingUnavailableError(`CarSensor: карточка ${candidate.sourceId} снята с публикации`)
+  const brands = Array.isArray(product.brand) ? product.brand.map(asRecord).filter((value): value is UnknownRecord => Boolean(value)) : []
+  const rawMake = asText(brands[0]?.name)
+  const rawModel = asText(brands[1]?.name) || asText(product.model)
+  const make = rawMake ? normalizeAuctionMake(JAPANESE_MAKES[rawMake] || rawMake) : null
+  const model = normalizeAuctionModel(rawModel ? romanizeJapanese(rawModel) : null)
+  const offers = Array.isArray(product.offers) ? asRecord(product.offers[0]) : asRecord(product.offers)
+  const sourcePrice = asNumber(asText(offers?.price)?.replace(/,/g, ""))
+  const pairs = tablePairs(html)
+  const year = pairs.get("年式(初度登録年)")?.match(/(\d{4})/)
+  if (!make || !model || !sourcePrice || sourcePrice >= 999_999_999 || !year || /[\u3040-\u30FF\u3400-\u9FFF]/.test(make)) throw new Error(`CarSensor: неполная карточка ${candidate.sourceId}`)
+  const carsensorImageHosts = new Set(["ccsrpcma.carsensor.net", "ccsrpcml.carsensor.net"])
+  const images = [...new Set([...html.matchAll(/https:\/\/(?:ccsrpcma|ccsrpcml)\.carsensor\.net\/[^\s"')]+\.(?:jpg|jpeg|png|webp)/gi)]
+    .map((match) => safeImage(match[0], carsensorImageHosts)).filter((url): url is string => Boolean(url)))].slice(0, 60)
+  const mileageWan = asNumber(pairs.get("走行距離")?.match(/([\d.]+)万km/)?.[1])
+  const mileageKm = mileageWan !== null ? Math.round(mileageWan * 10_000) : asNumber(pairs.get("走行距離")?.replace(/[^\d]/g, ""))
+  return {
+    source: "CARSENSOR", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    make, model, year: Number(year[1]), manufacturedMonth: null,
+    sourcePrice: Math.round(sourcePrice), sourceCurrency: "JPY", country: "JP", auctionDate: null,
+    mileage: mileageKm, fuelType: normalizeAuctionFuelType(pairs.get("使用燃料")),
+    transmission: normalizeAuctionTransmission(pairs.get("ミッション")), bodyType: null,
+    color: pairs.get("色") || asText(product.color), engineVolume: asNumber(pairs.get("排気量")?.replace(/[^\d.]/g, "")),
+    power: null, driveType: normalizeAuctionDriveType(pairs.get("駆動方式")), vin: null, lotNumber: candidate.sourceId,
+    imageUrl: images[0] || null, images,
+    descriptionOrig: asText(product.name),
+    specsOrig: [...pairs.entries()].filter(([key]) => /年式|走行距離|駆動方式|色|ミッション|排気量|使用燃料/.test(key)).map(([key, value]) => `${key}: ${value}`).join("; ") || null,
+    location: "Japan",
+  }
+}
+
+async function fetchAutosaleListing(candidate: PublicAuctionCandidate): Promise<AuctionImportItem> {
+  if (!/^\d+$/.test(candidate.sourceId) || candidate.sourceUrl !== `https://autosale.ee/listings/view.php?id=${candidate.sourceId}`) throw new Error("Некорректная карточка AutoSale")
+  const html = await sourceHtml("AUTOSALE", candidate.sourceUrl)
+  const car = jsonLdObjects(html).find((value) => value["@type"] === "Car")
+  const offers = asRecord(car?.offers)
+  if (!car || asText(offers?.availability) !== "https://schema.org/InStock") throw new PublicListingUnavailableError(`AutoSale: карточка ${candidate.sourceId} снята с публикации`)
+  const make = normalizeAuctionMake(asText(asRecord(car.brand)?.name))
+  const model = normalizeAuctionModel(car.model)
+  const sourcePrice = asNumber(offers?.price)
+  const year = asNumber(car.vehicleModelDate)
+  if (!make || !model || !sourcePrice || !year) throw new Error(`AutoSale: неполная карточка ${candidate.sourceId}`)
+  const imageValues = Array.isArray(car.image) ? car.image : [car.image]
+  const images = [...new Set(imageValues.map(asText).map((url) => safeImage(url, new Set(["autosale.ee"]))).filter((url): url is string => Boolean(url)))].slice(0, 60)
+  return {
+    source: "AUTOSALE", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    make, model, year: Math.round(year), manufacturedMonth: null,
+    sourcePrice: Math.round(sourcePrice), sourceCurrency: "EUR", country: "DE", auctionDate: null,
+    mileage: asNumber(asRecord(car.mileageFromOdometer)?.value), fuelType: normalizeAuctionFuelType(car.fuelType),
+    transmission: normalizeAuctionTransmission(car.vehicleTransmission), bodyType: normalizeAuctionBodyType(car.bodyType),
+    color: asText(car.color), engineVolume: null, power: null, driveType: null, vin: null, lotNumber: candidate.sourceId,
+    imageUrl: images[0] || null, images, descriptionOrig: asText(car.description),
+    specsOrig: `${make} ${model}; ${Math.round(year)}; ${asNumber(asRecord(car.mileageFromOdometer)?.value) || "—"} km`,
+    location: "Estonia",
+  }
+}
+
+async function activeYouxinpaiCandidate(sourceId: string) {
+  for (let page = 1; page <= publicSourceMaximumPage("YOUXINPAI"); page += 1) {
+    let cached = youxinpaiCatalogCache.get(page)
+    if (!cached || cached.expiresAt <= Date.now()) {
+      const json = await sourceHtml("YOUXINPAI", publicSourceCatalogUrl("YOUXINPAI", page))
+      parseYouxinpaiCatalog(json, page)
+      cached = youxinpaiCatalogCache.get(page)
+    }
+    const candidate = cached?.candidates.find((value) => value.sourceId === sourceId)
+    if (candidate) return candidate
+  }
+  return null
+}
+
+async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise<AuctionImportItem> {
+  if (!/^\d+$/.test(candidate.sourceId)) throw new Error("Некорректная карточка YouXinPai")
+  const active = candidate.make && candidate.model && candidate.sourcePrice ? candidate : await activeYouxinpaiCandidate(candidate.sourceId)
+  if (!active?.make || !active.model || !active.sourcePrice || !active.year) throw new PublicListingUnavailableError(`YouXinPai: карточка ${candidate.sourceId} снята с публикации`)
+  const engineVolume = asNumber(active.model.match(/(\d+(?:\.\d+)?)\s*[LT]\b/i)?.[1])
+  const images = active.imageUrl ? [active.imageUrl] : []
+  return {
+    source: "YOUXINPAI", sourceId: active.sourceId, sourceUrl: active.sourceUrl,
+    make: active.make, model: active.model, year: active.year, manufacturedMonth: active.manufacturedMonth || null,
+    sourcePrice: active.sourcePrice, sourceCurrency: "CNY", country: "CN", auctionDate: active.auctionDate || null,
+    mileage: active.mileage ?? null, fuelType: active.fuelType || null, transmission: active.transmission || null,
+    bodyType: active.bodyType || null, color: null, engineVolume, power: null, driveType: null, vin: null,
+    lotNumber: active.sourceId, imageUrl: active.imageUrl || null, images,
+    descriptionOrig: `${active.make} ${active.model}. Vehicle listed in the official YouXinPai export auction catalogue.`,
+    specsOrig: `Mileage: ${active.mileage ?? "—"} km; auction lot: ${active.sourceId}`,
+    location: "China",
+  }
+}
+
 function nextData(html: string) {
   const marker = html.indexOf("__NEXT_DATA__")
   if (marker < 0) return null
@@ -349,6 +698,11 @@ async function fetchCarvagoListing(candidate: PublicAuctionCandidate): Promise<A
 
 export function fetchPublicAuctionListing(source: PublicAuctionSource, candidate: PublicAuctionCandidate) {
   if (source === "IAUTOS") return fetchIautosListing(candidate)
+  if (source === "YOUXINPAI") return fetchYouxinpaiListing(candidate)
   if (source === "GOONET") return fetchGoonetListing(candidate)
+  if (source === "BEFORWARD") return fetchBeforwardListing(candidate)
+  if (source === "CARSENSOR") return fetchCarsensorListing(candidate)
+  if (source === "AUTOSALE") return fetchAutosaleListing(candidate)
+  if (source === "BOBAEDREAM") return fetchBobaedreamListing(candidate)
   return fetchCarvagoListing(candidate)
 }
