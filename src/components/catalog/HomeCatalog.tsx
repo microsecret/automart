@@ -187,8 +187,8 @@ export default function HomePage(p: HomePageProps = {}) {
                     [
                       "Доставка под контролем",
                       auctionStats.auctions
-                        ? `${auctionStats.auctions} лотов из пяти стран`
-                        : "Аукционы и доставка из пяти стран",
+                        ? `${auctionStats.auctions} актуальных импортных лотов`
+                        : "Каталог зарубежных площадок",
                     ],
                   ].map(([title, description], index) => (
                     <Group key={title} gap="sm" wrap="nowrap" align="flex-start" className="home-auctions__journey-step">

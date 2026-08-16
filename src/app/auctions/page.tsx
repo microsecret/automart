@@ -214,7 +214,7 @@ export default function AuctionsPage() {
           <ThemeIcon variant="light" color="orange" size={44} radius="md"><IconGavel size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Аукционы мира</Text>
-            <Text size="xs" c="gray.5">{data?.pagination?.total || 0} авто · Япония · Корея · Китай · США · Европа · доставка в РФ</Text>
+            <Text size="xs" c="gray.5">{data?.pagination?.total || 0} авто в активном каталоге · сейчас источник ENCAR (Корея) · доставка в РФ</Text>
           </Stack>
         </Group>
 
