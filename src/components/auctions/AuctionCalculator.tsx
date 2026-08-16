@@ -176,7 +176,9 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
   const [city, setCity] = useState("Москва")
   const { data: exchangeRateData, error: exchangeRateError } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetchJson, { revalidateOnFocus: false })
   // Не подставляем вымышленный объём: от него напрямую зависит таможенная пошлина.
-  const volume = typeof engineVolume === "number" && engineVolume > 0 ? Math.round(engineVolume * 1000) : null
+  // AuctionListing.engineVolume is normalized to cubic centimetres for every
+  // source. Older partner feeds that send litres are normalized on import.
+  const volume = typeof engineVolume === "number" && engineVolume > 0 ? Math.round(engineVolume) : null
   const sourceRate = exchangeRateData?.rates[sourceCurrency]?.rateToRub
   const eurRate = exchangeRateData?.rates.EUR?.rateToRub
   const effectivePriceRub = sourceRate && sourcePrice >= 0 ? Math.round(sourcePrice * sourceRate) : priceRub

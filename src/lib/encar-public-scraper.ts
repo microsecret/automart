@@ -412,10 +412,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     transmission: normalizeAuctionTransmission(rawTransmission),
     bodyType: normalizeEncarBodyType(rawBody),
     color: translateEncarColor(rawColor),
-    engineVolume: fuelType === "ELECTRIC" ? null : (() => {
-      const displacement = asInteger(spec.displacement)
-      return displacement && displacement > 0 ? Number((displacement / 1000).toFixed(1)) : null
-    })(),
+    engineVolume: fuelType === "ELECTRIC" ? null : firstPositiveInteger(spec.displacement),
     // Some Encar records include power in a source field, while many public
     // listings omit it entirely. Never infer horsepower from displacement.
     power: firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower),

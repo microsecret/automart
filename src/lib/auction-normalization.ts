@@ -88,6 +88,65 @@ export function auctionMakeLabel(value: string) {
   return normalizeAuctionMake(value) || value.replace(/_/g, " ")
 }
 
+const EAST_ASIAN_SCRIPT = /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/
+const LATIN_SCRIPT = /[A-Za-z]/
+const CYRILLIC_SCRIPT = /[\u0400-\u04FF]/
+
+const KOREAN_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/디 올 뉴/gi, "The All-New"], [/올 뉴/gi, "All-New"], [/더 뉴/gi, "The New"], [/뉴/gi, "New"],
+  [/아이오닉/gi, "Ioniq"], [/캐스퍼/gi, "Casper"], [/그랜저/gi, "Grandeur"], [/팰리세이드/gi, "Palisade"],
+  [/트래버스/gi, "Traverse"], [/모닝/gi, "Morning"], [/어반/gi, "Urban"], [/쏘렌토/gi, "Sorento"],
+  [/싼타페/gi, "Santa Fe"], [/카니발/gi, "Carnival"], [/아반떼/gi, "Avante"], [/쏘나타/gi, "Sonata"],
+  [/투싼/gi, "Tucson"], [/스포티지/gi, "Sportage"], [/셀토스/gi, "Seltos"], [/니로/gi, "Niro"],
+  [/스타리아/gi, "Staria"], [/스타렉스/gi, "Starex"], [/포터/gi, "Porter"], [/봉고/gi, "Bongo"],
+  [/레이/gi, "Ray"], [/스파크/gi, "Spark"], [/말리부/gi, "Malibu"], [/트랙스/gi, "Trax"],
+  [/크루즈/gi, "Cruze"], [/콜로라도/gi, "Colorado"], [/이쿼녹스/gi, "Equinox"], [/임팔라/gi, "Impala"],
+  [/올란도/gi, "Orlando"], [/티볼리/gi, "Tivoli"], [/토레스/gi, "Torres"], [/렉스턴/gi, "Rexton"],
+  [/코란도/gi, "Korando"], [/액티언/gi, "Actyon"], [/무쏘/gi, "Musso"], [/체어맨/gi, "Chairman"],
+  [/하이브리드/gi, "Hybrid"], [/(\d+)세대/gi, "$1-е поколение"], [/페이스리프트/gi, "рестайлинг"],
+]
+
+const HANGUL_INITIAL_RU = ["г", "кк", "н", "д", "тт", "р", "м", "б", "пп", "с", "сс", "", "ч", "чч", "ч", "к", "т", "п", "х"]
+const HANGUL_VOWEL_RU = ["а", "э", "я", "яэ", "о", "е", "ё", "е", "о", "ва", "вэ", "ве", "ё", "у", "во", "ве", "ви", "ю", "ы", "уи", "и"]
+const HANGUL_FINAL_RU = ["", "к", "к", "к", "н", "н", "н", "т", "ль", "к", "м", "ль", "ль", "ль", "ль", "ль", "м", "п", "п", "т", "т", "нг", "т", "т", "к", "т", "п", "т"]
+
+function transliterateHangul(value: string) {
+  return value.replace(/[\uAC00-\uD7AF]/g, (syllable) => {
+    const offset = syllable.charCodeAt(0) - 0xac00
+    const initial = Math.floor(offset / 588)
+    const vowel = Math.floor((offset % 588) / 28)
+    const final = offset % 28
+    return `${HANGUL_INITIAL_RU[initial]}${HANGUL_VOWEL_RU[vowel]}${HANGUL_FINAL_RU[final]}`
+  })
+}
+
+/** Customer-facing model label without Korean/Japanese/Chinese script. */
+export function normalizeAuctionModel(value: unknown) {
+  if (typeof value !== "string") return null
+  let model = value.trim()
+  if (!model) return null
+  for (const [pattern, replacement] of KOREAN_MODEL_TERMS) model = model.replace(pattern, replacement)
+  model = transliterateHangul(model).replace(/\s+/g, " ").trim()
+  return model && !EAST_ASIAN_SCRIPT.test(model) ? model : null
+}
+
+/** Prevents a failed machine translation from leaking source script into UI. */
+export function isCustomerFacingRussianText(value: unknown): value is string {
+  if (typeof value !== "string" || !value.trim() || EAST_ASIAN_SCRIPT.test(value)) return false
+  // Codes and numbers are language-neutral. Any prose written with Latin
+  // letters must also contain a Russian explanation before it is published.
+  return !LATIN_SCRIPT.test(value) || CYRILLIC_SCRIPT.test(value)
+}
+
+/** Auction import storage uses cubic centimetres for every combustion engine. */
+export function normalizeAuctionEngineVolumeCc(value: unknown, fuelType: string | null | undefined) {
+  if (fuelType === "ELECTRIC") return null
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed <= 0) return null
+  const cubicCentimetres = parsed <= 10 ? parsed * 1_000 : parsed
+  return Math.round(cubicCentimetres)
+}
+
 const bodyAliases: Record<(typeof AUCTION_BODY_TYPES)[number], readonly string[]> = {
   SEDAN: ["SEDAN", "SALOON", "BERLINE", "세단", "轿车", "三厢"],
   SUV: ["SUV", "CUV", "JEEP", "SPORT UTILITY", "CROSSOVER", "지프", "越野", "越野车"],

@@ -13,7 +13,7 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { auctionCardImageUrl, auctionThumbnailImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
-import { auctionMakeLabel } from "@/lib/auction-normalization"
+import { auctionMakeLabel, isCustomerFacingRussianText, normalizeAuctionModel } from "@/lib/auction-normalization"
 import { auctionSourceLabel } from "@/lib/auction-sources"
 import type { AuctionListing } from "@prisma/client"
 import styles from "./auction-detail.module.css"
@@ -67,7 +67,7 @@ function parseAuctionEquipment(value: string | null): AuctionEquipment | null {
       ? parsed.items.flatMap((item) => {
           if (!item || typeof item !== "object") return []
           const record = item as { label?: unknown; available?: unknown }
-          return typeof record.label === "string" && record.label.trim() && typeof record.available === "boolean"
+          return isCustomerFacingRussianText(record.label) && typeof record.available === "boolean"
             ? [{ label: record.label.trim(), available: record.available }]
             : []
         })
@@ -93,7 +93,7 @@ function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo |
     const insuranceRecordCount = typeof parsed.insuranceRecordCount === "number" && Number.isInteger(parsed.insuranceRecordCount) && parsed.insuranceRecordCount >= 0
       ? parsed.insuranceRecordCount
       : null
-    const inspectionSummary = typeof parsed.inspectionSummary === "string" && parsed.inspectionSummary.trim() ? parsed.inspectionSummary.trim() : null
+    const inspectionSummary = isCustomerFacingRussianText(parsed.inspectionSummary) ? parsed.inspectionSummary.trim() : null
     const newCarPriceRatioPct = typeof parsed.newCarPriceRatioPct === "number" && Number.isInteger(parsed.newCarPriceRatioPct) && parsed.newCarPriceRatioPct >= 0 && parsed.newCarPriceRatioPct <= 100
       ? parsed.newCarPriceRatioPct
       : null
@@ -101,7 +101,7 @@ function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo |
       ? parsed.verifiedItems.flatMap((item) => {
           if (!item || typeof item !== "object") return []
           const record = item as { label?: unknown; status?: unknown }
-          return typeof record.label === "string" && record.label.trim().length <= 80 && typeof record.status === "string" && record.status.trim().length <= 100
+          return isCustomerFacingRussianText(record.label) && record.label.trim().length <= 80 && isCustomerFacingRussianText(record.status) && record.status.trim().length <= 100
             ? [{ label: record.label.trim(), status: record.status.trim() }]
             : []
         }).slice(0, 4)
@@ -149,6 +149,8 @@ function AuctionDetail() {
   const displayedActiveImage = isActiveImageLoading ? activeImagePreview : activeImageHighQuality
   const equipment = listing ? parseAuctionEquipment(listing.equipment) : null
   const conditionInfo = listing ? parseAuctionConditionInfo(listing.conditionInfo) : null
+  const publicModel = listing ? normalizeAuctionModel(listing.model) || "Модель уточняется" : ""
+  const publicDescription = listing && isCustomerFacingRussianText(listing.descriptionRu) ? listing.descriptionRu : null
 
   useEffect(() => {
     setActiveImageIndex(0)
@@ -238,7 +240,7 @@ function AuctionDetail() {
         <Breadcrumbs separator={<IconChevronRight size={14} color="gray.4" />}>
           <Anchor component={Link} href="/" size="sm" c="gray.5">Главная</Anchor>
           <Anchor component={Link} href="/auctions" size="sm" c="gray.5">Аукционы</Anchor>
-          <Text size="sm" c="dark.9">{auctionMakeLabel(listing.make)} {listing.model}</Text>
+          <Text size="sm" c="dark.9">{auctionMakeLabel(listing.make)} {publicModel}</Text>
         </Breadcrumbs>
 
         <Box className="auction-detail-layout" style={hasWideAuctionLayout ? undefined : { gridTemplateColumns: "minmax(0, 1fr)" }}>
@@ -267,7 +269,7 @@ function AuctionDetail() {
                         key={displayedActiveImage}
                         className={styles.galleryImage}
                         src={displayedActiveImage}
-                        alt={`${auctionMakeLabel(listing.make)} ${listing.model}, фото ${activeImageIndex + 1}`}
+                        alt={`${auctionMakeLabel(listing.make)} ${publicModel}, фото ${activeImageIndex + 1}`}
                         decoding="async"
                         fetchPriority={activeImageIndex === 0 ? "high" : "auto"}
                         onLoad={() => {
@@ -359,27 +361,27 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #fff 58%)", borderColor: "#99f6e4" }}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
-                      <Group gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Проверка и история по данным Encar</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
+                      <Group gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Проверка и история по данным {auctionSourceLabel(listing.source)}</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
                       <Badge variant="light" color="teal">Проверяйте перед сделкой</Badge>
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: conditionInfo.newCarPriceRatioPct !== null ? 3 : 2 }} spacing="xs">
-                      {conditionInfo.newCarPriceRatioPct !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Цена относительно нового авто</Text><Group justify="space-between" mt={3}><Text fw={800} c="teal.8">{conditionInfo.newCarPriceRatioPct}%</Text><Text size="xs" c="dimmed">сравнение Encar</Text></Group><Progress value={conditionInfo.newCarPriceRatioPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
+                      {conditionInfo.newCarPriceRatioPct !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Цена относительно нового авто</Text><Group justify="space-between" mt={3}><Text fw={800} c="teal.8">{conditionInfo.newCarPriceRatioPct}%</Text><Text size="xs" c="dimmed">сравнение {auctionSourceLabel(listing.source)}</Text></Group><Progress value={conditionInfo.newCarPriceRatioPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
                       {conditionInfo.inspectionSummary && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Техосмотр</Text><Text fw={700} size="sm" mt={4}>{conditionInfo.inspectionSummary}</Text></Paper>}
                       {conditionInfo.insuranceRecordCount !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Страховые записи</Text><Text fw={800} size="lg" c="teal.8" mt={1}>{conditionInfo.insuranceRecordCount}</Text></Paper>}
                     </SimpleGrid>
                     {conditionInfo.verifiedItems.length > 0 && <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                       {conditionInfo.verifiedItems.map((item) => <Paper key={`${item.label}-${item.status}`} p="xs" radius="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}><Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="teal" variant="light"><IconCheck size={13} /></ThemeIcon><Box><Text size="xs" c="dimmed">{item.label}</Text><Text fw={750} size="sm" c="teal.9">{item.status}</Text></Box></Group></Paper>)}
                     </SimpleGrid>}
-                    <Text size="xs" c="dimmed">Карточки состояния — только открытые подтверждения Encar. Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт; для перечня работ нужен полный отчёт/акт осмотра из первоисточника.</Text>
+                    <Text size="xs" c="dimmed">Карточки состояния — только открытые подтверждения {auctionSourceLabel(listing.source)}. Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт; для перечня работ нужен полный отчёт/акт осмотра из первоисточника.</Text>
                   </Stack>
                 </Paper>
               )}
 
-              {listing.descriptionRu && (
+              {publicDescription && (
                 <Paper radius="md" p="md" withBorder>
                   <Stack gap="xs">
                     <Group gap="sm"><IconCheck size={18} color="#059669" /><Text fw={700} c="dark.9">Описание (ИИ-перевод)</Text></Group>
-                    <Text size="sm" c="gray.6" lh={1.6}>{listing.descriptionRu}</Text>
+                    <Text size="sm" c="gray.6" lh={1.6}>{publicDescription}</Text>
                   </Stack>
                 </Paper>
               )}
@@ -387,7 +389,7 @@ function AuctionDetail() {
               {/* Умный калькулятор */}
               <AuctionCalculator
                 make={auctionMakeLabel(listing.make)}
-                model={listing.model}
+                model={publicModel}
                 year={listing.year}
                 manufacturedMonth={listing.manufacturedMonth}
                 engineVolume={listing.engineVolume}
@@ -416,7 +418,7 @@ function AuctionDetail() {
                 <form onSubmit={handleSubmit}>
                   <Stack gap="sm">
                     <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="dark.9">Заказать авто</Text></Group>
-                    <Text size="xs" c="gray.5">{auctionMakeLabel(listing.make)} {listing.model} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
+                    <Text size="xs" c="gray.5">{auctionMakeLabel(listing.make)} {publicModel} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
                     <Button component={Link} href={`/dashboard/deliveries?auctionListingId=${listing.id}`} variant="light" color="indigo" radius="md" size="sm" leftSection={<IconTruckDelivery size={16} />} fullWidth>Открыть сделку в кабинете</Button>
                     <Text size="xs" c="gray.5" ta="center">Для отслеживания маршрута, счетов и документов после входа.</Text>
                     <TextInput label="Ваше имя" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="sm" />

@@ -378,14 +378,24 @@ select {
   width: 100%;
 }
 
-/* Footer is the closing bar for the whole desktop marketplace, including the
-   area below Mantine's fixed navbar. Below the desktop breakpoint there is no
-   navbar offset, so the footer returns to the natural main-column width. */
+/* The desktop navigation stays attached to the viewport and scrolls inside
+   its own rail. The footer belongs to the content column and must not cover
+   the account/navigation rail when the document reaches its end. */
+.market-app-navbar {
+  bottom: 0 !important;
+  min-height: 0;
+  z-index: 220;
+}
+
+.market-app-navbar .mantine-ScrollArea-root {
+  height: 100%;
+}
+
 .market-app-footer {
   position: relative;
-  z-index: 210;
-  width: calc(100% + 280px);
-  margin-left: -280px;
+  z-index: 2;
+  width: 100%;
+  margin-left: 0;
 }
 
 @media (max-width: 61.99em) {
@@ -3460,6 +3470,20 @@ select {
 .admin-workspace {
   max-width: 1440px;
   margin: 0 auto;
+}
+
+.admin-traffic-chart {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.admin-traffic-chart svg {
+  display: block;
+  width: 100%;
+  min-width: 620px;
+  height: clamp(190px, 24vw, 250px);
+  overflow: visible;
 }
 
 .admin-workspace__hero {

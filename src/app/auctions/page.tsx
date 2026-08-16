@@ -12,7 +12,7 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import type { AuctionListing } from "@prisma/client"
 import { AUCTION_SOURCE_COUNTRY, AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceLabel } from "@/lib/auction-sources"
-import { auctionMakeLabel } from "@/lib/auction-normalization"
+import { auctionMakeLabel, normalizeAuctionModel } from "@/lib/auction-normalization"
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "./auctions.module.css"
 
@@ -119,7 +119,7 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
       {!hasImage && <VehicleFallback type="CAR" compact />}
       {hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={`${listing.make} ${listing.model}`} onError={() => setFailed(true)} loading="lazy" decoding="async" />
+        <img src={image} alt={`${auctionMakeLabel(listing.make)} ${normalizeAuctionModel(listing.model) || "автомобиль"}`} onError={() => setFailed(true)} loading="lazy" decoding="async" />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
           <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
@@ -448,7 +448,7 @@ export default function AuctionsPage() {
                     <Group gap="sm" wrap="nowrap" align="center">
                       <BrandIcon brand={auctionMakeLabel(l.make)} size={34} variant="rounded" />
                       <Box style={{ minWidth: 0, flex: 1 }}>
-                        <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{auctionMakeLabel(l.make)} {l.model}</Text>
+                        <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{auctionMakeLabel(l.make)} {normalizeAuctionModel(l.model) || "Модель уточняется"}</Text>
                         <Text className="auction-result-card__summary" lineClamp={1}>
                           {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
                         </Text>
@@ -458,7 +458,7 @@ export default function AuctionsPage() {
                       {l.fuelType && <Badge className={styles.resultSpec} size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "orange"} leftSection={<IconGasStation size={12} />}>Топливо: {FUEL_LABELS[l.fuelType] || l.fuelType}</Badge>}
                       {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconCar size={12} />}>Кузов: {BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
-                      {l.power && <Badge className={styles.resultSpec} size="xs" variant="light" color="violet" leftSection={<IconBolt size={12} />}>Мощность: {l.power} л.с.</Badge>}
+                      <Badge className={styles.resultSpec} size="xs" variant="light" color={l.power ? "violet" : "gray"} leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
                       {(parseAuctionImages(l.images)?.length || 0) > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue" leftSection={<IconPhoto size={12} />}>Фото: {parseAuctionImages(l.images)?.length}</Badge>}
                       {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>

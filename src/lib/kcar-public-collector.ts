@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 import type { AuctionConditionInfo, AuctionEquipmentSnapshot, AuctionImportItem } from "@/lib/auction-import"
-import { normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
+import { normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionModel, normalizeAuctionTransmission } from "@/lib/auction-normalization"
 import { authorizedSourceGet, authorizedSourceRequest } from "@/lib/authorized-source-http"
 
 const KCAR_API_HOST = "api.kcar.com"
@@ -66,29 +66,6 @@ function htmlText(value: unknown) {
     .trim() || null
 }
 
-function publicModelName(value: unknown) {
-  const model = asText(value)
-  if (!model) return null
-  return model
-    .replace(/^디 올 뉴\s+/, "The All-New ")
-    .replace(/^올 뉴\s+/, "All-New ")
-    .replace(/^더 뉴\s+/, "The New ")
-    .replace(/^뉴\s+/, "New ")
-    .replace(/하이브리드/g, "Hybrid")
-    .replace(/그랜저/g, "Grandeur")
-    .replace(/팰리세이드/g, "Palisade")
-    .replace(/트래버스/g, "Traverse")
-    .replace(/모닝/g, "Morning")
-    .replace(/어반/g, "Urban")
-    .replace(/쏘렌토/g, "Sorento")
-    .replace(/싼타페/g, "Santa Fe")
-    .replace(/카니발/g, "Carnival")
-    .replace(/아반떼/g, "Avante")
-    .replace(/쏘나타/g, "Sonata")
-    .replace(/투싼/g, "Tucson")
-    .replace(/스포티지/g, "Sportage")
-}
-
 function encryptCatalogParams(value: UnknownRecord) {
   const cleaned = Object.fromEntries(Object.entries(value).filter(([, entry]) => Boolean(entry)))
   const cipher = crypto.createCipheriv("aes-128-cbc", KCAR_AES_KEY, KCAR_AES_IV)
@@ -145,25 +122,98 @@ function equipmentSnapshot(payload: UnknownRecord): AuctionEquipmentSnapshot | n
   const options = Array.isArray(payload.mainOptList) ? payload.mainOptList : []
   const items = options.flatMap((option) => {
     const record = asRecord(option)
-    const label = asText(record?.optnNm) || asText(record?.optNm) || asText(record?.optDesc)
+    const label = localizeKCarEquipment(asText(record?.optnNm) || asText(record?.optNm) || asText(record?.optDesc))
     return label ? [{ label, available: true }] : []
   }).slice(0, 100)
-  return items.length ? { totalReported: items.length, items } : null
+  return items.length ? { totalReported: options.length, items } : null
+}
+
+const KCAR_EQUIPMENT_LABELS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/열선시트\s*·?\s*운전석/g, "Подогрев сиденья водителя"],
+  [/열선시트\s*·?\s*동승석/g, "Подогрев переднего пассажирского сиденья"],
+  [/통풍시트\s*·?\s*운전석/g, "Вентиляция сиденья водителя"],
+  [/통풍시트\s*·?\s*동승석/g, "Вентиляция переднего пассажирского сиденья"],
+  [/내비게이션/g, "Навигация"], [/파워\s*트렁크/g, "Электропривод багажника"],
+  [/자동긴급제동/g, "Система автоматического экстренного торможения"],
+  [/LDWS\s*:?\s*차선이탈경보시스템/gi, "Контроль схода с полосы (LDWS)"],
+  [/스마트\s*크루즈컨트롤/g, "Адаптивный круиз-контроль"],
+  [/텔레매틱스\s*\(BlueLink\/UVO\)/gi, "Телематика BlueLink / UVO"],
+  [/전자식파킹브레이크/g, "Электронный стояночный тормоз"], [/스마트키/g, "Бесключевой доступ"],
+  [/하이패스/g, "Электронная оплата дорог Hi-Pass"], [/블루투스/g, "Беспроводная связь Bluetooth"],
+  [/선루프/g, "Люк"], [/후방카메라/g, "Камера заднего вида"], [/주차감지센서/g, "Парктроники"],
+]
+
+function localizeKCarEquipment(value: string | null) {
+  if (!value) return null
+  let label = value
+  for (const [pattern, replacement] of KCAR_EQUIPMENT_LABELS) label = label.replace(pattern, replacement)
+  label = label.replace(/\s+/g, " ").trim()
+  return /[\uAC00-\uD7AF]/.test(label) ? null : label
+}
+
+function localizeKCarStatus(value: string | null) {
+  if (!value) return null
+  const normalized = value.trim()
+  const exact: Record<string, string> = {
+    "판매중": "В продаже",
+    "무사고": "ДТП не заявлены",
+    "사고": "Есть запись о ДТП",
+    "진단완료": "Диагностика выполнена",
+  }
+  return exact[normalized] || (/\p{Script=Hangul}/u.test(normalized) ? null : normalized)
+}
+
+function safeKCarImage(value: unknown) {
+  const url = asText(value)
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === "https:" && parsed.hostname === "img.kcar.com" ? parsed.toString() : null
+  } catch {
+    return null
+  }
+}
+
+function photoUrlsFromList(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((photo) => {
+    const url = safeKCarImage(asRecord(photo)?.elanPath)
+    return url ? [url] : []
+  })
+}
+
+function vrExtraPhotoUrls(payload: UnknownRecord) {
+  const vr = asRecord(payload.vrVo)
+  const base = safeKCarImage(vr?.v_detail_base)
+  const encoded = asText(vr?.v_extra_description)
+  if (!base || !encoded) return []
+  try {
+    const decoded = encoded.replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+    const extras = JSON.parse(decoded) as unknown
+    if (!Array.isArray(extras)) return []
+    return extras.flatMap((entry) => {
+      const path = asText(asRecord(entry)?.extrapath)
+      const url = path?.startsWith("/extra/") ? safeKCarImage(`${base}${path}`) : null
+      return url ? [url] : []
+    })
+  } catch {
+    return []
+  }
 }
 
 function conditionSnapshot(payload: UnknownRecord, vehicle: UnknownRecord): AuctionConditionInfo | null {
   const history = asRecord(payload.carhistory)
   const verifiedItems = [
-    ["Статус площадки", asText(vehicle.statCdNm)],
-    ["История ДТП", asText(vehicle.acdtHistComnt)],
-    ["Диагностика", htmlText(vehicle.dgnosOpinCnts)],
+    ["Статус площадки", localizeKCarStatus(asText(vehicle.statCdNm))],
+    ["История ДТП", localizeKCarStatus(asText(vehicle.acdtHistComnt))],
+    ["Диагностика", htmlText(vehicle.dgnosOpinCnts) ? "Заключение опубликовано площадкой" : null],
   ].flatMap(([label, status]) => status ? [{ label: String(label), status: String(status).slice(0, 500) }] : []).slice(0, 20)
   const insuranceRecordCount = [history?.owncarDmgeAcdtCnt, history?.othrcarWrdgAcdtCnt]
     .map(asInteger)
     .filter((value): value is number => value !== null)
     .reduce((sum, value) => sum + value, 0)
   return verifiedItems.length || insuranceRecordCount
-    ? { insuranceRecordCount, inspectionSummary: htmlText(vehicle.histCnts), newCarPriceRatioPct: null, verifiedItems }
+    ? { insuranceRecordCount, inspectionSummary: htmlText(vehicle.histCnts) ? "Диагностика K Car опубликована" : null, newCarPriceRatioPct: null, verifiedItems }
     : null
 }
 
@@ -193,27 +243,25 @@ export async function fetchKCarListing(sourceId: string): Promise<AuctionImportI
 
   const confirmedId = asText(vehicle.carCd)
   const make = normalizeAuctionMake(vehicle.mnuftrNm)
-  const model = publicModelName(vehicle.modelNm) || publicModelName(vehicle.modelGrpNm)
+  const model = normalizeAuctionModel(vehicle.modelNm) || normalizeAuctionModel(vehicle.modelGrpNm)
   const manufactured = asText(vehicle.mfgDt) || asText(vehicle.fstCarRegYm)
   const year = manufactured && /^\d{6}$/.test(manufactured) ? Number(manufactured.slice(0, 4)) : asInteger(vehicle.regModelyr)
   const priceTenThousandWon = asInteger(vehicle.salprc)
   if (confirmedId !== sourceId || !make || !model || !year || priceTenThousandWon === null) throw new Error(`K Car вернул неполную карточку ${sourceId}`)
 
-  const photos = Array.isArray(data?.photoList) ? data.photoList : []
-  const images = [...new Set(photos.flatMap((photo) => {
-    const url = asText(asRecord(photo)?.elanPath)
-    if (!url) return []
-    try {
-      const parsed = new URL(url)
-      return parsed.protocol === "https:" && parsed.hostname === "img.kcar.com" ? [parsed.toString()] : []
-    } catch {
-      return []
-    }
-  }))].slice(0, 60)
-  const fallbackImage = asText(vehicle.elanPath) || asText(vehicle.lsizeImgPath) || asText(vehicle.msizeImgPath)
-  if (!images.length && fallbackImage?.startsWith("https://img.kcar.com/")) images.push(fallbackImage)
+  // `photoList` mixes the first vehicle photo with K Car marketing banners.
+  // The semantic photo lists and VR extra manifest contain only this car.
+  const images = [...new Set([
+    ...photoUrlsFromList(data?.outerPhotoList),
+    ...photoUrlsFromList(data?.innerPhotoList),
+    ...photoUrlsFromList(data?.optionPhotoList),
+    ...vrExtraPhotoUrls(data || {}),
+  ])].slice(0, 60)
+  const fallbackImage = safeKCarImage(vehicle.elanPath) || safeKCarImage(vehicle.lsizeImgPath) || safeKCarImage(vehicle.msizeImgPath)
+  if (!images.length && fallbackImage) images.push(fallbackImage)
 
   const grade = [asText(vehicle.grdNm), asText(vehicle.grdDtlNm)].filter(Boolean).join(" ")
+  const fuelType = normalizeAuctionFuelType(vehicle.fuelTypecdNm)
   return {
     source: "KCAR",
     sourceId,
@@ -227,11 +275,11 @@ export async function fetchKCarListing(sourceId: string): Promise<AuctionImportI
     country: "KR",
     auctionDate: null,
     mileage: asInteger(vehicle.milg),
-    fuelType: normalizeAuctionFuelType(vehicle.fuelTypecdNm),
+    fuelType,
     transmission: normalizeAuctionTransmission(vehicle.trnsmsncdNm),
     bodyType: bodyTypeFrom(vehicle),
     color: asText(vehicle.extrColorNm),
-    engineVolume: asInteger(vehicle.engdispmnt),
+    engineVolume: fuelType === "ELECTRIC" ? null : asInteger(vehicle.engdispmnt),
     power: asInteger(vehicle.hrspow),
     driveType: normalizeAuctionDriveType(vehicle.drvgYnNm),
     vin: asText(vehicle.vin),

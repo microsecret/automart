@@ -33,8 +33,6 @@ type AdminStats = {
   featured: number
   avgPrice: number
   traffic: {
-    visits24h: number
-    visits7d: number
     pageViews24h: number
     pageViews7d: number
     pageViews30d: number
@@ -51,7 +49,7 @@ type AdminStats = {
     attributedRegistrations7d: number
     pagesPerVisitor7d: number
     registrationConversion7d: number
-    daily: Array<{ date: string; visits: number; uniqueVisitors: number; registrations: number }>
+    daily: Array<{ date: string; pageViews: number; uniqueVisitors: number; registrations: number }>
     devices: Array<{ key: string; count: number }>
     sources: Array<{ key: string; count: number }>
     topPaths: Array<{ path: string; count: number }>
@@ -186,6 +184,99 @@ const SOURCE_LABELS: Record<string, string> = {
   REFERRAL: "Другие сайты", INTERNAL: "Внутренние переходы", UNKNOWN: "Старые события",
 }
 
+const SCREEN_LABELS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^\/$/, "Главная страница"],
+  [/^\/auctions\/[^/]+$/, "Карточка автомобиля с зарубежной площадки"],
+  [/^\/auctions$/, "Каталог зарубежных автомобилей"],
+  [/^\/category\/cars$/, "Легковые автомобили"],
+  [/^\/category\/moto$/, "Мотоциклы"],
+  [/^\/category\/trucks$/, "Грузовые автомобили"],
+  [/^\/category\/special$/, "Спецтехника"],
+  [/^\/category\/water$/, "Водный транспорт"],
+  [/^\/category\/air$/, "Воздушный транспорт"],
+  [/^\/listings\/vehicle\/[^/]+$/, "Карточка объявления об автомобиле"],
+  [/^\/listings\/part\/[^/]+$/, "Карточка объявления о запчасти"],
+  [/^\/parts-finder$/, "Каталог запчастей"],
+  [/^\/news(?:\/[^/]+)?$/, "Новости"],
+  [/^\/services\/fuel-map$/, "Карта автозаправок"],
+  [/^\/services\/history-check$/, "Проверка истории автомобиля"],
+  [/^\/services\/valuation$/, "Оценка стоимости"],
+  [/^\/services\/smart-matching$/, "Умный подбор автомобиля"],
+  [/^\/telegram$/, "Telegram Mini App"],
+  [/^\/auth\/signin$/, "Вход в аккаунт"],
+  [/^\/auth\/signup$/, "Регистрация"],
+  [/^\/dashboard(?:\/.*)?$/, "Личный кабинет"],
+  [/^\/admin(?:\/.*)?$/, "Панель администратора"],
+]
+
+function screenLabel(path: string) {
+  const pathname = path.split("?")[0].replace(/\/$/, "") || "/"
+  return SCREEN_LABELS.find(([pattern]) => pattern.test(pathname))?.[1] || "Другой раздел сайта"
+}
+
+type TrafficChartPoint = AdminStats["traffic"]["daily"][number]
+
+function curvedLinePath(points: Array<{ x: number; y: number }>) {
+  if (!points.length) return ""
+  return points.slice(1).reduce((path, point, index) => {
+    const previous = points[index]
+    const middleX = (previous.x + point.x) / 2
+    return `${path} C ${middleX} ${previous.y}, ${middleX} ${point.y}, ${point.x} ${point.y}`
+  }, `M ${points[0].x} ${points[0].y}`)
+}
+
+function TrafficLineChart({ points }: { points: TrafficChartPoint[] }) {
+  const width = 760
+  const height = 210
+  const padding = { top: 14, right: 18, bottom: 34, left: 42 }
+  const chartWidth = width - padding.left - padding.right
+  const chartHeight = height - padding.top - padding.bottom
+  const maximum = Math.max(1, ...points.flatMap((point) => [point.pageViews, point.uniqueVisitors]))
+  const x = (index: number) => padding.left + (points.length > 1 ? (index / (points.length - 1)) * chartWidth : chartWidth / 2)
+  const y = (value: number) => padding.top + chartHeight - (value / maximum) * chartHeight
+  const pageViewPoints = points.map((point, index) => ({ x: x(index), y: y(point.pageViews) }))
+  const visitorPoints = points.map((point, index) => ({ x: x(index), y: y(point.uniqueVisitors) }))
+  const pageViewPath = curvedLinePath(pageViewPoints)
+  const visitorPath = curvedLinePath(visitorPoints)
+  const areaPath = pageViewPoints.length ? `${pageViewPath} L ${pageViewPoints.at(-1)?.x} ${padding.top + chartHeight} L ${pageViewPoints[0].x} ${padding.top + chartHeight} Z` : ""
+
+  return (
+    <Box className="admin-traffic-chart">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Линейный график просмотров страниц и уникальных посетителей за семь дней" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="admin-page-view-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.24" />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const gridY = padding.top + chartHeight * ratio
+          return <line key={ratio} x1={padding.left} x2={width - padding.right} y1={gridY} y2={gridY} stroke="#e2e8f0" strokeWidth="1" />
+        })}
+        {areaPath && <path d={areaPath} fill="url(#admin-page-view-area)" />}
+        {pageViewPath && <path d={pageViewPath} fill="none" stroke="#5b5cf0" strokeWidth="4" strokeLinecap="round" />}
+        {visitorPath && <path d={visitorPath} fill="none" stroke="#16a3b6" strokeWidth="3" strokeLinecap="round" strokeDasharray="8 5" />}
+        {points.map((point, index) => {
+          const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
+          return (
+            <g key={point.date}>
+              <circle cx={x(index)} cy={y(point.pageViews)} r="5" fill="#5b5cf0" stroke="white" strokeWidth="2"><title>{label}: {point.pageViews} просмотров страниц</title></circle>
+              <circle cx={x(index)} cy={y(point.uniqueVisitors)} r="4" fill="#16a3b6" stroke="white" strokeWidth="2"><title>{label}: {point.uniqueVisitors} уникальных посетителей</title></circle>
+              <text x={x(index)} y={height - 10} textAnchor="middle" fill="#64748b" fontSize="12" fontWeight="650">{label}</text>
+            </g>
+          )
+        })}
+        <text x="6" y={padding.top + 5} fill="#64748b" fontSize="11">{maximum}</text>
+        <text x="28" y={padding.top + chartHeight + 4} fill="#94a3b8" fontSize="11">0</text>
+      </svg>
+      <Group gap="md" justify="center" mt={4}>
+        <Badge variant="dot" color="indigo">Просмотры страниц</Badge>
+        <Badge variant="dot" color="cyan">Уникальные посетители</Badge>
+      </Group>
+    </Box>
+  )
+}
+
 const SYNC_STATUS_META: Record<string, { label: string; color: MantineColor; icon: ReactNode }> = {
   SUCCEEDED: { label: "Завершён", color: "teal", icon: <IconCheck size={15} /> },
   PARTIAL: { label: "Частично", color: "orange", icon: <IconAlertTriangle size={15} /> },
@@ -238,9 +329,7 @@ export default function AdminDashboard() {
 
   const total = c.listings || 1
   const dailyTraffic = data.traffic.daily || []
-  const maxDailyVisits = Math.max(1, ...dailyTraffic.map((point) => point.visits))
-  const maxDailyVisitors = Math.max(1, ...dailyTraffic.map((point) => point.uniqueVisitors))
-  const maxDailyRegistrations = Math.max(1, ...dailyTraffic.map((point) => point.registrations))
+  const maxDailyPageViews = Math.max(1, ...dailyTraffic.map((point) => point.pageViews))
   const dailyListingViews = data.listingPerformance.daily || []
   const maxDailyListingViews = Math.max(1, ...dailyListingViews.map((point) => point.views))
   const operationItems = [
@@ -547,8 +636,8 @@ export default function AdminDashboard() {
           })}
         </SimpleGrid>
 
-        {/* Посещаемость */}
-        <Alert color="indigo" variant="light" title="Как считается посещаемость">
+        {/* Просмотры сайта и аудитория */}
+        <Alert color="indigo" variant="light" title="Как считаются просмотры и уникальные посетители">
           Просмотр — каждое фактическое открытие экрана, повторные открытия тоже учитываются. Уникальный посетитель — один IP-адрес за выбранный период:
           переходы по разным страницам и сервисам не создают новых уникальных посетителей. Сохраняется только необратимый хеш IP;
           исходный адрес и автоматические bot/headless-запросы не учитываются.
@@ -591,8 +680,8 @@ export default function AdminDashboard() {
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="light" color="orange" size={38} radius="md"><IconTag size={19} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Эффективность объявлений · 7 дней</Text>
-                <Text size="xs" c="dimmed">Просмотры карточек считаются отдельно от общей посещаемости сайта.</Text>
+                <Text size="sm" fw={750}>Объявления пользователей · 7 дней</Text>
+                <Text size="xs" c="dimmed">Личные объявления о транспорте и запчастях. Импортные автомобили из раздела аукционов сюда не входят.</Text>
               </Stack>
             </Group>
             <Badge variant="light" color={data.listingPerformance.viewsTrend7d >= 0 ? "teal" : "red"}>
@@ -656,8 +745,8 @@ export default function AdminDashboard() {
             <Group gap="sm">
               <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconTrendingUp size={18} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Динамика площадки за 7 дней</Text>
-                <Text size="xs" c="dimmed">Только реальные события аналитики и даты создания учётных записей.</Text>
+                <Text size="sm" fw={750}>Просмотры сайта и аудитория за 7 дней</Text>
+                <Text size="xs" c="dimmed">Фиолетовая линия — все открытия страниц, бирюзовая — разные IP-адреса за день.</Text>
               </Stack>
             </Group>
             <Group gap="xs">
@@ -666,25 +755,7 @@ export default function AdminDashboard() {
             </Group>
           </Group>
           <Paper withBorder radius="md" p={{ base: "xs", sm: "md" }} bg="gray.0">
-            <Group h={170} align="flex-end" gap="xs" wrap="nowrap" role="img" aria-label="График посещений и регистраций за семь дней">
-              {dailyTraffic.map((point) => {
-                const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
-                const visitHeight = Math.max(6, Math.round((point.visits / maxDailyVisits) * 118))
-                const visitorHeight = point.uniqueVisitors ? Math.max(6, Math.round((point.uniqueVisitors / maxDailyVisitors) * 118)) : 3
-                const registrationHeight = point.registrations ? Math.max(6, Math.round((point.registrations / maxDailyRegistrations) * 118)) : 3
-                return (
-                  <Stack key={point.date} gap={5} align="center" style={{ flex: 1, minWidth: 0 }}>
-                    <Group h={122} gap={3} align="flex-end" wrap="nowrap">
-                      <Tooltip label={`${point.visits} посещений`} withArrow><Box h={visitHeight} bg="indigo.5" style={{ width: "clamp(10px, 2vw, 18px)", borderRadius: "6px 6px 2px 2px" }} /></Tooltip>
-                      <Tooltip label={`${point.uniqueVisitors} уникальных`} withArrow><Box h={visitorHeight} bg={point.uniqueVisitors ? "cyan.5" : "gray.3"} style={{ width: "clamp(8px, 1.5vw, 13px)", borderRadius: "5px 5px 2px 2px" }} /></Tooltip>
-                      <Tooltip label={`${point.registrations} регистраций`} withArrow><Box h={registrationHeight} bg={point.registrations ? "teal.5" : "gray.3"} style={{ width: "clamp(6px, 1.2vw, 10px)", borderRadius: "5px 5px 2px 2px" }} /></Tooltip>
-                    </Group>
-                    <Text size="10px" c="dimmed" fw={650} ta="center">{label}</Text>
-                  </Stack>
-                )
-              })}
-            </Group>
-            <Group gap="md" justify="center" mt="xs"><Badge variant="dot" color="indigo">Просмотры</Badge><Badge variant="dot" color="cyan">Уникальные</Badge><Badge variant="dot" color="teal">Регистрации</Badge></Group>
+            <TrafficLineChart points={dailyTraffic} />
           </Paper>
 
           <SimpleGrid cols={{ base: 2, xs: 4, sm: 7 }} spacing="xs">
@@ -693,9 +764,9 @@ export default function AdminDashboard() {
               return (
                 <Paper key={point.date} withBorder radius="md" p="xs">
                   <Text size="xs" c="dimmed" fw={700}>{label}</Text>
-                  <Text size="lg" fw={850} mt={4}>{point.visits}</Text>
+                  <Text size="lg" fw={850} mt={4}>{point.pageViews}</Text>
                   <Text size="10px" c="dimmed">просмотров · {point.uniqueVisitors} уник.</Text>
-                  <Progress value={(point.visits / maxDailyVisits) * 100} color="indigo" size="sm" radius="xl" mt="xs" aria-label={`${label}: ${point.visits} визитов`} />
+                  <Progress value={(point.pageViews / maxDailyPageViews) * 100} color="indigo" size="sm" radius="xl" mt="xs" aria-label={`${label}: ${point.pageViews} просмотров страниц`} />
                   <Group justify="space-between" gap={4} mt={6}>
                     <Text size="10px" c="dimmed">регистрации</Text>
                     <Badge size="xs" variant="light" color={point.registrations ? "teal" : "gray"}>{point.registrations}</Badge>
@@ -708,12 +779,13 @@ export default function AdminDashboard() {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
-            <Text size="sm" fw={600} c="dark.9" mb="sm">Популярные экраны за 7 дней</Text>
+            <Text size="sm" fw={700} c="dark.9" mb={2}>Самые просматриваемые разделы · 7 дней</Text>
+            <Text size="xs" c="dimmed" mb="sm">Названия показаны по-русски; число справа — открытия страниц.</Text>
             <Stack gap="xs">
               {data.traffic.topPaths.map((item) => (
-                <Group key={item.path} justify="space-between"><Text size="xs" c="gray.6" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.path}</Text><Badge size="sm" variant="light" color="indigo">{item.count}</Badge></Group>
+                <Group key={item.path} justify="space-between" wrap="nowrap"><Text size="xs" fw={650} c="gray.7" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{screenLabel(item.path)}</Text><Badge size="sm" variant="light" color="indigo">{item.count} просм.</Badge></Group>
               ))}
-              {!data.traffic.topPaths.length && <Text size="xs" c="gray.4">Данные появятся после первых визитов.</Text>}
+              {!data.traffic.topPaths.length && <Text size="xs" c="gray.4">Данные появятся после первых просмотров страниц.</Text>}
             </Stack>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">

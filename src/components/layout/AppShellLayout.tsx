@@ -116,7 +116,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         <AppHeader navigationOpened={mobileOpened} onNavigationToggle={toggleMobile} />
       </AppShell.Header>
 
-      <AppShell.Navbar p={0} style={{ background: "var(--market-surface-subtle)", borderRight: "1px solid var(--market-line)" }}>
+      <AppShell.Navbar className="market-app-navbar" p={0} style={{ background: "var(--market-surface-subtle)", borderRight: "1px solid var(--market-line)" }}>
         <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={5}>
           <Stack gap="sm" p="sm">
               {/* Для гостя вход уже доступен в хедере: не дублируем две одинаковые пары кнопок. */}

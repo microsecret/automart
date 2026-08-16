@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { translateListingFields, translateToRussian } from "@/lib/nvidia-translate"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
 import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
+import { normalizeAuctionEngineVolumeCc } from "@/lib/auction-normalization"
 
 function hasUntranslatedForeignText(original: string | null, translated: string | null) {
   if (!original) return false
@@ -116,6 +117,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
   let translated = 0
 
   for (const item of items) {
+    const engineVolume = normalizeAuctionEngineVolumeCc(item.engineVolume, item.fuelType)
     const [displayColor, displayLocation] = await Promise.all([
       localizeImportedDisplayValue(item.color, "color", item.country),
       localizeImportedDisplayValue(item.location, "location", item.country),
@@ -153,7 +155,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           transmission: item.transmission,
           bodyType: item.bodyType,
           color: displayColor,
-          engineVolume: item.engineVolume,
+          engineVolume,
           power: item.power,
           driveType: item.driveType,
           vin: item.vin,
@@ -212,7 +214,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         make: item.make, model: item.model, year: item.year, manufacturedMonth: item.manufacturedMonth || null,
         mileage: item.mileage || null, fuelType: item.fuelType || null,
         transmission: item.transmission || null, bodyType: item.bodyType || null,
-        color: displayColor, engineVolume: item.engineVolume || null,
+        color: displayColor, engineVolume,
         power: item.power || null, driveType: item.driveType || null,
         vin: item.vin || null, lotNumber: item.lotNumber || null,
         sourcePrice: item.sourcePrice, sourceCurrency: item.sourceCurrency,

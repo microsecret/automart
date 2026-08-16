@@ -20,6 +20,8 @@ function getNextKey(): string | null {
 // Простой кэш (in-memory, для одного процесса)
 const cache = new Map<string, string>()
 const MAX_TRANSLATION_CACHE_ENTRIES = 1_000
+const EAST_ASIAN_SCRIPT = /[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/
+const CYRILLIC_SCRIPT = /[\u0400-\u04FF]/
 
 const KOREAN_AUTOMOTIVE_FALLBACKS: ReadonlyArray<readonly [RegExp, string]> = [
   // Exact compounds must precede short automotive terms (`은색`, `금색`)
@@ -138,6 +140,10 @@ export async function translateToRussian(text: string): Promise<string> {
       const translated = data?.choices?.[0]?.message?.content?.trim()
 
       if (translated && translated.length > 0) {
+        if (EAST_ASIAN_SCRIPT.test(text) && (EAST_ASIAN_SCRIPT.test(translated) || !CYRILLIC_SCRIPT.test(translated))) {
+          lastError = new Error("Translation provider returned untranslated source script")
+          continue
+        }
         rememberTranslation(text, translated)
         return translated
       }
@@ -163,9 +169,15 @@ export async function translateListingFields(fields: {
     // A provider/network failure deliberately returns the original. For Encar's
     // common Korean technical fields, show a deterministic Russian fallback
     // rather than storing the original as a successful translation.
-    return translated.trim() === value.trim() && /[\uAC00-\uD7AF]/.test(value)
+    const candidate = translated.trim() === value.trim() && /[\uAC00-\uD7AF]/.test(value)
       ? translateKnownKoreanAutomotiveTerms(value)
       : translated
+    // Customer pages are Russian-only. A failed or partial provider response
+    // is retained in descriptionOrig/specsOrig and can be retried later, but
+    // is never published as a successful translation.
+    if (EAST_ASIAN_SCRIPT.test(candidate)) return null
+    if (/[A-Za-z]/.test(value) && candidate.trim() === value.trim() && !CYRILLIC_SCRIPT.test(candidate)) return null
+    return candidate
   }
   const [descriptionRu, specsRu] = await Promise.all([
     translateField(fields.description),

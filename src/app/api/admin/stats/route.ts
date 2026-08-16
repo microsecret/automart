@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"
 
 type DailyTrafficPoint = {
   date: string
-  visits: number
+  pageViews: number
   uniqueVisitors: number
   registrations: number
 }
@@ -47,14 +47,14 @@ function createDailyTraffic(events: TrafficEvent[], users: Array<{ createdAt: Da
   const points = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(start)
     date.setUTCDate(start.getUTCDate() + index)
-    return { date: utcDayKey(date), visits: 0, uniqueVisitors: 0, registrations: 0, visitorKeys: new Set<string>() }
+    return { date: utcDayKey(date), pageViews: 0, uniqueVisitors: 0, registrations: 0, visitorKeys: new Set<string>() }
   })
   const byDate = new Map(points.map((point) => [point.date, point]))
 
   for (const event of events) {
     const point = byDate.get(utcDayKey(event.createdAt))
     if (point) {
-      point.visits += 1
+      point.pageViews += 1
       const identity = trafficVisitorIdentity(event)
       if (identity) point.visitorKeys.add(identity)
     }
@@ -192,9 +192,9 @@ export async function GET() {
 
     const trafficEvents7d = trafficEvents30d.filter((event) => event.createdAt >= weekAgo)
     const previousTrafficEvents7d = trafficEvents30d.filter((event) => event.createdAt >= previousWeekStart && event.createdAt < weekAgo)
-    const visits24h = trafficEvents7d.filter((event) => event.createdAt >= dayAgo).length
-    const visits7d = trafficEvents7d.length
-    const visits30d = trafficEvents30d.length
+    const pageViews24h = trafficEvents7d.filter((event) => event.createdAt >= dayAgo).length
+    const pageViews7d = trafficEvents7d.length
+    const pageViews30d = trafficEvents30d.length
     const visitorSet = (events: TrafficEvent[]) => new Set(events.map(trafficVisitorIdentity).filter((value): value is string => Boolean(value)))
     const uniqueVisitors7dSet = visitorSet(trafficEvents7d)
     const previousUniqueVisitors7dSet = visitorSet(previousTrafficEvents7d)
@@ -217,7 +217,7 @@ export async function GET() {
         .map((event) => event.userId)
         .filter((value): value is string => typeof value === "string" && newRegistrationIds7d.has(value)),
     ).size
-    const pagesPerVisitor7d = uniqueVisitors7d ? Math.round(visits7d / uniqueVisitors7d * 10) / 10 : 0
+    const pagesPerVisitor7d = uniqueVisitors7d ? Math.round(pageViews7d / uniqueVisitors7d * 10) / 10 : 0
     const registrationConversion7d = uniqueVisitors7d ? Math.min(100, Math.round(attributedRegistrations7d / uniqueVisitors7d * 1_000) / 10) : 0
     const recentVisitors = recentVisitorEvents.filter((visit, index, values) => visit.userId && values.findIndex((candidate) => candidate.userId === visit.userId) === index).slice(0, 10)
 
@@ -332,15 +332,13 @@ export async function GET() {
         recentOrders: recentPromotionOrders,
       },
       traffic: {
-        visits24h,
-        visits7d,
-        pageViews24h: visits24h,
-        pageViews7d: visits7d,
-        pageViews30d: visits30d,
+        pageViews24h,
+        pageViews7d,
+        pageViews30d,
         uniqueVisitors24h,
         uniqueVisitors7d,
         uniqueVisitors30d,
-        pageViewsTrend7d: percentageChange(visits7d, previousTrafficEvents7d.length),
+        pageViewsTrend7d: percentageChange(pageViews7d, previousTrafficEvents7d.length),
         uniqueVisitorsTrend7d: percentageChange(uniqueVisitors7d, previousUniqueVisitors7dSet.size),
         returningVisitors7d,
         newVisitors7d,

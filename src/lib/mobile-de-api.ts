@@ -163,17 +163,53 @@ function imageUrls(value: unknown) {
   }))].slice(0, 80)
 }
 
+const MOBILE_DE_EQUIPMENT_LABELS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^ABS$/i, "Антиблокировочная система (ABS)"],
+  [/^(ESP|ELECTRONIC STABILITY PROGRAM)$/i, "Система курсовой устойчивости (ESP)"],
+  [/^(BLUETOOTH|BLUETOOTH ENABLED)$/i, "Беспроводная связь Bluetooth"],
+  [/^(NAVIGATION|NAVIGATION SYSTEM)$/i, "Навигационная система"],
+  [/^(CRUISE CONTROL|TEMPOMAT)$/i, "Круиз-контроль"],
+  [/^(ADAPTIVE CRUISE CONTROL)$/i, "Адаптивный круиз-контроль"],
+  [/^(HEATED SEATS?|SITZHEIZUNG)$/i, "Подогрев сидений"],
+  [/^(VENTILATED SEATS?)$/i, "Вентиляция сидений"],
+  [/^(PARKING SENSORS?|PARK DISTANCE CONTROL)$/i, "Парктроники"],
+  [/^(REAR VIEW CAMERA|REVERSING CAMERA)$/i, "Камера заднего вида"],
+  [/^(LED HEADLIGHTS?|LED-SCHEINWERFER)$/i, "Светодиодные фары"],
+  [/^(PANORAMIC ROOF|PANORAMA ROOF)$/i, "Панорамная крыша"],
+  [/^(FULL SERVICE HISTORY|SCHECKHEFTGEPFLEGT)$/i, "Полная сервисная история"],
+  [/^(NON-SMOKER VEHICLE|NICHTRAUCHERFAHRZEUG)$/i, "Салон без следов курения"],
+]
+
+function localizeMobileDeEquipment(value: string) {
+  const source = value.trim()
+  const localized = MOBILE_DE_EQUIPMENT_LABELS.find(([pattern]) => pattern.test(source))?.[1]
+  // Unknown German/English prose remains available at the source, but must
+  // not leak into a customer-facing Russian card.
+  return localized || (/[\u0400-\u04FF]/.test(source) && !/[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(source) ? source : null)
+}
+
 function equipmentSnapshot(value: unknown): AuctionEquipmentSnapshot | null {
   const container = asRecord(value)
   const features = Array.isArray(value) ? value : Array.isArray(container?.feature) ? container.feature : Array.isArray(container?.features) ? container.features : []
-  const labels = [...new Set(features.map(asText).filter((entry): entry is string => Boolean(entry)))].slice(0, 100)
-  return labels.length ? { totalReported: labels.length, items: labels.map((label) => ({ label, available: true })) } : null
+  const sourceLabels = [...new Set(features.map(asText).filter((entry): entry is string => Boolean(entry)))]
+  const labels = sourceLabels.flatMap((label) => {
+    const localized = localizeMobileDeEquipment(label)
+    return localized ? [localized] : []
+  }).slice(0, 100)
+  return labels.length ? { totalReported: sourceLabels.length, items: labels.map((label) => ({ label, available: true })) } : null
 }
 
 function conditionSnapshot(ad: UnknownRecord): AuctionConditionInfo | null {
   const checks: Array<{ label: string; status: string }> = []
-  const condition = asText(ad.condition)
-  if (condition) checks.push({ label: "Состояние у продавца", status: condition })
+  const condition = asText(ad.condition)?.toLocaleUpperCase("en-US")
+  const conditionLabel: Record<string, string> = {
+    NEW: "Новый автомобиль",
+    USED: "Автомобиль с пробегом",
+    PRE_REGISTRATION: "Предварительно зарегистрирован",
+    DEMONSTRATION: "Демонстрационный автомобиль",
+    OLD_TIMER: "Классический автомобиль",
+  }
+  if (condition && conditionLabel[condition]) checks.push({ label: "Состояние у продавца", status: conditionLabel[condition] })
   if (typeof ad.damageUnrepaired === "boolean") checks.push({ label: "Неустранённые повреждения", status: ad.damageUnrepaired ? "Указаны продавцом" : "Не указаны продавцом" })
   if (typeof ad.accidentDamaged === "boolean") checks.push({ label: "Аварийный автомобиль", status: ad.accidentDamaged ? "Да" : "Нет" })
   return checks.length ? { insuranceRecordCount: null, inspectionSummary: null, newCarPriceRatioPct: null, verifiedItems: checks } : null

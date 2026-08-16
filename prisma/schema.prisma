@@ -671,7 +671,7 @@ model AuctionListing {
   transmission    String?
   bodyType        String?
   color           String?
-  engineVolume    Float?
+  engineVolume    Float?  // cubic centimetres for imported auction vehicles
   power           Int?
   driveType       String?
   vin             String?
