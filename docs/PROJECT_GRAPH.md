@@ -17,6 +17,7 @@ flowchart LR
   Parser --> Rates["CBR exchange-rate snapshot"]
   Parser --> Prisma
   Next --> Media["Direct source photo URLs"]
+  Next --> IautosMedia["Allow-listed transient iAutos media relay"]
 ```
 
 ## Task routing graph
@@ -59,7 +60,10 @@ IDs enter immediately. Detail pages already confirmed in the database use a
 12–24 hour source-specific cooldown. Availability refresh is separate and uses
 3–12 hour source-specific intervals; two spaced missing checks are required
 before a listing is hidden. Photos remain source CDN URLs and image binaries are
-not persisted in the application database or server filesystem.
+not persisted in the application database or server filesystem. The iAutos CDN
+is unreachable from some client regions, so only its four fixed image hosts use
+a bounded, cached, allow-listed relay; bytes are streamed through memory and are
+never written to disk.
 
 ## Source inventory
 

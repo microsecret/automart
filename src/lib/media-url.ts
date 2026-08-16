@@ -35,6 +35,18 @@ export function safeHttpsUrl(value: unknown, maxLength = MAX_MEDIA_URL_LENGTH): 
 
 type EncarRendition = { rh: number; cw: number; ch: number }
 
+const IAUTOS_IMAGE_HOSTS = new Set(["qimg.iautos.cn", "s1.iautos.cn", "s2.iautos.cn", "s3.iautos.cn"])
+
+function browserReachableAuctionImageUrl(value: string): string {
+  if (!isSafeMediaUrl(value)) return value
+  try {
+    const url = new URL(value)
+    return IAUTOS_IMAGE_HOSTS.has(url.hostname) ? `/api/auction-media?url=${encodeURIComponent(url.toString())}` : value
+  } catch {
+    return value
+  }
+}
+
 function encarImageUrl(value: string, rendition: EncarRendition): string {
   if (!isSafeMediaUrl(value)) return value
 
@@ -55,12 +67,12 @@ function encarImageUrl(value: string, rendition: EncarRendition): string {
 
 /** A compact rendition for the thumbnail rail; never request full gallery files there. */
 export function auctionThumbnailImageUrl(value: string): string {
-  return encarImageUrl(value, { rh: 320, cw: 480, ch: 320 })
+  return browserReachableAuctionImageUrl(encarImageUrl(value, { rh: 320, cw: 480, ch: 320 }))
 }
 
 /** A balanced image for auction-result cards. */
 export function auctionCardImageUrl(value: string): string {
-  return encarImageUrl(value, { rh: 720, cw: 1120, ch: 720 })
+  return browserReachableAuctionImageUrl(encarImageUrl(value, { rh: 720, cw: 1120, ch: 720 }))
 }
 
 /**
@@ -68,7 +80,7 @@ export function auctionCardImageUrl(value: string): string {
  * fetching the former 2560px variant again after a 1600px source preview.
  */
 export function highQualityAuctionImageUrl(value: string): string {
-  return encarImageUrl(value, { rh: 1024, cw: 1600, ch: 1024 })
+  return browserReachableAuctionImageUrl(encarImageUrl(value, { rh: 1024, cw: 1600, ch: 1024 }))
 }
 
 /**
