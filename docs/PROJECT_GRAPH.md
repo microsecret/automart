@@ -34,6 +34,7 @@ flowchart LR
 | Exchange rates | `src/lib/exchange-rates.ts` | CBR refresh script and cron |
 | Freshness/removal | source refresh route | `auction-crawl-policy.ts`, `auction-source-freshness.ts`, listing status fields |
 | Production schedule | `scripts/run-encar-collector.sh` | cron installer and deployment script |
+| Delivery partner onboarding | `src/app/api/delivery-organizations/route.ts` | delivery workspace, admin partner registry |
 
 ## Auction ingestion graph
 
@@ -93,3 +94,21 @@ never written to disk.
 6. Store source currency and use the current CBR snapshot for RUB pricing.
 7. Implement both discovery and two-confirmation freshness checks.
 8. Add the source to the registry, cron, production health query and this graph.
+
+## Delivery partner verification graph
+
+```mermaid
+flowchart LR
+  Partner["ИП / ООО / логистическая компания"] --> Application["Заявка и реквизиты"]
+  Application --> Pending["Закрытая очередь проверки"]
+  Pending --> Admin["Сверка администратором / ФНС"]
+  Admin -->|подтверждено| Verified["Проверенный партнёр"]
+  Admin -->|нужны данные| Rework["Исправление заявки"]
+  Verified --> Order["Назначение в конкретную сделку"]
+```
+
+Подача заявки не назначает компанию на доставку и не открывает ей чужие
+сделки. Пользователь видит только собственную заявку; решение фиксируется в
+существующем администраторском реестре. Автоматическая отметка ФНС допустима
+только после ответа подтверждённого источника, иначе используется ручная
+проверка.

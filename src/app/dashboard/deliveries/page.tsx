@@ -4,9 +4,9 @@ import { FormEvent, Suspense, useEffect, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Badge, Box, Button, Center, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
+import { Alert, Badge, Box, Button, Center, Divider, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconArrowRight, IconChevronRight, IconFileInvoice, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
+import { IconArrowRight, IconBuildingWarehouse, IconCheck, IconChevronRight, IconClipboardCheck, IconFileInvoice, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
@@ -39,6 +39,33 @@ type AuctionPrefillResponse = {
   listing: { make: string; model: string; year: number; lotNumber: string | null; country: string; location: string | null }
 }
 
+type DeliveryOrganization = {
+  id: string
+  legalName: string
+  inn: string
+  ogrn: string | null
+  organizationType: string
+  serviceRegions: string | null
+  verificationStatus: "PENDING" | "VERIFIED" | "REJECTED" | "SUSPENDED"
+  verificationNote: string | null
+}
+
+type DeliveryOrganizationResponse = { organization: DeliveryOrganization | null }
+
+const organizationTypeOptions = [
+  { value: "COMPANY", label: "ООО или другая компания" },
+  { value: "ENTREPRENEUR", label: "Индивидуальный предприниматель" },
+  { value: "LOGISTICS", label: "Логистическая компания" },
+  { value: "BROKER", label: "Таможенный брокер" },
+]
+
+const organizationStatusMeta = {
+  PENDING: { label: "Заявка на проверке", color: "orange" },
+  VERIFIED: { label: "Партнёр проверен", color: "teal" },
+  REJECTED: { label: "Нужны исправления", color: "red" },
+  SUSPENDED: { label: "Проверка приостановлена", color: "gray" },
+} as const
+
 export default function DeliveriesPage() {
   return <Suspense fallback={<Center py={100}><Loader color="indigo" /></Center>}><DeliveriesWorkspace /></Suspense>
 }
@@ -48,9 +75,13 @@ function DeliveriesWorkspace() {
   const searchParams = useSearchParams()
   const auctionListingIdFromSearch = searchParams.get("auctionListingId")
   const { data, error, isLoading, mutate } = useSWR<DeliveryOrdersResponse>("/api/delivery-orders", fetchJson)
+  const { data: organizationData, mutate: mutateOrganization } = useSWR<DeliveryOrganizationResponse>("/api/delivery-organizations", fetchJson)
   const [opened, setOpened] = useState(false)
+  const [partnerOpened, setPartnerOpened] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [partnerSubmitting, setPartnerSubmitting] = useState(false)
   const [form, setForm] = useState({ title: "", kind: "VEHICLE", sourceType: "AUCTION", originCountry: "CN", destinationCity: "", originCity: "", description: "", auctionListingId: "" })
+  const [partnerForm, setPartnerForm] = useState({ legalName: "", inn: "", ogrn: "", organizationType: "COMPANY", serviceRegions: "" })
 
   useEffect(() => {
     const auctionListingId = auctionListingIdFromSearch
@@ -93,6 +124,39 @@ function DeliveriesWorkspace() {
     }
   }
 
+  const openPartnerApplication = () => {
+    const organization = organizationData?.organization
+    if (organization) {
+      setPartnerForm({
+        legalName: organization.legalName,
+        inn: organization.inn,
+        ogrn: organization.ogrn || "",
+        organizationType: organization.organizationType,
+        serviceRegions: formatOrganizationRegions(organization.serviceRegions),
+      })
+    }
+    setPartnerOpened(true)
+  }
+
+  const submitPartnerApplication = async (event: FormEvent) => {
+    event.preventDefault()
+    setPartnerSubmitting(true)
+    try {
+      await fetchJson<DeliveryOrganizationResponse>("/api/delivery-organizations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(partnerForm),
+      })
+      await mutateOrganization()
+      setPartnerOpened(false)
+      notifications.show({ title: "Заявка принята", message: "Реквизиты появились в реестре администратора. Сообщим результат после проверки.", color: "teal" })
+    } catch (submitError: unknown) {
+      notifications.show({ title: "Не удалось отправить заявку", message: submitError instanceof Error ? submitError.message : "Проверьте реквизиты и повторите попытку.", color: "red" })
+    } finally {
+      setPartnerSubmitting(false)
+    }
+  }
+
   if (isLoading) return <Center py={100}><Loader color="indigo" aria-label="Загружаем доставки" /></Center>
   if (error) return <Box py={80}><AsyncErrorState title="Не удалось загрузить доставки" description={error instanceof Error ? error.message : "Проверьте подключение и повторите попытку."} onRetry={() => void mutate()} backHref="/dashboard" backLabel="В кабинет" /></Box>
 
@@ -102,15 +166,16 @@ function DeliveriesWorkspace() {
   return (
     <Box p={{ base: "sm", md: "lg" }}>
       <Stack gap="md">
-        <Paper radius="lg" p={{ base: "md", md: "xl" }} style={{ color: "white", overflow: "hidden", background: "linear-gradient(126deg, #0c1834 0%, #182f64 52%, #5146c9 100%)", boxShadow: "0 18px 42px rgba(25, 48, 103, .18)" }}>
+        <Paper radius="xl" p={{ base: "lg", md: 36 }} style={{ color: "white", overflow: "hidden", position: "relative", isolation: "isolate", background: "radial-gradient(circle at 88% 14%, rgba(139,92,246,.72), transparent 29%), linear-gradient(126deg, #071329 0%, #142c63 52%, #4038b9 100%)", boxShadow: "0 24px 60px rgba(25, 48, 103, .22)" }}>
+          <Box aria-hidden style={{ position: "absolute", width: 260, height: 260, borderRadius: "50%", border: "1px solid rgba(255,255,255,.14)", right: -70, bottom: -150, zIndex: -1 }} />
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
             <Stack gap="xs" maw={650}>
-              <Group gap="xs"><ThemeIcon size={34} radius="md" variant="white" color="indigo"><IconRoute size={18} /></ThemeIcon><Badge color="indigo" variant="white">Кабинет сделки</Badge></Group>
-              <Title order={1} fz={{ base: 25, md: 34 }} lh={1.08} ff="var(--font-display), sans-serif">Доставка без тёмных зон</Title>
-              <Text c="rgba(255,255,255,.78)" size="sm" maw={590}>От заявки на аукционный автомобиль или запчасть до выдачи в вашем городе: этапы, счета, документы и общий чат — в одном рабочем пространстве.</Text>
-              <Group gap="xs" mt="xs"><Badge color="cyan" variant="light">Статусы с автором</Badge><Badge color="violet" variant="light">Отдельные платежи</Badge><Badge color="teal" variant="light">Закрытые документы</Badge></Group>
+              <Group gap="xs"><ThemeIcon size={36} radius="md" variant="white" color="indigo"><IconRoute size={19} /></ThemeIcon><Badge color="indigo" variant="white">Международная доставка</Badge></Group>
+              <Title order={1} fz={{ base: 28, md: 42 }} lh={1.04} lts="-.025em" ff="var(--font-display), sans-serif">Маршрут, документы и статусы — в одном кабинете</Title>
+              <Text c="rgba(255,255,255,.8)" size="md" maw={610}>Сопровождаем автомобиль или запчасть от зарубежной площадки до выдачи в вашем городе. Партнёры и реквизиты появляются только после проверки.</Text>
+              <Group gap="xs" mt="xs"><Badge color="cyan" variant="light">Прозрачные этапы</Badge><Badge color="violet" variant="light">Раздельные счета</Badge><Badge color="teal" variant="light">Проверенные партнёры</Badge></Group>
             </Stack>
-            <Button onClick={() => setOpened(true)} color="white" c="indigo" leftSection={<IconPlus size={17} />} radius="md">Новая заявка</Button>
+            <Button onClick={() => setOpened(true)} color="white" c="indigo" leftSection={<IconPlus size={17} />} radius="xl" size="md">Рассчитать доставку</Button>
           </Group>
         </Paper>
 
@@ -135,7 +200,7 @@ function DeliveriesWorkspace() {
               return <Paper key={order.id} component={Link} href={`/dashboard/deliveries/${order.id}`} withBorder radius="lg" p="md" className="delivery-order-card" style={{ textDecoration: "none", color: "inherit" }}>
                 <Stack gap="sm">
                   <Group justify="space-between" gap="xs" wrap="nowrap"><Badge variant="light" color={meta.color}>{meta.shortLabel}</Badge><Text size="xs" c="dimmed" fw={600}>{order.code}</Text></Group>
-                  <Stack gap={2}><Text fw={800} lineClamp={2}>{order.title}</Text><Text size="xs" c="dimmed">{order.kind === "PART" ? "Запчасть" : "Транспорт"} · {order.sourceType === "AUCTION" ? "аукцион" : order.sourceType === "PARTS_ORDER" ? "под заказ" : "прямой импорт"}</Text></Stack>
+                  <Stack gap={2}><Text fw={800} lineClamp={2}>{order.title}</Text><Text size="xs" c="dimmed">{order.kind === "PART" ? "Запчасть" : "Автомобиль"} · {order.sourceType === "AUCTION" ? "аукцион" : order.sourceType === "PARTS_ORDER" ? "под заказ" : "прямой импорт"}</Text></Stack>
                   <Group gap={6} wrap="nowrap"><IconMapPin size={15} color="#64748b" /><Text size="sm" c="dimmed" lineClamp={1}>{countryLabel(order.originCountry)}{order.originCity ? `, ${order.originCity}` : ""}</Text><IconArrowRight size={14} color="#94a3b8" /><Text size="sm" fw={600} lineClamp={1}>{order.destinationCity}</Text></Group>
                   <Box><Group justify="space-between" mb={4}><Text size="xs" c="dimmed">{meta.label}</Text><Text size="xs" fw={700}>{deliveryProgress(order.status)}%</Text></Group><Progress value={deliveryProgress(order.status)} color={meta.color} size="sm" radius="xl" /></Box>
                   <Group justify="space-between"><Text size="xs" c="dimmed" lineClamp={1}>{order.nextAction || meta.description}</Text><IconChevronRight size={17} color="#64748b" /></Group>
@@ -144,18 +209,47 @@ function DeliveriesWorkspace() {
             })}
           </SimpleGrid>
         )}
+
+        <Paper withBorder radius="xl" p={{ base: "md", md: "lg" }} style={{ background: "linear-gradient(135deg, rgba(79,70,229,.055), rgba(20,184,166,.045))" }}>
+          <Group justify="space-between" align="center" gap="lg" wrap="wrap">
+            <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 280 }}>
+              <ThemeIcon size={48} radius="lg" variant="gradient" gradient={{ from: "indigo", to: "violet", deg: 135 }}><IconBuildingWarehouse size={24} /></ThemeIcon>
+              <Stack gap={4}>
+                <Group gap="xs" wrap="wrap"><Text fw={850} fz="lg">Работаете с международной доставкой?</Text>{organizationData?.organization && <Badge variant="light" color={organizationStatusMeta[organizationData.organization.verificationStatus].color}>{organizationStatusMeta[organizationData.organization.verificationStatus].label}</Badge>}</Group>
+                <Text size="sm" c="dimmed" maw={720}>ИП, ООО, логистические компании и брокеры могут подать реквизиты. После проверки организация попадёт в закрытый реестр партнёров LeWheel.</Text>
+              </Stack>
+            </Group>
+            <Button onClick={openPartnerApplication} variant={organizationData?.organization ? "light" : "filled"} color="indigo" radius="xl" leftSection={<IconClipboardCheck size={17} />}>{organizationData?.organization ? "Открыть заявку" : "Стать партнёром"}</Button>
+          </Group>
+        </Paper>
       </Stack>
 
-      <Modal opened={opened} onClose={() => setOpened(false)} title="Заявка на международную доставку" centered radius="lg">
+      <Modal opened={opened} onClose={() => setOpened(false)} title="Заявка на международную доставку" centered radius="xl" size="lg">
         <form onSubmit={createOrder}><Stack gap="sm">
           <Text size="sm" c="dimmed">Это заявка на сопровождение, а не платёж. Сначала согласуем маршрут, партнёра и документы.</Text>
           {form.auctionListingId && <Badge color="orange" variant="light">Выбран лот аукциона — он будет привязан к сделке</Badge>}
           <TextInput required label="Что нужно доставить" placeholder="Например, Toyota RAV4 2023, лот 1842" value={form.title} onChange={(e) => setForm({ ...form, title: e.currentTarget.value })} />
-          <SimpleGrid cols={2}><Select label="Тип" data={[{ value: "VEHICLE", label: "Транспорт" }, { value: "PART", label: "Запчасть" }]} value={form.kind} onChange={(value) => setForm({ ...form, kind: value || "VEHICLE" })} /><Select label="Источник" data={sourceOptions} value={form.sourceType} onChange={(value) => setForm({ ...form, sourceType: value || "AUCTION" })} /></SimpleGrid>
-          <SimpleGrid cols={2}><Select required label="Страна отправления" data={DELIVERY_COUNTRIES} value={form.originCountry} onChange={(value) => setForm({ ...form, originCountry: value || "CN" })} /><TextInput label="Город / порт отправления" placeholder="Например, Суйфэньхэ" value={form.originCity} onChange={(e) => setForm({ ...form, originCity: e.currentTarget.value })} /></SimpleGrid>
+          <SimpleGrid cols={{ base: 1, sm: 2 }}><Select label="Что доставляем" data={[{ value: "VEHICLE", label: "Автомобиль" }, { value: "PART", label: "Запчасть" }]} value={form.kind} onChange={(value) => setForm({ ...form, kind: value || "VEHICLE" })} /><Select label="Источник" data={sourceOptions} value={form.sourceType} onChange={(value) => setForm({ ...form, sourceType: value || "AUCTION" })} /></SimpleGrid>
+          <SimpleGrid cols={{ base: 1, sm: 2 }}><Select required label="Страна отправления" data={DELIVERY_COUNTRIES} value={form.originCountry} onChange={(value) => setForm({ ...form, originCountry: value || "CN" })} /><TextInput label="Город / порт отправления" placeholder="Например, Суйфэньхэ" value={form.originCity} onChange={(e) => setForm({ ...form, originCity: e.currentTarget.value })} /></SimpleGrid>
           <TextInput required label="Город доставки в России" placeholder="Например, Екатеринбург" value={form.destinationCity} onChange={(e) => setForm({ ...form, destinationCity: e.currentTarget.value })} />
           <Textarea label="Комментарий" placeholder="Нужен маршрут, бюджет, номер лота, особые условия" minRows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.currentTarget.value })} />
           <Button type="submit" loading={submitting} color="indigo" rightSection={<IconArrowRight size={16} />}>Создать заявку</Button>
+        </Stack></form>
+      </Modal>
+
+      <Modal opened={partnerOpened} onClose={() => setPartnerOpened(false)} title="Заявка партнёра LeWheel" centered radius="xl" size="lg">
+        <form onSubmit={submitPartnerApplication}><Stack gap="sm">
+          <Alert color="indigo" icon={<IconShieldCheck size={18} />} title="Реквизиты проверяет администратор">Заявка не даёт автоматический доступ к заказам. До назначения партнёром мы сверим организацию и направления работы.</Alert>
+          {organizationData?.organization?.verificationNote && <Alert color="orange" title="Комментарий проверки">{organizationData.organization.verificationNote}</Alert>}
+          <TextInput required label="Полное наименование" placeholder="ООО «Транс Логистика»" value={partnerForm.legalName} onChange={(event) => setPartnerForm({ ...partnerForm, legalName: event.currentTarget.value })} />
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <Select required allowDeselect={false} label="Тип организации" data={organizationTypeOptions} value={partnerForm.organizationType} onChange={(value) => setPartnerForm({ ...partnerForm, organizationType: value || "COMPANY" })} />
+            <TextInput required inputMode="numeric" label="ИНН" placeholder="10 или 12 цифр" value={partnerForm.inn} onChange={(event) => setPartnerForm({ ...partnerForm, inn: event.currentTarget.value.replace(/\D/g, "").slice(0, 12) })} />
+          </SimpleGrid>
+          <TextInput inputMode="numeric" label="ОГРН / ОГРНИП" description="Можно заполнить после подачи, если номера пока нет под рукой." placeholder="13 или 15 цифр" value={partnerForm.ogrn} onChange={(event) => setPartnerForm({ ...partnerForm, ogrn: event.currentTarget.value.replace(/\D/g, "").slice(0, 15) })} />
+          <Textarea required label="География и направления" placeholder="Китай — Владивосток — Екатеринбург; Корея — Москва" minRows={3} value={partnerForm.serviceRegions} onChange={(event) => setPartnerForm({ ...partnerForm, serviceRegions: event.currentTarget.value })} />
+          <Divider />
+          <Group justify="space-between" gap="sm" wrap="wrap"><Text size="xs" c="dimmed" maw={390}>После отправки заявка получит статус «На проверке». Платёжные реквизиты в этой форме не запрашиваются.</Text><Button type="submit" loading={partnerSubmitting} color="indigo" radius="xl" leftSection={<IconCheck size={17} />}>Отправить на проверку</Button></Group>
         </Stack></form>
       </Modal>
     </Box>
@@ -168,4 +262,14 @@ function Metric({ label, value, icon, color }: { label: string; value: number; i
 
 function countryLabel(code: string) {
   return DELIVERY_COUNTRIES.find((country) => country.value === code)?.label || code
+}
+
+function formatOrganizationRegions(value: string | null) {
+  if (!value) return ""
+  try {
+    const parsed: unknown = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string").join(", ") : value
+  } catch {
+    return value
+  }
 }
