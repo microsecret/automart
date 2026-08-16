@@ -18,30 +18,35 @@ BASE_URL="${AUTOMART_INTERNAL_URL:-http://127.0.0.1:4000}"
 CURL=(curl --fail --silent --show-error --connect-timeout 10 --max-time 240
   --retry 3 --retry-all-errors --retry-delay 3
   -H "Authorization: Bearer ${PARSER_TOKEN}" -H "Content-Type: application/json")
+FAILED_STAGES=0
 
-echo "[$(date -Is)] Encar discovery"
-"${CURL[@]}" -X POST "${BASE_URL}/api/parser/encar/sync" --data '{"limit":5}'
-echo
-echo "[$(date -Is)] Encar freshness refresh"
+run_stage() {
+  local label="$1"
+  local endpoint="$2"
+  local payload="$3"
+  echo "[$(date -Is)] ${label}"
+  if ! "${CURL[@]}" -X POST "${BASE_URL}${endpoint}" --data "${payload}"; then
+    echo
+    echo "[$(date -Is)] ERROR: ${label} failed; continuing with the remaining sources" >&2
+    FAILED_STAGES=$((FAILED_STAGES + 1))
+  fi
+  echo
+}
+
+run_stage "Encar discovery" "/api/parser/encar/sync" '{"limit":5}'
 # The endpoint processes source pages serially. 40 checks per cycle cover the
 # current catalogue in under seven hours while keeping the source request rate
 # bounded and independent of proxies or header rotation.
-"${CURL[@]}" -X POST "${BASE_URL}/api/parser/encar/refresh" --data '{"limit":40}'
-echo
-echo "[$(date -Is)] K Car discovery"
-"${CURL[@]}" -X POST "${BASE_URL}/api/parser/kcar/sync" --data '{"limit":8}'
-echo
-echo "[$(date -Is)] K Car freshness refresh"
-"${CURL[@]}" -X POST "${BASE_URL}/api/parser/kcar/refresh" --data '{"limit":40}'
-echo
+run_stage "Encar freshness refresh" "/api/parser/encar/refresh" '{"limit":40}'
+run_stage "K Car discovery" "/api/parser/kcar/sync" '{"limit":8}'
+run_stage "K Car freshness refresh" "/api/parser/kcar/refresh" '{"limit":40}'
 if [[ -n "${MOBILE_DE_API_USERNAME:-}" && -n "${MOBILE_DE_API_PASSWORD:-}" ]]; then
-  echo "[$(date -Is)] mobile.de official API discovery"
-  "${CURL[@]}" -X POST "${BASE_URL}/api/parser/mobile-de/sync" --data '{"limit":5}'
-  echo
-  echo "[$(date -Is)] mobile.de freshness refresh"
-  "${CURL[@]}" -X POST "${BASE_URL}/api/parser/mobile-de/refresh" --data '{"limit":30}'
-  echo
+  run_stage "mobile.de official API discovery" "/api/parser/mobile-de/sync" '{"limit":5}'
+  run_stage "mobile.de freshness refresh" "/api/parser/mobile-de/refresh" '{"limit":30}'
 fi
-echo "[$(date -Is)] Configured partner/API feeds"
-"${CURL[@]}" -X POST "${BASE_URL}/api/parser/partner-feeds/sync" --data '{}'
-echo
+run_stage "Configured partner/API feeds" "/api/parser/partner-feeds/sync" '{}'
+
+if (( FAILED_STAGES > 0 )); then
+  echo "[$(date -Is)] Collector completed with ${FAILED_STAGES} failed stage(s)" >&2
+  exit 1
+fi

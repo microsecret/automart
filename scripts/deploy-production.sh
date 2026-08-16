@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# The collector script and this deployment both touch the running parser
+# surface. Holding the same lock prevents cron from calling routes that exist
+# on disk but are not served by the previous process yet.
+if command -v flock >/dev/null 2>&1; then
+  exec 9>/tmp/automart-encar-collector.lock
+  flock 9
+fi
+
 # Run on the production host from the repository root. Secrets stay in the
 # server environment; this script deliberately never writes them to the repo.
 git pull --ff-only origin master
