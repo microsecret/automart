@@ -30,7 +30,7 @@ const SOURCE_MAX_BYTES = 4 * 1024 * 1024
 const SOURCE_HEADERS = {
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "Accept-Language": "en-US,en;q=0.8",
-  "User-Agent": "LeWheel-Public-Catalog-Collector/1.0 (+https://lewheel.ru)",
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36",
 }
 const SOURCE_HOSTS: Record<PublicAuctionSource, ReadonlySet<string>> = {
   IAUTOS: new Set(["so.iautos.cn", "www.iautos.cn"]),
