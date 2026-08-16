@@ -34,9 +34,8 @@ run_stage() {
 }
 
 run_stage "Encar discovery" "/api/parser/encar/sync" '{"limit":5}'
-# The endpoint processes source pages serially. 40 checks per cycle cover the
-# current catalogue in under seven hours while keeping the source request rate
-# bounded and independent of proxies or header rotation.
+# The endpoint processes due source pages serially. Its database cutoff keeps
+# the source request rate bounded and independent of cron frequency.
 run_stage "Encar freshness refresh" "/api/parser/encar/refresh" '{"limit":40}'
 run_stage "K Car discovery" "/api/parser/kcar/sync" '{"limit":8}'
 run_stage "K Car freshness refresh" "/api/parser/kcar/refresh" '{"limit":40}'

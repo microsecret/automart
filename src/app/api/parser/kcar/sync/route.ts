@@ -4,6 +4,7 @@ import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumI
 import { discoverKCarListingIds, fetchKCarListing, isKCarListingUnavailableError } from "@/lib/kcar-public-collector"
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
 
 export const dynamic = "force-dynamic"
 
@@ -34,13 +35,23 @@ export async function POST(request: NextRequest) {
     const excludedByPolicy = await excludeListingsOutsideImportAgePolicy("KCAR", maxAgeYears)
     let catalog = await discoverKCarListingIds(page, Math.min(MAX_CANDIDATES_PER_SYNC, Math.max(limit * 2, limit)))
     if (!catalog.ids.length && page > catalog.totalPages) catalog = await discoverKCarListingIds(1, Math.min(MAX_CANDIDATES_PER_SYNC, Math.max(limit * 2, limit)))
+    const recentlyChecked = await prisma.auctionListing.findMany({
+      where: { source: "KCAR", status: "ACTIVE", sourceId: { in: catalog.ids }, lastChecked: { gte: recentDiscoveryCutoff("KCAR") } },
+      select: { sourceId: true },
+    })
+    const recentlyCheckedIds = new Set(recentlyChecked.map((listing) => listing.sourceId))
     const items: AuctionImportItem[] = []
     const failed: Array<{ id: string; error: string }> = []
     let unavailable = 0
     let skippedByPolicy = 0
+    let skippedKnown = 0
 
     for (const id of catalog.ids) {
       if (items.length >= limit) break
+      if (recentlyCheckedIds.has(id)) {
+        skippedKnown += 1
+        continue
+      }
       try {
         const item = await fetchKCarListing(id)
         if (assessImportAge(item, maxAgeYears).eligible) items.push(item)
@@ -69,7 +80,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, status, catalogTotal: catalog.total, catalogPage: catalog.page, catalogPages: catalog.totalPages, discovered: catalog.ids.length, imported: items.length, unavailable, skippedByPolicy, excludedByPolicy, failed, ...result })
+    return NextResponse.json({ success: true, status, catalogTotal: catalog.total, catalogPage: catalog.page, catalogPages: catalog.totalPages, discovered: catalog.ids.length, imported: items.length, unavailable, skippedKnown, skippedByPolicy, excludedByPolicy, failed, ...result })
   } catch (error) {
     console.error("K Car sync error:", error)
     if (syncRunId) {

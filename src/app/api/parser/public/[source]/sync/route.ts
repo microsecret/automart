@@ -11,11 +11,12 @@ import {
 } from "@/lib/public-auction-collectors"
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
 
 export const dynamic = "force-dynamic"
 
 const MAX_LISTINGS_PER_SYNC = 6
-const MAX_CANDIDATES_PER_SYNC = 12
+const MAX_CANDIDATES_PER_SYNC = 24
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ source: string }> }) {
   let syncRunId: string | null = null
@@ -46,13 +47,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const excludedByPolicy = await excludeListingsOutsideImportAgePolicy(source, maxAgeYears)
     const catalog = await discoverPublicAuctionCandidates(source, page, Math.min(MAX_CANDIDATES_PER_SYNC, Math.max(limit * 2, limit)))
+    const recentlyChecked = await prisma.auctionListing.findMany({
+      where: {
+        source,
+        status: "ACTIVE",
+        sourceId: { in: catalog.candidates.map((candidate) => candidate.sourceId) },
+        lastChecked: { gte: recentDiscoveryCutoff(source) },
+      },
+      select: { sourceId: true },
+    })
+    const recentlyCheckedIds = new Set(recentlyChecked.map((listing) => listing.sourceId))
     const items: AuctionImportItem[] = []
     const failed: Array<{ id: string; error: string }> = []
     let unavailable = 0
     let skippedByPolicy = 0
+    let skippedKnown = 0
 
     for (const candidate of catalog.candidates) {
       if (items.length >= limit) break
+      if (recentlyCheckedIds.has(candidate.sourceId)) {
+        skippedKnown += 1
+        continue
+      }
       try {
         const item = await fetchPublicAuctionListing(source, candidate)
         if (assessImportAge(item, maxAgeYears).eligible) items.push(item)
@@ -73,7 +89,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         error: failed.length && !items.length ? `${source}: в выдаче нет пригодных карточек` : null,
       },
     })
-    return NextResponse.json({ success: true, source, status, page, catalogTotal: catalog.total, discovered: catalog.candidates.length, imported: items.length, unavailable, skippedByPolicy, excludedByPolicy, failed, ...result })
+    return NextResponse.json({ success: true, source, status, page, catalogTotal: catalog.total, discovered: catalog.candidates.length, imported: items.length, unavailable, skippedKnown, skippedByPolicy, excludedByPolicy, failed, ...result })
   } catch (error) {
     console.error(`${source} public sync error:`, error)
     if (syncRunId) {

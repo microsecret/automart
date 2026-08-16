@@ -3,13 +3,13 @@ import { saveAuctionImportItems } from "@/lib/auction-import"
 import { isEncarListingUnavailableError, scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
 
 export const dynamic = "force-dynamic"
 
 const PARSER_TOKEN = process.env.PARSER_TOKEN
-// The collector processes one source card at a time. With the public catalogue
-// already containing hundreds of eligible lots, 40 items every 20 minutes
-// keeps a complete confirmation cycle below seven hours without parallelism.
+// The collector processes one due source card at a time. The database cutoff
+// prevents every 20-minute cron tick from reopening recently confirmed lots.
 const MAX_LISTINGS_PER_REFRESH = 40
 
 export async function POST(request: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     syncRunId = syncRun.id
 
     const listings = await prisma.auctionListing.findMany({
-      where: { source: "ENCAR", status: "ACTIVE" },
+      where: { source: "ENCAR", status: "ACTIVE", lastChecked: { lte: refreshDueCutoff("ENCAR") } },
       orderBy: [{ lastChecked: "asc" }, { id: "asc" }],
       take: limit,
       select: { id: true, sourceUrl: true, sourceMissingChecks: true },
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true, status, checked: listings.length, refreshed: created + updated,
-      unavailable, expired, failed, created, updated, translated,
+      refreshIntervalHours: refreshIntervalHours("ENCAR"), unavailable, expired, failed, created, updated, translated,
     })
   } catch (error) {
     console.error("Encar refresh error:", error)

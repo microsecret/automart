@@ -3,6 +3,7 @@ import { saveAuctionImportItems } from "@/lib/auction-import"
 import { fetchPublicAuctionListing, isPublicAuctionSource, isPublicListingUnavailableError } from "@/lib/public-auction-collectors"
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const syncRun = await prisma.auctionSyncRun.create({ data: { source, syncKind: "REFRESH", requestedLimit: limit }, select: { id: true } })
     syncRunId = syncRun.id
     const listings = await prisma.auctionListing.findMany({
-      where: { source, status: "ACTIVE" }, orderBy: [{ lastChecked: "asc" }, { id: "asc" }], take: limit,
+      where: { source, status: "ACTIVE", lastChecked: { lte: refreshDueCutoff(source) } }, orderBy: [{ lastChecked: "asc" }, { id: "asc" }], take: limit,
       select: { id: true, sourceId: true, sourceUrl: true, sourcePrice: true, year: true, manufacturedMonth: true, mileage: true, imageUrl: true, sourceMissingChecks: true },
     })
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await prisma.auctionSyncRun.update({
       where: { id: syncRun.id }, data: { status, discovered: listings.length, imported: updated, updated, failed: failed.length, expired, completedAt: new Date() },
     })
-    return NextResponse.json({ success: true, source, status, checked: listings.length, refreshed: updated, unavailable, expired, failed, updated, translated })
+    return NextResponse.json({ success: true, source, status, refreshIntervalHours: refreshIntervalHours(source), checked: listings.length, refreshed: updated, unavailable, expired, failed, updated, translated })
   } catch (error) {
     console.error(`${source} public refresh error:`, error)
     if (syncRunId) {

@@ -3,6 +3,7 @@ import { saveAuctionImportItems } from "@/lib/auction-import"
 import { fetchKCarListing, isKCarListingUnavailableError } from "@/lib/kcar-public-collector"
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     syncRunId = syncRun.id
 
     const listings = await prisma.auctionListing.findMany({
-      where: { source: "KCAR", status: "ACTIVE" },
+      where: { source: "KCAR", status: "ACTIVE", lastChecked: { lte: refreshDueCutoff("KCAR") } },
       orderBy: [{ lastChecked: "asc" }, { id: "asc" }],
       take: limit,
       select: { id: true, sourceId: true, sourceMissingChecks: true },
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       where: { id: syncRun.id },
       data: { status, discovered: listings.length, imported: updated, updated, failed: failed.length, expired, completedAt: new Date() },
     })
-    return NextResponse.json({ success: true, status, checked: listings.length, refreshed: updated, unavailable, expired, failed, updated, translated })
+    return NextResponse.json({ success: true, status, refreshIntervalHours: refreshIntervalHours("KCAR"), checked: listings.length, refreshed: updated, unavailable, expired, failed, updated, translated })
   } catch (error) {
     console.error("K Car refresh error:", error)
     if (syncRunId) {

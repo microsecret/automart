@@ -36,6 +36,10 @@ export type PublicAuctionCandidate = {
   transmission?: string | null
   bodyType?: string | null
   auctionDate?: Date | null
+  referencePriceLow?: number | null
+  referencePriceHigh?: number | null
+  openingPrice?: number | null
+  currentBid?: number | null
 }
 
 type UnknownRecord = Record<string, unknown>
@@ -432,7 +436,7 @@ export function publicSourceMaximumPage(source: PublicAuctionSource) {
   if (source === "IAUTOS" || source === "BOBAEDREAM") return 50
   if (source === "GOONET" || source === "BEFORWARD") return 20
   if (source === "CARSENSOR") return 10
-  if (source === "YOUXINPAI") return 5
+  if (source === "YOUXINPAI") return 50
   if (source === "AUTOSALE") return 1
   return 200
 }
@@ -523,7 +527,14 @@ function parseYouxinpaiCatalog(json: string, pageNumber: number) {
   for (const value of records) {
     const record = asRecord(value)
     const sourceId = asNumber(record?.publishId)
-    const price = asNumber(record?.startPrice) || asNumber(record?.currentHighestBid) || asNumber(record?.refPriceLow)
+    const openingPrice = asNumber(record?.startPrice)
+    const currentBid = asNumber(record?.currentHighestBid)
+    const referencePriceLow = asNumber(record?.refPriceLow)
+    const referencePriceHigh = asNumber(record?.refPriceHigh)
+    // The opening bid is not the expected purchase price. For the preliminary
+    // landed-cost estimate use the highest public price signal and keep the
+    // complete source range for an explicit explanation in the listing.
+    const price = Math.max(openingPrice || 0, currentBid || 0, referencePriceLow || 0, referencePriceHigh || 0)
     const registered = asText(record?.registerDate)?.match(/^(\d{4})-(\d{2})-/)
     const make = normalizeAuctionMake(asText(record?.brandName))
     const serialName = asText(record?.serialName) || ""
@@ -549,6 +560,10 @@ function parseYouxinpaiCatalog(json: string, pageNumber: number) {
         const timestamp = asNumber(record?.priceStopTime)
         return timestamp ? new Date(timestamp) : null
       })(),
+      referencePriceLow,
+      referencePriceHigh,
+      openingPrice,
+      currentBid,
     })
   }
   const unique = uniqueCandidates(candidates)
@@ -913,7 +928,10 @@ async function fetchYouxinpaiReport(sourceId: string) {
 
 async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise<AuctionImportItem> {
   if (!/^\d+$/.test(candidate.sourceId)) throw new Error("Некорректная карточка YouXinPai")
-  const active = candidate.make && candidate.model && candidate.sourcePrice ? candidate : await activeYouxinpaiCandidate(candidate.sourceId)
+  const hasCurrentCatalogPrice = candidate.referencePriceHigh !== undefined || candidate.openingPrice !== undefined
+  const active = hasCurrentCatalogPrice && candidate.make && candidate.model && candidate.sourcePrice
+    ? candidate
+    : await activeYouxinpaiCandidate(candidate.sourceId)
   if (!active?.make || !active.model || !active.sourcePrice || !active.year) throw new PublicListingUnavailableError(`YouXinPai: карточка ${candidate.sourceId} снята с публикации`)
   const report = await fetchYouxinpaiReport(active.sourceId).catch(() => null)
   const basicInfo = asRecord(report?.data.basicInfo)
@@ -950,6 +968,12 @@ async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise
     `Год выпуска: ${active.year}`,
     `Пробег: ${active.mileage?.toLocaleString("ru-RU") || "уточняется"} км`,
     `Номер лота: ${active.sourceId}`,
+    active.referencePriceLow && active.referencePriceHigh
+      ? `Ориентир цены источника: ${Math.round(active.referencePriceLow).toLocaleString("ru-RU")}–${Math.round(active.referencePriceHigh).toLocaleString("ru-RU")} CNY`
+      : null,
+    active.openingPrice ? `Стартовая ставка: ${Math.round(active.openingPrice).toLocaleString("ru-RU")} CNY` : null,
+    active.currentBid ? `Текущая ставка: ${Math.round(active.currentBid).toLocaleString("ru-RU")} CNY` : null,
+    `База предварительного расчёта: ${Math.round(active.sourcePrice).toLocaleString("ru-RU")} CNY`,
     engineVolume ? `Объём двигателя: ${engineVolume} л` : null,
     power ? `Мощность: ${Math.round(power)} л.с.` : null,
     asNumber(carInfo?.motorPower) ? `Мощность электромотора: ${Math.round(asNumber(carInfo?.motorPower) || 0)} кВт` : null,
@@ -968,7 +992,7 @@ async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise
     mileage: active.mileage ?? null, fuelType: active.fuelType || null, transmission: active.transmission || null,
     bodyType: active.bodyType || null, color, engineVolume, power, driveType: equipment?.items.some((item) => item.label === "Полный привод") ? "AWD" : null, vin: null,
     lotNumber: active.sourceId, imageUrl: images[0] || null, images,
-    descriptionOrig: `${active.make} ${active.model}, ${active.year} года. В открытом отчёте YouXinPai опубликованы ${reportImages.length || "доступные"} фотографий автомобиля${equipment ? ` и ${equipment.items.length} распознанных опций` : ""}. Данные осмотра и комплектацию необходимо подтвердить перед сделкой.`,
+    descriptionOrig: `${active.make} ${active.model}, ${active.year} года. Предварительный расчёт использует верхний публичный ценовой ориентир, а не минимальную стартовую ставку. В открытом отчёте YouXinPai опубликованы ${reportImages.length || "доступные"} фотографий автомобиля${equipment ? ` и ${equipment.items.length} распознанных опций` : ""}. Валюта китайского каталога — CNY; данные осмотра, итоговую цену и комплектацию необходимо подтвердить перед сделкой.`,
     specsOrig: specs.join("; "), equipment,
     conditionInfo: report ? {
       insuranceRecordCount: null,

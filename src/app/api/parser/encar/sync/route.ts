@@ -4,6 +4,7 @@ import { discoverEncarPublicListingUrls, scrapeEncarPublicListing } from "@/lib/
 import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
 
 export const dynamic = "force-dynamic"
 
@@ -40,12 +41,22 @@ export async function POST(request: NextRequest) {
       body?.catalogUrl,
       Math.min(limit * CANDIDATES_PER_LISTING, MAX_CANDIDATES_PER_SYNC),
     )
+    const recentlyChecked = await prisma.auctionListing.findMany({
+      where: { source: "ENCAR", status: "ACTIVE", sourceUrl: { in: urls }, lastChecked: { gte: recentDiscoveryCutoff("ENCAR") } },
+      select: { sourceUrl: true },
+    })
+    const recentlyCheckedUrls = new Set(recentlyChecked.map((listing) => listing.sourceUrl))
     const items: AuctionImportItem[] = []
     const failed: Array<{ url: string; error: string }> = []
     const skippedByAge: Array<{ url: string; year: number; manufacturedMonth: string | null }> = []
+    let skippedKnown = 0
 
     for (const url of urls) {
       if (items.length >= limit) break
+      if (recentlyCheckedUrls.has(url)) {
+        skippedKnown += 1
+        continue
+      }
       try {
         const item = await scrapeEncarPublicListing(url)
         if (assessImportAge(item, maxAgeYears).eligible) items.push(item)
@@ -63,7 +74,7 @@ export async function POST(request: NextRequest) {
           error: failed.length ? "В выдаче нет пригодных карточек" : null, completedAt: new Date(),
         },
       })
-      return NextResponse.json({ success: true, status, discovered: urls.length, imported: 0, maxAgeYears, skippedByAge, excludedByPolicy, failed })
+      return NextResponse.json({ success: true, status, discovered: urls.length, imported: 0, skippedKnown, maxAgeYears, skippedByAge, excludedByPolicy, failed })
     }
 
     const result = await saveAuctionImportItems(items)
@@ -75,7 +86,7 @@ export async function POST(request: NextRequest) {
         updated: result.updated, failed: failed.length, skippedByPolicy: skippedByAge.length, excludedByPolicy, completedAt: new Date(),
       },
     })
-    return NextResponse.json({ success: true, status, discovered: urls.length, imported: items.length, maxAgeYears, skippedByAge, excludedByPolicy, failed, ...result })
+    return NextResponse.json({ success: true, status, discovered: urls.length, imported: items.length, skippedKnown, maxAgeYears, skippedByAge, excludedByPolicy, failed, ...result })
   } catch (error) {
     console.error("Encar sync error:", error)
     if (syncRunId) {
