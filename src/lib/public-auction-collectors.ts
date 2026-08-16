@@ -230,8 +230,9 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   if (!model) throw new Error(`Iautos: не переведена модель карточки ${candidate.sourceId}`)
 
   const pairs = tablePairs(html)
-  const images = [...new Set([...html.matchAll(/(?:src|data-original)="(https:\/\/qimg\.iautos\.cn\/[^\"]+\.(?:jpg|jpeg|png)(?:-[^\"]+)?)"/gi)]
-    .map((match) => safeImage(match[1], new Set(["qimg.iautos.cn"]))).filter((url): url is string => Boolean(url)))].slice(0, 60)
+  const iautosImageHosts = new Set(["qimg.iautos.cn", "s1.iautos.cn", "s2.iautos.cn", "s3.iautos.cn"])
+  const images = [...new Set([...html.matchAll(/(?:src|data-original)="(https:\/\/(?:qimg|s[123])\.iautos\.cn\/[^\"]+\.(?:jpg|jpeg|png)(?:-[^\"]+)?)"/gi)]
+    .map((match) => safeImage(match[1], iautosImageHosts)).filter((url): url is string => Boolean(url)))].slice(0, 60)
   if (!images.length && candidate.imageUrl) images.push(candidate.imageUrl)
   const descriptionOrig = htmlText(firstMatch(html, /<p class="see-one-part"[^>]*>([\s\S]*?)<\/p>/i))
   const engineText = pairs.get("发动机") || firstMatch(title, /(\d+(?:\.\d+)?L)/i)
