@@ -13,10 +13,10 @@ import {
   TelegramIdentityConflictError,
   TelegramRegistrationError,
   telegramApi,
+  telegramPhotoApi,
   type TelegramRegistrationStep,
 } from "@/lib/telegram"
 import { prisma } from "@/lib/prisma"
-import { absoluteUrl } from "@/lib/site-url"
 import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 import { registerTelegramGroup, setTelegramChatMarketing } from "@/lib/telegram-marketing"
 
@@ -75,10 +75,6 @@ function getBotStartUrl() {
   return username ? `https://t.me/${username}?start=register` : null
 }
 
-function getTelegramInfographicUrl() {
-  return absoluteUrl("/images/telegram-service-infographic.png")
-}
-
 function telegramUserMention(from: NonNullable<TelegramMessage["from"]>) {
   const displayName = [from.first_name, from.last_name].filter(Boolean).join(" ").trim() || "пользователь Telegram"
   const mention = `<a href="tg://user?id=${encodeURIComponent(String(from.id))}">${escapeTelegramHtml(displayName)}</a>`
@@ -92,9 +88,8 @@ async function sendBrandedMessage(
   replyMarkup?: Record<string, unknown>,
 ) {
   try {
-    return await telegramApi<TelegramSentMessage>("sendPhoto", {
+    return await telegramPhotoApi<TelegramSentMessage>({
       chat_id: chatId,
-      photo: getTelegramInfographicUrl(),
       caption: text,
       parse_mode: "HTML",
       reply_markup: replyMarkup,

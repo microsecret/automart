@@ -1,5 +1,7 @@
 import crypto from "crypto"
+import { readFile } from "node:fs/promises"
 import https from "node:https"
+import path from "node:path"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 
@@ -238,6 +240,58 @@ export async function telegramApi<T = unknown>(method: string, payload: Record<s
     })
     request.on("error", reject)
     request.on("timeout", () => request.destroy(new Error(`Telegram API ${method} timed out`)))
+    request.end(requestBody)
+  })
+}
+
+export async function telegramPhotoApi<T = unknown>(payload: Record<string, unknown>) {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not configured")
+
+  const photo = await readFile(path.join(process.cwd(), "public", "images", "telegram-service-infographic.png"))
+  const boundary = `----LeWheelTelegram${crypto.randomBytes(12).toString("hex")}`
+  const chunks: Buffer[] = []
+  for (const [key, rawValue] of Object.entries(payload)) {
+    if (rawValue === undefined || rawValue === null) continue
+    const value = typeof rawValue === "object" ? JSON.stringify(rawValue) : String(rawValue)
+    chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`))
+  }
+  chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="photo"; filename="lewheel-service.png"\r\nContent-Type: image/png\r\n\r\n`))
+  chunks.push(photo)
+  chunks.push(Buffer.from(`\r\n--${boundary}--\r\n`))
+  const requestBody = Buffer.concat(chunks)
+
+  return new Promise<T>((resolve, reject) => {
+    const request = https.request({
+      hostname: "api.telegram.org",
+      family: 4,
+      port: 443,
+      path: `/bot${token}/sendPhoto`,
+      method: "POST",
+      headers: {
+        "Content-Type": `multipart/form-data; boundary=${boundary}`,
+        "Content-Length": requestBody.length,
+      },
+      timeout: 30_000,
+    }, (response) => {
+      let responseBody = ""
+      response.setEncoding("utf8")
+      response.on("data", (chunk) => {
+        responseBody += chunk
+        if (responseBody.length > 2_000_000) request.destroy(new Error("Telegram API response is too large"))
+      })
+      response.on("end", () => {
+        let body: TelegramApiResponse<T> | null = null
+        try { body = JSON.parse(responseBody) as TelegramApiResponse<T> } catch { /* handled below */ }
+        if ((response.statusCode || 500) >= 400 || !body?.ok) {
+          reject(new Error(body?.description || `Telegram API ${response.statusCode || 500}`))
+          return
+        }
+        resolve(body.result as T)
+      })
+    })
+    request.on("error", reject)
+    request.on("timeout", () => request.destroy(new Error("Telegram API sendPhoto timed out")))
     request.end(requestBody)
   })
 }

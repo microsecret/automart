@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { absoluteUrl } from "@/lib/site-url"
-import { getTelegramBotUsername, telegramApi } from "@/lib/telegram"
+import { getTelegramBotUsername, telegramApi, telegramPhotoApi } from "@/lib/telegram"
 import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 
 const PROMO_INTERVAL_MS = 12 * 60 * 60 * 1000
@@ -83,9 +83,8 @@ export async function processTelegramMarketingCampaign() {
     try {
       let sent: TelegramSentMessage
       try {
-        sent = await telegramApi<TelegramSentMessage>("sendPhoto", {
+        sent = await telegramPhotoApi<TelegramSentMessage>({
           chat_id: chat.id,
-          photo: absoluteUrl("/images/telegram-service-infographic.png"),
           caption: TELEGRAM_PROMO_TEXT,
           parse_mode: "HTML",
           reply_markup: promoKeyboard(),
