@@ -496,18 +496,33 @@ export default function AdminDashboard() {
           </Group>
           {/* Непустые задачи идут первыми: разобранные направления не должны
               отодвигать то, что действительно ждёт решения. */}
+          {/* Карточка строится из Paper, а не из Button: у кнопки с пустым
+              значением leftSection отрывалась от сжавшегося текста, и в сетке
+              оставались висящие иконки без подписи. */}
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs" mt="md">
             {[...operationItems].sort((left, right) => right.value - left.value).map((item) => (
-              <Button key={item.label} component={Link} href={item.href} variant={item.value ? "light" : "subtle"} color={item.value ? item.color : "gray"} h="auto" p="sm" justify="flex-start" styles={{ inner: { alignItems: "flex-start" }, label: { textAlign: "left", whiteSpace: "normal" } }} leftSection={<ThemeIcon variant={item.value ? "white" : "light"} color={item.value ? item.color : "gray"} size={30} radius="md">{item.icon}</ThemeIcon>}>
-                <Stack gap={1} align="flex-start">
-                  <Group gap={6} align="baseline">
-                    <Text size="xl" fw={850} lh={1} c={item.value ? undefined : "dimmed"}>{item.value}</Text>
-                    {item.value === 0 && <Text size="10px" c="dimmed">разобрано</Text>}
-                  </Group>
-                  <Text size="xs" fw={700}>{item.label}</Text>
-                  <Text size="10px" c="dimmed" fw={400}>{item.description}</Text>
-                </Stack>
-              </Button>
+              <Paper
+                key={item.label}
+                component={Link}
+                href={item.href}
+                className="admin-queue-card"
+                data-idle={item.value === 0 || undefined}
+                radius="md"
+                p="sm"
+                withBorder
+              >
+                <Group gap="sm" wrap="nowrap" align="flex-start">
+                  <ThemeIcon variant="light" color={item.value ? item.color : "gray"} size={34} radius="md">{item.icon}</ThemeIcon>
+                  <Box style={{ minWidth: 0 }}>
+                    <Group gap={6} align="baseline">
+                      <Text size="xl" fw={850} lh={1} c={item.value ? undefined : "dimmed"}>{item.value}</Text>
+                      {item.value === 0 && <Text size="10px" c="dimmed">разобрано</Text>}
+                    </Group>
+                    <Text size="xs" fw={700} mt={2}>{item.label}</Text>
+                    <Text size="10px" c="dimmed" lineClamp={2}>{item.description}</Text>
+                  </Box>
+                </Group>
+              </Paper>
             ))}
           </SimpleGrid>
         </Card>

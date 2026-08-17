@@ -34,10 +34,28 @@
   transition: transform 180ms ease;
 }
 
-.brandShortcut :global(.mantine-Button-label) {
+/* Счётчик лотов сжимался вместе с названием марки, из-за чего число теряло
+   цифры и превращалось в «4..». Название допустимо укоротить, число — нет. */
+.brandShortcut :global(.mantine-Button-section[data-position="right"]) {
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* Длинное имя вроде «Renault Korea Motors» переносится на вторую строку
+   вместо обрезки: марка — это то, по чему выбирают. */
+.brandShortcut :global(.mantine-Button-inner) {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.brandShortcut :global(.mantine-Button-label) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  text-align: left;
+  font-size: 0.82rem;
+  line-height: 1.15;
 }
 
 .brandShortcut:hover {
