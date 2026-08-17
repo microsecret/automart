@@ -2656,6 +2656,22 @@ select {
   background: var(--market-surface-subtle);
 }
 
+.auction-card__media[data-loading]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(110deg, transparent 22%, rgba(255, 255, 255, 0.78) 43%, transparent 64%),
+    linear-gradient(145deg, #eef1f7, #f8f9fc 54%, #e8ecf5);
+  background-size: 240% 100%, 100% 100%;
+  animation: auction-media-loading 1.35s ease-in-out infinite;
+}
+
+@keyframes auction-media-loading {
+  from { background-position: 140% 0, 0 0; }
+  to { background-position: -100% 0, 0 0; }
+}
+
 .auction-card__media[data-empty-media] {
   aspect-ratio: 16 / 7;
   background:

@@ -134,17 +134,18 @@ function cancelAuctionDetailImageWarmup(listing: AuctionListing) {
 
 function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; priority?: boolean }) {
   const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const originalImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0] || ""
   const image = auctionCardImageUrl(originalImage)
   const hasImage = Boolean(image) && !failed
   const identity = auctionVehicleIdentity(listing.make, listing.model)
 
   return (
-    <Box className="auction-card__media" data-empty-media={!hasImage || undefined}>
+    <Box className="auction-card__media" data-empty-media={!hasImage || undefined} data-loading={hasImage && !loaded || undefined}>
       {!hasImage && <VehicleFallback type="CAR" compact />}
       {hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={identity.title} referrerPolicy="no-referrer" onError={() => setFailed(true)} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" />
+        <img src={image} alt={identity.title} referrerPolicy="no-referrer" onLoad={() => setLoaded(true)} onError={() => setFailed(true)} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
           <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>

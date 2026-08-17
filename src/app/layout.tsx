@@ -43,6 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             negotiation before a visitor opens an individual photo gallery. */}
         <link rel="preconnect" href="https://ci.encar.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://ci.encar.com" />
+        <link rel="preconnect" href="https://img.kcar.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://img.kcar.com" />
       </head>
       <body>
         <StructuredData data={{
