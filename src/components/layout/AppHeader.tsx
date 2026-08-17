@@ -202,8 +202,8 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                   variant="filled"
                   styles={{
                     input: {
-                      background: "var(--mantine-color-gray-1)",
-                      border: "1px solid transparent",
+                      background: "var(--market-surface-subtle)",
+                      border: "1px solid var(--market-field-line)",
                       height: 38,
                       transition: "all 200ms ease",
                     },
@@ -290,6 +290,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               color="indigo"
               variant="filled"
               visibleFrom="md"
+              className="header-create-cta"
               styles={{ root: { height: 38, fontWeight: 700 } }}
             >
               Подать объявление

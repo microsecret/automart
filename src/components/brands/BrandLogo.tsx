@@ -32,6 +32,11 @@ export default function BrandLogo({ brand, size = 24, color = "currentColor" }: 
 const BRAND_KEY_ALIASES: Record<string, string> = {
   "mercedes": "mercedesbenz",
   "mercedesbenz": "mercedesbenz",
+  "geelyauto": "geely",
+  "geelyautomobile": "geely",
+  "kgmssangyong": "ssangyong",
+  "renaultkoreamotors": "renault",
+  "renaultkorea": "renault",
   "理想": "liauto",
   "理想汽车": "liauto",
   "蔚来": "nio",
@@ -152,7 +157,10 @@ const LOGOS: Record<string, LogoFn> = {
 
   // Honda — стилизованная H с рамкой
   honda: (c) => (
-    <text x="24" y="32" fontSize="22" fontWeight="900" fill={c} textAnchor="middle" fontFamily="sans-serif">H</text>
+    <>
+      <path d="M8 8 Q24 4 40 8 L38 40 Q24 44 10 40 Z" stroke={c} strokeWidth="2.4" fill="none" />
+      <path d="M16 14 L18 34 M32 14 L30 34 M18 24 H30" stroke={c} strokeWidth="3.2" strokeLinecap="round" />
+    </>
   ),
 
   // Mazda — стилизованная M в виде крыльев
@@ -308,6 +316,30 @@ const LOGOS: Record<string, LogoFn> = {
       <path d="M6 18 Q24 8 42 18" stroke={c} strokeWidth="3" fill="none" />
       <rect x="22" y="18" width="4" height="24" fill={c} />
       <path d="M22 18 L32 14 V22 L22 18 Z" fill={c} />
+    </>
+  ),
+
+  // Neta — лаконичный замкнутый контур бренда электромобилей.
+  neta: (c) => (
+    <>
+      <path d="M8 32 V16 L24 32 L40 16 V32" stroke={c} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 38 H38" stroke={c} strokeWidth="2.2" strokeLinecap="round" />
+    </>
+  ),
+
+  // Aion — вытянутый овальный знак с центральной вершиной.
+  aion: (c) => (
+    <>
+      <ellipse cx="24" cy="24" rx="20" ry="12" stroke={c} strokeWidth="2.4" />
+      <path d="M13 30 L24 14 L35 30 M18 25 H30" stroke={c} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+
+  // KGM / SsangYong — симметричный крылатый знак.
+  ssangyong: (c) => (
+    <>
+      <path d="M5 28 C11 14 18 11 24 22 C30 11 37 14 43 28" stroke={c} strokeWidth="2.8" fill="none" strokeLinecap="round" />
+      <path d="M9 31 C15 24 20 24 24 34 C28 24 33 24 39 31" stroke={c} strokeWidth="2.4" fill="none" strokeLinecap="round" />
     </>
   ),
 

@@ -1,18 +1,37 @@
 .brandDiscovery {
-  border: 1px solid #dbe4f3;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--market-line);
   background:
     radial-gradient(circle at 92% 0%, rgba(79, 70, 229, 0.1), transparent 28%),
-    linear-gradient(145deg, #ffffff, #f8faff);
+    linear-gradient(145deg, var(--market-surface), var(--market-surface-subtle));
 }
 
 .brandShortcut {
+  position: relative;
+  overflow: hidden;
   min-width: 0;
   min-height: 58px;
   padding-inline: 10px;
-  border: 1px solid #dce4f2;
-  background: #ffffff;
-  color: #1e293b;
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.045);
+  border: 1px solid var(--market-field-line);
+  background: var(--market-surface);
+  color: var(--market-ink);
+  box-shadow: var(--market-shadow-soft);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.brandShortcut::after {
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  left: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed, #f97316);
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
 }
 
 .brandShortcut :global(.mantine-Button-label) {
@@ -22,15 +41,22 @@
 }
 
 .brandShortcut:hover {
-  border-color: #a5b4fc;
-  background: #f5f3ff;
+  border-color: color-mix(in srgb, var(--market-brand) 44%, var(--market-field-line));
+  background: color-mix(in srgb, var(--market-brand) 6%, var(--market-surface));
+  box-shadow: 0 9px 22px color-mix(in srgb, var(--market-brand) 13%, transparent);
+  transform: translateY(-2px);
+}
+
+.brandShortcut:hover::after,
+.brandShortcut[data-active]::after {
+  transform: scaleX(1);
 }
 
 .brandShortcut[data-active] {
-  border-color: #6366f1;
-  background: #eef2ff;
-  color: #3730a3;
-  box-shadow: 0 5px 14px rgba(79, 70, 229, 0.14);
+  border-color: var(--market-brand);
+  background: color-mix(in srgb, var(--market-brand) 10%, var(--market-surface));
+  color: var(--market-brand-strong);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--market-brand) 18%, transparent);
 }
 
 .insights {
@@ -42,14 +68,14 @@
 .insight {
   min-width: 0;
   padding: 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--market-line);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.78);
+  background: color-mix(in srgb, var(--market-surface) 86%, transparent);
 }
 
 .insightValue {
   overflow: hidden;
-  color: #172033;
+  color: var(--market-ink);
   font-size: 0.98rem;
   font-weight: 800;
   line-height: 1.2;
@@ -60,22 +86,22 @@
 .insightLabel {
   display: block;
   margin-top: 3px;
-  color: #64748b;
+  color: var(--market-muted);
   font-size: 0.69rem;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .sourceSummary {
-  color: #64748b;
+  color: var(--market-muted);
   font-size: 0.72rem;
 }
 
 .marketMix {
   padding: 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--market-line);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.64);
+  background: color-mix(in srgb, var(--market-surface) 76%, transparent);
 }
 
 .mixRow {
@@ -99,6 +125,7 @@
 
 .resultTitle {
   min-height: 2.5em;
+  color: var(--market-ink);
   line-height: 1.25;
 }
 
@@ -123,18 +150,33 @@
   align-items: center;
   margin-top: 2px;
   padding-top: 7px;
-  border-top: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid var(--market-line);
 }
 
 .detailCta {
+  position: relative;
+  overflow: hidden;
   margin-top: auto;
   min-height: 38px;
   padding: 7px 11px;
-  border: 1px solid var(--mantine-color-indigo-1);
+  border: 1px solid color-mix(in srgb, var(--market-brand) 22%, var(--market-line));
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--mantine-color-indigo-0), #f8f7ff);
-  color: var(--mantine-color-indigo-7);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--market-brand) 12%, var(--market-surface)), color-mix(in srgb, #7c3aed 7%, var(--market-surface)));
+  color: var(--market-brand-strong);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.detailCta::before {
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -38%;
+  width: 26%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+  content: "";
+  opacity: 0;
+  transform: skewX(-18deg);
+  transition: left 420ms ease, opacity 140ms ease;
 }
 
 .detailCta svg {
@@ -142,10 +184,15 @@
 }
 
 :global(.auction-result-card:hover) .detailCta {
-  border-color: var(--mantine-color-indigo-3);
-  color: var(--mantine-color-indigo-8);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.12);
+  border-color: color-mix(in srgb, var(--market-brand) 48%, var(--market-line));
+  color: var(--market-brand-strong);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--market-brand) 16%, transparent);
   transform: translateY(-1px);
+}
+
+:global(.auction-result-card:hover) .detailCta::before {
+  left: 116%;
+  opacity: 1;
 }
 
 :global(.auction-result-card:hover) .detailCta svg {
@@ -154,8 +201,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .detailCta,
-  .detailCta svg {
+  .detailCta svg,
+  .brandShortcut,
+  .brandShortcut::after {
     transition: none;
+  }
+
+  .detailCta::before {
+    display: none;
   }
 }
 

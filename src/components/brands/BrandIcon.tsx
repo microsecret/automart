@@ -34,13 +34,13 @@ export default function BrandIcon({ brand, size = 36, variant = "rounded" }: Bra
         width: size,
         height: size,
         borderRadius: radius,
-        border: "1px solid #dbe3ed",
-        background: "linear-gradient(145deg, #ffffff 0%, #f4f7fb 100%)",
+        border: "1px solid var(--market-field-line)",
+        background: "linear-gradient(145deg, var(--market-surface) 0%, var(--market-surface-subtle) 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
-        boxShadow: "0 1px 3px rgba(15, 23, 42, 0.08)",
+        boxShadow: "var(--market-shadow-soft)",
       }}
       role="img"
       aria-label={`Марка ${brand}`}

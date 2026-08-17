@@ -11,6 +11,7 @@ import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import { fetchJson } from "@/lib/api-client"
+import { parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "../listing-create-form.module.css"
 
@@ -54,6 +55,21 @@ type GarageVehicleResponse = {
     color: string | null
     condition: string | null
     location: string
+    doors: number | null
+    engineVolume: number | null
+    power: number | null
+    driveType: string | null
+    steeringWheel: string | null
+    ownersCount: number | null
+    documentsStatus: string | null
+    damageInfo: string | null
+    sellerType: string | null
+    availability: string | null
+    customsCleared: boolean | null
+    generation: string | null
+    keywords: string | null
+    description: string | null
+    images: string | null
   }
 }
 
@@ -70,11 +86,12 @@ function CreateVehicleWorkspace() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isTelegramMiniApp = searchParams.get("source") === "telegram"
+  const isGarageMode = searchParams.get("mode") === "garage"
   const garageId = searchParams.get("garageId")?.trim() || ""
   const garagePrefillAttempted = useRef(false)
   const [garagePrefillState, setGaragePrefillState] = useState<"loading" | "loaded" | "error" | null>(null)
   const [loading, setLoading] = useState(false)
-  const { images, uploadingImages, uploadPhotos, removeImage } = useMarketplaceImageUpload()
+  const { images, uploadingImages, uploadPhotos, removeImage, replaceImages } = useMarketplaceImageUpload()
   const [categories, setCategories] = useState<VehicleCategory[]>([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [categoriesError, setCategoriesError] = useState<string | null>(null)
@@ -136,12 +153,27 @@ function CreateVehicleWorkspace() {
           color: vehicle.color || "",
           condition: vehicle.condition || "EXCELLENT",
           location: vehicle.location || "",
+          doors: vehicle.doors == null ? "" : String(vehicle.doors),
+          engineVolume: vehicle.engineVolume == null ? "" : String(vehicle.engineVolume),
+          power: vehicle.power == null ? "" : String(vehicle.power),
+          driveType: vehicle.driveType || "FWD",
+          steeringWheel: vehicle.steeringWheel || "LEFT",
+          ownersCount: vehicle.ownersCount == null ? "" : String(vehicle.ownersCount),
+          documentsStatus: vehicle.documentsStatus || "CLEAN",
+          damageInfo: vehicle.damageInfo || "NONE",
+          sellerType: vehicle.sellerType || "OWNER",
+          availability: vehicle.availability || "IN_STOCK",
+          customsCleared: vehicle.customsCleared === false ? "false" : "true",
+          generation: vehicle.generation || "",
+          keywords: vehicle.keywords || "",
+          description: vehicle.description || "",
           vehicleType: "CAR",
         }))
+        replaceImages(parseImages(vehicle.images))
         setGaragePrefillState("loaded")
       })
       .catch(() => setGaragePrefillState("error"))
-  }, [garageId, status])
+  }, [garageId, replaceImages, status])
 
   if (status === "loading") return <Center py={100}><Loader color="indigo" /></Center>
   if (!session) return null
@@ -172,25 +204,63 @@ function CreateVehicleWorkspace() {
   const brandCategory = BRAND_CATEGORY_BY_VEHICLE_TYPE[f.vehicleType as keyof typeof BRAND_CATEGORY_BY_VEHICLE_TYPE] || "cars"
   const brandOptions = getBrandsByCategory(brandCategory)
   const modelOptions = f.make.trim() ? getModels(f.make.trim(), brandCategory) : []
-  const isVehicleDetailsReady = Boolean(f.make && f.model && f.year && f.price && f.location.trim())
+  const isVehicleDetailsReady = Boolean(f.make && f.model && f.year && (isGarageMode || (f.price && f.location.trim())))
   const currentJourneyStep = images.length > 0 ? 2 : isVehicleDetailsReady ? 1 : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!f.make || !f.model || !f.year || !f.price || !f.location.trim()) {
+    if (!f.make || !f.model || !f.year || (!isGarageMode && (!f.price || !f.location.trim()))) {
       notifications.show({ title: "Ошибка", message: "Заполните обязательные поля", color: "red" })
       return
     }
-    if (images.length === 0) {
+    if (!isGarageMode && images.length === 0) {
       notifications.show({ title: "Добавьте фото", message: "Для публикации транспорта нужна хотя бы одна фотография.", color: "orange" })
       return
     }
-    if (!selectedCategory) {
+    if (!isGarageMode && !selectedCategory) {
       notifications.show({ title: "Категория недоступна", message: "Не удалось подобрать категорию для выбранного типа транспорта. Обновите страницу.", color: "red" })
       return
     }
     setLoading(true)
     try {
+      if (isGarageMode) {
+        await fetchJson("/api/garage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            make: f.make,
+            model: f.model,
+            year: Number(f.year),
+            mileage: f.mileage ? Number(f.mileage) : null,
+            vin: f.vin || null,
+            fuelType: f.fuelType,
+            transmission: f.transmission,
+            bodyType: f.bodyType,
+            color: f.color || null,
+            doors: f.doors ? Number(f.doors) : null,
+            engineVolume: f.engineVolume ? Number(f.engineVolume) : null,
+            power: f.power ? Number(f.power) : null,
+            driveType: f.driveType,
+            condition: f.condition,
+            steeringWheel: f.steeringWheel,
+            ownersCount: f.ownersCount ? Number(f.ownersCount) : null,
+            documentsStatus: f.documentsStatus,
+            damageInfo: f.damageInfo,
+            sellerType: f.sellerType,
+            availability: f.availability,
+            customsCleared: f.customsCleared === "true",
+            generation: f.generation,
+            keywords: f.keywords,
+            location: f.location,
+            description: f.description,
+            images,
+          }),
+        })
+        notifications.show({ title: "Автомобиль сохранён", message: "Приватная карточка добавлена в личный гараж.", color: "teal" })
+        router.push("/dashboard?tab=garage&created=garage")
+        return
+      }
+
       // Сервер создаёт ТС и объявление в одной транзакции: не оставляем
       // транспорт без объявления, если сеть оборвётся между запросами.
       const vehicle = await fetchJson<CreateVehicleResponse>("/api/vehicles", {
@@ -241,7 +311,7 @@ function CreateVehicleWorkspace() {
             mtowKg: f.mtowKg ? Number(f.mtowKg) : "",
             passengerCapacity: f.passengerCapacity ? Number(f.passengerCapacity) : "",
           },
-          categoryId: selectedCategory.id,
+          categoryId: selectedCategory!.id,
         }),
       })
 
@@ -262,10 +332,10 @@ function CreateVehicleWorkspace() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Group gap={7} align="center">
-              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Новое объявление</Text>
+              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">{isGarageMode ? "Добавить автомобиль в гараж" : "Новое объявление"}</Text>
               {isTelegramMiniApp && <Badge leftSection={<IconBrandTelegram size={12} />} color="indigo" variant="light" radius="xl">Mini App</Badge>}
             </Group>
-            <Text size="xs" c="var(--market-muted)">Заполните данные — после проверки объявление появится в поиске</Text>
+            <Text size="xs" c="var(--market-muted)">{isGarageMode ? "Сохраните полную приватную карточку — в каталоге она не появится" : "Заполните данные — после проверки объявление появится в поиске"}</Text>
           </Stack>
         </Group>
 
@@ -276,6 +346,12 @@ function CreateVehicleWorkspace() {
         {isTelegramMiniApp && (
           <Alert color="indigo" variant="light" title="Быстрая подача из Telegram" icon={<IconBrandTelegram size={18} />}>
             Добавьте данные и снимите фото прямо с телефона — номер и аккаунт уже подтверждены ботом.
+          </Alert>
+        )}
+
+        {isGarageMode && (
+          <Alert color="teal" variant="light" title="Приватная карточка автомобиля" icon={<IconCar size={18} />}>
+            Данные видны только вам. Позже из этой карточки можно создать объявление без повторного заполнения.
           </Alert>
         )}
 
@@ -291,9 +367,9 @@ function CreateVehicleWorkspace() {
         <Paper className="create-listing__journey" radius="lg" p="sm" withBorder>
           <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>
             {[
-              { number: "01", label: "Категория", description: CATS.find((category) => category.value === f.vehicleType)?.label || "Транспорт" },
-              { number: "02", label: "Данные объявления", description: isVehicleDetailsReady ? "Данные готовы" : "Марка, цена и характеристики" },
-              { number: "03", label: "Фото и публикация", description: images.length ? `Добавлено фото: ${images.length}` : "Добавьте реальные фотографии" },
+              { number: "01", label: isGarageMode ? "Автомобиль" : "Категория", description: isGarageMode ? "Легковой транспорт" : CATS.find((category) => category.value === f.vehicleType)?.label || "Транспорт" },
+              { number: "02", label: isGarageMode ? "Характеристики" : "Данные объявления", description: isVehicleDetailsReady ? "Данные готовы" : isGarageMode ? "Марка, год и состояние" : "Марка, цена и характеристики" },
+              { number: "03", label: isGarageMode ? "Фото и сохранение" : "Фото и публикация", description: images.length ? `Добавлено фото: ${images.length}` : isGarageMode ? "Фотографии можно добавить позже" : "Добавьте реальные фотографии" },
             ].map((step, index) => (
               <Group
                 className="create-listing__journey-step"
@@ -316,13 +392,13 @@ function CreateVehicleWorkspace() {
         <form onSubmit={handleSubmit}>
           <Stack className={`${styles.listingCreateForm} create-listing__form`} gap="md">
             {/* Тип транспорта */}
-            <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
+            {!isGarageMode && <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
               <Group justify="space-between" mb="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Тип транспорта</Text>
                 <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
               </Group>
               <SegmentedControl value={f.vehicleType} onChange={setVehicleType} data={CATS} size="sm" radius="md" fullWidth />
-            </Paper>
+            </Paper>}
 
             {/* Основное */}
             <Paper className="create-listing__section" radius="lg" p="md" withBorder>
@@ -334,7 +410,7 @@ function CreateVehicleWorkspace() {
                   </Stack>
                   <Badge size="sm" color="gray" variant="light">Шаг 2</Badge>
                 </Group>
-                <TextInput label="Заголовок (необязательно)" description="Если оставить пустым, подставим год, марку и модель." placeholder="Например, Toyota Camry в отличном состоянии" value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />
+                {!isGarageMode && <TextInput label="Заголовок (необязательно)" description="Если оставить пустым, подставим год, марку и модель." placeholder="Например, Toyota Camry в отличном состоянии" value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />}
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <Autocomplete
                     className="create-listing__catalog-autocomplete"
@@ -377,14 +453,14 @@ function CreateVehicleWorkspace() {
                     leftSection={f.make.trim() ? <BrandIcon brand={f.make.trim()} size={20} variant="rounded" /> : <IconCar size={16} />}
                   />
                 </SimpleGrid>
-                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+                <SimpleGrid cols={{ base: 1, sm: isGarageMode ? 2 : 3 }} spacing="sm">
                   <NumberInput label="Год" placeholder="2018" required value={f.year ? Number(f.year) : undefined} onChange={(v) => set("year", String(v || ""))} size="sm" min={1886} max={new Date().getFullYear() + 1} />
-                  <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />
+                  {!isGarageMode && <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />}
                   <NumberInput label={`${usageMeta.label}, ${usageMeta.unit}`} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, String(v || ""))} size="sm" min={0} />
                 </SimpleGrid>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                  <TextInput label="Город" placeholder="Москва" required value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
-                  <TextInput label={identityMeta.label} placeholder={identityMeta.placeholder} value={identityMeta.field === "vin" ? f.vin : identityMeta.field === "serialNumber" ? f.serialNumber : f.registrationNumber} onChange={(e) => set(identityMeta.field, e.target.value.toUpperCase())} size="sm" maxLength={identityMeta.maxLength} required description={identityMeta.description} />
+                  <TextInput label="Город" placeholder="Москва" required={!isGarageMode} value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
+                  <TextInput label={identityMeta.label} placeholder={identityMeta.placeholder} value={identityMeta.field === "vin" ? f.vin : identityMeta.field === "serialNumber" ? f.serialNumber : f.registrationNumber} onChange={(e) => set(identityMeta.field, e.target.value.toUpperCase())} size="sm" maxLength={identityMeta.maxLength} required={!isGarageMode} description={isGarageMode ? "Необязательно. VIN поможет быстро создать объявление позже." : identityMeta.description} />
                 </SimpleGrid>
               </Stack>
             </Paper>
@@ -573,10 +649,10 @@ function CreateVehicleWorkspace() {
             {/* Кнопка */}
             <Paper className={styles.submitPanel} radius="lg" p="sm" withBorder>
               <Stack gap={6}>
-                <Button fullWidth type="submit" size="md" radius="md" color="indigo" loading={loading} disabled={!selectedCategory || uploadingImages} leftSection={<IconCheck size={18} />}>
-                  {loading ? "Публикация..." : "Отправить на модерацию"}
+                <Button fullWidth type="submit" size="md" radius="md" color={isGarageMode ? "teal" : "indigo"} loading={loading} disabled={(!isGarageMode && !selectedCategory) || uploadingImages} leftSection={<IconCheck size={18} />}>
+                  {loading ? (isGarageMode ? "Сохраняем..." : "Публикация...") : (isGarageMode ? "Сохранить в личный гараж" : "Отправить на модерацию")}
                 </Button>
-                <Text size="xs" c="dimmed" ta="center">Сначала объявление проверит модератор. Статус появится в личном кабинете.</Text>
+                <Text size="xs" c="dimmed" ta="center">{isGarageMode ? "Карточка останется приватной. Опубликовать её можно отдельным действием из гаража." : "Сначала объявление проверит модератор. Статус появится в личном кабинете."}</Text>
               </Stack>
             </Paper>
           </Stack>

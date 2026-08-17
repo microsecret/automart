@@ -5,8 +5,8 @@ import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Alert, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal, Select, NumberInput, FileInput, ScrollArea } from "@mantine/core"
-import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconCreditCard, IconReceipt, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck, IconPhoto, IconX } from "@tabler/icons-react"
+import { Alert, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal } from "@mantine/core"
+import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconCreditCard, IconReceipt, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -14,9 +14,8 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import { BODY_TYPES, CAR_BRANDS, CONDITIONS, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
+import { BODY_TYPES, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 
 type DashboardVehicle = {
   id: string
@@ -132,34 +131,7 @@ type AccountProfileResponse = {
 type GarageMutationResponse = { success?: boolean; vehicle?: GarageVehicle }
 type RemovalConfirmation = { kind: "listing" | "garage"; id: string; title: string }
 
-type GarageForm = {
-  make: string
-  model: string
-  year: number | ""
-  mileage: number | ""
-  fuelType: string
-  transmission: string
-  bodyType: string
-  color: string
-  vin: string
-  condition: string
-  location: string
-}
-
 const DASHBOARD_TABS = new Set(["listings", "payments", "favorites", "garage", "profile"])
-const createGarageForm = (): GarageForm => ({
-  make: "",
-  model: "",
-  year: new Date().getFullYear(),
-  mileage: "",
-  fuelType: "GASOLINE",
-  transmission: "AUTOMATIC",
-  bodyType: "",
-  color: "",
-  vin: "",
-  condition: "EXCELLENT",
-  location: "",
-})
 
 const formatMemberSince = (value: string | null) => value
   ? new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(new Date(value))
@@ -203,10 +175,6 @@ function DashboardContent() {
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false)
   const [profileName, setProfileName] = useState("")
   const [isProfileSaving, setIsProfileSaving] = useState(false)
-  const [isGarageModalOpen, setIsGarageModalOpen] = useState(false)
-  const [garageForm, setGarageForm] = useState<GarageForm>(createGarageForm)
-  const [isGarageSaving, setIsGarageSaving] = useState(false)
-  const { images: garageImages, uploadingImages: isGarageImageUploading, uploadPhotos: uploadGaragePhotos, removeImage: removeGarageImage, replaceImages: replaceGarageImages } = useMarketplaceImageUpload()
   const [garageDeletingId, setGarageDeletingId] = useState<string | null>(null)
   const [removalConfirmation, setRemovalConfirmation] = useState<RemovalConfirmation | null>(null)
   const [isRemovalSaving, setIsRemovalSaving] = useState(false)
@@ -228,19 +196,6 @@ function DashboardContent() {
     if (nextTab === "listings") nextParams.delete("tab")
     else nextParams.set("tab", nextTab)
     router.replace(nextParams.size ? `/dashboard?${nextParams.toString()}` : "/dashboard", { scroll: false })
-  }
-
-  const openGarageModal = () => {
-    setGarageForm(createGarageForm())
-    replaceGarageImages([])
-    setIsGarageModalOpen(true)
-  }
-
-  const closeGarageModal = () => {
-    if (isGarageSaving) return
-    setIsGarageModalOpen(false)
-    setGarageForm(createGarageForm())
-    replaceGarageImages([])
   }
 
   const archiveListing = async (id: string) => {
@@ -281,27 +236,6 @@ function DashboardContent() {
       notifications.show({ title: "Не удалось сохранить", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
     } finally {
       setIsProfileSaving(false)
-    }
-  }
-
-  const handleGarageSave = async () => {
-    setIsGarageSaving(true)
-    try {
-      await fetchJson<GarageMutationResponse>("/api/garage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...garageForm, images: garageImages }),
-      })
-
-      setGarageForm(createGarageForm())
-      replaceGarageImages([])
-      setIsGarageModalOpen(false)
-      await Promise.all([mutateGarage(), mutate()])
-      notifications.show({ title: "Автомобиль добавлен", message: "Теперь можно отслеживать его в личном гараже.", color: "teal" })
-    } catch (error) {
-      notifications.show({ title: "Не удалось добавить автомобиль", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
-    } finally {
-      setIsGarageSaving(false)
     }
   }
 
@@ -640,7 +574,7 @@ function DashboardContent() {
                   <Text size="sm" c="dimmed">Ваши автомобили не публикуются в каталоге и доступны только вам.</Text>
                 </Stack>
               </Group>
-              <Button color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />} onClick={openGarageModal}>Добавить автомобиль</Button>
+              <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />}>Добавить автомобиль</Button>
             </Group>
 
             {isGarageLoading ? (
@@ -693,7 +627,7 @@ function DashboardContent() {
                   <ThemeIcon variant="light" color="teal" size={54} radius="xl"><IconCar size={27} /></ThemeIcon>
                   <Text fw={750} fz="lg">В гараже пока нет автомобилей</Text>
                   <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно, а когда понадобится — создать из неё объявление без повторного ввода.</Text>
-                  <Button color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />} onClick={openGarageModal}>Добавить первый автомобиль</Button>
+                  <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>
                 </Stack>
               </Center>
             )}
@@ -786,78 +720,6 @@ function DashboardContent() {
         )}
       </Stack>
 
-      <Modal opened={isGarageModalOpen} onClose={closeGarageModal} title="Добавить автомобиль в гараж" radius="lg" size="xl" yOffset="4vh" scrollAreaComponent={ScrollArea.Autosize}>
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">Это личная запись: она не появится в каталоге и доступна только владельцу кабинета.</Text>
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-            <Select
-              required
-              searchable
-              label="Марка"
-              placeholder="Выберите марку"
-              data={CAR_BRANDS.map((brand) => ({ value: brand, label: brand }))}
-              value={garageForm.make || null}
-              onChange={(value) => setGarageForm((current) => ({ ...current, make: value || "" }))}
-            />
-            <TextInput required label="Модель" placeholder="Например, Camry" value={garageForm.model} onChange={(event) => setGarageForm((current) => ({ ...current, model: event.currentTarget.value }))} maxLength={80} />
-            <NumberInput
-              required
-              label="Год выпуска"
-              value={garageForm.year === "" ? undefined : garageForm.year}
-              min={1900}
-              max={new Date().getFullYear() + 1}
-              allowDecimal={false}
-              onChange={(value) => setGarageForm((current) => ({ ...current, year: typeof value === "number" ? value : "" }))}
-            />
-            <NumberInput
-              label="Пробег, км"
-              placeholder="Необязательно"
-              value={garageForm.mileage === "" ? undefined : garageForm.mileage}
-              min={0}
-              max={3_000_000}
-              allowDecimal={false}
-              thousandSeparator=" "
-              onChange={(value) => setGarageForm((current) => ({ ...current, mileage: typeof value === "number" ? value : "" }))}
-            />
-            <Select label="Топливо" data={FUEL_TYPES.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.fuelType} onChange={(value) => setGarageForm((current) => ({ ...current, fuelType: value || "GASOLINE" }))} />
-            <Select label="Коробка передач" data={TRANSMISSIONS.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.transmission} onChange={(value) => setGarageForm((current) => ({ ...current, transmission: value || "AUTOMATIC" }))} />
-            <Select clearable label="Кузов" placeholder="Выберите тип" data={BODY_TYPES.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.bodyType || null} onChange={(value) => setGarageForm((current) => ({ ...current, bodyType: value || "" }))} />
-            <Select label="Состояние" data={CONDITIONS.map((item) => ({ value: item.value, label: item.label }))} value={garageForm.condition} onChange={(value) => setGarageForm((current) => ({ ...current, condition: value || "EXCELLENT" }))} />
-            <TextInput label="Цвет" placeholder="Например, белый" value={garageForm.color} onChange={(event) => setGarageForm((current) => ({ ...current, color: event.currentTarget.value }))} maxLength={40} />
-            <TextInput label="VIN" placeholder="Необязательно" value={garageForm.vin} onChange={(event) => setGarageForm((current) => ({ ...current, vin: event.currentTarget.value.toUpperCase() }))} maxLength={32} />
-            <TextInput label="Город" placeholder="Например, Уфа" value={garageForm.location} onChange={(event) => setGarageForm((current) => ({ ...current, location: event.currentTarget.value }))} maxLength={120} />
-          </SimpleGrid>
-          <Paper withBorder radius="md" p="sm" bg="gray.0">
-            <Stack gap="xs">
-              <Group justify="space-between" gap="sm">
-                <Stack gap={1}>
-                  <Text size="sm" fw={750}>Фотографии автомобиля</Text>
-                  <Text size="xs" c="dimmed">Первая фотография станет обложкой, если вы создадите объявление из гаража.</Text>
-                </Stack>
-                <Badge variant="light" color={garageImages.length ? "teal" : "gray"}>{garageImages.length}/12</Badge>
-              </Group>
-              <FileInput accept="image/jpeg,image/png,image/webp" multiple clearable disabled={isGarageImageUploading || garageImages.length >= 12} placeholder="Добавить фотографии" onChange={uploadGaragePhotos} leftSection={<IconPhoto size={16} />} />
-              {isGarageImageUploading && <Text size="xs" c="teal">Загружаем фотографии…</Text>}
-              {garageImages.length > 0 && (
-                <SimpleGrid cols={{ base: 3, sm: 6 }} spacing="xs">
-                  {garageImages.map((image, index) => (
-                    <Box key={image} pos="relative" className="garage-photo-preview" data-cover={index === 0 || undefined}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={image} alt={`Фото автомобиля ${index + 1}`} />
-                      <ActionIcon aria-label={`Удалить фото ${index + 1}`} type="button" size="sm" color="dark" variant="filled" pos="absolute" top={5} right={5} onClick={() => removeGarageImage(index)}><IconX size={13} /></ActionIcon>
-                      {index === 0 && <Badge size="xs" color="teal" variant="filled" pos="absolute" left={5} bottom={5}>Обложка</Badge>}
-                    </Box>
-                  ))}
-                </SimpleGrid>
-              )}
-            </Stack>
-          </Paper>
-          <Group justify="flex-end" gap="xs">
-            <Button variant="subtle" color="gray" disabled={isGarageSaving || isGarageImageUploading} onClick={closeGarageModal}>Отмена</Button>
-            <Button color="teal" loading={isGarageSaving} disabled={isGarageImageUploading} leftSection={<IconPlus size={16} />} onClick={handleGarageSave}>Добавить в гараж</Button>
-          </Group>
-        </Stack>
-      </Modal>
       <Modal opened={Boolean(removalConfirmation)} onClose={() => !isRemovalSaving && !garageDeletingId && setRemovalConfirmation(null)} title={removalConfirmation?.kind === "listing" ? "Снять объявление с публикации" : "Удалить автомобиль из гаража"} centered radius="lg">
         <Stack gap="md">
           <Text size="sm" c="dimmed">

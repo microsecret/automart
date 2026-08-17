@@ -22,8 +22,9 @@ const explicitLimit = Number(process.argv[process.argv.indexOf("--limit") + 1])
 const limit = Number.isInteger(explicitLimit) ? Math.min(Math.max(explicitLimit, 1), 10) : Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_POST_LIMIT || 3), 1), 10)
 const maxAgeHours = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_AGE_HOURS || 72), 1), 720)
 const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim()
-const chatIds = [...new Set((process.env.TELEGRAM_AUCTION_CHAT_IDS || "").split(",").map((value) => value.trim()).filter(Boolean))]
+const configuredChatIds = [...new Set((process.env.TELEGRAM_AUCTION_CHAT_IDS || "").split(",").map((value) => value.trim()).filter(Boolean))]
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://lewheel.ru").replace(/\/$/, "")
+const botUsername = (process.env.TELEGRAM_BOT_USERNAME || process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "lewheelbot").replace(/^@/, "").trim()
 
 const COUNTRY_LABELS = { CN: "Китай", KR: "Корея", JP: "Япония", US: "США", DE: "Европа" }
 const FUEL_LABELS = { GASOLINE: "бензин", DIESEL: "дизель", ELECTRIC: "электро", HYBRID: "гибрид", GAS: "газ" }
@@ -113,6 +114,7 @@ export function buildAuctionCaption(listing, countryMedian) {
     damage.notes ? `🛠 Осмотр: ${damage.serious} ${pluralRu(damage.serious, "серьёзный дефект", "серьёзных дефекта", "серьёзных дефектов")} · ${damage.notes} ${pluralRu(damage.notes, "замечание", "замечания", "замечаний")}` : null,
     equipment.length ? `✨ Оснащение: ${escapeHtml(equipment.join(", "))}` : null,
     "ℹ️ Цена предварительная. Итог подтвердим после проверки лота, доставки и документов.",
+    `🌐 <a href="${siteUrl}">LeWheel</a>${botUsername ? ` · @${escapeHtml(botUsername)}` : ""}`,
   ].filter(Boolean)
   while (lines.join("\n").length > 1000 && lines.length > 6) lines.splice(lines.length - 2, 1)
   return lines.join("\n")
@@ -152,10 +154,7 @@ function telegramApi(method, payload) {
 
 async function publish(listing, chatId, countryMedian) {
   const url = `${siteUrl}/auctions/${listing.id}`
-  const replyMarkup = { inline_keyboard: [[
-    { text: "🚘 Открыть карточку", url },
-    { text: "🔥 Рассчитать доставку", url: `${url}#order` },
-  ]] }
+  const replyMarkup = { inline_keyboard: [[{ text: "🚘 Посмотреть автомобиль", url }]] }
   const caption = buildAuctionCaption(listing, countryMedian)
   const photo = parseImages(listing)[0]
   let message
@@ -168,9 +167,33 @@ async function publish(listing, chatId, countryMedian) {
   await prisma.auctionTelegramPost.create({ data: { auctionListingId: listing.id, chatId, messageId: message?.message_id ? String(message.message_id) : null } })
 }
 
+async function resolveChatIds() {
+  const registered = await prisma.telegramChat.findMany({
+    where: { active: true, marketingEnabled: true },
+    select: { id: true },
+  })
+  return [...new Set([...configuredChatIds, ...registered.map((chat) => chat.id)])]
+}
+
+async function filterAdminChats(chatIds) {
+  if (dryRun || !botToken || chatIds.length === 0) return chatIds
+  const bot = await telegramApi("getMe", {})
+  const checks = await Promise.all(chatIds.map(async (chatId) => {
+    const member = await telegramApi("getChatMember", { chat_id: chatId, user_id: bot.id }).catch(() => null)
+    return member && (member.status === "administrator" || member.status === "creator") ? chatId : null
+  }))
+  return checks.filter(Boolean)
+}
+
 async function main() {
-  if (!dryRun && (!botToken || chatIds.length === 0)) {
-    console.log("[auction-telegram] skipped: configure TELEGRAM_BOT_TOKEN and TELEGRAM_AUCTION_CHAT_IDS")
+  if (!dryRun && !botToken) {
+    console.log("[auction-telegram] skipped: configure TELEGRAM_BOT_TOKEN")
+    return
+  }
+
+  const chatIds = await filterAdminChats(await resolveChatIds())
+  if (!dryRun && chatIds.length === 0) {
+    console.log("[auction-telegram] skipped: no registered chats where the bot is an administrator")
     return
   }
 

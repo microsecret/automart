@@ -19,6 +19,7 @@ type TelegramApiResponse<T> = { ok?: boolean; description?: string; result?: T }
 
 const CHAT_MODERATION_CACHE_TTL_MS = 5 * 60 * 1000
 const moderatedChatCapability = new Map<string, { allowed: boolean; expiresAt: number }>()
+const adminChatCapability = new Map<string, { allowed: boolean; expiresAt: number }>()
 let botProfilePromise: Promise<TelegramBotProfile> | null = null
 
 export class TelegramIdentityConflictError extends Error {}
@@ -350,6 +351,24 @@ export async function canModerateTelegramChat(chatId: string) {
   } catch (error) {
     console.error("Telegram moderation permission check failed:", error)
     moderatedChatCapability.set(chatId, { allowed: false, expiresAt: Date.now() + 30_000 })
+    return false
+  }
+}
+
+/** Проверяет только роль бота в чате — без whitelist модерации и права удаления. */
+export async function isTelegramChatAdministrator(chatId: string) {
+  const cached = adminChatCapability.get(chatId)
+  if (cached && cached.expiresAt > Date.now()) return cached.allowed
+
+  try {
+    const bot = await getTelegramBotProfile()
+    const membership = await telegramApi<TelegramChatMember>("getChatMember", { chat_id: chatId, user_id: bot.id })
+    const allowed = membership.status === "administrator" || membership.status === "creator" || membership.status === "owner"
+    adminChatCapability.set(chatId, { allowed, expiresAt: Date.now() + CHAT_MODERATION_CACHE_TTL_MS })
+    return allowed
+  } catch (error) {
+    console.error("Telegram administrator permission check failed:", error)
+    adminChatCapability.set(chatId, { allowed: false, expiresAt: Date.now() + 30_000 })
     return false
   }
 }

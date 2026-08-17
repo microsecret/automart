@@ -480,7 +480,7 @@ function AuctionsPageContent() {
                     <Group gap="sm" wrap="nowrap" align="center">
                       <BrandIcon brand={identity.make} size={34} variant="rounded" />
                       <Box style={{ minWidth: 0, flex: 1 }}>
-                        <Text className={styles.resultTitle} fw={760} fz="sm" c="dark.9" lineClamp={2}>{identity.title}</Text>
+                        <Text className={styles.resultTitle} fw={760} fz="sm" lineClamp={2}>{identity.title}</Text>
                         <Text className="auction-result-card__summary" lineClamp={1}>
                           {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
                         </Text>

@@ -11,13 +11,29 @@ const TRANSMISSION_TYPES = new Set(["MANUAL", "AUTOMATIC", "VARIATOR", "ROBOTIC"
 const GARAGE_VEHICLE_SELECT = {
   id: true, make: true, model: true, year: true, mileage: true, vin: true,
   fuelType: true, transmission: true, bodyType: true, color: true,
-  condition: true, location: true, images: true, createdAt: true,
+  doors: true, engineVolume: true, power: true, driveType: true,
+  condition: true, steeringWheel: true, ownersCount: true,
+  documentsStatus: true, damageInfo: true, sellerType: true,
+  availability: true, customsCleared: true, generation: true, keywords: true,
+  location: true, description: true, images: true, createdAt: true,
 } as const
 
 function optionalText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return null
   const normalized = value.trim().replace(/\s+/g, " ")
   return normalized ? normalized.slice(0, maxLength) : null
+}
+
+function optionalInteger(value: unknown, min: number, max: number) {
+  if (value === "" || value == null) return null
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : null
+}
+
+function optionalDecimal(value: unknown, min: number, max: number) {
+  if (value === "" || value == null) return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null
 }
 
 /** GET /api/garage — список или одна личная запись пользователя. */
@@ -69,6 +85,10 @@ export async function POST(request: NextRequest) {
     const condition = optionalText(body?.condition, 32) || "EXCELLENT"
     const vin = optionalText(body?.vin, 32)?.toUpperCase() || null
     const location = optionalText(body?.location, 120) || ""
+    const doors = optionalInteger(body?.doors, 1, 8)
+    const engineVolume = optionalDecimal(body?.engineVolume, 0.1, 20)
+    const power = optionalInteger(body?.power, 1, 5000)
+    const ownersCount = optionalInteger(body?.ownersCount, 1, 100)
     const images = Array.isArray(body?.images)
       ? [...new Set(body.images.filter((value: unknown): value is string => typeof value === "string" && /^\/uploads\/[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(value)))].slice(0, 12)
       : []
@@ -108,8 +128,22 @@ export async function POST(request: NextRequest) {
         transmission,
         bodyType,
         color,
+        doors,
+        engineVolume,
+        power,
+        driveType: optionalText(body?.driveType, 20),
         condition,
+        steeringWheel: optionalText(body?.steeringWheel, 16),
+        ownersCount,
+        documentsStatus: optionalText(body?.documentsStatus, 24),
+        damageInfo: optionalText(body?.damageInfo, 24),
+        sellerType: optionalText(body?.sellerType, 20),
+        availability: optionalText(body?.availability, 24),
+        customsCleared: typeof body?.customsCleared === "boolean" ? body.customsCleared : null,
+        generation: optionalText(body?.generation, 80),
+        keywords: optionalText(body?.keywords, 500),
         location,
+        description: optionalText(body?.description, 5000),
         images: images.length ? JSON.stringify(images) : null,
         vehicleType: "CAR",
         userId: session.user.id,

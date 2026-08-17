@@ -254,7 +254,7 @@ async function handleMessage(message: TelegramMessage) {
       const sentMessage = await telegramApi<TelegramSentMessage>("sendMessage", {
         chat_id: chatId,
         text: allowed
-          ? enabled ? "✅ <b>Новости LeWheel включены.</b> Полезный обзор сервиса будет выходить не чаще одного раза в 12 часов." : "🔕 <b>Новости LeWheel отключены для этого чата.</b> Включить снова можно командой /promo_on."
+          ? enabled ? "✅ <b>Новости LeWheel включены.</b> Полезный обзор сервиса будет выходить не чаще одного раза в 8 часов." : "🔕 <b>Новости LeWheel отключены для этого чата.</b> Включить снова можно командой /promo_on."
           : "⚠️ Управлять рассылкой LeWheel могут только администраторы этого чата.",
         parse_mode: "HTML",
       })

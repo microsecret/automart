@@ -104,7 +104,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   return (
     <AppShell
       header={{ height: 68 }}
-      navbar={{ width: 260, breakpoint: "md", collapsed: { mobile: !mobileOpened } }}
+      navbar={{ width: 236, breakpoint: "md", collapsed: { mobile: !mobileOpened } }}
       padding={0}
       style={{ minHeight: "100vh", background: "var(--market-background)" }}
     >
@@ -118,7 +118,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
 
       <AppShell.Navbar className="market-app-navbar" p={0} style={{ background: "var(--market-surface-subtle)", borderRight: "1px solid var(--market-line)" }}>
         <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={5}>
-          <Stack gap="sm" p="sm">
+          <Stack gap="xs" p="xs">
               {/* Для гостя вход уже доступен в хедере: не дублируем две одинаковые пары кнопок. */}
               {session?.user && (
                 <Suspense fallback={<AccountPanel pathname={pathname || ""} dashboardTab="listings" session={session} />}>
@@ -197,7 +197,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       </AppShell.Navbar>
 
       <AppShell.Main style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
-        <Box maw={1192} mx="auto" w="100%" className="app-main-content" style={{ flex: 1 }}>{children}</Box>
+        <Box maw={1280} mx="auto" w="100%" className="app-main-content" style={{ flex: 1 }}>{children}</Box>
         <AppFooter />
       </AppShell.Main>
       <SupportChat />

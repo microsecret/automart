@@ -1,29 +1,36 @@
 import { prisma } from "@/lib/prisma"
 import { absoluteUrl } from "@/lib/site-url"
-import { getTelegramBotUsername, telegramApi, telegramPhotoApi } from "@/lib/telegram"
-import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
+import { getTelegramBotUsername, isTelegramChatAdministrator, telegramApi, telegramPhotoApi } from "@/lib/telegram"
 
-const PROMO_INTERVAL_MS = 12 * 60 * 60 * 1000
+const PROMO_INTERVAL_MS = 8 * 60 * 60 * 1000
 const PROMO_BATCH_SIZE = 20
 
 type TelegramSentMessage = { message_id: number }
 
-export const TELEGRAM_PROMO_TEXT = [
-  "🚘 <b>LeWheel — весь путь к автомобилю в одном сервисе</b>",
-  "",
-  "Ищете авто из <b>Японии, Кореи или Китая</b> — либо хотите продать свою машину без лишней рутины? Мы собрали всё необходимое рядом:",
-  "",
-  "🔨 аукционы с подробными данными источника",
-  "📝 бесплатная подача объявления",
-  "🛡 проверка автомобиля и безопасная сделка",
-  "🚚 расчёт и сопровождение доставки",
-  "🏠 личный гараж, избранное и документы",
-  "🔧 поиск запчастей по вашему автомобилю",
-  "",
-  "✨ <b>Откройте LeWheel и найдите свой вариант прямо сейчас.</b>",
-  "",
-  "🤝 Выкупаете и доставляете автомобили? Станьте партнёром — передаём целевые заявки из вашего региона.",
-].join("\n")
+function buildPromoText() {
+  const botUsername = getTelegramBotUsername()
+  return [
+    "🚘 <b>LeWheel — весь путь к автомобилю в одном сервисе</b>",
+    "",
+    "Ищете авто из <b>Японии, Кореи или Китая</b> — либо хотите продать свою машину без лишней рутины? Мы собрали всё необходимое рядом:",
+    "",
+    "🔨 аукционы с подробными данными источника",
+    "📝 бесплатная подача объявления",
+    "🛡 проверка автомобиля и безопасная сделка",
+    "🚚 расчёт и сопровождение доставки",
+    "🏠 личный гараж, избранное и документы",
+    "🔧 поиск запчастей по вашему автомобилю",
+    "",
+    "✨ <b>Откройте LeWheel и найдите свой вариант прямо сейчас.</b>",
+    "",
+    "🤝 Выкупаете и доставляете автомобили? Станьте партнёром — передаём целевые заявки из вашего региона.",
+    "",
+    `🌐 <a href="${absoluteUrl("/?utm_source=telegram&utm_campaign=service_promo")}">lewheel.ru</a>`,
+    botUsername ? `🤖 Официальный бот: @${botUsername}` : null,
+  ].filter(Boolean).join("\n")
+}
+
+export const TELEGRAM_PROMO_TEXT = buildPromoText()
 
 function promoKeyboard() {
   const botUsername = getTelegramBotUsername()
@@ -81,6 +88,14 @@ export async function processTelegramMarketingCampaign() {
     if (claimed.count !== 1) continue
 
     try {
+      if (!(await isTelegramChatAdministrator(chat.id))) {
+        await prisma.telegramChat.update({
+          where: { id: chat.id },
+          data: { lastPromoAt: claimedAt, lastError: "Для рекламной рассылки боту требуются права администратора" },
+        })
+        failed += 1
+        continue
+      }
       let sent: TelegramSentMessage
       try {
         sent = await telegramPhotoApi<TelegramSentMessage>({
@@ -101,7 +116,6 @@ export async function processTelegramMarketingCampaign() {
         where: { id: chat.id },
         data: { lastPromoAt: claimedAt, lastPromoMessage: sent.message_id, lastError: null },
       })
-      await scheduleTelegramMessageCleanup(chat.id, sent.message_id)
       delivered += 1
     } catch (error) {
       const message = error instanceof Error ? error.message.slice(0, 500) : "Неизвестная ошибка Telegram"
