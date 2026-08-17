@@ -35,6 +35,20 @@ if (process.env.ENABLE_HSTS === "true") {
   })
 }
 
+// Telegram Mini App открывается внутри iframe клиента Telegram, поэтому
+// глобальные `frame-ancestors 'none'` и `X-Frame-Options: DENY` блокировали
+// его запуск. Разрешение выдаётся точечно — только маршруту Mini App и только
+// доменам Telegram, поэтому остальной сайт остаётся защищённым от кликджекинга.
+const TELEGRAM_FRAME_ANCESTORS = "frame-ancestors https://web.telegram.org https://*.telegram.org https://telegram.org"
+
+const telegramEmbedHeaders = securityHeaders
+  .filter((header) => header.key !== "X-Frame-Options" && header.key !== "Cross-Origin-Opener-Policy")
+  .map((header) => (
+    header.key === "Content-Security-Policy"
+      ? { key: header.key, value: header.value.replace("frame-ancestors 'none'", TELEGRAM_FRAME_ANCESTORS) }
+      : header
+  ))
+
 const nextConfig = {
   reactStrictMode: false,
   poweredByHeader: false,
@@ -53,7 +67,17 @@ const nextConfig = {
   // deterministic; Linux production builds retain Next's normal concurrency.
   ...(process.platform === 'win32' ? { experimental: { cpus: 1 } } : {}),
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }]
+    // Next применяет все совпавшие правила подряд, поэтому общий шаблон
+    // перезаписал бы заголовки Mini App. Маршрут Mini App исключён из общего
+    // правила через missing-условие, а не только порядком объявления.
+    return [
+      { source: "/telegram", headers: telegramEmbedHeaders },
+      { source: "/telegram/:path*", headers: telegramEmbedHeaders },
+      {
+        source: "/((?!telegram).*)",
+        headers: securityHeaders,
+      },
+    ]
   },
   webpack: (config) => {
     config.module.rules.push({
