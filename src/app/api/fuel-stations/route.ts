@@ -687,7 +687,11 @@ export async function GET(request: NextRequest) {
   }
 
   const radius = requestedCoordinates ? 30_000 : place ? 26_000 : 22_000
-  const query = `[out:json][timeout:24];(node["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude}););out center tags 180;`
+  // Крупные заправочные комплексы нанесены отношениями, а не точками, поэтому
+  // без `relation` часть сетевых АЗС просто отсутствует на карте. Лимит выдачи
+  // поднят: в плотной городской застройке 180 точек обрывались задолго до
+  // границы запрошенного радиуса.
+  const query = `[out:json][timeout:24];(node["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});relation["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude}););out center tags 600;`
   const directoryCacheKey = getDirectoryCacheKey(coordinates, radius)
   const cachedDirectory = directoryStationCache.get(directoryCacheKey)
   const directoryPromise = !forceRefresh && cachedDirectory && cachedDirectory.expiresAt > Date.now()
