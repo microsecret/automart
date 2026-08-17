@@ -38,6 +38,11 @@ type FuelStationsResponse = {
     liveStationCount: number
     directoryStationCount: number
     providerAttributionUrl: string | null
+    providerState: "NOT_CONFIGURED" | "READY" | "COOLDOWN" | "BUDGET_EXHAUSTED" | "UNAVAILABLE"
+    rateLimitLimit: number | null
+    rateLimitRemaining: number | null
+    providerRetryAt: string | null
+    liveDataStale: boolean
   }
 }
 
@@ -709,7 +714,7 @@ export default function FuelMapPage() {
           <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button><Button color={hasUnloadedMapArea ? "indigo" : "gray"} variant={hasUnloadedMapArea ? "filled" : "light"} size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>{hasUnloadedMapArea ? "Загрузить текущий участок" : "Участок загружен"}</Button></Group>
         </Group>
 
-        {data && <Group gap="xs"><Badge size="sm" variant="light" color={data.coverage.dataMode === "LIVE" ? "teal" : "gray"}>{data.coverage.dataMode === "LIVE" ? "Live: цены и наличие" : "Справочный режим"}</Badge><Text size="xs" c="dimmed">{data.coverage.dataMode === "LIVE" ? "Данные обновляются от подключённого поставщика." : data.coverage.liveProviderConfigured ? "Поставщик временно не вернул данные для участка." : "Live-поставщик ещё не подключён; показываем проверяемые точки OSM."}</Text></Group>}
+        {data && <Paper radius="md" p="sm" withBorder><Group justify="space-between" gap="xs" wrap="wrap"><Group gap="xs"><Badge size="sm" variant="light" color={data.coverage.dataMode === "LIVE" ? (data.coverage.liveDataStale ? "orange" : "teal") : "gray"}>{data.coverage.dataMode === "LIVE" ? (data.coverage.liveDataStale ? "Последние live-данные" : "Live: цены и наличие") : "Справочный режим"}</Badge><Text size="xs" c="dimmed">{data.coverage.dataMode === "LIVE" ? (data.coverage.liveDataStale ? "Поставщик временно недоступен — показываем последнюю сохранённую выборку." : "Цены, наличие и время обновления получены от поставщика.") : data.coverage.liveProviderConfigured ? "Поставщик временно не вернул данные для участка." : "Подключите официальный API-ключ, чтобы видеть цены и наличие; точки уже доступны из OSM."}</Text></Group>{data.coverage.rateLimitRemaining !== null && <Badge size="xs" color="gray" variant="outline">API: осталось {data.coverage.rateLimitRemaining.toLocaleString("ru-RU")} из {data.coverage.rateLimitLimit?.toLocaleString("ru-RU") || "лимита"}</Badge>}</Group></Paper>}
         {hasUnloadedMapArea && <Paper radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-indigo-2)", background: "var(--mantine-color-indigo-0)" }}><Group gap="xs" wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="indigo" variant="light"><IconMapPin size={14} /></ThemeIcon><Text size="sm" c="indigo.9">Вы переместили карту. Загрузите текущий участок, чтобы обновить список АЗС, расстояния и доступные справочные данные.</Text></Group></Paper>}
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (

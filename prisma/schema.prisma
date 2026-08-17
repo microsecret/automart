@@ -23,6 +23,9 @@ model User {
   telegramUsername   String?
   telegramVerifiedAt DateTime?
   role               String    @default("USER") // USER, ADMIN, MODERATOR
+  accountStatus      String    @default("ACTIVE") // ACTIVE, RESTRICTED, BANNED
+  restrictionReason  String?
+  statusUpdatedAt    DateTime?
   hashedPassword     String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -622,6 +625,23 @@ model TelegramAuthCode {
 
   @@index([phone, purpose, createdAt])
   @@index([expiresAt])
+}
+
+// Persistent outbox for temporary system notices in Telegram groups. A
+// database queue survives application and polling-worker restarts, unlike a
+// process-local setTimeout.
+model TelegramMessageCleanup {
+  id          String    @id @default(cuid())
+  chatId      String
+  messageId   Int
+  deleteAt    DateTime
+  attempts    Int       @default(0)
+  lastError   String?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([chatId, messageId])
+  @@index([processedAt, deleteAt])
 }
 
 model News {

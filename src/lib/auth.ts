@@ -35,8 +35,10 @@ export const authOptions: NextAuthOptions = {
         if (!user) return null
         const valid = await bcrypt.compare(credentials.password, user.hashedPassword || "")
         if (!valid) return null
+        if (user.accountStatus === "BANNED") throw new Error("ACCOUNT_BANNED")
+        if (user.accountStatus === "RESTRICTED") throw new Error("ACCOUNT_RESTRICTED")
         if (!user.emailVerified) throw new Error("EMAIL_NOT_VERIFIED")
-        return { id: user.id, email: user.email, name: user.name, role: normalizeUserRole(user.role) }
+        return { id: user.id, email: user.email, name: user.name, role: normalizeUserRole(user.role), accountStatus: user.accountStatus }
       },
     }),
     CredentialsProvider({
@@ -50,7 +52,8 @@ export const authOptions: NextAuthOptions = {
         if (!telegramUser) return null
         const user = await getVerifiedTelegramUser(telegramUser.id)
         if (!user) return null
-        return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role) }
+        if (user.accountStatus !== "ACTIVE") throw new Error(user.accountStatus === "BANNED" ? "ACCOUNT_BANNED" : "ACCOUNT_RESTRICTED")
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: normalizeUserRole(user.role), accountStatus: user.accountStatus }
       },
     }),
   ],
@@ -63,7 +66,7 @@ export const authOptions: NextAuthOptions = {
         // чтобы снятие доступа сработало сразу, а не после истечения токена.
         const currentUser = await prisma.user.findUnique({
           where: { id: String(token.id) },
-          select: { id: true, name: true, email: true, image: true, role: true },
+          select: { id: true, name: true, email: true, image: true, role: true, accountStatus: true },
         })
 
         if (!currentUser) {
@@ -75,6 +78,17 @@ export const authOptions: NextAuthOptions = {
           session.user.name = null
           session.user.email = ""
           session.user.image = null
+          session.user.accountStatus = "BANNED"
+          return session
+        }
+
+        if (currentUser.accountStatus !== "ACTIVE") {
+          session.user.id = ""
+          session.user.role = normalizeUserRole(null)
+          session.user.accountStatus = currentUser.accountStatus
+          session.user.name = currentUser.name
+          session.user.email = null
+          session.user.image = currentUser.image
           return session
         }
 
@@ -83,6 +97,7 @@ export const authOptions: NextAuthOptions = {
         session.user.name = currentUser.name || session.user.name
         session.user.email = isInternalTelegramEmail(currentUser.email) ? null : currentUser.email || session.user.email
         session.user.image = currentUser.image || session.user.image
+        session.user.accountStatus = currentUser.accountStatus
       }
       return session
     },
@@ -90,6 +105,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = normalizeUserRole(user.role)
+        token.accountStatus = user.accountStatus
       }
       if (trigger === "update" && typeof session?.name === "string") {
         token.name = session.name

@@ -68,6 +68,10 @@ export default function SignInForm() {
           : "Почта не подтверждена. Повторите вход, указав почту, и запросите новое письмо.")
       } else if (res?.error === "RATE_LIMITED") {
         setError("Слишком много попыток входа. Подождите 15 минут и попробуйте снова.")
+      } else if (res?.error === "ACCOUNT_BANNED") {
+        setError("Аккаунт заблокирован администратором. Обратитесь в поддержку, если считаете это ошибкой.")
+      } else if (res?.error === "ACCOUNT_RESTRICTED") {
+        setError("Доступ к аккаунту временно ограничен. Уточните причину у поддержки.")
       } else if (res?.error) {
         setError("Неверный email или пароль")
       } else if (res?.ok) {

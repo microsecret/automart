@@ -23,6 +23,7 @@ const localPort = Number(process.env.PORT || 4001)
 const statePath = process.env.TELEGRAM_POLLING_STATE_PATH || "/var/lib/automart-telegram/offset"
 const pollTimeoutSeconds = 30
 const maxBackoffMs = 60_000
+const cleanupIntervalMs = 10_000
 
 if (!botToken || !webhookSecret) {
   console.error("[telegram-polling] TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET are required")
@@ -121,6 +122,37 @@ function forwardToLocalWebhook(update) {
   })
 }
 
+function runLocalCleanup() {
+  return new Promise((resolve, reject) => {
+    const body = "{}"
+    const request = http.request({
+      hostname: "127.0.0.1",
+      port: localPort,
+      path: "/api/telegram/cleanup",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        "X-Telegram-Bot-Api-Secret-Token": webhookSecret,
+      },
+      timeout: 15_000,
+    }, (response) => {
+      let responseBody = ""
+      response.on("data", (chunk) => { responseBody += chunk })
+      response.on("end", () => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Local cleanup ${response.statusCode}: ${responseBody.slice(0, 200)}`))
+          return
+        }
+        resolve()
+      })
+    })
+    request.on("error", reject)
+    request.on("timeout", () => request.destroy(new Error("Local cleanup timed out")))
+    request.end(body)
+  })
+}
+
 async function enablePollingMode() {
   let backoffMs = 2_000
   while (running) {
@@ -141,33 +173,41 @@ async function poll() {
   let backoffMs = 2_000
   let connectivityFailed = false
   console.log(`[telegram-polling] Started on local port ${localPort}; offset=${offset}`)
+  const cleanupTimer = setInterval(() => {
+    void runLocalCleanup().catch((error) => console.error(`[telegram-polling] Cleanup: ${error instanceof Error ? error.message : error}`))
+  }, cleanupIntervalMs)
+  cleanupTimer.unref()
 
-  while (running) {
-    try {
-      const updates = await telegramApi("getUpdates", {
-        offset,
-        timeout: pollTimeoutSeconds,
-        allowed_updates: ["message"],
-      }, (pollTimeoutSeconds + 15) * 1_000)
+  try {
+    while (running) {
+      try {
+        const updates = await telegramApi("getUpdates", {
+          offset,
+          timeout: pollTimeoutSeconds,
+          allowed_updates: ["message"],
+        }, (pollTimeoutSeconds + 15) * 1_000)
 
-      if (connectivityFailed) {
-        console.log("[telegram-polling] Telegram connectivity restored")
-        connectivityFailed = false
+        if (connectivityFailed) {
+          console.log("[telegram-polling] Telegram connectivity restored")
+          connectivityFailed = false
+        }
+
+        for (const update of updates) {
+          await forwardToLocalWebhook(update)
+          offset = update.update_id + 1
+          persistOffset(offset)
+        }
+        if (updates.length > 0) console.log(`[telegram-polling] Processed ${updates.length} update(s); offset=${offset}`)
+        backoffMs = 2_000
+      } catch (error) {
+        connectivityFailed = true
+        console.error(`[telegram-polling] ${error instanceof Error ? error.message : error}`)
+        await sleep(backoffMs)
+        backoffMs = Math.min(backoffMs * 2, maxBackoffMs)
       }
-
-      for (const update of updates) {
-        await forwardToLocalWebhook(update)
-        offset = update.update_id + 1
-        persistOffset(offset)
-      }
-      if (updates.length > 0) console.log(`[telegram-polling] Processed ${updates.length} update(s); offset=${offset}`)
-      backoffMs = 2_000
-    } catch (error) {
-      connectivityFailed = true
-      console.error(`[telegram-polling] ${error instanceof Error ? error.message : error}`)
-      await sleep(backoffMs)
-      backoffMs = Math.min(backoffMs * 2, maxBackoffMs)
     }
+  } finally {
+    clearInterval(cleanupTimer)
   }
 }
 

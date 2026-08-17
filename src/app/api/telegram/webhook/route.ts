@@ -17,6 +17,7 @@ import {
 } from "@/lib/telegram"
 import { prisma } from "@/lib/prisma"
 import { absoluteUrl } from "@/lib/site-url"
+import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 
 export const dynamic = "force-dynamic"
 
@@ -42,6 +43,7 @@ type TelegramMessage = {
 }
 
 type TelegramUpdate = { message?: TelegramMessage }
+type TelegramSentMessage = { message_id: number }
 
 const MODERATION_NOTICE_COOLDOWN_MS = 60 * 60 * 1000
 const moderationNoticeTimes = new Map<string, number>()
@@ -89,7 +91,7 @@ async function sendBrandedMessage(
   replyMarkup?: Record<string, unknown>,
 ) {
   try {
-    await telegramApi("sendPhoto", {
+    return await telegramApi<TelegramSentMessage>("sendPhoto", {
       chat_id: chatId,
       photo: getTelegramInfographicUrl(),
       caption: text,
@@ -98,12 +100,20 @@ async function sendBrandedMessage(
     })
   } catch (error) {
     console.error("Telegram infographic delivery failed; sending text fallback:", error)
-    await telegramApi("sendMessage", {
+    return telegramApi<TelegramSentMessage>("sendMessage", {
       chat_id: chatId,
       text,
       parse_mode: "HTML",
       reply_markup: replyMarkup,
     })
+  }
+}
+
+async function scheduleTemporarySystemMessage(chatId: string, message: TelegramSentMessage) {
+  try {
+    await scheduleTelegramMessageCleanup(chatId, message.message_id)
+  } catch (error) {
+    console.error("Telegram system message cleanup could not be scheduled:", error)
   }
 }
 
@@ -243,12 +253,15 @@ async function handleMessage(message: TelegramMessage) {
       const user = await getTelegramUser(telegramId)
       await sendRegistrationStep(chatId, getTelegramRegistrationStep(user), message.from.first_name, user?.name)
     }
-    else await telegramApi("sendMessage", {
-      chat_id: chatId,
-      text: "🔐 <b>Регистрация проходит в личном чате с ботом.</b>\n\nПодтвердите телефон, укажите почту и придумайте пароль — после этого доступ к чату откроется автоматически.",
-      parse_mode: "HTML",
-      reply_markup: getBotStartUrl() ? { inline_keyboard: [[{ text: "🚀 Пройти регистрацию", style: "primary", url: getBotStartUrl()! }]] } : undefined,
-    })
+    else {
+      const sentMessage = await telegramApi<TelegramSentMessage>("sendMessage", {
+        chat_id: chatId,
+        text: "🔐 <b>Регистрация проходит в личном чате с ботом.</b>\n\nПодтвердите телефон, укажите почту и придумайте пароль — после этого доступ к чату откроется автоматически.\n\n⏳ Это системное сообщение исчезнет через 5 минут.",
+        parse_mode: "HTML",
+        reply_markup: getBotStartUrl() ? { inline_keyboard: [[{ text: "🚀 Пройти регистрацию", style: "primary", url: getBotStartUrl()! }]] } : undefined,
+      })
+      await scheduleTemporarySystemMessage(chatId, sentMessage)
+    }
     return
   }
 
@@ -362,7 +375,7 @@ async function handleMessage(message: TelegramMessage) {
     }
     if (wasDeleted && canSendModerationNotice(chatId, telegramId)) {
       const userMention = telegramUserMention(message.from)
-      await sendBrandedMessage(chatId, [
+      const sentMessage = await sendBrandedMessage(chatId, [
         `🔐 <b>${userMention}, сообщение скрыто</b>`,
         "Регистрация в LeWheel пока не завершена. Пройдите три коротких шага в личном чате с ботом:",
         "",
@@ -371,9 +384,11 @@ async function handleMessage(message: TelegramMessage) {
         "3️⃣ 🔑 <b>Пароль</b> — придумайте защищённый пароль от аккаунта.",
         "",
         "✅ После регистрации сообщения и медиа будут публиковаться автоматически.",
+        "⏳ Системное уведомление удалится через 5 минут.",
       ].join("\n"), getBotStartUrl() ? {
         inline_keyboard: [[{ text: "🚀 Завершить регистрацию", style: "primary", url: getBotStartUrl()! }]],
-      } : undefined).catch((error) => console.error("Telegram moderation notice failed:", error))
+      } : undefined)
+      await scheduleTemporarySystemMessage(chatId, sentMessage)
     }
   }
 }

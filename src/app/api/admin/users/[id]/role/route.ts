@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const currentRole = normalizeUserRole(target.role)
     if (currentRole === USER_ROLE.ADMIN && role !== USER_ROLE.ADMIN) {
-      const admins = await prisma.user.count({ where: { role: USER_ROLE.ADMIN } })
+      const admins = await prisma.user.count({ where: { role: USER_ROLE.ADMIN, accountStatus: "ACTIVE" } })
       if (admins <= 1) return NextResponse.json({ error: "Нельзя понизить последнего администратора" }, { status: 409 })
     }
 

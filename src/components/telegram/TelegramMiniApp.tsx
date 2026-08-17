@@ -52,7 +52,7 @@ const QUICK_ACTIONS = [
   { href: "/dashboard/deliveries", label: "Мои доставки", icon: IconTruckDelivery, group: "Мой кабинет" },
   { href: "/messages", label: "Сообщения", icon: IconMessageCircle2, group: "Мой кабинет" },
   { href: "/news", label: "Новости", icon: IconNews, group: "Сервисы" },
-  { href: "/services/fuel-map", label: "Карта АЗС", icon: IconGasStation, group: "Сервисы" },
+  { href: "/services/fuel-map", label: "АЗС: цены и наличие", icon: IconGasStation, group: "Сервисы" },
 ]
 const QUICK_ACTION_GROUPS = ["Найти автомобиль", "Продать", "Мой кабинет", "Сервисы"]
 
@@ -181,6 +181,9 @@ export default function TelegramMiniApp() {
           {status === "ready" && (
             <Stack gap="md">
               <Button component={Link} href="/dashboard" onClick={triggerHaptic} color="indigo" radius="lg" size="md" fullWidth rightSection={<IconExternalLink size={16} />}>Открыть личный кабинет</Button>
+              <Paper component={Link} href="/services/fuel-map" onClick={triggerHaptic} radius="lg" p="md" bg="teal.0" style={{ textDecoration: "none", border: "1px solid var(--mantine-color-teal-2)" }}>
+                <Group wrap="nowrap" align="center"><Avatar color="teal" variant="light" radius="md"><IconGasStation size={20} /></Avatar><Stack gap={2} miw={0}><Text fw={800} c="teal.9">Карта АЗС рядом</Text><Text size="xs" c="teal.8">Маршрут, виды топлива и live-цены при подключённом поставщике</Text></Stack><IconExternalLink size={16} color="var(--mantine-color-teal-7)" /></Group>
+              </Paper>
               {QUICK_ACTION_GROUPS.map((group) => (
                 <Stack key={group} gap={7}>
                   <Text size="xs" fw={800} tt="uppercase" c="dimmed">{group}</Text>

@@ -65,6 +65,16 @@ type CachedLiveStations = {
   expiresAt: number
 }
 
+type LiveProviderState = "NOT_CONFIGURED" | "READY" | "COOLDOWN" | "BUDGET_EXHAUSTED" | "UNAVAILABLE"
+
+type LiveProviderHealth = {
+  state: LiveProviderState
+  limit: number | null
+  remaining: number | null
+  retryAt: string | null
+  stale: boolean
+}
+
 const FUEL_TAG_LABELS: Record<string, string> = {
   "fuel:diesel": "ДТ",
   "fuel:octane_92": "АИ‑92",
@@ -118,12 +128,54 @@ const MAX_STATION_ADDRESS_CACHE_ENTRIES = 600
 const MAX_LIVE_STATION_CACHE_ENTRIES = 80
 const LIVE_STATION_PAGE_LIMIT = 200
 const MAX_LIVE_STATION_PAGES = 5
+const configuredLiveProviderDailyBudget = Number(process.env.FUEL_PROVIDER_DAILY_REQUEST_BUDGET || 8_000)
+const LIVE_PROVIDER_DAILY_BUDGET = Number.isFinite(configuredLiveProviderDailyBudget)
+  ? Math.max(1, Math.min(10_000, configuredLiveProviderDailyBudget))
+  : 8_000
 const placeCache = new Map<string, CachedPlace>()
 const directoryStationCache = new Map<string, CachedDirectoryStations>()
 const stationAddressCache = new Map<string, CachedStationAddress>()
 const liveStationCache = new Map<string, CachedLiveStations>()
 let nextNominatimRequestAt = 0
 let nominatimRequestQueue = Promise.resolve()
+let liveProviderHealth: LiveProviderHealth = { state: "NOT_CONFIGURED", limit: null, remaining: null, retryAt: null, stale: false }
+let liveProviderCooldownUntil = 0
+let liveProviderRequestDay = new Date().toISOString().slice(0, 10)
+let liveProviderRequestsToday = 0
+
+function refreshLiveProviderDailyBudget() {
+  const today = new Date().toISOString().slice(0, 10)
+  if (today !== liveProviderRequestDay) {
+    liveProviderRequestDay = today
+    liveProviderRequestsToday = 0
+  }
+}
+
+function asRateLimitNumber(value: string | null) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+}
+
+function updateLiveProviderRateLimits(response: Response) {
+  const limit = asRateLimitNumber(response.headers.get("x-ratelimit-limit"))
+  const remaining = asRateLimitNumber(response.headers.get("x-ratelimit-remaining"))
+  const resetSeconds = asRateLimitNumber(response.headers.get("x-ratelimit-reset"))
+  const retrySeconds = asRateLimitNumber(response.headers.get("retry-after"))
+  const retryAt = retrySeconds !== null
+    ? Date.now() + retrySeconds * 1_000
+    : resetSeconds !== null
+      ? resetSeconds * 1_000
+      : 0
+
+  if (response.status === 429 || remaining === 0) liveProviderCooldownUntil = Math.max(liveProviderCooldownUntil, retryAt || Date.now() + 60_000)
+  liveProviderHealth = {
+    state: liveProviderCooldownUntil > Date.now() ? "COOLDOWN" : "READY",
+    limit,
+    remaining,
+    retryAt: liveProviderCooldownUntil > Date.now() ? new Date(liveProviderCooldownUntil).toISOString() : null,
+    stale: false,
+  }
+}
 
 function hasPublishedFuelTag(value: string | undefined) {
   return /^(yes|true|1)$/iu.test(value?.trim() || "")
@@ -465,11 +517,24 @@ async function resolveStationAddress(coordinates: Coordinates) {
 
 async function requestLiveStations(coordinates: Coordinates, radius: number, forceRefresh = false) {
   const apiKey = process.env.ZAPRAVKIN_API_KEY?.trim()
-  if (!apiKey) return []
+  if (!apiKey) {
+    liveProviderHealth = { state: "NOT_CONFIGURED", limit: null, remaining: null, retryAt: null, stale: false }
+    return []
+  }
 
   const cacheKey = getLiveStationsCacheKey(coordinates, radius)
   const cached = liveStationCache.get(cacheKey)
   if (!forceRefresh && cached && cached.expiresAt > Date.now()) return cached.stations
+
+  refreshLiveProviderDailyBudget()
+  if (liveProviderCooldownUntil > Date.now()) {
+    liveProviderHealth = { ...liveProviderHealth, state: "COOLDOWN", retryAt: new Date(liveProviderCooldownUntil).toISOString(), stale: Boolean(cached?.stations.length) }
+    return cached?.stations || []
+  }
+  if (liveProviderRequestsToday >= LIVE_PROVIDER_DAILY_BUDGET) {
+    liveProviderHealth = { ...liveProviderHealth, state: "BUDGET_EXHAUSTED", retryAt: null, stale: Boolean(cached?.stations.length) }
+    return cached?.stations || []
+  }
 
   const latitudeDelta = radius / 111_000
   const longitudeDelta = radius / Math.max(25_000, 111_000 * Math.cos(coordinates.latitude * Math.PI / 180))
@@ -497,6 +562,8 @@ async function requestLiveStations(coordinates: Coordinates, radius: number, for
           signal: controller.signal,
           next: { revalidate: 0 },
         })
+        liveProviderRequestsToday += 1
+        updateLiveProviderRateLimits(response)
         if (!response.ok) throw new Error(`Live fuel provider responded with ${response.status}`)
         payload = await response.json() as unknown
       } finally {
@@ -520,11 +587,15 @@ async function requestLiveStations(coordinates: Coordinates, radius: number, for
     }
   } catch (error) {
     console.warn("Live fuel provider is temporarily unavailable", error instanceof Error ? error.message : "Unknown error")
-    return []
+    if (liveProviderHealth.state !== "COOLDOWN") {
+      liveProviderHealth = { ...liveProviderHealth, state: "UNAVAILABLE", stale: Boolean(cached?.stations.length) }
+    }
+    return cached?.stations || []
   }
 
   const uniqueStations = Array.from(new Map(stations.map((station) => [station.id, station])).values())
   cacheLiveStations(cacheKey, uniqueStations)
+  liveProviderHealth = { ...liveProviderHealth, state: "READY", retryAt: null, stale: false }
   return uniqueStations
 }
 
@@ -642,7 +713,7 @@ export async function GET(request: NextRequest) {
       coordinates,
       stations: [],
       source: "OpenStreetMap",
-      coverage: { dataMode: "DIRECTORY", liveProviderConfigured: hasProviderKey, liveStationCount: 0, directoryStationCount: 0 },
+      coverage: { dataMode: "DIRECTORY", liveProviderConfigured: hasProviderKey, liveStationCount: 0, directoryStationCount: 0, providerState: liveProviderHealth.state, rateLimitLimit: liveProviderHealth.limit, rateLimitRemaining: liveProviderHealth.remaining, providerRetryAt: liveProviderHealth.retryAt, liveDataStale: liveProviderHealth.stale },
       disclaimer: "Карта точек временно недоступна. Попробуйте позже.",
     }, { status: 503 })
   }
@@ -667,6 +738,11 @@ export async function GET(request: NextRequest) {
       liveStationCount: liveStations.length,
       directoryStationCount: directoryStations.length,
       providerAttributionUrl: dataMode === "LIVE" ? "https://zapravkin24.ru" : null,
+      providerState: liveProviderHealth.state,
+      rateLimitLimit: liveProviderHealth.limit,
+      rateLimitRemaining: liveProviderHealth.remaining,
+      providerRetryAt: liveProviderHealth.retryAt,
+      liveDataStale: liveProviderHealth.stale,
     },
     disclaimer,
   }, {
