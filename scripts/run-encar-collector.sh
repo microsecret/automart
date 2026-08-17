@@ -64,7 +64,7 @@ if [[ -n "${MOBILE_DE_API_USERNAME:-}" && -n "${MOBILE_DE_API_PASSWORD:-}" ]]; t
 fi
 run_stage "Configured partner/API feeds" "/api/parser/partner-feeds/sync" '{}'
 
-if [[ -n "${TELEGRAM_AUCTION_CHAT_IDS:-}" ]]; then
+if [[ -n "${TELEGRAM_BOT_TOKEN:-}" ]]; then
   echo "[$(date -Is)] Telegram auction highlights"
   if ! node ./scripts/publish-auction-highlights.mjs --limit "${TELEGRAM_AUCTION_POST_LIMIT:-3}"; then
     echo "[$(date -Is)] ERROR: Telegram auction highlights failed; collector data is preserved" >&2

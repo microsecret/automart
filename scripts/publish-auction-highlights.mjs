@@ -205,26 +205,29 @@ async function main() {
   const medians = new Map([...new Set(listings.map((listing) => listing.country))].map((country) => [country, median(listings.filter((listing) => listing.country === country).map((listing) => listing.finalPrice))]))
   const posted = dryRun || chatIds.length === 0 ? [] : await prisma.auctionTelegramPost.findMany({ where: { auctionListingId: { in: listings.map((listing) => listing.id) }, chatId: { in: chatIds } }, select: { auctionListingId: true, chatId: true } })
   const postedKeys = new Set(posted.map((item) => `${item.auctionListingId}:${item.chatId}`))
-  const candidates = listings
+  const rankedCandidates = listings
     .map((listing) => ({ listing, signal: signalForPrice(listing.finalPrice, medians.get(listing.country)) }))
     .filter(({ signal }) => signal.ratio == null || signal.ratio <= 0.95)
     .sort((left, right) => (left.signal.ratio || 1) - (right.signal.ratio || 1))
-    .slice(0, limit)
 
   if (dryRun) {
-    console.log(JSON.stringify(candidates.map(({ listing }) => ({ id: listing.id, photo: parseImages(listing)[0] || null, caption: buildAuctionCaption(listing, medians.get(listing.country)) })), null, 2))
+    console.log(JSON.stringify(rankedCandidates.slice(0, limit).map(({ listing }) => ({ id: listing.id, photo: parseImages(listing)[0] || null, caption: buildAuctionCaption(listing, medians.get(listing.country)) })), null, 2))
     return
   }
 
   let sent = 0
-  for (const { listing } of candidates) {
-    for (const chatId of chatIds) {
-      if (postedKeys.has(`${listing.id}:${chatId}`)) continue
+  let highlightedLots = 0
+  for (const chatId of chatIds) {
+    const candidates = rankedCandidates
+      .filter(({ listing }) => !postedKeys.has(`${listing.id}:${chatId}`))
+      .slice(0, limit)
+    highlightedLots = Math.max(highlightedLots, candidates.length)
+    for (const { listing } of candidates) {
       await publish(listing, chatId, medians.get(listing.country))
       sent += 1
     }
   }
-  console.log(`[auction-telegram] sent ${sent} post(s) for ${candidates.length} highlighted lot(s)`)
+  console.log(`[auction-telegram] sent ${sent} post(s); up to ${highlightedLots} fresh highlighted lot(s) per chat`)
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
