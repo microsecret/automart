@@ -28,6 +28,7 @@ const ACTION_META: Record<string, { label: string; color: string }> = {
   DELIVERY_ORGANIZATION_VERIFY: { label: "Проверка партнёра", color: "cyan" },
   SUPPORT_TICKET_UPDATE: { label: "Обращение", color: "gray" },
   FUEL_PRICE_REPORT_REJECT: { label: "Отметка цены отклонена", color: "orange" },
+  PART_STORE_STATUS_CHANGE: { label: "Статус магазина", color: "violet" },
 }
 
 const ACTION_FILTERS = [

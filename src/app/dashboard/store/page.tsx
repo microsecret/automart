@@ -8,7 +8,7 @@ import {
 } from "@mantine/core"
 import {
   IconAlertTriangle, IconBuildingStore, IconCheck, IconExternalLink, IconFileSpreadsheet,
-  IconPlus, IconTrash, IconUpload,
+  IconPlus, IconSend, IconTrash, IconUpload,
 } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
@@ -92,6 +92,8 @@ export default function StoreWorkspacePage() {
   const [importState, setImportState] = useState<"idle" | "parsing" | "applying">("idle")
   const [lastApplied, setLastApplied] = useState<{ batchId: string; created: number } | null>(null)
   const [revertTarget, setRevertTarget] = useState<{ batchId: string; created: number } | null>(null)
+  const [statusState, setStatusState] = useState<"idle" | "saving">("idle")
+  const [statusError, setStatusError] = useState<string | null>(null)
 
   const store = data?.stores?.[0] || null
 
@@ -119,6 +121,29 @@ export default function StoreWorkspacePage() {
       setSaveError(getApiClientErrorMessage(requestError, "Нет связи с сервером. Попробуйте ещё раз."))
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const changeStatus = async (nextStatus: string) => {
+    if (!store) return
+    setStatusState("saving")
+    setStatusError(null)
+    try {
+      const response = await fetch(`/api/stores/${store.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        setStatusError(typeof payload?.error === "string" ? payload.error : "Не удалось изменить статус")
+        return
+      }
+      await mutate()
+    } catch (requestError) {
+      setStatusError(getApiClientErrorMessage(requestError, "Нет связи с сервером. Попробуйте ещё раз."))
+    } finally {
+      setStatusState("idle")
     }
   }
 
@@ -326,6 +351,38 @@ export default function StoreWorkspacePage() {
                   <Text size="xs" c="dimmed" mt={2}>lewheel.ru/store/{store.slug}</Text>
                   {statusMeta && <Text size="sm" c="dimmed" mt={6} maw={560}>{statusMeta.hint}</Text>}
                   {store.statusReason && <Alert color="red" variant="light" mt="sm">{store.statusReason}</Alert>}
+
+                  {/* Публикацию подтверждает администратор: витрина попадает в
+                      поиск и к покупателям, поэтому продавец отправляет заявку,
+                      а не публикует сам. */}
+                  <Group gap="xs" mt="md">
+                    {(store.status === "DRAFT" || store.status === "SUSPENDED") && (
+                      <Button
+                        color="indigo"
+                        size="sm"
+                        leftSection={<IconSend size={15} />}
+                        onClick={() => changeStatus("PENDING")}
+                        loading={statusState === "saving"}
+                        disabled={store._count.parts === 0}
+                      >
+                        Отправить на проверку
+                      </Button>
+                    )}
+                    {store.status === "PENDING" && (
+                      <Button variant="light" color="gray" size="sm" onClick={() => changeStatus("DRAFT")} loading={statusState === "saving"}>
+                        Отозвать заявку
+                      </Button>
+                    )}
+                    {store.status === "ACTIVE" && (
+                      <Button variant="light" color="gray" size="sm" onClick={() => changeStatus("DRAFT")} loading={statusState === "saving"}>
+                        Снять с публикации
+                      </Button>
+                    )}
+                    {store._count.parts === 0 && store.status === "DRAFT" && (
+                      <Text size="xs" c="dimmed">Сначала загрузите хотя бы одну позицию.</Text>
+                    )}
+                  </Group>
+                  {statusError && <Alert color="red" variant="light" mt="sm">{statusError}</Alert>}
                 </Box>
                 <Card withBorder radius="md" p="sm" miw={160}>
                   <Text size="xs" c="dimmed">Позиций в каталоге</Text>

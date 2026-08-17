@@ -14,6 +14,7 @@ export type AdminAuditAction =
   | "DELIVERY_ORGANIZATION_VERIFY"
   | "SUPPORT_TICKET_UPDATE"
   | "FUEL_PRICE_REPORT_REJECT"
+  | "PART_STORE_STATUS_CHANGE"
 
 type AdminAuditInput = {
   actorId: string | null
