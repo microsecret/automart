@@ -60,6 +60,7 @@ model User {
   reportsCreated                ListingReport[]                @relation("ListingReportReporter")
   fuelPriceReports              FuelPriceReport[]              @relation("FuelPriceReporter")
   adminAuditEvents              AdminAuditEvent[]              @relation("AdminAuditActor")
+  partStores                    PartStore[]                    @relation("PartStoreOwner")
   reportsReviewed               ListingReport[]                @relation("ListingReportReviewer")
   promotionOrders               PromotionOrder[]
   supportTickets                SupportTicket[]                @relation("SupportTicketRequester")
@@ -222,6 +223,20 @@ model Part {
   userId String
   user   User   @relation(fields: [userId], references: [id], name: "UserParts")
 
+  // Позиция витрины магазина. Обычное частное объявление магазину не
+  // принадлежит, поэтому связь необязательная.
+  storeId String?
+  store   PartStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  // Условия поставки под заказ: покупателю нужен срок и происхождение, а не
+  // только цена, иначе заказ оформляется вслепую.
+  supplyMode      String  @default("STOCK") // STOCK — на складе, ORDER — под заказ
+  leadTimeDaysMin Int?
+  leadTimeDaysMax Int?
+  originCountry   String? // CN, KR, JP, DE, RU
+  brandName       String? // производитель детали, а не автомобиля
+  batchId         String? // партия массовой загрузки, чтобы её можно было откатить
+
   // Reverse relation for listings
   listings Listing[] @relation("ListingPart")
   bids     PartBid[]
@@ -235,6 +250,63 @@ model Part {
   @@index([make, model])
   @@index([partType])
   @@index([partType, price, condition])
+  @@index([storeId, createdAt])
+  @@index([batchId])
+  @@index([oemNumber])
+}
+
+// === МАГАЗИН ЗАПЧАСТЕЙ ===
+
+// Витрина продавца: отдельная сущность, потому что у магазина есть реквизиты,
+// условия доставки и репутация, которых нет у частного объявления.
+model PartStore {
+  id            String   @id @default(uuid())
+  ownerId       String
+  owner         User     @relation("PartStoreOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  name          String
+  slug          String   @unique
+  description   String?
+  logoUrl       String?
+  legalName     String?
+  inn           String?
+  contactPhone  String?
+  contactEmail  String?
+  city          String?
+  // Условия по умолчанию подставляются в новые позиции, чтобы продавцу не
+  // приходилось заполнять их в каждой строке загрузки.
+  defaultLeadTimeDaysMin Int?
+  defaultLeadTimeDaysMax Int?
+  defaultOriginCountry   String?
+  status        String   @default("DRAFT") // DRAFT, PENDING, ACTIVE, SUSPENDED
+  statusReason  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  parts    Part[]
+  batches  PartImportBatch[]
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+// Партия массовой загрузки. Хранится отдельно, чтобы неудачный импорт можно
+// было удалить целиком, а не искать позиции руками.
+model PartImportBatch {
+  id          String    @id @default(uuid())
+  storeId     String
+  store       PartStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  fileName    String?
+  status      String    @default("PREVIEW") // PREVIEW, APPLIED, REVERTED, FAILED
+  totalRows   Int       @default(0)
+  createdRows Int       @default(0)
+  skippedRows Int       @default(0)
+  errorReport String? // JSON: номер строки и причина отказа
+  appliedAt   DateTime?
+  revertedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([storeId, createdAt])
+  @@index([status])
 }
 
 model PartBid {
