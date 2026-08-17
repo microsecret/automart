@@ -364,9 +364,12 @@ async function main() {
     return
   }
 
+  // Скрытый лот нельзя рекламировать: и ручное решение администратора, и
+  // автоматический карантин качества должны убирать карточку из рассылки так
+  // же, как они убирают её из публичного каталога.
   const where = explicitListingId
-    ? { id: explicitListingId, status: "ACTIVE", finalPrice: { gt: 0 }, imageUrl: { not: null } }
-    : { status: "ACTIVE", finalPrice: { gt: 0 }, imageUrl: { not: null }, createdAt: { gte: new Date(Date.now() - maxAgeHours * 60 * 60 * 1000) } }
+    ? { id: explicitListingId, status: "ACTIVE", adminHiddenAt: null, finalPrice: { gt: 0 }, imageUrl: { not: null } }
+    : { status: "ACTIVE", adminHiddenAt: null, finalPrice: { gt: 0 }, imageUrl: { not: null }, createdAt: { gte: new Date(Date.now() - maxAgeHours * 60 * 60 * 1000) } }
   const listings = await prisma.auctionListing.findMany({
     where,
     orderBy: { createdAt: "desc" },
