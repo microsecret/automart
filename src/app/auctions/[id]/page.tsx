@@ -558,10 +558,23 @@ function AuctionDetail() {
                         <img src={auctionCardImageUrl(similarImage)} alt={similarIdentity.title} loading="lazy" decoding="async" referrerPolicy="no-referrer" className={styles.similarImage} />
                       ) : <Center h="100%"><IconPhotoOff size={28} color="var(--mantine-color-gray-5)" /></Center>}
                       <Badge pos="absolute" top={10} left={10} color="dark" variant="filled">{similarListing.year}</Badge>
+                      <Badge pos="absolute" top={10} right={10} color="orange" variant="filled">{auctionSourceLabel(similarListing.source)}</Badge>
                     </Box>
-                    <Stack gap={7} p="md">
-                      <Group gap="xs" wrap="nowrap"><BrandIcon brand={similarIdentity.make} size={30} /><Text fw={800} c="dark.9" lineClamp={1}>{similarIdentity.title}</Text></Group>
-                      <Group justify="space-between" gap="xs" wrap="nowrap"><Text fw={850} c="indigo.8">{formatPriceShort(similarListing.finalPrice)}</Text><IconArrowRight size={16} color="var(--mantine-color-indigo-6)" /></Group>
+                    <Stack gap={8} p="md" className={styles.similarContent}>
+                      <Group gap="xs" wrap="nowrap"><BrandIcon brand={similarIdentity.make} size={30} /><Text fw={800} c="dark.9" lineClamp={2} className={styles.similarTitle}>{similarIdentity.title}</Text></Group>
+                      <Group gap={5} wrap="wrap" className={styles.similarFacts}>
+                        {similarListing.mileage != null && <Badge size="xs" variant="light" color="gray">{similarListing.mileage.toLocaleString("ru")} км</Badge>}
+                        {similarListing.fuelType && <Badge size="xs" variant="light" color="orange">{similarListing.fuelType === "GASOLINE" ? "Бензин" : similarListing.fuelType === "DIESEL" ? "Дизель" : similarListing.fuelType === "HYBRID" ? "Гибрид" : similarListing.fuelType === "ELECTRIC" ? "Электро" : similarListing.fuelType}</Badge>}
+                        {similarListing.bodyType && <Badge size="xs" variant="light" color="indigo">{similarListing.bodyType === "SUV" ? "Кроссовер" : similarListing.bodyType === "SEDAN" ? "Седан" : similarListing.bodyType}</Badge>}
+                        {similarListing.engineVolume && <Badge size="xs" variant="light" color="gray">{Math.round(similarListing.engineVolume).toLocaleString("ru")} см³</Badge>}
+                      </Group>
+                      <Group justify="space-between" gap="xs" wrap="nowrap" className={styles.similarPriceRow}>
+                        <Box>
+                          <Text fw={850} c="indigo.8">{formatPriceShort(similarListing.finalPrice)}</Text>
+                          <Text size="10px" c="dimmed">предварительно под ключ</Text>
+                        </Box>
+                        <ThemeIcon variant="light" color="indigo" radius="xl" size={30}><IconArrowRight size={16} /></ThemeIcon>
+                      </Group>
                     </Stack>
                   </Paper>
                 )

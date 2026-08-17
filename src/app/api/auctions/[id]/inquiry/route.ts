@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { normalizePhone } from "@/lib/telegram"
+import { routeAuctionInquiryToPartners } from "@/lib/auction-partner-routing"
 
 export const dynamic = "force-dynamic"
 
@@ -73,7 +74,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
       select: { id: true, createdAt: true },
     })
-    return NextResponse.json({ success: true, inquiry }, { status: 201 })
+    const routing = await routeAuctionInquiryToPartners(inquiry.id).catch((routingError: unknown) => {
+      console.error("Auction inquiry partner routing error:", routingError)
+      return { offered: 0 }
+    })
+    return NextResponse.json({ success: true, inquiry, routing }, { status: 201 })
   } catch (error) {
     console.error("Inquiry error:", error)
     return NextResponse.json({ error: "Failed" }, { status: 500 })

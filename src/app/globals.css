@@ -613,10 +613,10 @@ select {
 }
 
 .market-side-nav {
-  min-height: 34px;
-  margin-inline: 2px;
-  border-radius: 10px;
-  font-size: 0.8rem;
+  min-height: 30px;
+  margin-inline: 1px;
+  border-radius: 8px;
+  font-size: 0.78rem;
   font-weight: 600;
   transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
 }
@@ -632,9 +632,10 @@ select {
 }
 
 .market-side-nav--nested {
-  padding-left: 34px;
-  font-size: 0.74rem;
-  font-weight: 500;
+  min-height: 28px;
+  padding-left: 26px;
+  font-size: 0.73rem;
+  font-weight: 600;
   color: var(--market-muted);
 }
 

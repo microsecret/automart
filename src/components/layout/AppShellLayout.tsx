@@ -155,16 +155,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               </SidebarPanel>
 
               <SidebarPanel title="Мировые аукционы" href="/auctions" icon={<IconGavel size={15} />}>
-                {AUCTIONS.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    component={Link}
-                    href={item.href}
-                    label={item.label}
-                    color="orange"
-                    className="market-side-nav market-side-nav--nested"
-                  />
-                ))}
+                <Suspense fallback={AUCTIONS.map((item) => <NavLink key={item.href} component={Link} href={item.href} label={item.label} color="orange" className="market-side-nav market-side-nav--nested" />)}>
+                  <AuctionCountryLinks pathname={pathname || ""} />
+                </Suspense>
               </SidebarPanel>
 
               <SidebarPanel title="Сервисы" href="/services" icon={<IconShieldCheck size={15} />}>
@@ -215,6 +208,16 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       </nav>
     </AppShell>
   )
+}
+
+function AuctionCountryLinks({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams()
+  const selectedCountry = pathname === "/auctions" ? searchParams.get("country") : null
+
+  return AUCTIONS.map((item) => {
+    const country = item.href.split("country=")[1]
+    return <NavLink key={item.href} component={Link} href={item.href} label={item.label} active={selectedCountry === country} color="orange" className="market-side-nav market-side-nav--nested" />
+  })
 }
 
 function NavigationQuerySync({ onRouteChange }: { onRouteChange: () => void }) {

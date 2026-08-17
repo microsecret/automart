@@ -6,12 +6,15 @@ import Link from "next/link"
 import { Alert, Avatar, Badge, Button, Center, Group, Loader, Paper, SimpleGrid, Stack, Text, Title } from "@mantine/core"
 import {
   IconBrandTelegram,
+  IconCar,
   IconCircleCheck,
   IconExternalLink,
   IconGasStation,
   IconGavel,
   IconHeart,
   IconLogin,
+  IconMessageCircle2,
+  IconNews,
   IconPlus,
   IconTools,
   IconTruckDelivery,
@@ -41,13 +44,17 @@ declare global {
 }
 
 const QUICK_ACTIONS = [
-  { href: "/listings/create/vehicle?source=telegram", label: "Подать объявление", icon: IconPlus },
-  { href: "/listings/create/part?source=telegram", label: "Продать запчасть", icon: IconTools },
-  { href: "/auctions", label: "Аукционы", icon: IconGavel },
-  { href: "/favorites", label: "Избранное", icon: IconHeart },
-  { href: "/dashboard/deliveries", label: "Мои доставки", icon: IconTruckDelivery },
-  { href: "/services/fuel-map", label: "Карта АЗС", icon: IconGasStation },
+  { href: "/auctions", label: "Аукционы", icon: IconGavel, group: "Найти автомобиль" },
+  { href: "/favorites", label: "Избранное", icon: IconHeart, group: "Найти автомобиль" },
+  { href: "/listings/create/vehicle?source=telegram", label: "Подать объявление", icon: IconPlus, group: "Продать" },
+  { href: "/listings/create/part?source=telegram", label: "Продать запчасть", icon: IconTools, group: "Продать" },
+  { href: "/dashboard?tab=garage", label: "Личный гараж", icon: IconCar, group: "Мой кабинет" },
+  { href: "/dashboard/deliveries", label: "Мои доставки", icon: IconTruckDelivery, group: "Мой кабинет" },
+  { href: "/messages", label: "Сообщения", icon: IconMessageCircle2, group: "Мой кабинет" },
+  { href: "/news", label: "Новости", icon: IconNews, group: "Сервисы" },
+  { href: "/services/fuel-map", label: "Карта АЗС", icon: IconGasStation, group: "Сервисы" },
 ]
+const QUICK_ACTION_GROUPS = ["Найти автомобиль", "Продать", "Мой кабинет", "Сервисы"]
 
 async function waitForTelegramWebApp(timeoutMs = 4_000) {
   const startedAt = Date.now()
@@ -102,21 +109,21 @@ export default function TelegramMiniApp() {
         setStatus("ready")
         setMessage("Вы вошли автоматически — повторная авторизация не нужна.")
 
-        const createListing = () => {
+        const openDashboard = () => {
           webApp.HapticFeedback?.impactOccurred("light")
-          window.location.assign("/listings/create/vehicle?source=telegram")
+          window.location.assign("/dashboard")
         }
-        webApp.MainButton?.setText("Подать объявление")
+        webApp.MainButton?.setText("Открыть личный кабинет")
         webApp.MainButton?.setParams?.({
-          text: "Подать объявление",
+          text: "Открыть личный кабинет",
           color: "#4f46e5",
           text_color: "#ffffff",
           has_shine_effect: true,
         })
-        webApp.MainButton?.onClick(createListing)
+        webApp.MainButton?.onClick(openDashboard)
         webApp.MainButton?.show()
         detachMainButton = () => {
-          webApp.MainButton?.offClick(createListing)
+          webApp.MainButton?.offClick(openDashboard)
           webApp.MainButton?.hide()
         }
       } catch {
@@ -172,29 +179,34 @@ export default function TelegramMiniApp() {
           )}
 
           {status === "ready" && (
-            <Stack gap="sm">
-              <SimpleGrid cols={2} spacing="sm">
-                {QUICK_ACTIONS.map((action) => {
-                  const Icon = action.icon
-                  return (
-                    <Button
-                      key={action.href}
-                      component={Link}
-                      href={action.href}
-                      onClick={triggerHaptic}
-                      variant="light"
-                      color="indigo"
-                      radius="md"
-                      size="sm"
-                      leftSection={<Icon size={16} />}
-                      justify="flex-start"
-                    >
-                      {action.label}
-                    </Button>
-                  )
-                })}
-              </SimpleGrid>
-              <Button component={Link} href="/dashboard" color="indigo" radius="md" fullWidth>Открыть личный кабинет</Button>
+            <Stack gap="md">
+              <Button component={Link} href="/dashboard" onClick={triggerHaptic} color="indigo" radius="lg" size="md" fullWidth rightSection={<IconExternalLink size={16} />}>Открыть личный кабинет</Button>
+              {QUICK_ACTION_GROUPS.map((group) => (
+                <Stack key={group} gap={7}>
+                  <Text size="xs" fw={800} tt="uppercase" c="dimmed">{group}</Text>
+                  <SimpleGrid cols={2} spacing="xs">
+                    {QUICK_ACTIONS.filter((action) => action.group === group).map((action) => {
+                      const Icon = action.icon
+                      return (
+                        <Button
+                          key={action.href}
+                          component={Link}
+                          href={action.href}
+                          onClick={triggerHaptic}
+                          variant="light"
+                          color={group === "Продать" ? "orange" : "indigo"}
+                          radius="md"
+                          size="sm"
+                          leftSection={<Icon size={16} />}
+                          justify="flex-start"
+                        >
+                          {action.label}
+                        </Button>
+                      )
+                    })}
+                  </SimpleGrid>
+                </Stack>
+              ))}
             </Stack>
           )}
 

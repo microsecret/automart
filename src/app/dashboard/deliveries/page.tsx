@@ -6,11 +6,12 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Badge, Box, Button, Center, Divider, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconArrowRight, IconBuildingWarehouse, IconCheck, IconChevronRight, IconClipboardCheck, IconFileInvoice, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
+import { IconArrowRight, IconBuildingWarehouse, IconCheck, IconChevronRight, IconClipboardCheck, IconFileInvoice, IconGavel, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
 import DashboardNav from "@/components/dashboard/DashboardNav"
+import { formatPriceShort } from "@/lib/format"
 
 const sourceOptions = [
   { value: "AUCTION", label: "Аукцион" },
@@ -53,6 +54,34 @@ type DeliveryOrganization = {
 
 type DeliveryOrganizationResponse = { organization: DeliveryOrganization | null }
 
+type AuctionOffer = {
+  id: string
+  matchReason: string | null
+  expiresAt: string
+  inquiry: {
+    id: string
+    name: string
+    city: string | null
+    comment: string | null
+    auctionListing: {
+      id: string
+      make: string
+      model: string
+      year: number
+      country: string
+      source: string
+      lotNumber: string | null
+      finalPrice: number
+      imageUrl: string | null
+    }
+  }
+}
+
+type AuctionOffersResponse = {
+  organization: { id: string; legalName: string } | null
+  offers: AuctionOffer[]
+}
+
 const organizationTypeOptions = [
   { value: "COMPANY", label: "ООО или другая компания" },
   { value: "ENTREPRENEUR", label: "Индивидуальный предприниматель" },
@@ -77,10 +106,13 @@ function DeliveriesWorkspace() {
   const auctionListingIdFromSearch = searchParams.get("auctionListingId")
   const { data, error, isLoading, mutate } = useSWR<DeliveryOrdersResponse>("/api/delivery-orders", fetchJson)
   const { data: organizationData, mutate: mutateOrganization } = useSWR<DeliveryOrganizationResponse>("/api/delivery-organizations", fetchJson)
+  const isVerifiedPartner = organizationData?.organization?.verificationStatus === "VERIFIED"
+  const { data: auctionOffersData, mutate: mutateAuctionOffers } = useSWR<AuctionOffersResponse>(isVerifiedPartner ? "/api/partner/auction-offers" : null, fetchJson, { revalidateOnFocus: true })
   const [opened, setOpened] = useState(false)
   const [partnerOpened, setPartnerOpened] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [partnerSubmitting, setPartnerSubmitting] = useState(false)
+  const [acceptingOfferId, setAcceptingOfferId] = useState<string | null>(null)
   const [form, setForm] = useState({ title: "", kind: "VEHICLE", sourceType: "AUCTION", originCountry: "CN", destinationCity: "", originCity: "", description: "", auctionListingId: "" })
   const [partnerForm, setPartnerForm] = useState({ legalName: "", inn: "", ogrn: "", organizationType: "COMPANY", serviceRegions: "" })
 
@@ -158,6 +190,25 @@ function DeliveriesWorkspace() {
     }
   }
 
+  const acceptAuctionOffer = async (offerId: string) => {
+    setAcceptingOfferId(offerId)
+    try {
+      const payload = await fetchJson<{ order: { id: string } }>("/api/partner/auction-offers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId }),
+      })
+      await Promise.all([mutateAuctionOffers(), mutate()])
+      notifications.show({ title: "Заявка принята", message: "Сделка и защищённый чат открыты в кабинете.", color: "teal" })
+      router.push("/dashboard/deliveries/" + payload.order.id)
+    } catch (acceptError: unknown) {
+      notifications.show({ title: "Не удалось принять заявку", message: acceptError instanceof Error ? acceptError.message : "Обновите список и повторите попытку.", color: "red" })
+      await mutateAuctionOffers()
+    } finally {
+      setAcceptingOfferId(null)
+    }
+  }
+
   if (isLoading) return <Center py={100}><Loader color="indigo" aria-label="Загружаем доставки" /></Center>
   if (error) return <Box py={80}><AsyncErrorState title="Не удалось загрузить доставки" description={error instanceof Error ? error.message : "Проверьте подключение и повторите попытку."} onRetry={() => void mutate()} backHref="/dashboard" backLabel="В кабинет" /></Box>
 
@@ -187,6 +238,51 @@ function DeliveriesWorkspace() {
           <Metric label="Счета и квитанции" value={summary.pendingPayments} icon={<IconFileInvoice size={18} />} color="orange" />
           <Metric label="Требует внимания" value={summary.needsAttention} icon={<IconShieldCheck size={18} />} color={summary.needsAttention ? "red" : "teal"} />
         </SimpleGrid>
+
+        {isVerifiedPartner && (
+          <Paper withBorder radius="xl" p={{ base: "md", md: "lg" }} style={{ background: "linear-gradient(135deg, rgba(249,115,22,.07), rgba(79,70,229,.055))" }}>
+            <Stack gap="md">
+              <Group justify="space-between" gap="sm" wrap="wrap">
+                <Group gap="sm" wrap="nowrap">
+                  <ThemeIcon size={42} radius="lg" variant="light" color="orange"><IconGavel size={21} /></ThemeIcon>
+                  <Stack gap={1}>
+                    <Group gap="xs"><Text fw={850} fz="lg">Заявки рядом</Text><Badge color="teal" variant="light">Автораспределение включено</Badge></Group>
+                    <Text size="sm" c="dimmed">Показываем город и данные лота без телефона и почты. Кто первым принимает заявку, тот открывает сделку.</Text>
+                  </Stack>
+                </Group>
+                <Badge variant="white" color="orange">{auctionOffersData?.offers.length || 0} доступно</Badge>
+              </Group>
+
+              {auctionOffersData?.offers.length ? (
+                <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+                  {auctionOffersData.offers.map((offer) => {
+                    const listing = offer.inquiry.auctionListing
+                    return (
+                      <Paper key={offer.id} withBorder radius="lg" p="md">
+                        <Stack gap="sm">
+                          <Group justify="space-between" gap="xs" wrap="nowrap">
+                            <Badge color="orange" variant="light">{listing.source}</Badge>
+                            <Text size="xs" c="dimmed">до {new Date(offer.expiresAt).toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</Text>
+                          </Group>
+                          <Box>
+                            <Text fw={850} lineClamp={2}>{listing.make} {listing.model} {listing.year}</Text>
+                            <Text size="sm" c="dimmed">{countryLabel(listing.country)} · {listing.lotNumber ? "лот " + listing.lotNumber + " · " : ""}{formatPriceShort(listing.finalPrice)}</Text>
+                          </Box>
+                          <Group gap={6}><IconMapPin size={15} color="#4f46e5" /><Text size="sm" fw={700}>{offer.inquiry.city || "Город уточняется"}</Text><Text size="sm" c="dimmed">· {offer.inquiry.name}</Text></Group>
+                          {offer.matchReason && <Text size="xs" c="teal.7">{offer.matchReason}</Text>}
+                          {offer.inquiry.comment && <Text size="xs" c="dimmed" lineClamp={2}>{offer.inquiry.comment}</Text>}
+                          <Button color="orange" radius="md" onClick={() => acceptAuctionOffer(offer.id)} loading={acceptingOfferId === offer.id} disabled={Boolean(acceptingOfferId)} rightSection={<IconArrowRight size={16} />}>Принять в работу</Button>
+                        </Stack>
+                      </Paper>
+                    )
+                  })}
+                </SimpleGrid>
+              ) : (
+                <Text size="sm" c="dimmed">Новых подходящих заявок сейчас нет. Как только появится заявка по вашей географии, она отобразится здесь и придёт в уведомления.</Text>
+              )}
+            </Stack>
+          </Paper>
+        )}
 
         <Group justify="space-between" align="center">
           <Stack gap={0}><Title order={2} fz="h3">Мои доставки</Title><Text size="sm" c="dimmed">Только сделки, в которых вы участвуете.</Text></Stack>

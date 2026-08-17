@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { makeSeoDescription, newsHref } from "@/lib/news"
 import { absoluteUrl } from "@/lib/site-url"
+import { readNewsContentMetadata } from "@/lib/news-content"
 import NewsDetailClient, { type NewsArticle } from "./NewsDetailClient"
 
 type PageProps = { params: Promise<{ id: string }> }
@@ -23,6 +24,7 @@ async function getNewsMetadata(id: string) {
       seoDescription: true,
       publishedAt: true,
       updatedAt: true,
+      tags: true,
     },
   })
 }
@@ -68,10 +70,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = news.seoTitle || news.title
   const description = news.seoDescription || makeSeoDescription(news.excerpt || news.title)
   const canonical = newsHref(news)
+  const keywords = readNewsContentMetadata(news.tags).tags
 
   return {
     title,
     description,
+    keywords,
     alternates: { canonical },
     openGraph: {
       type: "article",
@@ -93,6 +97,7 @@ export default async function NewsDetailPage({ params }: PageProps) {
   if (!news) notFound()
 
   const canonical = absoluteUrl(newsHref(news))
+  const newsKeywords = readNewsContentMetadata(news.tags).tags
   const initialArticle: NewsArticle = {
     id: news.id,
     title: news.title,
@@ -121,6 +126,7 @@ export default async function NewsDetailPage({ params }: PageProps) {
     author: news.author ? { "@type": "Person", name: news.author } : { "@type": "Organization", name: "LeWheel" },
     publisher: { "@type": "Organization", name: "LeWheel", url: absoluteUrl() },
     isBasedOn: news.sourceUrl || news.telegramUrl || undefined,
+    keywords: newsKeywords.length ? newsKeywords.join(", ") : undefined,
   }
 
   return (

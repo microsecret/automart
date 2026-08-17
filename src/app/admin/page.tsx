@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic"
 import useSWR from "swr"
 import { ActionIcon, Alert, Box, Stack, Text, Center, Loader, SimpleGrid, Card, Paper, ThemeIcon, Title, Group, Badge, Progress, Button, Tooltip, Timeline, Tabs } from "@mantine/core"
 import type { MantineColor } from "@mantine/core"
-import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld, IconRefresh, IconDatabase, IconGavel, IconAlertTriangle, IconBuildingWarehouse, IconCheck, IconClock, IconListCheck, IconShieldCheck, IconCreditCard, IconCoins, IconReceipt, IconLockCheck, IconHeadset } from "@tabler/icons-react"
+import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld, IconRefresh, IconDatabase, IconGavel, IconAlertTriangle, IconBuildingWarehouse, IconCheck, IconClock, IconListCheck, IconShieldCheck, IconCreditCard, IconCoins, IconReceipt, IconLockCheck, IconHeadset, IconBrandTelegram } from "@tabler/icons-react"
 import Link from "next/link"
 import { useState, type ReactNode } from "react"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
@@ -39,6 +39,8 @@ type AdminStats = {
     uniqueVisitors24h: number
     uniqueVisitors7d: number
     uniqueVisitors30d: number
+    telegramMiniAppVisitors24h: number
+    telegramMiniAppVisitors7d: number
     pageViewsTrend7d: number
     uniqueVisitorsTrend7d: number
     returningVisitors7d: number
@@ -697,7 +699,7 @@ export default function AdminDashboard() {
           переходы по разным страницам и сервисам не создают новых уникальных посетителей. Сохраняется только необратимый хеш IP;
           исходный адрес и автоматические bot/headless-запросы не учитываются.
         </Alert>
-        <SimpleGrid cols={{ base: 1, xs: 2, lg: 6 }} spacing="sm">
+        <SimpleGrid cols={{ base: 1, xs: 2, lg: 7 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Просмотры · 24 часа</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.pageViews24h}</Text>
@@ -727,6 +729,11 @@ export default function AdminDashboard() {
             <Group gap="sm"><ThemeIcon variant="light" color="blue" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные · 30 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitors30d}</Text>
             <Text size="xs" c="gray.4">{data.traffic.newVisitors7d} новых · {data.traffic.returningVisitors7d} вернулись</Text>
+          </Card>
+          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconBrandTelegram size={17} /></ThemeIcon><Text size="xs" c="gray.5">Telegram Mini App</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.telegramMiniAppVisitors24h}</Text>
+            <Text size="xs" c="gray.4">за 24 ч · {data.traffic.telegramMiniAppVisitors7d} за 7 дней</Text>
           </Card>
         </SimpleGrid>
 

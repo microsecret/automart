@@ -117,14 +117,24 @@
   white-space: nowrap;
 }
 
+.auctionMeta {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+  padding-top: 7px;
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
 .detailCta {
   margin-top: auto;
-  min-height: 34px;
-  padding: 6px 10px;
+  min-height: 38px;
+  padding: 7px 11px;
+  border: 1px solid var(--mantine-color-indigo-1);
   border-radius: 10px;
-  background: var(--mantine-color-indigo-0);
+  background: linear-gradient(135deg, var(--mantine-color-indigo-0), #f8f7ff);
   color: var(--mantine-color-indigo-7);
-  transition: background-color 160ms ease, color 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .detailCta svg {
@@ -132,8 +142,10 @@
 }
 
 :global(.auction-result-card:hover) .detailCta {
-  background: var(--mantine-color-indigo-6);
-  color: white;
+  border-color: var(--mantine-color-indigo-3);
+  color: var(--mantine-color-indigo-8);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.12);
+  transform: translateY(-1px);
 }
 
 :global(.auction-result-card:hover) .detailCta svg {

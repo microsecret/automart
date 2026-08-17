@@ -34,7 +34,7 @@ export default function AppAnalytics() {
         const query = new URLSearchParams(window.location.search)
         attribution = {
           referer: document.referrer || "",
-          utmSource: query.get("utm_source") || "",
+          utmSource: query.get("utm_source") || (pathname.startsWith("/telegram") ? "telegram-mini-app" : ""),
           campaign: query.get("utm_campaign") || "",
         }
         sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution))

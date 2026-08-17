@@ -1,4 +1,5 @@
-import { normalizeNewsText } from "@/lib/news"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { normalizeNewsText } from "./news.ts"
 
 export type NewsTelegramActionKind = "channel" | "vehicle-check"
 
@@ -74,6 +75,27 @@ export function extractNewsHashtags(value: string, suppliedTags: string[] = []) 
   }
 
   return result
+}
+
+const NEWS_TOPIC_TAGS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(?:аукцион|торги|лот)\p{L}*/iu, "автоаукционы"],
+  [/(?:кита[йяюе]|китайск)\p{L}*/iu, "автоизКитая"],
+  [/(?:коре[яию]|корейск)\p{L}*/iu, "автоизКореи"],
+  [/(?:япони[яию]|японск)\p{L}*/iu, "автоизЯпонии"],
+  [/(?:электромобил|электрокар|зарядн)\p{L}*/iu, "электромобили"],
+  [/(?:гибрид)\p{L}*/iu, "гибриды"],
+  [/(?:импорт|ввоз|тамож|утильсбор)\p{L}*/iu, "импортАвто"],
+  [/(?:цена|стоимост|подорож|скидк)\p{L}*/iu, "ценыНаАвто"],
+  [/(?:дтп|авари|поврежден|страхов)\p{L}*/iu, "проверкаАвто"],
+  [/(?:достав|логист|перевоз)\p{L}*/iu, "доставкаАвто"],
+  [/(?:закон|штраф|гибдд|правил)\p{L}*/iu, "автозакон"],
+  [/(?:рынок|продаж)\p{L}*/iu, "авторынок"],
+]
+
+export function inferNewsTags(title: string, content: string, suppliedTags: string[] = []) {
+  const text = [title, content].join("\n").normalize("NFKC")
+  const inferred = NEWS_TOPIC_TAGS.flatMap(([pattern, tag]) => pattern.test(text) ? [tag] : [])
+  return extractNewsHashtags(content, [...suppliedTags, "автоновости", ...inferred]).slice(0, 12)
 }
 
 /** Removes transport-only CTA labels and standalone hashtag rows from article prose. */

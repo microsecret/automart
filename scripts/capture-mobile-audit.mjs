@@ -159,6 +159,9 @@ try {
     const layout = await send("Runtime.evaluate", {
       expression: `(() => {
         const footer = document.querySelector(".market-app-footer")?.getBoundingClientRect()
+        const appMainElement = document.querySelector("main")
+        const appMain = appMainElement?.getBoundingClientRect()
+        const appMainStyle = appMainElement ? getComputedStyle(appMainElement) : null
         return JSON.stringify({
           url: location.pathname,
           title: document.title,
@@ -173,6 +176,10 @@ try {
             top: Math.round(footer.top + scrollY),
             bottom: Math.round(footer.bottom + scrollY),
           } : null,
+          appMain: appMain ? {
+            left: Math.round(appMain.left + parseFloat(appMainStyle?.paddingLeft || "0")),
+            right: Math.round(appMain.right - parseFloat(appMainStyle?.paddingRight || "0")),
+          } : null,
         })
       })()`,
       returnByValue: true,
@@ -183,8 +190,10 @@ try {
     }
     if (!route.startsWith("/auth/") && !route.startsWith("/telegram")) {
       if (!layoutMetrics.footer) throw new Error(`${route} does not render the marketplace footer`)
-      if (Math.abs(layoutMetrics.footer.left) > 1 || Math.abs(layoutMetrics.footer.right - layoutMetrics.viewport) > 1) {
-        throw new Error(`${route} footer does not span the viewport: left=${layoutMetrics.footer.left}, right=${layoutMetrics.footer.right}, viewport=${layoutMetrics.viewport}`)
+      const expectedLeft = layoutMetrics.appMain?.left || 0
+      const expectedRight = layoutMetrics.appMain?.right || layoutMetrics.viewport
+      if (Math.abs(layoutMetrics.footer.left - expectedLeft) > 1 || Math.abs(layoutMetrics.footer.right - expectedRight) > 1) {
+        throw new Error(`${route} footer does not span the content column: left=${layoutMetrics.footer.left}, right=${layoutMetrics.footer.right}, expected=${expectedLeft}..${expectedRight}`)
       }
       if (Math.abs(layoutMetrics.scrollHeight - layoutMetrics.footer.bottom) > 4) {
         throw new Error(`${route} leaves space after the footer: footerBottom=${layoutMetrics.footer.bottom}, document=${layoutMetrics.scrollHeight}`)

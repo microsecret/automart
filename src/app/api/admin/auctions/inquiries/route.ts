@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
           requester: { select: { id: true, name: true } },
           assignedPartner: { select: { id: true, name: true } },
           assignedBy: { select: { id: true, name: true } },
+          offers: { select: { id: true, status: true, expiresAt: true, organization: { select: { legalName: true } } } },
           deliveryOrder: {
             select: {
               id: true,
@@ -216,6 +217,11 @@ export async function PATCH(request: NextRequest) {
             select: { id: true, status: true, deliveryOrderId: true },
           })
         }
+
+        await tx.auctionInquiryOffer.updateMany({
+          where: { inquiryId: inquiry.id, status: "OFFERED" },
+          data: { status: "EXPIRED", respondedAt: now },
+        })
 
         await tx.notification.createMany({
           data: [

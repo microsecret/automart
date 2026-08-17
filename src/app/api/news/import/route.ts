@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { cleanNewsTitle, makeExcerpt, makeImportedNewsSlug, makeSeoDescription } from "@/lib/news"
 import { safeHttpsUrl } from "@/lib/media-url"
-import { cleanNewsArticleContent, extractNewsHashtags, extractTelegramActions, serializeNewsContentMetadata } from "@/lib/news-content"
+import { cleanNewsArticleContent, extractTelegramActions, inferNewsTags, serializeNewsContentMetadata } from "@/lib/news-content"
 
 export const runtime = "nodejs"
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const parsed = importPayloadSchema.parse(await request.json())
     const title = cleanNewsTitle(parsed.title)
     const content = cleanNewsArticleContent(parsed.content)
-    const tags = extractNewsHashtags(parsed.content, parsed.tags || [])
+    const tags = inferNewsTags(title, parsed.content, parsed.tags || [])
     const telegramActions = extractTelegramActions(parsed.content)
     const contentMetadata = tags.length || telegramActions.length
       ? serializeNewsContentMetadata(tags, telegramActions)

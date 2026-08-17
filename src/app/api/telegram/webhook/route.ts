@@ -16,6 +16,7 @@ import {
   type TelegramRegistrationStep,
 } from "@/lib/telegram"
 import { prisma } from "@/lib/prisma"
+import { absoluteUrl } from "@/lib/site-url"
 
 export const dynamic = "force-dynamic"
 
@@ -71,6 +72,41 @@ function getBotStartUrl() {
   return username ? `https://t.me/${username}?start=register` : null
 }
 
+function getTelegramInfographicUrl() {
+  return absoluteUrl("/images/telegram-service-infographic.png")
+}
+
+function telegramUserMention(from: NonNullable<TelegramMessage["from"]>) {
+  const displayName = [from.first_name, from.last_name].filter(Boolean).join(" ").trim() || "пользователь Telegram"
+  const mention = `<a href="tg://user?id=${encodeURIComponent(String(from.id))}">${escapeTelegramHtml(displayName)}</a>`
+  const username = from.username?.trim().replace(/^@/, "")
+  return username ? `${mention} (@${escapeTelegramHtml(username)})` : mention
+}
+
+async function sendBrandedMessage(
+  chatId: string,
+  text: string,
+  replyMarkup?: Record<string, unknown>,
+) {
+  try {
+    await telegramApi("sendPhoto", {
+      chat_id: chatId,
+      photo: getTelegramInfographicUrl(),
+      caption: text,
+      parse_mode: "HTML",
+      reply_markup: replyMarkup,
+    })
+  } catch (error) {
+    console.error("Telegram infographic delivery failed; sending text fallback:", error)
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      reply_markup: replyMarkup,
+    })
+  }
+}
+
 async function sendMiniAppEntry(chatId: string, greeting: string) {
   const miniAppUrl = getTelegramMiniAppUrl()
   if (!miniAppUrl) {
@@ -80,16 +116,11 @@ async function sendMiniAppEntry(chatId: string, greeting: string) {
 
   const catalogueUrl = new URL("/auctions", miniAppUrl).toString()
 
-  await telegramApi("sendMessage", {
-    chat_id: chatId,
-    text: greeting,
-    parse_mode: "HTML",
-    reply_markup: {
+  await sendBrandedMessage(chatId, greeting, {
       inline_keyboard: [
         [{ text: "🚘 Открыть LeWheel", style: "success", web_app: { url: miniAppUrl } }],
         [{ text: "🌍 Смотреть автомобили", style: "primary", url: catalogueUrl }],
       ],
-    },
   })
 }
 
@@ -330,12 +361,19 @@ async function handleMessage(message: TelegramMessage) {
       console.error("Telegram message deletion failed:", error)
     }
     if (wasDeleted && canSendModerationNotice(chatId, telegramId)) {
-      await telegramApi("sendMessage", {
-        chat_id: chatId,
-        text: "🔐 <b>Сообщение скрыто: регистрация не завершена.</b>\n\nОткройте личный чат с ботом и пройдите 3 шага: телефон → почта → пароль. После этого текст и медиа будут проходить автоматически.",
-        parse_mode: "HTML",
-        reply_markup: getBotStartUrl() ? { inline_keyboard: [[{ text: "🚀 Завершить регистрацию", style: "primary", url: getBotStartUrl()! }]] } : undefined,
-      }).catch((error) => console.error("Telegram moderation notice failed:", error))
+      const userMention = telegramUserMention(message.from)
+      await sendBrandedMessage(chatId, [
+        `🔐 <b>${userMention}, сообщение скрыто</b>`,
+        "Регистрация в LeWheel пока не завершена. Пройдите три коротких шага в личном чате с ботом:",
+        "",
+        "1️⃣ 📱 <b>Телефон</b> — подтвердите свой контакт кнопкой Telegram.",
+        "2️⃣ 📧 <b>Почта</b> — укажите email для входа и восстановления доступа.",
+        "3️⃣ 🔑 <b>Пароль</b> — придумайте защищённый пароль от аккаунта.",
+        "",
+        "✅ После регистрации сообщения и медиа будут публиковаться автоматически.",
+      ].join("\n"), getBotStartUrl() ? {
+        inline_keyboard: [[{ text: "🚀 Завершить регистрацию", style: "primary", url: getBotStartUrl()! }]],
+      } : undefined).catch((error) => console.error("Telegram moderation notice failed:", error))
     }
   }
 }

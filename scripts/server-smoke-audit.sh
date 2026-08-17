@@ -99,6 +99,7 @@ probe 'brands page' GET '/brands' 200
 probe 'vehicle category page' GET '/category/cars' 200
 probe 'comparison page' GET '/compare' 200
 probe 'Telegram mini-app page' GET '/telegram' 200
+probe 'Telegram service infographic' GET '/images/telegram-service-infographic.png' 200
 probe 'news page' GET '/news' 200
 probe 'auctions page' GET '/auctions' 200
 probe 'services hub' GET '/services' 200
@@ -171,6 +172,7 @@ probe 'admin delivery partners without session' GET '/api/admin/delivery-organiz
 probe 'admin delivery partner mutation without session' PATCH '/api/admin/delivery-organizations' 403 -H 'Content-Type: application/json' --data '{}'
 probe 'admin support queue without session' GET '/api/admin/support' 403
 probe 'delivery orders without session' GET '/api/delivery-orders' 401
+probe 'partner auction offers without session' GET '/api/partner/auction-offers' 401
 probe 'delivery order detail without session' GET '/api/delivery-orders/not-a-real-order' 401
 probe 'favorites API without session' GET '/api/favorites' 401
 probe 'garage API without session' GET '/api/garage' 401

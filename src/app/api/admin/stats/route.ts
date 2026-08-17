@@ -207,6 +207,9 @@ export async function GET() {
     const uniqueVisitors7d = uniqueVisitors7dSet.size
     const uniqueVisitors24h = visitorSet(trafficEvents7d.filter((event) => event.createdAt >= dayAgo)).size
     const uniqueVisitors30d = visitorSet(trafficEvents30d).size
+    const telegramMiniAppEvents7d = trafficEvents7d.filter((event) => event.trafficSource === "UTM:TELEGRAM-MINI-APP")
+    const telegramMiniAppVisitors24h = visitorSet(telegramMiniAppEvents7d.filter((event) => event.createdAt >= dayAgo)).size
+    const telegramMiniAppVisitors7d = visitorSet(telegramMiniAppEvents7d).size
     const returningVisitors7d = [...uniqueVisitors7dSet].filter((identity) => historicalVisitorSet.has(identity)).length
     const newVisitors7d = uniqueVisitors7d - returningVisitors7d
     const sessions7d = new Set(trafficEvents7d.map((event) => event.sessionKey).filter((value): value is string => Boolean(value))).size
@@ -343,6 +346,8 @@ export async function GET() {
         uniqueVisitors24h,
         uniqueVisitors7d,
         uniqueVisitors30d,
+        telegramMiniAppVisitors24h,
+        telegramMiniAppVisitors7d,
         pageViewsTrend7d: percentageChange(pageViews7d, previousTrafficEvents7d.length),
         uniqueVisitorsTrend7d: percentageChange(uniqueVisitors7d, previousUniqueVisitors7dSet.size),
         returningVisitors7d,

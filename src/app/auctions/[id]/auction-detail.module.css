@@ -15,10 +15,32 @@
 }
 
 .similarCard {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   color: inherit;
   text-decoration: none;
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.similarContent {
+  flex: 1;
+}
+
+.similarTitle {
+  min-height: 2.5em;
+  line-height: 1.25;
+}
+
+.similarFacts {
+  min-height: 44px;
+  align-content: flex-start;
+}
+
+.similarPriceRow {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--mantine-color-gray-2);
 }
 
 .similarCard:hover {

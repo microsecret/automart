@@ -17,6 +17,7 @@ type NewsArticle = {
   excerpt: string | null
   imageUrl: string | null
   sourceChannel: string | null
+  tags: string[]
   publishedAt: string
   views: number
   _count?: { comments: number }
@@ -54,6 +55,12 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
           </Text>
 
           {article.excerpt && <Text className="news-list-card__excerpt" size="sm" c="dimmed" lh={1.5}>{article.excerpt}</Text>}
+
+          {article.tags.length > 0 && (
+            <Group gap={5} wrap="wrap">
+              {article.tags.map((tag) => <Badge key={tag.toLocaleLowerCase("ru")} size="xs" variant="light" color="gray">#{tag}</Badge>)}
+            </Group>
+          )}
 
           <Group className="news-list-card__footer" justify="space-between" mt="auto" pt="xs">
             <Group gap="sm" c="dimmed">

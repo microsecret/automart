@@ -1,8 +1,9 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Divider, Progress } from "@mantine/core"
 import { IconArrowRight, IconBolt, IconCar, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
@@ -131,7 +132,7 @@ function cancelAuctionDetailImageWarmup(listing: AuctionListing) {
   scheduledDetailImageWarmups.delete(imageUrl)
 }
 
-function AuctionMedia({ listing }: { listing: AuctionListing }) {
+function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; priority?: boolean }) {
   const [failed, setFailed] = useState(false)
   const originalImage = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0] || ""
   const image = auctionCardImageUrl(originalImage)
@@ -143,7 +144,7 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
       {!hasImage && <VehicleFallback type="CAR" compact />}
       {hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={identity.title} referrerPolicy="no-referrer" onError={() => setFailed(true)} loading="lazy" decoding="async" />
+        <img src={image} alt={identity.title} referrerPolicy="no-referrer" onError={() => setFailed(true)} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
           <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
@@ -158,7 +159,8 @@ function AuctionMedia({ listing }: { listing: AuctionListing }) {
   )
 }
 
-export default function AuctionsPage() {
+function AuctionsPageContent() {
+  const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
   const [country, setCountry] = useState("")
   const [source, setSource] = useState("")
@@ -169,7 +171,7 @@ export default function AuctionsPage() {
   const [yearFrom, setYearFrom] = useState("")
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(searchParams.toString())
     const requestedSource = params.get("source") || ""
     const sourceFromUrl = AUCTION_SOURCE_COUNTRY[requestedSource] ? requestedSource : ""
     const requestedCountry = params.get("country") || ""
@@ -187,7 +189,7 @@ export default function AuctionsPage() {
     setBodyType(validAuctionBodyTypes.has(requestedBodyType) ? requestedBodyType : "")
     setYearFrom(validAuctionYears.has(requestedYear) ? requestedYear : "")
     setPage(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1)
-  }, [])
+  }, [searchParams])
 
   const sourceOptions = useMemo(() => SOURCES.filter((item) => !item.value || !country || AUCTION_SOURCE_COUNTRY[item.value] === country), [country])
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
@@ -455,7 +457,7 @@ export default function AuctionsPage() {
           </Paper>
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm">
-            {listings.map((l) => {
+            {listings.map((l, listingIndex) => {
               const identity = auctionVehicleIdentity(l.make, l.model)
               const rentalTransfer = isRentalTransferListing(l.conditionInfo)
               const displayedPrice = rentalTransfer ? l.priceRub : l.finalPrice
@@ -472,7 +474,7 @@ export default function AuctionsPage() {
                 onTouchStart={() => warmAuctionDetailImage(l)}
               >
                 <Paper radius="lg" withBorder className="auction-result-card">
-                  <AuctionMedia listing={l} />
+                  <AuctionMedia listing={l} priority={listingIndex < 4} />
                   <Box p="md" className="auction-result-card__content">
                     <Group gap="sm" wrap="nowrap" align="center">
                       <BrandIcon brand={identity.make} size={34} variant="rounded" />
@@ -499,8 +501,8 @@ export default function AuctionsPage() {
                       </Group>
                       <Text className="auction-result-card__price-note">{rentalTransfer ? "Остаток регулярных платежей" : "Предварительно под ключ в РФ · оценка относительно медианы выдачи"}</Text>
                     </Box>
-                    {l.auctionDate && (
-                      <Group gap={4} className="auction-result-card__date" wrap="nowrap">
+                    <Box className={styles.auctionMeta}>
+                      {l.auctionDate ? <Group gap={4} className="auction-result-card__date" wrap="nowrap">
                         <Text size="xs" fw={700} c={new Date(l.auctionDate) > new Date() ? "teal.7" : "gray.5"}>
                           {new Date(l.auctionDate) > new Date() ? "Торги: " : "Торги были: "}
                         </Text>
@@ -508,8 +510,8 @@ export default function AuctionsPage() {
                           {new Date(l.auctionDate).toLocaleDateString("ru", { day: "numeric", month: "short" })}
                         </Text>
                         {l.lotNumber && <Text size="xs" c="gray.4" lineClamp={1}>· #{l.lotNumber}</Text>}
-                      </Group>
-                    )}
+                      </Group> : <Text size="xs" c="gray.5">Дата торгов уточняется{l.lotNumber ? ` · #${l.lotNumber}` : ""}</Text>}
+                    </Box>
                     <Group className={styles.detailCta} justify="space-between" gap="xs">
                       <Text size="sm" fw={800}>Подробнее</Text>
                       <IconArrowRight size={17} />
@@ -530,5 +532,13 @@ export default function AuctionsPage() {
         )}
       </Stack>
     </Container>
+  )
+}
+
+export default function AuctionsPage() {
+  return (
+    <Suspense fallback={<Container size="xl" py="xl"><ResultsGridSkeleton count={8} /></Container>}>
+      <AuctionsPageContent />
+    </Suspense>
   )
 }

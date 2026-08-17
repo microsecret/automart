@@ -52,6 +52,7 @@ model User {
   auctionInquiries              AuctionInquiry[]               @relation("AuctionInquiryRequester")
   assignedAuctionInquiries      AuctionInquiry[]               @relation("AuctionInquiryPartner")
   auctionInquiryAssignments     AuctionInquiry[]               @relation("AuctionInquiryAssigner")
+  auctionInquiryOffers          AuctionInquiryOffer[]          @relation("AuctionInquiryOfferPartner")
   communicationModerationEvents CommunicationModerationEvent[] @relation("CommunicationModerationSender")
   reportsCreated                ListingReport[]                @relation("ListingReportReporter")
   reportsReviewed               ListingReport[]                @relation("ListingReportReviewer")
@@ -767,32 +768,33 @@ model ExchangeRate {
 }
 
 model AuctionInquiry {
-  id                 String         @id @default(uuid())
+  id                 String                @id @default(uuid())
   auctionListingId   String
-  auctionListing     AuctionListing @relation(fields: [auctionListingId], references: [id], onDelete: Cascade)
+  auctionListing     AuctionListing        @relation(fields: [auctionListingId], references: [id], onDelete: Cascade)
   name               String
   phone              String
   email              String?
   city               String?
   comment            String?
-  status             String         @default("NEW") // NEW, CONTACTED, IN_PROGRESS, CLOSED, SOLD
+  status             String                @default("NEW") // NEW, CONTACTED, IN_PROGRESS, CLOSED, SOLD
   managerNotes       String?
   requesterId        String?
-  requester          User?          @relation("AuctionInquiryRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  requester          User?                 @relation("AuctionInquiryRequester", fields: [requesterId], references: [id], onDelete: SetNull)
   assignedPartnerId  String?
-  assignedPartner    User?          @relation("AuctionInquiryPartner", fields: [assignedPartnerId], references: [id], onDelete: SetNull)
+  assignedPartner    User?                 @relation("AuctionInquiryPartner", fields: [assignedPartnerId], references: [id], onDelete: SetNull)
   assignedById       String?
-  assignedBy         User?          @relation("AuctionInquiryAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedBy         User?                 @relation("AuctionInquiryAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
   assignedAt         DateTime?
-  deliveryOrderId    String?        @unique
-  deliveryOrder      DeliveryOrder? @relation(fields: [deliveryOrderId], references: [id], onDelete: SetNull)
-  monetizationModel  String         @default("DEAL_FEE") // DEAL_FEE, APPLICATION_FEE, SUBSCRIPTION
+  deliveryOrderId    String?               @unique
+  deliveryOrder      DeliveryOrder?        @relation(fields: [deliveryOrderId], references: [id], onDelete: SetNull)
+  monetizationModel  String                @default("DEAL_FEE") // DEAL_FEE, APPLICATION_FEE, SUBSCRIPTION
   platformFeeAmount  Int?
   buyerDepositAmount Int?
   startedAt          DateTime?
   closedAt           DateTime?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  offers             AuctionInquiryOffer[]
 
   @@index([auctionListingId])
   @@index([status])
@@ -805,23 +807,45 @@ model AuctionInquiry {
 // реквизиты выставленного счёта, статус проверки квитанции и журнал сделки.
 
 model DeliveryOrganization {
-  id                 String    @id @default(uuid())
+  id                 String                @id @default(uuid())
   ownerId            String
-  owner              User      @relation("DeliveryOrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner              User                  @relation("DeliveryOrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   legalName          String
-  inn                String    @unique
+  inn                String                @unique
   ogrn               String?
-  organizationType   String    @default("COMPANY") // COMPANY, ENTREPRENEUR, BROKER, LOGISTICS
+  organizationType   String                @default("COMPANY") // COMPANY, ENTREPRENEUR, BROKER, LOGISTICS
   serviceRegions     String? // JSON array of regions/cities
-  verificationStatus String    @default("PENDING") // PENDING, VERIFIED, REJECTED, SUSPENDED
+  verificationStatus String                @default("PENDING") // PENDING, VERIFIED, REJECTED, SUSPENDED
   verificationSource String? // MANUAL, FNS, PARTNER
   fnsCheckedAt       DateTime?
   verificationNote   String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  inquiryOffers      AuctionInquiryOffer[]
 
   @@index([ownerId])
   @@index([verificationStatus])
+}
+
+model AuctionInquiryOffer {
+  id             String               @id @default(uuid())
+  inquiryId      String
+  inquiry        AuctionInquiry       @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  partnerId      String
+  partner        User                 @relation("AuctionInquiryOfferPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   DeliveryOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status         String               @default("OFFERED") // OFFERED, ACCEPTED, DECLINED, EXPIRED
+  matchScore     Int                  @default(0)
+  matchReason    String?
+  expiresAt      DateTime
+  respondedAt    DateTime?
+  createdAt      DateTime             @default(now())
+
+  @@unique([inquiryId, partnerId])
+  @@index([partnerId, status, expiresAt])
+  @@index([inquiryId, status])
+  @@index([organizationId, status])
 }
 
 model DeliveryOrder {

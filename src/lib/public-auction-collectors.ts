@@ -10,6 +10,7 @@ import {
   normalizeAuctionTransmission,
 } from "@/lib/auction-normalization"
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
+import { extractIautosImages } from "@/lib/iautos-images"
 import { translateToRussian } from "@/lib/nvidia-translate"
 
 export const PUBLIC_AUCTION_SOURCES = [
@@ -685,7 +686,7 @@ function parseIautosCatalog(html: string): PublicAuctionCandidate[] {
     const month = block.match(/<div class="parameter">[\s\S]*?<span>\s*\d{4}年(\d{2})月\s*<\/span>/i)?.[1]
     const mileageWan = asNumber(firstMatch(block, /<div class="parameter">[\s\S]*?<span>\s*([\d.]+)万公里/i))
     const priceWan = asNumber(firstMatch(block, /<strong class="num">\s*([\d.]+)\s*<\/strong>/i))
-    const imageUrl = safeImage(firstMatch(block, /<img[^>]+src="(https:\/\/s3\.iautos\.cn\/[^\"]+)"/i), new Set(["s3.iautos.cn"]))
+    const imageUrl = extractIautosImages(block)[0] || null
     if (!sourceUrl || !date || !month || mileageWan === null || priceWan === null || priceWan <= 0) continue
     candidates.push({
       sourceId, sourceUrl, sourcePrice: Math.round(priceWan * 10_000), year: Number(date),
@@ -887,9 +888,7 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   if (!model) throw new Error(`Iautos: не переведена модель «${diagnosticSourceLabel(modelOriginal)}» карточки ${candidate.sourceId}`)
 
   const pairs = tablePairs(html)
-  const iautosImageHosts = new Set(["qimg.iautos.cn", "s1.iautos.cn", "s2.iautos.cn", "s3.iautos.cn"])
-  const images = [...new Set([...html.matchAll(/(?:src|data-original)="(https:\/\/(?:qimg|s[123])\.iautos\.cn\/[^\"]+\.(?:jpg|jpeg|png)(?:-[^\"]+)?)"/gi)]
-    .map((match) => safeImage(match[1], iautosImageHosts)).filter((url): url is string => Boolean(url)))].slice(0, 60)
+  const images = extractIautosImages(html)
   if (!images.length && candidate.imageUrl) images.push(candidate.imageUrl)
   const sourceDescription = htmlText(firstMatch(html, /<p class="see-one-part"[^>]*>([\s\S]*?)<\/p>/i))
   const engineText = pairs.get("发动机") || firstMatch(title, /(\d+(?:\.\d+)?L)/i)

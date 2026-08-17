@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import { readNewsContentMetadata } from "@/lib/news-content"
 
 export const MAX_NEWS_PAGE = 10_000
 export const MAX_NEWS_LIMIT = 50
@@ -40,6 +41,7 @@ export async function getNewsPage({ page, limit, query, sort = "recent" }: NewsP
         excerpt: true,
         imageUrl: true,
         sourceChannel: true,
+        tags: true,
         publishedAt: true,
         views: true,
         _count: { select: { comments: true } },
@@ -49,7 +51,10 @@ export async function getNewsPage({ page, limit, query, sort = "recent" }: NewsP
   ])
 
   return {
-    news,
+    news: news.map((article) => ({
+      ...article,
+      tags: readNewsContentMetadata(article.tags).tags.slice(0, 3),
+    })),
     pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     sort,
   }
