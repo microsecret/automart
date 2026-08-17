@@ -479,7 +479,10 @@ function AuctionDetail() {
                 </Paper>
               )}
 
-              {/* Умный калькулятор */}
+              {/* Умный калькулятор. Якорь используется кнопкой «Расчёт под
+                  ключ» в Telegram-ленте, поэтому переименование ломает ссылки
+                  в уже опубликованных постах. */}
+              <div id="calculator" style={{ scrollMarginTop: "var(--app-header-height, 68px)" }} />
               <AuctionCalculator
                 make={publicIdentity.make}
                 model={publicIdentity.model}

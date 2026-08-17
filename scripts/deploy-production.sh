@@ -55,6 +55,7 @@ node scripts/audit-listing-integrity.mjs
 if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-auction-rate-cron.sh || echo "Warning: auction-rate cron was not installed"
   bash scripts/install-encar-collector-cron.sh || echo "Warning: Encar collector cron was not installed"
+  bash scripts/install-auction-telegram-cron.sh || echo "Warning: auction Telegram cron was not installed"
 fi
 npm run type-check
 npm run build

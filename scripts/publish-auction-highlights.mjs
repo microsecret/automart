@@ -31,9 +31,21 @@ const explicitListingId = parseListingId(explicitListingArg)
 const explicitLimit = Number(getArgValue("--limit"))
 const limit = Number.isInteger(explicitLimit) ? Math.min(Math.max(explicitLimit, 1), 10) : Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_POST_LIMIT || 3), 1), 10)
 const maxAgeHours = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_AGE_HOURS || 72), 1), 720)
-const minFinalPrice = Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_FINAL_PRICE || 400_000), 0)
-const minMedianRatio = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_MEDIAN_RATIO || 0), 1), 0.95)
+// Дешёвый лот в ленте обесценивает подборку: подписчик приходит за машинами,
+// которые имеет смысл везти, а не за самой низкой строкой прайса.
+const minFinalPrice = Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_FINAL_PRICE || 1_000_000), 0)
+// Нижняя граница отношения к медиане отсекает подозрительно дешёвые записи:
+// цена сильно ниже рынка обычно означает битый лот или ошибку источника.
+// Значение по умолчанию намеренно ниже `maxGreatDealRatio`, иначе диапазон
+// отбора становится пустым и лента молча перестаёт публиковаться.
+const minMedianRatio = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_MEDIAN_RATIO || 0.35), 0), 0.95)
 const maxGreatDealRatio = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_PRICE_RATIO || 0.88), 0.01), 0.99)
+if (minMedianRatio > maxGreatDealRatio) {
+  // Перевёрнутый диапазон делает отбор невыполнимым, а лента при этом молчит
+  // без единой ошибки. Такую конфигурацию лучше остановить на старте.
+  console.error(`TELEGRAM_AUCTION_MIN_MEDIAN_RATIO (${minMedianRatio}) must not exceed TELEGRAM_AUCTION_MAX_PRICE_RATIO (${maxGreatDealRatio})`)
+  process.exit(1)
+}
 const maxSeriousDefects = Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_SERIOUS_DEFECTS || 1), 0)
 const maxInspectionNotes = Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_INSPECTION_NOTES || 30), 0)
 const postDelayMinMs = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_POST_DELAY_MIN_MS || 10_000), 1_000), 90_000)
@@ -85,12 +97,16 @@ function trimToLimit(lines, maxLength = 980) {
   const result = []
   let total = 0
   for (const line of lines) {
-    if (!line) continue
+    // Пустая строка — это разделитель абзаца, а не отсутствующее значение,
+    // поэтому она сохраняется. Ведущие и парные разделители отбрасываются,
+    // чтобы обрезанное сообщение не заканчивалось пустотой.
+    if (line === "" && (result.length === 0 || result[result.length - 1] === "")) continue
     const withLine = result.length === 0 ? line : `\n${line}`
     if (total + withLine.length > maxLength) break
     result.push(line)
     total += withLine.length
   }
+  while (result.length && result[result.length - 1] === "") result.pop()
   return result
 }
 
@@ -122,14 +138,6 @@ function inspectionCounts(conditionValue) {
     }
   }
   return { notes, serious }
-}
-
-function normalizeLabel(value) {
-  return normalizeText(value)
-    ?.toLocaleLowerCase("ru-RU")
-    .replace(/ё/g, "е")
-    .replace(/[^a-zа-я0-9]+/gi, " ")
-    .trim() || null
 }
 
 function parseSourceSpecs(value) {
@@ -177,11 +185,14 @@ function inspectionRows(conditionValue, sourceValue) {
 }
 
 function signalForPrice(price, countryMedian) {
-  if (!countryMedian) return { label: "Свежий лот", ratio: null }
+  if (!countryMedian) return { label: "Свежий лот", ratio: null, saving: null }
   const ratio = price / countryMedian
-  if (ratio <= 0.82) return { label: "Отличная цена", ratio }
-  if (ratio <= 0.95) return { label: "Хорошая цена", ratio }
-  return { label: "Рыночная цена", ratio }
+  // Выгода считается от медианы своей страны, поэтому сравнение идёт с
+  // сопоставимыми лотами, а не со всем каталогом сразу.
+  const saving = Math.max(0, Math.round(countryMedian - price))
+  if (ratio <= 0.82) return { label: "Отличная цена", ratio, saving }
+  if (ratio <= 0.95) return { label: "Хорошая цена", ratio, saving }
+  return { label: "Рыночная цена", ratio, saving: null }
 }
 
 function buildAuctionCaption(listing, countryMedian) {
@@ -203,21 +214,35 @@ function buildAuctionCaption(listing, countryMedian) {
   const sourcePrice = sourceSpec(listing.specsRu, "Ориентир цены источника")
   const startingBid = sourceSpec(listing.specsRu, "Стартовая ставка")
   const preCalc = sourceSpec(listing.specsRu, "База предварительного расчёта")
+  // Выгода показывается только когда она посчитана от медианы и заметна:
+  // «дешевле на 8 000 ₽» при цене в три миллиона выглядит как натяжка.
+  const savingText = signal.saving && signal.saving >= 100_000
+    ? `дешевле медианы по стране на ${signal.saving.toLocaleString("ru-RU")} ₽`
+    : null
+  const inspectionText = condition.serious > 0
+    ? `${condition.seriousText} · ${condition.remarks || "без замечаний"}`
+    : condition.remarks
+      ? `серьёзных дефектов нет · ${condition.remarks}`
+      : "серьёзных дефектов в отчёте нет"
+
   const lines = [
-    `🚘 <b>${escapeHtml(`${listing.make} ${listing.model}`)}</b>`,
-    `🔥 <b>${escapeHtml(signal.label)}</b>`,
-    `💰 <b>${listing.finalPrice.toLocaleString("ru-RU")} ₽</b>`,
+    `🚘 <b>${escapeHtml(`${listing.make} ${listing.model}`)}</b>${listing.year ? ` <b>${listing.year}</b>` : ""}`,
+    `💰 <b>${listing.finalPrice.toLocaleString("ru-RU")} ₽</b> — ${escapeHtml(signal.label.toLowerCase())}`,
+    savingText ? `📉 ${escapeHtml(savingText)}` : null,
+    "",
     details ? `📋 ${escapeHtml(details)}` : null,
-    listing.location ? `📍 ${escapeHtml(listing.location)}` : null,
+    `🛠 Осмотр: ${escapeHtml(inspectionText)}`,
+    ...condition.sourceRows.slice(0, 3).map((row) => `• ${escapeHtml(row.label)}: ${escapeHtml(row.detail)}`),
+    equipment.length ? `✨ ${escapeHtml(equipment.join(", "))}` : null,
+    "",
     `🏷 ${escapeHtml(source)}`,
+    listing.location ? `📍 ${escapeHtml(listing.location)}` : null,
     sourcePrice ? `📊 Источник: ${escapeHtml(sourcePrice)}${startingBid ? ` · старт ${escapeHtml(startingBid)}` : ""}` : null,
     preCalc ? `🧮 База расчёта: ${escapeHtml(preCalc)}` : null,
-    `🛠 Осмотр: ${escapeHtml(condition.seriousText)} · ${escapeHtml(condition.remarks || "без замечаний")}`,
-    ...condition.sourceRows.slice(0, 3).map((row) => `• ${escapeHtml(row.label)}: ${escapeHtml(row.detail)}`),
-    equipment.length ? `✨ Оснащение: ${escapeHtml(equipment.join(", "))}` : null,
-    "🛍 Полные данные по аукционному лоту обновляются по проверке и результатам диагностики",
-    `🌐 <a href="${siteUrl}">LeWheel</a> · ${botUsername ? `@${escapeHtml(botUsername)}` : "telegram-бот"}`,
-  ].filter(Boolean)
+    "",
+    "🧾 Цена лота без доставки и таможни — точный расчёт под ключ считаем по запросу",
+    `🌐 <a href="${siteUrl}">LeWheel</a>${botUsername ? ` · @${escapeHtml(botUsername)}` : ""}`,
+  ].filter((line) => line !== null)
 
   return trimToLimit(lines).join("\n")
 }
@@ -228,12 +253,21 @@ function parseImages(listing) {
 }
 
 function buildReplyMarkup(listing) {
-  const listingUrl = `${siteUrl}/auctions/${listing.id}?utm_source=telegram&utm_medium=auction_highlight&utm_campaign=auction_feed`
+  const campaign = "utm_source=telegram&utm_medium=auction_highlight&utm_campaign=auction_feed"
+  const listingUrl = `${siteUrl}/auctions/${listing.id}?${campaign}`
+  const countryLabel = COUNTRY_LABELS[listing.country] || listing.country
   const rows = [
     [{ text: "🚘 Смотреть лот", url: listingUrl }],
+    [
+      { text: "🧮 Расчёт под ключ", url: `${siteUrl}/auctions/${listing.id}?${campaign}#calculator` },
+      { text: `🌍 Ещё из «${countryLabel}»`, url: `${siteUrl}/auctions?country=${encodeURIComponent(listing.country)}&${campaign}` },
+    ],
+    // Лента приводит не только покупателей: продавцу нужен видимый вход в
+    // подачу объявления, иначе он уходит со страницы чужого лота.
+    [{ text: "➕ Разместить своё объявление", url: `${siteUrl}/listings/create/vehicle?${campaign}` }],
   ]
   if (botUsername) {
-    rows.push([{ text: "🤖 Открыть бота", url: `https://t.me/${botUsername}?startapp=register` }])
+    rows.push([{ text: "🤖 Открыть в Mini App", url: `https://t.me/${botUsername}?startapp=auctions` }])
   }
   return { inline_keyboard: rows }
 }
