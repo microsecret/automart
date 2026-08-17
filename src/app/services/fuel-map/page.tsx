@@ -7,6 +7,7 @@ import { IconCheck, IconClock, IconExternalLink, IconGasStation, IconMapPin, Ico
 import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
+import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
 
 type FuelStation = {
   id: string
@@ -56,6 +57,11 @@ const MIN_ZOOM = 9
 const MAX_ZOOM = 14
 const STATION_LIST_PAGE_SIZE = 24
 const EMPTY_STATIONS: FuelStation[] = []
+const EMPTY_REPORTED_PRICES: ConsensusPrice[] = []
+
+type FuelPriceReportsResponse = {
+  stations: Record<string, ConsensusPrice[]>
+}
 const FUEL_FILTERS = [
   { value: "", label: "Все типы топлива" },
   { value: "АИ‑92", label: "АИ‑92" },
@@ -490,11 +496,13 @@ function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoadin
   )
 }
 
-function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShowOnMap }: {
+function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShowOnMap, reportedPrices, onPricesReported }: {
   station: FuelStation
   resolvedAddress: string | null
   isAddressLoading: boolean
   onShowOnMap: (station: FuelStation) => void
+  reportedPrices: ConsensusPrice[]
+  onPricesReported: (stationId: string, prices: ConsensusPrice[]) => void
 }) {
   const network = getStationNetwork(station)
   const source = getStationSourceLabel(station)
@@ -529,6 +537,14 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
           ))}</SimpleGrid> : <Paper radius="md" p="sm" withBorder style={{ background: "rgba(255,255,255,.78)" }}><Text size="sm" c="dimmed">Типы топлива не опубликованы этой точкой.</Text></Paper>}
           <Text size="xs" c="dimmed" mt={6}>{station.status === "UNKNOWN" ? "Это справочная точка: не считаем отсутствие live-статуса отсутствием топлива." : `${statusUpdated ? `Данные поставщика: ${statusUpdated}. ` : "Данные поставщика без времени обновления. "}Наличие уточняйте перед поездкой.`}</Text>
         </Box>
+
+        <FuelPriceReporter
+          stationId={station.id}
+          latitude={station.latitude}
+          longitude={station.longitude}
+          prices={reportedPrices}
+          onReported={(prices) => onPricesReported(station.id, prices)}
+        />
 
         <Group gap="xs" wrap="wrap">
           <Button size="compact-sm" color="indigo" variant="light" leftSection={<IconMapPin size={14} />} onClick={() => onShowOnMap(station)}>Показать на карте</Button>
@@ -609,6 +625,16 @@ export default function FuelMapPage() {
   }, [selectedAddress, selectedAddressLatitude, selectedAddressLongitude])
   const { data: selectedStationAddressData, isLoading: isStationAddressLoading } = useSWR<FuelStationAddressResponse>(selectedStationAddressUrl, fetchJson, { revalidateOnFocus: false })
   const selectedStationAddress = selectedStation?.address || selectedStationAddressData?.address || null
+
+  // Цены водителей приходят отдельным запросом: справочник точек кэшируется
+  // надолго, а отметка должна становиться видимой сразу после сохранения.
+  const selectedStationId = selectedStation?.id || null
+  const reportedPricesUrl = selectedStationId ? `/api/fuel-prices?stations=${encodeURIComponent(selectedStationId)}` : null
+  const { data: reportedPricesData, mutate: mutateReportedPrices } = useSWR<FuelPriceReportsResponse>(reportedPricesUrl, fetchJson, { revalidateOnFocus: false })
+  const selectedStationPrices = (selectedStationId && reportedPricesData?.stations?.[selectedStationId]) || EMPTY_REPORTED_PRICES
+  const handlePricesReported = (stationId: string, prices: ConsensusPrice[]) => {
+    mutateReportedPrices((current) => ({ stations: { ...(current?.stations || {}), [stationId]: prices } }), { revalidate: false })
+  }
   const listedStations = selectedStationKey
     ? displayedStations.filter((station) => `${station.sourceType}-${station.id}` !== selectedStationKey)
     : displayedStations
@@ -715,7 +741,7 @@ export default function FuelMapPage() {
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">
-                {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} /></Box>}
+                {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} /></Box>}
                 {listedStations.map((station) => (
                 <FuelStationCard
                   key={`${station.sourceType}-${station.id}`}
