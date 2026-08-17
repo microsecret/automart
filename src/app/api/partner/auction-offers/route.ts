@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { inspectContactSharing } from "@/lib/contact-sharing-policy"
 import { makeDeliveryCode } from "@/lib/delivery"
 import { prisma } from "@/lib/prisma"
+import { refreshPartnerSlaMetrics } from "@/lib/partner-sla-refresh"
 
 export const dynamic = "force-dynamic"
 
@@ -187,9 +188,12 @@ export async function POST(request: NextRequest) {
       })
       if (!claimed.count) throw new Error(CLAIM_CONFLICT)
 
+      // Заявку забрал другой партнёр. Остальные предложения снимаются как
+      // «перехвачено»: партнёр не отвечал и не отказывался, поэтому такой
+      // оффер не должен ухудшать его показатель отзывчивости.
       await tx.auctionInquiryOffer.updateMany({
         where: { inquiryId: offer.inquiryId, id: { not: offer.id }, status: "OFFERED" },
-        data: { status: "EXPIRED", respondedAt: now },
+        data: { status: "SUPERSEDED", respondedAt: now },
       })
       await tx.notification.createMany({
         data: [
@@ -212,6 +216,12 @@ export async function POST(request: NextRequest) {
         ],
       })
       return createdOrder
+    })
+
+    // Показатели обновляются после сделки, а не в транзакции: их расхождение
+    // на несколько секунд безопаснее, чем удлинение критичной операции.
+    await refreshPartnerSlaMetrics(offer.organizationId).catch((error) => {
+      console.error("Partner SLA refresh failed", error instanceof Error ? error.message : error)
     })
 
     return NextResponse.json({ success: true, order })

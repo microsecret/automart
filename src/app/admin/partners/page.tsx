@@ -11,6 +11,7 @@ import { IconBuildingWarehouse, IconCheck, IconClipboardCheck, IconClock, IconFi
 import Link from "next/link"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+import { describePartnerRating } from "@/lib/partner-sla"
 
 const STATUS_META: Record<string, { label: string; color: MantineColor; icon: typeof IconClock }> = {
   PENDING: { label: "Ожидает проверки", color: "orange", icon: IconClock },
@@ -36,6 +37,12 @@ type DeliveryOrganization = {
   verificationSource: string | null
   fnsCheckedAt: string | null
   verificationNote: string | null
+  slaResponseMinutes: number | null
+  slaAcceptedOffers: number
+  slaMissedOffers: number
+  slaClosedDeals: number
+  slaRating: number
+  slaUpdatedAt: string | null
   createdAt: string
   updatedAt: string
   owner: { id: string; name: string | null; email: string | null; telegramUsername: string | null }
@@ -183,6 +190,26 @@ export default function AdminPartnersPage() {
                         </Group>
                         <Text size="xs" c="dimmed">ИНН {organization.inn}{organization.ogrn ? ` · ОГРН ${organization.ogrn}` : ""}</Text>
                         <Text size="sm">{formatRegions(organization.serviceRegions)}</Text>
+                        {(() => {
+                          // Показатели объясняют, почему партнёр получает или
+                          // не получает заявки: без них решение о проверке
+                          // опирается только на реквизиты.
+                          const hasHistory = organization.slaAcceptedOffers + organization.slaMissedOffers > 0 || organization.slaClosedDeals > 0
+                          const level = describePartnerRating(organization.slaRating, hasHistory)
+                          return (
+                            <Group gap={5} wrap="wrap" mt={2}>
+                              <Badge size="xs" variant="light" color={level.color}>{level.label}</Badge>
+                              {hasHistory && <Badge size="xs" variant="outline" color="gray">Рейтинг {organization.slaRating}/100</Badge>}
+                              {organization.slaResponseMinutes !== null && (
+                                <Badge size="xs" variant="outline" color="gray">
+                                  Ответ ≈ {organization.slaResponseMinutes < 60 ? `${organization.slaResponseMinutes} мин` : `${Math.round(organization.slaResponseMinutes / 60)} ч`}
+                                </Badge>
+                              )}
+                              {hasHistory && <Badge size="xs" variant="outline" color="gray">Принято {organization.slaAcceptedOffers} · пропущено {organization.slaMissedOffers}</Badge>}
+                              {organization.slaClosedDeals > 0 && <Badge size="xs" variant="light" color="teal">Сделок: {organization.slaClosedDeals}</Badge>}
+                            </Group>
+                          )
+                        })()}
                       </Stack>
                     </Group>
                     <Stack gap={4} miw={{ base: 0, sm: 240 }}>

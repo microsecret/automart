@@ -864,12 +864,22 @@ model DeliveryOrganization {
   verificationSource String? // MANUAL, FNS, PARTNER
   fnsCheckedAt       DateTime?
   verificationNote   String?
+  // Показатели качества работы. Считаются из фактических заявок и офферов, а
+  // здесь хранятся денормализованно: распределение выполняется на каждой новой
+  // заявке и не должно каждый раз пересчитывать историю всех партнёров.
+  slaResponseMinutes Int? // медиана времени ответа на предложение
+  slaAcceptedOffers  Int                   @default(0)
+  slaMissedOffers    Int                   @default(0) // истёкшие без ответа
+  slaClosedDeals     Int                   @default(0)
+  slaRating          Int                   @default(0) // 0..100, пересчитывается фоново
+  slaUpdatedAt       DateTime?
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
   inquiryOffers      AuctionInquiryOffer[]
 
   @@index([ownerId])
   @@index([verificationStatus])
+  @@index([verificationStatus, slaRating])
 }
 
 model AuctionInquiryOffer {
@@ -880,7 +890,7 @@ model AuctionInquiryOffer {
   partner        User                 @relation("AuctionInquiryOfferPartner", fields: [partnerId], references: [id], onDelete: Cascade)
   organizationId String
   organization   DeliveryOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  status         String               @default("OFFERED") // OFFERED, ACCEPTED, DECLINED, EXPIRED
+  status         String               @default("OFFERED") // OFFERED, ACCEPTED, DECLINED, EXPIRED, SUPERSEDED (заявку принял другой партнёр)
   matchScore     Int                  @default(0)
   matchReason    String?
   expiresAt      DateTime

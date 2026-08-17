@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { SLA_NEUTRAL_RATING, SLA_RESPONSE_TARGET_MINUTES } from "@/lib/partner-sla"
 
 const OFFER_LIMIT = 3
 const OFFER_TTL_MS = 24 * 60 * 60 * 1000
@@ -31,6 +32,8 @@ export function scoreAuctionPartner(input: {
   serviceRegions: string | null
   activeAssignments: number
   openOffers: number
+  slaRating?: number | null
+  slaResponseMinutes?: number | null
 }) {
   const regions = readServiceRegions(input.serviceRegions)
   const joined = regions.join(" ")
@@ -39,14 +42,22 @@ export function scoreAuctionPartner(input: {
   const exactCity = Boolean(city && regions.some((region) => region === city || region.includes(city)))
   const partialCity = !exactCity && cityTokens.some((token) => joined.includes(token))
   const countryMatch = (COUNTRY_TERMS[input.sourceCountry] || []).some((term) => joined.includes(term))
+  // Регион и загрузка говорят о доступности, но не о том, отработает ли
+  // партнёр заявку. Рейтинг смещает выбор к тем, кто отвечает и доводит
+  // сделку: вклад ограничен, чтобы близкий партнёр не проигрывал далёкому.
+  const rating = typeof input.slaRating === "number" ? input.slaRating : SLA_NEUTRAL_RATING
+  const slaBonus = Math.round(((rating - SLA_NEUTRAL_RATING) / 100) * 60)
   const score = 20
     + (exactCity ? 120 : partialCity ? 60 : 0)
     + (countryMatch ? 30 : 0)
     - Math.min(45, input.activeAssignments * 6 + input.openOffers * 3)
+    + slaBonus
+  const fastResponder = typeof input.slaResponseMinutes === "number" && input.slaResponseMinutes <= SLA_RESPONSE_TARGET_MINUTES
   const reasons = [
     exactCity ? "работает в городе доставки" : partialCity ? "работает в указанном регионе" : null,
     countryMatch ? "работает с выбранной страной" : null,
     !input.activeAssignments ? "свободен от активных заявок" : null,
+    fastResponder ? "отвечает в течение часа" : null,
   ].filter((reason): reason is string => Boolean(reason))
 
   return { score, reason: reasons.join(" · ") || "проверенный партнёр с наименьшей нагрузкой" }
@@ -71,6 +82,8 @@ export async function routeAuctionInquiryToPartners(inquiryId: string) {
       legalName: true,
       ownerId: true,
       serviceRegions: true,
+      slaRating: true,
+      slaResponseMinutes: true,
       owner: {
         select: {
           _count: {
@@ -94,6 +107,8 @@ export async function routeAuctionInquiryToPartners(inquiryId: string) {
         serviceRegions: organization.serviceRegions,
         activeAssignments: organization.owner._count.assignedAuctionInquiries,
         openOffers: organization.owner._count.auctionInquiryOffers,
+        slaRating: organization.slaRating,
+        slaResponseMinutes: organization.slaResponseMinutes,
       }),
     }))
     .sort((first, second) => second.score - first.score || first.legalName.localeCompare(second.legalName, "ru"))
