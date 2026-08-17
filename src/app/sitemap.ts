@@ -5,6 +5,7 @@ import { getSiteUrl } from "@/lib/site-url"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 import { publicListingWhere } from "@/lib/listing-lifecycle"
 import { listAuctionLandings } from "@/lib/auction-landing"
+import { listNewsTags } from "@/lib/news-tags"
 
 export const dynamic = "force-dynamic"
 
@@ -62,9 +63,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ])
 
-    // Направления «марка + страна» строятся из того же каталога, что и сами
-    // страницы, поэтому sitemap не может разойтись с тем, что открывается.
-    const landings = await listAuctionLandings().catch(() => [])
+    // Направления «марка + страна» и темы новостей строятся из тех же
+    // данных, что и сами страницы, поэтому sitemap не может разойтись с тем,
+    // что реально открывается.
+    const [landings, newsTags] = await Promise.all([
+      listAuctionLandings().catch(() => []),
+      listNewsTags().catch(() => []),
+    ])
 
     return [
       ...pages,
@@ -99,6 +104,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: now,
         changeFrequency: "daily" as const,
         priority: 0.9,
+      })),
+      ...newsTags.map((tag) => ({
+        url: `${baseUrl}/news/tema/${tag.slug}`,
+        lastModified: now,
+        changeFrequency: "daily" as const,
+        priority: 0.7,
       })),
     ]
   } catch (error) {
