@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import {
   IconBell, IconBrain, IconCar, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation,
-  IconGavel, IconHeart, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMotorbike, IconNews,
+  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMotorbike, IconNews,
   IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
   IconTractor, IconTruck, IconTruckDelivery,
 } from "@tabler/icons-react"
@@ -125,6 +125,19 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                   <AccountPanelWithSearch pathname={pathname || ""} session={session} />
                 </Suspense>
               )}
+
+              <Button
+                component={Link}
+                href="/dashboard/deliveries?partner=apply"
+                hiddenFrom="md"
+                variant="light"
+                color="orange"
+                size="md"
+                leftSection={<IconHeartHandshake size={18} stroke={1.8} />}
+                className="market-mobile-partner-cta"
+              >
+                Стать партнёром
+              </Button>
 
               <SidebarPanel title="Транспорт" icon={<IconCar size={15} />}>
                 {TRANSPORT.map((item) => (
