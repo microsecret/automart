@@ -751,6 +751,8 @@ function parseAutosaleSitemap(xml: string) {
 }
 
 const youxinpaiCatalogCache = new Map<number, { expiresAt: number; candidates: PublicAuctionCandidate[] }>()
+const youxinpaiCatalogPending = new Map<number, Promise<PublicAuctionCandidate[]>>()
+const YOUXINPAI_CATALOG_SCAN_CONCURRENCY = 4
 
 function parseYouxinpaiCatalog(json: string, pageNumber: number) {
   let root: UnknownRecord
@@ -804,6 +806,20 @@ function parseYouxinpaiCatalog(json: string, pageNumber: number) {
   const unique = uniqueCandidates(candidates)
   youxinpaiCatalogCache.set(pageNumber, { expiresAt: Date.now() + 2 * 60_000, candidates: unique })
   return unique
+}
+
+async function youxinpaiCatalogPage(page: number) {
+  const cached = youxinpaiCatalogCache.get(page)
+  if (cached && cached.expiresAt > Date.now()) return cached.candidates
+
+  const pending = youxinpaiCatalogPending.get(page)
+  if (pending) return pending
+
+  const request = sourceHtml("YOUXINPAI", publicSourceCatalogUrl("YOUXINPAI", page))
+    .then((json) => parseYouxinpaiCatalog(json, page))
+    .finally(() => youxinpaiCatalogPending.delete(page))
+  youxinpaiCatalogPending.set(page, request)
+  return request
 }
 
 export async function discoverPublicAuctionCandidates(source: PublicAuctionSource, page: number, limit: number) {
@@ -1274,15 +1290,23 @@ async function fetchAutosaleListing(candidate: PublicAuctionCandidate): Promise<
 }
 
 async function activeYouxinpaiCandidate(sourceId: string) {
-  for (let page = 1; page <= publicSourceMaximumPage("YOUXINPAI"); page += 1) {
-    let cached = youxinpaiCatalogCache.get(page)
-    if (!cached || cached.expiresAt <= Date.now()) {
-      const json = await sourceHtml("YOUXINPAI", publicSourceCatalogUrl("YOUXINPAI", page))
-      parseYouxinpaiCatalog(json, page)
-      cached = youxinpaiCatalogCache.get(page)
+  const maximumPage = publicSourceMaximumPage("YOUXINPAI")
+  for (let firstPage = 1; firstPage <= maximumPage; firstPage += YOUXINPAI_CATALOG_SCAN_CONCURRENCY) {
+    const pages = Array.from(
+      { length: Math.min(YOUXINPAI_CATALOG_SCAN_CONCURRENCY, maximumPage - firstPage + 1) },
+      (_, index) => firstPage + index,
+    )
+    const results = await Promise.allSettled(pages.map((page) => youxinpaiCatalogPage(page)))
+    for (const result of results) {
+      if (result.status !== "fulfilled") continue
+      const candidate = result.value.find((value) => value.sourceId === sourceId)
+      if (candidate) return candidate
     }
-    const candidate = cached?.candidates.find((value) => value.sourceId === sourceId)
-    if (candidate) return candidate
+
+    // An incomplete catalogue scan must never be interpreted as proof that a
+    // vehicle disappeared. Abort this refresh item so the next cron can retry.
+    const failed = results.find((result): result is PromiseRejectedResult => result.status === "rejected")
+    if (failed) throw failed.reason
   }
   return null
 }

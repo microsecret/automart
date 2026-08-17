@@ -6,7 +6,15 @@ set -euo pipefail
 # on disk but are not served by the previous process yet.
 if command -v flock >/dev/null 2>&1; then
   exec 9>/tmp/automart-encar-collector.lock
-  flock 9
+  DEPLOY_LOCK_WAIT_SECONDS="${AUTOMART_DEPLOY_LOCK_WAIT_SECONDS:-600}"
+  if ! [[ "$DEPLOY_LOCK_WAIT_SECONDS" =~ ^[1-9][0-9]*$ ]] || (( 10#$DEPLOY_LOCK_WAIT_SECONDS > 3600 )); then
+    echo "AUTOMART_DEPLOY_LOCK_WAIT_SECONDS must be an integer from 1 to 3600" >&2
+    exit 1
+  fi
+  if ! flock -w "$DEPLOY_LOCK_WAIT_SECONDS" 9; then
+    echo "Timed out waiting for the auction collector lock after ${DEPLOY_LOCK_WAIT_SECONDS}s" >&2
+    exit 1
+  fi
 fi
 
 # Run on the production host from the repository root. Secrets stay in the

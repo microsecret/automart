@@ -42,7 +42,10 @@ run_stage "K Car freshness refresh" "/api/parser/kcar/refresh" '{"limit":40}'
 run_stage "China Iautos discovery" "/api/parser/public/IAUTOS/sync" '{"limit":5}'
 run_stage "China Iautos freshness refresh" "/api/parser/public/IAUTOS/refresh" '{"limit":30}'
 run_stage "China YouXinPai discovery" "/api/parser/public/YOUXINPAI/sync" '{"limit":5}'
-run_stage "China YouXinPai freshness refresh" "/api/parser/public/YOUXINPAI/refresh" '{"limit":30}'
+# One stale YouXinPai item may require a bounded 50-page catalogue scan. Ten
+# items per run keep the lock responsive while three runs per hour still cover
+# the current production inventory before its three-hour refresh boundary.
+run_stage "China YouXinPai freshness refresh" "/api/parser/public/YOUXINPAI/refresh" '{"limit":10}'
 run_stage "Korea Bobaedream discovery" "/api/parser/public/BOBAEDREAM/sync" '{"limit":4}'
 run_stage "Korea Bobaedream freshness refresh" "/api/parser/public/BOBAEDREAM/refresh" '{"limit":25}'
 run_stage "Japan Goo-net discovery" "/api/parser/public/GOONET/sync" '{"limit":5}'
