@@ -1,0 +1,36 @@
+import assert from "node:assert/strict"
+import test from "node:test"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { inspectContactSharing, moderationAuditSummary } from "../src/lib/contact-sharing-policy.ts"
+
+test("allows auction and delivery details without contacts", () => {
+  for (const message of [
+    "Лот 8696250, бюджет 1 900 000 рублей, доставка в Уфу",
+    "Проверьте серьёзное повреждение правого крыла и два ключа",
+    "Подтверждаю маршрут через Владивосток",
+  ]) assert.equal(inspectContactSharing(message).allowed, true, message)
+})
+
+test("blocks direct and spaced phone numbers", () => {
+  assert.deepEqual(inspectContactSharing("Позвоните +7 (987) 015-71-46").reasonCodes, ["PHONE"])
+  assert.equal(inspectContactSharing("8 9 1 2 3 4 5 6 7 8 9").allowed, false)
+})
+
+test("blocks phone numbers written as words", () => {
+  assert.equal(inspectContactSharing("девять восемь семь ноль один пять семь один четыре шесть").allowed, false)
+  assert.equal(inspectContactSharing("плюс 7 девять восемь семь 015 семь один 46").allowed, false)
+})
+
+test("blocks email, obfuscated email, links and messenger handles", () => {
+  assert.equal(inspectContactSharing("mail@example.ru").allowed, false)
+  assert.equal(inspectContactSharing("mail собака example точка ru").allowed, false)
+  assert.equal(inspectContactSharing("https://example.ru/profile").allowed, false)
+  assert.equal(inspectContactSharing("Напишите в телеграм @dealer_ufa").allowed, false)
+})
+
+test("audit summary never contains rejected content", () => {
+  const secret = "+7 987 015-71-46"
+  const summary = moderationAuditSummary(secret)
+  assert.equal(summary.includes("987"), false)
+  assert.match(summary, /Содержимое не сохранено/u)
+})

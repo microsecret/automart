@@ -90,17 +90,26 @@ export async function PATCH(request: NextRequest) {
     const organization = await prisma.deliveryOrganization.findUnique({ where: { id }, select: { id: true } })
     if (!organization) return NextResponse.json({ error: "Партнёр не найден" }, { status: 404 })
 
-    const updated = await prisma.deliveryOrganization.update({
-      where: { id },
-      data: {
-        verificationStatus,
-        ...(sourceWasProvided ? { verificationSource: normalizedSource } : {}),
-        ...(normalizedSource === "FNS" ? { fnsCheckedAt: new Date() } : {}),
-        ...(noteWasProvided ? { verificationNote: typeof verificationNote === "string" && verificationNote.trim() ? verificationNote.trim() : null } : {}),
-      },
-      include: {
-        owner: { select: { id: true, name: true, email: true, telegramUsername: true } },
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const organizationWithOwner = await tx.deliveryOrganization.update({
+        where: { id },
+        data: {
+          verificationStatus,
+          ...(sourceWasProvided ? { verificationSource: normalizedSource } : {}),
+          ...(normalizedSource === "FNS" ? { fnsCheckedAt: new Date() } : {}),
+          ...(noteWasProvided ? { verificationNote: typeof verificationNote === "string" && verificationNote.trim() ? verificationNote.trim() : null } : {}),
+        },
+        include: {
+          owner: { select: { id: true, name: true, email: true, telegramUsername: true, role: true } },
+        },
+      })
+
+      if (verificationStatus === "VERIFIED" && ["USER", "VERIFIED_USER"].includes(organizationWithOwner.owner.role)) {
+        await tx.user.update({ where: { id: organizationWithOwner.owner.id }, data: { role: "PARTNER" } })
+        organizationWithOwner.owner.role = "PARTNER"
+      }
+
+      return organizationWithOwner
     })
 
     return NextResponse.json({ organization: updated })

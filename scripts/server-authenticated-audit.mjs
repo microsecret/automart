@@ -274,17 +274,11 @@ async function run() {
   const newsViewOne = await expect(`/api/news/${viewedNews.id}`, null, 200)
   const newsViewTwo = await expect(`/api/news/${viewedNews.id}`, `news-view-${viewedNews.id}=1`, 200)
   record("news views are unique within the hourly window", newsViewOne?.views === newsViewTwo?.views, `${newsViewOne?.views} then ${newsViewTwo?.views}`)
-  const inquiry = await expect(`/api/auctions/${auctionListing.id}/inquiry`, null, 201, {
+  await expect(`/api/auctions/${auctionListing.id}/inquiry`, null, 401, {
     method: "POST",
     body: JSON.stringify({ name: "Покупатель Аудит", phone: primary.phone, email: primary.email, city: "Москва", comment: "Нужен расчёт доставки" }),
   })
-  const inquiryQueue = await expect("/api/admin/auctions/inquiries?status=NEW", adminCookie, 200)
-  record("auction inquiry reaches the manager queue", inquiryQueue?.inquiries?.some((item) => item.id === inquiry?.inquiry?.id), `${inquiryQueue?.inquiries?.length ?? 0} new`)
-  const updatedInquiry = await expect("/api/admin/auctions/inquiries", adminCookie, 200, {
-    method: "PATCH",
-    body: JSON.stringify({ id: inquiry.inquiry.id, status: "CONTACTED", managerNotes: "Связались в рамках изолированного аудита" }),
-  })
-  record("manager can update inquiry status and notes", updatedInquiry?.inquiry?.status === "CONTACTED" && Boolean(updatedInquiry?.inquiry?.managerNotes), updatedInquiry?.inquiry?.status || "missing")
+  record("anonymous auction inquiry cannot bypass the protected deal workspace", true, "HTTP 401")
   await expect("/api/admin/auctions/stats", adminCookie, 200)
   await expect("/api/auctions?country=KR&limit=10", null, 200)
   const auctionDetail = await expect(`/api/auctions/${auctionListing.id}`, null, 200)
@@ -481,7 +475,7 @@ async function run() {
 
   const delivery = await expect("/api/delivery-orders", cookie, 201, {
     method: "POST",
-    body: JSON.stringify({ title: `${marker} доставка автомобиля`, kind: "VEHICLE", sourceType: "DIRECT_IMPORT", originCountry: "KR", destinationCity: "Москва", description: "Изолированная проверка заявки" }),
+    body: JSON.stringify({ title: "Доставка автомобиля из Кореи", kind: "VEHICLE", sourceType: "DIRECT_IMPORT", originCountry: "KR", destinationCity: "Москва", description: "Изолированная проверка заявки" }),
   })
   record("delivery order has timeline and chat", Boolean(delivery?.order?.events?.length && delivery?.order?.messages?.length), "created")
   await expect("/api/delivery-orders", cookie, 200)
@@ -546,6 +540,40 @@ async function run() {
     body: JSON.stringify({ id: organization.id, verificationStatus: "VERIFIED", verificationSource: "FNS", verificationNote: "Изолированная проверка реквизитов" }),
   })
   record("administrator can verify a partner with a recorded source", verifiedOrganization?.organization?.verificationStatus === "VERIFIED" && Boolean(verifiedOrganization?.organization?.fnsCheckedAt), verifiedOrganization?.organization?.verificationStatus || "missing")
+  const partnerUser = await prisma.user.findUnique({ where: { id: seller.id } })
+  record("verified delivery organization activates the partner role", partnerUser?.role === "PARTNER", partnerUser?.role || "missing")
+  const partnerCookie = await sessionCookie(partnerUser)
+
+  await expect(`/api/auctions/${auctionListing.id}/inquiry`, null, 401, {
+    method: "POST",
+    body: JSON.stringify({ name: "Гость", phone: "+79990000000", city: "Уфа" }),
+  })
+  const auctionInquiry = await expect(`/api/auctions/${auctionListing.id}/inquiry`, cookie, 201, {
+    method: "POST",
+    body: JSON.stringify({ name: "Покупатель Аудит", phone: primary.phone, email: primary.email, city: "Уфа", comment: "Нужны проверка лота, выкуп и доставка" }),
+  })
+  const inquiryWorkspace = await expect("/api/admin/auctions/inquiries?status=NEW", adminCookie, 200)
+  record("authenticated auction inquiry reaches the private admin workspace", inquiryWorkspace?.inquiries?.some((item) => item.id === auctionInquiry.inquiry.id && item.requesterId === primary.id) && inquiryWorkspace?.partners?.some((item) => item.userId === seller.id), `${inquiryWorkspace?.partners?.length ?? 0} verified partner(s)`)
+  const assignedInquiry = await expect("/api/admin/auctions/inquiries", adminCookie, 200, {
+    method: "PATCH",
+    body: JSON.stringify({ action: "ASSIGN", id: auctionInquiry.inquiry.id, partnerId: seller.id, buyerDepositAmount: 100_000, platformFeeAmount: 30_000 }),
+  })
+  record("admin assignment atomically opens the protected deal", Boolean(assignedInquiry?.inquiry?.deliveryOrderId), assignedInquiry?.inquiry?.deliveryOrderId || "missing")
+  const assignedDeal = await expect(`/api/delivery-orders/${assignedInquiry.inquiry.deliveryOrderId}`, partnerCookie, 200)
+  record("partner sees buyer name and city without phone or email", assignedDeal?.order?.buyer?.name === "Покупатель Проверен" && assignedDeal?.order?.destinationCity === "Уфа" && !("phone" in assignedDeal.order.buyer) && !("email" in assignedDeal.order.buyer), assignedDeal?.order?.destinationCity || "missing")
+  const messagesBeforeBlock = assignedDeal?.order?.messages?.length || 0
+  const blockedContact = await expect(`/api/delivery-orders/${assignedInquiry.inquiry.deliveryOrderId}/messages`, cookie, 422, {
+    method: "POST",
+    body: JSON.stringify({ content: "Напишите мне в телеграм @audit_dealer или +7 987 015-71-46" }),
+  })
+  record("protected chat blocks contact sharing before delivery", blockedContact?.code === "CONTACT_SHARING_BLOCKED", blockedContact?.code || "missing")
+  const afterBlockedContact = await expect(`/api/delivery-orders/${assignedInquiry.inquiry.deliveryOrderId}`, cookie, 200)
+  const moderationEvents = await prisma.communicationModerationEvent.count({ where: { deliveryOrderId: assignedInquiry.inquiry.deliveryOrderId } })
+  record("blocked contact is not stored while a redacted audit event remains", afterBlockedContact?.order?.messages?.length === messagesBeforeBlock && moderationEvents === 1, `${afterBlockedContact?.order?.messages?.length ?? 0} messages · ${moderationEvents} event(s)`)
+  await expect(`/api/delivery-orders/${assignedInquiry.inquiry.deliveryOrderId}/messages`, partnerCookie, 201, {
+    method: "POST",
+    body: JSON.stringify({ content: "Проверю отчёт по повреждениям и подготовлю перечень документов." }),
+  })
 
   await expect("/api/upload", cookie, 415, { method: "POST", body: JSON.stringify({ invalid: true }) })
   await expect("/api/listings?limit=10", null, 200)

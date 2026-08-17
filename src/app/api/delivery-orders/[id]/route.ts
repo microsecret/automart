@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { asTrimmedString, canManageDeliveryOrder, canReadDeliveryOrder, deliveryOrderPermissions, getDeliveryOrder, isDeliveryAdmin, parseDeliveryDate } from "@/lib/delivery-access"
+import { asTrimmedString, canManageDeliveryOrder, canReadDeliveryOrder, deliveryOrderPermissions, getDeliveryOrder, isDeliveryAdmin, parseDeliveryDate, safeDealDisplayName } from "@/lib/delivery-access"
 
 export const dynamic = "force-dynamic"
 
@@ -22,13 +22,31 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
       .filter((document) => canSeeInternal || document.visibility === "BUYER_AND_TEAM")
       .map(({ storageKey: _storageKey, ...document }) => ({
         ...document,
+        uploadedBy: permissions.isAdmin
+          ? document.uploadedBy
+          : { ...document.uploadedBy, name: safeDealDisplayName(document.uploadedBy.name, "Участник сделки") },
         downloadUrl: `/api/delivery-orders/${order.id}/documents/${document.id}`,
       }))
 
+    const publicOrder = permissions.isAdmin ? order : {
+      ...order,
+      buyer: { ...order.buyer, name: safeDealDisplayName(order.buyer.name, "Покупатель") },
+      partner: order.partner ? { ...order.partner, name: safeDealDisplayName(order.partner.name, "Партнёр") } : null,
+      manager: order.manager ? { ...order.manager, name: safeDealDisplayName(order.manager.name, "Менеджер LeWheel") } : null,
+      events: order.events.map((event) => ({
+        ...event,
+        author: event.author ? { ...event.author, name: safeDealDisplayName(event.author.name, "Участник сделки") } : null,
+      })),
+      messages: order.messages.map((message) => ({
+        ...message,
+        sender: { ...message.sender, name: safeDealDisplayName(message.sender.name, message.isSystem ? "LeWheel" : "Участник сделки") },
+      })),
+    }
+
     return NextResponse.json({
       order: {
-        ...order,
-        events: order.events.filter((event) => canSeeInternal || event.isVisibleToBuyer),
+        ...publicOrder,
+        events: publicOrder.events.filter((event) => canSeeInternal || event.isVisibleToBuyer),
         documents: visibleDocuments,
       },
       permissions,
@@ -63,7 +81,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if ("transitCity" in body) data.transitCity = asTrimmedString(body.transitCity, 120) || null
 
     if (isDeliveryAdmin(session)) {
-      if ("partnerId" in body) data.partnerId = asTrimmedString(body.partnerId, 80) || null
+      if ("partnerId" in body) {
+        const partnerId = asTrimmedString(body.partnerId, 80) || null
+        if (partnerId) {
+          const verifiedPartner = await prisma.deliveryOrganization.findFirst({
+            where: { ownerId: partnerId, verificationStatus: "VERIFIED" },
+            select: { id: true },
+          })
+          if (!verifiedPartner) return NextResponse.json({ error: "Можно назначить только проверенного партнёра" }, { status: 409 })
+        }
+        data.partnerId = partnerId
+      }
       if ("managerId" in body) data.managerId = asTrimmedString(body.managerId, 80) || null
     }
 

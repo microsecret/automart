@@ -1,11 +1,24 @@
 import { prisma } from "@/lib/prisma"
 import { can, isAdmin } from "@/lib/permissions"
+import { inspectContactSharing } from "@/lib/contact-sharing-policy"
 
 type SessionLike = { user?: { id?: string; role?: string } } | null
 
 export const deliveryOrderInclude = {
   buyer: { select: { id: true, name: true, image: true } },
-  partner: { select: { id: true, name: true, image: true } },
+  partner: {
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      deliveryOrganizations: {
+        where: { verificationStatus: "VERIFIED" },
+        orderBy: { updatedAt: "desc" as const },
+        take: 1,
+        select: { id: true, legalName: true, verificationStatus: true },
+      },
+    },
+  },
   manager: { select: { id: true, name: true, image: true } },
   auctionListing: { select: { id: true, make: true, model: true, year: true, country: true, lotNumber: true } },
   events: {
@@ -64,4 +77,9 @@ export function parseDeliveryDate(value: unknown) {
 
 export function asTrimmedString(value: unknown, maxLength = 500) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : ""
+}
+
+export function safeDealDisplayName(name: string | null | undefined, fallback: string) {
+  const normalized = name?.trim()
+  return normalized && inspectContactSharing(normalized).allowed ? normalized : fallback
 }

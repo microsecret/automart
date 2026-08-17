@@ -4,14 +4,14 @@ import { FormEvent, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { ActionIcon, Avatar, Badge, Box, Button, Center, Divider, FileInput, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, Timeline, Title } from "@mantine/core"
+import { ActionIcon, Alert, Avatar, Badge, Box, Button, Center, Divider, FileInput, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, Timeline, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconArrowLeft, IconArrowRight, IconCalendar, IconCheck, IconCircleCheck, IconClock, IconFileDescription, IconFileInvoice, IconMapPin, IconMessageCircle, IconNotes, IconPlus, IconReceipt, IconRoute, IconSend, IconShieldCheck, IconTruckDelivery, IconUpload } from "@tabler/icons-react"
+import { IconArrowLeft, IconArrowRight, IconCalendar, IconCheck, IconCircleCheck, IconClock, IconFileDescription, IconFileInvoice, IconLock, IconMapPin, IconMessageCircle, IconNotes, IconPlus, IconReceipt, IconRoute, IconSend, IconShieldCheck, IconSparkles, IconTruckDelivery, IconUpload } from "@tabler/icons-react"
 import { canTransitionDeliveryStatus, DELIVERY_DOCUMENT_META, DELIVERY_PAYMENT_META, DELIVERY_STATUSES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
-type DeliveryUser = { id: string; name: string | null; image: string | null }
+type DeliveryUser = { id: string; name: string | null; image: string | null; deliveryOrganizations?: Array<{ id: string; legalName: string; verificationStatus: string }> }
 
 type DeliveryEvent = {
   id: string
@@ -66,6 +66,10 @@ type DeliveryOrder = {
   estimatedDeliveryAt: string | null
   nextAction: string | null
   nextActionAt: string | null
+  buyerDepositAmount: number | null
+  buyerDepositStatus: string
+  platformFeeAmount: number | null
+  platformFeeStatus: string
   buyer: DeliveryUser
   partner: DeliveryUser | null
   manager: DeliveryUser | null
@@ -88,6 +92,13 @@ const paymentStatusMeta: Record<string, { label: string; color: string }> = {
   OVERDUE: { label: "Срок уточняется", color: "red" },
   CANCELED: { label: "Отменено", color: "gray" },
 }
+
+const QUICK_DEAL_QUESTIONS = [
+  "Какие документы нужны для начала выкупа?",
+  "Что входит в расчёт доставки?",
+  "Какие повреждения нужно проверить по лоту?",
+  "Когда будет готов договор и счёт?",
+]
 
 export default function DeliveryOrderPage() {
   const params = useParams<{ id: string }>()
@@ -209,8 +220,12 @@ export default function DeliveryOrderPage() {
           </Paper>
 
           <Paper withBorder radius="lg" p="md"><Group gap="xs" mb="md"><ThemeIcon color="violet" variant="light" radius="md"><IconMessageCircle size={17} /></ThemeIcon><Text fw={800}>Чат сделки</Text><Badge variant="light" color="gray" size="xs">{order.messages.length}</Badge></Group>
+            <Alert color="indigo" variant="light" icon={<IconLock size={17} />} title="Контакты защищены" mb="sm">Телефон, email, ссылки и контакты мессенджеров блокируются до отправки. Документы загружайте в закрытый раздел сделки.</Alert>
             <Stack gap="xs" mah={340} style={{ overflowY: "auto" }}>{order.messages.map((item) => <MessageBubble key={item.id} item={item} isOwn={item.sender?.id === permissions.currentUserId} />)}</Stack>
-            <Divider my="sm" /><form onSubmit={sendMessage}><Group align="flex-end" wrap="nowrap"><Textarea aria-label="Сообщение в чат сделки" placeholder="Напишите вопрос партнёру…" minRows={2} maxRows={5} autosize value={message} onChange={(event) => setMessage(event.currentTarget.value)} style={{ flex: 1 }} /><ActionIcon type="submit" size="lg" variant="filled" color="indigo" loading={sending} aria-label="Отправить"><IconSend size={18} /></ActionIcon></Group></form>
+            <Divider my="sm" />
+            <Group gap={6} mb="xs"><IconSparkles size={14} color="#7c3aed" /><Text size="xs" fw={750} c="violet.8">Быстрые вопросы по базе сделки</Text></Group>
+            <Group gap={6} mb="sm">{QUICK_DEAL_QUESTIONS.map((question) => <Button key={question} variant="light" color="gray" size="compact-xs" onClick={() => setMessage(question)}>{question}</Button>)}</Group>
+            <form onSubmit={sendMessage}><Group align="flex-end" wrap="nowrap"><Textarea aria-label="Сообщение в чат сделки" placeholder="Спросите о лоте, маршруте, договоре или счёте…" minRows={2} maxRows={5} autosize value={message} onChange={(event) => setMessage(event.currentTarget.value)} style={{ flex: 1 }} /><ActionIcon type="submit" size="lg" variant="filled" color="indigo" loading={sending} aria-label="Отправить"><IconSend size={18} /></ActionIcon></Group></form>
           </Paper>
         </Stack>
 
@@ -223,7 +238,8 @@ export default function DeliveryOrderPage() {
             {order.documents.length === 0 ? <EmptyText text="Подтверждения, договоры и квитанции появятся здесь. Доступ ограничен участниками этой сделки." /> : <Stack gap={4}>{order.documents.map((document) => <Group key={document.id} justify="space-between" gap="xs" wrap="nowrap"><Group gap="xs" style={{ minWidth: 0 }}><ThemeIcon size="sm" variant="light" color="cyan"><IconNotes size={13} /></ThemeIcon><Stack gap={0} style={{ minWidth: 0 }}><Text size="xs" fw={600} lineClamp={1}>{document.title}</Text><Text size="10px" c="dimmed">{DELIVERY_DOCUMENT_META[document.category] || document.category} · {formatBytes(document.size)}</Text></Stack></Group><Button component="a" href={document.downloadUrl} size="compact-xs" variant="subtle" color="indigo">Открыть</Button></Group>)}</Stack>}
           </Paper>
 
-          <Paper withBorder radius="lg" p="md"><Group gap="xs" mb="sm"><ThemeIcon color="teal" variant="light" radius="md"><IconCircleCheck size={17} /></ThemeIcon><Text fw={800}>Участники</Text></Group><Stack gap="xs"><Participant label="Покупатель" user={order.buyer} /><Participant label="Партнёр" user={order.partner} empty="Назначается менеджером" /><Participant label="Менеджер" user={order.manager} empty="Назначается после проверки" /></Stack></Paper>
+          <Paper withBorder radius="lg" p="md"><Group gap="xs" mb="sm"><ThemeIcon color="teal" variant="light" radius="md"><IconCircleCheck size={17} /></ThemeIcon><Text fw={800}>Участники</Text></Group><Stack gap="xs"><Participant label="Покупатель" user={order.buyer} /><Participant label="Проверенный партнёр" user={order.partner} empty="Назначается менеджером" /><Participant label="Менеджер LeWheel" user={order.manager} empty="Назначается после проверки" /></Stack></Paper>
+          {(order.buyerDepositAmount || order.platformFeeAmount) && <Paper withBorder radius="lg" p="md"><Group gap="xs" mb="sm"><ThemeIcon color="orange" variant="light" radius="md"><IconReceipt size={17} /></ThemeIcon><Text fw={800}>Условия расчётов</Text></Group><Stack gap="xs">{order.buyerDepositAmount && <PaymentTerm label="Задаток по сделке" amount={order.buyerDepositAmount} status={order.buyerDepositStatus} />}{order.platformFeeAmount && <PaymentTerm label="Сервисный сбор LeWheel" amount={order.platformFeeAmount} status={order.platformFeeStatus} />}</Stack><Text size="xs" c="dimmed" mt="sm">Суммы учитываются раздельно. Оплата доступна только после публикации счёта и договора внутри сделки.</Text></Paper>}
         </Stack>
       </SimpleGrid>
     </Stack>
@@ -246,7 +262,13 @@ function MessageBubble({ item, isOwn }: { item: DeliveryMessage; isOwn: boolean 
 }
 
 function Participant({ label, user, empty }: { label: string; user?: DeliveryUser | null; empty?: string }) {
-  return <Group gap="xs"><Avatar size="sm" radius="xl" src={user?.image}>{user?.name?.[0]?.toUpperCase()}</Avatar><Stack gap={0}><Text size="10px" c="dimmed">{label}</Text><Text size="xs" fw={600}>{user?.name || empty || "Не указан"}</Text></Stack></Group>
+  const organization = user?.deliveryOrganizations?.[0]
+  return <Group gap="xs"><Avatar size="sm" radius="xl" src={user?.image}>{user?.name?.[0]?.toUpperCase()}</Avatar><Stack gap={0}><Text size="10px" c="dimmed">{label}</Text><Group gap={5}><Text size="xs" fw={600}>{organization?.legalName || user?.name || empty || "Не указан"}</Text>{organization && <IconShieldCheck size={13} color="#059669" aria-label="Организация проверена" />}</Group></Stack></Group>
+}
+
+function PaymentTerm({ label, amount, status }: { label: string; amount: number; status: string }) {
+  const meta = paymentStatusMeta[status] || { label: "Счёт ещё не выставлен", color: "gray" }
+  return <Group justify="space-between" align="center" gap="sm" wrap="nowrap"><Stack gap={0}><Text size="xs" c="dimmed">{label}</Text><Text fw={800}>{amount.toLocaleString("ru-RU")} ₽</Text></Stack><Badge variant="light" color={meta.color}>{meta.label}</Badge></Group>
 }
 
 function EmptyText({ text }: { text: string }) { return <Text size="sm" c="dimmed">{text}</Text> }

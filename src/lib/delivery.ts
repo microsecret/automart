@@ -93,6 +93,7 @@ export const DELIVERY_PAYMENT_META: Record<string, string> = {
   LABORATORY: "Лаборатория",
   EPTS: "Оформление ЭПТС",
   LOGISTICS: "Логистика по России",
+  PLATFORM_FEE: "Сервисный сбор площадки",
 }
 
 export const DELIVERY_DOCUMENT_META: Record<string, string> = {

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { normalizePhone } from "@/lib/telegram"
@@ -15,6 +17,13 @@ function readOptionalText(value: unknown, maxLength: number) {
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Войдите в аккаунт, чтобы заявка, чат и документы появились в личном кабинете." },
+        { status: 401 },
+      )
+    }
     const { id } = await params
     const ipLimit = rateLimit(`auction-inquiry:ip:${getClientIp(request)}`, { windowMs: 15 * 60 * 1000, maxRequests: 8 })
     if (!ipLimit.success) {
@@ -31,7 +40,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const email = readOptionalText(input.email, 254)
     const city = readOptionalText(input.city, 120)
     const comment = readOptionalText(input.comment, 2000)
-    if (!name || !phone) return NextResponse.json({ error: "Укажите имя и корректный номер телефона" }, { status: 400 })
+    if (!name || !phone || !city) return NextResponse.json({ error: "Укажите имя, город доставки и корректный номер телефона" }, { status: 400 })
     if (email && !EMAIL_PATTERN.test(email)) return NextResponse.json({ error: "Укажите корректный email" }, { status: 400 })
 
     const phoneLimit = rateLimit(`auction-inquiry:phone:${phone}`, { windowMs: 60 * 60 * 1000, maxRequests: 3 })
@@ -60,6 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         email,
         city,
         comment,
+        requesterId: session.user.id,
       },
       select: { id: true, createdAt: true },
     })

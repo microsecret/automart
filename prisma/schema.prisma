@@ -13,104 +13,108 @@ datasource db {
 // User model for authentication and user profiles
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?  // URL to user's avatar
-  phone         String?  @unique
-  telegramId    String?  @unique
-  telegramUsername String?
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  emailVerified      DateTime?
+  name               String?
+  image              String? // URL to user's avatar
+  phone              String?   @unique
+  telegramId         String?   @unique
+  telegramUsername   String?
   telegramVerifiedAt DateTime?
-  role          String   @default("USER") // USER, ADMIN, MODERATOR
-  hashedPassword String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  role               String    @default("USER") // USER, ADMIN, MODERATOR
+  hashedPassword     String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // Relations
-  vehicles     Vehicle[] @relation("UserVehicles")
-  parts        Part[]    @relation("UserParts")
-  listings     Listing[]
-  favoriteListings Listing[] @relation("Favorites")
-  partBids     PartBid[]
-  reviews      Review[] @relation("Reviewer")
-  messagesSent Message[] @relation("MessageSender")
-  messagesReceived Message[] @relation("MessageReceiver")
-  aiServiceLogs AIServiceLog[] @relation("UserAIServiceLogs")
-  sessions     Session[] @relation("UserSessions")
-  notifications  Notification[] @relation("UserNotifications")
-  comments     Comment[]
-  visitEvents  VisitEvent[] @relation("UserVisitEvents")
-  listingViewEvents ListingViewEvent[] @relation("UserListingViewEvents")
-  deliveryOrdersAsBuyer   DeliveryOrder[]        @relation("DeliveryBuyer")
-  deliveryOrdersAsPartner DeliveryOrder[]        @relation("DeliveryPartner")
-  deliveryOrdersManaged   DeliveryOrder[]        @relation("DeliveryManager")
-  deliveryEvents          DeliveryEvent[]        @relation("DeliveryEventAuthor")
-  deliveryDocuments       DeliveryDocument[]     @relation("DeliveryDocumentUploader")
-  deliveryMessages        DeliveryMessage[]      @relation("DeliveryMessageSender")
-  deliveryOrganizations   DeliveryOrganization[] @relation("DeliveryOrganizationOwner")
-  reportsCreated          ListingReport[]        @relation("ListingReportReporter")
-  reportsReviewed         ListingReport[]        @relation("ListingReportReviewer")
-  promotionOrders         PromotionOrder[]
-  supportTickets          SupportTicket[]  @relation("SupportTicketRequester")
-  assignedSupportTickets  SupportTicket[]  @relation("SupportTicketAssignee")
-  supportMessages         SupportMessage[] @relation("SupportMessageAuthor")
+  vehicles                      Vehicle[]                      @relation("UserVehicles")
+  parts                         Part[]                         @relation("UserParts")
+  listings                      Listing[]
+  favoriteListings              Listing[]                      @relation("Favorites")
+  partBids                      PartBid[]
+  reviews                       Review[]                       @relation("Reviewer")
+  messagesSent                  Message[]                      @relation("MessageSender")
+  messagesReceived              Message[]                      @relation("MessageReceiver")
+  aiServiceLogs                 AIServiceLog[]                 @relation("UserAIServiceLogs")
+  sessions                      Session[]                      @relation("UserSessions")
+  notifications                 Notification[]                 @relation("UserNotifications")
+  comments                      Comment[]
+  visitEvents                   VisitEvent[]                   @relation("UserVisitEvents")
+  listingViewEvents             ListingViewEvent[]             @relation("UserListingViewEvents")
+  deliveryOrdersAsBuyer         DeliveryOrder[]                @relation("DeliveryBuyer")
+  deliveryOrdersAsPartner       DeliveryOrder[]                @relation("DeliveryPartner")
+  deliveryOrdersManaged         DeliveryOrder[]                @relation("DeliveryManager")
+  deliveryEvents                DeliveryEvent[]                @relation("DeliveryEventAuthor")
+  deliveryDocuments             DeliveryDocument[]             @relation("DeliveryDocumentUploader")
+  deliveryMessages              DeliveryMessage[]              @relation("DeliveryMessageSender")
+  deliveryOrganizations         DeliveryOrganization[]         @relation("DeliveryOrganizationOwner")
+  auctionInquiries              AuctionInquiry[]               @relation("AuctionInquiryRequester")
+  assignedAuctionInquiries      AuctionInquiry[]               @relation("AuctionInquiryPartner")
+  auctionInquiryAssignments     AuctionInquiry[]               @relation("AuctionInquiryAssigner")
+  communicationModerationEvents CommunicationModerationEvent[] @relation("CommunicationModerationSender")
+  reportsCreated                ListingReport[]                @relation("ListingReportReporter")
+  reportsReviewed               ListingReport[]                @relation("ListingReportReviewer")
+  promotionOrders               PromotionOrder[]
+  supportTickets                SupportTicket[]                @relation("SupportTicketRequester")
+  assignedSupportTickets        SupportTicket[]                @relation("SupportTicketAssignee")
+  supportMessages               SupportMessage[]               @relation("SupportMessageAuthor")
 
   @@index([email])
 }
 
 // Vehicle model - base model for all types of vehicles
 model Vehicle {
-  id           String   @id @default(uuid())
-  make         String   // Manufacturer (Toyota, BMW, etc.)
-  model        String   // Model name (Camry, X5, etc.)
-  year         Int
-  price        Int      // Price in rubles
-  mileage      Int?     // in kilometers; not applicable to water, air and special equipment
-  operatingHours Int?   // Engine hours for special equipment and water transport
-  flightHours  Int?     // Airframe flight hours for aircraft
-  vin          String?  @unique // Vehicle Identification Number for road vehicles
-  serialNumber String?  // Factory serial number for special equipment
+  id                 String   @id @default(uuid())
+  make               String // Manufacturer (Toyota, BMW, etc.)
+  model              String // Model name (Camry, X5, etc.)
+  year               Int
+  price              Int // Price in rubles
+  mileage            Int? // in kilometers; not applicable to water, air and special equipment
+  operatingHours     Int? // Engine hours for special equipment and water transport
+  flightHours        Int? // Airframe flight hours for aircraft
+  vin                String?  @unique // Vehicle Identification Number for road vehicles
+  serialNumber       String? // Factory serial number for special equipment
   registrationNumber String? // Airframe or vessel registration / hull identification number
-  fuelType     String   // GASOLINE, DIESEL, ELECTRIC, HYBRID, GAS, OTHER
-  transmission String   // MANUAL, AUTOMATIC, VARIATOR, ROBOTIC
-  bodyType     String?  // SEDAN, HATCHBACK, SUV, COUPE, CONVERTIBLE, WAGON, MINIVAN, PICKUP, OTHER
-  color        String?
-  doors        Int?
-  engineVolume Float?   // in liters
-  power        Int?     // in horsepower
-  driveType    String?  // FWD, RWD, AWD, FOUR_WD
-  condition    String   // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
-  steeringWheel    String?  // LEFT, RIGHT (руль)
-  ownersCount      Int?     // количество владельцев
-  documentsStatus  String?  // CLEAN, ISSUES, MISSING
-  damageInfo       String?  // NONE, REPAINTED, DAMAGED, SEVERE
-  sellerType       String?  // OWNER, DEALER
-  availability     String?  // IN_STOCK, ON_ORDER, IN_TRANSIT
-  customsCleared   Boolean? // растаможен
-  generation       String?  // поколение
-  keywords         String?  // ключевые слова для поиска
-  vehicleType   String   @default("CAR")
-  typeDetails  String?  // JSON with transport-specific fields
-  location     String   // City, region
-  lat          Float?   // Latitude
-  lng          Float?   // Longitude
-  description  String?
+  fuelType           String // GASOLINE, DIESEL, ELECTRIC, HYBRID, GAS, OTHER
+  transmission       String // MANUAL, AUTOMATIC, VARIATOR, ROBOTIC
+  bodyType           String? // SEDAN, HATCHBACK, SUV, COUPE, CONVERTIBLE, WAGON, MINIVAN, PICKUP, OTHER
+  color              String?
+  doors              Int?
+  engineVolume       Float? // in liters
+  power              Int? // in horsepower
+  driveType          String? // FWD, RWD, AWD, FOUR_WD
+  condition          String // NEW, LIKE_NEW, EXCELLENT, GOOD, FAIR, POOR
+  steeringWheel      String? // LEFT, RIGHT (руль)
+  ownersCount        Int? // количество владельцев
+  documentsStatus    String? // CLEAN, ISSUES, MISSING
+  damageInfo         String? // NONE, REPAINTED, DAMAGED, SEVERE
+  sellerType         String? // OWNER, DEALER
+  availability       String? // IN_STOCK, ON_ORDER, IN_TRANSIT
+  customsCleared     Boolean? // растаможен
+  generation         String? // поколение
+  keywords           String? // ключевые слова для поиска
+  vehicleType        String   @default("CAR")
+  typeDetails        String? // JSON with transport-specific fields
+  location           String // City, region
+  lat                Float? // Latitude
+  lng                Float? // Longitude
+  description        String?
   // Images will be stored as JSON string or separate table - for simplicity using String
-  images       String?  // JSON array of image URLs as string
+  images             String? // JSON array of image URLs as string
 
   // Foreign keys
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], name: "UserVehicles")
-  category     Category @relation(fields: [categoryId], references: [id])
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], name: "UserVehicles")
+  category Category @relation(fields: [categoryId], references: [id])
 
   // Reverse relation for listings
-  listings     Listing[] @relation("ListingVehicle")
-  categoryId   String
+  listings   Listing[] @relation("ListingVehicle")
+  categoryId String
 
   // Timestamps
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Indexes for search optimization
   @@index([make, model])
@@ -125,17 +129,17 @@ model Vehicle {
 // Vehicle categories
 
 model PartCompatibility {
-  id          String   @id @default(uuid())
-  partId      String
-  part        Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
-  make        String
-  model       String
-  generation  String?
-  yearFrom    Int?
-  yearTo      Int?
-  engine      String?
-  note        String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  partId     String
+  part       Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  make       String
+  model      String
+  generation String?
+  yearFrom   Int?
+  yearTo     Int?
+  engine     String?
+  note       String?
+  createdAt  DateTime @default(now())
 
   @@index([partId])
   @@index([make, model])
@@ -154,71 +158,71 @@ model PartCrossReference {
 }
 
 model Category {
-  id            String   @id @default(uuid())
-  name          String   // e.g., "Легковые автомобили"
-  description   String?
-  icon          String   // Icon name from lucide-react
-  vehicleCount  Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(uuid())
+  name         String // e.g., "Легковые автомобили"
+  description  String?
+  icon         String // Icon name from lucide-react
+  vehicleCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  vehicles      Vehicle[]
+  vehicles Vehicle[]
 
   @@unique([name])
 }
 
 // Auto parts model
 model Part {
-  id            String   @id @default(uuid())
-  name          String   // Part name
-  description   String?
-  price         Int      // Price in rubles
-  condition     String   // NEW, USED
-  steeringWheel    String?  // LEFT, RIGHT (руль)
-  ownersCount      Int?     // количество владельцев
-  documentsStatus  String?  // CLEAN, ISSUES, MISSING
-  damageInfo       String?  // NONE, REPAINTED, DAMAGED, SEVERE
-  sellerType       String?  // OWNER, DEALER
-  availability     String?  // IN_STOCK, ON_ORDER, IN_TRANSIT
-  customsCleared   Boolean? // растаможен
-  generation       String?  // поколение
-  keywords         String?  // ключевые слова для поиска
-  subcategory      String?  // подкатегория (амортизаторы, колодки)
-  oemNumber        String?  // OEM номер
-  suspensionType   String?  // MACPHERSON, MULTI_LINK, TORSION
-  brakeType        String?  // DISC, DRUM, VENTED_DISC
-  compatibility    PartCompatibility[]
-  crossReferences  PartCrossReference[]
-  vehicleType   String   @default("CAR")
-  saleFormat    String   @default("FIXED") // FIXED or AUCTION
-  auctionStatus String   @default("ACTIVE")
-  auctionEndsAt DateTime?
-  auctionStartPrice Int?
+  id                  String               @id @default(uuid())
+  name                String // Part name
+  description         String?
+  price               Int // Price in rubles
+  condition           String // NEW, USED
+  steeringWheel       String? // LEFT, RIGHT (руль)
+  ownersCount         Int? // количество владельцев
+  documentsStatus     String? // CLEAN, ISSUES, MISSING
+  damageInfo          String? // NONE, REPAINTED, DAMAGED, SEVERE
+  sellerType          String? // OWNER, DEALER
+  availability        String? // IN_STOCK, ON_ORDER, IN_TRANSIT
+  customsCleared      Boolean? // растаможен
+  generation          String? // поколение
+  keywords            String? // ключевые слова для поиска
+  subcategory         String? // подкатегория (амортизаторы, колодки)
+  oemNumber           String? // OEM номер
+  suspensionType      String? // MACPHERSON, MULTI_LINK, TORSION
+  brakeType           String? // DISC, DRUM, VENTED_DISC
+  compatibility       PartCompatibility[]
+  crossReferences     PartCrossReference[]
+  vehicleType         String               @default("CAR")
+  saleFormat          String               @default("FIXED") // FIXED or AUCTION
+  auctionStatus       String               @default("ACTIVE")
+  auctionEndsAt       DateTime?
+  auctionStartPrice   Int?
   auctionCurrentPrice Int?
-  auctionMinStep Int?
-  make          String   // Compatible vehicle make
-  model         String   // Compatible vehicle model
-  yearFrom      Int?     // Compatible from year
-  yearTo        Int?     // Compatible to year
-  partType      String   // ENGINE, TRANSMISSION, SUSPENSION, BRAKES, ELECTRICAL, BODY, INTERIOR, WHEELS, ACCESSORIES, OTHER
-  location      String   // City, region
-  lat           Float?   // Latitude
-  lng           Float?   // Longitude
+  auctionMinStep      Int?
+  make                String // Compatible vehicle make
+  model               String // Compatible vehicle model
+  yearFrom            Int? // Compatible from year
+  yearTo              Int? // Compatible to year
+  partType            String // ENGINE, TRANSMISSION, SUSPENSION, BRAKES, ELECTRICAL, BODY, INTERIOR, WHEELS, ACCESSORIES, OTHER
+  location            String // City, region
+  lat                 Float? // Latitude
+  lng                 Float? // Longitude
   // Images will be stored as JSON string or separate table - for simplicity using String
-  images        String?  // JSON array of image URLs as string
+  images              String? // JSON array of image URLs as string
 
   // Foreign keys
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], name: "UserParts")
+  userId String
+  user   User   @relation(fields: [userId], references: [id], name: "UserParts")
 
   // Reverse relation for listings
-  listings      Listing[] @relation("ListingPart")
-  bids          PartBid[]
+  listings Listing[] @relation("ListingPart")
+  bids     PartBid[]
 
   // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Indexes
   @@index([name])
@@ -242,48 +246,48 @@ model PartBid {
 
 // Listing model (combines vehicles and parts for unified interface)
 model Listing {
-  id            String   @id @default(uuid())
-  title         String
-  description   String?
-  price         Int      // Price in rubles
-  status        String   @default("ACTIVE") // DRAFT, PENDING_MODERATION, ACTIVE, PAUSED, REJECTED, SOLD, ARCHIVED
-  statusReason  String?
-  isFeatured    Boolean  @default(false)
-  promoType     String?  // boost, premium, vip
-  promoUntil    DateTime? // до какого числа действует продвижение
-  views         Int      @default(0)
+  id           String    @id @default(uuid())
+  title        String
+  description  String?
+  price        Int // Price in rubles
+  status       String    @default("ACTIVE") // DRAFT, PENDING_MODERATION, ACTIVE, PAUSED, REJECTED, SOLD, ARCHIVED
+  statusReason String?
+  isFeatured   Boolean   @default(false)
+  promoType    String? // boost, premium, vip
+  promoUntil   DateTime? // до какого числа действует продвижение
+  views        Int       @default(0)
 
   // Polymorphic relation - can be either vehicle or part
-  vehicleId     String?
-  vehicle       Vehicle? @relation(fields: [vehicleId], references: [id], name: "ListingVehicle")
+  vehicleId String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id], name: "ListingVehicle")
 
-  partId        String?
-  part          Part?    @relation(fields: [partId], references: [id], name: "ListingPart")
+  partId String?
+  part   Part?   @relation(fields: [partId], references: [id], name: "ListingPart")
 
   // Foreign keys
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
   // Reverse relation for favorites
-  favoritedBy   User[]   @relation("Favorites")
+  favoritedBy User[] @relation("Favorites")
 
   // Reverse relation for messages
-  messages      Message[] @relation("MessageListing")
+  messages Message[] @relation("MessageListing")
 
   // Reverse relation for reviews
-  reviews       Review[] @relation("ListingReviews")
-  statusEvents  ListingStatusEvent[]
-  revisions     ListingRevision[]
-  reports       ListingReport[]
+  reviews         Review[]             @relation("ListingReviews")
+  statusEvents    ListingStatusEvent[]
+  revisions       ListingRevision[]
+  reports         ListingReport[]
   promotionOrders PromotionOrder[]
-  viewEvents     ListingViewEvent[]
+  viewEvents      ListingViewEvent[]
 
   // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  publishedAt   DateTime?
-  archivedAt    DateTime?
-  deletedAt     DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  publishedAt         DateTime?
+  archivedAt          DateTime?
+  deletedAt           DateTime?
   lastStatusChangedAt DateTime?
 
   // Application validation and SQLite triggers enforce exactly one subject.
@@ -301,13 +305,13 @@ model Listing {
 // the platform traffic counter. Unlike unique visitors, every accepted event
 // remains a page view so repeated interest is visible in the funnel.
 model ListingViewEvent {
-  id         String   @id @default(uuid())
-  listingId  String
-  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  ipHash     String
-  userId     String?
-  user       User?    @relation("UserListingViewEvents", fields: [userId], references: [id], onDelete: SetNull)
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  ipHash    String
+  userId    String?
+  user      User?    @relation("UserListingViewEvents", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
 
   @@index([listingId, createdAt])
   @@index([ipHash, createdAt])
@@ -318,22 +322,22 @@ model ListingViewEvent {
 // redirecting to the payment provider and becomes PAID only from a verified
 // webhook. Provider identifiers are unique to make webhook replay idempotent.
 model PromotionOrder {
-  id                    String   @id @default(uuid())
-  listingId             String
-  listing               Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  userId                String
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tariffId              String
-  amountRub             Int
-  durationDays          Int
-  status                String   @default("PENDING") // PENDING, PAID, FAILED, CANCELED, REFUNDED
-  provider              String   @default("STRIPE")
-  providerCheckoutId    String?  @unique
-  providerPaymentId     String?  @unique
-  promoUntil            DateTime?
-  paidAt                DateTime?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                 String    @id @default(uuid())
+  listingId          String
+  listing            Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tariffId           String
+  amountRub          Int
+  durationDays       Int
+  status             String    @default("PENDING") // PENDING, PAID, FAILED, CANCELED, REFUNDED
+  provider           String    @default("STRIPE")
+  providerCheckoutId String?   @unique
+  providerPaymentId  String?   @unique
+  promoUntil         DateTime?
+  paidAt             DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
@@ -343,14 +347,14 @@ model PromotionOrder {
 // Immutable record of every lifecycle decision. actorId intentionally remains
 // nullable to retain historical actions if a user account is removed later.
 model ListingStatusEvent {
-  id          String   @id @default(uuid())
-  listingId   String
-  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  fromStatus  String?
-  toStatus    String
-  reason      String?
-  actorId     String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  fromStatus String?
+  toStatus   String
+  reason     String?
+  actorId    String?
+  createdAt  DateTime @default(now())
 
   @@index([listingId, createdAt])
 }
@@ -362,9 +366,9 @@ model ListingRevision {
   listingId     String
   listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   actorId       String?
-  changedFields String   // JSON string array
-  before        String   // JSON snapshot of editable public fields
-  after         String   // JSON snapshot of editable public fields
+  changedFields String // JSON string array
+  before        String // JSON snapshot of editable public fields
+  after         String // JSON snapshot of editable public fields
   reason        String?
   createdAt     DateTime @default(now())
 
@@ -375,19 +379,19 @@ model ListingRevision {
 // lifecycle events: moderation can investigate a complaint without changing
 // the public status of an otherwise active listing.
 model ListingReport {
-  id          String   @id @default(uuid())
-  listingId   String
-  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  reporterId  String
-  reporter    User     @relation("ListingReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  reason      String
-  comment     String?
-  status      String   @default("OPEN") // OPEN, IN_REVIEW, RESOLVED, DISMISSED
-  reviewedAt  DateTime?
-  reviewerId  String?
-  reviewer    User?    @relation("ListingReportReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String    @id @default(uuid())
+  listingId  String
+  listing    Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User      @relation("ListingReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  comment    String?
+  status     String    @default("OPEN") // OPEN, IN_REVIEW, RESOLVED, DISMISSED
+  reviewedAt DateTime?
+  reviewerId String?
+  reviewer   User?     @relation("ListingReportReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@unique([listingId, reporterId])
   @@index([status, createdAt])
@@ -396,22 +400,22 @@ model ListingReport {
 
 // Review model for transaction feedback
 model Review {
-  id            String   @id @default(uuid())
-  rating        Int      // 1-5 stars
-  comment       String?
+  id      String  @id @default(uuid())
+  rating  Int // 1-5 stars
+  comment String?
 
   // Foreign keys
-  userId        String   // Reviewer (user who left the review)
-  user          User     @relation("Reviewer", fields: [userId], references: [id])
+  userId String // Reviewer (user who left the review)
+  user   User   @relation("Reviewer", fields: [userId], references: [id])
 
   // For transaction-based reviews, we might want to link to a specific transaction
   // For now, we'll keep it general but allow linking to a listing
-  listingId     String?
-  listing       Listing? @relation("ListingReviews", fields: [listingId], references: [id])
+  listingId String?
+  listing   Listing? @relation("ListingReviews", fields: [listingId], references: [id])
 
   // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([rating])
@@ -420,9 +424,9 @@ model Review {
 
 // Message model for user-to-user communication
 model Message {
-  id            String   @id @default(uuid())
-  content       String
-  isRead        Boolean  @default(false)
+  id      String  @id @default(uuid())
+  content String
+  isRead  Boolean @default(false)
 
   // Conversation ID for efficient querying
   // Format: "{userId1}-{userId2}-{listingId}" or "{userId1}-{userId2}-no-listing"
@@ -430,18 +434,18 @@ model Message {
   conversationId String
 
   // Foreign keys
-  senderId      String
-  sender        User     @relation("MessageSender", fields: [senderId], references: [id])
+  senderId String
+  sender   User   @relation("MessageSender", fields: [senderId], references: [id])
 
-  receiverId    String
-  receiver      User     @relation("MessageReceiver", fields: [receiverId], references: [id])
+  receiverId String
+  receiver   User   @relation("MessageReceiver", fields: [receiverId], references: [id])
 
   // Optional relation to listing (if message is about a specific listing)
-  listingId     String?
-  listing       Listing? @relation(fields: [listingId], references: [id], name: "MessageListing")
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id], name: "MessageListing")
 
   // Timestamps
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([conversationId])
   @@index([conversationId, createdAt])
@@ -450,25 +454,25 @@ model Message {
 }
 
 // Favorite listings (many-to-many relationship between users and listings)
- // Handled implicitly through the relations in User and Listing models
+// Handled implicitly through the relations in User and Listing models
 
 // AI Service logs (to track usage of AI features)
 model AIServiceLog {
-  id            String   @id @default(uuid())
-  serviceType   String   // VALUATION, HISTORY_CHECK, SIMILAR_SEARCH, PRICE_PREDICTION, DAMAGE_ASSESSMENT, SMART_MATCHING
-  status        String   @default("COMPLETED") // REQUESTED, PROCESSING, COMPLETED, FAILED
-  provider      String?  // Provider or calculation engine that produced the result
+  id               String  @id @default(uuid())
+  serviceType      String // VALUATION, HISTORY_CHECK, SIMILAR_SEARCH, PRICE_PREDICTION, DAMAGE_ASSESSMENT, SMART_MATCHING
+  status           String  @default("COMPLETED") // REQUESTED, PROCESSING, COMPLETED, FAILED
+  provider         String? // Provider or calculation engine that produced the result
   subjectVehicleId String?
-  inputData     String?  // Input data for the AI service (stored as JSON string)
-  resultData    String?  // Result from the AI service (stored as JSON string)
+  inputData        String? // Input data for the AI service (stored as JSON string)
+  resultData       String? // Result from the AI service (stored as JSON string)
 
   // Foreign keys
-  userId        String?
-  user          User?    @relation(fields: [userId], references: [id], name: "UserAIServiceLogs")
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], name: "UserAIServiceLogs")
 
   // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([serviceType, createdAt])
   @@index([userId, serviceType, status, createdAt])
@@ -477,26 +481,26 @@ model AIServiceLog {
 // Dedicated support workflow. Guest visitors receive an opaque browser token;
 // only its SHA-256 hash is stored so a database leak cannot expose live access.
 model SupportTicket {
-  id                    String           @id @default(uuid())
-  publicTokenHash       String           @unique
-  userId                String?
-  user                  User?            @relation("SupportTicketRequester", fields: [userId], references: [id], onDelete: SetNull)
-  guestName             String?
-  guestEmail            String?
-  guestPhone            String?
-  subject               String           @default("Общий вопрос")
-  status                String           @default("OPEN") // OPEN, WAITING_OPERATOR, IN_PROGRESS, CLOSED
-  mode                  String           @default("AI") // AI, OPERATOR
-  priority              String           @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
-  assignedToId          String?
-  assignedTo            User?            @relation("SupportTicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  lastMessageAt         DateTime          @default(now())
-  lastReadByStaffAt     DateTime?
-  lastReadByVisitorAt   DateTime?
-  closedAt              DateTime?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-  messages              SupportMessage[]
+  id                  String           @id @default(uuid())
+  publicTokenHash     String           @unique
+  userId              String?
+  user                User?            @relation("SupportTicketRequester", fields: [userId], references: [id], onDelete: SetNull)
+  guestName           String?
+  guestEmail          String?
+  guestPhone          String?
+  subject             String           @default("Общий вопрос")
+  status              String           @default("OPEN") // OPEN, WAITING_OPERATOR, IN_PROGRESS, CLOSED
+  mode                String           @default("AI") // AI, OPERATOR
+  priority            String           @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  assignedToId        String?
+  assignedTo          User?            @relation("SupportTicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  lastMessageAt       DateTime         @default(now())
+  lastReadByStaffAt   DateTime?
+  lastReadByVisitorAt DateTime?
+  closedAt            DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  messages            SupportMessage[]
 
   @@index([status, lastMessageAt])
   @@index([mode, status, lastMessageAt])
@@ -505,15 +509,15 @@ model SupportTicket {
 }
 
 model SupportMessage {
-  id            String        @id @default(uuid())
-  ticketId      String
-  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  authorType    String // GUEST, USER, AI, OPERATOR, SYSTEM
-  authorUserId  String?
-  authorUser    User?         @relation("SupportMessageAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
-  content       String
-  metadata      String?
-  createdAt     DateTime      @default(now())
+  id           String        @id @default(uuid())
+  ticketId     String
+  ticket       SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorType   String // GUEST, USER, AI, OPERATOR, SYSTEM
+  authorUserId String?
+  authorUser   User?         @relation("SupportMessageAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+  content      String
+  metadata     String?
+  createdAt    DateTime      @default(now())
 
   @@index([ticketId, createdAt])
   @@index([authorUserId, createdAt])
@@ -549,20 +553,20 @@ model Session {
 
 // Notification model for in-app notifications
 model Notification {
-  id            String   @id @default(uuid())
-  title         String
-  content       String
-  isRead        Boolean  @default(false)
-  type          String   // INFO, WARNING, ERROR, SUCCESS
-  relatedId     String?  // ID of related entity (listing, message, etc.)
-  relatedType   String?  // Type of related entity (LISTING, MESSAGE, USER, etc.)
+  id          String  @id @default(uuid())
+  title       String
+  content     String
+  isRead      Boolean @default(false)
+  type        String // INFO, WARNING, ERROR, SUCCESS
+  relatedId   String? // ID of related entity (listing, message, etc.)
+  relatedType String? // Type of related entity (LISTING, MESSAGE, USER, etc.)
 
   // Foreign keys
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], name: "UserNotifications")
+  userId String
+  user   User   @relation(fields: [userId], references: [id], name: "UserNotifications")
 
   // Timestamps
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId, isRead])
   @@index([createdAt])
@@ -570,10 +574,10 @@ model Notification {
 
 // VerificationToken model for NextAuth
 model VerificationToken {
-  id            String   @id @default(uuid())
-  identifier    String
-  token         String   @unique
-  expires       DateTime
+  id         String   @id @default(uuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
   @@unique([identifier, token])
   @@index([token])
@@ -581,19 +585,19 @@ model VerificationToken {
 
 // Privacy-safe product analytics: raw IP is never stored.
 model VisitEvent {
-  id         String   @id @default(uuid())
-  path       String
-  visitorKey String?
-  sessionKey String?
-  ipHash     String?
-  userAgent  String?
-  referer    String?
-  deviceType String?
+  id            String   @id @default(uuid())
+  path          String
+  visitorKey    String?
+  sessionKey    String?
+  ipHash        String?
+  userAgent     String?
+  referer       String?
+  deviceType    String?
   trafficSource String?
-  campaign   String?
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id], name: "UserVisitEvents")
-  createdAt  DateTime @default(now())
+  campaign      String?
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], name: "UserVisitEvents")
+  createdAt     DateTime @default(now())
 
   @@index([createdAt])
   @@index([path, createdAt])
@@ -606,39 +610,40 @@ model VisitEvent {
 
 // One-time codes delivered by the Telegram bot for phone login.
 model TelegramAuthCode {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   phone      String
   codeHash   String
-  purpose    String   @default("LOGIN")
-  attempts   Int      @default(0)
+  purpose    String    @default("LOGIN")
+  attempts   Int       @default(0)
   expiresAt  DateTime
   consumedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([phone, purpose, createdAt])
   @@index([expiresAt])
 }
+
 model News {
-  id               String   @id @default(uuid())
-  title            String
-  slug             String?  @unique
-  content          String
-  excerpt          String?
-  imageUrl         String?
-  sourceUrl        String?
-  telegramUrl      String?
-  sourceKey        String?  @unique
-  sourceChannel    String?
-  sourceMessageId  Int?
-  author           String?
-  tags             String?
-  seoTitle         String?
-  seoDescription   String?
-  publishedAt      DateTime
-  views            Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  comments         Comment[]
+  id              String    @id @default(uuid())
+  title           String
+  slug            String?   @unique
+  content         String
+  excerpt         String?
+  imageUrl        String?
+  sourceUrl       String?
+  telegramUrl     String?
+  sourceKey       String?   @unique
+  sourceChannel   String?
+  sourceMessageId Int?
+  author          String?
+  tags            String?
+  seoTitle        String?
+  seoDescription  String?
+  publishedAt     DateTime
+  views           Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  comments        Comment[]
 
   @@index([publishedAt])
   @@index([sourceChannel, sourceMessageId])
@@ -657,61 +662,61 @@ model Comment {
 // === АУКЦИОННЫЙ АГРЕГАТОР ===
 
 model AuctionListing {
-  id              String   @id @default(uuid())
-  sourceId        String   // ID лота на источнике (дедупликация)
-  source          String   // EMARAAT, AJ, COPART, IAAI, USS, TAA, MOBILE_DE
-  sourceUrl       String   // ссылка на оригинал
+  id                  String    @id @default(uuid())
+  sourceId            String // ID лота на источнике (дедупликация)
+  source              String // EMARAAT, AJ, COPART, IAAI, USS, TAA, MOBILE_DE
+  sourceUrl           String // ссылка на оригинал
   // Данные ТС
-  make            String
-  model           String
-  year            Int
-  manufacturedMonth String? // YYYY-MM from the source when it is available
-  mileage         Int?
-  fuelType        String?
-  transmission    String?
-  bodyType        String?
-  color           String?
-  engineVolume    Float?  // cubic centimetres for imported auction vehicles
-  power           Int?
-  driveType       String?
-  vin             String?
-  lotNumber       String?
+  make                String
+  model               String
+  year                Int
+  manufacturedMonth   String? // YYYY-MM from the source when it is available
+  mileage             Int?
+  fuelType            String?
+  transmission        String?
+  bodyType            String?
+  color               String?
+  engineVolume        Float? // cubic centimetres for imported auction vehicles
+  power               Int?
+  driveType           String?
+  vin                 String?
+  lotNumber           String?
   // Цена
-  sourcePrice     Int      // цена на аукционе
-  sourceCurrency  String   // JPY, KRW, USD, EUR
-  priceRub        Int      // цена в рублях
-  markup          Int      // наценка
-  finalPrice      Int      // итоговая цена для покупателя
-  exchangeRate    Float?   // снимок курса ЦБ, использованный при расчёте
-  pricingUpdatedAt DateTime? // когда цена была пересчитана по актуальному курсу
+  sourcePrice         Int // цена на аукционе
+  sourceCurrency      String // JPY, KRW, USD, EUR
+  priceRub            Int // цена в рублях
+  markup              Int // наценка
+  finalPrice          Int // итоговая цена для покупателя
+  exchangeRate        Float? // снимок курса ЦБ, использованный при расчёте
+  pricingUpdatedAt    DateTime? // когда цена была пересчитана по актуальному курсу
   // Медиа (прямые ссылки)
-  imageUrl        String?
-  images          String?  // JSON массив
+  imageUrl            String?
+  images              String? // JSON массив
   // Перевод
-  descriptionOrig String?
-  specsOrig       String?
-  descriptionRu   String?
-  specsRu         String?
-  equipment       String?  // JSON: source-confirmed options and their availability
-  conditionInfo   String?  // JSON: source-confirmed inspection, insurance and new-car comparison
+  descriptionOrig     String?
+  specsOrig           String?
+  descriptionRu       String?
+  specsRu             String?
+  equipment           String? // JSON: source-confirmed options and their availability
+  conditionInfo       String? // JSON: source-confirmed inspection, insurance and new-car comparison
   // Локация
-  country         String   // JP, KR, US, DE
-  auctionDate     DateTime?
-  location        String?
+  country             String // JP, KR, US, DE
+  auctionDate         DateTime?
+  location            String?
   // Статус
-  status          String   @default("ACTIVE") // ACTIVE, SOLD, EXPIRED, POLICY_EXCLUDED
-  isTranslated    Boolean  @default(false)
-  translatedAt    DateTime?
-  lastChecked     DateTime @default(now()) // последняя попытка проверки источника
-  sourceLastSeenAt DateTime? // подтверждённое присутствие на исходной площадке
-  sourceMissingChecks Int    @default(0) // подряд подтверждённых отсутствий у источника
-  viewCount       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  status              String    @default("ACTIVE") // ACTIVE, SOLD, EXPIRED, POLICY_EXCLUDED
+  isTranslated        Boolean   @default(false)
+  translatedAt        DateTime?
+  lastChecked         DateTime  @default(now()) // последняя попытка проверки источника
+  sourceLastSeenAt    DateTime? // подтверждённое присутствие на исходной площадке
+  sourceMissingChecks Int       @default(0) // подряд подтверждённых отсутствий у источника
+  viewCount           Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  inquiries       AuctionInquiry[]
-  deliveryOrders  DeliveryOrder[]
-  telegramPosts   AuctionTelegramPost[]
+  inquiries      AuctionInquiry[]
+  deliveryOrders DeliveryOrder[]
+  telegramPosts  AuctionTelegramPost[]
 
   @@unique([source, sourceId])
   @@index([source])
@@ -728,55 +733,71 @@ model AuctionListing {
 // отличить сбой источника от снятого объявления и не терять диагностические
 // данные при скрытии просроченных лотов из публичного каталога.
 model AuctionSyncRun {
-  id             String   @id @default(uuid())
-  source         String
-  syncKind       String   // DISCOVERY, REFRESH
-  status         String   @default("RUNNING") // RUNNING, SUCCEEDED, PARTIAL, FAILED
-  catalogUrl     String?
-  requestedLimit Int
-  discovered     Int      @default(0)
-  imported       Int      @default(0)
-  created        Int      @default(0)
-  updated        Int      @default(0)
-  failed         Int      @default(0)
-  skippedByPolicy Int     @default(0)
-  excludedByPolicy Int    @default(0)
-  expired        Int      @default(0)
-  error          String?
-  startedAt      DateTime @default(now())
-  completedAt    DateTime?
+  id               String    @id @default(uuid())
+  source           String
+  syncKind         String // DISCOVERY, REFRESH
+  status           String    @default("RUNNING") // RUNNING, SUCCEEDED, PARTIAL, FAILED
+  catalogUrl       String?
+  requestedLimit   Int
+  discovered       Int       @default(0)
+  imported         Int       @default(0)
+  created          Int       @default(0)
+  updated          Int       @default(0)
+  failed           Int       @default(0)
+  skippedByPolicy  Int       @default(0)
+  excludedByPolicy Int       @default(0)
+  expired          Int       @default(0)
+  error            String?
+  startedAt        DateTime  @default(now())
+  completedAt      DateTime?
 
   @@index([source, startedAt])
   @@index([status, startedAt])
 }
 
 model ExchangeRate {
-  currency    String   @id // ISO: USD, EUR, JPY, KRW, CNY
-  rateToRub   Float    // стоимость одной единицы валюты в рублях
-  source      String   // CBR или резервный источник
+  currency    String    @id // ISO: USD, EUR, JPY, KRW, CNY
+  rateToRub   Float // стоимость одной единицы валюты в рублях
+  source      String // CBR или резервный источник
   effectiveAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([updatedAt])
 }
 
 model AuctionInquiry {
-  id               String   @id @default(uuid())
-  auctionListingId String
-  auctionListing   AuctionListing @relation(fields: [auctionListingId], references: [id], onDelete: Cascade)
-  name             String
-  phone            String
-  email            String?
-  city             String?
-  comment          String?
-  status           String   @default("NEW") // NEW, CONTACTED, IN_PROGRESS, CLOSED, SOLD
-  managerNotes     String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                 String         @id @default(uuid())
+  auctionListingId   String
+  auctionListing     AuctionListing @relation(fields: [auctionListingId], references: [id], onDelete: Cascade)
+  name               String
+  phone              String
+  email              String?
+  city               String?
+  comment            String?
+  status             String         @default("NEW") // NEW, CONTACTED, IN_PROGRESS, CLOSED, SOLD
+  managerNotes       String?
+  requesterId        String?
+  requester          User?          @relation("AuctionInquiryRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  assignedPartnerId  String?
+  assignedPartner    User?          @relation("AuctionInquiryPartner", fields: [assignedPartnerId], references: [id], onDelete: SetNull)
+  assignedById       String?
+  assignedBy         User?          @relation("AuctionInquiryAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedAt         DateTime?
+  deliveryOrderId    String?        @unique
+  deliveryOrder      DeliveryOrder? @relation(fields: [deliveryOrderId], references: [id], onDelete: SetNull)
+  monetizationModel  String         @default("DEAL_FEE") // DEAL_FEE, APPLICATION_FEE, SUBSCRIPTION
+  platformFeeAmount  Int?
+  buyerDepositAmount Int?
+  startedAt          DateTime?
+  closedAt           DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   @@index([auctionListingId])
   @@index([status])
+  @@index([requesterId, createdAt])
+  @@index([assignedPartnerId, status])
 }
 
 // === МЕЖДУНАРОДНАЯ ДОСТАВКА ===
@@ -784,66 +805,71 @@ model AuctionInquiry {
 // реквизиты выставленного счёта, статус проверки квитанции и журнал сделки.
 
 model DeliveryOrganization {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   ownerId            String
-  owner              User     @relation("DeliveryOrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner              User      @relation("DeliveryOrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   legalName          String
-  inn                String   @unique
+  inn                String    @unique
   ogrn               String?
-  organizationType   String   @default("COMPANY") // COMPANY, ENTREPRENEUR, BROKER, LOGISTICS
-  serviceRegions     String?  // JSON array of regions/cities
-  verificationStatus String   @default("PENDING") // PENDING, VERIFIED, REJECTED, SUSPENDED
-  verificationSource String?  // MANUAL, FNS, PARTNER
+  organizationType   String    @default("COMPANY") // COMPANY, ENTREPRENEUR, BROKER, LOGISTICS
+  serviceRegions     String? // JSON array of regions/cities
+  verificationStatus String    @default("PENDING") // PENDING, VERIFIED, REJECTED, SUSPENDED
+  verificationSource String? // MANUAL, FNS, PARTNER
   fnsCheckedAt       DateTime?
   verificationNote   String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([ownerId])
   @@index([verificationStatus])
 }
 
 model DeliveryOrder {
-  id                    String   @id @default(uuid())
-  code                  String   @unique
-  kind                  String   @default("VEHICLE") // VEHICLE, PART
-  sourceType            String   @default("AUCTION") // AUCTION, DIRECT_IMPORT, PARTS_ORDER
-  status                String   @default("REQUEST_CREATED")
-  statusSource          String   @default("MANUAL") // MANUAL, PARTNER, BROKER, OFFICIAL_API
-  title                 String
-  description           String?
-  auctionListingId      String?
-  auctionListing        AuctionListing? @relation(fields: [auctionListingId], references: [id], onDelete: SetNull)
-  vin                   String?
-  lotNumber             String?
-  originCountry         String
-  originCity            String?
-  originCheckpoint      String?
-  transitCity           String?
-  destinationCity       String
-  destinationRegion     String?
-  buyerId               String
-  buyer                 User     @relation("DeliveryBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
-  partnerId             String?
-  partner               User?    @relation("DeliveryPartner", fields: [partnerId], references: [id], onDelete: SetNull)
-  managerId             String?
-  manager               User?    @relation("DeliveryManager", fields: [managerId], references: [id], onDelete: SetNull)
-  buyerDepositAmount    Int?
-  buyerDepositStatus    String   @default("NOT_REQUESTED")
-  depositPaidAt         DateTime?
-  expectedPurchaseAt    DateTime?
-  purchasedAt           DateTime?
-  estimatedDeliveryAt   DateTime?
-  completedAt           DateTime?
-  nextAction            String?
-  nextActionAt          DateTime?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                  String          @id @default(uuid())
+  code                String          @unique
+  kind                String          @default("VEHICLE") // VEHICLE, PART
+  sourceType          String          @default("AUCTION") // AUCTION, DIRECT_IMPORT, PARTS_ORDER
+  status              String          @default("REQUEST_CREATED")
+  statusSource        String          @default("MANUAL") // MANUAL, PARTNER, BROKER, OFFICIAL_API
+  title               String
+  description         String?
+  auctionListingId    String?
+  auctionListing      AuctionListing? @relation(fields: [auctionListingId], references: [id], onDelete: SetNull)
+  vin                 String?
+  lotNumber           String?
+  originCountry       String
+  originCity          String?
+  originCheckpoint    String?
+  transitCity         String?
+  destinationCity     String
+  destinationRegion   String?
+  buyerId             String
+  buyer               User            @relation("DeliveryBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  partnerId           String?
+  partner             User?           @relation("DeliveryPartner", fields: [partnerId], references: [id], onDelete: SetNull)
+  managerId           String?
+  manager             User?           @relation("DeliveryManager", fields: [managerId], references: [id], onDelete: SetNull)
+  buyerDepositAmount  Int?
+  buyerDepositStatus  String          @default("NOT_REQUESTED")
+  monetizationModel   String          @default("DEAL_FEE") // DEAL_FEE, APPLICATION_FEE, SUBSCRIPTION
+  platformFeeAmount   Int?
+  platformFeeStatus   String          @default("NOT_REQUESTED")
+  depositPaidAt       DateTime?
+  expectedPurchaseAt  DateTime?
+  purchasedAt         DateTime?
+  estimatedDeliveryAt DateTime?
+  completedAt         DateTime?
+  nextAction          String?
+  nextActionAt        DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
-  events                DeliveryEvent[]
-  payments              DeliveryPayment[]
-  documents             DeliveryDocument[]
-  messages              DeliveryMessage[]
+  events           DeliveryEvent[]
+  payments         DeliveryPayment[]
+  documents        DeliveryDocument[]
+  messages         DeliveryMessage[]
+  auctionInquiry   AuctionInquiry?
+  moderationEvents CommunicationModerationEvent[]
 
   @@index([buyerId, updatedAt])
   @@index([partnerId, updatedAt])
@@ -853,43 +879,43 @@ model DeliveryOrder {
 }
 
 model DeliveryEvent {
-  id              String   @id @default(uuid())
-  deliveryOrderId String
-  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
-  status          String
-  title           String
-  description     String?
-  responsibleRole String   @default("PLATFORM") // BUYER, PARTNER, BROKER, LOGISTICS, PLATFORM
-  source          String   @default("MANUAL")
-  isVisibleToBuyer Boolean @default(true)
-  expectedAt      DateTime?
-  completedAt     DateTime @default(now())
-  authorId        String?
-  author          User?    @relation("DeliveryEventAuthor", fields: [authorId], references: [id], onDelete: SetNull)
-  metadata        String?  // JSON: reference/checkpoint/external status identifier
-  createdAt       DateTime @default(now())
+  id               String        @id @default(uuid())
+  deliveryOrderId  String
+  deliveryOrder    DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
+  status           String
+  title            String
+  description      String?
+  responsibleRole  String        @default("PLATFORM") // BUYER, PARTNER, BROKER, LOGISTICS, PLATFORM
+  source           String        @default("MANUAL")
+  isVisibleToBuyer Boolean       @default(true)
+  expectedAt       DateTime?
+  completedAt      DateTime      @default(now())
+  authorId         String?
+  author           User?         @relation("DeliveryEventAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  metadata         String? // JSON: reference/checkpoint/external status identifier
+  createdAt        DateTime      @default(now())
 
   @@index([deliveryOrderId, completedAt])
   @@index([status])
 }
 
 model DeliveryPayment {
-  id              String   @id @default(uuid())
-  deliveryOrderId String
-  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
-  category        String   // DEPOSIT, VEHICLE, EXPORT, BROKER, DUTY, LABORATORY, EPTS, LOGISTICS
-  status          String   @default("DRAFT") // DRAFT, INVOICE_ISSUED, AWAITING_CONFIRMATION, CONFIRMED, OVERDUE, CANCELED
-  amount          Int?
-  currency        String   @default("RUB")
-  payeeName       String?
-  invoiceNumber   String?
-  instruction     String?
-  dueAt           DateTime?
-  paidAt          DateTime?
-  confirmedAt     DateTime?
+  id                String        @id @default(uuid())
+  deliveryOrderId   String
+  deliveryOrder     DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
+  category          String // DEPOSIT, VEHICLE, EXPORT, BROKER, DUTY, LABORATORY, EPTS, LOGISTICS
+  status            String        @default("DRAFT") // DRAFT, INVOICE_ISSUED, AWAITING_CONFIRMATION, CONFIRMED, OVERDUE, CANCELED
+  amount            Int?
+  currency          String        @default("RUB")
+  payeeName         String?
+  invoiceNumber     String?
+  instruction       String?
+  dueAt             DateTime?
+  paidAt            DateTime?
+  confirmedAt       DateTime?
   receiptDocumentId String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([deliveryOrderId, status])
   @@index([category])
@@ -909,36 +935,55 @@ model AuctionTelegramPost {
 }
 
 model DeliveryDocument {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   deliveryOrderId String
   deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
   title           String
-  category        String   // INVOICE, RECEIPT, EXPORT, CUSTOMS, LABORATORY, EPTS, CONTRACT, OTHER
-  visibility      String   @default("BUYER_AND_TEAM") // BUYER_AND_TEAM, TEAM_ONLY
+  category        String // INVOICE, RECEIPT, EXPORT, CUSTOMS, LABORATORY, EPTS, CONTRACT, OTHER
+  visibility      String        @default("BUYER_AND_TEAM") // BUYER_AND_TEAM, TEAM_ONLY
   fileName        String
   mimeType        String
   size            Int
-  storageKey      String   @unique
+  storageKey      String        @unique
   uploadedById    String
-  uploadedBy      User     @relation("DeliveryDocumentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
+  uploadedBy      User          @relation("DeliveryDocumentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
 
   @@index([deliveryOrderId, createdAt])
   @@index([visibility])
 }
 
 model DeliveryMessage {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   deliveryOrderId String
   deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
   senderId        String
-  sender          User     @relation("DeliveryMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  sender          User          @relation("DeliveryMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
   content         String
-  isSystem        Boolean  @default(false)
-  createdAt       DateTime @default(now())
+  isSystem        Boolean       @default(false)
+  createdAt       DateTime      @default(now())
 
   @@index([deliveryOrderId, createdAt])
 }
 
-// === АУКЦИОННЫЙ АГРЕГАТОР ===
+// Audit trail for content rejected before it reaches the other participant.
+// The original message is deliberately not stored; only a redacted preview
+// and machine-readable reasons remain available to administrators.
+model CommunicationModerationEvent {
+  id              String        @id @default(uuid())
+  deliveryOrderId String
+  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
+  senderId        String
+  sender          User          @relation("CommunicationModerationSender", fields: [senderId], references: [id], onDelete: Cascade)
+  decision        String        @default("BLOCKED") // BLOCKED, REVIEW
+  reasonCodes     String // JSON array
+  redactedPreview String?
+  provider        String        @default("LOCAL_POLICY") // LOCAL_POLICY, NVIDIA, LOCAL_POLICY+NVIDIA
+  createdAt       DateTime      @default(now())
 
+  @@index([deliveryOrderId, createdAt])
+  @@index([senderId, createdAt])
+  @@index([decision, createdAt])
+}
+
+// === АУКЦИОННЫЙ АГРЕГАТОР ===

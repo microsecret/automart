@@ -2,9 +2,10 @@
 export const dynamic = "force-dynamic"
 import { useEffect, useMemo, useState, Suspense } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import Link from "next/link"
-import { ActionIcon, Anchor, Badge, Box, Button, Center, Container, Group, Loader, Paper, Progress, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, UnstyledButton } from "@mantine/core"
+import { ActionIcon, Alert, Anchor, Badge, Box, Button, Center, Container, Group, Loader, Paper, Progress, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, UnstyledButton } from "@mantine/core"
 import { useMediaQuery } from "@mantine/hooks"
 import { IconArrowLeft, IconArrowRight, IconCheck, IconChevronLeft, IconChevronRight, IconEye, IconGavel, IconHome, IconListDetails, IconPhotoOff, IconShieldCheck, IconTruckDelivery, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
@@ -138,6 +139,7 @@ function parseAuctionConditionInfo(value: string | null): AuctionConditionInfo |
 function AuctionDetail() {
   const params = useParams()
   const router = useRouter()
+  const { data: session, status: authStatus } = useSession()
   const id = params.id as string
   const { data, error, isLoading, mutate } = useSWR<AuctionDetailResponse>(
     `/api/auctions/${id}`,
@@ -207,6 +209,15 @@ function AuctionDetail() {
   }, [listing?.id])
 
   useEffect(() => {
+    if (!session?.user) return
+    setForm((current) => ({
+      ...current,
+      name: current.name || session.user.name || "",
+      email: current.email || session.user.email || "",
+    }))
+  }, [session?.user])
+
+  useEffect(() => {
     if (galleryImages.length < 2 || typeof window === "undefined") return
 
     // Decode only the active full-size image and one card-size neighbour.
@@ -268,7 +279,7 @@ function AuctionDetail() {
         body: JSON.stringify(form),
       })
       setSubmitted(true)
-      notifications.show({ title: "Заявка отправлена!", message: "Менеджер свяжется с вами в течение 1 часа", color: "green" })
+      notifications.show({ title: "Заявка отправлена", message: "После назначения партнёра сделка и защищённый чат появятся в кабинете.", color: "green" })
     } catch (error) {
       notifications.show({
         title: "Не удалось отправить заявку",
@@ -494,23 +505,29 @@ function AuctionDetail() {
                   <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>
                   <Stack gap={0} align="center">
                     <Text fw={700} fz="lg" c="dark.9">Заявка отправлена!</Text>
-                    <Text size="sm" c="gray.5" ta="center">Менеджер свяжется с вами<br />в течение 1 часа</Text>
+                    <Text size="sm" c="gray.5" ta="center">После проверки лота и назначения партнёра<br />сделка появится в личном кабинете.</Text>
+                    <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" fullWidth>Перейти к сделкам</Button>
                   </Stack>
                 </Stack>
               ) : (
-                <form onSubmit={handleSubmit}>
+                authStatus !== "authenticated" ? (
+                  <Stack gap="md">
+                    <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="dark.9">Заказать авто</Text></Group>
+                    <Text size="sm" c="dimmed">Войдите, чтобы заявка была привязана к вам, а партнёр общался с вами без доступа к телефону и почте.</Text>
+                    <Alert color="indigo" variant="light" icon={<IconShieldCheck size={18} />} title="Все этапы внутри LeWheel">После назначения партнёра здесь появятся чат, счета, договоры и маршрут доставки.</Alert>
+                    <Button component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(`/auctions/${listing.id}#order`)}`} color="indigo" size="md" fullWidth loading={authStatus === "loading"}>Войти и оставить заявку</Button>
+                  </Stack>
+                ) : <form onSubmit={handleSubmit}>
                   <Stack gap="sm">
                     <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="dark.9">Заказать авто</Text></Group>
                     <Text size="xs" c="gray.5">{publicIdentity.title} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
-                    <Button component={Link} href={`/dashboard/deliveries?auctionListingId=${listing.id}`} variant="light" color="indigo" radius="md" size="sm" leftSection={<IconTruckDelivery size={16} />} fullWidth>Открыть сделку в кабинете</Button>
-                    <Text size="xs" c="gray.5" ta="center">Для отслеживания маршрута, счетов и документов после входа.</Text>
                     <TextInput label="Ваше имя" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="sm" />
                     <TextInput label="Телефон" required placeholder="+7 (___) ___-__-__" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} size="sm" />
                     <TextInput label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} size="sm" />
-                    <TextInput label="Город доставки" placeholder="Москва" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} size="sm" />
+                    <TextInput label="Город доставки" required placeholder="Москва" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} size="sm" />
                     <Textarea label="Комментарий" placeholder="Вопросы, пожелания..." value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} size="sm" minRows={2} />
                     <Button type="submit" color="orange" radius="md" size="md" loading={submitting} leftSection={<IconCheck size={18} />} fullWidth>Отправить заявку</Button>
-                    <Group gap={6}><IconShieldCheck size={14} color="#059669" /><Text size="xs" c="gray.5">Без предоплаты. Консультация бесплатно.</Text></Group>
+                    <Group gap={6}><IconShieldCheck size={14} color="#059669" /><Text size="xs" c="gray.5">Контакты видит только администратор. Партнёру — имя и город.</Text></Group>
                     <Group gap={6}><IconTruckDelivery size={14} color="#4f46e5" /><Text size="xs" c="gray.5">Доставка во все регионы РФ</Text></Group>
                   </Stack>
                 </form>

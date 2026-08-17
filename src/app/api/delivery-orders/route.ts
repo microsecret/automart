@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { asTrimmedString, deliveryOrderInclude, isDeliveryAdmin } from "@/lib/delivery-access"
+import { asTrimmedString, deliveryOrderInclude, isDeliveryAdmin, safeDealDisplayName } from "@/lib/delivery-access"
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, makeDeliveryCode } from "@/lib/delivery"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { inspectContactSharing } from "@/lib/contact-sharing-policy"
 
 export const dynamic = "force-dynamic"
 
@@ -42,11 +43,17 @@ export async function GET() {
       take: 50,
     })
 
+    const publicOrders = isDeliveryAdmin(session) ? orders : orders.map((order) => ({
+      ...order,
+      buyer: { ...order.buyer, name: safeDealDisplayName(order.buyer.name, "Покупатель") },
+      partner: order.partner ? { ...order.partner, name: safeDealDisplayName(order.partner.name, "Партнёр") } : null,
+      manager: order.manager ? { ...order.manager, name: safeDealDisplayName(order.manager.name, "Менеджер LeWheel") } : null,
+    }))
     const activeOrders = orders.filter((order) => !["COMPLETED", "CANCELED"].includes(order.status))
     const pendingPayments = orders.reduce((count, order) => count + order.payments.filter((payment) => ["INVOICE_ISSUED", "AWAITING_CONFIRMATION", "OVERDUE"].includes(payment.status)).length, 0)
 
     return NextResponse.json({
-      orders,
+      orders: publicOrders,
       summary: {
         total: orders.length,
         active: activeOrders.length,
@@ -86,6 +93,11 @@ export async function POST(request: NextRequest) {
     if (!title || !destinationCity || !validKinds.has(kind) || !validSources.has(sourceType) || !validCountries.has(originCountry)) {
       return NextResponse.json({ error: "Проверьте вид транспорта, страну, название и город доставки" }, { status: 400 })
     }
+    const description = asTrimmedString(body.description, 2000)
+    const publicRequestText = [title, description, destinationCity, asTrimmedString(body.originCity, 120)].filter(Boolean).join("\n")
+    if (!inspectContactSharing(publicRequestText).allowed) {
+      return NextResponse.json({ error: "Телефон, почту, ссылки и контакты мессенджеров нельзя передавать партнёру. Удалите их из заявки." }, { status: 422 })
+    }
 
     const auctionListingId = asTrimmedString(body.auctionListingId, 80) || null
     if (auctionListingId) {
@@ -102,7 +114,7 @@ export async function POST(request: NextRequest) {
             kind,
             sourceType,
             title,
-            description: asTrimmedString(body.description, 2000) || null,
+            description: description || null,
             auctionListingId,
             vin: asTrimmedString(body.vin, 32) || null,
             lotNumber: asTrimmedString(body.lotNumber, 80) || null,

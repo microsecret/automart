@@ -75,12 +75,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Недопустимый тип документа" }, { status: 400 })
     }
 
-    let relatedPayment: { id: string; status: string } | null = null
+    let relatedPayment: { id: string; status: string; category: string } | null = null
     if (paymentId) {
       if (category !== "RECEIPT") {
         return NextResponse.json({ error: "К счёту можно приложить только квитанцию" }, { status: 400 })
       }
-      relatedPayment = await prisma.deliveryPayment.findFirst({ where: { id: paymentId, deliveryOrderId: order.id }, select: { id: true, status: true } })
+      relatedPayment = await prisma.deliveryPayment.findFirst({ where: { id: paymentId, deliveryOrderId: order.id }, select: { id: true, status: true, category: true } })
       if (!relatedPayment) return NextResponse.json({ error: "Счёт не относится к этой сделке" }, { status: 400 })
       if (!canTransitionDeliveryPayment(relatedPayment.status, "AWAITING_CONFIRMATION")) {
         return NextResponse.json({ error: "Квитанцию можно приложить только к выставленному или просроченному счёту" }, { status: 409 })
@@ -120,6 +120,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             data: { receiptDocumentId: created.id, status: "AWAITING_CONFIRMATION", paidAt: new Date() },
           })
           if (paymentUpdated.count === 0) throw new Error(PAYMENT_STATE_CONFLICT)
+          if (relatedPayment.category === "DEPOSIT") {
+            await tx.deliveryOrder.update({ where: { id: order.id }, data: { buyerDepositStatus: "AWAITING_CONFIRMATION" } })
+          }
+          if (relatedPayment.category === "PLATFORM_FEE") {
+            await tx.deliveryOrder.update({ where: { id: order.id }, data: { platformFeeStatus: "AWAITING_CONFIRMATION" } })
+          }
         }
         return created
       })

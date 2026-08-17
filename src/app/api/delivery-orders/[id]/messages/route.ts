@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { asTrimmedString, canReadDeliveryOrder } from "@/lib/delivery-access"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { moderateProtectedDealMessage } from "@/lib/contact-sharing-moderation"
+import { moderationAuditSummary } from "@/lib/contact-sharing-policy"
 
 export const dynamic = "force-dynamic"
 
@@ -29,6 +31,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = await request.json()
     const content = asTrimmedString(body.content, 3000)
     if (!content) return NextResponse.json({ error: "Введите сообщение" }, { status: 400 })
+
+    const moderation = await moderateProtectedDealMessage(content)
+    if (!moderation.allowed) {
+      await prisma.communicationModerationEvent.create({
+        data: {
+          deliveryOrderId: order.id,
+          senderId: session.user.id,
+          decision: "BLOCKED",
+          reasonCodes: JSON.stringify(moderation.reasonCodes),
+          redactedPreview: moderationAuditSummary(content),
+          provider: moderation.provider,
+        },
+      })
+      return NextResponse.json(
+        { error: moderation.message || "Сообщение содержит внешний контакт и не было отправлено.", code: "CONTACT_SHARING_BLOCKED" },
+        { status: 422 },
+      )
+    }
 
     const message = await prisma.deliveryMessage.create({
       data: { deliveryOrderId: order.id, senderId: session.user.id, content },
