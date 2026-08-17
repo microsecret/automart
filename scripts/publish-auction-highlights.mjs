@@ -23,6 +23,8 @@ const limit = Number.isInteger(explicitLimit) ? Math.min(Math.max(explicitLimit,
 const maxAgeHours = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_AGE_HOURS || 72), 1), 720)
 const minFinalPrice = Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_FINAL_PRICE || 400_000), 0)
 const minMedianRatio = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_MEDIAN_RATIO || 0.35), 0), 0.95)
+const maxSeriousDefects = Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_SERIOUS_DEFECTS || 1), 0)
+const maxInspectionNotes = Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_INSPECTION_NOTES || 30), 0)
 const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim()
 const configuredChatIds = [...new Set((process.env.TELEGRAM_AUCTION_CHAT_IDS || "").split(",").map((value) => value.trim()).filter(Boolean))]
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://lewheel.ru").replace(/\/$/, "")
@@ -208,8 +210,8 @@ async function main() {
   const posted = dryRun || chatIds.length === 0 ? [] : await prisma.auctionTelegramPost.findMany({ where: { auctionListingId: { in: listings.map((listing) => listing.id) }, chatId: { in: chatIds } }, select: { auctionListingId: true, chatId: true } })
   const postedKeys = new Set(posted.map((item) => `${item.auctionListingId}:${item.chatId}`))
   const rankedCandidates = listings
-    .map((listing) => ({ listing, signal: signalForPrice(listing.finalPrice, medians.get(listing.country)) }))
-    .filter(({ listing, signal }) => listing.finalPrice >= minFinalPrice && signal.ratio != null && signal.ratio >= minMedianRatio && signal.ratio <= 0.95)
+    .map((listing) => ({ listing, signal: signalForPrice(listing.finalPrice, medians.get(listing.country)), damage: inspectionCounts(listing.conditionInfo) }))
+    .filter(({ listing, signal, damage }) => listing.finalPrice >= minFinalPrice && signal.ratio != null && signal.ratio >= minMedianRatio && signal.ratio <= 0.95 && damage.serious <= maxSeriousDefects && damage.notes <= maxInspectionNotes)
     .sort((left, right) => (left.signal.ratio || 1) - (right.signal.ratio || 1))
 
   if (dryRun) {
