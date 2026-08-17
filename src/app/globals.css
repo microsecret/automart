@@ -642,13 +642,16 @@ select {
   background: color-mix(in srgb, var(--market-primary-soft) 82%, transparent);
 }
 
+/* Уровней в меню два: раздел и его подпункт. Раньше веса различались на
+   30 единиц (650/620/650) при почти равном кегле — глаз читал это как
+   случайную неровность, а не как иерархию. */
 .market-side-nav {
-  min-height: 25px;
+  min-height: 26px;
   margin-inline: 1px;
   border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 650;
-  line-height: 1.15;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
   transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
@@ -662,17 +665,25 @@ select {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #818cf8 30%, transparent), 0 8px 16px -16px rgba(79, 70, 229, 0.72);
 }
 
+/* Подпункт отличается отступом и приглушённым цветом, а не третьим весом:
+   так вложенность видна, а список остаётся ровным. */
 .market-side-nav--nested {
-  min-height: 23px;
+  min-height: 24px;
   padding-left: 22px;
-  font-size: 0.73rem;
-  font-weight: 620;
+  font-size: 0.78rem;
+  font-weight: 500;
   color: var(--market-muted);
 }
 
+.market-side-nav--nested[data-active] {
+  font-weight: 600;
+  color: var(--market-ink);
+}
+
+/* Сервисы — тот же уровень, что и разделы: собственного веса им не нужно. */
 .market-side-nav--service {
-  font-size: 0.76rem;
-  font-weight: 650;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .market-side-nav--service + .market-side-nav--service {

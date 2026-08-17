@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, Checkbox } from "@mantine/core"
-import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake } from "@tabler/icons-react"
+import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake, IconX } from "@tabler/icons-react"
 import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILABILITY_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
@@ -207,7 +207,13 @@ function PartsContent() {
       <Stack gap={8}>
         <Group gap="xs" justify="space-between">
           <Group gap="xs"><ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconTools size={16} /></ThemeIcon><Text fw={800} fz="sm" ff="var(--font-display),sans-serif">Категории запчастей</Text></Group>
-          {partType && <Button variant="subtle" color="gray" size="compact-xs" onClick={() => selectPartType(null)}>Сбросить категорию</Button>}
+          {/* Кнопка была subtle: на светлой карточке она читалась как пустой
+              прямоугольник в углу, а не как действие. */}
+          {partType && (
+            <Button variant="light" color="gray" size="compact-xs" leftSection={<IconX size={12} />} onClick={() => selectPartType(null)}>
+              Сбросить категорию
+            </Button>
+          )}
         </Group>
         <Group gap={6} wrap="wrap">
           <Button size="compact-sm" radius="md" variant={!partType ? "filled" : "default"} color="indigo" onClick={() => selectPartType(null)}>Все запчасти</Button>
