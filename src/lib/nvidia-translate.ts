@@ -1,20 +1,31 @@
 /**
  * ИИ-перевод текста на русский через NVIDIA API.
- * Ротация ключей применяется только при rate limit (429). Ошибка авторизации
- * ставит короткую паузу, чтобы импорт не создавал лишний трафик и шум в логах.
+ *
+ * Ключи ротируются при rate limit (429) и при отказе авторизации: один
+ * отозванный ключ из набора не должен останавливать перевод, пока остальные
+ * рабочие. Пауза включается только когда авторизацию отвергли все ключи.
  */
 
 const KEYS = (process.env.NVIDIA_KEYS || "").split(",").map((key) => key.trim()).filter(Boolean)
 const NVIDIA_MODEL = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.1-70b-instruct"
 const AUTH_FAILURE_COOLDOWN_MS = 5 * 60 * 1000
+// Ключ, отвергнутый провайдером, пропускается до конца жизни процесса:
+// отозванный ключ сам не восстановится, а повторные попытки создают лишний
+// трафик и шум в логах на каждом импортируемом лоте.
+const revokedKeys = new Set<string>()
 let currentKeyIdx = 0
 let authUnavailableUntil = 0
 
 function getNextKey(): string | null {
   if (KEYS.length === 0) return null
-  const key = KEYS[currentKeyIdx % KEYS.length]
-  currentKeyIdx++
-  return key
+  // Перебираем не больше одного полного круга, чтобы не зациклиться, когда
+  // отозваны все ключи.
+  for (let offset = 0; offset < KEYS.length; offset++) {
+    const key = KEYS[currentKeyIdx % KEYS.length]
+    currentKeyIdx++
+    if (!revokedKeys.has(key)) return key
+  }
+  return null
 }
 
 // Простой кэш (in-memory, для одного процесса)
@@ -121,12 +132,18 @@ export async function translateToRussian(text: string): Promise<string> {
       }
 
       if (res.status === 401 || res.status === 403) {
-        // An invalid or revoked credential cannot be solved by cycling all
-        // configured keys. Cool down, keep importing, and use the local
-        // terminology fallback until the operator fixes the secret.
-        authUnavailableUntil = Date.now() + AUTH_FAILURE_COOLDOWN_MS
+        // Отозван конкретный ключ, а не доступ целиком: остальные ключи из
+        // набора продолжают работать, поэтому прерывать перевод нельзя.
+        // Раньше первый же отозванный ключ отключал перевод на пять минут,
+        // и лоты сохранялись с непереведённым исходным текстом.
+        revokedKeys.add(apiKey)
         lastError = new Error(`NVIDIA API ${res.status}: authorization failed`)
-        break
+        if (revokedKeys.size >= KEYS.length) {
+          // Рабочих ключей не осталось — только теперь имеет смысл пауза.
+          authUnavailableUntil = Date.now() + AUTH_FAILURE_COOLDOWN_MS
+          break
+        }
+        continue
       }
 
       if (!res.ok) {

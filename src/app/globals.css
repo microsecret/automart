@@ -12,10 +12,13 @@
   --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --market-ink: #171719;
   --market-muted: #71717a;
-  --market-line: #e8e8ec;
+  --market-line: #e3e4ea;
   --market-surface: #ffffff;
-  --market-background: #f7f7f9;
-  --market-surface-subtle: #fafafd;
+  /* Фон был почти белым, поэтому карточки сливались с ним и страница
+     читалась как одна плоскость. Чуть более глубокий тон отделяет контент
+     от подложки, не превращая интерфейс в серый. */
+  --market-background: #f1f2f6;
+  --market-surface-subtle: #f8f9fc;
   --market-field: #ffffff;
   --market-field-hover: #eef2ff;
   --market-field-line: #d6deeb;
