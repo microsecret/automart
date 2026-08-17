@@ -10,6 +10,7 @@ import ListingRow from "@/components/listings/ListingRow"
 import type { ListingCardData } from "@/components/listings/ListingCard"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import DashboardNav from "@/components/dashboard/DashboardNav"
 
 type FavoritesResponse = {
   favorites: ListingCardData[]
@@ -38,6 +39,8 @@ export default function FavoritesPage() {
             <SegmentedControl size="xs" value={view} onChange={setView} data={[{label:<IconLayoutGrid size={14}/>,value:"grid"},{label:<IconList size={14}/>,value:"list"}]} />
           )}
         </Group>
+
+        <DashboardNav active="favorites" />
 
         {isLoading ? (
           <ResultsGridSkeleton count={8} mediaHeight={210} />

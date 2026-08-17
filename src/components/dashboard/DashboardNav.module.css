@@ -1,0 +1,50 @@
+.nav {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--market-line);
+  border-radius: 14px;
+  background: var(--market-surface);
+  box-shadow: 0 12px 24px -26px rgba(15, 23, 42, 0.62);
+  scrollbar-width: thin;
+}
+
+.track {
+  min-width: max-content;
+  padding: 5px;
+}
+
+.item {
+  display: flex;
+  min-width: 112px;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  color: var(--market-muted);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.item:hover {
+  color: var(--market-ink);
+  background: var(--market-surface-subtle);
+}
+
+.item[data-active] {
+  color: var(--mantine-color-indigo-8);
+  background: var(--mantine-color-indigo-0);
+}
+
+.item:focus-visible {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 1px;
+}
+
+@media (max-width: 48em) {
+  .item {
+    min-width: 96px;
+    flex-direction: column;
+    gap: 4px;
+    padding-inline: 8px;
+  }
+}

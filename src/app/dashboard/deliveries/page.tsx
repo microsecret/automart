@@ -10,6 +10,7 @@ import { IconArrowRight, IconBuildingWarehouse, IconCheck, IconChevronRight, Ico
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
+import DashboardNav from "@/components/dashboard/DashboardNav"
 
 const sourceOptions = [
   { value: "AUCTION", label: "Аукцион" },
@@ -166,6 +167,7 @@ function DeliveriesWorkspace() {
   return (
     <Box p={{ base: "sm", md: "lg" }}>
       <Stack gap="md">
+        <DashboardNav active="deliveries" />
         <Paper radius="xl" p={{ base: "lg", md: 36 }} style={{ color: "white", overflow: "hidden", position: "relative", isolation: "isolate", background: "radial-gradient(circle at 88% 14%, rgba(139,92,246,.72), transparent 29%), linear-gradient(126deg, #071329 0%, #142c63 52%, #4038b9 100%)", boxShadow: "0 24px 60px rgba(25, 48, 103, .22)" }}>
           <Box aria-hidden style={{ position: "absolute", width: 260, height: 260, borderRadius: "50%", border: "1px solid rgba(255,255,255,.14)", right: -70, bottom: -150, zIndex: -1 }} />
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">

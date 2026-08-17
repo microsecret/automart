@@ -5,6 +5,7 @@ import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
 import { auctionVehicleIdentity, normalizeAuctionEngineVolumeCc } from "@/lib/auction-normalization"
 import type { AuctionDamageReport } from "@/lib/auction-damage"
 import { serializeAuctionSourceSpecs } from "@/lib/auction-source-details"
+import { auctionPriceStorageError } from "@/lib/auction-price-guard"
 
 function hasUntranslatedForeignText(original: string | null, translated: string | null) {
   if (!original) return false
@@ -131,6 +132,13 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
       where: { source_sourceId: { source: item.source, sourceId: String(item.sourceId) } },
     }).catch(() => null)
 
+    const exchangeRate = getAuctionRateToRub(item.sourceCurrency, exchangeRates)
+    const priceStorageError = auctionPriceStorageError({ sourcePrice: item.sourcePrice, exchangeRate, markup: existing?.markup || 0 })
+    if (priceStorageError) {
+      console.warn(`Auction ${item.source}/${item.sourceId} skipped: ${priceStorageError}`)
+      continue
+    }
+
     if (existing) {
       const sourceTextChanged = item.descriptionOrig !== existing.descriptionOrig || item.specsOrig !== existing.specsOrig
       const needsTranslationRefresh = sourceTextChanged || hasUntranslatedForeignText(existing.descriptionOrig, existing.descriptionRu) || hasUntranslatedForeignText(existing.specsOrig, existing.specsRu)
@@ -165,7 +173,6 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         conditionInfo: item.conditionInfo,
       }, translatedFields?.specsRu || existing.specsRu)
 
-      const exchangeRate = getAuctionRateToRub(item.sourceCurrency, exchangeRates)
       const price = calculateAuctionRubPricing(item.sourcePrice, exchangeRate, existing.markup)
       await prisma.auctionListing.update({
         where: { id: existing.id },
@@ -215,9 +222,13 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
       continue
     }
 
-    const exchangeRate = getAuctionRateToRub(item.sourceCurrency, exchangeRates)
     const basePriceRub = Math.max(0, Math.round(item.sourcePrice * exchangeRate))
     const markup = estimatedAuctionServiceFee(basePriceRub)
+    const priceWithMarkupError = auctionPriceStorageError({ sourcePrice: item.sourcePrice, exchangeRate, markup })
+    if (priceWithMarkupError) {
+      console.warn(`Auction ${item.source}/${item.sourceId} skipped: ${priceWithMarkupError}`)
+      continue
+    }
     const price = calculateAuctionRubPricing(item.sourcePrice, exchangeRate, markup)
 
     let descriptionRu: string | null = null

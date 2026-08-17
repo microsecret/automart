@@ -3,6 +3,7 @@ import { AUCTION_DAMAGE_KINDS, type AuctionDamageKind, type AuctionDamageReport 
 import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
 import type { AuctionConditionInfo, AuctionEquipmentSnapshot, AuctionImportItem } from "@/lib/auction-import"
 import { assessImportAge, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
+import { MAX_AUCTION_INTEGER } from "@/lib/auction-price-guard"
 import { isCustomerFacingRussianText, isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
 
 const VALID_CURRENCIES = new Set(["RUB", "USD", "EUR", "JPY", "KRW", "CNY"])
@@ -157,7 +158,7 @@ export function normalizeAuctionImportItem(item: unknown, index = 0): AuctionImp
   if (!isAuctionSource(source) || auctionSourceCountry(source) !== country) throw new Error(`Лот ${index + 1}: площадка не соответствует стране`)
   if (!sourceId || sourceId.length > 120) throw new Error(`Лот ${index + 1}: некорректный ID источника`)
   if (!VALID_CURRENCIES.has(sourceCurrency)) throw new Error(`Лот ${index + 1}: неподдерживаемая валюта`)
-  if (!Number.isSafeInteger(sourcePrice) || sourcePrice < 0) throw new Error(`Лот ${index + 1}: некорректная цена`)
+  if (!Number.isSafeInteger(sourcePrice) || sourcePrice < 0 || sourcePrice > MAX_AUCTION_INTEGER) throw new Error(`Лот ${index + 1}: некорректная цена`)
   if (!Number.isInteger(year) || year < 1886 || year > new Date().getFullYear() + 1) throw new Error(`Лот ${index + 1}: некорректный год`)
   if (!assessImportAge({ year, manufacturedMonth }, maxImportAgeYears).eligible) throw new Error(`Лот ${index + 1}: принимаются автомобили не старше ${maxImportAgeYears} лет`)
   if (value.auctionDate && (!auctionDate || Number.isNaN(auctionDate.getTime()))) throw new Error(`Лот ${index + 1}: некорректная дата торгов`)

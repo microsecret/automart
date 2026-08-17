@@ -488,7 +488,7 @@ function AuctionDetail() {
 
           {/* Правая — заявка */}
           <Box className="auction-detail-layout__aside">
-            <Paper radius="md" p="lg" withBorder style={{ position: hasWideAuctionLayout ? undefined : "static", borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
+            <Paper id="order" radius="md" p="lg" withBorder style={{ position: hasWideAuctionLayout ? undefined : "static", scrollMarginTop: 96, borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
               {submitted ? (
                 <Stack gap="md" align="center" py="md">
                   <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>

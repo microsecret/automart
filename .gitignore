@@ -58,6 +58,9 @@ prisma/dev.db-journal
 # Local audit screenshots and disposable browser profiles
 /artifacts/
 
+# Private runtime uploads are persisted outside version control
+/data/delivery-documents/
+
 # Temp
 /.tmp/
 fix-*.js

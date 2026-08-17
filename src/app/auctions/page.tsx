@@ -464,26 +464,26 @@ export default function AuctionsPage() {
               <Link
                 key={l.id}
                 href={`/auctions/${l.id}`}
-                style={{ textDecoration: "none" }}
+                className={styles.resultCardLink}
                 onPointerEnter={() => warmAuctionDetailImage(l, 140)}
                 onPointerLeave={() => cancelAuctionDetailImageWarmup(l)}
                 onFocus={() => warmAuctionDetailImage(l)}
                 onPointerDown={() => warmAuctionDetailImage(l)}
                 onTouchStart={() => warmAuctionDetailImage(l)}
               >
-                <Paper radius="lg" withBorder className="auction-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)", cursor: "pointer" }}>
+                <Paper radius="lg" withBorder className="auction-result-card">
                   <AuctionMedia listing={l} />
                   <Box p="md" className="auction-result-card__content">
                     <Group gap="sm" wrap="nowrap" align="center">
                       <BrandIcon brand={identity.make} size={34} variant="rounded" />
                       <Box style={{ minWidth: 0, flex: 1 }}>
-                        <Text fw={760} fz="sm" c="dark.9" lineClamp={1}>{identity.title}</Text>
+                        <Text className={styles.resultTitle} fw={760} fz="sm" c="dark.9" lineClamp={2}>{identity.title}</Text>
                         <Text className="auction-result-card__summary" lineClamp={1}>
                           {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
                         </Text>
                       </Box>
                     </Group>
-                    <Group gap={4} mt={8} wrap="wrap">
+                    <Group className={styles.resultSpecs} gap={4} mt={8} wrap="wrap" align="flex-start">
                       {l.fuelType && <Badge className={styles.resultSpec} size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "orange"} leftSection={<IconGasStation size={12} />}>Топливо: {FUEL_LABELS[l.fuelType] || l.fuelType}</Badge>}
                       {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconCar size={12} />}>Кузов: {BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
@@ -493,9 +493,9 @@ export default function AuctionsPage() {
                       {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">
-                      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+                      <Group justify="space-between" align="center" gap="xs" wrap="nowrap" className={styles.priceLine}>
                         <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(displayedPrice)}</Text>
-                        {priceSignal && <Badge size="xs" variant="light" color={priceSignal.color}>{priceSignal.label}</Badge>}
+                        {priceSignal && <Badge className={styles.priceSignal} size="xs" variant="light" color={priceSignal.color}>{priceSignal.label}</Badge>}
                       </Group>
                       <Text className="auction-result-card__price-note">{rentalTransfer ? "Остаток регулярных платежей" : "Предварительно под ключ в РФ · оценка относительно медианы выдачи"}</Text>
                     </Box>
@@ -510,7 +510,7 @@ export default function AuctionsPage() {
                         {l.lotNumber && <Text size="xs" c="gray.4" lineClamp={1}>· #{l.lotNumber}</Text>}
                       </Group>
                     )}
-                    <Group className={styles.detailCta} justify="space-between" mt="sm" gap="xs">
+                    <Group className={styles.detailCta} justify="space-between" gap="xs">
                       <Text size="sm" fw={800}>Подробнее</Text>
                       <IconArrowRight size={17} />
                     </Group>

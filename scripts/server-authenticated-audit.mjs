@@ -432,11 +432,11 @@ async function run() {
 
   const garage = await expect("/api/garage", cookie, 201, {
     method: "POST",
-    body: JSON.stringify({ make: "Hyundai", model: "Tucson", year: 2022, mileage: 30_000, fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SUV", color: "Синий", location: "Екатеринбург" }),
+    body: JSON.stringify({ make: "Hyundai", model: "Tucson", year: 2022, mileage: 30_000, fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SUV", color: "Синий", location: "Екатеринбург", images: ["/uploads/123e4567-e89b-12d3-a456-426614174000.webp", "https://example.com/external.jpg"] }),
   })
   await expect("/api/garage", cookie, 200)
   const garagePrefill = await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200)
-  record("garage exposes only the owner's selected vehicle for listing prefill", garagePrefill?.vehicle?.id === garage.id && garagePrefill?.vehicle?.make === "Hyundai" && garagePrefill?.vehicle?.vin === null, garagePrefill?.vehicle?.id || "missing")
+  record("garage keeps only local uploaded photos for the owner's private vehicle", garagePrefill?.vehicle?.id === garage.id && garagePrefill?.vehicle?.make === "Hyundai" && garagePrefill?.vehicle?.vin === null && JSON.parse(garagePrefill?.vehicle?.images || "[]").length === 1, garagePrefill?.vehicle?.id || "missing")
   await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200, { method: "DELETE" })
 
   await expect("/api/favorites", cookie, 201, { method: "POST", body: JSON.stringify({ listingId: publicListingId }) })
@@ -521,6 +521,9 @@ async function run() {
   })
   const documentResponse = await request(uploadedDocument.document.downloadUrl, cookie)
   record("private delivery document downloads only through the authorized route", documentResponse.status === 200 && documentResponse.headers.get("content-type") === "application/pdf" && documentResponse.headers.get("cache-control")?.includes("no-store"), `HTTP ${documentResponse.status}`)
+  const documentHub = await expect("/api/delivery-documents", cookie, 200)
+  record("personal document hub returns authorized delivery files", documentHub?.documents?.some((document) => document.id === uploadedDocument.document.id && document.downloadUrl === uploadedDocument.document.downloadUrl), `${documentHub?.documents?.length ?? 0} document(s)`)
+  await expect("/api/delivery-documents", null, 401)
   const confirmedPayment = await expect(`/api/delivery-orders/${delivery.order.id}/payments/${payment.payment.id}`, adminCookie, 200, {
     method: "PATCH",
     body: JSON.stringify({ status: "CONFIRMED" }),

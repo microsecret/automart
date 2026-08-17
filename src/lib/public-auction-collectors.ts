@@ -30,6 +30,7 @@ export type PublicAuctionCandidate = {
   sourcePrice?: number
   year?: number
   manufacturedMonth?: string | null
+  registrationMonth?: string | null
   mileage?: number | null
   imageUrl?: string | null
   make?: string | null
@@ -351,6 +352,15 @@ function asText(value: unknown) {
 function asNumber(value: unknown) {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : null
+}
+
+function modelYearFromText(...values: Array<string | null | undefined>) {
+  const currentYear = new Date().getFullYear()
+  for (const value of values) {
+    const year = Number(value?.match(/\b(19\d{2}|20\d{2})\b/)?.[1])
+    if (Number.isInteger(year) && year >= 1886 && year <= currentYear + 1) return year
+  }
+  return null
 }
 
 function decodeHtml(value: string) {
@@ -767,6 +777,7 @@ function parseYouxinpaiCatalog(json: string, pageNumber: number) {
       ? serialName.slice(make.length).trim()
       : serialName
     const model = normalizeAuctionModel([serialWithoutMake, modelName && modelName !== serialName ? modelName : null].filter(Boolean).join(" "))
+    const modelYear = modelYearFromText(modelName, serialName) || Number(registered?.[1])
     // The catalogue thumbnail is a valid signed/public rendition. Rewriting
     // `/small/` to the guessed original path makes YouXinPai answer with 403.
     const image = asText(record?.mainImage)
@@ -775,7 +786,7 @@ function parseYouxinpaiCatalog(json: string, pageNumber: number) {
     const fuelCode = asNumber(record?.fuelType)
     candidates.push({
       sourceId: String(sourceId), sourceUrl: `https://www.youxinpai.cn/auction/detail?publishId=${sourceId}`,
-      sourcePrice: Math.round(price), year: Number(registered[1]), manufacturedMonth: `${registered[1]}-${registered[2]}`,
+      sourcePrice: Math.round(price), year: modelYear, manufacturedMonth: null, registrationMonth: `${registered[1]}-${registered[2]}`,
       mileage: asNumber(record?.mileage), imageUrl: safeImage(image, new Set(["img.youxinpai.cn"])), make, model,
       fuelType: fuelCode === 1 ? "DIESEL" : fuelCode === 2 ? "HYBRID" : fuelCode === 3 ? "ELECTRIC" : "GASOLINE",
       transmission: asNumber(record?.gearbox) === 1 ? "AUTOMATIC" : null,
@@ -1349,6 +1360,7 @@ async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise
     : null
   const specs = [
     `Год выпуска: ${active.year}`,
+    active.registrationMonth ? `Дата первой регистрации: ${active.registrationMonth}` : null,
     `Пробег: ${active.mileage?.toLocaleString("ru-RU") || "уточняется"} км`,
     `Номер лота: ${active.sourceId}`,
     active.referencePriceLow && active.referencePriceHigh

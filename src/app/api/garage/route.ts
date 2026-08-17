@@ -69,6 +69,9 @@ export async function POST(request: NextRequest) {
     const condition = optionalText(body?.condition, 32) || "EXCELLENT"
     const vin = optionalText(body?.vin, 32)?.toUpperCase() || null
     const location = optionalText(body?.location, 120) || ""
+    const images = Array.isArray(body?.images)
+      ? [...new Set(body.images.filter((value: unknown): value is string => typeof value === "string" && /^\/uploads\/[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(value)))].slice(0, 12)
+      : []
     const currentYear = new Date().getFullYear()
 
     if (!make || make.length < 2 || !model || model.length < 1 || !Number.isInteger(year) || year < 1900 || year > currentYear + 1) {
@@ -107,6 +110,7 @@ export async function POST(request: NextRequest) {
         color,
         condition,
         location,
+        images: images.length ? JSON.stringify(images) : null,
         vehicleType: "CAR",
         userId: session.user.id,
         categoryId: garageCategory.id,

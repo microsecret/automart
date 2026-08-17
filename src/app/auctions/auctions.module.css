@@ -89,7 +89,36 @@
   font-weight: 700;
 }
 
+.resultCardLink {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.resultTitle {
+  min-height: 2.5em;
+  line-height: 1.25;
+}
+
+.resultSpecs {
+  min-height: 48px;
+  max-height: 48px;
+  overflow: hidden;
+}
+
+.priceLine {
+  min-width: 0;
+}
+
+.priceSignal {
+  flex: none;
+  white-space: nowrap;
+}
+
 .detailCta {
+  margin-top: auto;
   min-height: 34px;
   padding: 6px 10px;
   border-radius: 10px;
@@ -125,5 +154,14 @@
 
   .insight {
     padding: 9px;
+  }
+
+  .resultTitle {
+    min-height: auto;
+  }
+
+  .resultSpecs {
+    min-height: 24px;
+    max-height: 50px;
   }
 }

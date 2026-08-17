@@ -13,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Статические страницы
   const staticPages = [
-    "", "/search", "/brands", "/compare", "/news", "/about", "/help",
+    "", "/brands", "/compare", "/news", "/about", "/help",
     "/category/cars", "/category/moto", "/category/trucks", "/category/special",
     "/category/water", "/category/air",
     "/services", "/services/valuation", "/services/history-check", "/services/smart-matching", "/services/safe-deal", "/services/legal-documents", "/services/fuel-map",

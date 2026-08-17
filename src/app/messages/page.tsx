@@ -19,12 +19,15 @@ import {
   Paper,
   Pagination,
   ThemeIcon,
+  Box,
+  TextInput,
 } from "@mantine/core"
-import { IconArrowRight, IconMessageCircle2, IconMessageCircleOff } from "@tabler/icons-react"
+import { IconArrowRight, IconMessageCircle2, IconMessageCircleOff, IconSearch, IconShieldCheck } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import DashboardNav from "@/components/dashboard/DashboardNav"
 
 interface Conversation {
   id: string
@@ -47,6 +50,7 @@ export default function MessagesPage() {
   const { data: session, status } = useSession() || { data: null, status: 'unauthenticated' }
   const router = useRouter()
   const [page, setPage] = useState(1)
+  const [query, setQuery] = useState("")
   const { data, error, isLoading, mutate } = useSWR<ConversationsResponse>(
     session ? `/api/messages?page=${page}&limit=20` : null,
     fetchJson,
@@ -59,6 +63,10 @@ export default function MessagesPage() {
   }, [session, status, router])
 
   const conversations = data?.conversations || []
+  const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU")
+  const visibleConversations = normalizedQuery
+    ? conversations.filter((conversation) => [conversation.otherUser.name, conversation.listing?.title, conversation.lastMessage?.content].filter(Boolean).join(" ").toLocaleLowerCase("ru-RU").includes(normalizedQuery))
+    : conversations
   const pagination = data?.pagination
 
   useEffect(() => {
@@ -85,45 +93,35 @@ export default function MessagesPage() {
           </Button>
         </Group>
 
+        <DashboardNav active="messages" />
+
         {isLoading ? (
           <Paper withBorder radius="xl" p="xl"><Center py={56}><Loader color="indigo" /></Center></Paper>
         ) : error ? (
           <AsyncErrorState title="Не удалось загрузить сообщения" description="Диалоги временно недоступны. Повторите запрос." onRetry={() => mutate()} />
-        ) : conversations.length === 0 ? (
-          <Paper withBorder radius="xl" p="xl">
-          <Center py={44}>
-            <Stack align="center" gap="md">
-              <ThemeIcon size={64} radius="xl" variant="light" color="indigo">
-                <IconMessageCircleOff size={31} />
-              </ThemeIcon>
-              <Stack gap={4} align="center">
-                <Text fw={700} size="lg">Пока нет диалогов</Text>
-                <Text size="sm" c="dimmed" ta="center" maw={410}>Откройте подходящее объявление и нажмите «Написать продавцу». Диалог сразу появится здесь.</Text>
-              </Stack>
-              <Button component={Link} href="/" color="indigo" leftSection={<IconMessageCircle2 size={18} />}>Перейти к объявлениям</Button>
-            </Stack>
-          </Center>
-          </Paper>
         ) : (
-          <Paper withBorder radius="xl" p="xs" className="av-fade-in">
-          <Stack gap={4}>
-            {conversations.map((conv) => (
-              <Paper
+          <Paper withBorder radius="lg" p={0} className="messages-workspace av-fade-in">
+            <Box className="messages-workspace__list">
+              <Box p="md" className="messages-workspace__search">
+                <TextInput value={query} onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Поиск по диалогам" leftSection={<IconSearch size={16} />} aria-label="Поиск по диалогам" />
+              </Box>
+              {visibleConversations.length === 0 ? (
+                <Center className="messages-workspace__list-empty">
+                  <Stack align="center" gap="xs" ta="center" px="md">
+                    <ThemeIcon size={46} radius="xl" variant="light" color="indigo"><IconMessageCircleOff size={23} /></ThemeIcon>
+                    <Text fw={750}>{conversations.length ? "Ничего не найдено" : "Пока нет диалогов"}</Text>
+                    <Text size="xs" c="dimmed">{conversations.length ? "Измените запрос." : "Переписка появится после сообщения продавцу."}</Text>
+                  </Stack>
+                </Center>
+              ) : (
+                <Stack gap={0}>
+                  {visibleConversations.map((conv) => (
+                    <Box
                 key={conv.id}
                 component={Link}
                 href={`/messages/${conv.id}`}
-                withBorder
-                radius="lg"
-                p="md"
-                style={{
-                  display: "block",
-                  textDecoration: "none",
-                  transition: "border-color 150ms ease, background-color 150ms ease, transform 150ms ease",
-                  borderColor: conv.unreadCount > 0 ? "var(--mantine-color-indigo-3)" : "var(--market-field-line)",
-                  background: conv.unreadCount > 0 ? "var(--mantine-color-indigo-0)" : "var(--mantine-color-body)",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-indigo-5)"; e.currentTarget.style.transform = "translateY(-1px)" }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = conv.unreadCount > 0 ? "var(--mantine-color-indigo-3)" : "var(--market-field-line)"; e.currentTarget.style.transform = "translateY(0)" }}
+                className="messages-conversation-row"
+                data-unread={conv.unreadCount > 0 || undefined}
               >
                 <Group gap="sm" align="flex-start">
                   <Avatar src={conv.otherUser.image} radius="xl" color="indigo">
@@ -149,23 +147,25 @@ export default function MessagesPage() {
                     </Group>
                   </Stack>
                 </Group>
-              </Paper>
-            ))}
-          </Stack>
-          {pagination && pagination.pages > 1 && (
-            <Center py="sm">
-              <Pagination
-                total={pagination.pages}
-                value={pagination.page}
-                onChange={setPage}
-                siblings={1}
-                boundaries={1}
-                color="indigo"
-                radius="md"
-                aria-label="Страницы диалогов"
-              />
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+              {pagination && pagination.pages > 1 && (
+                <Center py="sm"><Pagination total={pagination.pages} value={pagination.page} onChange={setPage} siblings={1} boundaries={1} color="indigo" radius="md" aria-label="Страницы диалогов" /></Center>
+              )}
+            </Box>
+            <Center className="messages-workspace__preview">
+              <Stack align="center" gap="md" ta="center" maw={430} px="lg">
+                <ThemeIcon size={66} radius="xl" variant="light" color="indigo"><IconMessageCircle2 size={31} /></ThemeIcon>
+                <Stack gap={4} align="center">
+                  <Text fw={800} size="lg">{conversations.length ? "Выберите диалог" : "Сообщения по сделкам — в одном месте"}</Text>
+                  <Text size="sm" c="dimmed">{conversations.length ? "Откройте переписку слева, чтобы продолжить разговор." : "Откройте объявление и нажмите «Написать продавцу». Новый диалог сразу появится в этом списке."}</Text>
+                </Stack>
+                {!conversations.length && <Button component={Link} href="/" color="indigo" leftSection={<IconArrowRight size={17} />}>Найти автомобиль</Button>}
+                <Group gap={5} wrap="nowrap"><IconShieldCheck size={15} color="var(--mantine-color-teal-6)" /><Text size="xs" c="dimmed">Не переводите общение и оплату за пределы площадки.</Text></Group>
+              </Stack>
             </Center>
-          )}
           </Paper>
         )}
       </Stack>

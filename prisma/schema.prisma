@@ -711,6 +711,7 @@ model AuctionListing {
 
   inquiries       AuctionInquiry[]
   deliveryOrders  DeliveryOrder[]
+  telegramPosts   AuctionTelegramPost[]
 
   @@unique([source, sourceId])
   @@index([source])
@@ -892,6 +893,19 @@ model DeliveryPayment {
 
   @@index([deliveryOrderId, status])
   @@index([category])
+}
+
+model AuctionTelegramPost {
+  id               String         @id @default(uuid())
+  auctionListingId String
+  auctionListing   AuctionListing @relation(fields: [auctionListingId], references: [id], onDelete: Cascade)
+  chatId           String
+  messageId        String?
+  createdAt        DateTime       @default(now())
+
+  @@unique([auctionListingId, chatId])
+  @@index([chatId, createdAt])
+  @@index([createdAt])
 }
 
 model DeliveryDocument {
