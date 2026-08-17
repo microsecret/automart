@@ -211,6 +211,21 @@ export async function telegramApi<T = unknown>(method: string, payload: Record<s
   if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not configured")
   const requestBody = JSON.stringify(payload)
   return new Promise<T>((resolve, reject) => {
+    // Обрыв соединения приходит и после того, как промис уже разрешён.
+    // Без единой точки завершения такой `ECONNRESET` всплывал как
+    // uncaughtException и мог уронить процесс приложения.
+    let settled = false
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      reject(error)
+    }
+    const succeed = (value: T) => {
+      if (settled) return
+      settled = true
+      resolve(value)
+    }
+
     const request = https.request({
       hostname: "api.telegram.org",
       family: 4,
@@ -225,22 +240,31 @@ export async function telegramApi<T = unknown>(method: string, payload: Record<s
     }, (response) => {
       let responseBody = ""
       response.setEncoding("utf8")
+      // Поток ответа тоже эмитит ошибки: без обработчика разрыв на этой
+      // стадии остаётся необработанным.
+      response.on("error", fail)
       response.on("data", (chunk) => {
         responseBody += chunk
-        if (responseBody.length > 2_000_000) request.destroy(new Error("Telegram API response is too large"))
+        if (responseBody.length > 2_000_000) {
+          fail(new Error("Telegram API response is too large"))
+          request.destroy()
+        }
       })
       response.on("end", () => {
         let body: TelegramApiResponse<T> | null = null
         try { body = JSON.parse(responseBody) as TelegramApiResponse<T> } catch { /* handled below */ }
         if ((response.statusCode || 500) >= 400 || !body?.ok) {
-          reject(new Error(body?.description || `Telegram API ${response.statusCode || 500}`))
+          fail(new Error(body?.description || `Telegram API ${response.statusCode || 500}`))
           return
         }
-        resolve(body.result as T)
+        succeed(body.result as T)
       })
     })
-    request.on("error", reject)
-    request.on("timeout", () => request.destroy(new Error(`Telegram API ${method} timed out`)))
+    request.on("error", fail)
+    request.on("timeout", () => {
+      fail(new Error(`Telegram API ${method} timed out`))
+      request.destroy()
+    })
     request.end(requestBody)
   })
 }
@@ -263,6 +287,20 @@ export async function telegramPhotoApi<T = unknown>(payload: Record<string, unkn
   const requestBody = Buffer.concat(chunks)
 
   return new Promise<T>((resolve, reject) => {
+    // Та же защита, что и в `telegramApi`: обрыв соединения после разрешения
+    // промиса не должен становиться необработанным исключением.
+    let settled = false
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      reject(error)
+    }
+    const succeed = (value: T) => {
+      if (settled) return
+      settled = true
+      resolve(value)
+    }
+
     const request = https.request({
       hostname: "api.telegram.org",
       family: 4,
@@ -277,22 +315,29 @@ export async function telegramPhotoApi<T = unknown>(payload: Record<string, unkn
     }, (response) => {
       let responseBody = ""
       response.setEncoding("utf8")
+      response.on("error", fail)
       response.on("data", (chunk) => {
         responseBody += chunk
-        if (responseBody.length > 2_000_000) request.destroy(new Error("Telegram API response is too large"))
+        if (responseBody.length > 2_000_000) {
+          fail(new Error("Telegram API response is too large"))
+          request.destroy()
+        }
       })
       response.on("end", () => {
         let body: TelegramApiResponse<T> | null = null
         try { body = JSON.parse(responseBody) as TelegramApiResponse<T> } catch { /* handled below */ }
         if ((response.statusCode || 500) >= 400 || !body?.ok) {
-          reject(new Error(body?.description || `Telegram API ${response.statusCode || 500}`))
+          fail(new Error(body?.description || `Telegram API ${response.statusCode || 500}`))
           return
         }
-        resolve(body.result as T)
+        succeed(body.result as T)
       })
     })
-    request.on("error", reject)
-    request.on("timeout", () => request.destroy(new Error("Telegram API sendPhoto timed out")))
+    request.on("error", fail)
+    request.on("timeout", () => {
+      fail(new Error("Telegram API sendPhoto timed out"))
+      request.destroy()
+    })
     request.end(requestBody)
   })
 }

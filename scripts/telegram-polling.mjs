@@ -57,6 +57,20 @@ function sleep(milliseconds) {
 async function telegramApi(method, payload = {}, timeoutMs = 20_000) {
   const requestBody = JSON.stringify(payload)
   return new Promise((resolve, reject) => {
+    // Долгоживущий процесс: обрыв соединения, пришедший после разрешения
+    // промиса, не должен становиться необработанным исключением.
+    let settled = false
+    const fail = (error) => {
+      if (settled) return
+      settled = true
+      reject(error)
+    }
+    const succeed = (value) => {
+      if (settled) return
+      settled = true
+      resolve(value)
+    }
+
     const request = https.request({
       hostname: "api.telegram.org",
       family: 4,
@@ -71,23 +85,30 @@ async function telegramApi(method, payload = {}, timeoutMs = 20_000) {
     }, (response) => {
       let responseBody = ""
       response.setEncoding("utf8")
+      response.on("error", fail)
       response.on("data", (chunk) => {
         responseBody += chunk
-        if (responseBody.length > 2_000_000) request.destroy(new Error("Telegram API response is too large"))
+        if (responseBody.length > 2_000_000) {
+          fail(new Error("Telegram API response is too large"))
+          request.destroy()
+        }
       })
       response.on("end", () => {
         const body = (() => {
           try { return JSON.parse(responseBody) } catch { return null }
         })()
         if ((response.statusCode || 500) >= 400 || !body?.ok) {
-          reject(new Error(body?.description || `Telegram API ${response.statusCode || 500}`))
+          fail(new Error(body?.description || `Telegram API ${response.statusCode || 500}`))
           return
         }
-        resolve(body.result)
+        succeed(body.result)
       })
     })
-    request.on("error", reject)
-    request.on("timeout", () => request.destroy(new Error(`Telegram API ${method} timed out`)))
+    request.on("error", fail)
+    request.on("timeout", () => {
+      fail(new Error(`Telegram API ${method} timed out`))
+      request.destroy()
+    })
     request.end(requestBody)
   })
 }
