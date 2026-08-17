@@ -4205,3 +4205,49 @@ select {
     transform: none;
   }
 }
+
+/* === Границы полей ввода ===================================================
+   Поле должно читаться как поле до того, как в него кликнули: на светлой
+   теме мягкая граница по умолчанию сливается с фоном карточки, и длинная
+   форма выглядит как список подписей без мест для ввода.                    */
+
+.mantine-TextInput-input,
+.mantine-Textarea-input,
+.mantine-NumberInput-input,
+.mantine-Select-input,
+.mantine-PasswordInput-input,
+.mantine-DateInput-input {
+  border-color: var(--market-field-line);
+  background: var(--market-field);
+  transition:
+    border-color var(--market-motion-base) var(--market-ease-out),
+    box-shadow var(--market-motion-base) var(--market-ease-out);
+}
+
+.mantine-TextInput-input:hover:not(:disabled),
+.mantine-Textarea-input:hover:not(:disabled),
+.mantine-NumberInput-input:hover:not(:disabled),
+.mantine-Select-input:hover:not(:disabled),
+.mantine-PasswordInput-input:hover:not(:disabled),
+.mantine-DateInput-input:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--market-primary) 42%, var(--market-field-line));
+}
+
+/* Фокус подсвечивается кольцом, а не только цветом границы: при заполнении
+   длинной формы важно видеть текущее поле, не приглядываясь. */
+.mantine-TextInput-input:focus,
+.mantine-Textarea-input:focus,
+.mantine-NumberInput-input:focus,
+.mantine-Select-input:focus,
+.mantine-PasswordInput-input:focus,
+.mantine-DateInput-input:focus {
+  border-color: var(--market-primary);
+  box-shadow: 0 0 0 3px var(--market-focus);
+}
+
+/* Обязательное поле помечено звёздочкой, но до отправки формы неясно, какие
+   из них пусты. Подпись остаётся спокойной, акцент — только на звёздочке. */
+.mantine-InputWrapper-required {
+  color: #e03131;
+  font-weight: 700;
+}

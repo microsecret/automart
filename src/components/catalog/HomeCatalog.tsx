@@ -533,8 +533,10 @@ export default function HomePage(p: HomePageProps = {}) {
         />
       ) : !data?.listings?.length ? (
         <EmptyState
-          title="Ничего не найдено"
-          description="Попробуйте изменить условия поиска или сбросить часть фильтров."
+          title={activeFilterCount > 0 ? "Ничего не найдено" : "В этом разделе пока нет объявлений"}
+          description={activeFilterCount > 0
+            ? "Попробуйте изменить условия поиска или сбросить часть фильтров."
+            : "Раздел наполняется продавцами. Разместите объявление — оно появится в каталоге после проверки модератором."}
           actionLabel={activeFilterCount > 0 ? "Сбросить фильтры" : undefined}
           onAction={activeFilterCount > 0 ? resetFilters : undefined}
         />
