@@ -372,10 +372,27 @@ function DashboardContent() {
             {data.listings.length === 0 ? (
               <Paper radius="md" p="xl" withBorder>
                 <Center>
-                  <Stack align="center" gap="sm">
+                  {/* Пустой экран — это точка, где продавец решает, продолжать
+                      ли. Машина в гараже уже содержит характеристики, поэтому
+                      подача из неё короче, чем заполнение формы с нуля. */}
+                  <Stack align="center" gap="sm" maw={420} ta="center">
                     <ThemeIcon variant="light" color="indigo" size={48} radius="md"><IconTag size={24} /></ThemeIcon>
-                    <Text c="gray.5">У вас пока нет объявлений</Text>
-                    <Button component={Link} href="/listings/create/vehicle" size="sm" color="indigo" leftSection={<IconPlus size={16} />}>Создать первое</Button>
+                    <Text fw={700}>У вас пока нет объявлений</Text>
+                    <Text size="sm" c="dimmed">
+                      {stats.garageCount > 0
+                        ? "В гараже уже есть автомобиль — характеристики подставятся автоматически, останется добавить цену и фотографии."
+                        : "Объявление проходит проверку модератором, после чего появляется в каталоге. Обычно это занимает несколько часов."}
+                    </Text>
+                    <Group gap="xs" justify="center">
+                      <Button component={Link} href="/listings/create/vehicle" size="sm" color="indigo" leftSection={<IconPlus size={16} />}>
+                        {stats.garageCount > 0 ? "Разместить объявление" : "Создать первое"}
+                      </Button>
+                      {stats.garageCount > 0 && (
+                        <Button component={Link} href="/dashboard?tab=garage" size="sm" variant="light" color="teal" leftSection={<IconCar size={16} />}>
+                          Мой гараж
+                        </Button>
+                      )}
+                    </Group>
                   </Stack>
                 </Center>
               </Paper>

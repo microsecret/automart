@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, SimpleGrid } from "@mantine/core"
+import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, SimpleGrid, UnstyledButton } from "@mantine/core"
 import { IconEye, IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
@@ -152,27 +152,36 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           {images.length > 1 && (
             <>
               {/* Точки навигации */}
-              <Box pos="absolute" bottom={6} left={0} right={0} style={{ display: "flex", justifyContent: "center", gap: 4 }}>
+              {/* Точка остаётся маленькой визуально, но зона нажатия занимает
+                  полную высоту полосы: попасть пальцем в шестипиксельную
+                  цель на телефоне невозможно. */}
+              <Box pos="absolute" bottom={0} left={0} right={0} style={{ display: "flex", justifyContent: "center", gap: 2, zIndex: 2 }}>
                 {images.slice(0, 5).map((_, i) => (
-                  <ActionIcon
+                  <UnstyledButton
                     key={i}
                     onClick={() => { setActiveImg(i); setImageFailed(false); setImageLoaded(false) }}
-                    aria-label={`Фото ${i + 1}`}
-                    variant="transparent"
+                    aria-label={`Показать фото ${i + 1} из ${images.length}`}
+                    aria-current={i === activeImg ? "true" : undefined}
                     style={{
-                      position: "relative",
-                      zIndex: 2,
-                      width: i === activeImg ? 16 : 6,
-                      height: 6,
-                      minWidth: i === activeImg ? 16 : 6,
-                      minHeight: 6,
+                      display: "grid",
+                      placeItems: "center",
+                      width: 22,
+                      height: 22,
                       padding: 0,
-                      borderRadius: 3,
-                      background: i === activeImg ? "#fff" : "rgba(255,255,255,0.5)",
                       cursor: "pointer",
-                      transition: "all 200ms ease",
                     }}
-                  />
+                  >
+                    <Box
+                      style={{
+                        width: i === activeImg ? 16 : 6,
+                        height: 6,
+                        borderRadius: 3,
+                        background: i === activeImg ? "#fff" : "rgba(255,255,255,0.55)",
+                        boxShadow: "0 0 2px rgba(0,0,0,.45)",
+                        transition: "width 200ms ease, background 200ms ease",
+                      }}
+                    />
+                  </UnstyledButton>
                 ))}
               </Box>
               {/* Счётчик фото */}
