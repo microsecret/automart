@@ -7,7 +7,8 @@ import {
   Select, SimpleGrid, Stack, Table, Text, TextInput, Textarea, ThemeIcon, Title,
 } from "@mantine/core"
 import {
-  IconAlertTriangle, IconBuildingStore, IconCheck, IconFileSpreadsheet, IconPlus, IconTrash, IconUpload,
+  IconAlertTriangle, IconBuildingStore, IconCheck, IconExternalLink, IconFileSpreadsheet,
+  IconPlus, IconTrash, IconUpload,
 } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
@@ -209,13 +210,25 @@ export default function StoreWorkspacePage() {
   return (
     <Container size="lg" py={{ base: "md", md: "xl" }}>
       <Stack gap="lg">
-        <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconBuildingStore size={22} /></ThemeIcon>
-          <Box>
-            <Title order={1} size="h3" ff="var(--font-display),sans-serif">Магазин запчастей</Title>
-            <Text size="sm" c="dimmed">Витрина, каталог и массовая загрузка прайс-листа.</Text>
-          </Box>
-        </Group>
+        <Card className="store-workspace__hero" radius="lg" p={{ base: "md", sm: "lg" }}>
+          <Group justify="space-between" align="center" gap="md" wrap="wrap">
+            <Group gap="sm" align="center" wrap="nowrap">
+              <ThemeIcon variant="white" color="dark" size={46} radius="md"><IconBuildingStore size={23} /></ThemeIcon>
+              <Box>
+                <Badge variant="white" color="indigo" size="sm" mb={4}>КАБИНЕТ ПРОДАВЦА</Badge>
+                <Title order={1} size="h3" c="white" ff="var(--font-display),sans-serif">Магазин запчастей</Title>
+                <Text size="sm" c="rgba(255,255,255,.76)" mt={2}>
+                  Витрина с собственным адресом, каталог и загрузка прайс-листа одним файлом.
+                </Text>
+              </Box>
+            </Group>
+            {store && (
+              <Button component="a" href={`/store/${store.slug}`} target="_blank" variant="white" color="dark" size="sm" leftSection={<IconExternalLink size={15} />}>
+                Открыть витрину
+              </Button>
+            )}
+          </Group>
+        </Card>
 
         {!store ? (
           <Card withBorder radius="lg" p="lg">
@@ -232,22 +245,71 @@ export default function StoreWorkspacePage() {
                 </Button>
               </Stack>
             ) : (
-              <Stack gap="sm">
-                <Text fw={750}>Новый магазин</Text>
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                  <TextInput required label="Название магазина" placeholder="АвтоДеталь" value={form.name} onChange={(event) => setForm({ ...form, name: event.currentTarget.value })} />
-                  <TextInput label="Город" placeholder="Москва" value={form.city} onChange={(event) => setForm({ ...form, city: event.currentTarget.value })} />
-                  <TextInput label="Юридическое название" placeholder="ООО «АвтоДеталь»" value={form.legalName} onChange={(event) => setForm({ ...form, legalName: event.currentTarget.value })} />
-                  <TextInput label="ИНН" value={form.inn} onChange={(event) => setForm({ ...form, inn: event.currentTarget.value })} />
-                  <TextInput label="Телефон" placeholder="+7 900 000-00-00" value={form.contactPhone} onChange={(event) => setForm({ ...form, contactPhone: event.currentTarget.value })} />
-                  <TextInput label="Email" value={form.contactEmail} onChange={(event) => setForm({ ...form, contactEmail: event.currentTarget.value })} />
-                  <Select label="Основная страна поставки" data={ORIGIN_OPTIONS} value={form.defaultOriginCountry} onChange={(value) => setForm({ ...form, defaultOriginCountry: value })} />
-                </SimpleGrid>
-                <Textarea label="Описание" placeholder="Чем занимается магазин, какие марки везёте, сроки" autosize minRows={2} value={form.description} onChange={(event) => setForm({ ...form, description: event.currentTarget.value })} />
-                {saveError && <Alert color="red" variant="light">{saveError}</Alert>}
-                <Group gap="xs">
-                  <Button color="indigo" onClick={createStore} loading={isSaving}>Создать</Button>
+              <Stack gap="lg">
+                <Box>
+                  <Text fw={800} size="lg">Новый магазин</Text>
+                  <Text size="sm" c="dimmed">Заполните обязательное поле — остальное можно добавить позже.</Text>
+                </Box>
+
+                {/* Поля сгруппированы по смыслу: витрина, реквизиты, поставка.
+                    Раньше девять полей шли одним списком без разделения, и
+                    форма читалась как анкета без структуры. */}
+                <Box>
+                  <Text fw={700} size="sm" mb={2}>Витрина</Text>
+                  <Text size="xs" c="dimmed" mb="sm">Как магазин увидят покупатели.</Text>
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                    <TextInput
+                      required
+                      label="Название магазина"
+                      placeholder="АвтоДеталь"
+                      description="Отображается в каталоге и в адресе витрины"
+                      value={form.name}
+                      onChange={(event) => setForm({ ...form, name: event.currentTarget.value })}
+                    />
+                    <TextInput label="Город" placeholder="Москва" description="Откуда отправляете заказы" value={form.city} onChange={(event) => setForm({ ...form, city: event.currentTarget.value })} />
+                  </SimpleGrid>
+                  <Textarea
+                    mt="sm"
+                    label="Описание"
+                    placeholder="Какие марки везёте, сроки поставки, условия возврата"
+                    description="Первое, что читает покупатель на витрине"
+                    autosize
+                    minRows={3}
+                    value={form.description}
+                    onChange={(event) => setForm({ ...form, description: event.currentTarget.value })}
+                  />
+                </Box>
+
+                <Divider />
+
+                <Box>
+                  <Text fw={700} size="sm" mb={2}>Условия поставки</Text>
+                  <Text size="xs" c="dimmed" mb="sm">Подставляются в позиции, где срок не указан в файле.</Text>
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                    <Select label="Основная страна поставки" data={ORIGIN_OPTIONS} value={form.defaultOriginCountry} onChange={(value) => setForm({ ...form, defaultOriginCountry: value })} allowDeselect={false} />
+                  </SimpleGrid>
+                </Box>
+
+                <Divider />
+
+                <Box>
+                  <Text fw={700} size="sm" mb={2}>Реквизиты и связь</Text>
+                  <Text size="xs" c="dimmed" mb="sm">Нужны для проверки магазина перед публикацией.</Text>
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                    <TextInput label="Юридическое название" placeholder="ООО «АвтоДеталь»" value={form.legalName} onChange={(event) => setForm({ ...form, legalName: event.currentTarget.value })} />
+                    <TextInput label="ИНН" placeholder="7701234567" value={form.inn} onChange={(event) => setForm({ ...form, inn: event.currentTarget.value })} />
+                    <TextInput label="Телефон" placeholder="+7 900 000-00-00" value={form.contactPhone} onChange={(event) => setForm({ ...form, contactPhone: event.currentTarget.value })} />
+                    <TextInput label="Email" placeholder="shop@example.ru" value={form.contactEmail} onChange={(event) => setForm({ ...form, contactEmail: event.currentTarget.value })} />
+                  </SimpleGrid>
+                </Box>
+
+                {saveError && <Alert color="red" variant="light" icon={<IconAlertTriangle size={16} />}>{saveError}</Alert>}
+
+                <Group gap="xs" justify="flex-end">
                   <Button variant="subtle" color="gray" onClick={() => { setIsCreating(false); setSaveError(null) }}>Отмена</Button>
+                  <Button color="indigo" size="md" onClick={createStore} loading={isSaving} leftSection={<IconCheck size={16} />}>
+                    Создать магазин
+                  </Button>
                 </Group>
               </Stack>
             )}
