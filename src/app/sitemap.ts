@@ -4,6 +4,7 @@ import { newsHref } from "@/lib/news"
 import { getSiteUrl } from "@/lib/site-url"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 import { publicListingWhere } from "@/lib/listing-lifecycle"
+import { listAuctionLandings } from "@/lib/auction-landing"
 
 export const dynamic = "force-dynamic"
 
@@ -61,6 +62,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ])
 
+    // Направления «марка + страна» строятся из того же каталога, что и сами
+    // страницы, поэтому sitemap не может разойтись с тем, что открывается.
+    const landings = await listAuctionLandings().catch(() => [])
+
     return [
       ...pages,
       ...news.map((article) => ({
@@ -86,6 +91,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: auction.updatedAt,
         changeFrequency: "daily" as const,
         priority: 0.85,
+      })),
+      // Приоритет выше карточки лота: лот исчезает вместе с продажей, а
+      // направление остаётся и накапливает позиции в выдаче.
+      ...landings.map((landing) => ({
+        url: `${baseUrl}/auctions/iz/${landing.countrySlug}/${landing.makeSlug}`,
+        lastModified: now,
+        changeFrequency: "daily" as const,
+        priority: 0.9,
       })),
     ]
   } catch (error) {

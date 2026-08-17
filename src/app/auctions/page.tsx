@@ -14,6 +14,7 @@ import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncState
 import type { AuctionListing } from "@prisma/client"
 import { AUCTION_SOURCE_COUNTRY, AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceLabel } from "@/lib/auction-sources"
 import { auctionMakeLabel, auctionVehicleIdentity } from "@/lib/auction-normalization"
+import { AUCTION_LANDING_COUNTRIES, makeSlug } from "@/lib/auction-landing-routes"
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "./auctions.module.css"
 
@@ -216,6 +217,21 @@ function AuctionsPageContent() {
   }
   const hasActiveFilters = Boolean(country || source || make || priceFrom || priceTo || bodyType || yearFrom)
   const analytics = data?.analytics
+  // Ссылки строятся из той же выдачи, что и «быстрый выбор марки», поэтому
+  // ведут только на существующие страницы направлений.
+  const landingLinks = useMemo(() => {
+    const countryMeta = country ? AUCTION_LANDING_COUNTRIES[country] : null
+    if (!countryMeta || !analytics?.popularMakes) return []
+    return analytics.popularMakes
+      .filter((item) => item.count >= 5)
+      .slice(0, 8)
+      .flatMap((item) => {
+        const slug = makeSlug(item.make)
+        return slug
+          ? [{ href: `/auctions/iz/${countryMeta.slug}/${slug}`, label: `${auctionMakeLabel(item.make)} из ${countryMeta.genitive}` }]
+          : []
+      })
+  }, [country, analytics])
   const sourceSummary = analytics?.sources.map((item) => `${auctionSourceLabel(item.source)}: ${item.count}`).join(" · ")
   const powerCoverage = analytics?.total ? Math.round((analytics.powerKnown / analytics.total) * 100) : 0
   const mileageCoverage = analytics?.total ? Math.round((analytics.mileageKnown / analytics.total) * 100) : 0
@@ -367,6 +383,29 @@ function AuctionsPageContent() {
                   </Button>
                 ))}
               </SimpleGrid>
+
+              {/* Ссылки на разборы направлений: помогают покупателю сравнить
+                  марку по стране и дают поисковой системе путь к страницам,
+                  которые иначе доступны только через фильтр. */}
+              {country && landingLinks.length > 0 && (
+                <Box>
+                  <Text size="xs" c="dimmed" mb={6}>Подробнее о марках из выбранной страны:</Text>
+                  <Group gap={6} wrap="wrap">
+                    {landingLinks.map((item) => (
+                      <Button
+                        key={item.href}
+                        component={Link}
+                        href={item.href}
+                        size="compact-xs"
+                        variant="light"
+                        color="indigo"
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
+                  </Group>
+                </Box>
+              )}
 
               <Divider color="gray.2" />
                 <Box className={styles.insights} aria-label="Аналитика текущей выдачи">
