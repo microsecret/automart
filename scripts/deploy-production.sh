@@ -59,3 +59,7 @@ fi
 npm run type-check
 npm run build
 bash scripts/install-production-network.sh
+if systemctl list-unit-files automart-telegram.service --no-legend 2>/dev/null | grep -q '^automart-telegram\.service'; then
+  systemctl restart automart-telegram
+  systemctl is-active --quiet automart-telegram
+fi

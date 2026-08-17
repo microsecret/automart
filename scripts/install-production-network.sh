@@ -19,12 +19,19 @@ systemctl is-active --quiet automart
 
 # The application is now on 127.0.0.1:4001, so Nginx can safely claim the
 # public :4000 entry point without changing customer-facing URLs.
-for _attempt in $(seq 1 15); do
-  if curl --fail --silent --show-error http://127.0.0.1:4001/api/exchange-rates >/dev/null; then
+application_ready=false
+for _attempt in $(seq 1 45); do
+  if curl --fail --silent http://127.0.0.1:4001/api/exchange-rates >/dev/null 2>&1; then
+    application_ready=true
     break
   fi
   sleep 1
 done
-curl --fail --silent --show-error http://127.0.0.1:4001/api/exchange-rates >/dev/null
+if [[ "$application_ready" != true ]]; then
+  systemctl status automart --no-pager -l >&2 || true
+  journalctl -u automart -n 80 --no-pager >&2 || true
+  echo "AutoMart did not become healthy on 127.0.0.1:4001 within 45 seconds" >&2
+  exit 1
+fi
 systemctl reload nginx
 curl --fail --silent --show-error http://127.0.0.1:4000/api/exchange-rates >/dev/null
