@@ -133,10 +133,6 @@ function getDistanceInKilometers(from: { latitude: number; longitude: number }, 
   return 6371 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value))
 }
 
-function formatDistance(distance: number) {
-  return distance < 1 ? `${Math.max(50, Math.round(distance * 1000 / 50) * 50)} м` : `${distance.toFixed(distance < 10 ? 1 : 0).replace(".", ",")} км`
-}
-
 function getStationDataQuality(station: FuelStation): StationDataQuality {
   if (station.status !== "UNKNOWN" || station.prices.length) return "live"
   if (station.fuels.length) return "fuel"
@@ -434,9 +430,8 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   )
 }
 
-function FuelStationCard({ station, referenceCoordinates, isSelected, resolvedAddress, isAddressLoading, onShowOnMap }: {
+function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoading, onShowOnMap }: {
   station: FuelStation
-  referenceCoordinates: { latitude: number; longitude: number }
   isSelected: boolean
   resolvedAddress?: string | null
   isAddressLoading?: boolean
@@ -451,7 +446,6 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, resolvedAd
   const sourceLabel = getStationSourceLabel(station)
   const iconColor = dataQuality === "live" ? stationStatus.color : dataQuality === "fuel" ? "teal" : dataQuality === "network" ? "orange" : "gray"
   const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
-  const distance = formatDistance(getDistanceInKilometers(referenceCoordinates, station))
   const displayAddress = station.address || resolvedAddress
   const selectStation = () => onShowOnMap(station)
 
@@ -470,7 +464,7 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, resolvedAd
           <ThemeIcon variant={networkIdentity ? "filled" : "light"} color={iconColor} radius="md" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkIdentity ? networkIdentity.shortLabel : <IconGasStation size={17} />}</ThemeIcon>
           <Box style={{ minWidth: 0 }}>
             <Text fw={750} size="sm" lineClamp={1}>{station.name}</Text>
-            <Text size="xs" c="dimmed" lineClamp={1}>{displayAddress || network || (isAddressLoading ? "Уточняем адрес по OSM…" : "Адрес не указан")}</Text>
+            <Text size="xs" c="dimmed" lineClamp={2}>{displayAddress || (isAddressLoading ? "Уточняем адрес по OSM…" : "Адрес не указан")}</Text>
           </Box>
         </Group>
         {station.sourceType !== "provider" && <Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id.replace(/^osm-[^-]+-/, "")}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor>}
@@ -479,7 +473,6 @@ function FuelStationCard({ station, referenceCoordinates, isSelected, resolvedAd
         {networkLabel && <Badge size="xs" variant={networkIdentity ? "filled" : "outline"} color="orange" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkLabel}</Badge>}
         <Badge size="xs" variant="light" color={stationStatus.color}>{stationStatus.label}</Badge>
         <Badge size="xs" variant="outline" color={sourceLabel.color}>{sourceLabel.label}</Badge>
-        <Badge size="xs" variant="outline" color="gray">{distance} от центра</Badge>
         {station.prices.length
           ? station.prices.map((price) => <Badge key={`${price.fuel}-${price.price}`} size="xs" variant="light" color="teal">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>)
           : station.fuels.length
@@ -523,7 +516,7 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
         </Group>
 
         <Paper radius="md" p="sm" withBorder style={{ background: "rgba(255,255,255,.78)" }}>
-          <Group gap="xs" align="flex-start" wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="indigo" variant="light"><IconMapPin size={14} /></ThemeIcon><Box><Text size="xs" c="dimmed">Адрес</Text><Text size="sm" fw={600}>{displayAddress || (isAddressLoading ? "Уточняем адрес по OpenStreetMap…" : "Адрес не опубликован")}</Text><Text size="xs" c="dimmed" mt={2}>{station.latitude.toFixed(5)}, {station.longitude.toFixed(5)}</Text></Box></Group>
+          <Group gap="xs" align="flex-start" wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="indigo" variant="light"><IconMapPin size={14} /></ThemeIcon><Box><Text size="xs" c="dimmed">Адрес</Text><Text size="sm" fw={600}>{displayAddress || (isAddressLoading ? "Уточняем адрес по OpenStreetMap…" : "Адрес не опубликован")}</Text></Box></Group>
         </Paper>
 
         <Box>
@@ -727,7 +720,6 @@ export default function FuelMapPage() {
                 <FuelStationCard
                   key={`${station.sourceType}-${station.id}`}
                   station={station}
-                  referenceCoordinates={coordinates}
                   isSelected={selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType}
                   onShowOnMap={showStationOnMap}
                 />

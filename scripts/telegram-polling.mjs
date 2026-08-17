@@ -24,6 +24,7 @@ const statePath = process.env.TELEGRAM_POLLING_STATE_PATH || "/var/lib/automart-
 const pollTimeoutSeconds = 30
 const maxBackoffMs = 60_000
 const cleanupIntervalMs = 10_000
+const marketingIntervalMs = 60_000
 
 if (!botToken || !webhookSecret) {
   console.error("[telegram-polling] TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET are required")
@@ -153,6 +154,37 @@ function runLocalCleanup() {
   })
 }
 
+function runLocalMarketing() {
+  return new Promise((resolve, reject) => {
+    const body = "{}"
+    const request = http.request({
+      hostname: "127.0.0.1",
+      port: localPort,
+      path: "/api/telegram/marketing",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        "X-Telegram-Bot-Api-Secret-Token": webhookSecret,
+      },
+      timeout: 20_000,
+    }, (response) => {
+      let responseBody = ""
+      response.on("data", (chunk) => { responseBody += chunk })
+      response.on("end", () => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Local marketing ${response.statusCode}: ${responseBody.slice(0, 200)}`))
+          return
+        }
+        resolve(responseBody)
+      })
+    })
+    request.on("error", reject)
+    request.on("timeout", () => request.destroy(new Error("Local marketing timed out")))
+    request.end(body)
+  })
+}
+
 async function enablePollingMode() {
   let backoffMs = 2_000
   while (running) {
@@ -177,6 +209,11 @@ async function poll() {
     void runLocalCleanup().catch((error) => console.error(`[telegram-polling] Cleanup: ${error instanceof Error ? error.message : error}`))
   }, cleanupIntervalMs)
   cleanupTimer.unref()
+  const marketingTimer = setInterval(() => {
+    void runLocalMarketing().catch((error) => console.error(`[telegram-polling] Marketing: ${error instanceof Error ? error.message : error}`))
+  }, marketingIntervalMs)
+  marketingTimer.unref()
+  void runLocalMarketing().catch((error) => console.error(`[telegram-polling] Initial marketing: ${error instanceof Error ? error.message : error}`))
 
   try {
     while (running) {
@@ -208,6 +245,7 @@ async function poll() {
     }
   } finally {
     clearInterval(cleanupTimer)
+    clearInterval(marketingTimer)
   }
 }
 

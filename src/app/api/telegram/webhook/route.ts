@@ -18,6 +18,7 @@ import {
 import { prisma } from "@/lib/prisma"
 import { absoluteUrl } from "@/lib/site-url"
 import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
+import { registerTelegramGroup, setTelegramChatMarketing } from "@/lib/telegram-marketing"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +27,7 @@ type TelegramMessage = {
   text?: string
   caption?: string
   from?: { id: number | string; is_bot?: boolean; first_name?: string; last_name?: string; username?: string }
-  chat: { id: number | string; type: string }
+  chat: { id: number | string; type: string; title?: string }
   contact?: { phone_number?: string; user_id?: number | string; first_name?: string; last_name?: string }
   photo?: unknown
   video?: unknown
@@ -247,6 +248,26 @@ async function handleMessage(message: TelegramMessage) {
   if (!message.from || message.from.is_bot) return
   const telegramId = String(message.from.id)
   const chatId = String(message.chat.id)
+
+  if (message.chat.type === "group" || message.chat.type === "supergroup") {
+    await registerTelegramGroup(message.chat)
+    const command = message.text?.trim().toLowerCase().split(/\s+/)[0]?.split("@")[0]
+    if (command === "/promo_on" || command === "/promo_off") {
+      const member = await telegramApi<{ status: string }>("getChatMember", { chat_id: chatId, user_id: message.from.id }).catch(() => null)
+      const allowed = member?.status === "creator" || member?.status === "owner" || member?.status === "administrator"
+      const enabled = command === "/promo_on"
+      const sentMessage = await telegramApi<TelegramSentMessage>("sendMessage", {
+        chat_id: chatId,
+        text: allowed
+          ? enabled ? "✅ <b>Новости LeWheel включены.</b> Полезный обзор сервиса будет выходить не чаще одного раза в 12 часов." : "🔕 <b>Новости LeWheel отключены для этого чата.</b> Включить снова можно командой /promo_on."
+          : "⚠️ Управлять рассылкой LeWheel могут только администраторы этого чата.",
+        parse_mode: "HTML",
+      })
+      if (allowed) await setTelegramChatMarketing(chatId, enabled)
+      await scheduleTemporarySystemMessage(chatId, sentMessage)
+      return
+    }
+  }
 
   if (message.text?.trim().toLowerCase().startsWith("/start")) {
     if (message.chat.type === "private") {

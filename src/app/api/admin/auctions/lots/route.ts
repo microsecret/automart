@@ -1,0 +1,48 @@
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { isAdmin } from "@/lib/permissions"
+import { prisma } from "@/lib/prisma"
+
+export const dynamic = "force-dynamic"
+
+async function requireAdmin() {
+  const session = await getServerSession(authOptions)
+  return session?.user?.id && isAdmin(session.user.role) ? session : null
+}
+
+export async function GET(request: NextRequest) {
+  if (!await requireAdmin()) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  const q = request.nextUrl.searchParams.get("q")?.trim().slice(0, 80) || ""
+  const visibility = request.nextUrl.searchParams.get("visibility") === "hidden" ? "hidden" : "visible"
+  const where = {
+    adminHiddenAt: visibility === "hidden" ? { not: null } : null,
+    ...(q ? { OR: [{ make: { contains: q } }, { model: { contains: q } }, { lotNumber: { contains: q } }, { sourceId: { contains: q } }] } : {}),
+  }
+  const lots = await prisma.auctionListing.findMany({
+    where,
+    orderBy: { updatedAt: "desc" },
+    take: 50,
+    select: { id: true, make: true, model: true, year: true, source: true, lotNumber: true, status: true, finalPrice: true, imageUrl: true, adminHiddenAt: true, adminHiddenReason: true, updatedAt: true },
+  })
+  return NextResponse.json({ lots })
+}
+
+export async function PATCH(request: NextRequest) {
+  const session = await requireAdmin()
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  const body = await request.json().catch(() => null)
+  const id = typeof body?.id === "string" ? body.id : ""
+  const action = body?.action === "RESTORE" ? "RESTORE" : body?.action === "HIDE" ? "HIDE" : null
+  const reason = typeof body?.reason === "string" ? body.reason.trim().replace(/\s+/g, " ").slice(0, 500) : ""
+  if (!id || !action) return NextResponse.json({ error: "Некорректное действие" }, { status: 400 })
+  if (action === "HIDE" && reason.length < 3) return NextResponse.json({ error: "Укажите причину скрытия" }, { status: 400 })
+  const existing = await prisma.auctionListing.findUnique({ where: { id }, select: { id: true } })
+  if (!existing) return NextResponse.json({ error: "Лот не найден" }, { status: 404 })
+  const lot = await prisma.auctionListing.update({
+    where: { id },
+    data: action === "HIDE" ? { adminHiddenAt: new Date(), adminHiddenReason: reason } : { adminHiddenAt: null, adminHiddenReason: null },
+    select: { id: true, adminHiddenAt: true, adminHiddenReason: true },
+  })
+  return NextResponse.json({ lot })
+}

@@ -20,6 +20,7 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { isSafeMediaUrl } from "@/lib/media-url"
+import AuctionLotAdministration from "@/components/admin/AuctionLotAdministration"
 
 type InquiryUser = { id: string; name: string | null }
 type InquiryDeal = {
@@ -230,6 +231,8 @@ export default function AdminAuctionsPage() {
             <Progress value={freshnessPercent} color={freshnessPercent >= 80 ? "teal" : "orange"} size="sm" radius="xl" mt="md" />
           </Paper>
         )}
+
+        <AuctionLotAdministration />
 
         <Group justify="space-between" align="flex-end" gap="md" wrap="wrap">
           <Stack gap={1}>

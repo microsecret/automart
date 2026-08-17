@@ -215,6 +215,13 @@ function PartsContent() {
             <Button key={t.value} size="compact-sm" radius="md" variant={partType === t.value ? "filled" : "default"} color="indigo" onClick={() => selectPartType(partType === t.value ? null : t.value)}>{t.label}</Button>
           ))}
         </Group>
+        <Group className="parts-condition-shortcuts" gap={6} wrap="wrap">
+          <Text size="xs" fw={750} c="dimmed">Состояние:</Text>
+          {PART_CONDITIONS.map((item) => {
+            const selected = conditions.includes(item.value)
+            return <Button key={item.value} size="compact-xs" radius="xl" variant={selected ? "filled" : "light"} color={item.value === "NEW" ? "teal" : "indigo"} onClick={() => toggleMultiFilter(item.value, conditions, setConditions)}>{item.label}</Button>
+          })}
+        </Group>
         {partType && subcats.length > 0 && (
           <Group gap={6} wrap="wrap" className="parts-subcategories">
             <Text size="xs" c="dimmed">Уточнить:</Text>
@@ -266,12 +273,6 @@ function PartsContent() {
           <Box className="parts-filter-grid">
             <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
             <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
-            <Box className="parts-filter-field parts-filter-checks">
-              <Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Состояние</Text>
-              <Group gap={8} wrap="wrap">
-                {PART_CONDITIONS.map((item) => <Checkbox key={item.value} size="xs" label={item.label} checked={conditions.includes(item.value)} onChange={() => toggleMultiFilter(item.value, conditions, setConditions)} />)}
-              </Group>
-            </Box>
             <Box className="parts-filter-field parts-filter-checks">
               <Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text>
               <Group gap={8} wrap="wrap">

@@ -46,6 +46,8 @@ export default function AdminWorkspaceNavigation({ canManageUsers = true }: Admi
                 href={section.href}
                 variant={active ? "filled" : "subtle"}
                 color={active ? "indigo" : "gray"}
+                className="admin-workspace-navigation__item"
+                data-active={active || undefined}
                 size="xs"
                 radius="md"
                 leftSection={<Icon size={15} />}

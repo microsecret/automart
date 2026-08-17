@@ -644,6 +644,26 @@ model TelegramMessageCleanup {
   @@index([processedAt, deleteAt])
 }
 
+// Groups and supergroups where the bot has been seen. The registry keeps the
+// 12-hour service campaign idempotent across worker restarts and lets chat
+// administrators opt out without removing the bot.
+model TelegramChat {
+  id               String    @id
+  type             String
+  title            String?
+  marketingEnabled Boolean   @default(true)
+  active           Boolean   @default(true)
+  lastSeenAt       DateTime  @default(now())
+  lastPromoAt      DateTime?
+  lastPromoMessage Int?
+  lastError        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([active, marketingEnabled, lastPromoAt])
+  @@index([lastSeenAt])
+}
+
 model News {
   id              String    @id @default(uuid())
   title           String
@@ -726,6 +746,8 @@ model AuctionListing {
   location            String?
   // Статус
   status              String    @default("ACTIVE") // ACTIVE, SOLD, EXPIRED, POLICY_EXCLUDED
+  adminHiddenAt       DateTime? // manual moderation override; collectors must not reset it
+  adminHiddenReason   String?
   isTranslated        Boolean   @default(false)
   translatedAt        DateTime?
   lastChecked         DateTime  @default(now()) // последняя попытка проверки источника
@@ -742,6 +764,7 @@ model AuctionListing {
   @@unique([source, sourceId])
   @@index([source])
   @@index([status])
+  @@index([adminHiddenAt])
   @@index([make, model])
   @@index([country])
   @@index([auctionDate])

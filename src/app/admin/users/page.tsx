@@ -5,9 +5,8 @@ export const dynamic = "force-dynamic"
 import { useDeferredValue, useState } from "react"
 import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
-import { ActionIcon, Alert, Avatar, Badge, Box, Button, Divider, Group, Menu, Modal, Pagination, Paper, ScrollArea, Select, SimpleGrid, Skeleton, Stack, Table, Text, Textarea, TextInput, ThemeIcon, Title, Tooltip } from "@mantine/core"
-import { IconBan, IconBrandTelegram, IconCircleCheck, IconDotsVertical, IconMail, IconMessageCircle2, IconSearch, IconSend, IconShieldCheck, IconTag, IconUsers } from "@tabler/icons-react"
-import { formatDate } from "@/lib/format"
+import { Alert, Avatar, Badge, Box, Button, Divider, Group, Modal, Pagination, Paper, ScrollArea, Select, SimpleGrid, Skeleton, Stack, Table, Text, Textarea, TextInput, ThemeIcon, Title, Tooltip } from "@mantine/core"
+import { IconBan, IconBrandTelegram, IconCircleCheck, IconExternalLink, IconMail, IconMessageCircle2, IconSearch, IconSend, IconShieldCheck, IconTag, IconUsers } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
 
@@ -56,6 +55,19 @@ const STATUS_META = {
   BANNED: { label: "Заблокирован", color: "red" },
 } as const
 const STATUS_OPTIONS = Object.entries(STATUS_META).map(([value, meta]) => ({ value, label: meta.label }))
+
+function formatYekaterinburgRegistration(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "—"
+  return new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "Asia/Yekaterinburg",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date).replace(",", " ·") + " ЕКБ"
+}
 
 function DirectorySkeleton() {
   return (
@@ -220,17 +232,9 @@ export default function AdminUsersPage() {
                           <Tooltip label="Отправлено сообщений" withArrow><Group gap={4}><IconMessageCircle2 size={14} color="#0ea5e9" /><Text size="xs" fw={700}>{user._count.messagesSent}</Text></Group></Tooltip>
                         </Group>
                       </Table.Td>
-                      <Table.Td><Text size="xs" c="dimmed">{formatDate(user.createdAt)}</Text></Table.Td>
+                      <Table.Td><Text size="xs" c="dimmed" miw={132}>{formatYekaterinburgRegistration(user.createdAt)}</Text></Table.Td>
                       <Table.Td>
-                        <Menu position="bottom-end" shadow="md" width={208} withinPortal>
-                          <Menu.Target>
-                            <ActionIcon variant="subtle" color="gray" aria-label={`Действия: ${user.name || user.email || "Telegram"}`}><IconDotsVertical size={17} /></ActionIcon>
-                          </Menu.Target>
-                          <Menu.Dropdown>
-                            <Menu.Label>Управление пользователем</Menu.Label>
-                            <Menu.Item leftSection={<IconShieldCheck size={15} />} onClick={() => openRoleEditor(user)}>Открыть карточку</Menu.Item>
-                          </Menu.Dropdown>
-                        </Menu>
+                        <Button variant="light" color="indigo" size="compact-xs" leftSection={<IconShieldCheck size={14} />} onClick={() => openRoleEditor(user)}>Управлять</Button>
                       </Table.Td>
                     </Table.Tr>
                   ))}
@@ -272,7 +276,7 @@ export default function AdminUsersPage() {
           <Group justify="flex-end"><Button variant="light" color="indigo" leftSection={<IconSend size={16} />} loading={isNotificationSending} disabled={notificationTitle.trim().length < 3 || notificationContent.trim().length < 3} onClick={() => void sendNotification()}>Отправить уведомление</Button></Group>
 
           <Divider label="Последние объявления" labelPosition="left" />
-          {isDetailLoading ? <Skeleton h={90} radius="md" /> : userDetail?.listings.length ? <Stack gap="xs">{userDetail.listings.map((listing) => <Paper key={listing.id} withBorder radius="md" p="sm"><Group justify="space-between" wrap="nowrap"><Box miw={0}><Text size="sm" fw={700} lineClamp={1}>{listing.title}</Text><Text size="xs" c="dimmed">{listing.price.toLocaleString("ru-RU")} ₽ · {listing.status}</Text></Box><Button component="a" href={`/listings/${listing.id}`} target="_blank" variant="subtle" size="compact-xs">Открыть</Button></Group></Paper>)}</Stack> : <Text size="sm" c="dimmed">У пользователя пока нет объявлений.</Text>}
+          {isDetailLoading ? <Skeleton h={90} radius="md" /> : userDetail?.listings.length ? <Stack gap="xs">{userDetail.listings.map((listing) => <Paper key={listing.id} withBorder radius="md" p="sm"><Group justify="space-between" wrap="nowrap"><Box miw={0}><Text size="sm" fw={700} lineClamp={1}>{listing.title}</Text><Text size="xs" c="dimmed">{listing.price.toLocaleString("ru-RU")} ₽ · {listing.status}</Text></Box><Button component="a" href="/moderation" target="_blank" variant="light" color="indigo" size="compact-xs" leftSection={<IconExternalLink size={13} />}>Статус и снятие</Button></Group></Paper>)}</Stack> : <Text size="sm" c="dimmed">У пользователя пока нет объявлений.</Text>}
           {roleError && <Alert color="red" title="Роль не изменена">{roleError}</Alert>}
         </Stack>
       </Modal>

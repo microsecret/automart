@@ -11,6 +11,7 @@ export function buildPublicAuctionPolicy(now = new Date()) {
 
   const where: Prisma.AuctionListingWhereInput = {
     status: "ACTIVE",
+    adminHiddenAt: null,
     OR: [{ auctionDate: null }, { auctionDate: { gte: now } }],
     year: { gte: minimumImportYear },
     AND: [
