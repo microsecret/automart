@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isAdmin, normalizeUserRole, USER_ROLE } from "@/lib/permissions"
+import { recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -38,6 +39,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       where: { id },
       data: { role },
       select: { id: true, name: true, email: true, role: true, updatedAt: true },
+    })
+
+    await recordAdminAudit({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: "USER_ROLE_CHANGE",
+      entityType: "User",
+      entityId: id,
+      summary: `Роль пользователя ${target.email || target.name || id} изменена: ${currentRole} → ${role}`,
+      metadata: { previousRole: currentRole, nextRole: role },
     })
 
     return NextResponse.json({ user })

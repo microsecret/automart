@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getTelegramMiniAppUrl, telegramApi } from "@/lib/telegram"
 import { isAdmin, normalizeUserRole, USER_ROLE } from "@/lib/permissions"
+import { recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -75,6 +76,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     },
     select: { id: true, role: true, accountStatus: true, restrictionReason: true, statusUpdatedAt: true },
   })
+  const roleChanged = normalizeUserRole(target.role) !== role
+  if (roleChanged || statusChanged) {
+    await recordAdminAudit({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: statusChanged ? "USER_STATUS_CHANGE" : "USER_ROLE_CHANGE",
+      entityType: "User",
+      entityId: id,
+      summary: [
+        roleChanged ? `роль ${normalizeUserRole(target.role)} → ${role}` : null,
+        statusChanged ? `статус ${target.accountStatus} → ${accountStatus}` : null,
+        accountStatus !== "ACTIVE" && restrictionReason ? `причина: ${restrictionReason}` : null,
+      ].filter(Boolean).join("; "),
+      metadata: {
+        previousRole: normalizeUserRole(target.role),
+        nextRole: role,
+        previousStatus: target.accountStatus,
+        nextStatus: accountStatus,
+        restrictionReason: accountStatus === "ACTIVE" ? null : restrictionReason,
+      },
+    })
+  }
   return NextResponse.json({ user })
 }
 

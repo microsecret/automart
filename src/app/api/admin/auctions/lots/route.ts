@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { isAdmin } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
+import { recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -43,6 +44,15 @@ export async function PATCH(request: NextRequest) {
     where: { id },
     data: action === "HIDE" ? { adminHiddenAt: new Date(), adminHiddenReason: reason } : { adminHiddenAt: null, adminHiddenReason: null },
     select: { id: true, adminHiddenAt: true, adminHiddenReason: true },
+  })
+  await recordAdminAudit({
+    actorId: session.user.id,
+    actorEmail: session.user.email,
+    action: action === "HIDE" ? "AUCTION_LOT_HIDE" : "AUCTION_LOT_RESTORE",
+    entityType: "AuctionListing",
+    entityId: id,
+    summary: action === "HIDE" ? `Лот скрыт: ${reason}` : "Лот возвращён в публичный каталог",
+    metadata: action === "HIDE" ? { reason } : null,
   })
   return NextResponse.json({ lot })
 }

@@ -58,6 +58,8 @@ model User {
   auctionInquiryOffers          AuctionInquiryOffer[]          @relation("AuctionInquiryOfferPartner")
   communicationModerationEvents CommunicationModerationEvent[] @relation("CommunicationModerationSender")
   reportsCreated                ListingReport[]                @relation("ListingReportReporter")
+  fuelPriceReports              FuelPriceReport[]              @relation("FuelPriceReporter")
+  adminAuditEvents              AdminAuditEvent[]              @relation("AdminAuditActor")
   reportsReviewed               ListingReport[]                @relation("ListingReportReviewer")
   promotionOrders               PromotionOrder[]
   supportTickets                SupportTicket[]                @relation("SupportTicketRequester")
@@ -1054,3 +1056,51 @@ model CommunicationModerationEvent {
 }
 
 // === АУКЦИОННЫЙ АГРЕГАТОР ===
+
+// === ЦЕНЫ НА ТОПЛИВО ОТ ПОЛЬЗОВАТЕЛЕЙ ===
+
+// Открытые картографические данные содержат виды топлива, но не цены, а
+// публичные API сетей АЗС требуют платного договора. Поэтому цена приходит от
+// водителей: каждая отметка хранится отдельно и остаётся проверяемой, а карта
+// показывает согласованное значение вместо одиночного мнения.
+model FuelPriceReport {
+  id         String   @id @default(uuid())
+  stationId  String // идентификатор точки на карте, например osm-node-123
+  latitude   Float
+  longitude  Float
+  fuel       String // AI92, AI95, AI98, AI100, DT, GAS
+  priceRub   Int // цена в копейках, чтобы не хранить дробное значение
+  userId     String?
+  user       User?    @relation("FuelPriceReporter", fields: [userId], references: [id], onDelete: SetNull)
+  ipHash     String? // антиспам без хранения адреса
+  status     String   @default("ACTIVE") // ACTIVE, REJECTED, SUPERSEDED
+  rejectedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([stationId, fuel, createdAt])
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+}
+
+// === ЖУРНАЛ ДЕЙСТВИЙ АДМИНИСТРАТОРА ===
+
+// Решения администратора меняют видимость чужого контента и роли, поэтому они
+// должны оставаться восстановимыми. Журнал только дополняется: запись не
+// правится и не удаляется вместе с целевой сущностью.
+model AdminAuditEvent {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actor      User?    @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String? // сохраняется отдельно, чтобы запись пережила удаление аккаунта
+  action     String // AUCTION_LOT_HIDE, USER_ROLE_CHANGE, LISTING_MODERATE, ...
+  entityType String // AuctionListing, User, Listing, SupportTicket, ...
+  entityId   String?
+  summary    String // человекочитаемое описание решения
+  metadata   String? // JSON с деталями до/после
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
+}

@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useState, type ReactNode } from "react"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
 import ListingReportModerationPanel from "@/components/moderation/ListingReportModerationPanel"
+import AdminAuditLog from "@/components/admin/AdminAuditLog"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
@@ -1012,6 +1013,7 @@ export default function AdminDashboard() {
         {/* Модерация объявлений */}
         <ListingModerationPanel />
         <ListingReportModerationPanel />
+        <AdminAuditLog />
             </Stack>
           </Tabs.Panel>
         </Tabs>
