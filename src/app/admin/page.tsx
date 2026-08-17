@@ -143,6 +143,13 @@ type AdminStats = {
     lastStatus: string | null
     lastSyncAt: string | null
   }>
+  sourceFieldMatrix: Array<{
+    source: string
+    label: string
+    total: number
+    quarantined: number
+    fields: Array<{ key: string; label: string; filled: number; percent: number | null }>
+  }>
   sourceTransport: {
     configured: number
     active: number
@@ -505,6 +512,55 @@ export default function AdminDashboard() {
               })}
             </Timeline>
           ) : <Text size="sm" c="dimmed">Запусков синхронизации ещё нет. После первого штатного запуска журнал появится здесь.</Text>}
+        </Card>
+
+        <Card withBorder radius="lg" p="md">
+          <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
+            <Group gap="sm">
+              <ThemeIcon variant="light" color="grape" size={36} radius="md"><IconListCheck size={18} /></ThemeIcon>
+              <Stack gap={1}>
+                <Text size="sm" fw={750}>Полнота полей по источникам</Text>
+                <Text size="xs" c="dimmed">Доля лотов с заполненным полем. Низкий процент — пробел в парсере либо поле, которого нет у площадки.</Text>
+              </Stack>
+            </Group>
+            {data.sourceFieldMatrix.some((row) => row.quarantined > 0) && (
+              <Badge variant="light" color="orange">
+                В карантине качества: {data.sourceFieldMatrix.reduce((sum, row) => sum + row.quarantined, 0)}
+              </Badge>
+            )}
+          </Group>
+          {data.sourceFieldMatrix.length ? (
+            <Stack gap="sm">
+              {data.sourceFieldMatrix.map((row) => (
+                <Paper key={row.source} withBorder radius="md" p="sm">
+                  <Group justify="space-between" mb={8} wrap="wrap" gap="xs">
+                    <Group gap="xs">
+                      <Text size="sm" fw={700}>{row.label}</Text>
+                      <Badge size="xs" variant="light" color="gray">{row.total.toLocaleString("ru-RU")} лотов</Badge>
+                    </Group>
+                    {row.quarantined > 0 && <Badge size="xs" variant="light" color="orange">Скрыто: {row.quarantined}</Badge>}
+                  </Group>
+                  <SimpleGrid cols={{ base: 2, sm: 3, lg: 5 }} spacing="xs">
+                    {row.fields.map((field) => (
+                      <Box key={field.key}>
+                        <Group justify="space-between" gap={4} wrap="nowrap">
+                          <Text size="xs" c="dimmed" truncate>{field.label}</Text>
+                          <Text size="xs" fw={700}>{field.percent === null ? "—" : `${field.percent}%`}</Text>
+                        </Group>
+                        <Progress
+                          mt={3}
+                          size="sm"
+                          radius="xl"
+                          value={field.percent ?? 0}
+                          color={field.percent === null ? "gray" : field.percent >= 80 ? "teal" : field.percent >= 40 ? "yellow" : "red"}
+                        />
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+                </Paper>
+              ))}
+            </Stack>
+          ) : <Text size="sm" c="dimmed">Аукционных лотов пока нет — матрица появится после первого импорта.</Text>}
         </Card>
 
         <Card withBorder radius="lg" p="md">

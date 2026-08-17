@@ -298,6 +298,62 @@ export async function GET() {
     } catch {
       partnerFeedConfigurationValid = false
     }
+    // Матрица полноты полей: показывает, какие атрибуты источник реально
+    // отдаёт. Ставится по фактическим лотам, поэтому «пустая» колонка означает
+    // либо пробел в парсере, либо отсутствие поля у площадки.
+    const QUALITY_FIELDS = [
+      { key: "mileage", label: "Пробег" },
+      { key: "engineVolume", label: "Двигатель" },
+      { key: "power", label: "Мощность" },
+      { key: "transmission", label: "КПП" },
+      { key: "driveType", label: "Привод" },
+      { key: "bodyType", label: "Кузов" },
+      { key: "color", label: "Цвет" },
+      { key: "vin", label: "VIN" },
+      { key: "imageUrl", label: "Фото" },
+      { key: "descriptionRu", label: "Описание RU" },
+    ] as const
+
+    const [sourceTotals, sourceQuarantined, ...sourceFieldCounts] = await Promise.all([
+      prisma.auctionListing.groupBy({ by: ["source"], _count: { _all: true } }),
+      prisma.auctionListing.groupBy({ by: ["source"], where: { adminHiddenAt: { not: null } }, _count: { _all: true } }),
+      ...QUALITY_FIELDS.map((field) =>
+        prisma.auctionListing.groupBy({
+          by: ["source"],
+          where: { [field.key]: { not: null } },
+          _count: { _all: true },
+        }),
+      ),
+    ])
+
+    const totalBySource = new Map(sourceTotals.map((row) => [row.source, row._count._all]))
+    const quarantinedBySource = new Map(sourceQuarantined.map((row) => [row.source, row._count._all]))
+    const filledBySourceField = QUALITY_FIELDS.map((field, index) => ({
+      field,
+      counts: new Map(sourceFieldCounts[index].map((row) => [row.source, row._count._all])),
+    }))
+
+    const sourceFieldMatrix = AUCTION_SOURCE_OPTIONS.map((source) => {
+      const total = totalBySource.get(source.value) || 0
+      return {
+        source: source.value,
+        label: source.label,
+        total,
+        quarantined: quarantinedBySource.get(source.value) || 0,
+        fields: filledBySourceField.map(({ field, counts }) => {
+          const filled = counts.get(source.value) || 0
+          return {
+            key: field.key,
+            label: field.label,
+            filled,
+            // Без лотов процент не считается: 0 из 0 — это «нет данных», а не
+            // «источник ничего не отдаёт».
+            percent: total > 0 ? Math.round((filled / total) * 100) : null,
+          }
+        }),
+      }
+    }).filter((row) => row.total > 0)
+
     const sourceCoverage = AUCTION_SOURCE_OPTIONS.map((source) => {
       const pipeline = AUCTION_SOURCE_PIPELINES[source.value]
       const latest = latestSyncBySource.get(source.value)
@@ -397,6 +453,7 @@ export async function GET() {
       },
       auctionSyncRuns: latestAuctionSyncRuns,
       sourceCoverage,
+      sourceFieldMatrix,
       sourceTransport: sourceProxyPoolStatus(),
       partnerFeedConfigurationValid,
     })
