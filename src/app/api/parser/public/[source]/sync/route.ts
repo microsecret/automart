@@ -79,7 +79,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
     }
 
-    const result = items.length ? await saveAuctionImportItems(items) : { created: 0, updated: 0, translated: 0 }
+    const result = items.length ? await saveAuctionImportItems(items) : { created: 0, updated: 0, translated: 0, qualityHold: 0, qualityRestored: 0 }
     const status = failed.length ? (items.length ? "PARTIAL" : "FAILED") : "SUCCEEDED"
     await prisma.auctionSyncRun.update({
       where: { id: syncRun.id },

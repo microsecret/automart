@@ -85,7 +85,7 @@ export async function pullPartnerAuctionFeed(config: PartnerFeedConfig) {
     return id && id.length <= 120 ? [id] : []
   })
 
-  const saved = items.length ? await saveAuctionImportItems(items) : { created: 0, updated: 0, translated: 0 }
+  const saved = items.length ? await saveAuctionImportItems(items) : { created: 0, updated: 0, translated: 0, qualityHold: 0, qualityRestored: 0 }
   const missing = config.completeSnapshot && data?.completeSnapshot === true
     ? await confirmMissingFromCompleteSnapshot(config.source, items.map((item) => item.sourceId))
     : await confirmAuctionListingsMissing(config.source, removedSourceIds)
