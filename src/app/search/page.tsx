@@ -6,6 +6,7 @@ import { Container, Center, Loader, Group, Text, Breadcrumbs, Anchor, Badge } fr
 import Link from "next/link"
 import HomePage from "@/components/catalog/HomeCatalog"
 import { IconSearch } from "@tabler/icons-react"
+import { PART_TYPES } from "@/lib/constants"
 
 function SearchContent() {
   const sp = useSearchParams()
@@ -16,10 +17,11 @@ function SearchContent() {
   const vehicleType = sp.get("vehicleType") || undefined
 
   const isPart = type === "part" || !!partType
+  const partTypeLabel = PART_TYPES.find((item) => item.value === partType)?.label
   const pageTitle = make
     ? `${make} — результаты поиска`
     : isPart
-    ? "Запчасти — поиск"
+    ? `${partTypeLabel || "Запчасти"} — поиск`
     : q
     ? `Поиск: «${q}»`
     : "Результаты поиска"
@@ -34,16 +36,20 @@ function SearchContent() {
       <Group gap="sm" align="center" mb="sm">
         <IconSearch size={20} color="#4f46e5" />
         <Text component="h1" fw={800} fz={20} c="dark.9" ff="var(--font-display),sans-serif">{pageTitle}</Text>
-        {isPart && <Badge size="sm" color="indigo" variant="light">Запчасти</Badge>}
+        {isPart && <Badge size="sm" color="indigo" variant="light">{partTypeLabel || "Запчасти"}</Badge>}
         {vehicleType && <Badge size="sm" color="violet" variant="light">{vehicleType}</Badge>}
       </Group>
 
       <HomePage
         key={`${type}-${make}-${q}-${partType}`}
         initialQuery={q}
+        initialMake={make}
+        initialPartType={partType}
         initialType={isPart ? "part" : "vehicle"}
         initialVehicleType={vehicleType}
         pageTitle={pageTitle}
+        showHero={false}
+        showHeading={false}
       />
     </Container>
   )

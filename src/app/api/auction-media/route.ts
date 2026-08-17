@@ -35,42 +35,63 @@ export async function GET(request: NextRequest) {
         "User-Agent": "LeWheel-Auction-Media/1.0",
       },
     })
-    if (!upstream.ok || !upstream.body) return NextResponse.json({ error: "Auction image unavailable" }, { status: 502 })
+    if (!upstream.ok || !upstream.body) {
+      clearTimeout(timeout)
+      return NextResponse.json({ error: "Auction image unavailable" }, { status: 502 })
+    }
 
     const contentType = upstream.headers.get("content-type")?.split(";", 1)[0].trim().toLocaleLowerCase("en-US") || ""
-    const contentLength = Number(upstream.headers.get("content-length"))
-    if (!ALLOWED_CONTENT_TYPES.has(contentType) || (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES)) {
+    const contentLengthHeader = upstream.headers.get("content-length")
+    const contentLength = contentLengthHeader === null ? null : Number(contentLengthHeader)
+    if (!ALLOWED_CONTENT_TYPES.has(contentType) || (contentLength !== null && Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES)) {
+      clearTimeout(timeout)
       await upstream.body.cancel()
       return NextResponse.json({ error: "Invalid auction image" }, { status: 502 })
     }
 
     const reader = upstream.body.getReader()
-    const chunks: Uint8Array[] = []
     let size = 0
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      size += value.byteLength
-      if (size > MAX_IMAGE_BYTES) {
-        await reader.cancel()
-        return NextResponse.json({ error: "Auction image is too large" }, { status: 502 })
-      }
-      chunks.push(value)
-    }
-
-    return new NextResponse(Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))), {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Content-Length": String(size),
-        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
-        "X-Content-Type-Options": "nosniff",
+    const body = new ReadableStream<Uint8Array>({
+      async pull(streamController) {
+        try {
+          const { done, value } = await reader.read()
+          if (done) {
+            clearTimeout(timeout)
+            streamController.close()
+            return
+          }
+          size += value.byteLength
+          if (size > MAX_IMAGE_BYTES) {
+            clearTimeout(timeout)
+            await reader.cancel("Auction image is too large")
+            streamController.error(new Error("Auction image is too large"))
+            return
+          }
+          streamController.enqueue(value)
+        } catch (error) {
+          clearTimeout(timeout)
+          streamController.error(error)
+        }
+      },
+      async cancel(reason) {
+        clearTimeout(timeout)
+        await reader.cancel(reason)
       },
     })
+    const headers = new Headers({
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
+      "X-Content-Type-Options": "nosniff",
+    })
+    if (contentLength !== null && Number.isFinite(contentLength) && contentLength >= 0) headers.set("Content-Length", String(contentLength))
+
+    return new NextResponse(body, {
+      status: 200,
+      headers,
+    })
   } catch (error) {
+    clearTimeout(timeout)
     const timedOut = error instanceof Error && error.name === "AbortError"
     return NextResponse.json({ error: timedOut ? "Auction image timed out" : "Auction image unavailable" }, { status: 502 })
-  } finally {
-    clearTimeout(timeout)
   }
 }

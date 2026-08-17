@@ -187,20 +187,20 @@ export function normalizeAuctionEngineVolumeCc(value: unknown, fuelType: string 
 }
 
 const bodyAliases: Record<(typeof AUCTION_BODY_TYPES)[number], readonly string[]> = {
-  SEDAN: ["SEDAN", "SALOON", "BERLINE", "세단", "轿车", "三厢"],
+  SEDAN: ["SEDAN", "SALOON", "BERLINE", "세단", "轿车", "三厢", "セダン"],
   SUV: ["SUV", "CUV", "JEEP", "SPORT UTILITY", "CROSSOVER", "지프", "越野", "越野车"],
-  HATCHBACK: ["HATCHBACK", "HATCH", "해치백", "两厢"],
-  COUPE: ["COUPE", "쿠페", "跑车"],
-  PICKUP: ["PICKUP", "PICK-UP", "TRUCK", "픽업", "皮卡"],
-  WAGON: ["WAGON", "ESTATE", "STATION WAGON", "UNIVERSAL", "왜건", "универсал", "旅行车"],
-  MINIVAN: ["MINIVAN", "MINI VAN", "VAN", "MPV", "MINIBUS", "RV", "미니밴", "승합", "승합차", "面包车", "商务车"],
+  HATCHBACK: ["HATCHBACK", "HATCH", "해치백", "两厢", "ハッチバック"],
+  COUPE: ["COUPE", "쿠페", "跑车", "クーペ"],
+  PICKUP: ["PICKUP", "PICK-UP", "TRUCK", "픽업", "皮卡", "トラック"],
+  WAGON: ["WAGON", "ESTATE", "STATION WAGON", "UNIVERSAL", "왜건", "универсал", "旅行车", "ワゴン", "ステーションワゴン"],
+  MINIVAN: ["MINIVAN", "MINI VAN", "VAN", "MPV", "MINIBUS", "RV", "미니밴", "승합", "승합차", "面包车", "商务车", "ミニバン"],
 }
 
 const fuelAliases: Record<string, readonly string[]> = {
-  GASOLINE: ["GASOLINE", "PETROL", "BENZINE", "가솔린", "휘발유", "汽油"],
-  DIESEL: ["DIESEL", "디젤", "경유", "柴油"],
-  ELECTRIC: ["ELECTRIC", "ELECTRICITY", "EV", "전기", "전기차", "纯电", "电动"],
-  HYBRID: ["HYBRID", "HYBRID_DIESEL", "HYBRID_PETROL", "PLUGIN_HYBRID", "HEV", "PHEV", "하이브리드", "플러그인 하이브리드", "가솔린+전기", "가솔린 + 전기", "전기+가솔린", "混动", "插电混动"],
+  GASOLINE: ["GASOLINE", "PETROL", "BENZINE", "가솔린", "휘발유", "汽油", "ガソリン", "レギュラー", "ハイオク"],
+  DIESEL: ["DIESEL", "디젤", "경유", "柴油", "ディーゼル"],
+  ELECTRIC: ["ELECTRIC", "ELECTRICITY", "EV", "전기", "전기차", "纯电", "电动", "電気"],
+  HYBRID: ["HYBRID", "HYBRID_DIESEL", "HYBRID_PETROL", "PLUGIN_HYBRID", "HEV", "PHEV", "하이브리드", "플러그인 하이브리드", "가솔린+전기", "가솔린 + 전기", "전기+가솔린", "混动", "插电混动", "ハイブリッド"],
   GAS: ["GAS", "LPG", "LPG(일반인 구입)", "LPG (일반인 구입)", "CNG", "LNG", "가스", "액화석유가스", "天然气"],
 }
 
@@ -238,7 +238,14 @@ export function normalizeAuctionFuelType(value: unknown) {
 }
 
 export function normalizeAuctionTransmission(value: unknown) {
-  return normalizeAlias(value, transmissionAliases)
+  const exact = normalizeAlias(value, transmissionAliases)
+  if (exact || typeof value !== "string") return exact
+  const normalized = normalizedAlias(value)
+  if (/(?:^|[^A-Z])(CVT)(?:$|[^A-Z])|無段|无级/.test(normalized)) return "VARIATOR"
+  if (/(?:^|[^A-Z])(DCT|DSG)(?:$|[^A-Z])|듀얼클러치|双离合/.test(normalized)) return "ROBOTIC"
+  if (/(?:^|[^A-Z])\d{0,2}\s*(?:M\/T|MT)(?:$|[^A-Z])|MANUAL|マニュアル|수동|手动/.test(normalized)) return "MANUAL"
+  if (/(?:^|[^A-Z])\d{0,2}\s*(?:A\/T|AT)(?:$|[^A-Z])|AUTOMATIC|オートマ|오토|자동|自动/.test(normalized)) return "AUTOMATIC"
+  return null
 }
 
 export function normalizeAuctionDriveType(value: unknown) {

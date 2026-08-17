@@ -292,10 +292,30 @@ async function run() {
   await expect(`/api/auctions/${staleAuctionListing.id}`, null, 404)
   await expect("/api/users", cookie, 200)
   await expect("/api/users", cookie, 200, { method: "PATCH", body: JSON.stringify({ name: "Покупатель Проверен" }) })
+  const ownPrivateProfile = await expect(`/api/users/${primary.id}`, cookie, 200)
+  record(
+    "account workspace exposes the owner's verified registration details",
+    ownPrivateProfile?.user?.email === primary.email
+      && ownPrivateProfile?.user?.phone === primary.phone
+      && Boolean(ownPrivateProfile?.user?.emailVerified)
+      && Boolean(ownPrivateProfile?.user?.telegramVerifiedAt)
+      && ownPrivateProfile?.user?.registrationChannel === "WEB",
+    `${ownPrivateProfile?.user?.email || "no email"} · ${ownPrivateProfile?.user?.phone || "no phone"}`,
+  )
   const sellerProfile = await expect(`/api/users/${seller.id}`, cookie, 200)
-  record("ordinary users cannot read another user's email", sellerProfile?.user?.email === undefined, Object.keys(sellerProfile?.user || {}).join(","))
+  record(
+    "ordinary users cannot read another user's private account fields",
+    sellerProfile?.user?.email === undefined && sellerProfile?.user?.phone === undefined && sellerProfile?.user?.role === undefined,
+    Object.keys(sellerProfile?.user || {}).join(","),
+  )
   const sellerPrivateProfile = await expect(`/api/users/${seller.id}`, adminCookie, 200)
-  record("administrator can read private profile data", sellerPrivateProfile?.user?.email === seller.email, sellerPrivateProfile?.user?.email || "missing")
+  record(
+    "administrator can read private profile data",
+    sellerPrivateProfile?.user?.email === seller.email
+      && sellerPrivateProfile?.user?.phone === seller.phone
+      && sellerPrivateProfile?.user?.registrationChannel === "WEB",
+    sellerPrivateProfile?.user?.email || "missing",
+  )
   const promotedPartner = await expect(`/api/admin/users/${seller.id}/role`, adminCookie, 200, {
     method: "PATCH",
     body: JSON.stringify({ role: "PARTNER" }),

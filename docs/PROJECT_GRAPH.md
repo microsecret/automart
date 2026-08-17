@@ -21,6 +21,8 @@ flowchart LR
   Next --> Media["Direct source photo URLs"]
   Next --> IautosMedia["Allow-listed transient iAutos media relay"]
   Next --> SEO["SSR metadata + JSON-LD + sitemap + manifest"]
+  Next --> PrivateProfile["Owner/admin-only verified account profile"]
+  SEO --> LandingMetadata["Canonical category and service landing metadata"]
 ```
 
 ## Task routing graph
@@ -35,6 +37,8 @@ flowchart LR
 | Sidebar/header/footer | `src/components/layout/` | app shell and responsive styles |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
+| Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |
+| Unified URL search | `src/app/search/page.tsx` | `HomeCatalog.tsx`, `/api/listings` query contract |
 | Auction import | source collector | parser sync/refresh route, `auction-import.ts` |
 | Exchange rates | `src/lib/exchange-rates.ts` | CBR refresh script and cron |
 | Freshness/removal | source refresh route | `auction-crawl-policy.ts`, `auction-source-freshness.ts`, listing status fields |
@@ -42,6 +46,8 @@ flowchart LR
 | Delivery partner onboarding | `src/app/api/delivery-organizations/route.ts` | delivery workspace, admin partner registry |
 | Garage to moderated listing | `src/app/api/garage/route.ts` | dashboard garage, vehicle creation workspace |
 | Search metadata and structured data | `src/app/layout.tsx` | route layouts, `StructuredData.tsx`, sitemap/robots/manifest |
+| SEO landing metadata | `src/lib/seo-metadata.ts` | category generator and public route layouts |
+| iAutos gallery relay | `src/app/api/auction-media/route.ts` | `media-url.ts`, detail gallery |
 
 ## Auction ingestion graph
 
@@ -87,7 +93,47 @@ legacy lots both render the same ordered source-detail table. Known database
 columns fill canonical rows first, translated source attributes enrich them,
 and an unavailable source value is stated explicitly instead of changing the
 layout by country. The browser decodes only the active full-size photo and one
-card-size neighbour; long galleries render a moving window of thumbnails.
+card-size neighbour; long galleries render a moving window of thumbnails. The
+iAutos relay streams validated bytes as they arrive instead of buffering the
+whole image, while enforcing the same host, MIME, timeout and size limits.
+
+## Account and search graph
+
+```mermaid
+flowchart LR
+  Telegram["Verified Telegram onboarding"] --> User["User record"]
+  User --> Session["NextAuth session"]
+  Session --> OwnerProfile["Private owner profile API"]
+  OwnerProfile --> Dashboard["Account completion and verified contacts"]
+  Session --> Garage["Owner garage"]
+  Garage --> Listing["Moderated listing draft"]
+  SearchUrl["/search q + make + partType + vehicleType"] --> Catalog["HomeCatalog initial state"]
+  Catalog --> ListingsApi["Unified /api/listings filters"]
+```
+
+The public user response remains limited to id, name and avatar. Only the
+profile owner or an administrator receives verified contact fields, role,
+registration channel and account creation time. Search query parameters are
+passed into the catalogue as keyed initial state so route-to-route navigation
+cannot leave a stale make or text query behind.
+
+## SEO graph
+
+```mermaid
+flowchart LR
+  PublicRoute["Public landing page"] --> Metadata["Unique title + description"]
+  Metadata --> Canonical["Canonical URL"]
+  Metadata --> Social["Open Graph + Twitter card"]
+  PublicRoute --> Sitemap["Fresh public URLs only"]
+  Listing["Vehicle / part / auction detail"] --> JsonLd["Product or Vehicle + breadcrumbs"]
+  InternalSearch["Parameterized /search"] --> NoIndex["noindex, follow"]
+```
+
+Category and service landing pages are indexable and use route-specific search
+intent. Parameterized internal search stays crawlable for link discovery but
+is not indexed, preventing duplicate result pages from diluting canonical
+category pages. Fonts use the local system stack, so server rendering and
+production builds never depend on a third-party font request.
 
 ## Personal listing workflow
 

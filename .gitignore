@@ -59,6 +59,7 @@ prisma/dev.db-journal
 /artifacts/
 
 # Temp
+/.tmp/
 fix-*.js
 replace-*.js
 audit-*.js

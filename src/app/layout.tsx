@@ -1,14 +1,11 @@
 import "./globals.css"
 import type { Metadata } from "next"
-import { Inter, Manrope } from "next/font/google"
 import { ColorSchemeScript } from "@mantine/core"
 import AppProviders from "@/components/providers/AppProviders"
 import AppShellLayout from "@/components/layout/AppShellLayout"
 import StructuredData from "@/components/seo/StructuredData"
 import { absoluteUrl, getSiteUrl } from "@/lib/site-url"
 
-const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-sans", display: "swap" })
-const manrope = Manrope({ subsets: ["latin", "cyrillic"], variable: "--font-display", weight: ["500", "600", "700", "800"], display: "swap" })
 const verification: NonNullable<Metadata["verification"]> = {}
 const otherVerification: Record<string, string> = {}
 if (process.env.GOOGLE_SITE_VERIFICATION) verification.google = process.env.GOOGLE_SITE_VERIFICATION
@@ -39,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning className={`${inter.variable} ${manrope.variable}`}>
+    <html lang="ru" suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultColorScheme="light" />
         {/* Auction cards use Encar's public CDN directly, so start DNS/TLS

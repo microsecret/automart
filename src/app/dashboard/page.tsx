@@ -6,7 +6,7 @@ import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, SegmentedControl, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal, Select, NumberInput, ScrollArea } from "@mantine/core"
-import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconCreditCard, IconReceipt } from "@tabler/icons-react"
+import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconCreditCard, IconReceipt, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -112,6 +112,21 @@ type GarageVehicle = {
 type GarageResponse = { vehicles: GarageVehicle[] }
 type ListingDeleteResponse = { success: boolean }
 type ProfileUpdateResponse = { user: { name: string } }
+type AccountProfileResponse = {
+  user: {
+    id: string
+    name: string | null
+    email: string | null
+    emailVerified: string | null
+    image: string | null
+    phone: string | null
+    telegramUsername: string | null
+    telegramVerifiedAt: string | null
+    role: string
+    createdAt: string
+    registrationChannel: "TELEGRAM" | "WEB"
+  }
+}
 type GarageMutationResponse = { success?: boolean; vehicle?: GarageVehicle }
 type RemovalConfirmation = { kind: "listing" | "garage"; id: string; title: string }
 
@@ -198,6 +213,11 @@ function DashboardContent() {
     fetchJson,
     { revalidateOnFocus: false },
   )
+  const { data: accountData, error: accountError, isLoading: isAccountLoading, mutate: mutateAccount } = useSWR<AccountProfileResponse>(
+    tab === "profile" && session?.user?.id ? `/api/users/${encodeURIComponent(session.user.id)}` : null,
+    fetchJson,
+    { revalidateOnFocus: false },
+  )
 
   const selectTab = (nextTab: string) => {
     setTab(nextTab)
@@ -249,6 +269,7 @@ function DashboardContent() {
       })
 
       await updateSession({ name: payload.user.name })
+      await mutateAccount()
       setIsProfileEditorOpen(false)
       notifications.show({ title: "Профиль обновлён", message: "Отображаемое имя сохранено.", color: "teal" })
     } catch (error) {
@@ -312,6 +333,13 @@ function DashboardContent() {
   const stats = data.stats
   const workflow = data.workflow
   const greetingName = session?.user?.name?.trim().split(" ")[0]
+  const accountProfile = accountData?.user
+  const accountCompletion = accountProfile ? Math.round([
+    Boolean(accountProfile.name?.trim()),
+    Boolean(accountProfile.email && accountProfile.emailVerified),
+    Boolean(accountProfile.phone),
+    Boolean(accountProfile.telegramVerifiedAt),
+  ].filter(Boolean).length / 4 * 100) : 0
   const hasAttentionItems = workflow.needsAttention > 0
 
   return (
@@ -686,11 +714,22 @@ function DashboardContent() {
         {tab === "profile" && (
           <Paper radius="md" p="lg" withBorder>
             <Stack gap="md">
+              {accountError && (
+                <Alert color="red" variant="light" icon={<IconAlertCircle size={18} />}>
+                  Не удалось загрузить данные аккаунта. Проверьте соединение и повторите попытку.
+                  <Button variant="subtle" color="red" size="compact-sm" ml="xs" onClick={() => mutateAccount()}>Повторить</Button>
+                </Alert>
+              )}
               <Group gap="md" align="center">
-                <Avatar src={session?.user?.image} size={64} radius="xl" color="indigo">{session?.user?.name?.[0]?.toUpperCase()}</Avatar>
-                <Stack gap={0}>
-                  <Text fw={700} fz="lg" c="dark.9">{session?.user?.name || "Без имени"}</Text>
-                  <Text size="sm" c="gray.5">{session?.user?.email}</Text>
+                <Avatar src={accountProfile?.image || session?.user?.image} size={64} radius="xl" color="indigo">{(accountProfile?.name || session?.user?.name)?.[0]?.toUpperCase()}</Avatar>
+                <Stack gap={3} style={{ minWidth: 0, flex: 1 }}>
+                  <Group gap="xs" wrap="wrap">
+                    <Text fw={700} fz="lg" c="dark.9">{accountProfile?.name || session?.user?.name || "Без имени"}</Text>
+                    {accountCompletion === 100
+                      ? <Badge color="teal" variant="light" leftSection={<IconShieldCheck size={12} />}>Аккаунт подтверждён</Badge>
+                      : <Badge color="yellow" variant="light">Профиль заполнен на {accountCompletion}%</Badge>}
+                  </Group>
+                  <Text size="sm" c="gray.5" truncate>{accountProfile?.email || session?.user?.email || "Почта не указана"}</Text>
                   {stats.avgRating > 0 && (
                     <Group gap={4}>
                       <IconStar size={14} color="#f59e0b" fill="#f59e0b" />
@@ -699,9 +738,45 @@ function DashboardContent() {
                   )}
                 </Stack>
               </Group>
+              {isAccountLoading && !accountProfile ? (
+                <Text size="sm" c="dimmed" aria-live="polite">Загружаем подтверждённые данные аккаунта…</Text>
+              ) : accountProfile && (
+                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+                  <Paper radius="md" p="sm" bg="gray.0">
+                    <Group gap="xs" wrap="nowrap" align="flex-start">
+                      <ThemeIcon variant="light" color="indigo" radius="md" size={34}><IconAt size={17} /></ThemeIcon>
+                      <Box style={{ minWidth: 0 }}>
+                        <Text size="xs" c="dimmed">Почта для входа</Text>
+                        <Text size="sm" fw={650} truncate>{accountProfile.email || "Не указана"}</Text>
+                        <Text size="xs" c={accountProfile.emailVerified ? "teal.7" : "yellow.8"}>{accountProfile.emailVerified ? "Подтверждена" : "Требует подтверждения"}</Text>
+                      </Box>
+                    </Group>
+                  </Paper>
+                  <Paper radius="md" p="sm" bg="gray.0">
+                    <Group gap="xs" wrap="nowrap" align="flex-start">
+                      <ThemeIcon variant="light" color="teal" radius="md" size={34}><IconPhone size={17} /></ThemeIcon>
+                      <Box style={{ minWidth: 0 }}>
+                        <Text size="xs" c="dimmed">Телефон</Text>
+                        <Text size="sm" fw={650} truncate>{accountProfile.phone || "Не указан"}</Text>
+                        <Text size="xs" c={accountProfile.telegramVerifiedAt ? "teal.7" : "yellow.8"}>{accountProfile.telegramVerifiedAt ? "Подтверждён через Telegram" : "Не подтверждён"}</Text>
+                      </Box>
+                    </Group>
+                  </Paper>
+                  <Paper radius="md" p="sm" bg="gray.0">
+                    <Group gap="xs" wrap="nowrap" align="flex-start">
+                      <ThemeIcon variant="light" color="blue" radius="md" size={34}><IconBrandTelegram size={17} /></ThemeIcon>
+                      <Box style={{ minWidth: 0 }}>
+                        <Text size="xs" c="dimmed">Telegram</Text>
+                        <Text size="sm" fw={650} truncate>{accountProfile.telegramUsername ? `@${accountProfile.telegramUsername}` : "Профиль без username"}</Text>
+                        <Text size="xs" c={accountProfile.telegramVerifiedAt ? "teal.7" : "yellow.8"}>{accountProfile.telegramVerifiedAt ? "Личность подтверждена" : "Не привязан"}</Text>
+                      </Box>
+                    </Group>
+                  </Paper>
+                </SimpleGrid>
+              )}
               <Divider />
               <SimpleGrid cols={2} spacing="sm">
-                <Box><Text size="xs" c="gray.4">На сайте с</Text><Text size="sm" fw={600} c="dark.9">{formatMemberSince(stats.memberSince)}</Text></Box>
+                <Box><Text size="xs" c="gray.4">На сайте с</Text><Text size="sm" fw={600} c="dark.9">{formatMemberSince(accountProfile?.createdAt || stats.memberSince)}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Всего объявлений</Text><Text size="sm" fw={600} c="dark.9">{stats.totalListings}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Просмотров всего</Text><Text size="sm" fw={600} c="dark.9">{stats.totalViews}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Отзывов</Text><Text size="sm" fw={600} c="dark.9">{stats.reviewsCount}</Text></Box>

@@ -16,10 +16,14 @@ import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/u
 
 type HomePageProps = {
   initialQuery?: string
+  initialMake?: string
+  initialPartType?: string
   initialVehicleType?: string
   initialType?: string
   categorySlug?: string
   pageTitle?: string
+  showHero?: boolean
+  showHeading?: boolean
 }
 
 type Pagination = { total: number; pages: number; limit: number }
@@ -36,7 +40,7 @@ export default function HomePage(p: HomePageProps = {}) {
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [make, setMake] = useState<string | null>(null)
+  const [make, setMake] = useState<string | null>(p.initialMake || null)
   const [model, setModel] = useState<string | null>(null)
   const [sort, setSort] = useState("newest")
   const [priceFrom, setPriceFrom] = useState("")
@@ -67,6 +71,7 @@ export default function HomePage(p: HomePageProps = {}) {
   const [mileageFrom, setMileageFrom] = useState("")
   const [keywords, setKeywords] = useState("")
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
+  const isPartSearch = p.initialType === "part"
   const vt = p.initialVehicleType || "CAR"
   const brandCategory = BRAND_CATEGORY_BY_VEHICLE_TYPE[vt] || "cars"
   const usageMeta = getUsageMeta(vt)
@@ -91,6 +96,7 @@ export default function HomePage(p: HomePageProps = {}) {
   const buildQuery = () => {
     const q = new URLSearchParams()
     q.set("type", p.initialType || "vehicle")
+    if (p.initialPartType) q.set("partType", p.initialPartType)
     if (p.initialVehicleType) q.set("vehicleType", p.initialVehicleType)
     q.set("page", String(page))
     q.set("limit", "20")
@@ -150,12 +156,12 @@ export default function HomePage(p: HomePageProps = {}) {
 
   const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(subtype.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(keywords?1:0)
   const filterKey = useMemo(() => [
-    p.initialType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo,
+    p.initialType, p.initialPartType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo,
     yearFrom, yearTo, city, mileageTo, transmission, fuelType.join(","), driveType,
     bodyType.join(","), subtype.join(","), engineVolumeFrom, engineVolumeTo, powerFrom, powerTo, color,
     condition.join(","), steeringWheel, documentsStatus, damageInfo, sellerType,
     availability, customsCleared, ownersCountFrom, ownersCountTo, mileageFrom, keywords,
-  ].join("|"), [p.initialType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo, yearFrom, yearTo, city, mileageTo, transmission, fuelType, driveType, bodyType, subtype, engineVolumeFrom, engineVolumeTo, powerFrom, powerTo, color, condition, steeringWheel, documentsStatus, damageInfo, sellerType, availability, customsCleared, ownersCountFrom, ownersCountTo, mileageFrom, keywords])
+  ].join("|"), [p.initialType, p.initialPartType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo, yearFrom, yearTo, city, mileageTo, transmission, fuelType, driveType, bodyType, subtype, engineVolumeFrom, engineVolumeTo, powerFrom, powerTo, color, condition, steeringWheel, documentsStatus, damageInfo, sellerType, availability, customsCleared, ownersCountFrom, ownersCountTo, mileageFrom, keywords])
 
   useEffect(() => {
     setPage(1)
@@ -163,7 +169,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
   return (
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
-      {!p.categorySlug && (
+      {p.showHero !== false && !p.categorySlug && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
           <NextImage src="/images/home/automarket-hero.png" alt="LeWheel — транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
           <Box className="home-auctions__scrim" />
@@ -208,7 +214,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
       <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
         <Stack gap={0}>
-          <Text component={p.categorySlug ? "h1" : "h2"} fw={800} fz={{base:20,md:24}} c="dark.9">{p.pageTitle || "Все объявления"}</Text>
+          {p.showHeading !== false && <Text component={p.categorySlug ? "h1" : "h2"} fw={800} fz={{base:20,md:24}} c="dark.9">{p.pageTitle || "Все объявления"}</Text>}
           {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} объявлений</Text>}
         </Stack>
         <Group gap="xs" wrap="nowrap">
@@ -239,14 +245,17 @@ export default function HomePage(p: HomePageProps = {}) {
       <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="lg" p="md" withBorder>
         <Stack gap="sm">
           <Group className="catalog-filter-panel__intro" justify="space-between" align="baseline" gap="sm">
-            <Box><Text size="sm" fw={750}>Найдите подходящий транспорт</Text><Text size="xs" c="dimmed">Начните с марки, цены или города — остальное уточните при необходимости.</Text></Box>
+            <Box>
+              <Text size="sm" fw={750}>{isPartSearch ? "Найдите нужную запчасть" : "Найдите подходящий транспорт"}</Text>
+              <Text size="xs" c="dimmed">{isPartSearch ? "Ищите по названию, OEM-номеру, марке автомобиля или цене." : "Начните с марки, цены или города — остальное уточните при необходимости."}</Text>
+            </Box>
             {activeFilterCount > 0 && <Badge color="indigo" variant="light" radius="xl">Выбрано: {activeFilterCount}</Badge>}
           </Group>
           <Box className="catalog-filter-grid">
-            <TextInput className="catalog-filter-field catalog-filter-field--search" label="Что ищете" placeholder="Марка, модель, ключевое слово" leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
+            <TextInput className="catalog-filter-field catalog-filter-field--search" label="Что ищете" placeholder={isPartSearch ? "Название, OEM или ключевое слово" : "Марка, модель, ключевое слово"} leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
             <Select
               className="catalog-filter-field catalog-filter-field--make"
-              label="Марка"
+              label={isPartSearch ? "Марка автомобиля" : "Марка"}
               placeholder="Любая"
               data={brandOptions}
               searchable
@@ -310,7 +319,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
           {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
 
-          <Group justify="space-between" align="center">
+          {!isPartSearch && <Group justify="space-between" align="center">
             <Button
               variant={showAdvanced ? "filled" : "light"}
               color="indigo"
@@ -331,9 +340,9 @@ export default function HomePage(p: HomePageProps = {}) {
               Расширенные фильтры
             </Button>
             {activeFilterCount > 0 && <Button variant="subtle" size="xs" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить всё</Button>}
-          </Group>
+          </Group>}
 
-          <Collapse in={showAdvanced} id="catalog-advanced-filters">
+          {!isPartSearch && <Collapse in={showAdvanced} id="catalog-advanced-filters">
             <Divider my="xs"/>
             <Stack gap="md" className="catalog-filter-advanced">
               <Box className="catalog-advanced-usage">
@@ -510,7 +519,7 @@ export default function HomePage(p: HomePageProps = {}) {
                 </Group>
               </Group>
             </Stack>
-          </Collapse>
+          </Collapse>}
         </Stack>
       </Paper>
 

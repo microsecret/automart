@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isAdmin } from "@/lib/permissions"
+import { isInternalTelegramEmail } from "@/lib/telegram"
 // GET user by ID
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -22,7 +23,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         id: true,
         name: true,
         email: true,
-        image: true
+        emailVerified: true,
+        image: true,
+        phone: true,
+        telegramUsername: true,
+        telegramVerifiedAt: true,
+        role: true,
+        createdAt: true,
       }
     })
 
@@ -34,7 +41,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const canSeePrivateProfile = session.user.id === id || isAdmin(session.user.role)
-    if (canSeePrivateProfile) return NextResponse.json({ user })
+    if (canSeePrivateProfile) {
+      const internalTelegramEmail = isInternalTelegramEmail(user.email)
+      return NextResponse.json({
+        user: {
+          ...user,
+          email: internalTelegramEmail ? null : user.email,
+          registrationChannel: internalTelegramEmail ? "TELEGRAM" : "WEB",
+        },
+      })
+    }
 
     const publicUser = { id: user.id, name: user.name, image: user.image }
     return NextResponse.json({ user: publicUser })

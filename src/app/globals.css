@@ -8,8 +8,8 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-display: "Manrope", "Inter", sans-serif;
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --market-ink: #171719;
   --market-muted: #71717a;
   --market-line: #e8e8ec;
@@ -633,22 +633,6 @@ select {
 }
 
 /* Утилитарные классы для редизайна */
-
-/* Линия-разделитель с индиго-акцентом слева */
-.accent-divider {
-  position: relative;
-  padding-left: 12px;
-}
-.accent-divider::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 4px;
-  bottom: 4px;
-  width: 3px;
-  border-radius: 2px;
-  background: #4f46e5;
-}
 
 /* Сетка характеристик в карточках */
 .specs-grid {
@@ -1637,9 +1621,8 @@ select {
   position: absolute;
   inset: 0;
   content: "";
-  background-image: linear-gradient(115deg, rgba(255, 255, 255, 0.1) 0 1px, transparent 1px 22px);
-  background-size: 26px 26px;
-  opacity: 0.3;
+  background: linear-gradient(112deg, transparent 12%, rgba(255, 255, 255, 0.14) 48%, transparent 78%);
+  opacity: 0.38;
   mask-image: linear-gradient(90deg, transparent, #000 24%, #000 76%, transparent);
 }
 
@@ -2832,18 +2815,6 @@ select {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--market-primary-soft) 56%, var(--market-surface)) 0%, var(--market-surface) 46%, var(--market-surface-subtle) 100%);
   box-shadow: 0 18px 36px -34px rgba(15, 23, 42, 0.78);
-}
-
-.catalog-filter-panel::before,
-.parts-filter-panel::before,
-.auction-filter-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: linear-gradient(90deg, #4f46e5 0%, #818cf8 40%, transparent 74%);
-  opacity: 0.92;
-  pointer-events: none;
 }
 
 .catalog-filter-panel__intro {
