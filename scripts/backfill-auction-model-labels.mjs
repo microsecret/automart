@@ -12,15 +12,21 @@ import { PrismaClient } from "@prisma/client"
 const prisma = new PrismaClient()
 const dryRun = process.argv.includes("--dry-run")
 
-const MODEL_DESCRIPTIVE_TAIL = /\s(?:\d{4}\s\d|\d+(?:\.\d+)?[TL]\s|АКПП|МКПП|задний привод|передний привод|полный привод|экостандарт|рестайлинг|пакет\s|юбилейная|комплектация)/i
-const MODEL_MAX_WORDS = 5
+// Правило намеренно совпадает с `normalizeAuctionModel` в
+// `src/lib/auction-normalization.ts`: скрипт запускается без сборки, поэтому
+// импортировать TS-модуль здесь нельзя. При изменении правила правьте оба
+// места — расхождение проверяется тестом auction-model-normalization.
+const MODEL_DESCRIPTIVE_TAIL = /\s(?:АКПП|МКПП|задний привод|передний привод|полный привод|экостандарт|рестайлинг|пакет\s|юбилейная|комплектация|China\s+[IVX]+)/i
+const MODEL_MAX_LENGTH = 64
 
 function trimModelConfiguration(model) {
   const cutAt = model.search(MODEL_DESCRIPTIVE_TAIL)
-  const trimmed = (cutAt > 0 ? model.slice(0, cutAt) : model).trim()
+  const trimmed = (cutAt > 0 ? model.slice(0, cutAt) : model).replace(/[\s,;]+$/, "").trim()
   if (!trimmed) return model
-  const words = trimmed.split(/\s+/)
-  return words.length > MODEL_MAX_WORDS ? words.slice(0, MODEL_MAX_WORDS).join(" ") : trimmed
+  if (trimmed.length <= MODEL_MAX_LENGTH) return trimmed
+  const clipped = trimmed.slice(0, MODEL_MAX_LENGTH)
+  const lastSpace = clipped.lastIndexOf(" ")
+  return (lastSpace > 20 ? clipped.slice(0, lastSpace) : clipped).trim()
 }
 
 async function main() {

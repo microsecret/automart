@@ -159,21 +159,27 @@ function transliterateHangul(value: string) {
   })
 }
 
-// Китайские и корейские витрины кладут в поле модели всю конфигурацию:
-// «C-Class 2024 1.5T задний привод Sport экостандарт China VI». В карточке и
-// в заголовке поста нужно название модели, а комплектация уже показана
-// отдельными характеристиками, поэтому описательный хвост обрезается.
-const MODEL_DESCRIPTIVE_TAIL = /\s(?:\d{4}\s\d|\d+(?:\.\d+)?[TL]\s|АКПП|МКПП|задний привод|передний привод|полный привод|экостандарт|рестайлинг|пакет\s|юбилейная|комплектация)/i
-const MODEL_MAX_WORDS = 5
+// Китайские витрины кладут в поле модели полное описание сборки: «C-Class
+// 2024 1.5T задний привод Sport экостандарт China VI». Год, тип привода и
+// экостандарт уже выведены отдельными характеристиками, поэтому в названии
+// они только мешают.
+//
+// Обрезается лишь та часть, которая заведомо является описанием, а не именем
+// комплектации: «Sportage Gasoline 1.6 Turbo 2WD Signature» остаётся целым,
+// потому что покупатель ищет именно такую строку.
+const MODEL_DESCRIPTIVE_TAIL = /\s(?:АКПП|МКПП|задний привод|передний привод|полный привод|экостандарт|рестайлинг|пакет\s|юбилейная|комплектация|China\s+[IVX]+)/i
+const MODEL_MAX_LENGTH = 64
 
 function trimModelConfiguration(model: string) {
   const cutAt = model.search(MODEL_DESCRIPTIVE_TAIL)
-  const trimmed = (cutAt > 0 ? model.slice(0, cutAt) : model).trim()
+  const trimmed = (cutAt > 0 ? model.slice(0, cutAt) : model).replace(/[\s,;]+$/, "").trim()
   if (!trimmed) return model
-  // Оставшееся название всё ещё может быть перечислением: ограничиваем длину,
-  // сохраняя осмысленные многословные имена вроде «Grand Santa Fe».
-  const words = trimmed.split(/\s+/)
-  return words.length > MODEL_MAX_WORDS ? words.slice(0, MODEL_MAX_WORDS).join(" ") : trimmed
+  if (trimmed.length <= MODEL_MAX_LENGTH) return trimmed
+  // Слишком длинную строку обрезаем по границе слова, чтобы в карточке не
+  // появился обрубок посреди названия.
+  const clipped = trimmed.slice(0, MODEL_MAX_LENGTH)
+  const lastSpace = clipped.lastIndexOf(" ")
+  return (lastSpace > 20 ? clipped.slice(0, lastSpace) : clipped).trim()
 }
 
 /** Customer-facing model label without Korean/Japanese/Chinese script. */

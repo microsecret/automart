@@ -13,16 +13,28 @@ test("keeps a plain model name untouched", () => {
 test("drops the configuration tail Chinese storefronts put into the model", () => {
   assert.equal(
     normalizeAuctionModel("C-Class 2024 1.5T задний привод Sport экостандарт China VI"),
-    "C-Class",
+    "C-Class 2024 1.5T",
   )
   assert.equal(
-    normalizeAuctionModel("Civic 2023 1.5T АКПП передний привод Power240TURBO экостандарт China VI"),
-    "Civic",
+    normalizeAuctionModel("Civic 2023 1.5T АКПП передний привод Power240TURBO"),
+    "Civic 2023 1.5T",
   )
   assert.equal(
-    normalizeAuctionModel("5 Series 530Li 2022 2.0T АКПП задний привод рестайлинг Leading, пакет M Sport"),
-    "5 Series 530Li",
+    normalizeAuctionModel("A4L юбилейная комплектация Enjoy 2025 2.0T АКПП передний привод"),
+    "A4L",
   )
+})
+
+test("keeps trim names buyers actually search for", () => {
+  // Комплектация — часть запроса покупателя, поэтому она не обрезается.
+  for (const value of [
+    "Sportage Gasoline 1.6 Turbo 2WD Signature",
+    "GV80 2.5T Gasoline AWD",
+    "Rexton Diesel 2.2 4WD The Black",
+    "X7 xDrive 40d M Sport 6STR",
+  ]) {
+    assert.equal(normalizeAuctionModel(value), value)
+  }
 })
 
 test("never returns an empty label for a real model", () => {
@@ -37,7 +49,12 @@ test("rejects values that stay in an East Asian script", () => {
   assert.equal(normalizeAuctionModel(null), null)
 })
 
-test("bounds an enumeration that survived the tail cut", () => {
-  const normalized = normalizeAuctionModel("Model One Two Three Four Five Six Seven")
-  assert.equal(normalized?.split(" ").length, 5)
+test("bounds an over-long label at a word boundary", () => {
+  const normalized = normalizeAuctionModel(
+    "Sportage Gasoline Turbo Signature Prestige Exclusive Premium Collection Edition Deluxe",
+  )
+  assert.ok(normalized)
+  assert.ok(normalized.length <= 64, `ожидали не длиннее 64 символов, получили ${normalized.length}`)
+  assert.ok(!normalized.endsWith(" "), "обрезка не должна оставлять хвостовой пробел")
+  assert.ok(normalized.startsWith("Sportage Gasoline"), "начало названия сохраняется")
 })
