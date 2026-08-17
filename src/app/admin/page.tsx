@@ -406,6 +406,17 @@ export default function AdminDashboard() {
     { label: "Поддержка ждёт оператора", value: data.operations.waitingSupportTickets, href: "/admin/support?status=WAITING_OPERATOR", icon: <IconHeadset size={17} />, color: "grape" as MantineColor, description: `${data.operations.openSupportTickets} открыто · ${data.operations.activeSupportTickets} в работе` },
   ]
   const actionsTotal = operationItems.reduce((sum, item) => sum + item.value, 0)
+  // Свежесть импорта — первое, что нужно знать при разборе очереди: устаревший
+  // каталог объясняет и падение трафика, и жалобы на исчезнувшие лоты.
+  const lastSyncLabel = (() => {
+    const lastSyncAt = data.auctionSyncRuns[0]?.startedAt
+    if (!lastSyncAt) return null
+    const minutes = Math.round((Date.now() - new Date(lastSyncAt).getTime()) / 60_000)
+    if (!Number.isFinite(minutes) || minutes < 0) return null
+    if (minutes < 60) return `${minutes} мин назад`
+    const hours = Math.round(minutes / 60)
+    return hours < 24 ? `${hours} ч назад` : `${Math.round(hours / 24)} дн назад`
+  })()
 
   return (
     <Box className="admin-workspace" p={{ base: "sm", md: "md" }}>
@@ -415,7 +426,12 @@ export default function AdminDashboard() {
             <Stack gap={5}>
               <Group gap={6}>
                 <Badge variant="white" color="indigo" size="sm">ПАНЕЛЬ УПРАВЛЕНИЯ</Badge>
-                <Badge variant="dot" color="teal" size="sm">Система онлайн</Badge>
+                {/* Статус отражает состояние очереди, а не факт того, что
+                    страница открылась: «система онлайн» не несло информации. */}
+                <Badge variant="dot" color={actionsTotal > 0 ? "orange" : "teal"} size="sm">
+                  {actionsTotal > 0 ? `${actionsTotal} ждут решения` : "Очередь разобрана"}
+                </Badge>
+                {lastSyncLabel && <Badge variant="dot" color="gray" size="sm">Импорт: {lastSyncLabel}</Badge>}
               </Group>
               <Title order={2} size="h3" c="white" ff="var(--font-display),sans-serif">Администрирование Авторынка</Title>
               <Text size="sm" c="rgba(255,255,255,.74)">Пользователи, объявления и модерация — в одном рабочем пространстве.</Text>
@@ -431,7 +447,10 @@ export default function AdminDashboard() {
           </Group>
         </Card>
 
-        <Tabs defaultValue="overview" variant="pills" color="indigo" keepMounted={false}>
+        {/* Панель открывается на том, что требует решения: если очередь не
+            разобрана, статистика подождёт. При пустой очереди сразу виден
+            обзор, а не пустой список задач. */}
+        <Tabs defaultValue={actionsTotal > 0 ? "operations" : "overview"} variant="pills" color="indigo" keepMounted={false}>
           <Tabs.List mb="md" grow aria-label="Разделы панели администратора">
             <Tabs.Tab value="overview" leftSection={<IconTrendingUp size={16} />}>Обзор</Tabs.Tab>
             <Tabs.Tab value="operations" leftSection={<IconListCheck size={16} />}>Задачи <Badge size="xs" variant="filled" color={actionsTotal ? "orange" : "teal"}>{actionsTotal}</Badge></Tabs.Tab>
@@ -475,11 +494,16 @@ export default function AdminDashboard() {
             </Group>
             <Badge variant="light" color={actionsTotal > 0 ? "orange" : "teal"} size="lg">{actionsTotal > 0 ? `${actionsTotal} требуют внимания` : "Очередь разобрана"}</Badge>
           </Group>
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="xs" mt="md">
-            {operationItems.map((item) => (
-              <Button key={item.label} component={Link} href={item.href} variant={item.value ? "light" : "subtle"} color={item.color} h="auto" p="sm" justify="flex-start" styles={{ inner: { alignItems: "flex-start" }, label: { textAlign: "left", whiteSpace: "normal" } }} leftSection={<ThemeIcon variant="white" color={item.color} size={30} radius="md">{item.icon}</ThemeIcon>}>
+          {/* Непустые задачи идут первыми: разобранные направления не должны
+              отодвигать то, что действительно ждёт решения. */}
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs" mt="md">
+            {[...operationItems].sort((left, right) => right.value - left.value).map((item) => (
+              <Button key={item.label} component={Link} href={item.href} variant={item.value ? "light" : "subtle"} color={item.value ? item.color : "gray"} h="auto" p="sm" justify="flex-start" styles={{ inner: { alignItems: "flex-start" }, label: { textAlign: "left", whiteSpace: "normal" } }} leftSection={<ThemeIcon variant={item.value ? "white" : "light"} color={item.value ? item.color : "gray"} size={30} radius="md">{item.icon}</ThemeIcon>}>
                 <Stack gap={1} align="flex-start">
-                  <Text size="lg" fw={850} lh={1}>{item.value}</Text>
+                  <Group gap={6} align="baseline">
+                    <Text size="xl" fw={850} lh={1} c={item.value ? undefined : "dimmed"}>{item.value}</Text>
+                    {item.value === 0 && <Text size="10px" c="dimmed">разобрано</Text>}
+                  </Group>
                   <Text size="xs" fw={700}>{item.label}</Text>
                   <Text size="10px" c="dimmed" fw={400}>{item.description}</Text>
                 </Stack>

@@ -155,16 +155,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               </SidebarPanel>
 
               <SidebarPanel title="Запчасти" href="/parts-finder" icon={<IconTools size={15} />}>
-                {PARTS.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    component={Link}
-                    href={item.href}
-                    label={item.label}
-                    color="indigo"
-                    className="market-side-nav market-side-nav--nested"
-                  />
-                ))}
+                <Suspense fallback={PARTS.map((item) => <NavLink key={item.href} component={Link} href={item.href} label={item.label} color="indigo" className="market-side-nav market-side-nav--nested" />)}>
+                  <PartCategoryLinks pathname={pathname || ""} />
+                </Suspense>
               </SidebarPanel>
 
               <SidebarPanel title="Мировые аукционы" href="/auctions" icon={<IconGavel size={15} />}>
@@ -230,6 +223,20 @@ function AuctionCountryLinks({ pathname }: { pathname: string }) {
   return AUCTIONS.map((item) => {
     const country = item.href.split("country=")[1]
     return <NavLink key={item.href} component={Link} href={item.href} label={item.label} active={selectedCountry === country} color="orange" className="market-side-nav market-side-nav--nested" />
+  })
+}
+
+/**
+ * Подсвечивает выбранную группу запчастей так же, как страну у аукционов:
+ * без этого пользователь, перешедший из меню, не видит, где находится.
+ */
+function PartCategoryLinks({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams()
+  const selectedPartType = pathname === "/parts-finder" ? searchParams.get("partType") : null
+
+  return PARTS.map((item) => {
+    const partType = item.href.split("partType=")[1]
+    return <NavLink key={item.href} component={Link} href={item.href} label={item.label} active={selectedPartType === partType} color="indigo" className="market-side-nav market-side-nav--nested" />
   })
 }
 
