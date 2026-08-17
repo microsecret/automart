@@ -175,16 +175,6 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </SidebarPanel>
 
-              <Paper component={Link} href="/dashboard/deliveries?partner=apply" className="partner-sidebar-cta" radius="lg" p="sm" withBorder>
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon className="partner-sidebar-cta__icon" color="orange" variant="filled" size={34} radius="md"><IconTruckDelivery size={18} /></ThemeIcon>
-                  <Box style={{ minWidth: 0, flex: 1 }}>
-                    <Text size="xs" fw={850} c="dark.9">Стать партнёром</Text>
-                    <Text size="10px" c="dimmed" lh={1.25}>Передаём заявки на выкуп и доставку в вашем регионе</Text>
-                  </Box>
-                </Group>
-              </Paper>
-
               <Group justify="space-between" px={4} pt={2}>
                 <Button component={Link} href="/news" variant="subtle" color="gray" size="compact-xs" leftSection={<IconNews size={14} />}>Новости</Button>
                 <Button component={Link} href="/help/safety" variant="subtle" color="gray" size="compact-xs">Помощь</Button>

@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Alert, Badge, Box, Button, Center, Divider, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
+import { Alert, Badge, Box, Button, Center, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { IconArrowRight, IconBuildingWarehouse, IconCheck, IconChevronRight, IconClipboardCheck, IconFileInvoice, IconGavel, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
@@ -335,20 +335,79 @@ function DeliveriesWorkspace() {
         </Stack></form>
       </Modal>
 
-      <Modal opened={partnerOpened} onClose={() => setPartnerOpened(false)} title="Заявка партнёра LeWheel" centered radius="xl" size="lg">
-        <form onSubmit={submitPartnerApplication}><Stack gap="sm">
-          <Alert color="indigo" icon={<IconShieldCheck size={18} />} title="Реквизиты проверяет администратор">Заявка не даёт автоматический доступ к заказам. До назначения партнёром мы сверим организацию и направления работы.</Alert>
-          {organizationData?.organization?.verificationNote && <Alert color="orange" title="Комментарий проверки">{organizationData.organization.verificationNote}</Alert>}
-          <TextInput required label="Полное наименование" placeholder="ООО «Транс Логистика»" value={partnerForm.legalName} onChange={(event) => setPartnerForm({ ...partnerForm, legalName: event.currentTarget.value })} />
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Select required allowDeselect={false} label="Тип организации" data={organizationTypeOptions} value={partnerForm.organizationType} onChange={(value) => setPartnerForm({ ...partnerForm, organizationType: value || "COMPANY" })} />
-            <TextInput required inputMode="numeric" label="ИНН" placeholder="10 или 12 цифр" value={partnerForm.inn} onChange={(event) => setPartnerForm({ ...partnerForm, inn: event.currentTarget.value.replace(/\D/g, "").slice(0, 12) })} />
-          </SimpleGrid>
-          <TextInput inputMode="numeric" label="ОГРН / ОГРНИП" description="Можно заполнить после подачи, если номера пока нет под рукой." placeholder="13 или 15 цифр" value={partnerForm.ogrn} onChange={(event) => setPartnerForm({ ...partnerForm, ogrn: event.currentTarget.value.replace(/\D/g, "").slice(0, 15) })} />
-          <Textarea required label="География и направления" placeholder="Китай — Владивосток — Екатеринбург; Корея — Москва" minRows={3} value={partnerForm.serviceRegions} onChange={(event) => setPartnerForm({ ...partnerForm, serviceRegions: event.currentTarget.value })} />
-          <Divider />
-          <Group justify="space-between" gap="sm" wrap="wrap"><Text size="xs" c="dimmed" maw={390}>После отправки заявка получит статус «На проверке». Платёжные реквизиты в этой форме не запрашиваются.</Text><Button type="submit" loading={partnerSubmitting} color="indigo" radius="xl" leftSection={<IconCheck size={17} />}>Отправить на проверку</Button></Group>
-        </Stack></form>
+      <Modal
+        opened={partnerOpened}
+        onClose={() => setPartnerOpened(false)}
+        title="Партнёрская сеть LeWheel"
+        centered
+        radius="xl"
+        size="xl"
+        classNames={{ content: "partner-application-modal", header: "partner-application-modal__header", body: "partner-application-modal__body" }}
+      >
+        <form onSubmit={submitPartnerApplication}>
+          <Stack gap="lg">
+            <Box className="partner-application-hero">
+              <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
+                <Group gap="md" wrap="nowrap" align="flex-start" maw={590}>
+                  <ThemeIcon size={52} radius="lg" className="partner-application-hero__icon"><IconBuildingWarehouse size={27} /></ThemeIcon>
+                  <Stack gap={5}>
+                    <Title order={2} fz={{ base: 24, sm: 30 }} lh={1.08}>Получайте заявки в своей географии</Title>
+                    <Text size="sm" c="rgba(255,255,255,.76)" lh={1.5}>Выкуп, логистика и таможенное сопровождение — только после проверки компании. Контакты клиента остаются внутри защищённой сделки.</Text>
+                  </Stack>
+                </Group>
+                {organizationData?.organization && (
+                  <Badge size="lg" variant="white" color={organizationStatusMeta[organizationData.organization.verificationStatus].color}>
+                    {organizationStatusMeta[organizationData.organization.verificationStatus].label}
+                  </Badge>
+                )}
+              </Group>
+
+              <Box component="ol" className="partner-application-steps" aria-label="Этапы подключения партнёра">
+                <li><span>1</span><div><strong>Реквизиты</strong><small>ИНН и направления</small></div></li>
+                <li><span>2</span><div><strong>Проверка</strong><small>Решение администратора</small></div></li>
+                <li><span>3</span><div><strong>Заявки</strong><small>По городам и маршрутам</small></div></li>
+              </Box>
+            </Box>
+
+            {organizationData?.organization?.verificationNote && <Alert color="orange" title="Комментарий проверки">{organizationData.organization.verificationNote}</Alert>}
+
+            <Box className="partner-application-section">
+              <Stack gap="sm">
+                <Box>
+                  <Text fw={850} fz="lg">Данные организации</Text>
+                  <Text size="sm" c="dimmed">Запрашиваем только сведения, необходимые для первичной проверки.</Text>
+                </Box>
+                <TextInput required label="Полное наименование" placeholder="ООО «Транс Логистика»" value={partnerForm.legalName} onChange={(event) => setPartnerForm({ ...partnerForm, legalName: event.currentTarget.value })} />
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <Select required allowDeselect={false} label="Тип организации" data={organizationTypeOptions} value={partnerForm.organizationType} onChange={(value) => setPartnerForm({ ...partnerForm, organizationType: value || "COMPANY" })} />
+                  <TextInput required inputMode="numeric" label="ИНН" placeholder="10 или 12 цифр" value={partnerForm.inn} onChange={(event) => setPartnerForm({ ...partnerForm, inn: event.currentTarget.value.replace(/\D/g, "").slice(0, 12) })} />
+                </SimpleGrid>
+                <TextInput inputMode="numeric" label="ОГРН / ОГРНИП" description="Необязательно на первом шаге — можно добавить после подачи." placeholder="13 или 15 цифр" value={partnerForm.ogrn} onChange={(event) => setPartnerForm({ ...partnerForm, ogrn: event.currentTarget.value.replace(/\D/g, "").slice(0, 15) })} />
+              </Stack>
+            </Box>
+
+            <Box className="partner-application-section partner-application-section--route">
+              <Stack gap="sm">
+                <Group gap="sm" wrap="nowrap">
+                  <ThemeIcon size={38} radius="md" variant="light" color="orange"><IconRoute size={20} /></ThemeIcon>
+                  <Box>
+                    <Text fw={850}>География и направления</Text>
+                    <Text size="sm" c="dimmed">По этим данным система будет сопоставлять заявки с вашей компанией.</Text>
+                  </Box>
+                </Group>
+                <Textarea required label="Города, страны и маршруты" placeholder="Например: Китай — Владивосток — Екатеринбург; Корея — Москва" minRows={3} autosize maxRows={6} value={partnerForm.serviceRegions} onChange={(event) => setPartnerForm({ ...partnerForm, serviceRegions: event.currentTarget.value })} />
+              </Stack>
+            </Box>
+
+            <Group justify="space-between" align="center" gap="md" wrap="wrap" className="partner-application-submit">
+              <Group gap="sm" wrap="nowrap" maw={470}>
+                <ThemeIcon variant="light" color="teal" radius="md"><IconShieldCheck size={18} /></ThemeIcon>
+                <Text size="xs" c="dimmed" lh={1.45}>Заявка не открывает доступ автоматически. Платёжные реквизиты здесь не запрашиваются, решение останется в кабинете.</Text>
+              </Group>
+              <Button type="submit" loading={partnerSubmitting} color="indigo" radius="md" size="md" leftSection={<IconCheck size={17} />} className="partner-application-submit__button">Отправить на проверку</Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
     </Box>
   )

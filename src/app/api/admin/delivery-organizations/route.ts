@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { isAdmin } from "@/lib/permissions"
+import { isAdmin, USER_ROLE } from "@/lib/permissions"
 
 export const dynamic = "force-dynamic"
 
@@ -100,13 +100,18 @@ export async function PATCH(request: NextRequest) {
           ...(noteWasProvided ? { verificationNote: typeof verificationNote === "string" && verificationNote.trim() ? verificationNote.trim() : null } : {}),
         },
         include: {
-          owner: { select: { id: true, name: true, email: true, telegramUsername: true, role: true } },
+          owner: { select: { id: true, name: true, email: true, telegramUsername: true, role: true, emailVerified: true, telegramVerifiedAt: true } },
         },
       })
 
-      if (verificationStatus === "VERIFIED" && ["USER", "VERIFIED_USER"].includes(organizationWithOwner.owner.role)) {
-        await tx.user.update({ where: { id: organizationWithOwner.owner.id }, data: { role: "PARTNER" } })
-        organizationWithOwner.owner.role = "PARTNER"
+      const owner = organizationWithOwner.owner
+      if (verificationStatus === "VERIFIED" && [USER_ROLE.USER, USER_ROLE.VERIFIED_USER].includes(owner.role as typeof USER_ROLE.USER | typeof USER_ROLE.VERIFIED_USER)) {
+        await tx.user.update({ where: { id: owner.id }, data: { role: USER_ROLE.PARTNER } })
+        owner.role = USER_ROLE.PARTNER
+      } else if (verificationStatus !== "VERIFIED" && owner.role === USER_ROLE.PARTNER) {
+        const fallbackRole = owner.emailVerified || owner.telegramVerifiedAt ? USER_ROLE.VERIFIED_USER : USER_ROLE.USER
+        await tx.user.update({ where: { id: owner.id }, data: { role: fallbackRole } })
+        owner.role = fallbackRole
       }
 
       return organizationWithOwner

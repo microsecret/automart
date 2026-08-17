@@ -2,7 +2,8 @@
 
 import { Box, Text, Group, Stack, Container, Divider, Anchor, ActionIcon, SimpleGrid } from "@mantine/core"
 import Link from "next/link"
-import { IconBrandTelegram, IconCar } from "@tabler/icons-react"
+import { IconBrandTelegram } from "@tabler/icons-react"
+import LeWheelBrand from "@/components/brand/LeWheelBrand"
 
 const FOOTER_SECTIONS = [
   {
@@ -67,18 +68,7 @@ export default function AppFooter() {
         <Stack gap="lg">
           <SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 5 }} spacing={{ base: "xl", md: "lg" }} verticalSpacing="xl">
             <Stack gap="sm" miw={0}>
-              <Group gap={8} align="center">
-                <Box style={{
-                  width: 36, height: 36, borderRadius: 8,
-                  background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <IconCar size={20} color="white" />
-                </Box>
-                <Text ff="var(--font-display),sans-serif" fw={800} fz={22} c="white" style={{ letterSpacing: "-0.02em" }}>
-                  LeWheel
-                </Text>
-              </Group>
+              <LeWheelBrand size={42} tone="inverse" />
               <Text size="sm" c="#a1a1aa" lh={1.6}>
                 Маркетплейс транспорта и запчастей с инструментами проверки, подбора и сопровождения.
               </Text>

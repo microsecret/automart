@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Burger, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2, IconBrain, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2, IconBrain, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -9,6 +9,7 @@ import { useState, useEffect } from "react"
 import { useColorScheme } from "@/components/providers/AppProviders"
 import { IconSun, IconMoon } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
+import LeWheelBrand from "@/components/brand/LeWheelBrand"
 
 type SearchSuggestion = {
   id: string
@@ -133,18 +134,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           {/* ЛЕВО: Лого */}
           {onNavigationToggle && <Burger hiddenFrom="md" opened={navigationOpened} onClick={onNavigationToggle} size="sm" aria-label={navigationOpened ? "Закрыть навигацию" : "Открыть навигацию"} />}
           <Link href="/" style={{ textDecoration: "none", color: "inherit", flexShrink: 0 }}>
-            <Group gap={8} wrap="nowrap" align="center">
-              <Box style={{
-                width: 36, height: 36, borderRadius: 11,
-                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <IconCar size={19} color="white" />
-              </Box>
-              <Text ff="var(--font-display),sans-serif" fw={800} fz={18} lh={1} c="var(--mantine-color-text)" style={{ letterSpacing: "-0.025em" }}>
-                LeWheel
-              </Text>
-            </Group>
+            <LeWheelBrand size={38} priority />
           </Link>
 
           <Menu shadow="md" width={210} position="bottom-start" radius="md" offset={6}>
@@ -182,6 +172,18 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               </Button>
             ))}
           </Group>
+
+          <Button
+            component={Link}
+            href="/dashboard/deliveries?partner=apply"
+            visibleFrom="xl"
+            size="compact-sm"
+            radius="md"
+            leftSection={<IconHeartHandshake size={15} stroke={1.9} />}
+            className="partner-header-cta"
+          >
+            Стать партнёром
+          </Button>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}
           <Popover opened={shouldShowSuggestions} position="bottom-start" width="target" offset={8} shadow="lg" radius="lg" withinPortal>
@@ -396,6 +398,11 @@ function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts }: { servic
               {item.label}
             </Menu.Item>
           ))}
+          <Menu.Divider />
+          <Menu.Label>Партнёрская сеть</Menu.Label>
+          <Menu.Item component={Link} href="/dashboard/deliveries?partner=apply" leftSection={<IconHeartHandshake size={15} />} color="orange">
+            Стать партнёром
+          </Menu.Item>
           <Menu.Divider />
           <Menu.Label>Площадка и поддержка</Menu.Label>
           {serviceNavigation.map((item) => (
