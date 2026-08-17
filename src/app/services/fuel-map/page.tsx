@@ -464,6 +464,18 @@ function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoadin
       withBorder
       onClick={selectStation}
       data-clickable
+      // Карточка выбирает станцию на карте, поэтому должна быть доступна и с
+      // клавиатуры: без role и обработки Enter/Space до неё нельзя добраться
+      // без мыши.
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+      aria-label={`Показать ${station.name} на карте`}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return
+        event.preventDefault()
+        selectStation()
+      }}
     >
       <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
         <Group gap="sm" wrap="nowrap">

@@ -2793,14 +2793,24 @@ select {
   cursor: pointer;
 }
 
+/* Карточка управляется и с клавиатуры, поэтому фокус должен быть виден так
+   же явно, как наведение мышью. */
+.fuel-station-card[data-clickable]:focus-visible {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 2px;
+  border-color: var(--market-primary);
+}
+
 .fuel-station-card:hover {
-  border-color: #a5b4fc;
+  border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-line));
   box-shadow: 0 12px 22px -22px rgba(49,46,129,.64);
 }
 
+/* Выбранная карточка раньше заливалась жёстким белым градиентом и в тёмной
+   теме превращалась в светлое пятно с нечитаемым текстом. */
 .fuel-station-card[data-selected] {
-  border-color: #818cf8;
-  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+  border-color: var(--market-primary);
+  background: linear-gradient(135deg, var(--market-surface) 0%, var(--market-primary-soft) 100%);
   box-shadow: 0 14px 24px -20px rgba(79, 70, 229, 0.58);
 }
 
