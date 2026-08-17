@@ -1,9 +1,34 @@
 import { prisma } from "@/lib/prisma"
 import { absoluteUrl } from "@/lib/site-url"
 import { getTelegramBotUsername, isTelegramChatAdministrator, telegramApi, telegramPhotoApi } from "@/lib/telegram"
+import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 
-const PROMO_INTERVAL_MS = 8 * 60 * 60 * 1000
+const PROMO_INTERVAL_MS = Math.max(
+  60 * 60 * 1000,
+  Number(process.env.TELEGRAM_PROMO_INTERVAL_MS || 12 * 60 * 60 * 1000),
+)
 const PROMO_BATCH_SIZE = 20
+
+function normalizePositiveInteger(value: string | undefined, fallback: number, min: number, max?: number) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < min) return fallback
+  if (max && parsed > max) return max
+  return parsed
+}
+
+const PROMO_SYSTEM_TTL_MS = normalizePositiveInteger(
+  process.env.TELEGRAM_SYSTEM_MESSAGE_TTL_MS,
+  5 * 60 * 1000,
+  30_000,
+  60 * 60 * 1000,
+)
+
+async function scheduleTemporaryCleanup(chatId: string, message: TelegramSentMessage) {
+  if (!message?.message_id) return
+  await scheduleTelegramMessageCleanup(chatId, message.message_id, Date.now() + PROMO_SYSTEM_TTL_MS).catch((error) => {
+    console.error("[telegram-marketing] Failed to schedule cleanup:", error)
+  })
+}
 
 type TelegramSentMessage = { message_id: number }
 
@@ -116,6 +141,7 @@ export async function processTelegramMarketingCampaign() {
         where: { id: chat.id },
         data: { lastPromoAt: claimedAt, lastPromoMessage: sent.message_id, lastError: null },
       })
+      await scheduleTemporaryCleanup(chat.id, sent)
       delivered += 1
     } catch (error) {
       const message = error instanceof Error ? error.message.slice(0, 500) : "Неизвестная ошибка Telegram"

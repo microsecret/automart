@@ -164,6 +164,16 @@
   background: linear-gradient(135deg, color-mix(in srgb, var(--market-brand) 12%, var(--market-surface)), color-mix(in srgb, #7c3aed 7%, var(--market-surface)));
   color: var(--market-brand-strong);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  cursor: pointer;
+}
+
+.detailCtaText {
+  transition: transform 180ms ease, letter-spacing 180ms ease;
+}
+
+.detailArrow {
+  flex-shrink: 0;
+  transition: transform 180ms ease, filter 180ms ease;
 }
 
 .detailCta::before {
@@ -190,6 +200,10 @@
   transform: translateY(-1px);
 }
 
+:global(.auction-result-card:hover) .detailCtaText {
+  letter-spacing: 0.12em;
+}
+
 :global(.auction-result-card:hover) .detailCta::before {
   left: 116%;
   opacity: 1;
@@ -197,6 +211,21 @@
 
 :global(.auction-result-card:hover) .detailCta svg {
   transform: translateX(3px);
+  filter: brightness(1.15);
+}
+
+.detailCta:focus-visible,
+.detailCta:hover {
+  border-color: color-mix(in srgb, var(--market-brand) 48%, var(--market-line));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--market-brand) 16%, transparent);
+}
+
+.detailCta:hover .detailArrow {
+  transform: translateX(4px);
+}
+
+.detailCta:hover .detailCtaText {
+  transform: translateX(1px);
 }
 
 @media (prefers-reduced-motion: reduce) {

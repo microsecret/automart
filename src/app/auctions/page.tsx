@@ -514,8 +514,8 @@ function AuctionsPageContent() {
                       </Group> : <Text size="xs" c="gray.5">Дата торгов уточняется{l.lotNumber ? ` · #${l.lotNumber}` : ""}</Text>}
                     </Box>
                     <Group className={styles.detailCta} justify="space-between" gap="xs">
-                      <Text size="sm" fw={800}>Подробнее</Text>
-                      <IconArrowRight size={17} />
+                      <Text size="sm" fw={800} className={styles.detailCtaText}>Подробнее</Text>
+                      <IconArrowRight size={17} className={styles.detailArrow} />
                     </Group>
                   </Box>
                 </Paper>
