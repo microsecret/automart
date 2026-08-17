@@ -433,13 +433,32 @@ async function main() {
     })
     .sort((left, right) => (left.signal.ratio || 1) - (right.signal.ratio || 1))
 
+  // Внутри одной страны лоты часто идут плотной группой по цене, поэтому
+  // прямая выборка «лучших» превращает подборку в ленту одного источника.
+  // Чередование сохраняет порядок выгодности внутри страны, но показывает
+  // подписчику разные направления.
+  const rankedByCountry = new Map()
+  for (const candidate of rankedCandidates) {
+    const country = candidate.listing.country
+    const bucket = rankedByCountry.get(country)
+    if (bucket) bucket.push(candidate)
+    else rankedByCountry.set(country, [candidate])
+  }
+  const diversifiedCandidates = []
+  while (rankedByCountry.size) {
+    for (const [country, bucket] of [...rankedByCountry.entries()]) {
+      diversifiedCandidates.push(bucket.shift())
+      if (!bucket.length) rankedByCountry.delete(country)
+    }
+  }
+
   if (!rankedCandidates.length) {
     console.log("[auction-telegram] no lots satisfy configured filters")
     return
   }
 
   if (dryRun) {
-    console.log(JSON.stringify(rankedCandidates.slice(0, limit).map(({ listing }) => ({
+    console.log(JSON.stringify(diversifiedCandidates.slice(0, limit).map(({ listing }) => ({
       id: listing.id,
       photo: parseImages(listing)[0] || null,
       caption: buildAuctionCaption(listing, medians.get(listing.country)),
@@ -450,7 +469,7 @@ async function main() {
   let sent = 0
   let highlightedLots = 0
   for (const chatId of chatIds) {
-    const candidatesPool = rankedCandidates
+    const candidatesPool = diversifiedCandidates
       .filter(({ listing }) => forceListing || !postedKeys.has(`${listing.id}:${chatId}`))
     const candidates = (explicitListingId || forceListing)
       ? candidatesPool.slice(0, limit)

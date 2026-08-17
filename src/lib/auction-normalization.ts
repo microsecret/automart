@@ -159,6 +159,23 @@ function transliterateHangul(value: string) {
   })
 }
 
+// Китайские и корейские витрины кладут в поле модели всю конфигурацию:
+// «C-Class 2024 1.5T задний привод Sport экостандарт China VI». В карточке и
+// в заголовке поста нужно название модели, а комплектация уже показана
+// отдельными характеристиками, поэтому описательный хвост обрезается.
+const MODEL_DESCRIPTIVE_TAIL = /\s(?:\d{4}\s\d|\d+(?:\.\d+)?[TL]\s|АКПП|МКПП|задний привод|передний привод|полный привод|экостандарт|рестайлинг|пакет\s|юбилейная|комплектация)/i
+const MODEL_MAX_WORDS = 5
+
+function trimModelConfiguration(model: string) {
+  const cutAt = model.search(MODEL_DESCRIPTIVE_TAIL)
+  const trimmed = (cutAt > 0 ? model.slice(0, cutAt) : model).trim()
+  if (!trimmed) return model
+  // Оставшееся название всё ещё может быть перечислением: ограничиваем длину,
+  // сохраняя осмысленные многословные имена вроде «Grand Santa Fe».
+  const words = trimmed.split(/\s+/)
+  return words.length > MODEL_MAX_WORDS ? words.slice(0, MODEL_MAX_WORDS).join(" ") : trimmed
+}
+
 /** Customer-facing model label without Korean/Japanese/Chinese script. */
 export function normalizeAuctionModel(value: unknown) {
   if (typeof value !== "string") return null
@@ -166,7 +183,8 @@ export function normalizeAuctionModel(value: unknown) {
   if (!model) return null
   for (const [pattern, replacement] of KOREAN_MODEL_TERMS) model = model.replace(pattern, replacement)
   model = transliterateHangul(model).replace(/\s+/g, " ").trim()
-  return model && !EAST_ASIAN_SCRIPT.test(model) ? model : null
+  if (!model || EAST_ASIAN_SCRIPT.test(model)) return null
+  return trimModelConfiguration(model) || null
 }
 
 /** Prevents a failed machine translation from leaking source script into UI. */
