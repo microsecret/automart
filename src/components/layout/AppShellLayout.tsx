@@ -7,7 +7,7 @@ import {
   IconBell, IconBrain, IconCar, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation,
   IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMotorbike, IconNews,
   IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
-  IconTractor, IconTruck, IconTruckDelivery,
+  IconBuildingStore, IconTractor, IconTruck, IconTruckDelivery,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
@@ -313,6 +313,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         <NavLink component={Link} href="/dashboard?tab=favorites" label="Избранное" leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} color="pink" />} active={pathname === "/dashboard" && dashboardTab === "favorites"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard?tab=garage" label="Личный гараж" leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} color="teal" />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard/deliveries" label="Мои доставки" leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} color="orange" />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/dashboard/store" label="Магазин запчастей" leftSection={<IconBuildingStore size={16} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
         <Divider my={2} />
         <NavLink component={Link} href="/messages" label="Сообщения" leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} color="red" />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/notifications" label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} color="red" />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />

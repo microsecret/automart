@@ -66,9 +66,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Направления «марка + страна» и темы новостей строятся из тех же
     // данных, что и сами страницы, поэтому sitemap не может разойтись с тем,
     // что реально открывается.
-    const [landings, newsTags] = await Promise.all([
+    const [landings, newsTags, stores] = await Promise.all([
       listAuctionLandings().catch(() => []),
       listNewsTags().catch(() => []),
+      // Витрина попадает в индекс только после проверки: черновик магазина
+      // не должен появляться в поиске.
+      prisma.partStore.findMany({
+        where: { status: "ACTIVE" },
+        select: { slug: true, updatedAt: true },
+        take: 5_000,
+      }).catch(() => []),
     ])
 
     return [
@@ -110,6 +117,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: now,
         changeFrequency: "daily" as const,
         priority: 0.7,
+      })),
+      ...stores.map((store) => ({
+        url: `${baseUrl}/store/${store.slug}`,
+        lastModified: store.updatedAt,
+        changeFrequency: "daily" as const,
+        priority: 0.8,
       })),
     ]
   } catch (error) {

@@ -47,15 +47,26 @@
   min-width: 0;
 }
 
+/* Название занимает всё свободное место между иконкой и счётчиком и
+   центрируется в нём: при выравнивании по левому краю короткие марки
+   («Audi», «BMW») висели вплотную к иконке, а длинные — почти касались
+   числа, и ряд выглядел неровным. */
 .brandShortcut :global(.mantine-Button-label) {
+  flex: 1;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   white-space: normal;
-  text-align: left;
+  text-align: center;
+  padding-inline: 8px;
   font-size: 0.82rem;
   line-height: 1.15;
+}
+
+/* Иконка бренда не должна сжиматься вместе с названием. */
+.brandShortcut :global(.mantine-Button-section[data-position="left"]) {
+  flex-shrink: 0;
 }
 
 .brandShortcut:hover {
