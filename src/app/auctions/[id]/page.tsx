@@ -437,7 +437,7 @@ function AuctionDetail() {
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                       {equipment.items.map((item) => (
-                        <Group key={item.label} gap="sm" justify="space-between" wrap="nowrap" p="xs" style={{ border: `1px solid ${item.available ? "#bbf7d0" : "#e2e8f0"}`, borderRadius: 10, background: item.available ? "#f0fdf4" : "#f8fafc" }}>
+                        <Group key={item.label} gap="sm" justify="space-between" wrap="nowrap" p="xs" style={{ border: `1px solid ${item.available ? "var(--market-success-line)" : "#e2e8f0"}`, borderRadius: 10, background: item.available ? "var(--market-success-surface)" : "#f8fafc" }}>
                           <Group gap={7} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color={item.available ? "teal" : "gray"} variant="light">{item.available ? <IconCheck size={13} /> : <IconX size={13} />}</ThemeIcon><Text size="sm" fw={600}>{item.label}</Text></Group>
                           <Badge size="xs" color={item.available ? "teal" : "gray"} variant="light">{item.available ? "Есть" : "Нет"}</Badge>
                         </Group>
@@ -463,7 +463,7 @@ function AuctionDetail() {
                       {conditionInfo.insuranceRecordCount !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Страховые записи</Text><Text fw={800} size="lg" c="teal.8" mt={1}>{conditionInfo.insuranceRecordCount}</Text></Paper>}
                     </SimpleGrid>
                     {conditionInfo.verifiedItems.length > 0 && <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
-                      {conditionInfo.verifiedItems.map((item) => <Paper key={`${item.label}-${item.status}`} p="xs" radius="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}><Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="teal" variant="light"><IconCheck size={13} /></ThemeIcon><Box><Text size="xs" c="dimmed">{item.label}</Text><Text fw={750} size="sm" c="teal.9">{item.status}</Text></Box></Group></Paper>)}
+                      {conditionInfo.verifiedItems.map((item) => <Paper key={`${item.label}-${item.status}`} p="xs" radius="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}><Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="teal" variant="light"><IconCheck size={13} /></ThemeIcon><Box><Text size="xs" c="dimmed">{item.label}</Text><Text fw={750} size="sm" c="var(--mantine-color-teal-text)">{item.status}</Text></Box></Group></Paper>)}
                     </SimpleGrid>}
                     <Text size="xs" c="dimmed">{isRentalTransfer ? `Показаны опубликованные условия переоформления аренды ${auctionSourceLabel(listing.source)}. Право выкупа, переход собственности и экспорт подтверждаются отдельно.` : `Карточки состояния — только открытые подтверждения ${auctionSourceLabel(listing.source)}. Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт; для перечня работ нужен полный отчёт/акт осмотра из первоисточника.`}</Text>
                   </Stack>
@@ -499,7 +499,7 @@ function AuctionDetail() {
 
           {/* Правая — заявка */}
           <Box className="auction-detail-layout__aside">
-            <Paper id="order" radius="md" p="lg" withBorder style={{ position: hasWideAuctionLayout ? undefined : "static", scrollMarginTop: 96, borderColor: "#fed7aa", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
+            <Paper id="order" radius="md" p="lg" withBorder style={{ position: hasWideAuctionLayout ? undefined : "static", scrollMarginTop: 96, borderColor: "var(--market-warning-line)", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
               {submitted ? (
                 <Stack gap="md" align="center" py="md">
                   <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>

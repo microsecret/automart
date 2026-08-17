@@ -324,7 +324,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
         )}
 
         {calc.customs?.requiresManufactureDate && (
-          <Paper radius="sm" p="xs" style={{ background: "#fef3c7", borderColor: "#fde68a", borderWidth: 1, borderStyle: "solid" }}>
+          <Paper radius="sm" p="xs" style={{ background: "var(--market-caution-surface)", borderColor: "var(--market-caution-line)", borderWidth: 1, borderStyle: "solid" }}>
             <Group gap="sm">
               <IconAlertTriangle size={18} color="#d97706" />
               <Text size="xs" c="#92400e">
@@ -337,7 +337,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
           </Paper>
         )}
         {calc.customs && !calc.customs.requiresManufactureDate && (
-          <Paper radius="sm" p="xs" style={{ background: "#f0fdf4", borderColor: "#bbf7d0", borderWidth: 1, borderStyle: "solid" }}>
+          <Paper radius="sm" p="xs" style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)", borderWidth: 1, borderStyle: "solid" }}>
             <Group gap="sm">
               <IconCheck size={18} color="#059669" />
               <Text size="xs" c="#15803d"><b>Таможенная категория:</b> {calc.customs.category}. Расчёт предварительный и требует сверки даты выпуска и документов.</Text>

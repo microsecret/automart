@@ -27,6 +27,20 @@
   --market-scroll-thumb: #d4d4d8;
   --market-primary: #4f46e5;
   --app-header-height: 68px;
+
+  /* Семантические подложки состояний. Раньше эти оттенки писались прямо в
+     inline-style, поэтому в тёмной теме превращались в светлые пятна с
+     нечитаемым текстом. */
+  --market-success-surface: #f0fdf4;
+  --market-success-line: #bbf7d0;
+  --market-warning-surface: #fff7ed;
+  --market-warning-line: #fed7aa;
+  --market-caution-surface: #fef3c7;
+  --market-caution-line: #fde68a;
+  --market-danger-surface: #fff1f2;
+  --market-danger-line: #fecdd3;
+  --market-info-surface: #eef2ff;
+  --market-info-line: #c7d2fe;
 }
 
 :root[data-mantine-color-scheme="dark"] {
@@ -45,6 +59,19 @@
   --market-focus: rgba(129, 140, 248, 0.32);
   --market-primary-soft: #252846;
   --market-scroll-thumb: #4b4d5a;
+
+  /* В тёмной теме те же состояния читаются как приглушённая подложка: тон
+     сохраняется, светлота уходит под текст светлой темы. */
+  --market-success-surface: #14251c;
+  --market-success-line: #22503a;
+  --market-warning-surface: #2a1e12;
+  --market-warning-line: #5c3d1f;
+  --market-caution-surface: #2a2412;
+  --market-caution-line: #5c4d1f;
+  --market-danger-surface: #2b1619;
+  --market-danger-line: #5e2a31;
+  --market-info-surface: #1b1d33;
+  --market-info-line: #343a63;
 }
 
 /* Базовый фон и текст */

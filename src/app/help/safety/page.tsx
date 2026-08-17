@@ -52,7 +52,7 @@ export default function SafetyPage() {
           })}
         </SimpleGrid>
 
-        <Paper radius="md" p="lg" withBorder style={{ background: "#fffbeb", borderColor: "#fde68a" }}>
+        <Paper radius="md" p="lg" withBorder style={{ background: "var(--market-caution-surface)", borderColor: "var(--market-caution-line)" }}>
           <Group gap="sm" mb="md">
             <ThemeIcon variant="light" color="orange" size={32} radius="md"><IconAlertTriangle size={18} /></ThemeIcon>
             <Text fw={700} c="dark.9">Признаки мошенничества</Text>
@@ -67,7 +67,7 @@ export default function SafetyPage() {
           </Stack>
         </Paper>
 
-        <Paper radius="md" p="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+        <Paper radius="md" p="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
           <Group gap="sm" align="center">
             <ThemeIcon variant="light" color="green" size={36} radius="md"><IconShieldCheck size={20} /></ThemeIcon>
             <Stack gap={0} style={{ flex: 1 }}>

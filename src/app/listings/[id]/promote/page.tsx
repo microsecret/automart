@@ -15,7 +15,7 @@ type PromoteResponse = { checkoutUrl: string }
 
 const PROMO_OPTIONS = [
   { ...PROMOTION_TARIFFS.BOOST, desc: PROMOTION_TARIFFS.BOOST.description, price: PROMOTION_TARIFFS.BOOST.amountRub, days: PROMOTION_TARIFFS.BOOST.durationDays, icon: IconArrowUp, color: "#0891b2", bg: "#ecfeff", features: ["Поднятие в топ выдачи", "Статистика просмотров"] },
-  { ...PROMOTION_TARIFFS.PREMIUM, desc: PROMOTION_TARIFFS.PREMIUM.description, price: PROMOTION_TARIFFS.PREMIUM.amountRub, days: PROMOTION_TARIFFS.PREMIUM.durationDays, icon: IconFlame, color: "#ea580c", bg: "#fff7ed", features: ["Всё из «Поднятия»", "Бейдж Премиум на карточке", "Выделение цветом"] },
+  { ...PROMOTION_TARIFFS.PREMIUM, desc: PROMOTION_TARIFFS.PREMIUM.description, price: PROMOTION_TARIFFS.PREMIUM.amountRub, days: PROMOTION_TARIFFS.PREMIUM.durationDays, icon: IconFlame, color: "#ea580c", bg: "var(--market-warning-surface)", features: ["Всё из «Поднятия»", "Бейдж Премиум на карточке", "Выделение цветом"] },
   { ...PROMOTION_TARIFFS.VIP, desc: PROMOTION_TARIFFS.VIP.description, price: PROMOTION_TARIFFS.VIP.amountRub, days: PROMOTION_TARIFFS.VIP.durationDays, icon: IconStar, color: "#7c3aed", bg: "#f5f3ff", features: ["Всё из «Премиум»", "Закрепление на главной", "Максимальный приоритет", "Бейдж VIP"] },
 ]
 
@@ -82,12 +82,12 @@ export default function PromotePage() {
         </Group>
 
         {paymentStatus === "success" && (
-          <Paper radius="md" p="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+          <Paper radius="md" p="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
             <Group gap="sm"><IconCheck size={20} color="#059669" /><Text size="sm" c="#15803d">Платёж принят. Продвижение включится после подтверждения платёжной системой.</Text></Group>
           </Paper>
         )}
         {paymentStatus === "canceled" && (
-          <Paper radius="md" p="md" withBorder style={{ background: "#fff7ed", borderColor: "#fed7aa" }}>
+          <Paper radius="md" p="md" withBorder style={{ background: "var(--market-warning-surface)", borderColor: "var(--market-warning-line)" }}>
             <Text size="sm" c="#c2410c">Оплата отменена. Объявление не продвигалось, средства не списаны.</Text>
           </Paper>
         )}
@@ -140,7 +140,7 @@ export default function PromotePage() {
           })}
         </SimpleGrid>
 
-        <Paper radius="md" p="md" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+        <Paper radius="md" p="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
           <Group gap="sm" align="center">
             <IconShieldCheck size={20} color="#059669" />
             <Text size="xs" c="#15803d">Продвижение включается только после подтверждения оплаты платёжной системой.</Text>

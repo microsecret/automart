@@ -23,7 +23,7 @@ export default function SafeDealPage() {
           </Stack>
         </Group>
 
-        <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)", background: "#f0fdf4" }}>
+        <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)", background: "var(--market-success-surface)" }}>
           <Text size="sm" c="gray.6" lh={1.6}>
             Сопровождаемая сделка помогает проверить продавца, собрать документы и контролировать путь покупки. Площадка пока не принимает и не удерживает деньги: платежи выполняются напрямую по согласованным реквизитам.
           </Text>

@@ -26,7 +26,7 @@ export default function HelpSellPage() {
             </Card>
           ))}
         </SimpleGrid>
-        <Card withBorder radius="md" p="md" style={{ borderColor: "#c7d2fe", background: "#eef2ff" }}>
+        <Card withBorder radius="md" p="md" style={{ borderColor: "var(--market-info-line)", background: "var(--market-info-surface)" }}>
           <Group gap="sm" align="center">
             <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconShieldCheck size={18} /></ThemeIcon>
             <Stack gap={0} style={{ flex: 1 }}>

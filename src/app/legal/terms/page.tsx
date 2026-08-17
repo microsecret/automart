@@ -31,7 +31,7 @@ export default function TermsPage() {
           </Stack>
         </Group>
 
-        <Paper radius="md" p="md" withBorder style={{ background: "#fef3c7", borderColor: "#fde68a" }}>
+        <Paper radius="md" p="md" withBorder style={{ background: "var(--market-caution-surface)", borderColor: "var(--market-caution-line)" }}>
           <Text size="sm" c="#92400e" lh={1.6}>
             ⚠️ Внимательно прочитайте все разделы. Используя Сервис, вы заключаете юридически значимое соглашение.
           </Text>

@@ -16,7 +16,7 @@ export default function RulesPage() {
         </Group>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-          <Paper radius="md" p="lg" withBorder style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+          <Paper radius="md" p="lg" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
             <Group gap="sm" mb="sm"><ThemeIcon variant="light" color="green" size={32} radius="md"><IconCheck size={18} /></ThemeIcon><Text fw={700} c="dark.9">Разрешено</Text></Group>
             <List size="sm" c="gray.6" spacing={6}>
               <List.Item>Продажа личного транспорта и запчастей</List.Item>
@@ -26,7 +26,7 @@ export default function RulesPage() {
               <List.Item>Фото и видео реального товара</List.Item>
             </List>
           </Paper>
-          <Paper radius="md" p="lg" withBorder style={{ background: "#fff1f2", borderColor: "#fecdd3" }}>
+          <Paper radius="md" p="lg" withBorder style={{ background: "var(--market-danger-surface)", borderColor: "var(--market-danger-line)" }}>
             <Group gap="sm" mb="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconX size={18} /></ThemeIcon><Text fw={700} c="dark.9">Запрещено</Text></Group>
             <List size="sm" c="gray.6" spacing={6}>
               <List.Item>Краденое имущество, документы</List.Item>
