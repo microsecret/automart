@@ -35,13 +35,23 @@ export function safeHttpsUrl(value: unknown, maxLength = MAX_MEDIA_URL_LENGTH): 
 
 type EncarRendition = { rh: number; cw: number; ch: number }
 
-const IAUTOS_IMAGE_HOSTS = new Set(["qimg.iautos.cn", "s1.iautos.cn", "s2.iautos.cn", "s3.iautos.cn"])
+// Хосты, изображения которых браузер покупателя не получает напрямую: iAutos
+// недоступен из части регионов, а Carvago отвечает кэшируемым редиректом на
+// подписанную ссылку, срок действия которой истекает раньше, чем истекает
+// кэш. Оба случая решает серверный релей.
+const RELAYED_IMAGE_HOSTS = new Set([
+  "qimg.iautos.cn",
+  "s1.iautos.cn",
+  "s2.iautos.cn",
+  "s3.iautos.cn",
+  "storage.alpha-analytics.cz",
+])
 
 function browserReachableAuctionImageUrl(value: string): string {
   if (!isSafeMediaUrl(value)) return value
   try {
     const url = new URL(value)
-    return IAUTOS_IMAGE_HOSTS.has(url.hostname) ? `/api/auction-media?url=${encodeURIComponent(url.toString())}` : value
+    return RELAYED_IMAGE_HOSTS.has(url.hostname) ? `/api/auction-media?url=${encodeURIComponent(url.toString())}` : value
   } catch {
     return value
   }
