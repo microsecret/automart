@@ -9,6 +9,7 @@ export const PART_IMPORT_COLUMNS = [
   { key: "name", label: "Название", required: true, aliases: ["наименование", "товар", "деталь", "name", "title"] },
   { key: "price", label: "Цена", required: true, aliases: ["стоимость", "цена, руб", "price", "cost"] },
   { key: "oemNumber", label: "OEM-номер", required: false, aliases: ["оем", "артикул", "номер", "код", "oem", "sku", "article"] },
+  { key: "crossNumbers", label: "Аналоги", required: false, aliases: ["кросс", "кросс-номера", "заменители", "аналог", "cross", "replaces"] },
   { key: "brandName", label: "Производитель", required: false, aliases: ["бренд", "марка детали", "изготовитель", "brand", "manufacturer"] },
   { key: "make", label: "Марка авто", required: false, aliases: ["марка", "марка автомобиля", "make"] },
   { key: "model", label: "Модель авто", required: false, aliases: ["модель", "модель автомобиля", "model"] },
@@ -26,6 +27,7 @@ export type PartImportRow = {
   name: string
   price: number
   oemNumber: string | null
+  crossNumbers: string[]
   brandName: string | null
   make: string | null
   model: string | null
@@ -156,6 +158,43 @@ function parseLeadTime(value: string | undefined) {
   return { min, max }
 }
 
+/**
+ * Приводит артикул к виду, по которому его можно найти.
+ *
+ * Один и тот же номер печатают как «GDB-1330», «GDB 1330» и «gdb1330»:
+ * покупатель вводит любой из вариантов и должен попасть в ту же позицию.
+ */
+export function normalizeOemNumber(value: string) {
+  return value.toLocaleUpperCase("en-US").replace(/[^A-Z0-9А-ЯЁ]/gu, "")
+}
+
+// Аналоги перечисляют через запятую, точку с запятой или перенос строки —
+// зависит от того, из какой системы выгружен прайс.
+const CROSS_SEPARATOR = /[,;/|\n]+/
+
+function parseCrossNumbers(value: string | undefined, ownNumber: string | null) {
+  if (!value) return []
+  const own = ownNumber ? normalizeOemNumber(ownNumber) : null
+  const seen = new Set<string>()
+  const numbers: string[] = []
+
+  for (const rawNumber of value.split(CROSS_SEPARATOR)) {
+    const trimmed = rawNumber.trim().slice(0, 64)
+    if (!trimmed) continue
+    const normalized = normalizeOemNumber(trimmed)
+    // Слишком короткий фрагмент — обычно мусор разбора, а не артикул.
+    if (normalized.length < 3) continue
+    // Собственный артикул в списке аналогов бесполезен и создаёт дубль связи.
+    if (own && normalized === own) continue
+    if (seen.has(normalized)) continue
+    seen.add(normalized)
+    numbers.push(trimmed)
+    if (numbers.length >= 20) break
+  }
+
+  return numbers
+}
+
 function detectCondition(value: string | undefined) {
   if (!value) return "NEW" as const
   return /б\/?у|used|разбор|contract/i.test(value) ? ("USED" as const) : ("NEW" as const)
@@ -270,6 +309,7 @@ export function parsePartImportFile(content: string, options: { maxRows?: number
       name: name.slice(0, 200),
       price,
       oemNumber: oemNumber?.slice(0, 64) || null,
+      crossNumbers: parseCrossNumbers(readCell("crossNumbers"), oemNumber || null),
       brandName: readCell("brandName")?.slice(0, 80) || null,
       make: readCell("make")?.slice(0, 60) || null,
       model: readCell("model")?.slice(0, 60) || null,

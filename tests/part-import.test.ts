@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { detectDelimiter, parseCsvLine, parsePartImportFile, parsePrice } from "../src/lib/part-import.ts"
+import { detectDelimiter, normalizeOemNumber, parseCsvLine, parsePartImportFile, parsePrice } from "../src/lib/part-import.ts"
 
 test("recognises the delimiter actually used in the file", () => {
   assert.equal(detectDelimiter("Название;Цена;Артикул"), ";")
@@ -64,6 +64,40 @@ test("accepts good rows and explains every rejected one", () => {
   assert.equal(result.errors.length, 2, "каждая отклонённая строка объяснена")
   assert.ok(result.errors.some((error) => error.line === 3 && /название/i.test(error.reason)))
   assert.ok(result.errors.some((error) => error.line === 4 && /цена/i.test(error.reason)))
+})
+
+test("normalises an article number so any spelling finds the same part", () => {
+  assert.equal(normalizeOemNumber("GDB-1330"), "GDB1330")
+  assert.equal(normalizeOemNumber("gdb 1330"), "GDB1330")
+  assert.equal(normalizeOemNumber("  GDB1330 "), "GDB1330")
+})
+
+test("reads cross numbers listed inside one cell", () => {
+  // Разделитель колонок здесь «;», поэтому аналоги внутри ячейки перечислены
+  // запятой и слэшем — так их и выгружают из учётных систем.
+  const file = [
+    "Название;Цена;Артикул;Аналоги",
+    "Колодки передние;3400;GDB1330;D1234, 58101-1234 / LP1234",
+    "Фильтр;1200;OC90;",
+  ].join("\n")
+
+  const result = parsePartImportFile(file)
+  assert.deepEqual(result.rows[0].crossNumbers, ["D1234", "58101-1234", "LP1234"])
+  assert.deepEqual(result.rows[1].crossNumbers, [], "пустая колонка не даёт мусорных аналогов")
+})
+
+test("drops the part own number and duplicates from its analogue list", () => {
+  const file = [
+    "Название;Цена;Артикул;Аналоги",
+    "Колодки;3400;GDB1330;GDB-1330, D1234, d1234, ab",
+  ].join("\n")
+
+  const result = parsePartImportFile(file)
+  assert.deepEqual(
+    result.rows[0].crossNumbers,
+    ["D1234"],
+    "собственный номер, повтор в другом регистре и обрывок в два символа отбрасываются",
+  )
 })
 
 test("refuses a file without the required columns instead of guessing", () => {

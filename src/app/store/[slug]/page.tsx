@@ -67,6 +67,9 @@ export default async function StorefrontPage({ params }: PageProps) {
         id: true, name: true, price: true, oemNumber: true, brandName: true, partType: true,
         condition: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true,
         originCountry: true, make: true, model: true,
+        // Аналоги показывают, что деталь подходит вместо привычного номера:
+        // покупатель ищет по своему артикулу и должен узнать позицию.
+        crossReferences: { select: { number: true }, take: 4 },
       },
     }),
     prisma.part.groupBy({
@@ -150,6 +153,11 @@ export default async function StorefrontPage({ params }: PageProps) {
                     <Badge size="xs" variant="outline" color="gray">{ORIGIN_LABELS[part.originCountry]}</Badge>
                   )}
                 </Group>
+                {part.crossReferences.length > 0 && (
+                  <Text size="10px" c="dimmed" mt={6}>
+                    Заменяет: {part.crossReferences.map((cross) => cross.number).join(", ")}
+                  </Text>
+                )}
                 <Text fw={850} size="lg" mt={8}>{part.price.toLocaleString("ru-RU")} ₽</Text>
                 <PartOrderButton
                   partId={part.id}

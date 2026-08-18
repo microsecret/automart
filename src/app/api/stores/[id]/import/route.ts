@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { parsePartImportFile } from "@/lib/part-import"
+import { normalizeOemNumber, parsePartImportFile } from "@/lib/part-import"
 
 export const dynamic = "force-dynamic"
 
@@ -146,6 +146,38 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!data.length) return NextResponse.json({ error: "Все позиции отклонены проверкой" }, { status: 422 })
 
   const created = await prisma.part.createMany({ data })
+
+  // Аналоги пишутся отдельным проходом: createMany не создаёт связанные
+  // записи, а без них номер-заменитель не находится поиском.
+  const crossByOem = new Map<string, string[]>()
+  for (const row of rows as Array<Record<string, unknown>>) {
+    const oem = typeof row.oemNumber === "string" ? row.oemNumber : null
+    const numbers = Array.isArray(row.crossNumbers) ? row.crossNumbers.filter((value): value is string => typeof value === "string") : []
+    if (!oem || !numbers.length) continue
+    crossByOem.set(oem, numbers)
+  }
+
+  if (crossByOem.size) {
+    const savedParts = await prisma.part.findMany({
+      where: { batchId: batch.id, oemNumber: { in: [...crossByOem.keys()] } },
+      select: { id: true, oemNumber: true },
+    })
+    const crossRows = savedParts.flatMap((part) => {
+      const numbers = part.oemNumber ? crossByOem.get(part.oemNumber) || [] : []
+      return numbers.map((number) => ({
+        partId: part.id,
+        number: number.slice(0, 64),
+        normalizedNumber: normalizeOemNumber(number).slice(0, 64),
+      }))
+    })
+    if (crossRows.length) {
+      // Дубли внутри партии игнорируются: уникальность пары уже задана схемой.
+      await prisma.partCrossReference.createMany({ data: crossRows }).catch((error) => {
+        console.warn("Part cross references were not saved", error instanceof Error ? error.message : error)
+      })
+    }
+  }
+
   await prisma.partImportBatch.update({
     where: { id: batch.id },
     data: { status: "APPLIED", createdRows: created.count, appliedAt: now },

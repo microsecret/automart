@@ -39,6 +39,7 @@ type PreviewRow = {
   name: string
   price: number
   oemNumber: string | null
+  crossNumbers: string[]
   brandName: string | null
   make: string | null
   model: string | null
@@ -402,7 +403,10 @@ export default function StoreWorkspacePage() {
                 <ThemeIcon variant="light" color="teal" size={34} radius="md"><IconFileSpreadsheet size={17} /></ThemeIcon>
                 <Box>
                   <Text fw={750} size="sm">Загрузка прайс-листа</Text>
-                  <Text size="xs" c="dimmed">CSV с колонками «Название» и «Цена». Остальные — по возможности.</Text>
+                  <Text size="xs" c="dimmed">
+                    CSV с колонками «Название» и «Цена». Остальные — по возможности: «Артикул», «Аналоги»,
+                    «Бренд», «Марка», «Категория», «Кол-во», «Срок».
+                  </Text>
                 </Box>
               </Group>
 
@@ -471,7 +475,12 @@ export default function StoreWorkspacePage() {
                         {preview.preview.map((row) => (
                           <Table.Tr key={row.line}>
                             <Table.Td>{row.name}</Table.Td>
-                            <Table.Td>{row.oemNumber || "—"}</Table.Td>
+                            <Table.Td>
+                              {row.oemNumber || "—"}
+                              {row.crossNumbers.length > 0 && (
+                                <Text size="10px" c="dimmed">+{row.crossNumbers.length} аналог{row.crossNumbers.length === 1 ? "" : row.crossNumbers.length < 5 ? "а" : "ов"}</Text>
+                              )}
+                            </Table.Td>
                             <Table.Td>{PART_TYPE_LABELS[row.partType] || row.partType}</Table.Td>
                             <Table.Td>
                               {row.supplyMode === "STOCK"
