@@ -98,7 +98,9 @@ export const theme = createTheme({
       styles: {
         root: {
           height: "38px",
-          transition: "all 150ms ease",
+          // Кнопки меняют только цвет и тень; `all` заставлял браузер следить
+          // и за размерами, а кнопок на странице десятки.
+          transition: "background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease",
           fontFamily: "var(--font-display), var(--font-sans), sans-serif",
         },
       },
@@ -139,7 +141,7 @@ export const theme = createTheme({
     },
     NavLink: {
       styles: {
-        root: { borderRadius: "8px", transition: "all 150ms ease" },
+        root: { borderRadius: "8px", transition: "background 150ms ease, color 150ms ease, box-shadow 150ms ease" },
         label: { fontFamily: "var(--font-sans), sans-serif" },
       },
     },
