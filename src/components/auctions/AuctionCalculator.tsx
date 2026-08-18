@@ -327,7 +327,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
           <Paper radius="sm" p="xs" style={{ background: "var(--market-caution-surface)", borderColor: "var(--market-caution-line)", borderWidth: 1, borderStyle: "solid" }}>
             <Group gap="sm">
               <IconAlertTriangle size={18} color="#d97706" />
-              <Text size="xs" c="#92400e">
+              <Text size="xs" c="var(--market-warning-text)">
                 <b>{hasManufacturedMonth ? "Пограничный месяц." : "Пограничный год."}</b>{" "}
                 {hasManufacturedMonth
                   ? `В источнике указан ${manufacturedMonth}; день выпуска не указан. Поэтому показываем диапазон пошлины: ${calc.customs.category}.`
@@ -340,7 +340,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
           <Paper radius="sm" p="xs" style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)", borderWidth: 1, borderStyle: "solid" }}>
             <Group gap="sm">
               <IconCheck size={18} color="#059669" />
-              <Text size="xs" c="#15803d"><b>Таможенная категория:</b> {calc.customs.category}. Расчёт предварительный и требует сверки даты выпуска и документов.</Text>
+              <Text size="xs" c="var(--market-success-text)"><b>Таможенная категория:</b> {calc.customs.category}. Расчёт предварительный и требует сверки даты выпуска и документов.</Text>
             </Group>
           </Paper>
         )}

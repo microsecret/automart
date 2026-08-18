@@ -534,7 +534,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               </Box>
               <Group mt="md" gap="xs">
                 <IconShieldCheck size={14} color="#16a34a" />
-                <Text size="xs" c="#16a34a">Проверка по внешним базам будет показана после подключения провайдера.</Text>
+                <Text size="xs" c="var(--market-success-text)">Проверка по внешним базам будет показана после подключения провайдера.</Text>
               </Group>
             </Card>}
 

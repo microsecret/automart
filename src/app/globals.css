@@ -42,6 +42,11 @@
      нечитаемым текстом. */
   --market-success-surface: #f0fdf4;
   --market-success-line: #bbf7d0;
+  /* Текст успеха писался прямо в разметке двумя разными зелёными, и каждый
+     проваливался в своей теме: #16a34a давал 3.3 на белом, #15803d — 3.4 на
+     тёмной подложке. Токен переключается вместе с темой. */
+  --market-success-text: #15803d;
+  --market-warning-text: #92400e;
   --market-warning-surface: #fff7ed;
   --market-warning-line: #fed7aa;
   --market-caution-surface: #fef3c7;
@@ -76,6 +81,8 @@
      сохраняется, светлота уходит под текст светлой темы. */
   --market-success-surface: #14251c;
   --market-success-line: #22503a;
+  --market-success-text: #4ade80;
+  --market-warning-text: #fbbf24;
   --market-warning-surface: #2a1e12;
   --market-warning-line: #5c3d1f;
   --market-caution-surface: #2a2412;

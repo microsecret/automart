@@ -83,12 +83,12 @@ export default function PromotePage() {
 
         {paymentStatus === "success" && (
           <Paper radius="md" p="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
-            <Group gap="sm"><IconCheck size={20} color="#059669" /><Text size="sm" c="#15803d">Платёж принят. Продвижение включится после подтверждения платёжной системой.</Text></Group>
+            <Group gap="sm"><IconCheck size={20} color="#059669" /><Text size="sm" c="var(--market-success-text)">Платёж принят. Продвижение включится после подтверждения платёжной системой.</Text></Group>
           </Paper>
         )}
         {paymentStatus === "canceled" && (
           <Paper radius="md" p="md" withBorder style={{ background: "var(--market-warning-surface)", borderColor: "var(--market-warning-line)" }}>
-            <Text size="sm" c="#c2410c">Оплата отменена. Объявление не продвигалось, средства не списаны.</Text>
+            <Text size="sm" c="var(--market-warning-text)">Оплата отменена. Объявление не продвигалось, средства не списаны.</Text>
           </Paper>
         )}
 
@@ -143,7 +143,7 @@ export default function PromotePage() {
         <Paper radius="md" p="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
           <Group gap="sm" align="center">
             <IconShieldCheck size={20} color="#059669" />
-            <Text size="xs" c="#15803d">Продвижение включается только после подтверждения оплаты платёжной системой.</Text>
+            <Text size="xs" c="var(--market-success-text)">Продвижение включается только после подтверждения оплаты платёжной системой.</Text>
           </Group>
         </Paper>
       </Stack>

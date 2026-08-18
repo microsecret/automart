@@ -804,7 +804,7 @@ export default function AdminDashboard() {
                   {s.new != null && s.new > 0 && (
                     <Group gap={3} mt={4}>
                       <IconTrendingUp size={11} color="#16a34a" />
-                      <Text size="10px" c="#16a34a" fw={600}>+{s.new} за неделю</Text>
+                      <Text size="10px" c="var(--market-success-text)" fw={600}>+{s.new} за неделю</Text>
                     </Group>
                   )}
                 </Stack>

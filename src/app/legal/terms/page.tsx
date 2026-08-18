@@ -32,7 +32,7 @@ export default function TermsPage() {
         </Group>
 
         <Paper radius="md" p="md" withBorder style={{ background: "var(--market-caution-surface)", borderColor: "var(--market-caution-line)" }}>
-          <Text size="sm" c="#92400e" lh={1.6}>
+          <Text size="sm" c="var(--market-warning-text)" lh={1.6}>
             ⚠️ Внимательно прочитайте все разделы. Используя Сервис, вы заключаете юридически значимое соглашение.
           </Text>
         </Paper>
