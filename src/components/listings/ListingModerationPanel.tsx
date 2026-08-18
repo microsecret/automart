@@ -76,7 +76,9 @@ export default function ListingModerationPanel({
         response = await fetch("/api/admin/listings", {
           method: "PATCH",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: listingId, status: LISTING_STATUS.REJECTED, reason: reason.trim() }),
+          // PAUSED, а не REJECTED: объявление снимается с витрины, но владелец
+          // может вернуть его сам, исправив причину.
+          body: JSON.stringify({ id: listingId, status: LISTING_STATUS.PAUSED, reason: reason.trim() }),
         })
       } else if (action === "delete") {
         response = await fetch("/api/admin/listings", {
@@ -168,7 +170,9 @@ export default function ListingModerationPanel({
           )}
           {error && <Text size="sm" c="red">{error}</Text>}
           <Group justify="flex-end" gap="xs">
-            <Button variant="subtle" color="gray" onClick={close} disabled={busy}>Отмена</Button>
+            {/* Кнопка была subtle — без фона она читалась только при наведении,
+                и выход из окна выглядел недоступным. */}
+            <Button variant="default" onClick={close} disabled={busy}>Отмена</Button>
             <Button
               color={action === "pause" ? "orange" : "red"}
               onClick={submit}

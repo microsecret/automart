@@ -59,7 +59,15 @@ export function getOwnerTransition(status: ListingStatus, action: unknown): List
 export function canModeratorTransition(from: ListingStatus, to: ListingStatus) {
   if (from === to) return false
   if (to === LISTING_STATUS.ACTIVE) return from === LISTING_STATUS.PENDING_MODERATION || from === LISTING_STATUS.PAUSED
-  if (to === LISTING_STATUS.REJECTED) return from === LISTING_STATUS.PENDING_MODERATION
+  // Нарушение чаще замечают уже в каталоге, а не на модерации: до этого
+  // отклонить опубликованное объявление было нельзя, и модератору оставалось
+  // только удалить карточку целиком.
+  if (to === LISTING_STATUS.REJECTED) {
+    return from === LISTING_STATUS.PENDING_MODERATION || from === LISTING_STATUS.ACTIVE
+  }
+  // Снятие с публикации без обвинения: объявление уходит из каталога, но
+  // владелец может вернуть его сам, когда причина отпадёт.
+  if (to === LISTING_STATUS.PAUSED) return from === LISTING_STATUS.ACTIVE
   return to === LISTING_STATUS.ARCHIVED
 }
 

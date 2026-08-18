@@ -1799,16 +1799,11 @@ select {
   to { transform: translateX(70%); }
 }
 
+/* Ограничение ширины считалось от самого бейджа, а не от карточки, поэтому
+   короткая надпись «Без фото» обрезалась до «БЕЗ …». */
 .listing-card__media-label {
-  max-width: calc(100% - 16px);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: top;
-}
-
-.listing-card--row .listing-card__media-label {
-  max-width: calc(100% - 12px);
 }
 
 .listing-card__row-layout {

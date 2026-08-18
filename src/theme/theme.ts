@@ -98,10 +98,25 @@ export const theme = createTheme({
       styles: {
         root: {
           height: "38px",
-          // Кнопки меняют только цвет и тень; `all` заставлял браузер следить
-          // и за размерами, а кнопок на странице десятки.
-          transition: "background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease",
+          // Кнопки меняют цвет, тень и положение; `all` заставлял браузер
+          // следить и за размерами, а кнопок на странице десятки.
+          transition: "background 150ms ease, border-color 150ms ease, box-shadow 200ms ease, color 150ms ease, transform 140ms ease",
           fontFamily: "var(--font-display), var(--font-sans), sans-serif",
+          // Кнопка отзывается на курсор: приподнимается под указателем и
+          // вдавливается при нажатии. Без этого интерфейс ощущается статичной
+          // картинкой, даже когда всё работает.
+          "&:hover:not(:disabled):not([data-loading])": {
+            transform: "translateY(-1px)",
+            boxShadow: "0 6px 16px -8px rgba(31, 26, 92, 0.45)",
+          },
+          "&:active:not(:disabled)": {
+            transform: "translateY(0)",
+            boxShadow: "0 2px 6px -4px rgba(31, 26, 92, 0.5)",
+          },
+          "@media (prefers-reduced-motion: reduce)": {
+            transition: "background 150ms ease, color 150ms ease",
+            "&:hover:not(:disabled):not([data-loading])": { transform: "none" },
+          },
         },
       },
     },
