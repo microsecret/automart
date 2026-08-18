@@ -45,9 +45,9 @@ fi
 npx prisma db push --skip-generate
 npx prisma generate
 # A fresh database must not wait for the morning cron before import prices can
-# be calculated. Fail the deployment if the official CBR snapshot cannot be
-# loaded: silently using guessed or missing rates would make landed-cost totals
-# misleading.
+# be calculated. The step still fails the deployment when no usable rate exists,
+# but a CBR outage no longer blocks a release while the stored snapshot is less
+# than a day old: those prices are still accurate.
 node scripts/refresh-auction-rates.mjs
 node scripts/enforce-encar-import-age-policy.mjs
 node scripts/reconcile-transport-categories.mjs

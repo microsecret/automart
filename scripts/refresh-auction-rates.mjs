@@ -57,8 +57,30 @@ async function fetchCbrRates() {
   }
 }
 
+// Курс старше суток уже нельзя показывать как актуальный: за это время цена
+// импорта успевает уехать заметно для покупателя.
+const STALE_RATE_MS = 24 * 60 * 60 * 1000
+
 async function main() {
-  const rates = await fetchCbrRates()
+  let rates
+  try {
+    rates = await fetchCbrRates()
+  } catch (error) {
+    // Сайт ЦБ периодически отвечает 502 или обрывает соединение. Валить из-за
+    // этого весь деплой незачем, если в базе лежит свежий снимок: цены на
+    // сайте останутся верными. Но молча работать на устаревших курсах нельзя —
+    // тогда стоимость доставки вводила бы покупателя в заблуждение.
+    const stored = await prisma.exchangeRate.findMany({ select: { currency: true, rateToRub: true, effectiveAt: true } })
+    const freshest = stored.reduce((latest, rate) => (!latest || rate.effectiveAt > latest ? rate.effectiveAt : latest), null)
+    const age = freshest ? Date.now() - new Date(freshest).getTime() : Infinity
+    if (!stored.length || age > STALE_RATE_MS) {
+      throw error
+    }
+    const hours = Math.round(age / 3_600_000)
+    console.warn(`ЦБ недоступен (${error instanceof Error ? error.message : error}); работаем на курсах из базы, им ${hours} ч.`)
+    return
+  }
+
   const refreshedAt = new Date()
   const rateMap = new Map([["RUB", 1], ...rates.map((rate) => [rate.currency, rate.rateToRub])])
 
