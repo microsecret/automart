@@ -18,8 +18,6 @@
 }
 
 .lead {
-  padding-left: 16px;
-  border-left: 3px solid #818cf8;
   color: #172033;
   font-size: clamp(1.07rem, 1.02rem + 0.2vw, 1.16rem);
   font-weight: 600;

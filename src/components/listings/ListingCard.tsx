@@ -171,14 +171,18 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                       cursor: "pointer",
                     }}
                   >
+                    {/* Активная точка растягивается через transform: анимация
+                        width заставляла браузер пересчитывать раскладку на
+                        каждом кадре, а карточек в каталоге десятки. */}
                     <Box
                       style={{
-                        width: i === activeImg ? 16 : 6,
+                        width: 16,
                         height: 6,
                         borderRadius: 3,
                         background: i === activeImg ? "#fff" : "rgba(255,255,255,0.55)",
                         boxShadow: "0 0 2px rgba(0,0,0,.45)",
-                        transition: "width 200ms ease, background 200ms ease",
+                        transform: i === activeImg ? "scaleX(1)" : "scaleX(0.375)",
+                        transition: "transform 200ms ease, background 200ms ease",
                       }}
                     />
                   </UnstyledButton>

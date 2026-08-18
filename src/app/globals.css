@@ -28,6 +28,12 @@
   --market-focus: rgba(99, 102, 241, 0.18);
   --market-primary-soft: #eef2ff;
   --market-scroll-thumb: #d4d4d8;
+  /* Выделение текста и каретка приходили из настроек браузера, поэтому на
+     фирменных страницах вспыхивали чужой синевой. Собственные токены держат
+     их в палитре проекта и в обеих темах. */
+  --market-selection: #c7d2fe;
+  --market-selection-ink: #171719;
+  --market-caret: #4f46e5;
   --market-primary: #4f46e5;
   --app-header-height: 68px;
 
@@ -62,6 +68,9 @@
   --market-focus: rgba(129, 140, 248, 0.32);
   --market-primary-soft: #252846;
   --market-scroll-thumb: #4b4d5a;
+  --market-selection: #3730a3;
+  --market-selection-ink: #f5f5f7;
+  --market-caret: #a5b4fc;
 
   /* В тёмной теме те же состояния читаются как приглушённая подложка: тон
      сохраняется, светлота уходит под текст светлой темы. */
@@ -965,6 +974,18 @@ select {
   .partner-application-submit__button {
     width: 100%;
   }
+}
+
+/* Выделение текста — в палитре проекта, а не в системной синеве браузера */
+::selection {
+  background: var(--market-selection);
+  color: var(--market-selection-ink);
+}
+
+/* Каретка в полях ввода: браузерная чёрная не совпадала с фирменной рамкой
+   фокуса, из-за чего активное поле выглядело собранным из двух разных наборов */
+:where(input, textarea, [contenteditable]) {
+  caret-color: var(--market-caret);
 }
 
 /* Скроллбар — минималистичный, индиго при ховере */
