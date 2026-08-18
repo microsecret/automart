@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { notifyBuyerAboutOrderStatus } from "@/lib/part-order-notify"
 
 export const dynamic = "force-dynamic"
 
@@ -63,6 +64,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     },
     select: { id: true, status: true, statusReason: true, sellerNotes: true },
   })
+
+  // Покупатель узнаёт о продвижении заказа сразу, а не при следующем визите.
+  await notifyBuyerAboutOrderStatus(id, nextStatus, statusReason)
 
   return NextResponse.json({ order: updated })
 }

@@ -88,3 +88,86 @@ export async function notifyStoreOwnerAboutOrder(order: OrderNotification) {
     console.warn("Part order notification was not delivered", error instanceof Error ? error.message : error)
   }
 }
+
+// Покупатель оставил заявку и ждёт: без сообщения о смене статуса он не знает,
+// подтвердил ли магазин наличие и когда ждать деталь. Уведомление приходит
+// только зарегистрированному покупателю — у анонимного заказа нет адресата.
+
+const BUYER_STATUS_MESSAGES: Readonly<Record<string, { title: string; text: (item: string, store: string) => string }>> = {
+  CONFIRMED: {
+    title: "Заказ подтверждён",
+    text: (item, store) => `${store} подтвердил наличие: ${item}. Магазин свяжется с вами по срокам и оплате.`,
+  },
+  IN_DELIVERY: {
+    title: "Заказ в доставке",
+    text: (item, store) => `${item} отправлен магазином ${store}. Срок в пути уточняйте у продавца.`,
+  },
+  DONE: {
+    title: "Заказ завершён",
+    text: (item, store) => `Заказ ${item} в магазине ${store} закрыт. Спасибо за покупку.`,
+  },
+  CANCELLED: {
+    title: "Заказ отменён",
+    text: (item, store) => `${store} отменил заказ ${item}.`,
+  },
+}
+
+/**
+ * Сообщает покупателю, что магазин продвинул или отменил его заказ.
+ *
+ * Как и уведомление продавцу, доставка вторична: сбой не должен отменять уже
+ * выполненную смену статуса.
+ */
+export async function notifyBuyerAboutOrderStatus(orderId: string, nextStatus: string, statusReason?: string | null) {
+  const template = BUYER_STATUS_MESSAGES[nextStatus]
+  if (!template) return
+
+  try {
+    const order = await prisma.partOrder.findUnique({
+      where: { id: orderId },
+      select: {
+        itemName: true,
+        buyerId: true,
+        store: { select: { name: true } },
+        buyer: { select: { telegramId: true, telegramVerifiedAt: true } },
+      },
+    })
+    if (!order?.buyerId || !order.buyer) return
+
+    const storeName = order.store?.name || "Магазин"
+    const content = [
+      template.text(order.itemName, storeName),
+      statusReason ? `Причина: ${statusReason}` : null,
+    ].filter(Boolean).join("\n")
+
+    await prisma.notification.create({
+      data: {
+        userId: order.buyerId,
+        title: template.title,
+        content,
+        type: nextStatus === "CANCELLED" ? "WARNING" : "SUCCESS",
+        relatedType: "PART_ORDER",
+        relatedId: orderId,
+      },
+    })
+
+    if (!order.buyer.telegramId || !order.buyer.telegramVerifiedAt) return
+
+    const miniAppUrl = getTelegramMiniAppUrl()
+    await telegramApi("sendMessage", {
+      chat_id: order.buyer.telegramId,
+      text: [
+        `<b>${escapeHtml(template.title)}</b>`,
+        "",
+        escapeHtml(template.text(order.itemName, storeName)),
+        statusReason ? `\n<i>${escapeHtml(statusReason)}</i>` : null,
+      ].filter((line) => line !== null).join("\n"),
+      parse_mode: "HTML",
+      reply_markup: miniAppUrl
+        ? { inline_keyboard: [[{ text: "Мои заказы", web_app: { url: miniAppUrl } }]] }
+        : undefined,
+    })
+  } catch (error) {
+    console.warn("Buyer order notification was not delivered", error instanceof Error ? error.message : error)
+  }
+}
