@@ -61,6 +61,7 @@ model User {
   fuelPriceReports              FuelPriceReport[]              @relation("FuelPriceReporter")
   adminAuditEvents              AdminAuditEvent[]              @relation("AdminAuditActor")
   partStores                    PartStore[]                    @relation("PartStoreOwner")
+  partOrders                    PartOrder[]                    @relation("PartOrderBuyer")
   reportsReviewed               ListingReport[]                @relation("ListingReportReviewer")
   promotionOrders               PromotionOrder[]
   supportTickets                SupportTicket[]                @relation("SupportTicketRequester")
@@ -238,8 +239,9 @@ model Part {
   batchId         String? // партия массовой загрузки, чтобы её можно было откатить
 
   // Reverse relation for listings
-  listings Listing[] @relation("ListingPart")
+  listings Listing[]   @relation("ListingPart")
   bids     PartBid[]
+  orders   PartOrder[]
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -284,9 +286,50 @@ model PartStore {
 
   parts    Part[]
   batches  PartImportBatch[]
+  orders   PartOrder[]
 
   @@index([ownerId])
   @@index([status])
+}
+
+// Заказ позиции из витрины магазина.
+//
+// Цена и срок фиксируются на момент оформления: прайс магазина меняется, а
+// покупатель и продавец должны обсуждать те условия, на которые согласились.
+model PartOrder {
+  id         String    @id @default(uuid())
+  storeId    String
+  store      PartStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  partId     String?
+  part       Part?     @relation(fields: [partId], references: [id], onDelete: SetNull)
+  buyerId    String?
+  buyer      User?     @relation("PartOrderBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  // Контакты берутся из формы: заказ можно оформить и без регистрации.
+  contactName  String
+  contactPhone String
+  contactEmail String?
+  city         String?
+  comment      String?
+
+  quantity        Int    @default(1)
+  // Снимок позиции: название и цена на момент заказа.
+  itemName        String
+  itemPriceRub    Int
+  itemOemNumber   String?
+  leadTimeDaysMin Int?
+  leadTimeDaysMax Int?
+
+  status       String   @default("NEW") // NEW, CONFIRMED, IN_DELIVERY, DONE, CANCELLED
+  statusReason String?
+  sellerNotes  String?
+  ipHash       String? // антиспам без хранения адреса
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([storeId, status, createdAt])
+  @@index([buyerId, createdAt])
+  @@index([partId])
 }
 
 // Партия массовой загрузки. Хранится отдельно, чтобы неудачный импорт можно

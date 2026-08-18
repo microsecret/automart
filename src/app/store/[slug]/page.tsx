@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Badge, Box, Card, Container, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core"
 import { IconBuildingStore, IconMapPin, IconTruckDelivery } from "@tabler/icons-react"
 import StructuredData from "@/components/seo/StructuredData"
+import PartOrderButton from "@/components/store/PartOrderButton"
 import { prisma } from "@/lib/prisma"
 
 type PageProps = { params: Promise<{ slug: string }> }
@@ -119,8 +120,13 @@ export default async function StorefrontPage({ params }: PageProps) {
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
             {parts.map((part) => (
-              <Card key={part.id} component={Link} href={`/listings/part/${part.id}`} withBorder radius="md" p="sm" className="admin-queue-card">
-                <Text fw={700} size="sm" lineClamp={2}>{part.name}</Text>
+              // Карточка не оборачивается в ссылку целиком: внутри есть
+              // кнопка заказа, а вложенная в ссылку кнопка недопустима и
+              // ломает клавиатурную навигацию.
+              <Card key={part.id} withBorder radius="md" p="sm">
+                <Text fw={700} size="sm" lineClamp={2} component={Link} href={`/listings/part/${part.id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                  {part.name}
+                </Text>
                 <Group gap={4} mt={6} wrap="wrap">
                   {part.brandName && <Badge size="xs" variant="light" color="indigo">{part.brandName}</Badge>}
                   {part.oemNumber && <Badge size="xs" variant="outline" color="gray">{part.oemNumber}</Badge>}
@@ -145,6 +151,15 @@ export default async function StorefrontPage({ params }: PageProps) {
                   )}
                 </Group>
                 <Text fw={850} size="lg" mt={8}>{part.price.toLocaleString("ru-RU")} ₽</Text>
+                <PartOrderButton
+                  partId={part.id}
+                  itemName={part.name}
+                  priceRub={part.price}
+                  supplyMode={part.supplyMode}
+                  leadTimeDaysMin={part.leadTimeDaysMin}
+                  leadTimeDaysMax={part.leadTimeDaysMax}
+                  storeName={store.name}
+                />
               </Card>
             ))}
           </SimpleGrid>
