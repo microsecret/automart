@@ -12,6 +12,7 @@ import {
 } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import StoreOrdersPanel from "@/components/store/StoreOrdersPanel"
+import StoreCatalogPanel from "@/components/store/StoreCatalogPanel"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type Store = {
@@ -393,6 +394,8 @@ export default function StoreWorkspacePage() {
             </Card>
 
             <StoreOrdersPanel storeId={store.id} />
+
+            {store._count.parts > 0 && <StoreCatalogPanel storeId={store.id} />}
 
             <Card withBorder radius="lg" p="md">
               <Group gap="sm" mb="sm">

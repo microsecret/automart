@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { notifyStoreOwnerAboutOrder } from "@/lib/part-order-notify"
 
 export const dynamic = "force-dynamic"
 
@@ -91,6 +92,20 @@ export async function POST(request: NextRequest) {
       ipHash: hashClientIp(ip),
     },
     select: { id: true, createdAt: true },
+  })
+
+  // Уведомление отправляется после создания заказа и не влияет на ответ:
+  // покупатель не должен ждать доставку сообщения продавцу.
+  await notifyStoreOwnerAboutOrder({
+    orderId: order.id,
+    storeId: part.store.id,
+    itemName: part.name,
+    quantity,
+    itemPriceRub: part.price,
+    contactName,
+    contactPhone,
+    city,
+    comment,
   })
 
   return NextResponse.json({ order }, { status: 201 })
