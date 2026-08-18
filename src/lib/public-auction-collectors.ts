@@ -90,17 +90,33 @@ const KATAKANA_ROMAJI: Readonly<Record<string, string>> = {
 }
 
 const CHINESE_MAKES: ReadonlyArray<readonly [string, string]> = [
-  ["梅赛德斯-奔驰", "Mercedes-Benz"], ["雷克萨斯", "Lexus"], ["凯迪拉克", "Cadillac"],
-  ["阿尔法·罗密欧", "Alfa Romeo"], ["广汽传祺", "GAC"], ["一汽-大众", "Volkswagen"],
-  ["上汽大众", "Volkswagen"], ["东风日产", "Nissan"], ["长安福特", "Ford"],
-  ["北京现代", "Hyundai"], ["华晨宝马", "BMW"], ["奥迪", "Audi"], ["宝马", "BMW"],
-  ["奔驰", "Mercedes-Benz"], ["大众", "Volkswagen"], ["丰田", "Toyota"], ["本田", "Honda"],
-  ["日产", "Nissan"], ["特斯拉", "Tesla"], ["保时捷", "Porsche"], ["沃尔沃", "Volvo"],
-  ["路虎", "Land Rover"], ["别克", "Buick"], ["雪佛兰", "Chevrolet"], ["福特", "Ford"],
-  ["现代", "Hyundai"], ["起亚", "Kia"], ["马自达", "Mazda"], ["斯柯达", "Skoda"],
-  ["林肯", "Lincoln"], ["吉利", "Geely"], ["比亚迪", "BYD"], ["奇瑞", "Chery"],
-  ["长城", "Great Wall"], ["红旗", "Hongqi"], ["理想", "Li Auto"], ["蔚来", "Nio"],
-  ["小鹏", "Xpeng"], ["极氪", "Zeekr"], ["五菱", "Wuling"], ["荣威", "Roewe"],
+  // Совпадение ищется вхождением в заголовок карточки, поэтому список
+  // отсортирован от длинных названий к коротким: иначе «长城» (Great Wall)
+  // перехватил бы «长城哈弗» (Haval), а «奇瑞» — «奇瑞新能源».
+  ["梅赛德斯-奔驰", "Mercedes-Benz"], ["阿尔法·罗密欧", "Alfa Romeo"], ["一汽-大众", "Volkswagen"],
+  ["奇瑞新能源", "Chery"], ["smart", "Smart"], ["雷克萨斯", "Lexus"],
+  ["凯迪拉克", "Cadillac"], ["广汽传祺", "GAC"], ["上汽大众", "Volkswagen"],
+  ["东风日产", "Nissan"], ["长安福特", "Ford"], ["北京现代", "Hyundai"],
+  ["华晨宝马", "BMW"], ["长城哈弗", "Haval"], ["长安深蓝", "Deepal"],
+  ["上汽大通", "Maxus"], ["东风风行", "Dongfeng"], ["北京汽车", "BAIC"],
+  ["一汽奔腾", "Bestune"], ["特斯拉", "Tesla"], ["保时捷", "Porsche"],
+  ["沃尔沃", "Volvo"], ["雪佛兰", "Chevrolet"], ["马自达", "Mazda"],
+  ["斯柯达", "Skoda"], ["比亚迪", "BYD"], ["阿维塔", "Avatr"],
+  ["奥迪", "Audi"], ["宝马", "BMW"], ["奔驰", "Mercedes-Benz"],
+  ["大众", "Volkswagen"], ["丰田", "Toyota"], ["本田", "Honda"],
+  ["日产", "Nissan"], ["路虎", "Land Rover"], ["别克", "Buick"],
+  ["福特", "Ford"], ["现代", "Hyundai"], ["起亚", "Kia"],
+  ["林肯", "Lincoln"], ["吉利", "Geely"], ["奇瑞", "Chery"],
+  ["长城", "Great Wall"], ["红旗", "Hongqi"], ["理想", "Li Auto"],
+  ["蔚来", "Nio"], ["小鹏", "Xpeng"], ["极氪", "Zeekr"],
+  ["五菱", "Wuling"], ["荣威", "Roewe"], ["哈弗", "Haval"],
+  ["哈佛", "Haval"], ["坦克", "Tank"], ["魏牌", "Wey"],
+  ["欧拉", "Ora"], ["星途", "Exeed"], ["捷途", "Jetour"],
+  ["长安", "Changan"], ["领克", "Lynk & Co"], ["名爵", "MG"],
+  ["宝骏", "Baojun"], ["东风", "Dongfeng"], ["江淮", "JAC"],
+  ["北汽", "BAIC"], ["极狐", "Arcfox"], ["岚图", "Voyah"],
+  ["问界", "Aito"], ["腾势", "Denza"], ["零跑", "Leapmotor"],
+  ["小米", "Xiaomi Auto"], ["海马", "Haima"],
 ]
 
 const CHINESE_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
