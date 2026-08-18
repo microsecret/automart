@@ -47,7 +47,9 @@ export default function QuickCreatePage() {
   const canSubmit = Boolean(
     form.make.trim() && form.model.trim() && form.location.trim()
     && Number(form.year) >= 1886 && Number(form.year) <= currentYear + 1
-    && Number(form.price) > 0,
+    && Number(form.price) > 0
+    // Без фотографии объявление не найдёт покупателя, поэтому она обязательна.
+    && images.length > 0,
   )
 
   const uploadPhotos = async (files: FileList | null) => {
@@ -168,8 +170,10 @@ export default function QuickCreatePage() {
             <Group gap="xs">
               <ThemeIcon variant="light" color="teal" size={30} radius="md"><IconPhoto size={16} /></ThemeIcon>
               <Box>
-                <Text size="sm" fw={700}>Фотографии</Text>
-                <Text size="xs" c="dimmed">Первая станет обложкой. До 12 штук.</Text>
+                <Text size="sm" fw={700}>Фотографии <Text span c="red">*</Text></Text>
+                <Text size="xs" c="dimmed">
+                  {images.length ? "Первая станет обложкой. До 12 штук." : "Нужна хотя бы одна — без фото объявление не смотрят."}
+                </Text>
               </Box>
             </Group>
             {images.length > 0 && <Badge variant="light" color="teal">{images.length} из 12</Badge>}

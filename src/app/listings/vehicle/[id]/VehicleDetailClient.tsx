@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useSession } from "next-auth/react"
+import { isAdmin } from "@/lib/permissions"
+import ListingModerationPanel from "@/components/listings/ListingModerationPanel"
 import {
   Container,
   Stack,
@@ -60,7 +62,6 @@ import {
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
-import PhotoAngleViewer from "@/components/viewer/Photo360Viewer"
 import CreditCalculator from "@/components/listings/CreditCalculator"
 import { getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import { useFavorites } from "@/hooks/useFavorites"
@@ -382,8 +383,6 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         {/* Левая колонка — галерея + характеристики */}
         <Box className="vehicle-detail-layout__main">
           <Stack gap="md">
-            {images.length >= 3 && <PhotoAngleViewer images={images} title={`${data.year} ${data.make} ${data.model} — просмотр ракурсов`} />}
-
             {/* Галерея */}
             <Card p={0} radius="lg" withBorder className={`vehicle-detail-gallery${hasImages ? "" : " vehicle-detail-gallery--empty"}`}>
               {hasImages ? (
@@ -788,6 +787,16 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 </Stack>
               <CreditCalculator price={data.price} />
               </Card>
+
+              {/* Решение модератора принимается там же, где видно нарушение,
+                  а не после поиска той же карточки в админ-панели. */}
+              {isAdmin(session?.user?.role) && data.listingId && (
+                <ListingModerationPanel
+                  listingId={data.listingId}
+                  sellerId={data.seller.id}
+                  sellerName={data.seller.name}
+                />
+              )}
 
               {/* Продавец */}
               <Card withBorder radius="lg" p="lg">

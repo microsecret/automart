@@ -18,20 +18,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params
   const listing = await prisma.listing.findFirst({
     where: { vehicleId: id, ...publicListingWhere },
-    select: { vehicle: { select: { make: true, model: true, year: true, price: true, images: true, location: true } } },
+    select: { vehicle: { select: { make: true, model: true, year: true, price: true, images: true, location: true, mileage: true } } },
   })
   const vehicle = listing?.vehicle
   if (!vehicle) return { title: "Объявление не найдено", robots: { index: false, follow: false } }
-  const title = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
-  const description = `${vehicle.make} ${vehicle.model} ${vehicle.year} года в ${vehicle.location}: характеристики, фото и цена ${vehicle.price.toLocaleString("ru-RU")} ₽.`
+  // Люди ищут «купить <марка> <модель> <год> в <городе>», а не «<год> <марка>
+  // <модель>»: заголовок собирается под живой запрос, а не под запись в базе.
+  const model = `${vehicle.make} ${vehicle.model}`
+  const price = vehicle.price.toLocaleString("ru-RU")
+  const title = `Купить ${model} ${vehicle.year} в ${vehicle.location} — ${price} ₽`
+  const mileage = vehicle.mileage ? `, пробег ${vehicle.mileage.toLocaleString("ru-RU")} км` : ""
+  const description = `${model} ${vehicle.year} года${mileage} с рук в ${vehicle.location}. Цена ${price} ₽, фотографии, характеристики и контакты продавца. Проверка истории и безопасная сделка на LeWheel.`
   const canonical = `/listings/vehicle/${id}`
   const images = parseImages(vehicle.images)
+  const socialTitle = `${model} ${vehicle.year} — ${price} ₽`
   return {
     title,
     description,
+    // Ключевые слова повторяют формулировки поисковых запросов по этой марке.
+    keywords: [
+      `купить ${model}`,
+      `${model} ${vehicle.year}`,
+      `${model} бу`,
+      `${model} ${vehicle.location}`,
+      `${vehicle.make} с пробегом`,
+      "купить авто с пробегом",
+      "продажа автомобилей",
+    ],
     alternates: { canonical },
-    openGraph: { type: "website", title, description, url: canonical, images: images.length ? [{ url: images[0], alt: title }] : undefined },
-    twitter: { card: "summary_large_image", title, description, images: images.length ? [images[0]] : undefined },
+    openGraph: { type: "website", title: socialTitle, description, url: canonical, images: images.length ? [{ url: images[0], alt: socialTitle }] : undefined },
+    twitter: { card: "summary_large_image", title: socialTitle, description, images: images.length ? [images[0]] : undefined },
   }
 }
 

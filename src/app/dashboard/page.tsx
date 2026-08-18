@@ -16,6 +16,7 @@ import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { BODY_TYPES, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import DashboardNav from "@/components/dashboard/DashboardNav"
+import ShareInviteCard from "@/components/dashboard/ShareInviteCard"
 
 type DashboardVehicle = {
   id: string
@@ -297,6 +298,10 @@ function DashboardContent() {
         </Group>
 
         <DashboardNav active={tab} />
+
+        {/* Момент сразу после регистрации — лучший, чтобы человек позвал
+            знакомых: он как раз занят покупкой и разговаривает об этом. */}
+        <ShareInviteCard />
 
         <Paper className="dashboard-workspace" radius="lg" p={{ base: "md", md: "lg" }} withBorder>
           <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">

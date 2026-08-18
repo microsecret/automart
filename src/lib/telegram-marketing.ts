@@ -63,7 +63,14 @@ function promoKeyboard() {
   return {
     inline_keyboard: [
       [{ text: "🚘 Открыть Mini App", url: miniAppUrl }, { text: "🌍 Аукционы", url: absoluteUrl("/auctions?utm_source=telegram&utm_campaign=service_promo") }],
-      [{ text: "➕ Подать объявление", url: absoluteUrl("/listings/create/vehicle?utm_source=telegram&utm_campaign=service_promo") }],
+      // Подача идёт в Mini App: там вход уже выполнен через Telegram, поэтому
+      // незарегистрированный пользователь не упирается в форму регистрации, а
+      // сразу размещает объявление. Ссылка на сайт остаётся второй кнопкой для
+      // тех, кому удобнее полная форма.
+      [
+        { text: "➕ Разместить за 2 минуты", url: botUsername ? `https://t.me/${botUsername}?startapp=create` : absoluteUrl("/listings/create/quick?utm_source=telegram&utm_campaign=service_promo") },
+        { text: "🖥 Подать на сайте", url: absoluteUrl("/listings/create/quick?utm_source=telegram&utm_campaign=service_promo") },
+      ],
       [{ text: "🤝 Стать партнёром", url: absoluteUrl("/dashboard/deliveries?partner=apply&utm_source=telegram&utm_campaign=service_promo") }, { text: "🌐 Перейти на сайт", url: absoluteUrl("/?utm_source=telegram&utm_campaign=service_promo") }],
     ],
   }

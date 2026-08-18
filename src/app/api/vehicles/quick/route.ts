@@ -62,6 +62,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Укажите цену в рублях" }, { status: 400 })
   }
   if (!location) return NextResponse.json({ error: "Укажите город" }, { status: 400 })
+  // Объявление без фотографий покупателю бесполезно: он не может оценить
+  // состояние и уходит, а карточка занимает место в каталоге.
+  if (!images.length) {
+    return NextResponse.json({ error: "Добавьте хотя бы одну фотографию" }, { status: 400 })
+  }
   if (mileage !== null && (!Number.isFinite(mileage) || mileage < 0 || mileage > 2_000_000)) {
     return NextResponse.json({ error: "Проверьте пробег" }, { status: 400 })
   }
