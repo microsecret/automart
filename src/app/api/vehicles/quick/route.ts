@@ -12,10 +12,12 @@ export const dynamic = "force-dynamic"
 // на середине. Быстрая подача берёт только то, без чего объявление
 // бессмысленно, а остальное владелец дополняет уже после публикации.
 
+// Названия должны совпадать с записями в таблице категорий: расхождение
+// ломает подачу целиком, потому что категория обязательна для объявления.
 const CATEGORY_BY_VEHICLE_TYPE: Readonly<Record<string, string>> = {
-  CAR: "Легковые",
-  MOTORCYCLE: "Мото",
-  TRUCK: "Грузовики",
+  CAR: "Легковые автомобили",
+  MOTORCYCLE: "Мототехника",
+  TRUCK: "Грузовой транспорт",
   SPECIAL: "Спецтехника",
   WATER: "Водный транспорт",
   AIR: "Воздушный транспорт",
@@ -71,6 +73,13 @@ export async function POST(request: NextRequest) {
     where: { name: categoryName },
     select: { id: true },
   })
+    // Названия категорий редактируются администратором, поэтому точное
+    // совпадение может пропасть: запасной поиск по началу строки не даёт
+    // подаче упасть из-за переименования.
+    || await prisma.category.findFirst({
+      where: { name: { startsWith: categoryName.split(" ")[0] } },
+      select: { id: true },
+    })
   if (!category) {
     return NextResponse.json({ error: "Категория транспорта недоступна. Обратитесь в поддержку." }, { status: 503 })
   }
