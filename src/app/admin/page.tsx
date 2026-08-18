@@ -12,6 +12,7 @@ import ListingModerationPanel from "@/components/moderation/ListingModerationPan
 import ListingReportModerationPanel from "@/components/moderation/ListingReportModerationPanel"
 import AdminAuditLog from "@/components/admin/AdminAuditLog"
 import PartStoreModerationPanel from "@/components/admin/PartStoreModerationPanel"
+import ReferralPayoutPanel from "@/components/admin/ReferralPayoutPanel"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
@@ -685,6 +686,7 @@ export default function AdminDashboard() {
 
           <Tabs.Panel value="monetization">
             <Stack gap="md">
+              <ReferralPayoutPanel />
               <Alert
                 color={data.monetization.paymentsConfigured ? "teal" : "orange"}
                 variant="light"

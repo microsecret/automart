@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { prisma } from "@/lib/prisma"
+import { accrueReferralReward } from "@/lib/referral-accrual"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { getPromotionTariff } from "@/lib/promotion-tariffs"
 export const dynamic = "force-dynamic"
@@ -108,6 +109,9 @@ export async function POST(request: NextRequest) {
 
         if (activated) {
           console.log(`Listing ${listingId} has been featured via payment ${paymentIntent.id}`)
+          // Начисление идёт после активации и вне транзакции: сбой в
+          // партнёрской программе не должен отменять уже оплаченный тариф.
+          await accrueReferralReward(orderId)
         }
         break
       }
