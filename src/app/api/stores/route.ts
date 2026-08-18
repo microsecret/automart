@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { slugify } from "@/lib/news"
+import { checkPartnerAccess } from "@/lib/partner-access"
 
 export const dynamic = "force-dynamic"
 
@@ -29,7 +30,10 @@ export async function GET() {
     },
   })
 
-  return NextResponse.json({ stores })
+  // Статус нужен интерфейсу: у непроверенного продавца вместо формы должно
+  // быть объяснение, что делать дальше, а не пустой кабинет.
+  const access = await checkPartnerAccess(session.user.id, session.user.role)
+  return NextResponse.json({ stores, access })
 }
 
 /** Создаёт витрину продавца. */
@@ -41,6 +45,16 @@ export async function POST(request: NextRequest) {
   const name = readText(body?.name, 120)
   if (!name || name.length < 3) {
     return NextResponse.json({ error: "Укажите название магазина от трёх символов" }, { status: 400 })
+  }
+
+  // Витрину открывает только проверенная компания: магазин принимает заказы
+  // и контакты покупателей, поэтому реквизиты должны быть сверены заранее.
+  const access = await checkPartnerAccess(session.user.id, session.user.role)
+  if (!access.allowed) {
+    return NextResponse.json(
+      { error: access.reason, applicationStatus: access.applicationStatus },
+      { status: 403 },
+    )
   }
 
   const existing = await prisma.partStore.count({ where: { ownerId: session.user.id } })

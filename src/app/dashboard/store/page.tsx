@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import useSWR from "swr"
 import {
   Alert, Badge, Box, Button, Card, Container, Divider, FileInput, Group, Loader, Modal,
@@ -8,7 +9,7 @@ import {
 } from "@mantine/core"
 import {
   IconAlertTriangle, IconBuildingStore, IconCheck, IconExternalLink, IconFileSpreadsheet,
-  IconPlus, IconSend, IconTrash, IconUpload,
+  IconHeartHandshake, IconPlus, IconSend, IconShieldCheck, IconTrash, IconUpload,
 } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import StoreOrdersPanel from "@/components/store/StoreOrdersPanel"
@@ -32,6 +33,12 @@ type Store = {
   defaultOriginCountry: string | null
   createdAt: string
   _count: { parts: number }
+}
+
+type PartnerAccess = {
+  allowed: boolean
+  applicationStatus: "NONE" | "PENDING" | "VERIFIED" | "REJECTED" | "SUSPENDED"
+  reason: string | null
 }
 
 type PreviewRow = {
@@ -83,7 +90,7 @@ const PART_TYPE_LABELS: Record<string, string> = {
 }
 
 export default function StoreWorkspacePage() {
-  const { data, error, isLoading, mutate } = useSWR<{ stores: Store[] }>("/api/stores", fetchJson, { revalidateOnFocus: false })
+  const { data, error, isLoading, mutate } = useSWR<{ stores: Store[]; access?: PartnerAccess }>("/api/stores", fetchJson, { revalidateOnFocus: false })
   const [isCreating, setIsCreating] = useState(false)
   const [form, setForm] = useState({ name: "", city: "", description: "", legalName: "", inn: "", contactPhone: "", contactEmail: "", defaultOriginCountry: "CN" as string | null })
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -99,6 +106,7 @@ export default function StoreWorkspacePage() {
   const [statusError, setStatusError] = useState<string | null>(null)
 
   const store = data?.stores?.[0] || null
+  const access = data?.access || null
 
   const createStore = async () => {
     if (form.name.trim().length < 3) {
@@ -258,7 +266,31 @@ export default function StoreWorkspacePage() {
           </Group>
         </Card>
 
-        {!store ? (
+        {access && !access.allowed ? (
+          /* Инструменты магазина открываются проверенной компании: до этого
+             продавцу нужно объяснить шаг, а не показывать форму, которую
+             сервер всё равно отклонит. */
+          <Card withBorder radius="lg" p="xl">
+            <Stack align="center" gap="sm" ta="center" maw={520} mx="auto">
+              <ThemeIcon variant="light" color={access.applicationStatus === "PENDING" ? "orange" : "indigo"} size={52} radius="md">
+                <IconShieldCheck size={26} />
+              </ThemeIcon>
+              <Text fw={800} size="lg">
+                {access.applicationStatus === "PENDING" ? "Заявка на проверке" : "Нужен статус партнёра"}
+              </Text>
+              <Text size="sm" c="dimmed">{access.reason}</Text>
+              <Text size="xs" c="dimmed">
+                Магазин принимает заказы и контакты покупателей, поэтому реквизиты компании
+                сверяются до публикации витрины.
+              </Text>
+              {access.applicationStatus !== "PENDING" && (
+                <Button component={Link} href="/dashboard/deliveries?partner=apply" color="indigo" leftSection={<IconHeartHandshake size={16} />}>
+                  {access.applicationStatus === "NONE" ? "Подать заявку партнёра" : "Исправить заявку"}
+                </Button>
+              )}
+            </Stack>
+          </Card>
+        ) : !store ? (
           <Card withBorder radius="lg" p="lg">
             {!isCreating ? (
               <Stack align="center" gap="sm" py="lg" ta="center" maw={520} mx="auto">
