@@ -30,7 +30,9 @@
   --market-surface-subtle: #f4f6fd;
   --market-field: #ffffff;
   --market-field-hover: #eef2ff;
-  --market-field-line: #d6deeb;
+  /* Рамка поля давала контраст 1.35 к белой заливке — на снимках экрана поля
+     фильтра читались как подписи без границ. */
+  --market-field-line: #c9d2e6;
   --market-label: #475467;
   --market-control-text: #273142;
   --market-placeholder: #667085;
