@@ -61,8 +61,15 @@ export async function GET(request: NextRequest) {
     // A Part is publicly visible only through an active, non-deleted Listing.
     // The nested relation keeps drafts and records awaiting moderation out of
     // catalog search even though their Part row already exists for the owner.
+    // Позиция публична двумя путями: как частное объявление, прошедшее
+    // модерацию, и как товар опубликованного магазина. Товары витрины
+    // объявления не создают, поэтому без второго условия каталог их не
+    // показывал и поиск по артикулу ничего не находил.
     const where: Prisma.PartWhereInput = {
-      listings: { some: publicListingWhere },
+      OR: [
+        { listings: { some: publicListingWhere } },
+        { store: { status: "ACTIVE" } },
+      ],
     }
     const and: Prisma.PartWhereInput[] = []
 
