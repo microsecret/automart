@@ -176,12 +176,16 @@ export default function HomePage(p: HomePageProps = {}) {
           <Box className="home-auctions__content">
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
               <Box maw={650}>
-                <Badge variant="light" color="indigo" size="sm" mb="sm" className="home-auctions__eyebrow">ЕДИНАЯ ПЛОЩАДКА ТРАНСПОРТА</Badge>
+                {/* Надпись-плашка над заголовком убрана: она повторяла то, что
+                    заголовок и так говорит, и отодвигала его вниз. */}
                 <Text component="h1" fw={800} fz={{base:28,md:42}} c="white" ff="var(--font-display),sans-serif" lh={1.08}>Найдите свой маршрут: транспорт, запчасти и аукционы.</Text>
                 <Text size="sm" c="rgba(255,255,255,0.84)" mt={10} maw={560}>От первого поиска до сделки и доставки — всё понятно, в одном кабинете и без лишних шагов.</Text>
                 <Group gap="sm" mt="lg" wrap="wrap">
-                  <Button component={Link} href="#catalog" color="indigo" size="sm" radius="md" rightSection={<IconArrowUpRight size={16} />}>Смотреть объявления</Button>
-                  <Button component={Link} href="/auctions" variant="white" color="dark" size="sm" radius="md" leftSection={<IconSparkles size={16} />}>Мировые аукционы</Button>
+                  {/* Обе кнопки были равнозначны по весу, поэтому глаз не знал,
+                      с чего начать. Главное действие теперь янтарное — это
+                      единственный акцент на первом экране. */}
+                  <Button component={Link} href="#catalog" size="md" radius="md" className="home-auctions__cta" rightSection={<IconArrowUpRight size={16} />}>Смотреть объявления</Button>
+                  <Button component={Link} href="/auctions" variant="white" color="dark" size="md" radius="md" leftSection={<IconSparkles size={16} />}>Мировые аукционы</Button>
                 </Group>
               </Box>
               <Box className="home-auctions__summary">

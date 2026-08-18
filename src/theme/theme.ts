@@ -13,7 +13,10 @@ const gray: MantineColorsTuple = [
 
 export const theme = createTheme({
   primaryColor: "indigo",
-  primaryShade: { light: 6, dark: 5 },
+  // Кнопки брали оттенок 6 (#4f46e5, светлота 59%) — на белом фоне он не
+  // держал вес, и интерфейс выглядел блёклым. Оттенок 7 (#4338ca) даёт
+  // контраст 7.9 вместо 6.3, оставаясь тем же фирменным индиго.
+  primaryShade: { light: 7, dark: 5 },
   white: "#ffffff",
   black: "#09090b",
 

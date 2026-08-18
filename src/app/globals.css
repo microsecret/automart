@@ -11,7 +11,10 @@
   --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --market-ink: #171719;
-  --market-muted: #71717a;
+  /* Вторичный текст был почти чистым серым (насыщенность 4%) и выглядел
+     выцветшим рядом с индиго. Синий подтон связывает его с основным тоном,
+     контраст при этом растёт с 4.8 до 5.5. */
+  --market-muted: #676783;
   --market-line: #e3e4ea;
   --market-surface: #ffffff;
   /* Фон был почти белым, поэтому карточки сливались с ним и страница
@@ -34,7 +37,17 @@
   --market-selection: #c7d2fe;
   --market-selection-ink: #171719;
   --market-caret: #4f46e5;
-  --market-primary: #4f46e5;
+  /* Основной тон углублён с #4f46e5 (светлота 59%) до #4338ca: светлый индиго
+     на белом фоне не держал вес, из-за чего интерфейс читался блёклым.
+     Оттенок взят из уже существующей палитры, поэтому бренд узнаваем. */
+  --market-primary: #4338ca;
+  /* Второй цвет системы. Раньше индиго отвечал и за навигацию, и за действие,
+     поэтому взгляду не за что было зацепиться: всё одинаково важное. Янтарь
+     несёт только призыв к действию и уже прижился в бейджах аукционов.
+     Текст на нём тёмный — белый даёт всего 2.1 контраста. */
+  --market-accent: #f59f0a;
+  --market-accent-ink: #171719;
+  --market-accent-soft: #fff7e6;
   --app-header-height: 68px;
 
   /* Семантические подложки состояний. Раньше эти оттенки писались прямо в
@@ -72,6 +85,12 @@
   --market-placeholder: #9fa3b5;
   --market-focus: rgba(129, 140, 248, 0.32);
   --market-primary-soft: #252846;
+  /* Тёмный индиго на тёмном фоне даёт контраст 1.8 — нечитаемо. В тёмной теме
+     основной тон светлеет, сохраняя оттенок. */
+  --market-primary: #8b85f5;
+  --market-accent: #fbbf24;
+  --market-accent-ink: #171719;
+  --market-accent-soft: #2a1e12;
   --market-scroll-thumb: #4b4d5a;
   --market-selection: #3730a3;
   --market-selection-ink: #f5f5f7;
@@ -1172,9 +1191,25 @@ select {
   color: #fff;
 }
 
+/* Главное действие первого экрана. Правило существовало, но класс никому не
+   был присвоен, и белый текст на оранжевом давал контраст 2.9. Теперь текст
+   тёмный (8.4), а тень тонирована самим янтарём, а не серым. */
 .home-auctions__cta {
-  background: #f97316;
-  color: #fff;
+  background: var(--market-accent);
+  color: var(--market-accent-ink);
+  box-shadow: 0 10px 24px -12px rgba(245, 159, 10, 0.75);
+  font-weight: 700;
+  transition: background 160ms ease, box-shadow 200ms ease, transform 160ms ease;
+}
+
+.home-auctions__cta:hover {
+  background: #e08f06;
+  box-shadow: 0 14px 30px -12px rgba(245, 159, 10, 0.9);
+  transform: translateY(-1px);
+}
+
+.home-auctions__cta:active {
+  transform: translateY(0);
 }
 
 .home-auctions__summary {
