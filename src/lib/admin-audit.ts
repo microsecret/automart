@@ -15,6 +15,7 @@ export type AdminAuditAction =
   | "SUPPORT_TICKET_UPDATE"
   | "FUEL_PRICE_REPORT_REJECT"
   | "PART_STORE_STATUS_CHANGE"
+  | "REFERRAL_PAYOUT"
 
 type AdminAuditInput = {
   actorId: string | null
