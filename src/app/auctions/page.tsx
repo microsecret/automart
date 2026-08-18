@@ -437,6 +437,9 @@ function AuctionsPageContent() {
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" className={styles.marketMix} aria-label="Структура текущей выдачи">
                       <Box>
                         <Text size="xs" fw={800} tt="uppercase" c="gray.6" mb={7}>Топливо в выдаче</Text>
+                        {topFuelDistribution.length === 0 && (
+                          <Text size="xs" c="dimmed">Площадка не публикует тип топлива для этих лотов.</Text>
+                        )}
                         <Stack gap={7}>
                           {topFuelDistribution.map((item) => {
                             const share = analytics.total ? Math.round((item.count / analytics.total) * 100) : 0
@@ -446,6 +449,12 @@ function AuctionsPageContent() {
                       </Box>
                       <Box>
                         <Text size="xs" fw={800} tt="uppercase" c="gray.6" mb={7}>Тип кузова в выдаче</Text>
+                        {/* Источник не всегда передаёт тип кузова: пустая
+                            колонка с одним заголовком выглядит как сбой, а не
+                            как отсутствие данных. */}
+                        {topBodyDistribution.length === 0 && (
+                          <Text size="xs" c="dimmed">Площадка не публикует тип кузова для этих лотов.</Text>
+                        )}
                         <Stack gap={7}>
                           {topBodyDistribution.map((item) => {
                             const share = analytics.total ? Math.round((item.count / analytics.total) * 100) : 0

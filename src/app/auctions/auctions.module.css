@@ -45,24 +45,27 @@
    вместо обрезки: марка — это то, по чему выбирают. */
 .brandShortcut :global(.mantine-Button-inner) {
   min-width: 0;
+  align-items: center;
 }
 
-/* Название занимает всё свободное место между иконкой и счётчиком и
-   центрируется в нём: при выравнивании по левому краю короткие марки
-   («Audi», «BMW») висели вплотную к иконке, а длинные — почти касались
-   числа, и ряд выглядел неровным. */
+/* Название занимает всё свободное место между иконкой и счётчиком.
+   `-webkit-box` нужен для обрезки в две строки, но он же отменяет
+   вертикальное центрирование и прижимает название к верху кнопки. Поэтому
+   центрирование задаётся снаружи через flex, а обрезка живёт внутри. */
 .brandShortcut :global(.mantine-Button-label) {
   flex: 1;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
   white-space: normal;
   text-align: center;
   padding-inline: 8px;
   font-size: 0.82rem;
-  line-height: 1.15;
+  line-height: 1.2;
+  overflow: hidden;
 }
+
 
 /* Иконка бренда не должна сжиматься вместе с названием. */
 .brandShortcut :global(.mantine-Button-section[data-position="left"]) {
