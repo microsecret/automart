@@ -131,6 +131,19 @@ const CHINESE_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
   [/豪华版/g, "Luxury"], [/尊贵版/g, "Premium"], [/旗舰版/g, "Flagship"], [/标准版/g, "Standard"],
   [/舒适版/g, "Comfort"], [/卓越版/g, "Excellence"], [/臻享版/g, "Premium"],
   [/\(国Ⅵ\)|\(国VI\)/gi, "экостандарт China VI"], [/\(国Ⅴ\)|\(国V\)/gi, "экостандарт China V"],
+  // Комплектации китайских кроссоверов: без них модель уходила в машинный
+  // перевод, который часто возвращал исходные иероглифы, и лот отбраковывался.
+  [/蓝标/g, "Blue Label"], [/红标/g, "Red Label"],
+  [/第三代/g, "3-е поколение"], [/第二代/g, "2-е поколение"],
+  // Составные комплектации идут раньше простых: «智联版» иначе съел бы часть
+  // «豪华智联版», и в названии остался бы обрывок «豪华Connect».
+  [/豪华智联版/g, "Luxury Connect"], [/超豪华版|超豪版/g, "Super Luxury"],
+  [/冠军版/g, "Champion"], [/智联版/g, "Connect"], [/互联版/g, "Connect"],
+  [/精英版/g, "Elite"], [/进取版/g, "Progressive"], [/领先版/g, "Leading"],
+  [/尊享版/g, "Premium"], [/尊贵型/g, "Premium"], [/豪华型/g, "Luxury"],
+  [/舒适型/g, "Comfort"], [/标准型/g, "Standard"], [/都市版/g, "Urban"],
+  [/两驱/g, "передний привод"], [/(\d+)座/g, "$1-местный"],
+  [/plus/gi, "Plus"], [/pro/gi, "Pro"], [/max/gi, "Max"],
 ]
 
 const YOUXIN_DAMAGE_SECTION_LABELS: Readonly<Record<string, string>> = {
