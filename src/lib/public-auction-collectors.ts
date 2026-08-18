@@ -1107,8 +1107,15 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
     || [...pairs.entries()].find(([key]) => key.replace(/\s+/g, "") === "RegistrationYear/month")?.[1]
     || htmlText(firstMatch(html, /Registration(?:\s|<br\s*\/?\s*>|<[^>]+>)*Year\/month[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/i))
   const registered = registrationText?.match(/(\d{4})\/(\d{2})/)
-  if (!sourcePrice || !make || !model || !registered) {
-    const missing = [!sourcePrice && "цена", !make && "марка", !model && "модель", !registered && "дата"].filter(Boolean).join(", ")
+  // Площадка убрала строку «Registration Year/month» из таблицы карточки, и
+  // все лоты стали отсеиваться как неполные. Год остался в заголовке вида
+  // «Used 2019 TOYOTA ALPHARD», поэтому он служит запасным источником: месяц
+  // при этом неизвестен и не выдумывается.
+  const titleYear = firstMatch(html, /<title>[^<]*?Used\s+((?:19|20)\d{2})\s/i)
+  const year = registered ? Number(registered[1]) : asNumber(titleYear)
+  const manufacturedMonth = registered ? `${registered[1]}-${registered[2]}` : null
+  if (!sourcePrice || !make || !model || !year) {
+    const missing = [!sourcePrice && "цена", !make && "марка", !model && "модель", !year && "год"].filter(Boolean).join(", ")
     throw new Error(`BE FORWARD: в карточке ${candidate.sourceId} отсутствуют обязательные поля: ${missing}`)
   }
   const beforwardImageHosts = new Set(["image-cdn.beforward.jp"])
@@ -1126,8 +1133,8 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
   const lotNumber = pairs.get("Ref. No.") || path[3].toUpperCase()
   const location = pairs.get("Location") || pairs.get("Current Location") || "Япония"
   const specs = [
-    `Год выпуска: ${registered[1]}`,
-    `Месяц выпуска: ${registered[1]}-${registered[2]}`,
+    `Год выпуска: ${year}`,
+    manufacturedMonth ? `Месяц выпуска: ${manufacturedMonth}` : null,
     `Пробег: ${mileage?.toLocaleString("ru-RU") || "уточняется"} км`,
     `Номер лота: ${lotNumber}`,
     engineVolume ? `Объём двигателя: ${Math.round(engineVolume).toLocaleString("ru-RU")} см³` : null,
@@ -1145,7 +1152,7 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
   ].filter((value): value is string => Boolean(value))
   return {
     source: "BEFORWARD", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
-    make, model, year: Number(registered[1]), manufacturedMonth: `${registered[1]}-${registered[2]}`,
+    make, model, year, manufacturedMonth,
     sourcePrice: Math.round(sourcePrice), sourceCurrency: "USD", country: "JP", auctionDate: null,
     mileage, fuelType,
     transmission, bodyType,
