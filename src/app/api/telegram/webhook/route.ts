@@ -75,6 +75,31 @@ function getBotStartUrl() {
   return username ? `https://t.me/${username}?start=register` : null
 }
 
+/**
+ * Ссылка на быструю подачу объявления в Mini App.
+ *
+ * Сообщение о регистрации видят как раз те, кто пришёл что-то продать или
+ * купить. Одна кнопка «зарегистрируйтесь» объясняет требование, но не даёт
+ * повода его пройти — вторая показывает, ради чего это делается.
+ */
+function getBotCreateUrl() {
+  const username = getTelegramBotUsername()
+  return username ? `https://t.me/${username}?startapp=create` : null
+}
+
+/** Клавиатура системных сообщений: регистрация плюс размещение объявления. */
+function registrationKeyboard(registerLabel: string) {
+  const startUrl = getBotStartUrl()
+  if (!startUrl) return undefined
+  const createUrl = getBotCreateUrl()
+  return {
+    inline_keyboard: [
+      [{ text: registerLabel, style: "primary", url: startUrl }],
+      ...(createUrl ? [[{ text: "🚗 Разместить объявление", url: createUrl }]] : []),
+    ],
+  }
+}
+
 function telegramUserMention(from: NonNullable<TelegramMessage["from"]>) {
   const displayName = [from.first_name, from.last_name].filter(Boolean).join(" ").trim() || "пользователь Telegram"
   const mention = `<a href="tg://user?id=${encodeURIComponent(String(from.id))}">${escapeTelegramHtml(displayName)}</a>`
@@ -274,7 +299,7 @@ async function handleMessage(message: TelegramMessage) {
         chat_id: chatId,
         text: "🔐 <b>Регистрация проходит в личном чате с ботом.</b>\n\nПодтвердите телефон, укажите почту и придумайте пароль — после этого доступ к чату откроется автоматически.\n\n⏳ Это системное сообщение исчезнет через 5 минут.",
         parse_mode: "HTML",
-        reply_markup: getBotStartUrl() ? { inline_keyboard: [[{ text: "🚀 Пройти регистрацию", style: "primary", url: getBotStartUrl()! }]] } : undefined,
+        reply_markup: registrationKeyboard("🚀 Пройти регистрацию"),
       })
       await scheduleTemporarySystemMessage(chatId, sentMessage)
     }
@@ -401,9 +426,7 @@ async function handleMessage(message: TelegramMessage) {
         "",
         "✅ После регистрации сообщения и медиа будут публиковаться автоматически.",
         "⏳ Системное уведомление удалится через 5 минут.",
-      ].join("\n"), getBotStartUrl() ? {
-        inline_keyboard: [[{ text: "🚀 Завершить регистрацию", style: "primary", url: getBotStartUrl()! }]],
-      } : undefined)
+      ].join("\n"), registrationKeyboard("🚀 Завершить регистрацию"))
       await scheduleTemporarySystemMessage(chatId, sentMessage)
     }
   }

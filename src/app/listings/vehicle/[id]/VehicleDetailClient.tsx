@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { isAdmin } from "@/lib/permissions"
-import ListingModerationPanel from "@/components/listings/ListingModerationPanel"
+import ListingModerationActions from "@/components/listings/ListingModerationActions"
 import {
   Container,
   Stack,
@@ -791,7 +791,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               {/* Решение модератора принимается там же, где видно нарушение,
                   а не после поиска той же карточки в админ-панели. */}
               {isAdmin(session?.user?.role) && data.listingId && (
-                <ListingModerationPanel
+                <ListingModerationActions
                   listingId={data.listingId}
                   sellerId={data.seller.id}
                   sellerName={data.seller.name}

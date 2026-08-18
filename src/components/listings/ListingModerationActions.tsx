@@ -37,7 +37,7 @@ const ACTION_COPY: Readonly<Record<Action, { title: string; confirm: string; hin
  * админ-панель и там искал ту же карточку заново. Решение принимается там же,
  * где видно проблему.
  */
-export default function ListingModerationPanel({
+export default function ListingModerationActions({
   listingId,
   sellerId,
   sellerName,

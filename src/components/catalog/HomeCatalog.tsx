@@ -12,6 +12,7 @@ import { COUNTRY_FLAGS, getBrandsByCategory } from "@/lib/catalog"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, SPECIAL_TYPES, WATER_TYPES, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import { fetchJson } from "@/lib/api-client"
+import { plural } from "@/lib/format"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
 type HomePageProps = {
@@ -222,7 +223,7 @@ export default function HomePage(p: HomePageProps = {}) {
       <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
         <Stack gap={0}>
           {p.showHeading !== false && <Text component={p.categorySlug ? "h1" : "h2"} fw={800} fz={{base:20,md:24}} c="dark.9">{p.pageTitle || "Все объявления"}</Text>}
-          {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} объявлений</Text>}
+          {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} {plural(data.pagination?.total || 0, "объявление", "объявления", "объявлений")}</Text>}
         </Stack>
         <Group gap="xs" wrap="nowrap">
           <Select
@@ -521,7 +522,7 @@ export default function HomePage(p: HomePageProps = {}) {
                 <Group gap="xs">
                   {activeFilterCount > 0 && <Button variant="subtle" size="sm" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить</Button>}
                   <Button color="indigo" size="sm" radius="md" leftSection={<IconSearch size={15}/>} onClick={() => setShowAdvanced(false)}>
-                    Показать {data?.pagination?.total ?? 0} объявлений
+                    Показать {data?.pagination?.total ?? 0} {plural(data?.pagination?.total ?? 0, "объявление", "объявления", "объявлений")}
                   </Button>
                 </Group>
               </Group>

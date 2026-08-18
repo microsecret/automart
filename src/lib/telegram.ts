@@ -206,7 +206,30 @@ export async function completeTelegramRegistration(telegramId: string, password:
   })
 }
 
-export async function telegramApi<T = unknown>(method: string, payload: Record<string, unknown>) {
+// Сетевые сбои до Telegram — таймаут, обрыв TLS, сброс соединения — приходят
+// эпизодически и не означают, что запрос неверен. Повторять же ответы самого
+// Telegram нельзя: «сообщение не найдено» или «нет прав» при повторе вернутся
+// теми же, а удаление могло уже пройти.
+const TELEGRAM_RETRYABLE = /timed out|socket disconnected|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|socket hang up|network/i
+
+export async function telegramApi<T = unknown>(method: string, payload: Record<string, unknown>): Promise<T> {
+  let lastError: unknown
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await telegramApiOnce<T>(method, payload)
+    } catch (error) {
+      lastError = error
+      const message = error instanceof Error ? error.message : String(error)
+      if (!TELEGRAM_RETRYABLE.test(message)) throw error
+      // Пауза растёт, чтобы не добивать запросами канал, который и так плохо
+      // отвечает: 400 мс, затем 1200 мс.
+      if (attempt < 2) await new Promise((wait) => setTimeout(wait, 400 * (attempt + 1) ** 2))
+    }
+  }
+  throw lastError
+}
+
+async function telegramApiOnce<T = unknown>(method: string, payload: Record<string, unknown>) {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not configured")
   const requestBody = JSON.stringify(payload)
