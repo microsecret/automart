@@ -106,7 +106,14 @@ export const theme = createTheme({
     Card: {
       defaultProps: { radius: "lg", padding: "md" },
       styles: {
-        root: { transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)" },
+        root: {
+          // Было `all`: браузер отслеживал каждое свойство, включая размеры,
+          // и на списке из десятков карточек это заметно подтормаживало.
+          // Тень со смещением и размытием отделяет карточку от подложки —
+          // одной границы для этого не хватало.
+          transition: "box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease",
+          boxShadow: "0 1px 2px rgba(23, 23, 25, 0.04), 0 4px 12px -8px rgba(23, 23, 25, 0.12)",
+        },
       },
     },
     TextInput: {

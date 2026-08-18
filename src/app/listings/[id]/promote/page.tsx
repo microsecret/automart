@@ -109,7 +109,7 @@ export default function PromotePage() {
           {PROMO_OPTIONS.map((opt) => {
             const Icon = opt.icon
             return (
-              <Paper key={opt.id} radius="md" p="md" withBorder style={{ borderColor: selected === opt.id ? opt.color : "#f4f4f5", transition: "all 200ms", cursor: "pointer", position: "relative" }}
+              <Paper key={opt.id} radius="md" p="md" withBorder style={{ borderColor: selected === opt.id ? opt.color : "#f4f4f5", transition: "border-color 200ms ease, box-shadow 200ms ease, background 200ms ease", cursor: "pointer", position: "relative" }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = opt.color; e.currentTarget.style.transform = "translateY(-2px)" }}
                 onMouseLeave={(e) => { if (selected !== opt.id) { e.currentTarget.style.borderColor = "#f4f4f5" }; e.currentTarget.style.transform = "" }}>
                 {opt.id === "vip" && <Badge pos="absolute" top={-8} right={12} size="xs" color="violet" variant="filled">Выгодно</Badge>}

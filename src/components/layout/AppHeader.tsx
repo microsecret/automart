@@ -205,7 +205,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                       background: "var(--market-surface-subtle)",
                       border: "1px solid var(--market-field-line)",
                       height: 38,
-                      transition: "all 200ms ease",
+                      transition: "border-color 200ms ease, box-shadow 200ms ease, background 200ms ease",
                     },
                   }}
                 />

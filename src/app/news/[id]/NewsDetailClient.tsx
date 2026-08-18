@@ -287,7 +287,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
               <Text size="sm" fw={600} c="dark.9">Читайте также</Text>
               {relatedNews.map((news) => (
                 <Link key={news.id} href={newsHref(news)} style={{ textDecoration: "none" }}>
-                  <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)", transition: "all 150ms" }}
+                  <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)", transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease" }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4f46e5" }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)" }}>
                     <Group gap="sm" align="flex-start">

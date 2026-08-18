@@ -646,7 +646,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       withBorder
                       radius="md"
                       p="sm"
-                      style={{ transition: "all 180ms ease" }}
+                      style={{ transition: "border-color 180ms ease, box-shadow 180ms ease, background 180ms ease" }}
                       onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#c7d2fe"; e.currentTarget.style.transform = "translateY(-2px)" }}
                       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e4e4e7"; e.currentTarget.style.transform = "none" }}
                     >

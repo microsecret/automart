@@ -26,7 +26,7 @@ export default function HelpPage() {
             const Icon = s.icon
             return (
               <Link key={s.title} href={s.href} style={{ textDecoration: "none" }}>
-                <Paper p="lg" radius="md" withBorder style={{ cursor: "pointer", height: "100%", transition: "all 0.2s" }}
+                <Paper p="lg" radius="md" withBorder style={{ cursor: "pointer", height: "100%", transition: "border-color 200ms ease, box-shadow 200ms ease, background 200ms ease" }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = s.color; e.currentTarget.style.transform = "translateY(-2px)" }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.transform = "" }}>
                   <Group gap="md" align="flex-start">

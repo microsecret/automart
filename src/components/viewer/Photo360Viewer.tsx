@@ -249,7 +249,7 @@ export default function PhotoAngleViewer({ images, title }: Photo360ViewerProps)
               flexShrink: 0,
               cursor: "pointer",
               opacity: activeIndex === i ? 1 : 0.5,
-              transition: "all 150ms ease",
+              transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease",
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
