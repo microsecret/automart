@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import VehicleDetailClient from "./VehicleDetailClient"
 import { findLabel, BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { cityInPrepositional } from "@/lib/geo"
 import { parseImages } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
@@ -26,9 +27,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // <модель>»: заголовок собирается под живой запрос, а не под запись в базе.
   const model = `${vehicle.make} ${vehicle.model}`
   const price = vehicle.price.toLocaleString("ru-RU")
-  const title = `Купить ${model} ${vehicle.year} в ${vehicle.location} — ${price} ₽`
+  const cityIn = cityInPrepositional(vehicle.location)
+  const title = `Купить ${model} ${vehicle.year} в ${cityIn} — ${price} ₽`
   const mileage = vehicle.mileage ? `, пробег ${vehicle.mileage.toLocaleString("ru-RU")} км` : ""
-  const description = `${model} ${vehicle.year} года${mileage} с рук в ${vehicle.location}. Цена ${price} ₽, фотографии, характеристики и контакты продавца. Проверка истории и безопасная сделка на LeWheel.`
+  const description = `${model} ${vehicle.year} года${mileage} с рук в ${cityIn}. Цена ${price} ₽, фотографии, характеристики и контакты продавца. Проверка истории и безопасная сделка на LeWheel.`
   const canonical = `/listings/vehicle/${id}`
   const images = parseImages(vehicle.images)
   const socialTitle = `${model} ${vehicle.year} — ${price} ₽`

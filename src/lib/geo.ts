@@ -95,3 +95,32 @@ export const POPULAR_CITIES: string[] = [
 export function getCountryByCity(city: string): Country | null {
   return COUNTRIES.find((c) => c.cities.includes(city)) || null
 }
+
+/**
+ * Ставит название города в предложный падеж: «Уфа» -> «Уфе».
+ *
+ * Заголовок «Купить Nissan Qashqai в Уфа» читается как машинный перевод и
+ * теряет доверие ещё в поисковой выдаче. Правила ниже покрывают подавляющее
+ * большинство русских топонимов; несклоняемые и составные названия
+ * возвращаются как есть, потому что ошибка здесь заметнее пропуска.
+ */
+export function cityInPrepositional(city: string): string {
+  const value = city.trim()
+  if (!value) return value
+
+  // Составные названия («Нижний Новгород», «Ростов-на-Дону») склоняются по
+  // своим правилам, поэтому остаются в исходной форме.
+  if (/[\s-]/.test(value)) return value
+
+  // Названия на -ово/-ево/-ино/-ыно в современной норме склоняются, но
+  // разговорная форма совпадает с исходной, поэтому её и оставляем.
+  if (/(ово|ево|ино|ыно)$/i.test(value)) return value
+
+  if (/(ия|ья)$/i.test(value)) return `${value.slice(0, -1)}и`
+  if (/[ая]$/i.test(value)) return `${value.slice(0, -1)}е`
+  if (/ь$/i.test(value)) return `${value.slice(0, -1)}и`
+  if (/й$/i.test(value)) return `${value.slice(0, -1)}е`
+  if (/[оеиуыэю]$/i.test(value)) return value
+
+  return `${value}е`
+}
