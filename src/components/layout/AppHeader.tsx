@@ -277,13 +277,13 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               {colorScheme === "dark" ? <IconSun size={18} stroke={1.8} /> : <IconMoon size={18} stroke={1.8} />}
             </ActionIcon>
 
-            <ActionIcon component={Link} href="/listings/create/vehicle" variant="light" color="indigo" size="md" radius="md" visibleFrom="sm" hiddenFrom="md" aria-label="Разместить объявление">
+            <ActionIcon component={Link} href="/listings/create/quick" variant="light" color="indigo" size="md" radius="md" visibleFrom="sm" hiddenFrom="md" aria-label="Разместить объявление">
               <IconPlus size={18} stroke={1.8} />
             </ActionIcon>
 
             <Button
               component={Link}
-              href="/listings/create/vehicle"
+              href="/listings/create/quick"
               leftSection={<IconPlus size={15} />}
               size="sm"
               radius="md"

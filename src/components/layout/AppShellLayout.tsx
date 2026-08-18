@@ -323,7 +323,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         {isAdmin && <NavLink component={Link} href="/admin" label="Админ-панель" leftSection={<IconSettings size={16} />} active={pathname.startsWith("/admin")} color="grape" variant="light" className="market-side-account__link" />}
         {isModerator && <NavLink component={Link} href="/moderation" label="Модерация" leftSection={<IconGavel size={16} />} active={pathname.startsWith("/moderation")} color="orange" variant="light" className="market-side-account__link" />}
       </Stack>
-      <Button component={Link} href="/listings/create/vehicle" variant="filled" color="indigo" size="xs" fullWidth mt="sm" leftSection={<IconPlus size={14} />}>Подать объявление</Button>
+      <Button component={Link} href="/listings/create/quick" variant="filled" color="indigo" size="xs" fullWidth mt="sm" leftSection={<IconPlus size={14} />}>Подать объявление</Button>
     </Paper>
   )
 }

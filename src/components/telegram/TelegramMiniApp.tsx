@@ -46,7 +46,7 @@ declare global {
 const QUICK_ACTIONS = [
   { href: "/auctions", label: "Аукционы", icon: IconGavel, group: "Найти автомобиль" },
   { href: "/favorites", label: "Избранное", icon: IconHeart, group: "Найти автомобиль" },
-  { href: "/listings/create/vehicle?source=telegram", label: "Подать объявление", icon: IconPlus, group: "Продать" },
+  { href: "/listings/create/quick?source=telegram", label: "Подать объявление", icon: IconPlus, group: "Продать" },
   { href: "/listings/create/part?source=telegram", label: "Продать запчасть", icon: IconTools, group: "Продать" },
   { href: "/dashboard?tab=garage", label: "Личный гараж", icon: IconCar, group: "Мой кабинет" },
   { href: "/dashboard/deliveries", label: "Мои доставки", icon: IconTruckDelivery, group: "Мой кабинет" },
