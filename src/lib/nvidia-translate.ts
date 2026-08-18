@@ -127,7 +127,10 @@ export async function translateToRussian(text: string): Promise<string> {
       })
 
       if (res.status === 429) {
-        // Rate limit — следующий ключ
+        // Rate limit — пробуем следующий ключ. Причина запоминается: если
+        // лимит вернут все ключи, в логе должно быть видно именно это, а не
+        // пустое «undefined».
+        lastError = new Error("NVIDIA API 429: rate limit on every key")
         continue
       }
 
@@ -171,7 +174,7 @@ export async function translateToRussian(text: string): Promise<string> {
     }
   }
 
-  console.error("Translation failed:", lastError?.message)
+  console.error("Translation failed:", lastError?.message || "провайдер не вернул перевод и не сообщил причину")
   return text // fallback — вернуть оригинал
 }
 

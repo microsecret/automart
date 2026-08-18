@@ -287,6 +287,25 @@ export async function GET() {
     // Средняя цена
     const avgPriceResult = await prisma.listing.aggregate({ _avg: { price: true } })
     const avgPrice = Math.round(avgPriceResult._avg.price || 0)
+    // Надёжность источника видна только по серии прогонов: единичная ошибка
+    // нормальна для публичного каталога, а устойчивая доля падений означает,
+    // что площадка изменила разметку или начала блокировать сбор.
+    const reliabilityWindowStart = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const syncRunStats = await prisma.auctionSyncRun.groupBy({
+      by: ["source", "status"],
+      where: { startedAt: { gte: reliabilityWindowStart } },
+      _count: { _all: true },
+    })
+
+    const reliabilityBySource = new Map<string, { succeeded: number; partial: number; failed: number }>()
+    for (const row of syncRunStats) {
+      const entry = reliabilityBySource.get(row.source) || { succeeded: 0, partial: 0, failed: 0 }
+      if (row.status === "SUCCEEDED") entry.succeeded += row._count._all
+      else if (row.status === "PARTIAL") entry.partial += row._count._all
+      else if (row.status === "FAILED") entry.failed += row._count._all
+      reliabilityBySource.set(row.source, entry)
+    }
+
     const latestSyncBySource = new Map<string, { status: string; startedAt: Date }>()
     for (const run of sourceSyncRuns) {
       if (!latestSyncBySource.has(run.source)) latestSyncBySource.set(run.source, run)
@@ -360,6 +379,8 @@ export async function GET() {
       const configured = source.value === "ENCAR" || source.value === "KCAR"
         || configuredFeeds.has(source.value)
         || (source.value === "MOBILE_DE" && Boolean(process.env.MOBILE_DE_API_USERNAME && process.env.MOBILE_DE_API_PASSWORD))
+      const reliability = reliabilityBySource.get(source.value)
+      const runs24h = reliability ? reliability.succeeded + reliability.partial + reliability.failed : 0
       return {
         source: source.value,
         label: source.label,
@@ -369,6 +390,12 @@ export async function GET() {
         configured,
         lastStatus: latest?.status || null,
         lastSyncAt: latest?.startedAt || null,
+        runs24h,
+        failed24h: reliability?.failed || 0,
+        partial24h: reliability?.partial || 0,
+        // Доля успешных прогонов за сутки: она отвечает на вопрос «источник
+        // работает?» точнее, чем статус последнего запуска.
+        successRate24h: runs24h > 0 ? Math.round(((reliability?.succeeded || 0) / runs24h) * 100) : null,
       }
     })
 

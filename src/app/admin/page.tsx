@@ -144,6 +144,10 @@ type AdminStats = {
     configured: boolean
     lastStatus: string | null
     lastSyncAt: string | null
+    runs24h: number
+    failed24h: number
+    partial24h: number
+    successRate24h: number | null
   }>
   sourceFieldMatrix: Array<{
     source: string
@@ -647,6 +651,29 @@ export default function AdminDashboard() {
                     {statusMeta && <Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>}
                     {source.lastSyncAt && <Text size="10px" c="dimmed">{new Date(source.lastSyncAt).toLocaleDateString("ru-RU")}</Text>}
                   </Group>
+                  {/* Единичная ошибка нормальна для публичного каталога, а
+                      устойчивая доля падений означает, что площадка сменила
+                      разметку или начала блокировать сбор. */}
+                  {source.successRate24h !== null && (
+                    <Box mt={8}>
+                      <Group justify="space-between" gap={4} wrap="nowrap">
+                        <Text size="10px" c="dimmed">Успешных прогонов за сутки</Text>
+                        <Text size="10px" fw={700}>{source.successRate24h}%</Text>
+                      </Group>
+                      <Progress
+                        mt={3}
+                        size="xs"
+                        radius="xl"
+                        value={source.successRate24h}
+                        color={source.successRate24h >= 80 ? "teal" : source.successRate24h >= 50 ? "yellow" : "red"}
+                      />
+                      <Text size="10px" c="dimmed" mt={3}>
+                        {source.runs24h} прогонов
+                        {source.failed24h > 0 ? ` · ошибок ${source.failed24h}` : ""}
+                        {source.partial24h > 0 ? ` · частично ${source.partial24h}` : ""}
+                      </Text>
+                    </Box>
+                  )}
                 </Paper>
               )
             })}
