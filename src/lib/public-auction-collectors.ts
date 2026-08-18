@@ -356,6 +356,21 @@ const CARVAGO_CITY_LABELS: Readonly<Record<string, string>> = {
   bragadiru: "Брагадиру",
 }
 
+// Пустая страница каталога — обычное состояние, а не поломка: площадка
+// вернула заглушку или страница вышла за границу выдачи. Отдельный тип
+// нужен, чтобы такой прогон не помечался как FAILED и не портил метрику
+// надёжности источника.
+export class EmptyCatalogPageError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "EmptyCatalogPageError"
+  }
+}
+
+export function isEmptyCatalogPageError(error: unknown): error is EmptyCatalogPageError {
+  return error instanceof Error && error.name === "EmptyCatalogPageError"
+}
+
 export class PublicListingUnavailableError extends Error {
   constructor(message: string) {
     super(message)
@@ -862,7 +877,7 @@ export async function discoverPublicAuctionCandidates(source: PublicAuctionSourc
             : source === "AUTOSALE" ? parseAutosaleSitemap(html)
               : source === "BOBAEDREAM" ? parseBobaedreamCatalog(html)
                 : parseCarvagoSitemap(html)
-  if (!all.length) throw new Error(`${source}: публичный каталог не содержит распознаваемых карточек`)
+  if (!all.length) throw new EmptyCatalogPageError(`${source}: страница ${page} каталога пуста`)
   if (source === "IAUTOS" || source === "YOUXINPAI" || source === "BOBAEDREAM") return { total: all.length, candidates: all.slice(0, limit) }
   const start = ((page - 1) * limit) % all.length
   return { total: all.length, candidates: [...all.slice(start), ...all.slice(0, start)].slice(0, limit) }

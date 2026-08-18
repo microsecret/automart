@@ -5,6 +5,7 @@ import {
   discoverPublicAuctionCandidates,
   fetchPublicAuctionListing,
   isPublicAuctionSource,
+  isEmptyCatalogPageError,
   isPublicListingUnavailableError,
   publicSourceCatalogUrl,
   publicSourceMaximumPage,
@@ -20,6 +21,8 @@ const MAX_CANDIDATES_PER_SYNC = 24
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ source: string }> }) {
   let syncRunId: string | null = null
+  // Номер страницы нужен и в ответе об ошибке, поэтому живёт вне try.
+  let page = 1
   const rawSource = (await params).source.toUpperCase()
   if (!isPublicAuctionSource(rawSource)) return NextResponse.json({ error: "Unknown public source" }, { status: 404 })
   const source = rawSource
@@ -38,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const maximumPage = publicSourceMaximumPage(source)
     const previousRuns = await prisma.auctionSyncRun.count({ where: { source, syncKind: "DISCOVERY", status: { not: "RUNNING" } } })
     const requestedPage = Number(body?.page)
-    const page = Number.isInteger(requestedPage) ? Math.min(Math.max(requestedPage, 1), maximumPage) : previousRuns % maximumPage + 1
+    page = Number.isInteger(requestedPage) ? Math.min(Math.max(requestedPage, 1), maximumPage) : previousRuns % maximumPage + 1
     const catalogUrl = publicSourceCatalogUrl(source, page)
     const syncRun = await prisma.auctionSyncRun.create({
       data: { source, syncKind: "DISCOVERY", requestedLimit: limit, catalogUrl }, select: { id: true },
@@ -91,6 +94,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
     return NextResponse.json({ success: true, source, status, page, catalogTotal: catalog.total, discovered: catalog.candidates.length, imported: items.length, unavailable, skippedKnown, skippedByPolicy, excludedByPolicy, failed, ...result })
   } catch (error) {
+    // Пустая страница каталога — не поломка источника: площадка вернула
+    // заглушку или страница вышла за границу выдачи. Такой прогон
+    // завершается успешно с нулём находок, иначе метрика надёжности
+    // показывала бы отказ там, где его нет.
+    if (isEmptyCatalogPageError(error)) {
+      if (syncRunId) {
+        await prisma.auctionSyncRun.update({
+          where: { id: syncRunId },
+          data: { status: "SUCCEEDED", discovered: 0, imported: 0, completedAt: new Date() },
+        }).catch(() => undefined)
+      }
+      return NextResponse.json({
+        success: true,
+        source,
+        status: "SUCCEEDED",
+        page,
+        discovered: 0,
+        imported: 0,
+        note: error instanceof Error ? error.message : "Страница каталога пуста",
+      })
+    }
+
     console.error(`${source} public sync error:`, error)
     if (syncRunId) {
       await prisma.auctionSyncRun.update({

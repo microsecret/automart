@@ -9,6 +9,7 @@
 const KEYS = (process.env.NVIDIA_KEYS || "").split(",").map((key) => key.trim()).filter(Boolean)
 const NVIDIA_MODEL = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.1-70b-instruct"
 const AUTH_FAILURE_COOLDOWN_MS = 5 * 60 * 1000
+const RATE_LIMIT_BACKOFF_MS = 1_200
 // Ключ, отвергнутый провайдером, пропускается до конца жизни процесса:
 // отозванный ключ сам не восстановится, а повторные попытки создают лишний
 // трафик и шум в логах на каждом импортируемом лоте.
@@ -131,6 +132,9 @@ export async function translateToRussian(text: string): Promise<string> {
         // лимит вернут все ключи, в логе должно быть видно именно это, а не
         // пустое «undefined».
         lastError = new Error("NVIDIA API 429: rate limit on every key")
+        // Короткая пауза перед следующим ключом: без неё импорт пробегает по
+        // всем ключам за миллисекунды и упирается в тот же лимит.
+        await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_BACKOFF_MS))
         continue
       }
 
@@ -199,9 +203,10 @@ export async function translateListingFields(fields: {
     if (/[A-Za-z]/.test(value) && candidate.trim() === value.trim() && !CYRILLIC_SCRIPT.test(candidate)) return null
     return candidate
   }
-  const [descriptionRu, specsRu] = await Promise.all([
-    translateField(fields.description),
-    translateField(fields.specs),
-  ])
+  // Поля переводятся последовательно: параллельная пара удваивает частоту
+  // запросов, а при импорте партии лотов это упирается в лимит провайдера и
+  // возвращает 429 по всем ключам сразу.
+  const descriptionRu = await translateField(fields.description)
+  const specsRu = await translateField(fields.specs)
   return { descriptionRu, specsRu }
 }
