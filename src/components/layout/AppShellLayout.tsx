@@ -185,10 +185,11 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </SidebarPanel>
 
-              <Group justify="space-between" px={4} pt={2}>
-                <Button component={Link} href="/news" variant="subtle" color="gray" size="compact-xs" leftSection={<IconNews size={14} />}>Новости</Button>
-                <Button component={Link} href="/help/safety" variant="subtle" color="gray" size="compact-xs">Помощь</Button>
-              </Group>
+              {/* «Новости» и «Помощь» есть в шапке, а здесь они упирались в
+                  нижний край прокручиваемой области и обрезались. Дубль убран,
+                  вместо него — отступ, чтобы последний блок меню не липнул к
+                  краю. */}
+              <Box h={8} />
           </Stack>
         </AppShell.Section>
       </AppShell.Navbar>

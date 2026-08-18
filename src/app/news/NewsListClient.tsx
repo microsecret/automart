@@ -30,12 +30,16 @@ type NewsResponse = {
 
 function NewsCard({ article, featured }: { article: NewsArticle; featured: boolean }) {
   const source = article.sourceChannel ? `@${article.sourceChannel}` : "Новости рынка"
+  // Картинки ведут на сайты источников, и часть из них закрыта от чужих
+  // страниц: карточка оставалась с белым прямоугольником вместо обложки.
+  // При ошибке загрузки показываем ту же оформленную заглушку.
+  const [imageFailed, setImageFailed] = useState(false)
 
   return (
     <Link className="news-list-card-link" data-featured={featured || undefined} href={newsHref(article)} aria-label={`Открыть новость: ${article.title}`}>
       <Card className="news-list-card" data-featured={featured || undefined} radius="lg" p={0} withBorder>
-        {article.imageUrl ? (
-          <Image className="news-list-card__image" src={article.imageUrl} alt="" h={featured ? 230 : 156} fit="cover" />
+        {article.imageUrl && !imageFailed ? (
+          <Image className="news-list-card__image" src={article.imageUrl} alt="" h={featured ? 230 : 156} fit="cover" onError={() => setImageFailed(true)} />
         ) : (
           <Box className="news-list-card__cover" data-featured={featured || undefined} aria-hidden="true">
             <ThemeIcon className="news-list-card__cover-icon" color="indigo" variant="white" radius="xl" size={featured ? 54 : 42}>
