@@ -29,7 +29,9 @@
   --market-control-text: #273142;
   --market-placeholder: #667085;
   --market-focus: rgba(99, 102, 241, 0.18);
-  --market-primary-soft: #eef2ff;
+  /* Мягкая подложка отличалась от фона страницы всего на 6% светлоты, поэтому
+     активный пункт меню было не отличить от обычного. */
+  --market-primary-soft: #dfe4ff;
   --market-scroll-thumb: #d4d4d8;
   /* Выделение текста и каретка приходили из настроек браузера, поэтому на
      фирменных страницах вспыхивали чужой синевой. Собственные токены держат
@@ -499,11 +501,22 @@ select {
   height: 100%;
 }
 
+/* Подвал лежит внутри колонки контента, которую AppShell отодвигает вправо на
+   ширину бокового меню. Из-за этого он обрывался по левому краю, не доходя до
+   края экрана. Отрицательный отступ возвращает его на всю ширину окна, а
+   внутренний padding удерживает содержимое над колонкой контента. */
 .market-app-footer {
   position: relative;
   z-index: 2;
-  width: 100%;
-  margin-left: 0;
+  width: 100vw;
+  margin-left: calc(-1 * var(--app-shell-navbar-offset, 0px));
+}
+
+@media (min-width: 62em) {
+  .market-app-footer {
+    --app-shell-navbar-offset: 236px;
+    padding-left: 236px;
+  }
 }
 
 @media (max-width: 61.99em) {
@@ -708,9 +721,13 @@ select {
   color: var(--market-ink);
 }
 
+/* Градиент уводил подложку почти в белый, и активный пункт терялся среди
+   обычных. Сплошная заливка плюс цветной текст называют текущий раздел сразу. */
 .market-side-nav[data-active] {
-  background: linear-gradient(135deg, var(--market-primary-soft), color-mix(in srgb, var(--market-primary-soft) 72%, var(--market-surface)));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #818cf8 30%, transparent), 0 8px 16px -16px rgba(79, 70, 229, 0.72);
+  background: var(--market-primary-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--market-primary) 22%, transparent);
+  color: var(--market-primary);
+  font-weight: 700;
 }
 
 /* Подпункт отличается отступом и приглушённым цветом, а не третьим весом:
