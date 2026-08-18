@@ -976,6 +976,42 @@ select {
   }
 }
 
+/* Вводка раздела аукционов. Отдаётся серверным layout, поэтому заголовок
+   попадает в HTML для поисковика, а не появляется только после гидратации. */
+.auction-intro {
+  max-width: var(--mantine-container-size-xl, 1320px);
+  margin: 0 auto;
+  padding: 20px 16px 0;
+}
+
+.auction-intro__title {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--market-ink);
+  text-wrap: balance;
+}
+
+.auction-intro__lead {
+  /* Мера строки держится в пределах 70 символов: длиннее глаз теряет начало
+     следующей строки. */
+  max-width: 68ch;
+  margin: 8px 0 0;
+  font-size: clamp(0.9rem, 0.87rem + 0.14vw, 1rem);
+  line-height: 1.65;
+  color: var(--market-muted);
+  text-wrap: pretty;
+}
+
+@media (max-width: 48em) {
+  .auction-intro {
+    padding: 14px 12px 0;
+  }
+}
+
 /* Выделение текста — в палитре проекта, а не в системной синеве браузера */
 ::selection {
   background: var(--market-selection);

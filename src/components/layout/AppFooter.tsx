@@ -59,9 +59,13 @@ const SOCIALS = telegramBotUsername
 
 export default function AppFooter() {
   return (
+    // Раньше подвал отделяла полоса 3px сплошного индиго — приём, который
+    // читается как шаблонная заготовка. Отделение теперь держат тонкая линия
+    // и мягкое свечение того же цвета: граница видна, но не кричит.
     <Box component="footer" className="market-app-footer" style={{
       background: "linear-gradient(180deg, #09090b 0%, #000000 100%)",
-      borderTop: "3px solid #4f46e5",
+      borderTop: "1px solid rgba(79, 70, 229, 0.55)",
+      boxShadow: "inset 0 6px 24px -18px rgba(99, 102, 241, 0.9)",
       marginTop: 60,
     }}>
       <Container size="xl" py="xl">
@@ -124,12 +128,15 @@ export default function AppFooter() {
 
           {/* Нижняя секция */}
           <Group justify="space-between" align="center" wrap="wrap" gap="md">
-            <Text size="xs" c="#52525b">© {new Date().getFullYear()} LeWheel</Text>
+            {/* Копирайт и нижние ссылки были #52525b и #71717a — контраст 2.6
+                и 4.1 на чёрной подложке, ниже нормы WCAG AA. Ссылки к тому же
+                шли тремя разными оттенками, хотя это один уровень навигации. */}
+            <Text size="xs" c="#8a8a94">© {new Date().getFullYear()} LeWheel</Text>
             <Group gap="lg" wrap="wrap">
-              <Anchor component={Link} href="/about" size="xs" c="#71717a">О проекте</Anchor>
-              <Anchor component={Link} href="/news" size="xs" c="#71717a">Новости</Anchor>
-              <Anchor component={Link} href="/legal/privacy" size="xs" c="gray.5">Конфиденциальность</Anchor>
-              <Anchor component={Link} href="/legal/terms" size="xs" c="gray.5">Условия</Anchor>
+              <Anchor component={Link} href="/about" size="xs" c="#a1a1aa">О проекте</Anchor>
+              <Anchor component={Link} href="/news" size="xs" c="#a1a1aa">Новости</Anchor>
+              <Anchor component={Link} href="/legal/privacy" size="xs" c="#a1a1aa">Конфиденциальность</Anchor>
+              <Anchor component={Link} href="/legal/terms" size="xs" c="#a1a1aa">Условия</Anchor>
             </Group>
           </Group>
         </Stack>

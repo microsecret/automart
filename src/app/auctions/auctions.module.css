@@ -222,8 +222,10 @@
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
   content: "";
   opacity: 0;
-  transform: skewX(-18deg);
-  transition: left 420ms ease, opacity 140ms ease;
+  /* Блик ехал через left, из-за чего браузер пересчитывал раскладку кнопки
+     на каждом кадре. Тот же путь на transform идёт мимо layout. */
+  transform: translateX(0) skewX(-18deg);
+  transition: transform 420ms ease, opacity 140ms ease;
 }
 
 .detailCta svg {
@@ -248,7 +250,9 @@
 }
 
 :global(.auction-result-card:hover) .detailCta::before {
-  left: 116%;
+  /* Путь блика — от -38% до 116% ширины кнопки, то есть 154%. Сам элемент
+     шириной 26%, поэтому в его собственных долях сдвиг равен 592%. */
+  transform: translateX(592%) skewX(-18deg);
   opacity: 1;
 }
 

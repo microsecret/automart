@@ -253,14 +253,14 @@ function AuctionsPageContent() {
   return (
     <Container size="xl" p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
+        {/* Заголовок страницы отдаёт серверный layout, иначе поисковик не
+            видел бы на разделе ни h1, ни текста: страница клиентская.
+            Здесь остаётся только живая статистика по загруженным лотам. */}
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="orange" size={44} radius="md"><IconGavel size={22} /></ThemeIcon>
-          <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Аукционы мира</Text>
-            <Text size="xs" c="gray.5">
-              {data?.pagination?.total || 0} авто в активном каталоге · {sourceSummary ? `источники: ${sourceSummary}` : "источники уточняются"} · доставка в РФ
-            </Text>
-          </Stack>
+          <Text size="xs" c="gray.5">
+            {data?.pagination?.total || 0} авто в активном каталоге · {sourceSummary ? `источники: ${sourceSummary}` : "источники уточняются"} · доставка в РФ
+          </Text>
         </Group>
 
         <Paper radius="lg" p="md" withBorder className="auction-filter-panel">
