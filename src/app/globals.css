@@ -3269,7 +3269,7 @@ select {
 
 .part-result-card__status-badge[data-tone="neutral"] {
   color: #475569 !important;
-  background: #f3f5f8 !important;
+  background: var(--market-surface-subtle) !important;
   border-color: #dde3ea;
 }
 
@@ -3284,7 +3284,7 @@ select {
   min-height: 20px;
   padding: 2px 6px;
   border-radius: 6px;
-  background: #f5f7fa;
+  background: var(--market-surface-subtle);
   color: #64748b;
   font-size: 11px;
   font-weight: 650;
@@ -4149,7 +4149,7 @@ select {
 
 .admin-workspace-navigation__item {
   color: #334155 !important;
-  background: #f8fafc !important;
+  background: var(--market-surface-subtle) !important;
   border: 1px solid #e2e8f0 !important;
   font-weight: 750 !important;
 }
@@ -4252,7 +4252,7 @@ select {
 }
 
 .admin-directory__table .mantine-Table-tr:hover {
-  background: #f8faff;
+  background: var(--market-primary-soft);
 }
 
 @media (max-width: 48em) {
