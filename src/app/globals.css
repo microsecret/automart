@@ -662,11 +662,24 @@ select {
 }
 
 .market-side-account,
+/* Каждая группа меню была отдельной белой карточкой с рамкой и тенью, и
+   боковая панель распадалась на лоскуты. Теперь она — одно полотно: границы
+   между разделами держат заголовки групп, а не рамки. */
 .market-side-panel,
 .market-side-service {
-  border-color: var(--market-line);
-  background: var(--market-surface);
-  box-shadow: 0 10px 24px -24px rgba(15, 23, 42, 0.8);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Тонкая линия отделяет группы друг от друга, не превращая их в карточки. */
+.market-side-panel + .market-side-panel,
+.market-side-panel + .market-side-service,
+.market-side-service + .market-side-panel {
+  border-top: 1px solid var(--market-line);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  padding-top: 10px;
 }
 
 .market-side-account {
