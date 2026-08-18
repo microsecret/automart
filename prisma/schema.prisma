@@ -62,6 +62,10 @@ model User {
   adminAuditEvents              AdminAuditEvent[]              @relation("AdminAuditActor")
   partStores                    PartStore[]                    @relation("PartStoreOwner")
   partOrders                    PartOrder[]                    @relation("PartOrderBuyer")
+  referralsMade                 ReferralAttribution[]          @relation("ReferralPartner")
+  referralOrigin                ReferralAttribution?           @relation("ReferralInvitee")
+  referralRewards               ReferralReward[]               @relation("ReferralRewardPartner")
+  referralPayouts               ReferralPayout[]               @relation("ReferralPayoutPartner")
   reportsReviewed               ListingReport[]                @relation("ListingReportReviewer")
   promotionOrders               PromotionOrder[]
   supportTickets                SupportTicket[]                @relation("SupportTicketRequester")
@@ -1228,4 +1232,59 @@ model AdminAuditEvent {
   @@index([actorId, createdAt])
   @@index([entityType, entityId, createdAt])
   @@index([action, createdAt])
+}
+
+// === ПАРТНЁРСКАЯ ПРОГРАММА ===
+
+// Кто кого привёл. Связь фиксируется один раз при регистрации и не меняется:
+// иначе вознаграждение можно было бы переписать задним числом.
+model ReferralAttribution {
+  id         String   @id @default(uuid())
+  partnerId  String
+  partner    User     @relation("ReferralPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+  inviteeId  String   @unique
+  invitee    User     @relation("ReferralInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  code       String
+  source     String? // страница или канал перехода
+  createdAt  DateTime @default(now())
+
+  @@index([partnerId, createdAt])
+  @@index([code])
+}
+
+// Начисление за оплату приглашённого. Хранится как отдельная запись, чтобы
+// история начислений оставалась проверяемой, даже если тариф позже отменят.
+model ReferralReward {
+  id                String   @id @default(uuid())
+  partnerId         String
+  partner           User     @relation("ReferralRewardPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+  inviteeId         String
+  promotionOrderId  String   @unique
+  // Сумма платежа и процент на момент начисления: шкала со временем меняется,
+  // а уже начисленное пересчитывать нельзя.
+  orderAmountRub    Int
+  percent           Int
+  amountRub         Int
+  status            String   @default("ACCRUED") // ACCRUED, PAID, CANCELLED
+  cancelReason      String?
+  createdAt         DateTime @default(now())
+
+  @@index([partnerId, status, createdAt])
+}
+
+// Выплата, которую администратор провёл вручную по расчётному счёту.
+// Площадка не переводит деньги сама, поэтому запись фиксирует факт перевода,
+// а не инициирует его.
+model ReferralPayout {
+  id          String   @id @default(uuid())
+  partnerId   String
+  partner     User     @relation("ReferralPayoutPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+  amountRub   Int
+  method      String? // расчётный счёт, карта, иное
+  reference   String? // номер платёжного поручения
+  comment     String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([partnerId, createdAt])
 }
