@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
+import { checkPartnerAccess } from "@/lib/partner-access"
 
 export const dynamic = "force-dynamic"
 
@@ -84,6 +85,8 @@ export async function GET() {
       needsAttention: listings.filter((listing) => listing.status === LISTING_STATUS.REJECTED || listing.status === LISTING_STATUS.PAUSED).length,
     }
 
+    const partnerAccess = await checkPartnerAccess(userId, session.user.role)
+
     return NextResponse.json({
       stats: {
         totalListings: listings.length,
@@ -116,6 +119,11 @@ export async function GET() {
       })),
       favorites: favorites?.favoriteListings || [],
       promotionOrders,
+      // Меню кабинета показывало партнёрские разделы всем подряд, поэтому
+      // обычный продавец открывал магазин и упирался в отказ доступа.
+      // Статус приходит вместе со статистикой, чтобы не звать отдельный запрос
+      // на каждой странице.
+      partnerAccess,
     })
   } catch (error) {
     console.error("Dashboard stats error:", error)

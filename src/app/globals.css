@@ -654,6 +654,19 @@ select {
   min-width: 0;
 }
 
+/* Подпись группы в меню кабинета. Одиннадцать пунктов подряд читались одним
+   полотном, поэтому партнёрские разделы отделены заголовком, а не ещё одной
+   линией: линия делит, но не объясняет, что именно ниже. */
+.market-side-account__group {
+  margin: 10px 0 2px;
+  padding-inline: 10px;
+  color: var(--market-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .market-side-account__link:hover {
   background: color-mix(in srgb, var(--market-primary-soft) 82%, transparent);
 }
@@ -4354,13 +4367,12 @@ select {
    последнюю строку футера, делая её ссылки некликабельными. Отступ снизу
    освобождает эту зону; на мобильных сам лаунчер уже поднят над нижней
    навигацией отдельным правилом выше. */
-.market-app-footer {
-  padding-bottom: 84px;
-}
-
-@media (max-width: 900px) {
+/* Отступ снизу оставляет место плавающей мобильной навигации, которая
+   включается только на узких экранах. Раньше он стоял без медиазапроса, и на
+   десктопе под подвалом висело 84 пикселя пустоты, не занятой ничем. */
+@media (max-width: 640px) {
   .market-app-footer {
-    padding-bottom: 132px;
+    padding-bottom: 96px;
   }
 }
 

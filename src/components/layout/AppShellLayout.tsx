@@ -74,6 +74,10 @@ type AccountSummary = {
     pendingModeration: number
     needsAttention: number
   }
+  partnerAccess?: {
+    allowed: boolean
+    applicationStatus: "NONE" | "PENDING" | "VERIFIED" | "REJECTED" | "SUSPENDED"
+  }
 }
 
 export default function AppShellLayout({ children }: { children: React.ReactNode }) {
@@ -287,6 +291,10 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
   const summary = data?.stats
   const workflow = data?.workflow
   const hasAttention = Boolean((workflow?.needsAttention || 0) + (workflow?.pendingModeration || 0) + (summary?.activeDeliveries || 0))
+  // Партнёрские разделы показываются только тем, кто прошёл проверку
+  // компании. Раньше они висели в меню у всех, и обычный продавец открывал
+  // магазин лишь затем, чтобы получить отказ доступа.
+  const isPartner = Boolean(data?.partnerAccess?.allowed)
 
   return (
     <Paper className="market-side-account market-side-account--user" radius="lg" p="sm" withBorder shadow="xs" aria-label="Личный кабинет">
@@ -303,7 +311,9 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
 
       <Paper className="market-side-account__summary" radius="md" p="xs" mt="sm" withBorder>
         <Group justify="space-between" gap="xs" wrap="nowrap">
-          <Stack gap={0}><Text size="xs" c="dimmed" fw={650}>Ваш кабинет</Text><Text size="xs" fw={700}>{hasAttention ? "Проверьте новые события" : "Всё под контролем"}</Text></Stack>
+          {/* Подпись и значение различаются цветом, а не весом: раньше 650
+              против 700 на одном кегле читалось как неровность набора. */}
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={500}>Ваш кабинет</Text><Text size="xs" fw={700}>{hasAttention ? "Проверьте новые события" : "Всё под контролем"}</Text></Stack>
           <ThemeIcon variant="light" color={hasAttention ? "orange" : "teal"} size={30} radius="md"><IconLayoutDashboard size={16} /></ThemeIcon>
         </Group>
       </Paper>
@@ -312,10 +322,20 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         <NavLink component={Link} href="/dashboard" label="Мои объявления" leftSection={<IconLayoutDashboard size={16} />} rightSection={<AccountCounter value={summary?.totalListings || 0} color="indigo" />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="light" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard?tab=favorites" label="Избранное" leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} color="pink" />} active={pathname === "/dashboard" && dashboardTab === "favorites"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard?tab=garage" label="Личный гараж" leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} color="teal" />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/dashboard/deliveries" label="Мои доставки" leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} color="orange" />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard/orders" label="Мои заказы" leftSection={<IconClipboardList size={16} />} active={pathname.startsWith("/dashboard/orders")} color="indigo" variant="subtle" className="market-side-account__link" />
+
+        {/* Партнёрский блок отделён подписью: до проверки компании этих
+            разделов в меню нет вовсе, поэтому список у обычного продавца
+            короче на треть. */}
+        {isPartner && (
+          <>
+            <Text className="market-side-account__group" component="p">Партнёрские разделы</Text>
+            <NavLink component={Link} href="/dashboard/deliveries" label="Мои доставки" leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} color="orange" />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
+            <NavLink component={Link} href="/dashboard/store" label="Магазин запчастей" leftSection={<IconBuildingStore size={16} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
+          </>
+        )}
+
         <NavLink component={Link} href="/dashboard/referral" label="Партнёрская программа" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/dashboard/store" label="Магазин запчастей" leftSection={<IconBuildingStore size={16} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
         <Divider my={2} />
         <NavLink component={Link} href="/messages" label="Сообщения" leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} color="red" />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/notifications" label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} color="red" />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
@@ -333,10 +353,10 @@ function SidebarPanel({ title, href, icon, children }: { title: string; href?: s
     <Paper className="market-side-panel" radius="lg" p={6} withBorder>
       {href ? (
         <Link href={href} className="market-side-panel__title-link">
-          <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={800} tt="uppercase" c="dimmed">{title}</Text></Group>
+          <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={700} tt="uppercase" c="dimmed">{title}</Text></Group>
         </Link>
       ) : (
-        <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={800} tt="uppercase" c="dimmed">{title}</Text></Group>
+        <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={700} tt="uppercase" c="dimmed">{title}</Text></Group>
       )}
       <Stack gap={1} mt={2}>{children}</Stack>
     </Paper>
