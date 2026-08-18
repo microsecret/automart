@@ -11,6 +11,7 @@ import {
   IconPlus, IconSend, IconTrash, IconUpload,
 } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import StoreOrdersPanel from "@/components/store/StoreOrdersPanel"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type Store = {
@@ -390,6 +391,8 @@ export default function StoreWorkspacePage() {
                 </Card>
               </Group>
             </Card>
+
+            <StoreOrdersPanel storeId={store.id} />
 
             <Card withBorder radius="lg" p="md">
               <Group gap="sm" mb="sm">
