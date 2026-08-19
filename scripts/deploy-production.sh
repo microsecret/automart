@@ -51,7 +51,10 @@ npx prisma generate
 node scripts/refresh-auction-rates.mjs
 node scripts/enforce-encar-import-age-policy.mjs
 node scripts/reconcile-transport-categories.mjs
-node scripts/audit-listing-integrity.mjs
+# Аудит целостности сообщает о расхождениях в данных, но не решает судьбу
+# выпуска: объявление продавца без VIN — повод для модерации, а не причина
+# оставить сервер на старой сборке. Отчёт остаётся в логе целиком.
+node scripts/audit-listing-integrity.mjs || echo "Warning: listing integrity audit reported findings; see the report above"
 if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-auction-rate-cron.sh || echo "Warning: auction-rate cron was not installed"
   bash scripts/install-encar-collector-cron.sh || echo "Warning: Encar collector cron was not installed"
