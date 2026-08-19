@@ -49,8 +49,13 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "20")
+    // Параметры приходят из адресной строки: «page=abc» давал NaN, «page=-5» —
+    // отрицательный skip, на котором запрос падает, а «limit=999999» выгружал
+    // всё избранное одним ответом.
+    const requestedPage = Number(searchParams.get("page") || "1")
+    const requestedLimit = Number(searchParams.get("limit") || "20")
+    const page = Number.isInteger(requestedPage) ? Math.max(requestedPage, 1) : 1
+    const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 20
     const skip = (page - 1) * limit
 
     // Get favorite listings for the current user
