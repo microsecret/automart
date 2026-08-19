@@ -141,12 +141,55 @@ export async function translateModelName(text: string): Promise<string> {
   return translateToRussian(text, MODEL_PROMPT)
 }
 
+/**
+ * Читает перевод из базы.
+ *
+ * Отказ хранилища не должен останавливать импорт: при ошибке возвращается
+ * null, и текст уходит на перевод как раньше.
+ */
+async function readStoredTranslation(key: string): Promise<string | null> {
+  try {
+    const { prisma } = await import("@/lib/prisma")
+    const row = await prisma.translationCache.findUnique({ where: { key }, select: { translated: true } })
+    if (!row) return null
+    // Счётчик обращений показывает, какие переводы реально нужны, и не
+    // задерживает импорт: результат уже получен.
+    void prisma.translationCache.update({ where: { key }, data: { hits: { increment: 1 } } }).catch(() => undefined)
+    return row.translated
+  } catch {
+    return null
+  }
+}
+
+/** Сохраняет перевод, не задерживая вызывающий код. */
+async function storeTranslation(key: string, sourceText: string, translated: string, mode: string) {
+  try {
+    const { prisma } = await import("@/lib/prisma")
+    await prisma.translationCache.upsert({
+      where: { key },
+      update: { translated, updatedAt: new Date() },
+      create: { key, sourceText: sourceText.slice(0, 2_000), translated, mode },
+    })
+  } catch {
+    // Кэш — ускорение, а не источник истины: перевод уже отдан вызывающему.
+  }
+}
+
 export async function translateToRussian(text: string, systemPrompt?: string): Promise<string> {
   if (!text || text.trim().length === 0) return text
   // Ключ кэша учитывает режим: одно название в двух режимах даёт разный
   // результат, а общий ключ вернул бы чужой перевод.
   const cacheKey = systemPrompt ? `model:${text}` : text
   if (cache.has(cacheKey)) return cache.get(cacheKey)!
+
+  // Второй уровень кэша — база. Память живёт до перезапуска, и после деплоя
+  // сборщик переводил те же названия заново: через прокси это десятки секунд
+  // на строку.
+  const stored = await readStoredTranslation(cacheKey)
+  if (stored) {
+    rememberTranslation(cacheKey, stored)
+    return stored
+  }
 
   // Если уже кириллица — не переводим
   if (/[\u0400-\u04FF]/.test(text) && !/[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(text)) {
@@ -221,6 +264,7 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
           continue
         }
         rememberTranslation(cacheKey, translated)
+        void storeTranslation(cacheKey, text, translated, systemPrompt ? "model" : "text")
         return translated
       }
 

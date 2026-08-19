@@ -1288,3 +1288,22 @@ model ReferralPayout {
 
   @@index([partnerId, createdAt])
 }
+
+/// Сохранённые переводы источников.
+///
+/// Кэш в памяти процесса терялся при каждом перезапуске, и после деплоя
+/// сборщик переводил те же названия заново — через прокси это десятки секунд
+/// на строку. Переводы детерминированы, поэтому хранятся между запусками.
+model TranslationCache {
+  /// Хэш исходного текста вместе с режимом перевода.
+  key         String   @id
+  sourceText  String
+  translated  String
+  /// Режим: обычный перевод или нормализация названия модели.
+  mode        String   @default("text")
+  hits        Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([updatedAt])
+}
