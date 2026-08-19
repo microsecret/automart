@@ -6,7 +6,50 @@
  * рабочие. Пауза включается только когда авторизацию отвергли все ключи.
  */
 
+import { parseProxyList, proxyJsonPost, type ProxyEndpoint } from "@/lib/proxy-fetch"
+
 const KEYS = (process.env.NVIDIA_KEYS || "").split(",").map((key) => key.trim()).filter(Boolean)
+const API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+
+// Провайдер отвечает 451 на запросы из региона сервера, поэтому обращения
+// идут через прокси. Список перебирается по кругу: один недоступный адрес не
+// должен останавливать перевод, пока остальные отвечают.
+const PROXIES = parseProxyList(process.env.NVIDIA_PROXIES)
+let proxyCursor = 0
+
+function nextProxy(): ProxyEndpoint | null {
+  if (!PROXIES.length) return null
+  const proxy = PROXIES[proxyCursor % PROXIES.length]
+  proxyCursor += 1
+  return proxy
+}
+
+/**
+ * Отправляет запрос к провайдеру: через прокси, если он настроен, иначе
+ * напрямую. Прямой путь оставлен, чтобы окружение без блокировки работало
+ * без лишнего звена.
+ */
+async function requestCompletion(apiKey: string, body: string) {
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }
+  const proxy = nextProxy()
+  if (!proxy) {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      signal: AbortSignal.timeout(20_000),
+      headers,
+      body,
+    })
+    return { status: response.status, ok: response.ok, text: () => response.text(), json: () => response.json() }
+  }
+
+  const response = await proxyJsonPost(API_URL, proxy, { headers, body, timeoutMs: 30_000 })
+  return {
+    status: response.status,
+    ok: response.ok,
+    text: async () => response.text,
+    json: async () => JSON.parse(response.text),
+  }
+}
 const NVIDIA_MODEL = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.1-70b-instruct"
 const AUTH_FAILURE_COOLDOWN_MS = 5 * 60 * 1000
 const RATE_LIMIT_BACKOFF_MS = 1_200
@@ -106,14 +149,7 @@ export async function translateToRussian(text: string): Promise<string> {
     }
 
     try {
-      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-        method: "POST",
-        signal: AbortSignal.timeout(20_000),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
+      const res = await requestCompletion(apiKey, JSON.stringify({
           model: NVIDIA_MODEL,
           messages: [
             {
@@ -124,8 +160,7 @@ export async function translateToRussian(text: string): Promise<string> {
           ],
           temperature: 0.3,
           max_tokens: 2000,
-        }),
-      })
+      }))
 
       if (res.status === 429) {
         // Rate limit — пробуем следующий ключ. Причина запоминается: если
