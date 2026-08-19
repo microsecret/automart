@@ -707,6 +707,21 @@ select {
   min-width: 0;
 }
 
+/* Подача объявления — главное действие продавца, поэтому кнопка несёт акцент,
+   а не тот же индиго, что и пункты меню вокруг неё. */
+.market-side-account__cta {
+  border: 0;
+  background: linear-gradient(135deg, var(--market-accent) 0%, #f0870a 100%);
+  color: var(--market-accent-ink);
+  box-shadow: 0 8px 18px -10px rgba(245, 159, 10, 0.85);
+  font-weight: 700;
+}
+
+.market-side-account__cta:hover {
+  background: linear-gradient(135deg, #f0870a 0%, #dd7a05 100%);
+  box-shadow: 0 12px 24px -10px rgba(245, 159, 10, 0.95);
+}
+
 /* Подпись группы в меню кабинета. Одиннадцать пунктов подряд читались одним
    полотном, поэтому партнёрские разделы отделены заголовком, а не ещё одной
    линией: линия делит, но не объясняет, что именно ниже. */
