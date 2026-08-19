@@ -95,6 +95,14 @@ const CHINESE_MAKES: ReadonlyArray<readonly [string, string]> = [
   // перехватил бы «长城哈弗» (Haval), а «奇瑞» — «奇瑞新能源».
   ["梅赛德斯-奔驰", "Mercedes-Benz"],
   ["玛莎拉蒂", "Maserati"], ["小米汽车", "Xiaomi"], ["小米", "Xiaomi"],
+  ["阿尔法罗密欧", "Alfa Romeo"], ["劳斯莱斯", "Rolls-Royce"],
+  ["英菲尼迪", "Infiniti"], ["捷豹", "Jaguar"], ["迷你", "MINI"],
+  ["江铃", "JMC"], ["北京汽车", "BAIC"],
+  // Народные модели Volkswagen источник пишет без марки, поэтому они
+  // распознаются как самостоятельные ярлыки: иначе лот отбраковывался
+  // с «не распознана марка».
+  ["帕萨特", "Volkswagen"], ["速腾", "Volkswagen"], ["迈腾", "Volkswagen"],
+  ["朗逸", "Volkswagen"], ["桑塔纳", "Volkswagen"], ["探岭", "Volkswagen"],
  ["阿尔法·罗密欧", "Alfa Romeo"], ["一汽-大众", "Volkswagen"],
   ["奇瑞新能源", "Chery"], ["smart", "Smart"], ["雷克萨斯", "Lexus"],
   ["凯迪拉克", "Cadillac"], ["广汽传祺", "GAC"], ["上汽大众", "Volkswagen"],
