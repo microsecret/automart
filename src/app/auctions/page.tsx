@@ -268,12 +268,11 @@ function AuctionsPageContent() {
         {/* Заголовок страницы отдаёт серверный layout, иначе поисковик не
             видел бы на разделе ни h1, ни текста: страница клиентская.
             Здесь остаётся только живая статистика по загруженным лотам. */}
-        <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="orange" size={44} radius="md"><IconGavel size={22} /></ThemeIcon>
-          <Text size="xs" c="gray.5">
-            {data?.pagination?.total || 0} авто в активном каталоге · {sourceSummary ? `источники: ${sourceSummary}` : "источники уточняются"} · доставка в РФ
-          </Text>
-        </Group>
+        {/* Иконка осталась от прежнего заголовка и после его переноса висела
+            в пустоте отдельным пятном. Строке статистики она не нужна. */}
+        <Text size="xs" c="gray.5">
+          {data?.pagination?.total || 0} авто в активном каталоге · {sourceSummary ? `источники: ${sourceSummary}` : "источники уточняются"} · доставка в РФ
+        </Text>
 
         <Paper radius="lg" p="md" withBorder className="auction-filter-panel">
           <Stack gap="sm">
