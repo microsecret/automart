@@ -133,6 +133,12 @@ function cancelAuctionDetailImageWarmup(listing: AuctionListing) {
   scheduledDetailImageWarmups.delete(imageUrl)
 }
 
+// Часть площадок отдаёт фотографии по полминуты и дольше. Карточка всё это
+// время оставалась пустой без единого пояснения, хотя ошибки не происходило:
+// браузер просто ждал ответа. По истечении срока показываем ту же заглушку,
+// что и при сбое загрузки.
+const IMAGE_WAIT_LIMIT_MS = 8_000
+
 function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; priority?: boolean }) {
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -140,6 +146,12 @@ function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; 
   const image = auctionCardImageUrl(originalImage)
   const hasImage = Boolean(image) && !failed
   const identity = auctionVehicleIdentity(listing.make, listing.model)
+
+  useEffect(() => {
+    if (!image || loaded || failed) return
+    const timer = window.setTimeout(() => setFailed(true), IMAGE_WAIT_LIMIT_MS)
+    return () => window.clearTimeout(timer)
+  }, [image, loaded, failed])
 
   return (
     <Box className="auction-card__media" data-empty-media={!hasImage || undefined} data-loading={hasImage && !loaded || undefined}>

@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
-const IAUTOS_IMAGE_HOSTS = new Set(["qimg.iautos.cn", "s1.iautos.cn", "s2.iautos.cn", "s3.iautos.cn"])
+// Хосты, отдающие файл напрямую: путь заканчивается расширением, поэтому тип
+// проверяется до запроса. Carsensor отвечает по тридцать секунд, и релей нужен
+// ему ради кэша — файл скачивается один раз, дальше приходит из него.
+const IAUTOS_IMAGE_HOSTS = new Set([
+  "qimg.iautos.cn",
+  "s1.iautos.cn",
+  "s2.iautos.cn",
+  "s3.iautos.cn",
+  "ccsrpcma.carsensor.net",
+])
 // Carvago отдаёт не файл, а 302 на подписанную ссылку S3 со сроком жизни в
 // один час. CloudFront кэширует сам редирект, поэтому браузер покупателя
 // регулярно получает уже просроченную подпись и карточка остаётся без фото.

@@ -45,6 +45,9 @@ const RELAYED_IMAGE_HOSTS = new Set([
   "s2.iautos.cn",
   "s3.iautos.cn",
   "storage.alpha-analytics.cz",
+  // Carsensor отдаёт снимки по тридцать секунд и дольше. Через релей файл
+  // скачивается один раз, а дальше приходит из кэша за миллисекунды.
+  "ccsrpcma.carsensor.net",
 ])
 
 function browserReachableAuctionImageUrl(value: string): string {
