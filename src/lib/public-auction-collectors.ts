@@ -11,7 +11,7 @@ import {
 } from "@/lib/auction-normalization"
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { extractIautosImages } from "@/lib/iautos-images"
-import { translateToRussian, translateModelName } from "@/lib/nvidia-translate"
+import { translateModelName } from "@/lib/nvidia-translate"
 
 export const PUBLIC_AUCTION_SOURCES = [
   "IAUTOS",
@@ -93,7 +93,9 @@ const CHINESE_MAKES: ReadonlyArray<readonly [string, string]> = [
   // Совпадение ищется вхождением в заголовок карточки, поэтому список
   // отсортирован от длинных названий к коротким: иначе «长城» (Great Wall)
   // перехватил бы «长城哈弗» (Haval), а «奇瑞» — «奇瑞新能源».
-  ["梅赛德斯-奔驰", "Mercedes-Benz"], ["阿尔法·罗密欧", "Alfa Romeo"], ["一汽-大众", "Volkswagen"],
+  ["梅赛德斯-奔驰", "Mercedes-Benz"],
+  ["玛莎拉蒂", "Maserati"], ["小米汽车", "Xiaomi"], ["小米", "Xiaomi"],
+ ["阿尔法·罗密欧", "Alfa Romeo"], ["一汽-大众", "Volkswagen"],
   ["奇瑞新能源", "Chery"], ["smart", "Smart"], ["雷克萨斯", "Lexus"],
   ["凯迪拉克", "Cadillac"], ["广汽传祺", "GAC"], ["上汽大众", "Volkswagen"],
   ["东风日产", "Nissan"], ["长安福特", "Ford"], ["北京现代", "Hyundai"],
@@ -943,7 +945,13 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   if (!title) throw new Error(`Iautos: у карточки ${candidate.sourceId} нет названия`)
   const makeEntry = CHINESE_MAKES.find(([label]) => title.includes(label))
   if (!makeEntry) throw new Error(`Iautos: не распознана марка «${diagnosticSourceLabel(title)}» карточки ${candidate.sourceId}`)
-  const modelOriginal = title.replace(makeEntry[0], "").trim()
+  // Источник иногда дублирует марку в начале строки («哈弗哈弗H6»), и снятие
+  // одного вхождения оставляло иероглифы в модели — лот отбраковывался.
+  let modelOriginal = title
+  while (modelOriginal.startsWith(makeEntry[0])) {
+    modelOriginal = modelOriginal.slice(makeEntry[0].length).trim()
+  }
+  modelOriginal = modelOriginal.replace(makeEntry[0], "").trim()
   const deterministicModel = normalizeAuctionModel(localizeChineseModel(modelOriginal))
   const model = deterministicModel || normalizeAuctionModel(await translateModelName(modelOriginal))
   if (!model) throw new Error(`Iautos: не переведена модель «${diagnosticSourceLabel(modelOriginal)}» карточки ${candidate.sourceId}`)
