@@ -51,6 +51,22 @@ async function requestCompletion(apiKey: string, body: string) {
   }
 }
 const NVIDIA_MODEL = process.env.NVIDIA_MODEL?.trim() || "meta/llama-3.1-70b-instruct"
+
+/**
+ * Модель подбирается под длину текста.
+ *
+ * Крупная модель переводит описание грамотно, но тратит на него до тридцати
+ * секунд — при десятке карточек прогон упирался в таймаут. На коротких полях
+ * вроде цвета и города разницы в качестве нет: замер показал «Белый» и
+ * «Пекин, район Чаоян» у обеих. Поэтому короткие поля уходят быстрой модели,
+ * а описание остаётся за крупной — его читает покупатель.
+ */
+const FAST_MODEL = process.env.NVIDIA_FAST_MODEL?.trim() || "meta/llama-3.1-8b-instruct"
+const FAST_MODEL_MAX_CHARS = 24
+
+function pickModel(text: string) {
+  return text.length <= FAST_MODEL_MAX_CHARS ? FAST_MODEL : NVIDIA_MODEL
+}
 const AUTH_FAILURE_COOLDOWN_MS = 5 * 60 * 1000
 const RATE_LIMIT_BACKOFF_MS = 1_200
 // Ключ, отвергнутый провайдером, пропускается до конца жизни процесса:
@@ -221,7 +237,7 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
 
     try {
       const res = await requestCompletion(apiKey, JSON.stringify({
-          model: NVIDIA_MODEL,
+          model: pickModel(text),
           messages: [
             {
               role: "system",

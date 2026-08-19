@@ -308,6 +308,7 @@ export default function AdminSupportPage() {
                       <Select
                         size="xs"
                         w={140}
+                        aria-label="Приоритет обращения"
                         data={PRIORITY_OPTIONS.filter((item) => item.value !== "ALL")}
                         value={ticket.priority}
                         onChange={(value) => value && void runAction("SET_PRIORITY", { priority: value })}
