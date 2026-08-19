@@ -23,7 +23,10 @@ if (process.env.NODE_ENV === "production") {
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       "connect-src 'self' https://api.telegram.org https://maps.googleapis.com https://maps.gstatic.com",
-      "frame-src 'self' https://*.telegram.org",
+      // Страница карты вставляет фрейм OpenStreetMap. Домена в политике не
+      // было, поэтому браузер блокировал врезку и вместо карты оставался
+      // пустой прямоугольник — основная функция страницы не работала.
+      "frame-src 'self' https://*.telegram.org https://www.openstreetmap.org",
     ].join("; "),
   })
 }

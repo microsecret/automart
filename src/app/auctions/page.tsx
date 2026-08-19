@@ -188,7 +188,12 @@ function AuctionsPageContent() {
     const params = new URLSearchParams(searchParams.toString())
     const requestedSource = params.get("source") || ""
     const sourceFromUrl = AUCTION_SOURCE_COUNTRY[requestedSource] ? requestedSource : ""
-    const requestedCountry = params.get("country") || ""
+    // «EU» — прежнее обозначение Европы, оставшееся в закладках и внешних
+    // ссылках. Сервер его понимает и подставляет Германию, а страница
+    // отбрасывала как неизвестное: человек по старой ссылке видел весь
+    // каталог вместо европейских машин.
+    const requestedCountryRaw = params.get("country") || ""
+    const requestedCountry = requestedCountryRaw === "EU" ? "DE" : requestedCountryRaw
     const countryFromUrl = validAuctionCountries.has(requestedCountry)
       ? requestedCountry
       : AUCTION_SOURCE_COUNTRY[sourceFromUrl] || ""

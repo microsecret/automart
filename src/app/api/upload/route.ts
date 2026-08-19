@@ -3,6 +3,7 @@ import { randomUUID } from "crypto"
 import { writeFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
 import path from "path"
+import sharp from "sharp"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { hasExpectedFileSignature } from "@/lib/file-signature"
@@ -62,11 +63,23 @@ export async function POST(request: NextRequest) {
     const uploadDir = path.join(process.cwd(), "public", "uploads")
     if (!existsSync(uploadDir)) await mkdir(uploadDir, { recursive: true })
 
-    const extensionByMime: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }
-    const filename = `${randomUUID()}.${extensionByMime[file.type]}`
+    // Снимок с телефона весит несколько мегабайт, а показывается в карточке
+    // шириной меньше тысячи точек. Раньше файл сохранялся как есть, и одна
+    // страница объявления тянула сорок мегабайт — на мобильной сети она
+    // фактически не открывалась. Уменьшение по длинной стороне и перевод в
+    // JPEG снимают вес в десятки раз, оставляя качество, достаточное для
+    // просмотра и увеличения.
+    const filename = `${randomUUID()}.jpg`
     const filepath = path.join(uploadDir, filename)
 
-    await writeFile(filepath, bytes)
+    const optimized = await sharp(bytes)
+      // Поворот по метаданным камеры: без него снимки с телефона ложатся боком.
+      .rotate()
+      .resize({ width: 1920, height: 1920, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 82, mozjpeg: true })
+      .toBuffer()
+
+    await writeFile(filepath, optimized)
 
     return NextResponse.json({ url: `/uploads/${filename}` })
   } catch (error) {
