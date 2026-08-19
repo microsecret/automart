@@ -11,7 +11,7 @@ import {
 } from "@/lib/auction-normalization"
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { extractIautosImages } from "@/lib/iautos-images"
-import { translateToRussian } from "@/lib/nvidia-translate"
+import { translateToRussian, translateModelName } from "@/lib/nvidia-translate"
 
 export const PUBLIC_AUCTION_SOURCES = [
   "IAUTOS",
@@ -945,7 +945,7 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   if (!makeEntry) throw new Error(`Iautos: не распознана марка «${diagnosticSourceLabel(title)}» карточки ${candidate.sourceId}`)
   const modelOriginal = title.replace(makeEntry[0], "").trim()
   const deterministicModel = normalizeAuctionModel(localizeChineseModel(modelOriginal))
-  const model = deterministicModel || normalizeAuctionModel(await translateToRussian(modelOriginal))
+  const model = deterministicModel || normalizeAuctionModel(await translateModelName(modelOriginal))
   if (!model) throw new Error(`Iautos: не переведена модель «${diagnosticSourceLabel(modelOriginal)}» карточки ${candidate.sourceId}`)
 
   const pairs = tablePairs(html)

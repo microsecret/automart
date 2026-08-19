@@ -127,9 +127,26 @@ function translateKnownKoreanAutomotiveTerms(text: string) {
   return KOREAN_AUTOMOTIVE_FALLBACKS.reduce((translated, [pattern, replacement]) => translated.replace(pattern, replacement), text)
 }
 
-export async function translateToRussian(text: string): Promise<string> {
+/**
+ * Названия моделей переводятся отдельным указанием.
+ *
+ * Обычная подсказка просит перевести текст, и провайдер пересказывал название
+ * фразой: «5-й серии 530Li 2022 года выпуска 2.0T автоматическая коробка»
+ * вместо «5 Series 530Li 2022 2.0T». В каталоге такое название не помещается
+ * в карточку и не совпадает с поисковым запросом.
+ */
+const MODEL_PROMPT = "You normalize car model names. Return the model designation only: keep the series name in Latin script, trim engine and gearbox wording to short technical tokens, and never write a sentence. Example: «5系 530Li 2022款 2.0T 自动» -> «5 Series 530Li 2022 2.0T AT». Output ONLY the name."
+
+export async function translateModelName(text: string): Promise<string> {
+  return translateToRussian(text, MODEL_PROMPT)
+}
+
+export async function translateToRussian(text: string, systemPrompt?: string): Promise<string> {
   if (!text || text.trim().length === 0) return text
-  if (cache.has(text)) return cache.get(text)!
+  // Ключ кэша учитывает режим: одно название в двух режимах даёт разный
+  // результат, а общий ключ вернул бы чужой перевод.
+  const cacheKey = systemPrompt ? `model:${text}` : text
+  if (cache.has(cacheKey)) return cache.get(cacheKey)!
 
   // Если уже кириллица — не переводим
   if (/[\u0400-\u04FF]/.test(text) && !/[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(text)) {
@@ -154,7 +171,7 @@ export async function translateToRussian(text: string): Promise<string> {
           messages: [
             {
               role: "system",
-              content: "You are a professional automotive translator. Translate the given text to Russian. Keep technical terms, car brands, and model names recognizable. Output ONLY the translation, no explanations.",
+              content: systemPrompt || "You are a professional automotive translator. Translate the given text to Russian. Keep technical terms, car brands, and model names recognizable. Output ONLY the translation, no explanations.",
             },
             { role: "user", content: text },
           ],
@@ -203,7 +220,7 @@ export async function translateToRussian(text: string): Promise<string> {
           lastError = new Error("Translation provider returned untranslated source script")
           continue
         }
-        rememberTranslation(text, translated)
+        rememberTranslation(cacheKey, translated)
         return translated
       }
 
