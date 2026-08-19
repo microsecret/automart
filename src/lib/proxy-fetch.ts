@@ -149,3 +149,77 @@ export async function proxyJsonPost(
     secureSocket.on("error", fail)
   })
 }
+
+/**
+ * Скачивает файл через прокси.
+ *
+ * Часть площадок ограничивает скорость по адресу сервера: Carsensor отдаёт
+ * снимок со скоростью 178 байт в секунду, и файл в 37 КБ не доходит целиком.
+ * Через прокси тот же файл приходит за доли секунды.
+ */
+export async function proxyGetBuffer(
+  url: string,
+  proxy: ProxyEndpoint,
+  options: { headers?: Record<string, string>; timeoutMs?: number; maxBytes?: number } = {},
+): Promise<{ status: number; ok: boolean; contentType: string | null; body: Buffer }> {
+  const target = new URL(url)
+  const timeoutMs = options.timeoutMs ?? 30_000
+  const maxBytes = options.maxBytes ?? 8 * 1024 * 1024
+  const port = Number(target.port || 443)
+  const socket = await openTunnel(proxy, target.hostname, port, timeoutMs)
+
+  return new Promise((resolve, reject) => {
+    let settled = false
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      socket.destroy()
+      reject(error)
+    }
+
+    const secureSocket = tlsConnect({ socket, servername: target.hostname }, () => {
+      const request = https.request({
+        createConnection: () => secureSocket,
+        host: target.hostname,
+        port,
+        path: `${target.pathname}${target.search}`,
+        method: "GET",
+        headers: options.headers,
+        timeout: timeoutMs,
+      }, (response) => {
+        const chunks: Buffer[] = []
+        let received = 0
+        response.on("data", (chunk: Buffer) => {
+          received += chunk.length
+          // Обрыв по превышению размера защищает память: содержимое чужое и
+          // заявленной длине верить нельзя.
+          if (received > maxBytes) {
+            response.destroy()
+            fail(new Error(`Файл превышает ${maxBytes} байт`))
+            return
+          }
+          chunks.push(chunk)
+        })
+        response.on("error", fail)
+        response.on("end", () => {
+          if (settled) return
+          settled = true
+          const status = response.statusCode || 0
+          resolve({
+            status,
+            ok: status >= 200 && status < 300,
+            contentType: response.headers["content-type"] || null,
+            body: Buffer.concat(chunks),
+          })
+          secureSocket.destroy()
+        })
+      })
+
+      request.on("timeout", () => fail(new Error(`Файл с ${target.hostname} не получен за ${timeoutMs} мс`)))
+      request.on("error", fail)
+      request.end()
+    })
+
+    secureSocket.on("error", fail)
+  })
+}

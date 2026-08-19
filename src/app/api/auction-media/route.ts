@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { parseProxyList, proxyGetBuffer } from "@/lib/proxy-fetch"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +18,10 @@ const IAUTOS_IMAGE_HOSTS = new Set([
 // регулярно получает уже просроченную подпись и карточка остаётся без фото.
 // Сервер проходит редирект в момент запроса и всегда получает свежую подпись.
 const REDIRECTING_IMAGE_HOSTS = new Set(["storage.alpha-analytics.cz"])
+// Carsensor ограничивает скорость по адресу сервера: снимок идёт со скоростью
+// 178 байт в секунду и обрывается на середине. Через прокси тот же файл
+// приходит за доли секунды, поэтому такие хосты качаются в обход.
+const THROTTLED_IMAGE_HOSTS = new Set(["ccsrpcma.carsensor.net"])
 const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 const FETCH_TIMEOUT_MS = 20_000
@@ -48,9 +53,56 @@ function permittedImageUrl(value: string | null): PermittedImage | null {
   }
 }
 
+/**
+ * Скачивает снимок через прокси.
+ *
+ * Возвращает null, если прокси не настроены или ответ не похож на картинку —
+ * тогда вызывающий код идёт обычным путём. Кэш ответа тот же, что и у прямой
+ * загрузки: медленный источник опрашивается один раз в сутки.
+ */
+async function fetchThrottledImage(url: URL) {
+  const proxies = parseProxyList(process.env.NVIDIA_PROXIES)
+  if (!proxies.length) return null
+
+  const proxy = proxies[Math.floor(Math.random() * proxies.length)]
+  try {
+    const response = await proxyGetBuffer(url.toString(), proxy, {
+      timeoutMs: FETCH_TIMEOUT_MS,
+      maxBytes: MAX_IMAGE_BYTES,
+      headers: {
+        Accept: "image/avif,image/webp,image/png,image/jpeg;q=0.9,*/*;q=0.5",
+        "User-Agent": "LeWheel-Auction-Media/1.0",
+      },
+    })
+    const contentType = response.contentType?.split(";", 1)[0].trim().toLocaleLowerCase("en-US") || ""
+    if (!response.ok || !ALLOWED_CONTENT_TYPES.has(contentType) || !response.body.length) return null
+
+    return new NextResponse(new Uint8Array(response.body), {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Content-Length": String(response.body.length),
+        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
+        "X-Content-Type-Options": "nosniff",
+      },
+    })
+  } catch {
+    // Прокси мог отпасть — прямой путь остаётся запасным.
+    return null
+  }
+}
+
 export async function GET(request: NextRequest) {
   const permitted = permittedImageUrl(request.nextUrl.searchParams.get("url"))
   if (!permitted) return NextResponse.json({ error: "Unsupported auction image" }, { status: 400 })
+
+  // Хосты, режущие скорость по адресу сервера, качаются через прокси целиком:
+  // потоковая отдача здесь ничего не даёт, файл всё равно небольшой, зато
+  // ответ приходит за доли секунды вместо полутора минут с обрывом.
+  if (THROTTLED_IMAGE_HOSTS.has(permitted.url.hostname)) {
+    const proxied = await fetchThrottledImage(permitted.url)
+    if (proxied) return proxied
+  }
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
