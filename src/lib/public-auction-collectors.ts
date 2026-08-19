@@ -102,6 +102,16 @@ const CHINESE_MAKES: ReadonlyArray<readonly [string, string]> = [
   // распознаются как самостоятельные ярлыки: иначе лот отбраковывался
   // с «не распознана марка».
   ["帕萨特", "Volkswagen"], ["速腾", "Volkswagen"], ["迈腾", "Volkswagen"],
+  // Toyota и Chery источник тоже пишет одной моделью.
+  ["陆地巡洋舰", "Toyota"], ["赛那", "Toyota"], ["花冠", "Toyota"],
+  ["艾瑞泽", "Chery"],
+  // Немецкие серии приходят без марки: «C级» вместо «奔驰C级». Классы
+  // перечислены явно — список ярлыков ищет вхождение подстроки, шаблон здесь
+  // работать не будет.
+  ["A级", "Mercedes-Benz"], ["B级", "Mercedes-Benz"], ["C级", "Mercedes-Benz"],
+  ["E级", "Mercedes-Benz"], ["S级", "Mercedes-Benz"], ["G级", "Mercedes-Benz"],
+  ["1系", "BMW"], ["2系", "BMW"], ["3系", "BMW"], ["4系", "BMW"],
+  ["5系", "BMW"], ["6系", "BMW"], ["7系", "BMW"], ["8系", "BMW"],
   ["朗逸", "Volkswagen"], ["桑塔纳", "Volkswagen"], ["探岭", "Volkswagen"],
  ["阿尔法·罗密欧", "Alfa Romeo"], ["一汽-大众", "Volkswagen"],
   ["奇瑞新能源", "Chery"], ["smart", "Smart"], ["雷克萨斯", "Lexus"],
