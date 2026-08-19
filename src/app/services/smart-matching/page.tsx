@@ -102,8 +102,11 @@ export default function SmartmatchingPage() {
                   const v = l.vehicle
                   const images = parseImages(v?.images)
                   const image = images[0] || ""
+                  // Лучшее совпадение выделено фиолетовой рамкой и мягкой подложкой.
+                  // Раньше фон задавался белым #fff, а текст внутри — тёмным: в тёмной
+                  // теме карточка оставалась белым пятном, разрывающим список.
                   return (
-                    <Paper key={l.id} radius="md" p="md" withBorder style={{ borderColor: i === 0 ? "#7c3aed" : "#f4f4f5", background: i === 0 ? "#faf5ff" : "#fff" }}>
+                    <Paper key={l.id} radius="md" p="md" withBorder style={{ borderColor: i === 0 ? "#7c3aed" : "var(--market-line)", background: i === 0 ? "var(--market-primary-soft)" : "var(--market-surface)" }}>
                       <Group gap="md" align="flex-start" wrap="nowrap">
                         <Box style={{ position: "relative", flexShrink: 0 }}>
                           <Box style={{ width: 120, height: 90, borderRadius: 8, overflow: "hidden", background: "var(--mantine-color-gray-1)", position: "relative" }}>

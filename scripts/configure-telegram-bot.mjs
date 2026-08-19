@@ -20,10 +20,13 @@ if (miniApp.protocol !== "https:") throw new Error("TELEGRAM_MINI_APP_URL must u
 const webhookUrl = new URL("/api/telegram/webhook", miniApp).toString()
 
 async function api(method, payload) {
+  // Без ограничения по времени скрипт настройки зависал бы навсегда, если
+  // Telegram не отвечает: запуск идёт вручную и оборвать его некому.
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30_000),
   })
   const body = await response.json().catch(() => null)
   if (!response.ok || !body?.ok) throw new Error(body?.description || `Telegram API ${response.status}`)

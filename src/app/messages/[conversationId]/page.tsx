@@ -230,10 +230,14 @@ function ConversationWorkspace() {
         <Box mt="sm" ref={messagesEndRef} />
 
         <Group gap="xs" align="flex-end">
+          {/* Плейсхолдер исчезает при первом же символе, поэтому скринридер
+              объявлял поле просто «текстовое поле» — в переписке из нескольких
+              полей неясно, куда попадёт ввод. */}
           <Textarea
             value={text}
             onChange={(e) => setText(e.currentTarget.value)}
             placeholder="Напишите сообщение…"
+            aria-label="Текст сообщения"
             radius="md"
             autosize
             minRows={1}

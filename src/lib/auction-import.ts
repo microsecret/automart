@@ -157,7 +157,17 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
     const isQualityHold = qualityAssessment.anomalies.length > 0
     const qualityReason = isQualityHold ? createQualityHoldReason(qualityAssessment.anomalies) : null
 
-    const exchangeRate = getAuctionRateToRub(item.sourceCurrency, exchangeRates)
+    // Курс отсутствующей валюты выбрасывает исключение. Раньше оно уходило
+    // наружу и обрывало весь прогон: один лот с непривычной валютой отменял
+    // импорт всех остальных, уже разобранных карточек. Пропускаем лот так же,
+    // как при непомещающейся цене ниже.
+    let exchangeRate: number
+    try {
+      exchangeRate = getAuctionRateToRub(item.sourceCurrency, exchangeRates)
+    } catch (error) {
+      console.warn(`Auction ${item.source}/${item.sourceId} skipped: ${error instanceof Error ? error.message : "нет курса валюты"}`)
+      continue
+    }
     const priceStorageError = auctionPriceStorageError({ sourcePrice: item.sourcePrice, exchangeRate, markup: existing?.markup || 0 })
     if (priceStorageError) {
       console.warn(`Auction ${item.source}/${item.sourceId} skipped: ${priceStorageError}`)

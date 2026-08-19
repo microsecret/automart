@@ -26,9 +26,10 @@ export default function HelpPage() {
             const Icon = s.icon
             return (
               <Link key={s.title} href={s.href} style={{ textDecoration: "none" }}>
-                <Paper p="lg" radius="md" withBorder style={{ cursor: "pointer", height: "100%", transition: "border-color 200ms ease, box-shadow 200ms ease, background 200ms ease" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = s.color; e.currentTarget.style.transform = "translateY(-2px)" }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.transform = "" }}>
+                {/* Прежний JS-hover двигал карточку через transform, которого не было
+                    в transition: подъём происходил рывком, а на тач-экране подсветка
+                    залипала, потому что mouseleave после тапа не приходит. */}
+                <Paper p="lg" radius="md" withBorder className="market-linked-card" style={{ cursor: "pointer", height: "100%" }}>
                   <Group gap="md" align="flex-start">
                     <ThemeIcon size={44} radius="md" style={{ background: s.color }}>
                       <Icon size={22} color="white" />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Badge, Box, Button, Group, NumberInput, Paper, Select, Stack, Text, ThemeIcon } from "@mantine/core"
 import { IconCheck, IconCoin, IconUsers } from "@tabler/icons-react"
 import { FUEL_REPORT_LABELS, FUEL_REPORT_TYPES, formatReportedPrice } from "@/lib/fuel-price-reports"
@@ -46,6 +46,17 @@ export default function FuelPriceReporter({ stationId, latitude, longitude, pric
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle")
   const [error, setError] = useState<string | null>(null)
 
+  // Подтверждение «Сохранено» гасится через 1,6 с. Водитель за это время часто
+  // успевает закрыть карточку АЗС или выбрать другую точку: тогда таймер
+  // срабатывал уже по снятому компоненту и React ругался на обновление
+  // состояния размонтированного узла, а при повторном открытии формы карточка
+  // могла схлопнуться сама. Держим ссылку на таймер и снимаем его при уходе.
+  const resetTimer = useRef<number | null>(null)
+
+  useEffect(() => () => {
+    if (resetTimer.current !== null) window.clearTimeout(resetTimer.current)
+  }, [])
+
   const submit = async () => {
     if (!fuel || price === "" || status === "saving") return
     setStatus("saving")
@@ -65,7 +76,12 @@ export default function FuelPriceReporter({ stationId, latitude, longitude, pric
       if (Array.isArray(payload?.prices)) onReported?.(payload.prices)
       setStatus("saved")
       setPrice("")
-      setTimeout(() => { setStatus("idle"); setIsOpen(false) }, 1_600)
+      if (resetTimer.current !== null) window.clearTimeout(resetTimer.current)
+      resetTimer.current = window.setTimeout(() => {
+        resetTimer.current = null
+        setStatus("idle")
+        setIsOpen(false)
+      }, 1_600)
     } catch {
       setError("Нет связи с сервером. Попробуйте ещё раз.")
       setStatus("idle")

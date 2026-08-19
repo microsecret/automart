@@ -590,7 +590,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       <Text size="sm" fw={600} c="var(--market-ink)">Ваш отзыв</Text>
                       <Rating value={reviewRating} onChange={setReviewRating} size="md" />
                     </Group>
-                    <Textarea placeholder="Поделитесь впечатлениями об авто..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} size="sm" minRows={2} autosize />
+                    <Textarea aria-label="Текст отзыва об автомобиле" placeholder="Поделитесь впечатлениями об авто..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} size="sm" minRows={2} autosize />
                     <Group justify="flex-end">
                       <Button size="sm" color="indigo" radius="md" onClick={submitReview} loading={reviewSubmitting} disabled={!reviewText.trim()}>
                         Отправить отзыв
@@ -645,9 +645,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       withBorder
                       radius="md"
                       p="sm"
-                      style={{ transition: "border-color 180ms ease, box-shadow 180ms ease, background 180ms ease" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#c7d2fe"; e.currentTarget.style.transform = "translateY(-2px)" }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e4e4e7"; e.currentTarget.style.transform = "none" }}
+                      className="market-linked-card"
                     >
                       <Text size="sm" fw={500} className="line-clamp-1">{item.title}</Text>
                       <Text size="md" fw={700} c="indigo" mt={4}>{formatPriceShort(item.price)}</Text>

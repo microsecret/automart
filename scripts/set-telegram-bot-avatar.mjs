@@ -19,7 +19,13 @@ const form = new FormData()
 form.set("photo", JSON.stringify({ type: "static", photo: "attach://profile_photo" }))
 form.set("profile_photo", new Blob([image], { type: "image/jpeg" }), "telegram-bot-avatar.jpg")
 
-const response = await fetch(`https://api.telegram.org/bot${token}/setMyProfilePhoto`, { method: "POST", body: form })
+// Отправка картинки идёт дольше обычного запроса, но без предела скрипт
+// висел бы бесконечно при обрыве связи — запускают его руками.
+const response = await fetch(`https://api.telegram.org/bot${token}/setMyProfilePhoto`, {
+  method: "POST",
+  body: form,
+  signal: AbortSignal.timeout(60_000),
+})
 const body = await response.json().catch(() => null)
 if (!response.ok || !body?.ok) throw new Error(body?.description || `Telegram API ${response.status}`)
 

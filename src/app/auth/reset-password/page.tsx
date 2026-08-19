@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, Suspense, useState } from "react"
+import { FormEvent, Suspense, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Box, Button, Card, Center, Container, Loader, Stack, Text, TextInput, ThemeIcon } from "@mantine/core"
@@ -23,6 +23,16 @@ function ResetPasswordWorkspace() {
   const [loading, setLoading] = useState(false)
   const [completed, setCompleted] = useState(false)
 
+  // Успешный сброс уводит на вход через 1,2 с — паузу, за которую человек
+  // успевает прочитать подтверждение. Если он уходит раньше сам, таймер
+  // срабатывал уже по снятому экрану и выдёргивал пользователя со страницы,
+  // на которую он только что перешёл. Снимаем его при размонтировании.
+  const redirectTimer = useRef<number | null>(null)
+
+  useEffect(() => () => {
+    if (redirectTimer.current !== null) window.clearTimeout(redirectTimer.current)
+  }, [])
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     if (password !== confirmPassword) {
@@ -38,10 +48,15 @@ function ResetPasswordWorkspace() {
       })
       setCompleted(true)
       notifications.show({ title: "Пароль обновлён", message: "Теперь войдите с новым паролем.", color: "teal" })
-      window.setTimeout(() => router.push("/auth/signin"), 1200)
+      redirectTimer.current = window.setTimeout(() => {
+        redirectTimer.current = null
+        router.push("/auth/signin")
+      }, 1200)
+      // Загрузка намеренно не снимается после успеха: токен сброса одноразовый,
+      // и разблокированная на секунду кнопка позволяла отправить его повторно —
+      // второй запрос возвращал ошибку поверх уже показанного успеха.
     } catch (error) {
       notifications.show({ title: "Не удалось обновить пароль", message: getApiClientErrorMessage(error, "Попробуйте позже."), color: "red" })
-    } finally {
       setLoading(false)
     }
   }

@@ -108,10 +108,12 @@ export default function PromotePage() {
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
           {PROMO_OPTIONS.map((opt) => {
             const Icon = opt.icon
+            // Выбранный тариф остаётся выделенным цветом тарифа, а наведение отдано
+            // CSS: JS-обработчик стирал рамку выбранного варианта, когда курсор уходил
+            // с соседней карточки, и пользователь терял из виду, за что платит.
             return (
-              <Paper key={opt.id} radius="md" p="md" withBorder style={{ borderColor: selected === opt.id ? opt.color : "#f4f4f5", transition: "border-color 200ms ease, box-shadow 200ms ease, background 200ms ease", cursor: "pointer", position: "relative" }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = opt.color; e.currentTarget.style.transform = "translateY(-2px)" }}
-                onMouseLeave={(e) => { if (selected !== opt.id) { e.currentTarget.style.borderColor = "#f4f4f5" }; e.currentTarget.style.transform = "" }}>
+              <Paper key={opt.id} radius="md" p="md" withBorder className="market-linked-card"
+                style={{ borderColor: selected === opt.id ? opt.color : undefined, cursor: "pointer", position: "relative" }}>
                 {opt.id === "vip" && <Badge pos="absolute" top={-8} right={12} size="xs" color="violet" variant="filled">Выгодно</Badge>}
                 <Stack gap="sm">
                   <Group justify="space-between" align="flex-start">

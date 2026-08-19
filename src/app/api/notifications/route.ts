@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
 
     const page = Number(searchParams.get("page") || "1")
     const limit = Number(searchParams.get("limit") || "20")
-    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
+    // Верхняя граница страницы обязательна: Number.isInteger(1e308) === true,
+    // и без неё skip становится Infinity, на котором запрос падает.
+    if (!Number.isInteger(page) || page < 1 || page > 10_000 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       return NextResponse.json({ error: "Некорректная пагинация" }, { status: 400 })
     }
     const skip = (page - 1) * limit

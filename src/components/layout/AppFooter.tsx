@@ -112,10 +112,9 @@ export default function AppFooter() {
                       size="sm"
                       c="#a1a1aa"
                       display="block"
-                      style={{ lineHeight: 1.45, transition: "color 150ms ease" }}
+                      className="market-app-footer__link"
+                      style={{ lineHeight: 1.45 }}
                       styles={{ root: { overflowWrap: "anywhere" } }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "#ffffff" }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = "#a1a1aa" }}
                     >
                       {link.label}
                     </Anchor>

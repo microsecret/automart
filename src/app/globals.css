@@ -4490,3 +4490,64 @@ select {
   font-weight: 600;
   font-size: 0.8125rem;
 }
+
+/* === Карточки-ссылки: единый отклик =========================================
+   Часть экранов (марки, помощь, продвижение, «читайте также», похожие
+   объявления) задавала наведение из JS: onMouseEnter присваивал
+   element.style.background / borderColor захардкоженными светлыми цветами.
+   Три последствия. Первое — в тёмной теме карточка после первого наведения
+   навсегда оставалась светлой, и тёмный текст на ней переставал читаться.
+   Второе — inline-стиль от JS перебивает CSS, поэтому вернуть карточку к
+   теме мог только перезагрузка страницы. Третье — на тач-устройствах
+   mouseenter срабатывает по тапу, а mouseleave не приходит, и подсветка
+   «залипала» на случайной карточке. Ниже — тот же эффект на CSS: он живёт
+   в токенах темы и включается только там, где есть настоящий курсор. */
+.market-linked-card {
+  border-color: var(--market-line);
+  background: var(--market-surface);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .market-linked-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--market-primary);
+    background: var(--market-surface-subtle);
+    box-shadow: 0 16px 28px -22px rgba(49, 46, 129, 0.55);
+  }
+}
+
+/* Клавиатурный пользователь должен видеть выбранную карточку так же явно,
+   как и пользователь мыши, иначе табом по списку невозможно ориентироваться. */
+.market-linked-card:focus-visible,
+a:focus-visible > .market-linked-card {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 3px;
+}
+
+/* Вариант без подъёма — для плотных списков, где сдвиг соседей заметнее
+   самой подсветки. */
+.market-linked-card--flat:hover {
+  transform: none;
+}
+
+/* Ссылки подвала подсвечивались из JS. На тач-устройствах mouseleave после
+   тапа не приходит, поэтому случайная ссылка оставалась белой и выглядела
+   выбранной. CSS снимает подсветку сам и включает её только под курсором. */
+.market-app-footer__link {
+  color: #a1a1aa;
+  transition: color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .market-app-footer__link:hover {
+    color: #ffffff;
+  }
+}
+
+.market-app-footer__link:focus-visible {
+  color: #ffffff;
+  outline: 2px solid rgba(165, 180, 252, 0.7);
+  outline-offset: 2px;
+  border-radius: 3px;
+}

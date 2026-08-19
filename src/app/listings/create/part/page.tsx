@@ -3,12 +3,13 @@ export const dynamic = "force-dynamic"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl, Image } from "@mantine/core"
-import { IconPlus, IconCheck, IconCar, IconTrash, IconPhoto, IconX } from "@tabler/icons-react"
+import { Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl } from "@mantine/core"
+import { IconPlus, IconCheck, IconCar, IconTrash, IconPhoto } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, PART_AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
+import ListingPhotoGrid from "@/components/uploads/ListingPhotoGrid"
 import { fetchJson } from "@/lib/api-client"
 import styles from "../listing-create-form.module.css"
 
@@ -172,14 +173,7 @@ export default function CreatePartPage() {
                   <Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge>
                 </Group>
                 <FileInput accept="image/jpeg,image/png,image/webp" multiple clearable disabled={uploadingImages || images.length >= 12} placeholder="Выберите фотографии" onChange={uploadPhotos} leftSection={<IconPhoto size={16} />} />
-                {uploadingImages && <Text size="xs" c="indigo">Загружаем фотографии…</Text>}
-                {images.length > 0 && <SimpleGrid cols={{ base: 3, sm: 4, md: 6 }} spacing="xs">
-                  {images.map((image, index) => <Box key={image} pos="relative" style={{ aspectRatio: "1", overflow: "hidden", borderRadius: 10, border: index === 0 ? "2px solid var(--mantine-color-indigo-5)" : "1px solid var(--mantine-color-gray-3)" }}>
-                    <Image src={image} alt={`Фото ${index + 1}`} w="100%" h="100%" fit="cover" />
-                    <ActionIcon aria-label={`Удалить фото ${index + 1}`} type="button" size="sm" color="dark" variant="filled" pos="absolute" top={5} right={5} onClick={() => removeImage(index)}><IconX size={13} /></ActionIcon>
-                    {index === 0 && <Badge size="xs" color="indigo" variant="filled" pos="absolute" left={5} bottom={5}>Обложка</Badge>}
-                  </Box>)}
-                </SimpleGrid>}
+                <ListingPhotoGrid images={images} uploading={uploadingImages} onRemove={removeImage} />
               </Stack>
             </Paper>
 

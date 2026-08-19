@@ -20,7 +20,11 @@ export async function GET(request: NextRequest) {
     const statusParam = request.nextUrl.searchParams.get("status")
     const priorityParam = request.nextUrl.searchParams.get("priority")
     const query = request.nextUrl.searchParams.get("q")?.trim().slice(0, 100) || ""
-    const page = Math.max(1, Number(request.nextUrl.searchParams.get("page")) || 1)
+    // Number("1e400") даёт Infinity, а Number("1e9") — целое вне диапазона:
+    // и то и другое уходит в skip и роняет запрос. Верхняя граница держит
+    // смещение в пределах, где выборка вообще имеет смысл.
+    const rawPage = Number.parseInt(request.nextUrl.searchParams.get("page") || "1", 10)
+    const page = Number.isInteger(rawPage) && rawPage > 0 ? Math.min(rawPage, 10_000) : 1
     const pageSize = 40
 
     const where = {

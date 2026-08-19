@@ -270,9 +270,11 @@ function CompareContent() {
 
           <Divider my="sm" />
 
-          {/* Строки характеристик */}
+          {/* Строки характеристик. Чередование задано токеном поверхности: раньше
+              чётные строки заливались светлым #fafafa, и в тёмной теме сравнение
+              превращалось в белые полосы под серым текстом. */}
           {compareFields.map((field, idx) => (
-            <Group key={field.key} gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180, background: idx % 2 === 0 ? "transparent" : "#fafafa", padding: "6px 0", borderRadius: 4 }}>
+            <Group key={field.key} gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180, background: idx % 2 === 0 ? "transparent" : "var(--market-surface-subtle)", padding: "6px 0", borderRadius: 4 }}>
               <Box style={{ width: 160, flexShrink: 0 }}>
                 <Text size="xs" fw={600} c="gray.6" pl="xs">{field.label}</Text>
               </Box>

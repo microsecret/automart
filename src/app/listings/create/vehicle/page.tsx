@@ -3,13 +3,14 @@ export const dynamic = "force-dynamic"
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Alert, Autocomplete, Box, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, ActionIcon, SimpleGrid, Badge, Chip } from "@mantine/core"
-import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto, IconX } from "@tabler/icons-react"
+import { Alert, Autocomplete, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, SegmentedControl, ThemeIcon, FileInput, SimpleGrid, Badge, Chip } from "@mantine/core"
+import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
+import ListingPhotoGrid from "@/components/uploads/ListingPhotoGrid"
 import { fetchJson } from "@/lib/api-client"
 import { parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -630,19 +631,7 @@ function CreateVehicleWorkspace() {
                   onChange={uploadPhotos}
                   leftSection={<IconPhoto size={16} />}
                 />
-                {uploadingImages && <Text size="xs" c="indigo">Загружаем фотографии…</Text>}
-                {images.length > 0 && (
-                  <SimpleGrid cols={{ base: 3, sm: 4, md: 6 }} spacing="xs">
-                    {images.map((image, index) => (
-                      <Box key={image} pos="relative" style={{ aspectRatio: "1", overflow: "hidden", borderRadius: 10, border: index === 0 ? "2px solid var(--mantine-color-indigo-5)" : "1px solid var(--mantine-color-gray-3)" }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={image} alt={`Фото ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        <ActionIcon aria-label={`Удалить фото ${index + 1}`} type="button" size="sm" color="dark" variant="filled" pos="absolute" top={5} right={5} onClick={() => removeImage(index)}><IconX size={13} /></ActionIcon>
-                        {index === 0 && <Badge size="xs" color="indigo" variant="filled" pos="absolute" left={5} bottom={5}>Обложка</Badge>}
-                      </Box>
-                    ))}
-                  </SimpleGrid>
-                )}
+                <ListingPhotoGrid images={images} uploading={uploadingImages} onRemove={removeImage} />
               </Stack>
             </Paper>
 

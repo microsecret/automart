@@ -54,7 +54,9 @@ export async function GET(request: NextRequest) {
     // всё избранное одним ответом.
     const requestedPage = Number(searchParams.get("page") || "1")
     const requestedLimit = Number(searchParams.get("limit") || "20")
-    const page = Number.isInteger(requestedPage) ? Math.max(requestedPage, 1) : 1
+    // Number.isInteger(1e308) === true, поэтому одной проверки на целое мало:
+    // без верхней границы skip уходит в Infinity и запрос падает.
+    const page = Number.isInteger(requestedPage) ? Math.min(Math.max(requestedPage, 1), 10_000) : 1
     const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 20
     const skip = (page - 1) * limit
 

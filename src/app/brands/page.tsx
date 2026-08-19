@@ -45,13 +45,14 @@ export default function BrandsPage() {
               href={`/search?type=vehicle&make=${encodeURIComponent(brand.name)}`}
               style={{ textDecoration: "none" }}
             >
+              {/* Наведение описано в CSS-классе: прежний JS-обработчик оставлял
+                  на карточке белый фон, который в тёмной теме уже не снимался. */}
               <Paper
                 radius="md"
                 p="sm"
                 withBorder
-                style={{ borderColor: "var(--mantine-color-border)", transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease", cursor: "pointer" }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#e4e4e7"; e.currentTarget.style.background = "#fafafa" }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#f4f4f5"; e.currentTarget.style.background = "#fff" }}
+                className="market-linked-card market-linked-card--flat"
+                style={{ cursor: "pointer" }}
               >
                 <Group gap="sm" align="center" wrap="nowrap">
 <BrandIcon brand={brand.name} size={40} variant="rounded" />

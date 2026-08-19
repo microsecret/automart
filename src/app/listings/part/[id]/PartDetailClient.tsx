@@ -370,7 +370,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                     <Text size="sm" c="var(--market-muted)">Это ваш лот. Ставки владельца недоступны.</Text>
                   ) : (
                     <>
-                      <TextInput placeholder="Сумма ставки, ₽" type="number" value={bidAmount} onChange={(event) => setBidAmount(event.currentTarget.value)} mb="sm" />
+                      <TextInput aria-label="Сумма ставки в рублях" placeholder="Сумма ставки, ₽" type="number" value={bidAmount} onChange={(event) => setBidAmount(event.currentTarget.value)} mb="sm" />
                       <Button fullWidth color="orange" loading={bidLoading} disabled={data.auctionStatus !== "ACTIVE" || !bidAmount} onClick={submitBid}>Подтвердить ставку</Button>
                     </>
                   )}

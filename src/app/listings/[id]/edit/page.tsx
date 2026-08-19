@@ -6,16 +6,13 @@ import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import {
-  ActionIcon,
   Alert,
   Badge,
-  Box,
   Button,
   Container,
   FileInput,
   Group,
   Paper,
-  SimpleGrid,
   Skeleton,
   Stack,
   Text,
@@ -24,9 +21,10 @@ import {
   ThemeIcon,
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconAlertTriangle, IconArrowLeft, IconCheck, IconEdit, IconPhoto, IconX } from "@tabler/icons-react"
+import { IconAlertTriangle, IconArrowLeft, IconCheck, IconEdit, IconPhoto } from "@tabler/icons-react"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
 import { parseImages } from "@/lib/format"
+import ListingPhotoGrid from "@/components/uploads/ListingPhotoGrid"
 import { LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
@@ -154,15 +152,7 @@ export default function EditListingPage() {
             <Group justify="space-between" align="center"><Group gap="xs"><ThemeIcon color="indigo" variant="light" radius="md"><IconPhoto size={17} /></ThemeIcon><Text fw={750}>Фотографии</Text></Group><Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge></Group>
             <Text size="sm" c="dimmed">Первая фотография используется как обложка. Допустимы JPG, PNG и WebP до 10 МБ.</Text>
             <FileInput accept="image/jpeg,image/png,image/webp" multiple clearable disabled={uploadingImages || images.length >= 12} placeholder="Добавить фотографии" onChange={uploadPhotos} leftSection={<IconPhoto size={16} />} />
-            {uploadingImages && <Text size="xs" c="indigo" aria-live="polite">Загружаем фотографии…</Text>}
-            {images.length > 0 && <SimpleGrid cols={{ base: 3, sm: 4, md: 6 }} spacing="xs">
-              {images.map((image, index) => <Box key={image} pos="relative" style={{ aspectRatio: "1", overflow: "hidden", borderRadius: 10, border: index === 0 ? "2px solid var(--mantine-color-indigo-5)" : "1px solid var(--mantine-color-gray-3)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image} alt={`Фото ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <ActionIcon aria-label={`Удалить фото ${index + 1}`} type="button" size="sm" color="dark" variant="filled" pos="absolute" top={5} right={5} onClick={() => removeImage(index)}><IconX size={13} /></ActionIcon>
-                {index === 0 && <Badge size="xs" color="indigo" variant="filled" pos="absolute" left={5} bottom={5}>Обложка</Badge>}
-              </Box>)}
-            </SimpleGrid>}
+            <ListingPhotoGrid images={images} uploading={uploadingImages} onRemove={removeImage} />
           </Stack>
         </Paper>
 

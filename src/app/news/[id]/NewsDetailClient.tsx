@@ -287,9 +287,9 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
               <Text size="sm" fw={600} c="dark.9">Читайте также</Text>
               {relatedNews.map((news) => (
                 <Link key={news.id} href={newsHref(news)} style={{ textDecoration: "none" }}>
-                  <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)", transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4f46e5" }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--mantine-color-border)" }}>
+                  {/* Индиговая рамка при наведении описана в CSS: из JS она ставилась
+                      фиксированным #4f46e5 и в тёмной теме уходила в почти чёрный. */}
+                  <Card withBorder radius="md" p="sm" className="market-linked-card market-linked-card--flat">
                     <Group gap="sm" align="flex-start">
                       <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconNews size={18} /></ThemeIcon>
                       <Stack gap={2} style={{ flex: 1 }}>
