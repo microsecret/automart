@@ -211,10 +211,31 @@ function trimModelConfiguration(model: string) {
 }
 
 /** Customer-facing model label without Korean/Japanese/Chinese script. */
+/**
+ * Сжимает пересказ обратно в обозначение модели.
+ *
+ * Переводчик не всегда держит заданный формат: вместо «5 Series 525Li 2022
+ * 2.0T AT» возвращает «5-й серии 525Li 2022 модельного года 2.0T
+ * автоматическая коробка». В карточке такое название не помещается и не
+ * совпадает с поисковым запросом, поэтому лишние слова снимаются здесь.
+ */
+const MODEL_PHRASE_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(\d+)-(?:й|я|го)\s+серии/gi, "$1 Series"],
+  [/\s*(?:года выпуска|модельного года|года|модель|модельный год)/gi, ""],
+  [/автоматическая(?:\s+коробка(?:\s+передач)?)?/gi, "AT"],
+  [/механическая(?:\s+коробка(?:\s+передач)?)?/gi, "MT"],
+  [/автомат/gi, "AT"],
+  [/механика/gi, "MT"],
+  // Привод здесь не сокращается: он входит в описательный хвост, который
+  // отбрасывается целиком вместе с экостандартом и комплектацией. Замена на
+  // «RWD» вывела бы его из-под этого правила, и хвост остался бы в названии.
+]
+
 export function normalizeAuctionModel(value: unknown) {
   if (typeof value !== "string") return null
   let model = value.normalize("NFKC").trim()
   if (!model) return null
+  for (const [pattern, replacement] of MODEL_PHRASE_TERMS) model = model.replace(pattern, replacement)
   for (const [pattern, replacement] of KOREAN_MODEL_TERMS) model = model.replace(pattern, replacement)
   model = transliterateHangul(model).replace(/\s+/g, " ").trim()
   if (!model || EAST_ASIAN_SCRIPT.test(model)) return null

@@ -58,3 +58,17 @@ test("bounds an over-long label at a word boundary", () => {
   assert.ok(!normalized.endsWith(" "), "обрезка не должна оставлять хвостовой пробел")
   assert.ok(normalized.startsWith("Sportage Gasoline"), "начало названия сохраняется")
 })
+
+test("сжимает пересказ переводчика в обозначение модели", () => {
+  // Переводчик не всегда держит заданный формат и возвращает название фразой.
+  // В карточке она не помещается и не совпадает с поисковым запросом.
+  assert.equal(
+    normalizeAuctionModel("5-й серии 525Li 2022 модельного года 2.0T автоматическая коробка"),
+    "5 Series 525Li 2022 2.0T AT",
+  )
+  assert.equal(normalizeAuctionModel("H6 2024 года выпуска 1.5T автомат"), "H6 2024 1.5T AT")
+})
+
+test("не трогает название, уже собранное словарём", () => {
+  assert.equal(normalizeAuctionModel("3 Series 325i 2024 2.0T"), "3 Series 325i 2024 2.0T")
+})
