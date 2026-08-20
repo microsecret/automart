@@ -213,14 +213,14 @@ async function sendPasswordRequest(chatId: string) {
     text: [
       "🔐 <b>Шаг 3 из 3 — придумайте пароль</b>",
       "",
-      "Отправьте пароль длиной от <b>8 до 128 символов</b>. Он будет использоваться вместе с почтой или телефоном для входа на сайт.",
+      "<b>Напишите пароль в этот чат</b> — от <b>8 символов</b>. С ним и почтой вы будете входить на сайте.",
       "",
       "🛡 <i>В базе хранится только защищённый хэш пароля.</i>",
     ].join("\n"),
     parse_mode: "HTML",
     reply_markup: {
       force_reply: true,
-      selective: true,
+      // selective действует только в группах и мешает force_reply в личке.
       input_field_placeholder: "Минимум 8 символов",
     },
   })
@@ -406,9 +406,15 @@ async function handleMessage(message: TelegramMessage) {
         await sendRegistrationComplete(chatId, completedUser?.name)
       } catch (error) {
         const text = error instanceof TelegramRegistrationError
-          ? `⚠️ ${escapeTelegramHtml(error.message)}. Придумайте другой пароль и отправьте его одним сообщением.`
+          ? `⚠️ ${escapeTelegramHtml(error.message)}. Напишите другой пароль в этот чат.`
           : "⚠️ Не удалось сохранить пароль. Попробуйте ещё раз немного позже."
-        await telegramApi("sendMessage", { chat_id: chatId, text, parse_mode: "HTML" })
+        // Поле ввода открывается заново, иначе человек упирается в ту же стену.
+        await telegramApi("sendMessage", {
+          chat_id: chatId,
+          text,
+          parse_mode: "HTML",
+          reply_markup: { force_reply: true, input_field_placeholder: "Минимум 8 символов" },
+        })
       }
       return
     }
