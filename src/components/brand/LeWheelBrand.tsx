@@ -25,7 +25,7 @@ export default function LeWheelBrand({
     >
       {/* Знак шире, чем высок: крыло уходит влево за пределы колеса. Ширина
           задаётся с запасом, иначе перья сжались бы в полоску. */}
-      <span className="lewheel-brand__mark" style={{ width: size * 1.12, height: size }} aria-hidden="true">
+      <span className="lewheel-brand__mark" style={{ width: size * 1.3, height: size }} aria-hidden="true">
         <LeWheelMark size={size} idSuffix={idSuffix || tone} />
       </span>
       {showName && (

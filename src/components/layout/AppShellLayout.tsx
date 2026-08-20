@@ -95,6 +95,43 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
     closeMobile()
   }, [pathname, closeMobile])
 
+  /**
+   * Меню укорачивается, когда в кадр входит подвал.
+   *
+   * Меню закреплено на всю высоту экрана, а подвал занимает всю ширину окна и
+   * проходит поверх него. Из-за этого нижние пункты списка оказывались под
+   * подвалом: прокручивать было нечего — список помещался целиком, — но
+   * увидеть его конец было нельзя.
+   *
+   * Здесь мы измеряем, сколько экрана отъел подвал, и на столько же
+   * подрезаем меню снизу. Как только внутри становится тесно, ScrollArea
+   * получает настоящую прокрутку, и до последнего пункта можно долистать.
+   */
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const updateInset = () => {
+      const footer = document.querySelector(".market-app-footer")
+      const overlap = footer
+        ? Math.max(0, window.innerHeight - footer.getBoundingClientRect().top)
+        : 0
+      document.documentElement.style.setProperty("--app-navbar-bottom-inset", `${Math.round(overlap)}px`)
+    }
+
+    updateInset()
+    window.addEventListener("scroll", updateInset, { passive: true })
+    window.addEventListener("resize", updateInset)
+    // Высота подвала меняется при подгрузке контента, а не только при скролле.
+    const observer = new ResizeObserver(updateInset)
+    observer.observe(document.body)
+
+    return () => {
+      window.removeEventListener("scroll", updateInset)
+      window.removeEventListener("resize", updateInset)
+      observer.disconnect()
+    }
+  }, [])
+
   if (isStandaloneRoute) {
     return (
       <Box component="main" style={{ minHeight: "100vh", background: "var(--market-background)" }}>

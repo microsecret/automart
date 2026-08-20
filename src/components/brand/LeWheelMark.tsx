@@ -29,9 +29,9 @@ export default function LeWheelMark({ size = 38, idSuffix = "" }: LeWheelMarkPro
   return (
     <svg
       className="lewheel-mark"
-      width={size * 1.12}
+      width={size * 1.3}
       height={size}
-      viewBox="0 0 72 64"
+      viewBox="-6 0 84 64"
       role="img"
       aria-hidden="true"
       focusable="false"
@@ -64,12 +64,16 @@ export default function LeWheelMark({ size = 38, idSuffix = "" }: LeWheelMarkPro
         </linearGradient>
       </defs>
 
-      {/* Крыло: три пера, сужающиеся влево. Стоит за колесом и не вращается —
-          оно обозначает скорость, а не является частью диска. */}
+      {/* Крыло скорости: пять перьев, уходящих далеко влево под наклоном.
+          Каждое летит по своему таймингу — так шлейф читается как поток
+          воздуха, а не как статичная деталь. Крыло не вращается: оно
+          обозначает движение вперёд, а не часть диска. */}
       <g className="lewheel-mark__wing">
-        <path d="M31 21 C22 19.5 13 20.5 6 24 C13.5 23.4 21 23.8 28 25.4 Z" fill={`url(#${wing})`} />
-        <path d="M29 30 C21 29.2 13.5 30 8 32.4 C14 32 20.5 32.3 26.5 33.4 Z" fill={`url(#${wing})`} opacity="0.88" />
-        <path d="M31 38.6 C24 38.4 17.5 39.2 12.6 41 C18 40.8 23.6 41.1 28.4 42 Z" fill={`url(#${wing})`} opacity="0.72" />
+        <path className="lewheel-mark__feather lewheel-mark__feather--1" d="M30 17.5 C20 14.6 10 15.2 0 19.4 C10.5 18.2 20 19 28 21.4 Z" fill={`url(#${wing})`} />
+        <path className="lewheel-mark__feather lewheel-mark__feather--2" d="M27.5 25 C17 23.2 7 24.4 -2 28 C8 26.8 17.5 27.4 25.5 29 Z" fill={`url(#${wing})`} opacity="0.92" />
+        <path className="lewheel-mark__feather lewheel-mark__feather--3" d="M26 32.6 C15.5 32 5.5 33.2 -3 36 C7 35.2 16.5 35.6 24.5 36.6 Z" fill={`url(#${wing})`} opacity="0.8" />
+        <path className="lewheel-mark__feather lewheel-mark__feather--4" d="M27.5 40 C18 40.4 9 41.6 1.5 44 C10 43.2 18.5 43.2 26 43.8 Z" fill={`url(#${wing})`} opacity="0.66" />
+        <path className="lewheel-mark__feather lewheel-mark__feather--5" d="M30 46.8 C22.5 47.8 15 49.2 9 51.2 C16 50.4 23 50.2 28.6 50.4 Z" fill={`url(#${wing})`} opacity="0.5" />
       </g>
 
       {/* Покрышка и тёмный зазор под ней — от них отсчитывается объём. */}

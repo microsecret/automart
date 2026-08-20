@@ -554,8 +554,11 @@ select {
   overflow: hidden;
 }
 
-.market-app-navbar .mantine-ScrollArea-viewport > div {
-  display: block !important;
+/* Внутренний блок ScrollArea должен оставаться table-разметкой Mantine:
+   подмена display ломает измерение прокручиваемой высоты, и список
+   переставал листаться. */
+.market-app-navbar .mantine-ScrollArea-viewport {
+  max-height: 100%;
 }
 
 @media (min-width: 62em) {
@@ -566,8 +569,12 @@ select {
     position: fixed !important;
     top: 68px !important;
     bottom: auto !important;
-    height: calc(100dvh - 68px);
-    max-height: calc(100dvh - 68px);
+    /* Отступ снизу равен той части экрана, которую занял подвал: иначе нижние
+       пункты уходят под него и до них нельзя добраться. Значение считает
+       AppShellLayout при прокрутке. */
+    height: calc(100dvh - 68px - var(--app-navbar-bottom-inset, 0px));
+    max-height: calc(100dvh - 68px - var(--app-navbar-bottom-inset, 0px));
+    transition: height 120ms linear;
   }
 }
 
@@ -971,14 +978,37 @@ a:hover .lewheel-brand__mark {
 
 .lewheel-mark__wing {
   transform-origin: 42px 32px;
-  transition: transform 320ms cubic-bezier(0.22, 0.9, 0.24, 1), opacity 320ms ease;
 }
 
-/* Перья отходят влево при наведении — знак читается как набирающий ход. */
-.lewheel-brand:hover .lewheel-mark__wing,
-a:hover .lewheel-mark__wing {
-  transform: translateX(-1.5px);
-  opacity: 0.92;
+/* Перья живут собственной жизнью: каждое уносится влево и возвращается со
+   своей задержкой. Разнобой таймингов и создаёт ощущение потока воздуха —
+   синхронное движение читалось бы как дрожание одной детали. */
+.lewheel-mark__feather {
+  transform-origin: 42px 32px;
+  animation: lewheel-trail 2.8s ease-in-out infinite;
+}
+
+.lewheel-mark__feather--1 { animation-delay: 0s; }
+.lewheel-mark__feather--2 { animation-delay: 0.14s; }
+.lewheel-mark__feather--3 { animation-delay: 0.28s; }
+.lewheel-mark__feather--4 { animation-delay: 0.42s; }
+.lewheel-mark__feather--5 { animation-delay: 0.56s; }
+
+/* При наведении поток ускоряется и вытягивается сильнее. */
+.lewheel-brand:hover .lewheel-mark__feather,
+a:hover .lewheel-mark__feather {
+  animation-duration: 1.1s;
+}
+
+@keyframes lewheel-trail {
+  0%, 100% {
+    transform: translateX(0) scaleX(1);
+    opacity: var(--feather-opacity, 1);
+  }
+  45% {
+    transform: translateX(-3.5px) scaleX(1.16);
+    opacity: 0.55;
+  }
 }
 
 /* Блик слегка «дышит»: даёт ощущение полированного металла в покое. */
@@ -1010,34 +1040,46 @@ a:hover .lewheel-mark__wing {
     animation: none;
   }
 
-  .lewheel-mark__wing,
-  .lewheel-brand:hover .lewheel-mark__wing,
-  a:hover .lewheel-mark__wing {
-    transform: none;
-    transition: none;
+  .lewheel-mark__feather,
+  .lewheel-brand:hover .lewheel-mark__feather,
+  a:hover .lewheel-mark__feather,
+  .lewheel-brand__wordmark strong {
+    animation: none;
   }
 }
 
 .lewheel-brand__wordmark {
   font-family: var(--font-display), sans-serif;
-  font-size: 1.24rem;
-  font-weight: 700;
+  /* Крупнее и с наклоном, как на фирменном баннере: прежний кегль терялся
+     рядом с усиленным знаком. */
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-style: italic;
   line-height: 1;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.045em;
   white-space: nowrap;
-  /* Тонкая светлая кромка снизу приподнимает надпись над фоном — тот же
-     приём, что даёт объём знаку, без превращения текста в тиснение. */
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+  /* Многослойная тень даёт объём вместо плоской буквы: светлая кромка
+     сверху, тёмная опора снизу. */
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    0 2px 3px rgba(49, 46, 129, 0.18);
 }
 
 .lewheel-brand__wordmark strong {
-  /* Градиент по букве вместо плоской заливки: «Wheel» становится смысловым
-     центром, а не просто более жирным словом. */
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 55%, #312e81 100%);
+  /* Градиент медленно перетекает по слову — блик, идущий по металлу.
+     Размер фона больше самой буквы, иначе двигать нечего. */
+  background: linear-gradient(115deg, #4338ca 0%, #6366f1 25%, #a5b4fc 40%, #6366f1 55%, #312e81 100%);
+  background-size: 260% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   font-weight: 900;
+  animation: lewheel-shine 5.5s ease-in-out infinite;
+}
+
+@keyframes lewheel-shine {
+  0%, 100% { background-position: 100% 50%; }
+  50% { background-position: 0% 50%; }
 }
 
 .lewheel-brand--inverse {
@@ -1050,7 +1092,10 @@ a:hover .lewheel-mark__wing {
 }
 
 .lewheel-brand--inverse .lewheel-brand__wordmark strong {
-  background: linear-gradient(135deg, #c7d2fe 0%, #818cf8 60%, #6366f1 100%);
+  /* Свои тона для тёмного подвала, но background-size обязателен — иначе
+     блику некуда двигаться и анимация остановится. */
+  background: linear-gradient(115deg, #818cf8 0%, #c7d2fe 25%, #ffffff 40%, #c7d2fe 55%, #6366f1 100%);
+  background-size: 260% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
