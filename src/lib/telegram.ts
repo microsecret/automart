@@ -334,7 +334,10 @@ export async function telegramPhotoApi<T = unknown>(payload: Record<string, unkn
         "Content-Type": `multipart/form-data; boundary=${boundary}`,
         "Content-Length": requestBody.length,
       },
-      timeout: 30_000,
+      // Двенадцати секунд достаточно для картинки в несколько сотен килобайт.
+      // Тридцать копили зависшие запросы: уведомление всё равно уходит
+      // текстом по запасному пути, а ждать полминуты незачем.
+      timeout: 12_000,
     }, (response) => {
       let responseBody = ""
       response.setEncoding("utf8")

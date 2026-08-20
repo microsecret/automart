@@ -486,12 +486,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  let update: TelegramUpdate
   try {
-    const update = await request.json() as TelegramUpdate
-    if (update.message) await handleMessage(update.message)
-    return NextResponse.json({ ok: true })
+    update = await request.json() as TelegramUpdate
   } catch (error) {
-    console.error("Telegram webhook error:", error)
+    console.error("Telegram webhook payload error:", error)
     return NextResponse.json({ ok: true })
   }
+
+  if (!update.message) return NextResponse.json({ ok: true })
+
+  // Обработка запускается, но ответ не ждёт её завершения.
+  //
+  // Раньше здесь стоял await: отправка инфографики к уведомлению о модерации
+  // занимает до 30 секунд (картинка 1.5 МБ, до трёх повторов), а мост
+  // long-polling ждёт локальный вебхук только 15. Ответ не приходил, offset не
+  // двигался, и одно и то же сообщение обрабатывалось по кругу — очередь
+  // вставала, а остальные сообщения в чатах оставались без модерации.
+  //
+  // Удаление сообщения нарушителя — первое, что делает handleMessage, поэтому
+  // модерация от этого не замедляется; в фоне остаётся только доставка
+  // уведомления.
+  void handleMessage(update.message).catch((error) => {
+    console.error("Telegram webhook error:", error)
+  })
+
+  return NextResponse.json({ ok: true })
 }
