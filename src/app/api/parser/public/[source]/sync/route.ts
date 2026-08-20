@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems, type AuctionImportItem } from "@/lib/auction-import"
 import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
-import { excludeListingsOutsideImportPowerPolicy } from "@/lib/import-power-policy"
 import {
   discoverPublicAuctionCandidates,
   fetchPublicAuctionListing,
   isPublicAuctionSource,
   isEmptyCatalogPageError,
-  isImportPowerExcludedError,
   isPublicListingUnavailableError,
   publicSourceCatalogUrl,
   publicSourceMaximumPage,
@@ -50,11 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
     syncRunId = syncRun.id
 
-    // Обе политики применяются к уже собранному каталогу: фильтр при импорте
-    // действует только на новые лоты, а старые остаются видимыми до чистки.
-    const excludedByAge = await excludeListingsOutsideImportAgePolicy(source, maxAgeYears)
-    const excludedByPower = await excludeListingsOutsideImportPowerPolicy(source)
-    const excludedByPolicy = excludedByAge + excludedByPower
+    const excludedByPolicy = await excludeListingsOutsideImportAgePolicy(source, maxAgeYears)
     const catalog = await discoverPublicAuctionCandidates(source, page, Math.min(MAX_CANDIDATES_PER_SYNC, Math.max(limit * 2, limit)))
     const recentlyChecked = await prisma.auctionListing.findMany({
       where: {
@@ -83,11 +77,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         if (assessImportAge(item, maxAgeYears).eligible) items.push(item)
         else skippedByPolicy += 1
       } catch (error) {
-        // Отсев по мощности — штатная работа фильтра, а не поломка: лот
-        // считается пропущенным политикой, иначе метрика надёжности
-        // показывала бы отказ источника на каждой мощной машине.
-        if (isImportPowerExcludedError(error)) skippedByPolicy += 1
-        else if (isPublicListingUnavailableError(error)) unavailable += 1
+        if (isPublicListingUnavailableError(error)) unavailable += 1
         else failed.push({ id: candidate.sourceId, error: error instanceof Error ? error.message : `Не удалось разобрать карточку ${source}` })
       }
     }

@@ -12,7 +12,7 @@ import {
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { extractIautosImages } from "@/lib/iautos-images"
 import { translateModelName } from "@/lib/nvidia-translate"
-import { assessImportPower } from "@/lib/import-power-policy"
+import { lookupVehiclePower } from "@/lib/vehicle-power-reference"
 
 export const PUBLIC_AUCTION_SOURCES = [
   "IAUTOS",
@@ -405,23 +405,6 @@ export class EmptyCatalogPageError extends Error {
   }
 }
 
-/**
- * Лот отклонён по мощности, а не из-за сбоя разбора.
- *
- * Отдельный тип нужен, чтобы такой пропуск не считался отказом источника:
- * иначе метрика надёжности показывала бы поломку там, где сборщик отработал
- * правильно и просто отсеял неподходящую машину.
- */
-export class ImportPowerExcludedError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "ImportPowerExcludedError"
-  }
-}
-
-export function isImportPowerExcludedError(error: unknown): error is ImportPowerExcludedError {
-  return error instanceof Error && error.name === "ImportPowerExcludedError"
-}
 
 export function isEmptyCatalogPageError(error: unknown): error is EmptyCatalogPageError {
   return error instanceof Error && error.name === "EmptyCatalogPageError"
@@ -993,17 +976,6 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   const engineText = pairs.get("发动机") || firstMatch(title, /(\d+(?:\.\d+)?L)/i)
   const power = sourcePowerHorsepower(pairs.get("发动机功率") || pairs.get("最大功率") || engineText)
   const fuelType = normalizeAuctionFuelType(pairs.get("燃料类型") || pairs.get("能源类型"))
-
-  // Мощность проверяется до перевода: машина свыше порога льготного
-  // утильсбора покупателю не нужна, а перевод названия через прокси — самая
-  // дорогая часть разбора. Раньше мы платили за перевод и только потом
-  // узнавали, что лот не подходит.
-  const powerAssessment = assessImportPower({ power, fuelType })
-  if (!powerAssessment.eligible) {
-    throw new ImportPowerExcludedError(
-      `Iautos: карточка ${candidate.sourceId} мощнее порога льготного утильсбора (${power} л.с. при пределе ${powerAssessment.limit})`,
-    )
-  }
 
   const deterministicModel = normalizeAuctionModel(localizeChineseModel(modelOriginal))
   const model = deterministicModel || normalizeAuctionModel(await translateModelName(modelOriginal))
@@ -1673,11 +1645,14 @@ async function fetchCarvagoListing(candidate: PublicAuctionCandidate): Promise<A
  */
 export async function fetchPublicAuctionListing(source: PublicAuctionSource, candidate: PublicAuctionCandidate) {
   const item = await fetchPublicAuctionListingRaw(source, candidate)
-  const assessment = assessImportPower(item)
-  if (!assessment.eligible) {
-    throw new ImportPowerExcludedError(
-      `${source}: лот ${candidate.sourceId} мощнее порога льготного утильсбора (${item.power} л.с. при пределе ${assessment.limit})`,
-    )
+  // Encar, Carsensor, BE FORWARD и Goo-net не публикуют мощность, хотя от неё
+  // зависит утилизационный сбор — разница между льготной и коммерческой
+  // ставкой доходит до сотен раз. Справочник восстанавливает её по модели и
+  // обозначению двигателя в названии комплектации; неизвестная остаётся
+  // неизвестной, догадка здесь опаснее пропуска.
+  if (!item.power) {
+    const referencePower = lookupVehiclePower(item.make, item.model)
+    if (referencePower) return { ...item, power: referencePower }
   }
   return item
 }

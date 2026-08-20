@@ -4,6 +4,7 @@ import useSWR from "swr"
 import { Alert, Paper, Stack, Group, Text, Select, Divider, ThemeIcon, Box, Tooltip } from "@mantine/core"
 import { IconCalculator, IconInfoCircle, IconShip, IconBuildingBank, IconTruckDelivery, IconCar, IconCheck, IconAlertTriangle, IconCoin } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
+import { calculateUtilizationFee } from "@/lib/utilization-fee"
 import { fetchJson } from "@/lib/api-client"
 import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
 
@@ -145,13 +146,37 @@ function customsDuty(year: number, manufacturedMonth: string | null | undefined,
 }
 
 /**
- * Preferential recycling fee for a vehicle imported by an individual for
- * personal use. Since 01.12.2025 the preferential coefficients also depend
- * on power. Above 160 hp (and when power is missing) the exact fee must be
- * calculated from the official table and confirmed from vehicle documents.
+ * Считает утилизационный сбор для карточки лота.
+ *
+ * Раньше функция возвращала null для всего свыше 160 л.с. и для любых
+ * электромобилей, а итоговая цена показывается только когда сбор известен.
+ * Из-за этого владелец мощной машины не видел итога вовсе — вместо суммы
+ * пустота, хотя сбор посчитать можно, просто он выше.
  */
-function preferentialUtilizationFee(year: number, manufacturedMonth: string | null | undefined, power: number | null, isElectric: boolean) {
-  if (isElectric || !power || power > 160) return null
+function preferentialUtilizationFee(
+  year: number,
+  manufacturedMonth: string | null | undefined,
+  power: number | null,
+  isElectric: boolean,
+  engineVolumeCc: number | null,
+) {
+  if (!power) return null
+
+  const commercial = calculateUtilizationFee({
+    power,
+    engineVolumeCc,
+    fuelType: isElectric ? "ELECTRIC" : "GASOLINE",
+    year,
+    manufacturedMonth,
+  })
+
+  // Коммерческая ставка не зависит от месяца выпуска, поэтому вилки нет:
+  // сумма одна и та же по обе стороны трёхлетней границы.
+  if (!commercial.preferential) {
+    return commercial.feeRub === null
+      ? null
+      : { min: commercial.feeRub, max: commercial.feeRub, boundary: false, preferential: false }
+  }
 
   const yearDifference = Math.max(0, CURRENT_YEAR - year)
   const currentMonth = new Date().getMonth() + 1
@@ -170,6 +195,7 @@ function preferentialUtilizationFee(year: number, manufacturedMonth: string | nu
     min: Math.min(...amounts),
     max: Math.max(...amounts),
     boundary: amounts.length > 1,
+    preferential: true,
   }
 }
 
@@ -186,7 +212,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
   const isElectric = fuelType === "ELECTRIC"
   const hasEngineData = !isElectric && volume !== null
   const canCalculateCustomsDuty = hasEngineData && typeof eurRate === "number"
-  const utilizationFee = preferentialUtilizationFee(year, manufacturedMonth, power, isElectric)
+  const utilizationFee = preferentialUtilizationFee(year, manufacturedMonth, power, isElectric, volume)
 
   const calc = useMemo(() => {
     const customs = canCalculateCustomsDuty && volume !== null && eurRate !== undefined
