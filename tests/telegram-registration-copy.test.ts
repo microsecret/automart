@@ -67,6 +67,8 @@ test("без имени текст остаётся связным", () => {
 test("кнопка зовёт к конкретному действию", () => {
   assert.match(resumeButtonLabel("email"), /почту/i)
   assert.match(resumeButtonLabel("password"), /пароль/i)
-  assert.match(resumeButtonLabel("contact"), /телефон/i)
+  // Первый шаг зовёт пройти регистрацию целиком: человек ещё не знает, что
+  // она начинается с телефона, и слово «телефон» его не объясняет.
+  assert.match(resumeButtonLabel("contact"), /регистрацию/i)
   assert.match(resumeButtonLabel("complete"), /Завершить/)
 })

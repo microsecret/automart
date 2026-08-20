@@ -193,15 +193,16 @@ async function sendEmailRequest(chatId: string) {
     text: [
       "📧 <b>Шаг 2 из 3 — укажите почту</b>",
       "",
-      "Отправьте email одним сообщением. Он понадобится для входа на сайт и восстановления доступа.",
+      "<b>Просто напишите свой email в этот чат</b> — обычным сообщением, как пишете друзьям.",
       "",
-      "<i>Пример: name@example.com</i>",
+      "<i>Например: ivan@mail.ru</i>",
     ].join("\n"),
     parse_mode: "HTML",
     reply_markup: {
       force_reply: true,
-      selective: true,
-      input_field_placeholder: "name@example.com",
+      // selective действует только в группах, а в приватном чате мешает
+      // force_reply открыть поле ввода.
+      input_field_placeholder: "ivan@mail.ru",
     },
   })
 }
@@ -384,9 +385,16 @@ async function handleMessage(message: TelegramMessage) {
         await sendPasswordRequest(chatId)
       } catch (error) {
         const text = error instanceof TelegramRegistrationError
-          ? `⚠️ ${escapeTelegramHtml(error.message)}\n\nОтправьте другую почту одним сообщением.`
+          ? `⚠️ ${escapeTelegramHtml(error.message)}\n\nНапишите другой email в этот чат.`
           : "⚠️ Не удалось сохранить почту. Попробуйте ещё раз немного позже."
-        await telegramApi("sendMessage", { chat_id: chatId, text, parse_mode: "HTML" })
+        // Поле ввода открывается снова: без него человек упирается в ту же
+        // стену, что и в первый раз, и бросает регистрацию на этом шаге.
+        await telegramApi("sendMessage", {
+          chat_id: chatId,
+          text,
+          parse_mode: "HTML",
+          reply_markup: { force_reply: true, input_field_placeholder: "ivan@mail.ru" },
+        })
       }
       return
     }
