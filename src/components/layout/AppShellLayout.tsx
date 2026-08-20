@@ -194,9 +194,14 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         </AppShell.Section>
       </AppShell.Navbar>
 
-      <AppShell.Main style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+      {/* Подвал вынесен из потока Main и растянут на всю ширину окна: Mantine
+          сдвигает Main вправо на ширину сайдбара, и подвал обрывался, не
+          доходя до левого края экрана. */}
+      <AppShell.Main style={{ minHeight: "calc(100dvh - 68px)", display: "flex", flexDirection: "column" }}>
         <Box maw={1280} mx="auto" w="100%" className="app-main-content" style={{ flex: 1 }}>{children}</Box>
-        <AppFooter />
+        <div className="app-footer-bleed">
+          <AppFooter />
+        </div>
       </AppShell.Main>
       <SupportChat />
 
@@ -336,11 +341,13 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
           </>
         )}
 
-        <NavLink component={Link} href="/dashboard/referral" label="Партнёрская программа" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
+        {/* Приглашать друзей может любой пользователь — это не партнёрский
+            раздел для проверенных компаний, поэтому и название другое. */}
+        <NavLink component={Link} href="/dashboard/referral" label="Пригласить друзей" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
         <Divider my={2} />
         <NavLink component={Link} href="/messages" label="Сообщения" leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} color="red" />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/notifications" label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} color="red" />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/dashboard?tab=profile" label="Профиль и настройки" leftSection={<IconSettings size={16} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/dashboard?tab=profile" label="Профиль и настройки" leftSection={<IconSettings size={16} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
         {isAdmin && <NavLink component={Link} href="/admin" label="Админ-панель" leftSection={<IconSettings size={16} />} active={pathname.startsWith("/admin")} color="grape" variant="light" className="market-side-account__link" />}
         {isModerator && <NavLink component={Link} href="/moderation" label="Модерация" leftSection={<IconGavel size={16} />} active={pathname.startsWith("/moderation")} color="orange" variant="light" className="market-side-account__link" />}
       </Stack>

@@ -1,19 +1,22 @@
-import Image from "next/image"
+import LeWheelMark from "./LeWheelMark"
 
 type LeWheelBrandProps = {
   size?: number
   tone?: "default" | "inverse"
   showName?: boolean
+  /** Оставлен для совместимости с вызовами: вектору предзагрузка не нужна. */
   priority?: boolean
   className?: string
+  /** Знак встречается на странице дважды — id градиентов не должны совпадать. */
+  idSuffix?: string
 }
 
 export default function LeWheelBrand({
   size = 38,
   tone = "default",
   showName = true,
-  priority = false,
   className = "",
+  idSuffix = "",
 }: LeWheelBrandProps) {
   return (
     <span
@@ -21,14 +24,7 @@ export default function LeWheelBrand({
       aria-label={showName ? "LeWheel" : undefined}
     >
       <span className="lewheel-brand__mark" style={{ width: size, height: size }} aria-hidden="true">
-        <Image
-          src="/brand/lewheel-mark.png"
-          alt=""
-          width={size}
-          height={size}
-          priority={priority}
-          sizes={`${size}px`}
-        />
+        <LeWheelMark size={size} idSuffix={idSuffix || tone} />
       </span>
       {showName && (
         <span className="lewheel-brand__wordmark">

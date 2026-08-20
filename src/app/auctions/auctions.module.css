@@ -310,3 +310,44 @@
     max-height: 50px;
   }
 }
+
+/* Переключатель разбора выдачи. Строка ведёт себя как кнопка, но остаётся
+   частью карточки: это не действие, а раскрытие подробностей. */
+.insightsToggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--market-line);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--market-surface-subtle) 70%, transparent);
+  transition: background-color 170ms ease, border-color 170ms ease, transform 170ms ease;
+}
+
+.insightsToggle:hover {
+  border-color: color-mix(in srgb, #818cf8 55%, transparent);
+  background: color-mix(in srgb, var(--market-primary-soft) 45%, transparent);
+}
+
+.insightsToggle:active {
+  transform: translateY(1px);
+}
+
+.insightsChevron {
+  flex: 0 0 auto;
+  color: var(--market-muted);
+  transition: transform 240ms cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+
+.insightsChevronOpen {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insightsChevron,
+  .insightsToggle {
+    transition: none;
+  }
+}

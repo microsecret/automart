@@ -4,8 +4,8 @@ import { Suspense, useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Divider, Progress } from "@mantine/core"
-import { IconArrowRight, IconBolt, IconCar, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
+import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Collapse, Divider, Progress, UnstyledButton } from "@mantine/core"
+import { IconArrowRight, IconBolt, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
@@ -176,6 +176,8 @@ function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; 
 function AuctionsPageContent() {
   const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
+  // Разбор выдачи закрыт по умолчанию — на первом экране нужны лоты, а не графики.
+  const [insightsOpened, setInsightsOpened] = useState(false)
   const [country, setCountry] = useState("")
   const [source, setSource] = useState("")
   const [make, setMake] = useState("")
@@ -424,6 +426,31 @@ function AuctionsPageContent() {
               )}
 
               <Divider color="gray.2" />
+
+              {/* Аналитика свёрнута по умолчанию: она полезна, но занимала
+                  почти весь первый экран, и до самих лотов приходилось
+                  пролистывать страницу. Кто ищет машину — видит фильтры и
+                  марки сразу, кто изучает рынок — раскрывает разбор. */}
+              <UnstyledButton
+                className={styles.insightsToggle}
+                onClick={() => setInsightsOpened((opened) => !opened)}
+                aria-expanded={insightsOpened}
+              >
+                <Group gap="xs" wrap="nowrap">
+                  <ThemeIcon variant="light" color="indigo" size={26} radius="md"><IconChartBar size={15} /></ThemeIcon>
+                  <Box style={{ minWidth: 0 }}>
+                    <Text size="sm" fw={750}>Разбор текущей выдачи</Text>
+                    <Text size="xs" c="dimmed">Цены, год, пробег, топливо и кузов по {analytics.total} лотам</Text>
+                  </Box>
+                </Group>
+                <IconChevronDown
+                  size={16}
+                  className={`${styles.insightsChevron}${insightsOpened ? ` ${styles.insightsChevronOpen}` : ""}`}
+                />
+              </UnstyledButton>
+
+              <Collapse in={insightsOpened}>
+                <Stack gap="sm">
                 <Box className={styles.insights} aria-label="Аналитика текущей выдачи">
                   <Box className={styles.insight}>
                     <Text className={styles.insightValue}>{analytics.averageFinalPrice ? formatPriceShort(analytics.averageFinalPrice) : "—"}</Text>
@@ -482,6 +509,8 @@ function AuctionsPageContent() {
                     <Text size="xs" c="dimmed">Структура отражает только текущую отфильтрованную выдачу. Это не прогноз спроса, ликвидности или конечной цены сделки.</Text>
                   </>
                 )}
+                </Stack>
+              </Collapse>
               </Stack>
             </Paper>
         )}

@@ -375,10 +375,32 @@ select {
 
 .market-app-header {
   height: var(--app-header-height);
-  background: color-mix(in srgb, var(--market-surface) 88%, transparent) !important;
-  border-bottom-color: color-mix(in srgb, var(--market-field-line) 78%, transparent) !important;
-  box-shadow: 0 10px 28px -24px rgba(30, 41, 59, 0.42) !important;
-  backdrop-filter: blur(18px) saturate(1.14);
+  /* Шапка была почти прозрачной и сливалась со страницей. Плотный градиент с
+     индиго-подложкой даёт ей насыщенность и отделяет от контента.
+     Фон остаётся светлым намеренно: кнопки, иконки и текст в шапке
+     рассчитаны на светлую основу, и тёмная плашка сломала бы их читаемость. */
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, #eef2ff 94%, transparent) 0%,
+      color-mix(in srgb, #e0e7ff 88%, transparent) 100%) !important;
+  border-bottom-color: color-mix(in srgb, #a5b4fc 62%, transparent) !important;
+  box-shadow:
+    0 10px 30px -22px rgba(49, 46, 129, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+/* В тёмной теме та же идея, но в своих тонах: глубокий индиго вместо
+   светлого, иначе шапка светилась бы белым пятном. */
+[data-mantine-color-scheme="dark"] .market-app-header {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, #1e1b4b 92%, transparent) 0%,
+      color-mix(in srgb, #17162e 94%, transparent) 100%) !important;
+  border-bottom-color: color-mix(in srgb, #4338ca 55%, transparent) !important;
+  box-shadow:
+    0 10px 30px -20px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(129, 140, 248, 0.22) !important;
 }
 
 .market-app-header::after {
@@ -502,11 +524,34 @@ select {
 .market-app-navbar {
   bottom: 0 !important;
   min-height: 0;
-  z-index: 220;
+  /* Ниже подвала: меню — навигация по странице, а подвал принадлежит всей
+     ширине окна и должен проходить под ним, а не упираться в его край. */
+  z-index: 90;
+}
+
+/* Обёртка нужна, чтобы подвал вышел из колонки контента: сам AppShell.Main
+   отодвинут вправо на ширину меню. */
+.app-footer-bleed {
+  position: relative;
+  z-index: 120;
+  width: 100%;
 }
 
 .market-app-navbar .mantine-ScrollArea-root {
   height: 100%;
+}
+
+@media (min-width: 62em) {
+  /* Меню держится в пределах экрана и прокручивается внутри себя, а не тянется
+     вниз через весь документ до подвала. Так список остаётся компактным и
+     всегда на виду, а подвал начинается там, где кончается страница. */
+  .market-app-navbar {
+    position: fixed !important;
+    top: 68px !important;
+    bottom: auto !important;
+    height: calc(100dvh - 68px);
+    max-height: calc(100dvh - 68px);
+  }
 }
 
 /* Подвал лежит внутри колонки контента, которую AppShell отодвигает вправо на
@@ -523,7 +568,9 @@ select {
 @media (min-width: 62em) {
   .market-app-footer {
     --app-shell-navbar-offset: 236px;
-    padding-left: 236px;
+    /* padding-left здесь быть не должно: он возвращал содержимое подвала
+       обратно вправо, под боковое меню, ради которого подвал и растягивали.
+       Колонки центрируются собственным max-width, как и остальной контент. */
   }
 }
 
@@ -739,6 +786,55 @@ select {
   background: color-mix(in srgb, var(--market-primary-soft) 82%, transparent);
 }
 
+/* Профиль и настройки — вход в собственный аккаунт, а не ещё один раздел
+   каталога. Тонкая линия слева и мягкая подложка отделяют его от списка,
+   не превращая в кнопку-акцент: главное действие здесь всё-таки подача
+   объявления. */
+.market-side-account__link--profile {
+  position: relative;
+  background: color-mix(in srgb, var(--market-primary-soft) 42%, transparent);
+}
+
+.market-side-account__link--profile::before {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 0;
+  width: 2.5px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #818cf8 0%, #4338ca 100%);
+  content: "";
+  transition: box-shadow 200ms ease;
+}
+
+.market-side-account__link--profile:hover {
+  background: color-mix(in srgb, var(--market-primary-soft) 92%, transparent);
+}
+
+.market-side-account__link--profile:hover::before {
+  box-shadow: 0 0 10px 1px rgba(99, 102, 241, 0.75);
+}
+
+/* Шестерёнка проворачивается при наведении — настройки в одном движении
+   объясняют, что за ними. */
+.market-side-account__link--profile .mantine-NavLink-section svg {
+  transition: transform 420ms cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+
+.market-side-account__link--profile:hover .mantine-NavLink-section svg {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-side-account__link--profile .mantine-NavLink-section svg {
+    transition: none;
+  }
+
+  .market-side-account__link--profile:hover .mantine-NavLink-section svg {
+    transform: none;
+  }
+}
+
 /* Уровней в меню два: раздел и его подпункт. Раньше веса различались на
    30 единиц (650/620/650) при почти равном кегле — глаз читал это как
    случайную неровность, а не как иерархию. */
@@ -823,30 +919,92 @@ select {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  overflow: hidden;
-  border-radius: 12px;
-  background: #06152f;
-  box-shadow: 0 9px 22px -14px rgba(18, 48, 118, 0.9);
+  border-radius: 50%;
+  /* Подложка повторяет форму знака: у круглого колеса квадратная плашка
+     читалась как чужая рамка вокруг логотипа. */
+  box-shadow:
+    0 10px 24px -14px rgba(30, 27, 75, 0.95),
+    0 2px 6px -3px rgba(67, 56, 202, 0.55);
+  transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
-.lewheel-brand__mark img {
+.lewheel-mark {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  overflow: visible;
+}
+
+/* Разгон при загрузке страницы: колесо делает один оборот и замирает —
+   короткий знак жизни, который не превращается в вечную анимацию. */
+.lewheel-mark__spin {
+  transform-origin: 32px 32px;
+  animation: lewheel-spin-in 1400ms cubic-bezier(0.22, 0.9, 0.24, 1) 1 both;
+}
+
+/* Наведение раскручивает колесо непрерывно, пока курсор на логотипе. */
+.lewheel-brand:hover .lewheel-mark__spin,
+a:hover .lewheel-mark__spin {
+  animation: lewheel-spin 2.6s linear infinite;
+}
+
+.lewheel-brand:hover .lewheel-brand__mark,
+a:hover .lewheel-brand__mark {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow:
+    0 14px 30px -14px rgba(30, 27, 75, 0.95),
+    0 3px 10px -4px rgba(99, 102, 241, 0.7);
+}
+
+/* Блик слегка «дышит»: даёт ощущение полированного металла в покое. */
+.lewheel-mark__gloss {
+  animation: lewheel-gloss 5s ease-in-out infinite;
+}
+
+@keyframes lewheel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes lewheel-spin-in {
+  from { transform: rotate(-150deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes lewheel-gloss {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Уважение к системной настройке: движение отключается полностью. */
+@media (prefers-reduced-motion: reduce) {
+  .lewheel-mark__spin,
+  .lewheel-brand:hover .lewheel-mark__spin,
+  a:hover .lewheel-mark__spin,
+  .lewheel-mark__gloss {
+    animation: none;
+  }
 }
 
 .lewheel-brand__wordmark {
   font-family: var(--font-display), sans-serif;
-  font-size: 1.18rem;
-  font-weight: 650;
+  font-size: 1.24rem;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   white-space: nowrap;
+  /* Тонкая светлая кромка снизу приподнимает надпись над фоном — тот же
+     приём, что даёт объём знаку, без превращения текста в тиснение. */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .lewheel-brand__wordmark strong {
-  color: #4338ca;
+  /* Градиент по букве вместо плоской заливки: «Wheel» становится смысловым
+     центром, а не просто более жирным словом. */
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 55%, #312e81 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-weight: 900;
 }
 
@@ -854,8 +1012,16 @@ select {
   color: #f8fafc;
 }
 
+.lewheel-brand--inverse .lewheel-brand__wordmark {
+  /* На тёмном подвале светлая кромка снизу превратилась бы в грязь. */
+  text-shadow: none;
+}
+
 .lewheel-brand--inverse .lewheel-brand__wordmark strong {
-  color: #818cf8;
+  background: linear-gradient(135deg, #c7d2fe 0%, #818cf8 60%, #6366f1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .partner-header-cta {
