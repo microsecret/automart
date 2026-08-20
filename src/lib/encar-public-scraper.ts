@@ -6,9 +6,10 @@ import { authorizedSourceGet } from "@/lib/authorized-source-http"
 const ENCAR_HOST = "fem.encar.com"
 const ENCAR_DETAIL_PATH = /^\/cars\/detail\/(\d+)$/
 const ENCAR_CATALOG_HOST = "car.encar.com"
+const ENCAR_API_HOST = "api.encar.com"
 const ENCAR_CATALOG_PATH = "/list/car"
 const ENCAR_REQUEST_TIMEOUT_MS = 20_000
-const ENCAR_ALLOWED_HOSTS = new Set([ENCAR_HOST, ENCAR_CATALOG_HOST])
+const ENCAR_ALLOWED_HOSTS = new Set([ENCAR_HOST, ENCAR_CATALOG_HOST, ENCAR_API_HOST])
 const ENCAR_REQUEST_HEADERS = {
   Accept: "text/html,application/xhtml+xml",
   "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7",
@@ -322,6 +323,40 @@ export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: num
   return [...urls]
 }
 
+/**
+ * Забирает мощность из карточки достоинств лота.
+ *
+ * Основные данные Encar её не содержат — ни разметка страницы, ни разделы
+ * основного API. Но площадка ведёт отдельную карточку с характеристиками, где
+ * встречается поле «출력(304ps)». Заполнено оно примерно у каждого
+ * пятнадцатого лота, поэтому служит дополнением к справочнику, а не заменой:
+ * зато там мощность паспортная, а не выведенная по модели.
+ *
+ * Отказ запроса не должен ломать импорт: без мощности лот сохраняется как и
+ * раньше, просто утилизационный сбор будет посчитан по справочнику.
+ */
+async function fetchEncarSellingPointPower(vehicleId: string): Promise<number | null> {
+  try {
+    const response = await authorizedSourceGet(
+      `https://${ENCAR_API_HOST}/v1/readside/diagnosis/vehicle/${vehicleId}/sellingpoint`,
+      {
+        allowedHosts: ENCAR_ALLOWED_HOSTS,
+        headers: { ...ENCAR_REQUEST_HEADERS, Accept: "application/json", Referer: `https://${ENCAR_HOST}/` },
+        timeoutMs: ENCAR_REQUEST_TIMEOUT_MS,
+        maxBytes: 200_000,
+      },
+    )
+    if (!response.ok) return null
+    const body = await response.text()
+    // Значение приходит внутри названия поля: «출력(304ps)».
+    const match = body.match(/SPEC_horsepowerNm[\s\S]{0,120}?\((\d{2,4})ps\)/i)
+    const power = match ? Number(match[1]) : Number.NaN
+    return Number.isFinite(power) && power > 0 ? power : null
+  } catch {
+    return null
+  }
+}
+
 export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<AuctionImportItem> {
   const { sourceUrl, requestedId } = sourceUrlFrom(rawUrl)
   const response = await authorizedSourceGet(sourceUrl, {
@@ -345,6 +380,11 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
   const spec = asRecord(base?.spec)
   const contact = asRecord(base?.contact)
   if (!base || !category || !advertisement || !spec) throw new Error("В карточке Encar отсутствуют обязательные данные автомобиля")
+
+  // Мощность запрашивается только когда основные поля её не дали: лишний
+  // запрос к площадке на каждый лот замедлил бы сбор без пользы.
+  const hasPower = Boolean(firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower))
+  const sellingPointPower = hasPower ? null : await fetchEncarSellingPointPower(requestedId)
 
   const advertisementStatus = asText(advertisement.status)
   if (advertisementStatus && advertisementStatus !== "ADVERTISE") {
@@ -415,7 +455,8 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     engineVolume: fuelType === "ELECTRIC" ? null : firstPositiveInteger(spec.displacement),
     // Some Encar records include power in a source field, while many public
     // listings omit it entirely. Never infer horsepower from displacement.
-    power: firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower),
+    power: firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower)
+      ?? sellingPointPower,
     driveType: normalizeAuctionDriveType(rawDrive),
     vin: asText(base.vin),
     lotNumber: requestedId,
