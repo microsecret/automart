@@ -1081,6 +1081,9 @@ a:hover .lewheel-mark__feather {
   background-clip: text;
   color: transparent;
   font-weight: 900;
+  /* Тень родителя рисуется под прозрачными буквами и просвечивает сквозь
+     них светлым ореолом — из-за этого слово выглядело выцветшим. */
+  text-shadow: none;
   animation: lewheel-shine 5.5s ease-in-out infinite;
 }
 
