@@ -1,10 +1,33 @@
 import "./globals.css"
 import type { Metadata } from "next"
+import { Manrope, Inter } from "next/font/google"
 import { ColorSchemeScript } from "@mantine/core"
 import AppProviders from "@/components/providers/AppProviders"
 import AppShellLayout from "@/components/layout/AppShellLayout"
 import StructuredData from "@/components/seo/StructuredData"
 import { absoluteUrl, getSiteUrl } from "@/lib/site-url"
+
+/**
+ * Типографика.
+ *
+ * Раньше сайт жил на системном Segoe UI — отсюда казённый, «офисный» вид.
+ * Manrope с плотными засечками-полуштрихами держит заголовки и цифры, Inter
+ * отвечает за длинный текст. Пара характерная, но не крикливая: марка
+ * автомобиля и цена должны читаться мгновенно.
+ */
+const display = Manrope({
+  subsets: ["latin", "cyrillic"],
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-display-next",
+  display: "swap",
+})
+
+const body = Inter({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans-next",
+  display: "swap",
+})
 
 const verification: NonNullable<Metadata["verification"]> = {}
 const otherVerification: Record<string, string> = {}
@@ -36,7 +59,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="ru" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultColorScheme="light" />
         {/* Auction cards use Encar's public CDN directly, so start DNS/TLS

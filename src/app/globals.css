@@ -8,17 +8,19 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --market-ink: #171719;
+  /* Шрифты грузит next/font и кладёт в --font-*-next; системные остаются
+     запасным вариантом на случай, если загрузка не прошла. */
+  --font-sans: var(--font-sans-next), "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display-next), "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --market-ink: #0d1b32;
   /* Вторичный текст был почти чистым серым (насыщенность 4%) и выглядел
      выцветшим рядом с индиго. Синий подтон связывает его с основным тоном,
      контраст при этом растёт с 4.8 до 5.5. */
-  --market-muted: #676783;
+  --market-muted: #5b6b84;
   /* Граница карточки почти сливалась с фоном страницы (контраст 1.13), из-за
      чего карточка не читалась как отдельный объект и страница выглядела
      плоской. Более глубокий тон отделяет её от подложки. */
-  --market-line: #d3d7e3;
+  --market-line: #ccd5e3;
   --market-surface: #ffffff;
   /* Фон был почти белым, поэтому карточки сливались с ним и страница
      читалась как одна плоскость. Чуть более глубокий тон отделяет контент
@@ -26,36 +28,36 @@
   /* Фон получил индиговый подтон панели кабинета: раньше насыщенность была
      22% и страница выглядела серой рядом с фирменным цветом. Теперь 56% —
      белые карточки отделяются от подложки заметнее, а тон один на весь сайт. */
-  --market-background: #eaedf9;
-  --market-surface-subtle: #f4f6fd;
+  --market-background: #eef1f7;
+  --market-surface-subtle: #f6f8fc;
   --market-field: #ffffff;
-  --market-field-hover: #eef2ff;
+  --market-field-hover: #eaf0fa;
   /* Рамка поля давала контраст 1.35 к белой заливке — на снимках экрана поля
      фильтра читались как подписи без границ. */
-  --market-field-line: #c9d2e6;
+  --market-field-line: #c3cfe2;
   --market-label: #475467;
   --market-control-text: #273142;
   --market-placeholder: #667085;
-  --market-focus: rgba(99, 102, 241, 0.18);
+  --market-focus: rgba(20, 48, 107, 0.2);
   /* Мягкая подложка отличалась от фона страницы всего на 6% светлоты, поэтому
      активный пункт меню было не отличить от обычного. */
-  --market-primary-soft: #dfe4ff;
+  --market-primary-soft: #dbe4f7;
   --market-scroll-thumb: #d4d4d8;
   /* Выделение текста и каретка приходили из настроек браузера, поэтому на
      фирменных страницах вспыхивали чужой синевой. Собственные токены держат
      их в палитре проекта и в обеих темах. */
-  --market-selection: #c7d2fe;
+  --market-selection: #bfd3f2;
   --market-selection-ink: #171719;
-  --market-caret: #4f46e5;
+  --market-caret: #14306b;
   /* Основной тон углублён с #4f46e5 (светлота 59%) до #4338ca: светлый индиго
      на белом фоне не держал вес, из-за чего интерфейс читался блёклым.
      Оттенок взят из уже существующей палитры, поэтому бренд узнаваем. */
-  --market-primary: #4338ca;
+  --market-primary: #14306b;
   /* Второй цвет системы. Раньше индиго отвечал и за навигацию, и за действие,
      поэтому взгляду не за что было зацепиться: всё одинаково важное. Янтарь
      несёт только призыв к действию и уже прижился в бейджах аукционов.
      Текст на нём тёмный — белый даёт всего 2.1 контраста. */
-  --market-accent: #f59f0a;
+  --market-accent: #ef7d00;
   --market-accent-ink: #171719;
   --market-accent-soft: #fff7e6;
   --app-header-height: 68px;

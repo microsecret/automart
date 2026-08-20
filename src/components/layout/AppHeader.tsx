@@ -139,7 +139,16 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
 
           <Menu shadow="md" width={210} position="bottom-start" radius="md" offset={6}>
             <Menu.Target>
-              <Button visibleFrom="md" variant="light" color="indigo" size="compact-sm" leftSection={<IconMenu2 size={15} />}>
+              {/* Подпись не сжимается: в тесной шапке слово «Разделы»
+                  обрезалось до «Раз» и кнопка выглядела сломанной. */}
+              <Button
+                visibleFrom="md"
+                variant="light"
+                color="indigo"
+                size="compact-sm"
+                leftSection={<IconMenu2 size={15} />}
+                styles={{ root: { flexShrink: 0 }, label: { whiteSpace: "nowrap" } }}
+              >
                 Разделы
               </Button>
             </Menu.Target>

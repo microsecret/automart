@@ -14,6 +14,7 @@ import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEE
 import { fetchJson } from "@/lib/api-client"
 import { plural } from "@/lib/format"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import CategoryShowcase from "./CategoryShowcase"
 
 type HomePageProps = {
   initialQuery?: string
@@ -219,6 +220,10 @@ export default function HomePage(p: HomePageProps = {}) {
           </Box>
         </Paper>
       )}
+
+      {/* Витрина направлений — только на главной: внутри категории человек
+          уже выбрал, куда идёт, и повторное меню там мешало бы. */}
+      {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
 
       <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
         <Stack gap={0}>
