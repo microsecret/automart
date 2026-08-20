@@ -12,6 +12,7 @@ import {
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { extractIautosImages } from "@/lib/iautos-images"
 import { translateModelName } from "@/lib/nvidia-translate"
+import { assessImportPower } from "@/lib/import-power-policy"
 
 export const PUBLIC_AUCTION_SOURCES = [
   "IAUTOS",
@@ -402,6 +403,24 @@ export class EmptyCatalogPageError extends Error {
     super(message)
     this.name = "EmptyCatalogPageError"
   }
+}
+
+/**
+ * Лот отклонён по мощности, а не из-за сбоя разбора.
+ *
+ * Отдельный тип нужен, чтобы такой пропуск не считался отказом источника:
+ * иначе метрика надёжности показывала бы поломку там, где сборщик отработал
+ * правильно и просто отсеял неподходящую машину.
+ */
+export class ImportPowerExcludedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ImportPowerExcludedError"
+  }
+}
+
+export function isImportPowerExcludedError(error: unknown): error is ImportPowerExcludedError {
+  return error instanceof Error && error.name === "ImportPowerExcludedError"
 }
 
 export function isEmptyCatalogPageError(error: unknown): error is EmptyCatalogPageError {
@@ -970,18 +989,30 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
     modelOriginal = modelOriginal.slice(makeEntry[0].length).trim()
   }
   modelOriginal = modelOriginal.replace(makeEntry[0], "").trim()
+  const pairs = tablePairs(html)
+  const engineText = pairs.get("发动机") || firstMatch(title, /(\d+(?:\.\d+)?L)/i)
+  const power = sourcePowerHorsepower(pairs.get("发动机功率") || pairs.get("最大功率") || engineText)
+  const fuelType = normalizeAuctionFuelType(pairs.get("燃料类型") || pairs.get("能源类型"))
+
+  // Мощность проверяется до перевода: машина свыше порога льготного
+  // утильсбора покупателю не нужна, а перевод названия через прокси — самая
+  // дорогая часть разбора. Раньше мы платили за перевод и только потом
+  // узнавали, что лот не подходит.
+  const powerAssessment = assessImportPower({ power, fuelType })
+  if (!powerAssessment.eligible) {
+    throw new ImportPowerExcludedError(
+      `Iautos: карточка ${candidate.sourceId} мощнее порога льготного утильсбора (${power} л.с. при пределе ${powerAssessment.limit})`,
+    )
+  }
+
   const deterministicModel = normalizeAuctionModel(localizeChineseModel(modelOriginal))
   const model = deterministicModel || normalizeAuctionModel(await translateModelName(modelOriginal))
   if (!model) throw new Error(`Iautos: не переведена модель «${diagnosticSourceLabel(modelOriginal)}» карточки ${candidate.sourceId}`)
 
-  const pairs = tablePairs(html)
   const images = extractIautosImages(html)
   if (!images.length && candidate.imageUrl) images.push(candidate.imageUrl)
   const sourceDescription = htmlText(firstMatch(html, /<p class="see-one-part"[^>]*>([\s\S]*?)<\/p>/i))
-  const engineText = pairs.get("发动机") || firstMatch(title, /(\d+(?:\.\d+)?L)/i)
-  const power = sourcePowerHorsepower(pairs.get("发动机功率") || pairs.get("最大功率") || engineText)
   const displacement = asNumber(engineText?.match(/([\d.]+)L/i)?.[1])
-  const fuelType = normalizeAuctionFuelType(pairs.get("燃料类型") || pairs.get("能源类型"))
   const transmission = normalizeAuctionTransmission(pairs.get("变速箱"))
   const bodyType = normalizeAuctionBodyType(pairs.get("车身结构") || pairs.get("车辆级别"))
   const driveType = normalizeAuctionDriveType(pairs.get("驱动方式"))
@@ -1632,7 +1663,26 @@ async function fetchCarvagoListing(candidate: PublicAuctionCandidate): Promise<A
   }
 }
 
-export function fetchPublicAuctionListing(source: PublicAuctionSource, candidate: PublicAuctionCandidate) {
+/**
+ * Разбирает карточку и отсеивает машины мощнее порога льготного утильсбора.
+ *
+ * Проверка стоит здесь, а не в каждом из восьми разборщиков: так правило
+ * действует на все площадки сразу и не может быть забыто при добавлении
+ * новой. У Iautos есть ещё и ранняя проверка внутри разборщика — она
+ * экономит платный перевод названия, который иначе тратился бы впустую.
+ */
+export async function fetchPublicAuctionListing(source: PublicAuctionSource, candidate: PublicAuctionCandidate) {
+  const item = await fetchPublicAuctionListingRaw(source, candidate)
+  const assessment = assessImportPower(item)
+  if (!assessment.eligible) {
+    throw new ImportPowerExcludedError(
+      `${source}: лот ${candidate.sourceId} мощнее порога льготного утильсбора (${item.power} л.с. при пределе ${assessment.limit})`,
+    )
+  }
+  return item
+}
+
+function fetchPublicAuctionListingRaw(source: PublicAuctionSource, candidate: PublicAuctionCandidate) {
   if (source === "IAUTOS") return fetchIautosListing(candidate)
   if (source === "YOUXINPAI") return fetchYouxinpaiListing(candidate)
   if (source === "GOONET") return fetchGoonetListing(candidate)
