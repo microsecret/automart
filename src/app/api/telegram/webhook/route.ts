@@ -100,6 +100,32 @@ function registrationKeyboard(registerLabel: string) {
   }
 }
 
+/**
+ * Описание оставшихся шагов регистрации.
+ *
+ * Раньше уведомление всегда перечисляло все три шага, включая уже пройденные:
+ * человек, подтвердивший телефон, снова читал «подтвердите телефон» и не
+ * понимал, чего от него хотят. Показываем только то, что осталось сделать.
+ */
+function describePendingSteps(step: TelegramRegistrationStep) {
+  const steps: Array<{ key: TelegramRegistrationStep; text: string }> = [
+    { key: "contact", text: "📱 <b>Телефон</b> — подтвердите свой контакт кнопкой Telegram." },
+    { key: "email", text: "📧 <b>Почта</b> — укажите email для входа и восстановления доступа." },
+    { key: "password", text: "🔑 <b>Пароль</b> — придумайте защищённый пароль от аккаунта." },
+  ]
+  const startIndex = steps.findIndex((item) => item.key === step)
+  const pending = startIndex === -1 ? steps : steps.slice(startIndex)
+  const done = startIndex > 0
+
+  return [
+    done
+      ? `Регистрация в LeWheel почти завершена — остал${pending.length > 1 ? "ось" : "ся"} ${pending.length === 1 ? "последний шаг" : `${pending.length} шага`}:`
+      : "Регистрация в LeWheel пока не завершена. Пройдите три коротких шага в личном чате с ботом:",
+    "",
+    ...pending.map((item, index) => `${index + 1}️⃣ ${item.text}`),
+  ]
+}
+
 function telegramUserMention(from: NonNullable<TelegramMessage["from"]>) {
   const displayName = [from.first_name, from.last_name].filter(Boolean).join(" ").trim() || "пользователь Telegram"
   const mention = `<a href="tg://user?id=${encodeURIComponent(String(from.id))}">${escapeTelegramHtml(displayName)}</a>`
@@ -408,6 +434,7 @@ async function handleMessage(message: TelegramMessage) {
   }
 
   const user = await getTelegramUser(telegramId)
+  const pendingStep = getTelegramRegistrationStep(user)
   if (
     (message.chat.type === "group" || message.chat.type === "supergroup") &&
     hasModeratableContent(message) &&
@@ -425,11 +452,7 @@ async function handleMessage(message: TelegramMessage) {
       const userMention = telegramUserMention(message.from)
       const sentMessage = await sendBrandedMessage(chatId, [
         `🔐 <b>${userMention}, сообщение скрыто</b>`,
-        "Регистрация в LeWheel пока не завершена. Пройдите три коротких шага в личном чате с ботом:",
-        "",
-        "1️⃣ 📱 <b>Телефон</b> — подтвердите свой контакт кнопкой Telegram.",
-        "2️⃣ 📧 <b>Почта</b> — укажите email для входа и восстановления доступа.",
-        "3️⃣ 🔑 <b>Пароль</b> — придумайте защищённый пароль от аккаунта.",
+        ...describePendingSteps(pendingStep),
         "",
         "✅ После регистрации сообщения и медиа будут публиковаться автоматически.",
         "⏳ Системное уведомление удалится через 5 минут.",
