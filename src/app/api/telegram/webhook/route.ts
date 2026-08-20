@@ -19,6 +19,7 @@ import {
 import { prisma } from "@/lib/prisma"
 import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 import { registerTelegramGroup, setTelegramChatMarketing } from "@/lib/telegram-marketing"
+import { describePendingSteps, resumeButtonLabel } from "@/lib/telegram-registration-copy"
 
 export const dynamic = "force-dynamic"
 
@@ -98,32 +99,6 @@ function registrationKeyboard(registerLabel: string) {
       ...(createUrl ? [[{ text: "🚗 Разместить объявление", url: createUrl }]] : []),
     ],
   }
-}
-
-/**
- * Описание оставшихся шагов регистрации.
- *
- * Раньше уведомление всегда перечисляло все три шага, включая уже пройденные:
- * человек, подтвердивший телефон, снова читал «подтвердите телефон» и не
- * понимал, чего от него хотят. Показываем только то, что осталось сделать.
- */
-function describePendingSteps(step: TelegramRegistrationStep) {
-  const steps: Array<{ key: TelegramRegistrationStep; text: string }> = [
-    { key: "contact", text: "📱 <b>Телефон</b> — подтвердите свой контакт кнопкой Telegram." },
-    { key: "email", text: "📧 <b>Почта</b> — укажите email для входа и восстановления доступа." },
-    { key: "password", text: "🔑 <b>Пароль</b> — придумайте защищённый пароль от аккаунта." },
-  ]
-  const startIndex = steps.findIndex((item) => item.key === step)
-  const pending = startIndex === -1 ? steps : steps.slice(startIndex)
-  const done = startIndex > 0
-
-  return [
-    done
-      ? `Регистрация в LeWheel почти завершена — остал${pending.length > 1 ? "ось" : "ся"} ${pending.length === 1 ? "последний шаг" : `${pending.length} шага`}:`
-      : "Регистрация в LeWheel пока не завершена. Пройдите три коротких шага в личном чате с ботом:",
-    "",
-    ...pending.map((item, index) => `${index + 1}️⃣ ${item.text}`),
-  ]
 }
 
 function telegramUserMention(from: NonNullable<TelegramMessage["from"]>) {
@@ -456,7 +431,7 @@ async function handleMessage(message: TelegramMessage) {
         "",
         "✅ После регистрации сообщения и медиа будут публиковаться автоматически.",
         "⏳ Системное уведомление удалится через 5 минут.",
-      ].join("\n"), registrationKeyboard("🚀 Завершить регистрацию"))
+      ].join("\n"), registrationKeyboard(resumeButtonLabel(pendingStep)))
       await scheduleTemporarySystemMessage(chatId, sentMessage)
     }
   }

@@ -27,6 +27,12 @@ model User {
   restrictionReason  String?
   statusUpdatedAt    DateTime?
   hashedPassword     String?
+
+  // Напоминания о незавершённой регистрации: когда отправили последнее и
+  // сколько всего. Нужны, чтобы не писать человеку бесконечно.
+  regReminderAt      DateTime?
+  regReminderCount   Int       @default(0)
+
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
