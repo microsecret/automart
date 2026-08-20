@@ -2,6 +2,7 @@ import { isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDr
 import type { AuctionConditionCheck, AuctionConditionInfo, AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
 import { translateToRussian } from "@/lib/nvidia-translate"
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
+import { lookupVehiclePower } from "@/lib/vehicle-power-reference"
 
 const ENCAR_HOST = "fem.encar.com"
 const ENCAR_DETAIL_PATH = /^\/cars\/detail\/(\d+)$/
@@ -453,10 +454,13 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     bodyType: normalizeEncarBodyType(rawBody),
     color: translateEncarColor(rawColor),
     engineVolume: fuelType === "ELECTRIC" ? null : firstPositiveInteger(spec.displacement),
-    // Some Encar records include power in a source field, while many public
-    // listings omit it entirely. Never infer horsepower from displacement.
+    // Порядок источников мощности: сначала поля самой площадки, затем её
+    // карточка характеристик, и лишь потом справочник по модели. Каждый
+    // следующий шаг менее точен, поэтому применяется только когда предыдущий
+    // ничего не дал.
     power: firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower)
-      ?? sellingPointPower,
+      ?? sellingPointPower
+      ?? lookupVehiclePower(make, modelParts.join(" ")),
     driveType: normalizeAuctionDriveType(rawDrive),
     vin: asText(base.vin),
     lotNumber: requestedId,
