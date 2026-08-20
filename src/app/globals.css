@@ -951,8 +951,9 @@ select {
   /* Подложки нет: у крылатого знака крыло уходит за пределы круга, и любая
      плашка обрезала бы перья. Объём даёт сама графика, а тень — фильтр,
      повторяющий силуэт. */
-  filter: drop-shadow(0 6px 12px rgba(30, 27, 75, 0.42));
-  transition: transform 220ms ease, filter 220ms ease;
+  /* Тень повторяет силуэт: у крылатого знака перья выходят за пределы круга,
+     и прямоугольная плашка обрезала бы их. */
+  filter: drop-shadow(0 5px 10px rgba(15, 13, 51, 0.35));
 }
 
 .lewheel-mark {
@@ -960,115 +961,6 @@ select {
   width: 100%;
   height: 100%;
   overflow: visible;
-}
-
-/* Разгон при загрузке страницы: колесо делает один оборот и замирает —
-   короткий знак жизни, который не превращается в вечную анимацию. */
-.lewheel-mark__spin {
-  transform-origin: 42px 32px;
-  animation: lewheel-spin-in 1400ms cubic-bezier(0.22, 0.9, 0.24, 1) 1 both;
-}
-
-/* Наведение раскручивает колесо непрерывно, пока курсор на логотипе. */
-.lewheel-brand:hover .lewheel-mark__spin,
-a:hover .lewheel-mark__spin {
-  animation: lewheel-spin 2.6s linear infinite;
-}
-
-.lewheel-brand:hover .lewheel-brand__mark,
-a:hover .lewheel-brand__mark {
-  transform: translateY(-1px) scale(1.05);
-  filter: drop-shadow(0 8px 16px rgba(67, 56, 202, 0.6));
-}
-
-.lewheel-mark__wing {
-  transform-origin: 42px 32px;
-}
-
-/* Перья живут собственной жизнью: каждое уносится влево и возвращается со
-   своей задержкой. Разнобой таймингов и создаёт ощущение потока воздуха —
-   синхронное движение читалось бы как дрожание одной детали. */
-.lewheel-mark__feather {
-  transform-origin: 42px 32px;
-  animation: lewheel-trail 2.8s ease-in-out infinite;
-}
-
-.lewheel-mark__feather--1 { animation-delay: 0s; }
-.lewheel-mark__feather--2 { animation-delay: 0.16s; }
-.lewheel-mark__feather--3 { animation-delay: 0.32s; }
-
-/* Основное перо дышит мягче линий: оно держит форму знака, и резкое
-   движение читалось бы как дефект, а не как поток. */
-.lewheel-mark__blade {
-  transform-origin: 42px 32px;
-  animation: lewheel-blade 3.4s ease-in-out infinite;
-}
-
-.lewheel-brand:hover .lewheel-mark__blade,
-a:hover .lewheel-mark__blade {
-  animation-duration: 1.4s;
-}
-
-@keyframes lewheel-blade {
-  0%, 100% { transform: translateX(0) scaleX(1); }
-  50% { transform: translateX(-1.4px) scaleX(1.05); }
-}
-
-/* При наведении поток ускоряется и вытягивается сильнее. */
-.lewheel-brand:hover .lewheel-mark__feather,
-a:hover .lewheel-mark__feather {
-  animation-duration: 1.1s;
-}
-
-@keyframes lewheel-trail {
-  0%, 100% {
-    transform: translateX(0) scaleX(1);
-    opacity: var(--feather-opacity, 1);
-  }
-  45% {
-    transform: translateX(-3.5px) scaleX(1.16);
-    opacity: 0.55;
-  }
-}
-
-/* Блик слегка «дышит»: даёт ощущение полированного металла в покое. */
-.lewheel-mark__gloss {
-  animation: lewheel-gloss 5s ease-in-out infinite;
-}
-
-@keyframes lewheel-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes lewheel-spin-in {
-  from { transform: rotate(-150deg); }
-  to { transform: rotate(0deg); }
-}
-
-@keyframes lewheel-gloss {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
-}
-
-/* Уважение к системной настройке: движение отключается полностью. */
-@media (prefers-reduced-motion: reduce) {
-  .lewheel-mark__spin,
-  .lewheel-brand:hover .lewheel-mark__spin,
-  a:hover .lewheel-mark__spin,
-  .lewheel-mark__gloss {
-    animation: none;
-  }
-
-  .lewheel-mark__feather,
-  .lewheel-brand:hover .lewheel-mark__feather,
-  a:hover .lewheel-mark__feather,
-  .lewheel-mark__blade,
-  .lewheel-brand:hover .lewheel-mark__blade,
-  a:hover .lewheel-mark__blade,
-  .lewheel-brand__wordmark strong {
-    animation: none;
-  }
 }
 
 .lewheel-brand__wordmark {
@@ -1097,8 +989,7 @@ a:hover .lewheel-mark__feather {
      Размер фона больше самой буквы, иначе двигать нечего. */
   /* Светлая точка блика приглушена: на белой шапке #a5b4fc почти сливался с
      фоном, и слово пропадало в середине цикла. */
-  background: linear-gradient(115deg, #312e81 0%, #4338ca 28%, #6366f1 42%, #4338ca 58%, #1e1b4b 100%);
-  background-size: 260% 100%;
+  background: linear-gradient(115deg, #312e81 0%, #4338ca 55%, #211d63 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1106,12 +997,9 @@ a:hover .lewheel-mark__feather {
   /* Тень родителя рисуется под прозрачными буквами и просвечивает сквозь
      них светлым ореолом — из-за этого слово выглядело выцветшим. */
   text-shadow: none;
-  animation: lewheel-shine 5.5s ease-in-out infinite;
 }
 
-@keyframes lewheel-shine {
-  0%, 100% { background-position: 100% 50%; }
-  50% { background-position: 0% 50%; }
+
 }
 
 /* На узких экранах шапка тесная: крупный знак с крылом и курсив вытеснили
@@ -1138,8 +1026,7 @@ a:hover .lewheel-mark__feather {
 .lewheel-brand--inverse .lewheel-brand__wordmark strong {
   /* Свои тона для тёмного подвала, но background-size обязателен — иначе
      блику некуда двигаться и анимация остановится. */
-  background: linear-gradient(115deg, #818cf8 0%, #c7d2fe 25%, #ffffff 40%, #c7d2fe 55%, #6366f1 100%);
-  background-size: 260% 100%;
+  background: linear-gradient(115deg, #a5b4fc 0%, #c7d2fe 50%, #818cf8 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
