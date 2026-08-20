@@ -380,10 +380,8 @@ select {
      Фон остаётся светлым намеренно: кнопки, иконки и текст в шапке
      рассчитаны на светлую основу, и тёмная плашка сломала бы их читаемость. */
   background:
-    linear-gradient(180deg,
-      color-mix(in srgb, #eef2ff 94%, transparent) 0%,
-      color-mix(in srgb, #e0e7ff 88%, transparent) 100%) !important;
-  border-bottom-color: color-mix(in srgb, #a5b4fc 62%, transparent) !important;
+    linear-gradient(180deg, #e8ecff 0%, #d5dcfb 58%, #c9d2f8 100%) !important;
+  border-bottom-color: #a5b4fc !important;
   box-shadow:
     0 10px 30px -22px rgba(49, 46, 129, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
@@ -551,6 +549,9 @@ select {
     bottom: auto !important;
     height: calc(100dvh - 68px);
     max-height: calc(100dvh - 68px);
+    /* Нижний отступ, чтобы последний пункт не оказался прижат к краю окна
+       и не читался как обрезанный подвалом. */
+    padding-bottom: 8px;
   }
 }
 
