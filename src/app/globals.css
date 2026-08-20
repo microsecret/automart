@@ -1073,7 +1073,9 @@ a:hover .lewheel-mark__feather {
 .lewheel-brand__wordmark strong {
   /* Градиент медленно перетекает по слову — блик, идущий по металлу.
      Размер фона больше самой буквы, иначе двигать нечего. */
-  background: linear-gradient(115deg, #4338ca 0%, #6366f1 25%, #a5b4fc 40%, #6366f1 55%, #312e81 100%);
+  /* Светлая точка блика приглушена: на белой шапке #a5b4fc почти сливался с
+     фоном, и слово пропадало в середине цикла. */
+  background: linear-gradient(115deg, #312e81 0%, #4338ca 28%, #6366f1 42%, #4338ca 58%, #1e1b4b 100%);
   background-size: 260% 100%;
   -webkit-background-clip: text;
   background-clip: text;
