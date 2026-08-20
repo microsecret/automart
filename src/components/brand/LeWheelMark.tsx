@@ -23,9 +23,9 @@ export default function LeWheelMark({ size = 38, idSuffix = "" }: LeWheelMarkPro
   return (
     <svg
       className="lewheel-mark"
-      width={size * 1.34}
+      width={size * 1.62}
       height={size}
-      viewBox="-10 0 86 64"
+      viewBox="-28 0 104 64"
       role="img"
       aria-hidden="true"
       focusable="false"
@@ -55,9 +55,9 @@ export default function LeWheelMark({ size = 38, idSuffix = "" }: LeWheelMarkPro
 
       {/* Крыло: три клина слева. Каждый толстый у колеса и заострён к краю;
           верхний уходит дальше всех, нижний самый короткий. */}
-      <path d="M30 14.6 C22 13.4 8 13.6 -9 17.2 C6 17.4 20 18.6 30 20.8 Z" fill={`url(#${wing})`} />
-      <path d="M28 25.8 C20 25 8 25.4 -6 28.2 C6 28.4 18 29.2 28 31 Z" fill={`url(#${wing})`} />
-      <path d="M27 37.4 C20 37 10 37.6 -1 39.8 C9 39.8 19 40.4 27 41.8 Z" fill={`url(#${wing})`} />
+      <path d="M31 11.4 C22 9.6 6 10 -26 15.8 C4 15.6 20 17.4 31 20.8 Z" fill={`url(#${wing})`} />
+      <path d="M29 25 C21 24 7 24.4 -20 28.6 C4 28.4 19 29.6 29 31.6 Z" fill={`url(#${wing})`} />
+      <path d="M28 37.2 C21 36.8 10 37.4 -12 40.6 C7 40.4 20 41 28 42.4 Z" fill={`url(#${wing})`} />
 
       {/* Покрышка и глубокий зазор под ней. */}
       <circle cx="40" cy="32" r="23" fill={`url(#${tyre})`} />

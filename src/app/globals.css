@@ -985,12 +985,11 @@ select {
 }
 
 .lewheel-brand__wordmark strong {
-  /* Градиент по слову вместо плоской заливки: «Wheel» — смысловой центр
-     знака. Тона тёмные, чтобы буквы читались на светлой шапке. */
-  background: linear-gradient(115deg, #312e81 0%, #4338ca 55%, #211d63 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  /* Сплошной цвет, а не градиент через background-clip: strong — строчный
+     элемент, его фон обрывается по границе бокса, а наклонная «l» выходит
+     за неё. Из-за этого хвост последней буквы оставался незакрашенным и
+     выглядел обрезанным, хотя место в контейнере было. */
+  color: #312e81;
   font-weight: 900;
   /* Тень родителя рисуется под прозрачными буквами и просвечивает сквозь
      них светлым ореолом — из-за этого слово выглядело выцветшим. */
@@ -1019,12 +1018,9 @@ select {
 }
 
 .lewheel-brand--inverse .lewheel-brand__wordmark strong {
-  /* Свои тона для тёмного подвала, но background-size обязателен — иначе
-     блику некуда двигаться и анимация остановится. */
-  background: linear-gradient(115deg, #a5b4fc 0%, #c7d2fe 50%, #818cf8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  /* Тот же приём, что и в шапке: сплошной цвет вместо background-clip,
+     иначе хвост наклонной «l» остаётся незакрашенным. */
+  color: #a5b4fc;
 }
 
 .partner-header-cta {
