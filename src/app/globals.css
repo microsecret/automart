@@ -935,6 +935,8 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  /* Крыло уходит далеко влево и упиралось в край экрана. */
+  padding-left: 4px;
   /* Знак не сжимается: min-width: 0 позволял контейнеру ужаться, и надпись
      обрезалась справа прямо в шапке. */
   flex: 0 0 auto;
@@ -992,10 +994,25 @@ a:hover .lewheel-brand__mark {
 }
 
 .lewheel-mark__feather--1 { animation-delay: 0s; }
-.lewheel-mark__feather--2 { animation-delay: 0.14s; }
-.lewheel-mark__feather--3 { animation-delay: 0.28s; }
-.lewheel-mark__feather--4 { animation-delay: 0.42s; }
-.lewheel-mark__feather--5 { animation-delay: 0.56s; }
+.lewheel-mark__feather--2 { animation-delay: 0.16s; }
+.lewheel-mark__feather--3 { animation-delay: 0.32s; }
+
+/* Основное перо дышит мягче линий: оно держит форму знака, и резкое
+   движение читалось бы как дефект, а не как поток. */
+.lewheel-mark__blade {
+  transform-origin: 42px 32px;
+  animation: lewheel-blade 3.4s ease-in-out infinite;
+}
+
+.lewheel-brand:hover .lewheel-mark__blade,
+a:hover .lewheel-mark__blade {
+  animation-duration: 1.4s;
+}
+
+@keyframes lewheel-blade {
+  0%, 100% { transform: translateX(0) scaleX(1); }
+  50% { transform: translateX(-1.4px) scaleX(1.05); }
+}
 
 /* При наведении поток ускоряется и вытягивается сильнее. */
 .lewheel-brand:hover .lewheel-mark__feather,
@@ -1046,6 +1063,9 @@ a:hover .lewheel-mark__feather {
   .lewheel-mark__feather,
   .lewheel-brand:hover .lewheel-mark__feather,
   a:hover .lewheel-mark__feather,
+  .lewheel-mark__blade,
+  .lewheel-brand:hover .lewheel-mark__blade,
+  a:hover .lewheel-mark__blade,
   .lewheel-brand__wordmark strong {
     animation: none;
   }
@@ -1061,8 +1081,10 @@ a:hover .lewheel-mark__feather {
   line-height: 1;
   letter-spacing: -0.03em;
   white-space: nowrap;
-  /* Наклонная «l» вылезает за метрику строки — без запаса её срезает. */
-  padding-right: 0.14em;
+  /* Наклонная «l» вылезает за метрику строки сильнее, чем кажется: при
+     курсиве правый край буквы уходит за свой бокс почти на четверть кегля.
+     Без этого запаса её срезает. */
+  padding-right: 0.3em;
   /* Многослойная тень даёт объём вместо плоской буквы: светлая кромка
      сверху, тёмная опора снизу. */
   text-shadow:

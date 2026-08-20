@@ -163,8 +163,35 @@ async function sendMiniAppEntry(chatId: string, greeting: string) {
   })
 }
 
+/**
+ * Анимированные стикеры на ключевых шагах.
+ *
+ * Обычные эмодзи в тексте Telegram не оживляет — движутся только премиум-эмодзи,
+ * а для них боту нужен Premium. Стикер работает у всех и даёт то самое живое
+ * движение в чате.
+ *
+ * Отправка не критична: если стикер недоступен (набор удалён, сеть подвела),
+ * регистрация продолжается молча — ронять шаг из-за украшения нельзя.
+ */
+const REGISTRATION_STICKERS = {
+  // Приветствие в начале регистрации.
+  welcome: process.env.TELEGRAM_STICKER_WELCOME?.trim(),
+  // Празднование после третьего шага.
+  done: process.env.TELEGRAM_STICKER_DONE?.trim(),
+}
+
+async function sendStickerIfConfigured(chatId: string, sticker?: string) {
+  if (!sticker) return
+  try {
+    await telegramApi("sendSticker", { chat_id: chatId, sticker })
+  } catch (error) {
+    console.warn("Telegram sticker delivery skipped:", error)
+  }
+}
+
 async function sendContactRequest(chatId: string, firstName?: string) {
   const safeName = escapeTelegramHtml(firstName?.trim() || "друг")
+  await sendStickerIfConfigured(chatId, REGISTRATION_STICKERS.welcome)
   await telegramApi("sendMessage", {
     chat_id: chatId,
     text: [
@@ -228,6 +255,7 @@ async function sendPasswordRequest(chatId: string) {
 
 async function sendRegistrationComplete(chatId: string, name?: string | null) {
   const safeName = escapeTelegramHtml(name?.trim() || "друг")
+  await sendStickerIfConfigured(chatId, REGISTRATION_STICKERS.done)
   await sendMiniAppEntry(chatId, [
     `🎉 <b>${safeName}, регистрация завершена!</b>`,
     "",
