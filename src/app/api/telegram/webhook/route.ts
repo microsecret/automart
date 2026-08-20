@@ -146,11 +146,18 @@ async function sendMiniAppEntry(chatId: string, greeting: string) {
   }
 
   const catalogueUrl = new URL("/auctions", miniAppUrl).toString()
+  // Через точку входа Mini App, а не напрямую на форму: страница подачи
+  // закрыта middleware, и гость улетел бы на форму пароля прямо внутри
+  // Telegram. Точка входа авторизует по Telegram ID и сама доведёт до формы.
+  const createUrl = new URL("/telegram?start=create", miniAppUrl).toString()
 
   await sendBrandedMessage(chatId, greeting, {
       inline_keyboard: [
         [{ text: "🚘 Открыть LeWheel", style: "success", web_app: { url: miniAppUrl } }],
-        [{ text: "🌍 Смотреть автомобили", style: "primary", url: catalogueUrl }],
+        // Большинство приходит продавать, а не смотреть, — размещение должно
+        // быть на виду сразу после регистрации.
+        [{ text: "🚗 Разместить объявление", web_app: { url: createUrl } }],
+        [{ text: "🌍 Смотреть автомобили", url: catalogueUrl }],
       ],
   })
 }

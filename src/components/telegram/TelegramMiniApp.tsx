@@ -56,6 +56,38 @@ const QUICK_ACTIONS = [
 ]
 const QUICK_ACTION_GROUPS = ["Найти автомобиль", "Продать", "Мой кабинет", "Сервисы"]
 
+/**
+ * Куда вести человека после входа.
+ *
+ * Кнопки в боте передают цель через startapp: «разместить объявление» — это
+ * create. Без разбора этого параметра все попадали на главную Mini App,
+ * то есть жали «разместить», а оказывались не там.
+ *
+ * Значение читаем из подписанной initData, а не из initDataUnsafe: подпись
+ * проверяется на сервере при входе, и до этой строки мы доходим только после
+ * успешной авторизации.
+ */
+const START_PARAM_ROUTES: Record<string, string> = {
+  create: "/listings/create/quick",
+  promo: "/auctions",
+}
+
+function resolveStartRoute(initData: string) {
+  try {
+    // Цель приходит двумя путями: ссылка t.me/bot?startapp=create кладёт её в
+    // start_param внутри initData, а кнопка web_app — в строку запроса.
+    const startParam = (
+      new URLSearchParams(initData).get("start_param")
+      || new URLSearchParams(window.location.search).get("start")
+    )?.trim()
+    // Только известные значения — иначе чужой параметр стал бы открытым
+    // редиректом внутри Mini App.
+    return (startParam && START_PARAM_ROUTES[startParam]) || "/dashboard"
+  } catch {
+    return "/dashboard"
+  }
+}
+
 async function waitForTelegramWebApp(timeoutMs = 4_000) {
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMs) {
@@ -108,6 +140,13 @@ export default function TelegramMiniApp() {
         setDisplayName(session?.user?.name || null)
         setStatus("ready")
         setMessage("Вы вошли автоматически — повторная авторизация не нужна.")
+
+        const startRoute = resolveStartRoute(webApp.initData)
+        // Пришёл размещать объявление — не задерживаем на промежуточном экране.
+        if (startRoute !== "/dashboard") {
+          window.location.assign(startRoute)
+          return
+        }
 
         const openDashboard = () => {
           webApp.HapticFeedback?.impactOccurred("light")
