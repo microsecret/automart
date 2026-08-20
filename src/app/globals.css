@@ -934,8 +934,10 @@ select {
 .lewheel-brand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  min-width: 0;
+  gap: 7px;
+  /* Знак не сжимается: min-width: 0 позволял контейнеру ужаться, и надпись
+     обрезалась справа прямо в шапке. */
+  flex: 0 0 auto;
   color: var(--market-ink);
 }
 
@@ -943,6 +945,7 @@ select {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
+  overflow: visible;
   /* Подложки нет: у крылатого знака крыло уходит за пределы круга, и любая
      плашка обрезала бы перья. Объём даёт сама графика, а тень — фильтр,
      повторяющий силуэт. */
@@ -1056,8 +1059,10 @@ a:hover .lewheel-mark__feather {
   font-weight: 800;
   font-style: italic;
   line-height: 1;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.03em;
   white-space: nowrap;
+  /* Наклонная «l» вылезает за метрику строки — без запаса её срезает. */
+  padding-right: 0.14em;
   /* Многослойная тень даёт объём вместо плоской буквы: светлая кромка
      сверху, тёмная опора снизу. */
   text-shadow:
@@ -1080,6 +1085,18 @@ a:hover .lewheel-mark__feather {
 @keyframes lewheel-shine {
   0%, 100% { background-position: 100% 50%; }
   50% { background-position: 0% 50%; }
+}
+
+/* На узких экранах шапка тесная: крупный знак с крылом и курсив вытеснили
+   бы кнопки. Уменьшаем и то и другое, сохраняя пропорции. */
+@media (max-width: 480px) {
+  .lewheel-brand__wordmark {
+    font-size: 1.2rem;
+  }
+
+  .lewheel-brand {
+    gap: 5px;
+  }
 }
 
 .lewheel-brand--inverse {
