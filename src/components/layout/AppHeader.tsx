@@ -61,9 +61,11 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
     { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
   ]
   const serviceNavigation: NavigationItem[] = [
-    { href: "/services", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
     { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
     { href: "/help", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
+    // «Сервисы» последним: это набор инструментов, а не раздел каталога,
+    // и человек идёт туда после того, как разобрался с основным.
+    { href: "/services", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
   ]
   const serviceShortcuts: NavigationItem[] = [
     { href: "/services/fuel-map", label: "Карта АЗС", icon: <IconGasStation size={15} />, active: pathname.startsWith("/services/fuel-map") },
@@ -140,7 +142,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           {/* Разделы каталога — плоские вкладки, а не выпадающая плашка.
               Три пункта прятать под кнопку незачем: человек и так видит,
               куда идти, а лишний клик только удлинял путь. */}
-          <Group gap={2} visibleFrom="md" wrap="nowrap" className="market-app-header__tabs">
+          <Group gap={2} visibleFrom="lg" wrap="nowrap" className="market-app-header__tabs">
             {catalogueNavigation.map((item) => (
               <Button
                 key={item.href}

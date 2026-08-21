@@ -309,13 +309,16 @@ function DashboardContent() {
               <Badge className="dashboard-workspace__eyebrow" variant="light" color={hasAttentionItems ? "orange" : "indigo"} radius="xl">
                 {hasAttentionItems ? "Требуется внимание" : "Рабочее пространство"}
               </Badge>
-              <Text fw={850} fz={{ base: 22, md: 28 }} lh={1.08} ff="var(--font-display),sans-serif">
-                {hasAttentionItems ? "Есть объявления, которым нужно ваше действие" : `Здравствуйте${greetingName ? `, ${greetingName}` : ""}. Всё под контролем.`}
+              {/* Кегль уменьшен, приветствие в одну строку: прежние 28px в две
+                  строки плюс абзац описания занимали треть первого экрана,
+                  а карточки со статусами уходили под сгиб. */}
+              <Text fw={800} fz={{ base: 19, md: 22 }} lh={1.15} ff="var(--font-display),sans-serif">
+                {hasAttentionItems ? "Есть объявления, которым нужно ваше действие" : `Здравствуйте${greetingName ? `, ${greetingName}` : ""}`}
               </Text>
               <Text size="sm" c="dimmed" maw={520}>
                 {hasAttentionItems
                   ? "Откройте список объявлений: там есть карточки с причиной и следующим шагом."
-                  : "Здесь собраны публикации, отклики и инструменты для работы с транспортом — без лишней навигации."}
+                  : "Публикации, отклики и инструменты — в одном месте."}
               </Text>
             </Stack>
             <Group gap="xs" wrap="wrap">
