@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { getClientIp, rateLimit } from "@/lib/rate-limit"
+import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -46,6 +46,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    // Без ограничителя авторизованный аккаунт мог залить тысячи комментариев
+    // за минуту: база растёт, а страница новости перестаёт открываться.
+    // Двадцать в час — с запасом для живого обсуждения.
+    const userLimit = rateLimit(`news-comment:user:${session.user.id}`, {
+      windowMs: 60 * 60_000,
+      maxRequests: 20,
+    })
+    if (!userLimit.success) {
+      return NextResponse.json(
+        { error: "Слишком много комментариев. Попробуйте позже." },
+        { status: 429, headers: rateLimitHeaders(userLimit) },
+      )
+    }
+
+    // Один адрес мог обойти пользовательский лимит, заведя несколько аккаунтов.
+    const ipLimit = rateLimit(`news-comment:ip:${getClientIp(request)}`, {
+      windowMs: 60 * 60_000,
+      maxRequests: 60,
+    })
+    if (!ipLimit.success) {
+      return NextResponse.json(
+        { error: "Слишком много комментариев. Попробуйте позже." },
+        { status: 429, headers: rateLimitHeaders(ipLimit) },
+      )
+    }
 
     const body = await request.json().catch(() => null)
     const content = typeof body?.content === "string" ? body.content.trim() : ""

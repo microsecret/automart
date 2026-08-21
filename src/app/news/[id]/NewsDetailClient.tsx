@@ -13,6 +13,7 @@ import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { notifications } from "@mantine/notifications"
 import { cleanNewsArticleContent, extractNewsHashtags, extractTelegramActions, LEGACY_VEHICLE_CHECK_TELEGRAM_URL, readNewsContentMetadata, safeTelegramUrl, type NewsTelegramAction } from "@/lib/news-content"
 import styles from "./news-article.module.css"
+import ShareButtons from "@/components/news/ShareButtons"
 
 export type NewsComment = {
   id: string
@@ -254,6 +255,10 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
             </Stack>
           )}
         </Box>
+
+        {/* Поделиться — перед комментариями: человек, дочитавший новость,
+            скорее отправит её знакомому, чем напишет отзыв. */}
+        <ShareButtons title={article.title} />
 
         <Stack gap="sm">
           <Text size="sm" fw={600} c="dark.9">Комментарии ({article.comments?.length || 0})</Text>
