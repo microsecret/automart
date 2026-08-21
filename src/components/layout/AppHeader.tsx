@@ -353,10 +353,11 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                 <Button component={Link} href="/auth/signin" variant="default" color="gray" size="sm" radius="md" styles={{ root: { height: 38, fontWeight: 700 } }}>
                   Войти
                 </Button>
-                <Button component={Link} href="/auth/signup" variant="light" color="indigo" size="sm" radius="md" visibleFrom="xs" styles={{ root: { height: 38, fontWeight: 700 } }}>
-                  Регистрация
-                </Button>
-                <ActionIcon component={Link} href="/auth/signup" variant="light" color="indigo" size="md" radius="md" hiddenFrom="xs" aria-label="Регистрация">
+                {/* Отдельной «Регистрации» в шапке нет: на 1440px она вместе с
+                    «Войти» вытесняла иконки кабинета за край окна. Ссылка на
+                    регистрацию есть на самой странице входа, поэтому путь не
+                    теряется, а место в ряду освобождается. */}
+                <ActionIcon component={Link} href="/auth/signup" variant="light" color="indigo" size="md" radius="md" hiddenFrom="sm" aria-label="Регистрация">
                   <IconUserPlus size={18} stroke={1.8} />
                 </ActionIcon>
               </>
