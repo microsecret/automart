@@ -5,7 +5,7 @@ import useSWR from "swr"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Collapse, Divider, Progress, UnstyledButton } from "@mantine/core"
-import { IconArrowRight, IconBolt, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
+import { IconBolt, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
@@ -593,7 +593,9 @@ function AuctionsPageContent() {
                         <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(displayedPrice)}</Text>
                         {priceSignal && <Badge className={styles.priceSignal} size="xs" variant="light" color={priceSignal.color}>{priceSignal.label}</Badge>}
                       </Group>
-                      <Text className="auction-result-card__price-note">{rentalTransfer ? "Остаток регулярных платежей" : "Предварительно под ключ в РФ · оценка относительно медианы выдачи"}</Text>
+                      {/* Восемь слов подписи повторяли то, что уже сказано в шапке страницы,
+                          и оттягивали внимание от самой цены. */}
+                      <Text className="auction-result-card__price-note">{rentalTransfer ? "Остаток платежей" : "Под ключ в РФ"}</Text>
                     </Box>
                     <Box className={styles.auctionMeta}>
                       {l.auctionDate ? <Group gap={4} className="auction-result-card__date" wrap="nowrap">
@@ -606,10 +608,6 @@ function AuctionsPageContent() {
                         {l.lotNumber && <Text size="xs" c="gray.4" lineClamp={1}>· #{l.lotNumber}</Text>}
                       </Group> : <Text size="xs" c="gray.5">Дата торгов уточняется{l.lotNumber ? ` · #${l.lotNumber}` : ""}</Text>}
                     </Box>
-                    <Group className={styles.detailCta} justify="space-between" gap="xs">
-                      <Text size="sm" fw={800} className={styles.detailCtaText}>Подробнее</Text>
-                      <IconArrowRight size={17} className={styles.detailArrow} />
-                    </Group>
                   </Box>
                 </Paper>
               </Link>

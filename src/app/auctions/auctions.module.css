@@ -171,8 +171,16 @@
   min-width: 0;
 }
 
+/* Бейдж оценки — спутник цены, а не соперник: при равном визуальном весе
+   глаз метался между суммой и подписью «выше медианы». Мелкий кегль и
+   разрядка ставят его на второй план, цвет остаётся смысловым. */
 .priceSignal {
   flex: none;
+  padding-inline: 7px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -183,114 +191,7 @@
   margin-top: 2px;
   padding-top: 7px;
   border-top: 1px solid var(--market-line);
-}
-
-.detailCta {
-  position: relative;
-  overflow: hidden;
-  margin-top: auto;
-  min-height: 38px;
-  padding: 7px 11px;
-  /* Главное действие карточки было залито на 12% бренда и читалось как
-     подпись, а не как кнопка: заливка усилена до сплошной, чтобы переход к
-     лоту был очевиден с первого взгляда. */
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #4f46e5 0%, #635bff 58%, #7c3aed 100%);
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: 0 8px 18px -12px rgba(79, 70, 229, 0.75);
-  transition: box-shadow 180ms ease, transform 140ms ease, filter 180ms ease;
-  cursor: pointer;
-}
-
-.detailCtaText {
-  transition: transform 180ms ease, letter-spacing 180ms ease;
-}
-
-.detailArrow {
-  flex-shrink: 0;
-  transition: transform 180ms ease, filter 180ms ease;
-}
-
-.detailCta::before {
-  position: absolute;
-  top: -60%;
-  bottom: -60%;
-  left: -38%;
-  width: 26%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
-  content: "";
-  opacity: 0;
-  /* Блик ехал через left, из-за чего браузер пересчитывал раскладку кнопки
-     на каждом кадре. Тот же путь на transform идёт мимо layout. */
-  transform: translateX(0) skewX(-18deg);
-  transition: transform 420ms ease, opacity 140ms ease;
-}
-
-.detailCta svg {
-  transition: transform 160ms ease;
-}
-
-:global(.auction-result-card:hover) .detailCta {
-  box-shadow: 0 14px 26px -12px rgba(79, 70, 229, 0.85);
-  filter: brightness(1.06);
-  transform: translateY(-2px);
-}
-
-/* Нажатие возвращает кнопку вниз: подтверждение действия читается быстрее
-   изменения цвета. */
-.detailCta:active {
-  transform: translateY(1px) scale(0.99);
-  transition-duration: 60ms;
-}
-
-:global(.auction-result-card:hover) .detailCtaText {
-  letter-spacing: 0.12em;
-}
-
-:global(.auction-result-card:hover) .detailCta::before {
-  /* Путь блика — от -38% до 116% ширины кнопки, то есть 154%. Сам элемент
-     шириной 26%, поэтому в его собственных долях сдвиг равен 592%. */
-  transform: translateX(592%) skewX(-18deg);
-  opacity: 1;
-}
-
-:global(.auction-result-card:hover) .detailCta svg {
-  transform: translateX(3px);
-  filter: brightness(1.15);
-}
-
-.detailCta:hover {
-  box-shadow: 0 14px 26px -12px rgba(79, 70, 229, 0.85);
-  filter: brightness(1.06);
-}
-
-.detailCta:focus-visible {
-  outline: 3px solid var(--market-focus);
-  outline-offset: 2px;
-}
-
-.detailCta:hover .detailArrow {
-  transform: translateX(4px);
-}
-
-.detailCta:hover .detailCtaText {
-  transform: translateX(1px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .detailCta,
-  .detailCta svg,
-  .brandShortcut,
-  .brandShortcut::after {
-    transition: none;
-  }
-
-  .detailCta::before {
-    display: none;
-  }
-}
+}@media (prefers-reduced-motion: reduce) {}
 
 @media (max-width: 480px) {
   .brandDiscovery {

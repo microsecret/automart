@@ -3460,30 +3460,40 @@ select {
 
 .auction-result-card__price-row {
   display: grid;
-  gap: 4px;
-  min-height: 58px;
+  gap: 2px;
+  /* Высота больше не резервируется под двухстрочную подпись: она сократилась
+     до двух слов, и пустой запас растягивал каждую карточку. */
+  min-height: 0;
   margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--market-line) 70%, transparent);
 }
 
+/* Цена — главный элемент карточки, и это должно читаться с одного взгляда:
+   прежние 18px спорили по весу с бейджем оценки рядом, и глаз метался между
+   ними, вместо того чтобы сразу считать сумму. */
 .auction-result-card__price {
   min-width: 0;
   color: color-mix(in srgb, #ea580c 88%, var(--market-ink));
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  font-size: 22px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
   white-space: nowrap;
 }
 
+/* Подпись отступает на второй план: она поясняет цену, а не соревнуется
+   с ней за внимание. */
 .auction-result-card__price-note {
-  display: -webkit-box;
   overflow: hidden;
   color: var(--market-muted);
-  font-size: 11px;
-  font-weight: 650;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   line-height: 1.3;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .auction-result-card__date {
