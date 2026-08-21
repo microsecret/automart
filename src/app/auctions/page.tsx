@@ -17,6 +17,7 @@ import { auctionMakeLabel, auctionVehicleIdentity } from "@/lib/auction-normaliz
 import { AUCTION_LANDING_COUNTRIES, makeSlug } from "@/lib/auction-landing-routes"
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "./auctions.module.css"
+import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 const fetcher = fetchJson
 
@@ -369,6 +370,12 @@ function AuctionsPageContent() {
           {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
           </Stack>
         </Paper>
+
+        {/* Подписка на аукционы: лоты обновляются каждый день, и следить
+            за ними вручную бессмысленно. */}
+        <Group justify="flex-end" mb={-4}>
+          <SaveSearchButton scope="AUCTIONS" />
+        </Group>
 
         {analytics && analytics.total > 0 && (
           <Paper radius="lg" p="md" withBorder className={styles.brandDiscovery}>

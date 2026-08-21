@@ -15,6 +15,7 @@ import { fetchJson } from "@/lib/api-client"
 import { plural } from "@/lib/format"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import CategoryShowcase from "./CategoryShowcase"
+import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
   initialQuery?: string
@@ -231,6 +232,9 @@ export default function HomePage(p: HomePageProps = {}) {
           {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} {plural(data.pagination?.total || 0, "объявление", "объявления", "объявлений")}</Text>}
         </Stack>
         <Group gap="xs" wrap="nowrap">
+          {/* Подписка рядом с сортировкой: человек уже настроил фильтры и
+              именно здесь решает, возвращаться ли ему потом вручную. */}
+          <SaveSearchButton scope="LISTINGS" suggestedTitle={p.pageTitle} />
           <Select
             className="catalog-sort-control"
             aria-label="Сортировка объявлений"
