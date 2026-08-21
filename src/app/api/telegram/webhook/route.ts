@@ -13,7 +13,6 @@ import {
   TelegramIdentityConflictError,
   TelegramRegistrationError,
   telegramApi,
-  telegramPhotoApi,
   type TelegramRegistrationStep,
 } from "@/lib/telegram"
 import { prisma } from "@/lib/prisma"
@@ -119,27 +118,47 @@ function telegramUserMention(from: NonNullable<TelegramMessage["from"]>) {
   return username ? `${mention} (@${escapeTelegramHtml(username)})` : mention
 }
 
+/**
+ * Системное сообщение бота.
+ *
+ * Картинка отправляется, только если в окружении задан её file_id. Загружать
+ * файл при каждой отправке нельзя: с этого сервера выгрузка в Telegram не
+ * проходит — проверено на 310 КБ и на 32 КБ, обрывается даже за четыре минуты,
+ * хотя обычные запросы идут за две секунды. Из-за этого каждое сообщение
+ * сначала ждало таймаут, а картинку всё равно не получало (51 отказ за шесть
+ * часов в логах).
+ *
+ * Готовый file_id обходит выгрузку целиком: Telegram берёт картинку из своего
+ * хранилища. Получить его можно, отправив файл боту вручную с любой машины,
+ * у которой выгрузка работает.
+ */
+const BRANDED_PHOTO_FILE_ID = process.env.TELEGRAM_BRANDED_PHOTO_ID?.trim()
+
 async function sendBrandedMessage(
   chatId: string,
   text: string,
   replyMarkup?: Record<string, unknown>,
 ) {
-  try {
-    return await telegramPhotoApi<TelegramSentMessage>({
-      chat_id: chatId,
-      caption: text,
-      parse_mode: "HTML",
-      reply_markup: replyMarkup,
-    })
-  } catch (error) {
-    console.error("Telegram infographic delivery failed; sending text fallback:", error)
-    return telegramApi<TelegramSentMessage>("sendMessage", {
-      chat_id: chatId,
-      text,
-      parse_mode: "HTML",
-      reply_markup: replyMarkup,
-    })
+  if (BRANDED_PHOTO_FILE_ID) {
+    try {
+      return await telegramApi<TelegramSentMessage>("sendPhoto", {
+        chat_id: chatId,
+        photo: BRANDED_PHOTO_FILE_ID,
+        caption: text,
+        parse_mode: "HTML",
+        reply_markup: replyMarkup,
+      })
+    } catch (error) {
+      console.error("Telegram branded photo failed; sending text:", error)
+    }
   }
+
+  return telegramApi<TelegramSentMessage>("sendMessage", {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    reply_markup: replyMarkup,
+  })
 }
 
 async function scheduleTemporarySystemMessage(chatId: string, message: TelegramSentMessage) {
@@ -499,11 +518,15 @@ async function handleMessage(message: TelegramMessage) {
     if (wasDeleted && canSendModerationNotice(chatId, telegramId)) {
       const userMention = telegramUserMention(message.from)
       const sentMessage = await sendBrandedMessage(chatId, [
-        `🔐 <b>${userMention}, сообщение скрыто</b>`,
+        // «Скрыто» вводило в заблуждение: сообщение удалено, а не спрятано.
+        // Дальше сразу объясняем выгоду, а не одно требование.
+        `🗑 <b>${userMention}, ваше сообщение удалено</b>`,
+        "",
+        "Чтобы размещать объявления в чате <b>бесплатно</b>, пройдите быструю регистрацию в боте:",
         ...describePendingSteps(pendingStep),
         "",
-        "✅ После регистрации сообщения и медиа будут публиковаться автоматически.",
-        "⏳ Системное уведомление удалится через 5 минут.",
+        "✅ После регистрации вы сможете снова бесплатно размещать свои объявления в чате.",
+        "⏳ Это уведомление исчезнет через 5 минут.",
       ].join("\n"), registrationKeyboard(resumeButtonLabel(pendingStep)))
       await scheduleTemporarySystemMessage(chatId, sentMessage)
     }

@@ -4,6 +4,7 @@ import https from "node:https"
 import path from "node:path"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { parseProxyList, proxyJsonPost } from "@/lib/proxy-fetch"
 
 export type TelegramIdentity = {
   id: string
@@ -212,6 +213,41 @@ export async function completeTelegramRegistration(telegramId: string, password:
 // теми же, а удаление могло уже пройти.
 const TELEGRAM_RETRYABLE = /timed out|socket disconnected|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|socket hang up|network/i
 
+/**
+ * Запасной путь до Telegram через прокси.
+ *
+ * Сервер российский, и доступ к Telegram периодически ограничивают: под вечер
+ * обычные запросы начинают обрываться. Прямой канал остаётся основным — он
+ * быстрее, — а прокси включается только когда прямой не отвечает.
+ *
+ * Список тот же, что у переводчика: адреса вне российской юрисдикции.
+ */
+const TELEGRAM_PROXIES = parseProxyList(process.env.NVIDIA_PROXIES)
+
+async function telegramApiViaProxy<T>(method: string, payload: Record<string, unknown>): Promise<T> {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not configured")
+  if (TELEGRAM_PROXIES.length === 0) throw new Error("Прокси для Telegram не настроены")
+
+  let lastError: unknown
+  for (const proxy of TELEGRAM_PROXIES) {
+    try {
+      const response = await proxyJsonPost(`https://api.telegram.org/bot${token}/${method}`, proxy, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        timeoutMs: 25_000,
+      })
+      const parsed = JSON.parse(response.text) as { ok?: boolean; result?: T; description?: string }
+      if (!parsed.ok) throw new Error(parsed.description || `Telegram API ${method} failed`)
+      return parsed.result as T
+    } catch (error) {
+      lastError = error
+      // Один прокси мог отвалиться — пробуем следующий, а не сдаёмся сразу.
+    }
+  }
+  throw lastError
+}
+
 export async function telegramApi<T = unknown>(method: string, payload: Record<string, unknown>): Promise<T> {
   let lastError: unknown
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -226,6 +262,20 @@ export async function telegramApi<T = unknown>(method: string, payload: Record<s
       if (attempt < 2) await new Promise((wait) => setTimeout(wait, 400 * (attempt + 1) ** 2))
     }
   }
+
+  // Прямой канал не ответил трижды — идём в обход. Это дороже по времени, но
+  // лучше, чем потерянное сообщение: бот молчит именно тогда, когда человек с
+  // ним разговаривает.
+  if (TELEGRAM_PROXIES.length > 0) {
+    try {
+      const result = await telegramApiViaProxy<T>(method, payload)
+      console.warn(`[telegram] ${method} доставлен через прокси: прямой канал недоступен`)
+      return result
+    } catch (proxyError) {
+      console.error(`[telegram] ${method} не прошёл и через прокси:`, proxyError)
+    }
+  }
+
   throw lastError
 }
 
