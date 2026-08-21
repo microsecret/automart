@@ -12,6 +12,7 @@ import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
 type Stats = {
+  trackingSince: string
   total: number
   registered: number
   unregistered: number
@@ -140,9 +141,15 @@ export default function TelegramBroadcastPage() {
         )}
 
         {stats && (
-          <Group gap="xs">
+          <Group gap="xs" align="center">
             <Badge variant="light" color="indigo">За сутки активны: {stats.active24h}</Badge>
             <Badge variant="light" color="blue">За неделю: {stats.active7d}</Badge>
+            {/* Без этой оговорки «открывали бота» читается как полная история,
+                хотя до включения учёта сохранялись только дошедшие до
+                подтверждения телефона. */}
+            <Text size="xs" c="dimmed">
+              Полный учёт ведётся с {new Date(stats.trackingSince).toLocaleDateString("ru", { day: "numeric", month: "long" })}; более ранние — только те, кто подтвердил телефон
+            </Text>
           </Group>
         )}
 

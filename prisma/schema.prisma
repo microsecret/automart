@@ -30,8 +30,9 @@ model User {
 
   // Напоминания о незавершённой регистрации: когда отправили последнее и
   // сколько всего. Нужны, чтобы не писать человеку бесконечно.
+  savedSearches    SavedSearch[]
   regReminderAt    DateTime?
-  regReminderCount Int       @default(0)
+  regReminderCount Int           @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -787,6 +788,42 @@ model TelegramMessageCleanup {
 /// Рассылку нельзя отозвать, поэтому важно видеть, что и когда ушло: без
 /// записи невозможно ни проверить факт отправки, ни разобрать жалобу, ни
 /// понять, почему часть людей заблокировала бота после конкретного письма.
+/// Сохранённый поиск с уведомлениями о новых лотах.
+///
+/// Человек редко покупает машину в первый визит: он присматривается неделями.
+/// Без подписки ему приходится возвращаться и проверять каталог вручную — и
+/// чаще всего он просто не возвращается.
+///
+/// Уведомления идут в Telegram: бот уже связан с аккаунтом, доставка мгновенная
+/// и бесплатная, в отличие от почты.
+model SavedSearch {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Человеческое название — чтобы список подписок читался.
+  title String
+
+  /// Раздел: объявления площадки или импортные аукционы.
+  scope String @default("LISTINGS")
+
+  /// Условия поиска строкой запроса, тем же форматом, что и в адресе страницы:
+  /// подписка должна открываться одним переходом.
+  query String
+
+  notifyTelegram Boolean @default(true)
+
+  /// От этой отметки отсчитываются «новые» лоты.
+  lastNotifiedAt DateTime?
+  lastMatchCount Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([notifyTelegram, lastNotifiedAt])
+}
+
 model TelegramBroadcast {
   id        String @id @default(uuid())
   text      String
