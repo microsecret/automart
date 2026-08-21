@@ -2572,15 +2572,40 @@ select {
   flex-shrink: 0;
 }
 
+/* Четыре колонки вместо трёх: поиск занимал две из трёх, и оставшаяся пара
+   полей переносилась на второй ряд, оставляя пустую ячейку справа — блок
+   выглядел рассыпанным. Теперь поиск, цена, наличие и формат сделки стоят
+   одним ровным рядом.
+
+   align-items: stretch вместо end — поля разной высоты (у наличия две
+   строки чекбоксов) прыгали относительно друг друга. */
 .parts-filter-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
   gap: 10px;
-  align-items: end;
+  align-items: stretch;
 }
 
-.parts-filter-grid__search {
-  grid-column: span 2;
+@media (max-width: 62em) {
+  /* На среднем экране четыре колонки сжимают поиск до нечитаемого — делим
+     пополам, ряды остаются полными. */
+  .parts-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .parts-filter-grid__search {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 36em) {
+  .parts-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .parts-filter-grid__search {
+    grid-column: auto;
+  }
 }
 
 .parts-filter-grid > .mantine-InputWrapper-root,
@@ -2640,6 +2665,15 @@ select {
   border: 1px solid var(--market-field-line);
   border-radius: 8px;
   background: var(--market-surface);
+  /* Подпись не переносится: «Под заказ» ломалось на две строки и плашка
+     становилась выше соседней, ряд ехал. */
+  white-space: nowrap;
+}
+
+/* Выбранное состояние видно без вглядывания в галочку. */
+.parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
+  border-color: color-mix(in srgb, var(--market-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--market-primary-soft) 70%, var(--market-surface));
 }
 
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
