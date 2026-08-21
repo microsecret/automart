@@ -595,7 +595,11 @@ function AuctionsPageContent() {
                       </Group>
                       {/* Восемь слов подписи повторяли то, что уже сказано в шапке страницы,
                           и оттягивали внимание от самой цены. */}
-                      <Text className="auction-result-card__price-note">{rentalTransfer ? "Остаток платежей" : "Под ключ в РФ"}</Text>
+                      {/* «Под ключ» здесь было неправдой: finalPrice — это цена лота по курсу
+                          плюс комиссия сервиса, без пошлины, доставки и оформления.
+                          У Peugeot 408 разница составляла 415 тысяч: 1,78 млн в
+                          карточке против 2,2 млн в калькуляторе на той же странице. */}
+                      <Text className="auction-result-card__price-note">{rentalTransfer ? "Остаток платежей" : "Лот + комиссия"}</Text>
                     </Box>
                     <Box className={styles.auctionMeta}>
                       {l.auctionDate ? <Group gap={4} className="auction-result-card__date" wrap="nowrap">

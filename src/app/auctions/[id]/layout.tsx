@@ -166,7 +166,13 @@ export default async function AuctionDetailLayout({ children, params }: LayoutPr
             <p className={styles.subtitle}>{listing.year} год · {auctionSourceLabel(listing.source)} · обновлено из первоисточника</p>
           </div>
         </div>
-        <strong className={styles.price}>{formatPriceShort(listing.finalPrice)}</strong>
+        {/* Цена стояла без подписи, и человек читал её как итоговую. На деле
+            это лот по курсу плюс комиссия: у Peugeot 408 калькулятор ниже на
+            той же странице показывал на 415 тысяч больше. */}
+        <span className={styles.priceBlock}>
+          <strong className={styles.price}>{formatPriceShort(listing.finalPrice)}</strong>
+          <span className={styles.priceNote}>лот + комиссия, без пошлины и доставки</span>
+        </span>
       </header>
       {children}
     </>

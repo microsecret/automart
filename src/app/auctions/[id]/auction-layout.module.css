@@ -27,10 +27,28 @@
   font-size: 0.875rem;
 }
 
+/* Цена и подпись под ней идут одним блоком: без пояснения сумма читалась
+   как итоговая, хотя пошлина и доставка в неё не входят. */
+.priceBlock {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 2px;
+}
+
 .price {
   flex-shrink: 0;
   color: #3730a3;
   font: 850 clamp(1.4rem, 3vw, 1.75rem) / 1 var(--font-display), sans-serif;
+}
+
+.priceNote {
+  color: var(--market-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: right;
 }
 
 @media (max-width: 600px) {
