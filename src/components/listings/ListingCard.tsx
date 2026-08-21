@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, SimpleGrid, UnstyledButton } from "@mantine/core"
+import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, UnstyledButton } from "@mantine/core"
 import { IconEye, IconHeart, IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
@@ -252,14 +252,17 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             {listing.title}
           </Text>
 
-          {/* Краткие факты: без капслока и повторения типа категории. */}
+          {/* Краткие факты: без капслока и повторения типа категории.
+              Раскладка — поток, а не жёсткие две колонки: при нечётном числе
+              фактов (у машины без пробега их три) справа внизу зияла пустая
+              ячейка. */}
           {isVehicle && (
-            <SimpleGrid cols={2} spacing={4} mb={6} className="listing-card__facts">
+            <Box mb={6} className="listing-card__facts">
               <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Год <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text></Text>
               {numericUsage != null && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">{usageMeta.label} <Text component="span" inherit fw={700} c="var(--market-ink)">{distanceValue}</Text></Text>}
               {supportsTransmission(vehicleType) && listing.vehicle!.transmission && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
               {listing.vehicle!.fuelType && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
-            </SimpleGrid>
+            </Box>
           )}
 
           {/* Низ — город и дата */}

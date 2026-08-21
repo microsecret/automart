@@ -66,6 +66,9 @@ export const TRANSMISSIONS = [
   { value: "AUTOMATIC", label: "Автомат" },
   { value: "VARIATOR", label: "Вариатор" },
   { value: "ROBOTIC", label: "Робот" },
+  // Импортные лоты приходят с OTHER: без этой строки в карточке
+  // показывалось английское слово из базы.
+  { value: "OTHER", label: "Другая" },
 ] as const
 
 export const AIR_FUEL_TYPES = [
@@ -78,12 +81,14 @@ export const TRUCK_TRANSMISSIONS = [
   { value: "MANUAL", label: "Механика" },
   { value: "AUTOMATIC", label: "Автомат" },
   { value: "ROBOTIC", label: "Роботизированная КПП" },
+  { value: "OTHER", label: "Другая" },
 ] as const
 
 export const MOTORCYCLE_TRANSMISSIONS = [
   { value: "MANUAL", label: "Механика" },
   { value: "AUTOMATIC", label: "АКПП / DCT" },
   { value: "VARIATOR", label: "Вариатор / ремень" },
+  { value: "OTHER", label: "Другая" },
 ] as const
 
 export type TransportVehicleType = "CAR" | "MOTORCYCLE" | "TRUCK" | "SPECIAL" | "WATER" | "AIR"

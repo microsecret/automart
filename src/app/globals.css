@@ -2271,28 +2271,28 @@ select {
   white-space: nowrap;
 }
 
+/* Факты идут потоком, а не сеткой 2×2: разделители на nth-child оставляли
+   пустую ячейку, когда фактов нечётное число — у машины без указанного
+   пробега их три, и справа внизу зияла дыра. Теперь каждый факт — отдельная
+   плашка, ряд заполняется по мере наличия данных. */
 .listing-card__facts {
-  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--market-line) 88%, transparent);
-  border-radius: 11px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--listing-accent) 5%, transparent), transparent 56%),
-    color-mix(in srgb, var(--market-surface-subtle) 78%, #eef2ff);
 }
 
 .listing-card__fact {
-  padding: 7px 8px;
+  flex: 1 1 calc(50% - 4px);
+  min-width: 0;
+  padding: 6px 9px;
+  border: 1px solid color-mix(in srgb, var(--market-line) 82%, transparent);
+  border-radius: 9px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--listing-accent) 6%, transparent), transparent 60%),
+    color-mix(in srgb, var(--market-surface-subtle) 80%, transparent);
   font-variant-numeric: tabular-nums;
   line-height: 1.25;
-}
-
-.listing-card__fact:nth-child(odd) {
-  border-right: 1px solid color-mix(in srgb, var(--market-line) 88%, transparent);
-}
-
-.listing-card__fact:nth-child(n + 3) {
-  border-top: 1px solid color-mix(in srgb, var(--market-line) 88%, transparent);
 }
 
 .listing-card__fact > span {
