@@ -670,7 +670,6 @@ select {
        последние пункты уходят под него. Значение считает AppShellLayout. */
     height: calc(100dvh - 68px - var(--app-navbar-bottom-inset, 0px));
     max-height: calc(100dvh - 68px - var(--app-navbar-bottom-inset, 0px));
-    transition: height var(--ease-fast) linear;
   }
 
   /* Колесо мыши над списком крутит сам список, а не страницу под ним —

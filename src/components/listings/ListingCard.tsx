@@ -152,9 +152,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           {images.length > 1 && (
             <>
               {/* Точки навигации */}
-              {/* Точка остаётся маленькой визуально, но зона нажатия занимает
-                  полную высоту полосы: попасть пальцем в шестипиксельную
-                  цель на телефоне невозможно. */}
+              {/* Точка остаётся маленькой визуально, но зона нажатия — 44px,
+                  как требует норма для пальца: попасть в шестипиксельную
+                  цель на телефоне невозможно. Зона уходит вверх от нижнего
+                  края карточки и не мешает нажатию на саму карточку. */}
               <Box pos="absolute" bottom={0} left={0} right={0} style={{ display: "flex", justifyContent: "center", gap: 2, zIndex: 2 }}>
                 {images.slice(0, 5).map((_, i) => (
                   <UnstyledButton
@@ -164,10 +165,12 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                     aria-current={i === activeImg ? "true" : undefined}
                     style={{
                       display: "grid",
-                      placeItems: "center",
-                      width: 22,
-                      height: 22,
-                      padding: 0,
+                      // Точка прижата к низу зоны: сама зона высотой 44px
+                      // растёт вверх на изображение, где нажимать не по чему.
+                      placeItems: "end center",
+                      width: 44,
+                      height: 44,
+                      paddingBottom: 6,
                       cursor: "pointer",
                     }}
                   >
@@ -182,7 +185,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                         background: i === activeImg ? "#fff" : "rgba(255,255,255,0.55)",
                         boxShadow: "0 0 2px rgba(0,0,0,.45)",
                         transform: i === activeImg ? "scaleX(1)" : "scaleX(0.375)",
-                        transition: "transform 200ms ease, background 200ms ease",
+                        transition: "transform var(--ease-base) ease, background var(--ease-base) ease",
                       }}
                     />
                   </UnstyledButton>
@@ -221,7 +224,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               className="listing-card__favorite"
               color={isFav ? "red" : "dark"}
               variant="filled"
-              size="sm"
+              /* 44px — норма зоны нажатия для пальца; при size="sm" кнопка
+                 была 30px и на телефоне в неё промахивались. Само сердечко
+                 осталось прежним, выросла только зона. */
+              size="lg"
               radius="xl"
               onClick={toggleFav}
               loading={isPending(listing.id)}
