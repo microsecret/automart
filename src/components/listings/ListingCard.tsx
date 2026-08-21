@@ -225,9 +225,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               color={isFav ? "red" : "dark"}
               variant="filled"
               /* 44px — норма зоны нажатия для пальца; при size="sm" кнопка
-                 была 30px и на телефоне в неё промахивались. Само сердечко
-                 осталось прежним, выросла только зона. */
-              size="lg"
+                 была 30px и на телефоне в неё промахивались. Размер задан
+                 числом: именованные ступени Mantine до 44px не доходят
+                 (lg — это 34px). Само сердечко осталось прежним. */
+              size={44}
               radius="xl"
               onClick={toggleFav}
               loading={isPending(listing.id)}
