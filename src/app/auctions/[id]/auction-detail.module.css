@@ -1,5 +1,5 @@
 .galleryImage {
-  transition: opacity 160ms ease, filter 160ms ease;
+  transition: opacity var(--ease-base) ease, filter var(--ease-base) ease;
 }
 
 .galleryImage[data-loading] {
@@ -20,7 +20,7 @@
   overflow: hidden;
   color: inherit;
   text-decoration: none;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition: transform var(--ease-base) ease, box-shadow var(--ease-base) ease, border-color var(--ease-base) ease;
 }
 
 .similarContent {
@@ -53,7 +53,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 280ms ease;
+  transition: transform var(--ease-slow) ease;
 }
 
 .similarCard:hover .similarImage {

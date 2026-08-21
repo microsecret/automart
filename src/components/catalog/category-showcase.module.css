@@ -33,7 +33,7 @@
   background: var(--market-surface);
   color: inherit;
   text-decoration: none;
-  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+  transition: transform var(--ease-base) ease, box-shadow var(--ease-base) ease, border-color var(--ease-base) ease;
 }
 
 .card::before {
