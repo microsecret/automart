@@ -69,6 +69,7 @@ import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import ListingViewTracker from "@/components/analytics/ListingViewTracker"
+import { filterMeaningfulSpecs } from "@/lib/spec-visibility"
 
 interface VehicleData {
   id: string
@@ -347,8 +348,14 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
     { label: "Продавец", value: data.sellerTypeLabel || "Не указан", state: "neutral" },
     { label: "Наличие", value: data.availabilityLabel || "Уточните у продавца", state: data.availabilityLabel === "В наличии" ? "positive" : "neutral" },
   ]
+  // Сами по себе «Не указано» — честный сигнал покупателю: продавец не
+  // заполнил документы или состояние. Но когда не заполнено ничего, подпись
+  // «ключевые сведения» обещает то, чего в блоке нет.
+  const filledStatusCount = statusItems.filter(
+    (item) => !/^Не указан|^Уточните/.test(String(item.value)),
+  ).length
 
-  const specs = [
+  const allSpecs = [
     { icon: <IconCalendar size={20} />, label: "Год", value: String(data.year) },
     ...(usageDisplay ? [{ icon: <IconGauge size={20} />, label: usageMeta.label, value: usageDisplay }] : []),
     { icon: typeMeta.icon, label: typeMeta.detailLabel, value: primaryTypeValue },
@@ -368,6 +375,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
     ] : []),
     ...additionalSpecs.map(([label, value]) => ({ icon: <IconCircleCheck size={20} />, label: formatDetailLabel(label), value: formatDetailValue(label, value) })),
   ]
+  // Незаполненные поля не показываем: у импортного грузовика из одиннадцати
+  // характеристик восемь были прочерками, и человек листал пустоту.
+  const specs = filterMeaningfulSpecs(allSpecs)
 
   return (
     <>
@@ -498,7 +508,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconShieldCheck size={18} /></ThemeIcon>
                     <Box>
                       <Title order={3} size="h4">Состояние и документы</Title>
-                      <Text size="xs" c="dimmed">Ключевые сведения из объявления продавца</Text>
+                      <Text size="xs" c="dimmed">
+                        {filledStatusCount === 0
+                          ? "Продавец не заполнил эти поля — уточните при обращении"
+                          : "Ключевые сведения из объявления продавца"}
+                      </Text>
                     </Box>
                   </Group>
                   <Badge variant="light" color="gray" radius="xl">Данные объявления</Badge>
