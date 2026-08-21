@@ -142,7 +142,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           {/* Разделы каталога — плоские вкладки, а не выпадающая плашка.
               Три пункта прятать под кнопку незачем: человек и так видит,
               куда идти, а лишний клик только удлинял путь. */}
-          <Group gap={2} visibleFrom="lg" wrap="nowrap" className="market-app-header__tabs">
+          <Group gap={2} visibleFrom="md" wrap="nowrap" className="market-app-header__tabs">
             {catalogueNavigation.map((item) => (
               <Button
                 key={item.href}
@@ -196,7 +196,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           {/* ЦЕНТР: Поиск — максимальная ширина */}
           <Popover opened={shouldShowSuggestions} position="bottom-start" width="target" offset={8} shadow="lg" radius="lg" withinPortal>
             <Popover.Target>
-              <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: 1, maxWidth: 380, minWidth: 280 }} visibleFrom="sm">
+              <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: "1 1 180px", maxWidth: 380, minWidth: 0 }} visibleFrom="sm">
                 <TextInput
                   placeholder="Марка, модель или город"
                   leftSection={<IconSearch size={16} color="gray.4" />}
@@ -270,7 +270,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           </ActionIcon>
 
           {/* ПРАВО: Кнопки — разделены визуально */}
-          <Group gap={6} wrap="nowrap" align="center">
+          <Group gap={6} wrap="nowrap" align="center" className="market-app-header__utility">
             {/* Продать — яркая индиго */}
             <ActionIcon
               variant="subtle"

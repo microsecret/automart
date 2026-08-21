@@ -649,6 +649,19 @@ select {
   }
 }
 
+/* Правый блок с иконками кабинета не сжимается и не уезжает за экран.
+   Поиск занимает 280px и не отдавал место — иконки выталкивало за границу
+   окна на 330px. Теперь поиск сжимается первым, а действия пользователя
+   остаются на виду. */
+.market-app-header__utility {
+  flex: 0 0 auto;
+}
+
+.market-app-header__tabs {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
 .market-header-search .mantine-Input-input {
   padding-left: 38px !important;
 }
