@@ -419,8 +419,32 @@ select {
     background: var(--market-primary-soft);
   }
 
+  /* Кнопка поддержки висит поверх страницы и на узком экране закрывала
+     строку поиска — главное поле на главной. Она стала компактнее и ушла
+     ближе к краю: остаётся под рукой, но перестаёт перекрывать ввод.
+     Полупрозрачность в покое возвращается к полной при касании. */
   .support-chat__launcher {
-    bottom: 88px !important;
+    right: 10px !important;
+    bottom: 92px !important;
+    opacity: 0.82;
+    transition: opacity var(--ease-base) ease;
+  }
+
+  .support-chat__launcher:hover,
+  .support-chat__launcher:focus-within {
+    opacity: 1;
+  }
+
+  .support-chat__launcher .mantine-ActionIcon-root {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .support-chat__launcher .mantine-ActionIcon-root svg {
+    width: 21px;
+    height: 21px;
   }
 
   .support-chat__panel {
