@@ -25,3 +25,32 @@ test("rejects unrelated hosts and non-image resources", () => {
 
   assert.deepEqual(extractIautosImages(html), [])
 })
+
+test("снимки с партнёрского CDN taocheche попадают в галерею", () => {
+  // Основной массив фотографий лота лежит там: у карточки сорок шесть ссылок
+  // на taocheche против двадцати восьми на qimg6. Пока домена не было в
+  // списке, лоты сохранялись почти без фотографий.
+  const html = `
+    <img src="//img5.taocheche.com.cn/00/37370993-102708geeq.jpg">
+    <img src="https://img5.taocheche.com.cn/00/724b49ca-102708geet.jpg">
+    <img src="//qimg6.iautos.cn/cp/2607/0618/X0502BsPQYMc7.jpg">
+  `
+  const images = extractIautosImages(html)
+  assert.equal(images.length, 3)
+  assert.ok(images.some((url) => url.includes("taocheche.com.cn")), "CDN taocheche пропущен")
+  assert.ok(images.some((url) => url.includes("qimg6.iautos.cn")), "прежний домен потерян")
+  assert.ok(images.every((url) => url.startsWith("https://")), "остались небезопасные ссылки")
+})
+
+test("вёрстка сайта не попадает в галерею вместо машины", () => {
+  // static.iautos.cn раздаёт логотипы, иконки и заглушки — в галерее лота
+  // им не место.
+  const html = `
+    <img src="//static.iautos.cn/images/logo.png">
+    <img src="//static.iautos.cn/css/sprite-icons.jpg">
+    <img src="//img5.taocheche.com.cn/00/1ab35ab8-102708gf23.jpg">
+  `
+  const images = extractIautosImages(html)
+  assert.equal(images.length, 1)
+  assert.ok(images[0].includes("taocheche.com.cn"))
+})

@@ -1,7 +1,11 @@
-// Источник раздаёт снимки с пронумерованных узлов: у одной карточки двадцать
-// семь ссылок на qimg6 и лишь одна на qimg. Жёсткий список пропускал только
-// старое имя, поэтому лоты сохранялись вообще без фотографий.
-const IAUTOS_IMAGE_HOST = /^(?:qimg\d*|s\d+)\.iautos\.cn$/i
+// Снимки лежат на двух узлах: iautos.cn отдаёт часть кадров, а основной
+// массив — партнёрский CDN taocheche (сорок шесть ссылок против двадцати
+// восьми у одной карточки). Пока в списке был только iautos.cn, лоты
+// сохранялись почти без фотографий.
+//
+// static.iautos.cn сюда не входит намеренно: это вёрстка сайта — логотипы,
+// иконки и заглушки, которым не место в галерее лота.
+const IAUTOS_IMAGE_HOST = /^(?:(?:qimg\d*|s\d+)\.iautos\.cn|img\d*\.taocheche\.com\.cn)$/i
 
 function decodeIautosMarkup(value: string) {
   return value
@@ -13,7 +17,7 @@ function decodeIautosMarkup(value: string) {
 }
 
 export function extractIautosImages(html: string) {
-  const candidates = decodeIautosMarkup(html).match(/(?:https?:)?\/\/(?:qimg\d*|s\d+)\.iautos\.cn\/[^\s"'<>\\)]+/gi) || []
+  const candidates = decodeIautosMarkup(html).match(/(?:https?:)?\/\/(?:(?:qimg\d*|s\d+)\.iautos\.cn|img\d*\.taocheche\.com\.cn)\/[^\s"'<>\\)]+/gi) || []
 
   return [...new Set(candidates.flatMap((candidate) => {
     try {
