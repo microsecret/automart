@@ -24,7 +24,7 @@
 .subtitle {
   margin: 5px 0 0;
   color: #64748b;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 /* Цена и подпись под ней идут одним блоком: без пояснения сумма читалась
@@ -45,7 +45,7 @@
 
 .priceNote {
   color: var(--market-muted);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.01em;
   text-align: right;
@@ -61,6 +61,6 @@
   }
 
   .subtitle {
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
   }
 }

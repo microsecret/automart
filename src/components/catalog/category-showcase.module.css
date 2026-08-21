@@ -16,7 +16,7 @@
   margin-top: 3px;
   max-width: 62ch;
   color: var(--market-muted);
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 
@@ -89,21 +89,21 @@
   margin-top: 9px;
   color: var(--market-ink);
   font-family: var(--font-display), sans-serif;
-  font-size: 0.97rem;
+  font-size: var(--text-md);
   font-weight: 700;
   letter-spacing: -0.012em;
 }
 
 .hint {
   color: var(--market-muted);
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   line-height: 1.35;
 }
 
 .meta {
   margin-top: 6px;
   color: color-mix(in srgb, var(--tone) 80%, var(--market-ink));
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 600;
 }
 
