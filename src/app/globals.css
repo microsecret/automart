@@ -603,15 +603,18 @@ select {
      sticky даёт естественное поведение: пока меню целиком помещается в кадр,
      оно едет с содержимым; как только доходит до края, останавливается и
      дальше прокручивается внутри себя. */
+  /* Родитель у Mantine — обычный блок, поэтому sticky-навбар вставал НАД
+     контентом и толкал его вниз на свою высоту: при загрузке страница
+     открывалась пустотой, а содержимое начиналось за первым экраном.
+     Возвращаем fixed — он вынимает меню из потока, как и было. */
   .market-app-navbar {
-    position: sticky !important;
+    position: fixed !important;
     top: 68px !important;
     bottom: auto !important;
     /* Нижний отступ равен той части экрана, которую занял подвал: иначе
        последние пункты уходят под него. Значение считает AppShellLayout. */
     height: calc(100dvh - 68px - var(--app-navbar-bottom-inset, 0px));
     max-height: calc(100dvh - 68px - var(--app-navbar-bottom-inset, 0px));
-    align-self: flex-start;
     transition: height 120ms linear;
   }
 

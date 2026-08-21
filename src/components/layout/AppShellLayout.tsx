@@ -16,6 +16,7 @@ import { useDisclosure } from "@mantine/hooks"
 import AppAnalytics from "@/components/analytics/AppAnalytics"
 import SupportChat from "@/components/support/SupportChat"
 import { fetchJson } from "@/lib/api-client"
+import { navbarScrollTop } from "@/lib/navbar-scroll-sync"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
 
@@ -116,6 +117,23 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         ? Math.max(0, window.innerHeight - footer.getBoundingClientRect().top)
         : 0
       document.documentElement.style.setProperty("--app-navbar-bottom-inset", `${Math.round(overlap)}px`)
+
+      // Меню закреплено (fixed) и потому само по себе не двигается: человек
+      // прокручивал страницу вниз, а список стоял, будто завис. Здесь мы
+      // доматываем его внутреннюю прокрутку вместе со страницей — ровно до
+      // конца списка, дальше он просто остаётся на месте.
+      const viewport = document.querySelector<HTMLElement>(
+        ".market-app-navbar .mantine-ScrollArea-viewport",
+      )
+      if (!viewport) return
+      const next = navbarScrollTop({
+        contentHeight: viewport.scrollHeight,
+        viewportHeight: viewport.clientHeight,
+        pageHeight: document.documentElement.scrollHeight,
+        windowHeight: window.innerHeight,
+        scrollY: window.scrollY,
+      })
+      if (next !== null) viewport.scrollTop = next
     }
 
     updateInset()

@@ -55,10 +55,13 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
   const [searchError, setSearchError] = useState(false)
   const [searchRequestVersion, setSearchRequestVersion] = useState(0)
 
+  // Порядок ряда: сначала то, ради чего приходят на площадку, затем новости.
+  // «Сервисы» и «Помощь» живут отдельно, в выпадающем меню справа.
   const catalogueNavigation: NavigationItem[] = [
     { href: "/", label: "Объявления", icon: null, active: pathname === "/" || pathname.startsWith("/category") || pathname.startsWith("/search") },
     { href: "/parts-finder", label: "Запчасти", icon: <IconTools size={14} />, active: pathname.startsWith("/parts") },
     { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
+    { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
   ]
   const serviceNavigation: NavigationItem[] = [
     { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
