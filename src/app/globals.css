@@ -4260,7 +4260,31 @@ select {
   }
 
   .home-auctions {
-    min-height: 360px;
+    /* Баннер занимал 547px — больше половины экрана телефона до того, как
+       появится первое объявление. Здесь он остаётся узнаваемым, но уступает
+       место товару. */
+    min-height: 232px;
+    padding: 18px !important;
+  }
+
+  /* «Маршрут сделки» объясняет процесс — это чтение для того, кто уже
+     заинтересовался, а не для первого экрана. Ниже по странице объяснение
+     остаётся. */
+  .home-auctions__summary {
+    display: none;
+  }
+
+  .home-auctions__content h1 {
+    font-size: 25px !important;
+  }
+
+  /* Подзаголовок пересказывает заголовок другими словами. */
+  .home-auctions__content h1 + .mantine-Text-root {
+    display: none;
+  }
+
+  .home-auctions__content .mantine-Group-root {
+    margin-top: 16px !important;
   }
 
   .home-auctions__image {
@@ -4350,6 +4374,37 @@ select {
 
   .catalog-filter-panel__intro {
     align-items: flex-start;
+  }
+
+  /* Первый экран телефона принадлежит объявлениям.
+     Замер главной: до первой карточки было 2021px — почти два с половиной
+     экрана баннера, витрины и фильтров. Человек приходит смотреть технику,
+     а прокручивал рассказ о площадке.
+
+     Ниже — не удаление блоков, а расстановка приоритетов для узкого экрана:
+     тяжёлое сжимается, объявления поднимаются, всё остаётся доступным. */
+
+  /* Пояснение над фильтрами повторяет то, что видно по самим полям. */
+  .catalog-filter-panel__intro > .mantine-Box-root > .mantine-Text-root:last-child {
+    display: none;
+  }
+
+  .catalog-filter-panel {
+    padding: 10px !important;
+  }
+
+  /* Свёрнутая панель показывает строку поиска и кнопку «Фильтры»:
+     остальные поля открываются по нажатию — механизм уже был, здесь он
+     распространён на базовую сетку. */
+  .catalog-filter-panel:not([data-expanded]) .catalog-filter-grid
+    > .catalog-filter-field:not(.catalog-filter-field--search) {
+    display: none;
+  }
+
+  .catalog-filter-panel:not([data-expanded]) .catalog-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
 }
 

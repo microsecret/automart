@@ -52,7 +52,7 @@ export default function CategoryShowcase() {
         </Box>
       </Group>
 
-      <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }} spacing="sm">
+      <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }} spacing="sm" className={styles.grid}>
         {DIRECTIONS.map(({ slug, href, label, hint, Icon, tone }) => {
           const count = counts?.[slug]
           return (

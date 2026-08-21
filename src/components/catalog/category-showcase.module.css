@@ -111,3 +111,50 @@
   .card { transition: none; }
   .card:hover { transform: none; }
 }
+
+/* На телефоне направления едут лентой.
+   Сеткой они занимали 747px — целый экран между баннером и объявлениями.
+   Лента оставляет их на виду, но забирает одну строку: приём привычен по
+   мобильным приложениям, где разделы листают вбок. */
+@media (max-width: 48em) {
+  .showcase {
+    margin-block: 2px 14px;
+  }
+
+  /* Подзаголовок повторяет то, что видно по самим карточкам. */
+  .subtitle {
+    display: none;
+  }
+
+  .title {
+    font-size: 1.05rem;
+  }
+
+  .grid {
+    display: flex !important;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    /* Карточки должны доезжать до самого края экрана, иначе лента выглядит
+       обрезанной; отступы возвращают их к колонке текста. */
+    margin-inline: calc(var(--mantine-spacing-sm) * -1);
+    padding-inline: var(--mantine-spacing-sm);
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .card {
+    flex: 0 0 auto;
+    width: 138px;
+    scroll-snap-align: start;
+  }
+
+  /* Подсказка под названием в узкой карточке переносится на три строки. */
+  .hint {
+    display: none;
+  }
+}
