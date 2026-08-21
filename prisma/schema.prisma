@@ -30,11 +30,11 @@ model User {
 
   // Напоминания о незавершённой регистрации: когда отправили последнее и
   // сколько всего. Нужны, чтобы не писать человеку бесконечно.
-  regReminderAt      DateTime?
-  regReminderCount   Int       @default(0)
+  regReminderAt    DateTime?
+  regReminderCount Int       @default(0)
 
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   vehicles                      Vehicle[]                      @relation("UserVehicles")
@@ -272,31 +272,31 @@ model Part {
 // Витрина продавца: отдельная сущность, потому что у магазина есть реквизиты,
 // условия доставки и репутация, которых нет у частного объявления.
 model PartStore {
-  id            String   @id @default(uuid())
-  ownerId       String
-  owner         User     @relation("PartStoreOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  name          String
-  slug          String   @unique
-  description   String?
-  logoUrl       String?
-  legalName     String?
-  inn           String?
-  contactPhone  String?
-  contactEmail  String?
-  city          String?
+  id                     String   @id @default(uuid())
+  ownerId                String
+  owner                  User     @relation("PartStoreOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  name                   String
+  slug                   String   @unique
+  description            String?
+  logoUrl                String?
+  legalName              String?
+  inn                    String?
+  contactPhone           String?
+  contactEmail           String?
+  city                   String?
   // Условия по умолчанию подставляются в новые позиции, чтобы продавцу не
   // приходилось заполнять их в каждой строке загрузки.
   defaultLeadTimeDaysMin Int?
   defaultLeadTimeDaysMax Int?
   defaultOriginCountry   String?
-  status        String   @default("DRAFT") // DRAFT, PENDING, ACTIVE, SUSPENDED
-  statusReason  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status                 String   @default("DRAFT") // DRAFT, PENDING, ACTIVE, SUSPENDED
+  statusReason           String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
-  parts    Part[]
-  batches  PartImportBatch[]
-  orders   PartOrder[]
+  parts   Part[]
+  batches PartImportBatch[]
+  orders  PartOrder[]
 
   @@index([ownerId])
   @@index([status])
@@ -307,13 +307,13 @@ model PartStore {
 // Цена и срок фиксируются на момент оформления: прайс магазина меняется, а
 // покупатель и продавец должны обсуждать те условия, на которые согласились.
 model PartOrder {
-  id         String    @id @default(uuid())
-  storeId    String
-  store      PartStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  partId     String?
-  part       Part?     @relation(fields: [partId], references: [id], onDelete: SetNull)
-  buyerId    String?
-  buyer      User?     @relation("PartOrderBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+  id      String    @id @default(uuid())
+  storeId String
+  store   PartStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  partId  String?
+  part    Part?     @relation(fields: [partId], references: [id], onDelete: SetNull)
+  buyerId String?
+  buyer   User?     @relation("PartOrderBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
 
   // Контакты берутся из формы: заказ можно оформить и без регистрации.
   contactName  String
@@ -322,7 +322,7 @@ model PartOrder {
   city         String?
   comment      String?
 
-  quantity        Int    @default(1)
+  quantity        Int     @default(1)
   // Снимок позиции: название и цена на момент заказа.
   itemName        String
   itemPriceRub    Int
@@ -774,6 +774,37 @@ model TelegramMessageCleanup {
 // Groups and supergroups where the bot has been seen. The registry keeps the
 // 12-hour service campaign idempotent across worker restarts and lets chat
 // administrators opt out without removing the bot.
+/// Личный диалог с ботом.
+///
+/// Запись появляется при первом «Начать», даже если человек так и не
+/// подтвердил телефон: до этого такие люди терялись бесследно, а именно они
+/// и составляют основную аудиторию рассылки.
+///
+/// Хранится минимум: Telegram ID, имя для обращения и отметки активности.
+/// Телефон и почта живут в User и появляются только после регистрации.
+model TelegramContact {
+  telegramId String  @id
+  username   String?
+  firstName  String?
+  lastName   String?
+
+  /// Прошёл ли человек регистрацию — обновляется при её завершении.
+  registered Boolean @default(false)
+
+  /// Заблокировал ли бота. Telegram отвечает «bot was blocked by the user»;
+  /// таким рассылка больше не отправляется, иначе очередь копит отказы.
+  blocked Boolean @default(false)
+
+  startedAt       DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  lastBroadcastAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([blocked, registered])
+  @@index([lastBroadcastAt])
+}
+
 model TelegramChat {
   id               String    @id
   type             String
@@ -1199,18 +1230,18 @@ model CommunicationModerationEvent {
 // водителей: каждая отметка хранится отдельно и остаётся проверяемой, а карта
 // показывает согласованное значение вместо одиночного мнения.
 model FuelPriceReport {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   stationId  String // идентификатор точки на карте, например osm-node-123
   latitude   Float
   longitude  Float
   fuel       String // AI92, AI95, AI98, AI100, DT, GAS
   priceRub   Int // цена в копейках, чтобы не хранить дробное значение
   userId     String?
-  user       User?    @relation("FuelPriceReporter", fields: [userId], references: [id], onDelete: SetNull)
+  user       User?     @relation("FuelPriceReporter", fields: [userId], references: [id], onDelete: SetNull)
   ipHash     String? // антиспам без хранения адреса
-  status     String   @default("ACTIVE") // ACTIVE, REJECTED, SUPERSEDED
+  status     String    @default("ACTIVE") // ACTIVE, REJECTED, SUPERSEDED
   rejectedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([stationId, fuel, createdAt])
   @@index([status, createdAt])
@@ -1245,14 +1276,14 @@ model AdminAuditEvent {
 // Кто кого привёл. Связь фиксируется один раз при регистрации и не меняется:
 // иначе вознаграждение можно было бы переписать задним числом.
 model ReferralAttribution {
-  id         String   @id @default(uuid())
-  partnerId  String
-  partner    User     @relation("ReferralPartner", fields: [partnerId], references: [id], onDelete: Cascade)
-  inviteeId  String   @unique
-  invitee    User     @relation("ReferralInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
-  code       String
-  source     String? // страница или канал перехода
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  partnerId String
+  partner   User     @relation("ReferralPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+  inviteeId String   @unique
+  invitee   User     @relation("ReferralInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  code      String
+  source    String? // страница или канал перехода
+  createdAt DateTime @default(now())
 
   @@index([partnerId, createdAt])
   @@index([code])
@@ -1261,19 +1292,19 @@ model ReferralAttribution {
 // Начисление за оплату приглашённого. Хранится как отдельная запись, чтобы
 // история начислений оставалась проверяемой, даже если тариф позже отменят.
 model ReferralReward {
-  id                String   @id @default(uuid())
-  partnerId         String
-  partner           User     @relation("ReferralRewardPartner", fields: [partnerId], references: [id], onDelete: Cascade)
-  inviteeId         String
-  promotionOrderId  String   @unique
+  id               String   @id @default(uuid())
+  partnerId        String
+  partner          User     @relation("ReferralRewardPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+  inviteeId        String
+  promotionOrderId String   @unique
   // Сумма платежа и процент на момент начисления: шкала со временем меняется,
   // а уже начисленное пересчитывать нельзя.
-  orderAmountRub    Int
-  percent           Int
-  amountRub         Int
-  status            String   @default("ACCRUED") // ACCRUED, PAID, CANCELLED
-  cancelReason      String?
-  createdAt         DateTime @default(now())
+  orderAmountRub   Int
+  percent          Int
+  amountRub        Int
+  status           String   @default("ACCRUED") // ACCRUED, PAID, CANCELLED
+  cancelReason     String?
+  createdAt        DateTime @default(now())
 
   @@index([partnerId, status, createdAt])
 }
@@ -1302,14 +1333,14 @@ model ReferralPayout {
 /// на строку. Переводы детерминированы, поэтому хранятся между запусками.
 model TranslationCache {
   /// Хэш исходного текста вместе с режимом перевода.
-  key         String   @id
-  sourceText  String
-  translated  String
+  key        String   @id
+  sourceText String
+  translated String
   /// Режим: обычный перевод или нормализация названия модели.
-  mode        String   @default("text")
-  hits        Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  mode       String   @default("text")
+  hits       Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([updatedAt])
 }

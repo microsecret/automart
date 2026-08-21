@@ -20,6 +20,7 @@ import { prisma } from "@/lib/prisma"
 import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 import { registerTelegramGroup, setTelegramChatMarketing } from "@/lib/telegram-marketing"
 import { describePendingSteps, resumeButtonLabel } from "@/lib/telegram-registration-copy"
+import { touchTelegramContact } from "@/lib/telegram-contacts"
 
 export const dynamic = "force-dynamic"
 
@@ -316,6 +317,18 @@ async function handleMessage(message: TelegramMessage) {
   const telegramId = String(message.from.id)
   const chatId = String(message.chat.id)
 
+  // Отмечаем контакт при любом личном сообщении, включая самое первое
+  // «Начать». До этого человек, не подтвердивший телефон, нигде не
+  // сохранялся — а таких большинство, и именно они аудитория рассылки.
+  if (message.chat.type === "private") {
+    void touchTelegramContact({
+      telegramId,
+      username: message.from.username,
+      firstName: message.from.first_name,
+      lastName: message.from.last_name,
+    })
+  }
+
   if (message.chat.type === "group" || message.chat.type === "supergroup") {
     await registerTelegramGroup(message.chat)
     const command = message.text?.trim().toLowerCase().split(/\s+/)[0]?.split("@")[0]
@@ -439,6 +452,14 @@ async function handleMessage(message: TelegramMessage) {
     if (step === "password") {
       try {
         await completeTelegramRegistration(telegramId, message.text.trim())
+        // Отмечаем в учёте контактов: в рассылке эти люди отделяются от тех,
+        // кто открыл бота и до конца не дошёл.
+        void touchTelegramContact({
+          telegramId,
+          username: message.from.username,
+          firstName: message.from.first_name,
+          lastName: message.from.last_name,
+        }, true)
         await telegramApi("deleteMessage", { chat_id: chatId, message_id: message.message_id }).catch(() => undefined)
         const completedUser = await getTelegramUser(telegramId)
         await sendRegistrationComplete(chatId, completedUser?.name)
