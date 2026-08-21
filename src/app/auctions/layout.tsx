@@ -43,15 +43,34 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
             чем этот каталог отличается от чужой витрины. Разметка остаётся
             серверной — она нужна поисковику вместе с заголовком. */}
         <ul className="auction-intro__facts">
-          <li>
+          <li data-tone="price">
+            <span className="auction-intro__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.3 5 1.4 5 3.4-2.2 3.3-5 3.3-5-1.2-5-3.1" />
+              </svg>
+            </span>
             <strong>Цена под ключ</strong>
             <span>Пересчёт по курсу ЦБ, пошлины и утильсбор — в итоговой сумме</span>
           </li>
-          <li>
+          <li data-tone="lots">
+            <span className="auction-intro__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+                <circle cx="12" cy="12" r="3.4" />
+                <path d="M7.5 5 9 2.6h6L16.5 5" />
+              </svg>
+            </span>
             <strong>Живые лоты площадок</strong>
             <span>Фотографии, пробег и состояние кузова — как в аукционном листе</span>
           </li>
-          <li>
+          <li data-tone="delivery">
+            <span className="auction-intro__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2.5 15.5V7.5a1 1 0 0 1 1-1h10v9M13.5 9.5h3.6l3.4 3.4v2.6" />
+                <circle cx="7" cy="17" r="1.9" />
+                <circle cx="17.5" cy="17" r="1.9" />
+              </svg>
+            </span>
             <strong>Доставка до России</strong>
             <span>Маршрут, сроки и таможенное оформление рассчитываем заранее</span>
           </li>

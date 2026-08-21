@@ -88,7 +88,16 @@ function getBotCreateUrl() {
   return username ? `https://t.me/${username}?startapp=create` : null
 }
 
-/** Клавиатура системных сообщений: регистрация плюс размещение объявления. */
+/** Чат с отчётами о проверке автомобилей. */
+const VEHICLE_REPORTS_CHAT_URL = "https://t.me/autoproverka"
+
+/**
+ * Клавиатура системных сообщений: регистрация, размещение и отчёты.
+ *
+ * Третья кнопка ведёт в чат с проверками: человек, которому только что скрыли
+ * сообщение, чаще всего выбирает машину — ему полезнее увидеть отчёты, чем
+ * просто требование зарегистрироваться.
+ */
 function registrationKeyboard(registerLabel: string) {
   const startUrl = getBotStartUrl()
   if (!startUrl) return undefined
@@ -97,6 +106,7 @@ function registrationKeyboard(registerLabel: string) {
     inline_keyboard: [
       [{ text: registerLabel, style: "primary", url: startUrl }],
       ...(createUrl ? [[{ text: "🚗 Разместить объявление", url: createUrl }]] : []),
+      [{ text: "📋 Отчёты об авто", url: VEHICLE_REPORTS_CHAT_URL }],
     ],
   }
 }

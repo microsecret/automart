@@ -1332,46 +1332,78 @@ select {
   text-wrap: pretty;
 }
 
-/* Три преимущества каталога.
-   Полоса слева цветом ведущего тона связывает пункты в группу и отделяет их
-   от вводного абзаца, не превращая в карточки: это подпись под заголовком,
-   а не отдельный блок страницы. */
+/* Три преимущества каталога — виджеты.
+   Каждый со своим тоном и живой иконкой: сплошная строка не показывала, чем
+   площадка отличается от чужой витрины, а одинаковые серые пункты читались
+   как мелкий шрифт под заголовком. */
 .auction-intro__facts {
   display: grid;
-  gap: 10px 22px;
-  margin: 14px 0 0;
+  gap: 12px;
+  margin: 16px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .auction-intro__facts li {
-  padding-left: 11px;
-  border-left: 2px solid color-mix(in srgb, var(--market-primary) 55%, transparent);
+  position: relative;
+  overflow: hidden;
+  padding: 13px 15px 14px;
+  border: 1px solid color-mix(in srgb, var(--tone) 26%, var(--market-line));
+  border-radius: 13px;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--tone) 9%, var(--market-surface)) 0%,
+      var(--market-surface) 62%);
+  box-shadow: 0 10px 22px -20px color-mix(in srgb, var(--tone) 90%, transparent);
+}
+
+/* Цветная полоса сверху — тот же приём, что и на плитках направлений
+   главной: страницы держатся одного языка. */
+.auction-intro__facts li::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--tone), color-mix(in srgb, var(--tone) 45%, transparent));
+  content: "";
+}
+
+.auction-intro__facts li[data-tone="price"]    { --tone: #0f766e; }
+.auction-intro__facts li[data-tone="lots"]     { --tone: #1d4ed8; }
+.auction-intro__facts li[data-tone="delivery"] { --tone: #ef7d00; }
+
+.auction-intro__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--tone) 15%, var(--market-surface));
+  color: var(--tone);
 }
 
 .auction-intro__facts strong {
   display: block;
   color: var(--market-ink);
   font-family: var(--font-display), sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: -0.012em;
 }
 
-.auction-intro__facts span {
+.auction-intro__facts span:not(.auction-intro__icon) {
   display: block;
-  margin-top: 1px;
+  margin-top: 3px;
   color: var(--market-muted);
   font-size: 0.82rem;
   line-height: 1.45;
 }
 
-@media (min-width: 62em) {
-  /* На широком экране три пункта встают в ряд — так они читаются как
-     единый набор, а не как список дел. */
+@media (min-width: 48em) {
   .auction-intro__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    max-width: 1000px;
   }
 }
 
