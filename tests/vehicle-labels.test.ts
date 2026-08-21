@@ -4,6 +4,8 @@ import {
   findLabel,
   getTransmissionOptions,
   getFuelOptions,
+  getSelectableFuelOptions,
+  getSelectableTransmissionOptions,
   TRANSMISSIONS,
   TRUCK_TRANSMISSIONS,
   MOTORCYCLE_TRANSMISSIONS,
@@ -45,4 +47,35 @@ test("неизвестное значение не выдаётся за пер�
   assert.equal(findLabel(TRANSMISSIONS, "SEQUENTIAL"), "SEQUENTIAL")
   assert.equal(findLabel(TRANSMISSIONS, null), "—")
   assert.equal(findLabel(TRANSMISSIONS, ""), "—")
+})
+
+test("«Другое» не предлагается продавцу при подаче", () => {
+  // Четыре активных объявления из пяти были поданы с OTHER и в топливе, и в
+  // коробке: это самый быстрый способ пропустить поле, а покупатель остаётся
+  // без данных, ради которых открыл карточку.
+  for (const type of ["CAR", "MOTORCYCLE", "TRUCK"]) {
+    const transmissions = getSelectableTransmissionOptions(type)
+    assert.ok(transmissions.length > 0, `${type}: список КПП опустел`)
+    assert.ok(
+      !transmissions.some((option) => option.value === "OTHER"),
+      `${type}: «Другое» осталось в выборе КПП`,
+    )
+  }
+
+  for (const type of ["CAR", "TRUCK", "AIR"]) {
+    const fuels = getSelectableFuelOptions(type)
+    assert.ok(fuels.length > 0, `${type}: список топлива опустел`)
+    assert.ok(
+      !fuels.some((option) => option.value === "OTHER"),
+      `${type}: «Другое» осталось в выборе топлива`,
+    )
+  }
+})
+
+test("«Другое» остаётся для показа импортных лотов", () => {
+  // Значение приходит из чужих каталогов: убрать его из справочника значило
+  // бы вернуть английское OTHER в карточку.
+  assert.equal(findLabel(TRANSMISSIONS, "OTHER"), "Другая")
+  assert.ok(getTransmissionOptions("CAR").some((option) => option.value === "OTHER"))
+  assert.ok(getFuelOptions("CAR").some((option) => option.value === "OTHER"))
 })

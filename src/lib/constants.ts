@@ -174,6 +174,27 @@ export function getFuelOptions(vehicleType: string | null | undefined) {
 }
 
 /**
+ * Варианты для формы подачи объявления.
+ *
+ * «Другое» нужно, чтобы показать значение импортного лота, который пришёл из
+ * чужого каталога, — но продавцу его предлагать нельзя. На площадке четыре
+ * активных объявления из пяти были поданы с «Другое» и в коробке, и в
+ * топливе: это самый быстрый способ пропустить поле, и покупатель остаётся
+ * без данных, ради которых открыл карточку.
+ */
+function withoutOther(options: readonly { value: string; label: string }[]) {
+  return options.filter((option) => option.value !== "OTHER")
+}
+
+export function getSelectableTransmissionOptions(vehicleType: string | null | undefined) {
+  return withoutOther(getTransmissionOptions(vehicleType))
+}
+
+export function getSelectableFuelOptions(vehicleType: string | null | undefined) {
+  return withoutOther(getFuelOptions(vehicleType))
+}
+
+/**
  * Rules that protect the catalogue from physically impossible demo and user
  * data.  They deliberately cover only manufacturers and model years with an
  * unambiguous electric-only history, so hybrid-capable brands remain free to

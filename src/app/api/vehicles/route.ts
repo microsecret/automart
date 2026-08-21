@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { BODY_TYPES, DRIVE_TYPES, getFuelOptions, getTransmissionOptions, getVehicleIdentityMeta, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, getSelectableFuelOptions, getSelectableTransmissionOptions, getVehicleIdentityMeta, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 import { parseMarketplaceImages } from "@/lib/media-url"
@@ -291,9 +291,18 @@ export async function POST(request: NextRequest) {
     if (normalizedImages.length === 0) return NextResponse.json({ error: "Добавьте хотя бы одну фотографию транспорта" }, { status: 400 })
     if ("error" in normalizedIdentity) return NextResponse.json({ error: normalizedIdentity.error }, { status: 400 })
 
-    const allowedFuelTypes = new Set<string>(getFuelOptions(normalizedVehicleType).map((item) => item.value))
+    // «Другое» доступно только импорту: на площадке четыре активных объявления
+    // из пяти были поданы с ним и в топливе, и в коробке — продавцы так
+    // пропускали поля, а покупатель оставался без данных, ради которых открыл
+    // карточку. Проверка стоит на сервере, потому что форму можно обойти.
+    const allowedFuelTypes = new Set<string>(getSelectableFuelOptions(normalizedVehicleType).map((item) => item.value))
     if (!fuelType || !allowedFuelTypes.has(String(fuelType))) {
-      return NextResponse.json({ error: "Выбранный тип топлива не подходит для этой категории транспорта" }, { status: 400 })
+      return NextResponse.json(
+        { error: String(fuelType) === "OTHER"
+          ? "Укажите тип топлива: бензин, дизель, гибрид, электро или газ"
+          : "Выбранный тип топлива не подходит для этой категории транспорта" },
+        { status: 400 },
+      )
     }
     const energyAndYearError = validateVehicleEnergyAndModelYear(
       normalizedVehicleType,
@@ -305,9 +314,14 @@ export async function POST(request: NextRequest) {
     )
     if (energyAndYearError) return NextResponse.json({ error: energyAndYearError }, { status: 400 })
 
-    const transmissionOptions = getTransmissionOptions(normalizedVehicleType)
+    const transmissionOptions = getSelectableTransmissionOptions(normalizedVehicleType)
     if (supportsTransmission(normalizedVehicleType) && (!transmission || !transmissionOptions.some((item) => item.value === transmission))) {
-      return NextResponse.json({ error: "Выбранный тип КПП не подходит для этой категории транспорта" }, { status: 400 })
+      return NextResponse.json(
+        { error: String(transmission) === "OTHER"
+          ? "Укажите коробку передач: механика, автомат, вариатор или робот"
+          : "Выбранный тип КПП не подходит для этой категории транспорта" },
+        { status: 400 },
+      )
     }
 
     const allowedDriveTypes = new Set<string>(DRIVE_TYPES.map((item) => item.value))

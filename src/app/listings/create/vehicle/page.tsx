@@ -7,7 +7,7 @@ import { Alert, Autocomplete, Stack, Text, Paper, TextInput, Textarea, Select, N
 import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
-import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getFuelOptions, getTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import ListingPhotoGrid from "@/components/uploads/ListingPhotoGrid"
@@ -192,15 +192,19 @@ function CreateVehicleWorkspace() {
     vin: "",
     serialNumber: "",
     registrationNumber: "",
-    fuelType: getFuelOptions(vehicleType)[0]?.value || "OTHER",
-    transmission: getTransmissionOptions(vehicleType)[0]?.value || "",
+    // Пустая строка вместо «OTHER»: подставлять «Другое» по умолчанию значило
+    // заполнять поле за продавца тем, что покупателю ничего не говорит.
+    fuelType: getSelectableFuelOptions(vehicleType)[0]?.value || "",
+    transmission: getSelectableTransmissionOptions(vehicleType)[0]?.value || "",
     bodyType: vehicleType === "CAR" ? previous.bodyType || "SEDAN" : "",
     driveType: vehicleType === "CAR" ? previous.driveType || "FWD" : "",
   }))
   const usageMeta = getUsageMeta(f.vehicleType)
   const identityMeta = getVehicleIdentityMeta(f.vehicleType)
-  const fuelOptions = getFuelOptions(f.vehicleType)
-  const transmissionOptions = getTransmissionOptions(f.vehicleType)
+  // В форме «Другое» не предлагаем — оно остаётся только для показа лотов,
+  // импортированных из чужих каталогов.
+  const fuelOptions = getSelectableFuelOptions(f.vehicleType)
+  const transmissionOptions = getSelectableTransmissionOptions(f.vehicleType)
   const selectedCategory = categories.find((category) => category.vehicleType === f.vehicleType)
   const brandCategory = BRAND_CATEGORY_BY_VEHICLE_TYPE[f.vehicleType as keyof typeof BRAND_CATEGORY_BY_VEHICLE_TYPE] || "cars"
   const brandOptions = getBrandsByCategory(brandCategory)
