@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button, Modal, Stack, Text, TextInput, Switch } from "@mantine/core"
@@ -22,7 +22,22 @@ type Props = {
  * Кнопка предлагает не возвращаться самому, а получить сообщение, когда
  * появится подходящий вариант.
  */
-export default function SaveSearchButton({ scope, suggestedTitle }: Props) {
+/**
+ * Обёртка с Suspense.
+ *
+ * Внутри используется useSearchParams: без границы Suspense Next.js не может
+ * отрисовать страницу заранее и роняет сборку целиком — главная переставала
+ * собираться, а сайт возвращал 502.
+ */
+export default function SaveSearchButton(props: Props) {
+  return (
+    <Suspense fallback={null}>
+      <SaveSearchButtonInner {...props} />
+    </Suspense>
+  )
+}
+
+function SaveSearchButtonInner({ scope, suggestedTitle }: Props) {
   const { data: session } = useSession()
   const params = useSearchParams()
   const [opened, setOpened] = useState(false)
