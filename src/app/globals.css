@@ -1332,6 +1332,49 @@ select {
   text-wrap: pretty;
 }
 
+/* Три преимущества каталога.
+   Полоса слева цветом ведущего тона связывает пункты в группу и отделяет их
+   от вводного абзаца, не превращая в карточки: это подпись под заголовком,
+   а не отдельный блок страницы. */
+.auction-intro__facts {
+  display: grid;
+  gap: 10px 22px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auction-intro__facts li {
+  padding-left: 11px;
+  border-left: 2px solid color-mix(in srgb, var(--market-primary) 55%, transparent);
+}
+
+.auction-intro__facts strong {
+  display: block;
+  color: var(--market-ink);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.auction-intro__facts span {
+  display: block;
+  margin-top: 1px;
+  color: var(--market-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+@media (min-width: 62em) {
+  /* На широком экране три пункта встают в ряд — так они читаются как
+     единый набор, а не как список дел. */
+  .auction-intro__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 1000px;
+  }
+}
+
 @media (max-width: 48em) {
   .auction-intro {
     padding: 14px 12px 0;
