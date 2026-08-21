@@ -8,7 +8,7 @@
   border: 1px solid #b8c4d6 !important;
   background: #ffffff !important;
   color: #172033 !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .listingCreateForm :global(.mantine-Textarea-input) {
@@ -47,5 +47,5 @@
   margin-top: 4px;
   border-color: #cbd5e1 !important;
   background: #ffffff !important;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+  box-shadow: var(--shadow-md);
 }
