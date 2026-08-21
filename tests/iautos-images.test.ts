@@ -5,15 +5,15 @@ import { extractIautosImages } from "../src/lib/iautos-images.ts"
 
 test("extracts IAUTOS images from lazy attributes and escaped JSON", () => {
   const html = [
-    "<img data-src='//s1.iautos.cn/cars/front.jpg'>",
+    "<img data-src='//qimg2.iautos.cn/cars/front.jpg'>",
     '<script>{"photo":"https:\\/\\/qimg.iautos.cn\\/cars\\/rear.png-large"}</script>',
-    '<img data-original="https://s3.iautos.cn/cars/interior.webp?size=large">',
+    '<img data-original="https://qimg6.iautos.cn/cars/interior.webp?size=large">',
   ].join("\n")
 
   assert.deepEqual(extractIautosImages(html), [
-    "https://s1.iautos.cn/cars/front.jpg",
+    "https://qimg2.iautos.cn/cars/front.jpg",
     "https://qimg.iautos.cn/cars/rear.png-large",
-    "https://s3.iautos.cn/cars/interior.webp?size=large",
+    "https://qimg6.iautos.cn/cars/interior.webp?size=large",
   ])
 })
 
@@ -53,4 +53,19 @@ test("вёрстка сайта не попадает в галерею вмес
   const images = extractIautosImages(html)
   assert.equal(images.length, 1)
   assert.ok(images[0].includes("taocheche.com.cn"))
+})
+
+test("узлы s1/s2/s3 не считаются хранилищем снимков", () => {
+  // Живая проверка показала: они отдают {"error":"Document not found"} и 404.
+  // Раньше оттуда набралось 1475 битых ссылок, и в галерее лота вместо машины
+  // показывались пустые кадры.
+  const html = [
+    "<img data-src='//s1.iautos.cn/cars/front.jpg'>",
+    '<img data-original="https://s3.iautos.cn/cars/interior.webp">',
+    '<img src="//qimg6.iautos.cn/cars/real.jpg">',
+  ].join("\n")
+
+  const images = extractIautosImages(html)
+  assert.equal(images.length, 1)
+  assert.ok(images[0].includes("qimg6.iautos.cn"))
 })

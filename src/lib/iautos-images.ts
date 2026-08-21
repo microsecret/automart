@@ -1,11 +1,13 @@
-// Снимки лежат на двух узлах: iautos.cn отдаёт часть кадров, а основной
-// массив — партнёрский CDN taocheche (сорок шесть ссылок против двадцати
-// восьми у одной карточки). Пока в списке был только iautos.cn, лоты
-// сохранялись почти без фотографий.
+// Снимки лежат на qimg*.iautos.cn и на партнёрском CDN taocheche.
 //
-// static.iautos.cn сюда не входит намеренно: это вёрстка сайта — логотипы,
-// иконки и заглушки, которым не место в галерее лота.
-const IAUTOS_IMAGE_HOST = /^(?:(?:qimg\d*|s\d+)\.iautos\.cn|img\d*\.taocheche\.com\.cn)$/i
+// Узлы s1/s2/s3.iautos.cn сюда не входят: они возвращают
+// {"error":"Document not found"} — проверено, 404 на все 1475 ссылок,
+// которые уже успели попасть в базу. Это не хранилище картинок, и такие
+// адреса засоряли галерею битыми кадрами.
+//
+// static.iautos.cn тоже исключён: это вёрстка сайта — логотипы, иконки и
+// заглушки, которым не место в галерее лота.
+const IAUTOS_IMAGE_HOST = /^(?:qimg\d*\.iautos\.cn|img\d*\.taocheche\.com\.cn)$/i
 
 function decodeIautosMarkup(value: string) {
   return value
@@ -17,7 +19,7 @@ function decodeIautosMarkup(value: string) {
 }
 
 export function extractIautosImages(html: string) {
-  const candidates = decodeIautosMarkup(html).match(/(?:https?:)?\/\/(?:(?:qimg\d*|s\d+)\.iautos\.cn|img\d*\.taocheche\.com\.cn)\/[^\s"'<>\\)]+/gi) || []
+  const candidates = decodeIautosMarkup(html).match(/(?:https?:)?\/\/(?:qimg\d*\.iautos\.cn|img\d*\.taocheche\.com\.cn)\/[^\s"'<>\\)]+/gi) || []
 
   return [...new Set(candidates.flatMap((candidate) => {
     try {
