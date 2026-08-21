@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { prisma } from "@/lib/prisma"
 import { authOptions } from "@/lib/auth"
 import { isAdmin } from "@/lib/permissions"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
@@ -16,7 +17,21 @@ export async function GET() {
   if (!isAdmin(session?.user?.role)) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
 
   try {
-    return NextResponse.json({ stats: await getTelegramContactStats() })
+    // История нужна вместе со сводкой: администратор должен видеть, что уже
+    // отправлено, прежде чем писать следующее письмо.
+    const [stats, history] = await Promise.all([
+      getTelegramContactStats(),
+      prisma.telegramBroadcast.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true, text: true, audience: true, total: true,
+          delivered: true, blocked: true, failed: true,
+          sentByName: true, createdAt: true,
+        },
+      }),
+    ])
+    return NextResponse.json({ stats, history })
   } catch (error) {
     console.error("Telegram contact stats failed:", error)
     return NextResponse.json({ error: "Не удалось загрузить статистику" }, { status: 500 })
@@ -54,7 +69,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Telegram не принимает сообщения длиннее 4 000 символов" }, { status: 400 })
     }
 
-    const result = await sendTelegramBroadcast({ text, audience, limit: limitCount })
+    const result = await sendTelegramBroadcast({
+      text,
+      audience,
+      limit: limitCount,
+      sentBy: { id: session?.user?.id, name: session?.user?.name },
+    })
     return NextResponse.json(result)
   } catch (error) {
     console.error("Telegram broadcast failed:", error)

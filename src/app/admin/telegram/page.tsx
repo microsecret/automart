@@ -28,6 +28,24 @@ type BroadcastResult = {
   failed: number
 }
 
+type HistoryItem = {
+  id: string
+  text: string
+  audience: string
+  total: number
+  delivered: number
+  blocked: number
+  failed: number
+  sentByName: string | null
+  createdAt: string
+}
+
+const AUDIENCE_LABELS: Record<string, string> = {
+  all: "Всем",
+  unregistered: "Не закончившим",
+  registered: "Зарегистрированным",
+}
+
 /**
  * Рассылка по контактам бота.
  *
@@ -36,7 +54,7 @@ type BroadcastResult = {
  * нечем.
  */
 export default function TelegramBroadcastPage() {
-  const { data, error, isLoading, mutate } = useSWR<{ stats: Stats }>(
+  const { data, error, isLoading, mutate } = useSWR<{ stats: Stats; history: HistoryItem[] }>(
     "/api/admin/telegram-broadcast",
     fetchJson,
   )
@@ -177,6 +195,35 @@ export default function TelegramBroadcastPage() {
             </Group>
           </Stack>
         </Card>
+
+        {/* История: рассылку нельзя отозвать, поэтому важно видеть, что уже
+            ушло, прежде чем писать следующее письмо. */}
+        {data?.history && data.history.length > 0 && (
+          <Card withBorder radius="lg" p="lg">
+            <Text size="sm" fw={700} mb="sm">Последние рассылки</Text>
+            <Stack gap="xs">
+              {data.history.map((item) => (
+                <Box key={item.id} className="broadcast-history-item">
+                  <Group justify="space-between" gap="xs" wrap="nowrap" align="flex-start">
+                    <Box style={{ minWidth: 0, flex: 1 }}>
+                      <Text size="sm" lineClamp={2}>{item.text}</Text>
+                      <Text size="xs" c="dimmed" mt={2}>
+                        {new Date(item.createdAt).toLocaleString("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        {" · "}{AUDIENCE_LABELS[item.audience] || item.audience}
+                        {item.sentByName ? ` · ${item.sentByName}` : ""}
+                      </Text>
+                    </Box>
+                    <Group gap={4} wrap="nowrap">
+                      <Badge variant="light" color="teal" size="sm">{item.delivered}</Badge>
+                      {item.blocked > 0 && <Badge variant="light" color="gray" size="sm">заблок. {item.blocked}</Badge>}
+                      {item.failed > 0 && <Badge variant="light" color="red" size="sm">ошибок {item.failed}</Badge>}
+                    </Group>
+                  </Group>
+                </Box>
+              ))}
+            </Stack>
+          </Card>
+        )}
       </Stack>
     </Container>
   )

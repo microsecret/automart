@@ -4902,3 +4902,15 @@ a:focus-visible > .market-linked-card {
   outline-offset: 2px;
   border-radius: 3px;
 }
+
+/* Элемент истории рассылок. Разделитель вместо рамки: это список записей,
+   а не набор карточек — рамки утяжелили бы блок при двадцати строках. */
+.broadcast-history-item {
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 70%, transparent);
+}
+
+.broadcast-history-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}

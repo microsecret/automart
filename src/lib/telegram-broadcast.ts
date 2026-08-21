@@ -38,6 +38,8 @@ export async function sendTelegramBroadcast(input: {
   audience: BroadcastAudience
   /** Ограничение на число получателей — для пробной отправки. */
   limit?: number
+  /** Кто отправил: рассылка доступна нескольким администраторам. */
+  sentBy?: { id?: string | null; name?: string | null }
 }): Promise<BroadcastResult> {
   const text = input.text.trim()
   if (!text) throw new Error("Пустое сообщение")
@@ -91,5 +93,27 @@ export async function sendTelegramBroadcast(input: {
     }
   }
 
-  return { audience: input.audience, total: contacts.length, delivered, blocked, failed }
+  const result = { audience: input.audience, total: contacts.length, delivered, blocked, failed }
+
+  // Запись в журнал не должна ронять уже выполненную рассылку: сообщения
+  // отправлены, и потеря строки в истории — меньшая беда, чем ошибка 500
+  // в ответе, после которой администратор нажмёт «Отправить» ещё раз.
+  try {
+    await prisma.telegramBroadcast.create({
+      data: {
+        text,
+        audience: input.audience,
+        total: result.total,
+        delivered,
+        blocked,
+        failed,
+        sentById: input.sentBy?.id || null,
+        sentByName: input.sentBy?.name || null,
+      },
+    })
+  } catch (error) {
+    console.error("[broadcast] Не удалось записать в журнал:", error)
+  }
+
+  return result
 }

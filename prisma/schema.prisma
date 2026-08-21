@@ -782,6 +782,29 @@ model TelegramMessageCleanup {
 ///
 /// Хранится минимум: Telegram ID, имя для обращения и отметки активности.
 /// Телефон и почта живут в User и появляются только после регистрации.
+/// Журнал массовых рассылок.
+///
+/// Рассылку нельзя отозвать, поэтому важно видеть, что и когда ушло: без
+/// записи невозможно ни проверить факт отправки, ни разобрать жалобу, ни
+/// понять, почему часть людей заблокировала бота после конкретного письма.
+model TelegramBroadcast {
+  id        String @id @default(uuid())
+  text      String
+  audience  String
+  total     Int
+  delivered Int
+  blocked   Int
+  failed    Int
+
+  /// Кто отправил — рассылка доступна нескольким администраторам.
+  sentById   String?
+  sentByName String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model TelegramContact {
   telegramId String  @id
   username   String?
