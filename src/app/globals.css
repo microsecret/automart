@@ -657,9 +657,14 @@ select {
   flex: 0 0 auto;
 }
 
+/* Вкладки не сжимаются: с flex-shrink подписи схлопывались до иконок и ряд
+   читался как набор непонятных значков. Место при нехватке отдаёт поиск. */
 .market-app-header__tabs {
-  min-width: 0;
-  flex-shrink: 1;
+  flex: 0 0 auto;
+}
+
+.market-app-header__tabs .mantine-Button-label {
+  white-space: nowrap;
 }
 
 .market-header-search .mantine-Input-input {
