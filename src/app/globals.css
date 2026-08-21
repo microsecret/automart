@@ -415,6 +415,37 @@ select {
   pointer-events: none;
 }
 
+/* Вкладки разделов в шапке.
+   Активная помечена подчёркиванием снизу, а не заливкой: заливка спорила бы
+   с оранжевой кнопкой подачи, которая должна оставаться единственным
+   ярким пятном. */
+.market-header-tab {
+  position: relative;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--market-control-text) !important;
+}
+
+.market-header-tab:hover {
+  background: color-mix(in srgb, var(--market-primary-soft) 60%, transparent) !important;
+}
+
+.market-header-tab--active {
+  color: var(--market-primary) !important;
+  font-weight: 700;
+}
+
+.market-header-tab--active::after {
+  position: absolute;
+  right: 9px;
+  bottom: 1px;
+  left: 9px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--market-primary);
+  content: "";
+}
+
 .market-app-header__links .mantine-Button-root {
   font-size: 12px;
   font-weight: 700;

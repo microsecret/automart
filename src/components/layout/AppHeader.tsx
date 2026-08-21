@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Burger, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconMenu2, IconBrain, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -137,29 +137,26 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
             <LeWheelBrand size={38} priority />
           </Link>
 
-          <Menu shadow="md" width={210} position="bottom-start" radius="md" offset={6}>
-            <Menu.Target>
-              {/* Подпись не сжимается: в тесной шапке слово «Разделы»
-                  обрезалось до «Раз» и кнопка выглядела сломанной. */}
+          {/* Разделы каталога — плоские вкладки, а не выпадающая плашка.
+              Три пункта прятать под кнопку незачем: человек и так видит,
+              куда идти, а лишний клик только удлинял путь. */}
+          <Group gap={2} visibleFrom="md" wrap="nowrap" className="market-app-header__tabs">
+            {catalogueNavigation.map((item) => (
               <Button
-                visibleFrom="md"
-                variant="light"
+                key={item.href}
+                component={Link}
+                href={item.href}
+                variant="subtle"
                 color="indigo"
                 size="compact-sm"
-                leftSection={<IconMenu2 size={15} />}
-                styles={{ root: { flexShrink: 0 }, label: { whiteSpace: "nowrap" } }}
+                leftSection={item.icon || <IconCar size={14} />}
+                aria-current={item.active ? "page" : undefined}
+                className={`market-header-tab${item.active ? " market-header-tab--active" : ""}`}
               >
-                Разделы
+                {item.label}
               </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {catalogueNavigation.map((item) => (
-                <Menu.Item key={item.href} component={Link} href={item.href} leftSection={item.icon || <IconCar size={14} />} color={item.active ? "indigo" : undefined}>
-                  {item.label}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
+            ))}
+          </Group>
 
           <ServiceNavigationMenu serviceNavigation={serviceNavigation} serviceShortcuts={serviceShortcuts} />
 
