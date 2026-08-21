@@ -675,7 +675,9 @@ select {
   display: none;
 }
 
-@media (max-width: 1179px) {
+/* Порог совпадает с visibleFrom="xl" у поля поиска (1200px): иначе в
+   промежутке между правилами не видно ни поля, ни кнопки. */
+@media (max-width: 1199px) {
   .market-header-search {
     display: none !important;
   }
