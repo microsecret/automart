@@ -354,7 +354,9 @@ export default function HomePage(p: HomePageProps = {}) {
               }
               styles={{ root: { fontWeight: 600 } }}
             >
-              Расширенные фильтры
+              {/* На телефоне за кнопкой прячутся и обычные поля тоже, поэтому
+                  «расширенные» вводило бы в заблуждение. */}
+              Фильтры
             </Button>
             {activeFilterCount > 0 && <Button variant="subtle" size="xs" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить всё</Button>}
           </Group>}
