@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { getOwnerTransition, isListingModerator, LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { parseListingEditInput, parseStoredImages } from "@/lib/listing-edit"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { isAdmin } from "@/lib/permissions"
 
 export const dynamic = "force-dynamic"
 
@@ -141,7 +142,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const patch = parsed.value
     const listing = await prisma.listing.findUnique({ where: { id }, include: editableListingInclude })
     if (!listing || listing.deletedAt) return NextResponse.json({ error: "Не найдено" }, { status: 404 })
-    if (listing.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+    // Администратор правит чужие карточки при модерации. Смена статуса и
+    // удаление ему сюда не открываются — для них есть админ-панель.
+    if (listing.userId !== session.user.id && !isAdmin(session.user.role)) {
+      return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+    }
     if (!listing.vehicle && !listing.part) return NextResponse.json({ error: "Нарушена целостность объявления" }, { status: 409 })
 
     const subject = listing.vehicle || listing.part!

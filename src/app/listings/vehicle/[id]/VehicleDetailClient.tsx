@@ -743,7 +743,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       Показать телефон
                     </Button>
                   )}
-                  {session?.user?.id === data.seller.id && data.listingId && (
+                  {/* Редактирование доступно владельцу и администратору:
+                      админ правит чужие карточки при модерации, и раньше ему
+                      приходилось искать ту же запись в админ-панели. */}
+                  {(session?.user?.id === data.seller.id || isAdmin(session?.user?.role)) && data.listingId && (
                     <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>
                       Редактировать объявление
                     </Button>

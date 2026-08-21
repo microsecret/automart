@@ -20,7 +20,11 @@ export const metadata: Metadata = {
 
 export default async function NewsPage() {
   const [initialPage, tags] = await Promise.all([
-    getNewsPage({ page: 1, limit: 12 }),
+    // Одиннадцать, а не двенадцать: главная новость занимает две колонки из
+    // трёх, поэтому двенадцать карточек дают тринадцать ячеек и последний ряд
+    // остаётся с дырой. Клиент запрашивает столько же — иначе до подгрузки
+    // SWR показывались серверные двенадцать и ряд рвался.
+    getNewsPage({ page: 1, limit: 11 }),
     listNewsTags().catch(() => []),
   ])
 

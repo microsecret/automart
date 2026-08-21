@@ -28,6 +28,7 @@ import ListingPhotoGrid from "@/components/uploads/ListingPhotoGrid"
 import { LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+import { isAdmin } from "@/lib/permissions"
 
 type EditableSubject = { id: string; location: string; images: string | null }
 type EditableListing = {
@@ -80,7 +81,10 @@ export default function EditListingPage() {
   if (!session) return null
   if (error) return <Container size="sm" py="xl"><AsyncErrorState title="Не удалось открыть редактор" description={error.message} onRetry={() => void mutate()} backHref="/dashboard" backLabel="В кабинет" /></Container>
   if (!data?.listing || !form) return <Container size="sm" py="xl"><EmptyState title="Объявление не найдено" description="Возможно, оно было удалено или перенесено в архив." actionLabel="В кабинет" actionHref="/dashboard" /></Container>
-  if (data.listing.userId !== session.user.id) return <Container size="sm" py="xl"><EmptyState title="Редактирование недоступно" description="Изменять карточку может только её владелец." actionLabel="Вернуться к объявлениям" actionHref="/" /></Container>
+  // Администратор правит чужие карточки при модерации: раньше кнопка на
+  // странице объявления вела сюда, а страница отвечала отказом.
+  const canEdit = data.listing.userId === session.user.id || isAdmin(session.user.role)
+  if (!canEdit) return <Container size="sm" py="xl"><EmptyState title="Редактирование недоступно" description="Изменять карточку может только её владелец." actionLabel="Вернуться к объявлениям" actionHref="/" /></Container>
 
   const subject = data.listing.vehicle || data.listing.part
   const isVehicle = Boolean(data.listing.vehicle)
