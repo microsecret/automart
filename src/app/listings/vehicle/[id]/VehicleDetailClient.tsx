@@ -8,6 +8,7 @@ import {
   Container,
   Stack,
   Group,
+  Tooltip,
   Text,
   Title,
   Button,
@@ -744,44 +745,54 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   >
                     Написать продавцу
                   </Button>
-                  <Button
-                    size="lg"
-                    radius="md"
-                    variant={isFav ? "light" : "default"}
-                    color={isFav ? "red" : "gray"}
-                    leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />}
-                    onClick={toggleDetailFavorite}
-                    loading={data.listingId ? isPending(data.listingId) : false}
-                    disabled={!data.listingId}
-                    fullWidth
-                  >
-                    {isFav ? "В избранном" : "В избранное"}
-                  </Button>
-                  <Stack gap="xs">
-                    <Button
-                      component={Link}
-                      href={`/compare?ids=${data.id}`}
-                      size="md"
-                      radius="md"
-                      variant="light"
-                      color="indigo"
-                      leftSection={<IconGitCompare size={18} />}
-                      fullWidth
-                    >
-                      Сравнить
-                    </Button>
-                    <Button
-                      size="md"
-                      radius="md"
-                      variant="default"
-                      color="gray"
-                      leftSection={<IconFlag size={18} />}
-                      onClick={openReport}
-                      fullWidth
-                    >
-                      Пожаловаться
-                    </Button>
-                  </Stack>
+                  {/* Второстепенные действия — компактным рядом, а не тремя
+                      кнопками во всю ширину: раньше «В избранное», «Сравнить»
+                      и «Пожаловаться» занимали столько же места, сколько связь
+                      с продавцом, и глазу не за что было зацепиться. */}
+                  <Group gap={6} grow wrap="nowrap" className="detail-secondary-actions">
+                    <Tooltip label={isFav ? "Убрать из избранного" : "В избранное"} withArrow>
+                      <Button
+                        size="sm"
+                        radius="md"
+                        variant={isFav ? "light" : "default"}
+                        color={isFav ? "red" : "gray"}
+                        onClick={toggleDetailFavorite}
+                        loading={data.listingId ? isPending(data.listingId) : false}
+                        disabled={!data.listingId}
+                        aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
+                        px={0}
+                      >
+                        <IconHeart size={18} fill={isFav ? "currentColor" : "none"} />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip label="Сравнить с другими" withArrow>
+                      <Button
+                        component={Link}
+                        href={`/compare?ids=${data.id}`}
+                        size="sm"
+                        radius="md"
+                        variant="default"
+                        color="gray"
+                        aria-label="Сравнить с другими объявлениями"
+                        px={0}
+                      >
+                        <IconGitCompare size={18} />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip label="Пожаловаться" withArrow>
+                      <Button
+                        size="sm"
+                        radius="md"
+                        variant="default"
+                        color="gray"
+                        onClick={openReport}
+                        aria-label="Пожаловаться на объявление"
+                        px={0}
+                      >
+                        <IconFlag size={18} />
+                      </Button>
+                    </Tooltip>
+                  </Group>
                 </Stack>
               <CreditCalculator price={data.price} />
               </Card>

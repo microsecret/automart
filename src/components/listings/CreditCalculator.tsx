@@ -62,11 +62,15 @@ export default function CreditCalculator({ price }: { price: number }) {
             size="sm"
             color="indigo"
             marks={[
-              { value: 12, label: "1г" },
-              { value: 36, label: "3г" },
-              { value: 60, label: "5л" },
-              { value: 84, label: "7л" },
+              // Единая единица: было «1г, 3г» и «5л, 7л» — разнобой в одном ряду.
+              { value: 12, label: "1 год" },
+              { value: 36, label: "3 года" },
+              { value: 60, label: "5 лет" },
+              { value: 84, label: "7 лет" },
             ]}
+            // Метки Mantine рисует под дорожкой, не резервируя под них место:
+            // следующий блок наезжал на подписи сверху.
+            mb={26}
           />
         </Box>
 
