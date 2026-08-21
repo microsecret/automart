@@ -62,6 +62,28 @@
   --market-accent-soft: #fff7e6;
   --app-header-height: 68px;
 
+  /* Шкала скруглений.
+     На странице было четырнадцать разных радиусов — 8, 9, 10, 3, 16 и так
+     далее, — и глаз читал это как набор чужих друг другу элементов, а не как
+     систему. Четыре ступени покрывают всё: мелкие элементы, поля и кнопки,
+     карточки, крупные блоки. Пятая — для круглых. */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+
+  /* Шкала теней.
+     Семнадцать разных теней делали интерфейс шумным: одинаковые по смыслу
+     карточки лежали как будто на разной высоте. Три уровня — покой, наведение,
+     всплывающий слой — задают ясную глубину.
+
+     Тени цветные, а не серые: серая на цветном фоне выглядит грязью, а
+     оттенок основного цвета читается как настоящая тень предмета. */
+  --shadow-sm: 0 1px 2px rgba(20, 48, 107, 0.06), 0 2px 6px -2px rgba(20, 48, 107, 0.08);
+  --shadow-md: 0 4px 10px -4px rgba(20, 48, 107, 0.14), 0 10px 24px -12px rgba(20, 48, 107, 0.18);
+  --shadow-lg: 0 12px 28px -12px rgba(20, 48, 107, 0.22), 0 24px 56px -24px rgba(20, 48, 107, 0.26);
+
   /* Семантические подложки состояний. Раньше эти оттенки писались прямо в
      inline-style, поэтому в тёмной теме превращались в светлые пятна с
      нечитаемым текстом. */
@@ -126,7 +148,16 @@
 
 /* Базовый фон и текст */
 body {
-  background: var(--market-background);
+  /* Не плоская заливка: сверху фон чуть светлее и холоднее, книзу теплеет.
+     Разница минимальная и не читается как градиент — но страница перестаёт
+     выглядеть листом бумаги, а контент на ней приобретает глубину.
+
+     Градиент закреплён за областью просмотра (fixed), иначе на длинной
+     странице он растянулся бы и перепад стал бы заметным пятном. */
+  background:
+    radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, #ffffff 55%, transparent), transparent 70%),
+    var(--market-background);
+  background-attachment: fixed;
   color: var(--market-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -250,7 +281,7 @@ select {
   height: 76px;
   flex: 0 0 104px;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--mantine-color-gray-1);
 }
 
@@ -320,7 +351,7 @@ select {
     gap: 4px;
     padding: 8px;
     border: 1px solid rgba(232, 232, 236, 0.95);
-    border-radius: 18px;
+    border-radius: var(--radius-lg);
     background: rgba(255, 255, 255, 0.94);
     box-shadow: 0 12px 32px -16px rgba(24, 24, 27, 0.28);
     backdrop-filter: blur(14px);
@@ -331,7 +362,7 @@ select {
     min-height: 44px;
     place-items: center;
     gap: 2px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     color: var(--market-muted);
     font-size: 10px;
     font-weight: 600;
@@ -461,7 +492,7 @@ select {
   /* Primary navigation is a first-class control, not secondary metadata.
      Keep it legible before hover so that the header remains scannable. */
   color: var(--market-control-text) !important;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -701,7 +732,7 @@ select {
 .market-header-search__suggestion {
   min-height: 40px;
   padding-inline: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   color: var(--market-ink) !important;
 }
 
@@ -732,7 +763,7 @@ select {
 .auth-experience::after {
   position: absolute;
   z-index: -1;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   content: "";
   filter: blur(8px);
   pointer-events: none;
@@ -761,7 +792,7 @@ select {
 .auth-experience__context {
   padding: 24px;
   border: 1px solid color-mix(in srgb, var(--market-field-line) 86%, transparent);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--market-surface) 78%, transparent);
   box-shadow: 0 24px 54px -46px rgba(30, 41, 59, 0.68);
 }
@@ -836,7 +867,7 @@ select {
 .market-side-account__link {
   min-height: 34px;
   margin-inline: 1px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 650;
 }
@@ -932,7 +963,7 @@ select {
 .market-side-nav {
   min-height: 26px;
   margin-inline: 1px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.2;
@@ -981,7 +1012,7 @@ select {
 .market-side-panel__title-link {
   display: block;
   color: inherit;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
 }
 
@@ -1223,7 +1254,7 @@ select {
   min-width: 0;
   padding: 10px 11px;
   border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.07);
 }
 
@@ -1233,7 +1264,7 @@ select {
   height: 28px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   color: #fed7aa;
   background: rgba(249, 115, 22, 0.17);
   font-size: 0.75rem;
@@ -1262,7 +1293,7 @@ select {
 .partner-application-section {
   padding: 18px;
   border: 1px solid var(--market-line);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--market-surface);
 }
 
@@ -1349,7 +1380,7 @@ select {
   overflow: hidden;
   padding: 13px 15px 14px;
   border: 1px solid color-mix(in srgb, var(--tone) 26%, var(--market-line));
-  border-radius: 13px;
+  border-radius: var(--radius-md);
   background:
     linear-gradient(135deg,
       color-mix(in srgb, var(--tone) 9%, var(--market-surface)) 0%,
@@ -1379,7 +1410,7 @@ select {
   width: 34px;
   height: 34px;
   margin-bottom: 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--tone) 15%, var(--market-surface));
   color: var(--tone);
 }
@@ -1413,6 +1444,15 @@ select {
   }
 }
 
+/* В тёмной теме подсветка холодная и слабее: белое пятно на тёмном фоне
+   выглядело бы засветкой, а не глубиной. */
+[data-mantine-color-scheme="dark"] body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(99, 102, 241, 0.12), transparent 70%),
+    var(--market-background);
+  background-attachment: fixed;
+}
+
 /* Выделение текста — в палитре проекта, а не в системной синеве браузера */
 ::selection {
   background: var(--market-selection);
@@ -1435,7 +1475,7 @@ select {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--market-scroll-thumb);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 2px solid var(--market-surface-subtle);
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -1505,7 +1545,7 @@ select {
 .market-directory__signals {
   padding: 10px 12px;
   border: 1px solid var(--market-line);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--market-surface-subtle);
 }
 
@@ -1578,7 +1618,7 @@ select {
   width: min(100%, 286px);
   padding: 15px 16px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: linear-gradient(145deg, rgba(4, 10, 28, 0.7), rgba(27, 25, 77, 0.5));
   box-shadow: 0 18px 30px -25px rgba(2, 6, 23, 0.96);
   backdrop-filter: blur(14px) saturate(1.15);
@@ -1626,7 +1666,7 @@ select {
   flex-shrink: 0;
   padding: 3px;
   border: 1px solid var(--market-field-line);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--market-field);
 }
 
@@ -1638,7 +1678,7 @@ select {
 .catalog-sort-control .mantine-Select-input {
   min-height: 32px;
   border-color: var(--market-field-line);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: var(--market-surface);
   color: var(--market-control-text);
   font-weight: 650;
@@ -1683,7 +1723,7 @@ select {
   min-height: 56px;
   padding: 5px 10px 6px;
   border: 1px solid color-mix(in srgb, var(--market-field-line) 88%, transparent);
-  border-radius: 11px;
+  border-radius: var(--radius-md);
   background: var(--market-field);
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.025), 0 8px 18px -20px rgba(15, 23, 42, 0.46);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
@@ -1799,7 +1839,7 @@ select {
   min-height: 28px;
   padding: 3px 9px;
   border-color: var(--market-field-line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--market-surface-subtle);
   color: var(--market-control-text);
   font-size: 13px;
@@ -1824,7 +1864,7 @@ select {
 .catalog-filter-advanced .mantine-Select-input {
   min-height: 32px;
   border-color: var(--market-field-line);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: var(--market-field);
   color: var(--market-control-text);
   font-size: 13px;
@@ -1904,7 +1944,7 @@ select {
   z-index: 1;
   width: 104px;
   height: 104px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: 1px solid rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.34);
   box-shadow:
@@ -1928,7 +1968,7 @@ select {
   z-index: 0;
   width: 58%;
   height: 1px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--listing-accent, #6366f1) 32%, transparent), transparent);
   opacity: 0.78;
   transform: rotate(-24deg);
@@ -2161,7 +2201,7 @@ select {
   gap: 0;
   overflow: hidden;
   border: 1px solid var(--market-line);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--market-surface-subtle);
 }
 
@@ -2245,7 +2285,7 @@ select {
 
 .listing-card__monthly-payment {
   padding: 3px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--market-surface-subtle);
   color: var(--market-muted);
   font-weight: 650;
@@ -2287,7 +2327,7 @@ select {
   min-width: 0;
   padding: 6px 9px;
   border: 1px solid color-mix(in srgb, var(--market-line) 82%, transparent);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--listing-accent) 6%, transparent), transparent 60%),
     color-mix(in srgb, var(--market-surface-subtle) 80%, transparent);
@@ -2350,14 +2390,14 @@ select {
 
 .news-article__body {
   padding: clamp(20px, 3vw, 34px);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   background: var(--market-surface);
   box-shadow: 0 20px 42px -34px rgba(15, 23, 42, 0.54);
 }
 
 .news-article__image {
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   max-height: 420px;
 }
 
@@ -2616,7 +2656,7 @@ select {
   min-height: 58px;
   padding: 6px 10px 7px;
   border: 1px solid color-mix(in srgb, var(--market-field-line) 88%, transparent);
-  border-radius: 11px;
+  border-radius: var(--radius-md);
   background: var(--market-field);
   transition: border-color 160ms ease, box-shadow 160ms ease;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.025), 0 8px 18px -20px rgba(15, 23, 42, 0.46);
@@ -2663,7 +2703,7 @@ select {
   min-height: 24px;
   padding: 3px 7px;
   border: 1px solid var(--market-field-line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--market-surface);
   /* Подпись не переносится: «Под заказ» ломалось на две строки и плашка
      становилась выше соседней, ряд ехал. */
@@ -2766,7 +2806,7 @@ select {
   min-height: 68px;
   padding: 9px 10px;
   border: 1px solid #e3e8f5;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.78);
   color: var(--market-ink);
   text-align: left;
@@ -2821,7 +2861,7 @@ select {
   height: 75px;
   place-items: center;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(145deg, #eff3ff, #f8fafc);
 }
 
@@ -2900,7 +2940,7 @@ select {
   height: 36px;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.78);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
   backdrop-filter: blur(10px);
@@ -2910,7 +2950,7 @@ select {
   aspect-ratio: 1;
   overflow: hidden;
   border: 1px solid var(--market-line);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--market-surface-subtle);
 }
 
@@ -3199,7 +3239,7 @@ select {
   right: 12px;
   z-index: 5;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: rgba(255,255,255,.86);
   box-shadow: 0 8px 18px -12px rgba(15,23,42,.55);
 }
@@ -3213,7 +3253,7 @@ select {
   gap: 5px;
   padding: 6px 8px;
   border: 1px solid rgba(255,255,255,0.7);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #3f3f46;
   background: rgba(255,255,255,0.88);
   backdrop-filter: blur(8px);
@@ -3236,7 +3276,7 @@ select {
   gap: 5px;
   padding: 5px 7px;
   border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   color: #334155;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.72);
@@ -3379,7 +3419,7 @@ select {
   min-height: 84px;
   padding: 12px;
   border: 1px solid var(--market-border-soft);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
@@ -3604,7 +3644,7 @@ select {
 .part-result-card__status-badge {
   max-width: 100%;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: var(--radius-xs);
   font-weight: 750;
   letter-spacing: 0.01em;
 }
@@ -3649,7 +3689,7 @@ select {
   align-items: center;
   min-height: 20px;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: var(--market-surface-subtle);
   color: #64748b;
   font-size: 11px;
@@ -3733,7 +3773,7 @@ select {
   width: 64px;
   height: 52px;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   place-items: center;
   background: #eef2ff;
 }
@@ -3853,7 +3893,7 @@ select {
   margin: 0;
   padding: 3px 8px;
   border: 1px solid color-mix(in srgb, var(--market-field-line) 86%, transparent);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--market-surface) 92%, transparent);
   transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
@@ -3892,7 +3932,7 @@ select {
   gap: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--market-field-line) 78%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .parts-price-range .mantine-TextInput-root,
@@ -4003,7 +4043,7 @@ select {
   height: 42px;
   place-items: center;
   border: 1px solid #c7d2fe;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: #eef2ff;
   color: #4f46e5;
 }
@@ -4030,7 +4070,7 @@ select {
   overflow: hidden;
   border-top: 1px solid var(--market-line);
   border-left: 1px solid var(--market-line);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .vehicle-detail-specs__grid {
@@ -4070,7 +4110,7 @@ select {
   height: 22px;
   align-items: center;
   justify-content: center;
-  border-radius: 7px;
+  border-radius: var(--radius-xs);
   background: #eef2ff;
   color: #6366f1;
 }
@@ -4147,7 +4187,7 @@ select {
 
 .moderation-listing-row {
   border: 1px solid var(--market-line);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--market-surface-subtle);
 }
 
@@ -4341,7 +4381,7 @@ select {
   min-height: 52px;
   padding: 4px 14px;
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   transition: background-color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -4419,7 +4459,7 @@ select {
   width: 22px;
   height: 22px;
   border: 1px solid color-mix(in srgb, var(--market-primary) 26%, var(--market-field-line));
-  border-radius: 7px;
+  border-radius: var(--radius-xs);
   color: var(--market-muted);
   background: var(--market-primary-soft);
   opacity: 1;
@@ -4509,7 +4549,7 @@ select {
 .admin-workspace__nav {
   padding: 6px;
   border: 1px solid var(--market-line);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--market-surface);
 }
 
