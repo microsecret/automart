@@ -162,24 +162,9 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
 
           <ServiceNavigationMenu serviceNavigation={serviceNavigation} serviceShortcuts={serviceShortcuts} />
 
-          <Group gap={2} visibleFrom="xl" wrap="nowrap" className="market-app-header__links">
-            {serviceNavigation.filter((item) => item.href !== "/services").map((item) => (
-              <Button
-                key={item.href}
-                component={Link}
-                href={item.href}
-                variant={item.active ? "light" : "subtle"}
-                color="indigo"
-                size="compact-sm"
-                leftSection={item.icon}
-                aria-current={item.active ? "page" : undefined}
-                className={`market-app-header__link${item.active ? " market-app-header__link--active" : ""}`}
-                styles={{ root: { fontWeight: item.active ? 700 : 600 } }}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </Group>
+          {/* Ряд «Новости/Помощь» убран: он дублировал выпадающее меню
+              сервисов и вместе с вкладками каталога вытеснял из шапки иконки
+              кабинета и поиск. Пункты остались в меню и в боковой навигации. */}
 
           <Button
             component={Link}
@@ -384,7 +369,10 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
 }
 
 function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts }: { serviceNavigation: NavigationItem[]; serviceShortcuts: NavigationItem[] }) {
-  const serviceIsActive = serviceNavigation[0]?.active || serviceShortcuts.some((item) => item.active)
+  // Ищем по адресу, а не по позиции: пункт «Сервисы» переставлялся в ряду,
+  // и жёсткий индекс подсвечивал не тот раздел.
+  const serviceIsActive = serviceNavigation.some((item) => item.href === "/services" && item.active)
+    || serviceShortcuts.some((item) => item.active)
 
   return (
     <Box visibleFrom="md">
