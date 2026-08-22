@@ -1,8 +1,11 @@
 "use client"
 export const dynamic = "force-dynamic"
+import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { Container, Card, Stack, Text, Box, Group, ThemeIcon } from "@mantine/core"
 import { IconCar, IconShieldCheck, IconChartBar, IconBell } from "@tabler/icons-react"
 import SignInForm from "@/components/auth/SignInForm"
+import { signInReason } from "@/lib/signin-reason"
 
 const FEATURES = [
   { icon: IconShieldCheck, text: "Сопровождение сделки и проверка документов" },
@@ -10,7 +13,20 @@ const FEATURES = [
   { icon: IconBell, text: "Уведомления и сообщения" },
 ]
 
-export default function SignInPage() {
+function SignInContent() {
+  /* Страница входа молчала о том, зачем человек здесь.
+
+     Кнопки «Показать телефон», «Написать продавцу», подача объявления,
+     избранное и заявка на лот — все уводят сюда, и все получали один и
+     тот же текст: «Вход в аккаунт. Почта или телефон и ваш пароль».
+     Шапки и подвала на этой странице нет, вернуться можно только кнопкой
+     браузера — получался тупик без объяснения.
+
+     Причину знает адрес возврата. Для подачи объявления здесь же сказано
+     главное, чего не было нигде, кроме страницы в подвале: размещение
+     бесплатное. */
+  const reason = signInReason(useSearchParams().get("callbackUrl"))
+
   return (
     <Container className="auth-experience" size="md" py={48}>
       <Group className="auth-experience__layout" gap={48} align="center" wrap="nowrap" justify="center">
@@ -39,8 +55,8 @@ export default function SignInPage() {
         {/* Правая колонка — форма */}
         <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0, flexShrink: 0 }}>
           <Stack gap={4} align="center">
-            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Вход в аккаунт</Text>
-            <Text size="sm" c="gray.5">Почта или телефон и ваш пароль</Text>
+            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif" ta="center">{reason.title}</Text>
+            <Text size="sm" c="gray.5" ta="center" maw={380}>{reason.hint}</Text>
           </Stack>
 
           <Card className="auth-experience__form-card" withBorder radius="md" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
@@ -49,5 +65,13 @@ export default function SignInPage() {
         </Stack>
       </Group>
     </Container>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInContent />
+    </Suspense>
   )
 }

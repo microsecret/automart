@@ -151,8 +151,9 @@ export default function QuickCreatePage() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconBolt size={22} /></ThemeIcon>
           <Box>
             <Title order={1} size="h3" ff="var(--font-display),sans-serif">Быстрое размещение</Title>
-            <Text size="sm" c="dimmed">Шесть полей и фотографии. Остальное добавите потом.</Text>
+            <Text size="sm" c="dimmed">Главное о машине и фотографии. Остальное добавите потом.</Text>
           </Box>
+          <Badge color="green" variant="light" size="lg" radius="sm" ml="auto">Бесплатно</Badge>
         </Group>
 
         <Card withBorder radius="md" p="md">

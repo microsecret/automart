@@ -57,7 +57,7 @@ const SERVICES = [
 const MOBILE_NAV = [
   { href: "/", label: "Главная", Icon: IconHome2 },
   { href: "/auctions", label: "Аукционы", Icon: IconGavel },
-  { href: "/listings/create/vehicle", label: "Подать", Icon: IconPlus, accent: true },
+  { href: "/listings/create/quick", label: "Подать", Icon: IconPlus, accent: true },
   { href: "/news", label: "Новости", Icon: IconNews },
   { href: "/messages", label: "Чаты", Icon: IconMessageCircle2 },
 ]

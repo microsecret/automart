@@ -143,11 +143,13 @@ export default function SignInForm() {
     </form>
 
       <Group justify="center">
-        <Text size="sm" c="gray.5">
+        <Text size="sm" c="gray.5" ta="center">
           Нет аккаунта?{" "}
           <Anchor component={Link} href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`} size="sm" c="indigo" fw={500}>
-            Зарегистрироваться
+            Зарегистрироваться через Telegram
           </Anchor>
+          <br />
+          <Text component="span" size="xs" c="gray.5">Регистрация проходит в боте — за минуту, без анкеты</Text>
         </Text>
       </Group>
     </Stack>
