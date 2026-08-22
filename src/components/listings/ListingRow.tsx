@@ -151,7 +151,8 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   </Stack>
                 </Group>
                 <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
-                  <Text className="listing-card__price" fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap" }}>
+                  {/* Цена крупнее названия — то же правило, что в плитке. */}
+                  <Text className="listing-card__price" fw={800} fz={20} c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>
                     {formatPriceShort(listing.price)}
                   </Text>
                   {monthlyPayment && <Text className="listing-card__monthly-payment" fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>{monthlyPayment}</Text>}
@@ -162,10 +163,11 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 <Group className="listing-card__row-facts" gap={0} wrap="wrap" mt={2}>
                   <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text></Text>
                   {distanceValue && <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="var(--market-ink)">{distanceValue}</Text></Text>}
-                  {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
+                  {/* OTHER означает «не указано» — в списке это не факт. */}
+                  {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && (
                     <Text fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
                   )}
-                  {listing.vehicle!.fuelType && (
+                  {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && (
                     <Text fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
                   )}
                 </Group>

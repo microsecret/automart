@@ -244,7 +244,9 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         <Box p="sm" className="listing-card__content">
           {/* Цена + цена в месяц */}
           <Group justify="space-between" align="baseline" mb={4}>
-            <Text className="listing-card__price" fw={800} fz="md" lh={1.1} c="var(--market-ink)" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.01em" }}>
+            {/* Цена — главное в карточке: раньше она была 16px против 14px
+                у названия, и разницу в два пикселя глаз не различал. */}
+            <Text className="listing-card__price" fw={800} fz={22} lh={1.05} c="var(--market-ink)" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.025em", fontVariantNumeric: "tabular-nums" }}>
               {formatPriceShort(listing.price)}
             </Text>
             {monthlyPayment && (
@@ -255,7 +257,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           </Group>
 
           {/* Заголовок */}
-          <Text className="listing-card__title" fz="sm" fw={700} c="var(--market-ink)" lh={1.35} mb={7}>
+          <Text className="listing-card__title" fz="sm" fw={600} c="var(--market-text-secondary)" lh={1.3} mb={7}>
             {listing.title}
           </Text>
 
@@ -267,8 +269,11 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             <Box mb={6} className="listing-card__facts">
               <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Год <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text></Text>
               {numericUsage != null && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">{usageMeta.label} <Text component="span" inherit fw={700} c="var(--market-ink)">{distanceValue}</Text></Text>}
-              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
-              {listing.vehicle!.fuelType && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
+              {/* OTHER не показываем: «КПП Другая» занимает строку наравне с
+                  настоящим фактом, хотя означает, что данных нет. В самом
+                  объявлении значение остаётся — там оно уместно. */}
+              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
+              {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
             </Box>
           )}
 
