@@ -228,7 +228,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
       <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
         <Stack gap={0}>
-          {p.showHeading !== false && <Text component={p.categorySlug ? "h1" : "h2"} fw={800} fz={{base:20,md:24}} c="dark.9">{p.pageTitle || "Все объявления"}</Text>}
+          {p.showHeading !== false && <Text component={p.categorySlug ? "h1" : "h2"} fw={800} fz={{base:20,md:24}} c="var(--market-ink)">{p.pageTitle || "Все объявления"}</Text>}
           {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} {plural(data.pagination?.total || 0, "объявление", "объявления", "объявлений")}</Text>}
         </Stack>
         <Group gap="xs" wrap="nowrap">

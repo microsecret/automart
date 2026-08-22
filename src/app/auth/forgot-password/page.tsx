@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
           <IconCar size={28} color="white" />
         </Box>
         <Stack gap={4} align="center">
-          <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Восстановление пароля</Text>
+          <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Восстановление пароля</Text>
           <Text size="sm" c="gray.5">Введите email для сброса</Text>
         </Stack>
 
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
             <Stack gap="md" align="center">
               <ThemeIcon variant="light" color="green" size={56} radius="xl"><IconCheck size={28} /></ThemeIcon>
               <Stack gap={0} align="center">
-                <Text fw={700} fz="lg" c="dark.9">Письмо отправлено</Text>
+                <Text fw={700} fz="lg" c="var(--market-ink)">Письмо отправлено</Text>
                 <Text size="sm" c="gray.5" ta="center">Если аккаунт с таким email существует, инструкции уже отправлены.</Text>
               </Stack>
               <Button component={Link} href="/auth/signin" variant="light" color="indigo" radius="md" leftSection={<IconArrowLeft size={16} />}>Вернуться ко входу</Button>

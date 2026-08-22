@@ -54,7 +54,7 @@ export default function SmartmatchingPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconTarget size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
+            <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
             <Text size="xs" c="gray.5">Подберём лучшие варианты под ваш бюджет и критерии</Text>
           </Stack>
         </Group>
@@ -75,7 +75,7 @@ export default function SmartmatchingPage() {
           <Stack gap="md">
             <Group gap="sm" align="center">
               <ThemeIcon variant="light" color="violet" size={32} radius="md"><IconSparkles size={18} /></ThemeIcon>
-              <Text fw={700} fz="md" c="dark.9">Рекомендации для вас</Text>
+              <Text fw={700} fz="md" c="var(--market-ink)">Рекомендации для вас</Text>
               {!isLoading && <Badge size="sm" color="violet" variant="light">{results.length} совпадений</Badge>}
             </Group>
 
@@ -122,12 +122,12 @@ export default function SmartmatchingPage() {
                           <Group gap="sm" align="center">
                             {v && <BrandIcon brand={v.make} size={28} />}
                             <Link href={`/listings/vehicle/${v?.id}`} style={{ textDecoration: "none" }}>
-                              <Text fw={700} fz="sm" c="dark.9">{l.title}</Text>
+                              <Text fw={700} fz="sm" c="var(--market-ink)">{l.title}</Text>
                             </Link>
                           </Group>
                           <Text fz="xs" c="gray.5">{v ? `${v.year} г. · ${formatMileage(v.mileage)} · ${v.location || "—"}` : ""}</Text>
                           <Group gap="sm" mt={2}>
-                            <Text fw={800} fz="lg" c="dark.9" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
+                            <Text fw={800} fz="lg" c="var(--market-ink)" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
                             <Badge size="xs" color="green" variant="light">Подходит по 4 критериям</Badge>
                           </Group>
                         </Stack>

@@ -129,7 +129,7 @@ export default function MessagesPage() {
                   </Avatar>
                   <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                     <Group justify="space-between" gap="sm">
-                      <Text size="sm" fw={600} c="dark.9">{conv.otherUser.name || "Пользователь"}</Text>
+                      <Text size="sm" fw={600} c="var(--market-ink)">{conv.otherUser.name || "Пользователь"}</Text>
                       {conv.lastMessage && <Text size="xs" c="gray.4">{formatRelativeDate(conv.lastMessage.createdAt)}</Text>}
                     </Group>
                     {conv.listing?.title && (

@@ -68,7 +68,7 @@ function ResetPasswordWorkspace() {
           <IconCar size={28} color="white" />
         </Box>
         <Stack gap={4} align="center">
-          <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Новый пароль</Text>
+          <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Новый пароль</Text>
           <Text size="sm" c="gray.5">Ссылка действует 24 часа и используется один раз.</Text>
         </Stack>
 
@@ -76,7 +76,7 @@ function ResetPasswordWorkspace() {
           <Card withBorder radius="lg" p="xl" w="100%">
             <Stack gap="md" align="center">
               <ThemeIcon variant="light" color="orange" size={56} radius="xl"><IconMailOff size={28} /></ThemeIcon>
-              <Text fw={700} c="dark.9">Ссылка неполная</Text>
+              <Text fw={700} c="var(--market-ink)">Ссылка неполная</Text>
               <Text size="sm" c="gray.5" ta="center">Запросите новое письмо для восстановления пароля.</Text>
               <Button component={Link} href="/auth/forgot-password" variant="light" color="indigo">Запросить ссылку</Button>
             </Stack>
@@ -85,7 +85,7 @@ function ResetPasswordWorkspace() {
           <Card withBorder radius="lg" p="xl" w="100%">
             <Stack gap="md" align="center">
               <ThemeIcon variant="light" color="green" size={56} radius="xl"><IconCheck size={28} /></ThemeIcon>
-              <Text fw={700} c="dark.9">Пароль обновлён</Text>
+              <Text fw={700} c="var(--market-ink)">Пароль обновлён</Text>
               <Text size="sm" c="gray.5" ta="center">Перенаправляем на страницу входа.</Text>
             </Stack>
           </Card>

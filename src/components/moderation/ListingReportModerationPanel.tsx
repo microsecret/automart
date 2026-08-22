@@ -79,7 +79,7 @@ export default function ListingReportModerationPanel() {
     <Card className="admin-moderation-panel" withBorder radius="lg" p="md">
       <Stack gap="sm">
         <Group justify="space-between" align="center" wrap="wrap">
-          <Group gap="sm"><ThemeIcon variant="light" color="orange" size={32} radius="md"><IconFlag size={18} /></ThemeIcon><Text fw={700} c="dark.9">Жалобы пользователей</Text></Group>
+          <Group gap="sm"><ThemeIcon variant="light" color="orange" size={32} radius="md"><IconFlag size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Жалобы пользователей</Text></Group>
           <Badge size="sm" variant="light" color={openReports.length ? "orange" : "green"}>{openReports.length} требуют внимания</Badge>
         </Group>
         <Text size="xs" c="dimmed">Решение по жалобе не меняет объявление автоматически: сначала проверьте карточку и затем используйте очередь модерации.</Text>
@@ -111,7 +111,7 @@ export default function ListingReportModerationPanel() {
                     </Group>
                     <Group justify="space-between" gap="sm" align="flex-start" wrap="wrap">
                       <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                        <Text size="sm" fw={600} c="dark.9" className="line-clamp-1">{report.listingTitle}</Text>
+                        <Text size="sm" fw={600} c="var(--market-ink)" className="line-clamp-1">{report.listingTitle}</Text>
                         <Text size="xs" c="gray.5">Заявитель: {report.reporterName || report.reporterEmail || "пользователь"}</Text>
                         {report.comment && <Text size="sm" c="gray.7">{report.comment}</Text>}
                       </Stack>

@@ -10,14 +10,14 @@ export default function RulesPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconScale size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Правила площадки</Text>
+            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Правила площадки</Text>
             <Text size="xs" c="gray.5">Обновлены: 8 августа 2026</Text>
           </Stack>
         </Group>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
           <Paper radius="md" p="lg" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
-            <Group gap="sm" mb="sm"><ThemeIcon variant="light" color="green" size={32} radius="md"><IconCheck size={18} /></ThemeIcon><Text fw={700} c="dark.9">Разрешено</Text></Group>
+            <Group gap="sm" mb="sm"><ThemeIcon variant="light" color="green" size={32} radius="md"><IconCheck size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Разрешено</Text></Group>
             <List size="sm" c="gray.6" spacing={6}>
               <List.Item>Продажа личного транспорта и запчастей</List.Item>
               <List.Item>Объявления от дилеров (с указанием)</List.Item>
@@ -27,7 +27,7 @@ export default function RulesPage() {
             </List>
           </Paper>
           <Paper radius="md" p="lg" withBorder style={{ background: "var(--market-danger-surface)", borderColor: "var(--market-danger-line)" }}>
-            <Group gap="sm" mb="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconX size={18} /></ThemeIcon><Text fw={700} c="dark.9">Запрещено</Text></Group>
+            <Group gap="sm" mb="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconX size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Запрещено</Text></Group>
             <List size="sm" c="gray.6" spacing={6}>
               <List.Item>Краденое имущество, документы</List.Item>
               <List.Item>Товары без выкупа</List.Item>
@@ -52,7 +52,7 @@ export default function RulesPage() {
               <Group gap="sm" align="flex-start">
                 <ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconInfoCircle size={16} /></ThemeIcon>
                 <Stack gap={2} style={{ flex: 1 }}>
-                  <Text fw={700} fz="sm" c="dark.9">{s.title}</Text>
+                  <Text fw={700} fz="sm" c="var(--market-ink)">{s.title}</Text>
                   <Text size="sm" c="gray.6" lh={1.5}>{s.text}</Text>
                 </Stack>
               </Group>

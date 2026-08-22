@@ -144,14 +144,14 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   {showBrandMark && <BrandIcon brand={listing.vehicle!.make} size={32} variant="rounded" />}
                   <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
                     {isVehicle && <Text className="listing-card__row-eyebrow" fz="10px" fw={700}>{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>}
-                    <Text className="listing-card__row-title" fw={700} fz="sm" c="dark.9" style={TRUNCATE}>{listing.title}</Text>
+                    <Text className="listing-card__row-title" fw={700} fz="sm" c="var(--market-ink)" style={TRUNCATE}>{listing.title}</Text>
                     <Text fz="xs" c="gray.5" style={TRUNCATE}>
                       {isVehicle ? `${listing.vehicle!.make} ${listing.vehicle!.model}` : listing.part?.name}
                     </Text>
                   </Stack>
                 </Group>
                 <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
-                  <Text className="listing-card__price" fw={800} fz="md" c="dark.9" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap" }}>
+                  <Text className="listing-card__price" fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap" }}>
                     {formatPriceShort(listing.price)}
                   </Text>
                   {monthlyPayment && <Text className="listing-card__monthly-payment" fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>{monthlyPayment}</Text>}
@@ -160,13 +160,13 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
 
               {isVehicle && (
                 <Group className="listing-card__row-facts" gap={0} wrap="wrap" mt={2}>
-                  <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="dark.8">{listing.vehicle!.year}</Text></Text>
-                  {distanceValue && <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="dark.8">{distanceValue}</Text></Text>}
+                  <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text></Text>
+                  {distanceValue && <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="var(--market-ink)">{distanceValue}</Text></Text>}
                   {supportsTransmission(vehicleType) && listing.vehicle!.transmission && (
-                    <Text fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="dark.8">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
+                    <Text fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
                   )}
                   {listing.vehicle!.fuelType && (
-                    <Text fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="dark.8">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
+                    <Text fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
                   )}
                 </Group>
               )}

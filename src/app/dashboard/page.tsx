@@ -290,7 +290,7 @@ function DashboardContent() {
           <Group gap="sm" align="center">
             <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconLayoutDashboard size={22} /></ThemeIcon>
             <Stack gap={0}>
-              <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Личный кабинет</Text>
+              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный кабинет</Text>
               <Text size="xs" c="gray.5">{session?.user?.name || session?.user?.email}</Text>
             </Stack>
           </Group>
@@ -338,7 +338,7 @@ function DashboardContent() {
                 <ThemeIcon size={30} radius="md" variant="light" color={item.color}>{item.icon}</ThemeIcon>
                 <Stack gap={0} align="flex-start" style={{ flex: 1 }}>
                   <Text size="xs" c="dimmed" fw={650}>{item.label}</Text>
-                  <Text size="lg" c="dark.9" fw={850} lh={1}>{item.value}</Text>
+                  <Text size="lg" c="var(--market-ink)" fw={850} lh={1}>{item.value}</Text>
                 </Stack>
               </Button>
             ))}
@@ -361,7 +361,7 @@ function DashboardContent() {
                   {s.icon}
                 </Box>
                 <Stack gap={0}>
-                  <Text size="xl" fw={800} c="dark.9" lh={1}>{s.value}</Text>
+                  <Text size="xl" fw={800} c="var(--market-ink)" lh={1}>{s.value}</Text>
                   <Text size="xs" c="gray.5">{s.label}</Text>
                 </Stack>
               </Group>
@@ -432,7 +432,7 @@ function DashboardContent() {
                         <Group gap="sm" align="center">
                           {isVehicle && l.vehicle && <BrandIcon brand={l.vehicle.make} size={28} />}
                           <Link href={href} style={{ textDecoration: "none" }}>
-                            <Text fw={600} fz="sm" c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</Text>
+                            <Text fw={600} fz="sm" c="var(--market-ink)" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</Text>
                           </Link>
                           <Badge size="xs" color={statusMeta.color} variant="light">{statusMeta.label}</Badge>
                           {l.isFeatured && <Badge size="xs" color="violet" variant="light">Премиум</Badge>}
@@ -440,7 +440,7 @@ function DashboardContent() {
                         <Text fz="xs" c="gray.5">{isVehicle && l.vehicle ? `${formatMileage(l.vehicle.mileage)} · ${l.vehicle.location || "—"}` : l.part?.name}</Text>
                         {l.statusReason && l.status !== LISTING_STATUS.ACTIVE && <Text fz="xs" c="red.6" lineClamp={1}>{l.statusReason}</Text>}
                         <Group gap="md">
-                          <Text fw={800} fz="md" c="dark.9" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
+                          <Text fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
                           <Group gap={4}>
                             <IconEye size={13} color="gray.4" />
                             <Text fz="xs" c="gray.4">{l.views} просмотров</Text>
@@ -577,7 +577,7 @@ function DashboardContent() {
                         </Box>
                       </Link>
                       <Box p="sm">
-                        <Text fw={800} fz="md" c="dark.9">{formatPriceShort(fav.price)}</Text>
+                        <Text fw={800} fz="md" c="var(--market-ink)">{formatPriceShort(fav.price)}</Text>
                         <Text fz="xs" c="gray.6">{v.make} {v.model}, {v.year}</Text>
                         <Text fz="xs" c="gray.4">{formatMileage(v.mileage)}</Text>
                       </Box>
@@ -595,7 +595,7 @@ function DashboardContent() {
               <Group gap="sm" align="center">
                 <ThemeIcon variant="light" color="teal" size={42} radius="md"><IconCar size={21} /></ThemeIcon>
                 <Stack gap={1}>
-                  <Text fw={800} fz="lg" c="dark.9" ff="var(--font-display),sans-serif">Личный гараж</Text>
+                  <Text fw={800} fz="lg" c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный гараж</Text>
                   <Text size="sm" c="dimmed">Ваши автомобили не публикуются в каталоге и доступны только вам.</Text>
                 </Stack>
               </Group>
@@ -623,7 +623,7 @@ function DashboardContent() {
                       <Stack gap={8} p="sm">
                         <Group justify="space-between" gap="xs" wrap="nowrap">
                           <Stack gap={1} style={{ minWidth: 0 }}>
-                            <Text fw={800} fz="sm" c="dark.9" truncate>{vehicle.make} {vehicle.model}</Text>
+                            <Text fw={800} fz="sm" c="var(--market-ink)" truncate>{vehicle.make} {vehicle.model}</Text>
                             <Text size="xs" c="dimmed">{vehicle.year} г.{vehicle.mileage != null ? ` · ${formatMileage(vehicle.mileage)}` : ""}</Text>
                           </Stack>
                           <Badge color="teal" variant="light" radius="xl" size="sm">Личный</Badge>
@@ -672,7 +672,7 @@ function DashboardContent() {
                 <Avatar src={accountProfile?.image || session?.user?.image} size={64} radius="xl" color="indigo">{(accountProfile?.name || session?.user?.name)?.[0]?.toUpperCase()}</Avatar>
                 <Stack gap={3} style={{ minWidth: 0, flex: 1 }}>
                   <Group gap="xs" wrap="wrap">
-                    <Text fw={700} fz="lg" c="dark.9">{accountProfile?.name || session?.user?.name || "Без имени"}</Text>
+                    <Text fw={700} fz="lg" c="var(--market-ink)">{accountProfile?.name || session?.user?.name || "Без имени"}</Text>
                     {accountCompletion === 100
                       ? <Badge color="teal" variant="light" leftSection={<IconShieldCheck size={12} />}>Аккаунт подтверждён</Badge>
                       : <Badge color="yellow" variant="light">Профиль заполнен на {accountCompletion}%</Badge>}
@@ -724,10 +724,10 @@ function DashboardContent() {
               )}
               <Divider />
               <SimpleGrid cols={2} spacing="sm">
-                <Box><Text size="xs" c="gray.4">На сайте с</Text><Text size="sm" fw={600} c="dark.9">{formatMemberSince(accountProfile?.createdAt || stats.memberSince)}</Text></Box>
-                <Box><Text size="xs" c="gray.4">Всего объявлений</Text><Text size="sm" fw={600} c="dark.9">{stats.totalListings}</Text></Box>
-                <Box><Text size="xs" c="gray.4">Просмотров всего</Text><Text size="sm" fw={600} c="dark.9">{stats.totalViews}</Text></Box>
-                <Box><Text size="xs" c="gray.4">Отзывов</Text><Text size="sm" fw={600} c="dark.9">{stats.reviewsCount}</Text></Box>
+                <Box><Text size="xs" c="gray.4">На сайте с</Text><Text size="sm" fw={600} c="var(--market-ink)">{formatMemberSince(accountProfile?.createdAt || stats.memberSince)}</Text></Box>
+                <Box><Text size="xs" c="gray.4">Всего объявлений</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.totalListings}</Text></Box>
+                <Box><Text size="xs" c="gray.4">Просмотров всего</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.totalViews}</Text></Box>
+                <Box><Text size="xs" c="gray.4">Отзывов</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.reviewsCount}</Text></Box>
               </SimpleGrid>
               {!isProfileEditorOpen ? (
                 <Button variant="light" color="indigo" size="sm" leftSection={<IconSettings size={16} />} radius="md" onClick={() => setIsProfileEditorOpen(true)}>Редактировать профиль</Button>

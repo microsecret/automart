@@ -16,7 +16,7 @@ export default function BrandsPage() {
     <Container size="xl" py="md" px={{ base: "md", md: "lg" }}>
       <Stack gap="md">
         <Stack gap={0}>
-          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} lh={1.2} c="dark.9">
+          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} lh={1.2} c="var(--market-ink)">
             Все марки
           </Text>
           <Text size="xs" c="gray.5" mt={2}>{filteredBrands.length} брендов в категории</Text>
@@ -57,7 +57,7 @@ export default function BrandsPage() {
                 <Group gap="sm" align="center" wrap="nowrap">
 <BrandIcon brand={brand.name} size={40} variant="rounded" />
                   <Stack gap={0} style={{ minWidth: 0, flex: 1 }}>
-                    <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <Text size="sm" fw={600} c="var(--market-ink)" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {brand.name}
                     </Text>
                     <Text size="xs" c="gray.4">{brand.models.length} моделей {COUNTRY_FLAGS[brand.country]}</Text>

@@ -21,7 +21,7 @@ export default function HelpSellPage() {
             <Card key={i} withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start">
                 <ThemeIcon variant="light" color="indigo" size={36} radius="md">{s.icon}</ThemeIcon>
-                <Stack gap={2}><Text size="xs" c="gray.4">Шаг {i + 1}</Text><Text size="sm" fw={600} c="dark.9">{s.title}</Text><Text size="xs" c="gray.5">{s.desc}</Text></Stack>
+                <Stack gap={2}><Text size="xs" c="gray.4">Шаг {i + 1}</Text><Text size="sm" fw={600} c="var(--market-ink)">{s.title}</Text><Text size="xs" c="gray.5">{s.desc}</Text></Stack>
               </Group>
             </Card>
           ))}

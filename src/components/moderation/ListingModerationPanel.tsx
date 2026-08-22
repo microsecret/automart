@@ -90,7 +90,7 @@ export default function ListingModerationPanel() {
     <Card className="admin-moderation-panel" withBorder radius="lg" p="md">
       <Stack gap="sm">
         <Group justify="space-between" align="center">
-          <Group gap="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconFlame size={18} /></ThemeIcon><Text fw={700} c="dark.9">Модерация объявлений</Text></Group>
+          <Group gap="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconFlame size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Модерация объявлений</Text></Group>
           <Badge size="sm" variant="light" color={pendingListings.length > 0 ? "orange" : "green"}>{pendingListings.length} на проверке</Badge>
         </Group>
         <SegmentedControl
@@ -122,12 +122,12 @@ export default function ListingModerationPanel() {
                   <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
                     <IconTag size={16} color="#71717a" />
                     <Stack gap={0} style={{ minWidth: 0 }}>
-                      <Text size="sm" fw={600} c="dark.9" className="line-clamp-1">{listing.title}</Text>
+                      <Text size="sm" fw={600} c="var(--market-ink)" className="line-clamp-1">{listing.title}</Text>
                       <Group gap={6} wrap="wrap"><Text size="xs" c="gray.5">{listing.user?.name || listing.user?.email} · {listing.vehicle ? `${listing.vehicle.make} ${listing.vehicle.model}` : listing.part?.name}</Text><Badge size="xs" color={statusMeta.color} variant="light">{statusMeta.label}</Badge></Group>
                     </Stack>
                   </Group>
                   <Group gap="xs" wrap="wrap" justify="flex-end">
-                    <Text size="xs" fw={700} c="dark.9">{(listing.price || 0).toLocaleString("ru")} ₽</Text>
+                    <Text size="xs" fw={700} c="var(--market-ink)">{(listing.price || 0).toLocaleString("ru")} ₽</Text>
                     {detailHref && <Button component={Link} href={detailHref} target="_blank" size="xs" variant="light" color="indigo">Открыть</Button>}
                     {isPending && <Button size="xs" variant="light" color="green" loading={updatingId === listing.id} onClick={() => handleStatus(listing.id, LISTING_STATUS.ACTIVE)} leftSection={<IconCheck size={12} />}>Одобрить</Button>}
                     {isPending && <Button size="xs" variant="light" color="red" loading={updatingId === listing.id} onClick={() => { setRejectionReason(""); setConfirmation({ id: listing.id, kind: "reject", title: listing.title }) }} leftSection={<IconX size={12} />}>Отклонить</Button>}

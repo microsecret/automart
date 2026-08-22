@@ -31,7 +31,7 @@ export default function FavoritesPage() {
           <Stack gap={0}>
             <Group gap="sm" align="center">
               <ThemeIcon variant="light" color="red" size={36} radius="md"><IconHeart size={20} fill="currentColor" /></ThemeIcon>
-              <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Избранное</Text>
+              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Избранное</Text>
             </Group>
             {data && <Text size="xs" c="gray.5">{data.pagination.total} объявлений в избранном</Text>}
           </Stack>
@@ -52,7 +52,7 @@ export default function FavoritesPage() {
               <Stack align="center" gap="md">
                 <ThemeIcon variant="light" color="gray" size={56} radius="md"><IconHeartBroken size={28} /></ThemeIcon>
                 <Stack gap={0} align="center">
-                  <Text fw={600} fz="lg" c="dark.9">В избранном пусто</Text>
+                  <Text fw={600} fz="lg" c="var(--market-ink)">В избранном пусто</Text>
                   <Text size="sm" c="gray.5" ta="center">Нажимайте на ♥ в карточках объявлений, чтобы сохранить их здесь</Text>
                 </Stack>
                 <Button component={Link} href="/" variant="light" color="indigo" size="sm" radius="md">Перейти к объявлениям</Button>

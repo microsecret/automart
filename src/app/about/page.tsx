@@ -28,7 +28,7 @@ export default function AboutPage() {
       <Stack gap="md">
         <Stack gap="xs" align="center" ta="center" py="md">
           <Badge variant="light" color="indigo" size="md">О проекте</Badge>
-          <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="dark.9" style={{ letterSpacing: "-0.02em" }}>
+          <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="var(--market-ink)" style={{ letterSpacing: "-0.02em" }}>
             LeWheel — маркетплейс транспорта
           </Title>
           <Text size="sm" c="gray.5" maw={500} lh={1.6}>
@@ -54,14 +54,14 @@ export default function AboutPage() {
 
         {/* Возможности */}
         <Stack gap="xs">
-          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="dark.9">Возможности</Title>
+          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="var(--market-ink)">Возможности</Title>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             {FEATURES.map((f) => (
               <Card key={f.title} withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
                 <Group gap="sm" align="flex-start">
                   <ThemeIcon variant="light" color="indigo" size={36} radius="md">{f.icon}</ThemeIcon>
                   <Stack gap={2}>
-                    <Text size="sm" fw={600} c="dark.9">{f.title}</Text>
+                    <Text size="sm" fw={600} c="var(--market-ink)">{f.title}</Text>
                     <Text size="xs" c="gray.5" lh={1.4}>{f.desc}</Text>
                   </Stack>
                 </Group>
@@ -74,14 +74,14 @@ export default function AboutPage() {
 
         {/* Страны ЕАЭС */}
         <Stack gap="xs">
-          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="dark.9">География</Title>
+          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="var(--market-ink)">География</Title>
           <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="xs">
             {COUNTRIES.map((c) => (
               <Card key={c.code} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
                 <Group gap="sm">
                   <Text size="xl">{c.flag}</Text>
                   <Stack gap={0}>
-                    <Text size="sm" fw={600} c="dark.9">{c.name}</Text>
+                    <Text size="sm" fw={600} c="var(--market-ink)">{c.name}</Text>
                     <Text size="xs" c="gray.4">{c.cities.length} городов</Text>
                   </Stack>
                 </Group>
@@ -94,7 +94,7 @@ export default function AboutPage() {
 
         {/* Принципы */}
         <Stack gap="xs">
-          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="dark.9">Наши принципы</Title>
+          <Title order={2} size="h4" ff="var(--font-display),sans-serif" c="var(--market-ink)">Наши принципы</Title>
           <Stack gap="xs">
             {[
               "Доверие превыше всего — верификация продавцов и VIN-паспорт",
@@ -105,7 +105,7 @@ export default function AboutPage() {
             ].map((p, i) => (
               <Group key={i} gap="sm">
                 <ThemeIcon variant="light" color="green" size={28} radius="md"><IconCheck size={14} /></ThemeIcon>
-                <Text size="sm" c="dark.7">{p}</Text>
+                <Text size="sm" c="var(--market-ink)">{p}</Text>
               </Group>
             ))}
           </Stack>

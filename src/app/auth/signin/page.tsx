@@ -20,7 +20,7 @@ export default function SignInPage() {
             <Box className="auth-experience__brand-mark">
               <IconCar size={24} color="white" />
             </Box>
-            <Text fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">LeWheel</Text>
+            <Text fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
           </Group>
           <Text size="sm" c="gray.5" lh={1.6}>Маркетплейс транспорта и запчастей с проверкой истории и безопасными сделками.</Text>
           <Stack gap="sm">
@@ -39,7 +39,7 @@ export default function SignInPage() {
         {/* Правая колонка — форма */}
         <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0, flexShrink: 0 }}>
           <Stack gap={4} align="center">
-            <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Вход в аккаунт</Text>
+            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Вход в аккаунт</Text>
             <Text size="sm" c="gray.5">Почта или телефон и ваш пароль</Text>
           </Stack>
 

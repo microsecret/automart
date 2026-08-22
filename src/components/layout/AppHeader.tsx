@@ -321,7 +321,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                   <Menu.Dropdown>
                     <Menu.Label>Профиль</Menu.Label>
                     <Box px="sm" py={6}>
-                      <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <Text size="sm" fw={600} c="var(--market-ink)" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {session.user?.name || session.user?.email}
                       </Text>
                     </Box>

@@ -256,7 +256,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
           <Group gap="sm" align="center">
             <ThemeIcon variant="light" color="blue" size={36} radius="md"><IconCalculator size={20} /></ThemeIcon>
             <Stack gap={0}>
-              <Text fw={800} fz="md" c="dark.9">Расчёт регулярных платежей по аренде</Text>
+              <Text fw={800} fz="md" c="var(--market-ink)">Расчёт регулярных платежей по аренде</Text>
               <Text size="xs" c="gray.5">{make} {model} · {year} · {countryLabel}</Text>
             </Stack>
           </Group>
@@ -298,7 +298,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="orange" size={36} radius="md"><IconCalculator size={20} /></ThemeIcon>
           <Stack gap={0}>
-            <Text fw={800} fz="md" c="dark.9">Калькулятор стоимости под ключ</Text>
+            <Text fw={800} fz="md" c="var(--market-ink)">Калькулятор стоимости под ключ</Text>
             <Text size="xs" c="gray.5">{make} {model} · {year} · {volumeLabel} · {countryLabel}</Text>
           </Stack>
         </Group>

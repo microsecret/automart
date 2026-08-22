@@ -226,7 +226,7 @@ function CompareContent() {
       <Stack gap="md">
         <Group justify="space-between" align="center">
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Сравнение</Text>
+            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Сравнение</Text>
             <Text size="xs" c="gray.5">{vehicles.length} автомобиля</Text>
           </Stack>
           <Group gap="xs">
@@ -258,7 +258,7 @@ function CompareContent() {
                   <Group gap="sm" mb={4}>
                     <BrandIcon brand={v.make} size={32} />
                     <Stack gap={0}>
-                      <Text fw={700} fz="sm" c="dark.9">{v.make} {v.model}</Text>
+                      <Text fw={700} fz="sm" c="var(--market-ink)">{v.make} {v.model}</Text>
                       <Text fz="xs" c="gray.5">{v.year}</Text>
                     </Stack>
                   </Group>

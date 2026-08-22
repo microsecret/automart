@@ -30,13 +30,13 @@ export default function CreditCalculator({ price }: { price: number }) {
       <Stack gap="sm">
         <Group gap="sm" align="center">
           <IconCalculator size={18} color="#4f46e5" />
-          <Text size="sm" fw={600} c="dark.9">Кредитный калькулятор</Text>
+          <Text size="sm" fw={600} c="var(--market-ink)">Кредитный калькулятор</Text>
         </Group>
 
         {/* Сумма кредита */}
         <Box>
           <Text size="xs" c="gray.5" mb={4}>Первоначальный взнос</Text>
-          <Text size="md" fw={700} c="dark.9" mb={6}>{formatPrice(downPayment)}</Text>
+          <Text size="md" fw={700} c="var(--market-ink)" mb={6}>{formatPrice(downPayment)}</Text>
           <Slider
             value={downPayment}
             onChange={setDownPayment}
@@ -52,7 +52,7 @@ export default function CreditCalculator({ price }: { price: number }) {
         {/* Срок */}
         <Box>
           <Text size="xs" c="gray.5" mb={4}>Срок кредита</Text>
-          <Text size="md" fw={700} c="dark.9" mb={6}>{term} мес ({Math.round(term / 12 * 10) / 10} лет)</Text>
+          <Text size="md" fw={700} c="var(--market-ink)" mb={6}>{term} мес ({Math.round(term / 12 * 10) / 10} лет)</Text>
           <Slider
             value={term}
             onChange={setTerm}
@@ -99,7 +99,7 @@ export default function CreditCalculator({ price }: { price: number }) {
           </Stack>
           <Stack gap={0} align="flex-end">
             <Text size="xs" c="gray.5">Сумма кредита</Text>
-            <Text size="sm" fw={600} c="dark.9">{formatPrice(totalLoan)}</Text>
+            <Text size="sm" fw={600} c="var(--market-ink)">{formatPrice(totalLoan)}</Text>
             <Text size="xs" c="gray.5">Всего с первым взносом: {formatPrice(totalCost)}</Text>
           </Stack>
         </Group>

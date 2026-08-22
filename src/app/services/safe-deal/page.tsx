@@ -36,7 +36,7 @@ export default function SafeDealPage() {
                 <ThemeIcon variant="light" color="green" size={36} radius="md">{step.icon}</ThemeIcon>
                 <Stack gap={2} style={{ flex: 1 }}>
                   <Text size="xs" c="gray.4">Шаг {i + 1}</Text>
-                  <Text size="sm" fw={600} c="dark.9">{step.title}</Text>
+                  <Text size="sm" fw={600} c="var(--market-ink)">{step.title}</Text>
                   <Text size="xs" c="gray.5" lh={1.4}>{step.desc}</Text>
                 </Stack>
               </Group>
@@ -46,7 +46,7 @@ export default function SafeDealPage() {
 
         <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
           <Stack gap="xs">
-            <Text size="sm" fw={600} c="dark.9">Что входит:</Text>
+            <Text size="sm" fw={600} c="var(--market-ink)">Что входит:</Text>
             {["Проверка сведений об объявлении и продавце", "Статусы, документы и чат по сделке", "Подготовка заявок и квитанций", "Поддержка на ключевых этапах", "Понятный следующий шаг для покупателя"].map((item) => (
               <Group key={item} gap={6}><IconCheck size={14} color="#16a34a" /><Text size="xs" c="gray.6">{item}</Text></Group>
             ))}

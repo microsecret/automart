@@ -530,7 +530,7 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
         <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
           <Group gap="sm" wrap="nowrap">
             <ThemeIcon color="indigo" variant="light" radius="md" size="lg"><IconGasStation size={20} /></ThemeIcon>
-            <Box style={{ minWidth: 0 }}><Text fw={800} c="dark.9" lineClamp={2}>{station.name}</Text><Text size="xs" c="dimmed">{network || "АЗС"} · {source.label}</Text></Box>
+            <Box style={{ minWidth: 0 }}><Text fw={800} c="var(--market-ink)" lineClamp={2}>{station.name}</Text><Text size="xs" c="dimmed">{network || "АЗС"} · {source.label}</Text></Box>
           </Group>
           <Badge color={stationStatus.color} variant="light">{stationStatus.label}</Badge>
         </Group>

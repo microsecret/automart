@@ -200,7 +200,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
 
         <Stack gap="xs">
           {article.sourceChannel && <Badge w="fit-content" size="sm" variant="light" color="indigo">Редакция @{article.sourceChannel}</Badge>}
-          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 24, md: 32 }} lh={1.16} c="dark.9">
+          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 24, md: 32 }} lh={1.16} c="var(--market-ink)">
             {article.title}
           </Text>
           <Group gap="md">
@@ -261,7 +261,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
         <ShareButtons title={article.title} />
 
         <Stack gap="sm">
-          <Text size="sm" fw={600} c="dark.9">Комментарии ({article.comments?.length || 0})</Text>
+          <Text size="sm" fw={600} c="var(--market-ink)">Комментарии ({article.comments?.length || 0})</Text>
           {session ? (
             <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Stack gap="xs">
@@ -280,7 +280,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
               <Group gap="sm" align="flex-start">
                 <Avatar src={commentItem.user?.image} size="sm" radius="xl" color="indigo">{commentItem.user?.name?.[0]?.toUpperCase()}</Avatar>
                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                  <Group gap="xs"><Text size="xs" fw={600} c="dark.9">{commentItem.user?.name || "Аноним"}</Text><Text size="10px" c="gray.4">{formatRelativeDate(commentItem.createdAt)}</Text></Group>
+                  <Group gap="xs"><Text size="xs" fw={600} c="var(--market-ink)">{commentItem.user?.name || "Аноним"}</Text><Text size="10px" c="gray.4">{formatRelativeDate(commentItem.createdAt)}</Text></Group>
                   <Text size="xs" c="gray.6" lh={1.5}>{commentItem.content}</Text>
                 </Stack>
               </Group>
@@ -289,7 +289,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
 
           {relatedNews.length > 0 && (
             <Stack gap="sm" mt="sm">
-              <Text size="sm" fw={600} c="dark.9">Читайте также</Text>
+              <Text size="sm" fw={600} c="var(--market-ink)">Читайте также</Text>
               {relatedNews.map((news) => (
                 <Link key={news.id} href={newsHref(news)} style={{ textDecoration: "none" }}>
                   {/* Индиговая рамка при наведении описана в CSS: из JS она ставилась
@@ -298,7 +298,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
                     <Group gap="sm" align="flex-start">
                       <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconNews size={18} /></ThemeIcon>
                       <Stack gap={2} style={{ flex: 1 }}>
-                        <Text size="sm" fw={600} c="dark.9" style={{ overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{news.title}</Text>
+                        <Text size="sm" fw={600} c="var(--market-ink)" style={{ overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{news.title}</Text>
                         <Group gap={4}><IconClock size={11} color="gray.4" /><Text size="10px" c="gray.4">{formatRelativeDate(news.publishedAt)}</Text></Group>
                       </Stack>
                     </Group>

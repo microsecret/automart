@@ -23,7 +23,7 @@ export default function TermsPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconFileText size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={24} c="dark.9" ff="var(--font-display),sans-serif">Условия использования</Text>
+            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Условия использования</Text>
             <Group gap={6}>
               <Text size="xs" c="gray.5">Последнее обновление: 16 августа 2026</Text>
               <Badge size="xs" variant="light" color="indigo">Версия 2.0</Badge>
@@ -40,7 +40,7 @@ export default function TermsPage() {
         <Stack gap="md">
           {SECTIONS.map((s) => (
             <Paper key={s.title} radius="md" p="md" withBorder>
-              <Text fw={700} fz="sm" c="dark.9" mb={6}>{s.title}</Text>
+              <Text fw={700} fz="sm" c="var(--market-ink)" mb={6}>{s.title}</Text>
               <Text size="sm" c="gray.6" lh={1.6}>{s.text}</Text>
             </Paper>
           ))}

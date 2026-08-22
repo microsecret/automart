@@ -244,7 +244,7 @@ function PartsContent() {
         <Group gap="sm">
           <ThemeIcon variant="light" color="violet" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
           <Stack gap={0}>
-            <Text fw={800} fz="sm" c="dark.9" ff="var(--font-display),sans-serif">Подбор по авто</Text>
+            <Text fw={800} fz="sm" c="var(--market-ink)" ff="var(--font-display),sans-serif">Подбор по авто</Text>
             <Text size="xs" c="gray.5">Найдём запчасти на ваш авто</Text>
           </Stack>
         </Group>
@@ -313,7 +313,7 @@ function PartsContent() {
           <Group gap="sm">
             <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconAdjustmentsHorizontal size={22} /></ThemeIcon>
             <Stack gap={0}>
-              <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Каталог запчастей</Text>
+              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Каталог запчастей</Text>
               <Text size="xs" c="gray.5">{data?.pagination?.total || 0} запчастей · кросс-совместимость по авто</Text>
             </Stack>
           </Group>
@@ -354,9 +354,9 @@ function PartsContent() {
                             <Stack gap={4}>
                               <Group gap="sm" align="flex-start" justify="space-between">
                                 <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none" }}>
-                                  <Text fw={750} fz="sm" c="dark.9" className="part-result-card__title">{p.name}</Text>
+                                  <Text fw={750} fz="sm" c="var(--market-ink)" className="part-result-card__title">{p.name}</Text>
                                 </Link>
-                                <Text fw={800} fz="md" c="dark.9" ff="var(--font-display),sans-serif" className="part-result-card__price">{formatPrice(p.price)}</Text>
+                                <Text fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display),sans-serif" className="part-result-card__price">{formatPrice(p.price)}</Text>
                               </Group>
 
                               <Group gap={6} wrap="wrap" className="part-result-card__status">

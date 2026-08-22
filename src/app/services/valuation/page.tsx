@@ -72,7 +72,7 @@ export default function ValuationPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconCalculator size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Предварительная оценка</Text>
+            <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Предварительная оценка</Text>
             <Text size="xs" c="gray.5">Прозрачный ориентир по данным вашего объявления — без ложных обещаний рыночной экспертизы</Text>
           </Stack>
         </Group>
@@ -118,5 +118,5 @@ export default function ValuationPage() {
 }
 
 function Factor({ label, value }: { label: string; value: string }) {
-  return <Stack gap={2}><Text size="xs" c="gray.5">{label}</Text><Text fw={700} c="dark.9">{value}</Text></Stack>
+  return <Stack gap={2}><Text size="xs" c="gray.5">{label}</Text><Text fw={700} c="var(--market-ink)">{value}</Text></Stack>
 }

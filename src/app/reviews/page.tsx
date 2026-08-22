@@ -65,7 +65,7 @@ export default function ReviewsPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="orange" size={36} radius="md"><IconStar size={20} fill="currentColor" /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="dark.9" ff="var(--font-display),sans-serif">Отзывы</Text>
+            <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Отзывы</Text>
             <Text size="xs" c="gray.5">{reviewCount} отзывов</Text>
           </Stack>
         </Group>
@@ -88,7 +88,7 @@ export default function ReviewsPage() {
             {/* Сводка рейтинга */}
             <Paper radius="md" p="lg" withBorder>
               <Stack gap="sm" align="center">
-                <Text fw={800} fz={48} c="dark.9" lh={1}>{avg}</Text>
+                <Text fw={800} fz={48} c="var(--market-ink)" lh={1}>{avg}</Text>
                 <Rating value={Number(avg) || 0} readOnly size="lg" />
                 <Text size="xs" c="gray.5">из {reviewCount} отзывов</Text>
               </Stack>
@@ -115,11 +115,11 @@ export default function ReviewsPage() {
                       <Avatar src={review.user.image} size={40} radius="xl" color="orange">{review.user.name?.[0]?.toUpperCase()}</Avatar>
                       <Stack gap={4} style={{ flex: 1 }}>
                         <Group gap="sm" align="center" justify="space-between">
-                          <Text fw={600} fz="sm" c="dark.9">{review.user.name || "Аноним"}</Text>
+                          <Text fw={600} fz="sm" c="var(--market-ink)">{review.user.name || "Аноним"}</Text>
                           <Text fz="xs" c="gray.4">{formatRelativeDate(review.createdAt)}</Text>
                         </Group>
                         <Rating value={review.rating} readOnly size="sm" />
-                        {review.comment && <Text fz="sm" c="dark.7" mt={4}>{review.comment}</Text>}
+                        {review.comment && <Text fz="sm" c="var(--market-ink)" mt={4}>{review.comment}</Text>}
                         {review.listing && (
                           <Link href={getListingHref(review.listing)} style={{ textDecoration: "none" }}>
                             <Text fz="xs" c="indigo" mt={4}>→ {review.listing.title}</Text>

@@ -313,7 +313,7 @@ function AuctionDetail() {
           <Button component={Link} href="/" variant="default" radius="xl" size="compact-sm" leftSection={<IconHome size={14} />}>Главная</Button>
           <Button component={Link} href="/auctions" variant="light" color="indigo" radius="xl" size="compact-sm" leftSection={<IconGavel size={14} />}>Все аукционы</Button>
           <Paper px="sm" py={5} radius="xl" withBorder style={{ minWidth: 0, background: "#f8fafc" }}>
-            <Text size="xs" fw={700} c="dark.7" lineClamp={1}>{publicIdentity.title}</Text>
+            <Text size="xs" fw={700} c="var(--market-ink)" lineClamp={1}>{publicIdentity.title}</Text>
           </Paper>
         </Group>
 
@@ -327,7 +327,7 @@ function AuctionDetail() {
                     <Center h="100%" px="lg">
                       <Stack gap="xs" align="center" ta="center" maw={420}>
                         <ThemeIcon variant="light" color="indigo" radius="xl" size={58}><IconPhotoOff size={28} /></ThemeIcon>
-                        <Text fw={800} c="dark.8">Фото временно недоступны</Text>
+                        <Text fw={800} c="var(--market-ink)">Фото временно недоступны</Text>
                         <Text size="sm" c="dimmed">Источник не передал изображение или временно запретил его загрузку. Характеристики ниже уже доступны.</Text>
                         <Button component="a" href={listing.sourceUrl} target="_blank" rel="noreferrer" variant="light" color="indigo" size="compact-sm" radius="xl">Проверить фото у источника</Button>
                       </Stack>
@@ -410,7 +410,7 @@ function AuctionDetail() {
 
               <Paper radius="md" p="md" withBorder>
                   <Stack gap="sm">
-                    <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconListDetails size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и приведены к единому формату для всех площадок</Text></Box></Group>
+                    <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconListDetails size={18} /></ThemeIcon><Box><Text fw={750} c="var(--market-ink)">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и приведены к единому формату для всех площадок</Text></Box></Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={0} verticalSpacing={0}>
                       {publicSpecs.map((item) => (
                         <Group key={`${item.label}-${item.detail}`} justify="space-between" align="flex-start" gap="md" py="xs" px={{ base: 0, sm: "xs" }} wrap="nowrap" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
@@ -432,7 +432,7 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f8fafc 0%, #fff 56%)" }}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
-                      <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {auctionSourceLabel(listing.source)}</Text></Box></Group>
+                      <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={750} c="var(--market-ink)">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {auctionSourceLabel(listing.source)}</Text></Box></Group>
                       {equipment.totalReported && <Badge variant="light" color="indigo">Опций в источнике: {equipment.totalReported}</Badge>}
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
@@ -454,7 +454,7 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #fff 58%)", borderColor: "#99f6e4" }}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
-                      <Group gap="sm"><ThemeIcon variant="light" color={isRentalTransfer ? "blue" : "teal"} radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="dark.9">{isRentalTransfer ? "Условия договора по данным" : "Проверка и история по данным"} {auctionSourceLabel(listing.source)}</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
+                      <Group gap="sm"><ThemeIcon variant="light" color={isRentalTransfer ? "blue" : "teal"} radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="var(--market-ink)">{isRentalTransfer ? "Условия договора по данным" : "Проверка и история по данным"} {auctionSourceLabel(listing.source)}</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
                       <Badge variant="light" color={isRentalTransfer ? "blue" : "teal"}>{isRentalTransfer ? "Не является ценой продажи" : "Проверяйте перед сделкой"}</Badge>
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: conditionInfo.newCarPriceRatioPct !== null ? 3 : 2 }} spacing="xs">
@@ -473,7 +473,7 @@ function AuctionDetail() {
               {publicDescription && (
                 <Paper radius="md" p="md" withBorder>
                   <Stack gap="xs">
-                    <Group gap="sm"><IconCheck size={18} color="#059669" /><Text fw={700} c="dark.9">Описание объявления</Text></Group>
+                    <Group gap="sm"><IconCheck size={18} color="#059669" /><Text fw={700} c="var(--market-ink)">Описание объявления</Text></Group>
                     <Text size="sm" c="gray.6" lh={1.6}>{publicDescription}</Text>
                   </Stack>
                 </Paper>
@@ -507,7 +507,7 @@ function AuctionDetail() {
                 <Stack gap="md" align="center" py="md">
                   <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>
                   <Stack gap={0} align="center">
-                    <Text fw={700} fz="lg" c="dark.9">Заявка отправлена!</Text>
+                    <Text fw={700} fz="lg" c="var(--market-ink)">Заявка отправлена!</Text>
                     <Text size="sm" c="gray.5" ta="center">После проверки лота и назначения партнёра<br />сделка появится в личном кабинете.</Text>
                     <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" fullWidth>Перейти к сделкам</Button>
                   </Stack>
@@ -515,14 +515,14 @@ function AuctionDetail() {
               ) : (
                 authStatus !== "authenticated" ? (
                   <Stack gap="md">
-                    <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="dark.9">Заказать авто</Text></Group>
+                    <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="var(--market-ink)">Заказать авто</Text></Group>
                     <Text size="sm" c="dimmed">Войдите, чтобы заявка была привязана к вам, а партнёр общался с вами без доступа к телефону и почте.</Text>
                     <Alert color="indigo" variant="light" icon={<IconShieldCheck size={18} />} title="Все этапы внутри LeWheel">После назначения партнёра здесь появятся чат, счета, договоры и маршрут доставки.</Alert>
                     <Button component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(`/auctions/${listing.id}#order`)}`} color="indigo" size="md" fullWidth loading={authStatus === "loading"}>Войти и оставить заявку</Button>
                   </Stack>
                 ) : <form onSubmit={handleSubmit}>
                   <Stack gap="sm">
-                    <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="dark.9">Заказать авто</Text></Group>
+                    <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="var(--market-ink)">Заказать авто</Text></Group>
                     <Text size="xs" c="gray.5">{publicIdentity.title} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
                     <TextInput label="Ваше имя" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="sm" />
                     <TextInput label="Телефон" required placeholder="+7 (___) ___-__-__" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} size="sm" />
@@ -543,7 +543,7 @@ function AuctionDetail() {
           <Stack gap="sm" mt="md">
             <Group justify="space-between" align="flex-end" gap="sm">
               <Box>
-                <Text component="h2" fz={{ base: 21, sm: 25 }} fw={850} c="dark.9">Похожие автомобили</Text>
+                <Text component="h2" fz={{ base: 21, sm: 25 }} fw={850} c="var(--market-ink)">Похожие автомобили</Text>
                 <Text size="sm" c="dimmed">Близкие по марке, году и бюджету предложения из той же страны</Text>
               </Box>
               <Button component={Link} href={`/auctions?make=${encodeURIComponent(publicIdentity.make)}&country=${listing.country}`} variant="subtle" color="indigo" radius="xl" rightSection={<IconArrowRight size={16} />}>Смотреть все</Button>
@@ -564,7 +564,7 @@ function AuctionDetail() {
                       <Badge pos="absolute" top={10} right={10} color="orange" variant="filled">{auctionSourceLabel(similarListing.source)}</Badge>
                     </Box>
                     <Stack gap={8} p="md" className={styles.similarContent}>
-                      <Group gap="xs" wrap="nowrap"><BrandIcon brand={similarIdentity.make} size={30} /><Text fw={800} c="dark.9" lineClamp={2} className={styles.similarTitle}>{similarIdentity.title}</Text></Group>
+                      <Group gap="xs" wrap="nowrap"><BrandIcon brand={similarIdentity.make} size={30} /><Text fw={800} c="var(--market-ink)" lineClamp={2} className={styles.similarTitle}>{similarIdentity.title}</Text></Group>
                       <Group gap={5} wrap="wrap" className={styles.similarFacts}>
                         {similarListing.mileage != null && <Badge size="xs" variant="light" color="gray">{similarListing.mileage.toLocaleString("ru")} км</Badge>}
                         {similarListing.fuelType && <Badge size="xs" variant="light" color="orange">{similarListing.fuelType === "GASOLINE" ? "Бензин" : similarListing.fuelType === "DIESEL" ? "Дизель" : similarListing.fuelType === "HYBRID" ? "Гибрид" : similarListing.fuelType === "ELECTRIC" ? "Электро" : similarListing.fuelType}</Badge>}

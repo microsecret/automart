@@ -799,7 +799,7 @@ export default function AdminDashboard() {
               <Card className="admin-metric-card" withBorder radius="lg" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start" justify="space-between">
                 <Stack gap={0}>
-                  <Text size="xl" fw={800} c="dark.9" ff="var(--font-display),sans-serif" lh={1}>{s.value}</Text>
+                  <Text size="xl" fw={800} c="var(--market-ink)" ff="var(--font-display),sans-serif" lh={1}>{s.value}</Text>
                   <Text size="xs" c="gray.5" mt={2}>{s.label}</Text>
                   {s.new != null && s.new > 0 && (
                     <Group gap={3} mt={4}>
@@ -917,7 +917,7 @@ export default function AdminDashboard() {
                 {data.listingPerformance.topListings.map((listing) => (
                   <Group key={listing.id} justify="space-between" gap="xs" wrap="nowrap">
                     {listing.href
-                      ? <Text component={Link} href={listing.href} size="xs" c="dark.7" truncate style={{ flex: 1 }}>{listing.title}</Text>
+                      ? <Text component={Link} href={listing.href} size="xs" c="var(--market-ink)" truncate style={{ flex: 1 }}>{listing.title}</Text>
                       : <Text size="xs" c="dimmed" truncate style={{ flex: 1 }}>{listing.title}</Text>}
                     <Badge size="xs" variant="light" color="orange">{listing.views7d} / {listing.uniqueViewers7d}</Badge>
                   </Group>
@@ -967,7 +967,7 @@ export default function AdminDashboard() {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
-            <Text size="sm" fw={700} c="dark.9" mb={2}>Самые просматриваемые разделы · 7 дней</Text>
+            <Text size="sm" fw={700} c="var(--market-ink)" mb={2}>Самые просматриваемые разделы · 7 дней</Text>
             <Text size="xs" c="dimmed" mb="sm">Названия показаны по-русски; число справа — открытия страниц.</Text>
             <Stack gap="xs">
               {data.traffic.topPaths.map((item) => (
@@ -977,7 +977,7 @@ export default function AdminDashboard() {
             </Stack>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
-            <Text size="sm" fw={600} c="dark.9" mb="sm">Последние идентифицированные посетители</Text>
+            <Text size="sm" fw={600} c="var(--market-ink)" mb="sm">Последние идентифицированные посетители</Text>
             <Stack gap="xs">
               {data.traffic.recentVisitors.slice(0, 6).map((visit) => (
                 <Group key={visit.id} justify="space-between"><Text size="xs" c="gray.6">{visit.user?.name || visit.user?.email || "Пользователь"}</Text><Text size="xs" c="gray.4">{new Date(visit.createdAt).toLocaleDateString("ru-RU")}</Text></Group>
@@ -1009,7 +1009,7 @@ export default function AdminDashboard() {
         {/* Распределение по категориям */}
         <Card className="admin-insight-card" withBorder radius="lg" p="md">
           <Group justify="space-between" mb="sm">
-            <Text size="sm" fw={600} c="dark.9">Объявления по категориям транспорта</Text>
+            <Text size="sm" fw={600} c="var(--market-ink)">Объявления по категориям транспорта</Text>
             <Badge variant="light" color="indigo" size="sm">{c.listings} всего</Badge>
           </Group>
           <Stack gap="xs">
@@ -1031,14 +1031,14 @@ export default function AdminDashboard() {
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Stack gap="xs">
               <Group gap="sm"><IconFlame size={16} color="#f97316" /><Text size="xs" c="gray.5">Премиум-объявления</Text></Group>
-              <Text size="xl" fw={700} c="dark.9">{data?.featured ?? 0}</Text>
+              <Text size="xl" fw={700} c="var(--market-ink)">{data?.featured ?? 0}</Text>
               <Text size="xs" c="gray.4">{Math.round(((data?.featured ?? 0) / total) * 100)}% от всех</Text>
             </Stack>
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Stack gap="xs">
               <Group gap="sm"><IconTrendingUp size={16} color="#16a34a" /><Text size="xs" c="gray.5">Средняя цена</Text></Group>
-              <Text size="xl" fw={700} c="dark.9">{data?.avgPrice?.toLocaleString("ru-RU") ?? 0} ₽</Text>
+              <Text size="xl" fw={700} c="var(--market-ink)">{data?.avgPrice?.toLocaleString("ru-RU") ?? 0} ₽</Text>
               <Text size="xs" c="gray.4">по всем объявлениям</Text>
             </Stack>
           </Card>
@@ -1048,7 +1048,7 @@ export default function AdminDashboard() {
               {Object.entries(data?.byRole || {}).map(([role, count]) => (
                 <Group key={role} justify="space-between">
                   <Text size="xs" c="gray.6">{role}</Text>
-                  <Text size="xs" fw={600} c="dark.9">{count as number}</Text>
+                  <Text size="xs" fw={600} c="var(--market-ink)">{count as number}</Text>
                 </Group>
               ))}
             </Stack>
@@ -1057,7 +1057,7 @@ export default function AdminDashboard() {
 
         {/* Быстрые действия */}
         <Card className="admin-insight-card" withBorder radius="lg" p="md">
-          <Text size="sm" fw={600} c="dark.9" mb="sm">Управление</Text>
+          <Text size="sm" fw={600} c="var(--market-ink)" mb="sm">Управление</Text>
           <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
             <Card className="admin-action-card" component={Link} href="/admin/users" withBorder radius="lg" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconUsers size={16} /></ThemeIcon><Text size="xs" fw={500}>Пользователи</Text></Group>
