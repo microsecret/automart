@@ -4,11 +4,8 @@ set -euo pipefail
 # One bounded multi-source run every 20 minutes; flock prevents duplicate traffic
 # when an earlier run is still in progress.
 JOB="*/20 * * * * cd /root/AutoMart && /usr/bin/flock -n /tmp/automart-encar-collector.lock /bin/bash scripts/run-encar-collector.sh >> /var/log/automart-encar-collector.log 2>&1 # automart-encar-collector"
-CURRENT="$(crontab -l 2>/dev/null || true)"
+# shellcheck source=scripts/cron-install-lib.sh
+source "$(dirname "$0")/cron-install-lib.sh"
 
-if ! grep -Fq "# automart-encar-collector" <<< "$CURRENT"; then
-  printf '%s\n%s\n' "$CURRENT" "$JOB" | crontab -
-  echo "Installed automart auction collector cron"
-else
-  echo "Automart auction collector cron already installed"
-fi
+replace_cron_job "# automart-encar-collector" "$JOB"
+echo "Installed automart auction collector cron"

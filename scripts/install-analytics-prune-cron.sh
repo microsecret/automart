@@ -10,8 +10,8 @@ set -euo pipefail
 #
 # Скрипт идемпотентен: повторный запуск заменяет запись, а не плодит копии.
 JOB="41 4 * * 1 cd /root/AutoMart && /usr/bin/flock -n /tmp/automart-analytics-prune.lock node scripts/prune-analytics-events.mjs >> /var/log/automart-analytics-prune.log 2>&1 # automart-analytics-prune"
-CURRENT="$(crontab -l 2>/dev/null || true)"
-FILTERED="$(printf '%s\n' "$CURRENT" | grep -vF "# automart-analytics-prune" || true)"
+# shellcheck source=scripts/cron-install-lib.sh
+source "$(dirname "$0")/cron-install-lib.sh"
 
-printf '%s\n%s\n' "$FILTERED" "$JOB" | crontab -
+replace_cron_job "# automart-analytics-prune" "$JOB"
 echo "Installed automart analytics-prune cron"

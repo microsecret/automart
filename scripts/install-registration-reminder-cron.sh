@@ -6,8 +6,8 @@ set -euo pipefail
 #
 # Скрипт идемпотентен: повторный запуск заменяет запись, а не плодит копии.
 JOB="41 * * * * cd /root/AutoMart && /usr/bin/flock -n /tmp/automart-registration-reminders.lock bash scripts/run-registration-reminders.sh >> /var/log/automart-registration-reminders.log 2>&1 # automart-registration-reminders"
-CURRENT="$(crontab -l 2>/dev/null || true)"
-FILTERED="$(printf '%s\n' "$CURRENT" | grep -vF "# automart-registration-reminders" || true)"
+# shellcheck source=scripts/cron-install-lib.sh
+source "$(dirname "$0")/cron-install-lib.sh"
 
-printf '%s\n%s\n' "$FILTERED" "$JOB" | crontab -
+replace_cron_job "# automart-registration-reminders" "$JOB"
 echo "Installed automart registration-reminder cron"

@@ -6,8 +6,8 @@ set -euo pipefail
 # hours makes a temporary network outage self-healing without burdening the
 # source or waiting for the next deployment.
 JOB="17 */6 * * * cd /root/AutoMart && /usr/bin/flock -n /tmp/automart-auction-rates.lock /usr/bin/node scripts/refresh-auction-rates.mjs >> /var/log/automart-auction-rates.log 2>&1 # automart-auction-rates"
-CURRENT="$(crontab -l 2>/dev/null || true)"
-FILTERED="$(printf '%s\n' "$CURRENT" | grep -vF "# automart-auction-rates" || true)"
+# shellcheck source=scripts/cron-install-lib.sh
+source "$(dirname "$0")/cron-install-lib.sh"
 
-printf '%s\n%s\n' "$FILTERED" "$JOB" | crontab -
+replace_cron_job "# automart-auction-rates" "$JOB"
 echo "Installed automart auction-rate cron"

@@ -11,15 +11,15 @@ set -euo pipefail
 # живое общение подписчиков. Задача не удалена, а выключена флагом, поэтому
 # включить её обратно можно одной переменной окружения, без правки кода:
 #   AUTOMART_AUCTION_TELEGRAM_CRON=on bash scripts/install-auction-telegram-cron.sh
+# shellcheck source=scripts/cron-install-lib.sh
+source "$(dirname "$0")/cron-install-lib.sh"
+
 if [ "${AUTOMART_AUCTION_TELEGRAM_CRON:-off}" != "on" ]; then
-  crontab -l 2>/dev/null | grep -vF "# automart-auction-telegram" | crontab - 2>/dev/null || true
+  remove_cron_job "# automart-auction-telegram"
   echo "Auction Telegram cron is disabled (set AUTOMART_AUCTION_TELEGRAM_CRON=on to enable)"
   exit 0
 fi
 
 JOB="8 * * * * cd /root/AutoMart && /usr/bin/flock -n /tmp/automart-auction-telegram.lock /usr/bin/node scripts/publish-auction-highlights.mjs >> /var/log/automart-auction-telegram.log 2>&1 # automart-auction-telegram"
-CURRENT="$(crontab -l 2>/dev/null || true)"
-FILTERED="$(printf '%s\n' "$CURRENT" | grep -vF "# automart-auction-telegram" || true)"
-
-printf '%s\n%s\n' "$FILTERED" "$JOB" | crontab -
+replace_cron_job "# automart-auction-telegram" "$JOB"
 echo "Installed automart auction Telegram cron"

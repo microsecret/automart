@@ -7,8 +7,8 @@ set -euo pipefail
 #
 # Kept idempotent so deploys replace, rather than duplicate, the tagged entry.
 JOB="27 * * * * cd /root/AutoMart && /usr/bin/flock -n /tmp/automart-partner-sla.lock /usr/bin/node scripts/refresh-partner-sla.mjs >> /var/log/automart-partner-sla.log 2>&1 # automart-partner-sla"
-CURRENT="$(crontab -l 2>/dev/null || true)"
-FILTERED="$(printf '%s\n' "$CURRENT" | grep -vF "# automart-partner-sla" || true)"
+# shellcheck source=scripts/cron-install-lib.sh
+source "$(dirname "$0")/cron-install-lib.sh"
 
-printf '%s\n%s\n' "$FILTERED" "$JOB" | crontab -
+replace_cron_job "# automart-partner-sla" "$JOB"
 echo "Installed automart partner SLA cron"
