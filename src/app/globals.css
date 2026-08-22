@@ -1,7 +1,22 @@
-@import "@mantine/core/styles.css";
-@import "@mantine/carousel/styles.css";
-@import "@mantine/dates/styles.css";
-@import "@mantine/notifications/styles.css";
+/* Стили Mantine грузятся в собственный слой каскада.
+
+   Без слоёв библиотечные селекторы вида `.mantine-Input-input` сильнее
+   наших `.lw-search-input`, и каждое переопределение приходилось
+   выигрывать через `!important` — их набралось сто штук на файл. Высота
+   поля поиска потребовала четырёх подходов ровно по этой причине.
+
+   Правило каскада: стиль вне слоёв всегда сильнее стиля внутри слоя,
+   какой бы ни была специфичность. Мантиновское уходит в `@layer mantine`,
+   наше остаётся снаружи и выигрывает само по себе.
+
+   Слой `mantine` объявляет сам файл styles.layer.css. Отдельной строки
+   `@layer mantine, tailwind;` тут быть не может: `@import` обязан стоять
+   раньше любого правила, и объявление перед ним отбросило бы импорты — то
+   есть все стили библиотеки разом. */
+@import "@mantine/core/styles.layer.css";
+@import "@mantine/carousel/styles.layer.css";
+@import "@mantine/dates/styles.layer.css";
+@import "@mantine/notifications/styles.layer.css";
 
 @tailwind base;
 @tailwind components;
@@ -147,6 +162,21 @@
   --market-info-surface: #eef2fb;
   --market-info-line: #b9caee;
 }
+
+/* Размытие подложки: ровно две ступени на весь сайт.
+
+   Было восемь значений — 4, 8, 10, 12, 14, 16, 18 — подобранных на глаз в
+   разное время. Разница между 10 и 12 пикселями не видна никому, но каждое
+   размытие стоит отдельного слоя отрисовки, а вместе они читаются как
+   несобранность. У Apple на весь сайт два значения, у Linear — два.
+
+   --blur-panel — панели поверх ленты: шапка, полосы, всплывающие меню.
+   --blur-overlay — перекрытия во весь экран: модальные окна, галерея. */
+:root {
+  --blur-panel: 10px;
+  --blur-overlay: 18px;
+}
+
 
 :root[data-mantine-color-scheme="dark"] {
   --market-ink: #f5f5f7;
@@ -539,7 +569,7 @@ select {
     border-radius: var(--radius-lg);
     background: rgba(255, 255, 255, 0.94);
     box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(14px);
+    backdrop-filter: blur(var(--blur-panel));
   }
 
   .mobile-bottom-nav a {
@@ -628,7 +658,7 @@ select {
   background: var(--market-surface) !important;
   border-bottom-color: var(--market-line) !important;
   box-shadow: var(--shadow-sm) !important;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--blur-panel));
 }
 
 /* В тёмной теме та же идея, но в своих тонах: глубокий индиго вместо
@@ -920,7 +950,7 @@ select {
   border-color: color-mix(in srgb, var(--market-field-line) 82%, #b9caee) !important;
   background: color-mix(in srgb, var(--market-surface) 94%, transparent) !important;
   box-shadow: 0 20px 38px -24px rgba(15, 23, 42, 0.42) !important;
-  backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(var(--blur-overlay)) saturate(1.08);
 }
 
 .market-header-search__suggestion {
@@ -1841,7 +1871,7 @@ select {
   border-radius: var(--radius-md);
   background: linear-gradient(145deg, rgba(4, 10, 28, 0.7), rgba(27, 25, 77, 0.5));
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(14px) saturate(1.15);
+  backdrop-filter: blur(var(--blur-panel)) saturate(1.15);
 }
 
 .home-auctions__journey {
@@ -2247,6 +2277,17 @@ select {
 
 .listing-card {
   --listing-accent: var(--market-primary);
+  /* Карточка меряет собственную ширину, а не ширину окна.
+
+     Одна и та же карточка стоит в каталоге по три в ряд и в избранном по
+     четыре: на ноутбуке это 390 и 290 пикселей. Медиазапрос про это не
+     знает — он видит только экран — и узкая карточка верстается по
+     правилам широкой: цена в 22 пикселя не помещается, четыре чипа
+     характеристик уезжают на вторую строку.
+
+     `container-type: inline-size` даёт правилам ниже мерить саму колонку.
+     Где не поддерживается — карточка остаётся в широком виде, как была. */
+  container: listing-card / inline-size;
   isolation: isolate;
   background: var(--market-surface);
   /* Чёткая рамка вместо полупрозрачной: карточка держит форму на любом фоне
@@ -2621,7 +2662,7 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.78);
   background: rgba(15, 23, 42, 0.72);
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(10px) saturate(1.18);
+  backdrop-filter: blur(var(--blur-panel)) saturate(1.18);
   transition: transform var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
@@ -3190,7 +3231,7 @@ select {
   border-radius: var(--radius-md);
   background: var(--market-surface);
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-panel));
 }
 
 .garage-photo-preview {
@@ -3500,7 +3541,7 @@ select {
   border-radius: var(--radius-sm);
   color: #3f3f46;
   background: rgba(255,255,255,0.88);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-panel));
 }
 
 .fuel-map-canvas__legend {
@@ -3527,7 +3568,7 @@ select {
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-panel));
 }
 
 .fuel-map-canvas__legend > span::before {
@@ -3555,7 +3596,7 @@ select {
   border-color: color-mix(in srgb, #5b82d6 38%, var(--market-line));
   background: rgb(255 255 255 / 94%);
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-panel));
 }
 
 .fuel-map-selected {
@@ -4802,7 +4843,7 @@ select {
   z-index: 4;
   bottom: 12px;
   background: color-mix(in srgb, var(--market-surface) 92%, transparent);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(var(--blur-overlay));
 }
 
 .admin-workspace {
@@ -4835,7 +4876,7 @@ select {
   min-width: 215px;
   pointer-events: none;
   background: var(--market-surface);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-panel));
 }
 
 .admin-traffic-tooltip__date {
@@ -5260,4 +5301,68 @@ a:focus-visible > .market-linked-card {
 .broadcast-history-item:last-child {
   padding-bottom: 0;
   border-bottom: 0;
+}
+
+/* Перенос строк по смыслу текста.
+
+   Заголовок «Mercedes-Benz E-Class 220 d 4MATIC» переносился как придётся:
+   на вторую строку падало одно слово, а иногда одна буква. Каталог из
+   таких карточек читается рвано — глаз цепляется за обрубки вместо цен.
+
+   `balance` выравнивает строки заголовка по длине; браузер делает это лишь
+   для коротких блоков (до четырёх строк), что ровно наш случай.
+   `pretty` в описаниях убирает висячее слово в конце абзаца.
+
+   Где не поддерживается — текст переносится как раньше, ничего не ломается. */
+h1, h2, h3, h4, h5, h6,
+.mantine-Title-root,
+.listing-card__title,
+.mantine-Card-root .mantine-Text-root[data-lw-title] {
+  text-wrap: balance;
+}
+
+p,
+.mantine-Text-root[data-lw-lead],
+.listing-card__description,
+.mantine-TypographyStylesProvider-root p {
+  text-wrap: pretty;
+}
+
+/* Карточка объявления в узкой колонке.
+
+   Порог 320px — ширина, ниже которой цена вида «12 500 000 ₽» перестаёт
+   помещаться в строку при кегле 22. Такое случается в избранном (четыре
+   колонки) и в блоке похожих, но не в каталоге.
+
+   Правила ниже не прячут данные, а ужимают их: покупатель, открывший
+   избранное, должен видеть то же самое, что и в каталоге. */
+@container listing-card (max-width: 320px) {
+  .listing-card__price {
+    font-size: 1.15rem !important;
+    letter-spacing: -0.03em;
+  }
+
+  /* Четвёртый чип в узкой колонке уводит строку характеристик на второй
+     ряд и растягивает карточку. Год, пробег и коробка отвечают на вопрос
+     «что это за машина»; топливо в узком виде уходит — оно есть в самом
+     объявлении. */
+  .listing-card__fact:nth-child(n + 4) {
+    display: none;
+  }
+
+  .listing-card__facts {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+}
+
+/* Совсем узкая колонка — телефон в две карточки в ряд. */
+@container listing-card (max-width: 220px) {
+  .listing-card__price {
+    font-size: 1.05rem !important;
+  }
+
+  .listing-card__fact:nth-child(n + 3) {
+    display: none;
+  }
 }
