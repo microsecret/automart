@@ -3,7 +3,7 @@
   overflow: hidden;
   border: 1px solid var(--market-line);
   background:
-    radial-gradient(circle at 92% 0%, rgba(79, 70, 229, 0.1), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(28, 66, 145, 0.1), transparent 28%),
     var(--market-surface);
 }
 

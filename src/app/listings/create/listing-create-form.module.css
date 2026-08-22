@@ -28,7 +28,7 @@
 .listingCreateForm :global(.mantine-Autocomplete-input:focus),
 .listingCreateForm :global(.mantine-FileInput-input:focus) {
   border-color: #1c4291 !important;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16) !important;
+  box-shadow: 0 0 0 3px rgba(28, 66, 145, 0.16) !important;
 }
 
 .listingCreateForm :global(.mantine-NumberInput-controls) {

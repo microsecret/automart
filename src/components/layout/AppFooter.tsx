@@ -64,8 +64,8 @@ export default function AppFooter() {
     // и мягкое свечение того же цвета: граница видна, но не кричит.
     <Box component="footer" className="market-app-footer" style={{
       background: "linear-gradient(180deg, #09090b 0%, #000000 100%)",
-      borderTop: "1px solid rgba(79, 70, 229, 0.55)",
-      boxShadow: "inset 0 6px 24px -18px rgba(99, 102, 241, 0.9)",
+      borderTop: "1px solid rgba(28, 66, 145, 0.55)",
+      boxShadow: "inset 0 6px 24px -18px rgba(43, 86, 176, 0.9)",
       marginTop: 60,
     }}>
       <Container size="xl" py="xl">

@@ -141,7 +141,7 @@
   --market-label: #c5c8d3;
   --market-control-text: #f4f4f5;
   --market-placeholder: #9fa3b5;
-  --market-focus: rgba(129, 140, 248, 0.32);
+  --market-focus: rgba(91, 130, 214, 0.32);
   --market-primary-soft: #252846;
   /* Тёмный индиго на тёмном фоне даёт контраст 1.8 — нечитаемо. В тёмной теме
      основной тон светлеет, сохраняя оттенок. */
@@ -215,7 +215,7 @@ body {
 /* A single calm focus treatment keeps keyboard navigation discoverable without
    competing with the compact visual language of the marketplace controls. */
 :where(a, button, input, select, textarea, [role="button"], [tabindex="0"]):focus-visible {
-  outline: 3px solid rgba(99, 102, 241, 0.42);
+  outline: 3px solid rgba(43, 86, 176, 0.42);
   outline-offset: 2px;
 }
 
@@ -248,9 +248,9 @@ select {
   overflow: hidden;
   color: #fff;
   background:
-    radial-gradient(circle at 92% 8%, rgba(129, 140, 248, 0.46), transparent 32%),
+    radial-gradient(circle at 92% 8%, rgba(91, 130, 214, 0.46), transparent 32%),
     linear-gradient(135deg, #0b2050 0%, #14306b 48%, #1c4291 100%);
-  box-shadow: 0 18px 45px -28px rgba(49, 46, 129, 0.8);
+  box-shadow: 0 18px 45px -28px rgba(11, 32, 80, 0.8);
 }
 
 .market-hero::after {
@@ -406,7 +406,7 @@ select {
   .mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
     color: #fff;
     background: linear-gradient(135deg, #1c4291, #2b56b0);
-    box-shadow: 0 8px 16px -12px rgba(79, 70, 229, 0.8);
+    box-shadow: 0 8px 16px -12px rgba(28, 66, 145, 0.8);
   }
 
   :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav {
@@ -464,7 +464,7 @@ select {
     linear-gradient(180deg, #e8ecff 0%, #d5dcfb 58%, #c9d2f8 100%) !important;
   border-bottom-color: #a5b4fc !important;
   box-shadow:
-    0 10px 30px -22px rgba(49, 46, 129, 0.55),
+    0 10px 30px -22px rgba(11, 32, 80, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
   backdrop-filter: blur(18px) saturate(1.2);
 }
@@ -479,7 +479,7 @@ select {
   border-bottom-color: color-mix(in srgb, #14306b 55%, transparent) !important;
   box-shadow:
     0 10px 30px -20px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(129, 140, 248, 0.22) !important;
+    inset 0 1px 0 rgba(91, 130, 214, 0.22) !important;
 }
 
 .market-app-header::after {
@@ -488,7 +488,7 @@ select {
   bottom: -1px;
   left: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.42), transparent);
+  background: linear-gradient(90deg, transparent, rgba(91, 130, 214, 0.42), transparent);
   content: "";
   opacity: 0.82;
   pointer-events: none;
@@ -584,7 +584,7 @@ select {
   }
 
   .market-app-header .mantine-Button-filled:hover {
-    box-shadow: 0 12px 22px -15px rgba(79, 70, 229, 0.92);
+    box-shadow: 0 12px 22px -15px rgba(28, 66, 145, 0.92);
   }
 }
 
@@ -821,7 +821,7 @@ select {
   height: min(52vw, 620px);
   top: 8%;
   left: -22%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.13), transparent 68%);
+  background: radial-gradient(circle, rgba(43, 86, 176, 0.13), transparent 68%);
 }
 
 .auth-experience::after {
@@ -851,7 +851,7 @@ select {
   place-items: center;
   border-radius: 15px;
   background: #1c4291;
-  box-shadow: 0 12px 24px -15px rgba(79, 70, 229, 0.9);
+  box-shadow: 0 12px 24px -15px rgba(28, 66, 145, 0.9);
 }
 
 .auth-experience__form-area {
@@ -981,7 +981,7 @@ select {
 }
 
 .market-side-account__link--profile:hover::before {
-  box-shadow: 0 0 10px 1px rgba(99, 102, 241, 0.75);
+  box-shadow: 0 0 10px 1px rgba(43, 86, 176, 0.75);
 }
 
 /* Шестерёнка проворачивается при наведении — настройки в одном движении
@@ -1126,7 +1126,7 @@ select {
      сверху, тёмная опора снизу. */
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.7),
-    0 2px 3px rgba(49, 46, 129, 0.18);
+    0 2px 3px rgba(11, 32, 80, 0.18);
 }
 
 .lewheel-brand__wordmark strong {
@@ -1214,7 +1214,7 @@ select {
   /* Градиент был прописан старыми светлыми оттенками и перебивал углублённую
      тему, из-за чего главная кнопка сайта осталась блёклой. */
   background: linear-gradient(135deg, #102a59 0%, #14306b 58%, #102a59 100%);
-  box-shadow: 0 11px 24px -15px rgba(55, 48, 163, 0.95);
+  box-shadow: 0 11px 24px -15px rgba(16, 42, 89, 0.95);
   transition: box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
 }
 
@@ -1230,7 +1230,7 @@ select {
 
 .header-create-cta:hover,
 .header-create-cta:focus-visible {
-  box-shadow: 0 15px 28px -16px rgba(79, 70, 229, 0.92);
+  box-shadow: 0 15px 28px -16px rgba(28, 66, 145, 0.92);
   transform: translateY(-1px);
 }
 
@@ -1261,7 +1261,7 @@ select {
   padding: 26px 24px 22px;
   color: #f8fafc;
   background:
-    radial-gradient(circle at 91% 9%, rgba(79, 70, 229, 0.72), transparent 31%),
+    radial-gradient(circle at 91% 9%, rgba(28, 66, 145, 0.72), transparent 31%),
     linear-gradient(128deg, #06152f 0%, #102a59 57%, #0b2050 100%);
 }
 
@@ -1495,7 +1495,7 @@ select {
    выглядело бы засветкой, а не глубиной. */
 [data-mantine-color-scheme="dark"] body {
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(99, 102, 241, 0.12), transparent 70%),
+    radial-gradient(1200px 600px at 50% -10%, rgba(43, 86, 176, 0.12), transparent 70%),
     var(--market-background);
   background-attachment: fixed;
 }
@@ -1600,7 +1600,7 @@ select {
 
 .market-directory {
   background:
-    radial-gradient(circle at 100% 0%, rgba(129, 140, 248, 0.14), transparent 34%),
+    radial-gradient(circle at 100% 0%, rgba(91, 130, 214, 0.14), transparent 34%),
     var(--market-surface);
   border-color: var(--market-line);
 }
@@ -1809,7 +1809,7 @@ select {
 .catalog-filter-field:focus-within {
   z-index: 1;
   border-color: #2b56b0;
-  box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(49, 46, 129, 0.72);
+  box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(11, 32, 80, 0.72);
 }
 
 .catalog-filter-field .mantine-InputWrapper-label {
@@ -1929,7 +1929,7 @@ select {
   border-color: #14306b;
   background: linear-gradient(135deg, #14306b, #1c4291);
   color: #fff;
-  box-shadow: 0 5px 12px -8px rgba(67, 56, 202, 0.9);
+  box-shadow: 0 5px 12px -8px rgba(20, 48, 107, 0.9);
 }
 
 .catalog-filter-advanced .mantine-Input-input,
@@ -1997,9 +1997,9 @@ select {
   height: 78%;
   right: -42%;
   bottom: -52%;
-  border: 1px solid rgba(79, 70, 229, 0.13);
+  border: 1px solid rgba(28, 66, 145, 0.13);
   border-radius: 50%;
-  box-shadow: 0 -12px 0 rgba(79, 70, 229, 0.035), 0 -25px 0 rgba(79, 70, 229, 0.025);
+  box-shadow: 0 -12px 0 rgba(28, 66, 145, 0.035), 0 -25px 0 rgba(28, 66, 145, 0.025);
 }
 
 .vehicle-fallback::after {
@@ -2007,7 +2007,7 @@ select {
   height: 58%;
   left: -20%;
   top: -28%;
-  border: 1px solid rgba(79, 70, 229, 0.1);
+  border: 1px solid rgba(28, 66, 145, 0.1);
   border-radius: 50%;
 }
 
@@ -2020,7 +2020,7 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.34);
   box-shadow:
-    0 14px 30px rgba(79, 70, 229, 0.1),
+    0 14px 30px rgba(28, 66, 145, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.76);
 }
 
@@ -2062,7 +2062,7 @@ select {
   position: relative;
   z-index: 2;
   box-shadow:
-    0 12px 22px rgba(79, 70, 229, 0.16),
+    0 12px 22px rgba(28, 66, 145, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.72);
 }
@@ -2161,13 +2161,13 @@ select {
 
   .listing-card--row:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px -6px rgba(79, 70, 229, 0.2);
+    box-shadow: 0 8px 24px -6px rgba(28, 66, 145, 0.2);
   }
 
   .part-result-card:hover {
     transform: translateY(-2px);
     border-color: #c7d2fe !important;
-    box-shadow: 0 16px 26px -24px rgba(49, 46, 129, 0.72);
+    box-shadow: 0 16px 26px -24px rgba(11, 32, 80, 0.72);
   }
 
   .auction-result-card:hover {
@@ -2513,12 +2513,12 @@ select {
   min-height: 50px;
   border-color: var(--market-field-line);
   background: color-mix(in srgb, var(--market-surface) 92%, #eef2ff);
-  box-shadow: 0 12px 24px -26px rgba(49, 46, 129, 0.72);
+  box-shadow: 0 12px 24px -26px rgba(11, 32, 80, 0.72);
 }
 
 .news-list-search .mantine-TextInput-input:focus {
   border-color: #5b82d6;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.13), 0 14px 28px -26px rgba(49, 46, 129, 0.72);
+  box-shadow: 0 0 0 3px rgba(43, 86, 176, 0.13), 0 14px 28px -26px rgba(11, 32, 80, 0.72);
 }
 
 .news-list-card-link {
@@ -2657,7 +2657,7 @@ select {
   .news-list-card-link:hover .news-list-card,
   .news-list-card-link:focus-visible .news-list-card {
     border-color: #a5b4fc;
-    box-shadow: 0 22px 34px -30px rgba(49, 46, 129, 0.72);
+    box-shadow: 0 22px 34px -30px rgba(11, 32, 80, 0.72);
     transform: translateY(-3px);
   }
 
@@ -2756,7 +2756,7 @@ select {
   position: relative;
   z-index: 1;
   border-color: #2b56b0;
-  box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(49, 46, 129, 0.72);
+  box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(11, 32, 80, 0.72);
 }
 
 .parts-filter-grid .mantine-Input-input,
@@ -2827,11 +2827,11 @@ select {
 .service-card:hover {
   transform: translateY(-3px);
   border-color: #a5b4fc;
-  box-shadow: 0 18px 30px -24px rgba(49, 46, 129, 0.6);
+  box-shadow: 0 18px 30px -24px rgba(11, 32, 80, 0.6);
 }
 
 .service-card:focus-visible {
-  outline: 3px solid rgba(79, 70, 229, 0.32);
+  outline: 3px solid rgba(28, 66, 145, 0.32);
   outline-offset: 3px;
 }
 
@@ -2867,7 +2867,7 @@ select {
   overflow: hidden;
   border-color: #dbe3f4;
   background:
-    radial-gradient(circle at 90% -15%, rgba(129, 140, 248, 0.2), transparent 34%),
+    radial-gradient(circle at 90% -15%, rgba(91, 130, 214, 0.2), transparent 34%),
     linear-gradient(135deg, #ffffff 0%, #f7f8ff 52%, #f1f5ff 100%);
   box-shadow: 0 18px 36px -32px rgba(30, 41, 59, 0.42);
 }
@@ -2895,12 +2895,12 @@ select {
 .dashboard-workspace__status:hover {
   border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
   background: var(--market-surface);
-  box-shadow: 0 12px 24px -22px rgba(49, 46, 129, 0.75);
+  box-shadow: 0 12px 24px -22px rgba(11, 32, 80, 0.75);
   transform: translateY(-1px);
 }
 
 .dashboard-workspace__status:focus-visible {
-  outline: 3px solid rgba(79, 70, 229, 0.3);
+  outline: 3px solid rgba(28, 66, 145, 0.3);
   outline-offset: 2px;
 }
 
@@ -3103,7 +3103,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .dashboard-document-row:hover {
     border-color: #a5b4fc;
-    box-shadow: 0 14px 24px -24px rgba(49, 46, 129, 0.58);
+    box-shadow: 0 14px 24px -24px rgba(11, 32, 80, 0.58);
   }
 }
 
@@ -3127,7 +3127,7 @@ select {
   .dashboard-favorite-card:hover {
     transform: translateY(-2px);
     border-color: #bdcaff !important;
-    box-shadow: 0 16px 30px -24px rgba(79, 70, 229, 0.26);
+    box-shadow: 0 16px 30px -24px rgba(28, 66, 145, 0.26);
   }
 
   .dashboard-listing-card:hover .dashboard-listing-card__media > img,
@@ -3182,7 +3182,7 @@ select {
     radial-gradient(circle at 82% 14%, rgba(34, 211, 238, 0.34), transparent 28%),
     radial-gradient(circle at 10% 100%, rgba(249, 115, 22, 0.28), transparent 34%),
     linear-gradient(128deg, #17175d 0%, #102a59 52%, #0f766e 120%);
-  box-shadow: 0 24px 54px -36px rgba(49, 46, 129, 0.88);
+  box-shadow: 0 24px 54px -36px rgba(11, 32, 80, 0.88);
 }
 
 .fuel-map-hero::after {
@@ -3225,7 +3225,7 @@ select {
 }
 
 .fuel-map-canvas__tiles:focus-visible {
-  outline: 3px solid rgba(79, 70, 229, 0.48);
+  outline: 3px solid rgba(28, 66, 145, 0.48);
   outline-offset: -3px;
 }
 
@@ -3444,7 +3444,7 @@ select {
 .fuel-station-card[data-selected] {
   border-color: var(--market-primary);
   background: var(--market-primary-soft);
-  box-shadow: 0 14px 24px -20px rgba(79, 70, 229, 0.58);
+  box-shadow: 0 14px 24px -20px rgba(28, 66, 145, 0.58);
 }
 
 .fuel-map-note {
@@ -3674,7 +3674,7 @@ select {
 .part-result-card__media[data-empty-media] {
   height: 112px;
   background:
-    radial-gradient(circle at 50% 40%, rgba(79, 70, 229, 0.12), transparent 28%),
+    radial-gradient(circle at 50% 40%, rgba(28, 66, 145, 0.12), transparent 28%),
     var(--market-primary-soft);
 }
 
@@ -3886,7 +3886,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .listing-map-result:hover .listing-map-result__surface {
     border-color: #a5b4fc;
-    box-shadow: 0 14px 24px -20px rgba(79, 70, 229, 0.55);
+    box-shadow: 0 14px 24px -20px rgba(28, 66, 145, 0.55);
     transform: translateY(-1px);
   }
 }
@@ -3942,12 +3942,15 @@ select {
 .catalog-filter-panel,
 .parts-filter-panel,
 .auction-filter-panel {
+  /* Панель поиска — ровная поверхность с рамкой, как карточка.
+     Раньше её заливал градиент из трёх точек плюс своя тень: на фоне
+     соседних белых блоков она выглядела чужеродной, а поля ввода внутри
+     теряли контраст с подложкой. */
   position: relative;
   overflow: hidden;
-  border-color: var(--market-field-line);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--market-primary-soft) 56%, var(--market-surface)) 0%, var(--market-surface) 46%, var(--market-surface-subtle) 100%);
-  box-shadow: 0 18px 36px -34px rgba(15, 23, 42, 0.78);
+  border-color: var(--market-line);
+  background: var(--market-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .catalog-filter-panel__intro {
@@ -3980,7 +3983,7 @@ select {
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
   border-color: color-mix(in srgb, #2b56b0 54%, var(--market-field-line));
   background: #eef2ff;
-  box-shadow: 0 5px 12px -11px rgba(79, 70, 229, 0.86);
+  box-shadow: 0 5px 12px -11px rgba(28, 66, 145, 0.86);
 }
 
 .parts-filter-checks .mantine-Checkbox-input {
@@ -4067,7 +4070,7 @@ select {
   height: 100%;
   border-color: #c7d2fe;
   background: linear-gradient(145deg, #f1f5ff 0%, var(--market-surface) 76%);
-  box-shadow: 0 14px 26px -28px rgba(67, 56, 202, 0.74);
+  box-shadow: 0 14px 26px -28px rgba(20, 48, 107, 0.74);
 }
 
 .parts-vehicle-inline__panel .mantine-Input-input,
@@ -4112,7 +4115,7 @@ select {
   place-items: center;
   padding: 28px;
   background:
-    radial-gradient(circle at 78% 18%, rgba(129, 140, 248, 0.18), transparent 28%),
+    radial-gradient(circle at 78% 18%, rgba(91, 130, 214, 0.18), transparent 28%),
     linear-gradient(145deg, var(--market-surface-subtle), var(--market-surface));
 }
 
@@ -4629,7 +4632,7 @@ select {
 .create-listing__section .mantine-NumberInput-input:focus,
 .create-listing__section .mantine-Textarea-input:focus {
   border-color: var(--mantine-color-indigo-5);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.11);
+  box-shadow: 0 0 0 3px rgba(28, 66, 145, 0.11);
 }
 
 .create-listing__submit {
@@ -4712,7 +4715,7 @@ select {
   color: #ffffff !important;
   background: linear-gradient(135deg, #1c4291, #14306b) !important;
   border-color: #1c4291 !important;
-  box-shadow: 0 8px 18px -13px rgba(67, 56, 202, 0.9);
+  box-shadow: 0 8px 18px -13px rgba(20, 48, 107, 0.9);
 }
 
 .admin-workspace-navigation__item:hover:not([data-active]) {
@@ -4761,7 +4764,7 @@ select {
 }
 
 .admin-action-card:focus-visible {
-  outline: 3px solid rgba(79, 70, 229, 0.28);
+  outline: 3px solid rgba(28, 66, 145, 0.28);
   outline-offset: 3px;
 }
 
@@ -4778,7 +4781,7 @@ select {
 
 .admin-directory__search .mantine-Input-input:focus {
   border-color: var(--mantine-color-indigo-5);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px rgba(28, 66, 145, 0.1);
 }
 
 .admin-directory__table {
@@ -4881,7 +4884,7 @@ select {
 .admin-queue-card:hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--market-primary) 38%, var(--market-line));
-  box-shadow: 0 14px 26px -20px rgba(79, 70, 229, 0.85);
+  box-shadow: 0 14px 26px -20px rgba(28, 66, 145, 0.85);
 }
 
 .admin-queue-card:active {
@@ -5052,7 +5055,7 @@ select {
     transform: translateY(-2px);
     border-color: var(--market-primary);
     background: var(--market-surface-subtle);
-    box-shadow: 0 16px 28px -22px rgba(49, 46, 129, 0.55);
+    box-shadow: 0 16px 28px -22px rgba(11, 32, 80, 0.55);
   }
 }
 
@@ -5086,7 +5089,7 @@ a:focus-visible > .market-linked-card {
 
 .market-app-footer__link:focus-visible {
   color: #ffffff;
-  outline: 2px solid rgba(165, 180, 252, 0.7);
+  outline: 2px solid rgba(143, 169, 222, 0.7);
   outline-offset: 2px;
   border-radius: 3px;
 }

@@ -126,7 +126,7 @@ export default function PhotoAngleViewer({ images, title }: Photo360ViewerProps)
         top={12}
         left={12}
         style={{
-          background: "rgba(79, 70, 229, 0.9)",
+          background: "rgba(28, 66, 145, 0.9)",
           backdropFilter: "blur(8px)",
           borderRadius: 8,
           padding: "4px 10px",

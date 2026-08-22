@@ -35,7 +35,7 @@
 .marker:focus-visible,
 .defectRow:focus-visible,
 .photoControl:focus-visible {
-  outline: 3px solid rgba(79, 70, 229, 0.28);
+  outline: 3px solid rgba(28, 66, 145, 0.28);
   outline-offset: 2px;
 }
 
