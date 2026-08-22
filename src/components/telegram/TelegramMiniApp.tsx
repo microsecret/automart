@@ -119,7 +119,7 @@ export default function TelegramMiniApp() {
       webApp.ready()
       webApp.expand()
       webApp.setHeaderColor?.("#1e1b4b")
-      webApp.setBackgroundColor?.("#eef2ff")
+      webApp.setBackgroundColor?.("#eef2fb")
       if (!webApp.initData) {
         setStatus("browser")
         setMessage("Откройте Mini App кнопкой внутри Telegram. Для входа в обычном браузере используйте почту или телефон и пароль.")

@@ -218,7 +218,7 @@ function ConversationWorkspace() {
                     >
                       <Stack gap={2}>
                         <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>{msg.content}</Text>
-                        <Text size="10px" c={isOwn ? "#c7d2fe" : "var(--mantine-color-dimmed)"}>{formatRelativeDate(msg.createdAt)}</Text>
+                        <Text size="10px" c={isOwn ? "#b9caee" : "var(--mantine-color-dimmed)"}>{formatRelativeDate(msg.createdAt)}</Text>
                       </Stack>
                     </Paper>
                   </Group>

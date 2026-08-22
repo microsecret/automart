@@ -124,8 +124,8 @@
   --market-caution-line: #fde68a;
   --market-danger-surface: #fff1f2;
   --market-danger-line: #fecdd3;
-  --market-info-surface: #eef2ff;
-  --market-info-line: #c7d2fe;
+  --market-info-surface: #eef2fb;
+  --market-info-line: #b9caee;
 }
 
 :root[data-mantine-color-scheme="dark"] {
@@ -559,7 +559,7 @@ select {
 /* Utility icons must stay visible on the light header before hover. */
 .market-app-header__utility-action {
   border: 1px solid var(--market-field-line) !important;
-  background: color-mix(in srgb, var(--market-surface) 92%, #eef2ff) !important;
+  background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb) !important;
   color: var(--market-control-text) !important;
   box-shadow: 0 4px 12px -10px rgba(30, 41, 59, 0.65);
 }
@@ -770,7 +770,7 @@ select {
 
 .market-header-search__suggestions {
   overflow: hidden;
-  border-color: color-mix(in srgb, var(--market-field-line) 82%, #c7d2fe) !important;
+  border-color: color-mix(in srgb, var(--market-field-line) 82%, #b9caee) !important;
   background: color-mix(in srgb, var(--market-surface) 94%, transparent) !important;
   box-shadow: 0 20px 38px -24px rgba(15, 23, 42, 0.42) !important;
   backdrop-filter: blur(18px) saturate(1.08);
@@ -1803,7 +1803,7 @@ select {
 
 .catalog-filter-field:hover {
   border-color: #a5b4fc;
-  background: color-mix(in srgb, var(--market-field) 92%, #eef2ff);
+  background: color-mix(in srgb, var(--market-field) 92%, #eef2fb);
 }
 
 .catalog-filter-field:focus-within {
@@ -1981,7 +1981,7 @@ select {
   overflow: hidden;
   background:
     radial-gradient(circle at 76% 20%, rgba(255, 255, 255, 0.96), transparent 25%),
-    linear-gradient(145deg, #eef2ff 0%, #f8fafc 58%, #e0e7ff 100%);
+    linear-gradient(145deg, #eef2fb 0%, #f8fafc 58%, #dbe4f7 100%);
 }
 
 .vehicle-fallback::before,
@@ -2072,7 +2072,7 @@ select {
 .vehicle-fallback--truck,
 .vehicle-fallback--special { background: linear-gradient(145deg, #fff7ed 0%, #f8fafc 58%, #fef3c7 100%); }
 .vehicle-fallback--motorcycle { background: linear-gradient(145deg, #f3e8ff 0%, #faf5ff 58%, #ede9fe 100%); }
-.vehicle-fallback--part { background: linear-gradient(145deg, #f5f3ff 0%, #fafaff 58%, #e0e7ff 100%); }
+.vehicle-fallback--part { background: linear-gradient(145deg, #f5f3ff 0%, #fafaff 58%, #dbe4f7 100%); }
 
 /* Part detail uses the same quiet, tactile surfaces as vehicle details in both themes. */
 .part-detail__gallery {
@@ -2166,7 +2166,7 @@ select {
 
   .part-result-card:hover {
     transform: translateY(-2px);
-    border-color: #c7d2fe !important;
+    border-color: #b9caee !important;
     box-shadow: 0 16px 26px -24px rgba(11, 32, 80, 0.72);
   }
 
@@ -2181,7 +2181,7 @@ select {
   background:
     radial-gradient(circle at 18% 85%, color-mix(in srgb, var(--listing-accent) 12%, transparent), transparent 38%),
     radial-gradient(circle at 82% 16%, rgba(255, 255, 255, 0.95), transparent 30%),
-    linear-gradient(145deg, #f8fafc 0%, #eef2ff 100%);
+    linear-gradient(145deg, #f8fafc 0%, #eef2fb 100%);
 }
 
 .listing-card__media {
@@ -2297,7 +2297,7 @@ select {
 .listing-card__media[data-empty-media][data-vehicle-type="car"] .vehicle-fallback {
   background:
     radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.98), transparent 22%),
-    linear-gradient(145deg, #f6f8fc 0%, #eef2ff 54%, #e7edff 100%);
+    linear-gradient(145deg, #f6f8fc 0%, #eef2fb 54%, #e7edff 100%);
 }
 
 .listing-card__media[data-empty-media][data-vehicle-type="part"] .vehicle-fallback {
@@ -2512,7 +2512,7 @@ select {
 .news-list-search .mantine-TextInput-input {
   min-height: 50px;
   border-color: var(--market-field-line);
-  background: color-mix(in srgb, var(--market-surface) 92%, #eef2ff);
+  background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb);
   box-shadow: 0 12px 24px -26px rgba(11, 32, 80, 0.72);
 }
 
@@ -2550,7 +2550,7 @@ select {
   justify-content: center;
   gap: 10px;
   overflow: hidden;
-  color: #e0e7ff;
+  color: #dbe4f7;
   background:
     radial-gradient(circle at 86% 16%, rgba(103, 232, 249, 0.34), transparent 30%),
     radial-gradient(circle at 14% 92%, rgba(244, 114, 182, 0.24), transparent 36%),
@@ -2746,7 +2746,7 @@ select {
 .auction-filter-grid > .mantine-InputWrapper-root:hover,
 .auction-filter-grid > .mantine-Box-root:hover {
   border-color: #a5b4fc;
-  background: color-mix(in srgb, var(--market-field) 92%, #eef2ff);
+  background: color-mix(in srgb, var(--market-field) 92%, #eef2fb);
 }
 
 .parts-filter-grid > .mantine-InputWrapper-root:focus-within,
@@ -2797,7 +2797,7 @@ select {
 
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
   border-color: #5b82d6;
-  background: #eef2ff;
+  background: #eef2fb;
 }
 
 .parts-filter-checks .mantine-Checkbox-label {
@@ -2868,7 +2868,7 @@ select {
   border-color: #dbe3f4;
   background:
     radial-gradient(circle at 90% -15%, rgba(91, 130, 214, 0.2), transparent 34%),
-    linear-gradient(135deg, #ffffff 0%, #f7f8ff 52%, #f1f5ff 100%);
+    linear-gradient(135deg, #ffffff 0%, #f7f8ff 52%, #f4f7fc 100%);
   box-shadow: 0 18px 36px -32px rgba(30, 41, 59, 0.42);
 }
 
@@ -3782,7 +3782,7 @@ select {
 
 .part-result-card__compatibility-chip {
   color: #14306b !important;
-  background: #eef2ff !important;
+  background: #eef2fb !important;
   border: 1px solid #dbe4ff;
   font-weight: 700;
 }
@@ -3841,7 +3841,7 @@ select {
   min-height: 78px;
   gap: 10px;
   border-color: color-mix(in srgb, var(--market-line) 88%, transparent);
-  background: linear-gradient(145deg, #fff, color-mix(in srgb, #fff 92%, #eef2ff));
+  background: linear-gradient(145deg, #fff, color-mix(in srgb, #fff 92%, #eef2fb));
   transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
 }
 
@@ -3854,7 +3854,7 @@ select {
   overflow: hidden;
   border-radius: var(--radius-sm);
   place-items: center;
-  background: #eef2ff;
+  background: #eef2fb;
 }
 
 .listing-map-result__media .vehicle-fallback {
@@ -3921,7 +3921,10 @@ select {
 }
 
 .parts-workspace {
-  align-items: stretch;
+  /* stretch растягивал панель поиска по высоте блока подбора справа: под
+     полями оставалось полстраницы пустоты. Теперь каждый блок высотой по
+     своему содержимому, а выравнивание идёт по верхнему краю. */
+  align-items: flex-start;
 }
 
 .parts-workspace > * > .mantine-Paper-root {
@@ -3982,7 +3985,7 @@ select {
 
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
   border-color: color-mix(in srgb, #2b56b0 54%, var(--market-field-line));
-  background: #eef2ff;
+  background: #eef2fb;
   box-shadow: 0 5px 12px -11px rgba(28, 66, 145, 0.86);
 }
 
@@ -4067,10 +4070,12 @@ select {
 }
 
 .parts-vehicle-inline__panel {
+  /* Тот же вид, что у панели поиска рядом: после перевода соседей на ровные
+     поверхности этот блок остался единственным цветным и выбивался. */
   height: 100%;
-  border-color: #c7d2fe;
-  background: linear-gradient(145deg, #f1f5ff 0%, var(--market-surface) 76%);
-  box-shadow: 0 14px 26px -28px rgba(20, 48, 107, 0.74);
+  border-color: var(--market-line);
+  background: var(--market-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .parts-vehicle-inline__panel .mantine-Input-input,
@@ -4124,9 +4129,9 @@ select {
   width: 42px;
   height: 42px;
   place-items: center;
-  border: 1px solid #c7d2fe;
+  border: 1px solid #b9caee;
   border-radius: var(--radius-md);
-  background: #eef2ff;
+  background: #eef2fb;
   color: #1c4291;
 }
 
@@ -4193,7 +4198,7 @@ select {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xs);
-  background: #eef2ff;
+  background: #eef2fb;
   color: #2b56b0;
 }
 
@@ -4720,8 +4725,8 @@ select {
 
 .admin-workspace-navigation__item:hover:not([data-active]) {
   color: #0b2050 !important;
-  background: #eef2ff !important;
-  border-color: #c7d2fe !important;
+  background: #eef2fb !important;
+  border-color: #b9caee !important;
 }
 
 .admin-metric-card,

@@ -525,7 +525,7 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
   const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
 
   return (
-    <Paper radius="lg" p="md" withBorder style={{ borderColor: "#a5b4fc", background: "linear-gradient(135deg, #eef2ff 0%, #fff 56%)" }}>
+    <Paper radius="lg" p="md" withBorder style={{ borderColor: "#a5b4fc", background: "linear-gradient(135deg, #eef2fb 0%, #fff 56%)" }}>
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
           <Group gap="sm" wrap="nowrap">

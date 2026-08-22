@@ -98,7 +98,7 @@ export default function ValuationPage() {
 
         {result && (
           <Stack gap="md">
-            <Paper radius="lg" p="xl" withBorder style={{ background: "linear-gradient(135deg, #eef2ff 0%, #fff 100%)", borderColor: "#c7d2fe" }}>
+            <Paper radius="lg" p="xl" withBorder style={{ background: "linear-gradient(135deg, #eef2fb 0%, #fff 100%)", borderColor: "#b9caee" }}>
               <Stack gap="sm" align="center">
                 <Text size="xs" c="gray.5" tt="uppercase" fw={700}>Предварительный ориентир</Text>
                 <Text fz="2.2rem" fw={800} c="#1c4291" ff="var(--font-display),sans-serif" lh={1}>{formatPrice(result.estimatedValue)}</Text>

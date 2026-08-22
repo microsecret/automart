@@ -348,7 +348,7 @@ function DashboardContent() {
         {/* Карточки статистики */}
         <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="sm">
           {[
-            { label: "Объявления", value: stats.totalListings, icon: <IconTag size={18} />, color: "#1c4291", bg: "#eef2ff" },
+            { label: "Объявления", value: stats.totalListings, icon: <IconTag size={18} />, color: "#1c4291", bg: "#eef2fb" },
             { label: "Просмотры", value: stats.totalViews, icon: <IconEye size={18} />, color: "#0891b2", bg: "#ecfeff" },
             { label: "Избранное", value: stats.favoritesCount, icon: <IconHeart size={18} />, color: "#e11d48", bg: "#fff1f2" },
             { label: "Отзывы", value: stats.reviewsCount, icon: <IconStar size={18} />, color: "#ea580c", bg: "#fff7ed" },
