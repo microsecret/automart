@@ -413,6 +413,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       <img
                         src={images[activeImage]}
                         alt={`${data.make} ${data.model} — фото ${activeImage + 1}`}
+                        // Главное фото — то, ради чего открыли страницу:
+                        // оно грузится в первую очередь, с высоким приоритетом.
+                        fetchPriority="high"
+                        decoding="async"
                         onError={() => setImageFailed(true)}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
@@ -424,7 +428,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       color="indigo"
                       variant="filled"
                       size="md"
-                      style={{ backdropFilter: "blur(4px)" }}
+                      style={{ backdropFilter: "blur(var(--blur-panel))" }}
                     >
                       {data.conditionLabel}
                     </Badge>
@@ -459,8 +463,24 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                             }}
                             onClick={() => selectImage(i)}
                           >
+                            {/* Миниатюра 110×80 тянет исходник целиком: у
+                                объявлений это файлы до 1440×1920, то есть в
+                                тринадцать раз шире нужного. Уменьшить сами
+                                файлы нельзя — они приходят от продавца, — но
+                                грузить их все сразу незачем.
+
+                                Первые три видны без прокрутки ленты, они
+                                грузятся обычным порядком; остальные ждут,
+                                пока человек до них долистает. */}
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={img} alt="" onError={(event) => { event.currentTarget.style.opacity = "0" }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <img
+                              src={img}
+                              alt=""
+                              loading={i < 3 ? "eager" : "lazy"}
+                              decoding="async"
+                              onError={(event) => { event.currentTarget.style.opacity = "0" }}
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
                           </UnstyledButton>
                         </Carousel.Slide>
                       ))}
@@ -681,25 +701,34 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             <Stack gap="md">
               {/* Цена и заголовок */}
               <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)" }}>
+                {/* Название машины крупнее цены, а не мельче её.
+
+                    Замер на боевом сайте: заголовок 16 пикселей, цена рядом
+                    — 28, кнопка «Показать телефон» — 19. Название товара
+                    оказывалось самым мелким крупным элементом страницы:
+                    взгляд находил цену, а потом искал, что за машина.
+
+                    Теперь заголовок ведёт, цена идёт следом. */}
                 <Title
                   order={1}
-                  size="h4"
-                  mb={6}
+                  size="h3"
+                  mb={4}
                   ff="var(--font-display), sans-serif"
-                  fw={700}
-                  lh={1.2}
+                  fw={750}
+                  lh={1.15}
                   c="var(--market-ink)"
+                  style={{ letterSpacing: "-0.025em", textWrap: "balance" }}
                 >
                   {data.year} {data.make} {data.model}
                 </Title>
                 <Text
-                  size="1.75rem"
+                  size="1.6rem"
                   fw={800}
                   c="var(--market-ink)"
                   ff="var(--font-display), sans-serif"
                   lh={1.1}
                   mb="xs"
-                  style={{ letterSpacing: "-0.02em" }}
+                  style={{ letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}
                 >
                   {formatPrice(data.price)}
                 </Text>

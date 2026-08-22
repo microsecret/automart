@@ -194,6 +194,16 @@ function AuctionsPageContent() {
      самого адреса и слушаем popstate: без этого «Назад» менял бы строку в
      адресной строке, а список оставался бы на прежней странице. */
   const [historyTick, setHistoryTick] = useState(0)
+  /* Пока адрес не прочитан, писать его нельзя.
+
+     Оба эффекта — чтение и запись — срабатывают в одном проходе, и оба
+     видят ещё пустое состояние: `setCountry` из чтения к моменту записи не
+     применился. Запись собирала адрес из пустоты и стирала `?country=KR`,
+     после чего чтение находило уже пустой адрес.
+
+     Человек выбирал «Корею» в меню, попадал на общий список аукционов и не
+     понимал, сработало ли: ни фильтра, ни подсветки, ни параметра. */
+  const [urlRead, setUrlRead] = useState(false)
 
   useEffect(() => {
     const onPopState = () => setHistoryTick((value) => value + 1)
@@ -227,6 +237,7 @@ function AuctionsPageContent() {
     setBodyType(validAuctionBodyTypes.has(requestedBodyType) ? requestedBodyType : "")
     setYearFrom(validAuctionYears.has(requestedYear) ? requestedYear : "")
     setPage(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1)
+    setUrlRead(true)
   }, [searchParams, historyTick])
 
   const sourceOptions = useMemo(() => SOURCES.filter((item) => !item.value || !country || AUCTION_SOURCE_COUNTRY[item.value] === country), [country])
@@ -257,6 +268,9 @@ function AuctionsPageContent() {
      `replace` вместо `push`: иначе каждое нажатие фильтра копило запись в
      истории, и «Назад» пришлось бы жать столько раз, сколько было правок. */
   useEffect(() => {
+    // Состояние ещё не заполнено из адреса — писать нечего, иначе сотрём
+    // то, с чем человек пришёл по ссылке.
+    if (!urlRead) return
     const next = new URLSearchParams()
     if (page > 1) next.set("page", String(page))
     if (country) next.set("country", country)
@@ -282,7 +296,7 @@ function AuctionsPageContent() {
     const currentPage = Number.parseInt(new URLSearchParams(currentQuery).get("page") || "1", 10)
     if (page !== currentPage) window.history.pushState(null, "", target)
     else window.history.replaceState(null, "", target)
-  }, [page, country, source, make, priceFrom, priceTo, bodyType, yearFrom, searchParams])
+  }, [urlRead, page, country, source, make, priceFrom, priceTo, bodyType, yearFrom, searchParams])
 
   const { data, error, isLoading, mutate } = useSWR<AuctionResponse>(hasInvalidPriceRange ? null : "/api/auctions?" + buildQ(), fetcher)
   const listings = data?.listings || []

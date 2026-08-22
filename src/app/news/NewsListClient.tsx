@@ -38,8 +38,24 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
   return (
     <Link className="news-list-card-link" data-featured={featured || undefined} href={newsHref(article)} aria-label={`Открыть новость: ${article.title}`}>
       <Card className="news-list-card" data-featured={featured || undefined} radius="md" p={0} withBorder>
+        {/* Подпись пустая намеренно: название новости уже озвучено в
+             aria-label самой ссылки, и чтец объявил бы его дважды.
+
+             Ленивая загрузка — обложки лежат ниже первого экрана, а замер
+             показал файлы 1199×675 под контейнер 378×156: грузить их все
+             разом при открытии ленты незачем. Главная новость грузится
+             сразу — она на первом экране. */}
         {article.imageUrl && !imageFailed ? (
-          <Image className="news-list-card__image" src={article.imageUrl} alt="" h={featured ? 230 : 156} fit="cover" onError={() => setImageFailed(true)} />
+          <Image
+            className="news-list-card__image"
+            src={article.imageUrl}
+            alt=""
+            h={featured ? 230 : 156}
+            fit="cover"
+            loading={featured ? "eager" : "lazy"}
+            decoding="async"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
           <Box className="news-list-card__cover" data-featured={featured || undefined} aria-hidden="true">
             <ThemeIcon className="news-list-card__cover-icon" color="indigo" variant="white" radius="xl" size={featured ? 54 : 42}>

@@ -149,6 +149,10 @@ export default function HomePage(p: HomePageProps = {}) {
      ссылку с фильтром и видит весь каталог, а «Назад» меняет строку в
      адресе, не меняя выдачу. */
   const [historyTick, setHistoryTick] = useState(0)
+  /* Пока адрес не прочитан, писать его нельзя: чтение и запись срабатывают
+     в одном проходе и обе видят ещё пустое состояние. Запись собирала бы
+     адрес из пустоты и стирала то, с чем человек пришёл по ссылке. */
+  const [urlRead, setUrlRead] = useState(false)
 
   useEffect(() => {
     const onPopState = () => setHistoryTick((value) => value + 1)
@@ -162,6 +166,12 @@ export default function HomePage(p: HomePageProps = {}) {
     // Марку из свойств компонента не перетираем: на странице категории она
     // задана самим разделом, а не выбором человека.
     if (!p.initialMake) setMake(params.get("make") || null)
+    /* Поисковый запрос читается из адреса наравне с фильтрами.
+
+       Без этого страница /search?q=Nissan показывала весь каталог после
+       обновления, а «Назад» с неё возвращал пустое поле поиска: запрос
+       жил только в состоянии и терялся при любой перезагрузке. */
+    setQuery(params.get("q") || p.initialQuery || "")
     setModel(params.get("model") || null)
     setPriceFrom(params.get("priceFrom") || "")
     setPriceTo(params.get("priceTo") || "")
@@ -172,6 +182,7 @@ export default function HomePage(p: HomePageProps = {}) {
     setSort(params.get("sort") || "newest")
     const requestedPage = Number.parseInt(params.get("page") || "1", 10)
     setPage(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1)
+    setUrlRead(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyTick])
 
@@ -186,7 +197,18 @@ export default function HomePage(p: HomePageProps = {}) {
      все два десятка полей значило бы получить нечитаемую строку. */
   useEffect(() => {
     if (typeof window === "undefined") return
+    /* Параметры, которыми владеет сама страница, а не панель фильтров:
+       вид объявлений, тип транспорта, раздел запчастей. Раньше адрес
+       собирался с нуля, и они стирались — /search?q=Nissan&type=part
+       превращался в /search, а вместе с ними уходил и сам запрос. */
+    if (!urlRead) return
+    const current = new URLSearchParams(window.location.search)
     const next = new URLSearchParams()
+    for (const key of ["type", "vehicleType", "partType"]) {
+      const value = current.get(key)
+      if (value) next.set(key, value)
+    }
+    if (query) next.set("q", query)
     if (make) next.set("make", make)
     if (model) next.set("model", model)
     if (priceFrom) next.set("priceFrom", priceFrom)
@@ -209,7 +231,7 @@ export default function HomePage(p: HomePageProps = {}) {
     const currentPage = Number.parseInt(new URLSearchParams(currentQuery).get("page") || "1", 10)
     if (page !== currentPage) window.history.pushState(null, "", target)
     else window.history.replaceState(null, "", target)
-  }, [make, model, priceFrom, priceTo, yearFrom, yearTo, city, radius, sort, page])
+  }, [urlRead, query, make, model, priceFrom, priceTo, yearFrom, yearTo, city, radius, sort, page])
 
   const { data, error, isLoading, mutate } = useSWR<ListingsResponse>(hasInvalidPriceRange ? null : "/api/listings?" + buildQuery(), fetcher)
 

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { translateListingFields, translateToRussian } from "@/lib/nvidia-translate"
+import { isUsableShortTranslation } from "@/lib/translation-refusal"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
 import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
 import { auctionVehicleIdentity, normalizeAuctionEngineVolumeCc } from "@/lib/auction-normalization"
@@ -55,7 +56,14 @@ async function localizeImportedDisplayValue(value: string | null, field: "color"
   if (!FOREIGN_DISPLAY_TEXT.test(source)) return source
 
   const translated = (await translateToRussian(source)).trim()
-  if (translated && CYRILLIC_TEXT.test(translated) && !/[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(translated)) return translated
+  /* Проверки на кириллицу мало.
+
+     Модель, получив короткое название города, отвечала: «Это не
+     автомобильный текст. Пожалуйста, предоставьте текст для перевода.» —
+     по-русски, без иероглифов, все прежние проверки пройдены. Сорок
+     четыре лота ушли на боевой сайт с этой фразой в поле
+     «Местонахождение», и она же попала в разметку для поисковиков. */
+  if (translated && CYRILLIC_TEXT.test(translated) && !/[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(translated) && isUsableShortTranslation(source, translated)) return translated
 
   // Never publish an untranslated source string in a Russian customer card.
   // The original listing remains available through sourceUrl for verification.

@@ -1,6 +1,7 @@
 import { isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
 import type { AuctionConditionCheck, AuctionConditionInfo, AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
 import { translateToRussian } from "@/lib/nvidia-translate"
+import { isTranslationRefusal } from "@/lib/translation-refusal"
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { lookupVehiclePower } from "@/lib/vehicle-power-reference"
 
@@ -202,9 +203,13 @@ function translateKnownEncarLocation(value: string) {
 
 function isUnreliableLocationTranslation(source: string, translated: string) {
   return translated.trim() === source.trim()
-    || /[\uAC00-\uD7AF]/.test(translated)
-    || /(?:это\s+(?:не\s+)?автомобильный\s+текст|корейский\s+текст|перевод(?:ится|\s+на\s+русский)|не\s+требуется)/i.test(translated)
+    || /[가-힯]/.test(translated)
+    // Общий разбор отказов модели: он же стоит на пути импорта лотов, где
+    // проверки не было и сорок четыре лота ушли в продажу с фразой
+    // «Это не автомобильный текст» вместо названия города.
+    || isTranslationRefusal(translated)
 }
+
 
 async function translateEncarLocation(value: string | null) {
   if (!value) return null
