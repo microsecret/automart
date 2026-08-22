@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import useSWR from "swr"
 import { Alert, Paper, Stack, Group, Text, Select, Divider, ThemeIcon, Box, Tooltip } from "@mantine/core"
 import { IconCalculator, IconInfoCircle, IconShip, IconBuildingBank, IconTruckDelivery, IconCar, IconCheck, IconAlertTriangle, IconCoin } from "@tabler/icons-react"
@@ -193,7 +193,35 @@ function preferentialUtilizationFee(
 }
 
 export default function AuctionCalculator({ make, model, year, manufacturedMonth, engineVolume, power, fuelType, sourcePrice, sourceCurrency, priceRub, country, pricingMode = "PURCHASE" }: Props) {
-  const [city, setCity] = useState("Москва")
+  /* Город доставки живёт в адресе страницы.
+
+     Раньше он хранился только в состоянии: человек менял Москву на свой
+     город, расчёт пересчитывался, но адрес оставался прежним. Уйти и
+     вернуться — снова московская цена; отправить расчёт другу ссылкой —
+     тот увидит не то, что видел отправитель. Разница между Москвой и
+     дальним городом доходит до полутора сотен тысяч.
+
+     Начальное значение читается синхронно, до первой отрисовки: иначе
+     человек, пришедший по ссылке, успел бы увидеть московскую цену. */
+  const [city, setCity] = useState(() => {
+    if (typeof window === "undefined") return "Москва"
+    const requested = new URLSearchParams(window.location.search).get("city")?.trim()
+    return requested && requested in CITY_COORDINATES ? requested : "Москва"
+  })
+
+  // Смена города переписывает адрес, не добавляя записи в историю: город
+  // правят по несколько раз подряд, и каждая правка в истории означала бы,
+  // что уйти со страницы можно только десятком нажатий «Назад».
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    if (city === "Москва") params.delete("city")
+    else params.set("city", city)
+    const query = params.toString()
+    const target = query ? `?${query}${window.location.hash}` : `${window.location.pathname}${window.location.hash}`
+    if (`${window.location.search}${window.location.hash}` === (query ? `?${query}${window.location.hash}` : window.location.hash)) return
+    window.history.replaceState(null, "", target)
+  }, [city])
   const { data: exchangeRateData, error: exchangeRateError } = useSWR<ExchangeRateResponse>("/api/exchange-rates", fetchJson, { revalidateOnFocus: false })
   // Не подставляем вымышленный объём: от него напрямую зависит таможенная пошлина.
   // AuctionListing.engineVolume is normalized to cubic centimetres for every

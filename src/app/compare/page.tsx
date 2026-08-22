@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic"
 import { useSearchParams } from "next/navigation"
 import useSWR from "swr"
-import { Container, Stack, Title, Text, Center, Button, ThemeIcon, Box, Paper, Group, Loader, Badge, Divider } from "@mantine/core"
+import { Container, Stack, Title, Text, Center, Button, ThemeIcon, Box, Paper, Group, Loader, Divider } from "@mantine/core"
 import { IconGitCompare, IconArrowLeft, IconX } from "@tabler/icons-react"
 import Link from "next/link"
 import { useState, useEffect, Suspense } from "react"
@@ -186,12 +186,12 @@ function CompareContent() {
           <ThemeIcon variant="light" color="indigo" size={56} radius="md">
             <IconGitCompare size={28} />
           </ThemeIcon>
-          <Title order={2} ff="var(--font-display),sans-serif" ta="center">Сравнение объявлений</Title>
-          <Text size="sm" c="gray.5" ta="center" maw={420}>
-            Чтобы сравнить автомобили, добавьте их в сравнение.
-            Откройте страницу объявления и нажмите «Сравнить», или добавьте через URL:
+          <Title order={1} ff="var(--font-display),sans-serif" ta="center">Сравнение объявлений</Title>
+          <Text size="sm" c="gray.5" ta="center" maw={440}>
+            Нажмите значок весов на карточке машины в каталоге — она попадёт сюда.
+            Сравнить можно до четырёх объявлений: цены, пробег, год и характеристики
+            встанут рядом в одной таблице.
           </Text>
-          <Badge variant="light" color="gray" size="md">/compare?ids=ID1,ID2,ID3</Badge>
           <Button component={Link} href="/" variant="light" color="indigo" size="md" radius="md" leftSection={<IconArrowLeft size={16} />}>
             К объявлениям
           </Button>
