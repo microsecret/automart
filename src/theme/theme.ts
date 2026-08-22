@@ -204,6 +204,10 @@ export const theme = createTheme({
       defaultProps: { radius: "sm", size: "md" },
       styles: {
         input: {
+          // Высота задана числом: size="md" у Mantine даёт 38px, и в строке
+          // поиска поле оказывалось на два пикселя выше кнопки рядом.
+          minHeight: "36px",
+          height: "36px",
           transition: "border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out)",
           fontFamily: "var(--font-sans), sans-serif",
         },
@@ -213,6 +217,8 @@ export const theme = createTheme({
       defaultProps: { radius: "sm", size: "md" },
       styles: {
         input: {
+          minHeight: "36px",
+          height: "36px",
           transition: "border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out)",
           fontFamily: "var(--font-sans), sans-serif",
         },
@@ -220,7 +226,13 @@ export const theme = createTheme({
     },
     NumberInput: {
       defaultProps: { radius: "sm", size: "md" },
-      styles: { input: { fontFamily: "var(--font-sans), sans-serif" } },
+      styles: {
+        input: {
+          minHeight: "36px",
+          height: "36px",
+          fontFamily: "var(--font-sans), sans-serif",
+        },
+      },
     },
     Textarea: {
       defaultProps: { radius: "sm" },
