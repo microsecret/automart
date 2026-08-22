@@ -138,8 +138,22 @@ export async function GET() {
     const [topPaths, recentVisitorEvents, trafficEvents30d, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, oldestPendingListing, oldestOpenReport, oldestNewInquiry, oldestActiveInquiry, oldestPendingPartner, oldestWaitingTicket, latestAuctionSyncRuns, sourceSyncRuns, listingInventory, listingViewEvents14d, listingMessages7d, soldListings7d, topListingViewGroups] = await Promise.all([
       prisma.visitEvent.groupBy({ by: ["path"], where: { createdAt: { gte: weekAgo } }, _count: { path: true }, orderBy: { _count: { path: "desc" } }, take: 8 }),
       prisma.visitEvent.findMany({ where: { createdAt: { gte: weekAgo }, userId: { not: null } }, orderBy: { createdAt: "desc" }, take: 50, include: { user: { select: { id: true, name: true, email: true, telegramUsername: true } } } }),
+      /* Месяц визитов читается целиком: уникальные посетители по дням
+         считаются пересечением ключей, и группировкой на стороне базы это
+         не выражается.
+
+         Предел ставит потолок памяти. Сейчас в таблице около двух тысяч
+         записей за месяц, но при тысяче посетителей в день их станет
+         тридцать тысяч, а панель открывается на каждой загрузке админки.
+         Свежие события важнее старых: при упоре в предел цифры за
+         последние дни останутся точными, а за начало месяца — занизятся.
+
+         Правильное решение — почасовые сводки вместо сырых событий; предел
+         держит панель работоспособной, пока их нет. */
       prisma.visitEvent.findMany({
         where: { createdAt: { gte: monthAgo } },
+        orderBy: { createdAt: "desc" },
+        take: 50_000,
         select: { createdAt: true, visitorKey: true, sessionKey: true, ipHash: true, userId: true, deviceType: true, trafficSource: true },
       }),
       prisma.user.findMany({ where: { createdAt: { gte: dailyTrafficStart } }, select: { id: true, createdAt: true } }),
