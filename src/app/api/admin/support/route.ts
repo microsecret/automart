@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authOptions } from "@/lib/auth"
 import { can } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
+import { planPriorityPage, priorityRank } from "@/lib/support-priority-order"
 import { isSupportPriority, isSupportStatus } from "@/lib/support-workspace"
 
 export const dynamic = "force-dynamic"
@@ -44,19 +45,20 @@ export async function GET(request: NextRequest) {
         : {}),
     }
 
-    const [tickets, total, groupedByStatus, groupedByPriority, unreadCandidates] = await Promise.all([
-      prisma.supportTicket.findMany({
-        where,
-        orderBy: [{ priority: "desc" }, { lastMessageAt: "desc" }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: {
-          user: { select: { id: true, name: true, email: true, phone: true, telegramUsername: true } },
-          assignedTo: { select: { id: true, name: true, email: true } },
-          messages: { orderBy: { createdAt: "desc" }, take: 1 },
-          _count: { select: { messages: true } },
-        },
-      }),
+    const ticketInclude = {
+      user: { select: { id: true, name: true, email: true, phone: true, telegramUsername: true } },
+      assignedTo: { select: { id: true, name: true, email: true } },
+      messages: { orderBy: { createdAt: "desc" as const }, take: 1 },
+      _count: { select: { messages: true } },
+    }
+
+    /* Сколько обращений каждой важности подходит под текущие фильтры.
+
+       Это нужно до самой выборки: важность хранится строкой, и база не умеет
+       упорядочить её по смыслу (сортировка по убыванию давала
+       URGENT → NORMAL → LOW → HIGH — важное ниже низкоприоритетного).
+       Зная размеры групп, страницу можно собрать из них по порядку. */
+    const [total, groupedByStatus, groupedByPriority, unreadCandidates, filteredByPriority] = await Promise.all([
       prisma.supportTicket.count({ where }),
       prisma.supportTicket.groupBy({ by: ["status"], _count: true }),
       prisma.supportTicket.groupBy({ by: ["priority"], _count: true }),
@@ -64,7 +66,37 @@ export async function GET(request: NextRequest) {
         where: { status: { not: "CLOSED" } },
         select: { lastMessageAt: true, lastReadByStaffAt: true },
       }),
+      prisma.supportTicket.groupBy({ by: ["priority"], where, _count: true }),
     ])
+
+    const countsByPriority = Object.fromEntries(
+      filteredByPriority.map((item) => [item.priority, item._count]),
+    ) as Record<string, number>
+
+    // По запросу на группу важности — но только на непустые, попавшие в страницу.
+    // Обычно это одна-две группы, а не четыре.
+    const plan = planPriorityPage(countsByPriority, (page - 1) * pageSize, pageSize)
+    const groups = await Promise.all(
+      plan.map((step) =>
+        prisma.supportTicket.findMany({
+          where: { ...where, priority: step.priority },
+          orderBy: { lastMessageAt: "desc" },
+          skip: step.skip,
+          take: step.take,
+          include: ticketInclude,
+        }),
+      ),
+    )
+
+    // Группы уже пришли в нужном порядке, но сортировка страхует от того,
+    // что параллельные запросы вернутся вперемешку.
+    const tickets = groups
+      .flat()
+      .sort(
+        (a, b) =>
+          priorityRank(a.priority) - priorityRank(b.priority) ||
+          b.lastMessageAt.getTime() - a.lastMessageAt.getTime(),
+      )
 
     return NextResponse.json({
       tickets: tickets.map((ticket) => ({

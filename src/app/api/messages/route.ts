@@ -33,7 +33,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ count: unreadCount })
     }
 
-    const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1)
+    /* Верхняя граница страницы обязательна.
+
+       Без неё `?page=999999999` превращается в skip на десять миллиардов, и
+       база обязана перебрать и отбросить все строки, прежде чем вернуть
+       пустой список. Соседние маршруты — уведомления, избранное, отзывы —
+       эту границу уже ставят; здесь её забыли. */
+    const page = Math.min(10_000, Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1))
     const limit = Math.min(50, Math.max(1, Number.parseInt(searchParams.get("limit") || String(MESSAGE_PAGE_SIZE), 10) || MESSAGE_PAGE_SIZE))
     const skip = (page - 1) * limit
     const participantWhere = {

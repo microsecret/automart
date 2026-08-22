@@ -449,6 +449,9 @@ model ListingViewEvent {
   @@index([listingId, createdAt])
   @@index([ipHash, createdAt])
   @@index([userId, createdAt])
+  // Статистика выбирает просмотры за период по одному createdAt: составные
+  // индексы такой запрос не покрывают.
+  @@index([createdAt])
 }
 
 // Provider-neutral ledger for paid listing promotion. A row is created before
@@ -572,6 +575,8 @@ model Review {
   @@index([userId])
   @@index([rating])
   @@index([createdAt])
+  // Отзывы карточки выбираются по объявлению — самый частый запрос модели.
+  @@index([listingId, createdAt])
 }
 
 // Message model for user-to-user communication
@@ -603,6 +608,9 @@ model Message {
   @@index([conversationId, createdAt])
   @@index([senderId, receiverId])
   @@index([createdAt])
+  // Список диалогов ищет и по отправителю, и по получателю. Вторая ветка
+  // не покрывалась: receiverId — второй столбец составного индекса.
+  @@index([receiverId, createdAt])
 }
 
 // Favorite listings (many-to-many relationship between users and listings)
@@ -722,6 +730,9 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([createdAt])
+  // Список уведомлений: фильтр по пользователю с сортировкой по дате.
+  // Ни один из существующих индексов не покрывал оба условия сразу.
+  @@index([userId, createdAt])
 }
 
 // VerificationToken model for NextAuth
@@ -758,6 +769,9 @@ model VisitEvent {
   @@index([deviceType, createdAt])
   @@index([trafficSource, createdAt])
   @@index([userId, createdAt])
+  // Посетитель без кук опознаётся по ipHash: без индекса каждый его
+  // просмотр страницы сканировал таблицу целиком.
+  @@index([ipHash, createdAt])
 }
 
 // One-time codes delivered by the Telegram bot for phone login.
