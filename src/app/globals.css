@@ -60,7 +60,10 @@
   --market-accent: #ef7d00;
   --market-accent-ink: #171719;
   --market-accent-soft: #fff7e6;
-  --app-header-height: 68px;
+  /* 68px сама шапка плюс 28px строка курсов над ней. Значение совпадает с
+     высотой, заданной оболочке: от него считаются отступы бокового меню и
+     подвала. */
+  --app-header-height: 96px;
 
   /* Шкала скруглений.
      На странице было четырнадцать разных радиусов — 8, 9, 10, 3, 16 и так
@@ -203,6 +206,86 @@ body {
   /* Табличные цифры по всему сайту: цены, пробеги и годы в списке должны
      стоять столбиком, а не плясать по ширине знаков. */
   font-variant-numeric: tabular-nums;
+}
+
+/* Строка курсов над шапкой.
+
+   Приём взят с площадки-образца: список выводится дважды и едет ровно на
+   половину своей ширины. В момент, когда первая копия уходит за край, вторая
+   встаёт на её место — шва не видно, и не нужно ни считать элементы, ни
+   перезапускать анимацию.
+
+   Маска по краям гасит текст на входе и выходе, иначе буквы обрубаются о
+   границу экрана. Наведение останавливает движение: иначе прочитать нужный
+   курс невозможно — он уезжает. */
+.market-ticker {
+  position: relative;
+  z-index: 3;
+  overflow: hidden;
+  background: #0f1117;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+}
+
+.market-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: market-ticker-move 64s linear infinite;
+}
+
+.market-ticker:hover .market-ticker__track,
+.market-ticker:focus-within .market-ticker__track {
+  animation-play-state: paused;
+}
+
+.market-ticker__run {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.market-ticker__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 18px;
+  font-size: var(--text-caps);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.market-ticker__code {
+  color: #7d879a;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.market-ticker__label {
+  color: #7d879a;
+}
+
+.market-ticker__value {
+  color: #f2f4f8;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-ticker__item--source {
+  color: #6b7688;
+  font-style: italic;
+}
+
+@keyframes market-ticker-move {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* При отключённой анимации строка замирает: курсы остаются на виду и
+   читаются, просто не едут. */
+@media (prefers-reduced-motion: reduce) {
+  .market-ticker__track { animation: none; }
+  .market-ticker { overflow-x: auto; }
 }
 
 /* Высота поля ввода равна высоте кнопки.
@@ -734,12 +817,12 @@ select {
      Возвращаем fixed — он вынимает меню из потока, как и было. */
   .market-app-navbar {
     position: fixed !important;
-    top: 68px !important;
+    top: var(--app-header-height) !important;
     bottom: auto !important;
     /* Нижний отступ равен той части экрана, которую занял подвал: иначе
        последние пункты уходят под него. Значение считает AppShellLayout. */
-    height: calc(100dvh - 68px - var(--app-navbar-bottom-inset, 0px));
-    max-height: calc(100dvh - 68px - var(--app-navbar-bottom-inset, 0px));
+    height: calc(100dvh - var(--app-header-height) - var(--app-navbar-bottom-inset, 0px));
+    max-height: calc(100dvh - var(--app-header-height) - var(--app-navbar-bottom-inset, 0px));
   }
 
   /* Колесо мыши над списком крутит сам список, а не страницу под ним —
