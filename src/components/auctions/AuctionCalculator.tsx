@@ -7,6 +7,8 @@ import { formatPrice } from "@/lib/format"
 import { calculateUtilizationFee } from "@/lib/utilization-fee"
 import { fetchJson } from "@/lib/api-client"
 import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
+import { estimateRfDelivery, isKnownDeliveryPrice } from "@/lib/rf-delivery"
+import { CITY_COORDINATES } from "@/lib/cities"
 
 interface Props {
   make: string
@@ -33,23 +35,14 @@ type ExchangeRateResponse = {
 }
 
 // Города РФ с ценой доставки из Владивостока (в рублях)
-const RF_CITIES = [
-  { value: "Владивосток", label: "Владивосток", deliveryFromVlad: 0 },
-  { value: "Хабаровск", label: "Хабаровск", deliveryFromVlad: 25000 },
-  { value: "Москва", label: "Москва", deliveryFromVlad: 180000 },
-  { value: "Санкт-Петербург", label: "Санкт-Петербург", deliveryFromVlad: 195000 },
-  { value: "Екатеринбург", label: "Екатеринбург", deliveryFromVlad: 160000 },
-  { value: "Новосибирск", label: "Новосибирск", deliveryFromVlad: 130000 },
-  { value: "Красноярск", label: "Красноярск", deliveryFromVlad: 110000 },
-  { value: "Иркутск", label: "Иркутск", deliveryFromVlad: 90000 },
-  { value: "Чита", label: "Чита", deliveryFromVlad: 75000 },
-  { value: "Якутск", label: "Якутск", deliveryFromVlad: 120000 },
-  { value: "Краснодар", label: "Краснодар", deliveryFromVlad: 200000 },
-  { value: "Сочи", label: "Сочи", deliveryFromVlad: 205000 },
-  { value: "Казань", label: "Казань", deliveryFromVlad: 170000 },
-  { value: "Самара", label: "Самара", deliveryFromVlad: 175000 },
-  { value: "Уфа", label: "Уфа", deliveryFromVlad: 165000 },
-]
+/* Список для выбора: все города справочника, отсортированные по алфавиту.
+
+   Прежний набор из пятнадцати оставлен ниже — из него берутся точные цены
+   перевозчиков, но выбирать теперь можно любой город. */
+const DELIVERY_CITIES = Object.keys(CITY_COORDINATES)
+  .sort((a, b) => a.localeCompare(b, "ru"))
+  .map((value) => ({ value, label: value }))
+
 
 // Стоимость доставки внутри страны-источника до порта (в рублях)
 const INLAND_DELIVERY: Record<string, number> = {
@@ -227,7 +220,10 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
       customsProcess: 15000, // Оформление на СВХ
       brokerFee: 30000, // Брокерские услуги
       svh: 25000, // Склад временного хранения (2 недели)
-      rfDelivery: RF_CITIES.find((c) => c.value === city)?.deliveryFromVlad || 180000,
+      // Раньше городам вне списка из пятнадцати подставлялось 180 000 ₽ —
+      // столько же, сколько до Москвы. Житель Хабаровска видел московскую
+      // цену, хотя до него шестьсот километров, а не шесть тысяч.
+      rfDelivery: estimateRfDelivery(city),
       ourCommission: estimatedAuctionServiceFee(effectivePriceRub),
     }
 
@@ -310,14 +306,21 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
         </Alert>
 
         {/* Выбор города */}
+        {/* Города берутся из полного справочника, а не из списка пятнадцати:
+            человек из малого города не находил себя и получал московскую
+            цену доставки. */}
         <Select
           label="Город доставки в РФ"
-          data={RF_CITIES.map((c) => ({ value: c.value, label: c.label }))}
+          data={DELIVERY_CITIES}
           value={city}
           onChange={(value) => setCity(value || "Москва")}
           size="sm"
           searchable
-          description="Выберите город — пересчитаем доставку"
+          description={
+            isKnownDeliveryPrice(city)
+              ? "Цена перевозчика для этого города"
+              : "Оценка по расстоянию — уточним при заявке"
+          }
         />
 
         {exchangeRateError && (

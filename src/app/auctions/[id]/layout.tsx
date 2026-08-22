@@ -77,7 +77,10 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
   })()
   const description = isRentalTransfer
     ? `${title}, ${mileage}. Расчётный остаток регулярных платежей ${listing.priceRub.toLocaleString("ru-RU")} ₽ — не цена продажи автомобиля; условия выкупа и экспорта требуют подтверждения.`
-    : `${title}, ${mileage}. Предварительная стоимость под ключ ${listing.finalPrice.toLocaleString("ru-RU")} ₽, фотографии и расчёт доставки в Россию.`
+    // «Под ключ» здесь неправда: finalPrice — это лот по курсу плюс комиссия,
+    // без пошлины и доставки. Описание уходит в поисковую выдачу, и человек
+    // приходил на страницу с заниженным ожиданием по цене.
+    : `${title}, ${mileage}. Цена лота с комиссией ${listing.finalPrice.toLocaleString("ru-RU")} ₽ — без пошлины и доставки, полный расчёт под ключ в калькуляторе на странице.`
   const canonical = `/auctions/${id}`
   const image = isSafeMediaUrl(listing.imageUrl) ? listing.imageUrl : parseAuctionImages(listing.images)?.[0]
 

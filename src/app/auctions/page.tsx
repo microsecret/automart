@@ -515,11 +515,11 @@ function AuctionsPageContent() {
                 <Box className={styles.insights} aria-label="Аналитика текущей выдачи">
                   <Box className={styles.insight}>
                     <Text className={styles.insightValue}>{analytics.averageFinalPrice ? formatPriceShort(analytics.averageFinalPrice) : "—"}</Text>
-                    <Text className={styles.insightLabel}>средняя цена под ключ</Text>
+                    <Text className={styles.insightLabel}>средняя цена лота</Text>
                   </Box>
                   <Box className={styles.insight}>
                     <Text className={styles.insightValue}>{analytics.medianFinalPrice ? formatPriceShort(analytics.medianFinalPrice) : "—"}</Text>
-                    <Text className={styles.insightLabel}>медианная цена под ключ</Text>
+                    <Text className={styles.insightLabel}>медианная цена лота</Text>
                   </Box>
                   <Box className={styles.insight}>
                     <Text className={styles.insightValue}>{analytics.averageYear || "—"}</Text>
@@ -656,11 +656,21 @@ function AuctionsPageContent() {
                       </Group>
                       {/* Восемь слов подписи повторяли то, что уже сказано в шапке страницы,
                           и оттягивали внимание от самой цены. */}
-                      {/* «Под ключ» здесь было неправдой: finalPrice — это цена лота по курсу
-                          плюс комиссия сервиса, без пошлины, доставки и оформления.
-                          У Peugeot 408 разница составляла 415 тысяч: 1,78 млн в
-                          карточке против 2,2 млн в калькуляторе на той же странице. */}
-                      <Text className="auction-result-card__price-note">{rentalTransfer ? "Остаток платежей" : "Лот + комиссия"}</Text>
+                      {/* Подпись прямо говорит, что это не итоговая сумма.
+
+                          finalPrice — цена лота по курсу плюс комиссия сервиса,
+                          без пошлины, доставки и оформления. У Peugeot 408
+                          разница составляла 415 тысяч: 1,78 млн в карточке
+                          против 2,2 млн в калькуляторе на той же странице.
+
+                          Полный расчёт в ленте показать нельзя: пошлина зависит
+                          от объёма двигателя и возраста, а этих полей в выдаче
+                          списка нет. Поэтому честно называем, что показано, и
+                          предупреждаем о доплатах — точную сумму человек видит
+                          в калькуляторе на странице лота. */}
+                      <Text className="auction-result-card__price-note">
+                        {rentalTransfer ? "Остаток платежей" : "Лот + комиссия · без пошлины и доставки"}
+                      </Text>
                     </Box>
                     <Box className={styles.auctionMeta}>
                       {l.auctionDate ? <Group gap={4} className="auction-result-card__date" wrap="nowrap">

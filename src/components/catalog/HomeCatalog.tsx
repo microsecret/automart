@@ -10,8 +10,10 @@ import ListingCard, { type ListingCardData } from "@/components/listings/Listing
 import ListingRow from "@/components/listings/ListingRow"
 import { COUNTRY_FLAGS, getBrandsByCategory } from "@/lib/catalog"
 import BrandIcon from "@/components/brands/BrandIcon"
-import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, POPULAR_CITIES, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, SPECIAL_TYPES, WATER_TYPES, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, SPECIAL_TYPES, WATER_TYPES, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import { fetchJson } from "@/lib/api-client"
+import { CITY_COORDINATES } from "@/lib/cities"
+import { SEARCH_RADII_KM } from "@/lib/geo-distance"
 import { plural } from "@/lib/format"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import CategoryShowcase from "./CategoryShowcase"
@@ -38,6 +40,8 @@ const BRAND_CATEGORY_BY_VEHICLE_TYPE: Record<string, "cars" | "moto" | "trucks" 
   CAR: "cars", MOTORCYCLE: "moto", TRUCK: "trucks", SPECIAL: "special", WATER: "water", AIR: "air",
 }
 
+const ALL_CITY_NAMES = Object.keys(CITY_COORDINATES).sort((a, b) => a.localeCompare(b, "ru"))
+
 export default function HomePage(p: HomePageProps = {}) {
   const [query, setQuery] = useState(p.initialQuery || "")
   const [page, setPage] = useState(1)
@@ -51,6 +55,7 @@ export default function HomePage(p: HomePageProps = {}) {
   const [yearFrom, setYearFrom] = useState<string | null>(null)
   const [yearTo, setYearTo] = useState<string | null>(null)
   const [city, setCity] = useState<string | null>(null)
+  const [radius, setRadius] = useState<string | null>(null)
   const [mileageTo, setMileageTo] = useState("")
   const [transmission, setTransmission] = useState<string | null>(null)
   const [fuelType, setFuelType] = useState<string[]>([])
@@ -108,6 +113,7 @@ export default function HomePage(p: HomePageProps = {}) {
     if(make) q.set("make", make)
     if(model) q.set("model", model)
     if(city) q.set("city", city)
+    if (city && radius) q.set("radius", radius)
     if(priceFrom) q.set("priceFrom", priceFrom)
     if(priceTo) q.set("priceTo", priceTo)
     if(yearFrom) q.set("yearFrom", yearFrom)
@@ -162,6 +168,7 @@ export default function HomePage(p: HomePageProps = {}) {
     setYearFrom(params.get("yearFrom") || null)
     setYearTo(params.get("yearTo") || null)
     setCity(params.get("city") || null)
+    setRadius(params.get("radius") || null)
     setSort(params.get("sort") || "newest")
     const requestedPage = Number.parseInt(params.get("page") || "1", 10)
     setPage(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1)
@@ -187,6 +194,7 @@ export default function HomePage(p: HomePageProps = {}) {
     if (yearFrom) next.set("yearFrom", yearFrom)
     if (yearTo) next.set("yearTo", yearTo)
     if (city) next.set("city", city)
+    if (city && radius) next.set("radius", radius)
     if (sort && sort !== "newest") next.set("sort", sort)
     if (page > 1) next.set("page", String(page))
 
@@ -201,13 +209,13 @@ export default function HomePage(p: HomePageProps = {}) {
     const currentPage = Number.parseInt(new URLSearchParams(currentQuery).get("page") || "1", 10)
     if (page !== currentPage) window.history.pushState(null, "", target)
     else window.history.replaceState(null, "", target)
-  }, [make, model, priceFrom, priceTo, yearFrom, yearTo, city, sort, page])
+  }, [make, model, priceFrom, priceTo, yearFrom, yearTo, city, radius, sort, page])
 
   const { data, error, isLoading, mutate } = useSWR<ListingsResponse>(hasInvalidPriceRange ? null : "/api/listings?" + buildQuery(), fetcher)
 
   const resetFilters = () => {
     setMake(null); setModel(null); setPriceFrom(""); setPriceTo("")
-    setYearFrom(null); setYearTo(null); setCity(null); setMileageTo("")
+    setYearFrom(null); setYearTo(null); setCity(null); setRadius(null); setMileageTo("")
     setTransmission(null); setFuelType([]); setDriveType(null); setBodyType([]); setSubtype([])
     setEngineVolumeFrom(""); setEngineVolumeTo(""); setPowerFrom(""); setPowerTo("")
     setColor(null); setCondition([])
@@ -397,7 +405,25 @@ export default function HomePage(p: HomePageProps = {}) {
                 <TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} />
               </Group>
             </Box>
-            <Select className="catalog-filter-field catalog-filter-field--city" label="Город" placeholder="Все города" data={POPULAR_CITIES.map((c) => ({value:c,label:c}))} searchable clearable value={city} onChange={setCity} size="sm" />
+            {/* Города берутся из полного справочника: в коротком списке
+                популярных не было малых городов, и житель такого города не
+                мог отфильтровать выдачу по своему месту вовсе. */}
+            <Select className="catalog-filter-field catalog-filter-field--city" label="Город" placeholder="Все города" data={ALL_CITY_NAMES} searchable clearable value={city} onChange={(value) => { setCity(value); if (!value) setRadius(null) }} size="sm" />
+            {/* Радиус показывается только при выбранном городе: без точки
+                отсчёта он ничего не значит. За хорошей машиной люди ездят в
+                соседний город, и на крупных площадках это привычный фильтр. */}
+            {city && (
+              <Select
+                className="catalog-filter-field catalog-filter-field--radius"
+                label="Искать вокруг"
+                placeholder="Только в городе"
+                data={SEARCH_RADII_KM.map((value) => ({ value: String(value), label: `+${value} км` }))}
+                clearable
+                value={radius}
+                onChange={setRadius}
+                size="sm"
+              />
+            )}
           </Box>
 
           {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}

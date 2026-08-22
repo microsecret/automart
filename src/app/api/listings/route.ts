@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { containsAnyCase } from "@/lib/search-terms"
+import { CITY_COORDINATES } from "@/lib/cities"
+import { citiesWithinRadius, parseRadius } from "@/lib/geo-distance"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
@@ -87,6 +89,7 @@ export async function GET(request: NextRequest) {
     const priceFrom = sp.get("priceFrom")
     const priceTo = sp.get("priceTo")
     const city = sp.get("city")?.trim()
+    const radiusKm = parseRadius(sp.get("radius"))
     const sort = sp.get("sort") || "newest"
 
     const priceRange = parseNumericRange({ from: priceFrom, to: priceTo, label: "Цена" })
@@ -251,8 +254,6 @@ export async function GET(request: NextRequest) {
       if (typeDetailChecks.length === 1) vehicleFilters.typeDetails = typeDetailChecks[0].typeDetails
       else vehicleAnd.push({ OR: typeDetailChecks })
     }
-    if (vehicleAnd.length) vehicleFilters.AND = vehicleAnd
-
     if (driveType && (!vehicleType || vehicleType === "CAR")) {
       if (!vehicleType) vehicleFilters.vehicleType = "CAR"
       vehicleFilters.driveType = driveType
@@ -298,7 +299,29 @@ export async function GET(request: NextRequest) {
       if (powerRange.from !== undefined) vehicleFilters.power.gte = powerRange.from
       if (powerRange.to !== undefined) vehicleFilters.power.lte = powerRange.to
     }
-    if (city) vehicleFilters.location = { contains: city }
+    /* Поиск «в радиусе N километров от города».
+
+       Раньше фильтр искал точное вхождение названия: человек из Тулы видел
+       только тульские объявления, хотя до Москвы ему два часа езды. На
+       крупных площадках радиус — привычный фильтр, и за хорошим вариантом
+       в соседний город ездят охотно.
+
+       Радиус принимается только из известного набора: произвольное число
+       из адреса развернулось бы в запрос по сотням городов. */
+    const nearbyCities = radiusKm && city && CITY_COORDINATES[city]
+      ? citiesWithinRadius(CITY_COORDINATES[city], radiusKm, CITY_COORDINATES)
+      : null
+
+    if (nearbyCities?.length) {
+      // Условие идёт в общий список: vehicleFilters.OR уже занят подтипом
+      // кузова, и прямое присваивание затёрло бы один из фильтров.
+      vehicleAnd.push({ OR: nearbyCities.map((name) => ({ location: { contains: name } })) })
+    } else if (city) {
+      vehicleFilters.location = { contains: city }
+    }
+
+    if (vehicleAnd.length) vehicleFilters.AND = vehicleAnd
+
     if (Object.keys(vehicleFilters).length > 0) {
       where.vehicle = vehicleFilters
     }
@@ -306,7 +329,11 @@ export async function GET(request: NextRequest) {
     const partFilters: Prisma.PartWhereInput = {}
     if (partType) partFilters.partType = partType
     if (partCondition) partFilters.condition = partCondition
-    if (city) partFilters.location = { contains: city }
+    if (nearbyCities?.length) {
+      partFilters.OR = nearbyCities.map((name) => ({ location: { contains: name } }))
+    } else if (city) {
+      partFilters.location = { contains: city }
+    }
     if (Object.keys(partFilters).length > 0) {
       where.part = partFilters
     }
