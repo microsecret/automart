@@ -89,6 +89,16 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   // Telegram Web Apps should open as a focused, full-screen experience. Rendering
   // the desktop shell around it wastes the mobile viewport and duplicates navigation.
   const isStandaloneRoute = isAuthRoute || pathname?.startsWith("/telegram")
+  /* Страница объявления идёт во всю ширину.
+     Каталог разделов слева занимал 236px там, где человек уже выбрал машину:
+     предложение уйти в «Мото» или «Запчасти» здесь работает против сделки, а
+     фотографии и характеристикам ширины не хватало. Шапка и подвал остаются —
+     уходит только боковое меню, как на auto.ru и Carvana. */
+  const isDetailRoute = Boolean(
+    pathname?.startsWith("/listings/vehicle/") ||
+    pathname?.startsWith("/listings/part/") ||
+    pathname?.startsWith("/auctions/"),
+  )
   const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
   const isMobileNavActive = (href: string) => href === "/" ? pathname === "/" : pathname?.startsWith(href)
 
@@ -163,7 +173,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   return (
     <AppShell
       header={{ height: 68 }}
-      navbar={{ width: 236, breakpoint: "md", collapsed: { mobile: !mobileOpened } }}
+      navbar={{ width: 236, breakpoint: "md", collapsed: { mobile: !mobileOpened, desktop: isDetailRoute } }}
       padding={0}
       style={{ minHeight: "100vh", background: "var(--market-background)" }}
     >
