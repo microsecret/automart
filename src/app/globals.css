@@ -278,7 +278,7 @@ select {
   background:
     radial-gradient(circle at 92% 8%, rgba(91, 130, 214, 0.46), transparent 32%),
     linear-gradient(135deg, #0b2050 0%, #14306b 48%, #1c4291 100%);
-  box-shadow: 0 18px 45px -28px rgba(11, 32, 80, 0.8);
+  box-shadow: var(--shadow-lg);
 }
 
 .market-hero::after {
@@ -310,7 +310,7 @@ select {
 .market-surface {
   background: var(--market-surface);
   border: 1px solid var(--market-line);
-  box-shadow: 0 8px 24px -24px rgba(24, 24, 27, 0.35);
+  box-shadow: var(--shadow-md);
 }
 
 .mobile-bottom-nav {
@@ -323,7 +323,7 @@ select {
 
 .admin-auction-inquiry-row:hover {
   border-color: var(--mantine-color-indigo-2);
-  box-shadow: 0 12px 30px rgba(30, 41, 59, 0.08);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-1px);
 }
 
@@ -405,7 +405,7 @@ select {
     border: 1px solid rgba(232, 232, 236, 0.95);
     border-radius: var(--radius-lg);
     background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 12px 32px -16px rgba(24, 24, 27, 0.28);
+    box-shadow: var(--shadow-lg);
     backdrop-filter: blur(14px);
   }
 
@@ -434,13 +434,13 @@ select {
   .mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
     color: #fff;
     background: linear-gradient(135deg, #1c4291, #2b56b0);
-    box-shadow: 0 8px 16px -12px rgba(28, 66, 145, 0.8);
+    box-shadow: var(--shadow-md);
   }
 
   :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav {
     border-color: rgba(58, 60, 73, 0.96);
     background: rgba(27, 28, 35, 0.94);
-    box-shadow: 0 12px 32px -16px rgba(0, 0, 0, 0.64);
+    box-shadow: var(--shadow-lg);
   }
 
   :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
@@ -575,7 +575,7 @@ select {
   border: 1px solid var(--market-field-line) !important;
   background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb) !important;
   color: var(--market-control-text) !important;
-  box-shadow: 0 4px 12px -10px rgba(30, 41, 59, 0.65);
+  box-shadow: var(--shadow-md);
 }
 
 .market-app-header__utility-action:hover {
@@ -598,7 +598,7 @@ select {
   }
 
   .market-app-header .mantine-Button-filled:hover {
-    box-shadow: 0 12px 22px -15px rgba(28, 66, 145, 0.92);
+    box-shadow: var(--shadow-md);
   }
 }
 
@@ -855,7 +855,7 @@ select {
   border: 1px solid color-mix(in srgb, var(--market-field-line) 86%, transparent);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--market-surface) 78%, transparent);
-  box-shadow: 0 24px 54px -46px rgba(30, 41, 59, 0.68);
+  box-shadow: var(--shadow-lg);
 }
 
 .auth-experience__brand-mark {
@@ -865,7 +865,7 @@ select {
   place-items: center;
   border-radius: 15px;
   background: #1c4291;
-  box-shadow: 0 12px 24px -15px rgba(28, 66, 145, 0.9);
+  box-shadow: var(--shadow-md);
 }
 
 .auth-experience__form-area {
@@ -876,7 +876,7 @@ select {
 .auth-experience__form-card {
   border-color: color-mix(in srgb, var(--market-field-line) 90%, transparent);
   background: color-mix(in srgb, var(--market-surface) 94%, transparent);
-  box-shadow: 0 24px 48px -38px rgba(30, 41, 59, 0.62);
+  box-shadow: var(--shadow-lg);
 }
 
 .auth-experience__form-card .mantine-Input-input:focus,
@@ -1189,7 +1189,7 @@ select {
   color: #7c2d12;
   border: 1px solid color-mix(in srgb, #fb923c 50%, var(--market-line));
   background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-  box-shadow: 0 9px 22px -17px rgba(234, 88, 12, 0.9);
+  box-shadow: var(--shadow-sm);
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
@@ -1208,7 +1208,7 @@ select {
   color: #9a3412;
   border-color: #fb923c;
   background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
-  box-shadow: 0 14px 26px -18px rgba(234, 88, 12, 0.86);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -1228,7 +1228,7 @@ select {
   /* Градиент был прописан старыми светлыми оттенками и перебивал углублённую
      тему, из-за чего главная кнопка сайта осталась блёклой. */
   background: linear-gradient(135deg, #102a59 0%, #14306b 58%, #102a59 100%);
-  box-shadow: 0 11px 24px -15px rgba(16, 42, 89, 0.95);
+  box-shadow: var(--shadow-sm);
   transition: box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
@@ -1244,7 +1244,7 @@ select {
 
 .header-create-cta:hover,
 .header-create-cta:focus-visible {
-  box-shadow: 0 15px 28px -16px rgba(28, 66, 145, 0.92);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-1px);
 }
 
@@ -1256,7 +1256,7 @@ select {
 .partner-application-modal {
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--market-line) 88%, #1c4291);
-  box-shadow: 0 34px 80px -34px rgba(15, 23, 42, 0.58);
+  box-shadow: var(--shadow-lg);
 }
 
 .partner-application-modal__header {
@@ -1695,7 +1695,7 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-md);
   background: linear-gradient(145deg, rgba(4, 10, 28, 0.7), rgba(27, 25, 77, 0.5));
-  box-shadow: 0 18px 30px -25px rgba(2, 6, 23, 0.96);
+  box-shadow: var(--shadow-lg);
   backdrop-filter: blur(14px) saturate(1.15);
 }
 
@@ -1932,7 +1932,7 @@ select {
   border-color: #14306b;
   background: linear-gradient(135deg, #14306b, #1c4291);
   color: #fff;
-  box-shadow: 0 5px 12px -8px rgba(20, 48, 107, 0.9);
+  box-shadow: var(--shadow-md);
 }
 
 .catalog-filter-advanced .mantine-Input-input,
@@ -2164,19 +2164,19 @@ select {
 
   .listing-card--row:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px -6px rgba(28, 66, 145, 0.2);
+    box-shadow: var(--shadow-md);
   }
 
   .part-result-card:hover {
     transform: translateY(-2px);
     border-color: #b9caee !important;
-    box-shadow: 0 16px 26px -24px rgba(11, 32, 80, 0.72);
+    box-shadow: var(--shadow-md);
   }
 
   .auction-result-card:hover {
     transform: translateY(-2px);
     border-color: #fb923c !important;
-    box-shadow: 0 16px 28px -24px rgba(194, 65, 12, 0.72);
+    box-shadow: var(--shadow-lg);
   }
 }
 
@@ -2335,11 +2335,11 @@ select {
 }
 
 .listing-card__media[data-vehicle-type="air"] .vehicle-fallback__halo {
-  box-shadow: 0 14px 30px rgba(2, 132, 199, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .listing-card__media[data-vehicle-type="water"] .vehicle-fallback__halo {
-  box-shadow: 0 14px 30px rgba(8, 145, 178, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .listing-card__media[data-vehicle-type="truck"] .vehicle-fallback__halo,
@@ -2494,7 +2494,7 @@ select {
   height: 44px;
   border: 1px solid rgba(255, 255, 255, 0.78);
   background: rgba(15, 23, 42, 0.72);
-  box-shadow: 0 8px 16px -10px rgba(15, 23, 42, 0.72);
+  box-shadow: var(--shadow-md);
   backdrop-filter: blur(10px) saturate(1.18);
   transition: transform var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
@@ -2512,7 +2512,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .listing-card__favorite:hover {
     transform: scale(1.08);
-    box-shadow: 0 12px 20px -10px rgba(15, 23, 42, 0.76);
+    box-shadow: var(--shadow-md);
   }
 }
 
@@ -2525,7 +2525,7 @@ select {
   padding: clamp(20px, 3vw, 34px);
   border-radius: var(--radius-lg);
   background: var(--market-surface);
-  box-shadow: 0 20px 42px -34px rgba(15, 23, 42, 0.54);
+  box-shadow: var(--shadow-lg);
 }
 
 .news-article__image {
@@ -2567,7 +2567,7 @@ select {
   min-height: 50px;
   border-color: var(--market-field-line);
   background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb);
-  box-shadow: 0 12px 24px -26px rgba(11, 32, 80, 0.72);
+  box-shadow: var(--shadow-md);
 }
 
 .news-list-search .mantine-TextInput-input:focus {
@@ -2636,7 +2636,7 @@ select {
 }
 
 .news-list-card__cover-icon {
-  box-shadow: 0 12px 22px -14px rgba(15, 23, 42, 0.85);
+  box-shadow: var(--shadow-md);
 }
 
 .news-list-card__cover-label {
@@ -2711,7 +2711,7 @@ select {
   .news-list-card-link:hover .news-list-card,
   .news-list-card-link:focus-visible .news-list-card {
     border-color: #8fa9de;
-    box-shadow: 0 22px 34px -30px rgba(11, 32, 80, 0.72);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-3px);
   }
 
@@ -2881,7 +2881,7 @@ select {
 .service-card:hover {
   transform: translateY(-3px);
   border-color: #8fa9de;
-  box-shadow: 0 18px 30px -24px rgba(11, 32, 80, 0.6);
+  box-shadow: var(--shadow-lg);
 }
 
 .service-card:focus-visible {
@@ -2897,17 +2897,17 @@ select {
     radial-gradient(circle at 94% 4%, rgba(34, 211, 238, 0.34), transparent 34%),
     radial-gradient(circle at 14% 100%, rgba(167, 139, 250, 0.34), transparent 36%),
     linear-gradient(118deg, #171340 0%, #102a59 52%, #0f5f8d 100%);
-  box-shadow: 0 24px 44px -32px rgba(30, 27, 75, 0.85);
+  box-shadow: var(--shadow-lg);
 }
 
 .service-hub-hero .mantine-ThemeIcon-root {
   color: #102a59;
-  box-shadow: 0 12px 24px -16px rgba(15, 23, 42, 0.76);
+  box-shadow: var(--shadow-md);
 }
 
 .service-hub-hero .mantine-Badge-root {
   color: #0b2050;
-  box-shadow: 0 8px 18px -14px rgba(15, 23, 42, 0.68);
+  box-shadow: var(--shadow-md);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2923,7 +2923,7 @@ select {
   background:
     radial-gradient(circle at 90% -15%, rgba(91, 130, 214, 0.2), transparent 34%),
     linear-gradient(135deg, #ffffff 0%, #f7f8ff 52%, #f4f7fc 100%);
-  box-shadow: 0 18px 36px -32px rgba(30, 41, 59, 0.42);
+  box-shadow: var(--shadow-lg);
 }
 
 .dashboard-workspace__eyebrow {
@@ -2949,7 +2949,7 @@ select {
 .dashboard-workspace__status:hover {
   border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
   background: var(--market-surface);
-  box-shadow: 0 12px 24px -22px rgba(11, 32, 80, 0.75);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -2976,7 +2976,7 @@ select {
   background:
     radial-gradient(circle at 94% 0%, rgba(45, 212, 191, 0.14), transparent 30%),
     linear-gradient(135deg, #ffffff 0%, #f5fffc 100%);
-  box-shadow: 0 18px 36px -34px rgba(15, 118, 110, 0.38);
+  box-shadow: var(--shadow-lg);
 }
 
 .dashboard-listing-card,
@@ -2984,7 +2984,7 @@ select {
   overflow: hidden;
   border-color: var(--market-line) !important;
   background: var(--market-surface);
-  box-shadow: 0 10px 22px -26px rgba(15, 23, 42, 0.7);
+  box-shadow: var(--shadow-md);
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
@@ -3036,7 +3036,7 @@ select {
   overflow: hidden;
   border-color: #dbe8e3 !important;
   background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 12px 26px -28px rgba(15, 23, 42, 0.65);
+  box-shadow: var(--shadow-md);
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
@@ -3075,7 +3075,7 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+  box-shadow: var(--shadow-md);
   backdrop-filter: blur(10px);
 }
 
@@ -3157,7 +3157,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .dashboard-document-row:hover {
     border-color: #8fa9de;
-    box-shadow: 0 14px 24px -24px rgba(11, 32, 80, 0.58);
+    box-shadow: var(--shadow-md);
   }
 }
 
@@ -3181,7 +3181,7 @@ select {
   .dashboard-favorite-card:hover {
     transform: translateY(-2px);
     border-color: #bdcaff !important;
-    box-shadow: 0 16px 30px -24px rgba(28, 66, 145, 0.26);
+    box-shadow: var(--shadow-lg);
   }
 
   .dashboard-listing-card:hover .dashboard-listing-card__media > img,
@@ -3193,7 +3193,7 @@ select {
   .garage-vehicle-card:hover {
     transform: translateY(-2px);
     border-color: #74d7c5 !important;
-    box-shadow: 0 18px 34px -24px rgba(13, 148, 136, 0.28);
+    box-shadow: var(--shadow-lg);
   }
 
   .garage-vehicle-card:hover .garage-vehicle-card__media > img {
@@ -3236,7 +3236,7 @@ select {
     radial-gradient(circle at 82% 14%, rgba(34, 211, 238, 0.34), transparent 28%),
     radial-gradient(circle at 10% 100%, rgba(249, 115, 22, 0.28), transparent 34%),
     linear-gradient(128deg, #17175d 0%, #102a59 52%, #0f766e 120%);
-  box-shadow: 0 24px 54px -36px rgba(11, 32, 80, 0.88);
+  box-shadow: var(--shadow-lg);
 }
 
 .fuel-map-hero::after {
@@ -3259,7 +3259,7 @@ select {
   min-width: min(100%, 270px);
   background: rgba(255,255,255,0.94);
   border-color: rgba(255,255,255,0.32);
-  box-shadow: 0 16px 35px -28px rgba(15, 23, 42, 0.7);
+  box-shadow: var(--shadow-lg);
 }
 
 .fuel-map-canvas {
@@ -3316,7 +3316,7 @@ select {
   border-radius: 50%;
   color: #fff;
   background: #ea580c;
-  box-shadow: 0 4px 12px rgba(124, 45, 18, 0.36);
+  box-shadow: var(--shadow-md);
   cursor: pointer;
   transform: translate(-50%, -50%);
   transition: transform var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
@@ -3341,7 +3341,7 @@ select {
 
 .fuel-map-marker[data-quality="fuel"] {
   background: #0f766e;
-  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.36);
+  box-shadow: var(--shadow-md);
 }
 
 .fuel-map-marker[data-quality="live"] {
@@ -3353,7 +3353,7 @@ select {
   width: 26px;
   height: 26px;
   background: #64748b;
-  box-shadow: 0 4px 10px rgba(51, 65, 85, 0.28);
+  box-shadow: var(--shadow-sm);
 }
 
 .fuel-map-marker:hover,
@@ -3374,7 +3374,7 @@ select {
   padding: 4px;
   border-radius: var(--radius-sm);
   background: rgba(255,255,255,.86);
-  box-shadow: 0 8px 18px -12px rgba(15,23,42,.55);
+  box-shadow: var(--shadow-md);
 }
 
 .fuel-map-canvas__caption {
@@ -3412,7 +3412,7 @@ select {
   border-radius: var(--radius-full);
   color: #334155;
   background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.72);
+  box-shadow: var(--shadow-md);
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
@@ -3443,7 +3443,7 @@ select {
   padding: 8px 10px;
   border-color: color-mix(in srgb, #5b82d6 38%, var(--market-line));
   background: rgb(255 255 255 / 94%);
-  box-shadow: 0 14px 28px -22px rgb(49 46 129 / 64%);
+  box-shadow: var(--shadow-lg);
   backdrop-filter: blur(10px);
 }
 
@@ -3454,7 +3454,7 @@ select {
   bottom: 12px;
   max-width: min(260px, calc(100% - 150px));
   background: rgba(255,255,255,.94);
-  box-shadow: 0 10px 24px -18px rgba(15,23,42,.7);
+  box-shadow: var(--shadow-md);
 }
 
 .fuel-map-list {
@@ -3490,7 +3490,7 @@ select {
 
 .fuel-station-card:hover {
   border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-line));
-  box-shadow: 0 12px 22px -22px rgba(49,46,129,.64);
+  box-shadow: var(--shadow-md);
 }
 
 /* Выбранная карточка раньше заливалась жёстким белым градиентом и в тёмной
@@ -3498,7 +3498,7 @@ select {
 .fuel-station-card[data-selected] {
   border-color: var(--market-primary);
   background: var(--market-primary-soft);
-  box-shadow: 0 14px 24px -20px rgba(28, 66, 145, 0.58);
+  box-shadow: var(--shadow-md);
 }
 
 .fuel-map-note {
@@ -3559,7 +3559,7 @@ select {
 
 .auction-detail-spec:hover {
   border-color: color-mix(in srgb, var(--market-accent) 34%, var(--market-border-soft));
-  box-shadow: 0 8px 20px rgb(79 70 229 / 8%);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -3864,7 +3864,7 @@ select {
   overflow: hidden;
   border-color: var(--market-line);
   background: var(--market-surface);
-  box-shadow: 0 18px 34px -32px rgba(15, 23, 42, 0.52);
+  box-shadow: var(--shadow-lg);
 }
 
 .listing-map-panel {
@@ -3940,7 +3940,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .listing-map-result:hover .listing-map-result__surface {
     border-color: #8fa9de;
-    box-shadow: 0 14px 24px -20px rgba(28, 66, 145, 0.55);
+    box-shadow: var(--shadow-md);
     transform: translateY(-1px);
   }
 }
@@ -3969,7 +3969,7 @@ select {
   .auction-result-card:hover,
   .part-result-card:hover {
     border-color: color-mix(in srgb, var(--market-primary) 28%, var(--market-field-line)) !important;
-    box-shadow: 0 18px 30px -26px rgba(30, 41, 59, 0.52);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
   }
 }
@@ -4040,7 +4040,7 @@ select {
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
   border-color: color-mix(in srgb, #2b56b0 54%, var(--market-field-line));
   background: #eef2fb;
-  box-shadow: 0 5px 12px -11px rgba(28, 66, 145, 0.86);
+  box-shadow: var(--shadow-md);
 }
 
 .parts-filter-checks .mantine-Checkbox-input {
@@ -4192,7 +4192,7 @@ select {
 .vehicle-detail-specs,
 .vehicle-detail-statuses {
   border-color: var(--market-line);
-  box-shadow: 0 16px 32px -34px rgba(15, 23, 42, 0.55);
+  box-shadow: var(--shadow-lg);
 }
 
 .vehicle-detail-specs__identity {
@@ -4280,7 +4280,7 @@ select {
 }
 
 .vehicle-detail-feature-card {
-  box-shadow: 0 18px 34px -38px rgba(15, 23, 42, 0.64);
+  box-shadow: var(--shadow-lg);
 }
 
 .vehicle-detail-feature-card--vin {
@@ -4618,7 +4618,7 @@ select {
 
 .create-listing__journey-step[data-current] {
   background: color-mix(in srgb, var(--market-surface) 90%, transparent);
-  box-shadow: 0 6px 16px rgba(63, 72, 155, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .create-listing__journey-step[data-complete] {
@@ -4632,7 +4632,7 @@ select {
 .create-listing__section,
 .create-listing__submit {
   border-color: var(--market-line);
-  box-shadow: 0 10px 26px rgba(27, 39, 87, 0.035);
+  box-shadow: var(--shadow-md);
 }
 
 /* Keep fields distinct from a white card without relying on hover. */
@@ -4657,7 +4657,7 @@ select {
 .create-listing__section .mantine-Autocomplete-dropdown,
 .create-listing__section .mantine-Combobox-dropdown {
   border-color: var(--market-field-line);
-  box-shadow: 0 16px 30px -20px rgba(30, 41, 59, 0.48);
+  box-shadow: var(--shadow-lg);
 }
 
 /* A selected catalog value must be reversible without relying on a hover-only icon. */
@@ -4753,7 +4753,7 @@ select {
     radial-gradient(circle at 86% 10%, rgba(77, 175, 255, 0.28), transparent 28%),
     radial-gradient(circle at 20% 120%, rgba(111, 52, 235, 0.42), transparent 42%),
     linear-gradient(135deg, #111c42 0%, #202d67 58%, #173d6a 100%);
-  box-shadow: 0 18px 42px rgba(31, 43, 105, 0.18);
+  box-shadow: var(--shadow-lg);
 }
 
 .admin-workspace__nav {
@@ -4774,7 +4774,7 @@ select {
   color: #ffffff !important;
   background: linear-gradient(135deg, #1c4291, #14306b) !important;
   border-color: #1c4291 !important;
-  box-shadow: 0 8px 18px -13px rgba(20, 48, 107, 0.9);
+  box-shadow: var(--shadow-md);
 }
 
 .admin-workspace-navigation__item:hover:not([data-active]) {
@@ -4792,20 +4792,20 @@ select {
 
 .admin-metric-card:hover {
   border-color: #bdcaff !important;
-  box-shadow: 0 12px 24px rgba(57, 73, 171, 0.09);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
 .admin-moderation-panel {
   border-color: #dfe5f2;
-  box-shadow: 0 12px 30px rgba(32, 42, 90, 0.05);
+  box-shadow: var(--shadow-lg);
 }
 
 .admin-insight-card,
 .admin-action-card {
   border-color: #e1e7f1;
   background: linear-gradient(145deg, #ffffff 0%, #fbfcff 100%);
-  box-shadow: 0 10px 24px rgba(32, 42, 90, 0.035);
+  box-shadow: var(--shadow-md);
 }
 
 .admin-action-card {
@@ -4817,7 +4817,7 @@ select {
   .admin-insight-card:hover,
   .admin-action-card:hover {
     border-color: #c9d4ff;
-    box-shadow: 0 14px 30px rgba(57, 73, 171, 0.09);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
   }
 }
@@ -4846,7 +4846,7 @@ select {
 .admin-directory__table {
   overflow: hidden;
   border-color: #dfe5f2;
-  box-shadow: 0 12px 30px rgba(32, 42, 90, 0.04);
+  box-shadow: var(--shadow-lg);
 }
 
 .admin-directory__table .mantine-Table-table {
@@ -4943,7 +4943,7 @@ select {
 .admin-queue-card:hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--market-primary) 38%, var(--market-line));
-  box-shadow: 0 14px 26px -20px rgba(28, 66, 145, 0.85);
+  box-shadow: var(--shadow-md);
 }
 
 .admin-queue-card:active {
@@ -5071,7 +5071,7 @@ select {
     radial-gradient(circle at 88% 8%, rgba(77, 175, 255, 0.26), transparent 30%),
     radial-gradient(circle at 14% 118%, rgba(111, 52, 235, 0.4), transparent 44%),
     linear-gradient(135deg, #111c42 0%, #202d67 58%, #173d6a 100%);
-  box-shadow: 0 18px 42px rgba(31, 43, 105, 0.18);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Подпись под полем объясняет, зачем оно нужно, поэтому не должна теряться
@@ -5114,7 +5114,7 @@ select {
     transform: translateY(-2px);
     border-color: var(--market-primary);
     background: var(--market-surface-subtle);
-    box-shadow: 0 16px 28px -22px rgba(11, 32, 80, 0.55);
+    box-shadow: var(--shadow-lg);
   }
 }
 
