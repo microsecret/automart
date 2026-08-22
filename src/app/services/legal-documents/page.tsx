@@ -50,7 +50,7 @@ export default function LegalDocumentsPage() {
         <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
           {DOCUMENTS.map((document) => {
             const Icon = document.icon
-            return <Paper key={document.title} withBorder radius="lg" p="lg" className="service-card">
+            return <Paper key={document.title} withBorder radius="md" p="lg" className="service-card">
               <Stack gap="md" h="100%">
                 <ThemeIcon size={44} radius="md" variant="light" color={document.color}><Icon size={22} /></ThemeIcon>
                 <Box><Text fw={800} fz="lg">{document.title}</Text><Text size="sm" c="dimmed" mt={5} lh={1.45}>{document.description}</Text></Box>
@@ -68,7 +68,7 @@ export default function LegalDocumentsPage() {
 
         <LegalDocumentBuilder />
 
-        <Paper withBorder radius="lg" p={{ base: "md", md: "lg" }}>
+        <Paper withBorder radius="md" p={{ base: "md", md: "lg" }}>
           <Group gap="sm" align="flex-start" wrap="nowrap">
             <ThemeIcon color="teal" variant="light" size={38} radius="md"><IconShieldCheck size={20} /></ThemeIcon>
             <Stack gap={4}><Text fw={800}>Перед подписанием</Text><Text size="sm" c="dimmed">Сверьте VIN или номер рамы с документами, проверьте полномочия продавца, внесите реальную цену и оформите акт приёма-передачи одновременно с расчётом.</Text></Stack>

@@ -43,7 +43,7 @@ export default function SignInPage() {
             <Text size="sm" c="gray.5">Почта или телефон и ваш пароль</Text>
           </Stack>
 
-          <Card className="auth-experience__form-card" withBorder radius="lg" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
+          <Card className="auth-experience__form-card" withBorder radius="md" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
             <SignInForm />
           </Card>
         </Stack>

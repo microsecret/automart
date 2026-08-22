@@ -92,7 +92,7 @@ export default function CreatePartPage() {
           </Stack>
         </Group>
 
-        <Paper className="create-listing__journey" radius="lg" p="sm" withBorder>
+        <Paper className="create-listing__journey" radius="md" p="sm" withBorder>
           <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>
             {[
               { number: "01", label: "Данные товара", description: f.partType ? PART_TYPES.find((type) => type.value === f.partType)?.label || "Запчасть" : "Запчасть" },
@@ -119,7 +119,7 @@ export default function CreatePartPage() {
 
         <form onSubmit={handleSubmit}>
           <Stack className={`${styles.listingCreateForm} create-listing__form`} gap="md">
-            <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
+            <Paper className="create-listing__section" data-accent="indigo" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="flex-start">
                   <Stack gap={1}>
@@ -166,7 +166,7 @@ export default function CreatePartPage() {
               </Stack>
             </Paper>
 
-            <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
+            <Paper className="create-listing__section" data-accent="indigo" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="center">
                   <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconPhoto size={18} /></ThemeIcon><Stack gap={0}><Text fw={700} fz="sm" c="var(--market-ink)">Фотографии товара</Text><Text size="xs" c="var(--market-muted)">Первое фото станет обложкой объявления. До 12 JPG, PNG или WebP.</Text></Stack></Group>
@@ -177,7 +177,7 @@ export default function CreatePartPage() {
               </Stack>
             </Paper>
 
-            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
+            <Paper className="create-listing__section" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="center">
                   <Group gap="sm" align="center">
@@ -212,7 +212,7 @@ export default function CreatePartPage() {
               </Stack>
             </Paper>
 
-            <Paper className={styles.submitPanel} radius="lg" p="sm" withBorder>
+            <Paper className={styles.submitPanel} radius="md" p="sm" withBorder>
               <Stack gap={6}>
                 <Button fullWidth type="submit" size="md" radius="md" color="indigo" loading={loading} disabled={uploadingImages} leftSection={<IconCheck size={18} />}>
                   {loading ? "Публикация..." : "Отправить на модерацию"}

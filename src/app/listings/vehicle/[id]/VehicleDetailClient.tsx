@@ -395,7 +395,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         <Box className="vehicle-detail-layout__main">
           <Stack gap="md">
             {/* Галерея */}
-            <Card p={0} radius="lg" withBorder className={`vehicle-detail-gallery${hasImages ? "" : " vehicle-detail-gallery--empty"}`}>
+            <Card p={0} radius="md" withBorder className={`vehicle-detail-gallery${hasImages ? "" : " vehicle-detail-gallery--empty"}`}>
               {hasImages ? (
                 <>
                   {/* Главное изображение */}
@@ -476,7 +476,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             </Card>
 
             {/* Характеристики */}
-            <Card withBorder radius="lg" p="lg" className="vehicle-detail-specs">
+            <Card withBorder radius="md" p="lg" className="vehicle-detail-specs">
               <Group justify="space-between" mb="md" align="center" gap="sm" wrap="wrap">
                 <Group gap="sm" wrap="nowrap">
                   <ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconEngine size={18} /></ThemeIcon>
@@ -501,7 +501,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             </Card>
 
             {/* Состояние и документы */}
-            <Card withBorder radius="lg" p="lg" className="vehicle-detail-statuses">
+            <Card withBorder radius="md" p="lg" className="vehicle-detail-statuses">
               <Stack gap="md">
                 <Group justify="space-between" align="center" gap="sm" wrap="wrap">
                   <Group gap="sm" wrap="nowrap">
@@ -529,7 +529,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             </Card>
 
             {/* VIN-паспорт выводится только для дорожного транспорта и без демо-утверждений. */}
-            {hasRoadVehicleDetails && data.vin && <Card withBorder radius="lg" p="lg" className="vehicle-detail-feature-card vehicle-detail-feature-card--vin">
+            {hasRoadVehicleDetails && data.vin && <Card withBorder radius="md" p="lg" className="vehicle-detail-feature-card vehicle-detail-feature-card--vin">
               <Group justify="space-between" mb="sm">
                 <Group gap={8}>
                   <ThemeIcon variant="light" color="green" size={32} radius="md">
@@ -553,7 +553,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             </Card>}
 
             {/* Безопасная сделка */}
-            <Card withBorder radius="lg" p="lg" className="vehicle-detail-feature-card vehicle-detail-feature-card--deal">
+            <Card withBorder radius="md" p="lg" className="vehicle-detail-feature-card vehicle-detail-feature-card--deal">
               <Group gap="md" align="flex-start">
                 <ThemeIcon variant="light" color="indigo" size={44} radius="md">
                   <IconShieldCheck size={24} />
@@ -583,7 +583,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
 
             {/* Описание */}
             {data.description && (
-              <Card withBorder radius="lg" p="lg">
+              <Card withBorder radius="md" p="lg">
                 <Title order={3} size="h4" mb="sm">Описание</Title>
                 <Text size="sm" c="var(--market-muted)" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>
                   {data.description}
@@ -592,7 +592,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             )}
 
             {/* Отзывы */}
-            <Card withBorder radius="lg" p="lg">
+            <Card withBorder radius="md" p="lg">
               <Group justify="space-between" align="center" mb="md">
                 <Title order={3} size="h4">Отзывы ({data.reviews.length})</Title>
               </Group>
@@ -716,7 +716,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               </Card>
 
               {/* Действия */}
-              <Card withBorder radius="lg" p="lg">
+              <Card withBorder radius="md" p="lg">
                 <Stack gap="sm">
                   {phone ? (
                     <Button
@@ -825,7 +825,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               )}
 
               {/* Продавец */}
-              <Card withBorder radius="lg" p="lg">
+              <Card withBorder radius="md" p="lg">
                 <Group gap="sm" mb="sm">
                   <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">
                     {data.seller.name?.[0]?.toUpperCase()}

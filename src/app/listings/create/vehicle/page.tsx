@@ -369,7 +369,7 @@ function CreateVehicleWorkspace() {
           </Alert>
         )}
 
-        <Paper className="create-listing__journey" radius="lg" p="sm" withBorder>
+        <Paper className="create-listing__journey" radius="md" p="sm" withBorder>
           <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>
             {[
               { number: "01", label: isGarageMode ? "Автомобиль" : "Категория", description: isGarageMode ? "Легковой транспорт" : CATS.find((category) => category.value === f.vehicleType)?.label || "Транспорт" },
@@ -397,7 +397,7 @@ function CreateVehicleWorkspace() {
         <form onSubmit={handleSubmit}>
           <Stack className={`${styles.listingCreateForm} create-listing__form`} gap="md">
             {/* Тип транспорта */}
-            {!isGarageMode && <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
+            {!isGarageMode && <Paper className="create-listing__section" data-accent="indigo" radius="md" p="md" withBorder>
               <Group justify="space-between" mb="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Тип транспорта</Text>
                 <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
@@ -406,7 +406,7 @@ function CreateVehicleWorkspace() {
             </Paper>}
 
             {/* Основное */}
-            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
+            <Paper className="create-listing__section" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="flex-start">
                   <Stack gap={1}>
@@ -471,7 +471,7 @@ function CreateVehicleWorkspace() {
             </Paper>
 
             {/* Характеристики */}
-            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
+            <Paper className="create-listing__section" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Характеристики</Text>
                 <Group gap="sm" grow>
@@ -564,7 +564,7 @@ function CreateVehicleWorkspace() {
             </Paper>
 
             {/* Документы и состояние */}
-            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
+            <Paper className="create-listing__section" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Документы и состояние</Text>
                 <Group gap="sm" grow>
@@ -604,7 +604,7 @@ function CreateVehicleWorkspace() {
             </Paper>
 
             {/* Описание */}
-            <Paper className="create-listing__section" radius="lg" p="md" withBorder>
+            <Paper className="create-listing__section" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Описание</Text>
                 <Textarea label="Подробное описание" placeholder="Опишите состояние, историю, комплектацию..." value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={4} autosize />
@@ -613,7 +613,7 @@ function CreateVehicleWorkspace() {
               </Stack>
             </Paper>
 
-            <Paper className="create-listing__section" data-accent="indigo" radius="lg" p="md" withBorder>
+            <Paper className="create-listing__section" data-accent="indigo" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Group justify="space-between" align="center">
                   <Group gap="sm">
@@ -640,7 +640,7 @@ function CreateVehicleWorkspace() {
             </Paper>
 
             {/* Кнопка */}
-            <Paper className={styles.submitPanel} radius="lg" p="sm" withBorder>
+            <Paper className={styles.submitPanel} radius="md" p="sm" withBorder>
               <Stack gap={6}>
                 <Button fullWidth type="submit" size="md" radius="md" color={isGarageMode ? "teal" : "indigo"} loading={loading} disabled={(!isGarageMode && !selectedCategory) || uploadingImages} leftSection={<IconCheck size={18} />}>
                   {loading ? (isGarageMode ? "Сохраняем..." : "Публикация...") : (isGarageMode ? "Сохранить в личный гараж" : "Отправить на модерацию")}

@@ -85,7 +85,7 @@ export default function NotificationsPage() {
   return (
     <Box p={{ base: "sm", md: "md" }} maw={980} mx="auto">
       <Stack gap="md">
-        <Paper withBorder radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Paper withBorder radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" wrap="wrap" gap="md">
             <Group gap="sm" align="center">
               <ThemeIcon variant="light" color="indigo" size={42} radius="md"><IconBellRinging size={22} /></ThemeIcon>
@@ -104,7 +104,7 @@ export default function NotificationsPage() {
         ) : error ? (
           <AsyncErrorState title="Не удалось загрузить уведомления" description="Проверьте подключение и повторите запрос." onRetry={() => mutate("/api/notifications?limit=50")} />
         ) : notifications.length === 0 ? (
-          <Paper radius="lg" p="xl" withBorder>
+          <Paper radius="md" p="xl" withBorder>
             <Center>
               <Stack align="center" gap="sm">
                 <ThemeIcon variant="light" color="gray" size={56} radius="md"><IconBell size={28} /></ThemeIcon>
@@ -119,7 +119,7 @@ export default function NotificationsPage() {
               const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.INFO
               const Icon = cfg.icon
               return (
-                <Paper key={n.id} radius="lg" p="md" withBorder style={{ opacity: n.isRead ? 0.72 : 1 }}>
+                <Paper key={n.id} radius="md" p="md" withBorder style={{ opacity: n.isRead ? 0.72 : 1 }}>
                   <Group gap="sm" align="flex-start" wrap="nowrap">
                     <ThemeIcon size={40} radius="md" variant="light" color={cfg.color} style={{ flexShrink: 0 }}>
                       <Icon size={20} />

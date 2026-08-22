@@ -121,7 +121,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
         pos="relative"
         padding={0}
-        radius="lg"
+        radius="md"
         withBorder
         style={{
           overflow: "hidden",

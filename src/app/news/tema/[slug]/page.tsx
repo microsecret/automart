@@ -70,7 +70,7 @@ export default async function NewsTagPage({ params }: PageProps) {
               component={Link}
               href={`/news/${article.slug || article.id}`}
               withBorder
-              radius="lg"
+              radius="md"
               p="md"
               className="admin-queue-card"
             >

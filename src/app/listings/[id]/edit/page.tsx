@@ -139,7 +139,7 @@ export default function EditListingPage() {
           </Alert>
         )}
 
-        <Paper withBorder radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Paper withBorder radius="md" p={{ base: "md", sm: "lg" }}>
           <Stack gap="md">
             <Text fw={750}>Основные данные</Text>
             <TextInput label="Заголовок" required value={form.title} onChange={(event) => updateForm("title", event.currentTarget.value)} maxLength={200} />
@@ -151,7 +151,7 @@ export default function EditListingPage() {
           </Stack>
         </Paper>
 
-        <Paper withBorder radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Paper withBorder radius="md" p={{ base: "md", sm: "lg" }}>
           <Stack gap="md">
             <Group justify="space-between" align="center"><Group gap="xs"><ThemeIcon color="indigo" variant="light" radius="md"><IconPhoto size={17} /></ThemeIcon><Text fw={750}>Фотографии</Text></Group><Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge></Group>
             <Text size="sm" c="dimmed">Первая фотография используется как обложка. Допустимы JPG, PNG и WebP до 10 МБ.</Text>
@@ -160,7 +160,7 @@ export default function EditListingPage() {
           </Stack>
         </Paper>
 
-        <Paper withBorder radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Paper withBorder radius="md" p={{ base: "md", sm: "lg" }}>
           <Textarea label="Комментарий к изменению" value={form.reason} onChange={(event) => updateForm("reason", event.currentTarget.value)} maxLength={500} minRows={2} description="Необязательно. Комментарий будет виден модерации в истории изменений." />
         </Paper>
 

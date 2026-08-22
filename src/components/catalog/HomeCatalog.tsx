@@ -259,7 +259,7 @@ export default function HomePage(p: HomePageProps = {}) {
         </Group>
       </Group>
 
-      <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="lg" p="md" withBorder>
+      <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="md" p="md" withBorder>
         <Stack gap="sm">
           <Group className="catalog-filter-panel__intro" justify="space-between" align="baseline" gap="sm">
             <Box>

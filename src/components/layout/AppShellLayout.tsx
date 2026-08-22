@@ -370,7 +370,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
   const isPartner = Boolean(data?.partnerAccess?.allowed)
 
   return (
-    <Paper className="market-side-account market-side-account--user" radius="lg" p="sm" withBorder shadow="xs" aria-label="Личный кабинет">
+    <Paper className="market-side-account market-side-account--user" radius="md" p="sm" withBorder shadow="xs" aria-label="Личный кабинет">
       <Group wrap="nowrap" gap="sm" align="center">
         <Avatar src={session.user.image} color={roleColor} radius="xl" size={44}>{session.user.name?.[0]?.toUpperCase()}</Avatar>
         <Box style={{ minWidth: 0, flex: 1 }}>
@@ -427,7 +427,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
 
 function SidebarPanel({ title, href, icon, children }: { title: string; href?: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <Paper className="market-side-panel" radius="lg" p={6} withBorder>
+    <Paper className="market-side-panel" radius="md" p={6} withBorder>
       {href ? (
         <Link href={href} className="market-side-panel__title-link">
           <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={700} tt="uppercase" c="dimmed">{title}</Text></Group>

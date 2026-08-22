@@ -204,7 +204,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
         <Grid.Col span={{ base: 12, md: 8 }}>
           <Stack gap="md">
             {/* Галерея */}
-            <Card p={0} radius="lg" withBorder style={{ overflow: "hidden" }}>
+            <Card p={0} radius="md" withBorder style={{ overflow: "hidden" }}>
               {hasImages ? (
                 <>
                   <Box className="part-detail__gallery" style={{ position: "relative", aspectRatio: "4/3", maxHeight: 520 }}>
@@ -262,7 +262,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             </Card>
 
             {/* Совместимость */}
-            <Card withBorder radius="lg" p="lg">
+            <Card withBorder radius="md" p="lg">
               <Title order={3} size="h4" mb="md">Совместимость и характеристики</Title>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                 <SpecRow icon={<IconTool size={18} />} label="Тип детали" value={PART_TYPES_MAP[data.partType] || data.partType} />
@@ -279,7 +279,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
             {/* Совместимость */}
             {data.compatibility && data.compatibility.length > 0 && (
-              <Card withBorder radius="lg" p="lg">
+              <Card withBorder radius="md" p="lg">
                 <Stack gap="md">
                   <Group gap="sm" align="center">
                     <ThemeIcon variant="light" color="green" size={32} radius="md"><IconCheck size={18} /></ThemeIcon>
@@ -311,7 +311,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
             {/* Описание */}
             {data.description && (
-              <Card withBorder radius="lg" p="lg">
+              <Card withBorder radius="md" p="lg">
                 <Title order={3} size="h4" mb="sm">Описание</Title>
                 <Text size="sm" c="var(--market-muted)" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>{data.description}</Text>
               </Card>
@@ -319,7 +319,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
             {/* Отзывы */}
             {data.reviews.length > 0 && (
-              <Card withBorder radius="lg" p="lg">
+              <Card withBorder radius="md" p="lg">
                 <Title order={3} size="h4" mb="md">Отзывы ({data.reviews.length})</Title>
                 <Stack gap="md">
                   {data.reviews.map((review) => (
@@ -345,7 +345,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Box className="part-detail__sticky-aside">
             <Stack gap="md">
-              <Card withBorder radius="lg" p="lg" className="part-detail__price-card">
+              <Card withBorder radius="md" p="lg" className="part-detail__price-card">
                 <Title order={1} size="h4" mb={4}>{data.name}</Title>
                 <Text size="1.75rem" fw={800} c={data.saleFormat === "AUCTION" ? "orange" : "indigo"} lh={1.1} mb="xs">{formatPrice(data.price)}</Text>
                 <Group gap={6}>
@@ -362,7 +362,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
               </Card>
 
               {data.saleFormat === "AUCTION" && (
-                <Card withBorder radius="lg" p="lg" className="part-detail__bid-card">
+                <Card withBorder radius="md" p="lg" className="part-detail__bid-card">
                   <Group justify="space-between" mb="xs"><Text fw={700}>Сделать ставку</Text><IconGavel size={18} color="#f97316" /></Group>
                   <Text size="xs" c="var(--market-muted)">Минимум: {formatPrice((data.auctionCurrentPrice || data.price) + (data.auctionMinStep || 1))}</Text>
                   {data.auctionEndsAt && <Text size="xs" c="var(--market-muted)" mb="sm">Окончание: {new Date(data.auctionEndsAt).toLocaleString("ru-RU")}</Text>}
@@ -379,7 +379,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                 </Card>
               )}
 
-              <Card withBorder radius="lg" p="lg">
+              <Card withBorder radius="md" p="lg">
                 <Stack gap="sm">
                   {phone ? (
                     <Button component="a" href={`tel:${phone}`} size="lg" radius="md" leftSection={<IconPhone size={18} />} variant="light" color="indigo">
@@ -400,7 +400,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                 </Stack>
               </Card>
 
-              <Card withBorder radius="lg" p="lg">
+              <Card withBorder radius="md" p="lg">
                 <Group gap="sm" mb="sm">
                   <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">{data.seller.name?.[0]?.toUpperCase()}</Avatar>
                   <Stack gap={2}>

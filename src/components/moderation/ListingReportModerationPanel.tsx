@@ -76,7 +76,7 @@ export default function ListingReportModerationPanel() {
   }
 
   return (
-    <Card className="admin-moderation-panel" withBorder radius="lg" p="md">
+    <Card className="admin-moderation-panel" withBorder radius="md" p="md">
       <Stack gap="sm">
         <Group justify="space-between" align="center" wrap="wrap">
           <Group gap="sm"><ThemeIcon variant="light" color="orange" size={32} radius="md"><IconFlag size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Жалобы пользователей</Text></Group>

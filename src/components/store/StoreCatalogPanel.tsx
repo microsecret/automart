@@ -108,7 +108,7 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
   const parts = data?.parts || []
 
   return (
-    <Card withBorder radius="lg" p="md">
+    <Card withBorder radius="md" p="md">
       <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
         <Group gap="sm">
           <ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconPackage size={17} /></ThemeIcon>

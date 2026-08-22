@@ -71,7 +71,7 @@ export default function ReferralPayoutPanel() {
   }
 
   return (
-    <Card withBorder radius="lg" p="md">
+    <Card withBorder radius="md" p="md">
       <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
         <Group gap="sm">
           <ThemeIcon variant="light" color="teal" size={36} radius="md"><IconCoins size={18} /></ThemeIcon>

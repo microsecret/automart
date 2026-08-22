@@ -208,7 +208,7 @@ function ConversationWorkspace() {
                     <Paper
                       px="md"
                       py="xs"
-                      radius="lg"
+                      radius="md"
                       style={{
                         maxWidth: "78%",
                         background: isOwn ? "var(--mantine-color-indigo-6)" : "var(--mantine-color-gray-0)",

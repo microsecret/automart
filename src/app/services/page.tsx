@@ -33,7 +33,7 @@ export default function ServicesPage() {
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
         {SERVICES.map((service) => {
           const Icon = service.icon
-          return <Paper key={service.href} component={Link} href={service.href} withBorder radius="lg" p="lg" className="service-card">
+          return <Paper key={service.href} component={Link} href={service.href} withBorder radius="md" p="lg" className="service-card">
             <Stack gap="md" h="100%">
               <Group justify="space-between" align="flex-start"><ThemeIcon size={44} radius="md" variant="light" color={service.color}><Icon size={22} /></ThemeIcon><Badge size="xs" variant="light" color={service.color} radius="xl">{service.stage}</Badge></Group>
               <Box><Text fw={800} fz="lg">{service.title}</Text><Text size="sm" c="dimmed" mt={5} lh={1.45}>{service.description}</Text></Box>

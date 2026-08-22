@@ -206,7 +206,7 @@ export default function AdminAuctionsPage() {
               { label: "Выкуплено", value: stats.byStatus?.SOLD || 0, color: "teal" },
               { label: "За неделю", value: stats.recent || 0, color: "violet" },
             ].map((card) => (
-              <Paper key={card.label} radius="lg" p="sm" withBorder>
+              <Paper key={card.label} radius="md" p="sm" withBorder>
                 <Text fw={850} fz="xl" c={`${card.color}.7`} style={{ fontVariantNumeric: "tabular-nums" }}>{card.value}</Text>
                 <Text size="xs" c="dimmed" mt={2}>{card.label}</Text>
               </Paper>
@@ -215,7 +215,7 @@ export default function AdminAuctionsPage() {
         )}
 
         {catalogHealth && (
-          <Paper radius="lg" p="md" withBorder>
+          <Paper radius="md" p="md" withBorder>
             <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
               <Group gap="sm" wrap="nowrap">
                 <ThemeIcon variant="light" color={catalogHealth.pendingRemoval ? "orange" : "teal"} size={40} radius="md"><IconDatabase size={19} /></ThemeIcon>
@@ -245,7 +245,7 @@ export default function AdminAuctionsPage() {
         {isLoading ? <Center py={80}><Loader size="sm" color="orange" /></Center> :
           error ? <AsyncErrorState title="Не удалось загрузить заявки" description="Проверьте соединение и повторите запрос." onRetry={() => void mutate()} /> :
             inquiries.length === 0 ? (
-              <Paper radius="lg" p="xl" withBorder><Center><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={46} radius="xl"><IconGavel size={22} /></ThemeIcon><Text fw={750}>В этом статусе заявок нет</Text><Text size="sm" c="dimmed">Новые обращения появятся здесь автоматически.</Text></Stack></Center></Paper>
+              <Paper radius="md" p="xl" withBorder><Center><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={46} radius="xl"><IconGavel size={22} /></ThemeIcon><Text fw={750}>В этом статусе заявок нет</Text><Text size="sm" c="dimmed">Новые обращения появятся здесь автоматически.</Text></Stack></Center></Paper>
             ) : (
               <Stack gap="sm">{inquiries.map((inquiry) => <InquiryRow key={inquiry.id} inquiry={inquiry} onOpen={() => openInquiryEditor(inquiry)} />)}</Stack>
             )}
@@ -254,7 +254,7 @@ export default function AdminAuctionsPage() {
       <Drawer opened={Boolean(editingInquiry)} onClose={() => !isSaving && !isAssigning && setEditingInquiry(null)} title="Маршрут заявки" position="right" size="lg" padding="lg">
         {editingInquiry && (
           <Stack gap="lg">
-            <Paper withBorder radius="lg" p="md" bg="gray.0">
+            <Paper withBorder radius="md" p="md" bg="gray.0">
               <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
                 <Stack gap={4} style={{ minWidth: 0 }}>
                   <Text fw={850} lineClamp={2}>{vehicleTitle(editingInquiry)}</Text>
@@ -279,7 +279,7 @@ export default function AdminAuctionsPage() {
             {editingInquiry.comment && <Stack gap={4}><Text size="sm" fw={750}>Запрос покупателя</Text><Paper withBorder radius="md" p="sm"><Text size="sm" style={{ overflowWrap: "anywhere" }}>{editingInquiry.comment}</Text></Paper></Stack>}
 
             {editingInquiry.deliveryOrder ? (
-              <Paper withBorder radius="lg" p="md">
+              <Paper withBorder radius="md" p="md">
                 <Stack gap="sm">
                   <Group justify="space-between" gap="md" wrap="wrap">
                     <Group gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconShieldCheck size={17} /></ThemeIcon><Stack gap={0}><Text fw={800}>Сделка {editingInquiry.deliveryOrder.code}</Text><Text size="xs" c="dimmed">Партнёр: {editingInquiry.assignedPartner?.name || "назначен"}</Text></Stack></Group>
@@ -329,7 +329,7 @@ function InquiryRow({ inquiry, onOpen }: { inquiry: AuctionInquiry; onOpen: () =
   const statusMeta = STATUSES.find((item) => item.value === inquiry.status) || STATUSES[0]
 
   return (
-    <Paper radius="lg" p="md" withBorder className="admin-auction-inquiry-row">
+    <Paper radius="md" p="md" withBorder className="admin-auction-inquiry-row">
       <Group gap="md" align="flex-start" wrap="wrap">
         <Box className="admin-auction-inquiry-row__image">
           <VehicleFallback type="CAR" compact />

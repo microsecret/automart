@@ -26,7 +26,7 @@ export default function AdminWorkspaceNavigation({ canManageUsers = true }: Admi
   const sections = canManageUsers ? ADMIN_SECTIONS : ADMIN_SECTIONS.filter((section) => section.href === "/moderation")
 
   return (
-    <Paper withBorder radius="lg" p="xs" mb="sm" className="admin-workspace-navigation" aria-label="Разделы администрирования">
+    <Paper withBorder radius="md" p="xs" mb="sm" className="admin-workspace-navigation" aria-label="Разделы администрирования">
       <Group justify="space-between" gap="sm" wrap="wrap" px="xs" pb={4}>
         <Group gap="xs" wrap="nowrap">
           <ThemeIcon variant="light" color="grape" size={28} radius="md"><IconLayoutDashboard size={15} /></ThemeIcon>

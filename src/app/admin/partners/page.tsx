@@ -120,7 +120,7 @@ export default function AdminPartnersPage() {
   return (
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
-        <Card className="admin-workspace__hero" radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Card className="admin-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" gap="md" wrap="wrap">
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="white" color="dark" size={46} radius="md"><IconBuildingWarehouse size={23} /></ThemeIcon>
@@ -153,7 +153,7 @@ export default function AdminPartnersPage() {
           {Object.entries(STATUS_META).map(([value, meta]) => {
             const StatusIcon = meta.icon
             return (
-              <Paper key={value} withBorder radius="lg" p="sm">
+              <Paper key={value} withBorder radius="md" p="sm">
                 <Group gap="sm" wrap="nowrap">
                   <ThemeIcon variant="light" color={meta.color} size={36} radius="md"><StatusIcon size={18} /></ThemeIcon>
                   <Stack gap={0}>
@@ -169,7 +169,7 @@ export default function AdminPartnersPage() {
         {isLoading ? <Center py={80}><Loader color="indigo" /></Center> : error ? (
           <AsyncErrorState title="Не удалось загрузить реестр" description="Данные не изменены. Повторите запрос, когда соединение восстановится." onRetry={() => void mutate()} backHref="/admin" backLabel="В админку" />
         ) : organizations.length === 0 ? (
-          <Paper withBorder radius="lg" p="xl">
+          <Paper withBorder radius="md" p="xl">
             <Center><Stack align="center" gap="sm"><ThemeIcon size={46} radius="xl" color="teal" variant="light"><IconClipboardCheck size={22} /></ThemeIcon><Text fw={700}>В этой очереди нет партнёров</Text><Text size="sm" c="dimmed" ta="center">Это реальное состояние реестра: тестовые компании не подставляются.</Text></Stack></Center>
           </Paper>
         ) : (
@@ -178,7 +178,7 @@ export default function AdminPartnersPage() {
               const meta = STATUS_META[organization.verificationStatus] || STATUS_META.PENDING
               const StatusIcon = meta.icon
               return (
-                <Paper key={organization.id} withBorder radius="lg" p={{ base: "sm", sm: "md" }}>
+                <Paper key={organization.id} withBorder radius="md" p={{ base: "sm", sm: "md" }}>
                   <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
                     <Group gap="sm" align="flex-start" wrap="nowrap" style={{ flex: 1, minWidth: 260 }}>
                       <ThemeIcon variant="light" color={meta.color} size={42} radius="md"><StatusIcon size={20} /></ThemeIcon>

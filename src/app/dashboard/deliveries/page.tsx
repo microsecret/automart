@@ -258,7 +258,7 @@ function DeliveriesWorkspace() {
                   {auctionOffersData.offers.map((offer) => {
                     const listing = offer.inquiry.auctionListing
                     return (
-                      <Paper key={offer.id} withBorder radius="lg" p="md">
+                      <Paper key={offer.id} withBorder radius="md" p="md">
                         <Stack gap="sm">
                           <Group justify="space-between" gap="xs" wrap="nowrap">
                             <Badge color="orange" variant="light">{listing.source}</Badge>
@@ -295,7 +295,7 @@ function DeliveriesWorkspace() {
           <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="sm">
             {orders.map((order) => {
               const meta = DELIVERY_STATUS_META[order.status as keyof typeof DELIVERY_STATUS_META] || DELIVERY_STATUS_META.REQUEST_CREATED
-              return <Paper key={order.id} component={Link} href={`/dashboard/deliveries/${order.id}`} withBorder radius="lg" p="md" className="delivery-order-card" style={{ textDecoration: "none", color: "inherit" }}>
+              return <Paper key={order.id} component={Link} href={`/dashboard/deliveries/${order.id}`} withBorder radius="md" p="md" className="delivery-order-card" style={{ textDecoration: "none", color: "inherit" }}>
                 <Stack gap="sm">
                   <Group justify="space-between" gap="xs" wrap="nowrap"><Badge variant="light" color={meta.color}>{meta.shortLabel}</Badge><Text size="xs" c="dimmed" fw={600}>{order.code}</Text></Group>
                   <Stack gap={2}><Text fw={800} lineClamp={2}>{order.title}</Text><Text size="xs" c="dimmed">{order.kind === "PART" ? "Запчасть" : "Автомобиль"} · {order.sourceType === "AUCTION" ? "аукцион" : order.sourceType === "PARTS_ORDER" ? "под заказ" : "прямой импорт"}</Text></Stack>
@@ -414,7 +414,7 @@ function DeliveriesWorkspace() {
 }
 
 function Metric({ label, value, icon, color }: { label: string; value: number; icon: React.ReactNode; color: string }) {
-  return <Paper withBorder radius="lg" p="sm"><Group gap="sm"><ThemeIcon variant="light" color={color} radius="md" size={38}>{icon}</ThemeIcon><Stack gap={0}><Text fw={800} fz="lg">{value}</Text><Text size="xs" c="dimmed">{label}</Text></Stack></Group></Paper>
+  return <Paper withBorder radius="md" p="sm"><Group gap="sm"><ThemeIcon variant="light" color={color} radius="md" size={38}>{icon}</ThemeIcon><Stack gap={0}><Text fw={800} fz="lg">{value}</Text><Text size="xs" c="dimmed">{label}</Text></Stack></Group></Paper>
 }
 
 function countryLabel(code: string) {

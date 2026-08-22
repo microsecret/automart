@@ -346,7 +346,7 @@ function PartsContent() {
                     const images = parseImages(p.images)
                     const image = images[0] || ""
                     return (
-                      <Paper key={p.id} radius="lg" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)" }}>
+                      <Paper key={p.id} radius="md" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)" }}>
                         <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                           <PartMedia image={image} name={p.name} partType={p.partType} />
                         </Link>

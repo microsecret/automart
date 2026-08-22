@@ -35,7 +35,7 @@ export default function AuctionLotAdministration() {
     } finally { setSaving(false) }
   }
 
-  return <Paper withBorder radius="lg" p="md">
+  return <Paper withBorder radius="md" p="md">
     <Stack gap="sm">
       <Group justify="space-between" align="flex-end" gap="sm" wrap="wrap">
         <Box><Text fw={850}>Управление аукционными лотами</Text><Text size="xs" c="dimmed">Ручное скрытие сохраняется после новых запусков парсеров.</Text></Box>

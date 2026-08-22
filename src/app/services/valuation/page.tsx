@@ -78,15 +78,15 @@ export default function ValuationPage() {
         </Group>
 
         {status === "unauthenticated" ? (
-          <Paper withBorder radius="lg" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="indigo"><IconCar size={25} /></ThemeIcon><Text fw={700}>Войдите, чтобы оценить свой автомобиль</Text><Text size="sm" c="dimmed" ta="center">Сервис работает только с вашими сохранёнными объявлениями или автомобилями в гараже.</Text><Button component={Link} href="/auth/signin?callbackUrl=%2Fservices%2Fvaluation" color="indigo">Войти</Button></Stack></Paper>
+          <Paper withBorder radius="md" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="indigo"><IconCar size={25} /></ThemeIcon><Text fw={700}>Войдите, чтобы оценить свой автомобиль</Text><Text size="sm" c="dimmed" ta="center">Сервис работает только с вашими сохранёнными объявлениями или автомобилями в гараже.</Text><Button component={Link} href="/auth/signin?callbackUrl=%2Fservices%2Fvaluation" color="indigo">Войти</Button></Stack></Paper>
         ) : status === "loading" || isLoading ? (
-          <Paper withBorder radius="lg" p="xl"><Group justify="center"><Loader color="indigo" size="sm" /><Text size="sm" c="dimmed">Загружаем ваши автомобили…</Text></Group></Paper>
+          <Paper withBorder radius="md" p="xl"><Group justify="center"><Loader color="indigo" size="sm" /><Text size="sm" c="dimmed">Загружаем ваши автомобили…</Text></Group></Paper>
         ) : error ? (
           <Alert color="red" radius="md">Не удалось загрузить ваши автомобили. Обновите страницу и повторите попытку.</Alert>
         ) : !data || data.vehicles.length === 0 ? (
-          <Paper withBorder radius="lg" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="indigo"><IconCar size={25} /></ThemeIcon><Text fw={700}>Нет автомобиля для оценки</Text><Text size="sm" c="dimmed" ta="center">Сначала разместите легковой автомобиль или добавьте его в личный гараж.</Text><Button component={Link} href="/listings/create/vehicle" color="indigo">Разместить объявление</Button></Stack></Paper>
+          <Paper withBorder radius="md" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="indigo"><IconCar size={25} /></ThemeIcon><Text fw={700}>Нет автомобиля для оценки</Text><Text size="sm" c="dimmed" ta="center">Сначала разместите легковой автомобиль или добавьте его в личный гараж.</Text><Button component={Link} href="/listings/create/vehicle" color="indigo">Разместить объявление</Button></Stack></Paper>
         ) : (
-          <Paper withBorder radius="lg" p="lg">
+          <Paper withBorder radius="md" p="lg">
             <Stack gap="md">
               <Select label="Ваш автомобиль" value={vehicleId} onChange={setVehicleId} data={data.vehicles.map((vehicle) => ({ value: vehicle.id, label: `${vehicle.make} ${vehicle.model}, ${vehicle.year}` }))} description={selectedVehicle ? `${selectedVehicle.mileage != null ? `${selectedVehicle.mileage.toLocaleString("ru-RU")} км` : "Пробег не указан"} · ${selectedVehicle.location || "город не указан"}` : undefined} />
               <Button onClick={calculate} loading={submitting} disabled={!vehicleId} color="indigo" radius="md" size="md" leftSection={<IconCalculator size={18} />}>Рассчитать ориентир</Button>
@@ -98,7 +98,7 @@ export default function ValuationPage() {
 
         {result && (
           <Stack gap="md">
-            <Paper radius="lg" p="xl" withBorder style={{ background: "linear-gradient(135deg, #eef2fb 0%, #fff 100%)", borderColor: "#b9caee" }}>
+            <Paper radius="md" p="xl" withBorder style={{ background: "linear-gradient(135deg, #eef2fb 0%, #fff 100%)", borderColor: "#b9caee" }}>
               <Stack gap="sm" align="center">
                 <Text size="xs" c="gray.5" tt="uppercase" fw={700}>Предварительный ориентир</Text>
                 <Text fz="2.2rem" fw={800} c="#1c4291" ff="var(--font-display),sans-serif" lh={1}>{formatPrice(result.estimatedValue)}</Text>
@@ -108,7 +108,7 @@ export default function ValuationPage() {
                 </Group>
               </Stack>
             </Paper>
-            <Paper radius="lg" p="md" withBorder><SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm"><Factor label="Возраст" value={percentage(result.factors.ageFactor)} /><Factor label="Пробег" value={percentage(result.factors.mileageFactor)} /><Factor label="Состояние" value={percentage(result.factors.stateFactor)} /></SimpleGrid></Paper>
+            <Paper radius="md" p="md" withBorder><SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm"><Factor label="Возраст" value={percentage(result.factors.ageFactor)} /><Factor label="Пробег" value={percentage(result.factors.mileageFactor)} /><Factor label="Состояние" value={percentage(result.factors.stateFactor)} /></SimpleGrid></Paper>
             <Alert icon={<IconInfoCircle size={16} />} color="gray" radius="md" variant="light">{result.disclaimer}</Alert>
           </Stack>
         )}

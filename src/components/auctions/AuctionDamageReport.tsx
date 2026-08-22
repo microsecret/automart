@@ -79,7 +79,7 @@ export default function AuctionDamageReport({ report }: { report: AuctionDamageR
   if (!activeSection || !activeItem) return null
 
   return (
-    <Paper className={styles.report} radius="lg" p={{ base: "md", sm: "lg" }} withBorder>
+    <Paper className={styles.report} radius="md" p={{ base: "md", sm: "lg" }} withBorder>
       <Stack gap="md">
         <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
           <Group gap="sm" align="flex-start" wrap="nowrap">

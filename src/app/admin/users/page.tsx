@@ -71,7 +71,7 @@ function formatYekaterinburgRegistration(value: string) {
 
 function DirectorySkeleton() {
   return (
-    <Paper className="admin-directory__table" radius="lg" p="md" withBorder>
+    <Paper className="admin-directory__table" radius="md" p="md" withBorder>
       <Stack gap="sm">
         {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} h={42} radius="md" />)}
       </Stack>
@@ -187,7 +187,7 @@ export default function AdminUsersPage() {
         ) : users.length === 0 ? (
           <EmptyState title={deferredQuery ? "Никого не найдено" : "Пользователей пока нет"} description={deferredQuery ? "Проверьте запрос или сбросьте поиск." : "После регистрации здесь появятся учётные записи и статусы проверки."} actionLabel={deferredQuery ? "Сбросить поиск" : undefined} onAction={deferredQuery ? () => { setQuery(""); setPage(1) } : undefined} />
         ) : (
-          <Paper className="admin-directory__table" radius="lg" p={0} withBorder>
+          <Paper className="admin-directory__table" radius="md" p={0} withBorder>
             <ScrollArea type="auto">
               <Table verticalSpacing="sm" horizontalSpacing="md" highlightOnHover>
                 <Table.Thead>

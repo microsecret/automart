@@ -60,7 +60,7 @@ export default function DashboardDocumentsPage() {
         ) : error ? (
           <AsyncErrorState title="Не удалось загрузить документы" description="Файлы временно недоступны. Повторите запрос." onRetry={() => mutate()} />
         ) : documents.length === 0 ? (
-          <Paper withBorder radius="lg" p="xl">
+          <Paper withBorder radius="md" p="xl">
             <Center py={48}>
               <Stack align="center" gap="sm" maw={440} ta="center">
                 <ThemeIcon size={58} radius="xl" variant="light" color="indigo"><IconFolderOpen size={28} /></ThemeIcon>

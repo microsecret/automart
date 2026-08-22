@@ -37,7 +37,7 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
 
   return (
     <Link className="news-list-card-link" data-featured={featured || undefined} href={newsHref(article)} aria-label={`Открыть новость: ${article.title}`}>
-      <Card className="news-list-card" data-featured={featured || undefined} radius="lg" p={0} withBorder>
+      <Card className="news-list-card" data-featured={featured || undefined} radius="md" p={0} withBorder>
         {article.imageUrl && !imageFailed ? (
           <Image className="news-list-card__image" src={article.imageUrl} alt="" h={featured ? 230 : 156} fit="cover" onError={() => setImageFailed(true)} />
         ) : (

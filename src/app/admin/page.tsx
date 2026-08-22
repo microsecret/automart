@@ -427,7 +427,7 @@ export default function AdminDashboard() {
   return (
     <Box className="admin-workspace" p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
-        <Card className="admin-workspace__hero" radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Card className="admin-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" gap="md" wrap="wrap">
             <Stack gap={5}>
               <Group gap={6}>
@@ -469,7 +469,7 @@ export default function AdminDashboard() {
             <Stack gap="md">
 
         {auctionStats && (
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
               <Group gap="sm" wrap="nowrap">
                 <ThemeIcon variant="light" color="orange" size={40} radius="md"><IconDatabase size={19} /></ThemeIcon>
@@ -489,7 +489,7 @@ export default function AdminDashboard() {
           </Card>
         )}
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="light" color={actionsTotal > 0 ? "orange" : "teal"} size={40} radius="md"><IconListCheck size={19} /></ThemeIcon>
@@ -539,7 +539,7 @@ export default function AdminDashboard() {
           <Tabs.Panel value="sources">
             <Stack gap="md">
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Group justify="space-between" mb="sm" wrap="wrap">
             <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconDatabase size={18} /></ThemeIcon><Box><Text size="sm" fw={750}>Последние синхронизации источников</Text><Text size="xs" c="dimmed">Диагностика импорта без запуска парсера из интерфейса.</Text></Box></Group>
             <Button component={Link} href="/admin/auctions" size="xs" variant="light" color="indigo">Открыть заявки</Button>
@@ -560,7 +560,7 @@ export default function AdminDashboard() {
           ) : <Text size="sm" c="dimmed">Запусков синхронизации ещё нет. После первого штатного запуска журнал появится здесь.</Text>}
         </Card>
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
             <Group gap="sm">
               <ThemeIcon variant="light" color="grape" size={36} radius="md"><IconListCheck size={18} /></ThemeIcon>
@@ -609,7 +609,7 @@ export default function AdminDashboard() {
           ) : <Text size="sm" c="dimmed">Аукционных лотов пока нет — матрица появится после первого импорта.</Text>}
         </Card>
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
             <Group gap="sm">
               <ThemeIcon variant="light" color="cyan" size={36} radius="md"><IconWorld size={18} /></ThemeIcon>
@@ -699,22 +699,22 @@ export default function AdminDashboard() {
               </Alert>
 
               <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-                <Card withBorder radius="lg" p="md">
+                <Card withBorder radius="md" p="md">
                   <ThemeIcon variant="light" color="teal" size={36} radius="md"><IconCoins size={18} /></ThemeIcon>
                   <Text size="xl" fw={850} mt="sm">{data.monetization.confirmedRevenueRub.toLocaleString("ru-RU")} ₽</Text>
                   <Text size="xs" c="dimmed">Подтверждённая выручка</Text>
                 </Card>
-                <Card withBorder radius="lg" p="md">
+                <Card withBorder radius="md" p="md">
                   <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconReceipt size={18} /></ThemeIcon>
                   <Text size="xl" fw={850} mt="sm">{data.monetization.paidOrders}</Text>
                   <Text size="xs" c="dimmed">Оплаченных заказов</Text>
                 </Card>
-                <Card withBorder radius="lg" p="md">
+                <Card withBorder radius="md" p="md">
                   <ThemeIcon variant="light" color="violet" size={36} radius="md"><IconFlame size={18} /></ThemeIcon>
                   <Text size="xl" fw={850} mt="sm">{data.monetization.activePromotions}</Text>
                   <Text size="xs" c="dimmed">Активных продвижений</Text>
                 </Card>
-                <Card withBorder radius="lg" p="md">
+                <Card withBorder radius="md" p="md">
                   <ThemeIcon variant="light" color={data.monetization.reviewRequiredOrders ? "orange" : "gray"} size={36} radius="md"><IconAlertTriangle size={18} /></ThemeIcon>
                   <Text size="xl" fw={850} mt="sm">{data.monetization.pendingOrders + data.monetization.reviewRequiredOrders}</Text>
                   <Text size="xs" c="dimmed">Ожидают / требуют проверки</Text>
@@ -722,7 +722,7 @@ export default function AdminDashboard() {
               </SimpleGrid>
 
               <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-                <Card withBorder radius="lg" p="md">
+                <Card withBorder radius="md" p="md">
                   <Group justify="space-between" mb="md">
                     <Stack gap={1}><Text fw={750}>Выручка по тарифам</Text><Text size="xs" c="dimmed">Только заказы со статусом «Оплачен»</Text></Stack>
                     <Badge variant="light" color="teal">{data.monetization.paidOrders} оплат</Badge>
@@ -740,7 +740,7 @@ export default function AdminDashboard() {
                   </Stack>
                 </Card>
 
-                <Card withBorder radius="lg" p="md">
+                <Card withBorder radius="md" p="md">
                   <Group justify="space-between" mb="md">
                     <Stack gap={1}><Text fw={750}>Последние платёжные заказы</Text><Text size="xs" c="dimmed">Журнал попыток и подтверждений</Text></Stack>
                     <IconCreditCard size={20} color="var(--mantine-color-indigo-6)" />
@@ -768,7 +768,7 @@ export default function AdminDashboard() {
                 </Card>
               </SimpleGrid>
 
-              <Card withBorder radius="lg" p="md">
+              <Card withBorder radius="md" p="md">
                 <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
                   <Group gap="sm" wrap="nowrap">
                     <ThemeIcon variant="light" color={data.monetization.safeDealConfigured ? "teal" : "blue"} size={42} radius="md"><IconShieldCheck size={21} /></ThemeIcon>
@@ -796,7 +796,7 @@ export default function AdminDashboard() {
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
           {stats.map((s) => {
             const metricCard = (
-              <Card className="admin-metric-card" withBorder radius="lg" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
+              <Card className="admin-metric-card" withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start" justify="space-between">
                 <Stack gap={0}>
                   <Text size="xl" fw={800} c="var(--market-ink)" ff="var(--font-display),sans-serif" lh={1}>{s.value}</Text>
@@ -826,44 +826,44 @@ export default function AdminDashboard() {
           исходный адрес и автоматические bot/headless-запросы не учитываются.
         </Alert>
         <SimpleGrid cols={{ base: 1, xs: 2, lg: 7 }} spacing="sm">
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Просмотры · 24 часа</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.pageViews24h}</Text>
             <Text size="xs" c="gray.4">открытые экраны</Text>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · 7 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitors7d}</Text>
             <Text size="xs" c={data.traffic.uniqueVisitorsTrend7d >= 0 ? "teal.6" : "red.6"}>{data.traffic.uniqueVisitorsTrend7d >= 0 ? "+" : ""}{data.traffic.uniqueVisitorsTrend7d}% к прошлой неделе</Text>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Сессии · 7 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.sessions7d}</Text>
             <Text size="xs" c="gray.4">отказы: {data.traffic.bounceRate7d}%</Text>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="teal" size={34} radius="md"><IconUsers size={17} /></ThemeIcon><Text size="xs" c="gray.5">Вошли в аккаунт · 7 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.authenticatedVisitors7d}</Text>
             <Text size="xs" c="gray.4">уникальные пользователи</Text>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="orange" size={34} radius="md"><IconTrendingUp size={17} /></ThemeIcon><Text size="xs" c="gray.5">Конверсия · 7 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.registrationConversion7d}%</Text>
             <Text size="xs" c="gray.4">{data.traffic.attributedRegistrations7d} новых аккаунтов с визитом</Text>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="blue" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные · 30 дней</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitors30d}</Text>
             <Text size="xs" c="gray.4">{data.traffic.newVisitors7d} новых · {data.traffic.returningVisitors7d} вернулись</Text>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconBrandTelegram size={17} /></ThemeIcon><Text size="xs" c="gray.5">Telegram Mini App</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.telegramMiniAppVisitors24h}</Text>
             <Text size="xs" c="gray.4">за 24 ч · {data.traffic.telegramMiniAppVisitors7d} за 7 дней</Text>
           </Card>
         </SimpleGrid>
 
-        <Card className="admin-insight-card" withBorder radius="lg" p="md">
+        <Card className="admin-insight-card" withBorder radius="md" p="md">
           <Group justify="space-between" align="flex-start" gap="md" wrap="wrap" mb="md">
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="light" color="orange" size={38} radius="md"><IconTag size={19} /></ThemeIcon>
@@ -928,7 +928,7 @@ export default function AdminDashboard() {
           </SimpleGrid>
         </Card>
 
-        <Card className="admin-insight-card" withBorder radius="lg" p="md">
+        <Card className="admin-insight-card" withBorder radius="md" p="md">
           <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
             <Group gap="sm">
               <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconTrendingUp size={18} /></ThemeIcon>
@@ -966,7 +966,7 @@ export default function AdminDashboard() {
         </Card>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Text size="sm" fw={700} c="var(--market-ink)" mb={2}>Самые просматриваемые разделы · 7 дней</Text>
             <Text size="xs" c="dimmed" mb="sm">Названия показаны по-русски; число справа — открытия страниц.</Text>
             <Stack gap="xs">
@@ -976,7 +976,7 @@ export default function AdminDashboard() {
               {!data.traffic.topPaths.length && <Text size="xs" c="gray.4">Данные появятся после первых просмотров страниц.</Text>}
             </Stack>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Text size="sm" fw={600} c="var(--market-ink)" mb="sm">Последние идентифицированные посетители</Text>
             <Stack gap="xs">
               {data.traffic.recentVisitors.slice(0, 6).map((visit) => (
@@ -988,7 +988,7 @@ export default function AdminDashboard() {
         </SimpleGrid>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Text size="sm" fw={700} mb="sm">Устройства уникальных посетителей · 7 дней</Text>
             <Stack gap="xs">
               {data.traffic.devices.map((item) => (
@@ -996,7 +996,7 @@ export default function AdminDashboard() {
               ))}
             </Stack>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Text size="sm" fw={700} mb="sm">Источники уникальных посетителей · 7 дней</Text>
             <Stack gap="xs">
               {data.traffic.sources.map((item) => (
@@ -1007,7 +1007,7 @@ export default function AdminDashboard() {
         </SimpleGrid>
 
         {/* Распределение по категориям */}
-        <Card className="admin-insight-card" withBorder radius="lg" p="md">
+        <Card className="admin-insight-card" withBorder radius="md" p="md">
           <Group justify="space-between" mb="sm">
             <Text size="sm" fw={600} c="var(--market-ink)">Объявления по категориям транспорта</Text>
             <Badge variant="light" color="indigo" size="sm">{c.listings} всего</Badge>
@@ -1028,21 +1028,21 @@ export default function AdminDashboard() {
 
         {/* Доп. статистика */}
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Stack gap="xs">
               <Group gap="sm"><IconFlame size={16} color="#f97316" /><Text size="xs" c="gray.5">Премиум-объявления</Text></Group>
               <Text size="xl" fw={700} c="var(--market-ink)">{data?.featured ?? 0}</Text>
               <Text size="xs" c="gray.4">{Math.round(((data?.featured ?? 0) / total) * 100)}% от всех</Text>
             </Stack>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Stack gap="xs">
               <Group gap="sm"><IconTrendingUp size={16} color="#16a34a" /><Text size="xs" c="gray.5">Средняя цена</Text></Group>
               <Text size="xl" fw={700} c="var(--market-ink)">{data?.avgPrice?.toLocaleString("ru-RU") ?? 0} ₽</Text>
               <Text size="xs" c="gray.4">по всем объявлениям</Text>
             </Stack>
           </Card>
-          <Card className="admin-insight-card" withBorder radius="lg" p="md">
+          <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Stack gap="xs">
               <Group gap="sm"><IconUsers size={16} color="#1c4291" /><Text size="xs" c="gray.5">Роли</Text></Group>
               {Object.entries(data?.byRole || {}).map(([role, count]) => (
@@ -1056,19 +1056,19 @@ export default function AdminDashboard() {
         </SimpleGrid>
 
         {/* Быстрые действия */}
-        <Card className="admin-insight-card" withBorder radius="lg" p="md">
+        <Card className="admin-insight-card" withBorder radius="md" p="md">
           <Text size="sm" fw={600} c="var(--market-ink)" mb="sm">Управление</Text>
           <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-            <Card className="admin-action-card" component={Link} href="/admin/users" withBorder radius="lg" p="sm">
+            <Card className="admin-action-card" component={Link} href="/admin/users" withBorder radius="md" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconUsers size={16} /></ThemeIcon><Text size="xs" fw={500}>Пользователи</Text></Group>
             </Card>
-            <Card className="admin-action-card" component={Link} href="/moderation" withBorder radius="lg" p="sm">
+            <Card className="admin-action-card" component={Link} href="/moderation" withBorder radius="md" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="blue" size={32} radius="md"><IconCar size={16} /></ThemeIcon><Text size="xs" fw={500}>Объявления</Text></Group>
             </Card>
-            <Card className="admin-action-card" component={Link} href="/parts-finder" withBorder radius="lg" p="sm">
+            <Card className="admin-action-card" component={Link} href="/parts-finder" withBorder radius="md" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="green" size={32} radius="md"><IconTag size={16} /></ThemeIcon><Text size="xs" fw={500}>Запчасти</Text></Group>
             </Card>
-            <Card className="admin-action-card" component={Link} href="/messages" withBorder radius="lg" p="sm">
+            <Card className="admin-action-card" component={Link} href="/messages" withBorder radius="md" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={32} radius="md"><IconMessageCircle2 size={16} /></ThemeIcon><Text size="xs" fw={500}>Сообщения</Text></Group>
             </Card>
           </SimpleGrid>

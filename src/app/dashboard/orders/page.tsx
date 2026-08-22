@@ -75,7 +75,7 @@ export default function BuyerOrdersPage() {
         </Group>
 
         {orders.length === 0 ? (
-          <Card withBorder radius="lg" p="xl">
+          <Card withBorder radius="md" p="xl">
             <Stack align="center" gap="sm" ta="center" maw={460} mx="auto">
               <ThemeIcon variant="light" color="indigo" size={52} radius="md"><IconClipboardList size={26} /></ThemeIcon>
               <Text fw={700}>Заказов пока нет</Text>
@@ -92,7 +92,7 @@ export default function BuyerOrdersPage() {
               const isCancelled = order.status === "CANCELLED"
               const activeStep = isCancelled ? -1 : FLOW.indexOf(order.status)
               return (
-                <Card key={order.id} withBorder radius="lg" p="md">
+                <Card key={order.id} withBorder radius="md" p="md">
                   <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
                     <Box style={{ minWidth: 0, flex: 1 }}>
                       <Group gap="xs" wrap="wrap">

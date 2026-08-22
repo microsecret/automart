@@ -153,7 +153,7 @@ export default function TelegramBroadcastPage() {
           </Group>
         )}
 
-        <Card withBorder radius="lg" p="lg">
+        <Card withBorder radius="md" p="lg">
           <Stack gap="md">
             <Box>
               <Text size="sm" fw={700} mb={6}>Кому отправить</Text>
@@ -206,7 +206,7 @@ export default function TelegramBroadcastPage() {
         {/* История: рассылку нельзя отозвать, поэтому важно видеть, что уже
             ушло, прежде чем писать следующее письмо. */}
         {data?.history && data.history.length > 0 && (
-          <Card withBorder radius="lg" p="lg">
+          <Card withBorder radius="md" p="lg">
             <Text size="sm" fw={700} mb="sm">Последние рассылки</Text>
             <Stack gap="xs">
               {data.history.map((item) => (

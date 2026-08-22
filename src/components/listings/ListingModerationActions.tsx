@@ -114,7 +114,7 @@ export default function ListingModerationActions({
 
   return (
     <>
-      <Paper withBorder radius="lg" p="md">
+      <Paper withBorder radius="md" p="md">
         <Group gap="xs" mb="sm">
           <ThemeIcon variant="light" color="grape" size={30} radius="md"><IconShieldCog size={16} /></ThemeIcon>
           <Text size="sm" fw={700}>Модерация</Text>

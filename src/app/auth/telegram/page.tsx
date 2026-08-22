@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Вход в аккаунт" }
 export default function TelegramAuthPage() {
   return (
     <Box maw={460} mx="auto" py={{ base: "xl", md: 80 }} px="md">
-      <Paper withBorder radius="lg" p={{ base: "lg", md: "xl" }}>
+      <Paper withBorder radius="md" p={{ base: "lg", md: "xl" }}>
         <Stack gap="lg">
           <div>
             <Title order={1} fz={28}>Вход в аккаунт</Title>

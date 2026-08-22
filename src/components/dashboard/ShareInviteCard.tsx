@@ -24,7 +24,7 @@ export default function ShareInviteCard() {
   const telegramShare = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`
 
   return (
-    <Paper withBorder radius="lg" p="md">
+    <Paper withBorder radius="md" p="md">
       <Group gap="sm" wrap="nowrap" align="flex-start">
         <ThemeIcon variant="light" color="teal" size={34} radius="md"><IconGift size={18} /></ThemeIcon>
         <div style={{ minWidth: 0, flex: 1 }}>

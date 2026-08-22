@@ -99,7 +99,7 @@ export default function MapPage() {
         />
 
         <Box className="listing-map-layout">
-          <Paper className="listing-map-panel" radius="lg" withBorder>
+          <Paper className="listing-map-panel" radius="md" withBorder>
             <iframe
               src={mapUrl}
               className="listing-map-panel__frame"
@@ -108,7 +108,7 @@ export default function MapPage() {
             />
           </Paper>
 
-          <Paper className="listing-map-results" radius="lg" withBorder>
+          <Paper className="listing-map-results" radius="md" withBorder>
             <ScrollArea className="listing-map-results__scroll">
               <Stack gap="xs" p="sm">
                 {error ? <AsyncErrorState title="Не удалось загрузить объявления" description="Карта остаётся доступна. Повторите запрос, чтобы вернуть список." onRetry={() => void mutate()} /> :

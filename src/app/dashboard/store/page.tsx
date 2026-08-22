@@ -246,7 +246,7 @@ export default function StoreWorkspacePage() {
   return (
     <Container size="lg" py={{ base: "md", md: "xl" }}>
       <Stack gap="lg">
-        <Card className="store-workspace__hero" radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Card className="store-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" gap="md" wrap="wrap">
             <Group gap="sm" align="center" wrap="nowrap">
               <ThemeIcon variant="white" color="dark" size={46} radius="md"><IconBuildingStore size={23} /></ThemeIcon>
@@ -270,7 +270,7 @@ export default function StoreWorkspacePage() {
           /* Инструменты магазина открываются проверенной компании: до этого
              продавцу нужно объяснить шаг, а не показывать форму, которую
              сервер всё равно отклонит. */
-          <Card withBorder radius="lg" p="xl">
+          <Card withBorder radius="md" p="xl">
             <Stack align="center" gap="sm" ta="center" maw={520} mx="auto">
               <ThemeIcon variant="light" color={access.applicationStatus === "PENDING" ? "orange" : "indigo"} size={52} radius="md">
                 <IconShieldCheck size={26} />
@@ -291,7 +291,7 @@ export default function StoreWorkspacePage() {
             </Stack>
           </Card>
         ) : !store ? (
-          <Card withBorder radius="lg" p="lg">
+          <Card withBorder radius="md" p="lg">
             {!isCreating ? (
               <Stack align="center" gap="sm" py="lg" ta="center" maw={520} mx="auto">
                 <ThemeIcon variant="light" color="indigo" size={52} radius="md"><IconBuildingStore size={26} /></ThemeIcon>
@@ -376,7 +376,7 @@ export default function StoreWorkspacePage() {
           </Card>
         ) : (
           <>
-            <Card withBorder radius="lg" p="md">
+            <Card withBorder radius="md" p="md">
               <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
                 <Box>
                   <Group gap="xs">
@@ -430,7 +430,7 @@ export default function StoreWorkspacePage() {
 
             {store._count.parts > 0 && <StoreCatalogPanel storeId={store.id} />}
 
-            <Card withBorder radius="lg" p="md">
+            <Card withBorder radius="md" p="md">
               <Group gap="sm" mb="sm">
                 <ThemeIcon variant="light" color="teal" size={34} radius="md"><IconFileSpreadsheet size={17} /></ThemeIcon>
                 <Box>
@@ -476,7 +476,7 @@ export default function StoreWorkspacePage() {
             </Card>
 
             {preview && (
-              <Card withBorder radius="lg" p="md">
+              <Card withBorder radius="md" p="md">
                 <Group justify="space-between" gap="sm" wrap="wrap" mb="sm">
                   <Box>
                     <Text fw={750} size="sm">Предпросмотр загрузки</Text>

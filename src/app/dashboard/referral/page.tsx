@@ -59,7 +59,7 @@ export default function ReferralPage() {
   return (
     <Container size="lg" py={{ base: "md", md: "xl" }}>
       <Stack gap="lg">
-        <Card className="store-workspace__hero" radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Card className="store-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" gap="md" wrap="wrap">
             <Group gap="sm" align="center" wrap="nowrap">
               <ThemeIcon variant="white" color="dark" size={46} radius="md"><IconGift size={23} /></ThemeIcon>
@@ -79,7 +79,7 @@ export default function ReferralPage() {
           </Group>
         </Card>
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Text fw={750} size="sm" mb={4}>Ваша реферальная ссылка</Text>
           <Text size="xs" c="dimmed" mb="sm">
             Отправьте её тому, кого приглашаете. Связь закрепляется при регистрации и не меняется.
@@ -99,19 +99,19 @@ export default function ReferralPage() {
         </Card>
 
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Приглашено</Text>
             <Text fw={850} size="xl" mt={4}>{data.stats.invitedCount}</Text>
           </Card>
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Из них с оплатой</Text>
             <Text fw={850} size="xl" mt={4}>{data.stats.paidInviteesCount}</Text>
           </Card>
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Начислено всего</Text>
             <Text fw={850} size="xl" mt={4}>{data.stats.accruedRub.toLocaleString("ru-RU")} ₽</Text>
           </Card>
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Доступно к выплате</Text>
             <Text fw={850} size="xl" mt={4} c={data.stats.availableRub > 0 ? "teal" : undefined}>
               {data.stats.availableRub.toLocaleString("ru-RU")} ₽
@@ -120,7 +120,7 @@ export default function ReferralPage() {
         </SimpleGrid>
 
         {data.nextTier && (
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Group justify="space-between" gap="xs" wrap="wrap" mb={6}>
               <Text size="sm" fw={700}>
                 До ставки {data.nextTier.tier.percent}% нужно ещё {data.nextTier.needed}
@@ -135,7 +135,7 @@ export default function ReferralPage() {
           {data.payoutNote}
         </Alert>
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Group gap="xs" mb="sm">
             {([
               { key: "invitees" as const, label: `Приглашённые (${data.invitees.length})`, icon: <IconUsers size={14} /> },

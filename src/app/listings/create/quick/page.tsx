@@ -105,7 +105,7 @@ export default function QuickCreatePage() {
   if (state === "done") {
     return (
       <Container size="sm" py="xl">
-        <Card withBorder radius="lg" p="xl">
+        <Card withBorder radius="md" p="xl">
           <Stack align="center" gap="sm" ta="center">
             <ThemeIcon size={56} radius="xl" color="teal" variant="light"><IconCheck size={28} /></ThemeIcon>
             <Title order={2} size="h4">Объявление отправлено</Title>
@@ -136,7 +136,7 @@ export default function QuickCreatePage() {
           </Box>
         </Group>
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Stack gap="sm">
             <Select
               label="Что размещаете"
@@ -165,7 +165,7 @@ export default function QuickCreatePage() {
           </Stack>
         </Card>
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Group justify="space-between" gap="xs" wrap="wrap" mb="sm">
             <Group gap="xs">
               <ThemeIcon variant="light" color="teal" size={30} radius="md"><IconPhoto size={16} /></ThemeIcon>

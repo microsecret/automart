@@ -184,7 +184,7 @@ export default function SupportChat() {
                 ) : chat.error ? (
                   <Stack align="center" py="xl"><IconMessageCircle2 size={30} color="gray" /><Text size="sm" c="red" ta="center">Не удалось загрузить переписку</Text><Button size="xs" variant="light" onClick={() => void chat.mutate()}>Повторить</Button></Stack>
                 ) : messages.length === 0 ? (
-                  <Paper withBorder radius="lg" p="md" bg="white">
+                  <Paper withBorder radius="md" p="md" bg="white">
                     <Group gap="sm" align="flex-start" wrap="nowrap">
                       <ThemeIcon variant="light" color="indigo" radius="xl"><IconRobot size={17} /></ThemeIcon>
                       <Stack gap={5}>
@@ -203,7 +203,7 @@ export default function SupportChat() {
                       <Box key={message.id} ml={visitor ? "auto" : 0} maw={system ? "100%" : "84%"} w={system ? "100%" : undefined}>
                         <Paper
                           withBorder={!system}
-                          radius="lg"
+                          radius="md"
                           px="sm"
                           py="xs"
                           bg={system ? "gray.2" : visitor ? "indigo.6" : "white"}

@@ -407,7 +407,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   }
 
   return (
-    <Paper id="fuel-station-map" className="fuel-map-canvas" radius="lg" withBorder>
+    <Paper id="fuel-station-map" className="fuel-map-canvas" radius="md" withBorder>
       <Box ref={mapInteractionRef} className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}. Стрелки перемещают карту, плюс и минус меняют масштаб.`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onKeyDown={handleKeyDown}>
         <Box className="fuel-map-canvas__tile-layer" aria-hidden="true">
         {tiles.map((tile) => (
@@ -525,7 +525,7 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
   const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
 
   return (
-    <Paper radius="lg" p="md" withBorder style={{ borderColor: "#8fa9de", background: "linear-gradient(135deg, #eef2fb 0%, #fff 56%)" }}>
+    <Paper radius="md" p="md" withBorder style={{ borderColor: "#8fa9de", background: "linear-gradient(135deg, #eef2fb 0%, #fff 56%)" }}>
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
           <Group gap="sm" wrap="nowrap">
@@ -727,7 +727,7 @@ export default function FuelMapPage() {
               <Box><Text component="h1" fz={{ base: 28, md: 38 }} fw={850} lh={1.08} c="white" ff="var(--font-display),sans-serif">Карта АЗС России</Text><Text c="rgba(255,255,255,0.8)" mt={8} maw={620}>Выберите город, посмотрите открытые точки заправок и сразу постройте маршрут в привычном картографическом сервисе.</Text></Box>
               <Text size="xs" c="rgba(255,255,255,0.64)">Ищите любой населённый пункт или участок трассы по России. Цены и фактическое наличие показываются только от подтверждённого поставщика.</Text>
             </Stack>
-            <Paper className="fuel-map-hero__control" radius="lg" p="md" withBorder>
+            <Paper className="fuel-map-hero__control" radius="md" p="md" withBorder>
               <Text size="xs" fw={750} tt="uppercase" c="gray.6" mb={6}>Населённый пункт или трасса</Text>
               <Box component="form" onSubmit={handlePlaceSearch}><TextInput aria-label="Введите населённый пункт или трассу" placeholder="Например: Уфа или М-5 Урал" value={placeQuery} onChange={(event) => setPlaceQuery(event.currentTarget.value)} rightSection={<ActionIcon type="submit" size="sm" variant="subtle" color="indigo" aria-label="Открыть место на карте"><IconSearch size={16} /></ActionIcon>} /></Box>
               <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Быстрый выбор города</Text>
@@ -751,7 +751,7 @@ export default function FuelMapPage() {
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
-            <Paper className="fuel-map-list" radius="lg" p="sm" withBorder style={{ gridColumn: "span 2" }}>
+            <Paper className="fuel-map-list" radius="md" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">
                 {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} /></Box>}
                 {listedStations.map((station) => (
@@ -766,7 +766,7 @@ export default function FuelMapPage() {
           </SimpleGrid>
         )}
 
-        <Paper radius="lg" p="md" withBorder className="fuel-map-note"><Group gap="sm" align="flex-start" wrap="nowrap"><ThemeIcon variant="light" color="cyan" radius="md"><IconMapPin size={18} /></ThemeIcon><Stack gap={2}><Text size="sm" c="dimmed">{data?.disclaimer || "Точки и открытые теги предоставлены OpenStreetMap. Ассортимент, цены и наличие топлива уточняйте на АЗС."}</Text>{data?.coverage.dataMode === "LIVE" && data.coverage.providerAttributionUrl && <Anchor size="xs" href={data.coverage.providerAttributionUrl} target="_blank" rel="noreferrer">Данные об АЗС: Заправкин</Anchor>}</Stack></Group></Paper>
+        <Paper radius="md" p="md" withBorder className="fuel-map-note"><Group gap="sm" align="flex-start" wrap="nowrap"><ThemeIcon variant="light" color="cyan" radius="md"><IconMapPin size={18} /></ThemeIcon><Stack gap={2}><Text size="sm" c="dimmed">{data?.disclaimer || "Точки и открытые теги предоставлены OpenStreetMap. Ассортимент, цены и наличие топлива уточняйте на АЗС."}</Text>{data?.coverage.dataMode === "LIVE" && data.coverage.providerAttributionUrl && <Anchor size="xs" href={data.coverage.providerAttributionUrl} target="_blank" rel="noreferrer">Данные об АЗС: Заправкин</Anchor>}</Stack></Group></Paper>
       </Stack>
     </Box>
   )

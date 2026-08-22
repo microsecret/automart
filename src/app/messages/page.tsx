@@ -100,7 +100,7 @@ export default function MessagesPage() {
         ) : error ? (
           <AsyncErrorState title="Не удалось загрузить сообщения" description="Диалоги временно недоступны. Повторите запрос." onRetry={() => mutate()} />
         ) : (
-          <Paper withBorder radius="lg" p={0} className="messages-workspace av-fade-in">
+          <Paper withBorder radius="md" p={0} className="messages-workspace av-fade-in">
             <Box className="messages-workspace__list">
               <Box p="md" className="messages-workspace__search">
                 <TextInput value={query} onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Поиск по диалогам" leftSection={<IconSearch size={16} />} aria-label="Поиск по диалогам" />

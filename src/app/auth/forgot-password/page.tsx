@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
         </Stack>
 
         {sent ? (
-          <Card withBorder radius="lg" p="xl" w={420}>
+          <Card withBorder radius="md" p="xl" w={420}>
             <Stack gap="md" align="center">
               <ThemeIcon variant="light" color="green" size={56} radius="xl"><IconCheck size={28} /></ThemeIcon>
               <Stack gap={0} align="center">
@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
             </Stack>
           </Card>
         ) : (
-          <Card withBorder radius="lg" p="xl" w={420} shadow="sm">
+          <Card withBorder radius="md" p="xl" w={420} shadow="sm">
             <form onSubmit={handleSubmit}>
               <Stack gap="md">
                 <Alert icon={<IconMail size={16} />} color="indigo" variant="light" radius="md">

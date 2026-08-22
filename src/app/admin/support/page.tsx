@@ -207,7 +207,7 @@ export default function AdminSupportPage() {
   return (
     <Box p={{ base: "xs", sm: "md" }}>
       <Stack gap="md">
-        <Card className="admin-workspace__hero" radius="lg" p={{ base: "md", sm: "lg" }}>
+        <Card className="admin-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" gap="md" wrap="wrap">
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="white" color="dark" size={48} radius="md"><IconHeadset size={25} /></ThemeIcon>
@@ -223,7 +223,7 @@ export default function AdminSupportPage() {
           </Group>
         </Card>
 
-        <Paper withBorder radius="lg" p="sm">
+        <Paper withBorder radius="md" p="sm">
           <Stack gap="sm">
             <SegmentedControl value={status} onChange={setStatus} data={STATUS_OPTIONS} fullWidth />
             <Group align="end" grow>
@@ -242,7 +242,7 @@ export default function AdminSupportPage() {
 
         <Grid gutter="md" align="stretch">
           <Grid.Col span={{ base: 12, lg: 4 }}>
-            <Paper withBorder radius="lg" h={{ base: 430, lg: 720 }}>
+            <Paper withBorder radius="md" h={{ base: 430, lg: 720 }}>
               {list.isLoading ? (
                 <Center h="100%"><Loader /></Center>
               ) : list.error ? (
@@ -287,7 +287,7 @@ export default function AdminSupportPage() {
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, lg: 8 }}>
-            <Paper withBorder radius="lg" h={{ base: 640, lg: 720 }} p="md">
+            <Paper withBorder radius="md" h={{ base: 640, lg: 720 }} p="md">
               {!selectedId ? (
                 <Center h="100%"><Text c="dimmed">Выберите обращение слева</Text></Center>
               ) : detail.isLoading ? (
@@ -339,7 +339,7 @@ export default function AdminSupportPage() {
                           <Box key={message.id} ml={staff ? "auto" : 0} mr={!staff && !system ? "auto" : 0} maw={system ? "100%" : "82%"} w={system ? "100%" : undefined}>
                             <Paper
                               withBorder={!system}
-                              radius="lg"
+                              radius="md"
                               p="sm"
                               bg={system ? "var(--mantine-color-gray-1)" : staff ? "var(--mantine-color-indigo-light)" : "white"}
                             >

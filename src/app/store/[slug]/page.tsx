@@ -86,7 +86,7 @@ export default async function StorefrontPage({ params }: PageProps) {
   return (
     <Container size="lg" py={{ base: "md", md: "xl" }}>
       <Stack gap="lg">
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Group gap="sm" align="flex-start" wrap="nowrap">
             <ThemeIcon variant="light" color="indigo" size={48} radius="md"><IconBuildingStore size={24} /></ThemeIcon>
             <Box style={{ minWidth: 0 }}>
@@ -117,7 +117,7 @@ export default async function StorefrontPage({ params }: PageProps) {
         )}
 
         {parts.length === 0 ? (
-          <Card withBorder radius="lg" p="xl">
+          <Card withBorder radius="md" p="xl">
             <Text ta="center" c="dimmed">Каталог магазина пока пуст.</Text>
           </Card>
         ) : (

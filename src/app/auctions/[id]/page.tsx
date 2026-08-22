@@ -554,7 +554,7 @@ function AuctionDetail() {
                 const similarImages = parseAuctionImages(similarListing.images) || []
                 const similarImage = isSafeMediaUrl(similarListing.imageUrl) ? similarListing.imageUrl : similarImages[0]
                 return (
-                  <Paper key={similarListing.id} component={Link} href={`/auctions/${similarListing.id}`} radius="lg" withBorder className={styles.similarCard}>
+                  <Paper key={similarListing.id} component={Link} href={`/auctions/${similarListing.id}`} radius="md" withBorder className={styles.similarCard}>
                     <Box h={150} bg="gray.1" pos="relative" style={{ overflow: "hidden" }}>
                       {similarImage ? (
                         // eslint-disable-next-line @next/next/no-img-element

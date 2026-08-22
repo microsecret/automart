@@ -220,7 +220,7 @@ export default function TelegramMiniApp() {
           {status === "ready" && (
             <Stack gap="md">
               <Button component={Link} href="/dashboard" onClick={triggerHaptic} color="indigo" radius="lg" size="md" fullWidth rightSection={<IconExternalLink size={16} />}>Открыть личный кабинет</Button>
-              <Paper component={Link} href="/services/fuel-map" onClick={triggerHaptic} radius="lg" p="md" bg="teal.0" style={{ textDecoration: "none", border: "1px solid var(--mantine-color-teal-2)" }}>
+              <Paper component={Link} href="/services/fuel-map" onClick={triggerHaptic} radius="md" p="md" bg="teal.0" style={{ textDecoration: "none", border: "1px solid var(--mantine-color-teal-2)" }}>
                 <Group wrap="nowrap" align="center"><Avatar color="teal" variant="light" radius="md"><IconGasStation size={20} /></Avatar><Stack gap={2} miw={0}><Text fw={800} c="teal.9">Карта АЗС рядом</Text><Text size="xs" c="teal.8">Маршрут, виды топлива и live-цены при подключённом поставщике</Text></Stack><IconExternalLink size={16} color="var(--mantine-color-teal-7)" /></Group>
               </Paper>
               {QUICK_ACTION_GROUPS.map((group) => (

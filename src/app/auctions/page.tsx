@@ -282,7 +282,7 @@ function AuctionsPageContent() {
           {data?.pagination?.total || 0} авто в активном каталоге · {sourceSummary ? `источники: ${sourceSummary}` : "источники уточняются"} · доставка в РФ
         </Text>
 
-        <Paper radius="lg" p="md" withBorder className="auction-filter-panel">
+        <Paper radius="md" p="md" withBorder className="auction-filter-panel">
           <Stack gap="sm">
             <Group justify="space-between" align="center">
               <Box><Text size="sm" fw={750}>Подберите лот под импорт</Text><Text size="xs" c="dimmed">Площадка зависит от страны, цена лота пересчитывается по курсу ЦБ.</Text></Box>
@@ -378,7 +378,7 @@ function AuctionsPageContent() {
         </Group>
 
         {analytics && analytics.total > 0 && (
-          <Paper radius="lg" p="md" withBorder className={styles.brandDiscovery}>
+          <Paper radius="md" p="md" withBorder className={styles.brandDiscovery}>
             <Stack gap="sm">
               <Group justify="space-between" gap="sm" wrap="wrap">
                 <Box>
@@ -531,7 +531,7 @@ function AuctionsPageContent() {
             onRetry={() => mutate()}
           />
         ) : listings.length === 0 ? (
-          <Paper radius="lg" p={{ base: "lg", md: "xl" }} withBorder>
+          <Paper radius="md" p={{ base: "lg", md: "xl" }} withBorder>
             <Stack align="center" gap="sm" maw={460} mx="auto" ta="center">
               <ThemeIcon size={52} radius="xl" variant="light" color={hasActiveFilters ? "gray" : "orange"}>
                 <IconDatabaseOff size={26} />
@@ -574,7 +574,7 @@ function AuctionsPageContent() {
                 onPointerDown={() => warmAuctionDetailImage(l)}
                 onTouchStart={() => warmAuctionDetailImage(l)}
               >
-                <Paper radius="lg" withBorder className="auction-result-card">
+                <Paper radius="md" withBorder className="auction-result-card">
                   <AuctionMedia listing={l} priority={listingIndex < 4} />
                   <Box p="md" className="auction-result-card__content">
                     <Group gap="sm" wrap="nowrap" align="center">

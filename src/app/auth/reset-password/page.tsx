@@ -73,7 +73,7 @@ function ResetPasswordWorkspace() {
         </Stack>
 
         {!token ? (
-          <Card withBorder radius="lg" p="xl" w="100%">
+          <Card withBorder radius="md" p="xl" w="100%">
             <Stack gap="md" align="center">
               <ThemeIcon variant="light" color="orange" size={56} radius="xl"><IconMailOff size={28} /></ThemeIcon>
               <Text fw={700} c="var(--market-ink)">Ссылка неполная</Text>
@@ -82,7 +82,7 @@ function ResetPasswordWorkspace() {
             </Stack>
           </Card>
         ) : completed ? (
-          <Card withBorder radius="lg" p="xl" w="100%">
+          <Card withBorder radius="md" p="xl" w="100%">
             <Stack gap="md" align="center">
               <ThemeIcon variant="light" color="green" size={56} radius="xl"><IconCheck size={28} /></ThemeIcon>
               <Text fw={700} c="var(--market-ink)">Пароль обновлён</Text>
@@ -90,7 +90,7 @@ function ResetPasswordWorkspace() {
             </Stack>
           </Card>
         ) : (
-          <Card withBorder radius="lg" p="xl" w="100%" shadow="sm">
+          <Card withBorder radius="md" p="xl" w="100%" shadow="sm">
             <form onSubmit={handleSubmit}>
               <Stack gap="md">
                 <Alert icon={<IconLock size={16} />} color="indigo" variant="light" radius="md">Минимум 8 символов. После смены пароля все активные сессии будут завершены.</Alert>

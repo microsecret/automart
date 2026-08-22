@@ -303,7 +303,7 @@ function DashboardContent() {
             знакомых: он как раз занят покупкой и разговаривает об этом. */}
         <ShareInviteCard />
 
-        <Paper className="dashboard-workspace" radius="lg" p={{ base: "md", md: "lg" }} withBorder>
+        <Paper className="dashboard-workspace" radius="md" p={{ base: "md", md: "lg" }} withBorder>
           <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
             <Stack gap={5} maw={560}>
               <Badge className="dashboard-workspace__eyebrow" variant="light" color={hasAttentionItems ? "orange" : "indigo"} radius="xl">
@@ -497,7 +497,7 @@ function DashboardContent() {
               </Paper>
             </SimpleGrid>
 
-            <Paper radius="lg" p={{ base: "md", md: "lg" }} withBorder>
+            <Paper radius="md" p={{ base: "md", md: "lg" }} withBorder>
               <Group justify="space-between" align="flex-start" mb="md" gap="sm">
                 <Stack gap={1}>
                   <Text fw={800} fz="lg">История продвижений</Text>
@@ -590,7 +590,7 @@ function DashboardContent() {
         )}
 
         {tab === "garage" && (
-          <Paper className="dashboard-garage" radius="lg" p={{ base: "md", md: "lg" }} withBorder>
+          <Paper className="dashboard-garage" radius="md" p={{ base: "md", md: "lg" }} withBorder>
             <Group justify="space-between" align="flex-start" mb="md" gap="md" wrap="wrap">
               <Group gap="sm" align="center">
                 <ThemeIcon variant="light" color="teal" size={42} radius="md"><IconCar size={21} /></ThemeIcon>

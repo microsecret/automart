@@ -74,19 +74,19 @@ export default async function AuctionLandingPage({ params }: PageProps) {
         </Box>
 
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Автомобилей в наличии</Text>
             <Text fw={850} size="xl" mt={4}>{landing.total}</Text>
           </Card>
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Цена под ключ от</Text>
             <Text fw={850} size="xl" mt={4}>{stats.minPrice ? formatPriceShort(stats.minPrice) : "—"}</Text>
           </Card>
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Медианная цена</Text>
             <Text fw={850} size="xl" mt={4}>{stats.medianPrice ? formatPriceShort(stats.medianPrice) : "—"}</Text>
           </Card>
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Средний год выпуска</Text>
             <Text fw={850} size="xl" mt={4}>{stats.averageYear ?? "—"}</Text>
           </Card>
@@ -102,7 +102,7 @@ export default async function AuctionLandingPage({ params }: PageProps) {
         </Group>
 
         {stats.models.length > 0 && (
-          <Card withBorder radius="lg" p="md">
+          <Card withBorder radius="md" p="md">
             <Title order={2} size="h5" mb="sm">Какие модели {landing.makeLabel} есть в наличии</Title>
             <Group gap={6} wrap="wrap">
               {stats.models.map((item) => (
@@ -119,7 +119,7 @@ export default async function AuctionLandingPage({ params }: PageProps) {
           </Card>
         )}
 
-        <Card withBorder radius="lg" p="md">
+        <Card withBorder radius="md" p="md">
           <Title order={2} size="h5" mb="sm">Как проходит покупка {landing.makeLabel} из {landing.countryGenitive}</Title>
           <Stack gap="sm">
             <Group gap="sm" align="flex-start" wrap="nowrap">

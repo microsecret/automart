@@ -93,7 +93,7 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
   }
 
   return (
-    <Card withBorder radius="lg" p="md">
+    <Card withBorder radius="md" p="md">
       <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
         <Group gap="sm">
           <ThemeIcon variant="light" color="orange" size={34} radius="md"><IconClipboardList size={17} /></ThemeIcon>

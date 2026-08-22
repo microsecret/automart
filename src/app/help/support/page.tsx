@@ -26,18 +26,18 @@ export default function HelpSupportPage() {
         </Stack>
 
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
-          <Card withBorder radius="lg" p="lg">
+          <Card withBorder radius="md" p="lg">
             <Stack gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconRobot size={18} /></ThemeIcon><Text fw={750}>Сначала — инструкция</Text><Text size="sm" c="dimmed">Помощник отвечает по проверенной базе знаний: регистрация, объявления, аукционы, доставка и безопасность.</Text></Stack>
           </Card>
-          <Card withBorder radius="lg" p="lg">
+          <Card withBorder radius="md" p="lg">
             <Stack gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconUserCheck size={18} /></ThemeIcon><Text fw={750}>Затем — оператор</Text><Text size="sm" c="dimmed">Если ответа недостаточно, нажмите «Позвать оператора». Сотрудник увидит историю и продолжит диалог в том же окне.</Text></Stack>
           </Card>
-          <Card withBorder radius="lg" p="lg">
+          <Card withBorder radius="md" p="lg">
             <Stack gap="sm"><ThemeIcon variant="light" color="blue" radius="md"><IconLock size={18} /></ThemeIcon><Text fw={750}>Контакт — по желанию</Text><Text size="sm" c="dimmed">Гость может оставить имя, телефон или email. Пароли, коды входа и платёжные данные поддержка не запрашивает.</Text></Stack>
           </Card>
         </SimpleGrid>
 
-        <Card withBorder radius="lg" p={{ base: "md", sm: "xl" }}>
+        <Card withBorder radius="md" p={{ base: "md", sm: "xl" }}>
           <Group align="flex-start" gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
             <ThemeIcon variant="light" color="grape" size={40} radius="md" style={{ flexShrink: 0 }}><IconBook2 size={20} /></ThemeIcon>
             <Stack gap="sm" style={{ minWidth: 0 }}>
