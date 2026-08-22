@@ -152,7 +152,7 @@
   --market-scroll-thumb: #4b4d5a;
   --market-selection: #102a59;
   --market-selection-ink: #f5f5f7;
-  --market-caret: #a5b4fc;
+  --market-caret: #8fa9de;
 
   /* В тёмной теме те же состояния читаются как приглушённая подложка: тон
      сохраняется, светлота уходит под текст светлой темы. */
@@ -456,43 +456,29 @@ select {
 
 .market-app-header {
   height: var(--app-header-height);
-  /* Шапка была почти прозрачной и сливалась со страницей. Плотный градиент с
-     индиго-подложкой даёт ей насыщенность и отделяет от контента.
-     Фон остаётся светлым намеренно: кнопки, иконки и текст в шапке
-     рассчитаны на светлую основу, и тёмная плашка сломала бы их читаемость. */
-  background:
-    linear-gradient(180deg, #e8ecff 0%, #d5dcfb 58%, #c9d2f8 100%) !important;
-  border-bottom-color: #a5b4fc !important;
-  box-shadow:
-    0 10px 30px -22px rgba(11, 32, 80, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
-  backdrop-filter: blur(18px) saturate(1.2);
+  /* Шапка — ровная поверхность с тонкой линией снизу.
+     Раньше её заливал трёхточечный градиент из холодных индиго-оттенков со
+     своей тенью и подсветкой изнутри. Шапка видна на каждой странице,
+     поэтому именно она держала прежний вид сайта даже там, где остальное
+     уже перевели на спокойные поверхности.
+
+     Фон остаётся светлым: кнопки, иконки и текст в шапке рассчитаны на
+     светлую основу. */
+  background: var(--market-surface) !important;
+  border-bottom-color: var(--market-line) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: blur(12px);
 }
 
 /* В тёмной теме та же идея, но в своих тонах: глубокий индиго вместо
    светлого, иначе шапка светилась бы белым пятном. */
 [data-mantine-color-scheme="dark"] .market-app-header {
-  background:
-    linear-gradient(180deg,
-      color-mix(in srgb, #1e1b4b 92%, transparent) 0%,
-      color-mix(in srgb, #17162e 94%, transparent) 100%) !important;
-  border-bottom-color: color-mix(in srgb, #14306b 55%, transparent) !important;
-  box-shadow:
-    0 10px 30px -20px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(91, 130, 214, 0.22) !important;
+  background: var(--market-surface) !important;
+  border-bottom-color: var(--market-line) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
-.market-app-header::after {
-  position: absolute;
-  right: 0;
-  bottom: -1px;
-  left: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(91, 130, 214, 0.42), transparent);
-  content: "";
-  opacity: 0.82;
-  pointer-events: none;
-}
+
 
 /* Вкладки разделов в шапке.
    Активная помечена подчёркиванием снизу, а не заливкой: заливка спорила бы
@@ -1165,7 +1151,7 @@ select {
 .lewheel-brand--inverse .lewheel-brand__wordmark strong {
   /* Тот же приём, что и в шапке: сплошной цвет вместо background-clip,
      иначе хвост наклонной «l» остаётся незакрашенным. */
-  color: #a5b4fc;
+  color: #8fa9de;
 }
 
 .partner-header-cta {
@@ -1802,7 +1788,7 @@ select {
 }
 
 .catalog-filter-field:hover {
-  border-color: #a5b4fc;
+  border-color: #8fa9de;
   background: color-mix(in srgb, var(--market-field) 92%, #eef2fb);
 }
 
@@ -1884,7 +1870,7 @@ select {
 }
 
 .catalog-filter-panel[data-expanded] {
-  border-color: #a5b4fc;
+  border-color: #8fa9de;
 }
 
 .catalog-filter-advanced {
@@ -1921,7 +1907,7 @@ select {
 
 .catalog-filter-advanced .mantine-Chip-label:hover {
   transform: translateY(-1px);
-  border-color: #a5b4fc;
+  border-color: #8fa9de;
   background: var(--market-primary-soft);
 }
 
@@ -2656,7 +2642,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .news-list-card-link:hover .news-list-card,
   .news-list-card-link:focus-visible .news-list-card {
-    border-color: #a5b4fc;
+    border-color: #8fa9de;
     box-shadow: 0 22px 34px -30px rgba(11, 32, 80, 0.72);
     transform: translateY(-3px);
   }
@@ -2745,7 +2731,7 @@ select {
 .parts-filter-grid > .mantine-Box-root:hover,
 .auction-filter-grid > .mantine-InputWrapper-root:hover,
 .auction-filter-grid > .mantine-Box-root:hover {
-  border-color: #a5b4fc;
+  border-color: #8fa9de;
   background: color-mix(in srgb, var(--market-field) 92%, #eef2fb);
 }
 
@@ -2826,7 +2812,7 @@ select {
 
 .service-card:hover {
   transform: translateY(-3px);
-  border-color: #a5b4fc;
+  border-color: #8fa9de;
   box-shadow: 0 18px 30px -24px rgba(11, 32, 80, 0.6);
 }
 
@@ -3102,7 +3088,7 @@ select {
 
 @media (hover: hover) and (pointer: fine) {
   .dashboard-document-row:hover {
-    border-color: #a5b4fc;
+    border-color: #8fa9de;
     box-shadow: 0 14px 24px -24px rgba(11, 32, 80, 0.58);
   }
 }
@@ -3885,7 +3871,7 @@ select {
 
 @media (hover: hover) and (pointer: fine) {
   .listing-map-result:hover .listing-map-result__surface {
-    border-color: #a5b4fc;
+    border-color: #8fa9de;
     box-shadow: 0 14px 24px -20px rgba(28, 66, 145, 0.55);
     transform: translateY(-1px);
   }

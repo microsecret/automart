@@ -53,7 +53,7 @@
    остаётся читаемым. */
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="blue"]   { --tone: #93b4fd; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="grape"]  { --tone: #d8b4fe; }
-:global([data-mantine-color-scheme="dark"]) .card[data-tone="indigo"] { --tone: #a5b4fc; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="indigo"] { --tone: #8fa9de; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="orange"] { --tone: #fdba74; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="cyan"]   { --tone: #67e8f9; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="teal"]   { --tone: #5eead4; }
