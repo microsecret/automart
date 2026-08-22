@@ -76,6 +76,15 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const activeImage = images[activeImg] || image
   const displayImage = imageFailed || activeImage.includes("/placeholder/") ? "" : activeImage
   const hasDisplayImage = Boolean(displayImage)
+  // Объявление считается свежим первые сутки: за этот срок его ещё не видели
+  // те, кто заходит на площадку раз в день.
+  const isFresh = Boolean(
+    listing.createdAt && Date.now() - new Date(listing.createdAt).getTime() < 86_400_000,
+  )
+  // Сдвиг для счётчика фото и подписи: каждая метка занимает свою ширину,
+  // иначе при двух метках счётчик оказывался бы поверх них.
+  const tagsOffset = 8 + (listing.isFeatured ? 76 : 0) + (isFresh ? 78 : 0)
+
   const monthlyPayment = formatMonthlyPayment(listing.price)
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
   const usageMeta = getUsageMeta(vehicleType)
@@ -192,21 +201,27 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 ))}
               </Box>
               {/* Счётчик фото */}
-              <Box pos="absolute" top={8} left={listing.isFeatured ? 76 : 8} style={{ background: "rgba(0,0,0,0.6)", borderRadius: 4, padding: "2px 6px", zIndex: 2 }}>
+              <Box pos="absolute" top={8} left={tagsOffset} style={{ background: "rgba(0,0,0,0.6)", borderRadius: 4, padding: "2px 6px", zIndex: 2 }}>
                 <Text fz={10} c="white" fw={500}>{activeImg + 1}/{images.length}</Text>
               </Box>
             </>
           )}
 
-          {/* Бейдж Премиум — слева сверху */}
-          {listing.isFeatured && (
-            <Box pos="absolute" top={8} left={8} style={{ zIndex: 2 }}>
-              <Badge color="dark" variant="filled" size="sm" radius="sm">Премиум</Badge>
+          {/* Метки состояния — слева сверху.
+
+              Показываем только то, что действительно известно про объявление:
+              выделенное продавцом и свежее (меньше суток). Придумывать
+              «проверено» или «срочно» там, где таких данных нет, нельзя —
+              метка перестанет что-либо значить. */}
+          {(listing.isFeatured || isFresh) && (
+            <Box pos="absolute" top={8} left={8} style={{ zIndex: 2, display: "flex", gap: 4 }}>
+              {listing.isFeatured && <span className="market-tag" data-tag="featured">Премиум</span>}
+              {isFresh && <span className="market-tag" data-tag="new">Сегодня</span>}
             </Box>
           )}
 
           {!hasDisplayImage && (
-            <Box pos="absolute" top={8} left={listing.isFeatured ? 76 : 8} style={{ zIndex: 2 }}>
+            <Box pos="absolute" top={8} left={tagsOffset} style={{ zIndex: 2 }}>
               <Badge className="listing-card__media-label" color="gray" variant="white" size="xs" radius="sm">{missingMediaLabel}</Badge>
             </Box>
           )}

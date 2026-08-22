@@ -2355,6 +2355,50 @@ select {
   background: var(--market-surface);
 }
 
+/* Цветные метки состояния.
+
+   Раньше карточка несла одну серую плашку «Премиум», и по списку было не
+   понять, что свежее, что проверено, а что уходит. Метка с рамкой и точкой
+   читается за долю секунды и не спорит с фотографией: заливка светлая,
+   контур и текст — насыщенные.
+
+   Каждый цвет закреплён за смыслом, а не выбран для красоты:
+   зелёный — свежее, синий — проверено, янтарный — выделенное,
+   красный — срочное. */
+.market-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid;
+  border-radius: var(--radius-xs);
+  font-size: var(--text-caps);
+  font-weight: 700;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.market-tag::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+  flex: 0 0 auto;
+}
+
+.market-tag[data-tag="new"]      { border-color: #86efac; background: #f0fdf4; color: #166534; }
+.market-tag[data-tag="checked"]  { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
+.market-tag[data-tag="featured"] { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
+.market-tag[data-tag="urgent"]   { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
+
+/* На тёмном фоне светлая заливка стала бы ярким пятном: подложка делается
+   прозрачной, а цвет метки — светлее фона. */
+[data-mantine-color-scheme="dark"] .market-tag[data-tag="new"]      { border-color: #16653480; background: #16653426; color: #86efac; }
+[data-mantine-color-scheme="dark"] .market-tag[data-tag="checked"]  { border-color: #1e40af80; background: #1e40af26; color: #93c5fd; }
+[data-mantine-color-scheme="dark"] .market-tag[data-tag="featured"] { border-color: #92400e80; background: #92400e26; color: #fcd34d; }
+[data-mantine-color-scheme="dark"] .market-tag[data-tag="urgent"]   { border-color: #b91c1c80; background: #b91c1c26; color: #fca5a5; }
+
 .listing-card__price {
   display: inline-flex;
   align-items: baseline;
