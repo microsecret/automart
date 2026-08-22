@@ -142,78 +142,145 @@ export const theme = createTheme({
   },
 
   components: {
+    /* Кнопка.
+
+       Числа сняты с площадки, которую владелец назвал образцом: высота 36px
+       (padding 8×16 при line-height 20), радиус из шкалы, переход 150ms по
+       перечисленным свойствам. Прежние 38px выбивались из ритма полей ввода,
+       а свои тени при наведении не совпадали с общей глубиной. */
     Button: {
-      defaultProps: { radius: "md", fw: "600" },
+      defaultProps: { radius: "sm", fw: "600" },
       styles: {
         root: {
-          height: "38px",
-          // Кнопки меняют цвет, тень и положение; `all` заставлял браузер
-          // следить и за размерами, а кнопок на странице десятки.
-          transition: "background 150ms ease, border-color 150ms ease, box-shadow 200ms ease, color 150ms ease, transform 140ms ease",
+          height: "36px",
+          paddingInline: "16px",
+          // Свойства перечислены явно: `all` заставил бы браузер следить и за
+          // размерами, а кнопок на странице десятки.
+          transition:
+            "background 150ms var(--ease-out), border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), color 150ms var(--ease-out), transform 150ms var(--ease-out)",
           fontFamily: "var(--font-display), var(--font-sans), sans-serif",
           // Кнопка отзывается на курсор: приподнимается под указателем и
           // вдавливается при нажатии. Без этого интерфейс ощущается статичной
           // картинкой, даже когда всё работает.
           "&:hover:not(:disabled):not([data-loading])": {
             transform: "translateY(-1px)",
-            boxShadow: "0 6px 16px -8px rgba(31, 26, 92, 0.45)",
+            boxShadow: "var(--shadow-md)",
           },
           "&:active:not(:disabled)": {
             transform: "translateY(0)",
-            boxShadow: "0 2px 6px -4px rgba(31, 26, 92, 0.5)",
+            boxShadow: "var(--shadow-sm)",
           },
           "@media (prefers-reduced-motion: reduce)": {
-            transition: "background 150ms ease, color 150ms ease",
+            transition: "background 150ms linear, color 150ms linear",
             "&:hover:not(:disabled):not([data-loading])": { transform: "none" },
           },
         },
       },
     },
+    /* Карточка.
+
+       Радиус 12px и внутренний отступ 14px — числа образцовой площадки. Тень
+       в покое почти незаметна: карточку держит рамка, а тень лишь отрывает
+       её от фона. Заметной она становится при наведении. */
     Card: {
-      defaultProps: { radius: "lg", padding: "md" },
+      defaultProps: { radius: "md", padding: 14 },
       styles: {
         root: {
-          // Было `all`: браузер отслеживал каждое свойство, включая размеры,
-          // и на списке из десятков карточек это заметно подтормаживало.
-          // Тень со смещением и размытием отделяет карточку от подложки —
-          // одной границы для этого не хватало.
-          transition: "box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease",
-          boxShadow: "0 1px 2px rgba(23, 23, 25, 0.04), 0 4px 12px -8px rgba(23, 23, 25, 0.12)",
+          // Свойства перечислены явно: с `all` браузер отслеживал бы и
+          // размеры, а на списке из десятков карточек это подтормаживает.
+          transition:
+            "box-shadow 200ms var(--ease-out), transform 150ms var(--ease-out), border-color 200ms var(--ease-out)",
+          boxShadow: "var(--shadow-sm)",
         },
       },
     },
+    /* Поля ввода.
+
+       Радиус и высота совпадают с кнопкой — иначе в одном ряду поиска поле
+       и кнопка стоят разной формы и высоты, и строка выглядит собранной из
+       чужих деталей. Подсветка при фокусе даётся тенью-кольцом, а не сменой
+       толщины рамки: толщина сдвигает содержимое на пиксель. */
     TextInput: {
-      defaultProps: { radius: "md", size: "md" },
+      defaultProps: { radius: "sm", size: "md" },
       styles: {
         input: {
-          transition: "border-color 150ms ease, box-shadow 150ms ease",
+          transition: "border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out)",
           fontFamily: "var(--font-sans), sans-serif",
         },
       },
     },
     Select: {
-      defaultProps: { radius: "md", size: "md" },
+      defaultProps: { radius: "sm", size: "md" },
       styles: {
-        input: { fontFamily: "var(--font-sans), sans-serif" },
+        input: {
+          transition: "border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out)",
+          fontFamily: "var(--font-sans), sans-serif",
+        },
       },
     },
+    NumberInput: {
+      defaultProps: { radius: "sm", size: "md" },
+      styles: { input: { fontFamily: "var(--font-sans), sans-serif" } },
+    },
+    Textarea: {
+      defaultProps: { radius: "sm" },
+      styles: { input: { fontFamily: "var(--font-sans), sans-serif" } },
+    },
+    MultiSelect: { defaultProps: { radius: "sm", size: "md" } },
+    Autocomplete: { defaultProps: { radius: "sm", size: "md" } },
+
+    /* Бейдж.
+
+       Компактнее прежнего: 12px при отступах 2×8 и радиусе 4px. Крупный
+       бейдж спорит с текстом, рядом с которым стоит, — метка должна
+       читаться, но не перебивать. */
     Badge: {
-      defaultProps: { radius: "sm", size: "md", fw: 600 },
+      defaultProps: { radius: "xs", size: "sm", fw: 600 },
       styles: {
-        root: { fontFamily: "var(--font-display), sans-serif", letterSpacing: "0.01em" },
+        root: {
+          fontFamily: "var(--font-sans), sans-serif",
+          letterSpacing: "0",
+          textTransform: "none",
+        },
       },
     },
     NavLink: {
       styles: {
-        root: { borderRadius: "8px", transition: "background 150ms ease, color 150ms ease, box-shadow 150ms ease" },
+        root: {
+          borderRadius: "var(--radius-sm)",
+          transition: "background 150ms var(--ease-out), color 150ms var(--ease-out)",
+        },
         label: { fontFamily: "var(--font-sans), sans-serif" },
       },
     },
     Anchor: {
-      styles: { root: { transition: "color 150ms ease" } },
+      styles: { root: { transition: "color 150ms var(--ease-out)" } },
     },
-    ActionIcon: { defaultProps: { radius: "md" } },
-    Paper: { defaultProps: { radius: "lg" } },
+    Tabs: {
+      styles: {
+        tab: {
+          fontFamily: "var(--font-sans), sans-serif",
+          fontWeight: 600,
+          transition: "color 150ms var(--ease-out), border-color 150ms var(--ease-out)",
+        },
+      },
+    },
+    Modal: {
+      defaultProps: { radius: "md", centered: true },
+      styles: { title: { fontFamily: "var(--font-display), sans-serif", fontWeight: 700 } },
+    },
+    Drawer: {
+      styles: { title: { fontFamily: "var(--font-display), sans-serif", fontWeight: 700 } },
+    },
+    Menu: { defaultProps: { radius: "sm", shadow: "md" } },
+    Popover: { defaultProps: { radius: "sm", shadow: "md" } },
+    Tooltip: { defaultProps: { radius: "xs" } },
+    SegmentedControl: { defaultProps: { radius: "sm" } },
+    Chip: { defaultProps: { radius: "sm" } },
+    Notification: { defaultProps: { radius: "sm" } },
+    ActionIcon: { defaultProps: { radius: "sm" } },
+    ThemeIcon: { defaultProps: { radius: "sm" } },
+    Paper: { defaultProps: { radius: "md" } },
     Title: {
       styles: {
         root: { fontFamily: "var(--font-display), var(--font-sans), sans-serif" },

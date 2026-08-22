@@ -205,6 +205,23 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Подсветка поля при фокусе — кольцом, а не сменой рамки.
+
+   Толщина рамки меняет размер элемента и сдвигает содержимое на пиксель:
+   при переходе между полями формы весь ряд заметно вздрагивает. Кольцо
+   через box-shadow лежит поверх раскладки и ничего не двигает.
+
+   Общее правило для всех полей: раньше подсветка задавалась в каждом
+   разделе отдельно, и в формах она различалась. */
+.mantine-Input-input:focus,
+.mantine-Input-input:focus-within,
+.mantine-Textarea-input:focus,
+.mantine-PasswordInput-input:focus-within {
+  border-color: var(--market-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--market-primary) 16%, transparent);
+  outline: none;
+}
+
 /* Отрицательный трекинг у заголовков.
 
    Без него крупный кегль расползается: буквы стоят с интервалом, рассчитанным
