@@ -67,11 +67,15 @@
      далее, — и глаз читал это как набор чужих друг другу элементов, а не как
      систему. Четыре ступени покрывают всё: мелкие элементы, поля и кнопки,
      карточки, крупные блоки. Пятая — для круглых. */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --radius-full: 999px;
+  /* Вложенный радиус всегда на пиксель меньше внешнего — иначе скругления
+     внутри карточки выглядят косо. Приём взят у Stripe (--card-radius 6px
+     и --card-radius-inner 5px). */
+  --radius-inner: 5px;
 
   /* Шкала теней.
      Семнадцать разных теней делали интерфейс шумным: одинаковые по смыслу
@@ -83,6 +87,12 @@
   --shadow-sm: 0 1px 2px rgba(20, 48, 107, 0.06), 0 2px 6px -2px rgba(20, 48, 107, 0.08);
   --shadow-md: 0 4px 10px -4px rgba(20, 48, 107, 0.14), 0 10px 24px -12px rgba(20, 48, 107, 0.18);
   --shadow-lg: 0 12px 28px -12px rgba(20, 48, 107, 0.22), 0 24px 56px -24px rgba(20, 48, 107, 0.26);
+
+  /* Волосяная обводка отдельным слоем тени, а не рамкой.
+     Приём Vercel: `box-shadow: 0 0 0 1px` не влияет на раскладку, поэтому
+     элемент не дёргается при наведении, и обводку можно анимировать вместе
+     с тенью одним переходом. */
+  --hairline: 0 0 0 1px rgba(20, 48, 107, 0.09);
 
   /* Шкала размеров текста — та же, что у темы Mantine.
      Собственные стили писали размеры вразнобой (0.72rem, 0.78rem, 0.82rem,
@@ -107,6 +117,16 @@
   --ease-fast: 120ms;   /* нажатие, смена цвета */
   --ease-base: 170ms;   /* наведение: подсветка, рамка, тень */
   --ease-slow: 260ms;   /* появление и раскрытие */
+
+  /* Кривая ускорения.
+
+     Замеры живого CSS: у Stripe cubic-bezier(.25, 1, .5, 1) встречается 40
+     раз, у Lucid — (.16, 1, .3, 1), у Polestar — (.65, 0, 0, 1). Все они об
+     одном: быстрый старт и долгий мягкий выход. Так движется предмет с
+     массой, который плавно останавливается.
+
+     Простой `ease` тормозит слишком рано и оттого читается механически. */
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
 
   /* Семантические подложки состояний. Раньше эти оттенки писались прямо в
      inline-style, поэтому в тёмной теме превращались в светлые пятна с
@@ -193,10 +213,10 @@ body {
 
    Это одно из главных отличий дорогой типографики от обычной: разницу видно
    не в отдельной строке, а на странице целиком. */
-h1, .mantine-Title-root[data-order="1"] { letter-spacing: -0.03em; }
-h2, .mantine-Title-root[data-order="2"] { letter-spacing: -0.025em; }
-h3, .mantine-Title-root[data-order="3"] { letter-spacing: -0.02em; }
-h4, h5, h6 { letter-spacing: -0.015em; }
+h1, .mantine-Title-root[data-order="1"] { letter-spacing: -0.045em; }
+h2, .mantine-Title-root[data-order="2"] { letter-spacing: -0.035em; }
+h3, .mantine-Title-root[data-order="3"] { letter-spacing: -0.025em; }
+h4, h5, h6 { letter-spacing: -0.02em; }
 
 /* Один заметный, но спокойный focus-ring для клавиатурной навигации. */
 :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
@@ -207,7 +227,7 @@ h4, h5, h6 { letter-spacing: -0.015em; }
 /* Одинаковый отклик у системных действий: интерфейс остаётся спокойным,
    но нажатие ощущается как у нативного приложения, а не как у набора ссылок. */
 :where(.mantine-Button-root, .mantine-ActionIcon-root):not([data-disabled]) {
-  transition: transform var(--ease-fast) ease, box-shadow var(--ease-base) ease, background-color var(--ease-base) ease, border-color var(--ease-base) ease;
+  transition: transform var(--ease-fast) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -298,7 +318,7 @@ select {
 }
 
 .admin-auction-inquiry-row {
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .admin-auction-inquiry-row:hover {
@@ -399,7 +419,7 @@ select {
     font-size: 10px;
     font-weight: 600;
     text-decoration: none;
-    transition: background var(--ease-base) ease, color var(--ease-base) ease, transform var(--ease-base) ease;
+    transition: background var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
   }
 
   .mobile-bottom-nav__accent {
@@ -435,7 +455,7 @@ select {
     right: 10px !important;
     bottom: 92px !important;
     opacity: 0.82;
-    transition: opacity var(--ease-base) ease;
+    transition: opacity var(--ease-base) var(--ease-out);
   }
 
   .support-chat__launcher:hover,
@@ -535,7 +555,7 @@ select {
      Keep it legible before hover so that the header remains scannable. */
   color: var(--market-control-text) !important;
   border-radius: var(--radius-sm);
-  transition: color var(--ease-base) ease, background-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: color var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .market-app-header__link:hover {
@@ -570,7 +590,7 @@ select {
 
 @media (hover: hover) and (pointer: fine) {
   .market-app-header :where(.mantine-Button-root, .mantine-ActionIcon-root) {
-    transition: transform var(--ease-base) ease, background-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+    transition: transform var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
   }
 
   .market-app-header :where(.mantine-Button-root, .mantine-ActionIcon-root):hover {
@@ -967,7 +987,7 @@ select {
   border-radius: 0 3px 3px 0;
   background: linear-gradient(180deg, #5b82d6 0%, #14306b 100%);
   content: "";
-  transition: box-shadow var(--ease-base) ease;
+  transition: box-shadow var(--ease-base) var(--ease-out);
 }
 
 .market-side-account__link--profile:hover {
@@ -1008,7 +1028,7 @@ select {
   font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.2;
-  transition: background-color var(--ease-base) ease, box-shadow var(--ease-base) ease, color var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .market-side-nav:hover {
@@ -1170,7 +1190,7 @@ select {
   border: 1px solid color-mix(in srgb, #fb923c 50%, var(--market-line));
   background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
   box-shadow: 0 9px 22px -17px rgba(234, 88, 12, 0.9);
-  transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .partner-header-cta::after {
@@ -1209,7 +1229,7 @@ select {
      тему, из-за чего главная кнопка сайта осталась блёклой. */
   background: linear-gradient(135deg, #102a59 0%, #14306b 58%, #102a59 100%);
   box-shadow: 0 11px 24px -15px rgba(16, 42, 89, 0.95);
-  transition: box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .header-create-cta::after {
@@ -1547,7 +1567,7 @@ select {
   }
 }
 .av-fade-in {
-  animation: av-fade-in var(--ease-slow) ease-out;
+  animation: av-fade-in var(--ease-slow) var(--ease-out)-out;
 }
 
 /* Появление карточек каталога.
@@ -1562,7 +1582,7 @@ select {
    Задержка нарастает лишь у первых шести — тех, что видны сразу. Дальше
    ступенька была бы уже незаметна, а ждать появления пришлось бы дольше. */
 .catalog-appear > * {
-  animation: av-fade-in var(--ease-slow) ease-out both;
+  animation: av-fade-in var(--ease-slow) var(--ease-out)-out both;
 }
 
 .catalog-appear > *:nth-child(1) { animation-delay: 0ms; }
@@ -1656,7 +1676,7 @@ select {
   color: var(--market-accent-ink);
   box-shadow: 0 10px 24px -12px rgba(245, 159, 10, 0.75);
   font-weight: 700;
-  transition: background var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .home-auctions__cta:hover {
@@ -1781,7 +1801,7 @@ select {
   border-radius: var(--radius-md);
   background: var(--market-field);
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.025), 0 8px 18px -20px rgba(15, 23, 42, 0.46);
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .catalog-filter-field:hover {
@@ -1899,7 +1919,7 @@ select {
   color: var(--market-control-text);
   font-size: var(--text-sm);
   font-weight: 650;
-  transition: transform var(--ease-fast) ease, border-color var(--ease-fast) ease, background var(--ease-fast) ease, color var(--ease-fast) ease;
+  transition: transform var(--ease-fast) var(--ease-out), border-color var(--ease-fast) var(--ease-out), background var(--ease-fast) var(--ease-out), color var(--ease-fast) var(--ease-out);
 }
 
 .catalog-filter-advanced .mantine-Chip-label:hover {
@@ -2092,7 +2112,7 @@ select {
      и не расплывается, как это было с rgba поверх градиента. */
   border-color: var(--market-line) !important;
   box-shadow: var(--shadow-sm);
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .listing-card::before {
@@ -2108,7 +2128,7 @@ select {
   transform-origin: left;
   background: linear-gradient(90deg, var(--listing-accent), color-mix(in srgb, var(--listing-accent) 16%, transparent));
   opacity: 0.82;
-  transition: transform var(--ease-base) ease, opacity var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), opacity var(--ease-base) var(--ease-out);
 }
 
 .listing-card[data-vehicle-type="motorcycle"] { --listing-accent: #8b5cf6; }
@@ -2187,7 +2207,7 @@ select {
 }
 
 .listing-card__media img {
-  transition: transform var(--ease-slow) ease, filter var(--ease-slow) ease;
+  transition: transform var(--ease-slow) var(--ease-out), filter var(--ease-slow) var(--ease-out);
 }
 
 .listing-card__image {
@@ -2198,7 +2218,7 @@ select {
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity var(--ease-base) ease, transform var(--ease-slow) ease, filter var(--ease-slow) ease;
+  transition: opacity var(--ease-base) var(--ease-out), transform var(--ease-slow) var(--ease-out), filter var(--ease-slow) var(--ease-out);
 }
 
 .listing-card__image[data-loaded] {
@@ -2425,7 +2445,7 @@ select {
   background: rgba(15, 23, 42, 0.72);
   box-shadow: 0 8px 16px -10px rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(10px) saturate(1.18);
-  transition: transform var(--ease-base) ease, background-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .listing-card__favorite--inline {
@@ -2517,7 +2537,7 @@ select {
   overflow: hidden;
   border-color: var(--market-line);
   background: var(--market-surface);
-  transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .news-list-card__image {
@@ -2720,7 +2740,7 @@ select {
   border: 1px solid color-mix(in srgb, var(--market-field-line) 88%, transparent);
   border-radius: var(--radius-md);
   background: var(--market-field);
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.025), 0 8px 18px -20px rgba(15, 23, 42, 0.46);
 }
 
@@ -2804,7 +2824,7 @@ select {
   color: inherit;
   text-decoration: none;
   background: var(--market-surface);
-  transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .service-card:hover {
@@ -2872,7 +2892,7 @@ select {
   background: rgba(255, 255, 255, 0.78);
   color: var(--market-ink);
   text-align: left;
-  transition: border-color var(--ease-base) ease, background var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .dashboard-workspace__status:hover {
@@ -2914,7 +2934,7 @@ select {
   border-color: var(--market-line) !important;
   background: var(--market-surface);
   box-shadow: 0 10px 22px -26px rgba(15, 23, 42, 0.7);
-  transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .dashboard-listing-card__media {
@@ -2932,7 +2952,7 @@ select {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--ease-slow) ease, filter var(--ease-slow) ease;
+  transition: transform var(--ease-slow) var(--ease-out), filter var(--ease-slow) var(--ease-out);
 }
 
 .dashboard-listing-card__media .vehicle-fallback {
@@ -2966,7 +2986,7 @@ select {
   border-color: #dbe8e3 !important;
   background: rgba(255, 255, 255, 0.86);
   box-shadow: 0 12px 26px -28px rgba(15, 23, 42, 0.65);
-  transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .garage-vehicle-card__media {
@@ -2982,7 +3002,7 @@ select {
   height: 100%;
   min-height: 118px;
   object-fit: cover;
-  transition: transform var(--ease-slow) ease, filter var(--ease-slow) ease;
+  transition: transform var(--ease-slow) var(--ease-out), filter var(--ease-slow) var(--ease-out);
 }
 
 .garage-vehicle-card__media .vehicle-fallback {
@@ -3029,7 +3049,7 @@ select {
 .dashboard-document-row {
   border-color: var(--market-line);
   background: var(--market-surface);
-  transition: border-color var(--ease-fast) ease, box-shadow var(--ease-fast) ease;
+  transition: border-color var(--ease-fast) var(--ease-out), box-shadow var(--ease-fast) var(--ease-out);
 }
 
 .messages-workspace {
@@ -3065,7 +3085,7 @@ select {
   border-bottom: 1px solid var(--market-line);
   color: inherit;
   text-decoration: none;
-  transition: background-color var(--ease-fast) ease;
+  transition: background-color var(--ease-fast) var(--ease-out);
 }
 
 .messages-conversation-row:hover {
@@ -3248,7 +3268,7 @@ select {
   box-shadow: 0 4px 12px rgba(124, 45, 18, 0.36);
   cursor: pointer;
   transform: translate(-50%, -50%);
-  transition: transform var(--ease-base) ease, background var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .fuel-map-marker[data-cluster] {
@@ -3402,7 +3422,7 @@ select {
 .fuel-station-card {
   background: var(--market-surface);
   border-color: var(--market-line);
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .fuel-station-card[data-clickable] {
@@ -3483,7 +3503,7 @@ select {
   border: 1px solid var(--market-border-soft);
   border-radius: var(--radius-md);
   background: linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .auction-detail-spec:hover {
@@ -3557,7 +3577,7 @@ select {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--ease-slow) ease, filter var(--ease-slow) ease;
+  transition: transform var(--ease-slow) var(--ease-out), filter var(--ease-slow) var(--ease-out);
 }
 
 .auction-card__image-pending {
@@ -3642,7 +3662,7 @@ select {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .part-result-card__media {
@@ -3668,7 +3688,7 @@ select {
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity var(--ease-base) ease, transform var(--ease-slow) ease, filter var(--ease-slow) ease;
+  transition: opacity var(--ease-base) var(--ease-out), transform var(--ease-slow) var(--ease-out), filter var(--ease-slow) var(--ease-out);
 }
 
 .part-result-card__media img[data-loaded] { opacity: 1; }
@@ -3825,7 +3845,7 @@ select {
   gap: 10px;
   border-color: color-mix(in srgb, var(--market-line) 88%, transparent);
   background: linear-gradient(145deg, #fff, color-mix(in srgb, #fff 92%, #eef2fb));
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .listing-map-result__media {
@@ -3885,7 +3905,7 @@ select {
   position: relative;
   z-index: 1;
   pointer-events: none;
-  transition: opacity var(--ease-base) ease;
+  transition: opacity var(--ease-base) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -3963,7 +3983,7 @@ select {
   border: 1px solid color-mix(in srgb, var(--market-field-line) 86%, transparent);
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--market-surface) 92%, transparent);
-  transition: border-color var(--ease-base) ease, background-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
@@ -4521,7 +4541,7 @@ select {
   padding: 4px 14px;
   position: relative;
   border-radius: var(--radius-md);
-  transition: background-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .create-listing__journey-step + .create-listing__journey-step::before {
@@ -4716,7 +4736,7 @@ select {
 .admin-moderation-panel,
 .admin-insight-card,
 .admin-action-card {
-  transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .admin-metric-card:hover {
@@ -4793,7 +4813,7 @@ select {
 }
 
 .admin-directory__table .mantine-Table-tr {
-  transition: background-color var(--ease-fast) ease;
+  transition: background-color var(--ease-fast) var(--ease-out);
 }
 
 .admin-directory__table .mantine-Table-tr:hover {
@@ -5035,7 +5055,7 @@ select {
 .market-linked-card {
   border-color: var(--market-line);
   background: var(--market-surface);
-  transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, background var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -5066,7 +5086,7 @@ a:focus-visible > .market-linked-card {
    выбранной. CSS снимает подсветку сам и включает её только под курсором. */
 .market-app-footer__link {
   color: #a1a1aa;
-  transition: color var(--ease-fast) ease;
+  transition: color var(--ease-fast) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {

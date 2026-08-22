@@ -17,7 +17,7 @@
   background: var(--market-surface);
   color: var(--market-ink);
   box-shadow: var(--market-shadow-soft);
-  transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .brandShortcut::after {
@@ -31,7 +31,7 @@
   content: "";
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--ease-base) ease;
+  transition: transform var(--ease-base) var(--ease-out);
 }
 
 /* Счётчик лотов сжимался вместе с названием марки, из-за чего число теряло
@@ -230,7 +230,7 @@
   border: 1px solid var(--market-line);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--market-surface-subtle) 70%, transparent);
-  transition: background-color var(--ease-base) ease, border-color var(--ease-base) ease, transform var(--ease-base) ease;
+  transition: background-color var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .insightsToggle:hover {

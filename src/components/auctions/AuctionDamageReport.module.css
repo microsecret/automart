@@ -23,7 +23,7 @@
   background: #ffffff;
   font-size: var(--text-sm);
   font-weight: 700;
-  transition: border-color var(--ease-fast) ease, background-color var(--ease-fast) ease, color var(--ease-fast) ease;
+  transition: border-color var(--ease-fast) var(--ease-out), background-color var(--ease-fast) var(--ease-out), color var(--ease-fast) var(--ease-out);
 }
 
 .sectionTab:hover {
@@ -83,7 +83,7 @@
   background: var(--damage-marker-color, #f59e0b);
   box-shadow: var(--shadow-md);
   cursor: pointer;
-  transition: transform var(--ease-base) cubic-bezier(0.16, 1, 0.3, 1), box-shadow var(--ease-base) ease;
+  transition: transform var(--ease-base) cubic-bezier(0.16, 1, 0.3, 1), box-shadow var(--ease-base) var(--ease-out);
 }
 
 .marker:hover,

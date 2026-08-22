@@ -22,7 +22,7 @@
   padding: 7px 10px;
   border-radius: var(--radius-sm);
   color: var(--market-muted);
-  transition: color var(--ease-fast) ease, background-color var(--ease-fast) ease;
+  transition: color var(--ease-fast) var(--ease-out), background-color var(--ease-fast) var(--ease-out);
 }
 
 .item:hover {
