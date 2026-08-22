@@ -409,6 +409,7 @@ model Listing {
   // Reverse relation for reviews
   reviews         Review[]             @relation("ListingReviews")
   statusEvents    ListingStatusEvent[]
+  priceEvents     ListingPriceEvent[]
   revisions       ListingRevision[]
   reports         ListingReport[]
   promotionOrders PromotionOrder[]
@@ -478,6 +479,25 @@ model PromotionOrder {
 
 // Immutable record of every lifecycle decision. actorId intentionally remains
 // nullable to retain historical actions if a user account is removed later.
+/// История изменения цены объявления.
+///
+/// Покупатель принимает решение не только по самой цене, но и по её
+/// движению: «снижена на 50 000 три дня назад» говорит о готовности
+/// продавца торговаться, а рост цены — о том, что спешить не нужно.
+///
+/// Записи создаются только при фактическом изменении цены: правка описания
+/// или фотографий историю не засоряет.
+model ListingPriceEvent {
+  id        String   @id @default(uuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  oldPrice  Int
+  newPrice  Int
+  createdAt DateTime @default(now())
+
+  @@index([listingId, createdAt])
+}
+
 model ListingStatusEvent {
   id         String   @id @default(uuid())
   listingId  String

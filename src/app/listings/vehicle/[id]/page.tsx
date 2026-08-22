@@ -82,6 +82,17 @@ export default async function VehicleDetailPage({ params }: PageProps) {
             include: { user: { select: { id: true, name: true, image: true } } },
             orderBy: { createdAt: "desc" },
           },
+          /* Последнее изменение цены.
+
+             Движение цены говорит покупателю больше, чем сама цена:
+             снижение — знак готовности торговаться, и человек решается
+             написать. Берём одно последнее событие: цепочка изменений
+             интересна разве что аналитику. */
+          priceEvents: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { oldPrice: true, newPrice: true, createdAt: true },
+          },
         },
       },
     },
@@ -114,8 +125,19 @@ export default async function VehicleDetailPage({ params }: PageProps) {
   })
 
   // Преобразуем для клиента
+  /* Снижение цены — сильный довод написать продавцу.
+
+     Показываем только падение и только за последний месяц: рост цены
+     покупателя отталкивает, а полугодовая давность уже ничего не значит. */
+  const lastPriceEvent = listing?.priceEvents?.[0]
+  const priceDrop = lastPriceEvent && lastPriceEvent.newPrice < lastPriceEvent.oldPrice
+    && Date.now() - new Date(lastPriceEvent.createdAt).getTime() < 30 * 24 * 60 * 60 * 1000
+    ? { amount: lastPriceEvent.oldPrice - lastPriceEvent.newPrice, at: lastPriceEvent.createdAt.toISOString() }
+    : null
+
   const data = {
     id: vehicle.id,
+    priceDrop,
     make: vehicle.make,
     model: vehicle.model,
     year: vehicle.year,

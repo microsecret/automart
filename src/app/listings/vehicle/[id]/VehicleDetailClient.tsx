@@ -60,6 +60,7 @@ import {
   IconMotorbike,
   IconTractor,
   IconEdit,
+  IconTrendingDown,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
@@ -73,6 +74,8 @@ import { filterMeaningfulSpecs } from "@/lib/spec-visibility"
 
 interface VehicleData {
   id: string
+  /** Последнее снижение цены, если оно было в течение месяца. */
+  priceDrop?: { amount: number; at: string } | null
   make: string
   model: string
   year: number
@@ -703,6 +706,22 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 <Badge variant="filled" color="green" size="sm" radius="sm" mb="xs" leftSection={<IconCheck size={12} />}>
                   Справедливая цена
                 </Badge>
+                {/* Снижение цены — сильный довод написать продавцу: оно
+                    говорит о готовности торговаться. Показывается только
+                    падение и только свежее, за последний месяц. */}
+                {data.priceDrop && (
+                  <Badge
+                    variant="light"
+                    color="orange"
+                    size="sm"
+                    radius="sm"
+                    mb="xs"
+                    ml={6}
+                    leftSection={<IconTrendingDown size={12} />}
+                  >
+                    Снижена на {formatPrice(data.priceDrop.amount)}
+                  </Badge>
+                )}
                 <Group gap={6} mb="xs">
                   <Text size="xs" c="var(--market-muted)">в кредит от</Text>
                   <Text size="sm" fw={700} c="indigo">{Math.round(data.price * 0.025 / 1000)}к ₽/мес</Text>

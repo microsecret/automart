@@ -193,6 +193,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         },
         include: editableListingInclude,
       })
+      /* Изменение цены записывается отдельно.
+
+         Покупатель принимает решение не только по самой цене, но и по её
+         движению: «снижена на 50 000 три дня назад» говорит о готовности
+         торговаться. Правка описания или фотографий историю не засоряет —
+         событие создаётся, только если цена действительно изменилась. */
+      if (changedFields.includes("price") && before.price !== after.price) {
+        await tx.listingPriceEvent.create({
+          data: { listingId: id, oldPrice: before.price, newPrice: after.price },
+        })
+      }
+
       await tx.listingRevision.create({
         data: {
           listingId: id,
