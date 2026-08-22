@@ -2063,7 +2063,7 @@ select {
   height: 104px;
   border-radius: var(--radius-full);
   border: 1px solid rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.34);
+  background: var(--market-surface-subtle);
   box-shadow:
     0 14px 30px rgba(28, 66, 145, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.76);
@@ -2980,9 +2980,9 @@ select {
 .dashboard-workspace__status {
   min-height: 68px;
   padding: 9px 10px;
-  border: 1px solid #e3e8f5;
+  border: 1px solid var(--market-line);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--market-surface);
   color: var(--market-ink);
   text-align: left;
   transition: border-color var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
@@ -3077,7 +3077,7 @@ select {
 .garage-vehicle-card {
   overflow: hidden;
   border-color: #dbe8e3 !important;
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--market-surface);
   box-shadow: var(--shadow-md);
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
@@ -3116,7 +3116,7 @@ select {
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--market-surface);
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(10px);
 }
@@ -3453,7 +3453,7 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: var(--radius-full);
   color: #334155;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--market-surface);
   box-shadow: var(--shadow-md);
   font-size: 10px;
   font-weight: 700;
@@ -3879,7 +3879,7 @@ select {
 .part-result-card__compatibility-chip {
   color: #14306b !important;
   background: #eef2fb !important;
-  border: 1px solid #dbe4ff;
+  border: 1px solid var(--market-line);
   font-weight: 700;
 }
 
@@ -4773,7 +4773,7 @@ select {
   top: 10px;
   min-width: 215px;
   pointer-events: none;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--market-surface);
   backdrop-filter: blur(10px);
 }
 
@@ -4808,7 +4808,7 @@ select {
 .admin-workspace-navigation__item {
   color: #334155 !important;
   background: var(--market-surface-subtle) !important;
-  border: 1px solid #e2e8f0 !important;
+  border: 1px solid var(--market-line) !important;
   font-weight: 750 !important;
 }
 
