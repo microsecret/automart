@@ -9,6 +9,7 @@ import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, suppor
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
 import VehicleFallback from "./VehicleFallback"
+import NextImage from "next/image"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
@@ -144,16 +145,26 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              /* Оптимизированная картинка вместо оригинала.
+
+                 Замер показал: снимки из /uploads отдавались как есть —
+                 4032×3024 весом 4 МБ в слот 382×306. Главная весила
+                 10.3 МБ, из них 7.8 МБ приходилось на шесть фотографий.
+
+                 sizes описывает реальную ширину слота: на телефоне карточка
+                 занимает всю ширину, на планшете половину, на широком экране
+                 четверть. По этим числам Next отдаёт подходящий размер, а не
+                 оригинал. */
+              <NextImage
                 className="listing-card__image"
                 data-loaded={imageLoaded || undefined}
                 src={displayImage}
                 alt={listing.title}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 onLoad={() => setImageLoaded(true)}
                 onError={() => { setImageFailed(true); setImageLoaded(false) }}
                 loading="lazy"
-                decoding="async"
               />
               )}
             </>

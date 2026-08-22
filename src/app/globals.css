@@ -205,6 +205,40 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Зоны нажатия на телефоне.
+
+   Замер на 390px показал цели заметно мельче нормы в 44px: бургер 24×24,
+   кнопка профиля 28×28, страницы пагинации 26×26, чекбоксы фильтров 16×16.
+   В последние палец не попадает вовсе — площадь в семь раз меньше нужной.
+
+   Сам значок остаётся прежнего размера: растёт только область, которая
+   ловит касание. Поэтому вид не меняется, а промахов становится меньше. */
+@media (max-width: 48em) {
+  .mantine-Burger-root {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mantine-Pagination-control {
+    min-width: 40px;
+    height: 40px;
+  }
+
+  /* Чекбокс ловит касание вместе со своей подписью: сам квадратик остаётся
+     16px, но кликабельная область растёт до строки целиком. */
+  .mantine-Checkbox-root,
+  .mantine-Radio-root {
+    min-height: 44px;
+  }
+
+  .mantine-Checkbox-labelWrapper,
+  .mantine-Radio-labelWrapper {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
 /* Высота поля ввода равна высоте кнопки.
 
    Mantine пишет height прямо в класс поля, поэтому ни styles в теме, ни

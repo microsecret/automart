@@ -55,6 +55,30 @@ const telegramEmbedHeaders = securityHeaders
 const nextConfig = {
   reactStrictMode: false,
   poweredByHeader: false,
+  /* Оптимизация изображений.
+
+     Замер главной: страница весила 10.3 МБ, из них 7.8 МБ — шесть
+     фотографий из /uploads. Отдавались оригиналами: снимок 4032×3024
+     весом 4 МБ показывался в слоте 382×306 — в десять раз шире нужного.
+     На телефоне грузилось ровно то же самое, адаптивной отдачи не было.
+
+     Ширины подобраны под реальные слоты: 384 — карточка в каталоге,
+     640/750 — телефон, дальше страница объявления и крупные экраны.
+     AVIF и WebP дают выигрыш к JPEG в разы; браузер выберет, что понимает.
+
+     Кэш на сутки: фотографии объявления не меняются после публикации. */
+  images: {
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [384, 640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [64, 96, 128, 256, 384],
+    minimumCacheTTL: 86400,
+    remotePatterns: [
+      { protocol: "https", hostname: "ci.encar.com" },
+      { protocol: "https", hostname: "**.encar.com" },
+      { protocol: "https", hostname: "img.kcar.com" },
+      { protocol: "https", hostname: "**.kcar.com" },
+    ],
+  },
   serverExternalPackages: ['prisma', '@prisma/client'],
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
