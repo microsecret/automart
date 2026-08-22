@@ -46,6 +46,19 @@
 .card[data-tone="teal"]   { --tone: #0f766e; }
 .card[data-tone="red"]    { --tone: #be123c; }
 
+/* Те же цвета для тёмной темы.
+   Значения выше подобраны под светлый фон: на тёмном тёмно-синий #14306b
+   давал контраст 1.35 — число и подпись тонули в подложке. Здесь взяты
+   светлые ступени тех же оттенков: направление узнаётся по цвету, но текст
+   остаётся читаемым. */
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="blue"]   { --tone: #93b4fd; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="grape"]  { --tone: #d8b4fe; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="indigo"] { --tone: #a5b4fc; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="orange"] { --tone: #fdba74; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="cyan"]   { --tone: #67e8f9; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="teal"]   { --tone: #5eead4; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="red"]    { --tone: #fda4af; }
+
 .card:hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--tone) 45%, transparent);
@@ -97,6 +110,12 @@
   color: color-mix(in srgb, var(--tone) 80%, var(--market-ink));
   font-size: var(--text-xs);
   font-weight: 600;
+}
+
+/* На тёмном фоне подмешивание --market-ink гасило подпись до нечитаемой
+   (контраст 1.23), поэтому цвет берётся чистым. */
+:global([data-mantine-color-scheme="dark"]) .meta {
+  color: var(--tone);
 }
 
 @media (prefers-reduced-motion: reduce) {
