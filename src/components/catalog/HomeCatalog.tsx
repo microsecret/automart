@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import NextImage from "next/image"
-import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Divider, Chip, Loader, SegmentedControl, Tooltip } from "@mantine/core"
-import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
+import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Divider, Chip, Loader, SegmentedControl, Tooltip , ThemeIcon} from "@mantine/core"
+import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles , IconBell} from "@tabler/icons-react"
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { COUNTRY_FLAGS, getBrandsByCategory } from "@/lib/catalog"
@@ -306,9 +306,6 @@ export default function HomePage(p: HomePageProps = {}) {
           {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} {plural(data.pagination?.total || 0, "объявление", "объявления", "объявлений")}</Text>}
         </Stack>
         <Group gap="xs" wrap="nowrap">
-          {/* Подписка рядом с сортировкой: человек уже настроил фильтры и
-              именно здесь решает, возвращаться ли ему потом вручную. */}
-          <SaveSearchButton scope="LISTINGS" suggestedTitle={p.pageTitle} />
           <Select
             className="catalog-sort-control"
             aria-label="Сортировка объявлений"
@@ -633,6 +630,36 @@ export default function HomePage(p: HomePageProps = {}) {
           </Collapse>}
         </Stack>
       </Paper>
+
+      {/* Подписка на поиск — после того, как фильтры настроены.
+
+          Механизм уведомлений был написан, но кнопка стояла в ряду с
+          сортировкой и терялась: человек не знал, что можно не возвращаться
+          в каталог вручную. Здесь она попадается на глаза ровно в тот
+          момент, когда человек уже выбрал, что ищет, и смотрит результаты.
+
+          Полоса не показывается без фильтров и без результатов: подписка на
+          «все объявления» или на пустую выдачу ничего не даёт. */}
+      {activeFilterCount > 0 && (data?.listings?.length ?? 0) > 0 && (
+        <Paper className="catalog-subscribe" radius="md" p="sm" withBorder>
+          <Group justify="space-between" wrap="wrap" gap="sm">
+            <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+              <ThemeIcon variant="light" color="indigo" size={36} radius="md">
+                <IconBell size={18} stroke={1.8} />
+              </ThemeIcon>
+              <Box style={{ minWidth: 0 }}>
+                <Text size="sm" fw={650} c="var(--market-ink)">
+                  Следить за этим поиском
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Сообщим в Telegram, когда появятся подходящие объявления — возвращаться и проверять не придётся.
+                </Text>
+              </Box>
+            </Group>
+            <SaveSearchButton scope="LISTINGS" suggestedTitle={p.pageTitle} />
+          </Group>
+        </Paper>
+      )}
 
       {isLoading ? (
         <ResultsGridSkeleton count={8} />

@@ -205,6 +205,39 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Полоса подписки на поиск.
+
+   Появляется, когда человек настроил фильтры и увидел результаты. Без
+   перехода она вклинивалась бы между заголовком и карточками рывком —
+   результаты дёргались бы вниз ровно в тот момент, когда их читают.
+
+   Двигаются только opacity и transform: они не заставляют браузер
+   пересчитывать раскладку. Кривая и длительность — из общей шкалы. */
+.catalog-subscribe {
+  border-color: color-mix(in srgb, var(--market-primary) 30%, var(--market-line));
+  background: var(--market-primary-soft);
+  animation: catalog-subscribe-in var(--ease-slow) var(--ease-out) both;
+}
+
+@keyframes catalog-subscribe-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* При отключённой анимации полоса просто появляется на своём месте:
+   состояние меняется, движения нет. */
+@media (prefers-reduced-motion: reduce) {
+  .catalog-subscribe {
+    animation: none;
+  }
+}
+
 /* Ссылка «к содержимому».
 
    Спрятана за пределами экрана и выезжает только при фокусе с клавиатуры:
