@@ -899,11 +899,11 @@ select {
 }
 
 .market-side-account {
-  background: linear-gradient(145deg, var(--market-primary-soft) 0%, var(--market-surface) 76%);
+  background: var(--market-primary-soft);
 }
 
 .market-side-account--user {
-  background: linear-gradient(145deg, var(--market-primary-soft) 0%, var(--market-surface) 78%);
+  background: var(--market-primary-soft);
 }
 
 .market-side-account__summary {
@@ -2078,7 +2078,7 @@ select {
 .part-detail__gallery {
   background:
     radial-gradient(circle at 80% 22%, color-mix(in srgb, var(--market-primary) 12%, transparent), transparent 36%),
-    linear-gradient(145deg, var(--market-surface-subtle), var(--market-primary-soft));
+    var(--market-surface-subtle);
 }
 
 .part-detail__gallery--empty {
@@ -2092,12 +2092,12 @@ select {
 
 .part-detail__price-card {
   border-color: color-mix(in srgb, var(--market-primary) 32%, var(--market-line)) !important;
-  background: linear-gradient(135deg, var(--market-surface), color-mix(in srgb, var(--market-primary-soft) 70%, var(--market-surface))) !important;
+  background: var(--market-primary-soft) !important;
 }
 
 .part-detail__bid-card {
   border-color: color-mix(in srgb, #f97316 40%, var(--market-line)) !important;
-  background: linear-gradient(135deg, color-mix(in srgb, #fff7ed 68%, var(--market-surface)), var(--market-surface)) !important;
+  background: #fff7ed !important;
 }
 .vehicle-fallback[data-compact] { min-height: 96px; padding: 8px 10px; }
 
@@ -2345,10 +2345,11 @@ select {
 }
 
 .listing-card__content {
-  background:
-    radial-gradient(circle at 92% -14%, color-mix(in srgb, var(--listing-accent) 10%, transparent), transparent 38%),
-    linear-gradient(180deg, color-mix(in srgb, var(--market-surface) 98%, transparent), var(--market-surface) 100%),
-    var(--market-surface);
+  /* Под текстом карточки лежали три слоя: цветная подсветка угла и два
+     перехода поверхности. В каталоге карточек десятки, и это давало общий
+     мутноватый тон. Ровная подложка — цена и характеристики читаются
+     чётче, а глубину карточке дают рамка и тень. */
+  background: var(--market-surface);
 }
 
 .listing-card__price {
@@ -2399,16 +2400,19 @@ select {
 }
 
 .listing-card__fact {
-  flex: 1 1 calc(50% - 4px);
+  /* Чип по содержимому, а не на половину ширины. Прежнее правило
+     `flex: 1 1 calc(50% - 4px)` растягивало единственный факт на всю строку:
+     после того как «КПП Другая» перестала показываться, у машины с одним
+     заполненным полем оставалась широкая пустая плашка «Год 2008».
+     Теперь чипы стоят подряд и занимают ровно столько, сколько нужно. */
+  flex: 0 0 auto;
   min-width: 0;
-  padding: 6px 9px;
-  border: 1px solid color-mix(in srgb, var(--market-line) 82%, transparent);
-  border-radius: var(--radius-sm);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--listing-accent) 6%, transparent), transparent 60%),
-    color-mix(in srgb, var(--market-surface-subtle) 80%, transparent);
+  padding: 4px 9px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: var(--market-surface-subtle);
   font-variant-numeric: tabular-nums;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .listing-card__fact > span {
@@ -2426,15 +2430,14 @@ select {
 }
 
 .listing-card[data-vehicle-type="part"] .listing-card__content {
-  background:
-    radial-gradient(circle at 92% -14%, rgba(99, 102, 241, 0.1), transparent 38%),
-    linear-gradient(180deg, color-mix(in srgb, var(--market-surface) 98%, transparent), var(--market-surface) 100%),
-    var(--market-surface);
+  background: var(--market-surface);
 }
 
 .listing-card__favorite {
-  width: 30px;
-  height: 30px;
+  /* Размер задаёт компонент (44px — норма зоны нажатия). Жёсткие 30px здесь
+     перебивали его и возвращали цель, в которую палец не попадает. */
+  width: 44px;
+  height: 44px;
   border: 1px solid rgba(255, 255, 255, 0.78);
   background: rgba(15, 23, 42, 0.72);
   box-shadow: 0 8px 16px -10px rgba(15, 23, 42, 0.72);
@@ -2664,7 +2667,7 @@ select {
 }
 
 .parts-category-bar {
-  background: linear-gradient(145deg, var(--market-surface) 0%, var(--market-surface-subtle) 100%);
+  background: var(--market-surface);
 }
 
 .parts-category-bar .mantine-Button-root {
@@ -2817,7 +2820,7 @@ select {
   min-height: 188px;
   color: inherit;
   text-decoration: none;
-  background: linear-gradient(145deg, var(--market-surface), var(--market-surface-subtle));
+  background: var(--market-surface);
   transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
 }
 
@@ -2926,7 +2929,7 @@ select {
 .dashboard-favorite-card {
   overflow: hidden;
   border-color: var(--market-line) !important;
-  background: linear-gradient(135deg, var(--market-surface), var(--market-surface-subtle));
+  background: var(--market-surface);
   box-shadow: 0 10px 22px -26px rgba(15, 23, 42, 0.7);
   transition: transform var(--ease-base) ease, border-color var(--ease-base) ease, box-shadow var(--ease-base) ease;
 }
@@ -3403,7 +3406,7 @@ select {
 .fuel-map-list {
   max-height: 500px;
   overflow: auto;
-  background: linear-gradient(150deg, var(--market-surface), var(--market-surface-subtle));
+  background: var(--market-surface);
 }
 
 .fuel-map-list__selection {
@@ -3440,7 +3443,7 @@ select {
    теме превращалась в светлое пятно с нечитаемым текстом. */
 .fuel-station-card[data-selected] {
   border-color: var(--market-primary);
-  background: linear-gradient(135deg, var(--market-surface) 0%, var(--market-primary-soft) 100%);
+  background: var(--market-primary-soft);
   box-shadow: 0 14px 24px -20px rgba(79, 70, 229, 0.58);
 }
 
@@ -3461,7 +3464,7 @@ select {
 
 .auction-filter-panel {
   border-color: var(--market-field-line);
-  background: linear-gradient(145deg, var(--market-surface) 0%, var(--market-surface-subtle) 100%);
+  background: var(--market-surface);
 }
 
 .auction-filter-grid {
@@ -3562,7 +3565,7 @@ select {
   aspect-ratio: 16 / 7;
   background:
     radial-gradient(circle at 50% 36%, rgba(255, 174, 0, 0.16), transparent 28%),
-    linear-gradient(145deg, #fffaf3, var(--market-surface-subtle));
+    var(--market-surface-subtle);
 }
 
 .auction-card__media > img {
@@ -3665,14 +3668,14 @@ select {
   height: 148px;
   place-items: center;
   overflow: hidden;
-  background: linear-gradient(145deg, var(--market-primary-soft), var(--market-surface-subtle));
+  background: var(--market-primary-soft);
 }
 
 .part-result-card__media[data-empty-media] {
   height: 112px;
   background:
     radial-gradient(circle at 50% 40%, rgba(79, 70, 229, 0.12), transparent 28%),
-    linear-gradient(145deg, var(--market-primary-soft), var(--market-surface-subtle));
+    var(--market-primary-soft);
 }
 
 .part-result-card__media img {

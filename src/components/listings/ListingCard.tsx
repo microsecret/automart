@@ -267,13 +267,16 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               ячейка. */}
           {isVehicle && (
             <Box mb={6} className="listing-card__facts">
-              <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Год <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text></Text>
-              {numericUsage != null && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">{usageMeta.label} <Text component="span" inherit fw={700} c="var(--market-ink)">{distanceValue}</Text></Text>}
-              {/* OTHER не показываем: «КПП Другая» занимает строку наравне с
-                  настоящим фактом, хотя означает, что данных нет. В самом
-                  объявлении значение остаётся — там оно уместно. */}
-              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>}
-              {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && <Text className="listing-card__fact" fz="xs" c="var(--market-muted)">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>}
+              <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{listing.vehicle!.year}</Text>
+              {numericUsage != null && <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{distanceValue}</Text>}
+              {/* Чип несёт значение без подписи: «2008», «85 000 км»,
+                  «автомат» — что это, понятно по самому значению, а слова
+                  «Год» и «КПП» занимали половину узкого чипа.
+
+                  OTHER не показываем: «КПП Другая» означает, что данных нет,
+                  и в списке это не факт. В самом объявлении оно остаётся. */}
+              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>}
+              {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>}
             </Box>
           )}
 
