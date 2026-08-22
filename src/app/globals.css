@@ -163,6 +163,21 @@
   --market-info-line: #b9caee;
 }
 
+/* Подъём при наведении — две роли, а не три случайные величины.
+
+   Замер по сайту: 1px у кнопок и пунктов меню, 2px у плиток категорий,
+   3px у карточек объявлений — двадцать четыре места, три ответа на один
+   и тот же жест. При переходе между блоками главной интерфейс читался
+   как несобранный.
+
+   --lift-sm — мелкие элементы: кнопки, пункты, чипы.
+   --lift-md — карточки: объявления, новости, лоты, марки. */
+:root {
+  --lift-sm: -1px;
+  --lift-md: -2px;
+}
+
+
 /* Размытие подложки: ровно две ступени на весь сайт.
 
    Было восемь значений — 4, 8, 10, 12, 14, 16, 18 — подобранных на глаз в
@@ -396,13 +411,11 @@ h4, h5, h6 { letter-spacing: -0.02em; }
 
 @media (hover: hover) and (pointer: fine) {
   :where(.mantine-Button-root, .mantine-ActionIcon-root):not([data-disabled]):hover {
-    transform: translateY(-1px);
+    transform: translateY(var(--lift-sm));
   }
 }
 
-:where(.mantine-Button-root, .mantine-ActionIcon-root):not([data-disabled]):active {
-  transform: translateY(1px) scale(0.985);
-}
+
 
 /* A single calm focus treatment keeps keyboard navigation discoverable without
    competing with the compact visual language of the marketplace controls. */
@@ -486,7 +499,7 @@ select {
 .admin-auction-inquiry-row:hover {
   border-color: var(--mantine-color-indigo-2);
   box-shadow: var(--shadow-lg);
-  transform: translateY(-1px);
+  transform: translateY(var(--lift-sm));
 }
 
 .admin-auction-inquiry-row__image {
@@ -756,7 +769,7 @@ select {
   }
 
   .market-app-header :where(.mantine-Button-root, .mantine-ActionIcon-root):hover {
-    transform: translateY(-1px);
+    transform: translateY(var(--lift-sm));
   }
 
   .market-app-header .mantine-Button-filled:hover {
@@ -1387,7 +1400,7 @@ select {
   border-color: #fb923c;
   background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  transform: translateY(var(--lift-sm));
 }
 
 @keyframes partner-header-glint {
@@ -1423,7 +1436,7 @@ select {
 .header-create-cta:hover,
 .header-create-cta:focus-visible {
   box-shadow: var(--shadow-lg);
-  transform: translateY(-1px);
+  transform: translateY(var(--lift-sm));
 }
 
 @keyframes header-create-glint {
@@ -1856,7 +1869,7 @@ select {
 .home-auctions__cta:hover {
   background: #e08f06;
   box-shadow: 0 14px 30px -12px rgba(245, 159, 10, 0.9);
-  transform: translateY(-1px);
+  transform: translateY(var(--lift-sm));
 }
 
 .home-auctions__cta:active {
@@ -2097,7 +2110,7 @@ select {
 }
 
 .catalog-filter-advanced .mantine-Chip-label:hover {
-  transform: translateY(-1px);
+  transform: translateY(var(--lift-sm));
   border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
   background: var(--market-primary-soft);
 }
@@ -2331,7 +2344,7 @@ select {
 
 @media (hover: hover) and (pointer: fine) {
   .listing-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(var(--lift-md));
     /* Цвет и тень берутся из системы: жёсткий #1c4291 не менялся в тёмной
        теме, а своя тень выбивалась из общей глубины. */
     border-color: var(--market-primary) !important;
@@ -2344,18 +2357,18 @@ select {
   }
 
   .listing-card--row:hover {
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-md));
     box-shadow: var(--shadow-md);
   }
 
   .part-result-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-md));
     border-color: var(--market-field-line) !important;
     box-shadow: var(--shadow-md);
   }
 
   .auction-result-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-md));
     border-color: #fb923c !important;
     box-shadow: var(--shadow-lg);
   }
@@ -2897,7 +2910,7 @@ select {
   .news-list-card-link:focus-visible .news-list-card {
     border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
     box-shadow: var(--shadow-lg);
-    transform: translateY(-3px);
+    transform: translateY(var(--lift-md));
   }
 
   .news-list-card-link:hover .news-list-card__read {
@@ -3064,7 +3077,7 @@ select {
 }
 
 .service-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(var(--lift-md));
   border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
   box-shadow: var(--shadow-lg);
 }
@@ -3130,7 +3143,7 @@ select {
   border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
   background: var(--market-surface);
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  transform: translateY(var(--lift-sm));
 }
 
 .dashboard-workspace__status:focus-visible {
@@ -3355,7 +3368,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .dashboard-listing-card:hover,
   .dashboard-favorite-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-md));
     border-color: var(--market-field-line) !important;
     box-shadow: var(--shadow-lg);
   }
@@ -3367,7 +3380,7 @@ select {
   }
 
   .garage-vehicle-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-md));
     border-color: #74d7c5 !important;
     box-shadow: var(--shadow-lg);
   }
@@ -3733,7 +3746,7 @@ select {
 .auction-detail-spec:hover {
   border-color: color-mix(in srgb, var(--market-accent) 34%, var(--market-border-soft));
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  transform: translateY(var(--lift-sm));
 }
 
 .auction-detail-spec__label {
@@ -4110,7 +4123,7 @@ select {
   .listing-map-result:hover .listing-map-result__surface {
     border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
     box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    transform: translateY(var(--lift-sm));
   }
 }
 
@@ -4139,7 +4152,7 @@ select {
   .part-result-card:hover {
     border-color: color-mix(in srgb, var(--market-primary) 28%, var(--market-field-line)) !important;
     box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-md));
   }
 }
 
@@ -4955,7 +4968,7 @@ select {
 .admin-metric-card:hover {
   border-color: var(--market-field-line) !important;
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  transform: translateY(var(--lift-md));
 }
 
 .admin-moderation-panel {
@@ -4980,7 +4993,7 @@ select {
   .admin-action-card:hover {
     border-color: #c9d4ff;
     box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-md));
   }
 }
 
@@ -5078,15 +5091,31 @@ select {
 
 .mantine-Button-root:not(:disabled):not([data-loading]):hover,
 .mantine-ActionIcon-root:not(:disabled):not([data-loading]):hover {
-  transform: translateY(-1px);
+  transform: translateY(var(--lift-sm));
 }
 
-/* Нажатие возвращает элемент вниз — это тактильная обратная связь, которую
-   пользователь считывает быстрее, чем изменение цвета. */
+/* Нажатие подтверждается и движением, и цветом.
+
+   Замер по боевому сайту: на всех проверенных кнопках цвет при нажатии
+   оставался тем же, что при наведении, — отличался только сдвиг. На
+   телефоне, где наведения нет вовсе, нажатие не подтверждалось ничем:
+   человек не знал, услышали его или нет.
+
+   Притемнение через brightness работает поверх любой заливки, поэтому
+   не приходится перечислять цвета всех кнопок сайта. Шестьдесят
+   миллисекунд — нижняя граница заметности: ответ должен быть мгновенным. */
 .mantine-Button-root:not(:disabled):not([data-loading]):active,
 .mantine-ActionIcon-root:not(:disabled):not([data-loading]):active {
   transform: translateY(1px) scale(0.985);
+  filter: brightness(0.93);
   transition-duration: 60ms;
+}
+
+/* В тёмной теме притемнение не читается — там элемент, наоборот,
+   светлеет. */
+[data-mantine-color-scheme="dark"] .mantine-Button-root:not(:disabled):not([data-loading]):active,
+[data-mantine-color-scheme="dark"] .mantine-ActionIcon-root:not(:disabled):not([data-loading]):active {
+  filter: brightness(1.12);
 }
 
 /* Карточка задачи в админке ведёт на очередь, поэтому ведёт себя как ссылка,
@@ -5103,7 +5132,7 @@ select {
 }
 
 .admin-queue-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(var(--lift-md));
   border-color: color-mix(in srgb, var(--market-primary) 38%, var(--market-line));
   box-shadow: var(--shadow-md);
 }
@@ -5270,7 +5299,7 @@ select {
 
 @media (hover: hover) and (pointer: fine) {
   .market-linked-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-md));
     border-color: var(--market-primary);
     background: var(--market-surface-subtle);
     box-shadow: var(--shadow-lg);
@@ -5286,7 +5315,12 @@ a:focus-visible > .market-linked-card {
 }
 
 /* Вариант без подъёма — для плотных списков, где сдвиг соседей заметнее
-   самой подсветки. */
+   самой подсветки.
+
+   Подъём отменялся, но взамен не давалось ничего: сто двадцать карточек
+   марок на странице не отвечали на курсор вовсе, и человек не понимал,
+   что по ним можно нажать. Рамка и подложка от общего правила остаются —
+   этого хватает, чтобы карточка отзывалась, не толкая соседей. */
 .market-linked-card--flat:hover {
   transform: none;
 }
@@ -5504,4 +5538,34 @@ h1,
   body:has(.auction-action-bar) {
     padding-bottom: 148px;
   }
+}
+
+/* Карточки новостей и лотов отвечают на курсор.
+
+   Замер по боевому сайту: у карточек новостей (112 штук) объявлен
+   переход, но правила `:hover` не было — переход в пустоту. Карточки
+   лотов правятся в своём модуле стилей, auctions.module.css.
+   Человек на этих страницах не понимал, что карточка кликабельна, пока
+   не пробовал нажать. Половина каталога сайта выглядела мёртвой.
+
+   Жест тот же, что у карточки объявления: подъём, рамка и тень. Один
+   ответ на одно действие по всему сайту. */
+@media (hover: hover) and (pointer: fine) {
+  .news-list-card-link:hover .news-list-card {
+    transform: translateY(var(--lift-md));
+    border-color: var(--market-primary);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* Логотип в шапке — единственный элемент шапки без ответа на курсор.
+   Он же ведёт на главную, то есть это ссылка, а не картинка. */
+@media (hover: hover) and (pointer: fine) {
+  .lewheel-brand:hover {
+    opacity: 0.82;
+  }
+}
+
+.lewheel-brand {
+  transition: opacity var(--ease-fast) var(--ease-out);
 }

@@ -161,6 +161,24 @@
   text-decoration: none;
 }
 
+/* Карточка лота отвечает на курсор.
+
+   Замер по боевому сайту: двадцать четыре карточки на странице, и ни
+   одна не менялась под курсором. Человек не понимал, что по ним можно
+   нажать, пока не пробовал. Жест тот же, что у карточки объявления в
+   каталоге: подъём, рамка, тень — один ответ на одно действие. */
+.resultCardLink > * {
+  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .resultCardLink:hover > * {
+    transform: translateY(var(--lift-md));
+    border-color: var(--market-primary);
+    box-shadow: var(--shadow-md);
+  }
+}
+
 .resultTitle {
   min-height: 2.5em;
   color: var(--market-ink);
