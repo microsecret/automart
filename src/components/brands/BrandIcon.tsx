@@ -34,8 +34,17 @@ export default function BrandIcon({ brand, size = 36, variant = "rounded" }: Bra
         width: size,
         height: size,
         borderRadius: radius,
-        border: "1px solid var(--market-field-line)",
-        background: "var(--market-surface)",
+        border: "1px solid rgba(20, 48, 107, 0.12)",
+        /* Подложка светлая в обеих темах.
+
+           Фирменные цвета марок рассчитаны на светлый фон и у многих почти
+           чёрные: Kia #05141F, Mazda #101010, Lexus #1B1B1B. На тёмной
+           поверхности они сливаются с ней — проверка контраста в тёмной
+           теме показала 35 нечитаемых значков из 37 найденных проблем.
+
+           Так же поступают автоплощадки: плашка марки всегда светлая, это
+           её опознавательный признак. */
+        background: "#f7f8fb",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
