@@ -5631,3 +5631,34 @@ h1:not(:last-child),
     min-height: 0;
   }
 }
+
+/* Отключённый элемент выглядит одинаково по всему сайту.
+
+   Замер: пагинация гасла до 0.4, поля выбора — до 0.6, а обёртка поля
+   оставалась непрозрачной, из-за чего подпись над отключённым полем
+   читалась как активная. Три разных ответа на одно состояние.
+
+   Гасится сам элемент, а не подпись: человеку нужно понимать, что за
+   поле недоступно, а полупрозрачный текст подписи читается хуже и
+   вводит в заблуждение — кажется, что данные грузятся. */
+:where(
+  .mantine-Button-root,
+  .mantine-ActionIcon-root,
+  .mantine-Input-input,
+  .mantine-Select-input,
+  .mantine-Pagination-control
+):disabled,
+:where(
+  .mantine-Button-root,
+  .mantine-ActionIcon-root,
+  .mantine-Pagination-control
+)[data-disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Подпись над отключённым полем остаётся полной: она объясняет, что это
+   за поле, и должна читаться независимо от доступности. */
+.mantine-InputWrapper-label {
+  opacity: 1;
+}
