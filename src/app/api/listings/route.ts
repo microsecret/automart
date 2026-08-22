@@ -333,11 +333,23 @@ export async function GET(request: NextRequest) {
        с городом «Казань», фильтр по Казани возвращал ноль. */
     const cityNames = nearbyCities?.length ? nearbyCities : city ? [city] : []
     if (cityNames.length) {
-      const cityConditions: Prisma.ListingWhereInput[] = cityNames.flatMap((name) => [
-        { vehicle: { location: { contains: name } } },
-        { part: { location: { contains: name } } },
-      ])
-      where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), { OR: cityConditions }]
+      /* Все города — внутри одного условия на связь.
+
+         Каждое условие вида `{ vehicle: { … } }` порождает у SQLite отдельное
+         соединение таблиц, а их не может быть больше 64. При поиске в радиусе
+         городов набирается до двухсот, и запрос падал с ошибкой «at most 64
+         tables in a join» — проверка на живом сайте это показала.
+
+         Здесь связей ровно две: одна к транспорту, одна к запчасти, а города
+         перечислены внутри них. */
+      const locationOr = cityNames.map((name) => ({ location: { contains: name } }))
+      const cityCondition: Prisma.ListingWhereInput = {
+        OR: [
+          { vehicle: { OR: locationOr } },
+          { part: { OR: locationOr } },
+        ],
+      }
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), cityCondition]
     }
 
     const orderBy: Prisma.ListingOrderByWithRelationInput =
