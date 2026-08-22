@@ -560,9 +560,9 @@ export default function HomePage(p: HomePageProps = {}) {
           onAction={activeFilterCount > 0 ? resetFilters : undefined}
         />
       ) : view === "grid" ? (
-        <SimpleGrid cols={{base:1,sm:2,lg:3}} spacing="sm">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
+        <SimpleGrid cols={{base:1,sm:2,lg:3}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
-        <Stack gap="xs">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
+        <Stack gap="xs" className="catalog-appear">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}
 
       {data && data.pagination?.pages > 1 && (

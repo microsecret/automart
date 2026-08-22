@@ -1564,23 +1564,39 @@ select {
   }
 }
 .av-fade-in {
-  animation: av-fade-in 0.3s ease-out;
+  animation: av-fade-in var(--ease-slow) ease-out;
 }
 
-/* Skeleton-шиммер при загрузке изображений */
-@keyframes av-shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
+/* Появление карточек каталога.
+
+   Замер показал: скелетоны сменяются готовыми карточками рывком —
+   девяносто с лишним плиток возникают на экране разом. Мягкое появление
+   убирает этот скачок.
+
+   Двигаются только opacity и transform: они не заставляют браузер
+   пересчитывать раскладку, поэтому даже сотня карточек не подтормаживает.
+
+   Задержка нарастает лишь у первых шести — тех, что видны сразу. Дальше
+   ступенька была бы уже незаметна, а ждать появления пришлось бы дольше. */
+.catalog-appear > * {
+  animation: av-fade-in var(--ease-slow) ease-out both;
+}
+
+.catalog-appear > *:nth-child(1) { animation-delay: 0ms; }
+.catalog-appear > *:nth-child(2) { animation-delay: 40ms; }
+.catalog-appear > *:nth-child(3) { animation-delay: 80ms; }
+.catalog-appear > *:nth-child(4) { animation-delay: 120ms; }
+.catalog-appear > *:nth-child(5) { animation-delay: 160ms; }
+.catalog-appear > *:nth-child(n + 6) { animation-delay: 200ms; }
+
+/* При отключённой анимации карточки просто появляются на своих местах:
+   состояние меняется, движения нет. */
+@media (prefers-reduced-motion: reduce) {
+  .catalog-appear > * {
+    animation: none;
   }
 }
-.av-shimmer {
-  background: linear-gradient(90deg, #f4f4f5 0%, #e4e4e7 50%, #f4f4f5 100%);
-  background-size: 1000px 100%;
-  animation: av-shimmer 1.6s infinite linear;
-}
+
 
 .market-directory {
   background:
@@ -2121,8 +2137,10 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .listing-card:hover {
     transform: translateY(-3px);
-    border-color: #4f46e5 !important;
-    box-shadow: 0 12px 32px -8px rgba(79, 70, 229, 0.25);
+    /* Цвет и тень берутся из системы: жёсткий #4f46e5 не менялся в тёмной
+       теме, а своя тень выбивалась из общей глубины. */
+    border-color: var(--market-primary) !important;
+    box-shadow: var(--shadow-md);
   }
 
   .listing-card:hover::before {
