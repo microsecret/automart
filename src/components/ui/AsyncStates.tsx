@@ -35,7 +35,7 @@ export function AsyncErrorState({
   }
 
   return (
-    <Paper radius="lg" p={{ base: "lg", md: "xl" }} withBorder>
+    <Paper radius="md" p={{ base: "lg", md: "xl" }} withBorder>
       {/* role="alert" — экранный диктор объявляет ошибку сразу, а не когда
           человек доберётся до этого места табуляцией. */}
       <Stack align="center" gap="sm" maw={480} mx="auto" ta="center" role="alert">
@@ -71,7 +71,7 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, actionLabel, actionHref, onAction }: EmptyStateProps) {
   return (
-    <Paper radius="lg" p={{ base: "lg", md: "xl" }} withBorder>
+    <Paper radius="md" p={{ base: "lg", md: "xl" }} withBorder>
       <Stack align="center" gap="sm" maw={480} mx="auto" ta="center">
         <ThemeIcon size={52} radius="xl" color="gray" variant="light"><IconSearchOff size={26} /></ThemeIcon>
         <Text fw={750} fz="lg">{title}</Text>
@@ -96,7 +96,7 @@ export function ResultsGridSkeleton({ count = 8, mediaHeight = 210 }: { count?: 
       style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}
     >
       {Array.from({ length: count }, (_, index) => (
-        <Paper key={index} radius="lg" p={0} withBorder style={{ overflow: "hidden" }}>
+        <Paper key={index} radius="md" p={0} withBorder style={{ overflow: "hidden" }}>
           <Skeleton height={mediaHeight} radius={0} />
           <Stack gap={8} p="sm">
             <Skeleton height={18} width="52%" />
