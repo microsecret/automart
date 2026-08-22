@@ -586,6 +586,43 @@ function AuctionDetail() {
           </Stack>
         )}
       </Stack>
+      {/* Полоса действия на телефоне.
+
+          Замер обхода: кнопка «Войти и оставить заявку» лежала на 5227
+          пикселях при экране 844 — шесть экранов прокрутки через параметры,
+          оснащение, историю и калькулятор. На десктопе блок заявки
+          прилипает и виден почти сразу, на телефоне не прилипал вовсе.
+          До единственного действия страницы человек просто не доходил.
+
+          Прилепить саму форму нельзя — она высокая и закроет собой лот.
+          Полоса же занимает шестьдесят пикселей и всегда под рукой.
+
+          Здесь же названа природа цены: вверху стоит «2,0 млн», а под ключ
+          выходит около трёх — и настоящая цифра лежала на 5.6 экрана ниже. */}
+      {!hasWideAuctionLayout && !submitted && (
+        <Box className="auction-action-bar">
+          <Box className="auction-action-bar__price">
+            <Text className="auction-action-bar__amount">{formatPriceShort(listing.finalPrice)}</Text>
+            <Anchor
+              href="#calculator"
+              className="auction-action-bar__note"
+              onClick={(event) => {
+                event.preventDefault()
+                document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }}
+            >
+              лот + комиссия · расчёт под ключ
+            </Anchor>
+          </Box>
+          <Button
+            color="orange"
+            size="md"
+            onClick={() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+          >
+            Заказать
+          </Button>
+        </Box>
+      )}
     </Container>
   )
 }

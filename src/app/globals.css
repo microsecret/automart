@@ -5425,3 +5425,83 @@ h1,
   letter-spacing: -0.025em;
   line-height: 1.15;
 }
+
+/* Полоса действия на странице лота — только на телефоне.
+
+   Кнопка «Войти и оставить заявку» лежала на 5227 пикселях при экране
+   844: шесть экранов прокрутки до единственного действия страницы. На
+   десктопе блок заявки прилипает и виден с первого экрана, на телефоне
+   не прилипал вовсе.
+
+   Саму форму прилепить нельзя — она высокая и закроет собой лот. */
+.auction-action-bar {
+  position: fixed;
+  /* Ниже панели навигации (250) — она главнее и всегда сверху. */
+  z-index: 200;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* Нижняя панель навигации плавает внизу с отступом 12px и высотой около
+     шестидесяти — встаём над ней, а не под неё. Вырез экрана панель
+     учитывает сама, поэтому здесь его прибавлять не нужно. */
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  padding: 10px 14px;
+  border-top: 1px solid var(--market-line);
+  background: var(--market-surface);
+  box-shadow: 0 -1px 2px rgb(13 27 50 / 6%), 0 -8px 24px -12px rgb(13 27 50 / 18%);
+}
+
+.auction-action-bar__price {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.auction-action-bar__amount {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--market-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Природа цены названа прямо здесь и ведёт к расчёту: вверху страницы
+   стоит «2,0 млн», а под ключ выходит около трёх — и эта цифра лежала на
+   5.6 экрана ниже, куда человек не доходил. */
+.auction-action-bar__note {
+  font-size: 0.7rem;
+  line-height: 1.25;
+  color: var(--market-muted);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--market-muted) 40%, transparent);
+  text-underline-offset: 2px;
+}
+
+/* Появление снизу — прибытие полосы, а не украшение: она возникает один
+   раз при загрузке, не по нажатию. */
+@media (prefers-reduced-motion: no-preference) {
+  .auction-action-bar {
+    animation: auction-action-bar-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+}
+
+@keyframes auction-action-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+/* Полоса перекрывает низ страницы — освобождаем ей место, иначе она
+   закроет последний блок содержимого. */
+@media (max-width: 61.99em) {
+  body:has(.auction-action-bar) {
+    padding-bottom: 148px;
+  }
+}

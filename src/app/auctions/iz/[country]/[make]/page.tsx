@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const stats = await buildAuctionLandingStats(landing.countryCode, landing.make)
   const priceHint = stats.minPrice ? ` от ${formatPriceShort(stats.minPrice)}` : ""
   const title = `${landing.makeLabel} из ${landing.countryGenitive} под заказ — ${landing.total} авто${priceHint}`
-  const description = `Актуальные лоты ${landing.makeLabel} с аукционов ${landing.countryGenitive}: ${landing.total} автомобилей${priceHint}. Цена под ключ с доставкой и таможней, расчёт по курсу ЦБ.`
+  const description = `Актуальные лоты ${landing.makeLabel} с аукционов ${landing.countryGenitive}: ${landing.total} автомобилей${priceHint} за лот с комиссией. Доставка, пошлина и утильсбор считаются в карточке машины по курсу ЦБ.`
   const canonical = `/auctions/iz/${landing.countrySlug}/${landing.makeSlug}`
 
   return {
@@ -79,7 +79,7 @@ export default async function AuctionLandingPage({ params }: PageProps) {
             <Text fw={850} size="xl" mt={4}>{landing.total}</Text>
           </Card>
           <Card withBorder radius="md" p="md">
-            <Text size="xs" c="dimmed">Цена под ключ от</Text>
+            <Text size="xs" c="dimmed">Лот с комиссией от</Text>
             <Text fw={850} size="xl" mt={4}>{stats.minPrice ? formatPriceShort(stats.minPrice) : "—"}</Text>
           </Card>
           <Card withBorder radius="md" p="md">
