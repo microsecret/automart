@@ -169,10 +169,14 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               сервисов и вместе с вкладками каталога вытеснял из шапки иконки
               кабинета и поиск. Пункты остались в меню и в боковой навигации. */}
 
+          {/* Кнопка занимает место наравне с поиском и вкладками. На 1440px
+              ряд переполнялся, и «Подать объявление» с «Войти» уезжали за
+              край экрана — проверка на живом сайте показала вылет на 115 и
+              211 пикселей. Показываем её там, где ряду хватает ширины; в
+              меню и боковой навигации пункт остаётся всегда. */}
           <Button
             component={Link}
             href="/dashboard/deliveries?partner=apply"
-            visibleFrom="xl"
             size="compact-sm"
             radius="md"
             leftSection={<IconHeartHandshake size={15} stroke={1.9} />}
@@ -184,7 +188,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           {/* ЦЕНТР: Поиск — максимальная ширина */}
           <Popover opened={shouldShowSuggestions} position="bottom-start" width="target" offset={8} shadow="lg" radius="lg" withinPortal>
             <Popover.Target>
-              <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: "1 1 200px", maxWidth: 340, minWidth: 200 }} visibleFrom="xl">
+              <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: "1 1 160px", maxWidth: 280, minWidth: 0 }} visibleFrom="xl">
                 <TextInput
                   placeholder="Марка, модель или город"
                   leftSection={<IconSearch size={16} color="gray.4" />}
