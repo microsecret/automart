@@ -54,7 +54,7 @@ export default function SmartmatchingPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconTarget size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
             <Text size="xs" c="gray.5">Подберём лучшие варианты под ваш бюджет и критерии</Text>
           </Stack>
         </Group>

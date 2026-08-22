@@ -337,7 +337,7 @@ function CreateVehicleWorkspace() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Group gap={7} align="center">
-              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">{isGarageMode ? "Добавить автомобиль в гараж" : "Новое объявление"}</Text>
+              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">{isGarageMode ? "Добавить автомобиль в гараж" : "Новое объявление"}</Text>
               {isTelegramMiniApp && <Badge leftSection={<IconBrandTelegram size={12} />} color="indigo" variant="light" radius="xl">Mini App</Badge>}
             </Group>
             <Text size="xs" c="var(--market-muted)">{isGarageMode ? "Сохраните полную приватную карточку — в каталоге она не появится" : "Заполните данные — после проверки объявление появится в поиске"}</Text>

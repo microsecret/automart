@@ -290,7 +290,7 @@ function DashboardContent() {
           <Group gap="sm" align="center">
             <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconLayoutDashboard size={22} /></ThemeIcon>
             <Stack gap={0}>
-              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный кабинет</Text>
+              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный кабинет</Text>
               <Text size="xs" c="gray.5">{session?.user?.name || session?.user?.email}</Text>
             </Stack>
           </Group>

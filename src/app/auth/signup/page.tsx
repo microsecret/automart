@@ -37,7 +37,7 @@ export default function SignUpPage() {
         {/* Форма */}
         <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0 }}>
           <Stack gap={4} align="center">
-            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Регистрация</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Регистрация</Text>
             <Text size="sm" c="gray.5">Три шага в Telegram-боте</Text>
           </Stack>
 

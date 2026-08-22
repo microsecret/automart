@@ -10,7 +10,7 @@ export default function RulesPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconScale size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Правила площадки</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Правила площадки</Text>
             <Text size="xs" c="gray.5">Обновлены: 8 августа 2026</Text>
           </Stack>
         </Group>

@@ -22,7 +22,7 @@ export default function PrivacyPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconShieldLock size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Политика конфиденциальности</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Политика конфиденциальности</Text>
             <Text size="xs" c="gray.5">Последнее обновление: 16 августа 2026</Text>
           </Stack>
         </Group>

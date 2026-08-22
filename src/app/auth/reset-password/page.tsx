@@ -68,7 +68,7 @@ function ResetPasswordWorkspace() {
           <IconCar size={28} color="white" />
         </Box>
         <Stack gap={4} align="center">
-          <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Новый пароль</Text>
+          <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Новый пароль</Text>
           <Text size="sm" c="gray.5">Ссылка действует 24 часа и используется один раз.</Text>
         </Stack>
 

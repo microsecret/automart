@@ -90,7 +90,7 @@ export default function NotificationsPage() {
             <Group gap="sm" align="center">
               <ThemeIcon variant="light" color="indigo" size={42} radius="md"><IconBellRinging size={22} /></ThemeIcon>
               <Stack gap={2}>
-                <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Уведомления</Text>
+                <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Уведомления</Text>
                 <Text size="sm" c="dimmed">Статусы объявлений, сделки и важные действия в одном месте</Text>
               </Stack>
               {unread > 0 && <Badge size="sm" color="indigo" variant="light">{unread} новых</Badge>}

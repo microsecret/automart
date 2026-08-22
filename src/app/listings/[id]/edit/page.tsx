@@ -126,7 +126,7 @@ export default function EditListingPage() {
           <Group gap="sm">
             <ThemeIcon size={46} radius="md" variant="light" color="indigo"><IconEdit size={23} /></ThemeIcon>
             <Stack gap={1}>
-              <Text component="h1" fw={800} fz={{ base: 22, sm: 26 }}>Редактирование объявления</Text>
+              <Text component="h1">Редактирование объявления</Text>
               <Text size="sm" c="dimmed">Сохраняются только данные этой карточки. Все изменения остаются в истории.</Text>
             </Stack>
           </Group>

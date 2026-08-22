@@ -65,7 +65,7 @@ export default function ReviewsPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="orange" size={36} radius="md"><IconStar size={20} fill="currentColor" /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Отзывы</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Отзывы</Text>
             <Text size="xs" c="gray.5">{reviewCount} отзывов</Text>
           </Stack>
         </Group>

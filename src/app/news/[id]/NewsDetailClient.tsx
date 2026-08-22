@@ -200,7 +200,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
 
         <Stack gap="xs">
           {article.sourceChannel && <Badge w="fit-content" size="sm" variant="light" color="indigo">Редакция @{article.sourceChannel}</Badge>}
-          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 24, md: 32 }} lh={1.16} c="var(--market-ink)">
+          <Text component="h1" ff="var(--font-display),sans-serif" c="var(--market-ink)">
             {article.title}
           </Text>
           <Group gap="md">

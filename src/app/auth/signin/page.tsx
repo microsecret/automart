@@ -55,7 +55,7 @@ function SignInContent() {
         {/* Правая колонка — форма */}
         <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0, flexShrink: 0 }}>
           <Stack gap={4} align="center">
-            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif" ta="center">{reason.title}</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif" ta="center">{reason.title}</Text>
             <Text size="sm" c="gray.5" ta="center" maw={380}>{reason.hint}</Text>
           </Stack>
 

@@ -16,7 +16,7 @@ export default function BrandsPage() {
     <Container size="xl" py="md" px={{ base: "md", md: "lg" }}>
       <Stack gap="md">
         <Stack gap={0}>
-          <Text component="h1" ff="var(--font-display),sans-serif" fw={800} fz={{ base: 22, md: 26 }} lh={1.2} c="var(--market-ink)">
+          <Text component="h1" ff="var(--font-display),sans-serif" c="var(--market-ink)">
             Все марки
           </Text>
           <Text size="xs" c="gray.5" mt={2}>{filteredBrands.length} брендов в категории</Text>

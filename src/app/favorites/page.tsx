@@ -31,7 +31,7 @@ export default function FavoritesPage() {
           <Stack gap={0}>
             <Group gap="sm" align="center">
               <ThemeIcon variant="light" color="red" size={36} radius="md"><IconHeart size={20} fill="currentColor" /></ThemeIcon>
-              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Избранное</Text>
+              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Избранное</Text>
             </Group>
             {data && <Text size="xs" c="gray.5">{data.pagination.total} объявлений в избранном</Text>}
           </Stack>

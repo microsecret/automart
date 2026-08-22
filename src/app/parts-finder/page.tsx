@@ -323,7 +323,7 @@ function PartsContent() {
           <Group gap="sm">
             <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconAdjustmentsHorizontal size={22} /></ThemeIcon>
             <Stack gap={0}>
-              <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Каталог запчастей</Text>
+              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Каталог запчастей</Text>
               <Text size="xs" c="gray.5">{data?.pagination?.total || 0} запчастей · кросс-совместимость по авто</Text>
             </Stack>
           </Group>

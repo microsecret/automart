@@ -87,7 +87,7 @@ export default function CreatePartPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Продать запчасть</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Продать запчасть</Text>
             <Text size="xs" c="var(--market-muted)">Заполните карточку — после проверки она появится в каталоге запчастей.</Text>
           </Stack>
         </Group>

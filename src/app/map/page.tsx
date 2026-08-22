@@ -83,7 +83,7 @@ export default function MapPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconMapPin size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={22} c="var(--market-ink)" ff="var(--font-display),sans-serif">Карта объявлений</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Карта объявлений</Text>
             <Text size="xs" c="gray.5">{listings.length} объявлений в городе {city}</Text>
           </Stack>
         </Group>

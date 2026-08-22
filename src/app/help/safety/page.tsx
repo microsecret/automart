@@ -26,7 +26,7 @@ export default function SafetyPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="red" size={44} radius="md"><IconShieldCheck size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Text component="h1" fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">Безопасность</Text>
+            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Безопасность</Text>
             <Text size="xs" c="gray.5">Как не стать жертвой мошенников</Text>
           </Stack>
         </Group>

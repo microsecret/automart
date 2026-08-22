@@ -121,7 +121,7 @@ export default function NewsListClient({ initialData }: { initialData: NewsRespo
         <Group className="news-list-page__heading" gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="lg"><IconNews size={22} /></ThemeIcon>
           <Stack gap={1}>
-            <Text component="h1" ff="var(--font-display),sans-serif" fw={850} fz={{ base: 26, md: 32 }} lh={1.08}>Автомобильные новости</Text>
+            <Text component="h1" ff="var(--font-display),sans-serif">Автомобильные новости</Text>
             <Text size="sm" c="dimmed">Свежие публикации редакции и рынка{data?.pagination.total ? ` · ${data.pagination.total}` : ""}</Text>
           </Stack>
         </Group>
