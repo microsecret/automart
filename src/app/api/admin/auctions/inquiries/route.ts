@@ -9,6 +9,22 @@ import { inspectContactSharing } from "@/lib/contact-sharing-policy"
 export const dynamic = "force-dynamic"
 
 const INQUIRY_STATUSES = new Set(["NEW", "CONTACTED", "IN_PROGRESS", "CLOSED", "SOLD"])
+
+/* Порядок разбора заявок.
+
+   Раньше список шёл от новых к старым, и заявка, пролежавшая неделю,
+   уезжала в конец — туда, куда не доходят. Заявка на импорт это живой
+   человек с деньгами: чем дольше он ждёт, тем вероятнее уйдёт к другому.
+
+   Сначала те, к кому никто не притронулся, потом взятые в работу, в конце
+   завершённые. Внутри каждой группы — самые старые сверху. */
+const STATUS_ORDER: Record<string, number> = {
+  NEW: 0,
+  CONTACTED: 1,
+  IN_PROGRESS: 2,
+  SOLD: 3,
+  CLOSED: 4,
+}
 const ACTIVE_MONETIZATION_MODEL = "DEAL_FEE"
 const ASSIGNMENT_CONFLICT = "AUCTION_INQUIRY_ASSIGNMENT_CONFLICT"
 
@@ -48,7 +64,9 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        // Внутри выборки сортируем по возрасту, а порядок по статусу
+        // задаётся ниже: алфавитный поставил бы CLOSED раньше NEW.
+        orderBy: { createdAt: "asc" },
         take: 100,
       }),
       prisma.deliveryOrganization.findMany({
@@ -70,7 +88,19 @@ export async function GET(request: NextRequest) {
       userName: organization.owner.name,
       assignedInquiries: organization.owner._count.assignedAuctionInquiries,
     }))
-    return NextResponse.json({ inquiries, partners })
+    /* Необработанные — наверх, внутри группы старые первыми.
+
+       Prisma сортирует по статусу алфавитно, а нам нужен порядок по смыслу:
+       CLOSED не должен оказаться раньше NEW. Выборка ограничена сотней
+       записей, поэтому упорядочить их в памяти дешевле, чем усложнять
+       запрос. */
+    const ordered = [...inquiries].sort((left, right) => {
+      const byStatus = (STATUS_ORDER[left.status] ?? 99) - (STATUS_ORDER[right.status] ?? 99)
+      if (byStatus !== 0) return byStatus
+      return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
+    })
+
+    return NextResponse.json({ inquiries: ordered, partners })
   } catch { return NextResponse.json({ error: "Failed" }, { status: 500 }) }
 }
 

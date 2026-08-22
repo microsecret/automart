@@ -16,6 +16,7 @@ import {
   IconReceipt, IconShieldCheck, IconUserCheck,
 } from "@tabler/icons-react"
 import { formatRelativeDate } from "@/lib/format"
+import { formatQueueAge, hoursSince, queueUrgency } from "@/lib/queue-age"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
@@ -342,7 +343,25 @@ function InquiryRow({ inquiry, onOpen }: { inquiry: AuctionInquiry; onOpen: () =
           <Group gap="xs" wrap="wrap"><Text fw={850} lineClamp={1}>{vehicleTitle(inquiry)}</Text><Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>{listing && <Badge size="xs" variant="light" color="orange">{listing.source}</Badge>}</Group>
           <Group gap="md" wrap="wrap"><Group gap={5}><IconUserCheck size={14} color="#64748b" /><Text size="sm" fw={700}>{inquiry.name}</Text></Group>{inquiry.city && <Group gap={5}><IconMapPin size={14} color="#64748b" /><Text size="sm" c="dimmed">{inquiry.city}</Text></Group>}<Badge size="xs" variant="light" color={inquiry.requesterId ? "teal" : "orange"}>{inquiry.requesterId ? "Аккаунт подтверждён" : "Гостевая заявка"}</Badge></Group>
           {inquiry.comment && <Text size="sm" c="dimmed" lineClamp={2} style={{ overflowWrap: "anywhere" }}>{inquiry.comment}</Text>}
-          <Group gap="xs" wrap="wrap"><Text size="xs" c="dimmed"><IconClock size={12} style={{ verticalAlign: -2 }} /> {formatRelativeDate(inquiry.createdAt)}</Text><Text size="xs" c="dimmed">· {formatRub(listing?.finalPrice)}</Text>{inquiry.offers?.length ? <Badge size="xs" variant="light" color={inquiry.assignedPartner ? "teal" : "indigo"}>Разослано партнёрам: {inquiry.offers.length}</Badge> : null}{inquiry.assignedPartner && <Text size="xs" c="indigo.7" fw={700}>· Партнёр: {inquiry.assignedPartner.name || "назначен"}</Text>}</Group>
+          <Group gap="xs" wrap="wrap">{(() => {
+            /* Возраст необработанной заявки заметен, а не спрятан в серой
+               подписи. Заявка на импорт это живой человек с деньгами: сутки
+               без ответа уже плохо, трое суток — почти потерянный клиент.
+
+               У закрытых и проданных возраст не подсвечиваем: там ждать
+               уже нечего. */
+            const waiting = inquiry.status === "NEW" || inquiry.status === "CONTACTED"
+            const hours = waiting ? hoursSince(inquiry.createdAt) : null
+            const urgency = queueUrgency(hours)
+            if (waiting && hours !== null && urgency !== "fresh") {
+              return (
+                <Badge size="xs" variant="light" color={urgency === "critical" ? "red" : "orange"}>
+                  без ответа {formatQueueAge(hours)}
+                </Badge>
+              )
+            }
+            return <Text size="xs" c="dimmed"><IconClock size={12} style={{ verticalAlign: -2 }} /> {formatRelativeDate(inquiry.createdAt)}</Text>
+          })()}<Text size="xs" c="dimmed">· {formatRub(listing?.finalPrice)}</Text>{inquiry.offers?.length ? <Badge size="xs" variant="light" color={inquiry.assignedPartner ? "teal" : "indigo"}>Разослано партнёрам: {inquiry.offers.length}</Badge> : null}{inquiry.assignedPartner && <Text size="xs" c="indigo.7" fw={700}>· Партнёр: {inquiry.assignedPartner.name || "назначен"}</Text>}</Group>
         </Stack>
         <Stack gap={6} className="admin-auction-inquiry-row__actions"><Button variant={inquiry.deliveryOrder ? "light" : "filled"} color={inquiry.deliveryOrder ? "teal" : "indigo"} onClick={onOpen} rightSection={<IconArrowRight size={15} />}>{inquiry.deliveryOrder ? "Сделка открыта" : "Обработать"}</Button><Text size="xs" c="dimmed" ta="center">Контакты внутри</Text></Stack>
       </Group>
