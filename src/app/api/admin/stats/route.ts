@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { hoursSince } from "@/lib/queue-age"
 import { prisma } from "@/lib/prisma"
 import { AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceCountry } from "@/lib/auction-sources"
 import { sourceProxyPoolStatus } from "@/lib/authorized-source-http"
@@ -134,7 +135,7 @@ export async function GET() {
     const dailyTrafficStart = new Date()
     dailyTrafficStart.setUTCHours(0, 0, 0, 0)
     dailyTrafficStart.setUTCDate(dailyTrafficStart.getUTCDate() - 6)
-    const [topPaths, recentVisitorEvents, trafficEvents30d, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, latestAuctionSyncRuns, sourceSyncRuns, listingInventory, listingViewEvents14d, listingMessages7d, soldListings7d, topListingViewGroups] = await Promise.all([
+    const [topPaths, recentVisitorEvents, trafficEvents30d, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, oldestPendingListing, oldestOpenReport, oldestNewInquiry, oldestActiveInquiry, oldestPendingPartner, oldestWaitingTicket, latestAuctionSyncRuns, sourceSyncRuns, listingInventory, listingViewEvents14d, listingMessages7d, soldListings7d, topListingViewGroups] = await Promise.all([
       prisma.visitEvent.groupBy({ by: ["path"], where: { createdAt: { gte: weekAgo } }, _count: { path: true }, orderBy: { _count: { path: "desc" } }, take: 8 }),
       prisma.visitEvent.findMany({ where: { createdAt: { gte: weekAgo }, userId: { not: null } }, orderBy: { createdAt: "desc" }, take: 50, include: { user: { select: { id: true, name: true, email: true, telegramUsername: true } } } }),
       prisma.visitEvent.findMany({
@@ -150,6 +151,38 @@ export async function GET() {
       prisma.supportTicket.count({ where: { status: { not: "CLOSED" } } }),
       prisma.supportTicket.count({ where: { status: "WAITING_OPERATOR" } }),
       prisma.supportTicket.count({ where: { status: "IN_PROGRESS" } }),
+      /* Возраст самой старой задачи в каждой очереди.
+
+         Счётчик без возраста не отвечает на главный вопрос: три задачи
+         возрастом двадцать минут и три, лежащие пятый день, выглядели
+         одинаково. `_min` по дате — самый дешёвый способ узнать, сколько
+         ждёт самая старая. */
+      prisma.listing.aggregate({
+        where: { status: "PENDING_MODERATION", deletedAt: null },
+        _min: { createdAt: true },
+      }),
+      prisma.listingReport.aggregate({
+        where: { status: { in: ["OPEN", "IN_REVIEW"] } },
+        _min: { createdAt: true },
+      }),
+      prisma.auctionInquiry.aggregate({
+        where: { status: "NEW" },
+        _min: { createdAt: true },
+      }),
+      prisma.auctionInquiry.aggregate({
+        where: { status: { in: ["CONTACTED", "IN_PROGRESS"] } },
+        _min: { createdAt: true },
+      }),
+      prisma.deliveryOrganization.aggregate({
+        where: { verificationStatus: "PENDING" },
+        _min: { createdAt: true },
+      }),
+      prisma.supportTicket.aggregate({
+        where: { status: "WAITING_OPERATOR" },
+        // Для тикета важна не дата создания, а сколько человек ждёт ответа
+        // после своего последнего сообщения.
+        _min: { lastMessageAt: true },
+      }),
       prisma.auctionSyncRun.findMany({
         orderBy: { startedAt: "desc" },
         take: 5,
@@ -477,6 +510,19 @@ export async function GET() {
         openSupportTickets,
         waitingSupportTickets,
         activeSupportTickets,
+        /* Возраст самой старой задачи в каждой очереди, часы.
+
+           Счётчик отвечает «сколько», возраст — «что горит». Без него три
+           задачи возрастом двадцать минут выглядели так же, как три,
+           лежащие пятый день. */
+        oldest: {
+          pendingListings: hoursSince(oldestPendingListing._min.createdAt),
+          openReports: hoursSince(oldestOpenReport._min.createdAt),
+          newAuctionInquiries: hoursSince(oldestNewInquiry._min.createdAt),
+          activeAuctionInquiries: hoursSince(oldestActiveInquiry._min.createdAt),
+          pendingDeliveryOrganizations: hoursSince(oldestPendingPartner._min.createdAt),
+          waitingSupportTickets: hoursSince(oldestWaitingTicket._min.lastMessageAt),
+        },
       },
       auctionSyncRuns: latestAuctionSyncRuns,
       sourceCoverage,

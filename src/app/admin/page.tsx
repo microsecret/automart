@@ -14,6 +14,7 @@ import AdminAuditLog from "@/components/admin/AdminAuditLog"
 import PartStoreModerationPanel from "@/components/admin/PartStoreModerationPanel"
 import ReferralPayoutPanel from "@/components/admin/ReferralPayoutPanel"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { compareByUrgency, formatQueueAge, queueUrgency } from "@/lib/queue-age"
 import { fetchJson } from "@/lib/api-client"
 
 type AdminStats = {
@@ -99,6 +100,15 @@ type AdminStats = {
     openSupportTickets: number
     waitingSupportTickets: number
     activeSupportTickets: number
+    /** Возраст самой старой задачи в каждой очереди, часы. */
+    oldest?: {
+      pendingListings: number | null
+      openReports: number | null
+      newAuctionInquiries: number | null
+      activeAuctionInquiries: number | null
+      pendingDeliveryOrganizations: number | null
+      waitingSupportTickets: number | null
+    }
   }
   monetization: {
     provider: string
@@ -403,13 +413,19 @@ export default function AdminDashboard() {
   const maxDailyPageViews = Math.max(1, ...dailyTraffic.map((point) => point.pageViews))
   const dailyListingViews = data.listingPerformance.daily || []
   const maxDailyListingViews = Math.max(1, ...dailyListingViews.map((point) => point.views))
+  /* Очередь задач с возрастом самой старой.
+
+     Счётчик отвечает «сколько», возраст — «что горит». Три задачи возрастом
+     двадцать минут и три, лежащие пятый день, выглядели одинаково, и по
+     панели нельзя было понять, где затык. */
+  const oldest = data.operations.oldest
   const operationItems = [
-    { label: "Объявления на проверке", value: data.operations.pendingListings, href: "/moderation", icon: <IconListCheck size={17} />, color: "orange" as MantineColor, description: "Проверить и принять решение" },
-    { label: "Открытые жалобы", value: data.operations.openReports, href: "/moderation", icon: <IconAlertTriangle size={17} />, color: "red" as MantineColor, description: "Разобрать обращения пользователей" },
-    { label: "Новые заявки на импорт", value: data.operations.newAuctionInquiries, href: "/admin/auctions", icon: <IconGavel size={17} />, color: "indigo" as MantineColor, description: "Связаться с клиентами" },
-    { label: "Импорт в работе", value: data.operations.activeAuctionInquiries, href: "/admin/auctions", icon: <IconClock size={17} />, color: "blue" as MantineColor, description: "Проверить этап сделок" },
-    { label: "Партнёры ждут проверки", value: data.operations.pendingDeliveryOrganizations, href: "/admin/partners", icon: <IconBuildingWarehouse size={17} />, color: "violet" as MantineColor, description: "Проверить реквизиты в реестре" },
-    { label: "Поддержка ждёт оператора", value: data.operations.waitingSupportTickets, href: "/admin/support?status=WAITING_OPERATOR", icon: <IconHeadset size={17} />, color: "grape" as MantineColor, description: `${data.operations.openSupportTickets} открыто · ${data.operations.activeSupportTickets} в работе` },
+    { label: "Объявления на проверке", value: data.operations.pendingListings, oldestHours: oldest?.pendingListings ?? null, href: "/moderation", icon: <IconListCheck size={17} />, color: "orange" as MantineColor, description: "Проверить и принять решение" },
+    { label: "Открытые жалобы", value: data.operations.openReports, oldestHours: oldest?.openReports ?? null, href: "/moderation", icon: <IconAlertTriangle size={17} />, color: "red" as MantineColor, description: "Разобрать обращения пользователей" },
+    { label: "Новые заявки на импорт", value: data.operations.newAuctionInquiries, oldestHours: oldest?.newAuctionInquiries ?? null, href: "/admin/auctions", icon: <IconGavel size={17} />, color: "indigo" as MantineColor, description: "Связаться с клиентами" },
+    { label: "Импорт в работе", value: data.operations.activeAuctionInquiries, oldestHours: oldest?.activeAuctionInquiries ?? null, href: "/admin/auctions", icon: <IconClock size={17} />, color: "blue" as MantineColor, description: "Проверить этап сделок" },
+    { label: "Партнёры ждут проверки", value: data.operations.pendingDeliveryOrganizations, oldestHours: oldest?.pendingDeliveryOrganizations ?? null, href: "/admin/partners", icon: <IconBuildingWarehouse size={17} />, color: "violet" as MantineColor, description: "Проверить реквизиты в реестре" },
+    { label: "Поддержка ждёт оператора", value: data.operations.waitingSupportTickets, oldestHours: oldest?.waitingSupportTickets ?? null, href: "/admin/support?status=WAITING_OPERATOR", icon: <IconHeadset size={17} />, color: "grape" as MantineColor, description: `${data.operations.openSupportTickets} открыто · ${data.operations.activeSupportTickets} в работе` },
   ]
   const actionsTotal = operationItems.reduce((sum, item) => sum + item.value, 0)
   // Свежесть импорта — первое, что нужно знать при разборе очереди: устаревший
@@ -506,7 +522,12 @@ export default function AdminDashboard() {
               значением leftSection отрывалась от сжавшегося текста, и в сетке
               оставались висящие иконки без подписи. */}
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs" mt="md">
-            {[...operationItems].sort((left, right) => right.value - left.value).map((item) => (
+            {/* Сортировка по возрасту, а не по величине счётчика.
+
+                Раньше наверх попадало то, чего просто больше. Но один
+                клиент, ждущий ответа неделю, важнее пяти объявлений,
+                поданных час назад. */}
+            {[...operationItems].sort(compareByUrgency).map((item) => (
               <Paper
                 key={item.label}
                 component={Link}
@@ -525,7 +546,24 @@ export default function AdminDashboard() {
                       {item.value === 0 && <Text size="10px" c="dimmed">разобрано</Text>}
                     </Group>
                     <Text size="xs" fw={700} mt={2}>{item.label}</Text>
-                    <Text size="10px" c="dimmed" lineClamp={2}>{item.description}</Text>
+                    {/* Возраст самой старой задачи: подсветка растёт со
+                        сроком ожидания — сутки требуют внимания, трое уже
+                        просрочено. */}
+                    {item.value > 0 && item.oldestHours !== null && (
+                      <Badge
+                        size="xs"
+                        variant="light"
+                        mt={3}
+                        color={
+                          queueUrgency(item.oldestHours) === "critical" ? "red"
+                            : queueUrgency(item.oldestHours) === "warning" ? "orange"
+                            : "gray"
+                        }
+                      >
+                        ждёт {formatQueueAge(item.oldestHours)}
+                      </Badge>
+                    )}
+                    <Text size="10px" c="dimmed" lineClamp={2} mt={2}>{item.description}</Text>
                   </Box>
                 </Group>
               </Paper>
