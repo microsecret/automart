@@ -312,14 +312,6 @@ export async function GET(request: NextRequest) {
       ? citiesWithinRadius(CITY_COORDINATES[city], radiusKm, CITY_COORDINATES)
       : null
 
-    if (nearbyCities?.length) {
-      // Условие идёт в общий список: vehicleFilters.OR уже занят подтипом
-      // кузова, и прямое присваивание затёрло бы один из фильтров.
-      vehicleAnd.push({ OR: nearbyCities.map((name) => ({ location: { contains: name } })) })
-    } else if (city) {
-      vehicleFilters.location = { contains: city }
-    }
-
     if (vehicleAnd.length) vehicleFilters.AND = vehicleAnd
 
     if (Object.keys(vehicleFilters).length > 0) {
@@ -329,13 +321,23 @@ export async function GET(request: NextRequest) {
     const partFilters: Prisma.PartWhereInput = {}
     if (partType) partFilters.partType = partType
     if (partCondition) partFilters.condition = partCondition
-    if (nearbyCities?.length) {
-      partFilters.OR = nearbyCities.map((name) => ({ location: { contains: name } }))
-    } else if (city) {
-      partFilters.location = { contains: city }
-    }
     if (Object.keys(partFilters).length > 0) {
       where.part = partFilters
+    }
+
+    /* Город — условие «или»: он есть либо у транспорта, либо у запчасти.
+
+       Раньше оно ставилось сразу в оба фильтра, а Prisma соединяет их через
+       «и»: объявление о машине отсеивалось, потому что запчасти у него нет и
+       её условие не выполнялось. Проверка на живом сайте: четыре объявления
+       с городом «Казань», фильтр по Казани возвращал ноль. */
+    const cityNames = nearbyCities?.length ? nearbyCities : city ? [city] : []
+    if (cityNames.length) {
+      const cityConditions: Prisma.ListingWhereInput[] = cityNames.flatMap((name) => [
+        { vehicle: { location: { contains: name } } },
+        { part: { location: { contains: name } } },
+      ])
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), { OR: cityConditions }]
     }
 
     const orderBy: Prisma.ListingOrderByWithRelationInput =
