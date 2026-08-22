@@ -16,7 +16,55 @@
  */
 
 /** Больше вариантов не нужно: они лишь удлиняют запрос к базе. */
-const MAX_VARIANTS = 4
+const MAX_VARIANTS = 6
+
+/**
+ * Русские названия марок и их написание в каталоге.
+ *
+ * Марки хранятся латиницей — «Lada (ВАЗ)», «Toyota», «Kia». Человек же ищет
+ * так, как привык говорить: «лада», «тойота», «киа». Замер на живом сайте
+ * это подтвердил: «Lada» находила два объявления, «лада» — ноль.
+ *
+ * Список короткий и покрывает то, что реально ищут в России. Разворачивать
+ * каждое слово по правилам транслитерации нельзя: «мазда» и «Mazda» так ещё
+ * совпадут, а «шкода» и «Skoda» — уже нет.
+ */
+const BRAND_ALIASES: Record<string, string> = {
+  лада: "Lada",
+  ваз: "Lada",
+  тойота: "Toyota",
+  ниссан: "Nissan",
+  хендай: "Hyundai",
+  хундай: "Hyundai",
+  киа: "Kia",
+  мазда: "Mazda",
+  хонда: "Honda",
+  мицубиси: "Mitsubishi",
+  митсубиси: "Mitsubishi",
+  субару: "Subaru",
+  сузуки: "Suzuki",
+  фольксваген: "Volkswagen",
+  ауди: "Audi",
+  бмв: "BMW",
+  мерседес: "Mercedes-Benz",
+  опель: "Opel",
+  шкода: "Skoda",
+  рено: "Renault",
+  пежо: "Peugeot",
+  ситроен: "Citroen",
+  форд: "Ford",
+  шевроле: "Chevrolet",
+  вольво: "Volvo",
+  лексус: "Lexus",
+  хавал: "Haval",
+  чери: "Chery",
+  джили: "Geely",
+  гели: "Geely",
+  экзид: "Exeed",
+  газель: "ГАЗ",
+  уаз: "УАЗ",
+  камаз: "КАМАЗ",
+}
 
 /**
  * Написания запроса, которые стоит проверить.
@@ -29,13 +77,18 @@ export function searchVariants(query: string): string[] {
   const trimmed = query.trim()
   if (!trimmed) return []
 
+  const lower = trimmed.toLowerCase()
   const candidates = [
     trimmed,
-    trimmed.toLowerCase(),
+    lower,
     trimmed.toUpperCase(),
     // «камаз» → «Камаз»: так пишут марки в объявлениях.
-    trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase(),
+    trimmed.charAt(0).toUpperCase() + lower.slice(1),
   ]
+
+  // «лада» → «Lada»: в каталоге марки записаны латиницей.
+  const alias = BRAND_ALIASES[lower]
+  if (alias) candidates.push(alias, alias.toUpperCase())
 
   const seen = new Set<string>()
   const result: string[] = []

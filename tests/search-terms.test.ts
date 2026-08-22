@@ -33,7 +33,21 @@ test("лишние пробелы по краям отбрасываются", (
 })
 
 test("число написаний ограничено — запрос к базе не должен разрастаться", () => {
-  assert.ok(searchVariants("Ваз 2114").length <= 4)
+  assert.ok(searchVariants("Ваз 2114").length <= 6)
+})
+
+test("русское название марки находит запись латиницей", () => {
+  // В каталоге марка записана как «Lada (ВАЗ)»: замер показал, что «Lada»
+  // находила два объявления, а «лада» — ни одного.
+  assert.ok(searchVariants("лада").includes("Lada"), "лада → Lada")
+  assert.ok(searchVariants("тойота").includes("Toyota"), "тойота → Toyota")
+  assert.ok(searchVariants("БМВ").includes("BMW"), "запрос заглавными тоже разворачивается")
+})
+
+test("незнакомое слово не подменяется", () => {
+  const variants = searchVariants("приора")
+  assert.ok(variants.includes("приора"))
+  assert.ok(variants.every((value) => /[а-яё]/i.test(value)), "латинских подстановок нет")
 })
 
 test("условия строятся по указанному полю", () => {
