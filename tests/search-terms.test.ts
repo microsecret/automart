@@ -44,9 +44,16 @@ test("русское название марки находит запись л�
   assert.ok(searchVariants("БМВ").includes("BMW"), "запрос заглавными тоже разворачивается")
 })
 
+test("русское название модели тоже находит запись латиницей", () => {
+  // «приора» и «Priora» — та же машина: в объявлении модель записана
+  // латиницей, а ищут её по-русски.
+  assert.ok(searchVariants("приора").includes("Priora"))
+  assert.ok(searchVariants("гранта").includes("Granta"))
+})
+
 test("незнакомое слово не подменяется", () => {
-  const variants = searchVariants("приора")
-  assert.ok(variants.includes("приора"))
+  const variants = searchVariants("сцепление")
+  assert.ok(variants.includes("сцепление"))
   assert.ok(variants.every((value) => /[а-яё]/i.test(value)), "латинских подстановок нет")
 })
 
