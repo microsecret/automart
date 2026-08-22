@@ -31,16 +31,20 @@ export const theme = createTheme({
     "ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, monospace",
 
   headings: {
-    // Заголовки — Jakarta Sans (геометричнее, строже)
+    /* Заголовки — Manrope.
+
+       Отрицательный трекинг обязателен: без него крупный кегль расползается
+       и заголовок читается рыхло. Числа взяты из макета, по которому
+       выстроен стиль сайта. */
     fontFamily:
       "var(--font-display), var(--font-sans), -apple-system, sans-serif",
     fontWeight: "700",
     sizes: {
-      h1: { fontSize: "2.5rem", lineHeight: "1.1", fontWeight: "800" },
-      h2: { fontSize: "1.875rem", lineHeight: "1.15", fontWeight: "700" },
-      h3: { fontSize: "1.375rem", lineHeight: "1.2", fontWeight: "700" },
-      h4: { fontSize: "1.125rem", lineHeight: "1.3", fontWeight: "600" },
-      h5: { fontSize: "1rem", lineHeight: "1.4", fontWeight: "600" },
+      h1: { fontSize: "2.875rem", lineHeight: "1.08", fontWeight: "800" },
+      h2: { fontSize: "1.875rem", lineHeight: "1.15", fontWeight: "800" },
+      h3: { fontSize: "1.1875rem", lineHeight: "1.25", fontWeight: "700" },
+      h4: { fontSize: "1rem", lineHeight: "1.35", fontWeight: "700" },
+      h5: { fontSize: "0.875rem", lineHeight: "1.4", fontWeight: "700" },
     },
   },
 
@@ -62,12 +66,22 @@ export const theme = createTheme({
     xl: "1.5rem",    // 24 — заголовки разделов
   },
 
+  /* Межстрочные интервалы.
+
+     Основной текст интерфейса шёл с интервалом 1.25 — строки лепились друг
+     к другу, и страница выглядела тесной независимо от того, какой стоит
+     шрифт. В макете, который лёг в основу этого стиля, тот же текст идёт с
+     1.6, и именно воздух между строк, а не сам шрифт, читается как
+     «дорого».
+
+     Мелкие метки остаются плотными: им воздух не нужен, они не читаются
+     построчно. */
   lineHeights: {
-    xs: "1.15",
-    sm: "1.25",
-    md: "1.4",
+    xs: "1.35",
+    sm: "1.55",
+    md: "1.6",
     lg: "1.5",
-    xl: "1.65",
+    xl: "1.35",
   },
 
   defaultRadius: "md",
