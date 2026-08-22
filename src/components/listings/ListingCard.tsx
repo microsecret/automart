@@ -310,7 +310,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                   <Text fz="xs">{new Intl.NumberFormat("ru-RU", { notation: "compact", maximumFractionDigits: 1 }).format(listing.views)}</Text>
                 </Group>
               )}
-              {listing.createdAt && (
+              {/* У свежего объявления дату в подвале не повторяем: метка
+                  «Сегодня» вверху уже это сказала, а строка отнимала место у
+                  города — длинные названия обрезались на середине. */}
+              {listing.createdAt && !isFresh && (
                 <Text fz="xs" c="var(--market-muted)" style={{ whiteSpace: "nowrap" }}>
                   {formatRelativeDate(listing.createdAt)}
                 </Text>

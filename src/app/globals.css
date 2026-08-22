@@ -2462,6 +2462,13 @@ select {
   line-height: 1.3;
 }
 
+/* Единственный чип подложки не получает: рамка вокруг одного значения
+   читается как случайная плашка, а не как ряд характеристик. */
+.listing-card__facts:has(> .listing-card__fact:only-child) > .listing-card__fact {
+  padding-inline: 0;
+  background: none;
+}
+
 .listing-card__fact > span {
   color: var(--market-ink);
   font-weight: 750;
