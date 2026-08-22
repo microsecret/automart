@@ -187,8 +187,24 @@ function AuctionsPageContent() {
   const [bodyType, setBodyType] = useState("")
   const [yearFrom, setYearFrom] = useState("")
 
+  /* Состояние читается из адреса при заходе по ссылке и при нажатии «Назад».
+
+     Адрес мы пишем через history.pushState напрямую — Next о такой записи не
+     знает, и его searchParams не обновится. Поэтому берём параметры из
+     самого адреса и слушаем popstate: без этого «Назад» менял бы строку в
+     адресной строке, а список оставался бы на прежней странице. */
+  const [historyTick, setHistoryTick] = useState(0)
+
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
+    const onPopState = () => setHistoryTick((value) => value + 1)
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(
+      typeof window === "undefined" ? searchParams.toString() : window.location.search,
+    )
     const requestedSource = params.get("source") || ""
     const sourceFromUrl = AUCTION_SOURCE_COUNTRY[requestedSource] ? requestedSource : ""
     // «EU» — прежнее обозначение Европы, оставшееся в закладках и внешних
@@ -211,7 +227,7 @@ function AuctionsPageContent() {
     setBodyType(validAuctionBodyTypes.has(requestedBodyType) ? requestedBodyType : "")
     setYearFrom(validAuctionYears.has(requestedYear) ? requestedYear : "")
     setPage(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1)
-  }, [searchParams])
+  }, [searchParams, historyTick])
 
   const sourceOptions = useMemo(() => SOURCES.filter((item) => !item.value || !country || AUCTION_SOURCE_COUNTRY[item.value] === country), [country])
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
@@ -229,6 +245,44 @@ function AuctionsPageContent() {
     if (yearFrom) q.set("yearFrom", yearFrom)
     return q.toString()
   }
+
+  /* Состояние списка живёт в адресе страницы.
+
+     Замер показал: переход на вторую страницу менял содержимое, но адрес
+     оставался прежним. Кнопка «Назад» в браузере уводила не к первой
+     странице, а вообще с сайта — человек терял весь просмотр. Ссылку на
+     вторую страницу или на отфильтрованную выдачу отправить было нельзя,
+     а поисковик их не видел.
+
+     `replace` вместо `push`: иначе каждое нажатие фильтра копило запись в
+     истории, и «Назад» пришлось бы жать столько раз, сколько было правок. */
+  useEffect(() => {
+    const next = new URLSearchParams()
+    if (page > 1) next.set("page", String(page))
+    if (country) next.set("country", country)
+    if (source) next.set("source", source)
+    if (make) next.set("make", make)
+    if (priceFrom) next.set("priceFrom", priceFrom)
+    if (priceTo) next.set("priceTo", priceTo)
+    if (bodyType) next.set("bodyType", bodyType)
+    if (yearFrom) next.set("yearFrom", yearFrom)
+
+    const nextQuery = next.toString()
+    const currentQuery = searchParams?.toString() || ""
+    // Сравнение разрывает круг: чтение адреса ставит состояние, запись
+    // меняет адрес — без него страница переписывала бы себя без конца.
+    if (nextQuery === currentQuery) return
+
+    const target = nextQuery ? `?${nextQuery}` : window.location.pathname
+    /* Смена страницы кладёт запись в историю, смена фильтра — нет.
+
+       Страницы листают осознанно и ждут, что «Назад» вернёт к предыдущей.
+       Фильтры же правят по несколько раз подряд: если писать каждую правку,
+       выйти со страницы можно будет только десятком нажатий «Назад». */
+    const currentPage = Number.parseInt(new URLSearchParams(currentQuery).get("page") || "1", 10)
+    if (page !== currentPage) window.history.pushState(null, "", target)
+    else window.history.replaceState(null, "", target)
+  }, [page, country, source, make, priceFrom, priceTo, bodyType, yearFrom, searchParams])
 
   const { data, error, isLoading, mutate } = useSWR<AuctionResponse>(hasInvalidPriceRange ? null : "/api/auctions?" + buildQ(), fetcher)
   const listings = data?.listings || []

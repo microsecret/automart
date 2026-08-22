@@ -18,7 +18,7 @@ export default function SafeDealPage() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="green" size={44} radius="md"><IconShieldCheck size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Title order={2} size="h3" ff="var(--font-display),sans-serif">Сопровождаемая сделка</Title>
+            <Title order={1} size="h3" ff="var(--font-display),sans-serif">Сопровождаемая сделка</Title>
             <Text size="xs" c="gray.5">Проверка, документы и прозрачные этапы без лишних рисков</Text>
           </Stack>
         </Group>

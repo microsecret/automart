@@ -291,6 +291,26 @@ export const theme = createTheme({
     Menu: { defaultProps: { radius: "sm", shadow: "md" } },
     Popover: { defaultProps: { radius: "sm", shadow: "md" } },
     Tooltip: { defaultProps: { radius: "xs" } },
+    /* Пагинация.
+
+       Стрелки «назад» и «вперёд» рисуются значками без текста, и чтение с
+       экрана объявляло их просто «кнопка» — куда она ведёт, человек не
+       узнавал. Подписи задаются здесь, чтобы не повторять их в восьми
+       местах, где стоит пагинация. */
+    Pagination: {
+      defaultProps: {
+        getItemProps: (page: number) => ({ "aria-label": `Страница ${page}` }),
+        getControlProps: (control: string) => {
+          const labels: Record<string, string> = {
+            first: "Первая страница",
+            previous: "Предыдущая страница",
+            next: "Следующая страница",
+            last: "Последняя страница",
+          }
+          return labels[control] ? { "aria-label": labels[control] } : {}
+        },
+      },
+    },
     SegmentedControl: { defaultProps: { radius: "sm" } },
     Chip: { defaultProps: { radius: "sm" } },
     Notification: { defaultProps: { radius: "sm" } },

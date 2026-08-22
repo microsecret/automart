@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
+import { CONDITIONS, getSelectableFuelOptions, getSelectableTransmissionOptions, supportsTransmission } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -71,6 +72,41 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Проверьте пробег" }, { status: 400 })
   }
 
+  /* Главные характеристики обязательны.
+
+     Раньше топливо и коробка подставлялись значением «OTHER», а состояние —
+     «GOOD». В карточке это выглядело как «КПП Другая», «Топливо Другое»:
+     покупатель видел объявление, где из характеристик заполнены только год
+     и цена. У пяти из шести активных объявлений было именно так.
+
+     Полная форма подачи запрещает «OTHER» с тем же обоснованием — здесь та
+     же проверка, чтобы быстрая подача не оставалась лазейкой. */
+  const fuelType = readText(body?.fuelType, 20)
+  const transmission = readText(body?.transmission, 20)
+  const condition = readText(body?.condition, 20)
+
+  const allowedFuel = getSelectableFuelOptions(vehicleType).map((option) => option.value)
+  if (!fuelType || !allowedFuel.includes(fuelType)) {
+    return NextResponse.json({ error: "Укажите тип топлива" }, { status: 400 })
+  }
+
+  if (supportsTransmission(vehicleType)) {
+    const allowedTransmission = getSelectableTransmissionOptions(vehicleType).map((option) => option.value)
+    if (!transmission || !allowedTransmission.includes(transmission)) {
+      return NextResponse.json({ error: "Укажите коробку передач" }, { status: 400 })
+    }
+  }
+
+  if (!condition || !CONDITIONS.some((option) => option.value === condition)) {
+    return NextResponse.json({ error: "Укажите состояние" }, { status: 400 })
+  }
+
+  // Пробег обязателен у техники, у которой он есть: по машине без пробега
+  // решение не принимают.
+  if (["CAR", "MOTORCYCLE", "TRUCK"].includes(vehicleType) && mileage === null) {
+    return NextResponse.json({ error: "Укажите пробег" }, { status: 400 })
+  }
+
   // Категория подбирается по типу транспорта: спрашивать её у продавца
   // отдельно незачем, он уже выбрал, что размещает.
   const categoryName = CATEGORY_BY_VEHICLE_TYPE[vehicleType]
@@ -100,11 +136,9 @@ export async function POST(request: NextRequest) {
       year,
       price,
       mileage,
-      // Обязательные для схемы поля заполняются нейтрально: продавец уточнит
-      // их при редактировании, а объявление уже уйдёт на проверку.
-      fuelType: readText(body?.fuelType, 20) || "OTHER",
-      transmission: readText(body?.transmission, 20) || "OTHER",
-      condition: "GOOD",
+      fuelType,
+      transmission: supportsTransmission(vehicleType) ? transmission : "OTHER",
+      condition,
       vehicleType,
       location,
       description,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { containsAnyCase } from "@/lib/search-terms"
 import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import { Prisma } from "@prisma/client"
@@ -100,14 +101,17 @@ export async function GET(request: NextRequest) {
     if (q) {
       const normalizedQuery = normalizeOem(q)
       and.push({
+        /* Без учёта регистра: в SQLite LIKE игнорирует регистр только для
+           латиницы, поэтому «фара» не находила «Фара». Номера OEM уже
+           приводятся к общему виду отдельно — им развороты не нужны. */
         OR: [
-          { name: { contains: q } },
-          { description: { contains: q } },
-          { keywords: { contains: q } },
+          ...containsAnyCase("name", q),
+          ...containsAnyCase("description", q),
+          ...containsAnyCase("keywords", q),
           { oemNumber: { contains: q } },
           ...(normalizedQuery ? [{ crossReferences: { some: { normalizedNumber: { contains: normalizedQuery } } } }] : []),
-          { compatibility: { some: { OR: [{ make: { contains: q } }, { model: { contains: q } }] } } },
-        ],
+          { compatibility: { some: { OR: [...containsAnyCase("make", q), ...containsAnyCase("model", q)] } } },
+        ] as Prisma.PartWhereInput["OR"],
       })
     }
     if (partType) where.partType = partType

@@ -15,7 +15,7 @@ export default function HelpSellPage() {
   return (
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 700, margin: "0 auto" }}>
       <Stack gap="md">
-        <Title order={2} size="h3" ff="var(--font-display),sans-serif">Как продать авто</Title>
+        <Title order={1} size="h3" ff="var(--font-display),sans-serif">Как продать авто</Title>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           {STEPS.map((s, i) => (
             <Card key={i} withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>

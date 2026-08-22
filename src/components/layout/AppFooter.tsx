@@ -114,6 +114,17 @@ export default function AppFooter() {
                       key={link.href}
                       component={Link}
                       href={link.href}
+                      /* Код раздела не загружается заранее.
+
+                         Подвал стоит на каждой странице и ведёт в три десятка
+                         разделов. Next по умолчанию подтягивает код каждого,
+                         поэтому на любой странице оказывались карта АЗС (47 КБ)
+                         и документы сделки (29 КБ) — замер показал полтора
+                         мегабайта скриптов, включая чужие разделы.
+
+                         Ссылки подвала нажимают редко: экономия на загрузке
+                         важнее мгновенного перехода. */
+                      prefetch={false}
                       size="sm"
                       c="#a1a1aa"
                       display="block"
@@ -137,10 +148,10 @@ export default function AppFooter() {
                 шли тремя разными оттенками, хотя это один уровень навигации. */}
             <Text size="xs" c="#8a8a94">© {new Date().getFullYear()} LeWheel</Text>
             <Group gap="lg" wrap="wrap">
-              <Anchor component={Link} href="/about" size="xs" c="#a1a1aa">О проекте</Anchor>
-              <Anchor component={Link} href="/news" size="xs" c="#a1a1aa">Новости</Anchor>
-              <Anchor component={Link} href="/legal/privacy" size="xs" c="#a1a1aa">Конфиденциальность</Anchor>
-              <Anchor component={Link} href="/legal/terms" size="xs" c="#a1a1aa">Условия</Anchor>
+              <Anchor component={Link} href="/about" prefetch={false} size="xs" c="#a1a1aa">О проекте</Anchor>
+              <Anchor component={Link} href="/news" prefetch={false} size="xs" c="#a1a1aa">Новости</Anchor>
+              <Anchor component={Link} href="/legal/privacy" prefetch={false} size="xs" c="#a1a1aa">Конфиденциальность</Anchor>
+              <Anchor component={Link} href="/legal/terms" prefetch={false} size="xs" c="#a1a1aa">Условия</Anchor>
             </Group>
           </Group>
         </Stack>

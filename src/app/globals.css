@@ -205,6 +205,32 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Ссылка «к содержимому».
+
+   Спрятана за пределами экрана и выезжает только при фокусе с клавиатуры:
+   мышью её никто не увидит, а человек с клавиатурой попадает в контент с
+   первого нажатия вместо тридцати шести. */
+.skip-to-content {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1000;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--market-primary);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-200%);
+  transition: transform var(--ease-base) var(--ease-out);
+}
+
+.skip-to-content:focus-visible {
+  transform: translateY(0);
+}
+
 /* Зоны нажатия на телефоне.
 
    Замер на 390px показал цели заметно мельче нормы в 44px: бургер 24×24,

@@ -137,6 +137,72 @@ export default function HomePage(p: HomePageProps = {}) {
     return q.toString()
   }
 
+  /* Чтение фильтров из адреса: заход по ссылке и кнопка «Назад».
+
+     Без этого адрес писался бы, но не читался: человек открывает присланную
+     ссылку с фильтром и видит весь каталог, а «Назад» меняет строку в
+     адресе, не меняя выдачу. */
+  const [historyTick, setHistoryTick] = useState(0)
+
+  useEffect(() => {
+    const onPopState = () => setHistoryTick((value) => value + 1)
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    // Марку из свойств компонента не перетираем: на странице категории она
+    // задана самим разделом, а не выбором человека.
+    if (!p.initialMake) setMake(params.get("make") || null)
+    setModel(params.get("model") || null)
+    setPriceFrom(params.get("priceFrom") || "")
+    setPriceTo(params.get("priceTo") || "")
+    setYearFrom(params.get("yearFrom") || null)
+    setYearTo(params.get("yearTo") || null)
+    setCity(params.get("city") || null)
+    setSort(params.get("sort") || "newest")
+    const requestedPage = Number.parseInt(params.get("page") || "1", 10)
+    setPage(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyTick])
+
+  /* Главные фильтры живут в адресе страницы.
+
+     Замер показал: выбранная цена сужала выдачу с шести объявлений до трёх,
+     но после обновления страницы фильтр слетал, а ссылку на такую выдачу
+     отправить было нельзя — адрес оставался прежним.
+
+     В адрес идут только те условия, по которым реально ищут и делятся:
+     марка, модель, цена, год, город, сортировка и страница. Складывать туда
+     все два десятка полей значило бы получить нечитаемую строку. */
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const next = new URLSearchParams()
+    if (make) next.set("make", make)
+    if (model) next.set("model", model)
+    if (priceFrom) next.set("priceFrom", priceFrom)
+    if (priceTo) next.set("priceTo", priceTo)
+    if (yearFrom) next.set("yearFrom", yearFrom)
+    if (yearTo) next.set("yearTo", yearTo)
+    if (city) next.set("city", city)
+    if (sort && sort !== "newest") next.set("sort", sort)
+    if (page > 1) next.set("page", String(page))
+
+    const nextQuery = next.toString()
+    const currentQuery = window.location.search.replace(/^\?/, "")
+    if (nextQuery === currentQuery) return
+
+    const target = nextQuery ? `?${nextQuery}` : window.location.pathname
+    // Смена страницы кладётся в историю: её листают осознанно и ждут, что
+    // «Назад» вернёт к предыдущей. Правка фильтра — нет, иначе уйти со
+    // страницы можно будет только десятком нажатий «Назад».
+    const currentPage = Number.parseInt(new URLSearchParams(currentQuery).get("page") || "1", 10)
+    if (page !== currentPage) window.history.pushState(null, "", target)
+    else window.history.replaceState(null, "", target)
+  }, [make, model, priceFrom, priceTo, yearFrom, yearTo, city, sort, page])
+
   const { data, error, isLoading, mutate } = useSWR<ListingsResponse>(hasInvalidPriceRange ? null : "/api/listings?" + buildQuery(), fetcher)
 
   const resetFilters = () => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { containsAnyCase } from "@/lib/search-terms"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
@@ -197,16 +198,31 @@ export async function GET(request: NextRequest) {
     }
 
     if (q) {
+      /* Поиск без учёта регистра.
+
+         База — SQLite: Prisma не поддерживает здесь `mode: "insensitive"`, а
+         встроенный LIKE игнорирует регистр только для латиницы. Замер на
+         живом сайте: «КАМАЗ» находил объявление, «камаз» — нет; «Lada» —
+         два, «лада» — ноль. Люди пишут строчными, то есть поиск не работал
+         для большинства реальных запросов.
+
+         Запрос разворачивается в несколько написаний — их не больше четырёх,
+         условие остаётся обычным `contains`. */
       where.OR = [
-        { title: { contains: q } },
-        { description: { contains: q } },
-        { vehicle: { OR: [{ make: { contains: q } }, { model: { contains: q } }, { vin: { contains: q } }] } },
-        { part: { OR: [{ name: { contains: q } }, { make: { contains: q } }, { model: { contains: q } }] } },
-      ]
+        ...containsAnyCase("title", q),
+        ...containsAnyCase("description", q),
+        { vehicle: { OR: [...containsAnyCase("make", q), ...containsAnyCase("model", q), ...containsAnyCase("vin", q)] } },
+        { part: { OR: [...containsAnyCase("name", q), ...containsAnyCase("make", q), ...containsAnyCase("model", q)] } },
+      ] as Prisma.ListingWhereInput["OR"]
     }
 
-    if (make) vehicleFilters.make = { contains: make }
-    if (model) vehicleFilters.model = { contains: model }
+    /* Марка и модель ищутся без учёта регистра — «лада» должна находить
+       «Lada». Условия складываются в общий AND: раньше марка занимала
+       vehicleFilters.OR, а подтип кузова ниже перезаписывал то же поле, и
+       выбор двух фильтров сразу давал неверную выдачу. */
+    const vehicleAnd: Prisma.VehicleWhereInput[] = []
+    if (make) vehicleAnd.push({ OR: containsAnyCase("make", make) as Prisma.VehicleWhereInput["OR"] })
+    if (model) vehicleAnd.push({ OR: containsAnyCase("model", model) as Prisma.VehicleWhereInput["OR"] })
     if (yearRange.from !== undefined || yearRange.to !== undefined) {
       vehicleFilters.year = {}
       if (yearRange.from !== undefined) vehicleFilters.year.gte = yearRange.from
@@ -233,8 +249,10 @@ export async function GET(request: NextRequest) {
         typeDetails: { contains: `\"${subtypeConfig.field}\":\"${value}\"` },
       }))
       if (typeDetailChecks.length === 1) vehicleFilters.typeDetails = typeDetailChecks[0].typeDetails
-      else vehicleFilters.OR = typeDetailChecks
+      else vehicleAnd.push({ OR: typeDetailChecks })
     }
+    if (vehicleAnd.length) vehicleFilters.AND = vehicleAnd
+
     if (driveType && (!vehicleType || vehicleType === "CAR")) {
       if (!vehicleType) vehicleFilters.vehicleType = "CAR"
       vehicleFilters.driveType = driveType

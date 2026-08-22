@@ -196,6 +196,16 @@ function PartsContent() {
     }
   }, [availability, conditions, make, model, page, partType, priceFrom, priceTo, q, router, saleFormat, searchKey, subcategory])
 
+  /* Раздел пуст или фильтр не подошёл — это разные ситуации.
+
+     Предложение «измените фильтры» человеку, который ничего не выбирал,
+     отправляет крутить настройки впустую: объявлений в разделе нет вовсе, и
+     ни один фильтр их не покажет. */
+  const hasActiveFilters = Boolean(
+    q || partType || subcategory || make || model || saleFormat
+    || conditions.length || availability.length || priceFrom || priceTo,
+  )
+
   const resetFilters = () => {
     setQ(""); setPartType(null); setSubcategory(null); setMake(null); setModel(null)
     setConditions([]); setAvailability([]); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1)
@@ -338,7 +348,29 @@ function PartsContent() {
                 />
               ) : parts.length === 0 ? (
                 <Paper radius="md" p="xl" withBorder>
-                  <Center><Stack align="center"><IconTools size={40} color="#a1a1aa" /><Text c="gray.5">Запчасти не найдены. Измените фильтры.</Text></Stack></Center>
+                  <Center>
+                    <Stack align="center" gap="xs" maw={420} ta="center">
+                      <IconTools size={40} color="#a1a1aa" />
+                      {hasActiveFilters ? (
+                        <>
+                          <Text fw={650}>По этим условиям запчастей нет</Text>
+                          <Text size="sm" c="dimmed">Попробуйте убрать часть фильтров или поискать по названию детали.</Text>
+                          <Button variant="light" color="indigo" size="xs" mt={4} onClick={resetFilters}>Сбросить фильтры</Button>
+                        </>
+                      ) : (
+                        <>
+                          <Text fw={650}>Раздел запчастей пока пуст</Text>
+                          <Text size="sm" c="dimmed">
+                            Объявления появятся, когда продавцы начнут их размещать. Если у вас есть запчасти —
+                            разместите первое объявление, оно будет на виду.
+                          </Text>
+                          <Button component={Link} href="/listings/create/part" variant="light" color="indigo" size="xs" mt={4}>
+                            Разместить запчасть
+                          </Button>
+                        </>
+                      )}
+                    </Stack>
+                  </Center>
                 </Paper>
               ) : (
                 <SimpleGrid cols={{ base: 1, sm: 2, xl: 3 }} spacing="sm">

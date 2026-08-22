@@ -20,6 +20,7 @@ import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 import { registerTelegramGroup, setTelegramChatMarketing } from "@/lib/telegram-marketing"
 import { describePendingSteps, resumeButtonLabel } from "@/lib/telegram-registration-copy"
 import { touchTelegramContact } from "@/lib/telegram-contacts"
+import { absoluteUrl } from "@/lib/site-url"
 
 export const dynamic = "force-dynamic"
 
@@ -104,7 +105,7 @@ function registrationKeyboard(registerLabel: string) {
   const createUrl = getBotCreateUrl()
   return {
     inline_keyboard: [
-      [{ text: registerLabel, style: "primary", url: startUrl }],
+      [{ text: registerLabel, url: startUrl }],
       ...(createUrl ? [[{ text: "🚗 Разместить объявление", url: createUrl }]] : []),
       [{ text: "📋 Отчёты об авто", url: VEHICLE_REPORTS_CHAT_URL }],
     ],
@@ -184,7 +185,7 @@ async function sendMiniAppEntry(chatId: string, greeting: string) {
 
   await sendBrandedMessage(chatId, greeting, {
       inline_keyboard: [
-        [{ text: "🚘 Открыть LeWheel", style: "success", web_app: { url: miniAppUrl } }],
+        [{ text: "🚘 Открыть LeWheel", web_app: { url: miniAppUrl } }],
         // Большинство приходит продавать, а не смотреть, — размещение должно
         // быть на виду сразу после регистрации.
         [{ text: "🚗 Разместить объявление", web_app: { url: createUrl } }],
@@ -236,7 +237,7 @@ async function sendContactRequest(chatId: string, firstName?: string) {
     ].join("\n"),
     parse_mode: "HTML",
     reply_markup: {
-      keyboard: [[{ text: "📱 Отправить мой контакт", style: "success", request_contact: true }]],
+      keyboard: [[{ text: "📱 Отправить мой контакт", request_contact: true }]],
       resize_keyboard: true,
       one_time_keyboard: true,
       input_field_placeholder: "Нажмите кнопку для шага 1",
@@ -393,12 +394,31 @@ async function handleMessage(message: TelegramMessage) {
 
   if (message.contact) {
     if (message.chat.type !== "private" || String(message.contact.user_id) !== telegramId) {
-      await telegramApi("sendMessage", { chat_id: chatId, text: "⚠️ Отправьте именно <b>свой контакт</b> из личного чата с ботом.", parse_mode: "HTML" })
+      await telegramApi("sendMessage", {
+        chat_id: chatId,
+        text: "⚠️ Отправьте именно <b>свой контакт</b> из личного чата с ботом.",
+        parse_mode: "HTML",
+      reply_markup: {
+        keyboard: [[{ text: "📱 Отправить мой контакт", request_contact: true }]],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+        input_field_placeholder: "Нажмите кнопку для шага 1",
+      },
+      })
       return
     }
     const phone = normalizePhone(message.contact.phone_number)
     if (!phone) {
-      await telegramApi("sendMessage", { chat_id: chatId, text: "⚠️ Не удалось распознать номер. Попробуйте отправить контакт ещё раз." })
+      await telegramApi("sendMessage", {
+        chat_id: chatId,
+        text: "⚠️ Не удалось распознать номер. Попробуйте отправить контакт ещё раз.",
+      reply_markup: {
+        keyboard: [[{ text: "📱 Отправить мой контакт", request_contact: true }]],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+        input_field_placeholder: "Нажмите кнопку для шага 1",
+      },
+      })
       return
     }
 
@@ -429,10 +449,23 @@ async function handleMessage(message: TelegramMessage) {
       await sendEmailRequest(chatId)
     } catch (error) {
       if (error instanceof TelegramIdentityConflictError) {
+        /* Конфликт личности — тупик, из которого человек сам не выйдет.
+
+           Раньше здесь было «напишите в поддержку» без адреса: куда именно
+           писать, не сказано. Даём кнопку — иначе человек со сменившимся
+           номером телефона просто теряет доступ к своему аккаунту. */
         await telegramApi("sendMessage", {
           chat_id: chatId,
-          text: "⚠️ Этот Telegram ID и номер уже относятся к разным аккаунтам. Напишите в поддержку, чтобы безопасно объединить данные.",
-          reply_markup: { remove_keyboard: true },
+          text: [
+            "⚠️ <b>Этот Telegram и номер относятся к разным аккаунтам.</b>",
+            "",
+            "Так бывает после смены номера или переустановки Telegram.",
+            "Объединить данные может только поддержка — напишите нам, и мы всё восстановим.",
+          ].join("\n"),
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [[{ text: "💬 Написать в поддержку", url: absoluteUrl("/help/support") }]],
+          },
         })
         return
       }
@@ -469,6 +502,18 @@ async function handleMessage(message: TelegramMessage) {
       return
     }
     if (step === "password") {
+      /* Сообщение с паролем удаляется сразу, до попытки сохранения.
+
+         Раньше удаление стояло внутри успешной ветки: если пароль оказывался
+         короче восьми символов или база была недоступна, сообщение с ним
+         оставалось в переписке навсегда. Telegram хранит историю в облаке и
+         синхронизирует на все устройства, а человек обычно вводит один и тот
+         же пароль повторно — то есть в чате оставался рабочий пароль. */
+      await telegramApi("deleteMessage", {
+        chat_id: chatId,
+        message_id: message.message_id,
+      }).catch(() => undefined)
+
       try {
         await completeTelegramRegistration(telegramId, message.text.trim())
         // Отмечаем в учёте контактов: в рассылке эти люди отделяются от тех,
@@ -479,7 +524,6 @@ async function handleMessage(message: TelegramMessage) {
           firstName: message.from.first_name,
           lastName: message.from.last_name,
         }, true)
-        await telegramApi("deleteMessage", { chat_id: chatId, message_id: message.message_id }).catch(() => undefined)
         const completedUser = await getTelegramUser(telegramId)
         await sendRegistrationComplete(chatId, completedUser?.name)
       } catch (error) {
@@ -502,11 +546,48 @@ async function handleMessage(message: TelegramMessage) {
 
   const user = await getTelegramUser(telegramId)
   const pendingStep = getTelegramRegistrationStep(user)
+  /* Личное сообщение без текста — фото, голосовое, стикер, документ.
+
+     Раньше такие сообщения проваливались мимо всех веток, и бот молчал.
+     Человек на шаге «поделитесь контактом» часто не понимает, что нужна
+     кнопка, и присылает скриншот или голосовое — в ответ была тишина, из
+     которой не выбраться.
+
+     Напоминаем, чего бот ждёт сейчас. */
+  if (message.chat.type === "private" && !message.text) {
+    const currentUser = await getTelegramUser(telegramId)
+    const currentStep = getTelegramRegistrationStep(currentUser)
+    if (currentStep !== "complete") {
+      await sendRegistrationStep(chatId, currentStep, message.from?.first_name, currentUser?.name)
+      return
+    }
+  }
+
+  /* Администраторы группы под модерацию не попадают.
+
+     Роль отправителя раньше не проверялась вовсе: владелец чата, который сам
+     не проходил регистрацию на площадке, молча терял собственные сообщения
+     от собственного бота. Это самое болезненное из ложных срабатываний.
+
+     Запрос роли делается последним — только когда все остальные условия уже
+     совпали, чтобы не ходить в Telegram на каждое сообщение чата. */
+  const isChatAdmin = async () => {
+    if (message.chat.type !== "group" && message.chat.type !== "supergroup") return false
+    // Сообщение может прийти от имени канала — тогда отправителя нет.
+    if (!message.from?.id) return false
+    const member = await telegramApi<{ status: string }>("getChatMember", {
+      chat_id: chatId,
+      user_id: message.from.id,
+    }).catch(() => null)
+    return member?.status === "creator" || member?.status === "owner" || member?.status === "administrator"
+  }
+
   if (
     (message.chat.type === "group" || message.chat.type === "supergroup") &&
     hasModeratableContent(message) &&
     !isTelegramUserRegistered(user) &&
-    await canModerateTelegramChat(chatId)
+    await canModerateTelegramChat(chatId) &&
+    !(await isChatAdmin())
   ) {
     let wasDeleted = false
     try {

@@ -183,6 +183,15 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       <Suspense fallback={null}>
         <NavigationQuerySync onRouteChange={closeMobile} />
       </Suspense>
+      {/* Ссылка «к содержимому» — первая цель табуляции.
+
+          Замер показал: с клавиатуры до основного контента 36 нажатий Tab —
+          человек каждый раз проходит всю шапку и каталог разделов в боковом
+          меню. Ссылка не видна мышью и появляется только при фокусе. */}
+      <a href="#main-content" className="skip-to-content">
+        Перейти к содержимому
+      </a>
+
       <AppShell.Header>
         <AppHeader navigationOpened={mobileOpened} onNavigationToggle={toggleMobile} />
       </AppShell.Header>
@@ -200,6 +209,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               <Button
                 component={Link}
                 href="/dashboard/deliveries?partner=apply"
+                prefetch={false}
                 hiddenFrom="md"
                 variant="light"
                 color="orange"
@@ -265,7 +275,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
           сдвигает Main вправо на ширину сайдбара, и подвал обрывался, не
           доходя до левого края экрана. */}
       <AppShell.Main style={{ minHeight: "calc(100dvh - var(--app-header-height))", display: "flex", flexDirection: "column" }}>
-        <Box maw={1280} mx="auto" w="100%" className="app-main-content" style={{ flex: 1 }}>{children}</Box>
+        <Box id="main-content" maw={1280} mx="auto" w="100%" className="app-main-content" style={{ flex: 1 }}>{children}</Box>
         <div className="app-footer-bleed">
           <AppFooter />
         </div>
@@ -395,7 +405,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         <NavLink component={Link} href="/dashboard" label="Мои объявления" leftSection={<IconLayoutDashboard size={16} />} rightSection={<AccountCounter value={summary?.totalListings || 0} color="indigo" />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="light" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard?tab=favorites" label="Избранное" leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} color="pink" />} active={pathname === "/dashboard" && dashboardTab === "favorites"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard?tab=garage" label="Личный гараж" leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} color="teal" />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/dashboard/orders" label="Мои заказы" leftSection={<IconClipboardList size={16} />} active={pathname.startsWith("/dashboard/orders")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/dashboard/orders" prefetch={false} label="Мои заказы" leftSection={<IconClipboardList size={16} />} active={pathname.startsWith("/dashboard/orders")} color="indigo" variant="subtle" className="market-side-account__link" />
 
         {/* Партнёрский блок отделён подписью: до проверки компании этих
             разделов в меню нет вовсе, поэтому список у обычного продавца
@@ -403,20 +413,20 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         {isPartner && (
           <>
             <Text className="market-side-account__group" component="p">Партнёрские разделы</Text>
-            <NavLink component={Link} href="/dashboard/deliveries" label="Мои доставки" leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} color="orange" />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
-            <NavLink component={Link} href="/dashboard/store" label="Магазин запчастей" leftSection={<IconBuildingStore size={16} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
+            <NavLink component={Link} href="/dashboard/deliveries" prefetch={false} label="Мои доставки" leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} color="orange" />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
+            <NavLink component={Link} href="/dashboard/store" prefetch={false} label="Магазин запчастей" leftSection={<IconBuildingStore size={16} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
           </>
         )}
 
         {/* Приглашать друзей может любой пользователь — это не партнёрский
             раздел для проверенных компаний, поэтому и название другое. */}
-        <NavLink component={Link} href="/dashboard/referral" label="Пригласить друзей" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/dashboard/referral" prefetch={false} label="Пригласить друзей" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
         <Divider my={2} />
         <NavLink component={Link} href="/messages" label="Сообщения" leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} color="red" />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/notifications" label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} color="red" />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/notifications" prefetch={false} label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} color="red" />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard?tab=profile" label="Профиль и настройки" leftSection={<IconSettings size={16} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
-        {isAdmin && <NavLink component={Link} href="/admin" label="Админ-панель" leftSection={<IconSettings size={16} />} active={pathname.startsWith("/admin")} color="grape" variant="light" className="market-side-account__link" />}
-        {isModerator && <NavLink component={Link} href="/moderation" label="Модерация" leftSection={<IconGavel size={16} />} active={pathname.startsWith("/moderation")} color="orange" variant="light" className="market-side-account__link" />}
+        {isAdmin && <NavLink component={Link} href="/admin" prefetch={false} label="Админ-панель" leftSection={<IconSettings size={16} />} active={pathname.startsWith("/admin")} color="grape" variant="light" className="market-side-account__link" />}
+        {isModerator && <NavLink component={Link} href="/moderation" prefetch={false} label="Модерация" leftSection={<IconGavel size={16} />} active={pathname.startsWith("/moderation")} color="orange" variant="light" className="market-side-account__link" />}
       </Stack>
       {/* Главное действие продавца выделено акцентом: среди индиговых пунктов
           меню одноцветная кнопка терялась. */}

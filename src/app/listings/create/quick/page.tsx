@@ -8,6 +8,7 @@ import {
 } from "@mantine/core"
 import { IconBolt, IconCheck, IconPhoto } from "@tabler/icons-react"
 import { getApiClientErrorMessage } from "@/lib/api-client"
+import { CONDITIONS, getSelectableFuelOptions, getSelectableTransmissionOptions, supportsTransmission } from "@/lib/constants"
 
 const VEHICLE_TYPES = [
   { value: "CAR", label: "Легковой" },
@@ -36,6 +37,9 @@ export default function QuickCreatePage() {
     year: "" as string | number,
     price: "" as string | number,
     mileage: "" as string | number,
+    fuelType: "",
+    transmission: "",
+    condition: "",
     location: "",
     description: "",
   })
@@ -44,12 +48,24 @@ export default function QuickCreatePage() {
   const [state, setState] = useState<"idle" | "saving" | "done">("idle")
   const [error, setError] = useState<string | null>(null)
 
+  // Пробег спрашиваем у техники, у которой он есть: у прицепа или лодки
+  // его не бывает, и требовать там нечего.
+  const needsMileage = ["CAR", "MOTORCYCLE", "TRUCK"].includes(form.vehicleType)
+  const needsTransmission = supportsTransmission(form.vehicleType)
+
   const canSubmit = Boolean(
     form.make.trim() && form.model.trim() && form.location.trim()
     && Number(form.year) >= 1886 && Number(form.year) <= currentYear + 1
     && Number(form.price) > 0
     // Без фотографии объявление не найдёт покупателя, поэтому она обязательна.
-    && images.length > 0,
+    && images.length > 0
+    // Топливо, коробка и состояние раньше подставлялись как «Другое» и
+    // «Хорошее». Покупатель видел карточку, где из характеристик заполнены
+    // только год и цена, — по такому объявлению решение не принимают.
+    && form.fuelType
+    && (!needsTransmission || form.transmission)
+    && form.condition
+    && (!needsMileage || Number(form.mileage) >= 0),
   )
 
   const uploadPhotos = async (files: FileList | null) => {
@@ -86,6 +102,9 @@ export default function QuickCreatePage() {
           year: Number(form.year),
           price: Number(form.price),
           mileage: form.mileage === "" ? null : Number(form.mileage),
+          fuelType: form.fuelType,
+          transmission: form.transmission || null,
+          condition: form.condition,
           images,
         }),
       })
@@ -150,7 +169,46 @@ export default function QuickCreatePage() {
               <TextInput required label="Модель" placeholder="Jolion" value={form.model} onChange={(event) => setForm({ ...form, model: event.currentTarget.value })} />
               <NumberInput required label="Год выпуска" placeholder={String(currentYear - 3)} min={1886} max={currentYear + 1} value={form.year} onChange={(value) => setForm({ ...form, year: value })} />
               <NumberInput required label="Цена, ₽" placeholder="1 500 000" min={1} thousandSeparator=" " value={form.price} onChange={(value) => setForm({ ...form, price: value })} />
-              <NumberInput label="Пробег, км" placeholder="Необязательно" min={0} max={2_000_000} thousandSeparator=" " value={form.mileage} onChange={(value) => setForm({ ...form, mileage: value })} />
+              <NumberInput
+                required={needsMileage}
+                label="Пробег, км"
+                placeholder={needsMileage ? "85 000" : "Необязательно"}
+                min={0}
+                max={2_000_000}
+                thousandSeparator=" "
+                value={form.mileage}
+                onChange={(value) => setForm({ ...form, mileage: value })}
+              />
+              {/* Топливо, коробка и состояние раньше подставлялись молча:
+                  в карточке стояло «Другая» и «Другое», и покупатель не
+                  понимал, что за машина. Спрашиваем прямо здесь — это три
+                  нажатия, а объявление становится читаемым. */}
+              <Select
+                required
+                label="Топливо"
+                placeholder="Выберите"
+                data={getSelectableFuelOptions(form.vehicleType)}
+                value={form.fuelType}
+                onChange={(value) => setForm({ ...form, fuelType: value || "" })}
+              />
+              {needsTransmission && (
+                <Select
+                  required
+                  label="Коробка передач"
+                  placeholder="Выберите"
+                  data={getSelectableTransmissionOptions(form.vehicleType)}
+                  value={form.transmission}
+                  onChange={(value) => setForm({ ...form, transmission: value || "" })}
+                />
+              )}
+              <Select
+                required
+                label="Состояние"
+                placeholder="Выберите"
+                data={CONDITIONS}
+                value={form.condition}
+                onChange={(value) => setForm({ ...form, condition: value || "" })}
+              />
               <TextInput required label="Город" placeholder="Москва" value={form.location} onChange={(event) => setForm({ ...form, location: event.currentTarget.value })} />
             </SimpleGrid>
             <Textarea
