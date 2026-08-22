@@ -35,7 +35,7 @@ export default function BrandIcon({ brand, size = 36, variant = "rounded" }: Bra
         height: size,
         borderRadius: radius,
         border: "1px solid var(--market-field-line)",
-        background: "linear-gradient(145deg, var(--market-surface) 0%, var(--market-surface-subtle) 100%)",
+        background: "var(--market-surface)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
