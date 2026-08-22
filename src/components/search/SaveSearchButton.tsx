@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useState } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button, Modal, Stack, Text, TextInput, Switch } from "@mantine/core"
@@ -45,9 +46,26 @@ function SaveSearchButtonInner({ scope, suggestedTitle }: Props) {
   const [notify, setNotify] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  // Гостю подписываться некуда: уведомления уходят в Telegram, привязанный
-  // к аккаунту.
-  if (!session?.user) return null
+  /* Гостю показываем вход, а не пустоту.
+
+     Уведомления уходят в Telegram, привязанный к аккаунту, поэтому без
+     входа подписаться нельзя. Но раньше компонент просто исчезал — и
+     человек видел приглашение «Следить за этим поиском» без единой кнопки
+     рядом. Теперь предложение ведёт туда, где его можно принять. */
+  if (!session?.user) {
+    return (
+      <Button
+        component={Link}
+        href={`/auth/signin?callbackUrl=${encodeURIComponent(typeof window === "undefined" ? "/" : window.location.pathname + window.location.search)}`}
+        variant="light"
+        color="indigo"
+        size="compact-sm"
+        leftSection={<IconBellPlus size={15} />}
+      >
+        Войти и следить
+      </Button>
+    )
+  }
 
   const query = params?.toString() || ""
 
