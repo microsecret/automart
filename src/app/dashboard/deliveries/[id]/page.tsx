@@ -223,7 +223,7 @@ export default function DeliveryOrderPage() {
             <Alert color="indigo" variant="light" icon={<IconLock size={17} />} title="Контакты защищены" mb="sm">Телефон, email, ссылки и контакты мессенджеров блокируются до отправки. Документы загружайте в закрытый раздел сделки.</Alert>
             <Stack gap="xs" mah={340} style={{ overflowY: "auto" }}>{order.messages.map((item) => <MessageBubble key={item.id} item={item} isOwn={item.sender?.id === permissions.currentUserId} />)}</Stack>
             <Divider my="sm" />
-            <Group gap={6} mb="xs"><IconSparkles size={14} color="#7c3aed" /><Text size="xs" fw={750} c="violet.8">Быстрые вопросы по базе сделки</Text></Group>
+            <Group gap={6} mb="xs"><IconSparkles size={14} color="#1c4291" /><Text size="xs" fw={750} c="violet.8">Быстрые вопросы по базе сделки</Text></Group>
             <Group gap={6} mb="sm">{QUICK_DEAL_QUESTIONS.map((question) => <Button key={question} variant="light" color="gray" size="compact-xs" onClick={() => setMessage(question)}>{question}</Button>)}</Group>
             <form onSubmit={sendMessage}><Group align="flex-end" wrap="nowrap"><Textarea aria-label="Сообщение в чат сделки" placeholder="Спросите о лоте, маршруте, договоре или счёте…" minRows={2} maxRows={5} autosize value={message} onChange={(event) => setMessage(event.currentTarget.value)} style={{ flex: 1 }} /><ActionIcon type="submit" size="lg" variant="filled" color="indigo" loading={sending} aria-label="Отправить"><IconSend size={18} /></ActionIcon></Group></form>
           </Paper>

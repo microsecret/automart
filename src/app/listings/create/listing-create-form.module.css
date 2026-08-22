@@ -27,7 +27,7 @@
 .listingCreateForm :global(.mantine-NumberInput-input:focus),
 .listingCreateForm :global(.mantine-Autocomplete-input:focus),
 .listingCreateForm :global(.mantine-FileInput-input:focus) {
-  border-color: #4f46e5 !important;
+  border-color: #1c4291 !important;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16) !important;
 }
 
@@ -38,7 +38,7 @@
 }
 
 .listingCreateForm :global(.mantine-NumberInput-control) {
-  color: #4338ca;
+  color: #14306b;
 }
 
 /* The form action belongs after its last field. A sticky panel hides inputs

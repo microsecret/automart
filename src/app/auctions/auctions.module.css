@@ -27,7 +27,7 @@
   left: 12px;
   height: 2px;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, #4f46e5, #7c3aed, #f97316);
+  background: linear-gradient(90deg, #1c4291, #1c4291, #f97316);
   content: "";
   transform: scaleX(0);
   transform-origin: left;
@@ -234,7 +234,7 @@
 }
 
 .insightsToggle:hover {
-  border-color: color-mix(in srgb, #818cf8 55%, transparent);
+  border-color: color-mix(in srgb, #5b82d6 55%, transparent);
   background: color-mix(in srgb, var(--market-primary-soft) 45%, transparent);
 }
 

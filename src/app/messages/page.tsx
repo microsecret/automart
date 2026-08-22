@@ -133,7 +133,7 @@ export default function MessagesPage() {
                       {conv.lastMessage && <Text size="xs" c="gray.4">{formatRelativeDate(conv.lastMessage.createdAt)}</Text>}
                     </Group>
                     {conv.listing?.title && (
-                      <Text size="xs" c="#4f46e5" className="line-clamp-1">{conv.listing.title}</Text>
+                      <Text size="xs" c="#1c4291" className="line-clamp-1">{conv.listing.title}</Text>
                     )}
                     <Group gap="xs" align="center">
                       <Text size="sm" c="dimmed" className="line-clamp-1" style={{ flex: 1 }}>

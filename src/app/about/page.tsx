@@ -43,7 +43,7 @@ export default function AboutPage() {
           {STATS.map((s) => (
             <Card key={s.label} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Stack gap={0} align="center" ta="center">
-                <Text size="xl" fw={800} c="#4f46e5" ff="var(--font-display),sans-serif">{s.value}</Text>
+                <Text size="xl" fw={800} c="#1c4291" ff="var(--font-display),sans-serif">{s.value}</Text>
                 <Text size="xs" c="gray.5">{s.label}</Text>
               </Stack>
             </Card>

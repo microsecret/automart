@@ -28,7 +28,7 @@
 
 .sectionTab:hover {
   border-color: #a5b4fc;
-  color: #4338ca;
+  color: #14306b;
 }
 
 .sectionTab:focus-visible,
@@ -40,9 +40,9 @@
 }
 
 .sectionTab[data-active="true"] {
-  border-color: #4f46e5;
+  border-color: #1c4291;
   color: #ffffff;
-  background: #4f46e5;
+  background: #1c4291;
 }
 
 .workspace {

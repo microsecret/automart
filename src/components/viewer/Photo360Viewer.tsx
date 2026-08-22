@@ -75,7 +75,7 @@ export default function PhotoAngleViewer({ images, title }: Photo360ViewerProps)
       >
         <Center>
           <Box style={{ textAlign: "center" }}>
-            <IconPhoto size={56} color="#4f46e5" style={{ margin: "0 auto 12px" }} />
+            <IconPhoto size={56} color="#1c4291" style={{ margin: "0 auto 12px" }} />
             <Text size="sm" c="gray.4" fw={500}>Мало ракурсов для просмотра</Text>
             <Text size="xs" c="gray.6" mt={4}>Используйте основную галерею</Text>
           </Box>
@@ -245,7 +245,7 @@ export default function PhotoAngleViewer({ images, title }: Photo360ViewerProps)
               height: 36,
               borderRadius: 4,
               overflow: "hidden",
-              border: activeIndex === i ? "2px solid #4f46e5" : "2px solid transparent",
+              border: activeIndex === i ? "2px solid #1c4291" : "2px solid transparent",
               flexShrink: 0,
               cursor: "pointer",
               opacity: activeIndex === i ? 1 : 0.5,

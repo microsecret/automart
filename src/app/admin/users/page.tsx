@@ -228,7 +228,7 @@ export default function AdminUsersPage() {
                       <Table.Td><Stack gap={4}><Badge size="sm" radius="xl" color={ROLE_META[user.role]?.color || "gray"} variant="light">{ROLE_META[user.role]?.label || user.role}</Badge><Badge size="xs" radius="xl" color={STATUS_META[user.accountStatus]?.color || "gray"} variant="dot">{STATUS_META[user.accountStatus]?.label || user.accountStatus}</Badge></Stack></Table.Td>
                       <Table.Td>
                         <Group gap="sm" wrap="nowrap">
-                          <Tooltip label="Объявлений" withArrow><Group gap={4}><IconTag size={14} color="#6366f1" /><Text size="xs" fw={700}>{user._count.listings}</Text></Group></Tooltip>
+                          <Tooltip label="Объявлений" withArrow><Group gap={4}><IconTag size={14} color="#2b56b0" /><Text size="xs" fw={700}>{user._count.listings}</Text></Group></Tooltip>
                           <Tooltip label="Отправлено сообщений" withArrow><Group gap={4}><IconMessageCircle2 size={14} color="#0ea5e9" /><Text size="xs" fw={700}>{user._count.messagesSent}</Text></Group></Tooltip>
                         </Group>
                       </Table.Td>

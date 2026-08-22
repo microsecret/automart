@@ -38,7 +38,7 @@ export default function AppProviders({ children }: { children: React.ReactNode }
     <SessionProvider>
       <ColorSchemeContext.Provider value={{ colorScheme, toggleScheme }}>
         <MantineProvider theme={theme} forceColorScheme={mounted ? colorScheme : "light"}>
-          <NavigationProgress color="#4f46e5" />
+          <NavigationProgress color="#1c4291" />
           <ModalsProvider>
             <Notifications position="top-right" />
             {children}

@@ -39,7 +39,7 @@
 
 .price {
   flex-shrink: 0;
-  color: #3730a3;
+  color: #102a59;
   font: 850 clamp(1.4rem, 3vw, 1.75rem) / 1 var(--font-display), sans-serif;
 }
 

@@ -155,7 +155,7 @@ export default function TelegramMiniApp() {
         webApp.MainButton?.setText("Открыть личный кабинет")
         webApp.MainButton?.setParams?.({
           text: "Открыть личный кабинет",
-          color: "#4f46e5",
+          color: "#1c4291",
           text_color: "#ffffff",
           has_shine_effect: true,
         })
@@ -189,7 +189,7 @@ export default function TelegramMiniApp() {
       mih="100dvh"
       w="100%"
       p={{ base: "sm", sm: "md" }}
-      style={{ background: "radial-gradient(circle at top,#6366f1 0%,#312e81 38%,#11162f 100%)", overflow: "hidden" }}
+      style={{ background: "radial-gradient(circle at top,#2b56b0 0%,#0b2050 38%,#11162f 100%)", overflow: "hidden" }}
     >
       <Paper maw={470} w="100%" miw={0} radius="xl" p={{ base: "lg", sm: "xl" }} shadow="xl" style={{ maxWidth: "calc(100vw - 24px)", border: "1px solid rgba(255,255,255,.45)" }}>
         <Stack gap="lg">

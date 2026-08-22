@@ -1,6 +1,6 @@
 import "./globals.css"
 import type { Metadata } from "next"
-import { Manrope, Inter } from "next/font/google"
+import { Manrope, IBM_Plex_Sans } from "next/font/google"
 import { ColorSchemeScript } from "@mantine/core"
 import AppProviders from "@/components/providers/AppProviders"
 import AppShellLayout from "@/components/layout/AppShellLayout"
@@ -10,10 +10,12 @@ import { absoluteUrl, getSiteUrl } from "@/lib/site-url"
 /**
  * Типографика.
  *
- * Раньше сайт жил на системном Segoe UI — отсюда казённый, «офисный» вид.
- * Manrope с плотными засечками-полуштрихами держит заголовки и цифры, Inter
- * отвечает за длинный текст. Пара характерная, но не крикливая: марка
- * автомобиля и цена должны читаться мгновенно.
+ * Manrope держит заголовки, цены и цифры — плотный геометричный рисунок,
+ * марка автомобиля и сумма читаются мгновенно. Длинный текст ушёл с Inter
+ * на IBM Plex Sans: у Inter крупный «глаз» и почти отсутствующий контраст
+ * штриха, поэтому сплошное мелкое полотно интерфейса выглядело безлико.
+ * Plex суше и заметно отличим от заголовочного шрифта — пара читается как
+ * пара, а не как один шрифт двух насыщенностей.
  */
 const display = Manrope({
   subsets: ["latin", "cyrillic"],
@@ -22,7 +24,7 @@ const display = Manrope({
   display: "swap",
 })
 
-const body = Inter({
+const body = IBM_Plex_Sans({
   subsets: ["latin", "cyrillic"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-sans-next",

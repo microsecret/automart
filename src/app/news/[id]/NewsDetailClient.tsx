@@ -293,7 +293,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
               {relatedNews.map((news) => (
                 <Link key={news.id} href={newsHref(news)} style={{ textDecoration: "none" }}>
                   {/* Индиговая рамка при наведении описана в CSS: из JS она ставилась
-                      фиксированным #4f46e5 и в тёмной теме уходила в почти чёрный. */}
+                      фиксированным #1c4291 и в тёмной теме уходила в почти чёрный. */}
                   <Card withBorder radius="md" p="sm" className="market-linked-card market-linked-card--flat">
                     <Group gap="sm" align="flex-start">
                       <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconNews size={18} /></ThemeIcon>

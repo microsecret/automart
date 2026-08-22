@@ -275,8 +275,8 @@ function TrafficLineChart({ points }: { points: TrafficChartPoint[] }) {
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Интерактивный график просмотров, уникальных посетителей, регистраций и новых объявлений за семь дней" preserveAspectRatio="xMidYMid meet" onPointerLeave={() => setActiveIndex(null)}>
         <defs>
           <linearGradient id="admin-page-view-area" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.24" />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="#2b56b0" stopOpacity="0.24" />
+            <stop offset="100%" stopColor="#2b56b0" stopOpacity="0.02" />
           </linearGradient>
         </defs>
         {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
@@ -287,7 +287,7 @@ function TrafficLineChart({ points }: { points: TrafficChartPoint[] }) {
         {pageViewPath && <path d={pageViewPath} fill="none" stroke="#5b5cf0" strokeWidth="4" strokeLinecap="round" />}
         {visitorPath && <path d={visitorPath} fill="none" stroke="#16a3b6" strokeWidth="3" strokeLinecap="round" strokeDasharray="8 5" />}
         {registrationPath && <path d={registrationPath} fill="none" stroke="#16a36a" strokeWidth="2.5" strokeLinecap="round" />}
-        {listingPath && <path d={listingPath} fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="5 4" />}
+        {listingPath && <path d={listingPath} fill="none" stroke="#1c4291" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="5 4" />}
         {activeIndex !== null && <line x1={activeX} x2={activeX} y1={padding.top} y2={padding.top + chartHeight} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4 4" />}
         {points.map((point, index) => {
           const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
@@ -297,7 +297,7 @@ function TrafficLineChart({ points }: { points: TrafficChartPoint[] }) {
               <circle cx={x(index)} cy={y(point.pageViews)} r={active ? 6 : 4} fill="#5b5cf0" stroke="white" strokeWidth="2" />
               <circle cx={x(index)} cy={y(point.uniqueVisitors)} r={active ? 5 : 3} fill="#16a3b6" stroke="white" strokeWidth="2" />
               {active && <circle cx={x(index)} cy={y(point.registrations)} r="4" fill="#16a36a" stroke="white" strokeWidth="2" />}
-              {active && <circle cx={x(index)} cy={y(point.newListings)} r="4" fill="#7c3aed" stroke="white" strokeWidth="2" />}
+              {active && <circle cx={x(index)} cy={y(point.newListings)} r="4" fill="#1c4291" stroke="white" strokeWidth="2" />}
               <text x={x(index)} y={height - 10} textAnchor="middle" fill="#64748b" fontSize="12" fontWeight="650">{label}</text>
               <rect
                 x={Math.max(0, x(index) - interactionWidth / 2)}
@@ -328,7 +328,7 @@ function TrafficLineChart({ points }: { points: TrafficChartPoint[] }) {
             ["Просмотры страниц", activePoint.pageViews, "#5b5cf0"],
             ["Уникальные посетители", activePoint.uniqueVisitors, "#16a3b6"],
             ["Регистрации", activePoint.registrations, "#16a36a"],
-            ["Новые объявления", activePoint.newListings, "#7c3aed"],
+            ["Новые объявления", activePoint.newListings, "#1c4291"],
           ].map(([label, value, color]) => (
             <Group key={String(label)} justify="space-between" gap="lg" wrap="nowrap" className="admin-traffic-tooltip__row">
               <Group gap={6} wrap="nowrap"><Box w={8} h={8} bg={String(color)} style={{ borderRadius: "50%", flex: "0 0 auto" }} /><Text size="xs" c="gray.6" style={{ whiteSpace: "nowrap" }}>{label}</Text></Group>
@@ -1044,7 +1044,7 @@ export default function AdminDashboard() {
           </Card>
           <Card className="admin-insight-card" withBorder radius="lg" p="md">
             <Stack gap="xs">
-              <Group gap="sm"><IconUsers size={16} color="#4f46e5" /><Text size="xs" c="gray.5">Роли</Text></Group>
+              <Group gap="sm"><IconUsers size={16} color="#1c4291" /><Text size="xs" c="gray.5">Роли</Text></Group>
               {Object.entries(data?.byRole || {}).map(([role, count]) => (
                 <Group key={role} justify="space-between">
                   <Text size="xs" c="gray.6">{role}</Text>

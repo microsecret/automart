@@ -49,7 +49,7 @@
   --market-selection: #bfd3f2;
   --market-selection-ink: #171719;
   --market-caret: #14306b;
-  /* Основной тон углублён с #4f46e5 (светлота 59%) до #4338ca: светлый индиго
+  /* Основной тон углублён с #1c4291 (светлота 59%) до #14306b: светлый индиго
      на белом фоне не держал вес, из-за чего интерфейс читался блёклым.
      Оттенок взят из уже существующей палитры, поэтому бренд узнаваем. */
   --market-primary: #14306b;
@@ -150,7 +150,7 @@
   --market-accent-ink: #171719;
   --market-accent-soft: #2a1e12;
   --market-scroll-thumb: #4b4d5a;
-  --market-selection: #3730a3;
+  --market-selection: #102a59;
   --market-selection-ink: #f5f5f7;
   --market-caret: #a5b4fc;
 
@@ -178,10 +178,10 @@ body {
 
      Градиент закреплён за областью просмотра (fixed), иначе на длинной
      странице он растянулся бы и перепад стал бы заметным пятном. */
-  background:
-    radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, #ffffff 55%, transparent), transparent 70%),
-    var(--market-background);
-  background-attachment: fixed;
+  /* Ровная подложка вместо градиентного пятна: глубину дают рамки и тени
+     карточек, а не подсветка фона. Так страница читается спокойнее, а
+     карточки на ней выделяются сами. */
+  background: var(--market-background);
   color: var(--market-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -249,7 +249,7 @@ select {
   color: #fff;
   background:
     radial-gradient(circle at 92% 8%, rgba(129, 140, 248, 0.46), transparent 32%),
-    linear-gradient(135deg, #312e81 0%, #4338ca 48%, #4f46e5 100%);
+    linear-gradient(135deg, #0b2050 0%, #14306b 48%, #1c4291 100%);
   box-shadow: 0 18px 45px -28px rgba(49, 46, 129, 0.8);
 }
 
@@ -405,7 +405,7 @@ select {
 
   .mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
     color: #fff;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    background: linear-gradient(135deg, #1c4291, #2b56b0);
     box-shadow: 0 8px 16px -12px rgba(79, 70, 229, 0.8);
   }
 
@@ -476,7 +476,7 @@ select {
     linear-gradient(180deg,
       color-mix(in srgb, #1e1b4b 92%, transparent) 0%,
       color-mix(in srgb, #17162e 94%, transparent) 100%) !important;
-  border-bottom-color: color-mix(in srgb, #4338ca 55%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, #14306b 55%, transparent) !important;
   box-shadow:
     0 10px 30px -20px rgba(0, 0, 0, 0.8),
     inset 0 1px 0 rgba(129, 140, 248, 0.22) !important;
@@ -547,13 +547,13 @@ select {
 .market-app-header__link:hover {
   color: var(--market-ink) !important;
   background: color-mix(in srgb, var(--market-primary-soft) 72%, white);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #818cf8 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #5b82d6 15%, transparent);
 }
 
 .market-app-header__link--active {
   color: var(--mantine-color-indigo-7) !important;
   background: var(--market-primary-soft);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #818cf8 28%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #5b82d6 28%, transparent);
 }
 
 /* Utility icons must stay visible on the light header before hover. */
@@ -850,7 +850,7 @@ select {
   height: 48px;
   place-items: center;
   border-radius: 15px;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: linear-gradient(135deg, #1c4291, #1c4291);
   box-shadow: 0 12px 24px -15px rgba(79, 70, 229, 0.9);
 }
 
@@ -971,7 +971,7 @@ select {
   left: 0;
   width: 2.5px;
   border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, #818cf8 0%, #4338ca 100%);
+  background: linear-gradient(180deg, #5b82d6 0%, #14306b 100%);
   content: "";
   transition: box-shadow var(--ease-base) ease;
 }
@@ -1134,7 +1134,7 @@ select {
      элемент, его фон обрывается по границе бокса, а наклонная «l» выходит
      за неё. Из-за этого хвост последней буквы оставался незакрашенным и
      выглядел обрезанным, хотя место в контейнере было. */
-  color: #312e81;
+  color: #0b2050;
   font-weight: 900;
   /* Тень родителя рисуется под прозрачными буквами и просвечивает сквозь
      них светлым ореолом — из-за этого слово выглядело выцветшим. */
@@ -1213,7 +1213,7 @@ select {
   overflow: hidden;
   /* Градиент был прописан старыми светлыми оттенками и перебивал углублённую
      тему, из-за чего главная кнопка сайта осталась блёклой. */
-  background: linear-gradient(135deg, #3730a3 0%, #4338ca 58%, #5b21b6 100%);
+  background: linear-gradient(135deg, #102a59 0%, #14306b 58%, #102a59 100%);
   box-shadow: 0 11px 24px -15px rgba(55, 48, 163, 0.95);
   transition: box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
 }
@@ -1241,7 +1241,7 @@ select {
 
 .partner-application-modal {
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--market-line) 88%, #4f46e5);
+  border: 1px solid color-mix(in srgb, var(--market-line) 88%, #1c4291);
   box-shadow: 0 34px 80px -34px rgba(15, 23, 42, 0.58);
 }
 
@@ -1262,7 +1262,7 @@ select {
   color: #f8fafc;
   background:
     radial-gradient(circle at 91% 9%, rgba(79, 70, 229, 0.72), transparent 31%),
-    linear-gradient(128deg, #06152f 0%, #102a59 57%, #312e81 100%);
+    linear-gradient(128deg, #06152f 0%, #102a59 57%, #0b2050 100%);
 }
 
 .partner-application-hero::after {
@@ -1749,7 +1749,7 @@ select {
 
 .catalog-sort-control .mantine-Input-input:focus,
 .catalog-sort-control .mantine-Select-input:focus {
-  border-color: #6366f1;
+  border-color: #2b56b0;
   box-shadow: 0 0 0 3px var(--market-focus);
 }
 
@@ -1799,7 +1799,7 @@ select {
 
 .catalog-filter-field:focus-within {
   z-index: 1;
-  border-color: #6366f1;
+  border-color: #2b56b0;
   box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(49, 46, 129, 0.72);
 }
 
@@ -1917,8 +1917,8 @@ select {
 }
 
 .catalog-filter-advanced .mantine-Chip-input:checked + .mantine-Chip-label {
-  border-color: #4338ca;
-  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  border-color: #14306b;
+  background: linear-gradient(135deg, #14306b, #1c4291);
   color: #fff;
   box-shadow: 0 5px 12px -8px rgba(67, 56, 202, 0.9);
 }
@@ -2021,7 +2021,7 @@ select {
   width: 44%;
   height: 44%;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--listing-accent, #6366f1) 14%, transparent);
+  background: color-mix(in srgb, var(--listing-accent, #2b56b0) 14%, transparent);
   filter: blur(22px);
   transform: translateY(18%);
 }
@@ -2032,7 +2032,7 @@ select {
   width: 58%;
   height: 1px;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--listing-accent, #6366f1) 32%, transparent), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--listing-accent, #2b56b0) 32%, transparent), transparent);
   opacity: 0.78;
   transform: rotate(-24deg);
 }
@@ -2093,11 +2093,13 @@ select {
 .vehicle-fallback[data-compact] { min-height: 96px; padding: 8px 10px; }
 
 .listing-card {
-  --listing-accent: #6366f1;
+  --listing-accent: var(--market-primary);
   isolation: isolate;
   background: var(--market-surface);
-  border-color: rgba(148, 163, 184, 0.28) !important;
-  box-shadow: 0 8px 24px -22px rgba(15, 23, 42, 0.52);
+  /* Чёткая рамка вместо полупрозрачной: карточка держит форму на любом фоне
+     и не расплывается, как это было с rgba поверх градиента. */
+  border-color: var(--market-line) !important;
+  box-shadow: var(--shadow-sm);
   transition: border-color var(--ease-base) ease, box-shadow var(--ease-base) ease, transform var(--ease-base) ease;
 }
 
@@ -2137,7 +2139,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .listing-card:hover {
     transform: translateY(-3px);
-    /* Цвет и тень берутся из системы: жёсткий #4f46e5 не менялся в тёмной
+    /* Цвет и тень берутся из системы: жёсткий #1c4291 не менялся в тёмной
        теме, а своя тень выбивалась из общей глубины. */
     border-color: var(--market-primary) !important;
     box-shadow: var(--shadow-md);
@@ -2503,7 +2505,7 @@ select {
 }
 
 .news-list-search .mantine-TextInput-input:focus {
-  border-color: #818cf8;
+  border-color: #5b82d6;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.13), 0 14px 28px -26px rgba(49, 46, 129, 0.72);
 }
 
@@ -2540,7 +2542,7 @@ select {
   background:
     radial-gradient(circle at 86% 16%, rgba(103, 232, 249, 0.34), transparent 30%),
     radial-gradient(circle at 14% 92%, rgba(244, 114, 182, 0.24), transparent 36%),
-    linear-gradient(135deg, #182153 0%, #3730a3 51%, #0e7490 100%);
+    linear-gradient(135deg, #182153 0%, #102a59 51%, #0e7490 100%);
 }
 
 .news-list-card__cover::after {
@@ -2648,7 +2650,7 @@ select {
   }
 
   .news-list-card-link:hover .news-list-card__read {
-    color: #3730a3;
+    color: #102a59;
   }
 }
 
@@ -2741,7 +2743,7 @@ select {
 .auction-filter-grid > .mantine-Box-root:focus-within {
   position: relative;
   z-index: 1;
-  border-color: #6366f1;
+  border-color: #2b56b0;
   box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(49, 46, 129, 0.72);
 }
 
@@ -2782,7 +2784,7 @@ select {
 }
 
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
-  border-color: #818cf8;
+  border-color: #5b82d6;
   background: #eef2ff;
 }
 
@@ -2828,17 +2830,17 @@ select {
   background:
     radial-gradient(circle at 94% 4%, rgba(34, 211, 238, 0.34), transparent 34%),
     radial-gradient(circle at 14% 100%, rgba(167, 139, 250, 0.34), transparent 36%),
-    linear-gradient(118deg, #171340 0%, #3730a3 52%, #0f5f8d 100%);
+    linear-gradient(118deg, #171340 0%, #102a59 52%, #0f5f8d 100%);
   box-shadow: 0 24px 44px -32px rgba(30, 27, 75, 0.85);
 }
 
 .service-hub-hero .mantine-ThemeIcon-root {
-  color: #3730a3;
+  color: #102a59;
   box-shadow: 0 12px 24px -16px rgba(15, 23, 42, 0.76);
 }
 
 .service-hub-hero .mantine-Badge-root {
-  color: #312e81;
+  color: #0b2050;
   box-shadow: 0 8px 18px -14px rgba(15, 23, 42, 0.68);
 }
 
@@ -3167,7 +3169,7 @@ select {
   background:
     radial-gradient(circle at 82% 14%, rgba(34, 211, 238, 0.34), transparent 28%),
     radial-gradient(circle at 10% 100%, rgba(249, 115, 22, 0.28), transparent 34%),
-    linear-gradient(128deg, #17175d 0%, #3730a3 52%, #0f766e 120%);
+    linear-gradient(128deg, #17175d 0%, #102a59 52%, #0f766e 120%);
   box-shadow: 0 24px 54px -36px rgba(49, 46, 129, 0.88);
 }
 
@@ -3258,7 +3260,7 @@ select {
   width: 34px;
   height: 34px;
   border-color: rgba(255,255,255,.96);
-  background: #4338ca;
+  background: #14306b;
   font-size: var(--text-caps);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -3292,7 +3294,7 @@ select {
 .fuel-map-marker:focus-visible,
 .fuel-map-marker[data-selected] {
   z-index: 4;
-  background: #4f46e5;
+  background: #1c4291;
   box-shadow: 0 0 0 4px rgba(255,255,255,0.72), 0 7px 16px rgba(49,46,129,.42);
   outline: none;
   transform: translate(-50%, -50%) scale(1.12);
@@ -3373,7 +3375,7 @@ select {
   gap: 8px;
   max-width: min(390px, calc(100% - 24px));
   padding: 8px 10px;
-  border-color: color-mix(in srgb, #818cf8 38%, var(--market-line));
+  border-color: color-mix(in srgb, #5b82d6 38%, var(--market-line));
   background: rgb(255 255 255 / 94%);
   box-shadow: 0 14px 28px -22px rgb(49 46 129 / 64%);
   backdrop-filter: blur(10px);
@@ -3399,7 +3401,7 @@ select {
   display: grid;
   gap: 6px;
   padding: 2px 2px 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 72%, #818cf8);
+  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 72%, #5b82d6);
 }
 
 .fuel-station-card {
@@ -3767,7 +3769,7 @@ select {
 }
 
 .part-result-card__compatibility-chip {
-  color: #4338ca !important;
+  color: #14306b !important;
   background: #eef2ff !important;
   border: 1px solid #dbe4ff;
   font-weight: 700;
@@ -3964,7 +3966,7 @@ select {
 }
 
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
-  border-color: color-mix(in srgb, #6366f1 54%, var(--market-field-line));
+  border-color: color-mix(in srgb, #2b56b0 54%, var(--market-field-line));
   background: #eef2ff;
   box-shadow: 0 5px 12px -11px rgba(79, 70, 229, 0.86);
 }
@@ -4110,7 +4112,7 @@ select {
   border: 1px solid #c7d2fe;
   border-radius: var(--radius-md);
   background: #eef2ff;
-  color: #4f46e5;
+  color: #1c4291;
 }
 
 .vehicle-detail-specs,
@@ -4177,7 +4179,7 @@ select {
   justify-content: center;
   border-radius: var(--radius-xs);
   background: #eef2ff;
-  color: #6366f1;
+  color: #2b56b0;
 }
 
 .vehicle-detail-specs__icon svg {
@@ -4696,13 +4698,13 @@ select {
 
 .admin-workspace-navigation__item[data-active] {
   color: #ffffff !important;
-  background: linear-gradient(135deg, #4f46e5, #4338ca) !important;
-  border-color: #4f46e5 !important;
+  background: linear-gradient(135deg, #1c4291, #14306b) !important;
+  border-color: #1c4291 !important;
   box-shadow: 0 8px 18px -13px rgba(67, 56, 202, 0.9);
 }
 
 .admin-workspace-navigation__item:hover:not([data-active]) {
-  color: #312e81 !important;
+  color: #0b2050 !important;
   background: #eef2ff !important;
   border-color: #c7d2fe !important;
 }

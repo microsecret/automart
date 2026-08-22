@@ -29,7 +29,7 @@ export default function CreditCalculator({ price }: { price: number }) {
     <Card withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
       <Stack gap="sm">
         <Group gap="sm" align="center">
-          <IconCalculator size={18} color="#4f46e5" />
+          <IconCalculator size={18} color="#1c4291" />
           <Text size="sm" fw={600} c="var(--market-ink)">Кредитный калькулятор</Text>
         </Group>
 
@@ -95,7 +95,7 @@ export default function CreditCalculator({ price }: { price: number }) {
         <Group justify="space-between" align="center">
           <Stack gap={0}>
             <Text size="xs" c="gray.5">Ежемесячный платёж</Text>
-            <Text size="xl" fw={800} c="#4f46e5" ff="var(--font-display),sans-serif">{formatPrice(monthlyPayment)}</Text>
+            <Text size="xl" fw={800} c="#1c4291" ff="var(--font-display),sans-serif">{formatPrice(monthlyPayment)}</Text>
           </Stack>
           <Stack gap={0} align="flex-end">
             <Text size="xs" c="gray.5">Сумма кредита</Text>
