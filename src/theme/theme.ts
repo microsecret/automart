@@ -204,10 +204,14 @@ export const theme = createTheme({
       defaultProps: { radius: "sm", size: "md" },
       styles: {
         input: {
-          // Высота задана числом: size="md" у Mantine даёт 38px, и в строке
-          // поиска поле оказывалось на два пикселя выше кнопки рядом.
+          /* Высота через переменную Mantine.
+
+             size="md" даёт 38px, и в строке поиска поле стояло на два
+             пикселя выше кнопки рядом. Задавать height в styles бесполезно:
+             Mantine считает высоту из --input-height и перебивает значение
+             своей специфичностью — проверка на живом сайте это показала. */
+          "--input-height": "36px",
           minHeight: "36px",
-          height: "36px",
           transition: "border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out)",
           fontFamily: "var(--font-sans), sans-serif",
         },
@@ -217,8 +221,8 @@ export const theme = createTheme({
       defaultProps: { radius: "sm", size: "md" },
       styles: {
         input: {
+          "--input-height": "36px",
           minHeight: "36px",
-          height: "36px",
           transition: "border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out)",
           fontFamily: "var(--font-sans), sans-serif",
         },
@@ -228,8 +232,8 @@ export const theme = createTheme({
       defaultProps: { radius: "sm", size: "md" },
       styles: {
         input: {
+          "--input-height": "36px",
           minHeight: "36px",
-          height: "36px",
           fontFamily: "var(--font-sans), sans-serif",
         },
       },
