@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, UnstyledButton } from "@mantine/core"
-import { IconEye, IconHeart, IconMapPin } from "@tabler/icons-react"
+import { IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
@@ -10,6 +10,7 @@ import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
 import VehicleFallback from "./VehicleFallback"
 import NextImage from "next/image"
+import { COMPARE_LIMIT, readCompareList, toggleCompare } from "@/lib/compare-list"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
@@ -79,6 +80,40 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const hasDisplayImage = Boolean(displayImage)
   // Объявление считается свежим первые сутки: за этот срок его ещё не видели
   // те, кто заходит на площадку раз в день.
+  const [inCompare, setInCompare] = useState(false)
+
+  // Список живёт в браузере, поэтому его состояние читается после отрисовки
+  // и обновляется, когда машину добавили из другой карточки.
+  useEffect(() => {
+    const sync = () => setInCompare(readCompareList().includes(listing.id))
+    sync()
+    window.addEventListener("compare-list-changed", sync)
+    return () => window.removeEventListener("compare-list-changed", sync)
+  }, [listing.id])
+
+  const handleCompare = (event: React.MouseEvent) => {
+    // Карточка — ссылка: без остановки нажатие открыло бы объявление.
+    event.preventDefault()
+    event.stopPropagation()
+    const result = toggleCompare(listing.id)
+    setInCompare(result.ids.includes(listing.id))
+    if (result.limitReached) {
+      notifications.show({
+        title: "В сравнении уже четыре машины",
+        message: "Уберите одну из списка, чтобы добавить эту.",
+        color: "orange",
+      })
+      return
+    }
+    notifications.show({
+      title: result.added ? "Добавлено к сравнению" : "Убрано из сравнения",
+      message: result.added
+        ? `В сравнении ${result.ids.length} из ${COMPARE_LIMIT} — откройте раздел «Сравнение», когда наберёте нужные.`
+        : "Машина больше не участвует в сравнении.",
+      color: result.added ? "indigo" : "gray",
+    })
+  }
+
   const isFresh = Boolean(
     listing.createdAt && Date.now() - new Date(listing.createdAt).getTime() < 86_400_000,
   )
@@ -241,6 +276,31 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           {showBrandMark && (
             <Box pos="absolute" top={8} right={8} style={{ zIndex: 2 }}>
               <BrandIcon brand={listing.vehicle!.make} size={28} variant="rounded" />
+            </Box>
+          )}
+
+          {/* Сравнение — рядом с избранным.
+
+              Страница сравнения на сайте была, но попасть в неё можно было
+              только вручную через адрес: в карточке кнопки не было. Человек,
+              который выбирает между тремя машинами, держал их в закладках.
+
+              Только для транспорта: сравнивать запчасти по характеристикам
+              нечего. */}
+          {isVehicle && (
+            <Box pos="absolute" bottom={8} right={56} style={{ zIndex: 2 }}>
+              <ActionIcon
+                className="listing-card__favorite"
+                color={inCompare ? "indigo" : "dark"}
+                variant="filled"
+                size={44}
+                radius="xl"
+                onClick={handleCompare}
+                aria-label={inCompare ? "Убрать из сравнения" : "Добавить к сравнению"}
+                style={{ opacity: 0.9 }}
+              >
+                <IconScale size={15} />
+              </ActionIcon>
             </Box>
           )}
 

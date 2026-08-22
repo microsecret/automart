@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { notifyNewMessage } from "@/lib/message-notify"
 import { createConversationId, normalizeMessageContent } from "@/lib/messages"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
@@ -295,6 +296,15 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    /* Уведомление уходит в Telegram, не задерживая ответ.
+
+       Продавец не сидит на сайте: он выставил машину и ждёт. Покупатель
+       пишет, а ответа нет неделю — сделка уходит к тому, кто ответил за час.
+
+       `void` намеренно: отправитель не должен ждать, пока Telegram примет
+       сообщение, а сбой доставки не повод считать письмо неотправленным. */
+    void notifyNewMessage(message.id)
 
     return NextResponse.json(message, { status: 201 })
   } catch (error) {
