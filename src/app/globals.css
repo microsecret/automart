@@ -1412,26 +1412,15 @@ select {
   position: relative;
   overflow: hidden;
   padding: 13px 15px 14px;
-  border: 1px solid color-mix(in srgb, var(--tone) 26%, var(--market-line));
+  /* Рамка и подложка нейтральные, как у остальных карточек сайта. Цветными
+     были и рамка, и фон, и тень — три носителя одного и того же оттенка на
+     блок из трёх пунктов. Цвет остался в иконке, где он и различает пункты. */
+  border: 1px solid var(--market-line);
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg,
-      color-mix(in srgb, var(--tone) 9%, var(--market-surface)) 0%,
-      var(--market-surface) 62%);
-  box-shadow: 0 10px 22px -20px color-mix(in srgb, var(--tone) 90%, transparent);
+  background: var(--market-surface);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Цветная полоса сверху — тот же приём, что и на плитках направлений
-   главной: страницы держатся одного языка. */
-.auction-intro__facts li::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--tone), color-mix(in srgb, var(--tone) 45%, transparent));
-  content: "";
-}
 
 .auction-intro__facts li[data-tone="price"]    { --tone: #0f766e; }
 .auction-intro__facts li[data-tone="lots"]     { --tone: #1d4ed8; }
