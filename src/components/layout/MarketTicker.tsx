@@ -17,9 +17,12 @@ const CURRENCIES: { code: string; label: string; per?: number }[] = [
 
 function formatRate(value: number, per: number) {
   const shown = value * per
+  // Два знака после запятой: рубли считают до копеек, и «82,9211 ₽» читается
+  // как техническая выгрузка, а не как курс. Порог по величине здесь не
+  // нужен — вона и иена уже показаны за сотню и в копейки укладываются.
   return shown.toLocaleString("ru-RU", {
     minimumFractionDigits: 2,
-    maximumFractionDigits: shown >= 100 ? 2 : 4,
+    maximumFractionDigits: 2,
   })
 }
 
