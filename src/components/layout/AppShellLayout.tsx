@@ -19,7 +19,6 @@ import { fetchJson } from "@/lib/api-client"
 import { navbarScrollTop } from "@/lib/navbar-scroll-sync"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
-import MarketTicker from "@/components/layout/MarketTicker"
 
 const TRANSPORT = [
   { slug: "cars", label: "Легковые", icon: <IconCar size={16} stroke={1.8} /> },
@@ -173,10 +172,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
 
   return (
     <AppShell
-      // 68px сама шапка плюс 28px строка курсов над ней. Высота задаётся
-      // здесь и в --app-header-height: боковое меню и подвал считают от неё
-      // свои отступы, поэтому значения должны совпадать.
-      header={{ height: 96 }}
+      // Значение совпадает с --app-header-height: боковое меню и подвал
+      // считают от него свои отступы.
+      header={{ height: 68 }}
       navbar={{ width: 236, breakpoint: "md", collapsed: { mobile: !mobileOpened, desktop: isDetailRoute } }}
       padding={0}
       style={{ minHeight: "100vh", background: "var(--market-background)" }}
@@ -186,7 +184,6 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         <NavigationQuerySync onRouteChange={closeMobile} />
       </Suspense>
       <AppShell.Header>
-        <MarketTicker />
         <AppHeader navigationOpened={mobileOpened} onNavigationToggle={toggleMobile} />
       </AppShell.Header>
 

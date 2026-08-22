@@ -60,10 +60,7 @@
   --market-accent: #ef7d00;
   --market-accent-ink: #171719;
   --market-accent-soft: #fff7e6;
-  /* 68px сама шапка плюс 28px строка курсов над ней. Значение совпадает с
-     высотой, заданной оболочке: от него считаются отступы бокового меню и
-     подвала. */
-  --app-header-height: 96px;
+  --app-header-height: 68px;
 
   /* Шкала скруглений.
      На странице было четырнадцать разных радиусов — 8, 9, 10, 3, 16 и так
@@ -208,86 +205,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Строка курсов над шапкой.
-
-   Приём взят с площадки-образца: список выводится дважды и едет ровно на
-   половину своей ширины. В момент, когда первая копия уходит за край, вторая
-   встаёт на её место — шва не видно, и не нужно ни считать элементы, ни
-   перезапускать анимацию.
-
-   Маска по краям гасит текст на входе и выходе, иначе буквы обрубаются о
-   границу экрана. Наведение останавливает движение: иначе прочитать нужный
-   курс невозможно — он уезжает. */
-.market-ticker {
-  position: relative;
-  z-index: 3;
-  overflow: hidden;
-  background: #0f1117;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
-}
-
-.market-ticker__track {
-  display: flex;
-  width: max-content;
-  animation: market-ticker-move 64s linear infinite;
-}
-
-.market-ticker:hover .market-ticker__track,
-.market-ticker:focus-within .market-ticker__track {
-  animation-play-state: paused;
-}
-
-.market-ticker__run {
-  display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
-.market-ticker__item {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 6px 18px;
-  font-size: var(--text-caps);
-  line-height: 1.4;
-  white-space: nowrap;
-}
-
-.market-ticker__code {
-  color: #7d879a;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.market-ticker__label {
-  color: #7d879a;
-}
-
-.market-ticker__value {
-  color: #f2f4f8;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.market-ticker__item--source {
-  color: #6b7688;
-  font-style: italic;
-}
-
-@keyframes market-ticker-move {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-/* При отключённой анимации строка замирает: курсы остаются на виду и
-   читаются, просто не едут. */
-@media (prefers-reduced-motion: reduce) {
-  .market-ticker__track { animation: none; }
-  .market-ticker { overflow-x: auto; }
-}
-
 /* Высота поля ввода равна высоте кнопки.
 
    Mantine пишет height прямо в класс поля, поэтому ни styles в теме, ни
@@ -298,13 +215,19 @@ body {
    читается как небрежность — строка выглядит собранной из чужих деталей.
 
    Многострочные поля исключены: им высота считается по содержимому. */
-.mantine-Input-input.mantine-Input-input:not(textarea):not([data-multiline]) {
-  /* Класс продублирован намеренно: правило Mantine грузится позже нашего и
-     при равной специфичности побеждает. Проверка на живом сайте показала
-     36px в собранном CSS и 38px в браузере — победил чужой стиль.
-     Повтор класса поднимает вес без !important. */
-  height: 36px;
-  min-height: 36px;
+.mantine-Input-input:not(textarea):not([data-multiline]) {
+  /* Высота поля равна высоте кнопки: в строке поиска они стоят рядом, и
+     разница в два пикселя читается как небрежность.
+
+     !important здесь по необходимости, а не по привычке. Mantine задаёт
+     высоту утилитарным классом, который грузится после наших стилей; три
+     попытки обойти это — styles в теме, переменная --input-height и
+     удвоенный селектор — на живом сайте давали прежние 38px. Проверено
+     сравнением собранного CSS с тем, что показывает браузер.
+
+     Многострочные поля исключены: им высота считается по содержимому. */
+  height: 36px !important;
+  min-height: 36px !important;
 }
 
 /* Подсветка поля при фокусе — кольцом, а не сменой рамки.
@@ -982,7 +905,7 @@ select {
   width: 48px;
   height: 48px;
   place-items: center;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   background: #1c4291;
   box-shadow: var(--shadow-md);
 }
