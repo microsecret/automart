@@ -26,6 +26,42 @@ const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 const FETCH_TIMEOUT_MS = 20_000
 
+/* Адреса, которые источник не отдал, запоминаются на четверть часа.
+
+   Лоты живут месяцами, а фотографии на японских и корейских площадках
+   пропадают вместе с проданной машиной. Каждый заход на такую карточку
+   уходил до источника и возвращался ни с чем: замер показал пять секунд
+   на один битый адрес — и так для каждого посетителя.
+
+   Пятнадцать минут — срок, за который источник может восстановить
+   картинку; дольше держать отказ нельзя, иначе вернувшееся фото не
+   покажется. Хранится только сам адрес, не содержимое: снимки тяжёлые,
+   а их кэшируют браузер и промежуточные узлы по заголовкам ответа. */
+const FAILURE_TTL_MS = 15 * 60 * 1000
+const FAILURE_CACHE_LIMIT = 512
+
+const failedMedia = new Map<string, number>()
+
+function isKnownFailure(url: string): boolean {
+  const at = failedMedia.get(url)
+  if (at === undefined) return false
+  if (Date.now() - at >= FAILURE_TTL_MS) {
+    failedMedia.delete(url)
+    return false
+  }
+  return true
+}
+
+function rememberFailure(url: string): void {
+  // Предел держит память: адресов у лотов десятки тысяч, а помнить нужно
+  // только те, что спрашивали недавно.
+  if (failedMedia.size >= FAILURE_CACHE_LIMIT) {
+    const oldest = failedMedia.keys().next().value
+    if (oldest !== undefined) failedMedia.delete(oldest)
+  }
+  failedMedia.set(url, Date.now())
+}
+
 type PermittedImage = { url: URL; followRedirects: boolean }
 
 function permittedImageUrl(value: string | null): PermittedImage | null {
@@ -104,6 +140,11 @@ export async function GET(request: NextRequest) {
     if (proxied) return proxied
   }
 
+  const target = permitted.url.toString()
+  if (isKnownFailure(target)) {
+    return NextResponse.json({ error: "Auction image unavailable" }, { status: 502 })
+  }
+
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
@@ -118,6 +159,7 @@ export async function GET(request: NextRequest) {
     })
     if (!upstream.ok || !upstream.body) {
       clearTimeout(timeout)
+      rememberFailure(target)
       return NextResponse.json({ error: "Auction image unavailable" }, { status: 502 })
     }
 
@@ -127,6 +169,7 @@ export async function GET(request: NextRequest) {
     if (!ALLOWED_CONTENT_TYPES.has(contentType) || (contentLength !== null && Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES)) {
       clearTimeout(timeout)
       await upstream.body.cancel()
+      rememberFailure(target)
       return NextResponse.json({ error: "Invalid auction image" }, { status: 502 })
     }
 
