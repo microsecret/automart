@@ -7,34 +7,26 @@ import LeWheelBrand from "@/components/brand/LeWheelBrand"
 
 const FOOTER_SECTIONS = [
   {
-    title: "Транспорт",
+    title: "Каталог",
     links: [
-      { label: "Легковые", href: "/category/cars" },
-      { label: "Мото", href: "/category/moto" },
-      { label: "Грузовики", href: "/category/trucks" },
-      { label: "Спецтехника", href: "/category/special" },
-      { label: "Водный транспорт", href: "/category/water" },
-      { label: "Воздушный транспорт", href: "/category/air" },
-      /* Три страницы были недостижимы: ссылок на них не было нигде во
-         всём коде. На /brands собран 91 бренд со счётчиками моделей,
-         /map показывает объявления по городам, /compare сравнивает до
-         четырёх машин. */
+      /* Категории транспорта отсюда убраны: девять ссылок дословно
+         повторяли боковое меню и плитки главной, вытягивая подвал втрое.
+         Здесь остаются страницы, которых нет ни там, ни там. */
+      { label: "Все объявления", href: "/" },
       { label: "Все марки", href: "/brands" },
       { label: "Карта объявлений", href: "/map" },
       { label: "Сравнение", href: "/compare" },
+      { label: "Мировые аукционы", href: "/auctions" },
     ],
   },
   {
     title: "Запчасти",
     links: [
       { label: "Все запчасти", href: "/parts-finder" },
-      { label: "Ходовая / Подвеска", href: "/parts-finder?partType=SUSPENSION" },
-      { label: "Рулевое управление", href: "/parts-finder?partType=STEERING" },
-      { label: "Тормоза", href: "/parts-finder?partType=BRAKES" },
-      { label: "Электрика", href: "/parts-finder?partType=ELECTRICAL" },
-      { label: "Оптика / Фары", href: "/parts-finder?partType=LIGHTING" },
       { label: "Двигатель", href: "/parts-finder?partType=ENGINE" },
-      { label: "Кузов", href: "/parts-finder?partType=BODY" },
+      { label: "Тормоза", href: "/parts-finder?partType=BRAKES" },
+      { label: "Ходовая / Подвеска", href: "/parts-finder?partType=SUSPENSION" },
+      { label: "Электрика", href: "/parts-finder?partType=ELECTRICAL" },
     ],
   },
   {
