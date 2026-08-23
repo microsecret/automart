@@ -21,7 +21,15 @@ function normalizedAttribution(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : ""
 }
 
-function classifyTrafficSource(referer: string, utmSource: string, request: NextRequest) {
+function classifyTrafficSource(referer: string, utmSource: string, request: NextRequest, fromApp: boolean) {
+  /* Приложение сообщает о себе отдельным признаком, а не подделкой
+     ссылающейся страницы.
+
+     Открытое внутри мессенджера, оно не имеет referer, и все его
+     посещения падали в «прямые заходы» — неотличимо от людей, набравших
+     адрес вручную. Долю Telegram увидеть было нельзя, хотя это отдельный
+     канал, ради которого приложение и делалось. */
+  if (fromApp) return "TELEGRAM_APP"
   if (utmSource) return `UTM:${utmSource.toLocaleUpperCase("en-US").replace(/[^A-Z0-9._-]/g, "").slice(0, 48) || "OTHER"}`
   if (!referer) return "DIRECT"
   try {
@@ -58,6 +66,7 @@ export async function POST(request: NextRequest) {
       referer?: unknown
       utmSource?: unknown
       campaign?: unknown
+      fromTelegramApp?: unknown
     }
     const path = String(body.path || "").slice(0, 200)
     if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("/api/")) return NextResponse.json({ error: "Invalid path" }, { status: 400 })
@@ -70,6 +79,10 @@ export async function POST(request: NextRequest) {
     const sessionKey = typeof body.sessionKey === "string" && ANALYTICS_KEY.test(body.sessionKey) ? body.sessionKey : null
     const referer = normalizedAttribution(body.referer, 500)
     const utmSource = normalizedAttribution(body.utmSource, 80)
+    /* Признак приложения приходит от клиента, поэтому подделать его
+       можно — но выгоды в этом нет: он влияет только на разбивку
+       статистики, не на права и не на данные. */
+    const fromTelegramApp = body.fromTelegramApp === true
     const campaign = normalizedAttribution(body.campaign, 120) || null
     const ipHash = hashAnalyticsIp(clientIp)
 
@@ -93,7 +106,7 @@ export async function POST(request: NextRequest) {
         userAgent,
         referer: referer || null,
         deviceType: classifyDevice(userAgent),
-        trafficSource: classifyTrafficSource(referer, utmSource, request),
+        trafficSource: classifyTrafficSource(referer, utmSource, request, fromTelegramApp),
         campaign,
         userId: session?.user?.id || null,
       },

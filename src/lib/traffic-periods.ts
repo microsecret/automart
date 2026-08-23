@@ -60,6 +60,7 @@ export function trafficSourceLabel(source: string | null): string {
     SOCIAL: "Соцсети",
     REFERRAL: "Другие сайты",
     TELEGRAM: "Telegram",
+    TELEGRAM_APP: "Приложение в Telegram",
     INTERNAL: "Переходы внутри сайта",
   }
   return known[upper] || source

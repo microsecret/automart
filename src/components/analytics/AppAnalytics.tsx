@@ -58,7 +58,20 @@ export default function AppAnalytics() {
       /* `screen` отличает экран с фильтрами от того же раздела без них.
          Сервер по нему отсекает повторную отправку одного и того же экрана и
          в базу не пишет — там остаётся чистый путь. */
-      body: JSON.stringify({ path: pathname, screen: search ? `${pathname}?${search}` : pathname, visitorKey, sessionKey, ...attribution }),
+      body: JSON.stringify({
+        path: pathname,
+        screen: search ? `${pathname}?${search}` : pathname,
+        visitorKey,
+        sessionKey,
+        /* Открыто внутри приложения Telegram.
+
+           У приложения нет ссылающейся страницы, и его посещения
+           попадали в «прямые заходы» — неотличимо от людей, набравших
+           адрес вручную. Признак платформы есть только внутри
+           мессенджера, поэтому он и отличает канал. */
+        fromTelegramApp: typeof window !== "undefined" && Boolean(window.Telegram?.WebApp?.initData),
+        ...attribution,
+      }),
       keepalive: true,
     }).catch(() => {})
   }, [pathname, search])

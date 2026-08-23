@@ -1,0 +1,284 @@
+/* Приложение LeWheel внутри Telegram.
+ *
+ * Оформление держится на переменных платформы: цвета приходят из темы
+ * мессенджера и подставляются в TelegramShell. Приложение выглядит родным
+ * и в светлой теме, и в тёмной, и у тех, кто поставил свою — чужеродная
+ * белая страница внутри тёмного Telegram первое, что выдаёт наспех
+ * сделанное приложение.
+ *
+ * Запасные значения подобраны под тёмное оформление по умолчанию:
+ * приложение в старом клиенте не должно вспыхивать белым.
+ */
+
+:root {
+  --tg-bg: #17212b;
+  --tg-surface: #1d2733;
+  --tg-elevated: #0e1621;
+  --tg-text: #ffffff;
+  --tg-hint: #708499;
+  --tg-accent: #5288c1;
+  --tg-accent-text: #ffffff;
+  --tg-line: #101921;
+
+  /* Высота нижней навигации плюс безопасный отступ снизу: под лентой
+     должно оставаться место, иначе последняя карточка уезжает под панель. */
+  --tg-nav-height: 58px;
+}
+
+.tg-shell {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  background: var(--tg-elevated);
+  color: var(--tg-text);
+  /* Пока тема не пришла, показываем запасные цвета без мигания. */
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+}
+
+.tg-shell[data-ready] {
+  opacity: 1;
+}
+
+.tg-shell__head {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--tg-line);
+  background: var(--tg-bg);
+}
+
+.tg-shell__title {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--tg-text);
+}
+
+.tg-shell__subtitle {
+  margin-top: 2px;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: var(--tg-hint);
+}
+
+.tg-shell__body {
+  flex: 1;
+  padding: 12px 12px calc(var(--tg-nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
+}
+
+/* Карточка машины.
+ *
+ * Горизонтальная, а не вертикальная: на телефоне так помещается вчетверо
+ * больше объявлений на экран, и человек листает, а не прокручивает по
+ * одной. Так устроены ленты Авито и Дрома.
+ */
+.tg-card {
+  display: flex;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--tg-surface);
+  color: inherit;
+  text-decoration: none;
+  /* Тень заменена рамкой: на тёмной подложке тень не читается, а рамка
+     отделяет карточку от фона в любой теме. */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tg-hint) 18%, transparent);
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background 140ms ease-out;
+}
+
+/* Нажатие подтверждается вдавливанием — на телефоне наведения нет, и
+   это единственный способ показать, что касание принято. */
+.tg-card:active {
+  transform: scale(0.985);
+  background: color-mix(in srgb, var(--tg-accent) 8%, var(--tg-surface));
+}
+
+.tg-card__media {
+  position: relative;
+  overflow: hidden;
+  width: 132px;
+  min-height: 100px;
+  flex: 0 0 132px;
+  background: var(--tg-elevated);
+}
+
+.tg-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tg-card__media-empty {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--tg-hint);
+}
+
+.tg-card__badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  border: 0;
+  background: var(--tg-accent);
+  color: var(--tg-accent-text);
+  font-weight: 700;
+}
+
+.tg-card__body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 12px;
+}
+
+/* Цена первой строкой и крупнее остального: листая ленту, человек
+   сравнивает цены, а не названия. */
+.tg-card__price {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--tg-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.tg-card__title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: color-mix(in srgb, var(--tg-text) 82%, transparent);
+}
+
+.tg-card__facts {
+  font-size: 0.72rem;
+  color: var(--tg-hint);
+}
+
+.tg-card__facts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.tg-card__place {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Нижняя навигация.
+ *
+ * Пять разделов — предел: шестой сжимает подписи до нечитаемых. Порядок
+ * по частоте: машины, аукционы, подача (главное действие площадки),
+ * избранное, профиль.
+ */
+.tg-nav {
+  position: fixed;
+  z-index: 20;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid var(--tg-line);
+  background: var(--tg-bg);
+}
+
+.tg-nav__item {
+  display: flex;
+  height: var(--tg-nav-height);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--tg-hint);
+  text-decoration: none;
+  transition: color 120ms ease-out, transform 120ms ease-out;
+}
+
+.tg-nav__item:active {
+  transform: scale(0.94);
+}
+
+.tg-nav__item[data-active] {
+  color: var(--tg-accent);
+}
+
+/* Подача выделена: это главное действие площадки, ради него приложение и
+   существует. Значок в круге фирменного цвета — как в приложениях, где
+   создание отличают от навигации. */
+.tg-nav__item[data-accent] {
+  color: var(--tg-accent-text);
+}
+
+.tg-nav__item[data-accent] svg {
+  padding: 6px;
+  border-radius: 50%;
+  background: var(--tg-accent);
+  box-sizing: content-box;
+}
+
+.tg-nav__label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+/* Служебное сообщение: вход не прошёл или приложение открыто вне
+   Telegram. Не занимает весь экран — лента под ним всё равно работает. */
+.tg-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tg-accent) 14%, var(--tg-surface));
+  color: var(--tg-text);
+}
+
+.tg-notice[data-tone="error"] {
+  background: color-mix(in srgb, #e03131 18%, var(--tg-surface));
+}
+
+.tg-button {
+  height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--tg-accent);
+  color: var(--tg-accent-text);
+  font-weight: 700;
+}
+
+.tg-button:active {
+  transform: scale(0.985);
+}
+
+/* Движение гасится, если человек об этом попросил в настройках
+   устройства: вдавливание и переходы исчезают, поведение остаётся. */
+@media (prefers-reduced-motion: reduce) {
+  .tg-shell,
+  .tg-card,
+  .tg-nav__item,
+  .tg-button {
+    transition: none;
+  }
+
+  .tg-card:active,
+  .tg-nav__item:active,
+  .tg-button:active {
+    transform: none;
+  }
+}

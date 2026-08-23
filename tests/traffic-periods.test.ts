@@ -57,6 +57,10 @@ test("источники читаются по-человечески", () => {
   // технический код вместо названия.
   assert.equal(trafficSourceLabel("ORGANIC_SEARCH"), "Поисковые системы")
   assert.equal(trafficSourceLabel("REFERRAL"), "Другие сайты")
+  // Приложение и ссылка из чата — разные каналы: в приложении человек
+  // уже внутри площадки, по ссылке он только переходит на неё.
+  assert.equal(trafficSourceLabel("TELEGRAM"), "Telegram")
+  assert.equal(trafficSourceLabel("TELEGRAM_APP"), "Приложение в Telegram")
   assert.match(trafficSourceLabel("UTM:TELEGRAM-MINI-APP"), /telegram-mini-app/)
   // Неизвестный код не теряется, а показывается как есть.
   assert.equal(trafficSourceLabel("SOMETHING_NEW"), "SOMETHING_NEW")
