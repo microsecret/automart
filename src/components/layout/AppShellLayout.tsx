@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import {
   IconBell, IconBrain, IconCar, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation,
-  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMotorbike, IconNews,
+  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMotorbike, IconSearch,
   IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
   IconBuildingStore, IconClipboardList, IconGift, IconTractor, IconTruck, IconTruckDelivery,
 } from "@tabler/icons-react"
@@ -56,9 +56,9 @@ const SERVICES = [
 
 const MOBILE_NAV = [
   { href: "/", label: "Главная", Icon: IconHome2 },
-  { href: "/auctions", label: "Аукционы", Icon: IconGavel },
+  { href: "/search", label: "Поиск", Icon: IconSearch },
   { href: "/listings/create/quick", label: "Подать", Icon: IconPlus, accent: true },
-  { href: "/news", label: "Новости", Icon: IconNews },
+  { href: "/favorites", label: "Избранное", Icon: IconHeart },
   { href: "/messages", label: "Чаты", Icon: IconMessageCircle2 },
 ]
 
