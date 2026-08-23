@@ -974,8 +974,12 @@ select {
   display: none;
 }
 
-/* Порог совпадает с visibleFrom="xl" у поля поиска (1200px): иначе в
-   промежутке между правилами не видно ни поля, ни кнопки. */
+/* Порог совпадает с visibleFrom="lg" у поля поиска (1200px): иначе в
+   промежутке между правилами не видно ни поля, ни кнопки.
+
+   Раньше поле появлялось только с 1408 пикселей и при этом сжималось до
+   нуля — на обычном ноутбуке от него оставалась полоска, в которую
+   нельзя было попасть. Теперь оно есть с 1200 и держит ширину. */
 @media (max-width: 1199px) {
   .market-header-search {
     display: none !important;
@@ -5753,4 +5757,56 @@ h1[data-lw-hero] {
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid var(--market-line);
+}
+
+/* Подвал: длинные колонки идут в два ряда ссылок.
+
+   Высоту задавала самая длинная колонка — девять ссылок «Транспорта» и
+   восемь «Запчастей» вытягивали подвал втрое выше остальных, а рядом
+   оставались пустые столбцы. Ширина использовалась на треть.
+
+   Колонки с шестью и более ссылками разворачиваются в два ряда: подвал
+   становится вдвое ниже, а место — занятым. */
+@media (min-width: 48em) {
+  .market-app-footer__grid [data-lw-wide] {
+    grid-column: span 2;
+  }
+
+  .market-app-footer__grid [data-lw-wide] > .mantine-Anchor-root {
+    /* Сами ссылки внутри такой колонки встают в две дорожки. */
+    break-inside: avoid;
+  }
+
+  .market-app-footer__grid [data-lw-wide] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    column-gap: 20px;
+    row-gap: 8px;
+  }
+
+  /* Заголовок раздела занимает обе дорожки: он относится ко всему списку. */
+  .market-app-footer__grid [data-lw-wide] > .mantine-Text-root:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Строка поиска для вошедшего — на месте витрины.
+
+   Человек, который уже вошёл, начинает с поиска машины, а не с чтения
+   обещаний площадки. Поле идёт во всю ширину колонки: это главное
+   действие на странице. */
+.home-returning-search {
+  width: 100%;
+}
+
+.home-returning-search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.home-returning-search__input .mantine-Input-input {
+  background: var(--market-surface);
+  border-color: var(--market-field-line);
+  box-shadow: var(--shadow-sm);
 }

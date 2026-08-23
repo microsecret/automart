@@ -82,7 +82,7 @@ export default function AppFooter() {
     }}>
       <Container size="xl" py="xl">
         <Stack gap="lg">
-          <SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 5 }} spacing={{ base: "xl", md: "lg" }} verticalSpacing="xl">
+          <SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 4 }} spacing={{ base: "xl", md: "lg" }} verticalSpacing="lg" className="market-app-footer__grid">
             <Stack gap="sm" miw={0}>
               <LeWheelBrand size={42} tone="inverse" />
               <Text size="sm" c="#a1a1aa" lh={1.6}>
@@ -112,7 +112,7 @@ export default function AppFooter() {
             </Stack>
 
             {FOOTER_SECTIONS.map((section) => (
-              <Stack key={section.title} gap={8} miw={0}>
+              <Stack key={section.title} gap={8} miw={0} data-lw-wide={section.links.length > 5 || undefined}>
                   <Text size="xs" fw={800} c="#d4d4d8" tt="uppercase" style={{ letterSpacing: "var(--track-caps)" }}>
                     {section.title}
                   </Text>

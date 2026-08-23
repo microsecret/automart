@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic"
 import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 import NextImage from "next/image"
 import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Divider, Chip, Loader, SegmentedControl, Tooltip , ThemeIcon} from "@mantine/core"
@@ -266,9 +267,21 @@ export default function HomePage(p: HomePageProps = {}) {
     setPage(1)
   }, [filterKey])
 
+  /* Вошедшему первый экран не нужен.
+
+     Витрина с обещаниями «от первого поиска до сделки» обращена к тому,
+     кто решает, оставаться ли на площадке. Человек, который уже вошёл,
+     это решение принял: ему нужны машины, а не приглашение. На других
+     площадках вход тоже открывает ленту, а не рекламу.
+
+     Плитки направлений остаются — по ним ориентируются и постоянные
+     посетители, — но встают сразу, без полноэкранной витрины над ними. */
+  const { status: sessionStatus } = useSession()
+  const isReturning = sessionStatus === "authenticated"
+
   return (
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
-      {p.showHero !== false && !p.categorySlug && (
+      {p.showHero !== false && !p.categorySlug && !isReturning && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
           <NextImage src="/images/home/automarket-hero.png" alt="LeWheel — транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
           <Box className="home-auctions__scrim" />
@@ -368,6 +381,35 @@ export default function HomePage(p: HomePageProps = {}) {
 
       {/* Витрина направлений — только на главной: внутри категории человек
           уже выбрал, куда идёт, и повторное меню там мешало бы. */}
+      {/* Поиск для вошедшего — там, где у гостя витрина.
+
+          Поле поиска жило внутри первого экрана, а вошедшему тот экран не
+          показывается. Здесь оно встаёт первым, над плитками направлений:
+          человек, который уже на площадке, начинает с поиска машины. */}
+      {p.showHero !== false && !p.categorySlug && isReturning && (
+        <Group gap="xs" wrap="nowrap" className="home-returning-search">
+          <TextInput
+            className="home-returning-search__input"
+            placeholder="Марка, модель или ключевое слово"
+            aria-label="Поиск по объявлениям"
+            leftSection={<IconSearch size={17} />}
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            size="md"
+          />
+          <Button
+            component={Link}
+            href="#catalog"
+            size="md"
+            radius="md"
+            color="indigo"
+            aria-label="Показать объявления"
+          >
+            Найти
+          </Button>
+        </Group>
+      )}
+
       {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
 
       <Group id="catalog" justify="space-between" align="center" className="catalog-heading">

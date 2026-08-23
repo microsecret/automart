@@ -52,7 +52,7 @@ export default function CategoryShowcase() {
         </Box>
       </Group>
 
-      <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }} spacing="sm" className={styles.grid}>
+      <SimpleGrid cols={{ base: 2, sm: 4, lg: 7 }} spacing="xs" className={styles.grid}>
         {DIRECTIONS.map(({ slug, href, label, hint, Icon, tone }) => {
           const count = counts?.[slug]
           return (
@@ -63,12 +63,12 @@ export default function CategoryShowcase() {
               className={styles.card}
               data-tone={tone}
               radius="md"
-              p="md"
+              p="sm"
               withBorder
             >
               <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
-                <ThemeIcon variant="light" color={tone} size={38} radius="md" className={styles.icon}>
-                  <Icon size={20} stroke={1.8} />
+                <ThemeIcon variant="light" color={tone} size={30} radius="md" className={styles.icon}>
+                  <Icon size={17} stroke={1.9} />
                 </ThemeIcon>
                 {/* Пока счётчики грузятся, места под них не занимаем —
                     иначе карточки дёргаются при появлении чисел.
