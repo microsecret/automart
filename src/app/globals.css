@@ -5494,10 +5494,11 @@ h1[data-lw-hero] {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  /* Нижняя панель навигации плавает внизу с отступом 12px и высотой около
-     шестидесяти — встаём над ней, а не под неё. Вырез экрана панель
-     учитывает сама, поэтому здесь его прибавлять не нужно. */
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  /* Нижняя панель навигации плавает внизу: отступ 12px, внутренние
+     отступы 8×2, пункт 44px — итого 72 пикселя высоты, верхний край на
+     84 от низа. Встаём над ней с зазором в восемь пикселей. Вырез экрана
+     панель учитывает сама, здесь его прибавлять не нужно. */
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   padding: 10px 14px;
   border-top: 1px solid var(--market-line);
   background: var(--market-surface);
@@ -5552,7 +5553,7 @@ h1[data-lw-hero] {
    закроет последний блок содержимого. */
 @media (max-width: 61.99em) {
   body:has(.auction-action-bar) {
-    padding-bottom: 148px;
+    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
   }
 }
 
