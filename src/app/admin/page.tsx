@@ -100,6 +100,9 @@ type AdminStats = {
     openSupportTickets: number
     waitingSupportTickets: number
     activeSupportTickets: number
+    /** Оплаченное продвижение, которое не действует: деньги получены,
+        услуга не оказана. */
+    stuckPayments: number
     /** Возраст самой старой задачи в каждой очереди, часы. */
     oldest?: {
       pendingListings: number | null
@@ -108,6 +111,7 @@ type AdminStats = {
       activeAuctionInquiries: number | null
       pendingDeliveryOrganizations: number | null
       waitingSupportTickets: number | null
+      stuckPayments: number | null
     }
   }
   monetization: {
@@ -426,6 +430,7 @@ export default function AdminDashboard() {
     { label: "Импорт в работе", value: data.operations.activeAuctionInquiries, oldestHours: oldest?.activeAuctionInquiries ?? null, href: "/admin/auctions", icon: <IconClock size={17} />, color: "blue" as MantineColor, description: "Проверить этап сделок" },
     { label: "Партнёры ждут проверки", value: data.operations.pendingDeliveryOrganizations, oldestHours: oldest?.pendingDeliveryOrganizations ?? null, href: "/admin/partners", icon: <IconBuildingWarehouse size={17} />, color: "violet" as MantineColor, description: "Проверить реквизиты в реестре" },
     { label: "Поддержка ждёт оператора", value: data.operations.waitingSupportTickets, oldestHours: oldest?.waitingSupportTickets ?? null, href: "/admin/support?status=WAITING_OPERATOR", icon: <IconHeadset size={17} />, color: "grape" as MantineColor, description: `${data.operations.openSupportTickets} открыто · ${data.operations.activeSupportTickets} в работе` },
+    { label: "Оплачено, но не продвигается", value: data.operations.stuckPayments ?? 0, oldestHours: oldest?.stuckPayments ?? null, href: "/admin/users", icon: <IconCreditCard size={17} />, color: "red" as MantineColor, description: "Деньги получены, услуга не оказана" },
   ]
   const actionsTotal = operationItems.reduce((sum, item) => sum + item.value, 0)
   // Свежесть импорта — первое, что нужно знать при разборе очереди: устаревший

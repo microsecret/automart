@@ -135,7 +135,7 @@ export async function GET() {
     const dailyTrafficStart = new Date()
     dailyTrafficStart.setUTCHours(0, 0, 0, 0)
     dailyTrafficStart.setUTCDate(dailyTrafficStart.getUTCDate() - 6)
-    const [topPaths, recentVisitorEvents, trafficEvents30d, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, oldestPendingListing, oldestOpenReport, oldestNewInquiry, oldestActiveInquiry, oldestPendingPartner, oldestWaitingTicket, latestAuctionSyncRuns, sourceSyncRuns, listingInventory, listingViewEvents14d, listingMessages7d, soldListings7d, topListingViewGroups] = await Promise.all([
+    const [topPaths, recentVisitorEvents, trafficEvents30d, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, oldestPendingListing, oldestOpenReport, oldestNewInquiry, oldestActiveInquiry, oldestPendingPartner, oldestWaitingTicket, stuckPayments, oldestStuckPayment, latestAuctionSyncRuns, sourceSyncRuns, listingInventory, listingViewEvents14d, listingMessages7d, soldListings7d, topListingViewGroups] = await Promise.all([
       prisma.visitEvent.groupBy({ by: ["path"], where: { createdAt: { gte: weekAgo } }, _count: { path: true }, orderBy: { _count: { path: "desc" } }, take: 8 }),
       prisma.visitEvent.findMany({ where: { createdAt: { gte: weekAgo }, userId: { not: null } }, orderBy: { createdAt: "desc" }, take: 50, include: { user: { select: { id: true, name: true, email: true, telegramUsername: true } } } }),
       /* Месяц визитов читается целиком: уникальные посетители по дням
@@ -196,6 +196,29 @@ export async function GET() {
         // Для тикета важна не дата создания, а сколько человек ждёт ответа
         // после своего последнего сообщения.
         _min: { lastMessageAt: true },
+      }),
+      /* Оплаченное продвижение, которое не действует.
+
+         Деньги получены, а услуга не оказана: заказ отмечен оплаченным,
+         но срок продвижения не проставлен или уже прошёл, а объявление
+         не продвигается. Такой платёж никто не заметит — раздела
+         платежей в панели нет, — и продавец останется без услуги, за
+         которую заплатил.
+
+         Пока покупок продвижения не было ни одной; проверка стоит
+         заранее, чтобы первый же застрявший платёж не потерялся. */
+      prisma.promotionOrder.count({
+        where: {
+          status: "PAID",
+          OR: [{ promoUntil: null }, { promoUntil: { lt: new Date() } }],
+        },
+      }),
+      prisma.promotionOrder.aggregate({
+        where: {
+          status: "PAID",
+          OR: [{ promoUntil: null }, { promoUntil: { lt: new Date() } }],
+        },
+        _min: { paidAt: true },
       }),
       prisma.auctionSyncRun.findMany({
         orderBy: { startedAt: "desc" },
@@ -524,6 +547,7 @@ export async function GET() {
         openSupportTickets,
         waitingSupportTickets,
         activeSupportTickets,
+        stuckPayments,
         /* Возраст самой старой задачи в каждой очереди, часы.
 
            Счётчик отвечает «сколько», возраст — «что горит». Без него три
@@ -536,6 +560,7 @@ export async function GET() {
           activeAuctionInquiries: hoursSince(oldestActiveInquiry._min.createdAt),
           pendingDeliveryOrganizations: hoursSince(oldestPendingPartner._min.createdAt),
           waitingSupportTickets: hoursSince(oldestWaitingTicket._min.lastMessageAt),
+          stuckPayments: hoursSince(oldestStuckPayment._min.paidAt),
         },
       },
       auctionSyncRuns: latestAuctionSyncRuns,
