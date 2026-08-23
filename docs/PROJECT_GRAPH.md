@@ -66,7 +66,8 @@ flowchart TD
   Seen -->|yes| Skip["Skip repeated detail request"]
   Seen -->|new or due| Detail["Fetch public detail page"]
   Detail --> Normalize["Normalize make/model/specifications"]
-  Normalize --> Canonical["Build one ordered source-detail schema"]
+  Normalize --> DriveBadge["Read only explicit AWD / 4WD / xDrive / 4MATIC / quattro / RWD / FWD badges"]
+  DriveBadge --> Canonical["Build one ordered source-detail schema"]
   Canonical --> Russian["Keep only Russian-safe public text"]
   Russian --> CBR["Apply current CBR rate"]
   Russian --> Damage["Normalize source damage zones, kinds and coordinates"]
@@ -93,6 +94,11 @@ never written to disk.
 The serialized collector retries short loopback failures within a 30-second
 budget. A source stage that reaches its four-minute timeout is recorded once
 and is not replayed by curl, keeping the shared deploy/collector lock bounded.
+Explicit drivetrain badges in source-confirmed model names fill an otherwise
+empty canonical drive value for new Encar imports and by an idempotent deploy
+backfill for older active lots. Existing source values are never overwritten;
+ambiguous `2WD` remains empty instead of being guessed as front- or rear-wheel
+drive.
 
 Structured inspection sources use the shared `AuctionDamageReport` payload.
 Native Russian source labels are kept first; deterministic source dictionaries

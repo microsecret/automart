@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { normalizeAuctionModel } from "../src/lib/auction-normalization.ts"
+import { deriveAuctionDriveTypeFromText, normalizeAuctionModel } from "../src/lib/auction-normalization.ts"
 
 test("keeps a plain model name untouched", () => {
   assert.equal(normalizeAuctionModel("Palisade"), "Palisade")
@@ -71,4 +71,18 @@ test("сжимает пересказ переводчика в обозначе
 
 test("не трогает название, уже собранное словарём", () => {
   assert.equal(normalizeAuctionModel("3 Series 325i 2024 2.0T"), "3 Series 325i 2024 2.0T")
+})
+
+test("явный привод из названия источника нормализуется без догадок", () => {
+  for (const value of ["X7 xDrive40d", "C 200 4MATIC+", "A6 45 TFSI quattro", "Mohave 4WD"]) {
+    assert.equal(deriveAuctionDriveTypeFromText(value), "AWD", value)
+  }
+  assert.equal(deriveAuctionDriveTypeFromText("Model Y RWD"), "RWD")
+  assert.equal(deriveAuctionDriveTypeFromText("EV6 FWD Air"), "FWD")
+})
+
+test("неоднозначный 2WD и похожие слова не превращаются в привод", () => {
+  assert.equal(deriveAuctionDriveTypeFromText("Sorento 2WD Signature"), null)
+  assert.equal(deriveAuctionDriveTypeFromText("Forward Edition"), null)
+  assert.equal(deriveAuctionDriveTypeFromText(null), null)
 })

@@ -54,6 +54,9 @@ npx prisma generate
 node scripts/refresh-auction-rates.mjs
 node scripts/enforce-encar-import-age-policy.mjs
 node scripts/reconcile-transport-categories.mjs
+# Older lots are repaired using the same strict explicit-badge rule as new
+# imports. The operation is idempotent and never overwrites a source value.
+node scripts/backfill-auction-explicit-drive-types.mjs --apply
 # Аудит целостности сообщает о расхождениях в данных, но не решает судьбу
 # выпуска: объявление продавца без VIN — повод для модерации, а не причина
 # оставить сервер на старой сборке. Отчёт остаётся в логе целиком.

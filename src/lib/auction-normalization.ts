@@ -1,3 +1,7 @@
+import { deriveAuctionDriveTypeFromText } from "./auction-drive-badge.mjs"
+
+export { deriveAuctionDriveTypeFromText }
+
 export const AUCTION_BODY_TYPES = ["SEDAN", "SUV", "HATCHBACK", "COUPE", "PICKUP", "WAGON", "MINIVAN"] as const
 
 const AUCTION_MAKE_ALIASES: Readonly<Record<string, string>> = {

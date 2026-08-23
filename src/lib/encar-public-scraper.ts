@@ -1,4 +1,4 @@
-import { isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
+import { deriveAuctionDriveTypeFromText, isIdentifiableAuctionMake, normalizeAuctionBodyType, normalizeAuctionDriveType, normalizeAuctionFuelType, normalizeAuctionMake, normalizeAuctionTransmission } from "@/lib/auction-normalization"
 import type { AuctionConditionCheck, AuctionConditionInfo, AuctionEquipmentItem, AuctionImportItem } from "@/lib/auction-import"
 import { translateToRussian } from "@/lib/nvidia-translate"
 import { isTranslationRefusal } from "@/lib/translation-refusal"
@@ -415,6 +415,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     asText(category.gradeEnglishName) || asText(category.gradeName),
     asText(category.gradeDetailEnglishName) || asText(category.gradeDetailName),
   ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index)
+  const model = modelParts.join(" ")
   if (!make || !isIdentifiableAuctionMake(make) || !modelParts.length || year === null || year < 1886 || year > new Date().getFullYear() + 1 || !listedPrice || listedPrice < 1) {
     throw new Error("В карточке Encar нет корректных марки, модели, года или цены")
   }
@@ -447,7 +448,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     sourceUrl,
     sourceTitle: asText(advertisement.title) || asText(advertisement.advertisementTitle),
     make,
-    model: modelParts.join(" "),
+    model,
     year,
     manufacturedMonth,
     sourcePrice: listedPrice * 10_000,
@@ -466,8 +467,8 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     // ничего не дал.
     power: firstPositiveInteger(spec.power, spec.horsePower, spec.horsepower, spec.ps, base.power, base.horsePower)
       ?? sellingPointPower
-      ?? lookupVehiclePower(make, modelParts.join(" ")),
-    driveType: normalizeAuctionDriveType(rawDrive),
+      ?? lookupVehiclePower(make, model),
+    driveType: normalizeAuctionDriveType(rawDrive) ?? deriveAuctionDriveTypeFromText(model),
     vin: asText(base.vin),
     lotNumber: requestedId,
     imageUrl: photos[0] || null,
