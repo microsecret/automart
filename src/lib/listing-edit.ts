@@ -7,6 +7,18 @@ export type ListingEditInput = {
   location?: string
   images?: string[]
   reason?: string | null
+  /* Характеристики машины.
+
+     Раньше правка их не касалась, и владелец объявления, поданного до
+     введения обязательных полей, не мог дозаполнить коробку или объём
+     двигателя — исправить неполную карточку было нечем. */
+  mileage?: number | null
+  operatingHours?: number | null
+  flightHours?: number | null
+  fuelType?: string | null
+  transmission?: string | null
+  engineVolume?: number | null
+  power?: number | null
 }
 
 type ParseResult = { value?: ListingEditInput; error?: string }
@@ -68,6 +80,52 @@ export function parseListingEditInput(raw: unknown): ParseResult {
     if (!images) return { error: "Допустимы до 12 изображений из защищённого источника" }
     value.images = images
   }
+  /* Числовые характеристики.
+
+     Пустая строка и null означают «убрать значение» — владелец мог
+     ошибиться при подаче. Ноль допустим для счётчиков пробега (новая
+     техника действительно «0 км»), но не для объёма и мощности: ноль
+     литров у двигателя невозможен. */
+  const numericSpecs: Array<{ key: "mileage" | "operatingHours" | "flightHours" | "engineVolume" | "power"; label: string; max: number; allowZero: boolean }> = [
+    { key: "mileage", label: "Пробег", max: 2_000_000, allowZero: true },
+    { key: "operatingHours", label: "Наработка", max: 200_000, allowZero: true },
+    { key: "flightHours", label: "Налёт", max: 200_000, allowZero: true },
+    { key: "engineVolume", label: "Объём двигателя", max: 100, allowZero: false },
+    { key: "power", label: "Мощность", max: 10_000, allowZero: false },
+  ]
+  for (const spec of numericSpecs) {
+    if (!hasOwn(input, spec.key)) continue
+    const raw = input[spec.key]
+    if (raw === null || raw === "") {
+      value[spec.key] = null
+      continue
+    }
+    const parsed = Number(raw)
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > spec.max) {
+      return { error: `${spec.label}: недопустимое значение` }
+    }
+    if (!spec.allowZero && parsed === 0) {
+      return { error: `${spec.label} не может быть нулевым` }
+    }
+    value[spec.key] = parsed
+  }
+
+  /* Топливо и коробка проверяются на длину, а не на принадлежность
+     справочнику: набор значений зависит от вида транспорта, и он уже
+     проверяется там, где известен этот вид. */
+  for (const key of ["fuelType", "transmission"] as const) {
+    if (!hasOwn(input, key)) continue
+    const raw = input[key]
+    if (raw === null || raw === "") {
+      value[key] = null
+      continue
+    }
+    if (typeof raw !== "string" || raw.length > 40) {
+      return { error: "Недопустимое значение характеристики" }
+    }
+    value[key] = raw
+  }
+
   if (hasOwn(input, "reason")) {
     if (input.reason !== null && typeof input.reason !== "string") return { error: "Причина должна быть текстом" }
     value.reason = typeof input.reason === "string" ? input.reason.trim().slice(0, 500) || null : null

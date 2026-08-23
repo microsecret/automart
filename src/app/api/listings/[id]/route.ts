@@ -164,8 +164,27 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       location: patch.location ?? before.location,
       images: patch.images ?? before.images,
     }
+
+    /* Характеристики машины правятся отдельно от общих полей.
+
+       У запчасти нет ни пробега, ни коробки, поэтому набор применяется
+       только к транспорту. `undefined` означает «не трогать», `null` —
+       «убрать значение»: владелец мог ошибиться при подаче. */
+    const SPEC_KEYS = ["mileage", "operatingHours", "flightHours", "fuelType", "transmission", "engineVolume", "power"] as const
+    const specPatch: Record<string, unknown> = {}
+    if (listing.vehicle) {
+      for (const key of SPEC_KEYS) {
+        const next = patch[key]
+        if (next === undefined) continue
+        const current = (listing.vehicle as Record<string, unknown>)[key]
+        if (next !== current) specPatch[key] = next
+      }
+    }
     const changedFields = (Object.keys(after) as Array<keyof typeof after>).filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]))
-    if (changedFields.length === 0) return NextResponse.json({ error: "Нет изменений для сохранения" }, { status: 400 })
+    const changedSpecs = Object.keys(specPatch)
+    if (changedFields.length === 0 && changedSpecs.length === 0) {
+      return NextResponse.json({ error: "Нет изменений для сохранения" }, { status: 400 })
+    }
 
     const requiresRemoderation = listing.status === LISTING_STATUS.ACTIVE
     const nextStatus = requiresRemoderation ? LISTING_STATUS.PENDING_MODERATION : listing.status
@@ -178,7 +197,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         description: after.description,
         images: JSON.stringify(after.images),
       }
-      if (listing.vehicle) await tx.vehicle.update({ where: { id: listing.vehicle.id }, data: subjectUpdate })
+      if (listing.vehicle) await tx.vehicle.update({ where: { id: listing.vehicle.id }, data: { ...subjectUpdate, ...specPatch } })
       else await tx.part.update({ where: { id: listing.part!.id }, data: subjectUpdate })
 
       const nextListing = await tx.listing.update({

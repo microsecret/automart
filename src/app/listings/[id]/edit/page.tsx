@@ -16,6 +16,7 @@ import {
   Skeleton,
   Stack,
   Text,
+  Select,
   Textarea,
   TextInput,
   ThemeIcon,
@@ -29,8 +30,22 @@ import { LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { isAdmin } from "@/lib/permissions"
+import { getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 
-type EditableSubject = { id: string; location: string; images: string | null }
+type EditableSubject = {
+  id: string
+  location: string
+  images: string | null
+  /* Характеристики машины. У запчасти их нет — поля необязательные. */
+  vehicleType?: string | null
+  mileage?: number | null
+  operatingHours?: number | null
+  flightHours?: number | null
+  fuelType?: string | null
+  transmission?: string | null
+  engineVolume?: number | null
+  power?: number | null
+}
 type EditableListing = {
   id: string
   userId: string
@@ -43,7 +58,20 @@ type EditableListing = {
 }
 
 type ListingResponse = { listing: EditableListing }
-type FormState = { title: string; description: string; price: string; location: string; reason: string }
+type FormState = {
+  title: string
+  description: string
+  price: string
+  location: string
+  reason: string
+  /* Характеристики хранятся строками: поле ввода отдаёт строку, а пустая
+     означает «убрать значение». */
+  usage: string
+  fuelType: string
+  transmission: string
+  engineVolume: string
+  power: string
+}
 type UpdateListingResponse = { requiresRemoderation?: boolean }
 
 export default function EditListingPage() {
@@ -71,6 +99,11 @@ export default function EditListingPage() {
       price: String(data.listing.price),
       location: subject.location,
       reason: "",
+      usage: String(subject.mileage ?? subject.operatingHours ?? subject.flightHours ?? ""),
+      fuelType: subject.fuelType || "",
+      transmission: subject.transmission || "",
+      engineVolume: subject.engineVolume != null ? String(subject.engineVolume) : "",
+      power: subject.power != null ? String(subject.power) : "",
     })
     replaceImages(parseImages(subject.images))
   }, [data, replaceImages])
@@ -88,6 +121,10 @@ export default function EditListingPage() {
 
   const subject = data.listing.vehicle || data.listing.part
   const isVehicle = Boolean(data.listing.vehicle)
+  /* Вид транспорта задаёт и подпись счётчика, и наборы топлива с коробкой:
+     у спецтехники моточасы, у самолёта — часы налёта. */
+  const vehicleType = data.listing.vehicle?.vehicleType || "CAR"
+  const usageMeta = getUsageMeta(vehicleType)
   const detailHref = subject ? `/listings/${isVehicle ? "vehicle" : "part"}/${subject.id}` : "/dashboard"
   const statusMeta = LISTING_STATUS_META[data.listing.status] || LISTING_STATUS_META.DRAFT
 
@@ -103,7 +140,23 @@ export default function EditListingPage() {
       const payload = await fetchJson<UpdateListingResponse>(`/api/listings/${data.listing.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: form.title, description: form.description, price, location: form.location, images, reason: form.reason }),
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          price,
+          location: form.location,
+          images,
+          reason: form.reason,
+          ...(isVehicle
+            ? {
+                [usageMeta.field]: form.usage === "" ? null : Number(form.usage),
+                fuelType: form.fuelType || null,
+                transmission: supportsTransmission(vehicleType) ? form.transmission || null : undefined,
+                engineVolume: form.engineVolume === "" ? null : Number(form.engineVolume),
+                power: form.power === "" ? null : Number(form.power),
+              }
+            : {}),
+        }),
       })
       notifications.show({
         title: payload.requiresRemoderation ? "Изменения отправлены на проверку" : "Изменения сохранены",
@@ -148,6 +201,65 @@ export default function EditListingPage() {
               <TextInput label="Город" required value={form.location} onChange={(event) => updateForm("location", event.currentTarget.value)} maxLength={120} />
             </Group>
             <Textarea label="Описание" value={form.description} onChange={(event) => updateForm("description", event.currentTarget.value)} minRows={5} autosize maxLength={5000} description={`${form.description.length}/5000`} />
+
+            {/* Характеристики машины.
+
+                Прежде их нельзя было править вовсе: объявление, поданное
+                до введения обязательных полей, оставалось неполным
+                навсегда — покупатель не понимал, что за машина.
+
+                Счётчик подписан по виду техники: у спецтехники и катера
+                моточасы, у воздушного судна — часы налёта. */}
+            {isVehicle && (
+              <>
+                <Text fw={700} mt="xs">Характеристики</Text>
+                <Text size="xs" c="dimmed" mt={-8}>
+                  Покупатель выбирает по ним. Объявление без года, пробега, коробки и топлива читается как неполное.
+                </Text>
+                <Group grow align="flex-start">
+                  <TextInput
+                    label={`${usageMeta.label}, ${usageMeta.unit}`}
+                    inputMode="numeric"
+                    value={form.usage}
+                    onChange={(event) => updateForm("usage", event.currentTarget.value.replace(/\D/g, ""))}
+                  />
+                  <Select
+                    label="Топливо"
+                    placeholder="Выберите"
+                    data={getSelectableFuelOptions(vehicleType)}
+                    value={form.fuelType || null}
+                    onChange={(value) => updateForm("fuelType", value || "")}
+                    clearable
+                  />
+                </Group>
+                <Group grow align="flex-start">
+                  {supportsTransmission(vehicleType) && (
+                    <Select
+                      label="Коробка передач"
+                      placeholder="Выберите"
+                      data={getSelectableTransmissionOptions(vehicleType)}
+                      value={form.transmission || null}
+                      onChange={(value) => updateForm("transmission", value || "")}
+                      clearable
+                    />
+                  )}
+                  <TextInput
+                    label="Объём двигателя, л"
+                    inputMode="decimal"
+                    placeholder="1.6"
+                    value={form.engineVolume}
+                    onChange={(event) => updateForm("engineVolume", event.currentTarget.value.replace(/[^\d.]/g, ""))}
+                  />
+                  <TextInput
+                    label="Мощность, л.с."
+                    inputMode="numeric"
+                    placeholder="150"
+                    value={form.power}
+                    onChange={(event) => updateForm("power", event.currentTarget.value.replace(/\D/g, ""))}
+                  />
+                </Group>
+              </>
+            )}
           </Stack>
         </Paper>
 
