@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { Box, Button, Loader, Stack, Text } from "@mantine/core"
@@ -8,6 +9,7 @@ import { IconAlertTriangle, IconBrandTelegram } from "@tabler/icons-react"
 import { tapFeedback, waitForTelegramWebApp } from "@/lib/telegram-webapp"
 import TelegramShell from "./TelegramShell"
 import TelegramFeed from "./TelegramFeed"
+import TelegramAuctions from "./TelegramAuctions"
 
 /**
  * Приложение LeWheel внутри Telegram.
@@ -50,6 +52,11 @@ function resolveStartRoute(initData: string): string | null {
 type Status = "loading" | "ready" | "browser" | "error"
 
 export default function TelegramMiniApp() {
+  /* Раздел читается из адреса, а не хранится в состоянии.
+
+     Тогда кнопка «назад» в Telegram возвращает к предыдущей вкладке, а
+     не закрывает приложение — как в любом мобильном приложении. */
+  const tab = useSearchParams().get("tab") === "auctions" ? "auctions" : "vehicles"
   const [status, setStatus] = useState<Status>("loading")
   const [message, setMessage] = useState("")
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
@@ -134,13 +141,21 @@ export default function TelegramMiniApp() {
     )
   }
 
+  const isAuctions = tab === "auctions"
+
   return (
-    <TelegramShell title="Свежие объявления" subtitle="Транспорт с проверкой и доставкой">
+    <TelegramShell
+      title={isAuctions ? "Мировые аукционы" : "Свежие объявления"}
+      subtitle={isAuctions ? "Корея, Япония, Китай — с расчётом под ключ" : "Транспорт с проверкой и доставкой"}
+      activeTab={isAuctions ? "/telegram?tab=auctions" : "/telegram"}
+    >
       {status === "loading" ? (
         <Stack align="center" py={40} gap="xs">
           <Loader size="sm" color="var(--tg-accent)" />
           <Text size="xs" c="var(--tg-hint)">Открываем ваш аккаунт…</Text>
         </Stack>
+      ) : isAuctions ? (
+        <TelegramAuctions />
       ) : (
         <TelegramFeed />
       )}

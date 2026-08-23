@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import Script from "next/script"
 import TelegramMiniApp from "@/components/telegram/TelegramMiniApp"
 import "./telegram.css"
@@ -16,7 +17,11 @@ export default function TelegramPage() {
   return (
     <>
       <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
-      <TelegramMiniApp />
+      {/* Раздел приложения читается из адреса, а чтение строки запроса
+          требует границы Suspense: без неё сборка страницы падает. */}
+      <Suspense fallback={null}>
+        <TelegramMiniApp />
+      </Suspense>
     </>
   )
 }
