@@ -494,6 +494,11 @@ export async function POST(request: NextRequest) {
       const v = await prisma.vehicle.findUnique({ where: { id: normalizedVehicleId } })
       if (!v) return NextResponse.json({ error: "ТС не найдено" }, { status: 404 })
       if (v.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+      const duplicate = await prisma.listing.findFirst({
+        where: { deletedAt: null, vehicleId: normalizedVehicleId },
+        select: { id: true },
+      })
+      if (duplicate) return NextResponse.json({ error: "Для этого объекта объявление уже создано", listingId: duplicate.id }, { status: 409 })
       resolvedVehicleDescription = normalizedDescription ?? v.description
       const publicationError = validateVehiclePublication({
         ...v,
@@ -507,16 +512,12 @@ export async function POST(request: NextRequest) {
       const p = await prisma.part.findUnique({ where: { id: normalizedPartId }, select: { id: true, userId: true } })
       if (!p) return NextResponse.json({ error: "Запчасть не найдена" }, { status: 404 })
       if (p.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+      const duplicate = await prisma.listing.findFirst({
+        where: { deletedAt: null, partId: normalizedPartId },
+        select: { id: true },
+      })
+      if (duplicate) return NextResponse.json({ error: "Для этого объекта объявление уже создано", listingId: duplicate.id }, { status: 409 })
     }
-
-    const duplicate = await prisma.listing.findFirst({
-      where: {
-        deletedAt: null,
-        ...(normalizedVehicleId ? { vehicleId: normalizedVehicleId } : { partId: normalizedPartId }),
-      },
-      select: { id: true },
-    })
-    if (duplicate) return NextResponse.json({ error: "Для этого объекта объявление уже создано", listingId: duplicate.id }, { status: 409 })
 
     const listing = await prisma.$transaction(async (tx) => {
       if (normalizedVehicleId) {
