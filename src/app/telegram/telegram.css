@@ -329,3 +329,69 @@
   line-height: 1.2;
   color: var(--tg-hint);
 }
+
+/* Поиск в ленте.
+
+   Без него лента годится, пока объявлений десяток: дальше человек,
+   которому нужна конкретная марка, листает вслепую. У auto.ru поле
+   поиска липкое и прячется при прокрутке вниз — здесь оно просто
+   липкое: приложение короче сайта, и прятать нечего.
+
+   Поле стоит под шапкой, а не в ней: шапка в Telegram своя, и
+   нагромождать два ряда над лентой значит отнять у неё экран. */
+.tg-search {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  padding: 8px 10px;
+  background: var(--tg-elevated);
+}
+
+.tg-search__input input {
+  height: 42px;
+  border: 1px solid color-mix(in srgb, var(--tg-hint) 26%, transparent);
+  border-radius: 12px;
+  background: var(--tg-surface);
+  color: var(--tg-text);
+  font-size: 0.94rem;
+}
+
+.tg-search__input input::placeholder {
+  color: var(--tg-hint);
+}
+
+.tg-search__input input:focus {
+  border-color: var(--tg-accent);
+  outline: none;
+}
+
+/* Значок поиска и кнопка очистки берут приглушённый цвет темы. */
+.tg-search__input .mantine-Input-section {
+  color: var(--tg-hint);
+}
+
+.tg-search__clear {
+  display: flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tg-hint) 22%, transparent);
+  color: var(--tg-text);
+  cursor: pointer;
+}
+
+/* Выдача приглушается на время обновления: человек набирает запрос и
+   видит, что идёт работа, не теряя прежний результат из виду. */
+.tg-feed {
+  transition: opacity 140ms ease-out;
+}
+
+.tg-feed[data-updating] {
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-feed {
+    transition: none;
+  }
+}

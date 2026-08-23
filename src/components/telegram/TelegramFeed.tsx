@@ -1,10 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useDeferredValue, useMemo, useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Badge, Box, Group, Loader, Stack, Text } from "@mantine/core"
-import { IconMapPin, IconPhotoOff } from "@tabler/icons-react"
+import { Badge, Box, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
+import { IconMapPin, IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { formatMileage, formatPriceShort } from "@/lib/format-numbers"
 import { parseImages } from "@/lib/format"
@@ -46,40 +46,92 @@ type FeedResponse = { listings: FeedListing[]; pagination?: { total: number } }
 const FEED_LIMIT = 24
 
 export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) {
+  const [search, setSearch] = useState("")
+  /* Запрос уходит с задержкой относительно набора: иначе каждая буква
+     отправляла бы запрос, а на телефоне это ещё и заметная задержка
+     отрисовки при медленной сети. */
+  const deferredSearch = useDeferredValue(search.trim())
+
   const query = new URLSearchParams({ type: "vehicle", limit: String(FEED_LIMIT), sort: "newest" })
   if (vehicleType) query.set("vehicleType", vehicleType)
+  if (deferredSearch.length > 1) query.set("q", deferredSearch)
 
-  const { data, isLoading } = useSWR<FeedResponse>(`/api/listings?${query}`, fetchJson, {
+  const { data, isLoading, isValidating } = useSWR<FeedResponse>(`/api/listings?${query}`, fetchJson, {
     revalidateOnFocus: false,
+    keepPreviousData: true,
   })
+
+  const searchField = (
+    <Box className="tg-search">
+      <TextInput
+        className="tg-search__input"
+        placeholder="Марка, модель или город"
+        aria-label="Поиск по объявлениям"
+        leftSection={<IconSearch size={16} />}
+        rightSection={
+          search ? (
+            <button
+              type="button"
+              className="tg-search__clear"
+              onClick={() => setSearch("")}
+              aria-label="Очистить поиск"
+            >
+              <IconX size={14} />
+            </button>
+          ) : null
+        }
+        value={search}
+        onChange={(event) => setSearch(event.currentTarget.value)}
+        size="md"
+      />
+    </Box>
+  )
 
   if (isLoading) {
     return (
-      <Stack align="center" py={48} gap="xs">
-        <Loader size="sm" color="var(--tg-accent)" />
-        <Text size="xs" c="var(--tg-hint)">Загружаем объявления…</Text>
-      </Stack>
+      <>
+        {searchField}
+        <Stack align="center" py={48} gap="xs">
+          <Loader size="sm" color="var(--tg-accent)" />
+          <Text size="xs" c="var(--tg-hint)">Загружаем объявления…</Text>
+        </Stack>
+      </>
     )
   }
 
   const listings = data?.listings || []
+  const searching = deferredSearch.length > 1
+
   if (!listings.length) {
     return (
-      <Stack align="center" py={48} gap={6}>
-        <Text fw={700} c="var(--tg-text)">Пока пусто</Text>
-        <Text size="xs" c="var(--tg-hint)" ta="center" maw={260}>
-          В этом разделе ещё нет объявлений. Разместите первым — это бесплатно.
-        </Text>
-      </Stack>
+      <>
+        {searchField}
+        <Stack align="center" py={48} gap={6}>
+          <Text fw={700} c="var(--tg-text)">
+            {searching ? "Ничего не нашлось" : "Пока пусто"}
+          </Text>
+          <Text size="xs" c="var(--tg-hint)" ta="center" maw={270}>
+            {searching
+              ? "Попробуйте другое название или проверьте раскладку."
+              : "В этом разделе ещё нет объявлений. Разместите первым — это бесплатно."}
+          </Text>
+        </Stack>
+      </>
     )
   }
 
   return (
-    <Stack gap="var(--tg-card-gap)" pb={8}>
-      {listings.map((listing) => (
-        <TelegramFeedCard key={listing.id} listing={listing} />
-      ))}
-    </Stack>
+    <>
+      {searchField}
+      {/* Выдача приглушается на время обновления, а не подменяется молча:
+          человек набирает запрос и видит, что идёт работа, не теряя
+          прежний результат из виду. */}
+      <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed" data-updating={isValidating || undefined}>
+        {listings.map((listing) => (
+          <TelegramFeedCard key={listing.id} listing={listing} />
+        ))}
+      </Stack>
+    </>
   )
 }
 
