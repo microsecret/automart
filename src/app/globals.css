@@ -5667,3 +5667,46 @@ h1[data-lw-hero] {
 .mantine-InputWrapper-label {
   opacity: 1;
 }
+
+/* Поиск на первом экране главной.
+
+   Поле поиска лежало только в панели фильтров — на 732 пикселях при
+   экране телефона 844, то есть почти за сгибом. Человек приходит на
+   маркетплейс искать машину и должен видеть, куда вводить, сразу.
+
+   Поле стоит на цветной подложке, поэтому фон у него сплошной белый:
+   полупрозрачное поле поверх градиента читается хуже, а вводимый текст
+   сливается с подложкой. */
+.home-hero__search {
+  max-width: 520px;
+}
+
+.home-hero__search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.home-hero__search-input .mantine-Input-input {
+  border-color: transparent;
+  background: var(--market-surface);
+  box-shadow: 0 1px 2px rgb(13 27 50 / 12%), 0 8px 20px -12px rgb(13 27 50 / 40%);
+}
+
+.home-hero__search-input .mantine-Input-input:focus-within {
+  border-color: var(--market-surface);
+  /* Кольцо белое, а не синее: на цветной подложке синее теряется. */
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 45%);
+}
+
+@media (max-width: 47.99em) {
+  .home-hero__search {
+    max-width: none;
+  }
+
+  /* На узком экране кнопка «Найти» сжимается до подписи, чтобы полю
+     осталось место для марки и модели. */
+  .home-hero__search .mantine-Button-root {
+    flex: 0 0 auto;
+    padding-inline: 14px;
+  }
+}

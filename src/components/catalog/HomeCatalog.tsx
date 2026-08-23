@@ -282,12 +282,46 @@ export default function HomePage(p: HomePageProps = {}) {
                 {/* Кнопки стояли к тексту почти вплотную и читались его
                     продолжением. Отступ над группой теперь заметно больше, чем
                     внутри неё, поэтому действие отделено от описания. */}
-                <Group gap="sm" mt={28} wrap="wrap">
-                  {/* Обе кнопки были равнозначны по весу, поэтому глаз не знал,
-                      с чего начать. Главное действие теперь янтарное — это
-                      единственный акцент на первом экране. */}
-                  <Button component={Link} href="#catalog" size="md" radius="md" className="home-auctions__cta" rightSection={<IconArrowUpRight size={16} />}>Смотреть объявления</Button>
+                {/* Поиск на первом экране, а не в панели фильтров ниже.
+
+                    Замер на телефоне: поле поиска лежало на 732 пикселях
+                    при экране 844 — почти за сгибом. Человек приходит
+                    искать машину и должен видеть, куда вводить, сразу.
+
+                    Поле общее с каталогом: набранное здесь сразу сужает
+                    выдачу ниже, а кнопка ведёт к результатам. */}
+                <Group gap="xs" mt={24} wrap="nowrap" className="home-hero__search">
+                  <TextInput
+                    className="home-hero__search-input"
+                    placeholder="Марка, модель или ключевое слово"
+                    aria-label="Поиск по объявлениям"
+                    leftSection={<IconSearch size={16} />}
+                    value={query}
+                    onChange={(event) => setQuery(event.currentTarget.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return
+                      document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }}
+                    size="md"
+                  />
+                  <Button
+                    component={Link}
+                    href="#catalog"
+                    size="md"
+                    radius="md"
+                    className="home-auctions__cta"
+                    aria-label="Показать объявления"
+                  >
+                    Найти
+                  </Button>
+                </Group>
+
+                <Group gap="sm" mt={16} wrap="wrap">
+                  {/* Кнопка каталога ушла в поиск выше — здесь остались
+                      второстепенные пути: аукционы для тех, кто ищет
+                      машину из-за границы. */}
                   <Button component={Link} href="/auctions" variant="white" color="dark" size="md" radius="md" leftSection={<IconSparkles size={16} />}>Мировые аукционы</Button>
+                  <Button component={Link} href="#catalog" variant="subtle" color="gray.0" size="md" radius="md" rightSection={<IconArrowUpRight size={16} />}>Весь каталог</Button>
                 </Group>
               </Box>
               <Box className="home-auctions__summary">
