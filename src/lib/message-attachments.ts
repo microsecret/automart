@@ -1,4 +1,5 @@
 import path from "path"
+import { isSafePrivateMessageStorageKey } from "./private-file-retention.mjs"
 
 export const MAX_MESSAGE_ATTACHMENTS = 4
 export const MAX_MESSAGE_ATTACHMENT_BYTES = 8 * 1024 * 1024
@@ -10,7 +11,7 @@ export function messageAttachmentsDirectory() {
 }
 
 export function isSafeMessageAttachmentStorageKey(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.jpg$/i.test(value)
+  return isSafePrivateMessageStorageKey(value)
 }
 
 export function messageAttachmentDownloadUrl(conversationId: string, attachmentId: string) {

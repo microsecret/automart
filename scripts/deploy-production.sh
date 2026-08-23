@@ -6,7 +6,10 @@ set -euo pipefail
 # on disk but are not served by the previous process yet.
 if command -v flock >/dev/null 2>&1; then
   exec 9>/tmp/automart-encar-collector.lock
-  DEPLOY_LOCK_WAIT_SECONDS="${AUTOMART_DEPLOY_LOCK_WAIT_SECONDS:-600}"
+  # A complete serialized source pass can legitimately take about half an hour
+  # when several upstreams reach their bounded request timeout. Ten minutes
+  # caused a healthy release to fail before the collector had finished.
+  DEPLOY_LOCK_WAIT_SECONDS="${AUTOMART_DEPLOY_LOCK_WAIT_SECONDS:-3600}"
   if ! [[ "$DEPLOY_LOCK_WAIT_SECONDS" =~ ^[1-9][0-9]*$ ]] || (( 10#$DEPLOY_LOCK_WAIT_SECONDS > 3600 )); then
     echo "AUTOMART_DEPLOY_LOCK_WAIT_SECONDS must be an integer from 1 to 3600" >&2
     exit 1
@@ -60,6 +63,8 @@ if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-encar-collector-cron.sh || echo "Warning: Encar collector cron was not installed"
   bash scripts/install-auction-telegram-cron.sh || echo "Warning: auction Telegram cron was not installed"
   bash scripts/install-partner-sla-cron.sh || echo "Warning: partner SLA cron was not installed"
+  bash scripts/install-analytics-prune-cron.sh || echo "Warning: analytics prune cron was not installed"
+  bash scripts/install-message-attachment-prune-cron.sh || echo "Warning: message attachment prune cron was not installed"
 fi
 npm run type-check
 npm run build
