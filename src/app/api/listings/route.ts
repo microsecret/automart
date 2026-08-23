@@ -9,6 +9,7 @@ import { Prisma } from "@prisma/client"
 import { getFuelOptions, getTransmissionOptions, supportsTransmission } from "@/lib/constants"
 import { getVehicleSubtypeConfig, isValidVehicleSubtype } from "@/lib/vehicleSubtypes"
 import { LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
+import { readStoredVehicleSubtype, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
@@ -488,10 +489,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Цена обязательна" }, { status: 400 })
     }
 
+    let resolvedVehicleDescription = normalizedDescription
     if (normalizedVehicleId) {
-      const v = await prisma.vehicle.findUnique({ where: { id: normalizedVehicleId }, select: { id: true, userId: true } })
+      const v = await prisma.vehicle.findUnique({ where: { id: normalizedVehicleId } })
       if (!v) return NextResponse.json({ error: "ТС не найдено" }, { status: 404 })
       if (v.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+      resolvedVehicleDescription = normalizedDescription ?? v.description
+      const publicationError = validateVehiclePublication({
+        ...v,
+        price: normalizedPrice,
+        description: resolvedVehicleDescription,
+        subtype: readStoredVehicleSubtype(v.vehicleType, v.typeDetails),
+      })
+      if (publicationError) return NextResponse.json({ error: publicationError }, { status: 400 })
     }
     if (normalizedPartId) {
       const p = await prisma.part.findUnique({ where: { id: normalizedPartId }, select: { id: true, userId: true } })
@@ -508,29 +518,37 @@ export async function POST(request: NextRequest) {
     })
     if (duplicate) return NextResponse.json({ error: "Для этого объекта объявление уже создано", listingId: duplicate.id }, { status: 409 })
 
-    const listing = await prisma.listing.create({
-      data: {
-        title: normalizedTitle,
-        description: normalizedDescription || null,
-        price: Math.trunc(normalizedPrice),
-        status: LISTING_STATUS.PENDING_MODERATION,
-        lastStatusChangedAt: new Date(),
-        userId: session.user.id,
-        vehicleId: normalizedVehicleId,
-        partId: normalizedPartId,
-        statusEvents: {
-          create: {
-            toStatus: LISTING_STATUS.PENDING_MODERATION,
-            actorId: session.user.id,
-            reason: "Отправлено владельцем на модерацию",
+    const listing = await prisma.$transaction(async (tx) => {
+      if (normalizedVehicleId) {
+        await tx.vehicle.update({
+          where: { id: normalizedVehicleId },
+          data: { price: Math.trunc(normalizedPrice), description: resolvedVehicleDescription },
+        })
+      }
+      return tx.listing.create({
+        data: {
+          title: normalizedTitle,
+          description: resolvedVehicleDescription || null,
+          price: Math.trunc(normalizedPrice),
+          status: LISTING_STATUS.PENDING_MODERATION,
+          lastStatusChangedAt: new Date(),
+          userId: session.user.id,
+          vehicleId: normalizedVehicleId,
+          partId: normalizedPartId,
+          statusEvents: {
+            create: {
+              toStatus: LISTING_STATUS.PENDING_MODERATION,
+              actorId: session.user.id,
+              reason: "Отправлено владельцем на модерацию",
+            },
           },
         },
-      },
-      include: {
-        vehicle: true,
-        part: true,
-        user: { select: { id: true, name: true, image: true } },
-      },
+        include: {
+          vehicle: true,
+          part: true,
+          user: { select: { id: true, name: true, image: true } },
+        },
+      })
     })
 
     return NextResponse.json(normalizeListing(listing), { status: 201 })

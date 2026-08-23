@@ -4826,6 +4826,21 @@ select {
   max-width: 860px;
 }
 
+.create-listing__readiness {
+  border-color: var(--market-warning-line);
+  background: color-mix(in srgb, var(--market-warning-surface) 76%, var(--market-surface));
+  transition:
+    border-color var(--ease-base) var(--ease-out),
+    background-color var(--ease-base) var(--ease-out),
+    box-shadow var(--ease-base) var(--ease-out);
+}
+
+.create-listing__readiness[data-ready] {
+  border-color: var(--market-success-line);
+  background: color-mix(in srgb, var(--market-success-surface) 76%, var(--market-surface));
+  box-shadow: var(--shadow-md);
+}
+
 .create-listing__journey {
   overflow: hidden;
   border-color: color-mix(in srgb, var(--market-primary) 20%, var(--market-line));
@@ -5057,6 +5072,12 @@ select {
 @media (max-width: 48em) {
   .admin-source-health__flags {
     justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-listing__readiness {
+    transition-duration: 0ms;
   }
 }
 

@@ -2,7 +2,8 @@
  * Обязательные характеристики объявления — по видам транспорта.
  *
  * Владелец площадки требует, чтобы объявление не публиковалось без главного:
- * год, пробег, коробка передач, тип топлива, объём двигателя. Но одинаковый
+ * год, пробег, коробка передач, топливо, двигатель, состояние и документы.
+ * Но одинаковый
  * набор для всех видов не работает — половина полей у части техники просто
  * не существует, и обязательность превратилась бы в тупик, из которого
  * продавец выходит только выдумыванием числа.
@@ -31,6 +32,7 @@ import { getUsageMeta, supportsTransmission } from "./constants.ts"
 
 export type RequiredSpecField =
   | "year"
+  | "subtype"
   | "mileage"
   | "operatingHours"
   | "flightHours"
@@ -38,6 +40,18 @@ export type RequiredSpecField =
   | "fuelType"
   | "engineVolume"
   | "power"
+  | "bodyType"
+  | "driveType"
+  | "color"
+  | "condition"
+  | "steeringWheel"
+  | "ownersCount"
+  | "documentsStatus"
+  | "damageInfo"
+  | "sellerType"
+  | "availability"
+  | "customsCleared"
+  | "generation"
 
 /** Значения, которые продавец подаёт в форме. Всё необязательное — nullable. */
 export type ListingSpecInput = {
@@ -50,6 +64,18 @@ export type ListingSpecInput = {
   fuelType?: string | null
   engineVolume?: number | string | null
   power?: number | string | null
+  bodyType?: string | null
+  driveType?: string | null
+  color?: string | null
+  condition?: string | null
+  steeringWheel?: string | null
+  ownersCount?: number | string | null
+  documentsStatus?: string | null
+  damageInfo?: string | null
+  sellerType?: string | null
+  availability?: string | null
+  customsCleared?: boolean | null
+  generation?: string | null
   /** Подтип: надстройка грузовика, категория ВС и т.п. — влияет на набор. */
   subtype?: string | null
 }
@@ -112,6 +138,13 @@ function isTowedUnit(input: ListingSpecInput): boolean {
   return normalizeVehicleType(input.vehicleType) === "TRUCK" && TRAILER_TRUCK_SUBTYPES.has(input.subtype || "")
 }
 
+/** Есть ли у техники силовая установка, для которой указывают мощность. */
+function hasPowerUnit(input: ListingSpecInput): boolean {
+  const vehicleType = normalizeVehicleType(input.vehicleType)
+  if (isTowedUnit(input)) return false
+  return !(vehicleType === "AIR" && ENGINELESS_AIR_SUBTYPES.has(input.subtype || ""))
+}
+
 /**
  * Набор обязательных характеристик для конкретной подачи.
  *
@@ -133,7 +166,7 @@ export function getRequiredSpecs(input: ListingSpecInput): RequiredSpec[] {
   // Топливо обязательно везде, где есть силовая установка. У мотоцикла оно
   // почти всегда бензин, но «почти» — не повод подставлять значение за
   // продавца: электромотоциклы на площадке уже есть.
-  if (!isTowedUnit(input)) {
+  if (hasPowerUnit(input)) {
     specs.push({ field: "fuelType", label: "Тип топлива" })
   }
 
@@ -143,12 +176,41 @@ export function getRequiredSpecs(input: ListingSpecInput): RequiredSpec[] {
 
   if (hasDisplacementEngine(input)) {
     specs.push({ field: "engineVolume", label: "Объём двигателя", unit: "л" })
-  } else if (!isTowedUnit(input)) {
-    // Замена, а не поблажка: у электрической и авиационной техники мощность —
-    // тот же ответ на вопрос «что там за мотор», который покупатель ищет
-    // в объёме двигателя.
+  }
+
+  if (hasPowerUnit(input)) {
+    // Auto.ru и Drom показывают мощность рядом с объёмом: это не замена для
+    // ДВС, а самостоятельная характеристика. У электротяги и авиации она
+    // остаётся главным числом силовой установки.
     specs.push({ field: "power", label: "Мощность", unit: "л.с." })
   }
+
+  if (vehicleType === "CAR") {
+    specs.push(
+      { field: "bodyType", label: "Тип кузова" },
+      { field: "driveType", label: "Привод" },
+      { field: "steeringWheel", label: "Расположение руля" },
+      { field: "ownersCount", label: "Количество владельцев по ПТС" },
+      { field: "generation", label: "Поколение" },
+    )
+  } else if (vehicleType === "TRUCK") {
+    specs.push(
+      { field: "steeringWheel", label: "Расположение руля" },
+      { field: "ownersCount", label: "Количество владельцев по ПТС" },
+    )
+  } else if (vehicleType === "MOTORCYCLE") {
+    specs.push({ field: "ownersCount", label: "Количество владельцев по ПТС" })
+  }
+
+  specs.push(
+    { field: "color", label: "Цвет" },
+    { field: "condition", label: "Общее состояние" },
+    { field: "documentsStatus", label: "Статус документов" },
+    { field: "damageInfo", label: "Сведения о повреждениях" },
+    { field: "sellerType", label: "Тип продавца" },
+    { field: "availability", label: "Наличие" },
+    { field: "customsCleared", label: "Таможенный статус" },
+  )
 
   return specs
 }
@@ -170,12 +232,18 @@ function readSpecValue(input: ListingSpecInput, field: RequiredSpecField): unkno
 
 function isSpecFilled(input: ListingSpecInput, field: RequiredSpecField): boolean {
   const value = readSpecValue(input, field)
-  if (field === "transmission" || field === "fuelType") return isFilledText(value)
+  if (field === "customsCleared") return typeof value === "boolean"
+  if (field === "transmission" || field === "fuelType" || field === "subtype"
+    || field === "bodyType" || field === "driveType" || field === "color"
+    || field === "condition" || field === "steeringWheel" || field === "documentsStatus"
+    || field === "damageInfo" || field === "sellerType" || field === "availability"
+    || field === "generation") return isFilledText(value)
   // Объём двигателя дробный, остальные счётчики целые — но для «заполнено ли»
   // разницы нет, обе проверки сводятся к неотрицательному числу.
   if (field === "engineVolume") return isFilledNumber(value) && Number(value) > 0
   if (field === "power") return isFilledNumber(value) && Number(value) > 0
   if (field === "year") return isFilledNumber(value) && Number(value) > 0
+  if (field === "ownersCount") return isFilledNumber(value) && Number.isInteger(Number(value))
   return isFilledNumber(value)
 }
 

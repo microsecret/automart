@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { canModeratorTransition, isListingStatus, LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { can } from "@/lib/permissions"
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
+import { readStoredVehicleSubtype, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
 
 export const dynamic = "force-dynamic"
 
@@ -49,10 +50,19 @@ export async function PATCH(request: NextRequest) {
     if (!id || !isListingStatus(status)) return NextResponse.json({ error: "Некорректные параметры" }, { status: 400 })
     if (status === LISTING_STATUS.REJECTED && !reason) return NextResponse.json({ error: "Укажите причину отклонения" }, { status: 400 })
 
-    const listing = await prisma.listing.findUnique({ where: { id }, select: { id: true, status: true, deletedAt: true } })
+    const listing = await prisma.listing.findUnique({ where: { id }, select: { id: true, status: true, deletedAt: true, vehicle: true } })
     if (!listing || listing.deletedAt) return NextResponse.json({ error: "Не найдено" }, { status: 404 })
     if (!canModeratorTransition(listing.status as typeof LISTING_STATUS[keyof typeof LISTING_STATUS], status)) {
       return NextResponse.json({ error: "Этот переход статуса недоступен" }, { status: 409 })
+    }
+    if (status === LISTING_STATUS.ACTIVE && listing.vehicle) {
+      const publicationError = validateVehiclePublication({
+        ...listing.vehicle,
+        subtype: readStoredVehicleSubtype(listing.vehicle.vehicleType, listing.vehicle.typeDetails),
+      })
+      if (publicationError) {
+        return NextResponse.json({ error: `Нельзя опубликовать неполное объявление. ${publicationError}` }, { status: 400 })
+      }
     }
 
     const now = new Date()

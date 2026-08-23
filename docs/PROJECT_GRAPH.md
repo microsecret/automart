@@ -49,6 +49,7 @@ flowchart LR
 | Production schedule | `scripts/run-encar-collector.sh` | cron installer and deployment script |
 | Delivery partner onboarding | `src/app/api/delivery-organizations/route.ts` | delivery workspace, admin partner registry |
 | Garage to moderated listing | `src/app/api/garage/route.ts` | dashboard garage, vehicle creation workspace |
+| Vehicle publication readiness | `src/lib/vehicle-publication-readiness.ts` | full vehicle form, owner resubmission/edit API, listing creation API, admin approval |
 | Search metadata and structured data | `src/app/layout.tsx` | route layouts, `StructuredData.tsx`, sitemap/robots/manifest |
 | SEO landing metadata | `src/lib/seo-metadata.ts` | category generator and public route layouts |
 | iAutos gallery relay | `src/app/api/auction-media/route.ts` | `media-url.ts`, detail gallery |
@@ -170,17 +171,26 @@ production builds never depend on a third-party font request.
 ```mermaid
 flowchart LR
   Garage["Private garage vehicle"] --> Prefill["Owner-only prefilled listing form"]
-  Prefill --> Photos["Price, photos and description"]
-  Photos --> Pending["PENDING_MODERATION"]
+  Legacy["Legacy quick URL"] --> Prefill
+  Prefill --> Details["Identity, specifications, condition and documents"]
+  Details --> Photos["Price, photos and description"]
+  Photos --> Gate{"Shared publication-readiness gate"}
+  Gate -->|complete and valid| Pending["PENDING_MODERATION"]
+  Gate -->|missing or invalid| Prefill
   Pending --> Dashboard["My listings status and reason"]
-  Pending -->|approved| Public["Public catalogue"]
+  Pending --> AdminGate{"Same gate on admin approval"}
+  AdminGate -->|approved| Public["Public catalogue"]
+  AdminGate -->|incomplete| Dashboard
   Pending -->|changes required| Dashboard
 ```
 
 The garage endpoint can return one selected vehicle only when it belongs to the
 current user and remains in the private garage category. Creating an advert
 still creates a new transport record and listing atomically; it never publishes
-the private garage record directly.
+the private garage record directly. The legacy quick URL redirects into the
+full form. Creation, owner resubmission and edit, and administrator approval all
+use the same readiness contract, so incomplete vehicles cannot enter or leave
+the moderation queue through an alternate endpoint.
 
 ## Source inventory
 

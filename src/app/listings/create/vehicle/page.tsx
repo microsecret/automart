@@ -8,7 +8,8 @@ import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto } from "@tab
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
-import { describeRequiredSpecs, getMissingSpecs, getRequiredSpecs } from "@/lib/listing-required-specs"
+import { describeRequiredSpecs } from "@/lib/listing-required-specs"
+import { getMissingVehiclePublicationRequirements, getVehiclePublicationRequirements, type VehiclePublicationField } from "@/lib/vehicle-publication-readiness"
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import ListingPhotoGrid from "@/components/uploads/ListingPhotoGrid"
@@ -93,6 +94,7 @@ function CreateVehicleWorkspace() {
   const garagePrefillAttempted = useRef(false)
   const [garagePrefillState, setGaragePrefillState] = useState<"loading" | "loaded" | "error" | null>(null)
   const [loading, setLoading] = useState(false)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
   const { images, uploadingImages, uploadPhotos, removeImage, replaceImages } = useMarketplaceImageUpload()
   const [categories, setCategories] = useState<VehicleCategory[]>([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
@@ -101,13 +103,13 @@ function CreateVehicleWorkspace() {
   const [f, setF] = useState({
     title: "", make: "", model: "", year: "", price: "", mileage: "",
     operatingHours: "", flightHours: "",
-    vin: "", serialNumber: "", registrationNumber: "", fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SEDAN",
-    color: "", doors: "", engineVolume: "", power: "", driveType: "FWD",
-    condition: "EXCELLENT", location: "", description: "",
+    vin: "", serialNumber: "", registrationNumber: "", fuelType: isGarageMode ? "GASOLINE" : "", transmission: isGarageMode ? "AUTOMATIC" : "", bodyType: isGarageMode ? "SEDAN" : "",
+    color: "", doors: "", engineVolume: "", power: "", driveType: isGarageMode ? "FWD" : "",
+    condition: isGarageMode ? "EXCELLENT" : "", location: "", description: "",
     vehicleType: "CAR",
-    steeringWheel: "LEFT", ownersCount: "", documentsStatus: "CLEAN",
-    damageInfo: "NONE", sellerType: "OWNER", availability: "IN_STOCK",
-    customsCleared: "true", generation: "", keywords: "",
+    steeringWheel: isGarageMode ? "LEFT" : "", ownersCount: "", documentsStatus: isGarageMode ? "CLEAN" : "",
+    damageInfo: isGarageMode ? "NONE" : "", sellerType: isGarageMode ? "OWNER" : "", availability: isGarageMode ? "IN_STOCK" : "",
+    customsCleared: isGarageMode ? "true" : "", generation: "", keywords: "",
     motorcycleType: "", finalDrive: "", strokeCycle: "", truckBodyType: "", axleFormula: "", ecoClass: "", payloadKg: "", grossWeightKg: "", transmissionVariant: "",
     specialType: "", operatingWeightKg: "", bucketVolumeM3: "", diggingDepthM: "", waterType: "", hullMaterial: "", hullLengthM: "", waterEngineType: "",
     airType: "", airEngineType: "", engineCount: "", mtowKg: "", passengerCapacity: "",
@@ -181,6 +183,7 @@ function CreateVehicleWorkspace() {
   if (!session) return null
 
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }))
+  const numericString = (value: string | number) => value === "" ? "" : String(value)
   const setMake = (value: string) => setF((previous) => {
     const make = value.trimStart()
     return make === previous.make ? previous : { ...previous, make, model: "" }
@@ -195,10 +198,19 @@ function CreateVehicleWorkspace() {
     registrationNumber: "",
     // Пустая строка вместо «OTHER»: подставлять «Другое» по умолчанию значило
     // заполнять поле за продавца тем, что покупателю ничего не говорит.
-    fuelType: getSelectableFuelOptions(vehicleType)[0]?.value || "",
-    transmission: getSelectableTransmissionOptions(vehicleType)[0]?.value || "",
-    bodyType: vehicleType === "CAR" ? previous.bodyType || "SEDAN" : "",
-    driveType: vehicleType === "CAR" ? previous.driveType || "FWD" : "",
+    fuelType: "",
+    transmission: "",
+    bodyType: "",
+    driveType: "",
+    condition: "",
+    steeringWheel: "",
+    ownersCount: "",
+    documentsStatus: "",
+    damageInfo: "",
+    sellerType: "",
+    availability: "",
+    customsCleared: "",
+    generation: "",
   }))
   const usageMeta = getUsageMeta(f.vehicleType)
   const identityMeta = getVehicleIdentityMeta(f.vehicleType)
@@ -218,9 +230,18 @@ function CreateVehicleWorkspace() {
   const submittedSubtypeValue = f.vehicleType === "TRUCK" ? f.truckBodyType
     : f.vehicleType === "AIR" ? f.airType
     : ""
-  const specInput = {
+  const publicationInput = {
+    make: f.make,
+    model: f.model,
     vehicleType: f.vehicleType,
     year: f.year,
+    price: f.price,
+    location: f.location,
+    vin: f.vin,
+    serialNumber: f.serialNumber,
+    registrationNumber: f.registrationNumber,
+    description: f.description,
+    images,
     mileage: f.mileage,
     operatingHours: f.operatingHours,
     flightHours: f.flightHours,
@@ -229,23 +250,47 @@ function CreateVehicleWorkspace() {
     engineVolume: f.engineVolume,
     power: f.power,
     subtype: submittedSubtypeValue,
+    bodyType: f.bodyType,
+    driveType: f.driveType,
+    color: f.color,
+    condition: f.condition,
+    steeringWheel: f.steeringWheel,
+    ownersCount: f.ownersCount,
+    documentsStatus: f.documentsStatus,
+    damageInfo: f.damageInfo,
+    sellerType: f.sellerType,
+    availability: f.availability,
+    customsCleared: f.customsCleared === "" ? null : f.customsCleared === "true",
+    generation: f.generation,
   }
   // В гараже карточка приватная и дополняется постепенно — там строгий набор
   // не нужен, он касается только того, что уходит в каталог.
-  const missingSpecs = isGarageMode ? [] : getMissingSpecs(specInput)
-  const requiredSpecFields = new Set(getRequiredSpecs(specInput).map((spec) => spec.field))
+  const publicationRequirements = isGarageMode ? [] : getVehiclePublicationRequirements(publicationInput)
+  const missingRequirements = isGarageMode ? [] : getMissingVehiclePublicationRequirements(publicationInput)
+  const requiredSpecFields = new Set<VehiclePublicationField>(publicationRequirements.map((requirement) => requirement.field))
+  const missingFields = new Map<VehiclePublicationField, string>(missingRequirements.map((requirement) => [requirement.field, requirement.label]))
+  const completedRequirementCount = publicationRequirements.length - missingRequirements.length
+  const moderationReady = !isGarageMode && missingRequirements.length === 0
+  const fieldError = (field: VehiclePublicationField) => submitAttempted ? missingFields.get(field) : undefined
+  const subtypeControlField = f.vehicleType === "MOTORCYCLE" ? "motorcycleType"
+    : f.vehicleType === "TRUCK" ? "truckBodyType"
+    : f.vehicleType === "SPECIAL" ? "specialType"
+    : f.vehicleType === "WATER" ? "waterType"
+    : f.vehicleType === "AIR" ? "airType"
+    : ""
+  const focusRequirement = (field: VehiclePublicationField) => {
+    const control = field === "subtype" ? subtypeControlField : field
+    if (!control) return
+    document.getElementById(`vehicle-field-${control}`)?.focus()
+  }
 
   const isVehicleDetailsReady = Boolean(f.make && f.model && f.year && (isGarageMode || (f.price && f.location.trim())))
   const currentJourneyStep = images.length > 0 ? 2 : isVehicleDetailsReady ? 1 : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!f.make || !f.model || !f.year || (!isGarageMode && (!f.price || !f.location.trim()))) {
+    if (isGarageMode && (!f.make || !f.model || !f.year)) {
       notifications.show({ title: "Ошибка", message: "Заполните обязательные поля", color: "red" })
-      return
-    }
-    if (!isGarageMode && images.length === 0) {
-      notifications.show({ title: "Добавьте фото", message: "Для публикации транспорта нужна хотя бы одна фотография.", color: "orange" })
       return
     }
     if (!isGarageMode && !selectedCategory) {
@@ -254,12 +299,14 @@ function CreateVehicleWorkspace() {
     }
     // Названо поимённо: в форме четыре десятка полей, и «заполните
     // обязательные» заставляет продавца искать пропуск глазами.
-    if (missingSpecs.length > 0) {
+    if (missingRequirements.length > 0) {
+      setSubmitAttempted(true)
       notifications.show({
-        title: "Не хватает характеристик",
-        message: `Заполните: ${missingSpecs.map((spec) => (spec.unit ? `${spec.label} (${spec.unit})` : spec.label)).join(", ")}.`,
+        title: "Объявление пока не готово",
+        message: `Заполните: ${missingRequirements.map((requirement) => requirement.label).join(", ")}.`,
         color: "orange",
       })
+      requestAnimationFrame(() => focusRequirement(missingRequirements[0].field))
       return
     }
     setLoading(true)
@@ -289,7 +336,7 @@ function CreateVehicleWorkspace() {
             damageInfo: f.damageInfo,
             sellerType: f.sellerType,
             availability: f.availability,
-            customsCleared: f.customsCleared === "true",
+            customsCleared: f.customsCleared === "" ? null : f.customsCleared === "true",
             generation: f.generation,
             keywords: f.keywords,
             location: f.location,
@@ -325,7 +372,7 @@ function CreateVehicleWorkspace() {
           steeringWheel: f.steeringWheel, ownersCount: f.ownersCount || null,
           documentsStatus: f.documentsStatus, damageInfo: f.damageInfo,
           sellerType: f.sellerType, availability: f.availability,
-          customsCleared: f.customsCleared === "true",
+          customsCleared: f.customsCleared === "" ? null : f.customsCleared === "true",
           generation: f.generation, keywords: f.keywords,
           vehicleType: f.vehicleType,
           typeDetails: {
@@ -405,6 +452,48 @@ function CreateVehicleWorkspace() {
           </Alert>
         )}
 
+        {!isGarageMode && (
+          <Paper
+            className="create-listing__readiness"
+            data-ready={moderationReady || undefined}
+            radius="md"
+            p="md"
+            withBorder
+            aria-live="polite"
+          >
+            <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
+              <Group gap="sm" wrap="nowrap">
+                <ThemeIcon color={moderationReady ? "teal" : "orange"} variant="light" radius="md" size={38}>
+                  <IconCheck size={20} />
+                </ThemeIcon>
+                <Stack gap={1}>
+                  <Text fw={800} fz="sm" c="var(--market-ink)">Готовность к модерации</Text>
+                  <Text size="xs" c="var(--market-muted)">
+                    {moderationReady
+                      ? "Все обязательные сведения заполнены."
+                      : `Заполнено ${completedRequirementCount} из ${publicationRequirements.length} обязательных пунктов.`}
+                  </Text>
+                </Stack>
+              </Group>
+              <Badge color={moderationReady ? "teal" : "orange"} variant="light" size="lg" radius="sm">
+                {moderationReady ? "Готово" : `Осталось ${missingRequirements.length}`}
+              </Badge>
+            </Group>
+            {!moderationReady && (
+              <Group gap={6} mt="sm" wrap="wrap">
+                {missingRequirements.slice(0, 7).map((requirement) => (
+                  <Badge key={requirement.field} color="gray" variant="light" radius="sm" tt="none">
+                    {requirement.label}
+                  </Badge>
+                ))}
+                {missingRequirements.length > 7 && (
+                  <Badge color="gray" variant="outline" radius="sm">+{missingRequirements.length - 7}</Badge>
+                )}
+              </Group>
+            )}
+          </Paper>
+        )}
+
         <Paper className="create-listing__journey" radius="md" p="sm" withBorder>
           <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={0}>
             {[
@@ -457,11 +546,13 @@ function CreateVehicleWorkspace() {
                 {!isGarageMode && <TextInput label="Заголовок (необязательно)" description="Если оставить пустым, подставим год, марку и модель." placeholder="Например, Toyota Camry в отличном состоянии" value={f.title} onChange={(e) => set("title", e.target.value)} size="sm" />}
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <Autocomplete
+                    id="vehicle-field-make"
                     className="create-listing__catalog-autocomplete"
                     label="Марка"
                     placeholder="Toyota"
                     description="Начните вводить или выберите из каталога"
                     required
+                    error={fieldError("make")}
                     value={f.make}
                     onChange={setMake}
                     onClear={() => setF((previous) => ({ ...previous, make: "", model: "" }))}
@@ -480,11 +571,13 @@ function CreateVehicleWorkspace() {
                     )}
                   />
                   <Autocomplete
+                    id="vehicle-field-model"
                     className="create-listing__catalog-autocomplete"
                     label="Модель"
                     placeholder={f.make ? "Выберите или введите модель" : "Сначала укажите марку"}
                     description={f.make && modelOptions.length === 0 ? "Модель можно указать вручную" : undefined}
                     required
+                    error={fieldError("model")}
                     disabled={!f.make.trim()}
                     value={f.model}
                     onChange={(value) => set("model", value)}
@@ -498,13 +591,13 @@ function CreateVehicleWorkspace() {
                   />
                 </SimpleGrid>
                 <SimpleGrid cols={{ base: 1, sm: isGarageMode ? 2 : 3 }} spacing="sm">
-                  <NumberInput label="Год" placeholder="2018" required value={f.year ? Number(f.year) : undefined} onChange={(v) => set("year", String(v || ""))} size="sm" min={1886} max={new Date().getFullYear() + 1} />
-                  {!isGarageMode && <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />}
-                  <NumberInput label={`${usageMeta.label}, ${usageMeta.unit}`} required={requiredSpecFields.has(usageMeta.field)} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, String(v || ""))} size="sm" min={0} />
+                  <NumberInput id="vehicle-field-year" label="Год" placeholder="2018" required value={f.year ? Number(f.year) : undefined} onChange={(v) => set("year", numericString(v))} error={fieldError("year")} size="sm" min={1886} max={new Date().getFullYear() + 1} />
+                  {!isGarageMode && <NumberInput id="vehicle-field-price" label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", numericString(v))} error={fieldError("price")} size="sm" min={1} />}
+                  <NumberInput id={`vehicle-field-${usageMeta.field}`} label={`${usageMeta.label}, ${usageMeta.unit}`} required={requiredSpecFields.has(usageMeta.field)} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, numericString(v))} error={fieldError(usageMeta.field)} size="sm" min={0} />
                 </SimpleGrid>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                  <TextInput label="Город" placeholder="Москва" required={!isGarageMode} value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
-                  <TextInput label={identityMeta.label} placeholder={identityMeta.placeholder} value={identityMeta.field === "vin" ? f.vin : identityMeta.field === "serialNumber" ? f.serialNumber : f.registrationNumber} onChange={(e) => set(identityMeta.field, e.target.value.toUpperCase())} size="sm" maxLength={identityMeta.maxLength} required={!isGarageMode} description={isGarageMode ? "Необязательно. VIN поможет быстро создать объявление позже." : identityMeta.description} />
+                  <TextInput id="vehicle-field-location" label="Город" placeholder="Москва" required={!isGarageMode} value={f.location} onChange={(e) => set("location", e.target.value)} error={fieldError("location")} size="sm" />
+                  <TextInput id={`vehicle-field-${identityMeta.field}`} label={identityMeta.label} placeholder={identityMeta.placeholder} value={identityMeta.field === "vin" ? f.vin : identityMeta.field === "serialNumber" ? f.serialNumber : f.registrationNumber} onChange={(e) => set(identityMeta.field, e.target.value.toUpperCase())} error={fieldError(identityMeta.field)} size="sm" maxLength={identityMeta.maxLength} required={!isGarageMode} description={isGarageMode ? "Необязательно. VIN поможет быстро создать объявление позже." : identityMeta.description} />
                 </SimpleGrid>
               </Stack>
             </Paper>
@@ -513,17 +606,17 @@ function CreateVehicleWorkspace() {
             <Paper className="create-listing__section" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Характеристики</Text>
-                <Group gap="sm" grow>
-                  <Select label={f.vehicleType === "AIR" ? "Тип топлива" : "Топливо"} required={requiredSpecFields.has("fuelType")} data={fuelOptions.map(t => ({ value: t.value, label: t.label }))} value={f.fuelType} onChange={(v) => set("fuelType", v || "")} size="sm" />
-                  {supportsTransmission(f.vehicleType) && <Select label="КПП" required={requiredSpecFields.has("transmission")} data={transmissionOptions.map(t => ({ value: t.value, label: t.label }))} value={f.transmission} onChange={(v) => set("transmission", v || "")} size="sm" />}
-                  {f.vehicleType === "CAR" && <Select label="Привод" data={DRIVE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.driveType} onChange={(v) => set("driveType", v || "")} size="sm" />}
-                </Group>
+                <SimpleGrid cols={{ base: 1, sm: f.vehicleType === "CAR" ? 3 : 2 }} spacing="sm">
+                  <Select id="vehicle-field-fuelType" label={f.vehicleType === "AIR" ? "Тип топлива" : "Топливо"} placeholder="Выберите" required={requiredSpecFields.has("fuelType")} data={fuelOptions.map(t => ({ value: t.value, label: t.label }))} value={f.fuelType || null} onChange={(v) => set("fuelType", v || "")} error={fieldError("fuelType")} size="sm" />
+                  {supportsTransmission(f.vehicleType) && <Select id="vehicle-field-transmission" label="КПП" placeholder="Выберите" required={requiredSpecFields.has("transmission")} data={transmissionOptions.map(t => ({ value: t.value, label: t.label }))} value={f.transmission || null} onChange={(v) => set("transmission", v || "")} error={fieldError("transmission")} size="sm" />}
+                  {f.vehicleType === "CAR" && <Select id="vehicle-field-driveType" label="Привод" placeholder="Выберите" required={requiredSpecFields.has("driveType")} data={DRIVE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.driveType || null} onChange={(v) => set("driveType", v || "")} error={fieldError("driveType")} size="sm" />}
+                </SimpleGrid>
                 {f.vehicleType === "CAR" && (
-                  <Select label="Тип кузова" data={BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.bodyType} onChange={(v) => set("bodyType", v || "")} size="sm" />
+                  <Select id="vehicle-field-bodyType" label="Тип кузова" placeholder="Выберите" required={requiredSpecFields.has("bodyType")} data={BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.bodyType || null} onChange={(v) => set("bodyType", v || "")} error={fieldError("bodyType")} size="sm" />
                 )}
                 {f.vehicleType === "MOTORCYCLE" && (
                   <Group gap="sm" grow>
-                    <Select label="Тип мотоцикла" data={MOTORCYCLE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.motorcycleType} onChange={(v) => set("motorcycleType", v || "")} size="sm" />
+                    <Select id="vehicle-field-motorcycleType" label="Тип мотоцикла" placeholder="Выберите" required={requiredSpecFields.has("subtype")} data={MOTORCYCLE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.motorcycleType || null} onChange={(v) => set("motorcycleType", v || "")} error={fieldError("subtype")} size="sm" />
                     <Select label="Главная передача" data={[{ value: "CHAIN", label: "Цепь" }, { value: "SHAFT", label: "Кардан" }, { value: "BELT", label: "Ремень" }]} value={f.finalDrive} onChange={(v) => set("finalDrive", v || "")} size="sm" />
                     <Select label="Тактность" data={[{ value: "2T", label: "2T" }, { value: "4T", label: "4T" }]} value={f.strokeCycle} onChange={(v) => set("strokeCycle", v || "")} size="sm" />
                   </Group>
@@ -531,7 +624,7 @@ function CreateVehicleWorkspace() {
                 {f.vehicleType === "TRUCK" && (
                   <Stack gap="sm">
                     <Group gap="sm" grow>
-                      <Select label="Тип кузова / прицепа" data={TRUCK_BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.truckBodyType} onChange={(v) => set("truckBodyType", v || "")} size="sm" />
+                      <Select id="vehicle-field-truckBodyType" label="Тип кузова / прицепа" placeholder="Выберите" required={requiredSpecFields.has("subtype")} data={TRUCK_BODY_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.truckBodyType || null} onChange={(v) => set("truckBodyType", v || "")} error={fieldError("subtype")} size="sm" />
                       <Select label="Колёсная формула" data={TRUCK_AXLE_FORMULAS.map(t => ({ value: t.value, label: t.label }))} value={f.axleFormula} onChange={(v) => set("axleFormula", v || "")} size="sm" />
                       <Select label="Экологический класс" data={["Евро-3", "Евро-4", "Евро-5", "Евро-6"].map(value => ({ value, label: value }))} value={f.ecoClass} onChange={(v) => set("ecoClass", v || "")} size="sm" />
                     </Group>
@@ -544,7 +637,7 @@ function CreateVehicleWorkspace() {
                 )}
                 {f.vehicleType === "SPECIAL" && (
                   <Stack gap="sm">
-                    <Select label="Вид спецтехники" data={SPECIAL_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.specialType} onChange={(v) => set("specialType", v || "")} size="sm" />
+                    <Select id="vehicle-field-specialType" label="Вид спецтехники" placeholder="Выберите" required={requiredSpecFields.has("subtype")} data={SPECIAL_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.specialType || null} onChange={(v) => set("specialType", v || "")} error={fieldError("subtype")} size="sm" />
                     <Group gap="sm" grow>
                       <NumberInput label="Эксплуатационная масса, кг" value={f.operatingWeightKg ? Number(f.operatingWeightKg) : undefined} onChange={(v) => set("operatingWeightKg", String(v || ""))} size="sm" min={0} />
                       <NumberInput label="Объём ковша, м³" value={f.bucketVolumeM3 ? Number(f.bucketVolumeM3) : undefined} onChange={(v) => set("bucketVolumeM3", String(v || ""))} size="sm" min={0} decimalScale={2} />
@@ -555,7 +648,7 @@ function CreateVehicleWorkspace() {
                 {f.vehicleType === "WATER" && (
                   <Stack gap="sm">
                     <Group gap="sm" grow>
-                      <Select label="Тип водного транспорта" data={WATER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.waterType} onChange={(v) => set("waterType", v || "")} size="sm" />
+                      <Select id="vehicle-field-waterType" label="Тип водного транспорта" placeholder="Выберите" required={requiredSpecFields.has("subtype")} data={WATER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.waterType || null} onChange={(v) => set("waterType", v || "")} error={fieldError("subtype")} size="sm" />
                       <Select label="Материал корпуса" data={HULL_MATERIALS.map(t => ({ value: t.value, label: t.label }))} value={f.hullMaterial} onChange={(v) => set("hullMaterial", v || "")} size="sm" />
                       <Select label="Тип мотора" data={[{ value: "OUTBOARD", label: "Подвесной" }, { value: "INBOARD", label: "Стационарный" }, { value: "JET", label: "Водомёт" }]} value={f.waterEngineType} onChange={(v) => set("waterEngineType", v || "")} size="sm" />
                     </Group>
@@ -565,7 +658,7 @@ function CreateVehicleWorkspace() {
                 {f.vehicleType === "AIR" && (
                   <Stack gap="sm">
                     <Group gap="sm" grow>
-                      <Select label="Категория ВС" data={AIR_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.airType} onChange={(v) => set("airType", v || "")} size="sm" />
+                      <Select id="vehicle-field-airType" label="Категория ВС" placeholder="Выберите" required={requiredSpecFields.has("subtype")} data={AIR_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.airType || null} onChange={(v) => set("airType", v || "")} error={fieldError("subtype")} size="sm" />
                       <Select label="Тип двигателя" data={ENGINE_TYPE_AIR.map(t => ({ value: t.value, label: t.label }))} value={f.airEngineType} onChange={(v) => set("airEngineType", v || "")} size="sm" />
                     </Group>
                     <Group gap="sm" grow>
@@ -579,15 +672,16 @@ function CreateVehicleWorkspace() {
                   {/* Объём в литрах спрашивается там, где он есть. У электротяги
                       и воздушного судна его нет — вместо него обязательна
                       мощность, она есть у любой силовой установки. */}
-                  <TextInput label="Объём двигателя, л" required={requiredSpecFields.has("engineVolume")} placeholder="2.0" value={f.engineVolume} onChange={(e) => set("engineVolume", e.target.value)} size="sm" type="number" step="0.1" />
-                  <TextInput label="Мощность, л.с." required={requiredSpecFields.has("power")} placeholder="150" value={f.power} onChange={(e) => set("power", e.target.value)} size="sm" type="number" />
-                  <TextInput label="Цвет" placeholder="Белый" value={f.color} onChange={(e) => set("color", e.target.value)} size="sm" />
+                  <TextInput id="vehicle-field-engineVolume" label="Объём двигателя, л" required={requiredSpecFields.has("engineVolume")} placeholder="2.0" value={f.engineVolume} onChange={(e) => set("engineVolume", e.target.value)} error={fieldError("engineVolume")} size="sm" type="number" min="0.1" max="100" step="0.1" />
+                  <TextInput id="vehicle-field-power" label="Мощность, л.с." required={requiredSpecFields.has("power")} placeholder="150" value={f.power} onChange={(e) => set("power", e.target.value)} error={fieldError("power")} size="sm" type="number" min="1" max="100000" />
+                  <TextInput id="vehicle-field-color" label="Цвет" required={requiredSpecFields.has("color")} placeholder="Белый" value={f.color} onChange={(e) => set("color", e.target.value)} error={fieldError("color")} size="sm" />
                 </Group>
                 <Stack gap={6}>
-                  <Text size="xs" fw={700} c="dimmed">Состояние</Text>
+                  <Text size="xs" fw={700} c="dimmed">Состояние{requiredSpecFields.has("condition") ? " *" : ""}</Text>
                   <Group gap={6}>
                     {CONDITIONS.map((item) => (
                       <Chip
+                        id={item.value === CONDITIONS[0]?.value ? "vehicle-field-condition" : undefined}
                         key={item.value}
                         checked={f.condition === item.value}
                         onChange={() => set("condition", item.value)}
@@ -600,8 +694,9 @@ function CreateVehicleWorkspace() {
                       </Chip>
                     ))}
                   </Group>
+                  {fieldError("condition") && <Text size="xs" c="red">{fieldError("condition")}</Text>}
                 </Stack>
-                <Select label="Руль" data={STEERING_WHEELS.map(t => ({ value: t.value, label: t.label }))} value={f.steeringWheel} onChange={(v) => set("steeringWheel", v || "")} size="sm" />
+                {requiredSpecFields.has("steeringWheel") && <Select id="vehicle-field-steeringWheel" label="Руль" placeholder="Выберите" required data={STEERING_WHEELS.map(t => ({ value: t.value, label: t.label }))} value={f.steeringWheel || null} onChange={(v) => set("steeringWheel", v || "")} error={fieldError("steeringWheel")} size="sm" />}
               </Stack>
             </Paper>
 
@@ -610,18 +705,19 @@ function CreateVehicleWorkspace() {
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Документы и состояние</Text>
                 <Group gap="sm" grow>
-                  <Select label="Документы" data={DOCUMENT_STATUSES.map(t => ({ value: t.value, label: t.label }))} value={f.documentsStatus} onChange={(v) => set("documentsStatus", v || "")} size="sm" />
-                  <Select label="Повреждения" data={DAMAGE_INFO.map(t => ({ value: t.value, label: t.label }))} value={f.damageInfo} onChange={(v) => set("damageInfo", v || "")} size="sm" />
+                  <Select id="vehicle-field-documentsStatus" label="Документы" placeholder="Выберите" required={requiredSpecFields.has("documentsStatus")} data={DOCUMENT_STATUSES.map(t => ({ value: t.value, label: t.label }))} value={f.documentsStatus || null} onChange={(v) => set("documentsStatus", v || "")} error={fieldError("documentsStatus")} size="sm" />
+                  <Select id="vehicle-field-damageInfo" label="Повреждения" placeholder="Выберите" required={requiredSpecFields.has("damageInfo")} data={DAMAGE_INFO.map(t => ({ value: t.value, label: t.label }))} value={f.damageInfo || null} onChange={(v) => set("damageInfo", v || "")} error={fieldError("damageInfo")} size="sm" />
                 </Group>
                 <Group gap="sm" grow>
-                  <NumberInput label="Владельцев" placeholder="2" value={f.ownersCount ? Number(f.ownersCount) : undefined} onChange={(v) => set("ownersCount", String(v || ""))} size="sm" min={1} max={10} />
-                  <Select label="Продавец" data={SELLER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.sellerType} onChange={(v) => set("sellerType", v || "")} size="sm" />
-                  <TextInput label="Поколение" placeholder="VII (XV50)" value={f.generation} onChange={(e) => set("generation", e.target.value)} size="sm" />
+                  {requiredSpecFields.has("ownersCount") && <NumberInput id="vehicle-field-ownersCount" label="Владельцев по ПТС" placeholder="1" required value={f.ownersCount === "" ? undefined : Number(f.ownersCount)} onChange={(v) => set("ownersCount", numericString(v))} error={fieldError("ownersCount")} size="sm" min={0} max={100} />}
+                  <Select id="vehicle-field-sellerType" label="Продавец" placeholder="Выберите" required={requiredSpecFields.has("sellerType")} data={SELLER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.sellerType || null} onChange={(v) => set("sellerType", v || "")} error={fieldError("sellerType")} size="sm" />
+                  {f.vehicleType === "CAR" && <TextInput id="vehicle-field-generation" label="Поколение" placeholder="VII (XV50)" required={requiredSpecFields.has("generation")} value={f.generation} onChange={(e) => set("generation", e.target.value)} error={fieldError("generation")} size="sm" />}
                 </Group>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="dimmed">Наличие</Text>
+                    <Text size="xs" fw={700} c="dimmed">Наличие{requiredSpecFields.has("availability") ? " *" : ""}</Text>
                     <SegmentedControl
+                      id="vehicle-field-availability"
                       value={f.availability}
                       onChange={(value) => set("availability", value)}
                       data={AVAILABILITY_TYPES.map((item) => ({ value: item.value, label: item.label }))}
@@ -629,10 +725,12 @@ function CreateVehicleWorkspace() {
                       radius="md"
                       fullWidth
                     />
+                    {fieldError("availability") && <Text size="xs" c="red">{fieldError("availability")}</Text>}
                   </Stack>
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="dimmed">Растаможен</Text>
+                    <Text size="xs" fw={700} c="dimmed">Растаможен{requiredSpecFields.has("customsCleared") ? " *" : ""}</Text>
                     <SegmentedControl
+                      id="vehicle-field-customsCleared"
                       value={f.customsCleared}
                       onChange={(value) => set("customsCleared", value)}
                       data={[{ value: "true", label: "Да" }, { value: "false", label: "Нет" }]}
@@ -640,6 +738,7 @@ function CreateVehicleWorkspace() {
                       radius="md"
                       fullWidth
                     />
+                    {fieldError("customsCleared") && <Text size="xs" c="red">{fieldError("customsCleared")}</Text>}
                   </Stack>
                 </SimpleGrid>
               </Stack>
@@ -649,7 +748,7 @@ function CreateVehicleWorkspace() {
             <Paper className="create-listing__section" radius="md" p="md" withBorder>
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Описание</Text>
-                <Textarea label="Подробное описание" placeholder="Опишите состояние, историю, комплектацию..." value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={4} autosize />
+                <Textarea id="vehicle-field-description" label="Подробное описание" description={`${f.description.trim().length}/40 символов минимум`} placeholder="Опишите состояние, историю обслуживания, комплектацию и известные недостатки" required={!isGarageMode} value={f.description} onChange={(e) => set("description", e.target.value)} error={fieldError("description")} size="sm" minRows={4} autosize />
                 <TextInput label="Ключевые слова" placeholder='"один хозяин", ксенон, панорама...' value={f.keywords} onChange={(e) => set("keywords", e.target.value)} size="sm" />
                 <Text size="xs" c="var(--market-muted)">Ключевые слова помогают найти ваше объявление</Text>
               </Stack>
@@ -668,6 +767,7 @@ function CreateVehicleWorkspace() {
                   <Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge>
                 </Group>
                 <FileInput
+                  id="vehicle-field-images"
                   accept="image/jpeg,image/png,image/webp"
                   multiple
                   clearable
@@ -676,6 +776,7 @@ function CreateVehicleWorkspace() {
                   placeholder={isTelegramMiniApp ? "Снять или выбрать фотографии" : "Выберите фотографии"}
                   onChange={uploadPhotos}
                   leftSection={<IconPhoto size={16} />}
+                  error={fieldError("images")}
                 />
                 <ListingPhotoGrid images={images} uploading={uploadingImages} onRemove={removeImage} />
               </Stack>

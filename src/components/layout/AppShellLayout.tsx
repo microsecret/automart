@@ -57,7 +57,7 @@ const SERVICES = [
 const MOBILE_NAV = [
   { href: "/", label: "Главная", Icon: IconHome2 },
   { href: "/search", label: "Поиск", Icon: IconSearch },
-  { href: "/listings/create/quick", label: "Подать", Icon: IconPlus, accent: true },
+  { href: "/listings/create/vehicle", label: "Подать", Icon: IconPlus, accent: true },
   { href: "/favorites", label: "Избранное", Icon: IconHeart },
   { href: "/messages", label: "Чаты", Icon: IconMessageCircle2 },
 ]
@@ -379,7 +379,7 @@ function GuestAccountPanel() {
       </Text>
       <Button
         component={Link}
-        href="/listings/create/quick"
+        href="/listings/create/vehicle"
         size="sm"
         fullWidth
         mt="sm"
@@ -477,7 +477,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
       </Stack>
       {/* Главное действие продавца выделено акцентом: среди индиговых пунктов
           меню одноцветная кнопка терялась. */}
-      <Button component={Link} href="/listings/create/quick" size="sm" fullWidth mt="sm" className="market-side-account__cta" leftSection={<IconPlus size={15} />}>Подать объявление</Button>
+      <Button component={Link} href="/listings/create/vehicle" size="sm" fullWidth mt="sm" className="market-side-account__cta" leftSection={<IconPlus size={15} />}>Подать объявление</Button>
     </Paper>
   )
 }

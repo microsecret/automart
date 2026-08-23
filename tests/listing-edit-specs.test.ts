@@ -13,7 +13,8 @@ const NUMERIC_SPECS = [
   { key: "operatingHours", label: "Наработка", max: 200_000, allowZero: true },
   { key: "flightHours", label: "Налёт", max: 200_000, allowZero: true },
   { key: "engineVolume", label: "Объём двигателя", max: 100, allowZero: false },
-  { key: "power", label: "Мощность", max: 10_000, allowZero: false },
+  { key: "power", label: "Мощность", max: 100_000, allowZero: false },
+  { key: "ownersCount", label: "Количество владельцев", max: 100, allowZero: true },
 ] as const
 
 type ParseResult = { value?: Record<string, unknown>; error?: string }
@@ -40,13 +41,10 @@ function parseListingEditInput(raw: unknown): ParseResult {
     value[spec.key] = parsed
   }
 
-  for (const key of ["fuelType", "transmission"] as const) {
+  for (const key of ["fuelType", "transmission", "condition"] as const) {
     if (!Object.prototype.hasOwnProperty.call(input, key)) continue
     const rawValue = input[key]
-    if (rawValue === null || rawValue === "") {
-      value[key] = null
-      continue
-    }
+    if (rawValue === null || rawValue === "") return { error: "Обязательную характеристику нельзя оставить пустой" }
     if (typeof rawValue !== "string" || rawValue.length > 40) {
       return { error: "Недопустимое значение характеристики" }
     }
@@ -86,13 +84,10 @@ test("ноль мощности не принимается", () => {
   assert.match(parseListingEditInput({ power: 0 }).error || "", /мощность/i)
 })
 
-test("пустое значение убирает характеристику", () => {
-  // Владелец мог ошибиться при подаче — возможность стереть значение
-  // нужна не меньше, чем возможность его поставить.
-  const cleared = parseListingEditInput({ transmission: null, engineVolume: "" })
-  assert.equal(cleared.error, undefined)
-  assert.equal(cleared.value?.transmission, null)
-  assert.equal(cleared.value?.engineVolume, null)
+test("обязательный селект нельзя очистить", () => {
+  assert.match(parseListingEditInput({ transmission: null }).error || "", /обязательную/i)
+  const clearedNumber = parseListingEditInput({ engineVolume: "" })
+  assert.equal(clearedNumber.value?.engineVolume, null)
 })
 
 test("отрицательный пробег отклоняется", () => {
@@ -143,5 +138,8 @@ test("правила совпадают с теми, что стоят в мод
       `в модуле нет правила для ${spec.key} с границей ${spec.max}`,
     )
   }
-  assert.ok(source.includes('["fuelType", "transmission"]'), "в модуле изменился набор строковых характеристик")
+  assert.ok(source.includes('["fuelType", "transmission", "condition"]'), "в модуле изменился набор строковых характеристик")
+  for (const key of ["vin", "serialNumber", "registrationNumber", "bodyType", "driveType", "color", "steeringWheel", "documentsStatus", "damageInfo", "sellerType", "availability", "generation"]) {
+    assert.ok(source.includes(`key: "${key}"`), `в модуле нет правила для ${key}`)
+  }
 })

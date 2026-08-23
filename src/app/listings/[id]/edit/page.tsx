@@ -13,6 +13,8 @@ import {
   FileInput,
   Group,
   Paper,
+  SegmentedControl,
+  SimpleGrid,
   Skeleton,
   Stack,
   Text,
@@ -30,10 +32,15 @@ import { LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { isAdmin } from "@/lib/permissions"
-import { getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { AVAILABILITY_TYPES, BODY_TYPES, CONDITIONS, DAMAGE_INFO, DOCUMENT_STATUSES, DRIVE_TYPES, SELLER_TYPES, STEERING_WHEELS, getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
+import { getMissingVehiclePublicationRequirements, getVehiclePublicationRequirements, readStoredVehicleSubtype } from "@/lib/vehicle-publication-readiness"
 
 type EditableSubject = {
   id: string
+  make?: string
+  model?: string
+  year?: number
+  price?: number
   location: string
   images: string | null
   /* Характеристики машины. У запчасти их нет — поля необязательные. */
@@ -45,6 +52,22 @@ type EditableSubject = {
   transmission?: string | null
   engineVolume?: number | null
   power?: number | null
+  vin?: string | null
+  serialNumber?: string | null
+  registrationNumber?: string | null
+  bodyType?: string | null
+  driveType?: string | null
+  color?: string | null
+  condition?: string | null
+  steeringWheel?: string | null
+  ownersCount?: number | null
+  documentsStatus?: string | null
+  damageInfo?: string | null
+  sellerType?: string | null
+  availability?: string | null
+  customsCleared?: boolean | null
+  generation?: string | null
+  typeDetails?: string | null
 }
 type EditableListing = {
   id: string
@@ -71,6 +94,19 @@ type FormState = {
   transmission: string
   engineVolume: string
   power: string
+  identity: string
+  bodyType: string
+  driveType: string
+  color: string
+  condition: string
+  steeringWheel: string
+  ownersCount: string
+  documentsStatus: string
+  damageInfo: string
+  sellerType: string
+  availability: string
+  customsCleared: string
+  generation: string
 }
 type UpdateListingResponse = { requiresRemoderation?: boolean }
 
@@ -93,6 +129,7 @@ export default function EditListingPage() {
     if (!data?.listing) return
     const subject = data.listing.vehicle || data.listing.part
     if (!subject) return
+    const identityMeta = getVehicleIdentityMeta(data.listing.vehicle?.vehicleType || "CAR")
     setForm({
       title: data.listing.title,
       description: data.listing.description || "",
@@ -104,6 +141,21 @@ export default function EditListingPage() {
       transmission: subject.transmission || "",
       engineVolume: subject.engineVolume != null ? String(subject.engineVolume) : "",
       power: subject.power != null ? String(subject.power) : "",
+      identity: data.listing.vehicle
+        ? String(data.listing.vehicle[identityMeta.field] || "")
+        : "",
+      bodyType: subject.bodyType || "",
+      driveType: subject.driveType || "",
+      color: subject.color || "",
+      condition: subject.condition || "",
+      steeringWheel: subject.steeringWheel || "",
+      ownersCount: subject.ownersCount == null ? "" : String(subject.ownersCount),
+      documentsStatus: subject.documentsStatus || "",
+      damageInfo: subject.damageInfo || "",
+      sellerType: subject.sellerType || "",
+      availability: subject.availability || "",
+      customsCleared: subject.customsCleared == null ? "" : subject.customsCleared ? "true" : "false",
+      generation: subject.generation || "",
     })
     replaceImages(parseImages(subject.images))
   }, [data, replaceImages])
@@ -125,6 +177,37 @@ export default function EditListingPage() {
      у спецтехники моточасы, у самолёта — часы налёта. */
   const vehicleType = data.listing.vehicle?.vehicleType || "CAR"
   const usageMeta = getUsageMeta(vehicleType)
+  const identityMeta = getVehicleIdentityMeta(vehicleType)
+  const editPublicationInput = isVehicle ? {
+    ...data.listing.vehicle!,
+    price: form.price,
+    location: form.location,
+    description: form.description,
+    images,
+    [usageMeta.field]: form.usage,
+    fuelType: form.fuelType,
+    transmission: form.transmission,
+    engineVolume: form.engineVolume,
+    power: form.power,
+    [identityMeta.field]: form.identity,
+    bodyType: form.bodyType,
+    driveType: form.driveType,
+    color: form.color,
+    condition: form.condition,
+    steeringWheel: form.steeringWheel,
+    ownersCount: form.ownersCount,
+    documentsStatus: form.documentsStatus,
+    damageInfo: form.damageInfo,
+    sellerType: form.sellerType,
+    availability: form.availability,
+    customsCleared: form.customsCleared === "" ? null : form.customsCleared === "true",
+    generation: form.generation,
+    subtype: readStoredVehicleSubtype(vehicleType, data.listing.vehicle?.typeDetails),
+  } : null
+  const editRequirements = editPublicationInput ? getVehiclePublicationRequirements(editPublicationInput) : []
+  const missingEditRequirements = editPublicationInput ? getMissingVehiclePublicationRequirements(editPublicationInput) : []
+  const requiredEditFields = new Set(editRequirements.map((requirement) => requirement.field))
+  const editReady = !isVehicle || missingEditRequirements.length === 0
   const detailHref = subject ? `/listings/${isVehicle ? "vehicle" : "part"}/${subject.id}` : "/dashboard"
   const statusMeta = LISTING_STATUS_META[data.listing.status] || LISTING_STATUS_META.DRAFT
 
@@ -133,6 +216,14 @@ export default function EditListingPage() {
     const price = Number(form.price)
     if (!form.title.trim() || !Number.isSafeInteger(price) || price < 0 || !form.location.trim()) {
       notifications.show({ title: "Проверьте поля", message: "Укажите заголовок, целую цену и город.", color: "red" })
+      return
+    }
+    if (!editReady) {
+      notifications.show({
+        title: "Объявление пока не готово",
+        message: `Заполните: ${missingEditRequirements.map((requirement) => requirement.label).join(", ")}.`,
+        color: "orange",
+      })
       return
     }
     setSaving(true)
@@ -154,6 +245,19 @@ export default function EditListingPage() {
                 transmission: supportsTransmission(vehicleType) ? form.transmission || null : undefined,
                 engineVolume: form.engineVolume === "" ? null : Number(form.engineVolume),
                 power: form.power === "" ? null : Number(form.power),
+                [identityMeta.field]: form.identity || null,
+                bodyType: form.bodyType || null,
+                driveType: form.driveType || null,
+                color: form.color || null,
+                condition: form.condition,
+                steeringWheel: form.steeringWheel || null,
+                ownersCount: form.ownersCount === "" ? null : Number(form.ownersCount),
+                documentsStatus: form.documentsStatus || null,
+                damageInfo: form.damageInfo || null,
+                sellerType: form.sellerType || null,
+                availability: form.availability || null,
+                customsCleared: form.customsCleared === "" ? null : form.customsCleared === "true",
+                generation: form.generation || null,
               }
             : {}),
         }),
@@ -192,6 +296,19 @@ export default function EditListingPage() {
           </Alert>
         )}
 
+        {isVehicle && (
+          <Alert
+            color={editReady ? "teal" : "orange"}
+            variant="light"
+            icon={editReady ? <IconCheck size={18} /> : <IconAlertTriangle size={18} />}
+            title={editReady ? "Карточка готова к модерации" : `Заполнено ${editRequirements.length - missingEditRequirements.length} из ${editRequirements.length} обязательных пунктов`}
+          >
+            {editReady
+              ? "Все сведения, которые нужны покупателю и модератору, заполнены."
+              : `Осталось: ${missingEditRequirements.map((requirement) => requirement.label).join(", ")}.`}
+          </Alert>
+        )}
+
         <Paper withBorder radius="md" p={{ base: "md", sm: "lg" }}>
           <Stack gap="md">
             <Text fw={700}>Основные данные</Text>
@@ -200,7 +317,7 @@ export default function EditListingPage() {
               <TextInput label="Цена, ₽" required inputMode="numeric" value={form.price} onChange={(event) => updateForm("price", event.currentTarget.value.replace(/\D/g, ""))} />
               <TextInput label="Город" required value={form.location} onChange={(event) => updateForm("location", event.currentTarget.value)} maxLength={120} />
             </Group>
-            <Textarea label="Описание" value={form.description} onChange={(event) => updateForm("description", event.currentTarget.value)} minRows={5} autosize maxLength={5000} description={`${form.description.length}/5000`} />
+            <Textarea label="Описание" required={isVehicle} value={form.description} onChange={(event) => updateForm("description", event.currentTarget.value)} minRows={5} autosize maxLength={5000} description={isVehicle ? `${form.description.trim().length}/40 символов минимум` : `${form.description.length}/5000`} />
 
             {/* Характеристики машины.
 
@@ -219,12 +336,14 @@ export default function EditListingPage() {
                 <Group grow align="flex-start">
                   <TextInput
                     label={`${usageMeta.label}, ${usageMeta.unit}`}
+                    required={requiredEditFields.has(usageMeta.field)}
                     inputMode="numeric"
                     value={form.usage}
                     onChange={(event) => updateForm("usage", event.currentTarget.value.replace(/\D/g, ""))}
                   />
                   <Select
                     label="Топливо"
+                    required={requiredEditFields.has("fuelType")}
                     placeholder="Выберите"
                     data={getSelectableFuelOptions(vehicleType)}
                     value={form.fuelType || null}
@@ -236,6 +355,7 @@ export default function EditListingPage() {
                   {supportsTransmission(vehicleType) && (
                     <Select
                       label="Коробка передач"
+                      required={requiredEditFields.has("transmission")}
                       placeholder="Выберите"
                       data={getSelectableTransmissionOptions(vehicleType)}
                       value={form.transmission || null}
@@ -245,6 +365,7 @@ export default function EditListingPage() {
                   )}
                   <TextInput
                     label="Объём двигателя, л"
+                    required={requiredEditFields.has("engineVolume")}
                     inputMode="decimal"
                     placeholder="1.6"
                     value={form.engineVolume}
@@ -252,12 +373,44 @@ export default function EditListingPage() {
                   />
                   <TextInput
                     label="Мощность, л.с."
+                    required={requiredEditFields.has("power")}
                     inputMode="numeric"
                     placeholder="150"
                     value={form.power}
                     onChange={(event) => updateForm("power", event.currentTarget.value.replace(/\D/g, ""))}
                   />
                 </Group>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <TextInput
+                    label={identityMeta.label}
+                    description={identityMeta.description}
+                    placeholder={identityMeta.placeholder}
+                    required
+                    value={form.identity}
+                    maxLength={identityMeta.maxLength}
+                    onChange={(event) => updateForm("identity", event.currentTarget.value.toUpperCase())}
+                  />
+                  <TextInput label="Цвет" placeholder="Белый" required value={form.color} onChange={(event) => updateForm("color", event.currentTarget.value)} />
+                  {vehicleType === "CAR" && <Select label="Тип кузова" placeholder="Выберите" required data={BODY_TYPES} value={form.bodyType || null} onChange={(value) => updateForm("bodyType", value || "")} />}
+                  {vehicleType === "CAR" && <Select label="Привод" placeholder="Выберите" required data={DRIVE_TYPES} value={form.driveType || null} onChange={(value) => updateForm("driveType", value || "")} />}
+                  <Select label="Состояние" placeholder="Выберите" required data={CONDITIONS} value={form.condition || null} onChange={(value) => updateForm("condition", value || "")} />
+                  {(vehicleType === "CAR" || vehicleType === "TRUCK") && <Select label="Руль" placeholder="Выберите" required data={STEERING_WHEELS} value={form.steeringWheel || null} onChange={(value) => updateForm("steeringWheel", value || "")} />}
+                  {["CAR", "MOTORCYCLE", "TRUCK"].includes(vehicleType) && <TextInput label="Владельцев по ПТС" inputMode="numeric" required value={form.ownersCount} onChange={(event) => updateForm("ownersCount", event.currentTarget.value.replace(/\D/g, ""))} />}
+                  {vehicleType === "CAR" && <TextInput label="Поколение" placeholder="VII (XV50)" required value={form.generation} onChange={(event) => updateForm("generation", event.currentTarget.value)} />}
+                  <Select label="Документы" placeholder="Выберите" required data={DOCUMENT_STATUSES} value={form.documentsStatus || null} onChange={(value) => updateForm("documentsStatus", value || "")} />
+                  <Select label="Повреждения" placeholder="Выберите" required data={DAMAGE_INFO} value={form.damageInfo || null} onChange={(value) => updateForm("damageInfo", value || "")} />
+                  <Select label="Продавец" placeholder="Выберите" required data={SELLER_TYPES} value={form.sellerType || null} onChange={(value) => updateForm("sellerType", value || "")} />
+                  <Select label="Наличие" placeholder="Выберите" required data={AVAILABILITY_TYPES} value={form.availability || null} onChange={(value) => updateForm("availability", value || "")} />
+                </SimpleGrid>
+                <Stack gap={6}>
+                  <Text size="xs" fw={700} c="dimmed">Растаможен *</Text>
+                  <SegmentedControl
+                    value={form.customsCleared}
+                    onChange={(value) => updateForm("customsCleared", value)}
+                    data={[{ value: "true", label: "Да" }, { value: "false", label: "Нет" }]}
+                    fullWidth
+                  />
+                </Stack>
               </>
             )}
           </Stack>

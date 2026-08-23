@@ -6,6 +6,7 @@ import { getOwnerTransition, isListingModerator, LISTING_STATUS } from "@/lib/li
 import { parseListingEditInput, parseStoredImages } from "@/lib/listing-edit"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { isAdmin } from "@/lib/permissions"
+import { readStoredVehicleSubtype, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
 
 export const dynamic = "force-dynamic"
 
@@ -92,7 +93,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const reason = typeof body?.reason === "string" ? body.reason.trim().slice(0, 500) : null
     const listing = await prisma.listing.findUnique({
       where: { id },
-      select: { id: true, userId: true, status: true, deletedAt: true, vehicle: { select: { images: true } }, part: { select: { images: true } } },
+      select: { id: true, userId: true, status: true, deletedAt: true, vehicle: true, part: { select: { images: true } } },
     })
     if (!listing || listing.deletedAt) return NextResponse.json({ error: "Не найдено" }, { status: 404 })
     if (listing.userId !== session.user.id) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
@@ -100,8 +101,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const nextStatus = getOwnerTransition(listing.status as typeof LISTING_STATUS[keyof typeof LISTING_STATUS], action)
     if (!nextStatus) return NextResponse.json({ error: "Этот переход статуса недоступен" }, { status: 409 })
 
-    if (action === "SUBMIT_FOR_MODERATION" && listing.vehicle && parseStoredImages(listing.vehicle.images).length === 0) {
-      return NextResponse.json({ error: "Добавьте хотя бы одну фотографию транспорта перед отправкой на модерацию" }, { status: 400 })
+    if (action === "SUBMIT_FOR_MODERATION" && listing.vehicle) {
+      const publicationError = validateVehiclePublication({
+        ...listing.vehicle,
+        subtype: readStoredVehicleSubtype(listing.vehicle.vehicleType, listing.vehicle.typeDetails),
+      })
+      if (publicationError) return NextResponse.json({ error: publicationError }, { status: 400 })
     }
 
     const now = new Date()
@@ -170,7 +175,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
        У запчасти нет ни пробега, ни коробки, поэтому набор применяется
        только к транспорту. `undefined` означает «не трогать», `null` —
        «убрать значение»: владелец мог ошибиться при подаче. */
-    const SPEC_KEYS = ["mileage", "operatingHours", "flightHours", "fuelType", "transmission", "engineVolume", "power"] as const
+    const SPEC_KEYS = [
+      "mileage", "operatingHours", "flightHours", "fuelType", "transmission", "engineVolume", "power",
+      "vin", "serialNumber", "registrationNumber", "bodyType", "driveType", "color", "condition",
+      "steeringWheel", "ownersCount", "documentsStatus", "damageInfo", "sellerType", "availability",
+      "customsCleared", "generation",
+    ] as const
     const specPatch: Record<string, unknown> = {}
     if (listing.vehicle) {
       for (const key of SPEC_KEYS) {
@@ -189,6 +199,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const requiresRemoderation = listing.status === LISTING_STATUS.ACTIVE
     const nextStatus = requiresRemoderation ? LISTING_STATUS.PENDING_MODERATION : listing.status
     const now = new Date()
+
+    if (listing.vehicle && (listing.status === LISTING_STATUS.ACTIVE || listing.status === LISTING_STATUS.PENDING_MODERATION)) {
+      const nextVehicle = { ...listing.vehicle, ...specPatch }
+      const publicationError = validateVehiclePublication({
+        ...nextVehicle,
+        price: after.price,
+        location: after.location,
+        description: after.description,
+        images: after.images,
+        subtype: readStoredVehicleSubtype(nextVehicle.vehicleType, nextVehicle.typeDetails),
+      })
+      if (publicationError) return NextResponse.json({ error: publicationError }, { status: 400 })
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const subjectUpdate = {
@@ -228,9 +251,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         data: {
           listingId: id,
           actorId: session.user.id,
-          changedFields: JSON.stringify(changedFields),
-          before: JSON.stringify(before),
-          after: JSON.stringify(after),
+          changedFields: JSON.stringify([...changedFields, ...changedSpecs]),
+          before: JSON.stringify({
+            ...before,
+            ...Object.fromEntries(changedSpecs.map((key) => [key, (listing.vehicle as Record<string, unknown> | null)?.[key] ?? null])),
+          }),
+          after: JSON.stringify({ ...after, ...specPatch }),
           reason: patch.reason || null,
         },
       })

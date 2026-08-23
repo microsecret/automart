@@ -68,8 +68,8 @@ function promoKeyboard() {
       // сразу размещает объявление. Ссылка на сайт остаётся второй кнопкой для
       // тех, кому удобнее полная форма.
       [
-        { text: "➕ Разместить за 2 минуты", url: botUsername ? `https://t.me/${botUsername}?startapp=create` : absoluteUrl("/listings/create/quick?utm_source=telegram&utm_campaign=service_promo") },
-        { text: "🖥 Подать на сайте", url: absoluteUrl("/listings/create/quick?utm_source=telegram&utm_campaign=service_promo") },
+        { text: "➕ Разместить объявление", url: botUsername ? `https://t.me/${botUsername}?startapp=create` : absoluteUrl("/listings/create/vehicle?utm_source=telegram&utm_campaign=service_promo") },
+        { text: "🖥 Подать на сайте", url: absoluteUrl("/listings/create/vehicle?utm_source=telegram&utm_campaign=service_promo") },
       ],
       [{ text: "🤝 Стать партнёром", url: absoluteUrl("/dashboard/deliveries?partner=apply&utm_source=telegram&utm_campaign=service_promo") }, { text: "🌐 Перейти на сайт", url: absoluteUrl("/?utm_source=telegram&utm_campaign=service_promo") }],
     ],

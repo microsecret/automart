@@ -338,6 +338,20 @@ async function run() {
   record("administrator can assign a delivery partner role", promotedPartner?.user?.role === "PARTNER", promotedPartner?.user?.role || "missing")
   await expect("/api/vehicles", cookie, 200)
 
+  const incompleteVehicle = await expect("/api/vehicles", cookie, 400, {
+    method: "POST",
+    body: JSON.stringify({
+      title: `${marker} incomplete car`, make: "Kia", model: "Sportage", year: 2023,
+      price: 2_850_000, mileage: 21_500, vin: `LWMSS${String(Date.now()).slice(-12)}`.slice(0, 17),
+      fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SUV", color: "Серый",
+      engineVolume: 2, driveType: "AWD", condition: "EXCELLENT", location: "Москва",
+      description: "Карточка намеренно неполная и не должна попасть на модерацию", vehicleType: "CAR",
+      categoryId: category.id,
+      images: ["https://images.unsplash.com/photo-1549317661-bd32c8ce0db2"],
+    }),
+  })
+  record("incomplete vehicle cannot enter moderation", typeof incompleteVehicle?.error === "string", incompleteVehicle?.error || "missing error")
+
   const vehicle = await expect("/api/vehicles", cookie, 201, {
     method: "POST",
     body: JSON.stringify({
@@ -345,6 +359,8 @@ async function run() {
       price: 2_850_000, mileage: 21_500, vin: `LWBUYER${String(Date.now()).slice(-10)}`.slice(0, 17),
       fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SUV", color: "Серый",
       power: 180, engineVolume: 2, driveType: "AWD", condition: "EXCELLENT", location: "Москва",
+      steeringWheel: "LEFT", ownersCount: 1, documentsStatus: "CLEAN", damageInfo: "NONE",
+      sellerType: "OWNER", availability: "IN_STOCK", customsCleared: true, generation: "V (NQ5)",
       description: "Изолированная проверка полного цикла объявления", vehicleType: "CAR",
       categoryId: category.id,
       images: ["https://images.unsplash.com/photo-1549317661-bd32c8ce0db2"],

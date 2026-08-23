@@ -19,6 +19,21 @@ export type ListingEditInput = {
   transmission?: string | null
   engineVolume?: number | null
   power?: number | null
+  vin?: string | null
+  serialNumber?: string | null
+  registrationNumber?: string | null
+  bodyType?: string | null
+  driveType?: string | null
+  color?: string | null
+  condition?: string
+  steeringWheel?: string | null
+  ownersCount?: number | null
+  documentsStatus?: string | null
+  damageInfo?: string | null
+  sellerType?: string | null
+  availability?: string | null
+  customsCleared?: boolean | null
+  generation?: string | null
 }
 
 type ParseResult = { value?: ListingEditInput; error?: string }
@@ -86,12 +101,13 @@ export function parseListingEditInput(raw: unknown): ParseResult {
      ошибиться при подаче. Ноль допустим для счётчиков пробега (новая
      техника действительно «0 км»), но не для объёма и мощности: ноль
      литров у двигателя невозможен. */
-  const numericSpecs: Array<{ key: "mileage" | "operatingHours" | "flightHours" | "engineVolume" | "power"; label: string; max: number; allowZero: boolean }> = [
+  const numericSpecs: Array<{ key: "mileage" | "operatingHours" | "flightHours" | "engineVolume" | "power" | "ownersCount"; label: string; max: number; allowZero: boolean }> = [
     { key: "mileage", label: "Пробег", max: 2_000_000, allowZero: true },
     { key: "operatingHours", label: "Наработка", max: 200_000, allowZero: true },
     { key: "flightHours", label: "Налёт", max: 200_000, allowZero: true },
     { key: "engineVolume", label: "Объём двигателя", max: 100, allowZero: false },
-    { key: "power", label: "Мощность", max: 10_000, allowZero: false },
+    { key: "power", label: "Мощность", max: 100_000, allowZero: false },
+    { key: "ownersCount", label: "Количество владельцев", max: 100, allowZero: true },
   ]
   for (const spec of numericSpecs) {
     if (!hasOwn(input, spec.key)) continue
@@ -113,17 +129,47 @@ export function parseListingEditInput(raw: unknown): ParseResult {
   /* Топливо и коробка проверяются на длину, а не на принадлежность
      справочнику: набор значений зависит от вида транспорта, и он уже
      проверяется там, где известен этот вид. */
-  for (const key of ["fuelType", "transmission"] as const) {
+  for (const key of ["fuelType", "transmission", "condition"] as const) {
     if (!hasOwn(input, key)) continue
     const raw = input[key]
-    if (raw === null || raw === "") {
-      value[key] = null
-      continue
-    }
+    if (raw === null || raw === "") return { error: "Обязательную характеристику нельзя оставить пустой" }
     if (typeof raw !== "string" || raw.length > 40) {
       return { error: "Недопустимое значение характеристики" }
     }
     value[key] = raw
+  }
+
+  const optionalTextSpecs = [
+    { key: "vin", max: 17, uppercase: true },
+    { key: "serialNumber", max: 32, uppercase: true },
+    { key: "registrationNumber", max: 32, uppercase: true },
+    { key: "bodyType", max: 40, uppercase: false },
+    { key: "driveType", max: 20, uppercase: false },
+    { key: "color", max: 40, uppercase: false },
+    { key: "steeringWheel", max: 16, uppercase: false },
+    { key: "documentsStatus", max: 24, uppercase: false },
+    { key: "damageInfo", max: 24, uppercase: false },
+    { key: "sellerType", max: 20, uppercase: false },
+    { key: "availability", max: 24, uppercase: false },
+    { key: "generation", max: 80, uppercase: false },
+  ] as const
+  for (const spec of optionalTextSpecs) {
+    if (!hasOwn(input, spec.key)) continue
+    const raw = input[spec.key]
+    if (raw === null || raw === "") {
+      value[spec.key] = null
+      continue
+    }
+    if (typeof raw !== "string" || raw.length > spec.max) return { error: "Недопустимое значение характеристики" }
+    const normalized = raw.trim()
+    value[spec.key] = spec.uppercase ? normalized.toUpperCase() : normalized
+  }
+
+  if (hasOwn(input, "customsCleared")) {
+    if (input.customsCleared !== null && typeof input.customsCleared !== "boolean") {
+      return { error: "Таможенный статус должен быть выбран из списка" }
+    }
+    value.customsCleared = input.customsCleared as boolean | null
   }
 
   if (hasOwn(input, "reason")) {

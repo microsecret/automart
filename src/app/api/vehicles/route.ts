@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { BODY_TYPES, DRIVE_TYPES, getSelectableFuelOptions, getSelectableTransmissionOptions, getVehicleIdentityMeta, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
+import { AVAILABILITY_TYPES, BODY_TYPES, CONDITIONS, DAMAGE_INFO, DOCUMENT_STATUSES, DRIVE_TYPES, SELLER_TYPES, STEERING_WHEELS, getSelectableFuelOptions, getSelectableTransmissionOptions, getVehicleIdentityMeta, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
-import { validateRequiredSpecs } from "@/lib/listing-required-specs"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -23,6 +23,16 @@ function normalizeOptionalNonNegativeInteger(value: unknown) {
   if (value === undefined || value === null || value === "") return null
   const parsed = Number(value)
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : undefined
+}
+
+function normalizeOptionalPositiveNumber(value: unknown, max: number) {
+  if (value === undefined || value === null || value === "") return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 && parsed <= max ? parsed : undefined
+}
+
+function isAllowedValue(value: string | null | undefined, options: readonly { value: string }[]) {
+  return Boolean(value && options.some((option) => option.value === value))
 }
 
 function normalizeOptionalText(value: unknown, maxLength: number) {
@@ -62,7 +72,7 @@ function normalizeVehicleIdentity(vehicleType: string, vin: unknown, serialNumbe
   // У спецтехники иногда указан полноценный VIN. Сохраняем его в отдельном
   // уникальном поле, чтобы прежняя антидубль-проверка продолжала работать.
   if (vehicleType === "SPECIAL" && VIN_PATTERN.test(selectedValue)) {
-    return { vin: selectedValue, serialNumber: null, registrationNumber: null }
+    return { vin: selectedValue, serialNumber: selectedValue, registrationNumber: null }
   }
   return {
     vin: null,
@@ -199,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedPrice = Number(price)
-    if (!Number.isSafeInteger(normalizedPrice) || normalizedPrice < 0) {
+    if (!Number.isSafeInteger(normalizedPrice) || normalizedPrice <= 0) {
       return NextResponse.json(
         { error: "Укажите корректную цену в рублях" },
         { status: 400 }
@@ -284,9 +294,38 @@ export async function POST(request: NextRequest) {
     const normalizedImages = parseMarketplaceImages(images)
     const normalizedIdentity = normalizeVehicleIdentity(normalizedVehicleType, vin, serialNumber, registrationNumber)
     const normalizedDescription = normalizeOptionalText(description, 10_000)
+    const normalizedColor = normalizeOptionalText(color, 40)
+    const normalizedCondition = normalizeOptionalText(condition, 24)
+    const normalizedSteeringWheel = normalizeOptionalText(steeringWheel, 16)
+    const normalizedDocumentsStatus = normalizeOptionalText(documentsStatus, 24)
+    const normalizedDamageInfo = normalizeOptionalText(damageInfo, 24)
+    const normalizedSellerType = normalizeOptionalText(sellerType, 20)
+    const normalizedAvailability = normalizeOptionalText(availability, 24)
+    const normalizedGeneration = normalizeOptionalText(generation, 80)
+    const normalizedKeywords = normalizeOptionalText(keywords, 500)
+    const normalizedOwnersCount = normalizeOptionalNonNegativeInteger(ownersCount)
+    const normalizedDoors = normalizeOptionalNonNegativeInteger(doors)
+    const normalizedEngineVolume = normalizeOptionalPositiveNumber(engineVolume, 100)
+    const normalizedPower = normalizeOptionalNonNegativeInteger(power)
+    const normalizedCustomsCleared = typeof customsCleared === "boolean" ? customsCleared : null
 
-    if (normalizedMileage === undefined || normalizedOperatingHours === undefined || normalizedFlightHours === undefined) {
+    if (normalizedMileage === undefined || normalizedOperatingHours === undefined || normalizedFlightHours === undefined
+      || normalizedOwnersCount === undefined || normalizedDoors === undefined || normalizedEngineVolume === undefined
+      || normalizedPower === undefined) {
       return NextResponse.json({ error: "Пробег и наработка должны быть неотрицательными целыми числами" }, { status: 400 })
+    }
+    if ([normalizedDescription, normalizedColor, normalizedCondition, normalizedSteeringWheel, normalizedDocumentsStatus,
+      normalizedDamageInfo, normalizedSellerType, normalizedAvailability, normalizedGeneration, normalizedKeywords].includes(undefined)) {
+      return NextResponse.json({ error: "Проверьте текстовые поля объявления" }, { status: 400 })
+    }
+    if (normalizedOwnersCount !== null && normalizedOwnersCount > 100) {
+      return NextResponse.json({ error: "Количество владельцев должно быть от 0 до 100" }, { status: 400 })
+    }
+    if (normalizedDoors !== null && (normalizedDoors < 1 || normalizedDoors > 20)) {
+      return NextResponse.json({ error: "Количество дверей должно быть от 1 до 20" }, { status: 400 })
+    }
+    if (normalizedPower !== null && (normalizedPower < 1 || normalizedPower > 100_000)) {
+      return NextResponse.json({ error: "Мощность должна быть от 1 до 100 000 л.с." }, { status: 400 })
     }
     if (!normalizedImages) return NextResponse.json({ error: "Допустимы до 12 корректных изображений" }, { status: 400 })
     if (normalizedImages.length === 0) return NextResponse.json({ error: "Добавьте хотя бы одну фотографию транспорта" }, { status: 400 })
@@ -297,7 +336,8 @@ export async function POST(request: NextRequest) {
     // пропускали поля, а покупатель оставался без данных, ради которых открыл
     // карточку. Проверка стоит на сервере, потому что форму можно обойти.
     const allowedFuelTypes = new Set<string>(getSelectableFuelOptions(normalizedVehicleType).map((item) => item.value))
-    if (!fuelType || !allowedFuelTypes.has(String(fuelType))) {
+    const normalizedFuelType = normalizeOptionalText(fuelType, 20)
+    if (!normalizedFuelType || !allowedFuelTypes.has(normalizedFuelType)) {
       return NextResponse.json(
         { error: String(fuelType) === "OTHER"
           ? "Укажите тип топлива: бензин, дизель, гибрид, электро или газ"
@@ -310,13 +350,14 @@ export async function POST(request: NextRequest) {
       normalizedMake,
       normalizedModel,
       normalizedYear,
-      String(fuelType),
+      normalizedFuelType,
       typeof transmission === "string" ? transmission : null,
     )
     if (energyAndYearError) return NextResponse.json({ error: energyAndYearError }, { status: 400 })
 
     const transmissionOptions = getSelectableTransmissionOptions(normalizedVehicleType)
-    if (supportsTransmission(normalizedVehicleType) && (!transmission || !transmissionOptions.some((item) => item.value === transmission))) {
+    const normalizedTransmission = normalizeOptionalText(transmission, 24)
+    if (supportsTransmission(normalizedVehicleType) && (!normalizedTransmission || !transmissionOptions.some((item) => item.value === normalizedTransmission))) {
       return NextResponse.json(
         { error: String(transmission) === "OTHER"
           ? "Укажите коробку передач: механика, автомат, вариатор или робот"
@@ -325,16 +366,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    /* Главные характеристики обязательны — набор зависит от техники.
-
-       Объём двигателя и счётчик наработки раньше были необязательными: в
-       карточке оставались прочерки там, где покупатель как раз и принимает
-       решение. Требовать одно и то же у всех нельзя — у прицепа нет мотора,
-       у катера нет одометра, у электромобиля нет литров, — поэтому набор
-       считает отдельный модуль, общий с формой подачи.
-
-       Проверка стоит после разбора подтипа: именно он говорит, прицеп это
-       или грузовик с мотором. */
     // Освобождения от силовых полей завязаны на надстройку грузовика и
     // категорию ВС, поэтому берётся подтип из typeDetails; у легкового
     // послаблений по кузову нет и подтип на набор не влияет.
@@ -343,31 +374,77 @@ export async function POST(request: NextRequest) {
       ? String({ ...inferredSubtype.typeDetails, ...submittedTypeDetails }[subtypeField] ?? "")
       : ""
 
-    const specsError = validateRequiredSpecs({
-      vehicleType: normalizedVehicleType,
-      year: normalizedYear,
-      mileage: normalizedMileage,
-      operatingHours: normalizedOperatingHours,
-      flightHours: normalizedFlightHours,
-      transmission: typeof transmission === "string" ? transmission : null,
-      fuelType: typeof fuelType === "string" ? fuelType : null,
-      engineVolume: engineVolume === undefined || engineVolume === null || engineVolume === "" ? null : Number(engineVolume),
-      power: power === undefined || power === null || power === "" ? null : Number(power),
-      subtype: resolvedSubtype,
-    })
-    if (specsError) return NextResponse.json({ error: specsError }, { status: 400 })
-
     const allowedDriveTypes = new Set<string>(DRIVE_TYPES.map((item) => item.value))
-    if (normalizedVehicleType === "CAR" && driveType && !allowedDriveTypes.has(String(driveType))) {
+    const normalizedDriveType = normalizeOptionalText(driveType, 20)
+    if (normalizedVehicleType === "CAR" && normalizedDriveType && !allowedDriveTypes.has(normalizedDriveType)) {
       return NextResponse.json({ error: "Выбранный тип привода не подходит для легкового автомобиля" }, { status: 400 })
     }
     const allowedBodyTypes = new Set<string>(BODY_TYPES.map((item) => item.value))
-    if (normalizedVehicleType === "CAR" && bodyType && !allowedBodyTypes.has(String(bodyType))) {
+    const submittedBodyType = normalizeOptionalText(bodyType, 24)
+    if (normalizedVehicleType === "CAR" && submittedBodyType && !allowedBodyTypes.has(submittedBodyType)) {
       return NextResponse.json({ error: "Выбранный тип кузова не подходит для легкового автомобиля" }, { status: 400 })
     }
     const normalizedBodyType = normalizedVehicleType === "CAR"
-      ? String(bodyType || inferredSubtype.bodyType || "").trim() || null
+      ? submittedBodyType || inferredSubtype.bodyType || null
       : null
+
+    if (normalizedCondition && !isAllowedValue(normalizedCondition, CONDITIONS)) {
+      return NextResponse.json({ error: "Выберите состояние из списка" }, { status: 400 })
+    }
+    if (normalizedSteeringWheel && !isAllowedValue(normalizedSteeringWheel, STEERING_WHEELS)) {
+      return NextResponse.json({ error: "Выберите расположение руля из списка" }, { status: 400 })
+    }
+    if (normalizedDocumentsStatus && !isAllowedValue(normalizedDocumentsStatus, DOCUMENT_STATUSES)) {
+      return NextResponse.json({ error: "Выберите статус документов из списка" }, { status: 400 })
+    }
+    if (normalizedDamageInfo && !isAllowedValue(normalizedDamageInfo, DAMAGE_INFO)) {
+      return NextResponse.json({ error: "Выберите сведения о повреждениях из списка" }, { status: 400 })
+    }
+    if (normalizedSellerType && !isAllowedValue(normalizedSellerType, SELLER_TYPES)) {
+      return NextResponse.json({ error: "Выберите тип продавца из списка" }, { status: 400 })
+    }
+    if (normalizedAvailability && !isAllowedValue(normalizedAvailability, AVAILABILITY_TYPES)) {
+      return NextResponse.json({ error: "Выберите наличие транспорта из списка" }, { status: 400 })
+    }
+
+    /* Единый шлюз перед PENDING_MODERATION.
+
+       Он проверяет не только мотор и пробег, но и данные, которые стабильно
+       показывают Auto.ru и Drom: мощность, кузов, привод, цвет, руль,
+       владельцев, поколение, документы, повреждения и таможенный статус.
+       Тот же контракт стоит на повторной отправке и одобрении модератором. */
+    const publicationError = validateVehiclePublication({
+      make: normalizedMake,
+      model: normalizedModel,
+      year: normalizedYear,
+      price: normalizedPrice,
+      location: normalizedLocation,
+      ...normalizedIdentity,
+      images: normalizedImages,
+      description: normalizedDescription,
+      vehicleType: normalizedVehicleType,
+      mileage: normalizedMileage,
+      operatingHours: normalizedOperatingHours,
+      flightHours: normalizedFlightHours,
+      transmission: normalizedTransmission,
+      fuelType: normalizedFuelType,
+      engineVolume: normalizedEngineVolume,
+      power: normalizedPower,
+      subtype: resolvedSubtype,
+      bodyType: normalizedBodyType,
+      driveType: normalizedDriveType,
+      color: normalizedColor,
+      condition: normalizedCondition,
+      steeringWheel: normalizedSteeringWheel,
+      ownersCount: normalizedOwnersCount,
+      documentsStatus: normalizedDocumentsStatus,
+      damageInfo: normalizedDamageInfo,
+      sellerType: normalizedSellerType,
+      availability: normalizedAvailability,
+      customsCleared: normalizedCustomsCleared,
+      generation: normalizedGeneration,
+    })
+    if (publicationError) return NextResponse.json({ error: publicationError }, { status: 400 })
 
     const vehicle = await prisma.vehicle.create({
       data: {
@@ -381,24 +458,24 @@ export async function POST(request: NextRequest) {
         vin: normalizedIdentity.vin,
         serialNumber: normalizedIdentity.serialNumber,
         registrationNumber: normalizedIdentity.registrationNumber,
-        fuelType: String(fuelType).trim(),
-        transmission: supportsTransmission(normalizedVehicleType) ? String(transmission).trim() : "NOT_APPLICABLE",
+        fuelType: normalizedFuelType,
+        transmission: supportsTransmission(normalizedVehicleType) ? normalizedTransmission! : "NOT_APPLICABLE",
         bodyType: normalizedBodyType,
-        color: color ? color.trim() : null,
-        doors: doors ? parseInt(doors) : null,
-        engineVolume: engineVolume ? parseFloat(engineVolume) : null,
-        power: power ? parseInt(power) : null,
-        driveType: normalizedVehicleType === "CAR" && driveType ? driveType.trim() : null,
-        condition: condition ? condition.trim() : null,
-        steeringWheel: steeringWheel ? steeringWheel.trim() : null,
-        ownersCount: ownersCount ? parseInt(ownersCount) : null,
-        documentsStatus: documentsStatus ? documentsStatus.trim() : null,
-        damageInfo: damageInfo ? damageInfo.trim() : null,
-        sellerType: sellerType ? sellerType.trim() : null,
-        availability: availability ? availability.trim() : null,
-        customsCleared: customsCleared !== undefined ? Boolean(customsCleared) : null,
-        generation: generation ? generation.trim() : null,
-        keywords: keywords ? keywords.trim() : null,
+        color: normalizedColor,
+        doors: normalizedDoors,
+        engineVolume: normalizedEngineVolume,
+        power: normalizedPower,
+        driveType: normalizedVehicleType === "CAR" ? normalizedDriveType : null,
+        condition: normalizedCondition!,
+        steeringWheel: normalizedSteeringWheel,
+        ownersCount: normalizedOwnersCount,
+        documentsStatus: normalizedDocumentsStatus,
+        damageInfo: normalizedDamageInfo,
+        sellerType: normalizedSellerType,
+        availability: normalizedAvailability,
+        customsCleared: normalizedCustomsCleared,
+        generation: normalizedGeneration,
+        keywords: normalizedKeywords,
         vehicleType: normalizedVehicleType,
         typeDetails: normalizedTypeDetails,
         location: normalizedLocation,
