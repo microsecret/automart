@@ -1586,12 +1586,6 @@ select {
 
 .auction-intro__title {
   margin: 0;
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.1rem);
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: var(--market-ink);
   text-wrap: balance;
 }
 
@@ -5454,6 +5448,17 @@ h1,
 h1:not(:last-child),
 .mantine-Title-root[data-order="1"]:not(:last-child) {
   margin-bottom: 8px;
+}
+
+/* Заголовок первого экрана главной — единственное исключение из шкалы.
+
+   Он открывает сайт, а не называет раздел: белый текст на цветной
+   подложке, 42 пикселя против общих 34. Помечен атрибутом, чтобы
+   отличаться от заголовка, которому размер поставили по недосмотру. */
+h1[data-lw-hero] {
+  font-size: inherit;
+  letter-spacing: -0.03em;
+  margin-bottom: 0;
 }
 
 /* Заголовок карточки товара — исключение, и осознанное.
