@@ -246,7 +246,7 @@ function DeliveriesWorkspace() {
                 <Group gap="sm" wrap="nowrap">
                   <ThemeIcon size={42} radius="lg" variant="light" color="orange"><IconGavel size={21} /></ThemeIcon>
                   <Stack gap={1}>
-                    <Group gap="xs"><Text fw={850} fz="lg">Заявки рядом</Text><Badge color="teal" variant="light">Автораспределение включено</Badge></Group>
+                    <Group gap="xs"><Text fw={800} fz="lg">Заявки рядом</Text><Badge color="teal" variant="light">Автораспределение включено</Badge></Group>
                     <Text size="sm" c="dimmed">Показываем город и данные лота без телефона и почты. Кто первым принимает заявку, тот открывает сделку.</Text>
                   </Stack>
                 </Group>
@@ -265,7 +265,7 @@ function DeliveriesWorkspace() {
                             <Text size="xs" c="dimmed">до {new Date(offer.expiresAt).toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</Text>
                           </Group>
                           <Box>
-                            <Text fw={850} lineClamp={2}>{listing.make} {listing.model} {listing.year}</Text>
+                            <Text fw={800} lineClamp={2}>{listing.make} {listing.model} {listing.year}</Text>
                             <Text size="sm" c="dimmed">{countryLabel(listing.country)} · {listing.lotNumber ? "лот " + listing.lotNumber + " · " : ""}{formatPriceShort(listing.finalPrice)}</Text>
                           </Box>
                           <Group gap={6}><IconMapPin size={15} color="#1c4291" /><Text size="sm" fw={700}>{offer.inquiry.city || "Город уточняется"}</Text><Text size="sm" c="dimmed">· {offer.inquiry.name}</Text></Group>
@@ -313,7 +313,7 @@ function DeliveriesWorkspace() {
             <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 280 }}>
               <ThemeIcon size={48} radius="lg" variant="gradient" gradient={{ from: "indigo", to: "violet", deg: 135 }}><IconBuildingWarehouse size={24} /></ThemeIcon>
               <Stack gap={4}>
-                <Group gap="xs" wrap="wrap"><Text fw={850} fz="lg">Работаете с международной доставкой?</Text>{organizationData?.organization && <Badge variant="light" color={organizationStatusMeta[organizationData.organization.verificationStatus].color}>{organizationStatusMeta[organizationData.organization.verificationStatus].label}</Badge>}</Group>
+                <Group gap="xs" wrap="wrap"><Text fw={800} fz="lg">Работаете с международной доставкой?</Text>{organizationData?.organization && <Badge variant="light" color={organizationStatusMeta[organizationData.organization.verificationStatus].color}>{organizationStatusMeta[organizationData.organization.verificationStatus].label}</Badge>}</Group>
                 <Text size="sm" c="dimmed" maw={720}>ИП, ООО, логистические компании и брокеры могут подать реквизиты. После проверки организация попадёт в закрытый реестр партнёров LeWheel.</Text>
               </Stack>
             </Group>
@@ -374,7 +374,7 @@ function DeliveriesWorkspace() {
             <Box className="partner-application-section">
               <Stack gap="sm">
                 <Box>
-                  <Text fw={850} fz="lg">Данные организации</Text>
+                  <Text fw={800} fz="lg">Данные организации</Text>
                   <Text size="sm" c="dimmed">Запрашиваем только сведения, необходимые для первичной проверки.</Text>
                 </Box>
                 <TextInput required label="Полное наименование" placeholder="ООО «Транс Логистика»" value={partnerForm.legalName} onChange={(event) => setPartnerForm({ ...partnerForm, legalName: event.currentTarget.value })} />
@@ -391,7 +391,7 @@ function DeliveriesWorkspace() {
                 <Group gap="sm" wrap="nowrap">
                   <ThemeIcon size={38} radius="md" variant="light" color="orange"><IconRoute size={20} /></ThemeIcon>
                   <Box>
-                    <Text fw={850}>География и направления</Text>
+                    <Text fw={800}>География и направления</Text>
                     <Text size="sm" c="dimmed">По этим данным система будет сопоставлять заявки с вашей компанией.</Text>
                   </Box>
                 </Group>

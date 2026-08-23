@@ -143,7 +143,7 @@ export default function LegalDocumentBuilder() {
         <Group gap="sm" align="flex-start" wrap="nowrap">
           <ThemeIcon size={42} radius="md" color="indigo" variant="light"><IconFileCheck size={21} /></ThemeIcon>
           <Stack gap={2}>
-            <Text component="h2" fw={850} fz={{ base: 22, md: 27 }}>Заполнить и скачать</Text>
+            <Text component="h2" fw={800} fz={{ base: 22, md: 27 }}>Заполнить и скачать</Text>
             <Text size="sm" c="dimmed">Файл RTF открывается в Word, LibreOffice и большинстве мобильных редакторов.</Text>
           </Stack>
         </Group>

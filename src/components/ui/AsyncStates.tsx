@@ -40,7 +40,7 @@ export function AsyncErrorState({
           человек доберётся до этого места табуляцией. */}
       <Stack align="center" gap="sm" maw={480} mx="auto" ta="center" role="alert">
         <ThemeIcon size={52} radius="xl" color="red" variant="light"><IconAlertCircle size={27} /></ThemeIcon>
-        <Text fw={750} fz="lg">{title}</Text>
+        <Text fw={700} fz="lg">{title}</Text>
         <Text size="sm" c="dimmed">{description}</Text>
         <Group justify="center" gap="xs" mt="xs">
           {onRetry && (
@@ -74,7 +74,7 @@ export function EmptyState({ title, description, actionLabel, actionHref, onActi
     <Paper radius="md" p={{ base: "lg", md: "xl" }} withBorder>
       <Stack align="center" gap="sm" maw={480} mx="auto" ta="center">
         <ThemeIcon size={52} radius="xl" color="gray" variant="light"><IconSearchOff size={26} /></ThemeIcon>
-        <Text fw={750} fz="lg">{title}</Text>
+        <Text fw={700} fz="lg">{title}</Text>
         <Text size="sm" c="dimmed">{description}</Text>
         {actionLabel && actionHref && <Button component={Link} href={actionHref} variant="light" color="indigo" size="sm" mt="xs">{actionLabel}</Button>}
         {actionLabel && onAction && <Button variant="light" color="indigo" size="sm" mt="xs" onClick={onAction}>{actionLabel}</Button>}

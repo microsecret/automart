@@ -157,7 +157,7 @@ export default function AdminPartnersPage() {
                 <Group gap="sm" wrap="nowrap">
                   <ThemeIcon variant="light" color={meta.color} size={36} radius="md"><StatusIcon size={18} /></ThemeIcon>
                   <Stack gap={0}>
-                    <Text fw={850} fz="lg" lh={1}>{summary[value] || 0}</Text>
+                    <Text fw={800} fz="lg" lh={1}>{summary[value] || 0}</Text>
                     <Text size="xs" c="dimmed">{meta.label}</Text>
                   </Stack>
                 </Group>
@@ -230,7 +230,7 @@ export default function AdminPartnersPage() {
       <Modal opened={Boolean(editingOrganization)} onClose={() => !isSaving && setEditingOrganization(null)} title="Решение по партнёру" centered radius="lg" size="lg">
         <Stack gap="sm">
           <Paper withBorder radius="md" p="sm" bg="gray.0">
-            <Text fw={750}>{editingOrganization?.legalName}</Text>
+            <Text fw={700}>{editingOrganization?.legalName}</Text>
             <Text size="xs" c="dimmed">ИНН {editingOrganization?.inn} · {organizationKindLabel(editingOrganization?.organizationType || "")}</Text>
           </Paper>
           <Alert color="blue" icon={<IconFileSearch size={16} />}>Сверьте реквизиты по подтверждённому источнику. Статус не заменяет юридическую экспертизу и не создаёт платёжных обязательств.</Alert>

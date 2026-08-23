@@ -344,7 +344,7 @@ export default function AdminSupportPage() {
                               bg={system ? "var(--mantine-color-gray-1)" : staff ? "var(--mantine-color-indigo-light)" : "white"}
                             >
                               <Group justify="space-between" gap="md" mb={4}>
-                                <Text size="xs" fw={750} c={system ? "dimmed" : staff ? "indigo" : "dark"}>{authorLabel(message)}</Text>
+                                <Text size="xs" fw={700} c={system ? "dimmed" : staff ? "indigo" : "dark"}>{authorLabel(message)}</Text>
                                 <Text size="xs" c="dimmed">{formatDate(message.createdAt)}</Text>
                               </Group>
                               <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>{message.content}</Text>

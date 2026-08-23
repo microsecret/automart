@@ -76,7 +76,7 @@ export default function ReferralPayoutPanel() {
         <Group gap="sm">
           <ThemeIcon variant="light" color="teal" size={36} radius="md"><IconCoins size={18} /></ThemeIcon>
           <Stack gap={1}>
-            <Text size="sm" fw={750}>Выплаты партнёрам</Text>
+            <Text size="sm" fw={700}>Выплаты партнёрам</Text>
             <Text size="xs" c="dimmed">
               Переводите по расчётному счёту и вносите запись — партнёр сразу увидит её в кабинете.
             </Text>

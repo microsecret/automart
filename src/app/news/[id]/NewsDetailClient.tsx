@@ -226,7 +226,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
               <Group gap="sm" wrap="nowrap">
                 <ThemeIcon size={38} radius="xl" color="blue"><IconBrandTelegram size={21} /></ThemeIcon>
                 <Box>
-                  <Text fw={750} size="sm">Продолжить в Telegram</Text>
+                  <Text fw={700} size="sm">Продолжить в Telegram</Text>
                   <Text size="xs" c="dimmed">Канал редакции и сервисы для автомобилистов</Text>
                 </Box>
               </Group>

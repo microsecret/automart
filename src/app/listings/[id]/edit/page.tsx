@@ -141,7 +141,7 @@ export default function EditListingPage() {
 
         <Paper withBorder radius="md" p={{ base: "md", sm: "lg" }}>
           <Stack gap="md">
-            <Text fw={750}>Основные данные</Text>
+            <Text fw={700}>Основные данные</Text>
             <TextInput label="Заголовок" required value={form.title} onChange={(event) => updateForm("title", event.currentTarget.value)} maxLength={200} />
             <Group grow align="flex-start">
               <TextInput label="Цена, ₽" required inputMode="numeric" value={form.price} onChange={(event) => updateForm("price", event.currentTarget.value.replace(/\D/g, ""))} />
@@ -153,7 +153,7 @@ export default function EditListingPage() {
 
         <Paper withBorder radius="md" p={{ base: "md", sm: "lg" }}>
           <Stack gap="md">
-            <Group justify="space-between" align="center"><Group gap="xs"><ThemeIcon color="indigo" variant="light" radius="md"><IconPhoto size={17} /></ThemeIcon><Text fw={750}>Фотографии</Text></Group><Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge></Group>
+            <Group justify="space-between" align="center"><Group gap="xs"><ThemeIcon color="indigo" variant="light" radius="md"><IconPhoto size={17} /></ThemeIcon><Text fw={700}>Фотографии</Text></Group><Badge variant="light" color={images.length ? "indigo" : "gray"}>{images.length}/12</Badge></Group>
             <Text size="sm" c="dimmed">Первая фотография используется как обложка. Допустимы JPG, PNG и WebP до 10 МБ.</Text>
             <FileInput accept="image/jpeg,image/png,image/webp" multiple clearable disabled={uploadingImages || images.length >= 12} placeholder="Добавить фотографии" onChange={uploadPhotos} leftSection={<IconPhoto size={16} />} />
             <ListingPhotoGrid images={images} uploading={uploadingImages} onRemove={removeImage} />

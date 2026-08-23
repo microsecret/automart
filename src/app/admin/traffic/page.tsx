@@ -109,13 +109,13 @@ export default function TrafficPage() {
                 <Text fz={28} fw={800} ff="var(--font-display),sans-serif" lh={1}>
                   {isLoading ? "—" : data?.totals.uniqueVisitors.toLocaleString("ru")}
                 </Text>
-                <Text size="sm" fw={650} mt={4}>Уникальных посетителей</Text>
+                <Text size="sm" fw={600} mt={4}>Уникальных посетителей</Text>
                 {typeof change === "number" && (
                   <Group gap={4} mt={4}>
                     <ThemeIcon variant="light" size={20} radius="sm" color={change >= 0 ? "teal" : "red"}>
                       {change >= 0 ? <IconTrendingUp size={12} /> : <IconTrendingDown size={12} />}
                     </ThemeIcon>
-                    <Text size="xs" c={change >= 0 ? "teal.7" : "red.7"} fw={650}>
+                    <Text size="xs" c={change >= 0 ? "teal.7" : "red.7"} fw={600}>
                       {change >= 0 ? "+" : ""}{change}% к прошлому периоду
                     </Text>
                   </Group>
@@ -126,7 +126,7 @@ export default function TrafficPage() {
                 <Text fz={28} fw={800} ff="var(--font-display),sans-serif" lh={1}>
                   {isLoading ? "—" : data?.totals.views.toLocaleString("ru")}
                 </Text>
-                <Text size="sm" fw={650} mt={4}>Просмотров страниц</Text>
+                <Text size="sm" fw={600} mt={4}>Просмотров страниц</Text>
                 <Text size="xs" c="dimmed">{data?.periodLabel}</Text>
               </Card>
 
@@ -134,7 +134,7 @@ export default function TrafficPage() {
                 <Text fz={28} fw={800} ff="var(--font-display),sans-serif" lh={1}>
                   {isLoading || !data ? "—" : (data.totals.views / Math.max(1, data.totals.uniqueVisitors)).toFixed(1)}
                 </Text>
-                <Text size="sm" fw={650} mt={4}>Страниц на человека</Text>
+                <Text size="sm" fw={600} mt={4}>Страниц на человека</Text>
                 <Text size="xs" c="dimmed">Глубина просмотра</Text>
               </Card>
 
@@ -142,7 +142,7 @@ export default function TrafficPage() {
                 <Text fz={28} fw={800} ff="var(--font-display),sans-serif" lh={1}>
                   {isLoading || !peakHour ? "—" : `${peakHour.hour}:00`}
                 </Text>
-                <Text size="sm" fw={650} mt={4}>Час пика</Text>
+                <Text size="sm" fw={600} mt={4}>Час пика</Text>
                 <Text size="xs" c="dimmed">По Москве · когда запускать рассылку</Text>
               </Card>
             </SimpleGrid>

@@ -337,8 +337,8 @@ function DashboardContent() {
               <Button key={item.label} variant="subtle" color={item.color} className="dashboard-workspace__status" onClick={() => selectTab("listings")} rightSection={<IconArrowRight size={14} />}>
                 <ThemeIcon size={30} radius="md" variant="light" color={item.color}>{item.icon}</ThemeIcon>
                 <Stack gap={0} align="flex-start" style={{ flex: 1 }}>
-                  <Text size="xs" c="dimmed" fw={650}>{item.label}</Text>
-                  <Text size="lg" c="var(--market-ink)" fw={850} lh={1}>{item.value}</Text>
+                  <Text size="xs" c="dimmed" fw={600}>{item.label}</Text>
+                  <Text size="lg" c="var(--market-ink)" fw={800} lh={1}>{item.value}</Text>
                 </Stack>
               </Button>
             ))}
@@ -489,7 +489,7 @@ function DashboardContent() {
                   <ThemeIcon color="indigo" variant="light" size={40} radius="md"><IconCreditCard size={20} /></ThemeIcon>
                   <Stack gap={1}>
                     <Text size="xs" c="dimmed">Оплачено за продвижение</Text>
-                    <Text fw={850} fz="xl">{formatRubles(stats.promotionSpentRub)}</Text>
+                    <Text fw={800} fz="xl">{formatRubles(stats.promotionSpentRub)}</Text>
                   </Stack>
                 </Group>
               </Paper>
@@ -498,7 +498,7 @@ function DashboardContent() {
                   <ThemeIcon color="teal" variant="light" size={40} radius="md"><IconTrendingUp size={20} /></ThemeIcon>
                   <Stack gap={1}>
                     <Text size="xs" c="dimmed">Активные продвижения</Text>
-                    <Text fw={850} fz="xl">{stats.activePromotions}</Text>
+                    <Text fw={800} fz="xl">{stats.activePromotions}</Text>
                   </Stack>
                 </Group>
               </Paper>
@@ -507,7 +507,7 @@ function DashboardContent() {
                   <ThemeIcon color="violet" variant="light" size={40} radius="md"><IconReceipt size={20} /></ThemeIcon>
                   <Stack gap={1}>
                     <Text size="xs" c="dimmed">Успешные оплаты</Text>
-                    <Text fw={850} fz="xl">{stats.promotionPaidCount}</Text>
+                    <Text fw={800} fz="xl">{stats.promotionPaidCount}</Text>
                   </Stack>
                 </Group>
               </Paper>
@@ -526,7 +526,7 @@ function DashboardContent() {
                 <Center py={{ base: "xl", md: 48 }}>
                   <Stack align="center" gap="sm" ta="center" maw={420}>
                     <ThemeIcon color="indigo" variant="light" size={52} radius="xl"><IconReceipt size={25} /></ThemeIcon>
-                    <Text fw={750}>Оплат пока не было</Text>
+                    <Text fw={700}>Оплат пока не было</Text>
                     <Text size="sm" c="dimmed">Продвижение можно подключить у активного объявления после настройки платёжного провайдера.</Text>
                     <Button onClick={() => selectTab("listings")} color="indigo" size="sm">Перейти к объявлениям</Button>
                   </Stack>
@@ -549,7 +549,7 @@ function DashboardContent() {
                             {order.promoUntil && <Text size="xs" c="teal.7">Продвижение до {new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.promoUntil))}</Text>}
                           </Stack>
                           <Group gap="xs">
-                            <Text fw={850}>{formatRubles(order.amountRub)}</Text>
+                            <Text fw={800}>{formatRubles(order.amountRub)}</Text>
                             <ActionIcon component={Link} href={`/listings/${order.listing.id}/promote`} color="indigo" variant="subtle" aria-label={`Открыть продвижение ${order.listing.title}`}><IconExternalLink size={17} /></ActionIcon>
                           </Group>
                         </Group>
@@ -666,7 +666,7 @@ function DashboardContent() {
               <Center py={{ base: "xl", md: 56 }}>
                 <Stack align="center" gap="sm" maw={420} ta="center">
                   <ThemeIcon variant="light" color="teal" size={54} radius="xl"><IconCar size={27} /></ThemeIcon>
-                  <Text fw={750} fz="lg">В гараже пока нет автомобилей</Text>
+                  <Text fw={700} fz="lg">В гараже пока нет автомобилей</Text>
                   <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно, а когда понадобится — создать из неё объявление без повторного ввода.</Text>
                   <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>
                 </Stack>
@@ -711,7 +711,7 @@ function DashboardContent() {
                       <ThemeIcon variant="light" color="indigo" radius="md" size={34}><IconAt size={17} /></ThemeIcon>
                       <Box style={{ minWidth: 0 }}>
                         <Text size="xs" c="dimmed">Почта для входа</Text>
-                        <Text size="sm" fw={650} truncate>{accountProfile.email || "Не указана"}</Text>
+                        <Text size="sm" fw={600} truncate>{accountProfile.email || "Не указана"}</Text>
                         <Text size="xs" c={accountProfile.emailVerified ? "teal.7" : "yellow.8"}>{accountProfile.emailVerified ? "Подтверждена" : "Требует подтверждения"}</Text>
                       </Box>
                     </Group>
@@ -721,7 +721,7 @@ function DashboardContent() {
                       <ThemeIcon variant="light" color="teal" radius="md" size={34}><IconPhone size={17} /></ThemeIcon>
                       <Box style={{ minWidth: 0 }}>
                         <Text size="xs" c="dimmed">Телефон</Text>
-                        <Text size="sm" fw={650} truncate>{accountProfile.phone || "Не указан"}</Text>
+                        <Text size="sm" fw={600} truncate>{accountProfile.phone || "Не указан"}</Text>
                         <Text size="xs" c={accountProfile.telegramVerifiedAt ? "teal.7" : "yellow.8"}>{accountProfile.telegramVerifiedAt ? "Подтверждён через Telegram" : "Не подтверждён"}</Text>
                       </Box>
                     </Group>
@@ -731,7 +731,7 @@ function DashboardContent() {
                       <ThemeIcon variant="light" color="blue" radius="md" size={34}><IconBrandTelegram size={17} /></ThemeIcon>
                       <Box style={{ minWidth: 0 }}>
                         <Text size="xs" c="dimmed">Telegram</Text>
-                        <Text size="sm" fw={650} truncate>{accountProfile.telegramUsername ? `@${accountProfile.telegramUsername}` : "Профиль без username"}</Text>
+                        <Text size="sm" fw={600} truncate>{accountProfile.telegramUsername ? `@${accountProfile.telegramUsername}` : "Профиль без username"}</Text>
                         <Text size="xs" c={accountProfile.telegramVerifiedAt ? "teal.7" : "yellow.8"}>{accountProfile.telegramVerifiedAt ? "Личность подтверждена" : "Не привязан"}</Text>
                       </Box>
                     </Group>

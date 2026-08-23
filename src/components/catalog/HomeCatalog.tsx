@@ -444,13 +444,11 @@ export default function HomePage(p: HomePageProps = {}) {
 
       <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="md" p="md" withBorder>
         <Stack gap="sm">
-          <Group className="catalog-filter-panel__intro" justify="space-between" align="baseline" gap="sm">
-            <Box>
-              <Text size="sm" fw={750}>{isPartSearch ? "Найдите нужную запчасть" : "Найдите подходящий транспорт"}</Text>
-              <Text size="xs" c="dimmed">{isPartSearch ? "Ищите по названию, OEM-номеру, марке автомобиля или цене." : "Начните с марки, цены или города — остальное уточните при необходимости."}</Text>
-            </Box>
-            {activeFilterCount > 0 && <Badge color="indigo" variant="light" radius="xl">Выбрано: {activeFilterCount}</Badge>}
-          </Group>
+          {activeFilterCount > 0 && (
+            <Group className="catalog-filter-panel__intro" justify="flex-end" gap="sm">
+              <Badge color="indigo" variant="light" radius="xl">Выбрано условий: {activeFilterCount}</Badge>
+            </Group>
+          )}
           <Box className="catalog-filter-grid">
             <TextInput className="catalog-filter-field catalog-filter-field--search" label="Что ищете" placeholder={isPartSearch ? "Название, OEM или ключевое слово" : "Марка, модель, ключевое слово"} leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
             <Select
@@ -482,7 +480,7 @@ export default function HomePage(p: HomePageProps = {}) {
                 return (
                   <Group gap="xs" wrap="nowrap">
                     <BrandIcon brand={option.value} size={24} variant="rounded" />
-                    <Text size="sm" fw={650}>{option.label}</Text>
+                    <Text size="sm" fw={600}>{option.label}</Text>
                     {brand && <Text size="xs" c="dimmed" ml="auto" aria-label={`Страна марки: ${brand.country}`}>{COUNTRY_FLAGS[brand.country]}</Text>}
                   </Group>
                 )
@@ -760,7 +758,7 @@ export default function HomePage(p: HomePageProps = {}) {
                 <IconBell size={18} stroke={1.8} />
               </ThemeIcon>
               <Box style={{ minWidth: 0 }}>
-                <Text size="sm" fw={650} c="var(--market-ink)">
+                <Text size="sm" fw={600} c="var(--market-ink)">
                   Следить за этим поиском
                 </Text>
                 <Text size="xs" c="dimmed">

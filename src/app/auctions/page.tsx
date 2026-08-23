@@ -353,7 +353,7 @@ function AuctionsPageContent() {
         <Paper radius="md" p="md" withBorder className="auction-filter-panel">
           <Stack gap="sm">
             <Group justify="space-between" align="center">
-              <Box><Text size="sm" fw={750}>Подберите лот под импорт</Text><Text size="xs" c="dimmed">Площадка зависит от страны, цена лота пересчитывается по курсу ЦБ.</Text></Box>
+              <Box><Text size="sm" fw={700}>Подберите лот под импорт</Text><Text size="xs" c="dimmed">Площадка зависит от страны, цена лота пересчитывается по курсу ЦБ.</Text></Box>
               {hasActiveFilters && <Button variant="subtle" color="gray" size="compact-sm" leftSection={<IconX size={14} />} onClick={resetFilters}>Сбросить</Button>}
             </Group>
             <Group gap="xs" align="center" wrap="wrap">
@@ -514,7 +514,7 @@ function AuctionsPageContent() {
                 <Group gap="xs" wrap="nowrap">
                   <ThemeIcon variant="light" color="indigo" size={26} radius="md"><IconChartBar size={15} /></ThemeIcon>
                   <Box style={{ minWidth: 0 }}>
-                    <Text size="sm" fw={750}>Разбор текущей выдачи</Text>
+                    <Text size="sm" fw={700}>Разбор текущей выдачи</Text>
                     <Text size="xs" c="dimmed">Цены, год, пробег, топливо и кузов по {analytics.total} лотам</Text>
                   </Box>
                 </Group>
@@ -604,7 +604,7 @@ function AuctionsPageContent() {
               <ThemeIcon size={52} radius="xl" variant="light" color={hasActiveFilters ? "gray" : "orange"}>
                 <IconDatabaseOff size={26} />
               </ThemeIcon>
-              <Text fw={750}>{countryAwaitingConnection ? `${countryLabel}: подключение источников готовится` : hasActiveFilters ? "По этим параметрам лотов не найдено" : "Каталог аукционов обновляется"}</Text>
+              <Text fw={700}>{countryAwaitingConnection ? `${countryLabel}: подключение источников готовится` : hasActiveFilters ? "По этим параметрам лотов не найдено" : "Каталог аукционов обновляется"}</Text>
               <Text size="sm" c="dimmed">
                 {countryAwaitingConnection
                   ? "Для этой страны нет активного автоматического сборщика: публикации появятся только после проверки и подключения разрешённого источника. Оставьте заявку — команда подберёт автомобиль вручную."
@@ -648,7 +648,7 @@ function AuctionsPageContent() {
                     <Group gap="sm" wrap="nowrap" align="center">
                       <BrandIcon brand={identity.make} size={34} variant="rounded" />
                       <Box style={{ minWidth: 0, flex: 1 }}>
-                        <Text className={styles.resultTitle} fw={760} fz="sm" lineClamp={2}>{identity.title}</Text>
+                        <Text className={styles.resultTitle} fw={700} fz="sm" lineClamp={2}>{identity.title}</Text>
                         <Text className="auction-result-card__summary" lineClamp={1}>
                           {l.year} г.{l.mileage != null ? ` · ${l.mileage.toLocaleString("ru")} км` : ""}
                         </Text>

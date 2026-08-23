@@ -27,13 +27,13 @@ export default function HelpSupportPage() {
 
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
           <Card withBorder radius="md" p="lg">
-            <Stack gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconRobot size={18} /></ThemeIcon><Text fw={750}>Сначала — инструкция</Text><Text size="sm" c="dimmed">Помощник отвечает по проверенной базе знаний: регистрация, объявления, аукционы, доставка и безопасность.</Text></Stack>
+            <Stack gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconRobot size={18} /></ThemeIcon><Text fw={700}>Сначала — инструкция</Text><Text size="sm" c="dimmed">Помощник отвечает по проверенной базе знаний: регистрация, объявления, аукционы, доставка и безопасность.</Text></Stack>
           </Card>
           <Card withBorder radius="md" p="lg">
-            <Stack gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconUserCheck size={18} /></ThemeIcon><Text fw={750}>Затем — оператор</Text><Text size="sm" c="dimmed">Если ответа недостаточно, нажмите «Позвать оператора». Сотрудник увидит историю и продолжит диалог в том же окне.</Text></Stack>
+            <Stack gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconUserCheck size={18} /></ThemeIcon><Text fw={700}>Затем — оператор</Text><Text size="sm" c="dimmed">Если ответа недостаточно, нажмите «Позвать оператора». Сотрудник увидит историю и продолжит диалог в том же окне.</Text></Stack>
           </Card>
           <Card withBorder radius="md" p="lg">
-            <Stack gap="sm"><ThemeIcon variant="light" color="blue" radius="md"><IconLock size={18} /></ThemeIcon><Text fw={750}>Контакт — по желанию</Text><Text size="sm" c="dimmed">Гость может оставить имя, телефон или email. Пароли, коды входа и платёжные данные поддержка не запрашивает.</Text></Stack>
+            <Stack gap="sm"><ThemeIcon variant="light" color="blue" radius="md"><IconLock size={18} /></ThemeIcon><Text fw={700}>Контакт — по желанию</Text><Text size="sm" c="dimmed">Гость может оставить имя, телефон или email. Пароли, коды входа и платёжные данные поддержка не запрашивает.</Text></Stack>
           </Card>
         </SimpleGrid>
 
@@ -43,7 +43,7 @@ export default function HelpSupportPage() {
             <Stack gap="sm" style={{ minWidth: 0 }}>
               <div><Title order={3}>Быстрые инструкции</Title><Text size="sm" c="dimmed">Откройте нужный раздел или задайте уточняющий вопрос помощнику.</Text></div>
               <List spacing="xs">
-                {HELP_LINKS.map((item) => <List.Item key={item.href}><Text component={Link} href={item.href} c="indigo" fw={650}>{item.label}</Text></List.Item>)}
+                {HELP_LINKS.map((item) => <List.Item key={item.href}><Text component={Link} href={item.href} c="indigo" fw={600}>{item.label}</Text></List.Item>)}
               </List>
             </Stack>
           </Group>

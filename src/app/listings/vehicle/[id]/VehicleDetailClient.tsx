@@ -723,7 +723,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   size="h3"
                   mb={4}
                   ff="var(--font-display), sans-serif"
-                  fw={750}
+                  fw={700}
                   lh={1.15}
                   c="var(--market-ink)"
                   style={{ letterSpacing: "var(--track-title)", textWrap: "balance" }}

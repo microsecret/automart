@@ -133,7 +133,7 @@ export default function TelegramBroadcastPage() {
                 <Text fz={26} fw={800} ff="var(--font-display),sans-serif" lh={1}>
                   {isLoading ? "—" : card.value.toLocaleString("ru")}
                 </Text>
-                <Text size="sm" fw={650} mt={4}>{card.label}</Text>
+                <Text size="sm" fw={600} mt={4}>{card.label}</Text>
                 <Text size="xs" c="dimmed">{card.hint}</Text>
               </Card>
             ))}

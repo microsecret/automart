@@ -430,8 +430,8 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
       </Group>
       <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · тяните карту, масштабируйте колесом</Text></Box>
       <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-quality="live">Есть live-данные</Text><Text component="span" data-quality="fuel">Топливо отмечено</Text><Text component="span" data-quality="network">Сеть указана</Text><Text component="span" data-quality="basic">Без тегов</Text></Box>
-      {clusterHint && <Paper className="fuel-map-cluster-hint" radius="md" p="xs" withBorder aria-live="polite"><Text size="xs" fw={650}>{clusterHint}</Text><Button size="compact-xs" variant="subtle" color="indigo" onClick={() => setClusterHint(null)}>Понятно</Button></Paper>}
-      {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite"><Group justify="space-between" gap="xs" wrap="nowrap"><Text size="xs" fw={750} lineClamp={1}>{selectedStation.name}</Text><Badge size="xs" color={getStationStatus(selectedStation).color} variant="light">{getStationStatus(selectedStation).label}</Badge></Group><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || selectedStationAddress || getStationNetwork(selectedStation) || "Уточняем адрес по OSM…"}</Text><Group gap={4} mt={4} wrap="wrap">{selectedStation.prices.length ? selectedStation.prices.slice(0, 3).map((price) => <Badge key={price.fuel} size="xs" color="teal" variant="light">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>) : selectedStation.fuels.length ? selectedStation.fuels.slice(0, 4).map((fuel) => <Badge key={fuel} size="xs" color="teal" variant="light">{fuel}</Badge>) : <Badge size="xs" color="gray" variant="light">Ассортимент не указан</Badge>}</Group><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{formatStationTimestamp(selectedStation.statusUpdatedAt) ? `Обновлено: ${formatStationTimestamp(selectedStation.statusUpdatedAt)}` : selectedStation.fuels.length ? "Топливо отмечено в OpenStreetMap" : getStationDataSummary(selectedStation)}</Text></Paper>}
+      {clusterHint && <Paper className="fuel-map-cluster-hint" radius="md" p="xs" withBorder aria-live="polite"><Text size="xs" fw={600}>{clusterHint}</Text><Button size="compact-xs" variant="subtle" color="indigo" onClick={() => setClusterHint(null)}>Понятно</Button></Paper>}
+      {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite"><Group justify="space-between" gap="xs" wrap="nowrap"><Text size="xs" fw={700} lineClamp={1}>{selectedStation.name}</Text><Badge size="xs" color={getStationStatus(selectedStation).color} variant="light">{getStationStatus(selectedStation).label}</Badge></Group><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || selectedStationAddress || getStationNetwork(selectedStation) || "Уточняем адрес по OSM…"}</Text><Group gap={4} mt={4} wrap="wrap">{selectedStation.prices.length ? selectedStation.prices.slice(0, 3).map((price) => <Badge key={price.fuel} size="xs" color="teal" variant="light">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>) : selectedStation.fuels.length ? selectedStation.fuels.slice(0, 4).map((fuel) => <Badge key={fuel} size="xs" color="teal" variant="light">{fuel}</Badge>) : <Badge size="xs" color="gray" variant="light">Ассортимент не указан</Badge>}</Group><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{formatStationTimestamp(selectedStation.statusUpdatedAt) ? `Обновлено: ${formatStationTimestamp(selectedStation.statusUpdatedAt)}` : selectedStation.fuels.length ? "Топливо отмечено в OpenStreetMap" : getStationDataSummary(selectedStation)}</Text></Paper>}
     </Paper>
   )
 }
@@ -481,7 +481,7 @@ function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoadin
         <Group gap="sm" wrap="nowrap">
           <ThemeIcon variant={networkIdentity ? "filled" : "light"} color={iconColor} radius="md" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkIdentity ? networkIdentity.shortLabel : <IconGasStation size={17} />}</ThemeIcon>
           <Box style={{ minWidth: 0 }}>
-            <Text fw={750} size="sm" lineClamp={1}>{station.name}</Text>
+            <Text fw={700} size="sm" lineClamp={1}>{station.name}</Text>
             <Text size="xs" c="dimmed" lineClamp={2}>{displayAddress || (isAddressLoading ? "Уточняем адрес по OSM…" : "Адрес не указан")}</Text>
           </Box>
         </Group>
@@ -540,7 +540,7 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
         </Paper>
 
         <Box>
-          <Group justify="space-between" mb={6}><Text size="sm" fw={750}>Топливо и наличие</Text><Badge size="xs" color={availability.color} variant="light">{availability.description}</Badge></Group>
+          <Group justify="space-between" mb={6}><Text size="sm" fw={700}>Топливо и наличие</Text><Badge size="xs" color={availability.color} variant="light">{availability.description}</Badge></Group>
           {fuelRows.length ? <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">{fuelRows.map((fuel) => (
             <Paper key={fuel.fuel} radius="md" p="xs" withBorder style={{ background: "rgba(255,255,255,.78)" }}>
               <Group justify="space-between" gap="xs" wrap="nowrap"><Text fw={700} size="sm">{fuel.fuel}</Text><Badge size="xs" color={availability.color} variant="light" leftSection={availability.icon}>{availability.label}</Badge></Group>
@@ -728,20 +728,20 @@ export default function FuelMapPage() {
               <Text size="xs" c="rgba(255,255,255,0.64)">Ищите любой населённый пункт или участок трассы по России. Цены и фактическое наличие показываются только от подтверждённого поставщика.</Text>
             </Stack>
             <Paper className="fuel-map-hero__control" radius="md" p="md" withBorder>
-              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mb={6}>Населённый пункт или трасса</Text>
+              <Text size="xs" fw={700} tt="uppercase" c="gray.6" mb={6}>Населённый пункт или трасса</Text>
               <Box component="form" onSubmit={handlePlaceSearch}><TextInput aria-label="Введите населённый пункт или трассу" placeholder="Например: Уфа или М-5 Урал" value={placeQuery} onChange={(event) => setPlaceQuery(event.currentTarget.value)} rightSection={<ActionIcon type="submit" size="sm" variant="subtle" color="indigo" aria-label="Открыть место на карте"><IconSearch size={16} /></ActionIcon>} /></Box>
-              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Быстрый выбор города</Text>
+              <Text size="xs" fw={700} tt="uppercase" c="gray.6" mt="sm" mb={6}>Быстрый выбор города</Text>
               <Select aria-label="Выберите город" data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))} value={place ? null : city} onChange={handleCityChange} searchable size="sm" placeholder="Выберите город" />
-              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Показать топливо</Text>
+              <Text size="xs" fw={700} tt="uppercase" c="gray.6" mt="sm" mb={6}>Показать топливо</Text>
               <Select aria-label="Выберите тип топлива" data={FUEL_FILTERS} value={fuelFilter} onChange={(value) => setFuelFilter(value || "")} size="sm" />
-              <Text size="xs" fw={750} tt="uppercase" c="gray.6" mt="sm" mb={6}>Сеть АЗС</Text>
+              <Text size="xs" fw={700} tt="uppercase" c="gray.6" mt="sm" mb={6}>Сеть АЗС</Text>
               <Select aria-label="Выберите сеть АЗС" data={networkFilters} value={networkFilter} onChange={(value) => setNetworkFilter(value || "")} size="sm" searchable nothingFoundMessage="Сеть не найдена" />
             </Paper>
           </Group>
         </Paper>
 
         <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={750}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с ${areaLabel}`}</Text><Text size="xs" c="dimmed">{data ? `${filteredStations.length} из ${data.stations.length} точек в подборке${data.coverage.dataMode === "LIVE" ? " · статусы от поставщика" : " · справочник OSM"}` : "Загружаем точки"}</Text></Box></Group>
+          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={700}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с ${areaLabel}`}</Text><Text size="xs" c="dimmed">{data ? `${filteredStations.length} из ${data.stations.length} точек в подборке${data.coverage.dataMode === "LIVE" ? " · статусы от поставщика" : " · справочник OSM"}` : "Загружаем точки"}</Text></Box></Group>
           <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button><Button color={hasUnloadedMapArea ? "indigo" : "gray"} variant={hasUnloadedMapArea ? "filled" : "light"} size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>{hasUnloadedMapArea ? "Загрузить текущий участок" : "Участок загружен"}</Button></Group>
         </Group>
 

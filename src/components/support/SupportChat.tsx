@@ -188,7 +188,7 @@ export default function SupportChat() {
                     <Group gap="sm" align="flex-start" wrap="nowrap">
                       <ThemeIcon variant="light" color="indigo" radius="xl"><IconRobot size={17} /></ThemeIcon>
                       <Stack gap={5}>
-                        <Text size="sm" fw={750}>Здравствуйте! Я помощник LeWheel.</Text>
+                        <Text size="sm" fw={700}>Здравствуйте! Я помощник LeWheel.</Text>
                         <Text size="xs" c="dimmed">Подскажу по регистрации, объявлениям, доставке и аукционам. Если инструкции недостаточно, приглашу оператора и сохраню всю переписку.</Text>
                       </Stack>
                     </Group>
@@ -210,7 +210,7 @@ export default function SupportChat() {
                           c={visitor ? "white" : undefined}
                         >
                           {!system && (
-                            <Text size="10px" fw={750} c={visitor ? "indigo.0" : message.authorType === "OPERATOR" ? "teal" : "indigo"} mb={3}>
+                            <Text size="10px" fw={700} c={visitor ? "indigo.0" : message.authorType === "OPERATOR" ? "teal" : "indigo"} mb={3}>
                               {visitor ? "Вы" : message.authorType === "OPERATOR" ? "Оператор" : "Помощник LeWheel"}
                             </Text>
                           )}

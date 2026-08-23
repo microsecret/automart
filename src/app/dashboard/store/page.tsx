@@ -421,7 +421,7 @@ export default function StoreWorkspacePage() {
                 </Box>
                 <Card withBorder radius="md" p="sm" miw={160}>
                   <Text size="xs" c="dimmed">Позиций в каталоге</Text>
-                  <Text fw={850} size="xl">{store._count.parts}</Text>
+                  <Text fw={800} size="xl">{store._count.parts}</Text>
                 </Card>
               </Group>
             </Card>
@@ -434,7 +434,7 @@ export default function StoreWorkspacePage() {
               <Group gap="sm" mb="sm">
                 <ThemeIcon variant="light" color="teal" size={34} radius="md"><IconFileSpreadsheet size={17} /></ThemeIcon>
                 <Box>
-                  <Text fw={750} size="sm">Загрузка прайс-листа</Text>
+                  <Text fw={700} size="sm">Загрузка прайс-листа</Text>
                   <Text size="xs" c="dimmed">
                     CSV с колонками «Название» и «Цена». Остальные — по возможности: «Артикул», «Аналоги»,
                     «Бренд», «Марка», «Категория», «Кол-во», «Срок».
@@ -479,7 +479,7 @@ export default function StoreWorkspacePage() {
               <Card withBorder radius="md" p="md">
                 <Group justify="space-between" gap="sm" wrap="wrap" mb="sm">
                   <Box>
-                    <Text fw={750} size="sm">Предпросмотр загрузки</Text>
+                    <Text fw={700} size="sm">Предпросмотр загрузки</Text>
                     <Text size="xs" c="dimmed">
                       Строк в файле: {preview.totalRows} · готовы к публикации: {preview.readyRows} · отклонено: {preview.skippedRows}
                     </Text>

@@ -54,7 +54,7 @@ export default function AdminAuditLog() {
         <Group gap="sm">
           <ThemeIcon variant="light" color="gray" size={36} radius="md"><IconHistory size={18} /></ThemeIcon>
           <Stack gap={1}>
-            <Text size="sm" fw={750}>Журнал действий администраторов</Text>
+            <Text size="sm" fw={700}>Журнал действий администраторов</Text>
             <Text size="xs" c="dimmed">Решения, меняющие видимость контента, роли и статусы аккаунтов. Запись не редактируется.</Text>
           </Stack>
         </Group>

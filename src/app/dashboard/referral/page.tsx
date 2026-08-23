@@ -73,14 +73,14 @@ export default function ReferralPage() {
             </Group>
             <Card withBorder={false} radius="md" p="sm" bg="rgba(255,255,255,.12)">
               <Text size="xs" c="rgba(255,255,255,.7)">Ваша ставка</Text>
-              <Text fw={900} size="28px" c="white" lh={1.1}>{data.tier.percent}%</Text>
+              <Text fw={800} size="28px" c="white" lh={1.1}>{data.tier.percent}%</Text>
               <Text size="xs" c="rgba(255,255,255,.7)">{data.tier.label}</Text>
             </Card>
           </Group>
         </Card>
 
         <Card withBorder radius="md" p="md">
-          <Text fw={750} size="sm" mb={4}>Ваша реферальная ссылка</Text>
+          <Text fw={700} size="sm" mb={4}>Ваша реферальная ссылка</Text>
           <Text size="xs" c="dimmed" mb="sm">
             Отправьте её тому, кого приглашаете. Связь закрепляется при регистрации и не меняется.
           </Text>
@@ -101,19 +101,19 @@ export default function ReferralPage() {
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
           <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Приглашено</Text>
-            <Text fw={850} size="xl" mt={4}>{data.stats.invitedCount}</Text>
+            <Text fw={800} size="xl" mt={4}>{data.stats.invitedCount}</Text>
           </Card>
           <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Из них с оплатой</Text>
-            <Text fw={850} size="xl" mt={4}>{data.stats.paidInviteesCount}</Text>
+            <Text fw={800} size="xl" mt={4}>{data.stats.paidInviteesCount}</Text>
           </Card>
           <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Начислено всего</Text>
-            <Text fw={850} size="xl" mt={4}>{data.stats.accruedRub.toLocaleString("ru-RU")} ₽</Text>
+            <Text fw={800} size="xl" mt={4}>{data.stats.accruedRub.toLocaleString("ru-RU")} ₽</Text>
           </Card>
           <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Доступно к выплате</Text>
-            <Text fw={850} size="xl" mt={4} c={data.stats.availableRub > 0 ? "teal" : undefined}>
+            <Text fw={800} size="xl" mt={4} c={data.stats.availableRub > 0 ? "teal" : undefined}>
               {data.stats.availableRub.toLocaleString("ru-RU")} ₽
             </Text>
           </Card>
@@ -210,7 +210,7 @@ export default function ReferralPage() {
                 {data.payouts.map((payout) => (
                   <Card key={payout.id} withBorder radius="md" p="sm">
                     <Group justify="space-between" gap="xs" wrap="wrap">
-                      <Text fw={750}>{payout.amountRub.toLocaleString("ru-RU")} ₽</Text>
+                      <Text fw={700}>{payout.amountRub.toLocaleString("ru-RU")} ₽</Text>
                       <Text size="xs" c="dimmed">{new Date(payout.createdAt).toLocaleString("ru-RU")}</Text>
                     </Group>
                     <Text size="xs" c="dimmed" mt={2}>

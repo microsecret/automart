@@ -37,7 +37,7 @@ export default function SignUpForm() {
               <Group wrap="nowrap" gap="sm">
                 <ThemeIcon color="indigo" variant="light" radius="xl" size={38}><Icon size={19} /></ThemeIcon>
                 <div style={{ flex: 1 }}>
-                  <Text size="sm" fw={750}>{index + 1}. {step.title}</Text>
+                  <Text size="sm" fw={700}>{index + 1}. {step.title}</Text>
                   <Text size="xs" c="dimmed">{step.text}</Text>
                 </div>
                 <IconCircleCheck size={18} color="#94a3b8" aria-hidden />

@@ -99,7 +99,7 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
           <ThemeIcon variant="light" color="orange" size={34} radius="md"><IconClipboardList size={17} /></ThemeIcon>
           <Box>
             <Group gap={6}>
-              <Text fw={750} size="sm">Заказы покупателей</Text>
+              <Text fw={700} size="sm">Заказы покупателей</Text>
               {newCount > 0 && <Badge size="sm" variant="filled" color="orange">{newCount} новых</Badge>}
             </Group>
             <Text size="xs" c="dimmed">Свяжитесь по телефону, подтвердите наличие и срок.</Text>
@@ -133,7 +133,7 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
                 <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
                   <Box style={{ minWidth: 0, flex: 1 }}>
                     <Group gap="xs" wrap="wrap">
-                      <Text fw={750} size="sm">{order.itemName}</Text>
+                      <Text fw={700} size="sm">{order.itemName}</Text>
                       <Badge size="sm" variant="light" color={meta.color}>{meta.label}</Badge>
                       {order.quantity > 1 && <Badge size="sm" variant="outline" color="gray">{order.quantity} шт</Badge>}
                     </Group>

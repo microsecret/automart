@@ -158,7 +158,7 @@ export default async function StorefrontPage({ params }: PageProps) {
                     Заменяет: {part.crossReferences.map((cross) => cross.number).join(", ")}
                   </Text>
                 )}
-                <Text fw={850} size="lg" mt={8}>{part.price.toLocaleString("ru-RU")} ₽</Text>
+                <Text fw={800} size="lg" mt={8}>{part.price.toLocaleString("ru-RU")} ₽</Text>
                 <PartOrderButton
                   partId={part.id}
                   itemName={part.name}

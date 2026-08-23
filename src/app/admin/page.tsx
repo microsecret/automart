@@ -351,7 +351,7 @@ function TrafficLineChart({ points }: { points: TrafficChartPoint[] }) {
           ].map(([label, value, color]) => (
             <Group key={String(label)} justify="space-between" gap="lg" wrap="nowrap" className="admin-traffic-tooltip__row">
               <Group gap={6} wrap="nowrap"><Box w={8} h={8} bg={String(color)} style={{ borderRadius: "50%", flex: "0 0 auto" }} /><Text size="xs" c="gray.6" style={{ whiteSpace: "nowrap" }}>{label}</Text></Group>
-              <Text size="sm" fw={850} style={{ color: String(color), fontVariantNumeric: "tabular-nums" }}>{Number(value).toLocaleString("ru-RU")}</Text>
+              <Text size="sm" fw={800} style={{ color: String(color), fontVariantNumeric: "tabular-nums" }}>{Number(value).toLocaleString("ru-RU")}</Text>
             </Group>
           ))}
         </Paper>
@@ -520,7 +520,7 @@ export default function AdminDashboard() {
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="light" color={actionsTotal > 0 ? "orange" : "teal"} size={40} radius="md"><IconListCheck size={19} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Оперативная очередь</Text>
+                <Text size="sm" fw={700}>Оперативная очередь</Text>
                 <Text size="xs" c="dimmed">Только реальные записи, требующие решения сотрудника.</Text>
               </Stack>
             </Group>
@@ -552,7 +552,7 @@ export default function AdminDashboard() {
                   <ThemeIcon variant="light" color={item.value ? item.color : "gray"} size={34} radius="md">{item.icon}</ThemeIcon>
                   <Box style={{ minWidth: 0 }}>
                     <Group gap={6} align="baseline">
-                      <Text size="xl" fw={850} lh={1} c={item.value ? undefined : "dimmed"}>{item.value}</Text>
+                      <Text size="xl" fw={800} lh={1} c={item.value ? undefined : "dimmed"}>{item.value}</Text>
                       {item.value === 0 && <Text size="10px" c="dimmed">разобрано</Text>}
                     </Group>
                     <Text size="xs" fw={700} mt={2}>{item.label}</Text>
@@ -589,7 +589,7 @@ export default function AdminDashboard() {
 
         <Card withBorder radius="md" p="md">
           <Group justify="space-between" mb="sm" wrap="wrap">
-            <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconDatabase size={18} /></ThemeIcon><Box><Text size="sm" fw={750}>Последние синхронизации источников</Text><Text size="xs" c="dimmed">Диагностика импорта без запуска парсера из интерфейса.</Text></Box></Group>
+            <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconDatabase size={18} /></ThemeIcon><Box><Text size="sm" fw={700}>Последние синхронизации источников</Text><Text size="xs" c="dimmed">Диагностика импорта без запуска парсера из интерфейса.</Text></Box></Group>
             <Button component={Link} href="/admin/auctions" size="xs" variant="light" color="indigo">Открыть заявки</Button>
           </Group>
           {data.auctionSyncRuns.length ? (
@@ -613,7 +613,7 @@ export default function AdminDashboard() {
             <Group gap="sm">
               <ThemeIcon variant="light" color="grape" size={36} radius="md"><IconListCheck size={18} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Полнота полей по источникам</Text>
+                <Text size="sm" fw={700}>Полнота полей по источникам</Text>
                 <Text size="xs" c="dimmed">Доля лотов с заполненным полем. Низкий процент — пробел в парсере либо поле, которого нет у площадки.</Text>
               </Stack>
             </Group>
@@ -662,7 +662,7 @@ export default function AdminDashboard() {
             <Group gap="sm">
               <ThemeIcon variant="light" color="cyan" size={36} radius="md"><IconWorld size={18} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Реестр источников импорта</Text>
+                <Text size="sm" fw={700}>Реестр источников импорта</Text>
                 <Text size="xs" c="dimmed">Статус отражает фактический способ получения данных, а не только доступность страны в фильтре.</Text>
               </Stack>
             </Group>
@@ -691,7 +691,7 @@ export default function AdminDashboard() {
               return (
                 <Paper key={source.source} withBorder radius="md" p="sm">
                   <Group justify="space-between" gap="xs" wrap="nowrap">
-                    <Text size="sm" fw={750} lineClamp={1}>{source.label}</Text>
+                    <Text size="sm" fw={700} lineClamp={1}>{source.label}</Text>
                     <Badge size="xs" variant="light" color={isCollector ? "teal" : "gray"}>{source.country || "—"}</Badge>
                   </Group>
                   <Text size="xs" c="dimmed" mt={4}>{source.pipelineLabel}</Text>
@@ -749,22 +749,22 @@ export default function AdminDashboard() {
               <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
                 <Card withBorder radius="md" p="md">
                   <ThemeIcon variant="light" color="teal" size={36} radius="md"><IconCoins size={18} /></ThemeIcon>
-                  <Text size="xl" fw={850} mt="sm">{data.monetization.confirmedRevenueRub.toLocaleString("ru-RU")} ₽</Text>
+                  <Text size="xl" fw={800} mt="sm">{data.monetization.confirmedRevenueRub.toLocaleString("ru-RU")} ₽</Text>
                   <Text size="xs" c="dimmed">Подтверждённая выручка</Text>
                 </Card>
                 <Card withBorder radius="md" p="md">
                   <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconReceipt size={18} /></ThemeIcon>
-                  <Text size="xl" fw={850} mt="sm">{data.monetization.paidOrders}</Text>
+                  <Text size="xl" fw={800} mt="sm">{data.monetization.paidOrders}</Text>
                   <Text size="xs" c="dimmed">Оплаченных заказов</Text>
                 </Card>
                 <Card withBorder radius="md" p="md">
                   <ThemeIcon variant="light" color="violet" size={36} radius="md"><IconFlame size={18} /></ThemeIcon>
-                  <Text size="xl" fw={850} mt="sm">{data.monetization.activePromotions}</Text>
+                  <Text size="xl" fw={800} mt="sm">{data.monetization.activePromotions}</Text>
                   <Text size="xs" c="dimmed">Активных продвижений</Text>
                 </Card>
                 <Card withBorder radius="md" p="md">
                   <ThemeIcon variant="light" color={data.monetization.reviewRequiredOrders ? "orange" : "gray"} size={36} radius="md"><IconAlertTriangle size={18} /></ThemeIcon>
-                  <Text size="xl" fw={850} mt="sm">{data.monetization.pendingOrders + data.monetization.reviewRequiredOrders}</Text>
+                  <Text size="xl" fw={800} mt="sm">{data.monetization.pendingOrders + data.monetization.reviewRequiredOrders}</Text>
                   <Text size="xs" c="dimmed">Ожидают / требуют проверки</Text>
                 </Card>
               </SimpleGrid>
@@ -772,7 +772,7 @@ export default function AdminDashboard() {
               <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
                 <Card withBorder radius="md" p="md">
                   <Group justify="space-between" mb="md">
-                    <Stack gap={1}><Text fw={750}>Выручка по тарифам</Text><Text size="xs" c="dimmed">Только заказы со статусом «Оплачен»</Text></Stack>
+                    <Stack gap={1}><Text fw={700}>Выручка по тарифам</Text><Text size="xs" c="dimmed">Только заказы со статусом «Оплачен»</Text></Stack>
                     <Badge variant="light" color="teal">{data.monetization.paidOrders} оплат</Badge>
                   </Group>
                   <Stack gap="sm">
@@ -780,7 +780,7 @@ export default function AdminDashboard() {
                       <Paper key={tariff.tariffId} withBorder radius="md" p="sm">
                         <Group justify="space-between" gap="xs">
                           <Stack gap={1}><Text size="sm" fw={700} tt="uppercase">{tariff.tariffId}</Text><Text size="xs" c="dimmed">{tariff.count} заказов</Text></Stack>
-                          <Text fw={850}>{tariff.revenueRub.toLocaleString("ru-RU")} ₽</Text>
+                          <Text fw={800}>{tariff.revenueRub.toLocaleString("ru-RU")} ₽</Text>
                         </Group>
                       </Paper>
                     ))}
@@ -790,7 +790,7 @@ export default function AdminDashboard() {
 
                 <Card withBorder radius="md" p="md">
                   <Group justify="space-between" mb="md">
-                    <Stack gap={1}><Text fw={750}>Последние платёжные заказы</Text><Text size="xs" c="dimmed">Журнал попыток и подтверждений</Text></Stack>
+                    <Stack gap={1}><Text fw={700}>Последние платёжные заказы</Text><Text size="xs" c="dimmed">Журнал попыток и подтверждений</Text></Stack>
                     <IconCreditCard size={20} color="var(--mantine-color-indigo-6)" />
                   </Group>
                   <Stack gap="xs">
@@ -821,7 +821,7 @@ export default function AdminDashboard() {
                   <Group gap="sm" wrap="nowrap">
                     <ThemeIcon variant="light" color={data.monetization.safeDealConfigured ? "teal" : "blue"} size={42} radius="md"><IconShieldCheck size={21} /></ThemeIcon>
                     <Stack gap={2}>
-                      <Text fw={750}>Безопасная сделка и доставка запчастей</Text>
+                      <Text fw={700}>Безопасная сделка и доставка запчастей</Text>
                       <Text size="xs" c="dimmed" maw={680}>Удержание денег до получения будет включено только после договора с лицензированным провайдером. Уже подготовлен кабинет сделки; следующим этапом подключаются платёжные сделки, CDEK и Почта России по выданным ключам.</Text>
                     </Stack>
                   </Group>
@@ -917,7 +917,7 @@ export default function AdminDashboard() {
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="light" color="orange" size={38} radius="md"><IconTag size={19} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Объявления пользователей · неделя</Text>
+                <Text size="sm" fw={700}>Объявления пользователей · неделя</Text>
                 <Text size="xs" c="dimmed">Личные объявления о транспорте и запчастях. Импортные автомобили из раздела аукционов сюда не входят.</Text>
               </Stack>
             </Group>
@@ -936,7 +936,7 @@ export default function AdminDashboard() {
               ["Продано", data.listingPerformance.soldWeek],
             ].map(([label, value]) => (
               <Paper key={String(label)} withBorder radius="md" p="sm">
-                <Text size="lg" fw={850}>{value}</Text>
+                <Text size="lg" fw={800}>{value}</Text>
                 <Text size="10px" c="dimmed">{label}</Text>
               </Paper>
             ))}
@@ -982,7 +982,7 @@ export default function AdminDashboard() {
             <Group gap="sm">
               <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconTrendingUp size={18} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Просмотры сайта и аудитория за неделю</Text>
+                <Text size="sm" fw={700}>Просмотры сайта и аудитория за неделю</Text>
                 <Text size="xs" c="dimmed">Фиолетовая линия — все открытия страниц, бирюзовая — разные IP-адреса за день.</Text>
               </Stack>
             </Group>
@@ -1001,7 +1001,7 @@ export default function AdminDashboard() {
               return (
                 <Paper key={point.date} withBorder radius="md" p="xs">
                   <Text size="xs" c="dimmed" fw={700}>{label}</Text>
-                  <Text size="lg" fw={850} mt={4}>{point.pageViews}</Text>
+                  <Text size="lg" fw={800} mt={4}>{point.pageViews}</Text>
                   <Text size="10px" c="dimmed">просмотров · {point.uniqueVisitors} уник.</Text>
                   <Progress value={(point.pageViews / maxDailyPageViews) * 100} color="indigo" size="sm" radius="xl" mt="xs" aria-label={`${label}: ${point.pageViews} просмотров страниц`} />
                     <Group justify="space-between" gap={4} mt={6} wrap="nowrap">
@@ -1020,7 +1020,7 @@ export default function AdminDashboard() {
             <Text size="xs" c="dimmed" mb="sm">Названия показаны по-русски; число справа — открытия страниц.</Text>
             <Stack gap="xs">
               {data.traffic.topPaths.map((item) => (
-                <Group key={item.path} justify="space-between" wrap="nowrap"><Text size="xs" fw={650} c="gray.7" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{screenLabel(item.path)}</Text><Badge size="sm" variant="light" color="indigo">{item.count} просм.</Badge></Group>
+                <Group key={item.path} justify="space-between" wrap="nowrap"><Text size="xs" fw={600} c="gray.7" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{screenLabel(item.path)}</Text><Badge size="sm" variant="light" color="indigo">{item.count} просм.</Badge></Group>
               ))}
               {!data.traffic.topPaths.length && <Text size="xs" c="gray.4">Данные появятся после первых просмотров страниц.</Text>}
             </Stack>

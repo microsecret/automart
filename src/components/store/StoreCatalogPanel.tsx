@@ -113,7 +113,7 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
         <Group gap="sm">
           <ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconPackage size={17} /></ThemeIcon>
           <Box>
-            <Text fw={750} size="sm">Каталог магазина</Text>
+            <Text fw={700} size="sm">Каталог магазина</Text>
             <Text size="xs" c="dimmed">Правка цены, срока и наличия по одной позиции.</Text>
           </Box>
         </Group>

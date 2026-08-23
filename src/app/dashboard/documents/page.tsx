@@ -79,7 +79,7 @@ export default function DashboardDocumentsPage() {
                     <ThemeIcon size={42} radius="md" variant="light" color="indigo"><IconFileDescription size={21} /></ThemeIcon>
                     <Stack gap={2} style={{ minWidth: 0 }}>
                       <Group gap="xs" wrap="wrap">
-                        <Text fw={750} lineClamp={1}>{document.title}</Text>
+                        <Text fw={700} lineClamp={1}>{document.title}</Text>
                         <Badge size="xs" variant="light" color="indigo">{CATEGORY_LABELS[document.category] || document.category}</Badge>
                       </Group>
                       <Text component={Link} href={`/dashboard/deliveries/${document.deliveryOrder.id}`} size="xs" c="indigo" lineClamp={1} style={{ textDecoration: "none" }}>

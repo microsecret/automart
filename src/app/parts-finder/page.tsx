@@ -232,7 +232,7 @@ function PartsContent() {
           ))}
         </Group>
         <Group className="parts-condition-shortcuts" gap={6} wrap="wrap">
-          <Text size="xs" fw={750} c="dimmed">Состояние:</Text>
+          <Text size="xs" fw={700} c="dimmed">Состояние:</Text>
           {PART_CONDITIONS.map((item) => {
             const selected = conditions.includes(item.value)
             return <Button key={item.value} size="compact-xs" radius="xl" variant={selected ? "filled" : "light"} color={item.value === "NEW" ? "teal" : "indigo"} onClick={() => toggleMultiFilter(item.value, conditions, setConditions)}>{item.label}</Button>
@@ -362,13 +362,13 @@ function PartsContent() {
                       <IconTools size={40} color="#a1a1aa" />
                       {hasActiveFilters ? (
                         <>
-                          <Text fw={650}>По этим условиям запчастей нет</Text>
+                          <Text fw={600}>По этим условиям запчастей нет</Text>
                           <Text size="sm" c="dimmed">Попробуйте убрать часть фильтров или поискать по названию детали.</Text>
                           <Button variant="light" color="indigo" size="xs" mt={4} onClick={resetFilters}>Сбросить фильтры</Button>
                         </>
                       ) : (
                         <>
-                          <Text fw={650}>Раздел запчастей пока пуст</Text>
+                          <Text fw={600}>Раздел запчастей пока пуст</Text>
                           <Text size="sm" c="dimmed">
                             Объявления появятся, когда продавцы начнут их размещать. Если у вас есть запчасти —
                             разместите первое объявление, оно будет на виду.
@@ -395,7 +395,7 @@ function PartsContent() {
                             <Stack gap={4}>
                               <Group gap="sm" align="flex-start" justify="space-between">
                                 <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none" }}>
-                                  <Text fw={750} fz="sm" c="var(--market-ink)" className="part-result-card__title">{p.name}</Text>
+                                  <Text fw={700} fz="sm" c="var(--market-ink)" className="part-result-card__title">{p.name}</Text>
                                 </Link>
                                 <Text fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display),sans-serif" className="part-result-card__price">{formatPrice(p.price)}</Text>
                               </Group>
@@ -417,7 +417,7 @@ function PartsContent() {
                                 <Group gap={5} wrap="wrap" mt={2} className="part-result-card__compatibility">
                                   <Group gap={3}>
                                     <IconCircleCheck size={13} color="#059669" />
-                                    <Text size="xs" fw={650} c="gray.6">Подходит:</Text>
+                                    <Text size="xs" fw={600} c="gray.6">Подходит:</Text>
                                   </Group>
                                   {p.compatibility.slice(0, 4).map((c, i) => (
                                     <Badge key={i} className="part-result-card__compatibility-chip" size="xs" variant="light" color="indigo" radius="sm">{c.make} {c.model}</Badge>

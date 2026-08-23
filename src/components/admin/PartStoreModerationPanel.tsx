@@ -70,7 +70,7 @@ export default function PartStoreModerationPanel() {
         <Group gap="sm">
           <ThemeIcon variant="light" color="violet" size={36} radius="md"><IconBuildingStore size={18} /></ThemeIcon>
           <Stack gap={1}>
-            <Text size="sm" fw={750}>Магазины запчастей</Text>
+            <Text size="sm" fw={700}>Магазины запчастей</Text>
             <Text size="xs" c="dimmed">Витрина становится публичной только после проверки реквизитов и каталога.</Text>
           </Stack>
         </Group>

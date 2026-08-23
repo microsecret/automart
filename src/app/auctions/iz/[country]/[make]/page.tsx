@@ -76,19 +76,19 @@ export default async function AuctionLandingPage({ params }: PageProps) {
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
           <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Автомобилей в наличии</Text>
-            <Text fw={850} size="xl" mt={4}>{landing.total}</Text>
+            <Text fw={800} size="xl" mt={4}>{landing.total}</Text>
           </Card>
           <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Лот с комиссией от</Text>
-            <Text fw={850} size="xl" mt={4}>{stats.minPrice ? formatPriceShort(stats.minPrice) : "—"}</Text>
+            <Text fw={800} size="xl" mt={4}>{stats.minPrice ? formatPriceShort(stats.minPrice) : "—"}</Text>
           </Card>
           <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Медианная цена</Text>
-            <Text fw={850} size="xl" mt={4}>{stats.medianPrice ? formatPriceShort(stats.medianPrice) : "—"}</Text>
+            <Text fw={800} size="xl" mt={4}>{stats.medianPrice ? formatPriceShort(stats.medianPrice) : "—"}</Text>
           </Card>
           <Card withBorder radius="md" p="md">
             <Text size="xs" c="dimmed">Средний год выпуска</Text>
-            <Text fw={850} size="xl" mt={4}>{stats.averageYear ?? "—"}</Text>
+            <Text fw={800} size="xl" mt={4}>{stats.averageYear ?? "—"}</Text>
           </Card>
         </SimpleGrid>
 
@@ -158,7 +158,7 @@ export default async function AuctionLandingPage({ params }: PageProps) {
         {related.length > 0 && (
           <Box>
             <Divider mb="sm" />
-            <Text fw={750} size="sm" mb="xs">Другие марки из {landing.countryGenitive}</Text>
+            <Text fw={700} size="sm" mb="xs">Другие марки из {landing.countryGenitive}</Text>
             <Group gap={6} wrap="wrap">
               {related.map((item) => (
                 <Button

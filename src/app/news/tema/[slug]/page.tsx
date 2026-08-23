@@ -74,7 +74,7 @@ export default async function NewsTagPage({ params }: PageProps) {
               p="md"
               className="admin-queue-card"
             >
-              <Text fw={750}>{article.title}</Text>
+              <Text fw={700}>{article.title}</Text>
               {article.excerpt && <Text size="sm" c="dimmed" mt={4} lineClamp={2}>{article.excerpt}</Text>}
               <Text size="xs" c="dimmed" mt={6}>
                 {new Date(article.publishedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
@@ -85,7 +85,7 @@ export default async function NewsTagPage({ params }: PageProps) {
 
         {related.length > 0 && (
           <Box>
-            <Text fw={750} size="sm" mb="xs">Другие темы</Text>
+            <Text fw={700} size="sm" mb="xs">Другие темы</Text>
             <Group gap={6} wrap="wrap">
               {related.map((item) => (
                 <Badge

@@ -410,7 +410,7 @@ function AuctionDetail() {
 
               <Paper radius="md" p="md" withBorder>
                   <Stack gap="sm">
-                    <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconListDetails size={18} /></ThemeIcon><Box><Text fw={750} c="var(--market-ink)">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и приведены к единому формату для всех площадок</Text></Box></Group>
+                    <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconListDetails size={18} /></ThemeIcon><Box><Text fw={700} c="var(--market-ink)">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и приведены к единому формату для всех площадок</Text></Box></Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={0} verticalSpacing={0}>
                       {publicSpecs.map((item) => (
                         <Group key={`${item.label}-${item.detail}`} justify="space-between" align="flex-start" gap="md" py="xs" px={{ base: 0, sm: "xs" }} wrap="nowrap" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
@@ -432,7 +432,7 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f8fafc 0%, #fff 56%)" }}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
-                      <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={750} c="var(--market-ink)">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {auctionSourceLabel(listing.source)}</Text></Box></Group>
+                      <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={700} c="var(--market-ink)">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {auctionSourceLabel(listing.source)}</Text></Box></Group>
                       {equipment.totalReported && <Badge variant="light" color="indigo">Опций в источнике: {equipment.totalReported}</Badge>}
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
@@ -454,7 +454,7 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #fff 58%)", borderColor: "#99f6e4" }}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
-                      <Group gap="sm"><ThemeIcon variant="light" color={isRentalTransfer ? "blue" : "teal"} radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={750} c="var(--market-ink)">{isRentalTransfer ? "Условия договора по данным" : "Проверка и история по данным"} {auctionSourceLabel(listing.source)}</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
+                      <Group gap="sm"><ThemeIcon variant="light" color={isRentalTransfer ? "blue" : "teal"} radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={700} c="var(--market-ink)">{isRentalTransfer ? "Условия договора по данным" : "Проверка и история по данным"} {auctionSourceLabel(listing.source)}</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
                       <Badge variant="light" color={isRentalTransfer ? "blue" : "teal"}>{isRentalTransfer ? "Не является ценой продажи" : "Проверяйте перед сделкой"}</Badge>
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: conditionInfo.newCarPriceRatioPct !== null ? 3 : 2 }} spacing="xs">
@@ -463,7 +463,7 @@ function AuctionDetail() {
                       {conditionInfo.insuranceRecordCount !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Страховые записи</Text><Text fw={800} size="lg" c="teal.8" mt={1}>{conditionInfo.insuranceRecordCount}</Text></Paper>}
                     </SimpleGrid>
                     {conditionInfo.verifiedItems.length > 0 && <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
-                      {conditionInfo.verifiedItems.map((item) => <Paper key={`${item.label}-${item.status}`} p="xs" radius="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}><Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="teal" variant="light"><IconCheck size={13} /></ThemeIcon><Box><Text size="xs" c="dimmed">{item.label}</Text><Text fw={750} size="sm" c="var(--mantine-color-teal-text)">{item.status}</Text></Box></Group></Paper>)}
+                      {conditionInfo.verifiedItems.map((item) => <Paper key={`${item.label}-${item.status}`} p="xs" radius="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}><Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="teal" variant="light"><IconCheck size={13} /></ThemeIcon><Box><Text size="xs" c="dimmed">{item.label}</Text><Text fw={700} size="sm" c="var(--mantine-color-teal-text)">{item.status}</Text></Box></Group></Paper>)}
                     </SimpleGrid>}
                     <Text size="xs" c="dimmed">{isRentalTransfer ? `Показаны опубликованные условия переоформления аренды ${auctionSourceLabel(listing.source)}. Право выкупа, переход собственности и экспорт подтверждаются отдельно.` : `Карточки состояния — только открытые подтверждения ${auctionSourceLabel(listing.source)}. Сравнение с ценой нового авто и количество страховых записей не описывают повреждения или ремонт; для перечня работ нужен полный отчёт/акт осмотра из первоисточника.`}</Text>
                   </Stack>
@@ -543,7 +543,7 @@ function AuctionDetail() {
           <Stack gap="sm" mt="md">
             <Group justify="space-between" align="flex-end" gap="sm">
               <Box>
-                <Text component="h2" fz={{ base: 21, sm: 25 }} fw={850} c="var(--market-ink)">Похожие автомобили</Text>
+                <Text component="h2" fz={{ base: 21, sm: 25 }} fw={800} c="var(--market-ink)">Похожие автомобили</Text>
                 <Text size="sm" c="dimmed">Близкие по марке, году и бюджету предложения из той же страны</Text>
               </Box>
               <Button component={Link} href={`/auctions?make=${encodeURIComponent(publicIdentity.make)}&country=${listing.country}`} variant="subtle" color="indigo" radius="xl" rightSection={<IconArrowRight size={16} />}>Смотреть все</Button>
@@ -573,7 +573,7 @@ function AuctionDetail() {
                       </Group>
                       <Group justify="space-between" gap="xs" wrap="nowrap" className={styles.similarPriceRow}>
                         <Box>
-                          <Text fw={850} c="indigo.8">{formatPriceShort(similarListing.finalPrice)}</Text>
+                          <Text fw={800} c="indigo.8">{formatPriceShort(similarListing.finalPrice)}</Text>
                           <Text size="10px" c="dimmed">предварительно под ключ</Text>
                         </Box>
                         <ThemeIcon variant="light" color="indigo" radius="xl" size={30}><IconArrowRight size={16} /></ThemeIcon>

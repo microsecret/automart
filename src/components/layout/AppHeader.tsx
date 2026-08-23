@@ -232,9 +232,9 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                       justify="space-between"
                       className="market-header-search__suggestion"
                       leftSection={<IconSearch size={14} stroke={1.8} />}
-                      rightSection={suggestion.price !== null ? <Text size="xs" fw={750} c="indigo.7">{new Intl.NumberFormat("ru-RU").format(suggestion.price)} ₽</Text> : undefined}
+                      rightSection={suggestion.price !== null ? <Text size="xs" fw={700} c="indigo.7">{new Intl.NumberFormat("ru-RU").format(suggestion.price)} ₽</Text> : undefined}
                     >
-                      <Text component="span" size="sm" fw={650} truncate>{suggestion.title}</Text>
+                      <Text component="span" size="sm" fw={600} truncate>{suggestion.title}</Text>
                     </Button>
                   ))}
                 </Stack>

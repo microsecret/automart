@@ -55,7 +55,7 @@ function MapListingResult({ listing, city }: { listing: MapListing; city: string
         <Stack gap={2} miw={0} style={{ flex: 1 }}>
           <Group gap={6} wrap="nowrap">
             <BrandIcon brand={vehicle.make} size={20} />
-            <Text className="listing-map-result__title" size="sm" fw={750} c="var(--market-ink)">{vehicle.make} {vehicle.model}</Text>
+            <Text className="listing-map-result__title" size="sm" fw={700} c="var(--market-ink)">{vehicle.make} {vehicle.model}</Text>
           </Group>
           <Text className="listing-map-result__price" size="sm" fw={800} c="var(--market-ink)">{formatPriceShort(listing.price)}</Text>
           <Text className="listing-map-result__meta" size="xs" c="gray.5">{vehicle.year} г. · {listing.location || vehicle.location || city}</Text>

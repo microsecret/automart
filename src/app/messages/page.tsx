@@ -109,7 +109,7 @@ export default function MessagesPage() {
                 <Center className="messages-workspace__list-empty">
                   <Stack align="center" gap="xs" ta="center" px="md">
                     <ThemeIcon size={46} radius="xl" variant="light" color="indigo"><IconMessageCircleOff size={23} /></ThemeIcon>
-                    <Text fw={750}>{conversations.length ? "Ничего не найдено" : "Пока нет диалогов"}</Text>
+                    <Text fw={700}>{conversations.length ? "Ничего не найдено" : "Пока нет диалогов"}</Text>
                     <Text size="xs" c="dimmed">{conversations.length ? "Измените запрос." : "Переписка появится после сообщения продавцу."}</Text>
                   </Stack>
                 </Center>

@@ -208,7 +208,7 @@ export default function AdminAuctionsPage() {
               { label: "За неделю", value: stats.recent || 0, color: "violet" },
             ].map((card) => (
               <Paper key={card.label} radius="md" p="sm" withBorder>
-                <Text fw={850} fz="xl" c={`${card.color}.7`} style={{ fontVariantNumeric: "tabular-nums" }}>{card.value}</Text>
+                <Text fw={800} fz="xl" c={`${card.color}.7`} style={{ fontVariantNumeric: "tabular-nums" }}>{card.value}</Text>
                 <Text size="xs" c="dimmed" mt={2}>{card.label}</Text>
               </Paper>
             ))}
@@ -246,7 +246,7 @@ export default function AdminAuctionsPage() {
         {isLoading ? <Center py={80}><Loader size="sm" color="orange" /></Center> :
           error ? <AsyncErrorState title="Не удалось загрузить заявки" description="Проверьте соединение и повторите запрос." onRetry={() => void mutate()} /> :
             inquiries.length === 0 ? (
-              <Paper radius="md" p="xl" withBorder><Center><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={46} radius="xl"><IconGavel size={22} /></ThemeIcon><Text fw={750}>В этом статусе заявок нет</Text><Text size="sm" c="dimmed">Новые обращения появятся здесь автоматически.</Text></Stack></Center></Paper>
+              <Paper radius="md" p="xl" withBorder><Center><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={46} radius="xl"><IconGavel size={22} /></ThemeIcon><Text fw={700}>В этом статусе заявок нет</Text><Text size="sm" c="dimmed">Новые обращения появятся здесь автоматически.</Text></Stack></Center></Paper>
             ) : (
               <Stack gap="sm">{inquiries.map((inquiry) => <InquiryRow key={inquiry.id} inquiry={inquiry} onOpen={() => openInquiryEditor(inquiry)} />)}</Stack>
             )}
@@ -258,13 +258,13 @@ export default function AdminAuctionsPage() {
             <Paper withBorder radius="md" p="md" bg="gray.0">
               <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
                 <Stack gap={4} style={{ minWidth: 0 }}>
-                  <Text fw={850} lineClamp={2}>{vehicleTitle(editingInquiry)}</Text>
+                  <Text fw={800} lineClamp={2}>{vehicleTitle(editingInquiry)}</Text>
                   <Group gap="xs" wrap="wrap">
                     {editingInquiry.auctionListing?.lotNumber && <Badge variant="light" color="orange">Лот {editingInquiry.auctionListing.lotNumber}</Badge>}
                     <Badge variant="light" color="gray">{editingInquiry.auctionListing?.source || "Источник"}</Badge>
                   </Group>
                 </Stack>
-                <Text fw={850} c="indigo.7" style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{formatRub(editingInquiry.auctionListing?.finalPrice)}</Text>
+                <Text fw={800} c="indigo.7" style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{formatRub(editingInquiry.auctionListing?.finalPrice)}</Text>
               </Group>
             </Paper>
 
@@ -277,7 +277,7 @@ export default function AdminAuctionsPage() {
               </Stack>
             </Alert>
 
-            {editingInquiry.comment && <Stack gap={4}><Text size="sm" fw={750}>Запрос покупателя</Text><Paper withBorder radius="md" p="sm"><Text size="sm" style={{ overflowWrap: "anywhere" }}>{editingInquiry.comment}</Text></Paper></Stack>}
+            {editingInquiry.comment && <Stack gap={4}><Text size="sm" fw={700}>Запрос покупателя</Text><Paper withBorder radius="md" p="sm"><Text size="sm" style={{ overflowWrap: "anywhere" }}>{editingInquiry.comment}</Text></Paper></Stack>}
 
             {editingInquiry.deliveryOrder ? (
               <Paper withBorder radius="md" p="md">
@@ -340,7 +340,7 @@ function InquiryRow({ inquiry, onOpen }: { inquiry: AuctionInquiry; onOpen: () =
           )}
         </Box>
         <Stack gap={6} style={{ flex: "1 1 380px", minWidth: 0 }}>
-          <Group gap="xs" wrap="wrap"><Text fw={850} lineClamp={1}>{vehicleTitle(inquiry)}</Text><Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>{listing && <Badge size="xs" variant="light" color="orange">{listing.source}</Badge>}</Group>
+          <Group gap="xs" wrap="wrap"><Text fw={800} lineClamp={1}>{vehicleTitle(inquiry)}</Text><Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>{listing && <Badge size="xs" variant="light" color="orange">{listing.source}</Badge>}</Group>
           <Group gap="md" wrap="wrap"><Group gap={5}><IconUserCheck size={14} color="#64748b" /><Text size="sm" fw={700}>{inquiry.name}</Text></Group>{inquiry.city && <Group gap={5}><IconMapPin size={14} color="#64748b" /><Text size="sm" c="dimmed">{inquiry.city}</Text></Group>}<Badge size="xs" variant="light" color={inquiry.requesterId ? "teal" : "orange"}>{inquiry.requesterId ? "Аккаунт подтверждён" : "Гостевая заявка"}</Badge></Group>
           {inquiry.comment && <Text size="sm" c="dimmed" lineClamp={2} style={{ overflowWrap: "anywhere" }}>{inquiry.comment}</Text>}
           <Group gap="xs" wrap="wrap">{(() => {

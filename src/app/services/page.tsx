@@ -37,7 +37,7 @@ export default function ServicesPage() {
             <Stack gap="md" h="100%">
               <Group justify="space-between" align="flex-start"><ThemeIcon size={44} radius="md" variant="light" color={service.color}><Icon size={22} /></ThemeIcon><Badge size="xs" variant="light" color={service.color} radius="xl">{service.stage}</Badge></Group>
               <Box><Text fw={800} fz="lg">{service.title}</Text><Text size="sm" c="dimmed" mt={5} lh={1.45}>{service.description}</Text></Box>
-              <Anchor component="span" size="sm" fw={750} c={`${service.color}.6`} mt="auto">Открыть сервис <IconArrowRight size={14} style={{ verticalAlign: "-2px" }} /></Anchor>
+              <Anchor component="span" size="sm" fw={700} c={`${service.color}.6`} mt="auto">Открыть сервис <IconArrowRight size={14} style={{ verticalAlign: "-2px" }} /></Anchor>
             </Stack>
           </Paper>
         })}
