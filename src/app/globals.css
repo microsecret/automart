@@ -357,15 +357,17 @@ body {
   /* Высота поля равна высоте кнопки: в строке поиска они стоят рядом, и
      разница в два пикселя читается как небрежность.
 
-     !important здесь по необходимости, а не по привычке. Mantine задаёт
-     высоту утилитарным классом, который грузится после наших стилей; три
-     попытки обойти это — styles в теме, переменная --input-height и
-     удвоенный селектор — на живом сайте давали прежние 38px. Проверено
-     сравнением собранного CSS с тем, что показывает браузер.
+     Раньше здесь стоял !important: Mantine задавал высоту утилитарным
+     классом, который грузился после наших стилей, и три попытки обойти
+     это — styles в теме, переменная --input-height и удвоенный селектор —
+     давали прежние 38px.
+
+     Теперь стили Mantine живут в слое каскада (@layer mantine), а это
+     правило — вне слоёв: оно выигрывает само, без important.
 
      Многострочные поля исключены: им высота считается по содержимому. */
-  height: 36px !important;
-  min-height: 36px !important;
+  height: 36px;
+  min-height: 36px;
 }
 
 /* Подсветка поля при фокусе — кольцом, а не сменой рамки.
@@ -738,18 +740,21 @@ select {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #5b82d6 28%, transparent);
 }
 
-/* Utility icons must stay visible on the light header before hover. */
+/* Значки в шапке читаются на светлой подложке до наведения.
+
+   important здесь стоял, чтобы перебить стили кнопок Mantine. Теперь
+   они живут в слое каскада, а это правило вне слоёв: выигрывает само. */
 .market-app-header__utility-action {
-  border: 1px solid var(--market-field-line) !important;
-  background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb) !important;
-  color: var(--market-control-text) !important;
+  border: 1px solid var(--market-field-line);
+  background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb);
+  color: var(--market-control-text);
   box-shadow: var(--shadow-md);
 }
 
 .market-app-header__utility-action:hover {
-  border-color: color-mix(in srgb, var(--market-primary) 38%, var(--market-field-line)) !important;
-  background: var(--market-primary-soft) !important;
-  color: var(--mantine-color-indigo-7) !important;
+  border-color: color-mix(in srgb, var(--market-primary) 38%, var(--market-field-line));
+  background: var(--market-primary-soft);
+  color: var(--mantine-color-indigo-7);
 }
 
 .market-app-header__utility-action--avatar {
