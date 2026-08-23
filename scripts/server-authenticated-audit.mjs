@@ -703,7 +703,7 @@ async function run() {
   const attachmentUrl = photoMessage?.attachments?.[0]?.downloadUrl
   const senderAttachment = attachmentUrl ? await request(attachmentUrl, cookie) : null
   const receiverAttachment = attachmentUrl ? await request(attachmentUrl, sellerCookie) : null
-  const outsiderAttachment = attachmentUrl ? await request(attachmentUrl, removableUserCookie) : null
+  const outsiderAttachment = attachmentUrl ? await request(attachmentUrl, revocableAdminCookie) : null
   record(
     "private message photo downloads only for both conversation participants",
     senderAttachment?.status === 200
