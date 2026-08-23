@@ -50,6 +50,7 @@ export async function notifyNewMessage(messageId: string): Promise<void> {
         sender: { select: { name: true } },
         receiver: { select: { id: true, telegramId: true, telegramVerifiedAt: true } },
         listing: { select: { id: true, title: true } },
+        _count: { select: { attachments: true } },
       },
     })
 
@@ -82,9 +83,10 @@ export async function notifyNewMessage(messageId: string): Promise<void> {
     })
     if (alreadyNotified) return
 
-    const preview = message.content.length > MAX_PREVIEW
-      ? `${message.content.slice(0, MAX_PREVIEW)}…`
-      : message.content
+    const rawPreview = message.content || (message._count.attachments > 0 ? `📷 Фото: ${message._count.attachments}` : "Новое сообщение")
+    const preview = rawPreview.length > MAX_PREVIEW
+      ? `${rawPreview.slice(0, MAX_PREVIEW)}…`
+      : rawPreview
 
     const miniAppUrl = getTelegramMiniAppUrl()
     const lines = [

@@ -51,6 +51,7 @@ flowchart LR
 | Delivery partner onboarding | `src/app/api/delivery-organizations/route.ts` | delivery workspace, admin partner registry |
 | Auction partner routing and SLA | `src/lib/auction-partner-routing.ts` | `partner-scoring.js`, offer API, hourly SLA cron |
 | Garage to moderated listing | `src/app/api/garage/route.ts` | dashboard garage, vehicle creation workspace |
+| Private message attachments | `src/app/api/messages/route.ts` | conversation page, protected attachment download route |
 | Vehicle publication readiness | `src/lib/vehicle-publication-readiness.ts` | full form, owner resubmission/edit API, listing/admin gates, protected legacy enforcement route and post-deploy script |
 | Search metadata and structured data | `src/app/layout.tsx` | route layouts, `StructuredData.tsx`, sitemap/robots/manifest |
 | SEO landing metadata | `src/lib/seo-metadata.ts` | category generator and public route layouts |
@@ -127,6 +128,9 @@ flowchart LR
   Garage --> GaragePrefill["Owner-only full form prefill"]
   GaragePrefill --> GarageConvert["Atomic category update + listing create"]
   GarageConvert --> Listing["PENDING_MODERATION without duplicate VIN"]
+  Session --> Conversation["Listing-bound user conversation"]
+  Conversation --> PrivateAttachment["Private optimized photos outside public/"]
+  PrivateAttachment --> AuthorizedDownload["Sender/receiver-only no-store route"]
   Navigation["Typed navigation registry"] --> Shells["Header / footer / dashboard / mobile / Telegram"]
   SearchUrl["/search q + make + partType + vehicleType"] --> Catalog["HomeCatalog initial state"]
   Catalog --> ListingsApi["Unified /api/listings filters"]

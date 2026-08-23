@@ -4830,6 +4830,53 @@ select {
   max-width: 860px;
 }
 
+.message-bubble {
+  max-width: min(78%, 560px);
+  color: var(--market-ink);
+  background: var(--market-surface-subtle);
+  border: 1px solid var(--market-field-line);
+}
+
+.message-bubble[data-own] {
+  color: #ffffff;
+  background: var(--mantine-color-indigo-6);
+  border-color: transparent;
+}
+
+.message-bubble__attachments {
+  width: min(420px, 58vw);
+}
+
+.message-bubble__attachment {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.message-bubble__attachment img {
+  width: 100%;
+  height: clamp(112px, 18vw, 190px);
+  transition: transform var(--ease-base) var(--ease-out);
+}
+
+.message-bubble__attachment:hover img {
+  transform: scale(1.025);
+}
+
+.message-composer__attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(100%, 240px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-bubble__attachment img {
+    transition: none;
+  }
+}
+
 .create-listing__readiness {
   border-color: var(--market-warning-line);
   background: color-mix(in srgb, var(--market-warning-surface) 76%, var(--market-surface));

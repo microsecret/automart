@@ -32,7 +32,7 @@ import DashboardNav from "@/components/dashboard/DashboardNav"
 interface Conversation {
   id: string
   otherUser: { id: string; name: string | null; image: string | null }
-  lastMessage: { content: string; createdAt: string } | null
+  lastMessage: { content: string; createdAt: string; attachmentCount: number } | null
   unreadCount: number
   listing: { title: string } | null
 }
@@ -137,7 +137,7 @@ export default function MessagesPage() {
                     )}
                     <Group gap="xs" align="center">
                       <Text size="sm" c="dimmed" className="line-clamp-1" style={{ flex: 1 }}>
-                        {conv.lastMessage?.content || "Нет сообщений"}
+                        {conv.lastMessage?.content || (conv.lastMessage?.attachmentCount ? `📷 Фото: ${conv.lastMessage.attachmentCount}` : "Нет сообщений")}
                       </Text>
                       {conv.unreadCount > 0 && (
                         <Badge color="indigo" size="xs" variant="filled" circle>

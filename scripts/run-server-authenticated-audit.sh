@@ -26,6 +26,7 @@ if [[ "$audit_directory" != /tmp/automart-auth-audit.* ]]; then
 fi
 audit_database="${audit_directory}/automart-audit.db"
 audit_documents="${audit_directory}/documents"
+audit_message_attachments="${audit_directory}/message-attachments"
 server_log="${audit_directory}/server.log"
 server_pid=""
 
@@ -49,6 +50,7 @@ env DATABASE_URL="$database_url" node --env-file=.env scripts/refresh-auction-ra
 env \
   DATABASE_URL="$database_url" \
   DELIVERY_DOCUMENTS_PATH="$audit_documents" \
+  MESSAGE_ATTACHMENTS_PATH="$audit_message_attachments" \
   NEXTAUTH_URL="$base_url" \
   PORT="$audit_port" \
   node --env-file=.env node_modules/next/dist/bin/next start -p "$audit_port" >"$server_log" 2>&1 &
@@ -75,5 +77,6 @@ env \
   AUDIT_BASE_URL="$base_url" \
   DATABASE_URL="$database_url" \
   DELIVERY_DOCUMENTS_PATH="$audit_documents" \
+  MESSAGE_ATTACHMENTS_PATH="$audit_message_attachments" \
   NEXTAUTH_URL="$base_url" \
   node --env-file=.env scripts/server-authenticated-audit.mjs

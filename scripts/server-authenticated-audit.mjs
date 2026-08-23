@@ -681,6 +681,46 @@ async function run() {
   await expect("/api/messages", cookie, 200)
   const conversation = await expect(`/api/messages/${firstMessage.conversationId}?page=1&limit=20`, cookie, 200)
   record("conversation returns both participants and listing context", conversation?.messages?.length === 2 && conversation?.otherUser?.id === seller.id && conversation?.listing?.id === publicListingId, `${conversation?.messages?.length ?? 0} messages`)
+  const forgedPhotoForm = new FormData()
+  forgedPhotoForm.set("receiverId", seller.id)
+  forgedPhotoForm.set("listingId", publicListingId)
+  forgedPhotoForm.set("files", new File([Buffer.from("not a real image")], "forged.png", { type: "image/png" }))
+  await expect("/api/messages", cookie, 400, { method: "POST", body: forgedPhotoForm })
+  record("message attachment rejects a forged image signature", true, "HTTP 400")
+  const photoForm = new FormData()
+  photoForm.set("receiverId", seller.id)
+  photoForm.set("listingId", publicListingId)
+  photoForm.set("content", "Фото состояния кузова")
+  photoForm.set("files", new File([
+    Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEklEQVQImWOQd5oo7zSRAUIBABi+A8n887YYAAAAAElFTkSuQmCC", "base64"),
+  ], "audit-car.png", { type: "image/png" }))
+  const photoMessage = await expect("/api/messages", cookie, 201, { method: "POST", body: photoForm })
+  record(
+    "conversation accepts an optimized private photo attachment",
+    photoMessage?.attachments?.length === 1 && photoMessage.attachments[0].mimeType === "image/jpeg",
+    `${photoMessage?.attachments?.length ?? 0} attachment(s)`,
+  )
+  const attachmentUrl = photoMessage?.attachments?.[0]?.downloadUrl
+  const senderAttachment = attachmentUrl ? await request(attachmentUrl, cookie) : null
+  const receiverAttachment = attachmentUrl ? await request(attachmentUrl, sellerCookie) : null
+  const outsiderAttachment = attachmentUrl ? await request(attachmentUrl, removableUserCookie) : null
+  record(
+    "private message photo downloads only for both conversation participants",
+    senderAttachment?.status === 200
+      && receiverAttachment?.status === 200
+      && outsiderAttachment?.status === 403
+      && senderAttachment.headers.get("content-type") === "image/jpeg"
+      && senderAttachment.headers.get("cache-control")?.includes("no-store"),
+    `${senderAttachment?.status ?? "missing"}/${receiverAttachment?.status ?? "missing"}/${outsiderAttachment?.status ?? "missing"}`,
+  )
+  const conversationWithPhoto = await expect(`/api/messages/${firstMessage.conversationId}?page=1&limit=20`, sellerCookie, 200)
+  record(
+    "receiver sees the private attachment metadata without its storage key",
+    conversationWithPhoto?.messages?.some((message) => message.id === photoMessage.id
+      && message.attachments?.[0]?.downloadUrl === attachmentUrl
+      && message.attachments[0].storageKey === undefined),
+    `${conversationWithPhoto?.messages?.length ?? 0} messages`,
+  )
   await expect(`/api/messages/${firstMessage.conversationId}`, cookie, 200, { method: "PUT" })
 
   const notification = await prisma.notification.create({ data: { userId: primary.id, type: "INFO", title: "Проверка", content: marker } })

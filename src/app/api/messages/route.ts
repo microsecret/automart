@@ -1,12 +1,58 @@
 import { NextRequest, NextResponse } from "next/server"
+import { randomUUID } from "crypto"
+import { mkdir, unlink, writeFile } from "fs/promises"
+import path from "path"
 import { getServerSession } from "next-auth"
+import sharp from "sharp"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { notifyNewMessage } from "@/lib/message-notify"
 import { createConversationId, normalizeMessageContent } from "@/lib/messages"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { hasExpectedFileSignature } from "@/lib/file-signature"
+import {
+  MAX_MESSAGE_ATTACHMENTS,
+  MAX_MESSAGE_ATTACHMENT_BYTES,
+  MAX_MESSAGE_MULTIPART_BYTES,
+  MESSAGE_ATTACHMENT_MIME_TYPES,
+  messageAttachmentDownloadUrl,
+  messageAttachmentsDirectory,
+} from "@/lib/message-attachments"
 
 const MESSAGE_PAGE_SIZE = 20
+
+type IncomingMessagePayload = {
+  content: unknown
+  receiverId: unknown
+  listingId: unknown
+  files: File[]
+}
+
+async function readIncomingMessage(request: NextRequest): Promise<IncomingMessagePayload | null> {
+  const contentType = request.headers.get("content-type") || ""
+  if (contentType.toLowerCase().startsWith("multipart/form-data")) {
+    const declaredLength = Number(request.headers.get("content-length"))
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_MESSAGE_MULTIPART_BYTES) return null
+    const formData = await request.formData().catch(() => null)
+    if (!formData) return null
+    return {
+      content: formData.get("content"),
+      receiverId: formData.get("receiverId"),
+      listingId: formData.get("listingId"),
+      files: formData.getAll("files").filter((value): value is File => value instanceof File),
+    }
+  }
+
+  const body = await request.json().catch(() => null)
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null
+  const record = body as Record<string, unknown>
+  return { content: record.content, receiverId: record.receiverId, listingId: record.listingId, files: [] }
+}
+
+function privateAttachmentFileName(originalName: string) {
+  const base = originalName.replace(/\.[^.]+$/, "").replace(/[\u0000-\u001f\\/:*?"<>|]/g, "_").trim() || "Фотография"
+  return `${base.slice(0, 140)}.jpg`
+}
 // GET all conversations for the current user
 export async function GET(request: NextRequest) {
   try {
@@ -90,6 +136,7 @@ export async function GET(request: NextRequest) {
                   part: { select: { name: true, make: true, model: true } },
                 },
               },
+              _count: { select: { attachments: true } },
             },
           })
         : Promise.resolve([]),
@@ -155,6 +202,7 @@ export async function GET(request: NextRequest) {
           isRead: latestMessage.isRead,
           createdAt: latestMessage.createdAt,
           senderId: latestMessage.senderId,
+          attachmentCount: latestMessage._count.attachments,
         } : null,
         unreadCount: unreadByConversation.get(conversation.conversationId) || 0,
       }
@@ -189,24 +237,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json().catch(() => null)
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return NextResponse.json({ error: "Некорректные данные сообщения" }, { status: 400 })
-    }
-    const { content, receiverId, listingId } = body
-
-    const normalizedContent = normalizeMessageContent(content)
-    if (!normalizedContent) return NextResponse.json({ error: "Сообщение должно содержать от 1 до 4000 символов" }, { status: 400 })
-
-    if (typeof receiverId !== "string" || !receiverId) return NextResponse.json({ error: "Укажите получателя" }, { status: 400 })
-    if (receiverId === session.user.id) return NextResponse.json({ error: "Нельзя написать самому себе" }, { status: 400 })
-
     const userLimit = rateLimit(`messages:user:${session.user.id}`, { windowMs: 60_000, maxRequests: 30 })
     const ipLimit = rateLimit(`messages:ip:${getClientIp(request)}`, { windowMs: 60_000, maxRequests: 60 })
     if (!userLimit.success || !ipLimit.success) {
       const limit = !userLimit.success ? userLimit : ipLimit
       return NextResponse.json({ error: "Слишком много сообщений. Подождите минуту." }, { status: 429, headers: rateLimitHeaders(limit) })
     }
+
+    if ((request.headers.get("content-type") || "").toLowerCase().startsWith("multipart/form-data")) {
+      const attachmentUserLimit = rateLimit(`message-attachments:user:${session.user.id}`, { windowMs: 60 * 60_000, maxRequests: 12 })
+      const attachmentIpLimit = rateLimit(`message-attachments:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 40 })
+      if (!attachmentUserLimit.success || !attachmentIpLimit.success) {
+        const limit = !attachmentUserLimit.success ? attachmentUserLimit : attachmentIpLimit
+        return NextResponse.json({ error: "Слишком много загрузок фотографий. Попробуйте позже." }, { status: 429, headers: rateLimitHeaders(limit) })
+      }
+    }
+
+    const body = await readIncomingMessage(request)
+    if (!body) return NextResponse.json({ error: "Некорректные данные сообщения или превышен размер запроса" }, { status: 400 })
+    const { content, receiverId, listingId, files } = body
+    if (files.length > MAX_MESSAGE_ATTACHMENTS) {
+      return NextResponse.json({ error: `К сообщению можно приложить не более ${MAX_MESSAGE_ATTACHMENTS} фотографий` }, { status: 400 })
+    }
+
+    const trimmedContent = typeof content === "string" ? content.trim() : ""
+    const normalizedContent = trimmedContent ? normalizeMessageContent(trimmedContent) : null
+    if (trimmedContent && !normalizedContent) {
+      return NextResponse.json({ error: "Сообщение должно содержать не более 4000 символов" }, { status: 400 })
+    }
+    if (!normalizedContent && files.length === 0) {
+      return NextResponse.json({ error: "Добавьте текст или фотографию" }, { status: 400 })
+    }
+
+    if (typeof receiverId !== "string" || !receiverId) return NextResponse.json({ error: "Укажите получателя" }, { status: 400 })
+    if (receiverId === session.user.id) return NextResponse.json({ error: "Нельзя написать самому себе" }, { status: 400 })
 
     // Verify receiver exists
     const receiver = await prisma.user.findUnique({
@@ -270,38 +334,63 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the message
-    const message = await prisma.message.create({
-      data: {
-        content: normalizedContent,
-        senderId: session.user.id,
-        receiverId: receiverId,
-        listingId: normalizedListingId,
-        conversationId: conversationId
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        },
-        receiver: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        },
-        listing: {
-          select: {
-            id: true,
-            title: true
-          }
-        }
+    const preparedAttachments = [] as Array<{ storageKey: string; fileName: string; bytes: Buffer }>
+    for (const file of files) {
+      if (!MESSAGE_ATTACHMENT_MIME_TYPES.has(file.type) || file.size <= 0 || file.size > MAX_MESSAGE_ATTACHMENT_BYTES) {
+        return NextResponse.json({ error: "Разрешены JPG, PNG и WebP до 8 МБ; не более четырёх фотографий" }, { status: 400 })
       }
-    })
+      const bytes = Buffer.from(await file.arrayBuffer())
+      if (!hasExpectedFileSignature(file.type, bytes)) {
+        return NextResponse.json({ error: "Содержимое фотографии не соответствует заявленному формату" }, { status: 400 })
+      }
+      const optimized = await sharp(bytes)
+        .rotate()
+        .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 80, mozjpeg: true })
+        .toBuffer()
+        .catch(() => null)
+      if (!optimized) return NextResponse.json({ error: "Не удалось обработать фотографию" }, { status: 400 })
+      preparedAttachments.push({ storageKey: `${randomUUID()}.jpg`, fileName: privateAttachmentFileName(file.name), bytes: optimized })
+    }
+
+    const storedPaths: string[] = []
+    let message
+    try {
+      if (preparedAttachments.length) await mkdir(messageAttachmentsDirectory(), { recursive: true })
+      for (const attachment of preparedAttachments) {
+        const target = path.join(messageAttachmentsDirectory(), attachment.storageKey)
+        await writeFile(target, attachment.bytes, { flag: "wx" })
+        storedPaths.push(target)
+      }
+
+      message = await prisma.message.create({
+        data: {
+          content: normalizedContent || "",
+          senderId: session.user.id,
+          receiverId,
+          listingId: normalizedListingId,
+          conversationId,
+          attachments: {
+            create: preparedAttachments.map((attachment) => ({
+              fileName: attachment.fileName,
+              mimeType: "image/jpeg",
+              size: attachment.bytes.byteLength,
+              storageKey: attachment.storageKey,
+              uploadedById: session.user.id,
+            })),
+          },
+        },
+        include: {
+          sender: { select: { id: true, name: true, image: true } },
+          receiver: { select: { id: true, name: true, image: true } },
+          listing: { select: { id: true, title: true } },
+          attachments: { select: { id: true, fileName: true, mimeType: true, size: true } },
+        },
+      })
+    } catch (error) {
+      await Promise.all(storedPaths.map((target) => unlink(target).catch(() => undefined)))
+      throw error
+    }
 
     /* Уведомление уходит в Telegram, не задерживая ответ.
 
@@ -312,7 +401,13 @@ export async function POST(request: NextRequest) {
        сообщение, а сбой доставки не повод считать письмо неотправленным. */
     void notifyNewMessage(message.id)
 
-    return NextResponse.json(message, { status: 201 })
+    return NextResponse.json({
+      ...message,
+      attachments: message.attachments.map((attachment) => ({
+        ...attachment,
+        downloadUrl: messageAttachmentDownloadUrl(message.conversationId, attachment.id),
+      })),
+    }, { status: 201 })
   } catch (error) {
     console.error("Error sending message:", error)
     return NextResponse.json(

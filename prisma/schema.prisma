@@ -46,6 +46,7 @@ model User {
   reviews                       Review[]                       @relation("Reviewer")
   messagesSent                  Message[]                      @relation("MessageSender")
   messagesReceived              Message[]                      @relation("MessageReceiver")
+  messageAttachments            MessageAttachment[]            @relation("MessageAttachmentUploader")
   aiServiceLogs                 AIServiceLog[]                 @relation("UserAIServiceLogs")
   sessions                      Session[]                      @relation("UserSessions")
   notifications                 Notification[]                 @relation("UserNotifications")
@@ -601,6 +602,8 @@ model Message {
   listingId String?
   listing   Listing? @relation(fields: [listingId], references: [id], name: "MessageListing")
 
+  attachments MessageAttachment[]
+
   // Timestamps
   createdAt DateTime @default(now())
 
@@ -611,6 +614,25 @@ model Message {
   // Список диалогов ищет и по отправителю, и по получателю. Вторая ветка
   // не покрывалась: receiverId — второй столбец составного индекса.
   @@index([receiverId, createdAt])
+}
+
+// Фото из личной переписки хранятся вне public и выдаются только участникам
+// диалога через авторизованный API. Отдельная модель не раскрывает storageKey
+// в обычном ответе Message и позволяет удалить файлы вместе с сообщением.
+model MessageAttachment {
+  id           String   @id @default(uuid())
+  messageId    String
+  message      Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileName     String
+  mimeType     String
+  size         Int
+  storageKey   String   @unique
+  uploadedById String
+  uploadedBy   User     @relation("MessageAttachmentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([messageId, createdAt])
+  @@index([uploadedById, createdAt])
 }
 
 // Favorite listings (many-to-many relationship between users and listings)

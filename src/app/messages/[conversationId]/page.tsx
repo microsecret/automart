@@ -19,8 +19,12 @@ import {
   Box,
   Paper,
   ThemeIcon,
+  FileButton,
+  ActionIcon,
+  Image,
+  SimpleGrid,
 } from "@mantine/core"
-import { IconArrowLeft, IconLock, IconMessageCircle2, IconSend } from "@tabler/icons-react"
+import { IconArrowLeft, IconLock, IconMessageCircle2, IconPaperclip, IconPhoto, IconSend, IconX } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
@@ -31,6 +35,7 @@ interface Message {
   content: string
   senderId: string
   createdAt: string
+  attachments: Array<{ id: string; fileName: string; mimeType: string; size: number; downloadUrl: string }>
 }
 
 type ConversationResponse = {
@@ -64,6 +69,7 @@ function ConversationWorkspace() {
   const router = useRouter()
   const [text, setText] = useState("")
   const [sending, setSending] = useState(false)
+  const [attachments, setAttachments] = useState<File[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const hasScrolledToLatest = useRef(false)
@@ -100,18 +106,31 @@ function ConversationWorkspace() {
   }, [messages.length])
 
   const send = useCallback(async () => {
-    if (!text.trim() || !session) return
+    if ((!text.trim() && attachments.length === 0) || !session) return
     setSending(true)
     const content = text.trim()
-    setText("")
     try {
       const receiverId = recipientId || latestPage?.otherUser?.id
       if (!receiverId) throw new Error("Не удалось определить собеседника")
+      const listingId = requestedListingId || latestPage?.listingId || null
+      const requestBody = attachments.length > 0 ? new FormData() : null
+      if (requestBody) {
+        requestBody.set("content", content)
+        requestBody.set("receiverId", receiverId)
+        if (listingId) requestBody.set("listingId", listingId)
+        attachments.forEach((file) => requestBody.append("files", file))
+      }
       const payload = await fetchJson<SendMessageResponse>("/api/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, receiverId, listingId: requestedListingId || latestPage?.listingId || null }),
+        ...(requestBody
+          ? { body: requestBody }
+          : {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ content, receiverId, listingId }),
+            }),
       })
+      setText("")
+      setAttachments([])
       if (isNewConversation && payload.conversationId) {
         router.replace(`/messages/${payload.conversationId}`)
       } else {
@@ -119,7 +138,6 @@ function ConversationWorkspace() {
         scrollToBottom()
       }
     } catch (requestError) {
-      setText(content)
       notifications.show({
         title: "Сообщение не отправлено",
         message: getApiClientErrorMessage(requestError, "Повторите попытку."),
@@ -128,7 +146,14 @@ function ConversationWorkspace() {
     } finally {
       setSending(false)
     }
-  }, [text, session, recipientId, latestPage?.otherUser?.id, requestedListingId, latestPage?.listingId, isNewConversation, mutate, router])
+  }, [text, attachments, session, recipientId, latestPage?.otherUser?.id, requestedListingId, latestPage?.listingId, isNewConversation, mutate, router])
+
+  const selectAttachments = (files: File[]) => {
+    if (files.length > 4) {
+      notifications.show({ title: "Можно выбрать до четырёх фото", message: "Лишние файлы не добавлены.", color: "orange" })
+    }
+    setAttachments(files.slice(0, 4))
+  }
 
   if (status === "loading" || !session) {
     return <Container py={80}><Center><Loader color="indigo" /></Center></Container>
@@ -209,15 +234,28 @@ function ConversationWorkspace() {
                       px="md"
                       py="xs"
                       radius="md"
-                      style={{
-                        maxWidth: "78%",
-                        background: isOwn ? "var(--mantine-color-indigo-6)" : "var(--mantine-color-gray-0)",
-                        color: isOwn ? "#fff" : "var(--mantine-color-text)",
-                        border: isOwn ? "1px solid transparent" : "1px solid var(--market-field-line)",
-                      }}
+                      className="message-bubble"
+                      data-own={isOwn || undefined}
                     >
                       <Stack gap={2}>
-                        <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>{msg.content}</Text>
+                        {msg.attachments?.length > 0 && (
+                          <SimpleGrid cols={msg.attachments.length > 1 ? 2 : 1} spacing={5} className="message-bubble__attachments">
+                            {msg.attachments.map((attachment) => (
+                              <Box
+                                key={attachment.id}
+                                component="a"
+                                href={attachment.downloadUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="message-bubble__attachment"
+                                aria-label={`Открыть фото ${attachment.fileName}`}
+                              >
+                                <Image src={attachment.downloadUrl} alt={attachment.fileName} loading="lazy" fit="cover" />
+                              </Box>
+                            ))}
+                          </SimpleGrid>
+                        )}
+                        {msg.content && <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>{msg.content}</Text>}
                         <Text size="10px" c={isOwn ? "#b9caee" : "var(--mantine-color-dimmed)"}>{formatRelativeDate(msg.createdAt)}</Text>
                       </Stack>
                     </Paper>
@@ -229,7 +267,27 @@ function ConversationWorkspace() {
         </Box>
         <Box mt="sm" ref={messagesEndRef} />
 
+        {attachments.length > 0 && (
+          <Group gap={6} mb="xs" wrap="wrap" aria-live="polite">
+            {attachments.map((file, index) => (
+              <Paper key={`${file.name}-${file.lastModified}`} withBorder radius="md" px="xs" py={5} className="message-composer__attachment">
+                <IconPhoto size={15} />
+                <Text size="xs" lineClamp={1}>{file.name}</Text>
+                <ActionIcon size="xs" variant="subtle" color="gray" aria-label={`Убрать ${file.name}`} onClick={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+                  <IconX size={13} />
+                </ActionIcon>
+              </Paper>
+            ))}
+          </Group>
+        )}
         <Group gap="xs" align="flex-end">
+          <FileButton onChange={selectAttachments} accept="image/jpeg,image/png,image/webp" multiple>
+            {(props) => (
+              <ActionIcon {...props} variant="default" color="gray" size={42} radius="md" disabled={sending} aria-label="Прикрепить фотографии">
+                <IconPaperclip size={19} />
+              </ActionIcon>
+            )}
+          </FileButton>
           {/* Плейсхолдер исчезает при первом же символе, поэтому скринридер
               объявлял поле просто «текстовое поле» — в переписке из нескольких
               полей неясно, куда попадёт ввод. */}
@@ -242,6 +300,7 @@ function ConversationWorkspace() {
             autosize
             minRows={1}
             maxRows={4}
+            disabled={sending}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault()
@@ -253,7 +312,7 @@ function ConversationWorkspace() {
           <Button
             onClick={send}
             loading={sending}
-            disabled={!text.trim()}
+            disabled={!text.trim() && attachments.length === 0}
             color="indigo"
             radius="md"
             aria-label="Отправить"

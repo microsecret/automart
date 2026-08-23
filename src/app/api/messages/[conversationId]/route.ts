@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { messageAttachmentDownloadUrl } from "@/lib/message-attachments"
 
 const CONVERSATION_PAGE_SIZE = 50
 // GET messages in a conversation
@@ -100,7 +101,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             id: true,
             title: true
           }
-        }
+        },
+        attachments: { select: { id: true, fileName: true, mimeType: true, size: true } },
       },
       orderBy: {
         createdAt: 'desc'
@@ -108,7 +110,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       skip,
       take: limit
     })
-    const messages = [...newestFirstMessages].reverse()
+    const messages = [...newestFirstMessages].reverse().map((message) => ({
+      ...message,
+      attachments: message.attachments.map((attachment) => ({
+        ...attachment,
+        downloadUrl: messageAttachmentDownloadUrl(conversationId, attachment.id),
+      })),
+    }))
 
     // Mark unread messages as read
     await prisma.message.updateMany({

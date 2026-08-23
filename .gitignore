@@ -60,6 +60,7 @@ prisma/dev.db-journal
 
 # Private runtime uploads are persisted outside version control
 /data/delivery-documents/
+/data/message-attachments/
 
 # Temp
 /.tmp/
