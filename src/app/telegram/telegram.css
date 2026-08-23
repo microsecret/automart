@@ -390,3 +390,81 @@
     transition: none;
   }
 }
+
+/* Ряд разделов под заголовком.
+
+   Нижняя навигация вмещает пять пунктов, а лент больше: здесь помещаются
+   остальные, и переключаться можно, не уводя палец вниз экрана.
+
+   Ряд прокручивается вбок: на узком экране четыре подписи не помещаются,
+   а сжимать их до нечитаемых нельзя. */
+.tg-shell__tabs {
+  display: flex;
+  overflow-x: auto;
+  margin-top: 10px;
+  gap: 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tg-shell__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tg-shell__tab {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tg-hint) 16%, transparent);
+  color: var(--tg-hint);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 120ms ease-out, color 120ms ease-out;
+}
+
+.tg-shell__tab[data-active] {
+  background: var(--tg-accent);
+  color: var(--tg-accent-text);
+}
+
+.tg-shell__tab:active {
+  transform: scale(0.96);
+}
+
+/* Карточка новости.
+
+   Фото ниже, чем у машины: у новости оно иллюстрация, а не предмет
+   выбора — заголовок важнее. */
+.tg-card--news .tg-card__media {
+  aspect-ratio: 16 / 9;
+}
+
+.tg-card__media--flat {
+  aspect-ratio: auto;
+  height: 72px;
+}
+
+.tg-card__news-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--tg-text);
+}
+
+.tg-card__news-summary {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--tg-text) 72%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-shell__tab {
+    transition: none;
+  }
+
+  .tg-shell__tab:active {
+    transform: none;
+  }
+}

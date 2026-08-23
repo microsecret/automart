@@ -7,7 +7,7 @@ import type { TelegramThemeParams } from "@/lib/telegram-webapp"
 import {
   IconCar,
   IconGavel,
-  IconHeart,
+  IconNews,
   IconPlus,
   IconUser,
 } from "@tabler/icons-react"
@@ -44,11 +44,25 @@ const FALLBACK: Required<Pick<TelegramThemeParams,
   section_separator_color: "#101921",
 }
 
+/* Верхний ряд — только ленты, между которыми переключаются.
+
+   Действия («Продать») и личные разделы («Профиль») сюда не попадают:
+   для них нижний ряд, где они под большим пальцем. */
+const TOP_TABS = [
+  { href: "/telegram", label: "Свежее" },
+  { href: "/telegram?tab=auctions", label: "Аукционы" },
+  { href: "/telegram?tab=news", label: "Новости" },
+  { href: "/favorites?from=telegram", label: "Избранное" },
+]
+
 const TABS = [
-  { href: "/telegram", label: "Машины", Icon: IconCar },
+  { href: "/telegram", label: "Свежее", Icon: IconCar },
   { href: "/telegram?tab=auctions", label: "Аукционы", Icon: IconGavel },
   { href: "/listings/create/quick?source=telegram", label: "Продать", Icon: IconPlus, accent: true },
-  { href: "/favorites?from=telegram", label: "Избранное", Icon: IconHeart },
+  /* Новости вместо избранного: избранное нужно тем, кто уже выбирает, а
+     новости читают все — и они удерживают в приложении, пока машин
+     немного. Избранное осталось в профиле. */
+  { href: "/telegram?tab=news", label: "Новости", Icon: IconNews },
   { href: "/dashboard?from=telegram", label: "Профиль", Icon: IconUser },
 ]
 
@@ -144,6 +158,27 @@ export default function TelegramShell({
       <Box className="tg-shell__head">
         <Text className="tg-shell__title">{title}</Text>
         {subtitle && <Text className="tg-shell__subtitle">{subtitle}</Text>}
+
+        {/* Ряд разделов под заголовком.
+
+            Нижняя навигация вмещает пять пунктов, а разделов больше:
+            здесь помещаются остальные, и переключаться между лентами
+            можно, не уводя палец вниз экрана. */}
+        <Box className="tg-shell__tabs" role="tablist">
+          {TOP_TABS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="tg-shell__tab"
+              data-active={href === activeTab || undefined}
+              onClick={() => window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()}
+              role="tab"
+              aria-selected={href === activeTab}
+            >
+              {label}
+            </Link>
+          ))}
+        </Box>
       </Box>
 
       <Box className="tg-shell__body">{children}</Box>
