@@ -75,7 +75,7 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
   }
 
   return (
-    <Stack gap={10} pb={8}>
+    <Stack gap="var(--tg-card-gap)" pb={8}>
       {listings.map((listing) => (
         <TelegramFeedCard key={listing.id} listing={listing} />
       ))}

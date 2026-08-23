@@ -23,6 +23,9 @@
   /* Высота нижней навигации плюс безопасный отступ снизу: под лентой
      должно оставаться место, иначе последняя карточка уезжает под панель. */
   --tg-nav-height: 58px;
+
+  /* Зазор между карточками: 8 пикселей у auto.ru, 10 у drom.ru. */
+  --tg-card-gap: 8px;
 }
 
 .tg-shell {
@@ -67,7 +70,27 @@
 
 .tg-shell__body {
   flex: 1;
-  padding: 12px 12px calc(var(--tg-nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
+  /* Боковых полей нет: у auto.ru и drom.ru карточка занимает все 390
+     пикселей экрана. Наши прежние поля по 10 отнимали двадцать пикселей
+     у фотографии — на телефоне это заметно. */
+  padding: 10px 0 calc(var(--tg-nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
+}
+
+/* Карточка отделяется от соседней подложкой, а не отступом от края. */
+.tg-shell__body > * > .tg-card {
+  border-radius: 0;
+}
+
+@media (min-width: 400px) {
+  /* На широком экране поля возвращаются: карточка во всю ширину
+     планшета выглядит растянутой. */
+  .tg-shell__body {
+    padding-inline: 10px;
+  }
+
+  .tg-shell__body > * > .tg-card {
+    border-radius: 16px;
+  }
 }
 
 /* Карточка машины.
@@ -79,13 +102,18 @@
 .tg-card {
   display: flex;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--tg-surface);
   color: inherit;
   text-decoration: none;
-  /* Тень заменена рамкой: на тёмной подложке тень не читается, а рамка
-     отделяет карточку от фона в любой теме. */
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tg-hint) 18%, transparent);
+  /* Тени нет намеренно.
+
+     Замер лент auto.ru и drom.ru на 390 пикселях: у обеих
+     `box-shadow: none` — карточку от фона отделяет подложка, а не тень.
+     На тёмной теме тень и не читается вовсе.
+
+     Радиус 16 — у auto.ru; drom обходится нулевым, но скруглённая
+     карточка мягче на тёмном фоне. */
   transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background 140ms ease-out;
 }
 
@@ -100,7 +128,10 @@
   position: relative;
   overflow: hidden;
   width: 132px;
-  min-height: 100px;
+  /* Кадр 4:3 — у auto.ru и drom.ru одинаково. Наше прежнее 1,25 было
+     исключением: в таком кадре машина видна хуже, а привычка у людей
+     сложилась по этим площадкам. */
+  aspect-ratio: 4 / 3;
   flex: 0 0 132px;
   background: var(--tg-elevated);
 }
@@ -144,8 +175,10 @@
    сравнивает цены, а не названия. */
 .tg-card__price {
   font-family: var(--font-display), sans-serif;
-  font-size: 1.05rem;
-  font-weight: 800;
+  /* 24 пикселя и вес 700 — так набрана цена и у auto.ru, и у drom.ru.
+     Совпадение независимых решений: цена это то, по чему листают ленту. */
+  font-size: 1.5rem;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.025em;
   color: var(--tg-text);
@@ -153,7 +186,9 @@
 }
 
 .tg-card__title {
-  font-size: 0.82rem;
+  /* 15 пикселей: у auto.ru столько же, у drom.ru 18 — наши прежние 14
+     были мельче обоих. Название машины не должно теряться под ценой. */
+  font-size: 0.94rem;
   font-weight: 600;
   line-height: 1.25;
   color: color-mix(in srgb, var(--tg-text) 82%, transparent);

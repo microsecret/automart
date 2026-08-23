@@ -57,11 +57,14 @@ export default function TelegramShell({
   activeTab = "/telegram",
   title,
   subtitle,
+  mainAction = true,
 }: {
   children: React.ReactNode
   activeTab?: string
   title: string
   subtitle?: string
+  /** Показывать ли кнопку платформы «Разместить объявление». */
+  mainAction?: boolean
 }) {
   const [ready, setReady] = useState(false)
 
@@ -100,7 +103,41 @@ export default function TelegramShell({
     webApp.setHeaderColor?.(theme.bg_color || FALLBACK.bg_color)
     webApp.setBackgroundColor?.(theme.secondary_bg_color || FALLBACK.secondary_bg_color)
     setReady(true)
-  }, [])
+
+    /* Кнопка платформы зовёт разместить объявление.
+
+       Это самое заметное место в приложении: она всегда внизу экрана, во
+       всю ширину, цветом мессенджера — ссылка в ленте с ней не
+       сравнится. Приложение и делается ради того, чтобы машины
+       выкладывали отсюда.
+
+       На вкладке подачи её нет: звать туда, где человек уже находится,
+       незачем. */
+    if (mainAction === false) {
+      webApp.MainButton?.hide()
+      return
+    }
+
+    const openCreate = () => {
+      webApp.HapticFeedback?.impactOccurred("medium")
+      window.location.assign("/listings/create/quick?source=telegram")
+    }
+
+    webApp.MainButton?.setParams?.({
+      text: "Разместить объявление",
+      color: theme.button_color || FALLBACK.button_color,
+      text_color: theme.button_text_color || FALLBACK.button_text_color,
+      is_visible: true,
+    })
+    webApp.MainButton?.setText("Разместить объявление")
+    webApp.MainButton?.onClick(openCreate)
+    webApp.MainButton?.show()
+
+    return () => {
+      webApp.MainButton?.offClick(openCreate)
+      webApp.MainButton?.hide()
+    }
+  }, [mainAction])
 
   return (
     <Box className="tg-shell" data-ready={ready || undefined}>

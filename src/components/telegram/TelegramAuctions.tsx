@@ -60,7 +60,7 @@ export default function TelegramAuctions() {
   }
 
   return (
-    <Stack gap={10} pb={8}>
+    <Stack gap="var(--tg-card-gap)" pb={8}>
       {lots.map((lot) => (
         <AuctionCard key={lot.id} lot={lot} />
       ))}
