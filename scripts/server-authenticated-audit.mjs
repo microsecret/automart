@@ -227,6 +227,16 @@ async function run() {
   await expect("/api/v1/models?brand_id=Toyota&category=CAR", null, 200)
   await expect("/api/categories", null, 200)
   await expect("/api/stats", null, 200)
+  const exchangeRateTimestamp = new Date()
+  await prisma.exchangeRate.createMany({
+    data: [
+      { currency: "USD", rateToRub: 80, source: "AUDIT_FIXTURE", effectiveAt: exchangeRateTimestamp },
+      { currency: "EUR", rateToRub: 92, source: "AUDIT_FIXTURE", effectiveAt: exchangeRateTimestamp },
+      { currency: "JPY", rateToRub: 0.54, source: "AUDIT_FIXTURE", effectiveAt: exchangeRateTimestamp },
+      { currency: "KRW", rateToRub: 0.058, source: "AUDIT_FIXTURE", effectiveAt: exchangeRateTimestamp },
+      { currency: "CNY", rateToRub: 11.1, source: "AUDIT_FIXTURE", effectiveAt: exchangeRateTimestamp },
+    ],
+  })
   const exchangeRates = await expect("/api/exchange-rates", null, 200)
   record("exchange-rate service exposes dated official rates", exchangeRates?.updated === true && typeof exchangeRates?.asOf === "string", exchangeRates?.asOf || "missing")
   await expect("/api/fuel-stations?latitude=0&longitude=0", null, 400)
