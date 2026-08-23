@@ -5456,7 +5456,7 @@ h1:not(:last-child),
    подложке, 42 пикселя против общих 34. Помечен атрибутом, чтобы
    отличаться от заголовка, которому размер поставили по недосмотру. */
 h1[data-lw-hero] {
-  font-size: inherit;
+  font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.625rem);
   letter-spacing: -0.03em;
   margin-bottom: 0;
 }
