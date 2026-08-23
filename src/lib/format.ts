@@ -1,5 +1,15 @@
 import { parseMarketplaceImages } from "@/lib/media-url"
 
+/* Форматирование чисел живёт отдельным модулем без зависимостей.
+
+   Этот файл тянет разбор адресов картинок, из-за чего правила набора —
+   неразрывные пробелы, сокращения, округление — нельзя было проверить
+   тестом без запуска всего приложения. Здесь они переэкспортируются,
+   чтобы прежние места ссылались как раньше. */
+export { formatEngineVolume, formatMileage, formatPower } from "@/lib/format-numbers"
+import { formatPriceShort } from "@/lib/format-numbers"
+export { formatPriceShort }
+
 /** Форматирование цены в рублях */
 export function formatPrice(price: number | null | undefined): string {
   if (price == null || !Number.isFinite(price)) return "Договорная"
@@ -10,42 +20,11 @@ export function formatPrice(price: number | null | undefined): string {
   }).format(price)
 }
 
-/** Краткая цена: 4.5 млн ₽ вместо 4 500 000 ₽ */
-export function formatPriceShort(price: number | null | undefined): string {
-  if (price == null || !Number.isFinite(price)) return "Договорная"
-  if (price >= 1_000_000) {
-    const mln = price / 1_000_000
-    return `${mln % 1 === 0 ? mln.toFixed(0) : mln.toFixed(1).replace(".", ",")} млн ₽`
-  }
-  if (price >= 1_000) {
-    const k = price / 1_000
-    return `${k % 1 === 0 ? k.toFixed(0) : k.toFixed(0)} тыс ₽`
-  }
-  return `${price} ₽`
-}
 
-/** Ориентировочный ежемесячный платёж для краткого отображения в карточке. */
+/** Ориентировочный ежемесячный платёж для краткого показа в карточке. */
 export function formatMonthlyPayment(price: number | null | undefined): string | null {
   if (!price || !Number.isFinite(price) || price <= 100_000) return null
   return `от ${formatPriceShort(Math.round(price * 0.025))}/мес`
-}
-
-/** Форматирование пробега: 45000 → 45 000 км */
-export function formatMileage(mileage: number | null | undefined): string {
-  if (mileage == null || !Number.isFinite(mileage)) return "—"
-  return `${new Intl.NumberFormat("ru-RU").format(mileage)} км`
-}
-
-/** Объём двигателя: 2.0 л */
-export function formatEngineVolume(volume: number | null | undefined): string {
-  if (volume == null) return "—"
-  return `${volume} л`
-}
-
-/** Мощность: 190 л.с. */
-export function formatPower(power: number | null | undefined): string {
-  if (power == null) return "—"
-  return `${power} л.с.`
 }
 
 /** Относительная дата: "2 дня назад", "только что" */
