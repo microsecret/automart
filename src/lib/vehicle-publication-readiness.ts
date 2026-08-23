@@ -77,6 +77,55 @@ function hasImage(value: unknown): boolean {
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/
 const TRANSPORT_IDENTIFIER_PATTERN = /^[A-ZА-ЯЁ0-9][A-ZА-ЯЁ0-9 .\/-]{1,31}$/
 
+export type NormalizedVehicleIdentity = {
+  vin: string | null
+  serialNumber: string | null
+  registrationNumber: string | null
+}
+
+/**
+ * Нормализует единственный идентификатор, подходящий выбранному виду
+ * транспорта. API подачи, гараж и публикационный шлюз используют одну
+ * проверку, поэтому VIN не может быть принят приватной формой и отклонён
+ * только в самом конце публичной подачи.
+ */
+export function normalizeVehicleIdentity(
+  vehicleType: string | null | undefined,
+  vin: unknown,
+  serialNumber: unknown,
+  registrationNumber: unknown,
+): NormalizedVehicleIdentity | { error: string } {
+  const identityMeta = getVehicleIdentityMeta(vehicleType)
+  const normalized = {
+    vin: typeof vin === "string" ? vin.trim().toUpperCase() : "",
+    serialNumber: typeof serialNumber === "string" ? serialNumber.trim().toUpperCase() : "",
+    registrationNumber: typeof registrationNumber === "string" ? registrationNumber.trim().toUpperCase() : "",
+  }
+  const selectedValue = normalized[identityMeta.field]
+
+  if (!selectedValue) return { error: `Укажите: ${identityMeta.label}.` }
+  if (identityMeta.field === "vin") {
+    if (!VIN_PATTERN.test(selectedValue)) {
+      return { error: "VIN должен содержать 17 латинских символов и цифр без I, O и Q." }
+    }
+    return { vin: selectedValue, serialNumber: null, registrationNumber: null }
+  }
+  if (!TRANSPORT_IDENTIFIER_PATTERN.test(selectedValue)) {
+    return { error: `${identityMeta.label} должен содержать от 3 до 32 букв, цифр, пробелов, точек, слэшей или дефисов.` }
+  }
+
+  // У спецтехники номер рамы иногда одновременно является полноценным VIN.
+  // Храним оба значения на одной записи, не создавая второй транспорт.
+  if (String(vehicleType || "") === "SPECIAL" && VIN_PATTERN.test(selectedValue)) {
+    return { vin: selectedValue, serialNumber: selectedValue, registrationNumber: null }
+  }
+  return {
+    vin: null,
+    serialNumber: identityMeta.field === "serialNumber" ? selectedValue : null,
+    registrationNumber: identityMeta.field === "registrationNumber" ? selectedValue : null,
+  }
+}
+
 function isOption(value: unknown, options: readonly { value: string }[]): boolean {
   return typeof value === "string" && options.some((option) => option.value === value)
 }
@@ -85,16 +134,8 @@ function isOption(value: unknown, options: readonly { value: string }[]): boolea
 export function validateVehiclePublicationValues(input: VehiclePublicationInput): string | null {
   const vehicleType = String(input.vehicleType || "CAR")
   const requiredFields = new Set(getRequiredSpecs(input).map((requirement) => requirement.field))
-  const identity = getVehicleIdentityMeta(vehicleType)
-  const identityValue = typeof input[identity.field] === "string"
-    ? input[identity.field]!.trim().toUpperCase()
-    : ""
-  if (identity.field === "vin" && !VIN_PATTERN.test(identityValue)) {
-    return "VIN должен содержать 17 латинских символов и цифр без I, O и Q."
-  }
-  if (identity.field !== "vin" && !TRANSPORT_IDENTIFIER_PATTERN.test(identityValue)) {
-    return `${identity.label} должен содержать от 3 до 32 букв, цифр, пробелов, точек, слэшей или дефисов.`
-  }
+  const identity = normalizeVehicleIdentity(vehicleType, input.vin, input.serialNumber, input.registrationNumber)
+  if ("error" in identity) return identity.error
 
   const currentYear = new Date().getFullYear()
   const year = Number(input.year)

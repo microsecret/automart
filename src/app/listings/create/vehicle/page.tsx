@@ -356,6 +356,7 @@ function CreateVehicleWorkspace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: f.title || `${f.year} ${f.make} ${f.model}`,
+          garageVehicleId: garageId || null,
           make: f.make, model: f.model, year: Number(f.year), price: Number(f.price),
           mileage: f.mileage ? Number(f.mileage) : null,
           operatingHours: f.operatingHours ? Number(f.operatingHours) : null,

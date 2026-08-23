@@ -533,14 +533,102 @@ async function run() {
   })
   record("part auction accepts a concurrency-safe minimum bid", bid?.bid?.amount === 21_000, String(bid?.bid?.amount ?? "missing"))
 
+  const garageCountBeforeInvalidVin = await prisma.vehicle.count({
+    where: { userId: primary.id, category: { name: "Личный гараж" } },
+  })
+  await expect("/api/garage", cookie, 400, {
+    method: "POST",
+    body: JSON.stringify({ make: "Hyundai", model: "Tucson", year: 2022, vin: "INVALID" }),
+  })
+  const garageCountAfterInvalidVin = await prisma.vehicle.count({
+    where: { userId: primary.id, category: { name: "Личный гараж" } },
+  })
+  record(
+    "garage rejects an invalid optional VIN without creating a record",
+    garageCountBeforeInvalidVin === garageCountAfterInvalidVin,
+    `${garageCountBeforeInvalidVin} then ${garageCountAfterInvalidVin}`,
+  )
+
+  const garageVin = `LWGRGE${String(Date.now()).slice(-11)}`
   const garage = await expect("/api/garage", cookie, 201, {
     method: "POST",
-    body: JSON.stringify({ make: "Hyundai", model: "Tucson", year: 2022, mileage: 30_000, fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SUV", color: "Синий", location: "Екатеринбург", images: ["/uploads/123e4567-e89b-12d3-a456-426614174000.webp", "https://example.com/external.jpg"] }),
+    body: JSON.stringify({
+      make: "Hyundai", model: "Tucson", year: 2022, mileage: 30_000, vin: garageVin,
+      fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SUV", color: "Синий",
+      engineVolume: 1.6, power: 180, driveType: "AWD", condition: "EXCELLENT",
+      steeringWheel: "LEFT", ownersCount: 0, documentsStatus: "CLEAN", damageInfo: "NONE",
+      sellerType: "OWNER", availability: "IN_STOCK", customsCleared: true, generation: "IV (NX4)",
+      location: "Екатеринбург", description: "Личный автомобиль с полными данными для будущего объявления.",
+      images: ["/uploads/123e4567-e89b-12d3-a456-426614174000.webp", "https://example.com/external.jpg"],
+    }),
   })
   await expect("/api/garage", cookie, 200)
   const garagePrefill = await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200)
-  record("garage keeps only local uploaded photos for the owner's private vehicle", garagePrefill?.vehicle?.id === garage.id && garagePrefill?.vehicle?.make === "Hyundai" && garagePrefill?.vehicle?.vin === null && JSON.parse(garagePrefill?.vehicle?.images || "[]").length === 1, garagePrefill?.vehicle?.id || "missing")
-  await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200, { method: "DELETE" })
+  record(
+    "garage keeps a validated VIN, zero previous owners and only local uploaded photos",
+    garagePrefill?.vehicle?.id === garage.id
+      && garagePrefill?.vehicle?.vin === garageVin
+      && garagePrefill?.vehicle?.ownersCount === 0
+      && JSON.parse(garagePrefill?.vehicle?.images || "[]").length === 1,
+    garagePrefill?.vehicle?.id || "missing",
+  )
+
+  const garageListingPayload = {
+    garageVehicleId: garage.id,
+    title: `${marker} Hyundai Tucson from garage`,
+    make: garagePrefill.vehicle.make,
+    model: garagePrefill.vehicle.model,
+    year: garagePrefill.vehicle.year,
+    price: 2_990_000,
+    mileage: garagePrefill.vehicle.mileage,
+    vin: garagePrefill.vehicle.vin,
+    fuelType: garagePrefill.vehicle.fuelType,
+    transmission: garagePrefill.vehicle.transmission,
+    bodyType: garagePrefill.vehicle.bodyType,
+    color: garagePrefill.vehicle.color,
+    engineVolume: garagePrefill.vehicle.engineVolume,
+    power: garagePrefill.vehicle.power,
+    driveType: garagePrefill.vehicle.driveType,
+    condition: garagePrefill.vehicle.condition,
+    steeringWheel: garagePrefill.vehicle.steeringWheel,
+    ownersCount: garagePrefill.vehicle.ownersCount,
+    documentsStatus: garagePrefill.vehicle.documentsStatus,
+    damageInfo: garagePrefill.vehicle.damageInfo,
+    sellerType: garagePrefill.vehicle.sellerType,
+    availability: garagePrefill.vehicle.availability,
+    customsCleared: garagePrefill.vehicle.customsCleared,
+    generation: garagePrefill.vehicle.generation,
+    location: garagePrefill.vehicle.location,
+    description: garagePrefill.vehicle.description,
+    images: garagePrefill.vehicle.images,
+    vehicleType: "CAR",
+    categoryId: category.id,
+  }
+  const garageListingVehicle = await expect("/api/vehicles", cookie, 201, {
+    method: "POST",
+    body: JSON.stringify(garageListingPayload),
+  })
+  await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 404)
+  const storedGarageListingVehicle = await prisma.vehicle.findUniqueOrThrow({
+    where: { id: garage.id },
+    include: { category: true, listings: true },
+  })
+  const garageVinCopies = await prisma.vehicle.count({ where: { vin: garageVin } })
+  record(
+    "garage vehicle becomes one moderated listing without duplicating VIN or photos",
+    garageListingVehicle?.id === garage.id
+      && garageListingVehicle?.listings?.[0]?.status === "PENDING_MODERATION"
+      && storedGarageListingVehicle.category.name !== "Личный гараж"
+      && storedGarageListingVehicle.listings.length === 1
+      && garageVinCopies === 1
+      && storedGarageListingVehicle.images === garagePrefill.vehicle.images,
+    `${garageVinCopies} VIN record · ${storedGarageListingVehicle.listings.length} listing`,
+  )
+  await expect("/api/vehicles", cookie, 409, {
+    method: "POST",
+    body: JSON.stringify(garageListingPayload),
+  })
+  record("garage-to-listing conversion cannot be replayed", true, "HTTP 409")
 
   await expect("/api/favorites", cookie, 201, { method: "POST", body: JSON.stringify({ listingId: publicListingId }) })
   const favoriteIds = await expect("/api/favorites?idsOnly=true", cookie, 200)

@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import {
   getMissingVehiclePublicationRequirements,
+  normalizeVehicleIdentity,
   readStoredVehicleSubtype,
   validateVehiclePublication,
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
@@ -40,6 +41,16 @@ test("false является выбранным таможенным стату�
 test("мусор в перечислении и VIN отклоняется", () => {
   assert.match(validateVehiclePublication({ ...completeCar, condition: "SUPER" }) || "", /состояние/i)
   assert.match(validateVehiclePublication({ ...completeCar, vin: "INVALIDVIN0000000" }) || "", /VIN/i)
+})
+
+test("форма, гараж и API используют одну нормализацию VIN", () => {
+  assert.deepEqual(normalizeVehicleIdentity("CAR", " jtnb11hk0n3000001 ", null, null), {
+    vin: "JTNB11HK0N3000001",
+    serialNumber: null,
+    registrationNumber: null,
+  })
+  const invalid = normalizeVehicleIdentity("CAR", "INVALID", null, null)
+  assert.match("error" in invalid ? invalid.error : "", /VIN/i)
 })
 
 test("подтип безопасно извлекается из сохранённого JSON", () => {

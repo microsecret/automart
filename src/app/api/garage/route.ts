@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { prisma } from "@/lib/prisma"
+import { normalizeVehicleIdentity } from "@/lib/vehicle-publication-readiness"
 
 export const dynamic = "force-dynamic"
 
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
     const doors = optionalInteger(body?.doors, 1, 8)
     const engineVolume = optionalDecimal(body?.engineVolume, 0.1, 20)
     const power = optionalInteger(body?.power, 1, 5000)
-    const ownersCount = optionalInteger(body?.ownersCount, 1, 100)
+    const ownersCount = optionalInteger(body?.ownersCount, 0, 100)
     const images = Array.isArray(body?.images)
       ? [...new Set(body.images.filter((value: unknown): value is string => typeof value === "string" && /^\/uploads\/[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(value)))].slice(0, 12)
       : []
@@ -100,6 +101,11 @@ export async function POST(request: NextRequest) {
 
     if (mileage != null && (!Number.isInteger(mileage) || mileage < 0 || mileage > 3_000_000)) {
       return NextResponse.json({ error: "Проверьте пробег автомобиля" }, { status: 400 })
+    }
+
+    const normalizedIdentity = vin ? normalizeVehicleIdentity("CAR", vin, null, null) : null
+    if (normalizedIdentity && "error" in normalizedIdentity) {
+      return NextResponse.json({ error: normalizedIdentity.error }, { status: 400 })
     }
 
     const energyAndYearError = validateVehicleEnergyAndModelYear("CAR", make, model, year, fuelType)
@@ -123,7 +129,10 @@ export async function POST(request: NextRequest) {
         make, model, year,
         price: 0,
         mileage,
-        vin: vin || `GARAGE-${Date.now()}`,
+        // Отсутствующий VIN остаётся честным null. Прежняя синтетическая
+        // строка выглядела как идентификатор и мешала безопасно переиспользовать
+        // запись при создании объявления.
+        vin: normalizedIdentity?.vin || null,
         fuelType,
         transmission,
         bodyType,

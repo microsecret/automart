@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { AVAILABILITY_TYPES, BODY_TYPES, CONDITIONS, DAMAGE_INFO, DOCUMENT_STATUSES, DRIVE_TYPES, SELLER_TYPES, STEERING_WHEELS, getSelectableFuelOptions, getSelectableTransmissionOptions, getVehicleIdentityMeta, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
+import { AVAILABILITY_TYPES, BODY_TYPES, CONDITIONS, DAMAGE_INFO, DOCUMENT_STATUSES, DRIVE_TYPES, SELLER_TYPES, STEERING_WHEELS, getSelectableFuelOptions, getSelectableTransmissionOptions, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
-import { validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
+import { normalizeVehicleIdentity, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -40,45 +40,6 @@ function normalizeOptionalText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return undefined
   const normalized = value.trim()
   return normalized ? normalized.slice(0, maxLength) : null
-}
-
-const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/
-const TRANSPORT_IDENTIFIER_PATTERN = /^[A-ZА-ЯЁ0-9][A-ZА-ЯЁ0-9 .\/-]{1,31}$/
-
-type VehicleIdentity = {
-  vin: string | null
-  serialNumber: string | null
-  registrationNumber: string | null
-}
-
-function normalizeVehicleIdentity(vehicleType: string, vin: unknown, serialNumber: unknown, registrationNumber: unknown): VehicleIdentity | { error: string } {
-  const identityMeta = getVehicleIdentityMeta(vehicleType)
-  const normalized = {
-    vin: typeof vin === "string" ? vin.trim().toUpperCase() : "",
-    serialNumber: typeof serialNumber === "string" ? serialNumber.trim().toUpperCase() : "",
-    registrationNumber: typeof registrationNumber === "string" ? registrationNumber.trim().toUpperCase() : "",
-  }
-  const selectedValue = normalized[identityMeta.field]
-
-  if (!selectedValue) return { error: `Укажите: ${identityMeta.label}` }
-  if (identityMeta.field === "vin") {
-    if (!VIN_PATTERN.test(selectedValue)) return { error: "VIN должен содержать 17 латинских символов и цифр без I, O и Q" }
-    return { vin: selectedValue, serialNumber: null, registrationNumber: null }
-  }
-  if (!TRANSPORT_IDENTIFIER_PATTERN.test(selectedValue)) {
-    return { error: `${identityMeta.label} должен содержать от 3 до 32 букв, цифр, пробелов, точек, слэшей или дефисов` }
-  }
-
-  // У спецтехники иногда указан полноценный VIN. Сохраняем его в отдельном
-  // уникальном поле, чтобы прежняя антидубль-проверка продолжала работать.
-  if (vehicleType === "SPECIAL" && VIN_PATTERN.test(selectedValue)) {
-    return { vin: selectedValue, serialNumber: selectedValue, registrationNumber: null }
-  }
-  return {
-    vin: null,
-    serialNumber: identityMeta.field === "serialNumber" ? selectedValue : null,
-    registrationNumber: identityMeta.field === "registrationNumber" ? selectedValue : null,
-  }
 }
 
 function normalizeTypeDetails(value: unknown, vehicleType: string) {
@@ -180,6 +141,7 @@ export async function POST(request: NextRequest) {
       images,
       categoryId,
       title,
+      garageVehicleId,
     } = body
 
     // Validation
@@ -238,6 +200,27 @@ export async function POST(request: NextRequest) {
     }
     if (!isVehicleCategoryCompatible(category.name, normalizedVehicleType)) {
       return NextResponse.json({ error: "Категория не соответствует типу транспорта" }, { status: 400 })
+    }
+    const normalizedGarageVehicleId = normalizeOptionalText(garageVehicleId, 64)
+    if (garageVehicleId != null && !normalizedGarageVehicleId) {
+      return NextResponse.json({ error: "Некорректный автомобиль гаража" }, { status: 400 })
+    }
+    if (normalizedGarageVehicleId && normalizedVehicleType !== "CAR") {
+      return NextResponse.json({ error: "Из личного гаража можно подать только легковой автомобиль" }, { status: 400 })
+    }
+    const garageVehicle = normalizedGarageVehicleId
+      ? await prisma.vehicle.findFirst({
+          where: {
+            id: normalizedGarageVehicleId,
+            userId: session.user.id,
+            category: { name: "Личный гараж" },
+            listings: { none: {} },
+          },
+          select: { id: true, categoryId: true },
+        })
+      : null
+    if (normalizedGarageVehicleId && !garageVehicle) {
+      return NextResponse.json({ error: "Автомобиль не найден в личном гараже или уже превращён в объявление" }, { status: 409 })
     }
     const normalizedLocation = normalizeOptionalText(location, 120)
     if (!normalizedLocation) return NextResponse.json({ error: "Укажите город размещения" }, { status: 400 })
@@ -446,65 +429,96 @@ export async function POST(request: NextRequest) {
     })
     if (publicationError) return NextResponse.json({ error: publicationError }, { status: 400 })
 
-    const vehicle = await prisma.vehicle.create({
-      data: {
-        make: normalizedMake,
-        model: normalizedModel,
-        year: normalizedYear,
-        price: normalizedPrice,
-        mileage: ["SPECIAL", "WATER", "AIR"].includes(normalizedVehicleType) ? null : normalizedMileage,
-        operatingHours: ["SPECIAL", "WATER"].includes(normalizedVehicleType) ? normalizedOperatingHours : null,
-        flightHours: normalizedVehicleType === "AIR" ? normalizedFlightHours : null,
-        vin: normalizedIdentity.vin,
-        serialNumber: normalizedIdentity.serialNumber,
-        registrationNumber: normalizedIdentity.registrationNumber,
-        fuelType: normalizedFuelType,
-        transmission: supportsTransmission(normalizedVehicleType) ? normalizedTransmission! : "NOT_APPLICABLE",
-        bodyType: normalizedBodyType,
-        color: normalizedColor,
-        doors: normalizedDoors,
-        engineVolume: normalizedEngineVolume,
-        power: normalizedPower,
-        driveType: normalizedVehicleType === "CAR" ? normalizedDriveType : null,
-        condition: normalizedCondition!,
-        steeringWheel: normalizedSteeringWheel,
-        ownersCount: normalizedOwnersCount,
-        documentsStatus: normalizedDocumentsStatus,
-        damageInfo: normalizedDamageInfo,
-        sellerType: normalizedSellerType,
-        availability: normalizedAvailability,
-        customsCleared: normalizedCustomsCleared,
-        generation: normalizedGeneration,
-        keywords: normalizedKeywords,
-        vehicleType: normalizedVehicleType,
-        typeDetails: normalizedTypeDetails,
-        location: normalizedLocation,
-        description: normalizedDescription,
-        images: normalizedImages.length ? JSON.stringify(normalizedImages) : null,
-        userId: session.user.id,
-        categoryId,
-        lat,
-        lng,
-        listings: {
-          create: {
-            title: normalizedTitle,
-            description: normalizedDescription,
-            price: normalizedPrice,
-            userId: session.user.id,
-            status: LISTING_STATUS.PENDING_MODERATION,
-            lastStatusChangedAt: new Date(),
-            statusEvents: {
-              create: {
-                toStatus: LISTING_STATUS.PENDING_MODERATION,
-                actorId: session.user.id,
-                reason: "Отправлено владельцем на модерацию",
-              },
-            },
-          },
+    const vehicleData = {
+      make: normalizedMake,
+      model: normalizedModel,
+      year: normalizedYear,
+      price: normalizedPrice,
+      mileage: ["SPECIAL", "WATER", "AIR"].includes(normalizedVehicleType) ? null : normalizedMileage,
+      operatingHours: ["SPECIAL", "WATER"].includes(normalizedVehicleType) ? normalizedOperatingHours : null,
+      flightHours: normalizedVehicleType === "AIR" ? normalizedFlightHours : null,
+      vin: normalizedIdentity.vin,
+      serialNumber: normalizedIdentity.serialNumber,
+      registrationNumber: normalizedIdentity.registrationNumber,
+      fuelType: normalizedFuelType,
+      transmission: supportsTransmission(normalizedVehicleType) ? normalizedTransmission! : "NOT_APPLICABLE",
+      bodyType: normalizedBodyType,
+      color: normalizedColor,
+      doors: normalizedDoors,
+      engineVolume: normalizedEngineVolume,
+      power: normalizedPower,
+      driveType: normalizedVehicleType === "CAR" ? normalizedDriveType : null,
+      condition: normalizedCondition!,
+      steeringWheel: normalizedSteeringWheel,
+      ownersCount: normalizedOwnersCount,
+      documentsStatus: normalizedDocumentsStatus,
+      damageInfo: normalizedDamageInfo,
+      sellerType: normalizedSellerType,
+      availability: normalizedAvailability,
+      customsCleared: normalizedCustomsCleared,
+      generation: normalizedGeneration,
+      keywords: normalizedKeywords,
+      vehicleType: normalizedVehicleType,
+      typeDetails: normalizedTypeDetails,
+      location: normalizedLocation,
+      description: normalizedDescription,
+      images: normalizedImages.length ? JSON.stringify(normalizedImages) : null,
+      userId: session.user.id,
+      categoryId,
+      lat,
+      lng,
+    }
+    const listingData = {
+      title: normalizedTitle,
+      description: normalizedDescription,
+      price: normalizedPrice,
+      userId: session.user.id,
+      status: LISTING_STATUS.PENDING_MODERATION,
+      lastStatusChangedAt: new Date(),
+      statusEvents: {
+        create: {
+          toStatus: LISTING_STATUS.PENDING_MODERATION,
+          actorId: session.user.id,
+          reason: "Отправлено владельцем на модерацию",
         },
       },
-      include: { listings: { select: { id: true, status: true } } },
-    })
+    }
+
+    const vehicle = garageVehicle
+      ? await prisma.$transaction(async (tx) => {
+          // categoryId is a compare-and-swap guard: two вкладки не смогут
+          // одновременно превратить одну приватную запись в два объявления.
+          const claimed = await tx.vehicle.updateMany({
+            where: {
+              id: garageVehicle.id,
+              userId: session.user.id,
+              categoryId: garageVehicle.categoryId,
+              listings: { none: {} },
+            },
+            data: vehicleData,
+          })
+          if (claimed.count !== 1) return null
+
+          const listing = await tx.listing.create({
+            data: { ...listingData, vehicleId: garageVehicle.id },
+            select: { id: true, status: true },
+          })
+          const updatedVehicle = await tx.vehicle.findUniqueOrThrow({ where: { id: garageVehicle.id } })
+          return { ...updatedVehicle, listings: [listing] }
+        })
+      : await prisma.vehicle.create({
+          data: {
+            ...vehicleData,
+            listings: {
+              create: listingData,
+            },
+          },
+          include: { listings: { select: { id: true, status: true } } },
+        })
+
+    if (!vehicle) {
+      return NextResponse.json({ error: "Автомобиль гаража уже изменён или отправлен на модерацию" }, { status: 409 })
+    }
 
     return NextResponse.json(vehicle, { status: 201 })
   } catch (error) {

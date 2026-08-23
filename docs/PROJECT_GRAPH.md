@@ -120,7 +120,9 @@ flowchart LR
   Session --> OwnerProfile["Private owner profile API"]
   OwnerProfile --> Dashboard["Account completion and verified contacts"]
   Session --> Garage["Owner garage"]
-  Garage --> Listing["Moderated listing draft"]
+  Garage --> GaragePrefill["Owner-only full form prefill"]
+  GaragePrefill --> GarageConvert["Atomic category update + listing create"]
+  GarageConvert --> Listing["PENDING_MODERATION without duplicate VIN"]
   Navigation["Typed navigation registry"] --> Shells["Header / footer / dashboard / mobile / Telegram"]
   SearchUrl["/search q + make + partType + vehicleType"] --> Catalog["HomeCatalog initial state"]
   Catalog --> ListingsApi["Unified /api/listings filters"]
@@ -193,12 +195,16 @@ flowchart LR
 ```
 
 The garage endpoint can return one selected vehicle only when it belongs to the
-current user and remains in the private garage category. Creating an advert
-still creates a new transport record and listing atomically; it never publishes
-the private garage record directly. The legacy quick URL redirects into the
-full form. Creation, owner resubmission and edit, and administrator approval all
-use the same readiness contract, so incomplete vehicles cannot enter or leave
-the moderation queue through an alternate endpoint. After the application has
+current user and remains in the private garage category. An ordinary advert
+creates a new transport record and listing atomically. A garage advert sends
+the owner-only `garageVehicleId`: the server rechecks ownership, the private
+category and absence of an existing listing, then updates that same `Vehicle`
+and creates one moderation listing in a transaction. A category compare-and-swap
+prevents two tabs from converting the same record twice; the real VIN and local
+photos remain on one row. The legacy quick URL redirects into the full form.
+Creation, garage conversion, owner resubmission/edit and administrator approval
+all use the same readiness contract, so incomplete vehicles cannot enter or
+leave the moderation queue through an alternate endpoint. After the application has
 restarted, `scripts/enforce-legacy-listing-readiness.sh` calls the protected
 `/api/parser/listings/readiness` route with the server-side parser token. The
 route first supports a non-mutating preview and then uses guarded transactions:
