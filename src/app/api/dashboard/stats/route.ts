@@ -23,7 +23,21 @@ export async function GET() {
       ],
     }
 
-    const [listings, favorites, reviews, garageVehicles, deliveryTotal, activeDeliveries, unreadMessages, unreadNotifications, promotionSummary, promotionOrders] = await Promise.all([
+    const [
+      listings,
+      favorites,
+      reviews,
+      garageVehicles,
+      deliveryTotal,
+      activeDeliveries,
+      unreadMessages,
+      unreadNotifications,
+      promotionSummary,
+      promotionOrders,
+      listingTotals,
+      listingsByStatus,
+      activePromotions,
+    ] = await Promise.all([
       prisma.listing.findMany({
         where: { userId },
         include: {
@@ -31,6 +45,7 @@ export async function GET() {
           part: { select: { id: true, name: true, price: true, images: true } },
         },
         orderBy: { createdAt: "desc" },
+        take: 10,
       }),
       prisma.user.findUnique({
         where: { id: userId },
@@ -39,10 +54,10 @@ export async function GET() {
           favoriteListings: { take: 10, orderBy: { createdAt: "desc" }, include: { vehicle: { select: { id: true, make: true, model: true, year: true, price: true, images: true, mileage: true, vehicleType: true, bodyType: true } } } },
         },
       }),
-      prisma.review.findMany({
+      prisma.review.aggregate({
         where: { userId },
-        select: { id: true, rating: true, comment: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
+        _count: true,
+        _avg: { rating: true },
       }),
       prisma.vehicle.count({ where: { userId, category: { name: "Личный гараж" } } }),
       prisma.deliveryOrder.count({ where: deliveryAccess }),
@@ -75,26 +90,48 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
         take: 20,
       }),
+      /* Сводки считает база, а не перебор всех объявлений в памяти.
+
+         Кабинет показывает десять последних объявлений, но общее их
+         число, сумма просмотров и разбивка по статусам нужны по всем.
+         Раньше ради этого выбирались все объявления со связями. */
+      prisma.listing.aggregate({
+        where: { userId },
+        _count: true,
+        _sum: { views: true },
+      }),
+      prisma.listing.groupBy({
+        by: ["status"],
+        where: { userId },
+        _count: true,
+      }),
+      prisma.listing.count({
+        where: { userId, promoUntil: { gt: new Date() } },
+      }),
     ])
 
-    const totalViews = listings.reduce((sum, l) => sum + (l.views || 0), 0)
+    const countByStatus = Object.fromEntries(
+      listingsByStatus.map((row) => [row.status, row._count]),
+    ) as Record<string, number>
+
+    const totalViews = listingTotals._sum.views ?? 0
     const workflow = {
-      drafts: listings.filter((listing) => listing.status === LISTING_STATUS.DRAFT).length,
-      pendingModeration: listings.filter((listing) => listing.status === LISTING_STATUS.PENDING_MODERATION).length,
-      active: listings.filter((listing) => listing.status === LISTING_STATUS.ACTIVE).length,
-      needsAttention: listings.filter((listing) => listing.status === LISTING_STATUS.REJECTED || listing.status === LISTING_STATUS.PAUSED).length,
+      drafts: countByStatus[LISTING_STATUS.DRAFT] || 0,
+      pendingModeration: countByStatus[LISTING_STATUS.PENDING_MODERATION] || 0,
+      active: countByStatus[LISTING_STATUS.ACTIVE] || 0,
+      needsAttention: (countByStatus[LISTING_STATUS.REJECTED] || 0) + (countByStatus[LISTING_STATUS.PAUSED] || 0),
     }
 
     const partnerAccess = await checkPartnerAccess(userId, session.user.role)
 
     return NextResponse.json({
       stats: {
-        totalListings: listings.length,
+        totalListings: listingTotals._count,
         totalViews,
         favoritesCount: favorites?.favoriteListings?.length || 0,
-        reviewsCount: reviews.length,
+        reviewsCount: reviews._count,
         garageCount: garageVehicles,
-        avgRating: reviews.length > 0 ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length * 10) / 10 : 0,
+        avgRating: reviews._avg.rating ? Math.round(reviews._avg.rating * 10) / 10 : 0,
         memberSince: favorites?.createdAt ?? null,
         deliveryTotal,
         activeDeliveries,
@@ -102,10 +139,10 @@ export async function GET() {
         unreadNotifications,
         promotionPaidCount: promotionSummary._count,
         promotionSpentRub: promotionSummary._sum.amountRub ?? 0,
-        activePromotions: listings.filter((listing) => listing.promoUntil && listing.promoUntil > new Date()).length,
+        activePromotions,
       },
       workflow,
-      listings: listings.slice(0, 10).map((l) => ({
+      listings: listings.map((l) => ({
         id: l.id,
         title: l.title,
         price: l.price,
