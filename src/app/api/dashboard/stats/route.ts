@@ -37,6 +37,7 @@ export async function GET() {
       listingTotals,
       listingsByStatus,
       activePromotions,
+      favoritesCount,
     ] = await Promise.all([
       prisma.listing.findMany({
         where: { userId },
@@ -108,6 +109,14 @@ export async function GET() {
       prisma.listing.count({
         where: { userId, promoUntil: { gt: new Date() } },
       }),
+      /* Число избранного считается запросом, а не по выборке.
+
+         Выше избранное берётся с `take: 10` — для показа в кабинете, — и
+         счётчик, построенный на длине этой выборки, у человека с
+         пятьюдесятью сохранёнными объявлениями показывал десять. */
+      prisma.listing.count({
+        where: { favoritedBy: { some: { id: userId } } },
+      }),
     ])
 
     const countByStatus = Object.fromEntries(
@@ -128,7 +137,7 @@ export async function GET() {
       stats: {
         totalListings: listingTotals._count,
         totalViews,
-        favoritesCount: favorites?.favoriteListings?.length || 0,
+        favoritesCount,
         reviewsCount: reviews._count,
         garageCount: garageVehicles,
         avgRating: reviews._avg.rating ? Math.round(reviews._avg.rating * 10) / 10 : 0,
