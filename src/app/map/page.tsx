@@ -7,7 +7,7 @@ import { IconMapPin } from "@tabler/icons-react"
 import Link from "next/link"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { formatPriceShort, parseImages } from "@/lib/format"
-import { POPULAR_CITIES } from "@/lib/constants"
+import useSWRImmutable from "swr/immutable"
 import { CITY_COORDINATES } from "@/lib/cities"
 import { fetchJson } from "@/lib/api-client"
 import VehicleFallback from "@/components/listings/VehicleFallback"
@@ -65,15 +65,35 @@ function MapListingResult({ listing, city }: { listing: MapListing; city: string
   )
 }
 
+/* Города для выбора — весь справочник, а не пятнадцать «популярных».
+
+   На карте было пятнадцать городов, в справочнике доставки — 679:
+   объявление в Альметьевске на карте найти было нельзя. Список
+   считается один раз при загрузке модуля, а не на каждую отрисовку. */
+const MAP_CITIES = Object.keys(CITY_COORDINATES).sort((a, b) => a.localeCompare(b, "ru"))
+
 export default function MapPage() {
-  const [city, setCity] = useState("Москва")
+  /* Карта открывается там, где есть объявления.
+
+     Раньше начальным городом всегда была Москва, а объявлений в ней нет:
+     человек открывал карту и видел «0 объявлений», хотя в Казани и
+     Альметьевске машины были. Берём город первого объявления каталога —
+     самого свежего. */
+  const { data: sample } = useSWRImmutable<MapListingsResponse>(
+    "/api/listings?type=vehicle&limit=1",
+    fetchJson,
+  )
+  const [city, setCity] = useState<string | null>(null)
+  const sampleCity = sample?.listings?.[0]?.vehicle?.location || null
+  const activeCity = city || (sampleCity && CITY_COORDINATES[sampleCity] ? sampleCity : "Москва")
+
   const { data, error, isLoading, mutate } = useSWR<MapListingsResponse>(
-    `/api/listings?type=vehicle&city=${encodeURIComponent(city)}&limit=30`,
+    `/api/listings?type=vehicle&city=${encodeURIComponent(activeCity)}&limit=30`,
     fetchJson,
   )
   const listings = data?.listings || []
 
-  const coords = CITY_COORDINATES[city] || CITY_COORDINATES["Москва"]
+  const coords = CITY_COORDINATES[activeCity] || CITY_COORDINATES["Москва"]
   const bbox = `${coords.latitude - 0.3},${coords.longitude - 0.5},${coords.latitude + 0.3},${coords.longitude + 0.5}`
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.latitude},${coords.longitude}`
 
@@ -84,14 +104,17 @@ export default function MapPage() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconMapPin size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Карта объявлений</Text>
-            <Text size="xs" c="gray.5">{listings.length} объявлений в городе {city}</Text>
+            <Text size="xs" c="gray.5">{listings.length} объявлений в городе {activeCity}</Text>
           </Stack>
         </Group>
 
         <Select
           label="Город"
-          data={POPULAR_CITIES.map((c) => ({ value: c, label: c }))}
-          value={city}
+          /* Города берутся из общего справочника — их 679, а не
+             пятнадцать «популярных»: объявление в Альметьевске на карте
+             найти было нельзя. */
+          data={MAP_CITIES}
+          value={activeCity}
           onChange={(value) => setCity(value || "Москва")}
           size="sm"
           w={250}
@@ -114,7 +137,7 @@ export default function MapPage() {
                 {error ? <AsyncErrorState title="Не удалось загрузить объявления" description="Карта остаётся доступна. Повторите запрос, чтобы вернуть список." onRetry={() => void mutate()} /> :
                  isLoading ? <Center py={48}><Loader size="sm" color="indigo" /></Center> :
                  listings.length === 0 ? <EmptyState title="В этом городе пока нет объявлений" description="Выберите другой город или посмотрите весь каталог." actionLabel="Все объявления" actionHref="/" /> :
-                 listings.map((listing) => <MapListingResult key={listing.id} listing={listing} city={city} />)}
+                 listings.map((listing) => <MapListingResult key={listing.id} listing={listing} city={activeCity} />)}
               </Stack>
             </ScrollArea>
           </Paper>

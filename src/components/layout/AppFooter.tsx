@@ -15,6 +15,13 @@ const FOOTER_SECTIONS = [
       { label: "Спецтехника", href: "/category/special" },
       { label: "Водный транспорт", href: "/category/water" },
       { label: "Воздушный транспорт", href: "/category/air" },
+      /* Три страницы были недостижимы: ссылок на них не было нигде во
+         всём коде. На /brands собран 91 бренд со счётчиками моделей,
+         /map показывает объявления по городам, /compare сравнивает до
+         четырёх машин. */
+      { label: "Все марки", href: "/brands" },
+      { label: "Карта объявлений", href: "/map" },
+      { label: "Сравнение", href: "/compare" },
     ],
   },
   {
