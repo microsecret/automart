@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { normalizePhone } from "@/lib/telegram"
 import { routeAuctionInquiryToPartners } from "@/lib/auction-partner-routing"
+import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 
 export const dynamic = "force-dynamic"
 
@@ -52,12 +53,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
+    /* Условие берётся из общей политики каталога, а не пишется заново.
+
+       Здесь стояла своя проверка, не учитывавшая скрытие модератором.
+       На боевой базе каталог показывал 3763 лота, а заявка принималась
+       по 3793: тридцать один скрытый лот принимал заявки, среди них
+       скрытый с причиной «нет ни одной пригодной фотографии». Партнёр
+       получал заявку на машину, которую площадка сама сняла с показа. */
     const listing = await prisma.auctionListing.findFirst({
-      where: {
-        id,
-        status: "ACTIVE",
-        OR: [{ auctionDate: null }, { auctionDate: { gte: new Date() } }],
-      },
+      where: { ...buildPublicAuctionPolicy().where, id },
       select: { id: true },
     })
     if (!listing) return NextResponse.json({ error: "Лот недоступен" }, { status: 404 })

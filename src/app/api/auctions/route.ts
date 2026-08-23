@@ -72,7 +72,25 @@ export async function GET(request: NextRequest) {
     const [listings, total, aggregates, popularMakes, sourceDistribution, fuelDistribution, bodyDistribution, powerKnown, mileageKnown] = await prisma.$transaction([
       prisma.auctionListing.findMany({
         where, skip, take: limit,
-        orderBy: { createdAt: "desc" },
+        /* Поля перечислены поимённо.
+
+           Раньше отдавались все сорок семь колонок, включая наценку
+           площадки, закупочную цену, курс пересчёта и прямую ссылку на
+           первоисточник: покупатель видел, сколько зарабатывает площадка,
+           и уходил к источнику напрямую.
+
+           Второй ключ сортировки — идентификатор. Без него порядок между
+           лотами с одинаковой датой не определён, и при вставке новых
+           лотов парсером записи повторялись на границе страниц. */
+        select: {
+          id: true, make: true, model: true, year: true, mileage: true,
+          finalPrice: true, priceRub: true, country: true, source: true,
+          imageUrl: true, images: true, bodyType: true, fuelType: true,
+          color: true, power: true, engineVolume: true, transmission: true,
+          auctionDate: true, lotNumber: true, viewCount: true,
+          conditionInfo: true, manufacturedMonth: true, createdAt: true,
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       }),
       prisma.auctionListing.count({ where }),
       prisma.auctionListing.aggregate({

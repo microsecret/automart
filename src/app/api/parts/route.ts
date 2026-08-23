@@ -159,10 +159,15 @@ export async function GET(request: NextRequest) {
 
     if (and.length) where.AND = and
 
-    const orderBy: Prisma.PartOrderByWithRelationInput =
+    /* Второй ключ — идентификатор: без него порядок между записями с
+       одинаковой ценой или датой не определён, и они повторяются или
+       пропадают на границе страниц. */
+    const primaryOrderBy: Prisma.PartOrderByWithRelationInput =
       sort === "price_asc" ? { price: "asc" }
       : sort === "price_desc" ? { price: "desc" }
       : { createdAt: "desc" }
+
+    const orderBy: Prisma.PartOrderByWithRelationInput[] = [primaryOrderBy, { id: "desc" }]
 
     const [parts, total] = await prisma.$transaction([
       prisma.part.findMany({

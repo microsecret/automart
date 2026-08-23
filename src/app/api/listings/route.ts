@@ -352,7 +352,16 @@ export async function GET(request: NextRequest) {
       where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), cityCondition]
     }
 
-    const orderBy: Prisma.ListingOrderByWithRelationInput =
+    /* Порядок задаётся двумя ключами: выбранным и идентификатором.
+
+       Одного ключа мало. Записи с одинаковой ценой или датой база
+       возвращает в произвольном порядке, и он меняется между запросами:
+       листая каталог, покупатель видел одни объявления дважды, а другие
+       не видел вовсе. Проверено на копии базы: одна вставка между
+       страницами — и запись со страницы 1 появляется на странице 2.
+
+       Идентификатор уникален, поэтому порядок становится определённым. */
+    const primaryOrderBy: Prisma.ListingOrderByWithRelationInput =
       sort === "price_asc" ? { price: "asc" }
       : sort === "price_desc" ? { price: "desc" }
       : sort === "oldest" ? { createdAt: "asc" }
@@ -362,14 +371,60 @@ export async function GET(request: NextRequest) {
       : sort === "mileage_asc" ? { vehicle: { mileage: "asc" } }
       : { createdAt: "desc" }
 
+    const orderBy: Prisma.ListingOrderByWithRelationInput[] = [primaryOrderBy, { id: "desc" }]
+
     const [listings, total] = await prisma.$transaction([
       prisma.listing.findMany({
         where,
         skip,
         take: limit,
-        include: {
-          vehicle: true,
-          part: true,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          price: true,
+          status: true,
+          isFeatured: true,
+          promoUntil: true,
+          views: true,
+          createdAt: true,
+          publishedAt: true,
+          userId: true,
+          /* Поля перечислены поимённо, а не через `vehicle: true`.
+
+             Раньше отдавались все сорок колонок, включая VIN, госномер,
+             серийный номер и координаты: один проход по каталогу собирал
+             готовую базу VIN всех объявлений площадки.
+
+             Здесь остаётся то, что показывает витрина: карточка, страница
+             сравнения и подсказки поиска. Точный адрес и опознавательные
+             номера машины к ним не относятся — они открываются вместе с
+             контактом продавца, а не всем подряд. */
+          vehicle: {
+            select: {
+              id: true, make: true, model: true, year: true, price: true,
+              mileage: true, operatingHours: true, flightHours: true,
+              fuelType: true, transmission: true, driveType: true,
+              bodyType: true, vehicleType: true, typeDetails: true,
+              engineVolume: true, power: true, doors: true, generation: true,
+              color: true, condition: true, steeringWheel: true,
+              documentsStatus: true, damageInfo: true, customsCleared: true,
+              ownersCount: true, sellerType: true, availability: true,
+              location: true, images: true, description: true,
+              categoryId: true, createdAt: true,
+            },
+          },
+          part: {
+            select: {
+              id: true, name: true, price: true, condition: true,
+              partType: true, images: true, description: true,
+              brandName: true, oemNumber: true, availability: true,
+              make: true, yearFrom: true, yearTo: true, vehicleType: true,
+              saleFormat: true, auctionStatus: true, auctionEndsAt: true,
+              auctionCurrentPrice: true, auctionStartPrice: true,
+              location: true, storeId: true, createdAt: true,
+            },
+          },
           user: { select: { id: true, name: true, image: true } },
         },
         orderBy,
