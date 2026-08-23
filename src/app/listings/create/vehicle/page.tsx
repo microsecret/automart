@@ -8,6 +8,7 @@ import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto } from "@tab
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
+import { describeRequiredSpecs, getMissingSpecs, getRequiredSpecs } from "@/lib/listing-required-specs"
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
 import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import ListingPhotoGrid from "@/components/uploads/ListingPhotoGrid"
@@ -209,6 +210,31 @@ function CreateVehicleWorkspace() {
   const brandCategory = BRAND_CATEGORY_BY_VEHICLE_TYPE[f.vehicleType as keyof typeof BRAND_CATEGORY_BY_VEHICLE_TYPE] || "cars"
   const brandOptions = getBrandsByCategory(brandCategory)
   const modelOptions = f.make.trim() ? getModels(f.make.trim(), brandCategory) : []
+  /* Обязательные характеристики считает общий с сервером модуль.
+
+     Подтип нужен потому, что от него зависит набор: у полуприцепа нет ни
+     мотора, ни коробки, ни одометра, и требовать их — тупик. Легкового это
+     не касается, там кузов на набор не влияет. */
+  const submittedSubtypeValue = f.vehicleType === "TRUCK" ? f.truckBodyType
+    : f.vehicleType === "AIR" ? f.airType
+    : ""
+  const specInput = {
+    vehicleType: f.vehicleType,
+    year: f.year,
+    mileage: f.mileage,
+    operatingHours: f.operatingHours,
+    flightHours: f.flightHours,
+    transmission: f.transmission,
+    fuelType: f.fuelType,
+    engineVolume: f.engineVolume,
+    power: f.power,
+    subtype: submittedSubtypeValue,
+  }
+  // В гараже карточка приватная и дополняется постепенно — там строгий набор
+  // не нужен, он касается только того, что уходит в каталог.
+  const missingSpecs = isGarageMode ? [] : getMissingSpecs(specInput)
+  const requiredSpecFields = new Set(getRequiredSpecs(specInput).map((spec) => spec.field))
+
   const isVehicleDetailsReady = Boolean(f.make && f.model && f.year && (isGarageMode || (f.price && f.location.trim())))
   const currentJourneyStep = images.length > 0 ? 2 : isVehicleDetailsReady ? 1 : 0
 
@@ -224,6 +250,16 @@ function CreateVehicleWorkspace() {
     }
     if (!isGarageMode && !selectedCategory) {
       notifications.show({ title: "Категория недоступна", message: "Не удалось подобрать категорию для выбранного типа транспорта. Обновите страницу.", color: "red" })
+      return
+    }
+    // Названо поимённо: в форме четыре десятка полей, и «заполните
+    // обязательные» заставляет продавца искать пропуск глазами.
+    if (missingSpecs.length > 0) {
+      notifications.show({
+        title: "Не хватает характеристик",
+        message: `Заполните: ${missingSpecs.map((spec) => (spec.unit ? `${spec.label} (${spec.unit})` : spec.label)).join(", ")}.`,
+        color: "orange",
+      })
       return
     }
     setLoading(true)
@@ -403,6 +439,9 @@ function CreateVehicleWorkspace() {
                 <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
               </Group>
               <SegmentedControl value={f.vehicleType} onChange={setVehicleType} data={CATS} size="sm" radius="md" fullWidth />
+              {/* Что понадобится — до того, как продавец начал заполнять.
+                  Иначе он упрётся в ошибку на последнем шаге и бросит форму. */}
+              <Text size="xs" c="var(--market-muted)" mt="xs">{describeRequiredSpecs(f.vehicleType)}</Text>
             </Paper>}
 
             {/* Основное */}
@@ -461,7 +500,7 @@ function CreateVehicleWorkspace() {
                 <SimpleGrid cols={{ base: 1, sm: isGarageMode ? 2 : 3 }} spacing="sm">
                   <NumberInput label="Год" placeholder="2018" required value={f.year ? Number(f.year) : undefined} onChange={(v) => set("year", String(v || ""))} size="sm" min={1886} max={new Date().getFullYear() + 1} />
                   {!isGarageMode && <NumberInput label="Цена, ₽" placeholder="1500000" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />}
-                  <NumberInput label={`${usageMeta.label}, ${usageMeta.unit}`} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, String(v || ""))} size="sm" min={0} />
+                  <NumberInput label={`${usageMeta.label}, ${usageMeta.unit}`} required={requiredSpecFields.has(usageMeta.field)} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, String(v || ""))} size="sm" min={0} />
                 </SimpleGrid>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <TextInput label="Город" placeholder="Москва" required={!isGarageMode} value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
@@ -475,8 +514,8 @@ function CreateVehicleWorkspace() {
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Характеристики</Text>
                 <Group gap="sm" grow>
-                  <Select label={f.vehicleType === "AIR" ? "Тип топлива" : "Топливо"} data={fuelOptions.map(t => ({ value: t.value, label: t.label }))} value={f.fuelType} onChange={(v) => set("fuelType", v || "")} size="sm" />
-                  {supportsTransmission(f.vehicleType) && <Select label="КПП" data={transmissionOptions.map(t => ({ value: t.value, label: t.label }))} value={f.transmission} onChange={(v) => set("transmission", v || "")} size="sm" />}
+                  <Select label={f.vehicleType === "AIR" ? "Тип топлива" : "Топливо"} required={requiredSpecFields.has("fuelType")} data={fuelOptions.map(t => ({ value: t.value, label: t.label }))} value={f.fuelType} onChange={(v) => set("fuelType", v || "")} size="sm" />
+                  {supportsTransmission(f.vehicleType) && <Select label="КПП" required={requiredSpecFields.has("transmission")} data={transmissionOptions.map(t => ({ value: t.value, label: t.label }))} value={f.transmission} onChange={(v) => set("transmission", v || "")} size="sm" />}
                   {f.vehicleType === "CAR" && <Select label="Привод" data={DRIVE_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.driveType} onChange={(v) => set("driveType", v || "")} size="sm" />}
                 </Group>
                 {f.vehicleType === "CAR" && (
@@ -537,8 +576,11 @@ function CreateVehicleWorkspace() {
                   </Stack>
                 )}
                 <Group gap="sm" grow>
-                  <TextInput label="Объём двигателя, л" placeholder="2.0" value={f.engineVolume} onChange={(e) => set("engineVolume", e.target.value)} size="sm" type="number" step="0.1" />
-                  <TextInput label="Мощность, л.с." placeholder="150" value={f.power} onChange={(e) => set("power", e.target.value)} size="sm" type="number" />
+                  {/* Объём в литрах спрашивается там, где он есть. У электротяги
+                      и воздушного судна его нет — вместо него обязательна
+                      мощность, она есть у любой силовой установки. */}
+                  <TextInput label="Объём двигателя, л" required={requiredSpecFields.has("engineVolume")} placeholder="2.0" value={f.engineVolume} onChange={(e) => set("engineVolume", e.target.value)} size="sm" type="number" step="0.1" />
+                  <TextInput label="Мощность, л.с." required={requiredSpecFields.has("power")} placeholder="150" value={f.power} onChange={(e) => set("power", e.target.value)} size="sm" type="number" />
                   <TextInput label="Цвет" placeholder="Белый" value={f.color} onChange={(e) => set("color", e.target.value)} size="sm" />
                 </Group>
                 <Stack gap={6}>

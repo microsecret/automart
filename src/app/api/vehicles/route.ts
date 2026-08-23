@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { BODY_TYPES, DRIVE_TYPES, getSelectableFuelOptions, getSelectableTransmissionOptions, getVehicleIdentityMeta, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
 import { isVehicleCategoryCompatible } from "@/lib/vehicleCategories"
+import { validateRequiredSpecs } from "@/lib/listing-required-specs"
 import { getVehicleSubtypeConfig, inferVehicleSubtype, isValidVehicleSubtype, type VehicleTypeDetails } from "@/lib/vehicleSubtypes"
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
@@ -323,6 +324,38 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
+
+    /* Главные характеристики обязательны — набор зависит от техники.
+
+       Объём двигателя и счётчик наработки раньше были необязательными: в
+       карточке оставались прочерки там, где покупатель как раз и принимает
+       решение. Требовать одно и то же у всех нельзя — у прицепа нет мотора,
+       у катера нет одометра, у электромобиля нет литров, — поэтому набор
+       считает отдельный модуль, общий с формой подачи.
+
+       Проверка стоит после разбора подтипа: именно он говорит, прицеп это
+       или грузовик с мотором. */
+    // Освобождения от силовых полей завязаны на надстройку грузовика и
+    // категорию ВС, поэтому берётся подтип из typeDetails; у легкового
+    // послаблений по кузову нет и подтип на набор не влияет.
+    const subtypeField = normalizedVehicleType === "CAR" ? null : subtypeConfig?.field
+    const resolvedSubtype = subtypeField
+      ? String({ ...inferredSubtype.typeDetails, ...submittedTypeDetails }[subtypeField] ?? "")
+      : ""
+
+    const specsError = validateRequiredSpecs({
+      vehicleType: normalizedVehicleType,
+      year: normalizedYear,
+      mileage: normalizedMileage,
+      operatingHours: normalizedOperatingHours,
+      flightHours: normalizedFlightHours,
+      transmission: typeof transmission === "string" ? transmission : null,
+      fuelType: typeof fuelType === "string" ? fuelType : null,
+      engineVolume: engineVolume === undefined || engineVolume === null || engineVolume === "" ? null : Number(engineVolume),
+      power: power === undefined || power === null || power === "" ? null : Number(power),
+      subtype: resolvedSubtype,
+    })
+    if (specsError) return NextResponse.json({ error: specsError }, { status: 400 })
 
     const allowedDriveTypes = new Set<string>(DRIVE_TYPES.map((item) => item.value))
     if (normalizedVehicleType === "CAR" && driveType && !allowedDriveTypes.has(String(driveType))) {

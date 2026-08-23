@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { CONDITIONS, getSelectableFuelOptions, getSelectableTransmissionOptions, supportsTransmission } from "@/lib/constants"
+import { validateRequiredSpecs } from "@/lib/listing-required-specs"
 
 export const dynamic = "force-dynamic"
 
@@ -48,6 +49,10 @@ export async function POST(request: NextRequest) {
   const year = Number(body?.year)
   const price = Number(body?.price)
   const mileage = body?.mileage === undefined || body?.mileage === null || body?.mileage === "" ? null : Number(body.mileage)
+  // Счётчик наработки зависит от техники: у спецтехники и катера моточасы,
+  // у воздушного судна налёт. Пробега у них нет вовсе.
+  const operatingHours = body?.operatingHours === undefined || body?.operatingHours === null || body?.operatingHours === "" ? null : Number(body.operatingHours)
+  const flightHours = body?.flightHours === undefined || body?.flightHours === null || body?.flightHours === "" ? null : Number(body.flightHours)
   const vehicleType = typeof body?.vehicleType === "string" && CATEGORY_BY_VEHICLE_TYPE[body.vehicleType] ? body.vehicleType : "CAR"
   const images = Array.isArray(body?.images)
     ? body.images.filter((value: unknown): value is string => typeof value === "string" && value.length < 2_000).slice(0, 12)
@@ -70,6 +75,12 @@ export async function POST(request: NextRequest) {
   }
   if (mileage !== null && (!Number.isFinite(mileage) || mileage < 0 || mileage > 2_000_000)) {
     return NextResponse.json({ error: "Проверьте пробег" }, { status: 400 })
+  }
+  if (operatingHours !== null && (!Number.isFinite(operatingHours) || operatingHours < 0 || operatingHours > 500_000)) {
+    return NextResponse.json({ error: "Проверьте наработку в моточасах" }, { status: 400 })
+  }
+  if (flightHours !== null && (!Number.isFinite(flightHours) || flightHours < 0 || flightHours > 500_000)) {
+    return NextResponse.json({ error: "Проверьте налёт" }, { status: 400 })
   }
 
   /* Главные характеристики обязательны.
@@ -101,11 +112,41 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Укажите состояние" }, { status: 400 })
   }
 
-  // Пробег обязателен у техники, у которой он есть: по машине без пробега
-  // решение не принимают.
-  if (["CAR", "MOTORCYCLE", "TRUCK"].includes(vehicleType) && mileage === null) {
-    return NextResponse.json({ error: "Укажите пробег" }, { status: 400 })
+  /* Набор главных характеристик считается по виду транспорта.
+
+     Счётчик наработки у каждого свой: километры у дорожной техники,
+     моточасы у спецтехники и катера, налёт у воздушного судна. Раньше
+     здесь стоял жёсткий список из трёх типов, и объявление о катере
+     уходило в каталог вообще без наработки.
+
+     Правило живёт в отдельном модуле, чтобы форма и сервер не разошлись:
+     форму можно обойти, поэтому проверка обязана быть и здесь. */
+  const engineVolume = body?.engineVolume === undefined || body?.engineVolume === null || body?.engineVolume === ""
+    ? null
+    : Number(body.engineVolume)
+  const power = body?.power === undefined || body?.power === null || body?.power === ""
+    ? null
+    : Number(body.power)
+
+  if (engineVolume !== null && (!Number.isFinite(engineVolume) || engineVolume < 0 || engineVolume > 100)) {
+    return NextResponse.json({ error: "Проверьте объём двигателя" }, { status: 400 })
   }
+  if (power !== null && (!Number.isSafeInteger(power) || power < 0 || power > 100_000)) {
+    return NextResponse.json({ error: "Проверьте мощность" }, { status: 400 })
+  }
+
+  const specsError = validateRequiredSpecs({
+    vehicleType,
+    year,
+    mileage,
+    operatingHours,
+    flightHours,
+    transmission,
+    fuelType,
+    engineVolume,
+    power,
+  })
+  if (specsError) return NextResponse.json({ error: specsError }, { status: 400 })
 
   // Категория подбирается по типу транспорта: спрашивать её у продавца
   // отдельно незачем, он уже выбрал, что размещает.
@@ -135,7 +176,13 @@ export async function POST(request: NextRequest) {
       model,
       year,
       price,
-      mileage,
+      // Счётчик пишется в своё поле: пробег у дорожной техники, моточасы
+      // у спецтехники и катера, налёт у воздушного судна.
+      mileage: ["SPECIAL", "WATER", "AIR"].includes(vehicleType) ? null : mileage,
+      operatingHours: ["SPECIAL", "WATER"].includes(vehicleType) ? operatingHours : null,
+      flightHours: vehicleType === "AIR" ? flightHours : null,
+      engineVolume,
+      power,
       fuelType,
       transmission: supportsTransmission(vehicleType) ? transmission : "OTHER",
       condition,

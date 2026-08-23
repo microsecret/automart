@@ -8,7 +8,8 @@ import {
 } from "@mantine/core"
 import { IconBolt, IconCheck, IconPhoto } from "@tabler/icons-react"
 import { getApiClientErrorMessage } from "@/lib/api-client"
-import { CONDITIONS, getSelectableFuelOptions, getSelectableTransmissionOptions, supportsTransmission } from "@/lib/constants"
+import { CONDITIONS, getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { describeRequiredSpecs, getMissingSpecs, getRequiredSpecs } from "@/lib/listing-required-specs"
 
 const VEHICLE_TYPES = [
   { value: "CAR", label: "Легковой" },
@@ -37,6 +38,10 @@ export default function QuickCreatePage() {
     year: "" as string | number,
     price: "" as string | number,
     mileage: "" as string | number,
+    operatingHours: "" as string | number,
+    flightHours: "" as string | number,
+    engineVolume: "" as string | number,
+    power: "" as string | number,
     fuelType: "",
     transmission: "",
     condition: "",
@@ -48,10 +53,33 @@ export default function QuickCreatePage() {
   const [state, setState] = useState<"idle" | "saving" | "done">("idle")
   const [error, setError] = useState<string | null>(null)
 
-  // Пробег спрашиваем у техники, у которой он есть: у прицепа или лодки
-  // его не бывает, и требовать там нечего.
-  const needsMileage = ["CAR", "MOTORCYCLE", "TRUCK"].includes(form.vehicleType)
   const needsTransmission = supportsTransmission(form.vehicleType)
+  // Счётчик наработки называется по-разному: километры у дорожной техники,
+  // моточасы у спецтехники и катера, налёт у воздушного судна.
+  const usageMeta = getUsageMeta(form.vehicleType)
+
+  /* Чего не хватает — считает общий с сервером модуль.
+
+     Набор зависит от техники и от уже введённых значений: выбрав «Электро»,
+     продавец меняет объём двигателя на мощность. Держать это правило в
+     форме отдельно от серверного значило бы дать им разойтись. */
+  const specInput = {
+    vehicleType: form.vehicleType,
+    year: form.year,
+    mileage: form.mileage,
+    operatingHours: form.operatingHours,
+    flightHours: form.flightHours,
+    transmission: form.transmission,
+    fuelType: form.fuelType,
+    engineVolume: form.engineVolume,
+    power: form.power,
+  }
+  const missingSpecs = getMissingSpecs(specInput)
+  // Какое из двух полей о моторе показывать, решает тот же модуль: у
+  // электротяги и авиации это мощность, у остальных — объём в литрах.
+  const requiredFields = new Set(getRequiredSpecs(specInput).map((spec) => spec.field))
+  const needsEngineVolume = requiredFields.has("engineVolume")
+  const needsPower = requiredFields.has("power")
 
   const canSubmit = Boolean(
     form.make.trim() && form.model.trim() && form.location.trim()
@@ -59,13 +87,12 @@ export default function QuickCreatePage() {
     && Number(form.price) > 0
     // Без фотографии объявление не найдёт покупателя, поэтому она обязательна.
     && images.length > 0
-    // Топливо, коробка и состояние раньше подставлялись как «Другое» и
-    // «Хорошее». Покупатель видел карточку, где из характеристик заполнены
-    // только год и цена, — по такому объявлению решение не принимают.
-    && form.fuelType
-    && (!needsTransmission || form.transmission)
+    // Состояние раньше подставлялось как «Хорошее»: покупатель видел
+    // карточку, где из характеристик заполнены только год и цена.
     && form.condition
-    && (!needsMileage || Number(form.mileage) >= 0),
+    // Главные характеристики без исключений: объявление без них
+    // покупателю бесполезно.
+    && missingSpecs.length === 0,
   )
 
   const uploadPhotos = async (files: FileList | null) => {
@@ -102,6 +129,10 @@ export default function QuickCreatePage() {
           year: Number(form.year),
           price: Number(form.price),
           mileage: form.mileage === "" ? null : Number(form.mileage),
+          operatingHours: form.operatingHours === "" ? null : Number(form.operatingHours),
+          flightHours: form.flightHours === "" ? null : Number(form.flightHours),
+          engineVolume: form.engineVolume === "" ? null : Number(form.engineVolume),
+          power: form.power === "" ? null : Number(form.power),
           fuelType: form.fuelType,
           transmission: form.transmission || null,
           condition: form.condition,
@@ -134,7 +165,7 @@ export default function QuickCreatePage() {
             </Text>
             <Group gap="xs" mt="xs">
               <Button component={Link} href="/dashboard" color="indigo">Мои объявления</Button>
-              <Button variant="light" color="gray" onClick={() => { setState("idle"); setForm({ ...form, make: "", model: "", year: "", price: "", mileage: "", description: "" }); setImages([]) }}>
+              <Button variant="light" color="gray" onClick={() => { setState("idle"); setForm({ ...form, make: "", model: "", year: "", price: "", mileage: "", operatingHours: "", flightHours: "", engineVolume: "", power: "", description: "" }); setImages([]) }}>
                 Разместить ещё
               </Button>
             </Group>
@@ -164,21 +195,28 @@ export default function QuickCreatePage() {
               value={form.vehicleType}
               onChange={(value) => setForm({ ...form, vehicleType: value || "CAR" })}
               allowDeselect={false}
+              // Продавец должен узнать про одометр и документы до того, как
+              // начал вводить данные: иначе он упрётся в ошибку на последнем
+              // шаге и бросит форму.
+              description={describeRequiredSpecs(form.vehicleType)}
             />
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
               <TextInput required label="Марка" placeholder="Haval" value={form.make} onChange={(event) => setForm({ ...form, make: event.currentTarget.value })} />
               <TextInput required label="Модель" placeholder="Jolion" value={form.model} onChange={(event) => setForm({ ...form, model: event.currentTarget.value })} />
               <NumberInput required label="Год выпуска" placeholder={String(currentYear - 3)} min={1886} max={currentYear + 1} value={form.year} onChange={(value) => setForm({ ...form, year: value })} />
               <NumberInput required label="Цена, ₽" placeholder="1 500 000" min={1} thousandSeparator=" " value={form.price} onChange={(value) => setForm({ ...form, price: value })} />
+              {/* Счётчик наработки называется по-своему у каждой техники:
+                  подпись и единицы берутся из общего справочника, чтобы в
+                  форме и в карточке стояло одно и то же слово. */}
               <NumberInput
-                required={needsMileage}
-                label="Пробег, км"
-                placeholder={needsMileage ? "85 000" : "Необязательно"}
+                required
+                label={`${usageMeta.label}, ${usageMeta.unit}`}
+                placeholder={usageMeta.field === "mileage" ? "85 000" : "2 500"}
                 min={0}
-                max={2_000_000}
+                max={usageMeta.field === "mileage" ? 2_000_000 : 500_000}
                 thousandSeparator=" "
-                value={form.mileage}
-                onChange={(value) => setForm({ ...form, mileage: value })}
+                value={form[usageMeta.field]}
+                onChange={(value) => setForm({ ...form, [usageMeta.field]: value })}
               />
               {/* Топливо, коробка и состояние раньше подставлялись молча:
                   в карточке стояло «Другая» и «Другое», и покупатель не
@@ -200,6 +238,33 @@ export default function QuickCreatePage() {
                   data={getSelectableTransmissionOptions(form.vehicleType)}
                   value={form.transmission}
                   onChange={(value) => setForm({ ...form, transmission: value || "" })}
+                />
+              )}
+              {/* Объём двигателя — то, с чего покупатель начинает разговор о
+                  моторе. У электротяги литров нет, и вместо объёма
+                  спрашивается мощность: она есть у любого привода. */}
+              {needsEngineVolume && (
+                <NumberInput
+                  required
+                  label="Объём двигателя, л"
+                  placeholder="2.0"
+                  min={0.1}
+                  max={100}
+                  step={0.1}
+                  decimalScale={1}
+                  value={form.engineVolume}
+                  onChange={(value) => setForm({ ...form, engineVolume: value })}
+                />
+              )}
+              {needsPower && (
+                <NumberInput
+                  required
+                  label="Мощность, л.с."
+                  placeholder="150"
+                  min={1}
+                  max={100_000}
+                  value={form.power}
+                  onChange={(value) => setForm({ ...form, power: value })}
                 />
               )}
               <Select
@@ -275,6 +340,18 @@ export default function QuickCreatePage() {
         </Card>
 
         {error && <Alert color="red" variant="light">{error}</Alert>}
+
+        {/* Кнопка заблокирована — значит, надо сказать, чего именно не
+            хватает. «Заполните все поля» продавцу ничего не даёт: он ищет
+            пропуск глазами по всей форме. */}
+        {missingSpecs.length > 0 && images.length > 0 && (
+          <Alert color="orange" variant="light" title="Не хватает характеристик">
+            <Text size="sm">
+              Заполните: {missingSpecs.map((spec) => (spec.unit ? `${spec.label} (${spec.unit})` : spec.label)).join(", ")}.
+              Без них объявление не опубликовать — покупатель по такой карточке решение не примет.
+            </Text>
+          </Alert>
+        )}
 
         <Button size="lg" color="indigo" onClick={submit} loading={state === "saving"} disabled={!canSubmit}>
           Разместить объявление
