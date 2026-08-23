@@ -37,7 +37,9 @@ export default function AppAnalytics() {
     try { visitorKey = storageValue(localStorage, VISITOR_KEY) } catch { /* Privacy modes may block persistent storage. */ }
     try { sessionKey = storageValue(sessionStorage, SESSION_KEY) } catch { /* The IP hash remains a privacy-safe fallback. */ }
 
-    let attribution: { referer: string; utmSource: string; campaign: string } = { referer: "", utmSource: "", campaign: "" }
+    let attribution: { referer: string; utmSource: string; campaign: string; campaignContent: string } = {
+      referer: "", utmSource: "", campaign: "", campaignContent: "",
+    }
     try {
       const saved = sessionStorage.getItem(ATTRIBUTION_KEY)
       if (saved) attribution = JSON.parse(saved) as typeof attribution
@@ -46,7 +48,8 @@ export default function AppAnalytics() {
         attribution = {
           referer: document.referrer || "",
           utmSource: query.get("utm_source") || (pathname.startsWith("/telegram") ? "telegram-mini-app" : ""),
-          campaign: query.get("utm_campaign") || "",
+          campaign: query.get("utm_campaign") || (window.Telegram?.WebApp?.initDataUnsafe?.start_param ? "telegram_mini_app" : ""),
+          campaignContent: query.get("utm_content") || window.Telegram?.WebApp?.initDataUnsafe?.start_param || "",
         }
         sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution))
       }

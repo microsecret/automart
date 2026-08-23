@@ -266,6 +266,7 @@ export async function fetchKCarListing(sourceId: string): Promise<AuctionImportI
     source: "KCAR",
     sourceId,
     sourceUrl: `https://www.kcar.com/bc/detail/carInfoDtl?i_sCarCd=${encodeURIComponent(sourceId)}`,
+    sourceTitle: asText(vehicle.carNm) || [asText(vehicle.mnuftrNm), asText(vehicle.modelNm), asText(vehicle.grdNm)].filter(Boolean).join(" "),
     make,
     model,
     year,

@@ -6,7 +6,7 @@ import {
   Badge, Box, Card, Container, Group, Progress, SegmentedControl,
   SimpleGrid, Stack, Text, ThemeIcon, Title,
 } from "@mantine/core"
-import { IconChartBar, IconDeviceMobile, IconExternalLink, IconClock, IconTrendingUp, IconTrendingDown } from "@tabler/icons-react"
+import { IconChartBar, IconDeviceMobile, IconExternalLink, IconClock, IconSpeakerphone, IconTrendingUp, IconTrendingDown } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
@@ -18,6 +18,7 @@ type TrafficResponse = {
   sources: Row[]
   referers: Row[]
   devices: Row[]
+  campaigns: Row[]
   topPaths: { path: string; views: number }[]
   hourly: { hour: number; visitors: number }[]
 }
@@ -147,8 +148,9 @@ export default function TrafficPage() {
               </Card>
             </SimpleGrid>
 
-            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
+            <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }} spacing="sm">
               {renderList("Источники переходов", <IconExternalLink size={15} />, data?.sources, "Пока нет данных")}
+              {renderList("Кампании и кнопки", <IconSpeakerphone size={15} />, data?.campaigns, "Переходов по размеченным кнопкам пока не было")}
               {renderList("Сайты-источники", <IconExternalLink size={15} />, data?.referers, "Переходов со сторонних сайтов не было")}
               {renderList("Устройства", <IconDeviceMobile size={15} />, data?.devices, "Пока нет данных")}
             </SimpleGrid>

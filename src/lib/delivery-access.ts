@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { can, isAdmin } from "@/lib/permissions"
+import { can, canReadAssignedDelivery, isAdmin } from "@/lib/permissions"
 import { inspectContactSharing } from "@/lib/contact-sharing-policy"
 
 type SessionLike = { user?: { id?: string; role?: string } } | null
@@ -45,8 +45,7 @@ export function isDeliveryAdmin(session: SessionLike) {
 }
 
 export function canReadDeliveryOrder(session: SessionLike, order: { buyerId: string; partnerId: string | null; managerId: string | null }) {
-  const userId = session?.user?.id
-  return Boolean(userId && (isDeliveryAdmin(session) || order.buyerId === userId || order.partnerId === userId || order.managerId === userId))
+  return canReadAssignedDelivery(session?.user?.role, session?.user?.id, order)
 }
 
 export function canManageDeliveryOrder(session: SessionLike, order: { partnerId: string | null; managerId: string | null }) {

@@ -11,6 +11,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { PrismaClient } from "@prisma/client"
+import { calculatePartnerRating, scoreAuctionPartner } from "../src/lib/partner-scoring.js"
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const envPath = path.join(projectRoot, ".env")
@@ -24,28 +25,14 @@ if (fs.existsSync(envPath)) {
 
 const prisma = new PrismaClient()
 
-const SLA_RESPONSE_TARGET_MINUTES = 60
-const SLA_NEUTRAL_RATING = 50
+const OFFER_LIMIT = 3
+const OFFER_TTL_MS = 24 * 60 * 60 * 1000
 
 function median(values) {
   if (!values.length) return null
   const sorted = [...values].sort((left, right) => left - right)
   const middle = Math.floor(sorted.length / 2)
   return sorted.length % 2 === 0 ? Math.round((sorted[middle - 1] + sorted[middle]) / 2) : sorted[middle]
-}
-
-// Правило намеренно повторяет `src/lib/partner-sla.ts`: скрипт запускается без
-// сборки, поэтому импортировать TS-модуль нельзя. Расхождение поймает тест
-// partner-sla, если формулу поменять только в одном месте.
-function calculateRating({ responseMinutes, acceptedOffers, missedOffers, closedDeals }) {
-  const answered = acceptedOffers + missedOffers
-  if (!answered && responseMinutes === null && !closedDeals) return SLA_NEUTRAL_RATING
-  const responsiveness = answered > 0 ? acceptedOffers / answered : 0.5
-  const speed = responseMinutes === null
-    ? 0.5
-    : Math.max(0, Math.min(1, SLA_RESPONSE_TARGET_MINUTES / Math.max(SLA_RESPONSE_TARGET_MINUTES, responseMinutes)))
-  const delivery = Math.min(1, closedDeals / 10)
-  return Math.max(0, Math.min(100, Math.round(responsiveness * 55 + speed * 30 + delivery * 15)))
 }
 
 async function main() {
@@ -71,7 +58,7 @@ async function main() {
     )
     const acceptedOffers = owned.filter((offer) => offer.status === "ACCEPTED").length
     const missedOffers = owned.filter((offer) => offer.status !== "ACCEPTED" && offer.status !== "DECLINED" && !offer.respondedAt && offer.expiresAt <= now).length
-    const rating = calculateRating({ responseMinutes, acceptedOffers, missedOffers, closedDeals })
+    const rating = calculatePartnerRating({ responseMinutes, acceptedOffers, missedOffers, closedDeals })
 
     await prisma.deliveryOrganization.update({
       where: { id: organization.id },
@@ -87,7 +74,79 @@ async function main() {
     updated += 1
   }
 
-  console.log(`[partner-sla] refreshed ${updated} organizations`)
+  // Освобождаем просроченные предложения и передаём неразобранные заявки
+  // следующей группе партнёров. Повторно одному партнёру заявку не предлагаем:
+  // уникальность пары inquiry/partner остаётся дополнительной защитой БД.
+  const expired = await prisma.auctionInquiryOffer.updateMany({
+    where: { status: "OFFERED", expiresAt: { lte: now } },
+    data: { status: "EXPIRED" },
+  })
+  const pending = await prisma.auctionInquiry.findMany({
+    where: {
+      assignedPartnerId: null,
+      deliveryOrderId: null,
+      status: { in: ["NEW", "CONTACTED"] },
+      offers: {
+        some: { status: "EXPIRED" },
+        none: { status: "OFFERED", expiresAt: { gt: now } },
+      },
+    },
+    select: {
+      id: true,
+      city: true,
+      auctionListing: { select: { make: true, model: true, year: true, country: true } },
+      offers: { select: { partnerId: true } },
+    },
+    take: 100,
+  })
+  let rerouted = 0
+  for (const inquiry of pending) {
+    const attempted = new Set(inquiry.offers.map((offer) => offer.partnerId))
+    const candidates = await prisma.deliveryOrganization.findMany({
+      where: { verificationStatus: "VERIFIED", ownerId: { notIn: [...attempted] } },
+      select: {
+        id: true, legalName: true, ownerId: true, serviceRegions: true,
+        slaRating: true, slaResponseMinutes: true,
+        owner: { select: { _count: { select: {
+          assignedAuctionInquiries: { where: { status: { in: ["CONTACTED", "IN_PROGRESS"] } } },
+          auctionInquiryOffers: { where: { status: "OFFERED", expiresAt: { gt: now } } },
+        } } } },
+      },
+    })
+    const ranked = candidates.map((candidate) => ({
+      ...candidate,
+      ...scoreAuctionPartner({
+        destinationCity: inquiry.city,
+        sourceCountry: inquiry.auctionListing.country,
+        serviceRegions: candidate.serviceRegions,
+        activeAssignments: candidate.owner._count.assignedAuctionInquiries,
+        openOffers: candidate.owner._count.auctionInquiryOffers,
+        slaRating: candidate.slaRating,
+        slaResponseMinutes: candidate.slaResponseMinutes,
+      }),
+    })).sort((left, right) => right.score - left.score || left.legalName.localeCompare(right.legalName, "ru")).slice(0, OFFER_LIMIT)
+    if (!ranked.length) continue
+    const expiresAt = new Date(now.getTime() + OFFER_TTL_MS)
+    await prisma.$transaction([
+      prisma.auctionInquiryOffer.createMany({
+        data: ranked.map((partner) => ({
+          inquiryId: inquiry.id, partnerId: partner.ownerId, organizationId: partner.id,
+          matchScore: partner.score, matchReason: partner.reason, expiresAt,
+        })),
+      }),
+      prisma.notification.createMany({
+        data: ranked.map((partner) => ({
+          userId: partner.ownerId,
+          title: "Заявка переназначена вам",
+          content: `${inquiry.auctionListing.make} ${inquiry.auctionListing.model} ${inquiry.auctionListing.year} · ${inquiry.city || "город уточняется"}`,
+          type: "INFO", relatedId: inquiry.id, relatedType: "AUCTION_INQUIRY_OFFER",
+        })),
+      }),
+    ])
+    rerouted += 1
+  }
+
+  console.log(`[partner-sla] refreshed ${updated} organizations; expired ${expired.count} offers; rerouted ${rerouted} inquiries`)
 }
 
 main()

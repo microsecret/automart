@@ -445,6 +445,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     source: "ENCAR",
     sourceId: requestedId,
     sourceUrl,
+    sourceTitle: asText(advertisement.title) || asText(advertisement.advertisementTitle),
     make,
     model: modelParts.join(" "),
     year,

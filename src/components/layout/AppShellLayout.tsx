@@ -4,8 +4,8 @@ import { AppShell, Avatar, Badge, Box, Button, Divider, Group, NavLink, Paper, S
 import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import {
-  IconBell, IconBrain, IconCar, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation,
-  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMotorbike, IconSearch,
+  IconBell, IconBrain, IconCar, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation,
+  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMotorbike, IconNews,
   IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
   IconBuildingStore, IconClipboardList, IconGift, IconTractor, IconTruck, IconTruckDelivery,
 } from "@tabler/icons-react"
@@ -16,51 +16,68 @@ import { useDisclosure } from "@mantine/hooks"
 import AppAnalytics from "@/components/analytics/AppAnalytics"
 import SupportChat from "@/components/support/SupportChat"
 import { fetchJson } from "@/lib/api-client"
+import {
+  AUCTION_COUNTRY_NAVIGATION,
+  getDashboardNavigationItem,
+  PART_NAVIGATION,
+  SERVICE_NAVIGATION,
+  SITE_MOBILE_NAVIGATION,
+  TRANSPORT_NAVIGATION,
+} from "@/lib/navigation-registry"
 import { navbarScrollTop } from "@/lib/navbar-scroll-sync"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
 
-const TRANSPORT = [
-  { slug: "cars", label: "Легковые", icon: <IconCar size={16} stroke={1.8} /> },
-  { slug: "moto", label: "Мото", icon: <IconMotorbike size={16} stroke={1.8} /> },
-  { slug: "trucks", label: "Грузовики", icon: <IconTruck size={16} stroke={1.8} /> },
-  { slug: "special", label: "Спецтехника", icon: <IconTractor size={16} stroke={1.8} /> },
-  { slug: "water", label: "Водный транспорт", icon: <IconSpeedboat size={16} stroke={1.8} /> },
-  { slug: "air", label: "Воздушный транспорт", icon: <IconPlane size={16} stroke={1.8} /> },
-]
+const TRANSPORT_ICONS = {
+  cars: <IconCar size={16} stroke={1.8} />,
+  moto: <IconMotorbike size={16} stroke={1.8} />,
+  trucks: <IconTruck size={16} stroke={1.8} />,
+  special: <IconTractor size={16} stroke={1.8} />,
+  water: <IconSpeedboat size={16} stroke={1.8} />,
+  air: <IconPlane size={16} stroke={1.8} />,
+} satisfies Record<(typeof TRANSPORT_NAVIGATION)[number]["id"], React.ReactNode>
 
-const PARTS = [
-  { label: "Двигатель", href: "/parts-finder?partType=ENGINE" },
-  { label: "Тормоза", href: "/parts-finder?partType=BRAKES" },
-  { label: "Подвеска и ходовая", href: "/parts-finder?partType=SUSPENSION" },
-  { label: "Электрика", href: "/parts-finder?partType=ELECTRICAL" },
-  { label: "Оптика", href: "/parts-finder?partType=LIGHTING" },
-]
+const SERVICE_ICONS = {
+  "fuel-map": <IconGasStation size={16} stroke={1.8} />,
+  "history-check": <IconFileSearch size={16} stroke={1.8} />,
+  valuation: <IconChartBar size={16} stroke={1.8} />,
+  "smart-matching": <IconBrain size={16} stroke={1.8} />,
+  "safe-deal": <IconShieldCheck size={16} stroke={1.8} />,
+  "legal-documents": <IconFileDescription size={16} stroke={1.8} />,
+} satisfies Record<(typeof SERVICE_NAVIGATION)[number]["id"], React.ReactNode>
 
-const AUCTIONS = [
-  { label: "Япония", href: "/auctions?country=JP" },
-  { label: "Корея", href: "/auctions?country=KR" },
-  { label: "Китай", href: "/auctions?country=CN" },
-  { label: "США", href: "/auctions?country=US" },
-  { label: "Европа", href: "/auctions?country=DE" },
-]
+const SERVICE_COLORS = {
+  "fuel-map": "orange",
+  "history-check": "cyan",
+  valuation: "indigo",
+  "smart-matching": "violet",
+  "safe-deal": "teal",
+  "legal-documents": "grape",
+} satisfies Record<(typeof SERVICE_NAVIGATION)[number]["id"], string>
 
-const SERVICES = [
-  { label: "Карта АЗС", href: "/services/fuel-map", icon: <IconGasStation size={16} stroke={1.8} />, color: "orange" },
-  { label: "Проверка истории", href: "/services/history-check", icon: <IconFileSearch size={16} stroke={1.8} />, color: "cyan" },
-  { label: "Оценка стоимости", href: "/services/valuation", icon: <IconChartBar size={16} stroke={1.8} />, color: "indigo" },
-  { label: "Умный подбор", href: "/services/smart-matching", icon: <IconBrain size={16} stroke={1.8} />, color: "violet" },
-  { label: "Безопасная сделка", href: "/services/safe-deal", icon: <IconShieldCheck size={16} stroke={1.8} />, color: "teal" },
-  { label: "Документы сделки", href: "/services/legal-documents", icon: <IconFileDescription size={16} stroke={1.8} />, color: "grape" },
-]
+const MOBILE_ICONS = {
+  home: IconHome2,
+  auctions: IconGavel,
+  create: IconPlus,
+  news: IconNews,
+  messages: IconMessageCircle2,
+} satisfies Record<(typeof SITE_MOBILE_NAVIGATION)[number]["id"], typeof IconHome2>
 
-const MOBILE_NAV = [
-  { href: "/", label: "Главная", Icon: IconHome2 },
-  { href: "/search", label: "Поиск", Icon: IconSearch },
-  { href: "/listings/create/vehicle", label: "Подать", Icon: IconPlus, accent: true },
-  { href: "/favorites", label: "Избранное", Icon: IconHeart },
-  { href: "/messages", label: "Чаты", Icon: IconMessageCircle2 },
-]
+const TRANSPORT = TRANSPORT_NAVIGATION.map((item) => ({ ...item, slug: item.id, icon: TRANSPORT_ICONS[item.id] }))
+const PARTS = PART_NAVIGATION
+const AUCTIONS = AUCTION_COUNTRY_NAVIGATION
+const SERVICES = SERVICE_NAVIGATION.map((item) => ({ ...item, icon: SERVICE_ICONS[item.id], color: SERVICE_COLORS[item.id] }))
+const MOBILE_NAV = SITE_MOBILE_NAVIGATION.map((item) => ({ ...item, Icon: MOBILE_ICONS[item.id], accent: item.id === "create" }))
+const ACCOUNT_NAVIGATION = {
+  listings: getDashboardNavigationItem("listings"),
+  favorites: getDashboardNavigationItem("favorites"),
+  garage: getDashboardNavigationItem("garage"),
+  deliveries: getDashboardNavigationItem("deliveries"),
+  documents: getDashboardNavigationItem("documents"),
+  messages: getDashboardNavigationItem("messages"),
+  payments: getDashboardNavigationItem("payments"),
+  profile: getDashboardNavigationItem("profile"),
+}
 
 type AccountSummary = {
   stats: {
@@ -229,7 +246,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                   <NavLink
                     key={item.slug}
                     component={Link}
-                    href={`/category/${item.slug}`}
+                    href={item.href}
                     label={item.label}
                     leftSection={item.icon}
                     active={activeCategory === item.slug}
@@ -449,10 +466,13 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
       </Paper>
 
       <Stack gap={1} mt="xs">
-        <NavLink component={Link} href="/dashboard" label="Мои объявления" leftSection={<IconLayoutDashboard size={16} />} rightSection={<AccountCounter value={summary?.totalListings || 0} color="indigo" />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="light" className="market-side-account__link" />
-        <NavLink component={Link} href="/dashboard?tab=favorites" label="Избранное" leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} color="pink" />} active={pathname === "/dashboard" && dashboardTab === "favorites"} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/dashboard?tab=garage" label="Личный гараж" leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} color="teal" />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.listings.href} label={ACCOUNT_NAVIGATION.listings.label} leftSection={<IconLayoutDashboard size={16} />} rightSection={<AccountCounter value={summary?.totalListings || 0} color="indigo" />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="light" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.favorites.href} label={ACCOUNT_NAVIGATION.favorites.label} leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} color="pink" />} active={pathname.startsWith("/favorites")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.garage.href} label={ACCOUNT_NAVIGATION.garage.label} leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} color="teal" />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard/orders" prefetch={false} label="Мои заказы" leftSection={<IconClipboardList size={16} />} active={pathname.startsWith("/dashboard/orders")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.deliveries.href} prefetch={false} label={ACCOUNT_NAVIGATION.deliveries.label} leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} color="orange" />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.documents.href} prefetch={false} label={ACCOUNT_NAVIGATION.documents.label} leftSection={<IconFileDescription size={16} />} active={pathname.startsWith("/dashboard/documents")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.payments.href} label={ACCOUNT_NAVIGATION.payments.label} leftSection={<IconCreditCard size={16} />} active={pathname === "/dashboard" && dashboardTab === "payments"} color="indigo" variant="subtle" className="market-side-account__link" />
 
         {/* Партнёрский блок отделён подписью: до проверки компании этих
             разделов в меню нет вовсе, поэтому список у обычного продавца
@@ -460,7 +480,6 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         {isPartner && (
           <>
             <Text className="market-side-account__group" component="p">Партнёрские разделы</Text>
-            <NavLink component={Link} href="/dashboard/deliveries" prefetch={false} label="Мои доставки" leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} color="orange" />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
             <NavLink component={Link} href="/dashboard/store" prefetch={false} label="Магазин запчастей" leftSection={<IconBuildingStore size={16} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
           </>
         )}
@@ -469,9 +488,9 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
             раздел для проверенных компаний, поэтому и название другое. */}
         <NavLink component={Link} href="/dashboard/referral" prefetch={false} label="Пригласить друзей" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
         <Divider my={2} />
-        <NavLink component={Link} href="/messages" label="Сообщения" leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} color="red" />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.messages.href} label={ACCOUNT_NAVIGATION.messages.label} leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} color="red" />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/notifications" prefetch={false} label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} color="red" />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/dashboard?tab=profile" label="Профиль и настройки" leftSection={<IconSettings size={16} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.profile.href} label={ACCOUNT_NAVIGATION.profile.label} leftSection={<IconSettings size={16} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
         {isAdmin && <NavLink component={Link} href="/admin" prefetch={false} label="Админ-панель" leftSection={<IconSettings size={16} />} active={pathname.startsWith("/admin")} color="grape" variant="light" className="market-side-account__link" />}
         {isModerator && <NavLink component={Link} href="/moderation" prefetch={false} label="Модерация" leftSection={<IconGavel size={16} />} active={pathname.startsWith("/moderation")} color="orange" variant="light" className="market-side-account__link" />}
       </Stack>

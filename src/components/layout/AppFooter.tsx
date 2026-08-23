@@ -4,52 +4,9 @@ import { Box, Text, Group, Stack, Container, Divider, Anchor, ActionIcon, Simple
 import Link from "next/link"
 import { IconBrandTelegram } from "@tabler/icons-react"
 import LeWheelBrand from "@/components/brand/LeWheelBrand"
+import { FOOTER_NAVIGATION } from "@/lib/navigation-registry"
 
-const FOOTER_SECTIONS = [
-  {
-    title: "Каталог",
-    links: [
-      /* Категории транспорта отсюда убраны: девять ссылок дословно
-         повторяли боковое меню и плитки главной, вытягивая подвал втрое.
-         Здесь остаются страницы, которых нет ни там, ни там. */
-      { label: "Все объявления", href: "/" },
-      { label: "Все марки", href: "/brands" },
-      { label: "Карта объявлений", href: "/map" },
-      { label: "Сравнение", href: "/compare" },
-      { label: "Мировые аукционы", href: "/auctions" },
-    ],
-  },
-  {
-    title: "Запчасти",
-    links: [
-      { label: "Все запчасти", href: "/parts-finder" },
-      { label: "Двигатель", href: "/parts-finder?partType=ENGINE" },
-      { label: "Тормоза", href: "/parts-finder?partType=BRAKES" },
-      { label: "Ходовая / Подвеска", href: "/parts-finder?partType=SUSPENSION" },
-      { label: "Электрика", href: "/parts-finder?partType=ELECTRICAL" },
-    ],
-  },
-  {
-    title: "Сервисы",
-    links: [
-      { label: "Оценка стоимости", href: "/services/valuation" },
-      { label: "Проверка истории", href: "/services/history-check" },
-      { label: "Умный подбор", href: "/services/smart-matching" },
-      { label: "Безопасная сделка", href: "/services/safe-deal" },
-      { label: "Документы сделки", href: "/services/legal-documents" },
-      { label: "Карта АЗС", href: "/services/fuel-map" },
-    ],
-  },
-  {
-    title: "Помощь",
-    links: [
-      { label: "Как продать авто", href: "/help/sell" },
-      { label: "Безопасность", href: "/help/safety" },
-      { label: "Правила", href: "/help/rules" },
-      { label: "Поддержка", href: "/help/support" },
-    ],
-  },
-]
+const FOOTER_SECTIONS = FOOTER_NAVIGATION.map((section) => ({ ...section, links: section.items }))
 
 const telegramBotUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "")
 const SOCIALS = telegramBotUsername

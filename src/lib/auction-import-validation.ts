@@ -151,6 +151,7 @@ export function normalizeAuctionImportItem(item: unknown, index = 0): AuctionImp
   const make = normalizeAuctionMake(optionalText(value.make, 120))
   const model = optionalText(value.model, 160)
   const manufacturedMonth = optionalText(value.manufacturedMonth, 7)
+  const sourceTitle = optionalText(value.sourceTitle, 500)
   const sourceUrl = optionalUrl(value.sourceUrl)
   if (Array.isArray(value.images) && value.images.length > MAX_IMAGES_PER_LISTING) throw new Error(`Лот ${index + 1}: допускается не более ${MAX_IMAGES_PER_LISTING} фотографий`)
   const images = Array.isArray(value.images) ? value.images.map(optionalUrl).filter((url): url is string => Boolean(url)) : null
@@ -167,7 +168,7 @@ export function normalizeAuctionImportItem(item: unknown, index = 0): AuctionImp
   if (!sourceUrl) throw new Error(`Лот ${index + 1}: нужна защищённая HTTPS-ссылка источника`)
 
   return {
-    source, sourceId, country, sourceCurrency, sourcePrice, year, manufacturedMonth, auctionDate, make, model, sourceUrl,
+    source, sourceId, country, sourceCurrency, sourcePrice, year, manufacturedMonth, auctionDate, make, model, sourceUrl, sourceTitle,
     mileage: optionalInteger(value.mileage),
     fuelType: normalizeAuctionFuelType(value.fuelType),
     transmission: normalizeAuctionTransmission(value.transmission),

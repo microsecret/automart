@@ -97,6 +97,8 @@ export type AuctionImportItem = {
   source: string
   sourceId: string
   sourceUrl: string
+  /** Оригинальный заголовок нужен только для контроля противоречий источника. */
+  sourceTitle?: string | null
   make: string
   model: string
   year: number

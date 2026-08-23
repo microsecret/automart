@@ -50,7 +50,7 @@ function buildPromoText() {
     "",
     "🤝 Выкупаете и доставляете автомобили? Станьте партнёром — передаём целевые заявки из вашего региона.",
     "",
-    `🌐 <a href="${absoluteUrl("/?utm_source=telegram&utm_campaign=service_promo")}">lewheel.ru</a>`,
+    `🌐 <a href="${absoluteUrl("/?utm_source=telegram&utm_campaign=service_promo&utm_content=caption_link")}">lewheel.ru</a>`,
     botUsername ? `🤖 Официальный бот: @${botUsername}` : null,
   ].filter(Boolean).join("\n")
 }
@@ -62,16 +62,16 @@ function promoKeyboard() {
   const miniAppUrl = botUsername ? `https://t.me/${botUsername}?startapp=promo` : absoluteUrl("/telegram")
   return {
     inline_keyboard: [
-      [{ text: "🚘 Открыть Mini App", url: miniAppUrl }, { text: "🌍 Аукционы", url: absoluteUrl("/auctions?utm_source=telegram&utm_campaign=service_promo") }],
+      [{ text: "🚘 Открыть Mini App", url: miniAppUrl }, { text: "🌍 Аукционы", url: absoluteUrl("/auctions?utm_source=telegram&utm_campaign=service_promo&utm_content=auctions") }],
       // Подача идёт в Mini App: там вход уже выполнен через Telegram, поэтому
       // незарегистрированный пользователь не упирается в форму регистрации, а
       // сразу размещает объявление. Ссылка на сайт остаётся второй кнопкой для
       // тех, кому удобнее полная форма.
       [
-        { text: "➕ Разместить объявление", url: botUsername ? `https://t.me/${botUsername}?startapp=create` : absoluteUrl("/listings/create/vehicle?utm_source=telegram&utm_campaign=service_promo") },
-        { text: "🖥 Подать на сайте", url: absoluteUrl("/listings/create/vehicle?utm_source=telegram&utm_campaign=service_promo") },
+        { text: "➕ Разместить объявление", url: botUsername ? `https://t.me/${botUsername}?startapp=create` : absoluteUrl("/listings/create/vehicle?utm_source=telegram&utm_campaign=service_promo&utm_content=create_mini_app") },
+        { text: "🖥 Подать на сайте", url: absoluteUrl("/listings/create/vehicle?utm_source=telegram&utm_campaign=service_promo&utm_content=create_website") },
       ],
-      [{ text: "🤝 Стать партнёром", url: absoluteUrl("/dashboard/deliveries?partner=apply&utm_source=telegram&utm_campaign=service_promo") }, { text: "🌐 Перейти на сайт", url: absoluteUrl("/?utm_source=telegram&utm_campaign=service_promo") }],
+      [{ text: "🤝 Стать партнёром", url: absoluteUrl("/dashboard/deliveries?partner=apply&utm_source=telegram&utm_campaign=service_promo&utm_content=partner") }, { text: "🌐 Перейти на сайт", url: absoluteUrl("/?utm_source=telegram&utm_campaign=service_promo&utm_content=homepage") }],
     ],
   }
 }

@@ -274,6 +274,7 @@ export async function fetchMobileDeListing(sourceId: string): Promise<AuctionImp
     source: "MOBILE_DE",
     sourceId: safeId,
     sourceUrl,
+    sourceTitle: asText(ad.title) || asText(ad.heading),
     make,
     model,
     year,

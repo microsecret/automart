@@ -629,6 +629,23 @@ async function run() {
     method: "POST",
     body: JSON.stringify({ content: "Проверю отчёт по повреждениям и подготовлю перечень документов." }),
   })
+  const suspendedOrganization = await expect("/api/admin/delivery-organizations", adminCookie, 200, {
+    method: "PATCH",
+    body: JSON.stringify({ id: organization.id, verificationStatus: "SUSPENDED", verificationNote: "Изолированная проверка отзыва доступа" }),
+  })
+  const suspendedPartner = await prisma.user.findUnique({ where: { id: seller.id } })
+  record(
+    "suspending a partner revokes the role transactionally",
+    suspendedOrganization?.organization?.verificationStatus === "SUSPENDED" && suspendedPartner?.role !== "PARTNER",
+    `${suspendedOrganization?.organization?.verificationStatus || "missing"} · ${suspendedPartner?.role || "missing"}`,
+  )
+  const suspendedOffers = await expect("/api/partner/auction-offers", partnerCookie, 200)
+  record(
+    "suspended partner loses the private offer queue on the next request",
+    suspendedOffers?.organization === null && suspendedOffers?.offers?.length === 0,
+    `${suspendedOffers?.offers?.length ?? 0} offer(s)`,
+  )
+  await expect(`/api/delivery-orders/${assignedInquiry.inquiry.deliveryOrderId}`, partnerCookie, 403)
 
   await expect("/api/upload", cookie, 415, { method: "POST", body: JSON.stringify({ invalid: true }) })
   await expect("/api/listings?limit=10", null, 200)

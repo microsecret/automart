@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { buildPartnerSlaMetrics, calculatePartnerRating, describePartnerRating, SLA_NEUTRAL_RATING } from "../src/lib/partner-sla.ts"
+import { readServiceRegions, scoreAuctionPartner } from "../src/lib/partner-scoring.js"
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000)
 
@@ -66,4 +67,18 @@ test("labels the partner level for the admin registry", () => {
   assert.equal(describePartnerRating(90, true).label, "Отвечает быстро")
   assert.equal(describePartnerRating(50, false).label, "Новый партнёр")
   assert.equal(describePartnerRating(10, true).color, "red")
+})
+
+test("routes an inquiry to a reliable partner in the buyer city", () => {
+  assert.deepEqual(readServiceRegions('["Екатеринбург", "Китай"]'), ["екатеринбург", "китай"])
+  const local = scoreAuctionPartner({
+    destinationCity: "Екатеринбург", sourceCountry: "CN", serviceRegions: '["Екатеринбург", "Китай"]',
+    activeAssignments: 1, openOffers: 1, slaRating: 80, slaResponseMinutes: 25,
+  })
+  const remote = scoreAuctionPartner({
+    destinationCity: "Екатеринбург", sourceCountry: "CN", serviceRegions: '["Москва"]',
+    activeAssignments: 0, openOffers: 0, slaRating: 95, slaResponseMinutes: 10,
+  })
+  assert.ok(local.score > remote.score, `местный партнёр ${local.score} должен быть выше удалённого ${remote.score}`)
+  assert.match(local.reason, /городе доставки/)
 })

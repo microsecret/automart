@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Box, Text } from "@mantine/core"
 import type { TelegramThemeParams } from "@/lib/telegram-webapp"
 import {
   IconCar,
+  IconFileDescription,
   IconGavel,
   IconHeart,
   IconList,
@@ -14,9 +15,15 @@ import {
   IconNews,
   IconPlus,
   IconTool,
+  IconTruckDelivery,
   IconX,
   IconUser,
 } from "@tabler/icons-react"
+import {
+  CREATE_VEHICLE_HREF,
+  TELEGRAM_MENU_NAVIGATION,
+  TELEGRAM_TAB_NAVIGATION,
+} from "@/lib/navigation-registry"
 
 /**
  * Оболочка приложения Telegram: шапка, лента и нижняя навигация.
@@ -59,46 +66,37 @@ const FALLBACK: Required<Pick<TelegramThemeParams,
    Меню открывается кнопкой слева вверху, как в мобильной версии сайта, и
    вмещает то, чему не нашлось места внизу: личные разделы, запчасти,
    аукционы по странам. */
-const MENU_SECTIONS = [
-  {
-    title: "Каталог",
-    items: [
-      { href: "/telegram", label: "Свежие объявления", Icon: IconCar },
-      { href: "/telegram?tab=auctions", label: "Мировые аукционы", Icon: IconGavel },
-      { href: "/telegram?tab=news", label: "Новости авторынка", Icon: IconNews },
-      { href: "/parts-finder?from=telegram", label: "Запчасти", Icon: IconTool },
-    ],
-  },
-  {
-    title: "Моё",
-    items: [
-      { href: "/favorites?from=telegram", label: "Избранное", Icon: IconHeart },
-      { href: "/telegram?tab=chats", label: "Сообщения", Icon: IconMessageCircle2 },
-      { href: "/dashboard?tab=listings&from=telegram", label: "Мои объявления", Icon: IconList },
-      { href: "/dashboard?tab=garage&from=telegram", label: "Личный гараж", Icon: IconCar },
-    ],
-  },
-  {
-    title: "Аукционы по странам",
-    items: [
-      { href: "/auctions?country=KR&from=telegram", label: "🇰🇷 Корея", Icon: null },
-      { href: "/auctions?country=JP&from=telegram", label: "🇯🇵 Япония", Icon: null },
-      { href: "/auctions?country=CN&from=telegram", label: "🇨🇳 Китай", Icon: null },
-      { href: "/auctions?country=DE&from=telegram", label: "🇩🇪 Европа", Icon: null },
-    ],
-  },
-]
+const MENU_ICONS: Record<string, typeof IconCar | null> = {
+  vehicles: IconCar,
+  auctions: IconGavel,
+  news: IconNews,
+  parts: IconTool,
+  favorites: IconHeart,
+  messages: IconMessageCircle2,
+  listings: IconList,
+  garage: IconCar,
+  deliveries: IconTruckDelivery,
+  documents: IconFileDescription,
+}
 
-const TABS = [
-  { href: "/telegram", label: "Свежее", Icon: IconCar },
-  { href: "/telegram?tab=auctions", label: "Аукционы", Icon: IconGavel },
-  { href: "/listings/create/quick?source=telegram", label: "Продать", Icon: IconPlus, accent: true },
-  /* Новости вместо избранного: избранное нужно тем, кто уже выбирает, а
-     новости читают все — и они удерживают в приложении, пока машин
-     немного. Избранное осталось в профиле. */
-  { href: "/telegram?tab=news", label: "Новости", Icon: IconNews },
-  { href: "/dashboard?from=telegram", label: "Профиль", Icon: IconUser },
-]
+const TAB_ICONS = {
+  vehicles: IconCar,
+  auctions: IconGavel,
+  create: IconPlus,
+  news: IconNews,
+  profile: IconUser,
+} satisfies Record<(typeof TELEGRAM_TAB_NAVIGATION)[number]["id"], typeof IconCar>
+
+const MENU_SECTIONS = TELEGRAM_MENU_NAVIGATION.map((section) => ({
+  ...section,
+  items: section.items.map((item) => ({ ...item, Icon: MENU_ICONS[item.id] || null })),
+}))
+
+const TABS = TELEGRAM_TAB_NAVIGATION.map((item) => ({
+  ...item,
+  Icon: TAB_ICONS[item.id],
+  accent: item.id === "create",
+}))
 
 export default function TelegramShell({
   children,
@@ -116,6 +114,33 @@ export default function TelegramShell({
 }) {
   const [ready, setReady] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuMounted, setMenuMounted] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+
+  const openMenu = useCallback(() => {
+    setMenuMounted(true)
+    window.requestAnimationFrame(() => setMenuOpen(true))
+  }, [])
+
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false)
+    menuButtonRef.current?.focus({ preventScroll: true })
+  }, [])
+
+  useEffect(() => {
+    if (menuOpen || !menuMounted) return
+    const timeout = window.setTimeout(() => setMenuMounted(false), 220)
+    return () => window.clearTimeout(timeout)
+  }, [menuMounted, menuOpen])
+
+  useEffect(() => {
+    if (!menuMounted) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeMenu()
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [closeMenu, menuMounted])
 
   useEffect(() => {
     const webApp = window.Telegram?.WebApp
@@ -185,7 +210,7 @@ export default function TelegramShell({
 
     const openCreate = () => {
       webApp.HapticFeedback?.impactOccurred("medium")
-      window.location.assign("/listings/create/quick?source=telegram")
+      window.location.assign(`${CREATE_VEHICLE_HREF}?source=telegram`)
     }
 
     webApp.MainButton?.setParams?.({
@@ -209,11 +234,12 @@ export default function TelegramShell({
       <Box className="tg-shell__head">
         {/* Кнопка меню слева, как в мобильной версии сайта. */}
         <button
+          ref={menuButtonRef}
           type="button"
           className="tg-shell__menu-button"
           onClick={() => {
             window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
-            setMenuOpen(true)
+            openMenu()
           }}
           aria-label="Открыть меню"
           aria-expanded={menuOpen}
@@ -232,20 +258,22 @@ export default function TelegramShell({
           Прежде здесь был ряд вкладок, повторявший нижнюю навигацию.
           Меню вмещает то, чему не нашлось места внизу, и приходит сбоку —
           так видно, откуда оно и куда уйдёт. */}
-      {menuOpen && (
+      {menuMounted && (
         <>
           <Box
             className="tg-menu__backdrop"
-            onClick={() => setMenuOpen(false)}
+            data-open={menuOpen || undefined}
+            onClick={closeMenu}
             aria-hidden="true"
           />
-          <Box component="nav" className="tg-menu" aria-label="Разделы">
+          <Box component="nav" className="tg-menu" data-open={menuOpen || undefined} aria-label="Разделы" aria-hidden={!menuOpen}>
             <Box className="tg-menu__head">
               <Text className="tg-menu__brand">LeWheel</Text>
               <button
                 type="button"
                 className="tg-menu__close"
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
+                tabIndex={menuOpen ? undefined : -1}
                 aria-label="Закрыть меню"
               >
                 <IconX size={18} />
@@ -263,8 +291,9 @@ export default function TelegramShell({
                     data-active={href === activeTab || undefined}
                     onClick={() => {
                       window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()
-                      setMenuOpen(false)
+                      closeMenu()
                     }}
+                    tabIndex={menuOpen ? undefined : -1}
                   >
                     {Icon ? <Icon size={18} stroke={1.8} /> : <span className="tg-menu__flag" />}
                     <span>{label}</span>

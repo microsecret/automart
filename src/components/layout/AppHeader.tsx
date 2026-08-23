@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Burger, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake, IconTruckDelivery } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -9,6 +9,13 @@ import { useState, useEffect } from "react"
 import { useColorScheme } from "@/components/providers/AppProviders"
 import { IconSun, IconMoon } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
+import {
+  isNavigationItemActive,
+  DASHBOARD_NAVIGATION,
+  PLATFORM_NAVIGATION,
+  PRIMARY_NAVIGATION,
+  SERVICE_NAVIGATION,
+} from "@/lib/navigation-registry"
 import LeWheelBrand from "@/components/brand/LeWheelBrand"
 
 type SearchSuggestion = {
@@ -28,6 +35,38 @@ type NavigationItem = {
   icon: React.ReactNode
   active: boolean
 }
+
+const PRIMARY_ICONS = {
+  listings: <IconCar size={14} />,
+  parts: <IconTools size={14} />,
+  auctions: <IconGavel size={14} />,
+  news: <IconNews size={14} />,
+} satisfies Record<(typeof PRIMARY_NAVIGATION)[number]["id"], React.ReactNode>
+
+const PLATFORM_ICONS = {
+  help: <IconHelpCircle size={14} />,
+  services: <IconShieldCheck size={14} />,
+} satisfies Record<(typeof PLATFORM_NAVIGATION)[number]["id"], React.ReactNode>
+
+const SERVICE_ICONS = {
+  "fuel-map": <IconGasStation size={15} />,
+  "history-check": <IconFileSearch size={15} />,
+  valuation: <IconChartBar size={15} />,
+  "smart-matching": <IconBrain size={15} />,
+  "safe-deal": <IconShieldCheck size={15} />,
+  "legal-documents": <IconFileDescription size={15} />,
+} satisfies Record<(typeof SERVICE_NAVIGATION)[number]["id"], React.ReactNode>
+
+const HEADER_ACCOUNT_ICONS = {
+  listings: <IconLayoutDashboard size={15} />,
+  favorites: <IconHeart size={15} />,
+  garage: <IconCar size={15} />,
+  deliveries: <IconTruckDelivery size={15} />,
+  documents: <IconFileDescription size={15} />,
+  messages: <IconMessageCircle2 size={15} />,
+  payments: <IconCreditCard size={15} />,
+  profile: <IconSettings size={15} />,
+} satisfies Record<(typeof DASHBOARD_NAVIGATION)[number]["id"], React.ReactNode>
 
 export default function AppHeader({ navigationOpened = false, onNavigationToggle }: { navigationOpened?: boolean; onNavigationToggle?: () => void }) {
   const { data: session } = useSession()
@@ -57,26 +96,24 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
 
   // Порядок ряда: сначала то, ради чего приходят на площадку, затем новости.
   // «Сервисы» и «Помощь» живут отдельно, в выпадающем меню справа.
-  const catalogueNavigation: NavigationItem[] = [
-    { href: "/", label: "Объявления", icon: null, active: pathname === "/" || pathname.startsWith("/category") || pathname.startsWith("/search") },
-    { href: "/parts-finder", label: "Запчасти", icon: <IconTools size={14} />, active: pathname.startsWith("/parts") },
-    { href: "/auctions", label: "Аукционы", icon: <IconGavel size={14} />, active: pathname.startsWith("/auctions") },
-    { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
-  ]
-  const serviceNavigation: NavigationItem[] = [
-    { href: "/news", label: "Новости", icon: <IconNews size={14} />, active: pathname.startsWith("/news") },
-    { href: "/help", label: "Помощь", icon: <IconHelpCircle size={14} />, active: pathname.startsWith("/help") },
-    // «Сервисы» последним: это набор инструментов, а не раздел каталога,
-    // и человек идёт туда после того, как разобрался с основным.
-    { href: "/services", label: "Сервисы", icon: <IconShieldCheck size={14} />, active: pathname.startsWith("/services") },
-  ]
-  const serviceShortcuts: NavigationItem[] = [
-    { href: "/services/fuel-map", label: "Карта АЗС", icon: <IconGasStation size={15} />, active: pathname.startsWith("/services/fuel-map") },
-    { href: "/services/history-check", label: "Проверка истории", icon: <IconFileSearch size={15} />, active: pathname.startsWith("/services/history-check") },
-    { href: "/services/valuation", label: "Оценка стоимости", icon: <IconChartBar size={15} />, active: pathname.startsWith("/services/valuation") },
-    { href: "/services/smart-matching", label: "Умный подбор", icon: <IconBrain size={15} />, active: pathname.startsWith("/services/smart-matching") },
-    { href: "/services/legal-documents", label: "Документы сделки", icon: <IconFileDescription size={15} />, active: pathname.startsWith("/services/legal-documents") },
-  ]
+  const catalogueNavigation: NavigationItem[] = PRIMARY_NAVIGATION.map((item) => ({
+    href: item.href,
+    label: item.label,
+    icon: PRIMARY_ICONS[item.id],
+    active: isNavigationItemActive(pathname, item),
+  }))
+  const serviceNavigation: NavigationItem[] = PLATFORM_NAVIGATION.map((item) => ({
+    href: item.href,
+    label: item.label,
+    icon: PLATFORM_ICONS[item.id],
+    active: isNavigationItemActive(pathname, item),
+  }))
+  const serviceShortcuts: NavigationItem[] = SERVICE_NAVIGATION.map((item) => ({
+    href: item.href,
+    label: item.label,
+    icon: SERVICE_ICONS[item.id],
+    active: isNavigationItemActive(pathname, item),
+  }))
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`)
@@ -331,12 +368,12 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                     </Box>
                     <Menu.Divider />
                     <Menu.Label>Кабинет</Menu.Label>
-                    <Menu.Item component={Link} href="/dashboard" leftSection={<IconLayoutDashboard size={15} />}>Личный кабинет</Menu.Item>
-                    <Menu.Item component={Link} href="/dashboard?tab=listings" leftSection={<IconCar size={15} />}>Мои объявления</Menu.Item>
-                    <Menu.Item component={Link} href="/messages" leftSection={<IconMessageCircle2 size={15} />}>Сообщения</Menu.Item>
+                    {DASHBOARD_NAVIGATION.map((item) => (
+                      <Menu.Item key={item.id} component={Link} href={item.href} leftSection={HEADER_ACCOUNT_ICONS[item.id]}>
+                        {item.label}
+                      </Menu.Item>
+                    ))}
                     <Menu.Item component={Link} href="/notifications" leftSection={<IconBell size={15} />}>Уведомления</Menu.Item>
-                    <Menu.Item component={Link} href="/favorites" leftSection={<IconHeart size={15} />}>Избранное</Menu.Item>
-                    <Menu.Item component={Link} href="/dashboard?tab=profile" leftSection={<IconSettings size={15} />}>Настройки профиля</Menu.Item>
                     {session.user?.role === "ADMIN" && (
                       <>
                         <Menu.Divider />

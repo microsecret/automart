@@ -36,9 +36,10 @@ flowchart LR
 | Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |
 | Admin analytics and charts | `src/app/admin/page.tsx` | `src/app/api/admin/stats/route.ts`, analytics visit route |
+| Campaign/button analytics | `src/components/analytics/AppAnalytics.tsx` | visit API, admin traffic API and traffic dashboard |
 | Admin decision audit | `src/components/admin/AdminAuditLog.tsx` | `src/app/api/admin/audit/route.ts`, `src/lib/admin-audit.ts`, mutating admin routes |
 | Auction source health | `src/app/api/admin/auctions/stats/route.ts` | `auction-crawl-policy.ts`, admin sources tab |
-| Sidebar/header/footer | `src/components/layout/` | app shell and responsive styles |
+| Shared site navigation | `src/lib/navigation-registry.ts` | header, footer, app shell, dashboard and Telegram shell |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
 | Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |
@@ -48,6 +49,7 @@ flowchart LR
 | Freshness/removal | source refresh route | `auction-crawl-policy.ts`, `auction-source-freshness.ts`, listing status fields |
 | Production schedule | `scripts/run-encar-collector.sh` | cron installer and deployment script |
 | Delivery partner onboarding | `src/app/api/delivery-organizations/route.ts` | delivery workspace, admin partner registry |
+| Auction partner routing and SLA | `src/lib/auction-partner-routing.ts` | `partner-scoring.js`, offer API, hourly SLA cron |
 | Garage to moderated listing | `src/app/api/garage/route.ts` | dashboard garage, vehicle creation workspace |
 | Vehicle publication readiness | `src/lib/vehicle-publication-readiness.ts` | full vehicle form, owner resubmission/edit API, listing creation API, admin approval |
 | Search metadata and structured data | `src/app/layout.tsx` | route layouts, `StructuredData.tsx`, sitemap/robots/manifest |
@@ -119,6 +121,7 @@ flowchart LR
   OwnerProfile --> Dashboard["Account completion and verified contacts"]
   Session --> Garage["Owner garage"]
   Garage --> Listing["Moderated listing draft"]
+  Navigation["Typed navigation registry"] --> Shells["Header / footer / dashboard / mobile / Telegram"]
   SearchUrl["/search q + make + partType + vehicleType"] --> Catalog["HomeCatalog initial state"]
   Catalog --> ListingsApi["Unified /api/listings filters"]
 ```
@@ -238,3 +241,22 @@ flowchart LR
 существующем администраторском реестре. Автоматическая отметка ФНС допустима
 только после ответа подтверждённого источника, иначе используется ручная
 проверка.
+
+## Auction partner offer and SLA graph
+
+```mermaid
+flowchart LR
+  Inquiry["New auction inquiry"] --> Eligible["Verified partners only"]
+  Eligible --> Score["City/region + country + active load + SLA rating + response time"]
+  Score --> Offer["Three private offers without buyer contacts"]
+  Offer -->|accepted| Assigned["One assigned partner; other offers superseded"]
+  Offer -->|24h expired| Expire["Mark offer expired"]
+  Expire --> Retry["Rank partners not invited before"]
+  Retry --> Offer
+```
+
+The API and the hourly Node cron import the same pure scoring module, so an
+interactive assignment and a scheduled retry cannot rank the same partner in
+different ways. An expired offer never reveals buyer contacts and never returns
+to a partner already invited for that inquiry. Arbitration remains a separate,
+unfinished business workflow and is not implied by SLA reassignment.

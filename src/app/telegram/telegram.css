@@ -469,7 +469,12 @@
   z-index: 40;
   inset: 0;
   background: rgb(0 0 0 / 55%);
-  animation: tg-fade-in 160ms ease-out;
+  opacity: 0;
+  transition: opacity 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.tg-menu__backdrop[data-open] {
+  opacity: 1;
 }
 
 .tg-menu {
@@ -483,7 +488,12 @@
   padding: 14px 0 24px;
   border-right: 1px solid var(--tg-line);
   background: var(--tg-bg);
-  animation: tg-slide-in 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  transform: translateX(-100%);
+  transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.tg-menu[data-open] {
+  transform: translateX(0);
 }
 
 .tg-menu__head {
@@ -537,7 +547,7 @@
   font-size: 0.94rem;
   font-weight: 500;
   text-decoration: none;
-  transition: background 120ms ease-out;
+  transition: background-color 120ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .tg-menu__item:active {
@@ -556,20 +566,21 @@
   width: 18px;
 }
 
-@keyframes tg-fade-in {
-  from { opacity: 0; }
-}
-
-@keyframes tg-slide-in {
-  from { transform: translateX(-100%); }
-}
-
-/* При включённом ограничении движения меню появляется сразу: смысл в
-   разделах, а не в том, как они приехали. */
+/* При ограничении движения остаётся короткая смена прозрачности, которая
+   показывает изменение состояния без перемещения панели по экрану. */
 @media (prefers-reduced-motion: reduce) {
-  .tg-menu,
+  .tg-menu {
+    opacity: 0;
+    transform: none;
+    transition: opacity 120ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+  }
+
+  .tg-menu[data-open] {
+    opacity: 1;
+  }
+
   .tg-menu__backdrop {
-    animation: none;
+    transition-duration: 120ms !important;
   }
 
   .tg-shell__menu-button,

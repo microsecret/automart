@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     const bySource = new Map<string, Set<string>>()
     const byReferer = new Map<string, Set<string>>()
     const byDevice = new Map<string, Set<string>>()
+    const byCampaign = new Map<string, Set<string>>()
     const byPath = new Map<string, number>()
     const byHour = new Map<number, Set<string>>()
 
@@ -78,6 +79,11 @@ export async function GET(request: NextRequest) {
       const device = event.deviceType || "Неизвестно"
       if (!byDevice.has(device)) byDevice.set(device, new Set())
       byDevice.get(device)!.add(visitor)
+
+      if (event.campaign) {
+        if (!byCampaign.has(event.campaign)) byCampaign.set(event.campaign, new Set())
+        byCampaign.get(event.campaign)!.add(visitor)
+      }
 
       byPath.set(event.path, (byPath.get(event.path) || 0) + 1)
 
@@ -112,6 +118,7 @@ export async function GET(request: NextRequest) {
       sources: toList(bySource),
       referers: toList(byReferer),
       devices: toList(byDevice),
+      campaigns: toList(byCampaign),
       topPaths: [...byPath.entries()]
         .map(([path, views]) => ({ path, views }))
         .sort((a, b) => b.views - a.views)

@@ -22,6 +22,7 @@ const IMPLAUSIBLE_OLD_CAR_MILEAGE_KM = 1_000
 const ELECTRIC_FUEL_TYPES = new Set(["ELECTRIC", "ELECTRICITY", "EV", "ЭЛЕКТРО"])
 
 export type AuctionQualityInput = {
+  sourceTitle?: string | null
   make: string | null
   model: string | null
   year: number | null
@@ -33,6 +34,26 @@ export type AuctionQualityInput = {
   fuelType?: string | null
   imageUrl: string | null
   images: string[] | null
+}
+
+function explicitSourceTitleYears(value: string | null | undefined, currentYear: number) {
+  if (!value?.trim()) return []
+  const years = new Set<number>()
+
+  for (const match of value.normalize("NFKC").matchAll(/(?:^|\D)((?:19|20)\d{2})(?!\d)/g)) {
+    years.add(Number(match[1]))
+  }
+
+  // Корейские и русские каталоги часто сокращают год до «23년» или
+  // «23 г.в.». Самостоятельные двузначные числа не трогаем: это может быть
+  // мощность, индекс модели или объём двигателя.
+  for (const match of value.normalize("NFKC").matchAll(/(?:^|\D)(\d{2})\s*(?:년|年式|г\.?\s*в\.?|год(?:а)?|model\s*year|MY)(?!\p{L})/giu)) {
+    const shortYear = Number(match[1])
+    const currentCenturyYear = 2000 + shortYear
+    years.add(currentCenturyYear <= currentYear + 1 ? currentCenturyYear : 1900 + shortYear)
+  }
+
+  return [...years]
 }
 
 export type AuctionQualityAssessment = {
@@ -82,6 +103,11 @@ export function evaluateAuctionImportItemQuality(input: AuctionQualityInput): Au
 
   if (input.year != null && (input.year < MIN_PLAUSIBLE_YEAR || input.year > currentYear + 1)) {
     anomalies.push("год выпуска вне допустимого диапазона")
+  }
+
+  const sourceTitleYears = explicitSourceTitleYears(input.sourceTitle, currentYear)
+  if (input.year != null && sourceTitleYears.length > 0 && !sourceTitleYears.includes(input.year)) {
+    anomalies.push("год выпуска не совпадает с названием источника")
   }
 
   const manufacturedYear = input.manufacturedMonth?.match(/^(19|20)\d{2}-(0[1-9]|1[0-2])$/)?.[0].slice(0, 4)

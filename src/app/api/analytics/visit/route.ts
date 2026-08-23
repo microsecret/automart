@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
-import { hashAnalyticsIp, isAutomatedUserAgent } from "@/lib/analytics-identity"
+import { composeCampaignAttribution, hashAnalyticsIp, isAutomatedUserAgent } from "@/lib/analytics-identity"
 import { registerVisitScreen, visitScreen } from "@/lib/visit-dedup"
 
 export const dynamic = "force-dynamic"
@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
       referer?: unknown
       utmSource?: unknown
       campaign?: unknown
+      campaignContent?: unknown
       fromTelegramApp?: unknown
     }
     const path = String(body.path || "").slice(0, 200)
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
        можно — но выгоды в этом нет: он влияет только на разбивку
        статистики, не на права и не на данные. */
     const fromTelegramApp = body.fromTelegramApp === true
-    const campaign = normalizedAttribution(body.campaign, 120) || null
+    const campaign = composeCampaignAttribution(body.campaign, body.campaignContent)
     const ipHash = hashAnalyticsIp(clientIp)
 
     /* Повторные отправки одного beacon-а не должны раздувать счётчик, но и

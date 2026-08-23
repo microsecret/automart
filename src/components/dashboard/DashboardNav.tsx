@@ -12,25 +12,26 @@ import {
   IconTag,
   IconTruckDelivery,
 } from "@tabler/icons-react"
+import { DASHBOARD_NAVIGATION } from "@/lib/navigation-registry"
 import styles from "./DashboardNav.module.css"
 
-const ITEMS = [
-  { id: "listings", label: "Объявления", href: "/dashboard", icon: IconTag },
-  { id: "favorites", label: "Избранное", href: "/favorites", icon: IconHeart },
-  { id: "garage", label: "Гараж", href: "/dashboard?tab=garage", icon: IconCar },
-  { id: "deliveries", label: "Доставки", href: "/dashboard/deliveries", icon: IconTruckDelivery },
-  { id: "documents", label: "Документы", href: "/dashboard/documents", icon: IconFileDescription },
-  { id: "messages", label: "Сообщения", href: "/messages", icon: IconMessageCircle2 },
-  { id: "payments", label: "Оплаты", href: "/dashboard?tab=payments", icon: IconCreditCard },
-  { id: "profile", label: "Профиль", href: "/dashboard?tab=profile", icon: IconSettings },
-] as const
+const ITEM_ICONS = {
+  listings: IconTag,
+  favorites: IconHeart,
+  garage: IconCar,
+  deliveries: IconTruckDelivery,
+  documents: IconFileDescription,
+  messages: IconMessageCircle2,
+  payments: IconCreditCard,
+  profile: IconSettings,
+} satisfies Record<(typeof DASHBOARD_NAVIGATION)[number]["id"], typeof IconTag>
 
 export default function DashboardNav({ active }: { active?: string }) {
   return (
     <Box component="nav" className={styles.nav} aria-label="Разделы личного кабинета">
       <Group gap={4} wrap="nowrap" className={styles.track}>
-        {ITEMS.map((item) => {
-          const Icon = item.icon
+        {DASHBOARD_NAVIGATION.map((item) => {
+          const Icon = ITEM_ICONS[item.id]
           const isActive = active === item.id
           return (
             <UnstyledButton
@@ -44,7 +45,7 @@ export default function DashboardNav({ active }: { active?: string }) {
               <ThemeIcon size={30} radius="md" variant={isActive ? "filled" : "light"} color="indigo">
                 <Icon size={16} stroke={1.9} />
               </ThemeIcon>
-              <Text size="xs" fw={isActive ? 800 : 650}>{item.label}</Text>
+              <Text size="xs" fw={isActive ? 800 : 650}>{"shortLabel" in item ? item.shortLabel : item.label}</Text>
             </UnstyledButton>
           )
         })}

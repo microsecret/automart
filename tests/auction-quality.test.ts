@@ -64,6 +64,12 @@ test("quarantines lots whose fields contradict each other", () => {
 
   const conflictingManufactureDate = evaluateAuctionImportItemQuality({ ...soundLot, year: 2025, manufacturedMonth: "2023-11" })
   assert.ok(conflictingManufactureDate.anomalies.includes("год выпуска не совпадает с датой производства"))
+
+  const conflictingSourceTitle = evaluateAuctionImportItemQuality({ ...soundLot, sourceTitle: "Hyundai Elantra седан, 23 г.в., 1.5 л", year: 2025 })
+  assert.ok(conflictingSourceTitle.anomalies.includes("год выпуска не совпадает с названием источника"))
+
+  const conflictingKoreanTitle = evaluateAuctionImportItemQuality({ ...soundLot, sourceTitle: "현대 아반떼 23년 1.6", year: 2025 })
+  assert.ok(conflictingKoreanTitle.anomalies.includes("год выпуска не совпадает с названием источника"))
 })
 
 test("accepts plausible combinations of age, mileage and fuel", () => {
@@ -72,6 +78,8 @@ test("accepts plausible combinations of age, mileage and fuel", () => {
   assert.deepEqual(evaluateAuctionImportItemQuality({ ...soundLot, fuelType: "ELECTRIC", engineVolume: null }).anomalies, [])
   // Нулевой пробег у старого лота — это «не указан», а не противоречие.
   assert.deepEqual(evaluateAuctionImportItemQuality({ ...soundLot, year: currentYear - 8, mileage: 0 }).anomalies, [])
+  assert.deepEqual(evaluateAuctionImportItemQuality({ ...soundLot, sourceTitle: "Hyundai Palisade 2021 3.5 AWD" }).anomalies, [])
+  assert.deepEqual(evaluateAuctionImportItemQuality({ ...soundLot, sourceTitle: "BMW 520i 2.0 184 hp" }).anomalies, [])
 })
 
 test("keeps the storage ceiling aligned with the price guard", async () => {

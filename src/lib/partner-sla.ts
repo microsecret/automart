@@ -3,10 +3,9 @@
 // как быстро партнёр отвечает, как часто вообще отвечает и доводит ли сделку
 // до закрытия. Показатели считаются из фактических заявок, без ручных оценок.
 
-export const SLA_RESPONSE_TARGET_MINUTES = 60
-// Партнёр без истории не должен ни выигрывать у проверенных, ни быть
-// вытесненным навсегда: нейтральная база даёт ему шанс получить первую заявку.
-export const SLA_NEUTRAL_RATING = 50
+import { calculatePartnerRating } from "./partner-scoring.js"
+
+export { calculatePartnerRating, SLA_NEUTRAL_RATING, SLA_RESPONSE_TARGET_MINUTES } from "./partner-scoring.js"
 
 export type PartnerOfferOutcome = {
   status: string
@@ -64,32 +63,6 @@ export function buildPartnerSlaMetrics(offers: PartnerOfferOutcome[], closedDeal
  * Рейтинг 0..100. Партнёр без истории получает нейтральные 50, иначе новый
  * участник никогда не получил бы первую заявку.
  */
-export function calculatePartnerRating(input: {
-  responseMinutes: number | null
-  acceptedOffers: number
-  missedOffers: number
-  closedDeals: number
-}) {
-  const answered = input.acceptedOffers + input.missedOffers
-  if (!answered && input.responseMinutes === null && !input.closedDeals) return SLA_NEUTRAL_RATING
-
-  // Отзывчивость: доля офферов, на которые партнёр ответил вовремя.
-  const responsiveness = answered > 0 ? input.acceptedOffers / answered : 0.5
-
-  // Скорость: ответ в пределах целевого часа даёт полный балл, дальше
-  // снижается плавно, чтобы разовая задержка не обнуляла репутацию.
-  const speed = input.responseMinutes === null
-    ? 0.5
-    : Math.max(0, Math.min(1, SLA_RESPONSE_TARGET_MINUTES / Math.max(SLA_RESPONSE_TARGET_MINUTES, input.responseMinutes)))
-
-  // Результативность: закрытые сделки подтверждают, что партнёр доводит работу
-  // до конца. Вклад ограничен, иначе давние партнёры навсегда закрывают вход.
-  const delivery = Math.min(1, input.closedDeals / 10)
-
-  const rating = responsiveness * 55 + speed * 30 + delivery * 15
-  return Math.max(0, Math.min(100, Math.round(rating)))
-}
-
 /** Человекочитаемое описание уровня партнёра для админки и карточки. */
 export function describePartnerRating(rating: number, hasHistory: boolean) {
   if (!hasHistory) return { label: "Новый партнёр", color: "gray" as const }

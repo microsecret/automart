@@ -254,17 +254,18 @@ function parseImages(listing) {
 
 function buildReplyMarkup(listing) {
   const campaign = "utm_source=telegram&utm_medium=auction_highlight&utm_campaign=auction_feed"
-  const listingUrl = `${siteUrl}/auctions/${listing.id}?${campaign}`
+  const trackedUrl = (path, content) => `${siteUrl}${path}${path.includes("?") ? "&" : "?"}${campaign}&utm_content=${encodeURIComponent(content)}`
+  const listingUrl = trackedUrl(`/auctions/${listing.id}`, "view_lot")
   const countryLabel = COUNTRY_LABELS[listing.country] || listing.country
   const rows = [
     [{ text: "🚘 Смотреть лот", url: listingUrl }],
     [
-      { text: "🧮 Расчёт под ключ", url: `${siteUrl}/auctions/${listing.id}?${campaign}#calculator` },
-      { text: `🌍 Ещё из «${countryLabel}»`, url: `${siteUrl}/auctions?country=${encodeURIComponent(listing.country)}&${campaign}` },
+      { text: "🧮 Расчёт под ключ", url: `${trackedUrl(`/auctions/${listing.id}`, "calculator")}#calculator` },
+      { text: `🌍 Ещё из «${countryLabel}»`, url: trackedUrl(`/auctions?country=${encodeURIComponent(listing.country)}`, "country_catalog") },
     ],
     // Лента приводит не только покупателей: продавцу нужен видимый вход в
     // подачу объявления, иначе он уходит со страницы чужого лота.
-    [{ text: "➕ Разместить своё объявление", url: `${siteUrl}/listings/create/vehicle?${campaign}` }],
+    [{ text: "➕ Разместить своё объявление", url: trackedUrl("/listings/create/vehicle", "create_listing") }],
   ]
   if (botUsername) {
     rows.push([{ text: "🤖 Открыть в Mini App", url: `https://t.me/${botUsername}?startapp=auctions` }])

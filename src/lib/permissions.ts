@@ -56,3 +56,21 @@ const permissions: Record<Permission, readonly UserRole[]> = {
 export function can(role: unknown, permission: Permission) {
   return permissions[permission].includes(normalizeUserRole(role))
 }
+
+type DeliveryOwnership = {
+  buyerId: string
+  partnerId: string | null
+  managerId: string | null
+}
+
+/**
+ * Reading a protected deal is an authorization decision, not just an ownership
+ * lookup. A suspended partner keeps the historical partnerId on the order for
+ * audit purposes, but loses the PARTNER permission and therefore loses access.
+ */
+export function canReadAssignedDelivery(role: unknown, userId: string | null | undefined, order: DeliveryOwnership) {
+  if (!userId) return false
+  if (can(role, "delivery:manage:any")) return true
+  if (order.buyerId === userId) return true
+  return can(role, "delivery:manage:assigned") && (order.partnerId === userId || order.managerId === userId)
+}

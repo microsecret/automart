@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Prisma } from "@prisma/client"
 import { authOptions } from "@/lib/auth"
 import { hoursSince } from "@/lib/queue-age"
 import { prisma } from "@/lib/prisma"
+import { AUCTION_SOURCE_MISSING_VALUE } from "@/lib/auction-source-details"
 import { AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceCountry } from "@/lib/auction-sources"
 import { sourceProxyPoolStatus } from "@/lib/authorized-source-http"
 import { percentageChange, trafficVisitorIdentity } from "@/lib/analytics-identity"
@@ -404,18 +406,38 @@ export async function GET() {
     // Матрица полноты полей: показывает, какие атрибуты источник реально
     // отдаёт. Ставится по фактическим лотам, поэтому «пустая» колонка означает
     // либо пробел в парсере, либо отсутствие поля у площадки.
-    const QUALITY_FIELDS = [
-      { key: "mileage", label: "Пробег" },
-      { key: "engineVolume", label: "Двигатель" },
-      { key: "power", label: "Мощность" },
-      { key: "transmission", label: "КПП" },
-      { key: "driveType", label: "Привод" },
-      { key: "bodyType", label: "Кузов" },
-      { key: "color", label: "Цвет" },
-      { key: "vin", label: "VIN" },
-      { key: "imageUrl", label: "Фото" },
-      { key: "descriptionRu", label: "Описание RU" },
-    ] as const
+    const publishedSourceSpec = (label: string): Prisma.AuctionListingWhereInput => ({
+      AND: [
+        { specsRu: { contains: `${label}:` } },
+        { NOT: { specsRu: { contains: `${label}: ${AUCTION_SOURCE_MISSING_VALUE}` } } },
+      ],
+    })
+    const QUALITY_FIELDS: ReadonlyArray<{
+      key: string
+      label: string
+      where: Prisma.AuctionListingWhereInput
+    }> = [
+      { key: "year", label: "Год", where: { year: { gt: 1900 } } },
+      { key: "lotNumber", label: "Номер лота", where: { OR: [{ lotNumber: { not: null } }, { sourceId: { not: "" } }] } },
+      { key: "sourcePrice", label: "Цена источника", where: { sourcePrice: { gt: 0 } } },
+      { key: "startingBid", label: "Стартовая ставка", where: publishedSourceSpec("Стартовая ставка") },
+      { key: "mileage", label: "Пробег", where: { mileage: { not: null } } },
+      { key: "engineVolume", label: "Объём двигателя", where: { engineVolume: { not: null } } },
+      { key: "power", label: "Мощность", where: { power: { not: null } } },
+      { key: "fuelType", label: "Топливо", where: { fuelType: { not: null } } },
+      { key: "transmission", label: "КПП", where: { transmission: { not: null } } },
+      { key: "driveType", label: "Привод", where: { driveType: { not: null } } },
+      { key: "bodyType", label: "Кузов", where: { bodyType: { not: null } } },
+      { key: "color", label: "Цвет", where: { color: { not: null } } },
+      { key: "keyCount", label: "Ключи", where: publishedSourceSpec("Количество ключей") },
+      { key: "seatCount", label: "Места", where: publishedSourceSpec("Количество мест") },
+      { key: "emissions", label: "Экология", where: publishedSourceSpec("Экологический стандарт") },
+      { key: "inspection", label: "Осмотр", where: publishedSourceSpec("Замечания осмотра") },
+      { key: "seriousDefects", label: "Серьёзные дефекты", where: publishedSourceSpec("Серьёзные дефекты отчёта") },
+      { key: "location", label: "Местонахождение", where: { location: { not: null } } },
+      { key: "imageUrl", label: "Фото", where: { imageUrl: { not: null } } },
+      { key: "descriptionRu", label: "Описание RU", where: { descriptionRu: { not: null } } },
+    ]
 
     const [sourceTotals, sourceQuarantined, ...sourceFieldCounts] = await Promise.all([
       prisma.auctionListing.groupBy({ by: ["source"], _count: { _all: true } }),
@@ -423,7 +445,7 @@ export async function GET() {
       ...QUALITY_FIELDS.map((field) =>
         prisma.auctionListing.groupBy({
           by: ["source"],
-          where: { [field.key]: { not: null } },
+          where: field.where,
           _count: { _all: true },
         }),
       ),

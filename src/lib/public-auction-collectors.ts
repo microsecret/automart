@@ -29,6 +29,7 @@ export type PublicAuctionSource = (typeof PUBLIC_AUCTION_SOURCES)[number]
 export type PublicAuctionCandidate = {
   sourceId: string
   sourceUrl: string
+  sourceTitle?: string | null
   sourcePrice?: number
   year?: number
   manufacturedMonth?: string | null
@@ -872,6 +873,7 @@ function parseYouxinpaiCatalog(json: string, pageNumber: number) {
     const fuelCode = asNumber(record?.fuelType)
     candidates.push({
       sourceId: String(sourceId), sourceUrl: `https://www.youxinpai.cn/auction/detail?publishId=${sourceId}`,
+      sourceTitle: [serialName, modelName].filter(Boolean).join(" "),
       sourcePrice: Math.round(price), year: modelYear, manufacturedMonth: null, registrationMonth: `${registered[1]}-${registered[2]}`,
       mileage: asNumber(record?.mileage), imageUrl: safeImage(image, new Set(["img.youxinpai.cn"])), make, model,
       fuelType: fuelCode === 1 ? "DIESEL" : fuelCode === 2 ? "HYBRID" : fuelCode === 3 ? "ELECTRIC" : "GASOLINE",
@@ -1010,6 +1012,7 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   ].filter((value): value is string => Boolean(value))
   return {
     source: "IAUTOS", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    sourceTitle: title,
     make: makeEntry[1], model, year: candidate.year, manufacturedMonth: candidate.manufacturedMonth || null,
     sourcePrice: candidate.sourcePrice, sourceCurrency: "CNY", country: "CN", auctionDate: null,
     mileage: candidate.mileage ?? null, fuelType,
@@ -1068,6 +1071,7 @@ async function fetchGoonetListing(candidate: PublicAuctionCandidate): Promise<Au
   ].filter((value): value is string => Boolean(value))
   return {
     source: "GOONET", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    sourceTitle: title,
     make, model, year: Number(date[2]), manufacturedMonth: `${date[2]}-${date[1]}`,
     sourcePrice: Math.round(sourcePrice), sourceCurrency: "JPY", country: "JP", auctionDate: null,
     mileage, fuelType,
@@ -1167,6 +1171,7 @@ async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promis
   } : null
   return {
     source: "BOBAEDREAM", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    sourceTitle: title,
     make, model, year: fullYear, manufacturedMonth: `${fullYear}-${month}`,
     sourcePrice, sourceCurrency: "KRW", country: "KR", auctionDate: null,
     mileage, fuelType,
@@ -1201,7 +1206,8 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
   // все лоты стали отсеиваться как неполные. Год остался в заголовке вида
   // «Used 2019 TOYOTA ALPHARD», поэтому он служит запасным источником: месяц
   // при этом неизвестен и не выдумывается.
-  const titleYear = firstMatch(html, /<title>[^<]*?Used\s+((?:19|20)\d{2})\s/i)
+  const sourceTitle = htmlText(firstMatch(html, /<title>([\s\S]*?)<\/title>/i))
+  const titleYear = sourceTitle?.match(/\bUsed\s+((?:19|20)\d{2})\s/i)?.[1] || null
   const year = registered ? Number(registered[1]) : asNumber(titleYear)
   const manufacturedMonth = registered ? `${registered[1]}-${registered[2]}` : null
   if (!sourcePrice || !make || !model || !year) {
@@ -1242,6 +1248,7 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
   ].filter((value): value is string => Boolean(value))
   return {
     source: "BEFORWARD", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    sourceTitle,
     make, model, year, manufacturedMonth,
     sourcePrice: Math.round(sourcePrice), sourceCurrency: "USD", country: "JP", auctionDate: null,
     mileage, fuelType,
@@ -1305,6 +1312,7 @@ async function fetchCarsensorListing(candidate: PublicAuctionCandidate): Promise
   ].filter((value): value is string => Boolean(value))
   return {
     source: "CARSENSOR", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    sourceTitle: asText(product.name),
     make, model, year: Number(year[1]), manufacturedMonth: null,
     sourcePrice: Math.round(sourcePrice), sourceCurrency: "JPY", country: "JP", auctionDate: null,
     mileage: mileageKm, fuelType,
@@ -1373,6 +1381,7 @@ async function fetchAutosaleListing(candidate: PublicAuctionCandidate): Promise<
   ].filter((value): value is string => Boolean(value))
   return {
     source: "AUTOSALE", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    sourceTitle: asText(car.name) || asText(car.model),
     make, model, year: Math.round(year), manufacturedMonth: null,
     sourcePrice: Math.round(sourcePrice), sourceCurrency: "EUR", country: "DE", auctionDate: null,
     mileage, fuelType,
@@ -1502,6 +1511,7 @@ async function fetchYouxinpaiListing(candidate: PublicAuctionCandidate): Promise
   ].filter((value): value is string => Boolean(value))
   return {
     source: "YOUXINPAI", sourceId: active.sourceId, sourceUrl: active.sourceUrl,
+    sourceTitle: active.sourceTitle,
     make: active.make, model: active.model, year: active.year, manufacturedMonth: active.manufacturedMonth || null,
     sourcePrice: active.sourcePrice, sourceCurrency: "CNY", country: "CN", auctionDate: active.auctionDate || null,
     mileage: active.mileage ?? null, fuelType: active.fuelType || null, transmission: active.transmission || null,
@@ -1612,6 +1622,7 @@ async function fetchCarvagoListing(candidate: PublicAuctionCandidate): Promise<A
   ].filter((value): value is string => Boolean(value))
   return {
     source: "CARVAGO", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
+    sourceTitle: asText(car.title),
     make, model, year: Number(date[1]), manufacturedMonth: `${date[1]}-${date[2]}`,
     sourcePrice: Math.round(price), sourceCurrency: "EUR", country: "DE", auctionDate: null,
     mileage: asNumber(car.mileage), fuelType, transmission, bodyType,

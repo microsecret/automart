@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Box, Button, Loader, Stack, Text } from "@mantine/core"
 import { IconAlertTriangle, IconBrandTelegram } from "@tabler/icons-react"
 import { tapFeedback, waitForTelegramWebApp } from "@/lib/telegram-webapp"
+import { CREATE_VEHICLE_HREF } from "@/lib/navigation-registry"
 import TelegramShell from "./TelegramShell"
 import TelegramFeed from "./TelegramFeed"
 import TelegramAuctions from "./TelegramAuctions"
@@ -35,7 +36,7 @@ import TelegramMessages from "./TelegramMessages"
    Только известные значения: чужой параметр стал бы открытым
    перенаправлением внутри приложения. */
 const START_PARAM_ROUTES: Record<string, string> = {
-  create: "/listings/create/quick?source=telegram",
+  create: `${CREATE_VEHICLE_HREF}?source=telegram`,
   promo: "/auctions?from=telegram",
 }
 
@@ -116,7 +117,7 @@ export default function TelegramMiniApp() {
      служебное сообщение. */
   const HEADINGS = {
     vehicles: { title: "Свежие объявления", subtitle: "Транспорт с проверкой и доставкой", href: "/telegram" },
-    auctions: { title: "Мировые аукционы", subtitle: "Корея, Япония, Китай — с расчётом под ключ", href: "/telegram?tab=auctions" },
+    auctions: { title: "Мировые аукционы", subtitle: "Корея, Япония и Китай с расчётом под ключ", href: "/telegram?tab=auctions" },
     news: { title: "Новости авторынка", subtitle: "Что происходит с ценами и рынком", href: "/telegram?tab=news" },
     chats: { title: "Сообщения", subtitle: "Переписка с продавцами", href: "/telegram?tab=chats" },
   } as const

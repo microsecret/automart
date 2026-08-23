@@ -32,3 +32,17 @@ export function percentageChange(current: number, previous: number) {
   if (previous === 0) return current === 0 ? 0 : 100
   return Math.round(((current - previous) / previous) * 1_000) / 10
 }
+
+function analyticsLabel(value: unknown, maxLength: number) {
+  return typeof value === "string"
+    ? value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength)
+    : ""
+}
+
+/** Stores campaign and concrete CTA in the existing bounded column. */
+export function composeCampaignAttribution(campaign: unknown, content: unknown) {
+  const campaignLabel = analyticsLabel(campaign, 80)
+  const contentLabel = analyticsLabel(content, 60)
+  if (!campaignLabel && !contentLabel) return null
+  return [campaignLabel || "без кампании", contentLabel].filter(Boolean).join(" · ").slice(0, 120)
+}
