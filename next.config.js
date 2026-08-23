@@ -77,6 +77,15 @@ const nextConfig = {
       { protocol: "https", hostname: "**.encar.com" },
       { protocol: "https", hostname: "img.kcar.com" },
       { protocol: "https", hostname: "**.kcar.com" },
+      /* Источники новостей. Обложки приходили как есть — файлы 177, 137
+         и 107 КБ в слот 378×230, время до главной картинки на телефоне
+         доходило до 6.5 секунды. Домены перечислены поимённо: открытый
+         шаблон превратил бы обработчик в чужой прокси. */
+      { protocol: "https", hostname: "www.zr.ru" },
+      { protocol: "https", hostname: "avatars.avto.ru" },
+      { protocol: "https", hostname: "resizer.mail.ru" },
+      { protocol: "https", hostname: "img-renderer.rambler.ru" },
+      { protocol: "https", hostname: "kolesa-uploads.ru" },
     ],
   },
   serverExternalPackages: ['prisma', '@prisma/client'],

@@ -2,13 +2,14 @@
 
 import { useDeferredValue, useState } from "react"
 import useSWR from "swr"
-import { Badge, Box, Card, Group, Image, Pagination, SegmentedControl, SimpleGrid, Stack, Text, TextInput, ThemeIcon } from "@mantine/core"
+import { Badge, Box, Card, Group, Pagination, SegmentedControl, SimpleGrid, Stack, Text, TextInput, ThemeIcon } from "@mantine/core"
 import { IconArrowUpRight, IconEye, IconMessageCircle2, IconNews, IconSearch, IconSparkles } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatRelativeDate } from "@/lib/format"
 import { newsHref } from "@/lib/news"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import NextImage from "next/image"
 
 type NewsArticle = {
   id: string
@@ -46,16 +47,23 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
              разом при открытии ленты незачем. Главная новость грузится
              сразу — она на первом экране. */}
         {article.imageUrl && !imageFailed ? (
-          <Image
-            className="news-list-card__image"
-            src={article.imageUrl}
-            alt=""
-            h={featured ? 230 : 156}
-            fit="cover"
-            loading={featured ? "eager" : "lazy"}
-            decoding="async"
-            onError={() => setImageFailed(true)}
-          />
+          <Box className="news-list-card__image-wrap" style={{ height: featured ? 230 : 156 }}>
+            <NextImage
+              className="news-list-card__image"
+              src={article.imageUrl}
+              alt=""
+              fill
+              sizes={featured ? "(max-width: 62em) 100vw, 776px" : "(max-width: 62em) 100vw, 378px"}
+              /* Обработчик берёт только домены из next.config.js: список
+                 источников новостей известен. Незнакомый адрес идёт как
+                 есть — иначе обложка не откроется вовсе. */
+              unoptimized={!isOptimizableNewsImage(article.imageUrl)}
+              loading={featured ? "eager" : "lazy"}
+              priority={featured}
+              onError={() => setImageFailed(true)}
+              style={{ objectFit: "cover" }}
+            />
+          </Box>
         ) : (
           <Box className="news-list-card__cover" data-featured={featured || undefined} aria-hidden="true">
             <ThemeIcon className="news-list-card__cover-icon" color="indigo" variant="white" radius="xl" size={featured ? 54 : 42}>
@@ -93,6 +101,28 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
       </Card>
     </Link>
   )
+}
+
+/* Домены, которые умеет обрабатывать next/image.
+
+   Список повторяет `remotePatterns` в next.config.js: там он задаёт
+   разрешение, здесь — выбор пути. Незнакомый источник грузится как есть,
+   иначе обложка не откроется вовсе. */
+const OPTIMIZABLE_NEWS_HOSTS = new Set([
+  "www.zr.ru",
+  "avatars.avto.ru",
+  "resizer.mail.ru",
+  "img-renderer.rambler.ru",
+  "kolesa-uploads.ru",
+])
+
+function isOptimizableNewsImage(url: string): boolean {
+  if (url.startsWith("/")) return true
+  try {
+    return OPTIMIZABLE_NEWS_HOSTS.has(new URL(url).hostname)
+  } catch {
+    return false
+  }
 }
 
 export default function NewsListClient({ initialData }: { initialData: NewsResponse }) {

@@ -14,9 +14,13 @@
    раньше любого правила, и объявление перед ним отбросило бы импорты — то
    есть все стили библиотеки разом. */
 @import "@mantine/core/styles.layer.css";
-@import "@mantine/carousel/styles.layer.css";
-@import "@mantine/dates/styles.layer.css";
 @import "@mantine/notifications/styles.layer.css";
+/* Стили @mantine/dates не подключаются: пакет не используется в коде
+   нигде, а его стили грузились на каждой странице.
+
+   Стили карусели тоже убраны отсюда — карусель есть только на страницах
+   объявления и запчасти, они импортируют её стили сами. По замеру
+   покрытия 96% этого файла на обычной странице не использовалось. */
 
 @tailwind base;
 @tailwind components;
@@ -5738,4 +5742,15 @@ h1[data-lw-hero] {
     flex: 0 0 auto;
     padding-inline: 14px;
   }
+}
+
+/* Обложка новости занимает свою высоту с самого начала.
+
+   Обработчик изображений требует, чтобы у растянутой картинки был
+   родитель с заданными размерами. Он же держит место до загрузки —
+   карточка не прыгает, когда обложка приходит. */
+.news-list-card__image-wrap {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--market-line);
 }

@@ -30,6 +30,7 @@ import {
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { Carousel } from "@mantine/carousel"
+import "@mantine/carousel/styles.layer.css"
 import {
   IconHeart,
   IconGitCompare,
@@ -71,6 +72,7 @@ import { useRouter } from "next/navigation"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 import { filterMeaningfulSpecs } from "@/lib/spec-visibility"
+import NextImage from "next/image"
 
 interface VehicleData {
   id: string
@@ -409,16 +411,24 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                         <Text size="sm">Фото недоступно</Text>
                       </Stack>
                     ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <NextImage
                         src={images[activeImage]}
                         alt={`${data.make} ${data.model} — фото ${activeImage + 1}`}
-                        // Главное фото — то, ради чего открыли страницу:
-                        // оно грузится в первую очередь, с высоким приоритетом.
-                        fetchPriority="high"
-                        decoding="async"
+                        fill
+                        /* Главное фото — то, ради чего открыли страницу:
+                           грузится первым и с высоким приоритетом.
+
+                           Раньше здесь стоял сырой тег, обходивший
+                           настроенную обработку: на телефоне тянулся
+                           исходник 220 КБ, и время до главной картинки
+                           доходило до 6.1 секунды. Теперь отдаётся avif
+                           или webp под размер экрана — для 390 пикселей
+                           это около сорока килобайт. */
+                        priority
+                        sizes="(max-width: 62em) 100vw, 620px"
+                        unoptimized={!images[activeImage].startsWith("/")}
                         onError={() => setImageFailed(true)}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        style={{ objectFit: "cover" }}
                       />
                     )}
                     <Badge
@@ -463,22 +473,21 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                             }}
                             onClick={() => selectImage(i)}
                           >
-                            {/* Миниатюра 110×80 тянет исходник целиком: у
-                                объявлений это файлы до 1440×1920, то есть в
-                                тринадцать раз шире нужного. Уменьшить сами
-                                файлы нельзя — они приходят от продавца, — но
-                                грузить их все сразу незачем.
+                            {/* Миниатюра 110×80: обработчик отдаёт кадр под
+                                этот размер, а не исходник до 1440×1920.
 
-                                Первые три видны без прокрутки ленты, они
-                                грузятся обычным порядком; остальные ждут,
-                                пока человек до них долистает. */}
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                                Первые три видны без прокрутки ленты и
+                                грузятся сразу; остальные ждут, пока
+                                человек до них долистает. */}
+                            <NextImage
                               src={img}
                               alt=""
+                              width={110}
+                              height={80}
+                              sizes="110px"
                               loading={i < 3 ? "eager" : "lazy"}
-                              decoding="async"
-                              onError={(event) => { event.currentTarget.style.opacity = "0" }}
+                              unoptimized={!img.startsWith("/")}
+                              onError={(event) => { (event.currentTarget as HTMLImageElement).style.opacity = "0" }}
                               style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             />
                           </UnstyledButton>

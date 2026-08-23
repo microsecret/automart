@@ -25,6 +25,7 @@ import {
   UnstyledButton,
 } from "@mantine/core"
 import { Carousel } from "@mantine/carousel"
+import "@mantine/carousel/styles.layer.css"
 import {
   IconHeart,
   IconPhone,
