@@ -353,7 +353,50 @@ function AccountPanel({ pathname, dashboardTab, session }: { pathname: string; d
     return <AuthenticatedAccountPanel pathname={pathname} dashboardTab={dashboardTab} session={session} roleLabel={roleLabel} roleColor={roleColor} isAdmin={isAdmin} isModerator={isModerator} />
   }
 
-  return null
+  return <GuestAccountPanel />
+}
+
+/**
+ * Меню для того, кто ещё не вошёл.
+ *
+ * Раньше здесь было пусто: гость не видел ни кнопки подачи объявления,
+ * ни приглашения войти. Продавец, открывший меню с телефона, не находил,
+ * где разместить машину.
+ *
+ * Про бесплатность сказано сразу: на весь сайт это упоминалось лишь на
+ * одной странице в подвале, до которой шесть экранов прокрутки.
+ */
+function GuestAccountPanel() {
+  return (
+    <Paper className="market-side-account" radius="md" p={10} withBorder>
+      <Text size="xs" c="dimmed" fw={700} tt="uppercase">Продаёте машину?</Text>
+      <Text size="xs" c="dimmed" mt={4} lh={1.45}>
+        Размещение бесплатное. Аккаунт нужен, чтобы объявление было привязано к вам.
+      </Text>
+      <Button
+        component={Link}
+        href="/listings/create/quick"
+        size="sm"
+        fullWidth
+        mt="sm"
+        className="market-side-account__cta"
+        leftSection={<IconPlus size={15} />}
+      >
+        Подать объявление
+      </Button>
+      <Button
+        component={Link}
+        href="/auth/signin"
+        size="sm"
+        fullWidth
+        mt={6}
+        variant="light"
+        color="indigo"
+      >
+        Войти
+      </Button>
+    </Paper>
+  )
 }
 
 function AccountCounter({ value, color = "gray" }: { value: number; color?: string }) {
