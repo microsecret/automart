@@ -163,7 +163,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   if (isStandaloneRoute) {
     return (
       <Box component="main" style={{ minHeight: "100vh", background: "var(--market-background)" }}>
-        <AppAnalytics />
+        {/* Счётчик читает строку запроса, а useSearchParams требует границы
+            Suspense: без неё страница целиком ушла бы в клиентский рендер. */}
+        <Suspense fallback={null}><AppAnalytics /></Suspense>
         {children}
         {isAuthRoute && <SupportChat />}
       </Box>
@@ -179,8 +181,10 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       padding={0}
       style={{ minHeight: "100vh", background: "var(--market-background)" }}
     >
-      <AppAnalytics />
       <Suspense fallback={null}>
+        {/* Счётчик посещений читает строку запроса: смена фильтров каталога —
+            такой же переход, как открытие нового раздела. */}
+        <AppAnalytics />
         <NavigationQuerySync onRouteChange={closeMobile} />
       </Suspense>
       {/* Ссылка «к содержимому» — первая цель табуляции.

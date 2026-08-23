@@ -25,11 +25,14 @@ type TrafficResponse = {
 /**
  * Аналитика посещаемости.
  *
- * Одна цифра «за 7 дней» не отвечает, растёт площадка или падает: рядом с
+ * Одна цифра за период не отвечает, растёт площадка или падает: рядом с
  * числом посетителей стоит сравнение с таким же предыдущим отрезком.
+ *
+ * Отрезки календарные и московские: «последние 30 дней» нельзя сопоставить с
+ * февралём или мартом, а владелец сравнивает именно месяцы.
  */
 export default function TrafficPage() {
-  const [period, setPeriod] = useState("7d")
+  const [period, setPeriod] = useState("week")
   const { data, error, isLoading, mutate } = useSWR<TrafficResponse>(
     `/api/admin/traffic?period=${period}`,
     fetchJson,
@@ -86,9 +89,9 @@ export default function TrafficPage() {
             value={period}
             onChange={setPeriod}
             data={[
-              { value: "24h", label: "Сутки" },
-              { value: "7d", label: "7 дней" },
-              { value: "30d", label: "30 дней" },
+              { value: "day", label: "Сегодня" },
+              { value: "week", label: "Неделя" },
+              { value: "month", label: "Месяц" },
             ]}
           />
         </Group>
@@ -140,7 +143,7 @@ export default function TrafficPage() {
                   {isLoading || !peakHour ? "—" : `${peakHour.hour}:00`}
                 </Text>
                 <Text size="sm" fw={650} mt={4}>Час пика</Text>
-                <Text size="xs" c="dimmed">Когда запускать рассылку</Text>
+                <Text size="xs" c="dimmed">По Москве · когда запускать рассылку</Text>
               </Card>
             </SimpleGrid>
 
@@ -153,7 +156,7 @@ export default function TrafficPage() {
             <Card withBorder radius="md" p="md">
               <Group gap="xs" mb="sm">
                 <ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconClock size={15} /></ThemeIcon>
-                <Text size="sm" fw={700}>Активность по часам</Text>
+                <Text size="sm" fw={700}>Активность по часам (МСК)</Text>
               </Group>
               {/* Столбики, а не таблица: провалы и пики видно с одного взгляда. */}
               <Group gap={3} align="flex-end" h={90} wrap="nowrap">

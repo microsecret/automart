@@ -6,6 +6,10 @@ import { prisma } from "@/lib/prisma"
 import { AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceCountry } from "@/lib/auction-sources"
 import { sourceProxyPoolStatus } from "@/lib/authorized-source-http"
 import { percentageChange, trafficVisitorIdentity } from "@/lib/analytics-identity"
+import {
+  lastMoscowDayStarts, moscowDayKey, moscowDayStart, moscowMonthStart,
+  moscowPeriodLabel, moscowWeekStart, previousMoscowPeriodRange,
+} from "@/lib/moscow-periods"
 import { configuredPartnerAuctionFeeds } from "@/lib/partner-auction-feeds"
 
 export const dynamic = "force-dynamic"
@@ -28,10 +32,6 @@ type TrafficEvent = {
   trafficSource?: string | null
 }
 
-function utcDayKey(value: Date) {
-  return value.toISOString().slice(0, 10)
-}
-
 function countUniqueByDimension(events: TrafficEvent[], key: "deviceType" | "trafficSource") {
   const identities = new Map<string, Set<string>>()
   for (const event of events) {
@@ -45,16 +45,16 @@ function countUniqueByDimension(events: TrafficEvent[], key: "deviceType" | "tra
   return [...identities.entries()].map(([dimension, values]) => ({ key: dimension, count: values.size })).sort((a, b) => b.count - a.count)
 }
 
-function createDailyTraffic(events: TrafficEvent[], users: Array<{ createdAt: Date }>, listings: Array<{ createdAt: Date }>, start: Date): DailyTrafficPoint[] {
-  const points = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(start)
-    date.setUTCDate(start.getUTCDate() + index)
-    return { date: utcDayKey(date), pageViews: 0, uniqueVisitors: 0, registrations: 0, newListings: 0, visitorKeys: new Set<string>() }
-  })
+/* Ось графика — московские сутки. По UTC вечерние события попадали в
+   следующий день: в 22:00 по Москве человек видел свой визит завтрашним. */
+function createDailyTraffic(events: TrafficEvent[], users: Array<{ createdAt: Date }>, listings: Array<{ createdAt: Date }>, days: Date[]): DailyTrafficPoint[] {
+  const points = days.map((day) => ({
+    date: moscowDayKey(day), pageViews: 0, uniqueVisitors: 0, registrations: 0, newListings: 0, visitorKeys: new Set<string>(),
+  }))
   const byDate = new Map(points.map((point) => [point.date, point]))
 
   for (const event of events) {
-    const point = byDate.get(utcDayKey(event.createdAt))
+    const point = byDate.get(moscowDayKey(event.createdAt))
     if (point) {
       point.pageViews += 1
       const identity = trafficVisitorIdentity(event)
@@ -62,25 +62,21 @@ function createDailyTraffic(events: TrafficEvent[], users: Array<{ createdAt: Da
     }
   }
   for (const user of users) {
-    const point = byDate.get(utcDayKey(user.createdAt))
+    const point = byDate.get(moscowDayKey(user.createdAt))
     if (point) point.registrations += 1
   }
   for (const listing of listings) {
-    const point = byDate.get(utcDayKey(listing.createdAt))
+    const point = byDate.get(moscowDayKey(listing.createdAt))
     if (point) point.newListings += 1
   }
   return points.map(({ visitorKeys, ...point }) => ({ ...point, uniqueVisitors: visitorKeys.size }))
 }
 
-function createDailyListingViews(events: Array<{ createdAt: Date; ipHash: string }>, start: Date) {
-  const points = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(start)
-    date.setUTCDate(start.getUTCDate() + index)
-    return { date: utcDayKey(date), views: 0, uniqueViewers: 0, viewerKeys: new Set<string>() }
-  })
+function createDailyListingViews(events: Array<{ createdAt: Date; ipHash: string }>, days: Date[]) {
+  const points = days.map((day) => ({ date: moscowDayKey(day), views: 0, uniqueViewers: 0, viewerKeys: new Set<string>() }))
   const byDate = new Map(points.map((point) => [point.date, point]))
   for (const event of events) {
-    const point = byDate.get(utcDayKey(event.createdAt))
+    const point = byDate.get(moscowDayKey(event.createdAt))
     if (!point) continue
     point.views += 1
     point.viewerKeys.add(event.ipHash)
@@ -125,19 +121,30 @@ export async function GET() {
     })
 
     const now = new Date()
-    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const previousWeekStart = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
-    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const newListings = await prisma.listing.count({ where: { createdAt: { gte: weekAgo } } })
-    const newUsers = await prisma.user.count({ where: { createdAt: { gte: weekAgo } } })
+    /* Отрезки календарные и московские.
 
-    const dailyTrafficStart = new Date()
-    dailyTrafficStart.setUTCHours(0, 0, 0, 0)
-    dailyTrafficStart.setUTCDate(dailyTrafficStart.getUTCDate() - 6)
-    const [topPaths, recentVisitorEvents, trafficEvents30d, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, oldestPendingListing, oldestOpenReport, oldestNewInquiry, oldestActiveInquiry, oldestPendingPartner, oldestWaitingTicket, stuckPayments, oldestStuckPayment, latestAuctionSyncRuns, sourceSyncRuns, listingInventory, listingViewEvents14d, listingMessages7d, soldListings7d, topListingViewGroups] = await Promise.all([
-      prisma.visitEvent.groupBy({ by: ["path"], where: { createdAt: { gte: weekAgo } }, _count: { path: true }, orderBy: { _count: { path: "desc" } }, take: 8 }),
-      prisma.visitEvent.findMany({ where: { createdAt: { gte: weekAgo }, userId: { not: null } }, orderBy: { createdAt: "desc" }, take: 50, include: { user: { select: { id: true, name: true, email: true, telegramUsername: true } } } }),
+       Сервер живёт в UTC, поэтому «сутки» начинались в 03:00 по Москве, а
+       «неделя» и «месяц» были скользящими окнами: цифра менялась каждый час и
+       не совпадала ни с понедельником, ни с началом месяца. Владелец
+       сравнивает август с июлем, а не «последние 30 дней» с предыдущими. */
+    const dayStart = moscowDayStart(now)
+    const weekStart = moscowWeekStart(now)
+    const monthStart = moscowMonthStart(now)
+    const previousWeek = previousMoscowPeriodRange("week", now)
+    const previousMonth = previousMoscowPeriodRange("month", now)
+    /* Нижняя граница выборки визитов: самый ранний из нужных отрезков.
+       В начале месяца это прошлый месяц (для сравнения), в середине —
+       начало текущего. */
+    const trafficWindowStart = previousMonth.from < weekStart ? previousMonth.from : weekStart
+    const newListings = await prisma.listing.count({ where: { createdAt: { gte: weekStart } } })
+    const newUsers = await prisma.user.count({ where: { createdAt: { gte: weekStart } } })
+
+    // Ось графика: последние семь московских суток, включая сегодняшние.
+    const dailyTrafficDays = lastMoscowDayStarts(7, now)
+    const dailyTrafficStart = dailyTrafficDays[0]
+    const [topPaths, recentVisitorEvents, trafficEventsWindow, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, oldestPendingListing, oldestOpenReport, oldestNewInquiry, oldestActiveInquiry, oldestPendingPartner, oldestWaitingTicket, stuckPayments, oldestStuckPayment, latestAuctionSyncRuns, sourceSyncRuns, listingInventory, listingViewEventsWindow, listingMessagesWeek, soldListingsWeek, topListingViewGroups] = await Promise.all([
+      prisma.visitEvent.groupBy({ by: ["path"], where: { createdAt: { gte: weekStart } }, _count: { path: true }, orderBy: { _count: { path: "desc" } }, take: 8 }),
+      prisma.visitEvent.findMany({ where: { createdAt: { gte: weekStart }, userId: { not: null } }, orderBy: { createdAt: "desc" }, take: 50, include: { user: { select: { id: true, name: true, email: true, telegramUsername: true } } } }),
       /* Месяц визитов читается целиком: уникальные посетители по дням
          считаются пересечением ключей, и группировкой на стороне базы это
          не выражается.
@@ -151,7 +158,7 @@ export async function GET() {
          Правильное решение — почасовые сводки вместо сырых событий; предел
          держит панель работоспособной, пока их нет. */
       prisma.visitEvent.findMany({
-        where: { createdAt: { gte: monthAgo } },
+        where: { createdAt: { gte: trafficWindowStart } },
         orderBy: { createdAt: "desc" },
         take: 50_000,
         select: { createdAt: true, visitorKey: true, sessionKey: true, ipHash: true, userId: true, deviceType: true, trafficSource: true },
@@ -251,72 +258,79 @@ export async function GET() {
         select: { id: true, title: true, status: true, views: true, vehicleId: true, partId: true, createdAt: true, publishedAt: true, _count: { select: { favoritedBy: true } } },
       }),
       prisma.listingViewEvent.findMany({
-        where: { createdAt: { gte: previousWeekStart } },
+        where: { createdAt: { gte: previousWeek.from } },
         select: { listingId: true, ipHash: true, createdAt: true },
       }),
-      prisma.message.count({ where: { listingId: { not: null }, createdAt: { gte: weekAgo } } }),
-      prisma.listingStatusEvent.count({ where: { toStatus: "SOLD", createdAt: { gte: weekAgo } } }),
+      prisma.message.count({ where: { listingId: { not: null }, createdAt: { gte: weekStart } } }),
+      prisma.listingStatusEvent.count({ where: { toStatus: "SOLD", createdAt: { gte: weekStart } } }),
       prisma.listingViewEvent.groupBy({
         by: ["listingId"],
-        where: { createdAt: { gte: weekAgo } },
+        where: { createdAt: { gte: weekStart } },
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
         take: 5,
       }),
     ])
 
-    const trafficEvents7d = trafficEvents30d.filter((event) => event.createdAt >= weekAgo)
-    const previousTrafficEvents7d = trafficEvents30d.filter((event) => event.createdAt >= previousWeekStart && event.createdAt < weekAgo)
-    const pageViews24h = trafficEvents7d.filter((event) => event.createdAt >= dayAgo).length
-    const pageViews7d = trafficEvents7d.length
-    const pageViews30d = trafficEvents30d.length
+    /* Срезы по календарным московским отрезкам: сегодня, текущая неделя с
+       понедельника, текущий месяц. Имена названы по отрезку, а не по числу
+       суток: «7d» рядом с недельным срезом означало бы другое. */
+    const trafficEventsWeek = trafficEventsWindow.filter((event) => event.createdAt >= weekStart)
+    const previousTrafficEventsWeek = trafficEventsWindow.filter((event) => event.createdAt >= previousWeek.from && event.createdAt < previousWeek.to)
+    const trafficEventsMonth = trafficEventsWindow.filter((event) => event.createdAt >= monthStart)
+    const previousTrafficEventsMonth = trafficEventsWindow.filter((event) => event.createdAt >= previousMonth.from && event.createdAt < previousMonth.to)
+    const pageViewsDay = trafficEventsWeek.filter((event) => event.createdAt >= dayStart).length
+    const pageViewsWeek = trafficEventsWeek.length
+    const pageViewsMonth = trafficEventsMonth.length
     const visitorSet = (events: TrafficEvent[]) => new Set(events.map(trafficVisitorIdentity).filter((value): value is string => Boolean(value)))
-    const uniqueVisitors7dSet = visitorSet(trafficEvents7d)
-    const previousUniqueVisitors7dSet = visitorSet(previousTrafficEvents7d)
-    const historicalVisitorSet = visitorSet(trafficEvents30d.filter((event) => event.createdAt < weekAgo))
-    const uniqueVisitors7d = uniqueVisitors7dSet.size
-    const uniqueVisitors24h = visitorSet(trafficEvents7d.filter((event) => event.createdAt >= dayAgo)).size
-    const uniqueVisitors30d = visitorSet(trafficEvents30d).size
-    const telegramMiniAppEvents7d = trafficEvents7d.filter((event) => event.trafficSource === "UTM:TELEGRAM-MINI-APP")
-    const telegramMiniAppVisitors24h = visitorSet(telegramMiniAppEvents7d.filter((event) => event.createdAt >= dayAgo)).size
-    const telegramMiniAppVisitors7d = visitorSet(telegramMiniAppEvents7d).size
-    const returningVisitors7d = [...uniqueVisitors7dSet].filter((identity) => historicalVisitorSet.has(identity)).length
-    const newVisitors7d = uniqueVisitors7d - returningVisitors7d
-    const sessions7d = new Set(trafficEvents7d.map((event) => event.sessionKey).filter((value): value is string => Boolean(value))).size
+    const uniqueVisitorsWeekSet = visitorSet(trafficEventsWeek)
+    const previousUniqueVisitorsWeekSet = visitorSet(previousTrafficEventsWeek)
+    // «Вернулся» — тот, кого видели до начала недели: иначе все посетители
+    // текущей недели считались бы новыми.
+    const historicalVisitorSet = visitorSet(trafficEventsWindow.filter((event) => event.createdAt < weekStart))
+    const uniqueVisitorsWeek = uniqueVisitorsWeekSet.size
+    const uniqueVisitorsDay = visitorSet(trafficEventsWeek.filter((event) => event.createdAt >= dayStart)).size
+    const uniqueVisitorsMonth = visitorSet(trafficEventsMonth).size
+    const telegramMiniAppEventsWeek = trafficEventsWeek.filter((event) => event.trafficSource === "UTM:TELEGRAM-MINI-APP")
+    const telegramMiniAppVisitorsDay = visitorSet(telegramMiniAppEventsWeek.filter((event) => event.createdAt >= dayStart)).size
+    const telegramMiniAppVisitorsWeek = visitorSet(telegramMiniAppEventsWeek).size
+    const returningVisitorsWeek = [...uniqueVisitorsWeekSet].filter((identity) => historicalVisitorSet.has(identity)).length
+    const newVisitorsWeek = uniqueVisitorsWeek - returningVisitorsWeek
+    const sessionsWeek = new Set(trafficEventsWeek.map((event) => event.sessionKey).filter((value): value is string => Boolean(value))).size
     const sessionViews = new Map<string, number>()
-    for (const event of trafficEvents7d) if (event.sessionKey) sessionViews.set(event.sessionKey, (sessionViews.get(event.sessionKey) || 0) + 1)
-    const bounceRate7d = sessionViews.size
+    for (const event of trafficEventsWeek) if (event.sessionKey) sessionViews.set(event.sessionKey, (sessionViews.get(event.sessionKey) || 0) + 1)
+    const bounceRateWeek = sessionViews.size
       ? Math.round(([...sessionViews.values()].filter((count) => count === 1).length / sessionViews.size) * 1_000) / 10
       : 0
-    const authenticatedVisitors7d = new Set(trafficEvents7d.map((event) => event.userId).filter((value): value is string => Boolean(value))).size
-    const newRegistrationIds7d = new Set(dailyRegistrations.filter((user) => user.createdAt >= weekAgo).map((user) => user.id))
-    const attributedRegistrations7d = new Set(
-      trafficEvents7d
+    const authenticatedVisitorsWeek = new Set(trafficEventsWeek.map((event) => event.userId).filter((value): value is string => Boolean(value))).size
+    const newRegistrationIdsWeek = new Set(dailyRegistrations.filter((user) => user.createdAt >= weekStart).map((user) => user.id))
+    const attributedRegistrationsWeek = new Set(
+      trafficEventsWeek
         .map((event) => event.userId)
-        .filter((value): value is string => typeof value === "string" && newRegistrationIds7d.has(value)),
+        .filter((value): value is string => typeof value === "string" && newRegistrationIdsWeek.has(value)),
     ).size
-    const pagesPerVisitor7d = uniqueVisitors7d ? Math.round(pageViews7d / uniqueVisitors7d * 10) / 10 : 0
-    const registrationConversion7d = uniqueVisitors7d ? Math.min(100, Math.round(attributedRegistrations7d / uniqueVisitors7d * 1_000) / 10) : 0
+    const pagesPerVisitorWeek = uniqueVisitorsWeek ? Math.round(pageViewsWeek / uniqueVisitorsWeek * 10) / 10 : 0
+    const registrationConversionWeek = uniqueVisitorsWeek ? Math.min(100, Math.round(attributedRegistrationsWeek / uniqueVisitorsWeek * 1_000) / 10) : 0
     const recentVisitors = recentVisitorEvents.filter((visit, index, values) => visit.userId && values.findIndex((candidate) => candidate.userId === visit.userId) === index).slice(0, 10)
 
-    const listingViews7d = listingViewEvents14d.filter((event) => event.createdAt >= weekAgo)
-    const previousListingViews7d = listingViewEvents14d.filter((event) => event.createdAt < weekAgo)
+    const listingViewsWeek = listingViewEventsWindow.filter((event) => event.createdAt >= weekStart)
+    const previousListingViewsWeek = listingViewEventsWindow.filter((event) => event.createdAt >= previousWeek.from && event.createdAt < previousWeek.to)
     const listingStatusCounts = listingInventory.reduce<Record<string, number>>((counts, listing) => {
       counts[listing.status] = (counts[listing.status] || 0) + 1
       return counts
     }, {})
-    const listingUniqueViewers7d = new Set(listingViews7d.map((event) => event.ipHash)).size
+    const listingUniqueViewersWeek = new Set(listingViewsWeek.map((event) => event.ipHash)).size
     const listingDetails = new Map(listingInventory.map((listing) => [listing.id, listing]))
     const topListings = topListingViewGroups.map((group) => {
       const listing = listingDetails.get(group.listingId)
-      const events = listingViews7d.filter((event) => event.listingId === group.listingId)
+      const events = listingViewsWeek.filter((event) => event.listingId === group.listingId)
       return {
         id: group.listingId,
         href: listing?.vehicleId ? `/listings/vehicle/${listing.vehicleId}` : listing?.partId ? `/listings/part/${listing.partId}` : null,
         title: listing?.title || "Удалённое объявление",
         status: listing?.status || "ARCHIVED",
-        views7d: group._count.id,
-        uniqueViewers7d: new Set(events.map((event) => event.ipHash)).size,
+        viewsWeek: group._count.id,
+        uniqueViewersWeek: new Set(events.map((event) => event.ipHash)).size,
         favorites: listing?._count.favoritedBy || 0,
       }
     })
@@ -493,27 +507,38 @@ export async function GET() {
         recentOrders: recentPromotionOrders,
       },
       traffic: {
-        pageViews24h,
-        pageViews7d,
-        pageViews30d,
-        uniqueVisitors24h,
-        uniqueVisitors7d,
-        uniqueVisitors30d,
-        telegramMiniAppVisitors24h,
-        telegramMiniAppVisitors7d,
-        pageViewsTrend7d: percentageChange(pageViews7d, previousTrafficEvents7d.length),
-        uniqueVisitorsTrend7d: percentageChange(uniqueVisitors7d, previousUniqueVisitors7dSet.size),
-        returningVisitors7d,
-        newVisitors7d,
-        sessions7d,
-        bounceRate7d,
-        authenticatedVisitors7d,
-        attributedRegistrations7d,
-        pagesPerVisitor7d,
-        registrationConversion7d,
-        daily: createDailyTraffic(trafficEvents7d, dailyRegistrations, listingInventory, dailyTrafficStart),
-        devices: countUniqueByDimension(trafficEvents7d, "deviceType"),
-        sources: countUniqueByDimension(trafficEvents7d, "trafficSource"),
+        // Отрезки календарные и московские: «сегодня» — с 00:00 МСК, «неделя» —
+        // с понедельника, «месяц» — с первого числа.
+        periodLabels: {
+          day: moscowPeriodLabel("day", now),
+          week: moscowPeriodLabel("week", now),
+          month: moscowPeriodLabel("month", now),
+        },
+        pageViewsDay,
+        pageViewsWeek,
+        pageViewsMonth,
+        uniqueVisitorsDay,
+        uniqueVisitorsWeek,
+        uniqueVisitorsMonth,
+        telegramMiniAppVisitorsDay,
+        telegramMiniAppVisitorsWeek,
+        // Сравнение с таким же календарным отрезком: прошлая неделя целиком и
+        // прошлый месяц целиком, а не «те же 7 или 30 суток назад».
+        pageViewsTrendWeek: percentageChange(pageViewsWeek, previousTrafficEventsWeek.length),
+        uniqueVisitorsTrendWeek: percentageChange(uniqueVisitorsWeek, previousUniqueVisitorsWeekSet.size),
+        pageViewsTrendMonth: percentageChange(pageViewsMonth, previousTrafficEventsMonth.length),
+        uniqueVisitorsTrendMonth: percentageChange(uniqueVisitorsMonth, visitorSet(previousTrafficEventsMonth).size),
+        returningVisitorsWeek,
+        newVisitorsWeek,
+        sessionsWeek,
+        bounceRateWeek,
+        authenticatedVisitorsWeek,
+        attributedRegistrationsWeek,
+        pagesPerVisitorWeek,
+        registrationConversionWeek,
+        daily: createDailyTraffic(trafficEventsWeek, dailyRegistrations, listingInventory, dailyTrafficDays),
+        devices: countUniqueByDimension(trafficEventsWeek, "deviceType"),
+        sources: countUniqueByDimension(trafficEventsWeek, "trafficSource"),
         topPaths: topPaths.map((item) => ({ path: item.path, count: item._count.path })),
         recentVisitors: recentVisitors.map((visit) => ({
           id: visit.id,
@@ -526,16 +551,16 @@ export async function GET() {
         active: listingStatusCounts.ACTIVE || 0,
         pending: listingStatusCounts.PENDING_MODERATION || 0,
         sold: listingStatusCounts.SOLD || 0,
-        published7d: listingInventory.filter((listing) => listing.publishedAt && listing.publishedAt >= weekAgo).length,
-        sold7d: soldListings7d,
+        publishedWeek: listingInventory.filter((listing) => listing.publishedAt && listing.publishedAt >= weekStart).length,
+        soldWeek: soldListingsWeek,
         totalViews: listingInventory.reduce((sum, listing) => sum + listing.views, 0),
-        views7d: listingViews7d.length,
-        uniqueViewers7d: listingUniqueViewers7d,
-        viewsTrend7d: percentageChange(listingViews7d.length, previousListingViews7d.length),
+        viewsWeek: listingViewsWeek.length,
+        uniqueViewersWeek: listingUniqueViewersWeek,
+        viewsTrendWeek: percentageChange(listingViewsWeek.length, previousListingViewsWeek.length),
         favorites: listingInventory.reduce((sum, listing) => sum + listing._count.favoritedBy, 0),
-        messageLeads7d: listingMessages7d,
-        leadConversion7d: listingViews7d.length ? Math.min(100, Math.round((listingMessages7d / listingViews7d.length) * 1_000) / 10) : 0,
-        daily: createDailyListingViews(listingViews7d, dailyTrafficStart),
+        messageLeadsWeek: listingMessagesWeek,
+        leadConversionWeek: listingViewsWeek.length ? Math.min(100, Math.round((listingMessagesWeek / listingViewsWeek.length) * 1_000) / 10) : 0,
+        daily: createDailyListingViews(listingViewsWeek, dailyTrafficDays),
         topListings,
       },
       operations: {

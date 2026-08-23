@@ -1,44 +1,61 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import {
-  isTrafficPeriod, periodStart, previousPeriodRange,
+  isTrafficPeriod, periodLabel, periodRange, periodStart, previousPeriodRange,
   refererHost, trafficSourceLabel,
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 } from "../src/lib/traffic-periods.ts"
 
+// 21 августа 2026 — пятница. 18:00 UTC = 21:00 по Москве.
 const NOW = new Date("2026-08-21T18:00:00Z")
 
 test("период приходит с клиента и не становится произвольным", () => {
   // Запрос за год положил бы базу, поэтому принимаются только известные значения.
-  assert.equal(isTrafficPeriod("7d"), true)
+  assert.equal(isTrafficPeriod("week"), true)
   assert.equal(isTrafficPeriod("365d"), false)
+  assert.equal(isTrafficPeriod("7d"), false, "скользящих окон больше нет")
   assert.equal(isTrafficPeriod(""), false)
   assert.equal(isTrafficPeriod(null), false)
   assert.equal(isTrafficPeriod({ days: 999 }), false)
 })
 
-test("начало периода отсчитывается верно", () => {
-  assert.equal(periodStart("24h", NOW).toISOString(), "2026-08-20T18:00:00.000Z")
-  assert.equal(periodStart("7d", NOW).toISOString(), "2026-08-14T18:00:00.000Z")
-  assert.equal(periodStart("30d", NOW).toISOString(), "2026-07-22T18:00:00.000Z")
+test("начало периода — московская полночь календарного отрезка", () => {
+  // Московская полночь = 21:00 UTC предыдущего дня.
+  assert.equal(periodStart("day", NOW).toISOString(), "2026-08-20T21:00:00.000Z")
+  // Пятница 21-го относится к неделе, начавшейся в понедельник 17-го.
+  assert.equal(periodStart("week", NOW).toISOString(), "2026-08-16T21:00:00.000Z")
+  assert.equal(periodStart("month", NOW).toISOString(), "2026-07-31T21:00:00.000Z")
 })
 
-test("предыдущий отрезок такой же длины и не пересекается с текущим", () => {
-  for (const period of ["24h", "7d", "30d"] as const) {
-    const current = periodStart(period, NOW)
-    const prev = previousPeriodRange(period, NOW)
-    assert.equal(prev.to.getTime(), current.getTime(), `${period}: отрезки не стыкуются`)
-    assert.equal(
-      prev.to.getTime() - prev.from.getTime(),
-      NOW.getTime() - current.getTime(),
-      `${period}: длина отрезков различается`,
-    )
+test("период закрыт сверху и содержит текущий момент", () => {
+  for (const period of ["day", "week", "month"] as const) {
+    const range = periodRange(period, NOW)
+    assert.ok(range.from <= NOW, `${period}: начало позже текущего момента`)
+    assert.ok(range.to > NOW, `${period}: конец раньше текущего момента`)
   }
+})
+
+test("предыдущий отрезок примыкает к текущему и не пересекается с ним", () => {
+  for (const period of ["day", "week", "month"] as const) {
+    const current = periodStart(period, NOW)
+    const previous = previousPeriodRange(period, NOW)
+    assert.equal(previous.to.getTime(), current.getTime(), `${period}: отрезки не стыкуются`)
+    assert.ok(previous.from < previous.to, `${period}: предыдущий отрезок пустой`)
+  }
+})
+
+test("подпись периода называет конкретную дату", () => {
+  assert.equal(periodLabel("month", NOW), "Август 2026")
+  assert.equal(periodLabel("week", NOW), "Неделя с 17 августа")
+  assert.equal(periodLabel("day", NOW), "21 августа")
 })
 
 test("источники читаются по-человечески", () => {
   assert.equal(trafficSourceLabel(null), "Прямые заходы")
   assert.equal(trafficSourceLabel("SEARCH"), "Поисковые системы")
+  // Запись из базы называется ORGANIC_SEARCH — без неё в списке появлялся
+  // технический код вместо названия.
+  assert.equal(trafficSourceLabel("ORGANIC_SEARCH"), "Поисковые системы")
   assert.equal(trafficSourceLabel("REFERRAL"), "Другие сайты")
   assert.match(trafficSourceLabel("UTM:TELEGRAM-MINI-APP"), /telegram-mini-app/)
   // Неизвестный код не теряется, а показывается как есть.

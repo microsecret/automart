@@ -4,12 +4,12 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { hashAnalyticsIp, isAutomatedUserAgent } from "@/lib/analytics-identity"
+import { registerVisitScreen, visitScreen } from "@/lib/visit-dedup"
 
 export const dynamic = "force-dynamic"
 
 const ANALYTICS_KEY = /^[A-Za-z0-9_-]{16,120}$/
 const INTERNAL_WORKSPACE_PREFIXES = ["/admin", "/moderation"]
-const ANALYTICS_RETRY_WINDOW_MS = 10_000
 
 function classifyDevice(userAgent: string) {
   if (/ipad|tablet|kindle|silk/i.test(userAgent)) return "TABLET"
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({})) as {
       path?: unknown
+      screen?: unknown
       visitorKey?: unknown
       sessionKey?: unknown
       referer?: unknown
@@ -72,18 +73,16 @@ export async function POST(request: NextRequest) {
     const campaign = normalizedAttribution(body.campaign, 120) || null
     const ipHash = hashAnalyticsIp(clientIp)
 
-    // Browsers and service workers may retry the same beacon immediately.
-    // Do not inflate page-view counters, while still allowing a real return to
-    // the same page later in the session to be counted.
-    const retry = await prisma.visitEvent.findFirst({
-      where: {
-        path,
-        createdAt: { gte: new Date(Date.now() - ANALYTICS_RETRY_WINDOW_MS) },
-        ...(sessionKey ? { sessionKey } : visitorKey ? { visitorKey } : { ipHash, userAgent }),
-      },
-      select: { id: true },
-    })
-    if (retry) return new NextResponse(null, { status: 204 })
+    /* Повторные отправки одного beacon-а не должны раздувать счётчик, но и
+       настоящий переход терять нельзя. Сравнивается экран целиком — путь со
+       строкой запроса, — поэтому смена фильтров каталога и возврат назад
+       считаются просмотрами, а дубль той же страницы — нет.
+
+       Раньше здесь стоял запрос в базу по одному пути: он отбрасывал любой
+       переход внутри раздела, случившийся в пределах десяти секунд. */
+    const screen = visitScreen(path, body.screen)
+    const visitorId = sessionKey || visitorKey || `${ipHash}:${userAgent}`
+    if (registerVisitScreen(visitorId, screen)) return new NextResponse(null, { status: 204 })
 
     await prisma.visitEvent.create({
       data: {

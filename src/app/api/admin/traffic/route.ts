@@ -3,9 +3,10 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { isAdmin } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
+import { moscowHour } from "@/lib/moscow-periods"
 import {
-  isTrafficPeriod, periodStart, previousPeriodRange,
-  refererHost, trafficSourceLabel, TRAFFIC_PERIODS, type TrafficPeriod,
+  isTrafficPeriod, periodLabel, periodRange, previousPeriodRange,
+  refererHost, trafficSourceLabel, type TrafficPeriod,
 } from "@/lib/traffic-periods"
 
 export const dynamic = "force-dynamic"
@@ -24,16 +25,18 @@ export async function GET(request: NextRequest) {
   if (!isAdmin(session?.user?.role)) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
 
   const raw = new URL(request.url).searchParams.get("period")
-  const period: TrafficPeriod = isTrafficPeriod(raw) ? raw : "7d"
+  const period: TrafficPeriod = isTrafficPeriod(raw) ? raw : "week"
 
   try {
     const now = new Date()
-    const from = periodStart(period, now)
+    const current = periodRange(period, now)
     const previous = previousPeriodRange(period, now)
 
     const [events, previousEvents] = await Promise.all([
       prisma.visitEvent.findMany({
-        where: { createdAt: { gte: from } },
+        // Верхняя граница закрывает период явно: у календарного месяца она
+        // наступает раньше, чем «сейчас», как только начнётся следующий.
+        where: { createdAt: { gte: current.from, lt: current.to } },
         select: {
           createdAt: true, path: true, visitorKey: true, ipHash: true,
           referer: true, trafficSource: true, deviceType: true, campaign: true,
@@ -78,7 +81,9 @@ export async function GET(request: NextRequest) {
 
       byPath.set(event.path, (byPath.get(event.path) || 0) + 1)
 
-      const hour = event.createdAt.getHours()
+      // Час берётся московский: сервер живёт в UTC и без пересчёта пик
+      // активности смещался бы на три часа назад.
+      const hour = moscowHour(event.createdAt)
       if (!byHour.has(hour)) byHour.set(hour, new Set())
       byHour.get(hour)!.add(visitor)
     }
@@ -94,7 +99,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       period,
-      periodLabel: TRAFFIC_PERIODS[period].label,
+      periodLabel: periodLabel(period, now),
       totals: {
         views: events.length,
         uniqueVisitors,

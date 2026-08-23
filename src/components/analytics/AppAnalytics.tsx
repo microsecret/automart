@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 const VISITOR_KEY = "lewheel-analytics-visitor-v1"
 const SESSION_KEY = "lewheel-analytics-session-v1"
@@ -18,6 +18,17 @@ function storageValue(storage: Storage, key: string) {
 
 export default function AppAnalytics() {
   const pathname = usePathname()
+  /* Смена фильтров каталога меняет только строку запроса, а `usePathname`
+     остаётся прежним: переход с «/auctions?country=JP» на «?country=KR» не
+     вызывал эффект и в статистику не попадал. Замер по боевой базе показал
+     ровно это — среди 1787 событий не было ни одного с «?».
+
+     В базу по-прежнему уходит путь без запроса: топ разделов считается
+     группировкой по нему, и с фильтрами он размазался бы на сотни строк.
+     Строка запроса нужна здесь только чтобы отличить один экран от другого
+     и отправить событие. */
+  const searchParams = useSearchParams()
+  const search = searchParams.toString()
 
   useEffect(() => {
     if (!pathname || typeof window === "undefined") return
@@ -44,10 +55,13 @@ export default function AppAnalytics() {
     fetch("/api/analytics/visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: pathname, visitorKey, sessionKey, ...attribution }),
+      /* `screen` отличает экран с фильтрами от того же раздела без них.
+         Сервер по нему отсекает повторную отправку одного и того же экрана и
+         в базу не пишет — там остаётся чистый путь. */
+      body: JSON.stringify({ path: pathname, screen: search ? `${pathname}?${search}` : pathname, visitorKey, sessionKey, ...attribution }),
       keepalive: true,
     }).catch(() => {})
-  }, [pathname])
+  }, [pathname, search])
 
   return null
 }

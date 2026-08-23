@@ -37,24 +37,29 @@ type AdminStats = {
   featured: number
   avgPrice: number
   traffic: {
-    pageViews24h: number
-    pageViews7d: number
-    pageViews30d: number
-    uniqueVisitors24h: number
-    uniqueVisitors7d: number
-    uniqueVisitors30d: number
-    telegramMiniAppVisitors24h: number
-    telegramMiniAppVisitors7d: number
-    pageViewsTrend7d: number
-    uniqueVisitorsTrend7d: number
-    returningVisitors7d: number
-    newVisitors7d: number
-    sessions7d: number
-    bounceRate7d: number
-    authenticatedVisitors7d: number
-    attributedRegistrations7d: number
-    pagesPerVisitor7d: number
-    registrationConversion7d: number
+    // Отрезки календарные и московские: day — с 00:00 МСК, week — с
+    // понедельника, month — с первого числа месяца.
+    periodLabels: { day: string; week: string; month: string }
+    pageViewsDay: number
+    pageViewsWeek: number
+    pageViewsMonth: number
+    uniqueVisitorsDay: number
+    uniqueVisitorsWeek: number
+    uniqueVisitorsMonth: number
+    telegramMiniAppVisitorsDay: number
+    telegramMiniAppVisitorsWeek: number
+    pageViewsTrendWeek: number
+    uniqueVisitorsTrendWeek: number
+    pageViewsTrendMonth: number
+    uniqueVisitorsTrendMonth: number
+    returningVisitorsWeek: number
+    newVisitorsWeek: number
+    sessionsWeek: number
+    bounceRateWeek: number
+    authenticatedVisitorsWeek: number
+    attributedRegistrationsWeek: number
+    pagesPerVisitorWeek: number
+    registrationConversionWeek: number
     daily: Array<{ date: string; pageViews: number; uniqueVisitors: number; registrations: number; newListings: number }>
     devices: Array<{ key: string; count: number }>
     sources: Array<{ key: string; count: number }>
@@ -71,23 +76,23 @@ type AdminStats = {
     active: number
     pending: number
     sold: number
-    published7d: number
-    sold7d: number
+    publishedWeek: number
+    soldWeek: number
     totalViews: number
-    views7d: number
-    uniqueViewers7d: number
-    viewsTrend7d: number
+    viewsWeek: number
+    uniqueViewersWeek: number
+    viewsTrendWeek: number
     favorites: number
-    messageLeads7d: number
-    leadConversion7d: number
+    messageLeadsWeek: number
+    leadConversionWeek: number
     daily: Array<{ date: string; views: number; uniqueViewers: number }>
     topListings: Array<{
       id: string
       href: string | null
       title: string
       status: string
-      views7d: number
-      uniqueViewers7d: number
+      viewsWeek: number
+      uniqueViewersWeek: number
       favorites: number
     }>
   }
@@ -864,45 +869,46 @@ export default function AdminDashboard() {
 
         {/* Просмотры сайта и аудитория */}
         <Alert color="indigo" variant="light" title="Как считаются просмотры и уникальные посетители">
-          Просмотр — каждое фактическое открытие экрана, повторные открытия тоже учитываются. Уникальный посетитель — один IP-адрес за выбранный период:
-          переходы по разным страницам и сервисам не создают новых уникальных посетителей. Сохраняется только необратимый хеш IP;
-          исходный адрес и автоматические bot/headless-запросы не учитываются.
+          Просмотр — каждое открытие экрана, включая переходы между разделами внутри сайта и смену фильтров каталога. Уникальный посетитель —
+          один IP-адрес за период: переходы по разным страницам и сервисам не создают новых уникальных посетителей. Сохраняется только необратимый
+          хеш IP; исходный адрес и автоматические bot/headless-запросы не учитываются. Периоды календарные по московскому времени: «сегодня» —
+          с 00:00 МСК, «неделя» — с понедельника, «месяц» — с первого числа.
         </Alert>
         <SimpleGrid cols={{ base: 1, xs: 2, lg: 7 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Просмотры · 24 часа</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.pageViews24h}</Text>
+            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Просмотры · сегодня</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.pageViewsDay}</Text>
             <Text size="xs" c="gray.4">открытые экраны</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · 7 дней</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitors7d}</Text>
-            <Text size="xs" c={data.traffic.uniqueVisitorsTrend7d >= 0 ? "teal.6" : "red.6"}>{data.traffic.uniqueVisitorsTrend7d >= 0 ? "+" : ""}{data.traffic.uniqueVisitorsTrend7d}% к прошлой неделе</Text>
+            <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · неделя</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitorsWeek}</Text>
+            <Text size="xs" c={data.traffic.uniqueVisitorsTrendWeek >= 0 ? "teal.6" : "red.6"}>{data.traffic.uniqueVisitorsTrendWeek >= 0 ? "+" : ""}{data.traffic.uniqueVisitorsTrendWeek}% к прошлой неделе</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Сессии · 7 дней</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.sessions7d}</Text>
-            <Text size="xs" c="gray.4">отказы: {data.traffic.bounceRate7d}%</Text>
+            <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Сессии · неделя</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.sessionsWeek}</Text>
+            <Text size="xs" c="gray.4">отказы: {data.traffic.bounceRateWeek}%</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="teal" size={34} radius="md"><IconUsers size={17} /></ThemeIcon><Text size="xs" c="gray.5">Вошли в аккаунт · 7 дней</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.authenticatedVisitors7d}</Text>
+            <Group gap="sm"><ThemeIcon variant="light" color="teal" size={34} radius="md"><IconUsers size={17} /></ThemeIcon><Text size="xs" c="gray.5">Вошли в аккаунт · неделя</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.authenticatedVisitorsWeek}</Text>
             <Text size="xs" c="gray.4">уникальные пользователи</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="orange" size={34} radius="md"><IconTrendingUp size={17} /></ThemeIcon><Text size="xs" c="gray.5">Конверсия · 7 дней</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.registrationConversion7d}%</Text>
-            <Text size="xs" c="gray.4">{data.traffic.attributedRegistrations7d} новых аккаунтов с визитом</Text>
+            <Group gap="sm"><ThemeIcon variant="light" color="orange" size={34} radius="md"><IconTrendingUp size={17} /></ThemeIcon><Text size="xs" c="gray.5">Конверсия · неделя</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.registrationConversionWeek}%</Text>
+            <Text size="xs" c="gray.4">{data.traffic.attributedRegistrationsWeek} новых аккаунтов с визитом</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="blue" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные · 30 дней</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitors30d}</Text>
-            <Text size="xs" c="gray.4">{data.traffic.newVisitors7d} новых · {data.traffic.returningVisitors7d} вернулись</Text>
+            <Group gap="sm"><ThemeIcon variant="light" color="blue" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные · месяц</Text></Group>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitorsMonth}</Text>
+            <Text size="xs" c="gray.4">{data.traffic.periodLabels.month} · {data.traffic.newVisitorsWeek} новых за неделю</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconBrandTelegram size={17} /></ThemeIcon><Text size="xs" c="gray.5">Telegram Mini App</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.telegramMiniAppVisitors24h}</Text>
-            <Text size="xs" c="gray.4">за 24 ч · {data.traffic.telegramMiniAppVisitors7d} за 7 дней</Text>
+            <Text size="xl" fw={800} mt="sm">{data.traffic.telegramMiniAppVisitorsDay}</Text>
+            <Text size="xs" c="gray.4">сегодня · {data.traffic.telegramMiniAppVisitorsWeek} за неделю</Text>
           </Card>
         </SimpleGrid>
 
@@ -911,23 +917,23 @@ export default function AdminDashboard() {
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="light" color="orange" size={38} radius="md"><IconTag size={19} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Объявления пользователей · 7 дней</Text>
+                <Text size="sm" fw={750}>Объявления пользователей · неделя</Text>
                 <Text size="xs" c="dimmed">Личные объявления о транспорте и запчастях. Импортные автомобили из раздела аукционов сюда не входят.</Text>
               </Stack>
             </Group>
-            <Badge variant="light" color={data.listingPerformance.viewsTrend7d >= 0 ? "teal" : "red"}>
-              {data.listingPerformance.viewsTrend7d >= 0 ? "+" : ""}{data.listingPerformance.viewsTrend7d}% просмотров
+            <Badge variant="light" color={data.listingPerformance.viewsTrendWeek >= 0 ? "teal" : "red"}>
+              {data.listingPerformance.viewsTrendWeek >= 0 ? "+" : ""}{data.listingPerformance.viewsTrendWeek}% просмотров
             </Badge>
           </Group>
 
           <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="xs">
             {[
               ["Активные", data.listingPerformance.active],
-              ["Опубликовано", data.listingPerformance.published7d],
-              ["Просмотры", data.listingPerformance.views7d],
-              ["Уникальные", data.listingPerformance.uniqueViewers7d],
-              ["Сообщения", data.listingPerformance.messageLeads7d],
-              ["Продано", data.listingPerformance.sold7d],
+              ["Опубликовано", data.listingPerformance.publishedWeek],
+              ["Просмотры", data.listingPerformance.viewsWeek],
+              ["Уникальные", data.listingPerformance.uniqueViewersWeek],
+              ["Сообщения", data.listingPerformance.messageLeadsWeek],
+              ["Продано", data.listingPerformance.soldWeek],
             ].map(([label, value]) => (
               <Paper key={String(label)} withBorder radius="md" p="sm">
                 <Text size="lg" fw={850}>{value}</Text>
@@ -955,14 +961,14 @@ export default function AdminDashboard() {
               </Group>
             </Paper>
             <Paper withBorder radius="md" p="sm">
-              <Group justify="space-between" mb="sm"><Text size="xs" fw={700}>Лучшие объявления</Text><Badge size="xs" variant="light" color="orange">конверсия {data.listingPerformance.leadConversion7d}%</Badge></Group>
+              <Group justify="space-between" mb="sm"><Text size="xs" fw={700}>Лучшие объявления</Text><Badge size="xs" variant="light" color="orange">конверсия {data.listingPerformance.leadConversionWeek}%</Badge></Group>
               <Stack gap="xs">
                 {data.listingPerformance.topListings.map((listing) => (
                   <Group key={listing.id} justify="space-between" gap="xs" wrap="nowrap">
                     {listing.href
                       ? <Text component={Link} href={listing.href} size="xs" c="var(--market-ink)" truncate style={{ flex: 1 }}>{listing.title}</Text>
                       : <Text size="xs" c="dimmed" truncate style={{ flex: 1 }}>{listing.title}</Text>}
-                    <Badge size="xs" variant="light" color="orange">{listing.views7d} / {listing.uniqueViewers7d}</Badge>
+                    <Badge size="xs" variant="light" color="orange">{listing.viewsWeek} / {listing.uniqueViewersWeek}</Badge>
                   </Group>
                 ))}
                 {!data.listingPerformance.topListings.length && <Text size="xs" c="dimmed">Данные появятся после открытий карточек объявлений.</Text>}
@@ -976,12 +982,12 @@ export default function AdminDashboard() {
             <Group gap="sm">
               <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconTrendingUp size={18} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={750}>Просмотры сайта и аудитория за 7 дней</Text>
+                <Text size="sm" fw={750}>Просмотры сайта и аудитория за неделю</Text>
                 <Text size="xs" c="dimmed">Фиолетовая линия — все открытия страниц, бирюзовая — разные IP-адреса за день.</Text>
               </Stack>
             </Group>
             <Group gap="xs">
-              <Badge variant="light" color="indigo">{data.traffic.pagesPerVisitor7d} стр. / посетителя</Badge>
+              <Badge variant="light" color="indigo">{data.traffic.pagesPerVisitorWeek} стр. / посетителя</Badge>
               <Badge variant="light" color="teal">Регистраций: {dailyTraffic.reduce((sum, point) => sum + point.registrations, 0)}</Badge>
             </Group>
           </Group>
@@ -1010,7 +1016,7 @@ export default function AdminDashboard() {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Text size="sm" fw={700} c="var(--market-ink)" mb={2}>Самые просматриваемые разделы · 7 дней</Text>
+            <Text size="sm" fw={700} c="var(--market-ink)" mb={2}>Самые просматриваемые разделы · неделя</Text>
             <Text size="xs" c="dimmed" mb="sm">Названия показаны по-русски; число справа — открытия страниц.</Text>
             <Stack gap="xs">
               {data.traffic.topPaths.map((item) => (
@@ -1032,7 +1038,7 @@ export default function AdminDashboard() {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Text size="sm" fw={700} mb="sm">Устройства уникальных посетителей · 7 дней</Text>
+            <Text size="sm" fw={700} mb="sm">Устройства уникальных посетителей · неделя</Text>
             <Stack gap="xs">
               {data.traffic.devices.map((item) => (
                 <Group key={item.key} justify="space-between"><Text size="xs" c="gray.6">{DEVICE_LABELS[item.key] || item.key}</Text><Badge variant="light" color="cyan">{item.count}</Badge></Group>
@@ -1040,7 +1046,7 @@ export default function AdminDashboard() {
             </Stack>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Text size="sm" fw={700} mb="sm">Источники уникальных посетителей · 7 дней</Text>
+            <Text size="sm" fw={700} mb="sm">Источники уникальных посетителей · неделя</Text>
             <Stack gap="xs">
               {data.traffic.sources.map((item) => (
                 <Group key={item.key} justify="space-between"><Text size="xs" c="gray.6">{item.key.startsWith("UTM:") ? item.key : SOURCE_LABELS[item.key] || item.key}</Text><Badge variant="light" color="violet">{item.count}</Badge></Group>
