@@ -114,6 +114,22 @@ export default function TelegramShell({
     root.style.setProperty("--tg-accent-text", theme.button_text_color || FALLBACK.button_text_color)
     root.style.setProperty("--tg-line", theme.section_separator_color || FALLBACK.section_separator_color)
 
+    /* Тема мессенджера сохраняется для остального сайта.
+
+       Кабинет, объявление и форма подачи открываются как обычные
+       страницы, и скрипта Telegram там нет: человек с тёмным
+       мессенджером переходил из тёмной ленты в белый кабинет.
+
+       Значение живёт в том же ключе, что и выбор темы на сайте, —
+       переход внутри приложения ничем не отличается от переключения
+       темы вручную. */
+    try {
+      const scheme = webApp.colorScheme === "dark" ? "dark" : "light"
+      localStorage.setItem("automart-color-scheme", scheme)
+    } catch {
+      // Приватный режим запрещает хранилище — тема просто не запомнится.
+    }
+
     webApp.setHeaderColor?.(theme.bg_color || FALLBACK.bg_color)
     webApp.setBackgroundColor?.(theme.secondary_bg_color || FALLBACK.secondary_bg_color)
     setReady(true)

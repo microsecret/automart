@@ -15,6 +15,13 @@ export default function AppProviders({ children }: { children: React.ReactNode }
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    /* Тему мессенджера сюда кладёт приложение Telegram.
+
+       Скрипт платформы подключён только на его странице, поэтому читать
+       window.Telegram здесь бесполезно: кабинет и форма подачи —
+       обычные страницы сайта. Приложение записывает выбор мессенджера в
+       это же хранилище, и переход из тёмной ленты в кабинет больше не
+       вспыхивает белым. */
     const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
     if (saved === "dark" || saved === "light") {
       setColorScheme(saved)
