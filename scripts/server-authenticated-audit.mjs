@@ -122,6 +122,15 @@ async function run() {
       finalPrice: 1_500_000, country: "KR", status: "ACTIVE", sourceLastSeenAt: new Date(Date.now() - 48 * 60 * 60_000),
     },
   })
+  await prisma.auctionListing.create({
+    data: {
+      sourceId: `${marker}-quality-hold`, source: "ENCAR", sourceUrl: `https://www.encar.com/${marker}-quality-hold`,
+      make: "Hyundai", model: "Quality hold audit lot", year: new Date().getFullYear(), mileage: 10_000,
+      sourcePrice: 1, sourceCurrency: "KRW", priceRub: 1, markup: 0, finalPrice: 1,
+      country: "KR", status: "POLICY_EXCLUDED", sourceLastSeenAt: new Date(), adminHiddenAt: new Date(),
+      adminHiddenReason: "Автопроверка качества: цена источника недостоверна",
+    },
+  })
   const cookie = await sessionCookie(primary)
   const sellerCookie = await sessionCookie(seller)
   const adminCookie = await sessionCookie(administrator)
@@ -212,7 +221,7 @@ async function run() {
   await expect("/api/dashboard/stats", cookie, 200)
   const adminStats = await expect("/api/admin/stats", adminCookie, 200)
   record("admin dashboard exposes real support counters", Number.isSafeInteger(adminStats?.operations?.openSupportTickets) && Number.isSafeInteger(adminStats?.counts?.supportTickets), `${adminStats?.operations?.openSupportTickets ?? "missing"} open`)
-  record("admin dashboard separates views, visitors, sessions and authenticated users", adminStats?.traffic?.pageViews7d >= 1 && adminStats?.traffic?.uniqueVisitors7d >= 1 && adminStats?.traffic?.sessions7d >= 1 && adminStats?.traffic?.authenticatedVisitors7d >= 1 && adminStats?.traffic?.attributedRegistrations7d >= 0 && adminStats?.traffic?.registrationConversion7d <= 100 && adminStats?.traffic?.devices?.some((item) => item.key === "MOBILE") && adminStats?.traffic?.sources?.some((item) => item.key === "UTM:TELEGRAM"), `${adminStats?.traffic?.pageViews7d ?? 0} views · ${adminStats?.traffic?.uniqueVisitors7d ?? 0} visitors · ${adminStats?.traffic?.registrationConversion7d ?? 0}% conversion`)
+  record("admin dashboard separates views, visitors, sessions and authenticated users", adminStats?.traffic?.pageViewsWeek >= 1 && adminStats?.traffic?.uniqueVisitorsWeek >= 1 && adminStats?.traffic?.sessionsWeek >= 1 && adminStats?.traffic?.authenticatedVisitorsWeek >= 1 && adminStats?.traffic?.attributedRegistrationsWeek >= 0 && adminStats?.traffic?.registrationConversionWeek <= 100 && adminStats?.traffic?.devices?.some((item) => item.key === "MOBILE") && adminStats?.traffic?.sources?.some((item) => item.key === "UTM:TELEGRAM"), `${adminStats?.traffic?.pageViewsWeek ?? 0} views · ${adminStats?.traffic?.uniqueVisitorsWeek ?? 0} visitors · ${adminStats?.traffic?.registrationConversionWeek ?? 0}% conversion`)
   record("source transport reports a valid bounded TCP pool", adminStats?.sourceTransport?.configurationValid === true && adminStats?.sourceTransport?.active + adminStats?.sourceTransport?.quarantined === adminStats?.sourceTransport?.configured && adminStats?.sourceTransport?.maxConnectionsPerProxy >= 1 && adminStats?.sourceTransport?.maxConnectionsPerProxy <= 50 && adminStats?.sourceTransport?.hardLimit === 50, `${adminStats?.sourceTransport?.active ?? 0}/${adminStats?.sourceTransport?.configured ?? 0} active · cap ${adminStats?.sourceTransport?.maxConnectionsPerProxy ?? "missing"}`)
   await prisma.user.update({ where: { id: revocableAdministrator.id }, data: { role: "USER" } })
   await expect("/api/admin/stats", revocableAdminCookie, 403)
@@ -279,7 +288,13 @@ async function run() {
     body: JSON.stringify({ name: "Покупатель Аудит", phone: primary.phone, email: primary.email, city: "Москва", comment: "Нужен расчёт доставки" }),
   })
   record("anonymous auction inquiry cannot bypass the protected deal workspace", true, "HTTP 401")
-  await expect("/api/admin/auctions/stats", adminCookie, 200)
+  const auctionStats = await expect("/api/admin/auctions/stats", adminCookie, 200)
+  const encarHealth = auctionStats?.sourceHealth?.find((source) => source.source === "ENCAR")
+  record(
+    "source health separates fresh, stale, removal and quality states",
+    encarHealth?.fresh >= 1 && encarHealth?.stale >= 1 && encarHealth?.qualityHold >= 1 && encarHealth?.expectedRefreshHours === 4,
+    encarHealth ? `${encarHealth.fresh} fresh · ${encarHealth.stale} stale · ${encarHealth.qualityHold} held` : "ENCAR missing",
+  )
   await expect("/api/auctions?country=KR&limit=10", null, 200)
   const auctionDetail = await expect(`/api/auctions/${auctionListing.id}`, null, 200)
   record("auction detail returns ranked similar vehicles", auctionDetail?.similar?.some((item) => item.id === similarAuctionListing.id), `${auctionDetail?.similar?.length ?? 0} similar`)
