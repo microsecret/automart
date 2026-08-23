@@ -289,7 +289,11 @@ export default function HomePage(p: HomePageProps = {}) {
                     искать машину и должен видеть, куда вводить, сразу.
 
                     Поле общее с каталогом: набранное здесь сразу сужает
-                    выдачу ниже, а кнопка ведёт к результатам. */}
+                    выдачу ниже, а кнопка ведёт к результатам.
+
+                    Под полем показано, сколько нашлось: выдача обновляется
+                    внизу страницы, вне поля зрения, и без этой строки
+                    человек не знал бы, дал ли его запрос результат. */}
                 <Group gap="xs" mt={24} wrap="nowrap" className="home-hero__search">
                   <TextInput
                     className="home-hero__search-input"
@@ -315,6 +319,16 @@ export default function HomePage(p: HomePageProps = {}) {
                     Найти
                   </Button>
                 </Group>
+
+                {query.trim().length > 1 && (
+                  <Text size="xs" c="rgba(255,255,255,0.9)" mt={8}>
+                    {isLoading
+                      ? "Ищем…"
+                      : (data?.pagination?.total ?? 0) > 0
+                      ? `Нашлось ${data?.pagination?.total} ${plural(data?.pagination?.total ?? 0, "объявление", "объявления", "объявлений")} — смотрите ниже`
+                      : "Ничего не нашлось. Попробуйте другое название или проверьте раскладку"}
+                  </Text>
+                )}
 
                 <Group gap="sm" mt={16} wrap="wrap">
                   {/* Кнопка каталога ушла в поиск выше — здесь остались
