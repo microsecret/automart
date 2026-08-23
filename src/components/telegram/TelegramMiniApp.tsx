@@ -114,9 +114,17 @@ export default function TelegramMiniApp() {
      смотреть машины можно и без него. Экран ожидания перед лентой — то
      самое, от чего мы уходим: человек пришёл за товаром, а видит
      служебное сообщение. */
+  const HEADINGS = {
+    vehicles: { title: "Свежие объявления", subtitle: "Транспорт с проверкой и доставкой", href: "/telegram" },
+    auctions: { title: "Мировые аукционы", subtitle: "Корея, Япония, Китай — с расчётом под ключ", href: "/telegram?tab=auctions" },
+    news: { title: "Новости авторынка", subtitle: "Что происходит с ценами и рынком", href: "/telegram?tab=news" },
+    chats: { title: "Сообщения", subtitle: "Переписка с продавцами", href: "/telegram?tab=chats" },
+  } as const
+  const heading = HEADINGS[tab]
+
   if (status === "browser" || status === "error") {
     return (
-      <TelegramShell title="LeWheel" subtitle="Транспорт, запчасти и аукционы">
+      <TelegramShell title={heading.title} subtitle={heading.subtitle} activeTab={heading.href}>
         <Stack gap="md">
           <Box className="tg-notice" data-tone={status === "error" ? "error" : undefined}>
             {status === "error" ? <IconAlertTriangle size={18} /> : <IconBrandTelegram size={18} />}
@@ -138,19 +146,14 @@ export default function TelegramMiniApp() {
               Перейти на сайт
             </Button>
           )}
-          <TelegramFeed />
+          {tab === "auctions" ? <TelegramAuctions />
+            : tab === "news" ? <TelegramNews />
+            : tab === "chats" ? <TelegramMessages />
+            : <TelegramFeed />}
         </Stack>
       </TelegramShell>
     )
   }
-
-  const HEADINGS = {
-    vehicles: { title: "Свежие объявления", subtitle: "Транспорт с проверкой и доставкой", href: "/telegram" },
-    auctions: { title: "Мировые аукционы", subtitle: "Корея, Япония, Китай — с расчётом под ключ", href: "/telegram?tab=auctions" },
-    news: { title: "Новости авторынка", subtitle: "Что происходит с ценами и рынком", href: "/telegram?tab=news" },
-    chats: { title: "Сообщения", subtitle: "Переписка с продавцами", href: "/telegram?tab=chats" },
-  } as const
-  const heading = HEADINGS[tab]
 
   return (
     <TelegramShell title={heading.title} subtitle={heading.subtitle} activeTab={heading.href}>
