@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useDeferredValue, useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Badge, Box, Group, Loader, Stack, Text } from "@mantine/core"
-import { IconPhotoOff } from "@tabler/icons-react"
+import { Badge, Box, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
+import { IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { formatMileage, formatPriceShort } from "@/lib/format-numbers"
 
@@ -34,37 +34,80 @@ const COUNTRY_FLAGS: Record<string, string> = {
 }
 
 export default function TelegramAuctions() {
-  const { data, isLoading } = useSWR<AuctionResponse>("/api/auctions?limit=24", fetchJson, {
+  const [search, setSearch] = useState("")
+  const deferredSearch = useDeferredValue(search.trim())
+
+  const query = new URLSearchParams({ limit: "24" })
+  if (deferredSearch.length > 1) query.set("make", deferredSearch)
+
+  const { data, isLoading, isValidating } = useSWR<AuctionResponse>(`/api/auctions?${query}`, fetchJson, {
     revalidateOnFocus: false,
+    keepPreviousData: true,
   })
+
+  const searchField = (
+    <Box className="tg-search">
+      <TextInput
+        className="tg-search__input"
+        placeholder="Марка: Toyota, Hyundai, BMW"
+        aria-label="Поиск по маркам"
+        leftSection={<IconSearch size={16} />}
+        rightSection={
+          search ? (
+            <button type="button" className="tg-search__clear" onClick={() => setSearch("")} aria-label="Очистить поиск">
+              <IconX size={14} />
+            </button>
+          ) : null
+        }
+        value={search}
+        onChange={(event) => setSearch(event.currentTarget.value)}
+        size="md"
+      />
+    </Box>
+  )
 
   if (isLoading) {
     return (
-      <Stack align="center" py={48} gap="xs">
-        <Loader size="sm" color="var(--tg-accent)" />
-        <Text size="xs" c="var(--tg-hint)">Загружаем лоты…</Text>
-      </Stack>
+      <>
+        {searchField}
+        <Stack align="center" py={48} gap="xs">
+          <Loader size="sm" color="var(--tg-accent)" />
+          <Text size="xs" c="var(--tg-hint)">Загружаем лоты…</Text>
+        </Stack>
+      </>
     )
   }
 
   const lots = data?.listings || []
+  const searching = deferredSearch.length > 1
+
   if (!lots.length) {
     return (
-      <Stack align="center" py={48} gap={6}>
-        <Text fw={700} c="var(--tg-text)">Лоты обновляются</Text>
-        <Text size="xs" c="var(--tg-hint)" ta="center" maw={260}>
-          Каталог пополняется с площадок Кореи, Японии и Китая. Загляните позже.
-        </Text>
-      </Stack>
+      <>
+        {searchField}
+        <Stack align="center" py={48} gap={6}>
+          <Text fw={700} c="var(--tg-text)">
+            {searching ? "Такой марки сейчас нет" : "Лоты обновляются"}
+          </Text>
+          <Text size="xs" c="var(--tg-hint)" ta="center" maw={270}>
+            {searching
+              ? "Каталог пополняется каждые двадцать минут — загляните позже или попробуйте другую марку."
+              : "Каталог пополняется с площадок Кореи, Японии и Китая. Загляните позже."}
+          </Text>
+        </Stack>
+      </>
     )
   }
 
   return (
-    <Stack gap="var(--tg-card-gap)" pb={8}>
-      {lots.map((lot) => (
-        <AuctionCard key={lot.id} lot={lot} />
-      ))}
-    </Stack>
+    <>
+      {searchField}
+      <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed" data-updating={isValidating || undefined}>
+        {lots.map((lot) => (
+          <AuctionCard key={lot.id} lot={lot} />
+        ))}
+      </Stack>
+    </>
   )
 }
 

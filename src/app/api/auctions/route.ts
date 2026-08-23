@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
 import { AUCTION_BODY_TYPES } from "@/lib/auction-normalization"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
+import { containsAnyCase } from "@/lib/search-terms"
 
 export const dynamic = "force-dynamic"
 
@@ -107,7 +108,20 @@ export async function GET(request: NextRequest) {
     if (country && source && auctionSourceCountry(source) !== country) return NextResponse.json({ error: "Площадка не относится к выбранной стране" }, { status: 400 })
     if (country) where.country = country
     if (source) where.source = source
-    if (make) where.make = { contains: make }
+    /* Поиск по марке не различает регистр и понимает русские названия.
+
+       SQLite сравнивает строки посимвольно: «toyota» строчными не
+       находило ничего, а «Toyota» находило. Тот же разбор применяется в
+       объявлениях и знает соответствия вроде «тойота» → Toyota. */
+    if (make) {
+      const variants = containsAnyCase("make", make)
+      if (variants.length) {
+        /* Отдельным условием, а не в where.OR: политика показа лотов уже
+           занимает OR под срок аукциона и скрытие модератором. Запись
+           поверх открыла бы скрытые лоты. */
+        where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), { OR: variants }]
+      }
+    }
     const minPrice = priceFrom ? Number.parseInt(priceFrom, 10) : undefined
     const maxPrice = priceTo ? Number.parseInt(priceTo, 10) : undefined
     if ((priceFrom && !Number.isFinite(minPrice)) || (priceTo && !Number.isFinite(maxPrice))) return NextResponse.json({ error: "Цена должна быть целым числом" }, { status: 400 })
