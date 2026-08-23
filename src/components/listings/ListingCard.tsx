@@ -33,6 +33,8 @@ export interface ListingCardData {
     fuelType: string | null
     transmission: string | null
     bodyType: string | null
+    engineVolume?: number | null
+    power?: number | null
     images: string | null
     vehicleType?: string | null
     typeDetails?: string | null
@@ -342,6 +344,12 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                   и в списке это не факт. В самом объявлении оно остаётся. */}
               {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>}
               {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>}
+              {/* Объём двигателя — первое, о чём спрашивают про машину, но
+                  в каталоге он не показывался вовсе. У электротяги объёма
+                  нет: там о моторе говорит мощность. */}
+              {listing.vehicle!.fuelType === "ELECTRIC"
+                ? listing.vehicle!.power ? <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{listing.vehicle!.power} л.с.</Text> : null
+                : listing.vehicle!.engineVolume ? <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{listing.vehicle!.engineVolume} л</Text> : null}
             </Box>
           )}
 

@@ -172,6 +172,14 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && (
                     <Text fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
                   )}
+                  {/* У электротяги объёма нет — там о моторе говорит мощность. */}
+                  {listing.vehicle!.fuelType === "ELECTRIC"
+                    ? listing.vehicle!.power ? (
+                        <Text fz="xs" c="gray.6">Мощность <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.power} л.с.</Text></Text>
+                      ) : null
+                    : listing.vehicle!.engineVolume ? (
+                        <Text fz="xs" c="gray.6">Объём <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.engineVolume} л</Text></Text>
+                      ) : null}
                 </Group>
               )}
             </Stack>
