@@ -73,7 +73,7 @@ const MENU_SECTIONS = [
     title: "Моё",
     items: [
       { href: "/favorites?from=telegram", label: "Избранное", Icon: IconHeart },
-      { href: "/messages?from=telegram", label: "Сообщения", Icon: IconMessageCircle2 },
+      { href: "/telegram?tab=chats", label: "Сообщения", Icon: IconMessageCircle2 },
       { href: "/dashboard?tab=listings&from=telegram", label: "Мои объявления", Icon: IconList },
       { href: "/dashboard?tab=garage&from=telegram", label: "Личный гараж", Icon: IconCar },
     ],

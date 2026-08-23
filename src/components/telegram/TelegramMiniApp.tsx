@@ -11,6 +11,7 @@ import TelegramShell from "./TelegramShell"
 import TelegramFeed from "./TelegramFeed"
 import TelegramAuctions from "./TelegramAuctions"
 import TelegramNews from "./TelegramNews"
+import TelegramMessages from "./TelegramMessages"
 
 /**
  * Приложение LeWheel внутри Telegram.
@@ -58,7 +59,7 @@ export default function TelegramMiniApp() {
      Тогда кнопка «назад» в Telegram возвращает к предыдущей вкладке, а
      не закрывает приложение — как в любом мобильном приложении. */
   const rawTab = useSearchParams().get("tab")
-  const tab = rawTab === "auctions" || rawTab === "news" ? rawTab : "vehicles"
+  const tab = rawTab === "auctions" || rawTab === "news" || rawTab === "chats" ? rawTab : "vehicles"
   const [status, setStatus] = useState<Status>("loading")
   const [message, setMessage] = useState("")
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
@@ -147,6 +148,7 @@ export default function TelegramMiniApp() {
     vehicles: { title: "Свежие объявления", subtitle: "Транспорт с проверкой и доставкой", href: "/telegram" },
     auctions: { title: "Мировые аукционы", subtitle: "Корея, Япония, Китай — с расчётом под ключ", href: "/telegram?tab=auctions" },
     news: { title: "Новости авторынка", subtitle: "Что происходит с ценами и рынком", href: "/telegram?tab=news" },
+    chats: { title: "Сообщения", subtitle: "Переписка с продавцами", href: "/telegram?tab=chats" },
   } as const
   const heading = HEADINGS[tab]
 
@@ -161,6 +163,8 @@ export default function TelegramMiniApp() {
         <TelegramAuctions />
       ) : tab === "news" ? (
         <TelegramNews />
+      ) : tab === "chats" ? (
+        <TelegramMessages />
       ) : (
         <TelegramFeed />
       )}

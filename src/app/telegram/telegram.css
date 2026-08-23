@@ -601,3 +601,82 @@
   gap: 3px;
   font-variant-numeric: tabular-nums;
 }
+
+/* Строка переписки.
+
+   Устроена как в мессенджере: аватар, имя, время справа, предпросмотр
+   последнего сообщения. Человек читает такой список не задумываясь —
+   привычка сложилась задолго до нашего приложения.
+
+   Раньше пункт меню уводил на сайт: человек выходил из приложения, ждал
+   загрузку обычной страницы и терял ленту, к которой возвращался. */
+.tg-chat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 120ms ease-out;
+}
+
+.tg-chat:active {
+  background: color-mix(in srgb, var(--tg-accent) 12%, transparent);
+}
+
+.tg-chat__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.tg-chat__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tg-chat__name {
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--tg-text);
+}
+
+.tg-chat__time {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  color: var(--tg-hint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Объявление, о котором идёт разговор: без него непонятно, про какую
+   машину речь, когда переписок несколько. */
+.tg-chat__listing {
+  font-size: 0.75rem;
+  color: var(--tg-accent);
+}
+
+.tg-chat__preview {
+  font-size: 0.84rem;
+  color: var(--tg-hint);
+}
+
+/* Непрочитанное выделяется насыщенностью имени, а не цветом строки:
+   цветная подложка в списке читается как выделение, а не как «новое». */
+.tg-chat[data-unread] .tg-chat__preview {
+  color: color-mix(in srgb, var(--tg-text) 80%, transparent);
+  font-weight: 600;
+}
+
+.tg-chat__badge {
+  flex: 0 0 auto;
+  background: var(--tg-accent);
+  color: var(--tg-accent-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-chat {
+    transition: none;
+  }
+}
