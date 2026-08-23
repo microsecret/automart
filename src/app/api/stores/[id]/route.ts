@@ -30,7 +30,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const store = await prisma.partStore.findUnique({
     where: { id },
-    select: { id: true, ownerId: true, name: true, status: true, _count: { select: { parts: true } } },
+    select: {
+      id: true, ownerId: true, name: true, status: true,
+      // Нужны для сравнения: правка юридических данных снимает отметку
+      // о проверке, а правка названия или города — нет.
+      legalName: true, inn: true, contactPhone: true, contactEmail: true,
+      _count: { select: { parts: true } },
+    },
   })
   if (!store) return NextResponse.json({ error: "Магазин не найден" }, { status: 404 })
 
@@ -44,9 +50,30 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   // Обновление профиля витрины доступно владельцу и администратору.
   if (!nextStatus) {
+    /* Правка юридических данных снимает отметку о проверке.
+
+       Модерация проверяет магазин по реквизитам: юрлицо, ИНН, телефон,
+       почта. Раньше их можно было поменять на уже проверенном магазине
+       обычным сохранением профиля — витрина продолжала показывать
+       «проверено», но проверенных данных там больше не было. Следа в
+       журнале тоже не оставалось.
+
+       Название, описание и город к проверке не относятся: их правка
+       статуса не меняет. */
+    const LEGAL_FIELDS = ["legalName", "inn", "contactPhone", "contactEmail"] as const
+    const changedLegalFields = LEGAL_FIELDS.filter((field) => {
+      if (body?.[field] === undefined) return false
+      const next = readText(body[field], 200)
+      return next !== (store as Record<string, unknown>)[field]
+    })
+    const needsRemoderation = !admin && store.status === "ACTIVE" && changedLegalFields.length > 0
+
     const updated = await prisma.partStore.update({
       where: { id },
       data: {
+        ...(needsRemoderation
+          ? { status: "PENDING", statusReason: "Изменены юридические данные: требуется повторная проверка" }
+          : {}),
         ...(body?.name !== undefined ? { name: readText(body.name, 120) || store.name } : {}),
         ...(body?.description !== undefined ? { description: readText(body.description, 1_000) } : {}),
         ...(body?.city !== undefined ? { city: readText(body.city, 80) } : {}),
@@ -58,8 +85,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         ...(body?.defaultLeadTimeDaysMin !== undefined ? { defaultLeadTimeDaysMin: Number.isFinite(Number(body.defaultLeadTimeDaysMin)) ? Number(body.defaultLeadTimeDaysMin) : null } : {}),
         ...(body?.defaultLeadTimeDaysMax !== undefined ? { defaultLeadTimeDaysMax: Number.isFinite(Number(body.defaultLeadTimeDaysMax)) ? Number(body.defaultLeadTimeDaysMax) : null } : {}),
       },
-      select: { id: true, name: true, slug: true, status: true },
+      select: { id: true, name: true, slug: true, status: true, statusReason: true },
     })
+
+    // Запись в журнал: подмена реквизитов на проверенном магазине —
+    // событие, о котором модерация должна узнать.
+    if (needsRemoderation) {
+      await recordAdminAudit({
+        actorId: session.user.id,
+        actorEmail: session.user.email,
+        action: "PART_STORE_LEGAL_CHANGE",
+        entityType: "PartStore",
+        entityId: id,
+        summary: `Магазин «${store.name}»: владелец изменил ${changedLegalFields.join(", ")} — статус ACTIVE → PENDING`,
+        metadata: { changedFields: changedLegalFields, previousStatus: store.status },
+      })
+    }
+
     return NextResponse.json({ store: updated })
   }
 

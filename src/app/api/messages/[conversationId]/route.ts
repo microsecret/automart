@@ -16,19 +16,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       )
     }
 
-    // Verify that the current user is part of this conversation
-    // We'll check this by looking for messages in this conversation involving the user
+    /* Условие участия применяется в КАЖДОЙ выборке ниже, а не один раз.
+
+       Раньше доступ подтверждался наличием хотя бы одного своего
+       сообщения в диалоге, а сообщения потом брались по одному
+       conversationId. Идентификатор диалога складывается из
+       идентификаторов собеседников и объявления, то есть предсказуем — и
+       при его совпадении в выдачу попала бы чужая переписка. */
+    const participantWhere = {
+      conversationId,
+      OR: [
+        { senderId: session.user.id },
+        { receiverId: session.user.id },
+      ],
+    }
+
     const hasAccess = await prisma.message.findFirst({
-      where: {
-        conversationId,
-        OR: [
-          { senderId: session.user.id },
-          { receiverId: session.user.id }
-        ]
-      },
-      select: {
-        id: true
-      }
+      where: participantWhere,
+      select: { id: true },
     })
 
     if (!hasAccess) {
@@ -39,12 +44,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { searchParams } = new URL(request.url)
-    const requestedPage = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1)
+    // Верхняя граница обязательна: Number("1e400") даёт Infinity, а
+    // Number("1e9") — целое вне разумного диапазона; и то и другое
+    // уходит в skip и роняет запрос.
+    const requestedPage = Math.min(10_000, Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1))
     const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || String(CONVERSATION_PAGE_SIZE), 10) || CONVERSATION_PAGE_SIZE))
     const [total, conversationMeta] = await Promise.all([
-      prisma.message.count({ where: { conversationId } }),
+      prisma.message.count({ where: participantWhere }),
       prisma.message.findFirst({
-        where: { conversationId },
+        where: participantWhere,
         orderBy: { createdAt: "asc" },
         select: {
           senderId: true,
@@ -71,9 +79,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Page one is the most recent page. We return each page in chronological
     // order so the client can prepend older pages without reordering bubbles.
     const newestFirstMessages = await prisma.message.findMany({
-      where: {
-        conversationId
-      },
+      where: participantWhere,
       include: {
         sender: {
           select: {

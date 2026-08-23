@@ -205,20 +205,17 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Verify listing exists
-    const listing = await prisma.listing.findUnique({
-      where: { id: listingId },
-      select: { id: true }
-    })
+    /* Проверки существования здесь нет, и это намеренно.
 
-    if (!listing) {
-      return NextResponse.json(
-        { error: "Объявление не найдено" },
-        { status: 404 }
-      )
-    }
+       Она отвечала по-разному на существующий и несуществующий
+       идентификатор: перебором можно было узнать, какие объявления есть
+       в базе, включая черновики и снятые с публикации.
 
-    // Remove from favorites
+       Она же мешала делу: объявление могло стать непубличным уже после
+       добавления в избранное, и убрать его оттуда стало бы нельзя.
+
+       Отсоединение безопасно само по себе — оно идёт по идентификатору
+       вошедшего и ничего не делает, если связи нет. */
     await prisma.user.update({
       where: { id: session.user.id },
       data: {

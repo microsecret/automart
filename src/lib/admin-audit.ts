@@ -15,6 +15,10 @@ export type AdminAuditAction =
   | "SUPPORT_TICKET_UPDATE"
   | "FUEL_PRICE_REPORT_REJECT"
   | "PART_STORE_STATUS_CHANGE"
+  /* Владелец изменил юрлицо, ИНН или контакты у проверенного магазина.
+     Проверка касалась именно этих данных, поэтому магазин уходит на
+     повторную модерацию, а событие попадает в журнал. */
+  | "PART_STORE_LEGAL_CHANGE"
   | "REFERRAL_PAYOUT"
 
 type AdminAuditInput = {
