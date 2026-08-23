@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio } from "@mantine/core"
-import { IconHeart, IconMapPin } from "@tabler/icons-react"
+import { IconHeart, IconMapPin , IconScale } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
@@ -13,6 +13,7 @@ import type { ListingCardData } from "./ListingCard"
 import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
+import { useCompare } from "@/hooks/useCompare"
 
 export type ListingRowData = ListingCardData
 
@@ -29,6 +30,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
+  const { inCompare, toggleCompare: handleCompare } = useCompare(listing.id)
 
   const isVehicle = !!listing.vehicle
   const detailHref = isVehicle
@@ -183,6 +185,20 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
               ) : <span />}
               <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
                 {listing.createdAt && <Text fz="xs" c="gray.4">{formatRelativeDate(listing.createdAt)}</Text>}
+                {isVehicle && (
+                  <ActionIcon
+                    className="listing-card__favorite listing-card__favorite--inline"
+                    color={inCompare ? "indigo" : "gray"}
+                    variant={inCompare ? "filled" : "subtle"}
+                    size={44}
+                    radius="xl"
+                    onClick={handleCompare}
+                    aria-label={inCompare ? "Убрать из сравнения" : "Добавить к сравнению"}
+                    style={{ position: "relative", zIndex: 2 }}
+                  >
+                    <IconScale size={14} />
+                  </ActionIcon>
+                )}
                 <ActionIcon
                   className="listing-card__favorite listing-card__favorite--inline"
                   color={isFav ? "red" : "gray"}
