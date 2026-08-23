@@ -12,7 +12,6 @@ import VehicleFallback from "./VehicleFallback"
 import NextImage from "next/image"
 import { COMPARE_LIMIT, readCompareList, toggleCompare } from "@/lib/compare-list"
 import { useFavorites } from "@/hooks/useFavorites"
-import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
 
 export interface ListingCardData {
@@ -60,7 +59,6 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const [activeImg, setActiveImg] = useState(0)
   const [imageFailed, setImageFailed] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
-  const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
   useEffect(() => {
     setActiveImg(0)
@@ -141,10 +139,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
     if (!isAuthenticated) {
       notifications.show({
         title: "Войдите, чтобы сохранить",
-        message: "Избранное синхронизируется между сайтом и Telegram после авторизации.",
+        message: "Избранное синхронизируется между сайтом и Telegram после входа.",
         color: "indigo",
+        autoClose: 7000,
       })
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(detailHref)}`)
       return
     }
 
