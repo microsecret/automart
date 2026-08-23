@@ -288,13 +288,21 @@ async function sendRegistrationComplete(chatId: string, name?: string | null) {
   const safeName = escapeTelegramHtml(name?.trim() || "друг")
   await sendStickerIfConfigured(chatId, REGISTRATION_STICKERS.done)
   await sendMiniAppEntry(chatId, [
-    `🎉 <b>${safeName}, регистрация завершена!</b>`,
+    `🎉 <b>${safeName}, добро пожаловать в LeWheel!</b>`,
     "",
     "✅ Телефон подтверждён",
     "✅ Почта сохранена",
     "✅ Пароль защищён",
     "",
-    "Теперь Mini App будет узнавать вас по Telegram ID и входить автоматически. На сайте используйте почту или телефон и свой пароль.",
+    "🚗 <b>Разместите первое объявление — это бесплатно</b>",
+    "Прямо здесь, в приложении: фото, цена, пара характеристик — и машина на витрине.",
+    "",
+    "🌍 Объявление появится сразу в двух местах:",
+    "• в приложении LeWheel — его видят все, кто заходит из Telegram;",
+    "• на сайте <b>lewheel.ru</b> — туда приходят из поиска Яндекса и Google.",
+    "",
+    "🔑 Входить больше не нужно: приложение узнаёт вас по Telegram.",
+    "На сайте — почта или телефон и ваш пароль.",
   ].join("\n"))
 }
 
