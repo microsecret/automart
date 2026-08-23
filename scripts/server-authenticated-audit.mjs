@@ -122,16 +122,19 @@ async function run() {
       make: "Hyundai", model: "Tucson", year: new Date().getFullYear(), mileage: 12_000,
       sourcePrice: 25_000_000, sourceCurrency: "KRW", priceRub: 1_500_000, markup: 200_000,
       finalPrice: 1_700_000, country: "KR", status: "ACTIVE", sourceLastSeenAt: new Date(),
+      fuelType: "DIESEL", transmission: "AUTOMATIC", bodyType: "SUV", color: "Белый",
+      driveType: "AWD", imageUrl: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2",
       engineVolume: 1998, power: 180, lotNumber: `${marker}-lot-1`, location: "Сеул",
       specsRu: "Количество ключей: 2\nЭкологический стандарт: Евро-6",
+      conditionInfo: JSON.stringify({ damageReport: { sections: [] }, inspectionNotes: [] }),
     },
   })
   const similarAuctionListing = await prisma.auctionListing.create({
     data: {
       sourceId: `${marker}-kcar-similar`, source: "KCAR", sourceUrl: `https://www.kcar.com/${marker}-similar`,
       make: "Hyundai", model: "Santa Fe", year: new Date().getFullYear(), mileage: 15_000,
-      sourcePrice: 27_000_000, sourceCurrency: "KRW", priceRub: 1_620_000, markup: 200_000,
-      finalPrice: 1_820_000, country: "KR", status: "ACTIVE", sourceLastSeenAt: new Date(),
+      sourcePrice: 36_000_000, sourceCurrency: "KRW", priceRub: 2_300_000, markup: 200_000,
+      finalPrice: 2_500_000, country: "KR", status: "ACTIVE", sourceLastSeenAt: new Date(),
     },
   })
   const staleAuctionListing = await prisma.auctionListing.create({
@@ -356,6 +359,24 @@ async function run() {
     kcarHealth?.operationalStatus === "STUCK" && kcarHealth?.latestRunDurationSeconds >= 20 * 60,
     kcarHealth ? `${kcarHealth.operationalStatus} · ${kcarHealth.latestRunDurationSeconds}s` : "KCAR missing",
   )
+  const highlightPath = `/api/admin/telegram-auction-highlight?listing=${auctionListing.id}`
+  await expect(highlightPath, cookie, 403)
+  const highlightPreview = await expect(highlightPath, adminCookie, 200)
+  record(
+    "admin previews only a complete, current and genuinely below-median Telegram lot",
+    highlightPreview?.preview?.id === auctionListing.id
+      && highlightPreview?.preview?.readiness?.ready === true
+      && highlightPreview?.preview?.readiness?.filled === 15
+      && highlightPreview?.preview?.priceSignal?.ratio < 0.88
+      && highlightPreview?.preview?.captionPlainText?.includes("Hyundai Tucson"),
+    highlightPreview?.preview
+      ? `${highlightPreview.preview.readiness.filled}/15 · ratio ${highlightPreview.preview.priceSignal.ratio}`
+      : "preview missing",
+  )
+  await expect("/api/admin/telegram-auction-highlight", adminCookie, 400, {
+    method: "POST",
+    body: JSON.stringify({ listing: auctionListing.id, confirm: false }),
+  })
   await expect("/api/auctions?country=KR&limit=10", null, 200)
   const auctionDetail = await expect(`/api/auctions/${auctionListing.id}`, null, 200)
   record("auction detail returns ranked similar vehicles", auctionDetail?.similar?.some((item) => item.id === similarAuctionListing.id), `${auctionDetail?.similar?.length ?? 0} similar`)

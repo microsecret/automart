@@ -5,6 +5,11 @@ import https from "node:https"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { PrismaClient } from "@prisma/client"
+import {
+  auctionHighlightMinimumFields,
+  auctionHighlightReadiness,
+  parseAuctionHighlightListingId,
+} from "../src/lib/auction-telegram-highlight.mjs"
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const envPath = path.join(projectRoot, ".env")
@@ -27,10 +32,11 @@ function getArgValue(flag) {
 const dryRun = process.argv.includes("--dry-run")
 const forceListing = process.argv.includes("--force")
 const explicitListingArg = getArgValue("--listing")
-const explicitListingId = parseListingId(explicitListingArg)
+const explicitListingId = parseAuctionHighlightListingId(explicitListingArg)
 const explicitLimit = Number(getArgValue("--limit"))
 const limit = Number.isInteger(explicitLimit) ? Math.min(Math.max(explicitLimit, 1), 10) : Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_POST_LIMIT || 3), 1), 10)
 const maxAgeHours = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_AGE_HOURS || 72), 1), 720)
+const freshnessBoundary = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000)
 // Дешёвый лот в ленте обесценивает подборку: подписчик приходит за машинами,
 // которые имеет смысл везти, а не за самой низкой строкой прайса.
 const minFinalPrice = Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_FINAL_PRICE || 1_000_000), 0)
@@ -48,6 +54,7 @@ if (minMedianRatio > maxGreatDealRatio) {
 }
 const maxSeriousDefects = Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_SERIOUS_DEFECTS || 1), 0)
 const maxInspectionNotes = Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_INSPECTION_NOTES || 30), 0)
+const minCompletenessFields = auctionHighlightMinimumFields(process.env.TELEGRAM_AUCTION_MIN_COMPLETENESS_FIELDS)
 const postDelayMinMs = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_POST_DELAY_MIN_MS || 10_000), 1_000), 90_000)
 const postDelayMaxMs = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_POST_DELAY_MAX_MS || 15_000), postDelayMinMs), 120_000)
 const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim()
@@ -83,14 +90,6 @@ function escapeHtml(value) {
 
 function normalizeText(value) {
   return value ? String(value).replace(/\s+/g, " ").trim() : null
-}
-
-function parseListingId(value) {
-  const input = normalizeText(value)
-  if (!input) return null
-  if (/^[0-9a-zA-Z-]{20,64}$/.test(input)) return input
-  const direct = input.match(/\/auctions\/([0-9a-zA-Z-]{20,64})(?:[/?#].*)?$/i)
-  return direct?.[1] || null
 }
 
 function trimToLimit(lines, maxLength = 980) {
@@ -404,7 +403,7 @@ async function main() {
   // же, как они убирают её из публичного каталога.
   const where = explicitListingId
     ? { id: explicitListingId, status: "ACTIVE", adminHiddenAt: null, finalPrice: { gt: 0 }, imageUrl: { not: null } }
-    : { status: "ACTIVE", adminHiddenAt: null, finalPrice: { gt: 0 }, imageUrl: { not: null }, createdAt: { gte: new Date(Date.now() - maxAgeHours * 60 * 60 * 1000) } }
+    : { status: "ACTIVE", adminHiddenAt: null, finalPrice: { gt: 0 }, imageUrl: { not: null }, createdAt: { gte: freshnessBoundary } }
   const listings = await prisma.auctionListing.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -415,21 +414,43 @@ async function main() {
     return
   }
 
-  const medians = new Map([...new Set(listings.map((listing) => listing.country))].map((country) => [country, median(listings.filter((listing) => listing.country === country).map((listing) => listing.finalPrice))]))
+  const medianListings = explicitListingId && listings[0]
+    ? await prisma.auctionListing.findMany({
+      where: {
+        country: listings[0].country,
+        status: "ACTIVE",
+        adminHiddenAt: null,
+        finalPrice: { gt: 0 },
+        sourceLastSeenAt: { gte: freshnessBoundary },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+    })
+    : listings
+  const medians = new Map([...new Set(medianListings.map((listing) => listing.country))].map((country) => [
+    country,
+    median(medianListings.filter((listing) => listing.country === country).map((listing) => listing.finalPrice)),
+  ]))
   const posted = dryRun || chatIds.length === 0 ? [] : await prisma.auctionTelegramPost.findMany({
     where: { auctionListingId: { in: listings.map((listing) => listing.id) }, chatId: { in: chatIds } },
     select: { auctionListingId: true, chatId: true },
   })
   const postedKeys = new Set(posted.map((item) => `${item.auctionListingId}:${item.chatId}`))
   const rankedCandidates = listings
-    .map((listing) => ({ listing, signal: signalForPrice(listing.finalPrice, medians.get(listing.country)), damage: inspectionCounts(listing.conditionInfo) }))
-    .filter(({ listing, signal, damage }) => {
+    .map((listing) => ({
+      listing,
+      signal: signalForPrice(listing.finalPrice, medians.get(listing.country)),
+      damage: inspectionCounts(listing.conditionInfo),
+      readiness: auctionHighlightReadiness(listing, minCompletenessFields),
+    }))
+    .filter(({ listing, signal, damage, readiness }) => {
       if (listing.finalPrice < minFinalPrice) return false
       if (!signal.ratio) return false
       if (signal.ratio < minMedianRatio) return false
-      if (!explicitListingId && signal.ratio > maxGreatDealRatio) return false
+      if (signal.ratio > maxGreatDealRatio && !(explicitListingId && forceListing)) return false
       if (damage.serious > maxSeriousDefects) return false
       if (damage.notes > maxInspectionNotes) return false
+      if (!readiness.ready) return false
       return true
     })
     .sort((left, right) => (left.signal.ratio || 1) - (right.signal.ratio || 1))
@@ -459,10 +480,12 @@ async function main() {
   }
 
   if (dryRun) {
-    console.log(JSON.stringify(diversifiedCandidates.slice(0, limit).map(({ listing }) => ({
+    console.log(JSON.stringify(diversifiedCandidates.slice(0, limit).map(({ listing, signal, readiness }) => ({
       id: listing.id,
       photo: parseImages(listing)[0] || null,
       caption: buildAuctionCaption(listing, medians.get(listing.country)),
+      priceSignal: signal,
+      readiness,
     })), null, 2))
     return
   }

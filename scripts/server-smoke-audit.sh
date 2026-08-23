@@ -167,6 +167,7 @@ probe 'admin listing queue without session' GET '/api/admin/listings' 403
 probe 'admin reports without session' GET '/api/admin/reports' 403
 probe 'admin auction inquiries without session' GET '/api/admin/auctions/inquiries' 403
 probe 'admin auction metrics without session' GET '/api/admin/auctions/stats' 403
+probe 'admin Telegram lot preview without session' GET '/api/admin/telegram-auction-highlight?listing=26cc45ec-c63f-496c-b15a-4a5232c1fc0f' 403
 probe 'admin role update without session' PATCH '/api/admin/users/not-a-user/role' 403 -H 'Content-Type: application/json' --data '{}'
 probe 'admin delivery partners without session' GET '/api/admin/delivery-organizations' 403
 probe 'admin delivery partner mutation without session' PATCH '/api/admin/delivery-organizations' 403 -H 'Content-Type: application/json' --data '{}'

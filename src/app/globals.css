@@ -5579,6 +5579,71 @@ a:focus-visible > .market-linked-card {
   border-bottom: 0;
 }
 
+.telegram-highlight-card {
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--mantine-color-blue-5) 10%, transparent), transparent 34%),
+    var(--mantine-color-body);
+}
+
+.telegram-highlight-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--mantine-spacing-sm);
+}
+
+.telegram-highlight-preview {
+  padding: var(--mantine-spacing-md);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-md);
+  background: color-mix(in srgb, var(--mantine-color-white) 88%, var(--mantine-color-blue-0));
+}
+
+[data-mantine-color-scheme="dark"] .telegram-highlight-preview {
+  border-color: var(--mantine-color-dark-4);
+  background: color-mix(in srgb, var(--mantine-color-dark-7) 90%, var(--mantine-color-blue-9));
+}
+
+.telegram-highlight-caption {
+  max-height: 18rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.telegram-highlight-photo-empty {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mantine-spacing-xs);
+  color: var(--mantine-color-dimmed);
+  border: 1px dashed var(--mantine-color-gray-4);
+  border-radius: var(--mantine-radius-md);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .telegram-highlight-card {
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .telegram-highlight-card:focus-within {
+    border-color: var(--mantine-color-blue-5);
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--mantine-color-blue-7) 10%, transparent);
+  }
+}
+
+@media (max-width: 36em) {
+  .telegram-highlight-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .telegram-highlight-controls .mantine-Button-root {
+    width: 100%;
+  }
+}
+
 /* Перенос строк по смыслу текста.
 
    Заголовок «Mercedes-Benz E-Class 220 d 4MATIC» переносился как придётся:

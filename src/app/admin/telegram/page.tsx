@@ -3,11 +3,14 @@
 import { useState } from "react"
 import useSWR from "swr"
 import {
-  Badge, Box, Button, Card, Container, Group, SegmentedControl, SimpleGrid,
-  Stack, Text, Textarea, ThemeIcon, Title,
+  Badge, Box, Button, Card, Container, Group, Image, Modal, Progress,
+  SegmentedControl, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, Title,
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconBrandTelegram, IconSend, IconUsers, IconUserCheck, IconUserOff, IconClock } from "@tabler/icons-react"
+import {
+  IconBrandTelegram, IconChecks, IconClock, IconEye, IconPhotoCheck,
+  IconSend, IconUsers, IconUserCheck, IconUserOff,
+} from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
@@ -41,6 +44,16 @@ type HistoryItem = {
   createdAt: string
 }
 
+type HighlightPreview = {
+  id: string
+  photo: string | null
+  captionPlainText: string
+  priceSignal: { label: string; ratio: number | null; saving: number | null }
+  readiness: { ready: boolean; filled: number; total: number; required: number; percent: number; missing: string[] }
+  activeChats: number
+  alreadyPosted: number
+}
+
 const AUDIENCE_LABELS: Record<string, string> = {
   all: "Всем",
   unregistered: "Не закончившим",
@@ -62,6 +75,11 @@ export default function TelegramBroadcastPage() {
   const [text, setText] = useState("")
   const [audience, setAudience] = useState("all")
   const [sending, setSending] = useState(false)
+  const [lotInput, setLotInput] = useState("")
+  const [highlightPreview, setHighlightPreview] = useState<HighlightPreview | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [publishLoading, setPublishLoading] = useState(false)
+  const [confirmHighlight, setConfirmHighlight] = useState(false)
 
   const stats = data?.stats
 
@@ -96,6 +114,59 @@ export default function TelegramBroadcastPage() {
       })
     } finally {
       setSending(false)
+    }
+  }
+
+  const previewHighlight = async () => {
+    if (!lotInput.trim() || previewLoading) return
+    setPreviewLoading(true)
+    try {
+      const result = await fetchJson<{ preview: HighlightPreview }>(
+        `/api/admin/telegram-auction-highlight?listing=${encodeURIComponent(lotInput.trim())}`,
+      )
+      setHighlightPreview(result.preview)
+    } catch (previewError) {
+      setHighlightPreview(null)
+      notifications.show({
+        title: "Лот не готов к публикации",
+        message: getApiClientErrorMessage(previewError, "Проверьте ссылку и полноту карточки."),
+        color: "orange",
+      })
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const publishHighlight = async () => {
+    if (!highlightPreview || publishLoading) return
+    setPublishLoading(true)
+    try {
+      const result = await fetchJson<{ success: true; sent: number; preview: HighlightPreview }>(
+        "/api/admin/telegram-auction-highlight",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ listing: highlightPreview.id, confirm: true }),
+        },
+      )
+      setHighlightPreview({
+        ...result.preview,
+        alreadyPosted: result.preview.alreadyPosted + result.sent,
+      })
+      setConfirmHighlight(false)
+      notifications.show({
+        title: "Лот опубликован",
+        message: `Новая карточка отправлена в ${result.sent.toLocaleString("ru")} ${result.sent === 1 ? "чат" : "чатов"}.`,
+        color: "teal",
+      })
+    } catch (publishError) {
+      notifications.show({
+        title: "Публикация не выполнена",
+        message: getApiClientErrorMessage(publishError, "Проверьте права бота и повторите позже."),
+        color: "red",
+      })
+    } finally {
+      setPublishLoading(false)
     }
   }
 
@@ -152,6 +223,112 @@ export default function TelegramBroadcastPage() {
             </Text>
           </Group>
         )}
+
+        <Card withBorder radius="md" p="lg" className="telegram-highlight-card">
+          <Stack gap="md">
+            <Group justify="space-between" align="flex-start" gap="md">
+              <Group gap="sm" align="flex-start" wrap="nowrap">
+                <ThemeIcon variant="light" color="blue" size={38} radius="md">
+                  <IconPhotoCheck size={20} />
+                </ThemeIcon>
+                <Box>
+                  <Text fw={750}>Выгодный лот в Telegram-чаты</Text>
+                  <Text size="sm" c="dimmed">
+                    Сначала проверьте фото, цену, повреждения и полноту данных. Отправка начнётся только после подтверждения.
+                  </Text>
+                </Box>
+              </Group>
+              <Badge variant="light" color="blue" leftSection={<IconChecks size={12} />}>Ручная проверка</Badge>
+            </Group>
+
+            <Box className="telegram-highlight-controls">
+              <TextInput
+                label="Ссылка или UUID аукционного лота"
+                placeholder="https://lewheel.ru/auctions/…"
+                value={lotInput}
+                onChange={(event) => {
+                  setLotInput(event.currentTarget.value)
+                  setHighlightPreview(null)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void previewHighlight()
+                }}
+              />
+              <Button
+                variant="light"
+                leftSection={<IconEye size={16} />}
+                loading={previewLoading}
+                disabled={!lotInput.trim()}
+                onClick={() => void previewHighlight()}
+              >
+                Проверить
+              </Button>
+            </Box>
+
+            {highlightPreview && (
+              <Box className="telegram-highlight-preview">
+                <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                  {highlightPreview.photo ? (
+                    <Image
+                      src={highlightPreview.photo}
+                      alt="Главное фото выбранного аукционного лота"
+                      radius="md"
+                      h={260}
+                      fit="cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <Box className="telegram-highlight-photo-empty">
+                      <IconPhotoCheck size={34} />
+                      <Text size="sm" c="dimmed">Фото источника недоступно</Text>
+                    </Box>
+                  )}
+
+                  <Stack gap="sm">
+                    <Group gap="xs">
+                      <Badge color="teal" variant="light">{highlightPreview.priceSignal.label}</Badge>
+                      {highlightPreview.priceSignal.ratio && (
+                        <Badge color="blue" variant="outline">
+                          {Math.round(highlightPreview.priceSignal.ratio * 100)}% от медианы
+                        </Badge>
+                      )}
+                    </Group>
+                    <Box>
+                      <Group justify="space-between" gap="xs" mb={5}>
+                        <Text size="sm" fw={650}>Полнота карточки</Text>
+                        <Text size="sm" c="dimmed">
+                          {highlightPreview.readiness.filled}/{highlightPreview.readiness.total}
+                        </Text>
+                      </Group>
+                      <Progress value={highlightPreview.readiness.percent} color="teal" radius="xl" />
+                      <Text size="xs" c="dimmed" mt={5}>
+                        Для публикации нужно не менее {highlightPreview.readiness.required} полей.
+                      </Text>
+                    </Box>
+                    <Text size="sm" className="telegram-highlight-caption">
+                      {highlightPreview.captionPlainText}
+                    </Text>
+                  </Stack>
+                </SimpleGrid>
+
+                <Group justify="space-between" gap="md" mt="md" align="center">
+                  <Text size="sm" c="dimmed">
+                    Разрешено чатов: <strong>{highlightPreview.activeChats}</strong>
+                    {highlightPreview.alreadyPosted > 0 ? ` · уже опубликовано: ${highlightPreview.alreadyPosted}` : ""}
+                  </Text>
+                  <Button
+                    color="teal"
+                    leftSection={<IconSend size={16} />}
+                    disabled={highlightPreview.activeChats <= highlightPreview.alreadyPosted}
+                    onClick={() => setConfirmHighlight(true)}
+                  >
+                    Подтвердить публикацию
+                  </Button>
+                </Group>
+              </Box>
+            )}
+          </Stack>
+        </Card>
 
         <Card withBorder radius="md" p="lg">
           <Stack gap="md">
@@ -232,6 +409,28 @@ export default function TelegramBroadcastPage() {
           </Card>
         )}
       </Stack>
+
+      <Modal
+        opened={confirmHighlight}
+        onClose={() => !publishLoading && setConfirmHighlight(false)}
+        title="Опубликовать выгодный лот?"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm">
+            Бот отправит фото, проверенный текст и inline-кнопки во все активные чаты, где разрешён маркетинг и бот является администратором.
+          </Text>
+          <Text size="sm" c="dimmed">
+            Сообщения не удаляются автоматически. Повторная отправка того же лота в тот же чат блокируется.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" disabled={publishLoading} onClick={() => setConfirmHighlight(false)}>Отмена</Button>
+            <Button color="teal" loading={publishLoading} onClick={() => void publishHighlight()}>
+              Опубликовать
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   )
 }

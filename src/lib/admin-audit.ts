@@ -20,6 +20,7 @@ export type AdminAuditAction =
   | "SUPPORT_TICKET_UPDATE"
   | "SUPPORT_TICKET_REPLY"
   | "TELEGRAM_BROADCAST_SEND"
+  | "TELEGRAM_AUCTION_HIGHLIGHT_SEND"
   | "FUEL_PRICE_REPORT_REJECT"
   | "PART_STORE_STATUS_CHANGE"
   /* Владелец изменил юрлицо, ИНН или контакты у проверенного магазина.
