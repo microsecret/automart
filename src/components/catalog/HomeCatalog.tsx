@@ -246,7 +246,7 @@ export default function HomePage(p: HomePageProps = {}) {
     else window.history.replaceState(null, "", target)
   }, [urlRead, query, make, model, priceFrom, priceTo, yearFrom, yearTo, city, radius, sort, page])
 
-  const { data, error, isLoading, mutate } = useSWR<ListingsResponse>(hasInvalidPriceRange ? null : "/api/listings?" + buildQuery(), fetcher)
+  const { data, error, isLoading, isValidating, mutate } = useSWR<ListingsResponse>(hasInvalidPriceRange ? null : "/api/listings?" + buildQuery(), fetcher)
 
   const resetFilters = () => {
     setMake(null); setModel(null); setPriceFrom(""); setPriceTo("")
@@ -792,6 +792,15 @@ export default function HomePage(p: HomePageProps = {}) {
         </Paper>
       )}
 
+      {/* Обновляющаяся выдача приглушается, а не исчезает.
+
+          При смене фильтра результат оставался прежним, пока не придёт
+          новый: человек менял условие и видел те же машины, не понимая,
+          применилось ли. Скелет здесь не годится — он стирает то, к чему
+          человек приглядывался.
+
+          Приглушение говорит «идёт работа», сохраняя контекст. */}
+      <Box className="catalog-results" data-updating={!isLoading && isValidating ? "true" : undefined}>
       {isLoading ? (
         <ResultsGridSkeleton count={8} />
       ) : error ? (
@@ -814,6 +823,7 @@ export default function HomePage(p: HomePageProps = {}) {
       ) : (
         <Stack gap="xs" className="catalog-appear">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}
+      </Box>
 
       {data && data.pagination?.pages > 1 && (
         <Stack align="center" gap={6}>
