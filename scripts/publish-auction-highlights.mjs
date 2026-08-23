@@ -37,6 +37,11 @@ const explicitLimit = Number(getArgValue("--limit"))
 const limit = Number.isInteger(explicitLimit) ? Math.min(Math.max(explicitLimit, 1), 10) : Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_POST_LIMIT || 3), 1), 10)
 const maxAgeHours = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_AGE_HOURS || 72), 1), 720)
 const freshnessBoundary = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000)
+const sourceFreshnessHours = Math.min(
+  Math.max(Number(process.env.TELEGRAM_AUCTION_SOURCE_FRESHNESS_HOURS || 36), 1),
+  maxAgeHours,
+)
+const sourceFreshnessBoundary = new Date(Date.now() - sourceFreshnessHours * 60 * 60 * 1000)
 // Дешёвый лот в ленте обесценивает подборку: подписчик приходит за машинами,
 // которые имеет смысл везти, а не за самой низкой строкой прайса.
 const minFinalPrice = Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_FINAL_PRICE || 1_000_000), 0)
@@ -402,8 +407,22 @@ async function main() {
   // автоматический карантин качества должны убирать карточку из рассылки так
   // же, как они убирают её из публичного каталога.
   const where = explicitListingId
-    ? { id: explicitListingId, status: "ACTIVE", adminHiddenAt: null, finalPrice: { gt: 0 }, imageUrl: { not: null } }
-    : { status: "ACTIVE", adminHiddenAt: null, finalPrice: { gt: 0 }, imageUrl: { not: null }, createdAt: { gte: freshnessBoundary } }
+    ? {
+      id: explicitListingId,
+      status: "ACTIVE",
+      adminHiddenAt: null,
+      finalPrice: { gt: 0 },
+      imageUrl: { not: null },
+      sourceLastSeenAt: { gte: sourceFreshnessBoundary },
+    }
+    : {
+      status: "ACTIVE",
+      adminHiddenAt: null,
+      finalPrice: { gt: 0 },
+      imageUrl: { not: null },
+      createdAt: { gte: freshnessBoundary },
+      sourceLastSeenAt: { gte: sourceFreshnessBoundary },
+    }
   const listings = await prisma.auctionListing.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -421,7 +440,7 @@ async function main() {
         status: "ACTIVE",
         adminHiddenAt: null,
         finalPrice: { gt: 0 },
-        sourceLastSeenAt: { gte: freshnessBoundary },
+        sourceLastSeenAt: { gte: sourceFreshnessBoundary },
       },
       orderBy: { createdAt: "desc" },
       take: 500,
