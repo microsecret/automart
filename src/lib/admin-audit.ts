@@ -9,10 +9,16 @@ export type AdminAuditAction =
   | "AUCTION_LOT_RESTORE"
   | "USER_ROLE_CHANGE"
   | "USER_STATUS_CHANGE"
+  | "USER_NOTIFICATION_SEND"
   | "LISTING_MODERATE"
+  | "LISTING_REMOVE"
   | "LISTING_REPORT_RESOLVE"
   | "DELIVERY_ORGANIZATION_VERIFY"
+  | "AUCTION_INQUIRY_ASSIGN"
+  | "AUCTION_INQUIRY_UPDATE"
   | "SUPPORT_TICKET_UPDATE"
+  | "SUPPORT_TICKET_REPLY"
+  | "TELEGRAM_BROADCAST_SEND"
   | "FUEL_PRICE_REPORT_REJECT"
   | "PART_STORE_STATUS_CHANGE"
   /* Владелец изменил юрлицо, ИНН или контакты у проверенного магазина.
@@ -29,6 +35,44 @@ type AdminAuditInput = {
   entityId?: string | null
   summary: string
   metadata?: Record<string, unknown> | null
+}
+
+const ADMIN_AUDIT_VALUE_LABELS: Readonly<Record<string, string>> = {
+  ACTIVE: "активно",
+  RESTRICTED: "ограничено",
+  BANNED: "заблокировано",
+  USER: "пользователь",
+  VERIFIED_USER: "подтверждённый пользователь",
+  PARTNER: "партнёр",
+  MODERATOR: "модератор",
+  ADMIN: "администратор",
+  DRAFT: "черновик",
+  PENDING: "ожидает проверки",
+  PENDING_MODERATION: "на модерации",
+  VERIFIED: "проверено",
+  REJECTED: "отклонено",
+  SUSPENDED: "приостановлено",
+  ARCHIVED: "в архиве",
+  OPEN: "открыто",
+  IN_REVIEW: "на рассмотрении",
+  RESOLVED: "решено",
+  DISMISSED: "отклонено",
+  NEW: "новая",
+  CONTACTED: "связались с клиентом",
+  IN_PROGRESS: "в работе",
+  CLOSED: "закрыта",
+  SOLD: "сделка завершена",
+  TAKE_OVER: "оператор принял обращение",
+  RELEASE_TO_AI: "обращение передано помощнику",
+  CLOSE: "обращение закрыто",
+  REOPEN: "обращение открыто повторно",
+  SET_PRIORITY: "изменён приоритет",
+  UPDATE_SUBJECT: "изменена тема",
+}
+
+/** Человекочитаемое русское название технического значения для журнала. */
+export function adminAuditValueLabel(value: string) {
+  return ADMIN_AUDIT_VALUE_LABELS[value] || value
 }
 
 /**

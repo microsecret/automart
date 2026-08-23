@@ -23,6 +23,7 @@ flowchart LR
   Next --> SEO["SSR metadata + JSON-LD + sitemap + manifest"]
   Next --> PrivateProfile["Owner/admin-only verified account profile"]
   Next --> SourceHealth["Admin source health: freshness, removal checks, quality holds"]
+  Next --> AdminAudit["Append-only admin decision log"]
   SEO --> LandingMetadata["Canonical category and service landing metadata"]
 ```
 
@@ -35,6 +36,7 @@ flowchart LR
 | Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |
 | Admin analytics and charts | `src/app/admin/page.tsx` | `src/app/api/admin/stats/route.ts`, analytics visit route |
+| Admin decision audit | `src/components/admin/AdminAuditLog.tsx` | `src/app/api/admin/audit/route.ts`, `src/lib/admin-audit.ts`, mutating admin routes |
 | Auction source health | `src/app/api/admin/auctions/stats/route.ts` | `auction-crawl-policy.ts`, admin sources tab |
 | Sidebar/header/footer | `src/components/layout/` | app shell and responsive styles |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
@@ -125,6 +127,25 @@ profile owner or an administrator receives verified contact fields, role,
 registration channel and account creation time. Search query parameters are
 passed into the catalogue as keyed initial state so route-to-route navigation
 cannot leave a stale make or text query behind.
+
+## Administrator decision audit graph
+
+```mermaid
+flowchart LR
+  AdminMutation["Successful admin mutation"] --> AuditHelper["recordAdminAudit"]
+  AuditHelper --> AuditTable["Append-only AdminAuditEvent"]
+  AuditTable --> AuditApi["Private search + cursor pagination"]
+  AuditApi --> AuditUi["Admin log: actor, target, result, ЕКБ time"]
+```
+
+The shared journal covers account roles and restrictions, personal
+notifications, listing moderation and removal, complaints, partner company
+verification, auction inquiry assignment and status changes, support actions,
+Telegram broadcasts, auction visibility, part-store moderation and referral
+payouts. Message bodies, buyer contacts and partner contacts are deliberately
+excluded from summaries and metadata. Failed actions are not written; a
+journal write failure is logged but does not replay an already completed
+external action such as a Telegram broadcast.
 
 ## SEO graph
 

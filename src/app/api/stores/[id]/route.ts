@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isAdmin } from "@/lib/permissions"
-import { recordAdminAudit } from "@/lib/admin-audit"
+import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -97,7 +97,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         action: "PART_STORE_LEGAL_CHANGE",
         entityType: "PartStore",
         entityId: id,
-        summary: `Магазин «${store.name}»: владелец изменил ${changedLegalFields.join(", ")} — статус ACTIVE → PENDING`,
+        summary: `Магазин «${store.name}»: владелец изменил реквизиты — статус «${adminAuditValueLabel(store.status)}» → «${adminAuditValueLabel("PENDING")}»`,
         metadata: { changedFields: changedLegalFields, previousStatus: store.status },
       })
     }
@@ -125,7 +125,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       action: "PART_STORE_STATUS_CHANGE",
       entityType: "PartStore",
       entityId: id,
-      summary: `Магазин «${store.name}»: статус ${store.status} → ${nextStatus}${reason ? `; причина: ${reason}` : ""}`,
+      summary: `Магазин «${store.name}»: статус «${adminAuditValueLabel(store.status)}» → «${adminAuditValueLabel(nextStatus)}»${reason ? `; причина: ${reason}` : ""}`,
       metadata: { previousStatus: store.status, nextStatus, reason },
     })
 

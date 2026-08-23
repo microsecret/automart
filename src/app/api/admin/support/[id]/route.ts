@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { can } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
 import { isSupportPriority } from "@/lib/support-workspace"
+import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -91,6 +92,20 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         })
       }
     })
+    await recordAdminAudit({
+      actorId: operatorId,
+      actorEmail: session.user.email,
+      action: "SUPPORT_TICKET_UPDATE",
+      entityType: "SupportTicket",
+      entityId: id,
+      summary: `Обращение: ${adminAuditValueLabel(action)}`,
+      metadata: {
+        action,
+        previousStatus: existing.status,
+        previousMode: existing.mode,
+        nextPriority: action === "SET_PRIORITY" ? body.priority : undefined,
+      },
+    })
     return NextResponse.json({ ticket: await loadTicket(id) })
   } catch (error) {
     console.error("Admin support update error:", error)
@@ -128,6 +143,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         },
       }),
     ])
+    await recordAdminAudit({
+      actorId: operatorId,
+      actorEmail: session.user.email,
+      action: "SUPPORT_TICKET_REPLY",
+      entityType: "SupportTicket",
+      entityId: id,
+      summary: "Оператор отправил ответ и принял обращение в работу",
+      metadata: { messageLength: content.length },
+    })
     return NextResponse.json({ ticket: await loadTicket(id) })
   } catch (error) {
     console.error("Admin support reply error:", error)

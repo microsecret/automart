@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { makeDeliveryCode } from "@/lib/delivery"
 import { isAdmin } from "@/lib/permissions"
 import { inspectContactSharing } from "@/lib/contact-sharing-policy"
+import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -276,6 +277,21 @@ export async function PATCH(request: NextRequest) {
 
         return updated
       })
+      await recordAdminAudit({
+        actorId: session.user.id,
+        actorEmail: session.user.email,
+        action: "AUCTION_INQUIRY_ASSIGN",
+        entityType: "AuctionInquiry",
+        entityId: inquiry.id,
+        summary: `Заявка на ${inquiry.auctionListing.make} ${inquiry.auctionListing.model} ${inquiry.auctionListing.year} назначена партнёру «${organization.legalName}»`,
+        metadata: {
+          partnerId,
+          deliveryOrderId: result.deliveryOrderId,
+          monetizationModel: ACTIVE_MONETIZATION_MODEL,
+          platformFeeAmount,
+          buyerDepositAmount,
+        },
+      })
       return NextResponse.json({ success: true, inquiry: result })
     }
 
@@ -285,6 +301,16 @@ export async function PATCH(request: NextRequest) {
     }
     if (managerNotes !== undefined && (typeof managerNotes !== "string" || managerNotes.length > 4_000)) return NextResponse.json({ error: "Комментарий менеджера не должен превышать 4000 символов" }, { status: 400 })
 
+    const existing = await prisma.auctionInquiry.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        auctionListing: { select: { make: true, model: true, year: true } },
+      },
+    })
+    if (!existing) return NextResponse.json({ error: "Заявка не найдена" }, { status: 404 })
+
     const updated = await prisma.auctionInquiry.update({
       where: { id },
       data: {
@@ -292,6 +318,15 @@ export async function PATCH(request: NextRequest) {
         closedAt: status === "CLOSED" || status === "SOLD" ? new Date() : null,
         ...(managerNotes !== undefined ? { managerNotes: managerNotes.trim() || null } : {}),
       },
+    })
+    await recordAdminAudit({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: "AUCTION_INQUIRY_UPDATE",
+      entityType: "AuctionInquiry",
+      entityId: id,
+      summary: `Заявка на ${existing.auctionListing.make} ${existing.auctionListing.model} ${existing.auctionListing.year}: «${adminAuditValueLabel(existing.status)}» → «${adminAuditValueLabel(status)}»`,
+      metadata: { previousStatus: existing.status, nextStatus: status, managerNotesUpdated: managerNotes !== undefined },
     })
     return NextResponse.json({ success: true, inquiry: updated })
   } catch (error) {

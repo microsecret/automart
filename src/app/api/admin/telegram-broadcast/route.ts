@@ -6,6 +6,7 @@ import { isAdmin } from "@/lib/permissions"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { getTelegramContactStats } from "@/lib/telegram-contacts"
 import { sendTelegramBroadcast, type BroadcastAudience } from "@/lib/telegram-broadcast"
+import { recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -74,6 +75,21 @@ export async function POST(request: NextRequest) {
       audience,
       limit: limitCount,
       sentBy: { id: session?.user?.id, name: session?.user?.name },
+    })
+    await recordAdminAudit({
+      actorId: session?.user?.id || null,
+      actorEmail: session?.user?.email,
+      action: "TELEGRAM_BROADCAST_SEND",
+      entityType: "TelegramBroadcast",
+      summary: `Telegram-рассылка: доставлено ${result.delivered} из ${result.total}, ошибок ${result.failed}`,
+      metadata: {
+        audience: result.audience,
+        requestedLimit: limitCount || null,
+        total: result.total,
+        delivered: result.delivered,
+        blocked: result.blocked,
+        failed: result.failed,
+      },
     })
     return NextResponse.json(result)
   } catch (error) {

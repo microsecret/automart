@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { canModeratorTransition, isListingStatus, LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { can } from "@/lib/permissions"
+import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -73,6 +74,16 @@ export async function PATCH(request: NextRequest) {
       return next
     })
 
+    await recordAdminAudit({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: "LISTING_MODERATE",
+      entityType: "Listing",
+      entityId: id,
+      summary: `Объявление: статус «${adminAuditValueLabel(listing.status)}» → «${adminAuditValueLabel(status)}»${reason ? `; причина: ${reason}` : ""}`,
+      metadata: { previousStatus: listing.status, nextStatus: status, reason },
+    })
+
     return NextResponse.json({ listing: updated })
   } catch (error) {
     console.error("Admin listing moderation error:", error)
@@ -117,6 +128,15 @@ export async function DELETE(request: NextRequest) {
         },
       }),
     ])
+    await recordAdminAudit({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: "LISTING_REMOVE",
+      entityType: "Listing",
+      entityId: id,
+      summary: `Объявление снято модератором: «${adminAuditValueLabel(listing.status)}» → «${adminAuditValueLabel(LISTING_STATUS.ARCHIVED)}»`,
+      metadata: { previousStatus: listing.status, nextStatus: LISTING_STATUS.ARCHIVED, softDeleted: true },
+    })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Admin listing removal error:", error)

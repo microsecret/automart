@@ -1,0 +1,92 @@
+.card {
+  overflow: hidden;
+}
+
+.heading {
+  min-width: 0;
+}
+
+.headingCopy {
+  min-width: 0;
+  max-width: 720px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(190px, 240px) minmax(180px, 220px);
+  gap: var(--mantine-spacing-xs);
+}
+
+.event {
+  transition:
+    transform var(--ease-fast) var(--ease-out),
+    border-color var(--ease-fast) var(--ease-out),
+    box-shadow var(--ease-fast) var(--ease-out);
+  animation: audit-entry var(--ease-base) var(--ease-out) both;
+}
+
+.event:hover {
+  border-color: light-dark(var(--mantine-color-indigo-2), var(--mantine-color-indigo-8));
+  box-shadow: var(--mantine-shadow-xs);
+  transform: translateY(-1px);
+}
+
+.entityId {
+  max-width: min(100%, 280px);
+  overflow: hidden;
+  font-family: var(--mantine-font-family-monospace);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moreButton {
+  align-self: center;
+  margin-top: var(--mantine-spacing-xs);
+}
+
+.empty {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  text-align: center;
+}
+
+@keyframes audit-entry {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 64em) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filters > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 36em) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .filters > :first-child {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event {
+    animation: none;
+    transition: none;
+  }
+
+  .event:hover {
+    transform: none;
+  }
+}

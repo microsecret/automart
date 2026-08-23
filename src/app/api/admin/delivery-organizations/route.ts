@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isAdmin, USER_ROLE } from "@/lib/permissions"
+import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -87,7 +88,16 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Комментарий проверки не должен превышать 1000 символов" }, { status: 400 })
     }
 
-    const organization = await prisma.deliveryOrganization.findUnique({ where: { id }, select: { id: true } })
+    const organization = await prisma.deliveryOrganization.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        legalName: true,
+        verificationStatus: true,
+        verificationSource: true,
+        owner: { select: { id: true, role: true } },
+      },
+    })
     if (!organization) return NextResponse.json({ error: "Партнёр не найден" }, { status: 404 })
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -115,6 +125,24 @@ export async function PATCH(request: NextRequest) {
       }
 
       return organizationWithOwner
+    })
+
+    await recordAdminAudit({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: "DELIVERY_ORGANIZATION_VERIFY",
+      entityType: "DeliveryOrganization",
+      entityId: id,
+      summary: `Партнёр «${organization.legalName}»: проверка «${adminAuditValueLabel(organization.verificationStatus)}» → «${adminAuditValueLabel(verificationStatus)}»`,
+      metadata: {
+        previousStatus: organization.verificationStatus,
+        nextStatus: verificationStatus,
+        previousSource: organization.verificationSource,
+        nextSource: sourceWasProvided ? normalizedSource : organization.verificationSource,
+        previousOwnerRole: organization.owner.role,
+        nextOwnerRole: updated.owner.role,
+        noteUpdated: noteWasProvided,
+      },
     })
 
     return NextResponse.json({ organization: updated })

@@ -277,6 +277,12 @@ async function run() {
     body: JSON.stringify({ action: "CLOSE" }),
   })
   record("operator can close the ticket with an audit event", closedTicket?.ticket?.status === "CLOSED" && Boolean(closedTicket?.ticket?.closedAt), closedTicket?.ticket?.status || "missing")
+  const supportAudit = await expect(`/api/admin/audit?action=SUPPORT_TICKET_UPDATE&entityType=SupportTicket&q=${guestSupport.ticket.id}`, adminCookie, 200)
+  record(
+    "support ownership and status decisions appear in the central admin audit",
+    supportAudit?.events?.some((event) => event.entityId === guestSupport.ticket.id && event.actor?.id === administrator.id),
+    `${supportAudit?.events?.length ?? 0} event(s)`,
+  )
   const popularNews = await expect(`/api/news?sort=popular&q=${encodeURIComponent(marker)}&limit=3`, null, 200)
   record("popular news is ordered by real view count", popularNews?.news?.map((item) => item.views).join(",") === "100,20,5", popularNews?.news?.map((item) => item.views).join(",") || "missing")
   const viewedNews = await prisma.news.findFirstOrThrow({ where: { title: `${marker} небольшой интерес` }, select: { id: true } })
@@ -353,6 +359,12 @@ async function run() {
     body: JSON.stringify({ id: buyerListingId, status: "ACTIVE" }),
   })
   record("moderation publishes a pending listing with an audit event", moderatedListing?.listing?.status === "ACTIVE", moderatedListing?.listing?.status || "missing")
+  const listingAudit = await expect(`/api/admin/audit?action=LISTING_MODERATE&entityType=Listing&q=${buyerListingId}`, adminCookie, 200)
+  record(
+    "central audit identifies the listing moderator and decision",
+    listingAudit?.events?.some((event) => event.entityId === buyerListingId && event.actor?.id === administrator.id),
+    `${listingAudit?.events?.length ?? 0} event(s)`,
+  )
   const sellerContact = await expect(`/api/listings/${publicListingId}`, cookie, 200, { method: "POST" })
   record("authenticated buyer can reveal the seller phone on an active listing", sellerContact?.phone === seller.phone, sellerContact?.phone || "missing")
   await expect("/api/listings", sellerCookie, 409, {
@@ -555,6 +567,12 @@ async function run() {
     body: JSON.stringify({ id: organization.id, verificationStatus: "VERIFIED", verificationSource: "FNS", verificationNote: "Изолированная проверка реквизитов" }),
   })
   record("administrator can verify a partner with a recorded source", verifiedOrganization?.organization?.verificationStatus === "VERIFIED" && Boolean(verifiedOrganization?.organization?.fnsCheckedAt), verifiedOrganization?.organization?.verificationStatus || "missing")
+  const organizationAudit = await expect(`/api/admin/audit?action=DELIVERY_ORGANIZATION_VERIFY&entityType=DeliveryOrganization&q=${organization.id}`, adminCookie, 200)
+  record(
+    "partner verification records the administrator and target organization",
+    organizationAudit?.events?.some((event) => event.entityId === organization.id && event.actor?.id === administrator.id),
+    `${organizationAudit?.events?.length ?? 0} event(s)`,
+  )
   const partnerUser = await prisma.user.findUnique({ where: { id: seller.id } })
   record("verified delivery organization activates the partner role", partnerUser?.role === "PARTNER", partnerUser?.role || "missing")
   const partnerCookie = await sessionCookie(partnerUser)
@@ -574,6 +592,12 @@ async function run() {
     body: JSON.stringify({ action: "ASSIGN", id: auctionInquiry.inquiry.id, partnerId: seller.id, buyerDepositAmount: 100_000, platformFeeAmount: 30_000 }),
   })
   record("admin assignment atomically opens the protected deal", Boolean(assignedInquiry?.inquiry?.deliveryOrderId), assignedInquiry?.inquiry?.deliveryOrderId || "missing")
+  const inquiryAudit = await expect(`/api/admin/audit?action=AUCTION_INQUIRY_ASSIGN&entityType=AuctionInquiry&q=${auctionInquiry.inquiry.id}`, adminCookie, 200)
+  record(
+    "auction assignment records the administrator without exposing buyer contacts",
+    inquiryAudit?.events?.some((event) => event.entityId === auctionInquiry.inquiry.id && event.actor?.id === administrator.id && !/[+@]/.test(event.summary)),
+    `${inquiryAudit?.events?.length ?? 0} event(s)`,
+  )
   const assignedDeal = await expect(`/api/delivery-orders/${assignedInquiry.inquiry.deliveryOrderId}`, partnerCookie, 200)
   record("partner sees buyer name and city without phone or email", assignedDeal?.order?.buyer?.name === "Покупатель Проверен" && assignedDeal?.order?.destinationCity === "Уфа" && !("phone" in assignedDeal.order.buyer) && !("email" in assignedDeal.order.buyer), assignedDeal?.order?.destinationCity || "missing")
   const messagesBeforeBlock = assignedDeal?.order?.messages?.length || 0
@@ -598,6 +622,25 @@ async function run() {
   await expect("/api/parser/encar/refresh", null, 401, { method: "POST", body: JSON.stringify({}) })
   await expect("/api/parser/encar/sync", null, 401, { method: "POST", body: JSON.stringify({}) })
   await expectOneOf("/api/telegram/webhook", null, [401, 503], { method: "POST", body: JSON.stringify({ update_id: 1 }) })
+
+  await expect("/api/admin/audit", cookie, 403)
+  await prisma.adminAuditEvent.createMany({
+    data: Array.from({ length: 32 }, (_, index) => ({
+      actorId: administrator.id,
+      actorEmail: administrator.email,
+      action: "SUPPORT_TICKET_UPDATE",
+      entityType: "AuditFixture",
+      entityId: `${marker}-page-${index}`,
+      summary: `${marker} проверка постраничного журнала ${index}`,
+    })),
+  })
+  const firstAuditPage = await expect(`/api/admin/audit?entityType=AuditFixture&q=${marker}`, adminCookie, 200)
+  const secondAuditPage = await expect(`/api/admin/audit?entityType=AuditFixture&q=${marker}&cursor=${firstAuditPage.nextCursor}`, adminCookie, 200)
+  record(
+    "admin audit search is private and paginates without dropping events",
+    firstAuditPage?.events?.length === 30 && Boolean(firstAuditPage?.nextCursor) && secondAuditPage?.events?.length === 2 && secondAuditPage?.nextCursor === null,
+    `${firstAuditPage?.events?.length ?? 0} + ${secondAuditPage?.events?.length ?? 0} event(s)`,
+  )
 
   const sourceCountries = {
     USS: "JP", TAA: "JP", EMARAAT: "KR", AJ: "KR", KCAR: "KR", KB_CHA_CHA_CHA: "KR", ENCAR: "KR",

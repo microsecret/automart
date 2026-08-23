@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getTelegramMiniAppUrl, telegramApi } from "@/lib/telegram"
 import { isAdmin, normalizeUserRole, USER_ROLE } from "@/lib/permissions"
-import { recordAdminAudit } from "@/lib/admin-audit"
+import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -85,8 +85,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       entityType: "User",
       entityId: id,
       summary: [
-        roleChanged ? `роль ${normalizeUserRole(target.role)} → ${role}` : null,
-        statusChanged ? `статус ${target.accountStatus} → ${accountStatus}` : null,
+        roleChanged ? `роль «${adminAuditValueLabel(normalizeUserRole(target.role))}» → «${adminAuditValueLabel(role)}»` : null,
+        statusChanged ? `статус «${adminAuditValueLabel(target.accountStatus)}» → «${adminAuditValueLabel(accountStatus)}»` : null,
         accountStatus !== "ACTIVE" && restrictionReason ? `причина: ${restrictionReason}` : null,
       ].filter(Boolean).join("; "),
       metadata: {
@@ -134,6 +134,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       console.warn("Admin Telegram notification was not delivered", error instanceof Error ? error.message : error)
     }
   }
+
+  await recordAdminAudit({
+    actorId: session.user.id,
+    actorEmail: session.user.email,
+    action: "USER_NOTIFICATION_SEND",
+    entityType: "User",
+    entityId: id,
+    summary: `Пользователю отправлено персональное уведомление${telegramDelivered ? " с доставкой в Telegram" : ""}`,
+    metadata: { notificationId: notification.id, telegramRequested: deliverTelegram, telegramDelivered },
+  })
 
   return NextResponse.json({ notification, telegramDelivered })
 }

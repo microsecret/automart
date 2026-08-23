@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { can } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
+import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
@@ -80,8 +81,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Некорректные параметры жалобы" }, { status: 400 })
     }
 
-    const reports = await prisma.$queryRaw<Array<Pick<ListingReportRow, "id" | "reporterId" | "listingTitle">>>`
-      SELECT r."id", r."reporterId", l."title" AS "listingTitle"
+    const reports = await prisma.$queryRaw<Array<Pick<ListingReportRow, "id" | "reporterId" | "listingId" | "listingTitle" | "status">>>`
+      SELECT r."id", r."reporterId", r."listingId", r."status", l."title" AS "listingTitle"
       FROM "ListingReport" r
       INNER JOIN "Listing" l ON l."id" = r."listingId"
       WHERE r."id" = ${id}
@@ -117,6 +118,16 @@ export async function PATCH(request: NextRequest) {
           },
         })
       }
+    })
+
+    await recordAdminAudit({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: "LISTING_REPORT_RESOLVE",
+      entityType: "ListingReport",
+      entityId: id,
+      summary: `Жалоба на «${report.listingTitle}»: «${adminAuditValueLabel(report.status)}» → «${adminAuditValueLabel(status)}»`,
+      metadata: { listingId: report.listingId, previousStatus: report.status, nextStatus: status },
     })
 
     return NextResponse.json({ id, status })
