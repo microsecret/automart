@@ -12,11 +12,13 @@ set +a
 : "${PARSER_TOKEN:?PARSER_TOKEN must be configured on the server}"
 BASE_URL="${AUTOMART_INTERNAL_URL:-http://127.0.0.1:4001}"
 # The application may be restarting for a deployment exactly when the cron
-# fires.  A few local retries keep this bounded collector from losing the
-# whole refresh cycle because of one short-lived 502/reset.  The retry is only
-# against our loopback API; it never increases source-site request parallelism.
+# fires. A few local retries keep this bounded collector from losing the whole
+# refresh cycle because of one short-lived 502/reset. The 30-second retry
+# budget is intentionally shorter than one stage: a source timeout after four
+# minutes must not replay the same expensive request three more times.
+# Retries target only our loopback API and never increase source concurrency.
 CURL=(curl --fail --silent --show-error --connect-timeout 10 --max-time 240
-  --retry 3 --retry-all-errors --retry-delay 3
+  --retry 3 --retry-all-errors --retry-delay 3 --retry-max-time 30
   -H "Authorization: Bearer ${PARSER_TOKEN}" -H "Content-Type: application/json")
 FAILED_STAGES=0
 

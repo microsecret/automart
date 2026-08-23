@@ -84,6 +84,10 @@ is unreachable from some client regions, so only its four fixed image hosts use
 a bounded, cached, allow-listed relay; bytes are streamed through memory and are
 never written to disk.
 
+The serialized collector retries short loopback failures within a 30-second
+budget. A source stage that reaches its four-minute timeout is recorded once
+and is not replayed by curl, keeping the shared deploy/collector lock bounded.
+
 Structured inspection sources use the shared `AuctionDamageReport` payload.
 Native Russian source labels are kept first; deterministic source dictionaries
 are used next, and untranslated foreign prose is never published. Only defect
