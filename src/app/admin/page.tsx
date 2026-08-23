@@ -16,6 +16,11 @@ import ReferralPayoutPanel from "@/components/admin/ReferralPayoutPanel"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { compareByUrgency, formatQueueAge, queueUrgency } from "@/lib/queue-age"
 import { fetchJson } from "@/lib/api-client"
+import {
+  AUCTION_OPERATIONAL_STATUS_LABELS,
+  formatAuctionSyncDuration,
+  type AuctionOperationalStatus,
+} from "@/lib/auction-source-health"
 
 type AdminStats = {
   counts: {
@@ -219,6 +224,14 @@ type AuctionAdminStats = {
     expectedRefreshHours: number
     latestSeenAt: string | null
     latestRunAt: string | null
+    operationalStatus: AuctionOperationalStatus
+    latestRunStatus: string | null
+    latestRunKind: string | null
+    latestRunStartedAt: string | null
+    latestRunCompletedAt: string | null
+    latestRunDurationSeconds: number | null
+    consecutiveIssues: number
+    latestRunError: string | null
   }>
   byStatus: { NEW: number; CONTACTED: number; IN_PROGRESS: number; CLOSED: number; SOLD: number }
 }
@@ -231,6 +244,22 @@ const DEVICE_LABELS: Record<string, string> = { DESKTOP: "Компьютеры",
 const SOURCE_LABELS: Record<string, string> = {
   DIRECT: "Прямые заходы", ORGANIC_SEARCH: "Поиск", SOCIAL: "Соцсети / Telegram",
   REFERRAL: "Другие сайты", INTERNAL: "Внутренние переходы", UNKNOWN: "Старые события",
+}
+
+const SOURCE_RUN_STATUS_META: Record<AuctionOperationalStatus, { color: MantineColor }> = {
+  HEALTHY: { color: "teal" },
+  RUNNING: { color: "blue" },
+  DEGRADED: { color: "yellow" },
+  FAILED: { color: "red" },
+  STUCK: { color: "red" },
+  NOT_RUN: { color: "gray" },
+}
+
+function sourceNeedsAttention(source: AuctionAdminStats["sourceHealth"][number]) {
+  return source.stale > 0
+    || source.pendingRemoval > 0
+    || source.qualityHold > 0
+    || ["DEGRADED", "FAILED", "STUCK", "NOT_RUN"].includes(source.operationalStatus)
 }
 
 const SCREEN_LABELS: ReadonlyArray<readonly [RegExp, string]> = [
@@ -613,10 +642,10 @@ export default function AdminDashboard() {
             {auctionStats?.sourceHealth.length ? (
               <Badge
                 variant="light"
-                color={auctionStats.sourceHealth.some((source) => source.stale > 0 || source.pendingRemoval > 0 || source.qualityHold > 0) ? "orange" : "teal"}
+                color={auctionStats.sourceHealth.some(sourceNeedsAttention) ? "orange" : "teal"}
               >
-                {auctionStats.sourceHealth.filter((source) => source.stale > 0 || source.pendingRemoval > 0 || source.qualityHold > 0).length
-                  ? `Требуют внимания: ${auctionStats.sourceHealth.filter((source) => source.stale > 0 || source.pendingRemoval > 0 || source.qualityHold > 0).length}`
+                {auctionStats.sourceHealth.filter(sourceNeedsAttention).length
+                  ? `Требуют внимания: ${auctionStats.sourceHealth.filter(sourceNeedsAttention).length}`
                   : "Все источники в норме"}
               </Badge>
             ) : null}
@@ -632,6 +661,8 @@ export default function AdminDashboard() {
                       ? "yellow"
                       : "red"
                 const lastActivity = source.latestSeenAt || source.latestRunAt
+                const runMeta = SOURCE_RUN_STATUS_META[source.operationalStatus]
+                const runDuration = formatAuctionSyncDuration(source.latestRunDurationSeconds)
                 return (
                   <Paper
                     key={source.source}
@@ -640,6 +671,7 @@ export default function AdminDashboard() {
                     p="sm"
                     className="admin-source-health__row"
                     data-health={healthColor}
+                    data-operational={source.operationalStatus}
                   >
                     <Group justify="space-between" align="center" gap="sm" wrap="wrap">
                       <Box className="admin-source-health__identity">
@@ -651,7 +683,13 @@ export default function AdminDashboard() {
                         <Text size="10px" c="dimmed" mt={3}>
                           Норматив: до {source.expectedRefreshHours} ч
                           {lastActivity ? ` · активность ${new Date(lastActivity).toLocaleString("ru-RU")}` : " · запусков ещё нет"}
+                          {runDuration ? ` · последний запуск ${runDuration}` : ""}
                         </Text>
+                        {source.latestRunError && (
+                          <Text size="10px" c="red.7" mt={3} lineClamp={1} title={source.latestRunError}>
+                            {source.latestRunError}
+                          </Text>
+                        )}
                       </Box>
                       <Box className="admin-source-health__freshness">
                         <Group justify="space-between" gap="xs" wrap="nowrap">
@@ -663,6 +701,10 @@ export default function AdminDashboard() {
                         <Progress mt={4} size="sm" radius="xl" value={source.freshPercent ?? 0} color={healthColor} />
                       </Box>
                       <Group gap={5} wrap="wrap" className="admin-source-health__flags">
+                        <Badge size="xs" variant="light" color={runMeta.color}>
+                          {AUCTION_OPERATIONAL_STATUS_LABELS[source.operationalStatus]}
+                        </Badge>
+                        {source.consecutiveIssues > 1 && <Badge size="xs" variant="light" color="red">Серия проблем: {source.consecutiveIssues}</Badge>}
                         {source.stale > 0 && <Badge size="xs" variant="light" color="orange">Устарели: {source.stale}</Badge>}
                         {source.pendingRemoval > 0 && <Badge size="xs" variant="light" color="red">Проверка снятия: {source.pendingRemoval}</Badge>}
                         {source.qualityHold > 0 && <Badge size="xs" variant="light" color="grape">Карантин: {source.qualityHold}</Badge>}

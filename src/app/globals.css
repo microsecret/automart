@@ -5063,6 +5063,16 @@ select {
 .admin-source-health__signal[data-color="yellow"] { background: var(--mantine-color-yellow-6); }
 .admin-source-health__signal[data-color="red"] { background: var(--mantine-color-red-6); }
 
+.admin-source-health__row[data-operational="RUNNING"] .admin-source-health__signal {
+  background: var(--mantine-color-blue-6);
+  animation: admin-source-running 1.8s var(--ease-out) infinite;
+}
+
+@keyframes admin-source-running {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 139, 230, 0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 139, 230, 0); }
+}
+
 .admin-source-health__freshness {
   min-width: min(100%, 210px);
   flex: 1 1 240px;
@@ -5088,6 +5098,10 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .admin-source-health__row {
     transition-duration: 1ms;
+  }
+
+  .admin-source-health__row[data-operational="RUNNING"] .admin-source-health__signal {
+    animation: none;
   }
 }
 

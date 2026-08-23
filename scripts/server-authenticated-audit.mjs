@@ -151,6 +151,27 @@ async function run() {
       adminHiddenReason: "Автопроверка качества: цена источника недостоверна",
     },
   })
+  const syncNow = Date.now()
+  await prisma.auctionSyncRun.createMany({
+    data: [
+      {
+        source: "ENCAR", syncKind: "DISCOVERY", status: "SUCCEEDED", requestedLimit: 5,
+        startedAt: new Date(syncNow - 45 * 60_000), completedAt: new Date(syncNow - 44 * 60_000),
+      },
+      {
+        source: "ENCAR", syncKind: "REFRESH", status: "PARTIAL", requestedLimit: 40, failed: 1,
+        error: "Одна карточка источника недоступна", startedAt: new Date(syncNow - 20 * 60_000), completedAt: new Date(syncNow - 18 * 60_000),
+      },
+      {
+        source: "ENCAR", syncKind: "DISCOVERY", status: "FAILED", requestedLimit: 5, failed: 1,
+        error: "Контрольный таймаут источника", startedAt: new Date(syncNow - 5 * 60_000), completedAt: new Date(syncNow - 4 * 60_000),
+      },
+      {
+        source: "KCAR", syncKind: "REFRESH", status: "RUNNING", requestedLimit: 40,
+        startedAt: new Date(syncNow - 20 * 60_000),
+      },
+    ],
+  })
   const cookie = await sessionCookie(primary)
   const sellerCookie = await sessionCookie(seller)
   const adminCookie = await sessionCookie(administrator)
@@ -320,6 +341,20 @@ async function run() {
     "source health separates fresh, stale, removal and quality states",
     encarHealth?.fresh >= 1 && encarHealth?.stale >= 1 && encarHealth?.qualityHold >= 1 && encarHealth?.expectedRefreshHours === 4,
     encarHealth ? `${encarHealth.fresh} fresh · ${encarHealth.stale} stale · ${encarHealth.qualityHold} held` : "ENCAR missing",
+  )
+  record(
+    "source health exposes the latest failure, duration and consecutive issue series",
+    encarHealth?.operationalStatus === "FAILED"
+      && encarHealth?.consecutiveIssues === 2
+      && encarHealth?.latestRunDurationSeconds === 60
+      && encarHealth?.latestRunError === "Контрольный таймаут источника",
+    encarHealth ? `${encarHealth.operationalStatus} · ${encarHealth.consecutiveIssues} issue(s)` : "ENCAR missing",
+  )
+  const kcarHealth = auctionStats?.sourceHealth?.find((source) => source.source === "KCAR")
+  record(
+    "source health marks an abandoned running parser as stuck",
+    kcarHealth?.operationalStatus === "STUCK" && kcarHealth?.latestRunDurationSeconds >= 20 * 60,
+    kcarHealth ? `${kcarHealth.operationalStatus} · ${kcarHealth.latestRunDurationSeconds}s` : "KCAR missing",
   )
   await expect("/api/auctions?country=KR&limit=10", null, 200)
   const auctionDetail = await expect(`/api/auctions/${auctionListing.id}`, null, 200)

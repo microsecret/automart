@@ -22,6 +22,7 @@ import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { isSafeMediaUrl } from "@/lib/media-url"
 import AuctionLotAdministration from "@/components/admin/AuctionLotAdministration"
+import type { AuctionOperationalStatus } from "@/lib/auction-source-health"
 
 type InquiryUser = { id: string; name: string | null }
 type InquiryDeal = {
@@ -98,6 +99,8 @@ type AuctionStatsResponse = {
     expectedRefreshHours: number
     latestSeenAt: string | null
     latestRunAt: string | null
+    operationalStatus: AuctionOperationalStatus
+    consecutiveIssues: number
   }>
   byStatus?: Partial<Record<(typeof STATUSES)[number]["value"], number>>
 }
@@ -141,6 +144,7 @@ export default function AdminAuctionsPage() {
     qualityHold: totals.qualityHold + source.qualityHold,
   }), { active: 0, fresh: 0, stale: 0, pendingRemoval: 0, qualityHold: 0 })
   const freshnessPercent = catalogTotals.active ? Math.round((catalogTotals.fresh / catalogTotals.active) * 100) : 0
+  const parserAlerts = sourceHealth.filter((source) => ["DEGRADED", "FAILED", "STUCK", "NOT_RUN"].includes(source.operationalStatus))
 
   const openInquiryEditor = (inquiry: AuctionInquiry) => {
     setEditingInquiry(inquiry)
@@ -232,7 +236,7 @@ export default function AdminAuctionsPage() {
           <Paper radius="md" p="md" withBorder>
             <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
               <Group gap="sm" wrap="nowrap">
-                <ThemeIcon variant="light" color={catalogTotals.stale || catalogTotals.pendingRemoval ? "orange" : "teal"} size={40} radius="md"><IconDatabase size={19} /></ThemeIcon>
+                <ThemeIcon variant="light" color={catalogTotals.stale || catalogTotals.pendingRemoval || parserAlerts.length ? "orange" : "teal"} size={40} radius="md"><IconDatabase size={19} /></ThemeIcon>
                 <Stack gap={1}>
                   <Text size="sm" fw={800}>Каталог всех аукционных источников</Text>
                   <Text size="xs" c="dimmed">
@@ -244,7 +248,8 @@ export default function AdminAuctionsPage() {
                 {catalogTotals.stale > 0 && <Badge variant="light" color="orange">Устарели: {catalogTotals.stale}</Badge>}
                 {catalogTotals.pendingRemoval > 0 && <Badge variant="light" color="red">Проверка снятия: {catalogTotals.pendingRemoval}</Badge>}
                 {catalogTotals.qualityHold > 0 && <Badge variant="light" color="grape">Карантин: {catalogTotals.qualityHold}</Badge>}
-                {!catalogTotals.stale && !catalogTotals.pendingRemoval && <Badge variant="light" color="teal">Каталог актуален</Badge>}
+                {parserAlerts.length > 0 && <Badge variant="light" color="red">Сбои парсеров: {parserAlerts.length}</Badge>}
+                {!catalogTotals.stale && !catalogTotals.pendingRemoval && !parserAlerts.length && <Badge variant="light" color="teal">Каталог актуален</Badge>}
                 <Button component={Link} href="/admin" size="xs" variant="subtle" color="indigo">Диагностика</Button>
               </Group>
             </Group>

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
 import { QUALITY_HOLD_PREFIX } from "@/lib/auction-quality"
 import { auctionSourceCountry, auctionSourceLabel } from "@/lib/auction-sources"
+import { deriveAuctionSourceRunHealth } from "@/lib/auction-source-health"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +19,7 @@ export async function GET() {
     const now = new Date()
     const [
       byStatus, total, totalAuctions, visibleAuctions, latestAuctionCheck, recent,
-      activeBySource, pendingRemovalBySource, qualityHoldBySource, latestSeenBySource, latestRunBySource,
+      activeBySource, pendingRemovalBySource, qualityHoldBySource, latestSeenBySource, recentSyncRuns,
     ] = await Promise.all([
       prisma.auctionInquiry.groupBy({ by: ["status"], _count: true }),
       prisma.auctionInquiry.count(),
@@ -45,9 +46,17 @@ export async function GET() {
         by: ["source"],
         _max: { sourceLastSeenAt: true },
       }),
-      prisma.auctionSyncRun.groupBy({
-        by: ["source"],
-        _max: { startedAt: true },
+      prisma.auctionSyncRun.findMany({
+        orderBy: { startedAt: "desc" },
+        take: 250,
+        select: {
+          source: true,
+          syncKind: true,
+          status: true,
+          startedAt: true,
+          completedAt: true,
+          error: true,
+        },
       }),
     ])
 
@@ -55,9 +64,8 @@ export async function GET() {
     const pendingCounts = new Map(pendingRemovalBySource.map((row) => [row.source, row._count._all]))
     const qualityHoldCounts = new Map(qualityHoldBySource.map((row) => [row.source, row._count._all]))
     const latestSeen = new Map(latestSeenBySource.map((row) => [row.source, row._max.sourceLastSeenAt]))
-    const latestRuns = new Map(latestRunBySource.map((row) => [row.source, row._max.startedAt]))
     const sourceNames = [...new Set([
-      ...activeCounts.keys(), ...qualityHoldCounts.keys(), ...latestSeen.keys(), ...latestRuns.keys(),
+      ...activeCounts.keys(), ...qualityHoldCounts.keys(), ...latestSeen.keys(), ...recentSyncRuns.map((run) => run.source),
     ])]
     const freshCounts = new Map(await Promise.all(sourceNames.map(async (source) => [
       source,
@@ -74,6 +82,7 @@ export async function GET() {
     const sourceHealth = sourceNames.map((source) => {
       const active = activeCounts.get(source) || 0
       const fresh = freshCounts.get(source) || 0
+      const runHealth = deriveAuctionSourceRunHealth(source, recentSyncRuns, now)
       return {
         source,
         label: auctionSourceLabel(source),
@@ -86,11 +95,13 @@ export async function GET() {
         qualityHold: qualityHoldCounts.get(source) || 0,
         expectedRefreshHours: refreshIntervalHours(source),
         latestSeenAt: latestSeen.get(source) || null,
-        latestRunAt: latestRuns.get(source) || null,
+        latestRunAt: runHealth.latestRunStartedAt,
+        ...runHealth,
       }
     }).sort((left, right) => {
-      const leftAttention = left.stale + left.pendingRemoval + left.qualityHold
-      const rightAttention = right.stale + right.pendingRemoval + right.qualityHold
+      const operationalWeight = { STUCK: 5, FAILED: 4, DEGRADED: 3, NOT_RUN: 2, RUNNING: 1, HEALTHY: 0 } as const
+      const leftAttention = left.stale + left.pendingRemoval + left.qualityHold + operationalWeight[left.operationalStatus] * 1_000
+      const rightAttention = right.stale + right.pendingRemoval + right.qualityHold + operationalWeight[right.operationalStatus] * 1_000
       return rightAttention - leftAttention || right.active - left.active || left.label.localeCompare(right.label, "ru")
     })
 

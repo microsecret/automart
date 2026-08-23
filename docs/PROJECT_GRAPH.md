@@ -22,7 +22,7 @@ flowchart LR
   Next --> IautosMedia["Allow-listed transient iAutos media relay"]
   Next --> SEO["SSR metadata + JSON-LD + sitemap + manifest"]
   Next --> PrivateProfile["Owner/admin-only verified account profile"]
-  Next --> SourceHealth["Admin source health: freshness, removal checks, quality holds"]
+  Next --> SourceHealth["Admin source health: freshness, run status, duration, issue streaks, quality holds"]
   Next --> AdminAudit["Append-only admin decision log"]
   SEO --> LandingMetadata["Canonical category and service landing metadata"]
 ```
@@ -110,6 +110,10 @@ whole image, while enforcing the same host, MIME, timeout and size limits.
 The admin source-health matrix uses each source's own refresh interval. It
 separates stale public lots, first-stage removal checks and automatic quality
 holds, so parser failure is distinguishable from moderation and delisting.
+Recent `AuctionSyncRun` records add the latest operational status and duration,
+consecutive PARTIAL/FAILED runs, a safe error summary and a STUCK state for a
+RUNNING row older than fifteen minutes. The diagnostic layer is read-only and
+never starts a parser from the administrator interface.
 
 ## Account and search graph
 
