@@ -21,6 +21,7 @@ import { registerTelegramGroup, setTelegramChatMarketing } from "@/lib/telegram-
 import { describePendingSteps, resumeButtonLabel } from "@/lib/telegram-registration-copy"
 import { touchTelegramContact } from "@/lib/telegram-contacts"
 import { absoluteUrl } from "@/lib/site-url"
+import { forwardNoticeText, isChannelForward } from "@/lib/telegram-forward-guard"
 
 export const dynamic = "force-dynamic"
 
@@ -43,6 +44,20 @@ type TelegramMessage = {
   venue?: unknown
   poll?: unknown
   dice?: unknown
+
+  /* Пересылка приходит двумя способами: forward_origin в новом формате
+     Bot API и forward_from_chat в старом. Клиенты обновляются вразнобой,
+     поэтому смотрим оба. */
+  forward_origin?: {
+    type?: string
+    chat?: { id?: number | string; type?: string; title?: string; username?: string }
+    sender_chat?: { id?: number | string; type?: string; title?: string; username?: string }
+    sender_user_name?: string
+  }
+  forward_from_chat?: { id?: number | string; type?: string; title?: string; username?: string }
+  /** Собственный канал группы: его посты пересылать можно. */
+  sender_chat?: { id?: number | string; type?: string }
+  is_automatic_forward?: boolean
 }
 
 type TelegramUpdate = { message?: TelegramMessage }
@@ -590,8 +605,39 @@ async function handleMessage(message: TelegramMessage) {
     return member?.status === "creator" || member?.status === "owner" || member?.status === "administrator"
   }
 
+  const isGroupChat = message.chat.type === "group" || message.chat.type === "supergroup"
+
+  /* Пересылка из чужого канала удаляется у всех, кроме администраторов.
+
+     Это реклама независимо от того, кто её прислал: зарегистрированный
+     человек так же может закинуть чужой пост. Поэтому проверка отдельна
+     от проверки регистрации. */
   if (
-    (message.chat.type === "group" || message.chat.type === "supergroup") &&
+    isGroupChat &&
+    isChannelForward(message) &&
+    await canModerateTelegramChat(chatId) &&
+    !(await isChatAdmin())
+  ) {
+    let wasDeleted = false
+    try {
+      await telegramApi("deleteMessage", { chat_id: chatId, message_id: message.message_id })
+      wasDeleted = true
+    } catch (error) {
+      console.error("Telegram forward deletion failed:", error)
+    }
+    if (wasDeleted && canSendModerationNotice(chatId, telegramId)) {
+      const sentMessage = await sendBrandedMessage(
+        chatId,
+        forwardNoticeText(telegramUserMention(message.from)),
+        registrationKeyboard(resumeButtonLabel(pendingStep)),
+      )
+      await scheduleTemporarySystemMessage(chatId, sentMessage)
+    }
+    return
+  }
+
+  if (
+    isGroupChat &&
     hasModeratableContent(message) &&
     !isTelegramUserRegistered(user) &&
     await canModerateTelegramChat(chatId) &&

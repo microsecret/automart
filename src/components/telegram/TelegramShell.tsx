@@ -7,8 +7,14 @@ import type { TelegramThemeParams } from "@/lib/telegram-webapp"
 import {
   IconCar,
   IconGavel,
+  IconHeart,
+  IconList,
+  IconMenu2,
+  IconMessageCircle2,
   IconNews,
   IconPlus,
+  IconTool,
+  IconX,
   IconUser,
 } from "@tabler/icons-react"
 
@@ -44,15 +50,43 @@ const FALLBACK: Required<Pick<TelegramThemeParams,
   section_separator_color: "#101921",
 }
 
-/* Верхний ряд — только ленты, между которыми переключаются.
+/* Разделы выезжающего меню.
 
-   Действия («Продать») и личные разделы («Профиль») сюда не попадают:
-   для них нижний ряд, где они под большим пальцем. */
-const TOP_TABS = [
-  { href: "/telegram", label: "Свежее" },
-  { href: "/telegram?tab=auctions", label: "Аукционы" },
-  { href: "/telegram?tab=news", label: "Новости" },
-  { href: "/favorites?from=telegram", label: "Избранное" },
+   Прежде здесь был ряд вкладок под заголовком, но он повторял нижнюю
+   навигацию — четыре подписи из пяти совпадали. Толку от такого дубля
+   нет, а место он занимал.
+
+   Меню открывается кнопкой слева вверху, как в мобильной версии сайта, и
+   вмещает то, чему не нашлось места внизу: личные разделы, запчасти,
+   аукционы по странам. */
+const MENU_SECTIONS = [
+  {
+    title: "Каталог",
+    items: [
+      { href: "/telegram", label: "Свежие объявления", Icon: IconCar },
+      { href: "/telegram?tab=auctions", label: "Мировые аукционы", Icon: IconGavel },
+      { href: "/telegram?tab=news", label: "Новости авторынка", Icon: IconNews },
+      { href: "/parts-finder?from=telegram", label: "Запчасти", Icon: IconTool },
+    ],
+  },
+  {
+    title: "Моё",
+    items: [
+      { href: "/favorites?from=telegram", label: "Избранное", Icon: IconHeart },
+      { href: "/messages?from=telegram", label: "Сообщения", Icon: IconMessageCircle2 },
+      { href: "/dashboard?tab=listings&from=telegram", label: "Мои объявления", Icon: IconList },
+      { href: "/dashboard?tab=garage&from=telegram", label: "Личный гараж", Icon: IconCar },
+    ],
+  },
+  {
+    title: "Аукционы по странам",
+    items: [
+      { href: "/auctions?country=KR&from=telegram", label: "🇰🇷 Корея", Icon: null },
+      { href: "/auctions?country=JP&from=telegram", label: "🇯🇵 Япония", Icon: null },
+      { href: "/auctions?country=CN&from=telegram", label: "🇨🇳 Китай", Icon: null },
+      { href: "/auctions?country=DE&from=telegram", label: "🇩🇪 Европа", Icon: null },
+    ],
+  },
 ]
 
 const TABS = [
@@ -81,6 +115,7 @@ export default function TelegramShell({
   mainAction?: boolean
 }) {
   const [ready, setReady] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const webApp = window.Telegram?.WebApp
@@ -172,30 +207,74 @@ export default function TelegramShell({
   return (
     <Box className="tg-shell" data-ready={ready || undefined}>
       <Box className="tg-shell__head">
-        <Text className="tg-shell__title">{title}</Text>
-        {subtitle && <Text className="tg-shell__subtitle">{subtitle}</Text>}
+        {/* Кнопка меню слева, как в мобильной версии сайта. */}
+        <button
+          type="button"
+          className="tg-shell__menu-button"
+          onClick={() => {
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
+            setMenuOpen(true)
+          }}
+          aria-label="Открыть меню"
+          aria-expanded={menuOpen}
+        >
+          <IconMenu2 size={20} />
+        </button>
 
-        {/* Ряд разделов под заголовком.
-
-            Нижняя навигация вмещает пять пунктов, а разделов больше:
-            здесь помещаются остальные, и переключаться между лентами
-            можно, не уводя палец вниз экрана. */}
-        <Box className="tg-shell__tabs" role="tablist">
-          {TOP_TABS.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="tg-shell__tab"
-              data-active={href === activeTab || undefined}
-              onClick={() => window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()}
-              role="tab"
-              aria-selected={href === activeTab}
-            >
-              {label}
-            </Link>
-          ))}
+        <Box className="tg-shell__heading">
+          <Text className="tg-shell__title">{title}</Text>
+          {subtitle && <Text className="tg-shell__subtitle">{subtitle}</Text>}
         </Box>
       </Box>
+
+      {/* Выезжающее меню.
+
+          Прежде здесь был ряд вкладок, повторявший нижнюю навигацию.
+          Меню вмещает то, чему не нашлось места внизу, и приходит сбоку —
+          так видно, откуда оно и куда уйдёт. */}
+      {menuOpen && (
+        <>
+          <Box
+            className="tg-menu__backdrop"
+            onClick={() => setMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <Box component="nav" className="tg-menu" aria-label="Разделы">
+            <Box className="tg-menu__head">
+              <Text className="tg-menu__brand">LeWheel</Text>
+              <button
+                type="button"
+                className="tg-menu__close"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Закрыть меню"
+              >
+                <IconX size={18} />
+              </button>
+            </Box>
+
+            {MENU_SECTIONS.map((section) => (
+              <Box key={section.title} className="tg-menu__section">
+                <Text className="tg-menu__section-title">{section.title}</Text>
+                {section.items.map(({ href, label, Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="tg-menu__item"
+                    data-active={href === activeTab || undefined}
+                    onClick={() => {
+                      window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()
+                      setMenuOpen(false)
+                    }}
+                  >
+                    {Icon ? <Icon size={18} stroke={1.8} /> : <span className="tg-menu__flag" />}
+                    <span>{label}</span>
+                  </Link>
+                ))}
+              </Box>
+            ))}
+          </Box>
+        </>
+      )}
 
       <Box className="tg-shell__body">{children}</Box>
 

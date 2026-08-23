@@ -47,9 +47,37 @@
   position: sticky;
   z-index: 5;
   top: 0;
-  padding: 14px 16px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 10px;
   border-bottom: 1px solid var(--tg-line);
   background: var(--tg-bg);
+}
+
+.tg-shell__heading {
+  min-width: 0;
+}
+
+/* Кнопка меню слева — там же, где она в мобильной версии сайта. */
+.tg-shell__menu-button {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--tg-hint) 16%, transparent);
+  color: var(--tg-text);
+  cursor: pointer;
+  transition: background 120ms ease-out, transform 120ms ease-out;
+}
+
+.tg-shell__menu-button:active {
+  transform: scale(0.94);
+  background: color-mix(in srgb, var(--tg-accent) 24%, transparent);
 }
 
 .tg-shell__title {
@@ -391,47 +419,6 @@
   }
 }
 
-/* Ряд разделов под заголовком.
-
-   Нижняя навигация вмещает пять пунктов, а лент больше: здесь помещаются
-   остальные, и переключаться можно, не уводя палец вниз экрана.
-
-   Ряд прокручивается вбок: на узком экране четыре подписи не помещаются,
-   а сжимать их до нечитаемых нельзя. */
-.tg-shell__tabs {
-  display: flex;
-  overflow-x: auto;
-  margin-top: 10px;
-  gap: 6px;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tg-shell__tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.tg-shell__tab {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--tg-hint) 16%, transparent);
-  color: var(--tg-hint);
-  font-size: 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: background 120ms ease-out, color 120ms ease-out;
-}
-
-.tg-shell__tab[data-active] {
-  background: var(--tg-accent);
-  color: var(--tg-accent-text);
-}
-
-.tg-shell__tab:active {
-  transform: scale(0.96);
-}
-
 /* Карточка новости.
 
    Фото ниже, чем у машины: у новости оно иллюстрация, а не предмет
@@ -467,4 +454,150 @@
   .tg-shell__tab:active {
     transform: none;
   }
+}
+
+/* Выезжающее меню.
+
+   Прежде под заголовком стоял ряд вкладок, но он повторял нижнюю
+   навигацию — четыре подписи из пяти совпадали. Меню вмещает то, чему не
+   нашлось места внизу: личные разделы, запчасти, аукционы по странам.
+
+   Приходит слева — оттуда же, где кнопка: так видно, откуда оно взялось
+   и куда уйдёт. */
+.tg-menu__backdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  background: rgb(0 0 0 / 55%);
+  animation: tg-fade-in 160ms ease-out;
+}
+
+.tg-menu {
+  position: fixed;
+  z-index: 41;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+  width: min(84vw, 320px);
+  padding: 14px 0 24px;
+  border-right: 1px solid var(--tg-line);
+  background: var(--tg-bg);
+  animation: tg-slide-in 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.tg-menu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 14px;
+  border-bottom: 1px solid var(--tg-line);
+}
+
+.tg-menu__brand {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--tg-text);
+}
+
+.tg-menu__close {
+  display: flex;
+  padding: 7px;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tg-hint) 18%, transparent);
+  color: var(--tg-text);
+  cursor: pointer;
+}
+
+.tg-menu__section {
+  padding: 14px 8px 4px;
+}
+
+.tg-menu__section-title {
+  padding: 0 8px 6px;
+  color: var(--tg-hint);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tg-menu__item {
+  display: flex;
+  align-items: center;
+  /* 46 пикселей — норма зоны нажатия: пункты меню выбирают пальцем. */
+  min-height: 46px;
+  gap: 12px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: var(--tg-text);
+  font-size: 0.94rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 120ms ease-out;
+}
+
+.tg-menu__item:active {
+  background: color-mix(in srgb, var(--tg-accent) 18%, transparent);
+}
+
+.tg-menu__item[data-active] {
+  background: color-mix(in srgb, var(--tg-accent) 22%, transparent);
+  color: var(--tg-accent-text);
+  font-weight: 700;
+}
+
+/* Флаг стоит в самой подписи — здесь только выравнивание по сетке
+   значков, чтобы строки не разъезжались. */
+.tg-menu__flag {
+  width: 18px;
+}
+
+@keyframes tg-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes tg-slide-in {
+  from { transform: translateX(-100%); }
+}
+
+/* При включённом ограничении движения меню появляется сразу: смысл в
+   разделах, а не в том, как они приехали. */
+@media (prefers-reduced-motion: reduce) {
+  .tg-menu,
+  .tg-menu__backdrop {
+    animation: none;
+  }
+
+  .tg-shell__menu-button,
+  .tg-menu__item {
+    transition: none;
+  }
+
+  .tg-shell__menu-button:active {
+    transform: none;
+  }
+}
+
+/* Подпись новости: дата, источник, просмотры и комментарии.
+
+   Просмотры показывают, читают ли заметку: одинокая новость без единого
+   просмотра выглядит заброшенной, а с сотней — стоящей внимания. */
+.tg-card__news-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 0.72rem;
+  color: var(--tg-hint);
+}
+
+.tg-card__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
 }

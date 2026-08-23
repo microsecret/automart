@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
 import { Box, Loader, Stack, Text } from "@mantine/core"
-import { IconNews } from "@tabler/icons-react"
+import { IconEye, IconMessageCircle2, IconNews } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { newsHref } from "@/lib/news"
 
@@ -24,6 +24,8 @@ type NewsItem = {
   imageUrl: string | null
   publishedAt: string | null
   sourceChannel: string | null
+  views: number
+  _count?: { comments: number }
 }
 
 type NewsResponse = { news: NewsItem[] }
@@ -87,9 +89,17 @@ function NewsCard({ item }: { item: NewsItem }) {
       <Box className="tg-card__body">
         <Text className="tg-card__news-title" lineClamp={3}>{item.title}</Text>
         {item.excerpt && <Text className="tg-card__news-summary" lineClamp={2}>{item.excerpt}</Text>}
-        <Text className="tg-card__facts">
-          {[published, item.sourceChannel].filter(Boolean).join(" · ")}
-        </Text>
+        <Box className="tg-card__news-meta">
+          <span>{[published, item.sourceChannel].filter(Boolean).join(" · ")}</span>
+          {/* Нули не показываем: «0 просмотров» под свежей заметкой
+              выглядит хуже, чем отсутствие цифры вовсе. */}
+          {item.views > 0 && (
+            <span className="tg-card__stat"><IconEye size={12} />{item.views}</span>
+          )}
+          {(item._count?.comments || 0) > 0 && (
+            <span className="tg-card__stat"><IconMessageCircle2 size={12} />{item._count?.comments}</span>
+          )}
+        </Box>
       </Box>
     </Box>
   )
