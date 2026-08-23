@@ -180,8 +180,18 @@ export async function GET(request: NextRequest) {
     // soft-deleted records must never leak through search, comparison or map.
     const where: Prisma.ListingWhereInput = { ...publicListingWhere }
     if (ids) {
-      const idArr = ids.split(",").map((x) => x.trim()).filter(Boolean)
-      where.vehicleId = { in: idArr }
+      /* Идентификаторы объявлений, а не машин.
+
+         Список сравнения хранит то, что сохраняет карточка — id
+         объявления. Здесь же поиск шёл по vehicleId, и страница
+         сравнения всегда показывала «Объявления не найдены». Проверено
+         на боевом API: по id объявления находилось ноль, по id машины —
+         один и тот же лот.
+
+         Условие ставится отдельным полем: ниже `type === "vehicle"`
+         перезаписывал vehicleId и стирал список. */
+      const idArr = ids.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 50)
+      where.id = { in: idArr }
     }
 
     if (type === "vehicle") {

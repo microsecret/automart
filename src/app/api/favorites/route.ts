@@ -38,9 +38,13 @@ export async function GET(request: NextRequest) {
     if (searchParams.get("idsOnly") === "true") {
       const favorites = await prisma.listing.findMany({
         where: currentUserFavoritesWhere(session.user.id),
-        select: {
-          id: true
-        }
+        select: { id: true },
+        /* Предел обязателен: ветка вызывается при каждой отрисовке
+           каталога, чтобы подсветить сохранённые карточки. Тысяча с
+           запасом покрывает любое разумное избранное — соседняя ветка
+           этого маршрута предел уже ставит. */
+        take: 1_000,
+        orderBy: { createdAt: "desc" },
       })
 
       return NextResponse.json({

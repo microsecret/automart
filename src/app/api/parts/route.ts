@@ -41,7 +41,14 @@ function normalizeOptionalText(value: unknown, maxLength: number) {
 export async function GET(request: NextRequest) {
   try {
     const sp = request.nextUrl.searchParams
-    const page = Math.max(1, Number.parseInt(sp.get("page") || "1", 10) || 1)
+    /* Потолок номера страницы обязателен.
+
+       Без него `?page=99999999` проходит все проверки: значение целое и
+       положительное. База получает смещение в двадцать миллиардов и
+       делает полный проход по таблице — на копии базы это 2.2 секунды.
+       Несколько таких запросов подряд занимают единственное соединение
+       с SQLite, и сайт перестаёт отвечать. */
+    const page = Math.min(10_000, Math.max(1, Number.parseInt(sp.get("page") || "1", 10) || 1))
     const limit = Math.min(50, Math.max(1, Number.parseInt(sp.get("limit") || "20", 10) || 20))
     const skip = (page - 1) * limit
 

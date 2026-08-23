@@ -187,7 +187,10 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   className="listing-card__favorite listing-card__favorite--inline"
                   color={isFav ? "red" : "gray"}
                   variant={isFav ? "filled" : "subtle"}
-                  size="sm"
+                  /* 44 пикселя — норма зоны нажатия для пальца. При size="sm"
+                     кнопка была 30px, и на телефоне в неё промахивались; в
+                     карточке каталога это уже исправлено. */
+                  size={44}
                   radius="xl"
                   onClick={toggleFav}
                   loading={isPending(listing.id)}

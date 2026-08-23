@@ -174,6 +174,16 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           pos="relative"
           style={{ background: "var(--market-surface-subtle)", lineHeight: 0 }}
         >
+          {/* Область фото поднята над общим оверлеем карточки — иначе
+              кнопки «в сравнение» и «в избранное» не нажимались вовсе.
+              Переход по клику на само фото задаётся этой ссылкой: она
+              лежит под кнопками и над изображением. */}
+          <Link
+            href={detailHref}
+            className="listing-card__media-link"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
           <AspectRatio ratio={5 / 4}>
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
