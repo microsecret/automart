@@ -330,7 +330,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           <Group justify="space-between" align="baseline" mb={4}>
             {/* Цена — главное в карточке: раньше она была 16px против 14px
                 у названия, и разницу в два пикселя глаз не различал. */}
-            <Text className="listing-card__price" fw={800} fz={22} lh={1.05} c="var(--market-ink)" ff="var(--font-display),sans-serif" style={{ letterSpacing: "-0.025em", fontVariantNumeric: "tabular-nums" }}>
+            <Text className="listing-card__price" fw={800} fz={22} lh={1.05} c="var(--market-ink)" ff="var(--font-display),sans-serif" style={{ letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
               {formatPriceShort(listing.price)}
             </Text>
             {monthlyPayment && (

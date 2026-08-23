@@ -28,7 +28,7 @@ export default function AboutPage() {
       <Stack gap="md">
         <Stack gap="xs" align="center" ta="center" py="md">
           <Badge variant="light" color="indigo" size="md">О проекте</Badge>
-          <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="var(--market-ink)" style={{ letterSpacing: "-0.02em" }}>
+          <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="var(--market-ink)" style={{ letterSpacing: "var(--track-title)" }}>
             LeWheel — маркетплейс транспорта
           </Title>
           <Text size="sm" c="gray.5" maw={500} lh={1.6}>

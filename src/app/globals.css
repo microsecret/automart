@@ -163,6 +163,32 @@
   --market-info-line: #b9caee;
 }
 
+/* Трекинг связан с кеглем, а не выбран на глаз.
+
+   В файле было пятнадцать значений: −0.01, −0.012, −0.018, −0.02, −0.025,
+   −0.03, −0.035, −0.04 и семь положительных. Разницу между −0.01 и −0.012
+   не видит никто, но вместе они читаются как несобранность — именно это
+   отличает выверенные интерфейсы от собранных наспех.
+
+   Правило простое: чем крупнее кегль, тем плотнее буквы. Мелкий текст,
+   наоборот, разрежен — иначе он сливается. Прописные требуют разрядки
+   всегда: они одинаковой высоты и без неё превращаются в частокол.
+
+   Ступени взяты по ролям текста, а не по числам:
+   --track-display  крупные заголовки страниц и витрины
+   --track-title    заголовки разделов и карточек
+   --track-body     обычный текст — без правки, шрифт уже настроен
+   --track-caption  подписи и мелкие значения
+   --track-caps     всё, что набрано прописными */
+:root {
+  --track-display: -0.035em;
+  --track-title: -0.025em;
+  --track-body: -0.012em;
+  --track-caption: 0;
+  --track-caps: 0.045em;
+}
+
+
 /* Подъём при наведении — две роли, а не три случайные величины.
 
    Замер по сайту: 1px у кнопок и пунктов меню, 2px у плиток категорий,
@@ -395,9 +421,9 @@ body {
 
    Это одно из главных отличий дорогой типографики от обычной: разницу видно
    не в отдельной строке, а на странице целиком. */
-h2, .mantine-Title-root[data-order="2"] { letter-spacing: -0.035em; }
-h3, .mantine-Title-root[data-order="3"] { letter-spacing: -0.025em; }
-h4, h5, h6 { letter-spacing: -0.02em; }
+h2, .mantine-Title-root[data-order="2"] { letter-spacing: var(--track-display); }
+h3, .mantine-Title-root[data-order="3"] { letter-spacing: var(--track-title); }
+h4, h5, h6 { letter-spacing: var(--track-title); }
 
 /* Один заметный, но спокойный focus-ring для клавиатурной навигации. */
 :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
@@ -1134,7 +1160,7 @@ select {
   color: var(--market-muted);
   font-size: var(--text-caps);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 
@@ -1303,7 +1329,7 @@ select {
   font-weight: 800;
   font-style: italic;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track-title);
   white-space: nowrap;
   /* Наклонная «l» вылезает за метрику строки сильнее, чем кажется: при
      курсиве правый край буквы уходит за свой бокс почти на четверть кегля.
@@ -1652,7 +1678,7 @@ select {
   font-family: var(--font-display), sans-serif;
   font-size: var(--text-md);
   font-weight: 750;
-  letter-spacing: -0.012em;
+  letter-spacing: var(--track-body);
 }
 
 .auction-intro__facts span:not(.auction-intro__icon) {
@@ -2000,7 +2026,7 @@ select {
   color: var(--market-label);
   font-size: var(--text-caps);
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 
@@ -2448,7 +2474,7 @@ select {
   overflow: hidden;
   color: var(--listing-accent);
   font-weight: 800;
-  letter-spacing: 0.045em;
+  letter-spacing: var(--track-caps);
   line-height: 1.1;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -2456,7 +2482,7 @@ select {
 }
 
 .listing-card__row-title {
-  letter-spacing: -0.012em;
+  letter-spacing: var(--track-body);
 }
 
 .listing-card__row-facts {
@@ -2575,7 +2601,7 @@ select {
   align-items: baseline;
   min-height: 24px;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.025em;
+  letter-spacing: var(--track-title);
 }
 
 .listing-card__monthly-payment {
@@ -2584,7 +2610,7 @@ select {
   background: var(--market-surface-subtle);
   color: var(--market-muted);
   font-weight: 650;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--track-body);
 }
 
 .listing-card__title {
@@ -2593,7 +2619,7 @@ select {
   overflow: hidden;
   color: var(--market-ink);
   font-weight: 700;
-  letter-spacing: -0.012em;
+  letter-spacing: var(--track-body);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -2809,7 +2835,7 @@ select {
 
 .news-list-card__cover-label {
   color: inherit;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--track-caps);
 }
 
 .news-list-card__content {
@@ -2833,7 +2859,7 @@ select {
   display: -webkit-box;
   overflow: hidden;
   color: var(--market-ink);
-  letter-spacing: -0.018em;
+  letter-spacing: var(--track-body);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -3113,7 +3139,7 @@ select {
 
 .dashboard-workspace__eyebrow {
   align-self: flex-start;
-  letter-spacing: 0.035em;
+  letter-spacing: var(--track-caps);
 }
 
 .dashboard-workspace__status-grid {
@@ -3513,7 +3539,7 @@ select {
 .fuel-map-marker__network {
   font-size: 9px;
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--track-display);
   line-height: 1;
 }
 
@@ -3745,7 +3771,7 @@ select {
   color: var(--market-text-secondary);
   font-size: var(--text-xs);
   font-weight: 700;
-  letter-spacing: 0.025em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 
@@ -3861,7 +3887,7 @@ select {
   font-size: 22px;
   font-weight: 850;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track-title);
   line-height: 1.05;
   white-space: nowrap;
 }
@@ -3873,7 +3899,7 @@ select {
   color: var(--market-muted);
   font-size: var(--text-caps);
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--track-caps);
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3932,7 +3958,7 @@ select {
   min-height: 2.6em;
   overflow: hidden;
   line-height: 1.3;
-  letter-spacing: -0.012em;
+  letter-spacing: var(--track-body);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -3940,7 +3966,7 @@ select {
 .part-result-card__price {
   flex: none;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.025em;
+  letter-spacing: var(--track-title);
   white-space: nowrap;
 }
 
@@ -3953,7 +3979,7 @@ select {
   border: 1px solid transparent;
   border-radius: var(--radius-xs);
   font-weight: 750;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--track-caps);
 }
 
 .part-result-card__status-badge[data-tone="success"] {
@@ -4108,7 +4134,7 @@ select {
 
 .listing-map-result__price {
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.012em;
+  letter-spacing: var(--track-body);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -4164,7 +4190,7 @@ select {
   color: var(--market-label);
   font-size: var(--text-caps);
   font-weight: 800;
-  letter-spacing: 0.035em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 
@@ -4190,7 +4216,7 @@ select {
 
 .catalog-filter-panel__intro > .mantine-Box-root > .mantine-Text-root:first-child {
   color: var(--market-ink);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--track-body);
 }
 
 /* Состояние и наличие — независимые фильтры. Компактные переключатели
@@ -4235,7 +4261,7 @@ select {
   color: var(--market-label);
   font-size: var(--text-caps);
   font-weight: 800;
-  letter-spacing: 0.035em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 
@@ -4414,7 +4440,7 @@ select {
   color: var(--market-muted);
   font-size: var(--text-caps);
   font-weight: 700;
-  letter-spacing: 0.025em;
+  letter-spacing: var(--track-caps);
 }
 
 .vehicle-detail-specs__icon {
@@ -4779,7 +4805,7 @@ select {
   color: var(--market-muted);
   font-size: var(--text-caps);
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-caps);
 }
 
 .create-listing__journey-step[data-current] .create-listing__journey-number {
@@ -5026,7 +5052,7 @@ select {
   color: #64748b;
   font-size: var(--text-caps);
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 
@@ -5386,7 +5412,7 @@ p,
 @container listing-card (max-width: 320px) {
   .listing-card__price {
     font-size: 1.15rem !important;
-    letter-spacing: -0.03em;
+    letter-spacing: var(--track-title);
   }
 
   /* Четвёртый чип в узкой колонке уводит строку характеристик на второй
@@ -5436,7 +5462,7 @@ h1,
   font-size: clamp(1.625rem, 1.35rem + 1.1vw, 2.125rem);
   font-weight: 800;
   line-height: 1.12;
-  letter-spacing: -0.035em;
+  letter-spacing: var(--track-display);
   color: var(--market-ink);
 }
 
@@ -5462,7 +5488,7 @@ h1:not(:last-child),
    отличаться от заголовка, которому размер поставили по недосмотру. */
 h1[data-lw-hero] {
   font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.625rem);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--track-title);
   margin-bottom: 0;
 }
 
@@ -5474,7 +5500,7 @@ h1[data-lw-hero] {
    треть карточки. */
 .vehicle-detail-layout__aside h1 {
   font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.6rem);
-  letter-spacing: -0.025em;
+  letter-spacing: var(--track-title);
   line-height: 1.15;
   /* Отступ задан в разметке: заголовок стоит вплотную к цене, а не над
      страницей, и общая восьмёрка развела бы их лишним просветом. */
@@ -5522,7 +5548,7 @@ h1[data-lw-hero] {
   font-size: 1.15rem;
   font-weight: 800;
   line-height: 1.1;
-  letter-spacing: -0.025em;
+  letter-spacing: var(--track-title);
   color: var(--market-ink);
   font-variant-numeric: tabular-nums;
 }

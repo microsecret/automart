@@ -717,7 +717,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   fw={750}
                   lh={1.15}
                   c="var(--market-ink)"
-                  style={{ letterSpacing: "-0.025em", textWrap: "balance" }}
+                  style={{ letterSpacing: "var(--track-title)", textWrap: "balance" }}
                 >
                   {data.year} {data.make} {data.model}
                 </Title>
@@ -728,7 +728,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   ff="var(--font-display), sans-serif"
                   lh={1.1}
                   mb="xs"
-                  style={{ letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}
+                  style={{ letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}
                 >
                   {formatPrice(data.price)}
                 </Text>

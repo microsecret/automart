@@ -106,7 +106,7 @@ export default function AppFooter() {
 
             {FOOTER_SECTIONS.map((section) => (
               <Stack key={section.title} gap={8} miw={0}>
-                  <Text size="xs" fw={800} c="#d4d4d8" tt="uppercase" style={{ letterSpacing: "0.06em" }}>
+                  <Text size="xs" fw={800} c="#d4d4d8" tt="uppercase" style={{ letterSpacing: "var(--track-caps)" }}>
                     {section.title}
                   </Text>
                   {section.links.map((link) => (

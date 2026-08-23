@@ -57,7 +57,7 @@ export default function BrandIcon({ brand, size = 36, variant = "rounded" }: Bra
       {hasSvg ? (
         <BrandLogo brand={brand} size={Math.round(size * 0.62)} color={markColor} />
       ) : (
-        <Text fw={800} fz={fontSize} c={markColor} lh={1} style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.04em" }}>
+        <Text fw={800} fz={fontSize} c={markColor} lh={1} style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "var(--track-display)" }}>
           {monogram}
         </Text>
       )}

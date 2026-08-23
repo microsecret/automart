@@ -152,7 +152,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 </Group>
                 <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
                   {/* Цена крупнее названия — то же правило, что в плитке. */}
-                  <Text className="listing-card__price" fw={800} fz={20} c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>
+                  <Text className="listing-card__price" fw={800} fz={20} c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
                     {formatPriceShort(listing.price)}
                   </Text>
                   {monthlyPayment && <Text className="listing-card__monthly-payment" fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>{monthlyPayment}</Text>}

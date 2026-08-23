@@ -84,7 +84,7 @@ export default function MessagesPage() {
       <Stack gap="lg">
         <Group justify="space-between" align="flex-end" gap="md">
           <Stack gap={3}>
-            <Text size="xs" fw={800} tt="uppercase" c="indigo" style={{ letterSpacing: "0.08em" }}>Личный кабинет</Text>
+            <Text size="xs" fw={800} tt="uppercase" c="indigo" style={{ letterSpacing: "var(--track-caps)" }}>Личный кабинет</Text>
             <Title order={1} size="h2">Сообщения</Title>
             <Text c="dimmed">Диалоги по объявлениям и договорённостям с продавцами.</Text>
           </Stack>
