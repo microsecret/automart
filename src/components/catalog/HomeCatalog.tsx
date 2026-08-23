@@ -469,7 +469,7 @@ export default function HomePage(p: HomePageProps = {}) {
                   «расширенные» вводило бы в заблуждение. */}
               Фильтры
             </Button>
-            {activeFilterCount > 0 && <Button variant="subtle" size="xs" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить всё</Button>}
+            {activeFilterCount > 0 && <Button variant="subtle" size="xs" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить фильтры</Button>}
           </Group>}
 
           {!isPartSearch && <Collapse in={showAdvanced} id="catalog-advanced-filters">
@@ -640,11 +640,11 @@ export default function HomePage(p: HomePageProps = {}) {
               </Box>
 
               <Group className="catalog-filter-advanced__actions" justify="space-between" gap="sm">
-                <Text size="xs" c="dimmed">Фильтры применяются сразу — уточните параметры и посмотрите результат.</Text>
+                <Text size="xs" c="dimmed">Фильтры применяются сразу — выдача ниже уже обновлена.</Text>
                 <Group gap="xs">
-                  {activeFilterCount > 0 && <Button variant="subtle" size="sm" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить</Button>}
+                  {activeFilterCount > 0 && <Button variant="subtle" size="sm" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить фильтры</Button>}
                   <Button color="indigo" size="sm" radius="md" leftSection={<IconSearch size={15}/>} onClick={() => setShowAdvanced(false)}>
-                    Показать {data?.pagination?.total ?? 0} {plural(data?.pagination?.total ?? 0, "объявление", "объявления", "объявлений")}
+                    К результатам · {data?.pagination?.total ?? 0}
                   </Button>
                 </Group>
               </Group>

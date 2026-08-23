@@ -71,17 +71,25 @@ export default function CategoryShowcase() {
                   <Icon size={20} stroke={1.8} />
                 </ThemeIcon>
                 {/* Пока счётчики грузятся, места под них не занимаем —
-                    иначе карточки дёргаются при появлении чисел. */}
+                    иначе карточки дёргаются при появлении чисел.
+
+                    Пустая категория показывает не «0», а точку: цифра ноль
+                    читается как «здесь ничего нет и не будет», хотя раздел
+                    работает и ждёт первое объявление. Пять нулей из семи
+                    плиток на главном экране отпугивали покупателя раньше,
+                    чем он успевал посмотреть каталог. */}
                 {typeof count === "number" && (
                   <Text className={styles.count} data-empty={count === 0 ? "true" : undefined}>
-                    {count}
+                    {count === 0 ? "—" : count}
                   </Text>
                 )}
               </Group>
               <Text className={styles.label}>{label}</Text>
               <Text className={styles.hint}>{hint}</Text>
-              {typeof count === "number" && count > 0 && (
-                <Text className={styles.meta}>{count} {plural(count)}</Text>
+              {typeof count === "number" && (
+                count > 0
+                  ? <Text className={styles.meta}>{count} {plural(count)}</Text>
+                  : <Text className={styles.meta} data-empty="true">Разместите первым</Text>
               )}
             </Paper>
           )
