@@ -179,6 +179,13 @@ function AuctionsPageContent() {
   const [page, setPage] = useState(1)
   // Разбор выдачи закрыт по умолчанию — на первом экране нужны лоты, а не графики.
   const [insightsOpened, setInsightsOpened] = useState(false)
+  /* Содержимое сводок не строится, пока их не раскрыли.
+
+     Collapse держит содержимое в дереве всегда — свёрнутое, но
+     построенное. Здесь это разбивки по маркам, источникам, топливу и
+     кузовам: работа, которую браузер делает у каждого посетителя, хотя
+     раскрывают сводки единицы. */
+  const [insightsEverOpened, setInsightsEverOpened] = useState(false)
   const [country, setCountry] = useState("")
   const [source, setSource] = useState("")
   const [make, setMake] = useState("")
@@ -508,7 +515,7 @@ function AuctionsPageContent() {
                   марки сразу, кто изучает рынок — раскрывает разбор. */}
               <UnstyledButton
                 className={styles.insightsToggle}
-                onClick={() => setInsightsOpened((opened) => !opened)}
+                onClick={() => { setInsightsOpened((opened) => !opened); setInsightsEverOpened(true) }}
                 aria-expanded={insightsOpened}
               >
                 <Group gap="xs" wrap="nowrap">
@@ -524,7 +531,7 @@ function AuctionsPageContent() {
                 />
               </UnstyledButton>
 
-              <Collapse in={insightsOpened}>
+              {insightsEverOpened && <Collapse in={insightsOpened}>
                 <Stack gap="sm">
                 <Box className={styles.insights} aria-label="Аналитика текущей выдачи">
                   <Box className={styles.insight}>
@@ -585,7 +592,7 @@ function AuctionsPageContent() {
                   </>
                 )}
                 </Stack>
-              </Collapse>
+              </Collapse>}
               </Stack>
             </Paper>
         )}

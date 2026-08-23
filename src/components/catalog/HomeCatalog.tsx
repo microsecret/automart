@@ -48,6 +48,18 @@ export default function HomePage(p: HomePageProps = {}) {
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
   const [showAdvanced, setShowAdvanced] = useState(false)
+  /* Содержимое панели не рисуется, пока её не открыли.
+
+     Collapse в Mantine держит содержимое в дереве всегда — свёрнутое, но
+     полностью построенное. Расширенные фильтры это два десятка полей,
+     которые браузер строит и оживляет у каждого посетителя, хотя
+     открывают их единицы: замер показал 61 поле ввода в документе при
+     закрытой панели.
+
+     Признак не сбрасывается при закрытии: один раз построенную панель
+     разумнее оставить — человек, открывший её, скорее вернётся к ней. */
+  const [advancedEverOpened, setAdvancedEverOpened] = useState(false)
+
   const [make, setMake] = useState<string | null>(p.initialMake || null)
   const [model, setModel] = useState<string | null>(null)
   const [sort, setSort] = useState("newest")
@@ -255,6 +267,15 @@ export default function HomePage(p: HomePageProps = {}) {
   }
 
   const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(subtype.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(keywords?1:0)
+/* Пришёл по ссылке с настроенным поиском — панель строится сразу.
+
+     Иначе человек увидел бы выдачу, суженную условиями, которых на
+     странице не видно, и не понял бы, почему машин так мало. */
+  useEffect(() => {
+    if (advancedEverOpened || activeFilterCount === 0) return
+    setAdvancedEverOpened(true)
+  }, [advancedEverOpened, activeFilterCount])
+
   const filterKey = useMemo(() => [
     p.initialType, p.initialPartType, p.initialVehicleType, query, make, model, sort, priceFrom, priceTo,
     yearFrom, yearTo, city, mileageTo, transmission, fuelType.join(","), driveType,
@@ -541,7 +562,7 @@ export default function HomePage(p: HomePageProps = {}) {
               color="indigo"
               size="sm"
               radius="md"
-              onClick={() => setShowAdvanced((s) => !s)}
+              onClick={() => { setShowAdvanced((value) => !value); setAdvancedEverOpened(true) }}
               aria-expanded={showAdvanced}
               aria-controls="catalog-advanced-filters"
               leftSection={<IconAdjustmentsHorizontal size={16} />}
@@ -560,7 +581,7 @@ export default function HomePage(p: HomePageProps = {}) {
             {activeFilterCount > 0 && <Button variant="subtle" size="xs" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить фильтры</Button>}
           </Group>}
 
-          {!isPartSearch && <Collapse in={showAdvanced} id="catalog-advanced-filters">
+          {!isPartSearch && advancedEverOpened && <Collapse in={showAdvanced} id="catalog-advanced-filters">
             <Divider my="xs"/>
             <Stack gap="md" className="catalog-filter-advanced">
               <Box className="catalog-advanced-usage">
