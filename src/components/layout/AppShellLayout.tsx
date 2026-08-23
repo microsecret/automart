@@ -240,13 +240,13 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               </SidebarPanel>
 
               <SidebarPanel title="Запчасти" href="/parts-finder" icon={<IconTools size={15} />}>
-                <Suspense fallback={PARTS.map((item) => <NavLink key={item.href} component={Link} href={item.href} label={item.label} color="indigo" className="market-side-nav market-side-nav--nested" />)}>
+                <Suspense fallback={PARTS.map((item) => <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} color="indigo" className="market-side-nav market-side-nav--nested" />)}>
                   <PartCategoryLinks pathname={pathname || ""} />
                 </Suspense>
               </SidebarPanel>
 
               <SidebarPanel title="Мировые аукционы" href="/auctions" icon={<IconGavel size={15} />}>
-                <Suspense fallback={AUCTIONS.map((item) => <NavLink key={item.href} component={Link} href={item.href} label={item.label} color="orange" className="market-side-nav market-side-nav--nested" />)}>
+                <Suspense fallback={AUCTIONS.map((item) => <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} color="orange" className="market-side-nav market-side-nav--nested" />)}>
                   <AuctionCountryLinks pathname={pathname || ""} />
                 </Suspense>
               </SidebarPanel>
@@ -313,7 +313,7 @@ function AuctionCountryLinks({ pathname }: { pathname: string }) {
 
   return AUCTIONS.map((item) => {
     const country = item.href.split("country=")[1]
-    return <NavLink key={item.href} component={Link} href={item.href} label={item.label} active={selectedCountry === country} color="orange" className="market-side-nav market-side-nav--nested" />
+    return <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} active={selectedCountry === country} color="orange" className="market-side-nav market-side-nav--nested" />
   })
 }
 
@@ -327,7 +327,7 @@ function PartCategoryLinks({ pathname }: { pathname: string }) {
 
   return PARTS.map((item) => {
     const partType = item.href.split("partType=")[1]
-    return <NavLink key={item.href} component={Link} href={item.href} label={item.label} active={selectedPartType === partType} color="indigo" className="market-side-nav market-side-nav--nested" />
+    return <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} active={selectedPartType === partType} color="indigo" className="market-side-nav market-side-nav--nested" />
   })
 }
 
