@@ -480,15 +480,15 @@ export default function AdminDashboard() {
                 {lastSyncLabel && <Badge variant="dot" color="gray" size="sm">Импорт: {lastSyncLabel}</Badge>}
               </Group>
               <Title order={2} size="h3" c="white" ff="var(--font-display),sans-serif">Администрирование Авторынка</Title>
-              <Text size="sm" c="rgba(255,255,255,.74)">Пользователи, объявления и модерация — в одном рабочем пространстве.</Text>
+              <Text size="sm" className="admin-workspace__hero-copy">Пользователи, объявления и модерация — в одном рабочем пространстве.</Text>
             </Stack>
             <Group gap="xs">
               <Tooltip label="Обновить реальные показатели">
                 <ActionIcon variant="white" color="dark" size="lg" loading={isValidating || isAuctionStatsValidating} aria-label="Обновить показатели" onClick={() => void refreshDashboard()}><IconRefresh size={17} /></ActionIcon>
               </Tooltip>
               <Button component={Link} href="/admin/users" variant="white" color="dark" size="sm">Пользователи</Button>
-              <Button component={Link} href="/admin/auctions" variant="outline" color="gray" size="sm" styles={{ root: { color: "white", borderColor: "rgba(255,255,255,.48)" } }}>Заявки</Button>
-              <Button component={Link} href="/admin/partners" variant="outline" color="gray" size="sm" styles={{ root: { color: "white", borderColor: "rgba(255,255,255,.48)" } }}>Партнёры</Button>
+              <Button component={Link} href="/admin/auctions" variant="outline" color="gray" size="sm" className="admin-workspace__hero-outline-action">Заявки</Button>
+              <Button component={Link} href="/admin/partners" variant="outline" color="gray" size="sm" className="admin-workspace__hero-outline-action">Партнёры</Button>
             </Group>
           </Group>
         </Card>

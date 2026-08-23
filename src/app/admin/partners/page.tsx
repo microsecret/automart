@@ -130,12 +130,12 @@ export default function AdminPartnersPage() {
                   <Badge variant="dot" color="teal" size="sm">Реальные записи</Badge>
                 </Group>
                 <Title order={1} size="h3" c="white" ff="var(--font-display),sans-serif">Проверка партнёров по доставке</Title>
-                <Text size="sm" c="rgba(255,255,255,.74)">Реквизиты, источник верификации и решение администратора — в одной очереди.</Text>
+                <Text size="sm" className="admin-workspace__hero-copy">Реквизиты, источник верификации и решение администратора — в одной очереди.</Text>
               </Stack>
             </Group>
             <Group gap="xs">
               <Tooltip label="Обновить реестр"><Button variant="white" color="dark" size="sm" leftSection={<IconRefresh size={15} />} onClick={() => void mutate()}>Обновить</Button></Tooltip>
-              <Button component={Link} href="/admin" variant="outline" color="gray" size="sm" styles={{ root: { color: "white", borderColor: "rgba(255,255,255,.48)" } }}>Админка</Button>
+              <Button component={Link} href="/admin" variant="outline" color="gray" size="sm" className="admin-workspace__hero-outline-action">Админка</Button>
             </Group>
           </Group>
         </Card>

@@ -4997,6 +4997,23 @@ select {
   border: 1px solid rgba(126, 145, 255, 0.32);
   background: linear-gradient(135deg, #111c42 0%, #202d67 58%, #173d6a 100%);
   box-shadow: var(--shadow-lg);
+  --admin-hero-copy: rgba(255, 255, 255, 0.74);
+  --admin-hero-action-line: rgba(255, 255, 255, 0.48);
+}
+
+.admin-workspace__hero-copy {
+  color: var(--admin-hero-copy) !important;
+}
+
+.admin-workspace__hero-outline-action {
+  color: #fff !important;
+  border-color: var(--admin-hero-action-line) !important;
+}
+
+.admin-workspace__hero-outline-action:hover {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .admin-source-health__row {

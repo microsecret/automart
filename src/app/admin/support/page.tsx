@@ -213,7 +213,7 @@ export default function AdminSupportPage() {
               <ThemeIcon variant="white" color="dark" size={48} radius="md"><IconHeadset size={25} /></ThemeIcon>
               <Stack gap={2}>
                 <Title order={2} c="white">Центр поддержки</Title>
-                <Text c="gray.2" size="sm">Гостевые обращения, ответы помощника и живые операторы в одной очереди</Text>
+                <Text size="sm" className="admin-workspace__hero-copy">Гостевые обращения, ответы помощника и живые операторы в одной очереди</Text>
               </Stack>
             </Group>
             <Group gap="xs">
