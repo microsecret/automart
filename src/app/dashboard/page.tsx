@@ -5,7 +5,7 @@ import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Alert, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal } from "@mantine/core"
+import { Alert, Anchor, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal } from "@mantine/core"
 import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconCreditCard, IconReceipt, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
@@ -438,7 +438,23 @@ function DashboardContent() {
                           {l.isFeatured && <Badge size="xs" color="violet" variant="light">Премиум</Badge>}
                         </Group>
                         <Text fz="xs" c="gray.5">{isVehicle && l.vehicle ? `${formatMileage(l.vehicle.mileage)} · ${l.vehicle.location || "—"}` : l.part?.name}</Text>
-                        {l.statusReason && l.status !== LISTING_STATUS.ACTIVE && <Text fz="xs" c="red.6" lineClamp={1}>{l.statusReason}</Text>}
+                        {l.statusReason && l.status === LISTING_STATUS.REJECTED && (
+                          <Alert
+                            color="red"
+                            variant="light"
+                            radius="sm"
+                            p="xs"
+                            mt={4}
+                            icon={<IconAlertCircle size={14} />}
+                            title="Не прошло проверку"
+                          >
+                            <Text fz="xs" lh={1.45}>{l.statusReason}</Text>
+                            <Anchor component={Link} href={`/listings/${l.id}/edit`} fz="xs" fw={600} mt={4} display="inline-block">
+                              Исправить и отправить снова
+                            </Anchor>
+                          </Alert>
+                        )}
+                        {l.statusReason && l.status !== LISTING_STATUS.ACTIVE && l.status !== LISTING_STATUS.REJECTED && <Text fz="xs" c="red.6" lineClamp={2}>{l.statusReason}</Text>}
                         <Group gap="md">
                           <Text fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
                           <Group gap={4}>
