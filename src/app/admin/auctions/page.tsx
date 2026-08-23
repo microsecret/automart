@@ -85,14 +85,20 @@ type AuctionStatsResponse = {
   totalAuctions?: number
   recent?: number
   lastAuctionSync?: string | null
-  catalogHealth?: {
+  sourceHealth?: Array<{
     source: string
+    label: string
+    country: string | null
     active: number
-    freshWithin8Hours: number
-    staleMoreThan8Hours: number
+    fresh: number
+    stale: number
+    freshPercent: number | null
     pendingRemoval: number
-    latestRun: { startedAt: string; completedAt: string | null; status: string; syncKind: string; failed: number; expired: number } | null
-  }
+    qualityHold: number
+    expectedRefreshHours: number
+    latestSeenAt: string | null
+    latestRunAt: string | null
+  }>
   byStatus?: Partial<Record<(typeof STATUSES)[number]["value"], number>>
 }
 
@@ -126,8 +132,15 @@ export default function AdminAuctionsPage() {
   const { data: stats } = useSWR<AuctionStatsResponse>("/api/admin/auctions/stats", fetchJson)
   const inquiries = data?.inquiries || []
   const partners = data?.partners || []
-  const catalogHealth = stats?.catalogHealth
-  const freshnessPercent = catalogHealth?.active ? Math.round((catalogHealth.freshWithin8Hours / catalogHealth.active) * 100) : 0
+  const sourceHealth = stats?.sourceHealth || []
+  const catalogTotals = sourceHealth.reduce((totals, source) => ({
+    active: totals.active + source.active,
+    fresh: totals.fresh + source.fresh,
+    stale: totals.stale + source.stale,
+    pendingRemoval: totals.pendingRemoval + source.pendingRemoval,
+    qualityHold: totals.qualityHold + source.qualityHold,
+  }), { active: 0, fresh: 0, stale: 0, pendingRemoval: 0, qualityHold: 0 })
+  const freshnessPercent = catalogTotals.active ? Math.round((catalogTotals.fresh / catalogTotals.active) * 100) : 0
 
   const openInquiryEditor = (inquiry: AuctionInquiry) => {
     setEditingInquiry(inquiry)
@@ -215,21 +228,27 @@ export default function AdminAuctionsPage() {
           </SimpleGrid>
         )}
 
-        {catalogHealth && (
+        {sourceHealth.length > 0 && (
           <Paper radius="md" p="md" withBorder>
             <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
               <Group gap="sm" wrap="nowrap">
-                <ThemeIcon variant="light" color={catalogHealth.pendingRemoval ? "orange" : "teal"} size={40} radius="md"><IconDatabase size={19} /></ThemeIcon>
+                <ThemeIcon variant="light" color={catalogTotals.stale || catalogTotals.pendingRemoval ? "orange" : "teal"} size={40} radius="md"><IconDatabase size={19} /></ThemeIcon>
                 <Stack gap={1}>
-                  <Text size="sm" fw={800}>Каталог {catalogHealth.source}</Text>
-                  <Text size="xs" c="dimmed">{catalogHealth.freshWithin8Hours.toLocaleString("ru-RU")} из {catalogHealth.active.toLocaleString("ru-RU")} активных лотов проверены за 8 часов</Text>
+                  <Text size="sm" fw={800}>Каталог всех аукционных источников</Text>
+                  <Text size="xs" c="dimmed">
+                    {catalogTotals.fresh.toLocaleString("ru-RU")} из {catalogTotals.active.toLocaleString("ru-RU")} активных лотов обновлены в норматив своей площадки
+                  </Text>
                 </Stack>
               </Group>
-              <Badge variant="light" color={catalogHealth.pendingRemoval ? "orange" : "teal"}>
-                {catalogHealth.pendingRemoval ? `Повторная проверка: ${catalogHealth.pendingRemoval}` : "Источники отвечают"}
-              </Badge>
+              <Group gap="xs" wrap="wrap">
+                {catalogTotals.stale > 0 && <Badge variant="light" color="orange">Устарели: {catalogTotals.stale}</Badge>}
+                {catalogTotals.pendingRemoval > 0 && <Badge variant="light" color="red">Проверка снятия: {catalogTotals.pendingRemoval}</Badge>}
+                {catalogTotals.qualityHold > 0 && <Badge variant="light" color="grape">Карантин: {catalogTotals.qualityHold}</Badge>}
+                {!catalogTotals.stale && !catalogTotals.pendingRemoval && <Badge variant="light" color="teal">Каталог актуален</Badge>}
+                <Button component={Link} href="/admin" size="xs" variant="subtle" color="indigo">Диагностика</Button>
+              </Group>
             </Group>
-            <Progress value={freshnessPercent} color={freshnessPercent >= 80 ? "teal" : "orange"} size="sm" radius="xl" mt="md" />
+            <Progress value={freshnessPercent} color={freshnessPercent >= 80 ? "teal" : freshnessPercent >= 50 ? "yellow" : "red"} size="sm" radius="xl" mt="md" />
           </Paper>
         )}
 

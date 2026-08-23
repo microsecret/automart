@@ -4999,6 +4999,56 @@ select {
   box-shadow: var(--shadow-lg);
 }
 
+.admin-source-health__row {
+  transition: background-color var(--ease-fast) var(--ease-out), border-color var(--ease-fast) var(--ease-out), box-shadow var(--ease-fast) var(--ease-out);
+}
+
+.admin-source-health__row:hover {
+  border-color: var(--market-field-line);
+  background: var(--market-surface-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-source-health__identity {
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+}
+
+.admin-source-health__signal {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: var(--mantine-color-gray-5);
+  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.2);
+}
+
+.admin-source-health__signal[data-color="teal"] { background: var(--mantine-color-teal-6); }
+.admin-source-health__signal[data-color="yellow"] { background: var(--mantine-color-yellow-6); }
+.admin-source-health__signal[data-color="red"] { background: var(--mantine-color-red-6); }
+
+.admin-source-health__freshness {
+  min-width: min(100%, 210px);
+  flex: 1 1 240px;
+}
+
+.admin-source-health__flags {
+  flex: 1 1 220px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 48em) {
+  .admin-source-health__flags {
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-source-health__row {
+    transition-duration: 1ms;
+  }
+}
+
 .admin-workspace__nav {
   padding: 6px;
   border: 1px solid var(--market-line);

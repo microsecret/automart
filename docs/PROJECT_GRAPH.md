@@ -22,6 +22,7 @@ flowchart LR
   Next --> IautosMedia["Allow-listed transient iAutos media relay"]
   Next --> SEO["SSR metadata + JSON-LD + sitemap + manifest"]
   Next --> PrivateProfile["Owner/admin-only verified account profile"]
+  Next --> SourceHealth["Admin source health: freshness, removal checks, quality holds"]
   SEO --> LandingMetadata["Canonical category and service landing metadata"]
 ```
 
@@ -34,6 +35,7 @@ flowchart LR
 | Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |
 | Admin analytics and charts | `src/app/admin/page.tsx` | `src/app/api/admin/stats/route.ts`, analytics visit route |
+| Auction source health | `src/app/api/admin/auctions/stats/route.ts` | `auction-crawl-policy.ts`, admin sources tab |
 | Sidebar/header/footer | `src/components/layout/` | app shell and responsive styles |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
@@ -96,6 +98,9 @@ layout by country. The browser decodes only the active full-size photo and one
 card-size neighbour; long galleries render a moving window of thumbnails. The
 iAutos relay streams validated bytes as they arrive instead of buffering the
 whole image, while enforcing the same host, MIME, timeout and size limits.
+The admin source-health matrix uses each source's own refresh interval. It
+separates stale public lots, first-stage removal checks and automatic quality
+holds, so parser failure is distinguishable from moderation and delisting.
 
 ## Account and search graph
 

@@ -7,7 +7,7 @@ import { auctionVehicleIdentity, normalizeAuctionEngineVolumeCc } from "@/lib/au
 import type { AuctionDamageReport } from "@/lib/auction-damage"
 import { serializeAuctionSourceSpecs } from "@/lib/auction-source-details"
 import { auctionPriceStorageError } from "@/lib/auction-price-guard"
-import { createQualityHoldReason, evaluateAuctionImportItemQuality, isQualityHoldReason } from "@/lib/auction-quality"
+import { auctionQualityModerationUpdate, evaluateAuctionImportItemQuality } from "@/lib/auction-quality"
 
 function hasUntranslatedForeignText(original: string | null, translated: string | null) {
   if (!original) return false
@@ -151,7 +151,6 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
       where: { source_sourceId: { source: item.source, sourceId: String(item.sourceId) } },
       select: {
         id: true,
-        status: true,
         adminHiddenAt: true,
         adminHiddenReason: true,
         markup: true,
@@ -163,7 +162,6 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
     }).catch(() => null)
     const qualityAssessment = evaluateAuctionImportItemQuality(item)
     const isQualityHold = qualityAssessment.anomalies.length > 0
-    const qualityReason = isQualityHold ? createQualityHoldReason(qualityAssessment.anomalies) : null
 
     // Курс отсутствующей валюты выбрасывает исключение. Раньше оно уходило
     // наружу и обрывало весь прогон: один лот с непривычной валютой отменял
@@ -217,6 +215,11 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
       }, translatedFields?.specsRu || existing.specsRu)
 
       const price = calculateAuctionRubPricing(item.sourcePrice, exchangeRate, existing.markup)
+      const moderationUpdate = auctionQualityModerationUpdate({
+        adminHiddenAt: existing.adminHiddenAt,
+        adminHiddenReason: existing.adminHiddenReason,
+        anomalies: qualityAssessment.anomalies,
+      })
       await prisma.auctionListing.update({
         where: { id: existing.id },
         data: {
@@ -257,21 +260,18 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           lastChecked: new Date(),
           sourceLastSeenAt: new Date(),
           sourceMissingChecks: 0,
-          // Ручное решение администратора сильнее автопроверки: коллектор
-          // возвращает лот в выдачу только если сам его и скрыл.
-          ...(isQualityHold
-            ? { adminHiddenAt: existing.adminHiddenAt || new Date(), adminHiddenReason: qualityReason }
-            : isQualityHoldReason(existing.adminHiddenReason)
-              ? { adminHiddenAt: null, adminHiddenReason: null }
-              : {}),
-          ...(existing.adminHiddenAt && !isQualityHold && !isQualityHoldReason(existing.adminHiddenReason)
-            ? {}
-            : { status: "ACTIVE" }),
+          // Ручное решение администратора сильнее автопроверки. Автоматически
+          // восстанавливается только лот, который скрыл именно импорт.
+          ...(moderationUpdate ? {
+            status: moderationUpdate.status,
+            adminHiddenAt: moderationUpdate.adminHiddenAt,
+            adminHiddenReason: moderationUpdate.adminHiddenReason,
+          } : {}),
           auctionDate: item.auctionDate,
         },
       })
-      if (isQualityHold && !existing.adminHiddenAt) qualityHold++
-      if (!isQualityHold && isQualityHoldReason(existing.adminHiddenReason)) qualityRestored++
+      if (moderationUpdate?.transition === "HELD") qualityHold++
+      if (moderationUpdate?.transition === "RESTORED") qualityRestored++
       updated++
       continue
     }
@@ -318,6 +318,12 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
       conditionInfo: item.conditionInfo,
     }, translatedSpecsRu)
 
+    const moderationUpdate = auctionQualityModerationUpdate({
+      adminHiddenAt: null,
+      adminHiddenReason: null,
+      anomalies: qualityAssessment.anomalies,
+    })
+
     await prisma.auctionListing.create({
       data: {
         sourceId: String(item.sourceId), source: item.source, sourceUrl: item.sourceUrl,
@@ -340,7 +346,11 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
         location: displayLocation,
         sourceLastSeenAt: new Date(),
         sourceMissingChecks: 0,
-        ...(isQualityHold ? { adminHiddenAt: new Date(), adminHiddenReason: qualityReason } : {}),
+        status: moderationUpdate?.status || "ACTIVE",
+        ...(isQualityHold ? {
+          adminHiddenAt: moderationUpdate?.adminHiddenAt,
+          adminHiddenReason: moderationUpdate?.adminHiddenReason,
+        } : {}),
         isTranslated: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, translatedSpecsRu),
         translatedAt: hasUsableTranslation(item.descriptionOrig, descriptionRu) || hasUsableTranslation(item.specsOrig, translatedSpecsRu) ? new Date() : null,
       },

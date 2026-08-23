@@ -25,6 +25,7 @@ export type AuctionQualityInput = {
   make: string | null
   model: string | null
   year: number | null
+  manufacturedMonth?: string | null
   mileage: number | null
   sourcePrice: number
   engineVolume: number | null
@@ -36,6 +37,13 @@ export type AuctionQualityInput = {
 
 export type AuctionQualityAssessment = {
   anomalies: string[]
+}
+
+export type AuctionQualityModerationUpdate = {
+  status: "ACTIVE" | "POLICY_EXCLUDED"
+  adminHiddenAt: Date | null
+  adminHiddenReason: string | null
+  transition: "HELD" | "RESTORED" | "UNCHANGED"
 }
 
 function hasUsableImage(input: AuctionQualityInput) {
@@ -74,6 +82,11 @@ export function evaluateAuctionImportItemQuality(input: AuctionQualityInput): Au
 
   if (input.year != null && (input.year < MIN_PLAUSIBLE_YEAR || input.year > currentYear + 1)) {
     anomalies.push("год выпуска вне допустимого диапазона")
+  }
+
+  const manufacturedYear = input.manufacturedMonth?.match(/^(19|20)\d{2}-(0[1-9]|1[0-2])$/)?.[0].slice(0, 4)
+  if (input.year != null && manufacturedYear && Number(manufacturedYear) !== input.year) {
+    anomalies.push("год выпуска не совпадает с датой производства")
   }
 
   if (input.mileage != null && (input.mileage < 0 || input.mileage > MAX_PLAUSIBLE_MILEAGE_KM)) {
@@ -125,4 +138,35 @@ export function createQualityHoldReason(anomalies: string[]) {
  */
 export function isQualityHoldReason(reason: string | null | undefined) {
   return typeof reason === "string" && reason.startsWith(QUALITY_HOLD_PREFIX)
+}
+
+/**
+ * Возвращает единое состояние модерации после автопроверки. Ручное скрытие
+ * администратора имеет приоритет: импорт не меняет ни его причину, ни статус.
+ */
+export function auctionQualityModerationUpdate(input: {
+  adminHiddenAt: Date | null
+  adminHiddenReason: string | null
+  anomalies: string[]
+  now?: Date
+}): AuctionQualityModerationUpdate | null {
+  const wasQualityHeld = isQualityHoldReason(input.adminHiddenReason)
+  const isManuallyHidden = Boolean(input.adminHiddenAt && !wasQualityHeld)
+  if (isManuallyHidden) return null
+
+  if (input.anomalies.length > 0) {
+    return {
+      status: "POLICY_EXCLUDED",
+      adminHiddenAt: input.adminHiddenAt || input.now || new Date(),
+      adminHiddenReason: createQualityHoldReason(input.anomalies),
+      transition: wasQualityHeld ? "UNCHANGED" : "HELD",
+    }
+  }
+
+  return {
+    status: "ACTIVE",
+    adminHiddenAt: null,
+    adminHiddenReason: null,
+    transition: wasQualityHeld ? "RESTORED" : "UNCHANGED",
+  }
 }

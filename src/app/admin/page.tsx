@@ -206,6 +206,20 @@ type AuctionAdminStats = {
   totalAuctions: number
   recent: number
   lastAuctionSync: string | null
+  sourceHealth: Array<{
+    source: string
+    label: string
+    country: string | null
+    active: number
+    fresh: number
+    stale: number
+    freshPercent: number | null
+    pendingRemoval: number
+    qualityHold: number
+    expectedRefreshHours: number
+    latestSeenAt: string | null
+    latestRunAt: string | null
+  }>
   byStatus: { NEW: number; CONTACTED: number; IN_PROGRESS: number; CLOSED: number; SOLD: number }
 }
 
@@ -384,8 +398,8 @@ const PAYMENT_STATUS_META: Record<string, { label: string; color: MantineColor }
 }
 
 export default function AdminDashboard() {
-  const { data, error, isLoading, mutate } = useSWR<AdminStats>("/api/admin/stats", fetchAdminStats)
-  const { data: auctionStats, mutate: mutateAuctionStats } = useSWR<AuctionAdminStats>("/api/admin/auctions/stats", fetchJson)
+  const { data, error, isLoading, isValidating, mutate } = useSWR<AdminStats>("/api/admin/stats", fetchAdminStats)
+  const { data: auctionStats, isValidating: isAuctionStatsValidating, mutate: mutateAuctionStats } = useSWR<AuctionAdminStats>("/api/admin/auctions/stats", fetchJson)
 
   const refreshDashboard = async () => {
     await Promise.all([mutate(), mutateAuctionStats()])
@@ -470,7 +484,7 @@ export default function AdminDashboard() {
             </Stack>
             <Group gap="xs">
               <Tooltip label="Обновить реальные показатели">
-                <ActionIcon variant="white" color="dark" size="lg" aria-label="Обновить показатели" onClick={() => void refreshDashboard()}><IconRefresh size={17} /></ActionIcon>
+                <ActionIcon variant="white" color="dark" size="lg" loading={isValidating || isAuctionStatsValidating} aria-label="Обновить показатели" onClick={() => void refreshDashboard()}><IconRefresh size={17} /></ActionIcon>
               </Tooltip>
               <Button component={Link} href="/admin/users" variant="white" color="dark" size="sm">Пользователи</Button>
               <Button component={Link} href="/admin/auctions" variant="outline" color="gray" size="sm" styles={{ root: { color: "white", borderColor: "rgba(255,255,255,.48)" } }}>Заявки</Button>
@@ -586,6 +600,84 @@ export default function AdminDashboard() {
 
           <Tabs.Panel value="sources">
             <Stack gap="md">
+
+        <Card withBorder radius="md" p="md" className="admin-source-health">
+          <Group justify="space-between" align="flex-start" gap="md" mb="sm" wrap="wrap">
+            <Group gap="sm" wrap="nowrap">
+              <ThemeIcon variant="light" color="teal" size={36} radius="md"><IconActivity size={18} /></ThemeIcon>
+              <Stack gap={1}>
+                <Text size="sm" fw={700}>Здоровье аукционных источников</Text>
+                <Text size="xs" c="dimmed">Свежесть считается по собственному нормативу каждой площадки, а не по одному общему таймеру.</Text>
+              </Stack>
+            </Group>
+            {auctionStats?.sourceHealth.length ? (
+              <Badge
+                variant="light"
+                color={auctionStats.sourceHealth.some((source) => source.stale > 0 || source.pendingRemoval > 0 || source.qualityHold > 0) ? "orange" : "teal"}
+              >
+                {auctionStats.sourceHealth.filter((source) => source.stale > 0 || source.pendingRemoval > 0 || source.qualityHold > 0).length
+                  ? `Требуют внимания: ${auctionStats.sourceHealth.filter((source) => source.stale > 0 || source.pendingRemoval > 0 || source.qualityHold > 0).length}`
+                  : "Все источники в норме"}
+              </Badge>
+            ) : null}
+          </Group>
+          {auctionStats?.sourceHealth.length ? (
+            <Stack gap={7}>
+              {auctionStats.sourceHealth.map((source) => {
+                const healthColor: MantineColor = source.active === 0
+                  ? "gray"
+                  : source.freshPercent !== null && source.freshPercent >= 80 && source.pendingRemoval === 0
+                    ? "teal"
+                    : source.freshPercent !== null && source.freshPercent >= 50
+                      ? "yellow"
+                      : "red"
+                const lastActivity = source.latestSeenAt || source.latestRunAt
+                return (
+                  <Paper
+                    key={source.source}
+                    withBorder
+                    radius="md"
+                    p="sm"
+                    className="admin-source-health__row"
+                    data-health={healthColor}
+                  >
+                    <Group justify="space-between" align="center" gap="sm" wrap="wrap">
+                      <Box className="admin-source-health__identity">
+                        <Group gap={7} wrap="nowrap">
+                          <Box className="admin-source-health__signal" data-color={healthColor} aria-hidden="true" />
+                          <Text size="sm" fw={750}>{source.label}</Text>
+                          <Badge size="xs" variant="light" color="gray">{source.country || "—"}</Badge>
+                        </Group>
+                        <Text size="10px" c="dimmed" mt={3}>
+                          Норматив: до {source.expectedRefreshHours} ч
+                          {lastActivity ? ` · активность ${new Date(lastActivity).toLocaleString("ru-RU")}` : " · запусков ещё нет"}
+                        </Text>
+                      </Box>
+                      <Box className="admin-source-health__freshness">
+                        <Group justify="space-between" gap="xs" wrap="nowrap">
+                          <Text size="10px" c="dimmed">Свежие лоты</Text>
+                          <Text size="xs" fw={800} style={{ fontVariantNumeric: "tabular-nums" }}>
+                            {source.fresh.toLocaleString("ru-RU")} / {source.active.toLocaleString("ru-RU")}
+                          </Text>
+                        </Group>
+                        <Progress mt={4} size="sm" radius="xl" value={source.freshPercent ?? 0} color={healthColor} />
+                      </Box>
+                      <Group gap={5} wrap="wrap" className="admin-source-health__flags">
+                        {source.stale > 0 && <Badge size="xs" variant="light" color="orange">Устарели: {source.stale}</Badge>}
+                        {source.pendingRemoval > 0 && <Badge size="xs" variant="light" color="red">Проверка снятия: {source.pendingRemoval}</Badge>}
+                        {source.qualityHold > 0 && <Badge size="xs" variant="light" color="grape">Карантин: {source.qualityHold}</Badge>}
+                        {source.active === 0 && source.qualityHold === 0 && <Badge size="xs" variant="light" color="gray">Нет активных лотов</Badge>}
+                        {source.active > 0 && source.stale === 0 && source.pendingRemoval === 0 && <Badge size="xs" variant="light" color="teal">Актуален</Badge>}
+                      </Group>
+                    </Group>
+                  </Paper>
+                )
+              })}
+            </Stack>
+          ) : (
+            <Text size="sm" c="dimmed">Данные появятся после первого запуска любого аукционного источника.</Text>
+          )}
+        </Card>
 
         <Card withBorder radius="md" p="md">
           <Group justify="space-between" mb="sm" wrap="wrap">

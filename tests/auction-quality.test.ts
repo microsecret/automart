@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { createQualityHoldReason, evaluateAuctionImportItemQuality, isQualityHoldReason, QUALITY_HOLD_PREFIX } from "../src/lib/auction-quality.ts"
+import { auctionQualityModerationUpdate, createQualityHoldReason, evaluateAuctionImportItemQuality, isQualityHoldReason, QUALITY_HOLD_PREFIX } from "../src/lib/auction-quality.ts"
 
 const soundLot = {
   make: "Hyundai",
@@ -61,6 +61,9 @@ test("quarantines lots whose fields contradict each other", () => {
 
   const electric = evaluateAuctionImportItemQuality({ ...soundLot, fuelType: "ELECTRIC", engineVolume: 2_000 })
   assert.ok(electric.anomalies.includes("у электромобиля указан объём двигателя внутреннего сгорания"))
+
+  const conflictingManufactureDate = evaluateAuctionImportItemQuality({ ...soundLot, year: 2025, manufacturedMonth: "2023-11" })
+  assert.ok(conflictingManufactureDate.anomalies.includes("год выпуска не совпадает с датой производства"))
 })
 
 test("accepts plausible combinations of age, mileage and fuel", () => {
@@ -86,4 +89,29 @@ test("marks its own hold reason and never claims a manual one", () => {
   assert.equal(isQualityHoldReason(reason), true)
   assert.equal(isQualityHoldReason("Скрыт администратором: жалоба покупателя"), false)
   assert.equal(isQualityHoldReason(null), false)
+})
+
+test("moves only automatic quality holds between public and quarantine states", () => {
+  const now = new Date("2026-08-23T08:00:00.000Z")
+  const held = auctionQualityModerationUpdate({
+    adminHiddenAt: null, adminHiddenReason: null,
+    anomalies: ["год выпуска не совпадает с датой производства"], now,
+  })
+  assert.equal(held?.status, "POLICY_EXCLUDED")
+  assert.equal(held?.adminHiddenAt, now)
+  assert.equal(held?.transition, "HELD")
+
+  const restored = auctionQualityModerationUpdate({
+    adminHiddenAt: now,
+    adminHiddenReason: held?.adminHiddenReason || null, anomalies: [], now,
+  })
+  assert.equal(restored?.status, "ACTIVE")
+  assert.equal(restored?.adminHiddenAt, null)
+  assert.equal(restored?.transition, "RESTORED")
+
+  const manual = auctionQualityModerationUpdate({
+    adminHiddenAt: now,
+    adminHiddenReason: "Скрыт администратором: подозрительная карточка", anomalies: [], now,
+  })
+  assert.equal(manual, null)
 })
