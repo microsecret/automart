@@ -64,6 +64,10 @@ fi
 npm run type-check
 npm run build
 bash scripts/install-production-network.sh
+# The strict form/API gate protects new submissions. This post-start step uses
+# the exact same compiled validator to return older incomplete public cards to
+# their owners for correction without deleting their data.
+bash scripts/enforce-legacy-listing-readiness.sh
 if systemctl list-unit-files automart-telegram.service --no-legend 2>/dev/null | grep -q '^automart-telegram\.service'; then
   systemctl restart automart-telegram
   systemctl is-active --quiet automart-telegram

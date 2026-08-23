@@ -51,7 +51,7 @@ flowchart LR
 | Delivery partner onboarding | `src/app/api/delivery-organizations/route.ts` | delivery workspace, admin partner registry |
 | Auction partner routing and SLA | `src/lib/auction-partner-routing.ts` | `partner-scoring.js`, offer API, hourly SLA cron |
 | Garage to moderated listing | `src/app/api/garage/route.ts` | dashboard garage, vehicle creation workspace |
-| Vehicle publication readiness | `src/lib/vehicle-publication-readiness.ts` | full vehicle form, owner resubmission/edit API, listing creation API, admin approval |
+| Vehicle publication readiness | `src/lib/vehicle-publication-readiness.ts` | full form, owner resubmission/edit API, listing/admin gates, protected legacy enforcement route and post-deploy script |
 | Search metadata and structured data | `src/app/layout.tsx` | route layouts, `StructuredData.tsx`, sitemap/robots/manifest |
 | SEO landing metadata | `src/lib/seo-metadata.ts` | category generator and public route layouts |
 | iAutos gallery relay | `src/app/api/auction-media/route.ts` | `media-url.ts`, detail gallery |
@@ -185,6 +185,11 @@ flowchart LR
   AdminGate -->|approved| Public["Public catalogue"]
   AdminGate -->|incomplete| Dashboard
   Pending -->|changes required| Dashboard
+  LegacyPublic["Legacy ACTIVE / PENDING cards"] --> LegacyScan{"Protected post-deploy readiness scan"}
+  LegacyScan -->|complete| Public
+  LegacyScan -->|incomplete| Rejected["REJECTED: needs correction"]
+  Rejected --> Notice["Owner notification + status event + system audit"]
+  Notice --> Prefill
 ```
 
 The garage endpoint can return one selected vehicle only when it belongs to the
@@ -193,7 +198,14 @@ still creates a new transport record and listing atomically; it never publishes
 the private garage record directly. The legacy quick URL redirects into the
 full form. Creation, owner resubmission and edit, and administrator approval all
 use the same readiness contract, so incomplete vehicles cannot enter or leave
-the moderation queue through an alternate endpoint.
+the moderation queue through an alternate endpoint. After the application has
+restarted, `scripts/enforce-legacy-listing-readiness.sh` calls the protected
+`/api/parser/listings/readiness` route with the server-side parser token. The
+route first supports a non-mutating preview and then uses guarded transactions:
+an old incomplete public card becomes `REJECTED`, its `publishedAt` is cleared,
+the owner receives the exact missing-field reason, and immutable status/admin
+events remain available. The data is not deleted and the owner can correct the
+same card and submit it again.
 
 ## Source inventory
 

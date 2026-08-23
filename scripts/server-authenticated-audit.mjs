@@ -87,8 +87,11 @@ async function run() {
     data: {
       make: "Toyota", model: "RAV4", year: 2024, price: 3_100_000, mileage: 18_000,
       vin: `LWSELLER${String(Date.now()).slice(-9)}`.slice(0, 17), fuelType: "GASOLINE",
-      transmission: "AUTOMATIC", bodyType: "SUV", color: "Белый", power: 199,
+      transmission: "AUTOMATIC", bodyType: "SUV", color: "Белый", power: 199, engineVolume: 2,
       driveType: "AWD", condition: "EXCELLENT", location: "Москва", vehicleType: "CAR",
+      steeringWheel: "LEFT", ownersCount: 1, documentsStatus: "CLEAN", damageInfo: "NONE",
+      sellerType: "OWNER", availability: "IN_STOCK", customsCleared: true, generation: "V (XA50)",
+      description: "Полная карточка продавца для проверки публичного каталога и контактов.",
       images: JSON.stringify(["https://images.unsplash.com/photo-1549317661-bd32c8ce0db2"]),
       userId: seller.id, categoryId: category.id,
       listings: { create: { title: `${marker} Toyota RAV4`, price: 3_100_000, status: "ACTIVE", userId: seller.id } },
@@ -96,6 +99,23 @@ async function run() {
     include: { listings: true },
   })
   const publicListingId = sellerVehicle.listings[0].id
+  const legacyVehicle = await prisma.vehicle.create({
+    data: {
+      make: "Opel", model: "Vivaro", year: 2022, price: 2_300_000, mileage: 104_000,
+      fuelType: "DIESEL", transmission: "MANUAL", condition: "GOOD", location: "Москва",
+      vehicleType: "CAR", description: "Старая неполная карточка до введения строгого контракта.",
+      images: JSON.stringify(["https://images.unsplash.com/photo-1549317661-bd32c8ce0db2"]),
+      userId: seller.id, categoryId: category.id,
+      listings: {
+        create: {
+          title: `${marker} legacy Opel Vivaro`, price: 2_300_000, status: "ACTIVE",
+          publishedAt: new Date(), userId: seller.id,
+        },
+      },
+    },
+    include: { listings: true },
+  })
+  const legacyListingId = legacyVehicle.listings[0].id
   const auctionListing = await prisma.auctionListing.create({
     data: {
       sourceId: `${marker}-encar-lot`, source: "ENCAR", sourceUrl: `https://www.encar.com/${marker}`,
@@ -351,6 +371,52 @@ async function run() {
     }),
   })
   record("incomplete vehicle cannot enter moderation", typeof incompleteVehicle?.error === "string", incompleteVehicle?.error || "missing error")
+
+  await expect("/api/parser/listings/readiness", null, 401, { method: "POST", body: JSON.stringify({ apply: true }) })
+  const readinessDryRun = await expect("/api/parser/listings/readiness", null, 200, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.PARSER_TOKEN}` },
+    body: JSON.stringify({ apply: false }),
+  })
+  const legacyBeforeEnforcement = await prisma.listing.findUniqueOrThrow({ where: { id: legacyListingId } })
+  record(
+    "legacy readiness dry-run finds incomplete public cards without changing them",
+    readinessDryRun?.issues?.some((issue) => issue.listingId === legacyListingId)
+      && legacyBeforeEnforcement.status === "ACTIVE",
+    `${readinessDryRun?.incomplete ?? 0} incomplete · ${legacyBeforeEnforcement.status}`,
+  )
+  const readinessApplied = await expect("/api/parser/listings/readiness", null, 200, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.PARSER_TOKEN}` },
+    body: JSON.stringify({ apply: true }),
+  })
+  const legacyAfterEnforcement = await prisma.listing.findUniqueOrThrow({
+    where: { id: legacyListingId },
+    include: { statusEvents: true },
+  })
+  const legacyNotification = await prisma.notification.findFirst({
+    where: { userId: seller.id, relatedId: legacyListingId, relatedType: "LISTING" },
+  })
+  record(
+    "legacy incomplete listing is reversibly returned to its owner with history and notification",
+    readinessApplied?.enforced >= 1
+      && legacyAfterEnforcement.status === "REJECTED"
+      && legacyAfterEnforcement.publishedAt === null
+      && legacyAfterEnforcement.statusEvents.some((event) => event.toStatus === "REJECTED")
+      && legacyNotification?.type === "WARNING",
+    `${legacyAfterEnforcement.status} · ${legacyAfterEnforcement.statusEvents.length} event(s)`,
+  )
+  const readinessRepeated = await expect("/api/parser/listings/readiness", null, 200, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.PARSER_TOKEN}` },
+    body: JSON.stringify({ apply: true }),
+  })
+  record(
+    "legacy readiness enforcement is idempotent",
+    readinessRepeated?.enforced === 0
+      && readinessRepeated?.issues?.every((issue) => issue.listingId !== legacyListingId),
+    `${readinessRepeated?.enforced ?? "missing"} repeated changes`,
+  )
 
   const vehicle = await expect("/api/vehicles", cookie, 201, {
     method: "POST",
