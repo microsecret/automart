@@ -8,10 +8,12 @@ const IAUTOS_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
   [/时尚型/g, "Style"], [/悦尚型/g, "Comfort Style"],
   [/豪华型/g, "Luxury"], [/尊贵型/g, "Premium"], [/旗舰型/g, "Flagship"],
   // Модельные ряды, которые источник публикует иероглифами.
-  [/途观/g, "Tiguan"], [/花冠/g, "Corolla"], [/朗逸/g, "Lavida"], [/揽胜星脉/g, "Range Rover Velar"],
+  [/途观/g, "Tiguan"], [/花冠/g, "Corolla"], [/朗逸/g, "Lavida"], [/高尔夫/g, "Golf"],
+  [/速腾/g, "Sagitar"], [/总裁/g, "Quattroporte"], [/揽胜星脉/g, "Range Rover Velar"],
   [/揽胜/g, "Range Rover"], [/轩逸/g, "Sylphy"], [/艾瑞泽/g, "Arrizo"],
   // Кузовные обозначения. Длинные варианты должны сработать до «轿跑».
-  [/纯电动/g, "электро"], [/四门轿跑/g, "Gran Coupe"], [/敞篷/g, "Cabriolet"], [/轿跑/g, "купе"], [/掀背/g, "Hatchback"],
+  [/纯电动/g, "электро"], [/四门轿跑/g, "Gran Coupe"], [/双门轿跑/g, "Coupe"],
+  [/敞篷/g, "Cabriolet"], [/轿跑/g, "купе"], [/掀背/g, "Hatchback"],
   [/加长版/g, "удлинённая"], [/超长续航版/g, "Long Range"],
   [/都会版/g, "Urban"], [/美规平行进口/g, "американская версия"],
   [/汽车/g, ""], [/二手/g, ""],
