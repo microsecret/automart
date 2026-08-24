@@ -91,6 +91,7 @@ function CreateVehicleWorkspace() {
   const isTelegramMiniApp = searchParams.get("source") === "telegram"
   const isGarageMode = searchParams.get("mode") === "garage"
   const garageId = searchParams.get("garageId")?.trim() || ""
+  const isGarageEdit = isGarageMode && Boolean(garageId)
   const garagePrefillAttempted = useRef(false)
   const [garagePrefillState, setGaragePrefillState] = useState<"loading" | "loaded" | "error" | null>(null)
   const [loading, setLoading] = useState(false)
@@ -312,8 +313,8 @@ function CreateVehicleWorkspace() {
     setLoading(true)
     try {
       if (isGarageMode) {
-        await fetchJson("/api/garage", {
-          method: "POST",
+        await fetchJson(isGarageEdit ? `/api/garage?id=${encodeURIComponent(garageId)}` : "/api/garage", {
+          method: isGarageEdit ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             make: f.make,
@@ -344,8 +345,12 @@ function CreateVehicleWorkspace() {
             images,
           }),
         })
-        notifications.show({ title: "Автомобиль сохранён", message: "Приватная карточка добавлена в личный гараж.", color: "teal" })
-        router.push("/dashboard?tab=garage&created=garage")
+        notifications.show({
+          title: isGarageEdit ? "Данные обновлены" : "Автомобиль сохранён",
+          message: isGarageEdit ? "Изменения сохранены в приватной карточке гаража." : "Приватная карточка добавлена в личный гараж.",
+          color: "teal",
+        })
+        router.push(`/dashboard?tab=garage&${isGarageEdit ? "updated" : "created"}=garage`)
         return
       }
 
@@ -421,15 +426,15 @@ function CreateVehicleWorkspace() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Group gap={7} align="center">
-              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">{isGarageMode ? "Добавить автомобиль в гараж" : "Новое объявление"}</Text>
+              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">{isGarageEdit ? "Редактировать автомобиль" : isGarageMode ? "Добавить автомобиль в гараж" : "Новое объявление"}</Text>
               {isTelegramMiniApp && <Badge leftSection={<IconBrandTelegram size={12} />} color="indigo" variant="light" radius="xl">Mini App</Badge>}
             </Group>
-            <Text size="xs" c="var(--market-muted)">{isGarageMode ? "Сохраните полную приватную карточку — в каталоге она не появится" : "Заполните данные — после проверки объявление появится в поиске"}</Text>
+            <Text size="xs" c="var(--market-muted)">{isGarageEdit ? "Обновите приватную карточку — в каталоге изменения не публикуются" : isGarageMode ? "Сохраните полную приватную карточку — в каталоге она не появится" : "Заполните данные — после проверки объявление появится в поиске"}</Text>
           </Stack>
         </Group>
 
         {garagePrefillState === "loading" && <Alert color="teal" variant="light" title="Загружаем автомобиль из гаража">Основные характеристики будут заполнены автоматически.</Alert>}
-        {garagePrefillState === "loaded" && <Alert color="teal" variant="light" title="Данные из гаража подставлены" icon={<IconCheck size={18} />}>Добавьте цену, фотографии и описание — после отправки объявление попадёт на модерацию.</Alert>}
+        {garagePrefillState === "loaded" && <Alert color="teal" variant="light" title={isGarageEdit ? "Карточка готова к редактированию" : "Данные из гаража подставлены"} icon={<IconCheck size={18} />}>{isGarageEdit ? "Измените нужные поля и сохраните — карточка останется приватной." : "Добавьте цену, фотографии и описание — после отправки объявление попадёт на модерацию."}</Alert>}
         {garagePrefillState === "error" && <Alert color="orange" variant="light" title="Не удалось прочитать запись гаража">Можно заполнить объявление вручную; приватная запись в гараже не изменилась.</Alert>}
 
         {isTelegramMiniApp && (
@@ -787,7 +792,7 @@ function CreateVehicleWorkspace() {
             <Paper className={styles.submitPanel} radius="md" p="sm" withBorder>
               <Stack gap={6}>
                 <Button fullWidth type="submit" size="md" radius="md" color={isGarageMode ? "teal" : "indigo"} loading={loading} disabled={(!isGarageMode && !selectedCategory) || uploadingImages} leftSection={<IconCheck size={18} />}>
-                  {loading ? (isGarageMode ? "Сохраняем..." : "Публикация...") : (isGarageMode ? "Сохранить в личный гараж" : "Отправить на модерацию")}
+                  {loading ? (isGarageMode ? "Сохраняем..." : "Публикация...") : (isGarageEdit ? "Сохранить изменения" : isGarageMode ? "Сохранить в личный гараж" : "Отправить на модерацию")}
                 </Button>
                 <Text size="xs" c="dimmed" ta="center">{isGarageMode ? "Карточка останется приватной. Опубликовать её можно отдельным действием из гаража." : "Сначала объявление проверит модератор. Статус появится в личном кабинете."}</Text>
               </Stack>

@@ -37,6 +37,68 @@ function optionalDecimal(value: unknown, min: number, max: number) {
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null
 }
 
+function normalizeGarageVehiclePayload(body: unknown) {
+  const input = body && typeof body === "object" ? body as Record<string, unknown> : {}
+  const make = optionalText(input.make, 60)
+  const model = optionalText(input.model, 80)
+  const year = Number(input.year)
+  const mileage = input.mileage === "" || input.mileage == null ? null : Number(input.mileage)
+  const fuelType = typeof input.fuelType === "string" && FUEL_TYPES.has(input.fuelType) ? input.fuelType : "GASOLINE"
+  const transmission = typeof input.transmission === "string" && TRANSMISSION_TYPES.has(input.transmission) ? input.transmission : "MANUAL"
+  const vin = optionalText(input.vin, 32)?.toUpperCase() || null
+  const currentYear = new Date().getFullYear()
+
+  if (!make || make.length < 2 || !model || !Number.isInteger(year) || year < 1900 || year > currentYear + 1) {
+    return { error: "Марка, модель и год обязательны" } as const
+  }
+  if (mileage != null && (!Number.isInteger(mileage) || mileage < 0 || mileage > 3_000_000)) {
+    return { error: "Проверьте пробег автомобиля" } as const
+  }
+
+  const normalizedIdentity = vin ? normalizeVehicleIdentity("CAR", vin, null, null) : null
+  if (normalizedIdentity && "error" in normalizedIdentity) {
+    return { error: normalizedIdentity.error } as const
+  }
+
+  const energyAndYearError = validateVehicleEnergyAndModelYear("CAR", make, model, year, fuelType)
+  if (energyAndYearError) return { error: energyAndYearError } as const
+
+  const images = Array.isArray(input.images)
+    ? [...new Set(input.images.filter((value: unknown): value is string => typeof value === "string" && /^\/uploads\/[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(value)))].slice(0, 12)
+    : []
+
+  return {
+    data: {
+      make,
+      model,
+      year,
+      mileage,
+      vin: normalizedIdentity?.vin || null,
+      fuelType,
+      transmission,
+      bodyType: optionalText(input.bodyType, 40),
+      color: optionalText(input.color, 40),
+      doors: optionalInteger(input.doors, 1, 8),
+      engineVolume: optionalDecimal(input.engineVolume, 0.1, 20),
+      power: optionalInteger(input.power, 1, 5000),
+      driveType: optionalText(input.driveType, 20),
+      condition: optionalText(input.condition, 32) || "EXCELLENT",
+      steeringWheel: optionalText(input.steeringWheel, 16),
+      ownersCount: optionalInteger(input.ownersCount, 0, 100),
+      documentsStatus: optionalText(input.documentsStatus, 24),
+      damageInfo: optionalText(input.damageInfo, 24),
+      sellerType: optionalText(input.sellerType, 20),
+      availability: optionalText(input.availability, 24),
+      customsCleared: typeof input.customsCleared === "boolean" ? input.customsCleared : null,
+      generation: optionalText(input.generation, 80),
+      keywords: optionalText(input.keywords, 500),
+      location: optionalText(input.location, 120) || "",
+      description: optionalText(input.description, 5000),
+      images: images.length ? JSON.stringify(images) : null,
+    },
+  } as const
+}
+
 /** GET /api/garage — список или одна личная запись пользователя. */
 export async function GET(request: NextRequest) {
   try {
@@ -74,44 +136,8 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
 
-    const body = await request.json().catch(() => null)
-    const make = optionalText(body?.make, 60)
-    const model = optionalText(body?.model, 80)
-    const year = Number(body?.year)
-    const mileage = body?.mileage === "" || body?.mileage == null ? null : Number(body.mileage)
-    const fuelType = typeof body?.fuelType === "string" && FUEL_TYPES.has(body.fuelType) ? body.fuelType : "GASOLINE"
-    const transmission = typeof body?.transmission === "string" && TRANSMISSION_TYPES.has(body.transmission) ? body.transmission : "MANUAL"
-    const bodyType = optionalText(body?.bodyType, 40)
-    const color = optionalText(body?.color, 40)
-    const condition = optionalText(body?.condition, 32) || "EXCELLENT"
-    const vin = optionalText(body?.vin, 32)?.toUpperCase() || null
-    const location = optionalText(body?.location, 120) || ""
-    const doors = optionalInteger(body?.doors, 1, 8)
-    const engineVolume = optionalDecimal(body?.engineVolume, 0.1, 20)
-    const power = optionalInteger(body?.power, 1, 5000)
-    const ownersCount = optionalInteger(body?.ownersCount, 0, 100)
-    const images = Array.isArray(body?.images)
-      ? [...new Set(body.images.filter((value: unknown): value is string => typeof value === "string" && /^\/uploads\/[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(value)))].slice(0, 12)
-      : []
-    const currentYear = new Date().getFullYear()
-
-    if (!make || make.length < 2 || !model || model.length < 1 || !Number.isInteger(year) || year < 1900 || year > currentYear + 1) {
-      return NextResponse.json({ error: "Марка, модель и год обязательны" }, { status: 400 })
-    }
-
-    if (mileage != null && (!Number.isInteger(mileage) || mileage < 0 || mileage > 3_000_000)) {
-      return NextResponse.json({ error: "Проверьте пробег автомобиля" }, { status: 400 })
-    }
-
-    const normalizedIdentity = vin ? normalizeVehicleIdentity("CAR", vin, null, null) : null
-    if (normalizedIdentity && "error" in normalizedIdentity) {
-      return NextResponse.json({ error: normalizedIdentity.error }, { status: 400 })
-    }
-
-    const energyAndYearError = validateVehicleEnergyAndModelYear("CAR", make, model, year, fuelType)
-    if (energyAndYearError) {
-      return NextResponse.json({ error: energyAndYearError }, { status: 400 })
-    }
+    const normalized = normalizeGarageVehiclePayload(await request.json().catch(() => null))
+    if ("error" in normalized) return NextResponse.json({ error: normalized.error }, { status: 400 })
 
     const garageCategory = await prisma.category.upsert({
       where: { name: "Личный гараж" },
@@ -126,34 +152,8 @@ export async function POST(request: NextRequest) {
     // У гаражного автомобиля нет Listing, поэтому он не попадает в публичный каталог.
     const vehicle = await prisma.vehicle.create({
       data: {
-        make, model, year,
+        ...normalized.data,
         price: 0,
-        mileage,
-        // Отсутствующий VIN остаётся честным null. Прежняя синтетическая
-        // строка выглядела как идентификатор и мешала безопасно переиспользовать
-        // запись при создании объявления.
-        vin: normalizedIdentity?.vin || null,
-        fuelType,
-        transmission,
-        bodyType,
-        color,
-        doors,
-        engineVolume,
-        power,
-        driveType: optionalText(body?.driveType, 20),
-        condition,
-        steeringWheel: optionalText(body?.steeringWheel, 16),
-        ownersCount,
-        documentsStatus: optionalText(body?.documentsStatus, 24),
-        damageInfo: optionalText(body?.damageInfo, 24),
-        sellerType: optionalText(body?.sellerType, 20),
-        availability: optionalText(body?.availability, 24),
-        customsCleared: typeof body?.customsCleared === "boolean" ? body.customsCleared : null,
-        generation: optionalText(body?.generation, 80),
-        keywords: optionalText(body?.keywords, 500),
-        location,
-        description: optionalText(body?.description, 5000),
-        images: images.length ? JSON.stringify(images) : null,
         vehicleType: "CAR",
         userId: session.user.id,
         categoryId: garageCategory.id,
@@ -166,6 +166,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "VIN уже существует" }, { status: 409 })
     }
     return NextResponse.json({ error: "Не удалось добавить автомобиль в гараж" }, { status: 500 })
+  }
+}
+
+/** PATCH /api/garage?id=... — обновить приватную карточку своего автомобиля. */
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
+
+    const id = request.nextUrl.searchParams.get("id")?.trim()
+    if (!id) return NextResponse.json({ error: "Не указан автомобиль" }, { status: 400 })
+
+    const normalized = normalizeGarageVehiclePayload(await request.json().catch(() => null))
+    if ("error" in normalized) return NextResponse.json({ error: normalized.error }, { status: 400 })
+
+    const result = await prisma.vehicle.updateMany({
+      where: { id, userId: session.user.id, category: { name: "Личный гараж" } },
+      data: normalized.data,
+    })
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Автомобиль не найден в вашем гараже" }, { status: 404 })
+    }
+
+    const vehicle = await prisma.vehicle.findFirst({
+      where: { id, userId: session.user.id, category: { name: "Личный гараж" } },
+      select: GARAGE_VEHICLE_SELECT,
+    })
+    return NextResponse.json(vehicle)
+  } catch (error: unknown) {
+    if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
+      return NextResponse.json({ error: "VIN уже существует" }, { status: 409 })
+    }
+    return NextResponse.json({ error: "Не удалось обновить автомобиль в гараже" }, { status: 500 })
   }
 }
 

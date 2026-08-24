@@ -652,9 +652,14 @@ function DashboardContent() {
                         </Group>
                         <Group justify="space-between" align="center" mt={2}>
                           <Text size="xs" c="gray.5" truncate>{vehicle.location || "Город не указан"}</Text>
-                          <ActionIcon color="red" variant="subtle" size="sm" aria-label={`Удалить ${vehicle.make} ${vehicle.model} из гаража`} loading={garageDeletingId === vehicle.id} onClick={() => setRemovalConfirmation({ kind: "garage", id: vehicle.id, title: `${vehicle.make} ${vehicle.model}` })}>
-                            <IconTrash size={16} />
-                          </ActionIcon>
+                          <Group gap={2} wrap="nowrap">
+                            <ActionIcon component={Link} href={`/listings/create/vehicle?mode=garage&garageId=${encodeURIComponent(vehicle.id)}`} color="indigo" variant="subtle" size="sm" aria-label={`Редактировать ${vehicle.make} ${vehicle.model}`}>
+                              <IconEdit size={16} />
+                            </ActionIcon>
+                            <ActionIcon color="red" variant="subtle" size="sm" aria-label={`Удалить ${vehicle.make} ${vehicle.model} из гаража`} loading={garageDeletingId === vehicle.id} onClick={() => setRemovalConfirmation({ kind: "garage", id: vehicle.id, title: `${vehicle.make} ${vehicle.model}` })}>
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Group>
                         </Group>
                         <Button component={Link} href={`/listings/create/vehicle?garageId=${encodeURIComponent(vehicle.id)}`} variant="light" color="teal" size="xs" radius="md" fullWidth rightSection={<IconArrowRight size={14} />}>Создать объявление из гаража</Button>
                       </Stack>

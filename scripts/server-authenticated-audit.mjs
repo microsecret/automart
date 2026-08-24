@@ -651,7 +651,7 @@ async function run() {
     }),
   })
   await expect("/api/garage", cookie, 200)
-  const garagePrefill = await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200)
+  let garagePrefill = await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200)
   record(
     "garage keeps a validated VIN, zero previous owners and only local uploaded photos",
     garagePrefill?.vehicle?.id === garage.id
@@ -660,6 +660,27 @@ async function run() {
       && JSON.parse(garagePrefill?.vehicle?.images || "[]").length === 1,
     garagePrefill?.vehicle?.id || "missing",
   )
+
+  const garageUpdatePayload = {
+    ...garagePrefill.vehicle,
+    mileage: 31_500,
+    color: "Белый",
+    images: JSON.parse(garagePrefill.vehicle.images || "[]"),
+  }
+  await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, sellerCookie, 404, {
+    method: "PATCH",
+    body: JSON.stringify(garageUpdatePayload),
+  })
+  const updatedGarage = await expect(`/api/garage?id=${encodeURIComponent(garage.id)}`, cookie, 200, {
+    method: "PATCH",
+    body: JSON.stringify(garageUpdatePayload),
+  })
+  record(
+    "garage owner can edit the private card while another user cannot",
+    updatedGarage?.id === garage.id && updatedGarage?.mileage === 31_500 && updatedGarage?.color === "Белый",
+    `${updatedGarage?.mileage ?? "missing"} km · ${updatedGarage?.color || "missing"}`,
+  )
+  garagePrefill = { vehicle: updatedGarage }
 
   const garageListingPayload = {
     garageVehicleId: garage.id,
