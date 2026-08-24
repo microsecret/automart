@@ -8,6 +8,7 @@ const debugPort = 9333
 const resolvedOutputDirectory = path.resolve(outputDirectory)
 const captures = [
   ["home-desktop.png", "/?audit=cdp-desktop", 1440, 1000, false],
+  ["auctions-laptop.png", "/auctions?country=KR&audit=cdp-laptop", 1280, 900, false],
   ["auctions-desktop.png", "/auctions?country=KR&audit=cdp-desktop", 1440, 1000, false],
   ["news-desktop.png", "/news?sort=popular&audit=cdp-desktop", 1440, 1000, false],
   ["smart-matching-desktop.png", "/services/smart-matching?audit=cdp-desktop", 1440, 1000, false],
@@ -162,6 +163,7 @@ try {
         const appMainElement = document.querySelector("main")
         const appMain = appMainElement?.getBoundingClientRect()
         const appMainStyle = appMainElement ? getComputedStyle(appMainElement) : null
+        const headerUtility = document.querySelector(".market-app-header__utility")?.getBoundingClientRect()
         return JSON.stringify({
           url: location.pathname,
           title: document.title,
@@ -180,6 +182,10 @@ try {
             left: Math.round(appMain.left + parseFloat(appMainStyle?.paddingLeft || "0")),
             right: Math.round(appMain.right - parseFloat(appMainStyle?.paddingRight || "0")),
           } : null,
+          headerUtility: headerUtility ? {
+            left: Math.round(headerUtility.left),
+            right: Math.round(headerUtility.right),
+          } : null,
         })
       })()`,
       returnByValue: true,
@@ -187,6 +193,9 @@ try {
     const layoutMetrics = JSON.parse(layout.result.value)
     if (layoutMetrics.scrollWidth > layoutMetrics.viewport || layoutMetrics.bodyWidth > layoutMetrics.viewport) {
       throw new Error(`${route} has horizontal overflow: viewport=${layoutMetrics.viewport}, document=${layoutMetrics.scrollWidth}, body=${layoutMetrics.bodyWidth}`)
+    }
+    if (layoutMetrics.headerUtility && (layoutMetrics.headerUtility.left < 0 || layoutMetrics.headerUtility.right > layoutMetrics.viewport)) {
+      throw new Error(`${route} clips header actions: left=${layoutMetrics.headerUtility.left}, right=${layoutMetrics.headerUtility.right}, viewport=${layoutMetrics.viewport}`)
     }
     if (!route.startsWith("/auth/") && !route.startsWith("/telegram")) {
       if (!layoutMetrics.footer) throw new Error(`${route} does not render the marketplace footer`)
