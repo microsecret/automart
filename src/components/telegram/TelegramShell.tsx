@@ -229,9 +229,30 @@ export default function TelegramShell({
     }
   }, [mainAction])
 
+  /* Высота шапки нужна полю поиска: оно липнет под неё.
+
+     Числом её не задать — подпись бывает в одну строку и в две, а на
+     узком экране заголовок переносится. Замер показал 67 пикселей там,
+     где предполагалось 64, и верх поля прятался под шапкой. */
+  const headRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const head = headRef.current
+    if (!head) return
+
+    const apply = () => {
+      document.documentElement.style.setProperty("--tg-head-height", `${Math.round(head.getBoundingClientRect().height)}px`)
+    }
+    apply()
+
+    // Высота меняется при повороте экрана и смене раздела.
+    const observer = new ResizeObserver(apply)
+    observer.observe(head)
+    return () => observer.disconnect()
+  }, [title, subtitle])
+
   return (
     <Box className="tg-shell" data-ready={ready || undefined}>
-      <Box className="tg-shell__head">
+      <Box className="tg-shell__head" ref={headRef}>
         {/* Кнопка меню слева, как в мобильной версии сайта. */}
         <button
           ref={menuButtonRef}
