@@ -215,6 +215,16 @@ async function run() {
     body: JSON.stringify({ initData: telegramParams.toString() }),
   })
   record("signed Telegram Mini App identity resolves the verified account", telegramSession?.user?.id === primary.id, telegramSession?.user?.id || "missing")
+  const repeatedTelegramSession = await expect("/api/auth/telegram", null, 200, {
+    method: "POST",
+    body: JSON.stringify({ initData: telegramParams.toString() }),
+  })
+  const telegramLinkedAccounts = await prisma.user.count({ where: { telegramId: auditTelegramId } })
+  record(
+    "reopening Telegram Mini App reuses the account without duplicates",
+    repeatedTelegramSession?.user?.id === primary.id && telegramLinkedAccounts === 1,
+    `${repeatedTelegramSession?.user?.id || "missing"} · ${telegramLinkedAccounts} linked account(s)`,
+  )
   await expect("/api/auth/resend-verification", null, 400, { method: "POST", body: "{" })
   await expect("/api/auth/telegram/request-code", null, 410, { method: "POST", body: JSON.stringify({ phone: "123" }) })
   await expect("/api/auth/telegram/verify-code", null, 410, { method: "POST", body: JSON.stringify({ phone: registrationPhone }) })
