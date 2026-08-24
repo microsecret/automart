@@ -44,6 +44,7 @@ import {
 } from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
 
 type TicketListItem = {
   id: string
@@ -119,14 +120,7 @@ const PRIORITY_META: Record<string, { label: string; color: string }> = {
   URGENT: { label: "Срочный", color: "red" },
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ru-RU", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value))
-}
+
 
 function authorLabel(message: TicketMessage) {
   if (message.authorType === "OPERATOR") return message.authorUser?.name || "Оператор"
@@ -265,7 +259,7 @@ export default function AdminSupportPage() {
                           <Stack gap={6}>
                             <Group justify="space-between" gap="xs" wrap="nowrap">
                               <Text fw={isUnread ? 800 : 650} lineClamp={1}>{contactLabel(item)}</Text>
-                              <Text size="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>{formatDate(item.lastMessageAt)}</Text>
+                              <Text size="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>{formatAdminDateTimeShort(item.lastMessageAt)}</Text>
                             </Group>
                             <Text size="sm" fw={600} lineClamp={1}>{item.subject}</Text>
                             <Text size="xs" c="dimmed" lineClamp={2}>{item.lastMessage?.content || "Диалог ещё не начат"}</Text>
@@ -345,7 +339,7 @@ export default function AdminSupportPage() {
                             >
                               <Group justify="space-between" gap="md" mb={4}>
                                 <Text size="xs" fw={700} c={system ? "dimmed" : staff ? "indigo" : "dark"}>{authorLabel(message)}</Text>
-                                <Text size="xs" c="dimmed">{formatDate(message.createdAt)}</Text>
+                                <Text size="xs" c="dimmed">{formatAdminDateTimeShort(message.createdAt)}</Text>
                               </Group>
                               <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>{message.content}</Text>
                             </Paper>

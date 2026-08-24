@@ -17,6 +17,7 @@ import TrafficLineChart from "@/components/admin/TrafficLineChart"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { compareByUrgency, formatQueueAge, queueUrgency } from "@/lib/queue-age"
 import { fetchJson } from "@/lib/api-client"
+import { formatAdminDateTime } from "@/lib/admin-datetime"
 import {
   AUCTION_OPERATIONAL_STATUS_LABELS,
   formatAuctionSyncDuration,
@@ -430,7 +431,7 @@ export default function AdminDashboard() {
                 <Stack gap={2}>
                   <Text size="sm" fw={700}>Импортный каталог и очередь</Text>
                   <Text size="xs" c="dimmed">
-                    В поиске: {auctionStats.visibleAuctions} из {auctionStats.totalAuctions} актуальных лотов. {auctionStats.lastAuctionSync ? `Последняя синхронизация: ${new Date(auctionStats.lastAuctionSync).toLocaleString("ru-RU")}.` : "Синхронизация ещё не зафиксирована."}
+                    В поиске: {auctionStats.visibleAuctions} из {auctionStats.totalAuctions} актуальных лотов. {auctionStats.lastAuctionSync ? `Последняя синхронизация: ${formatAdminDateTime(auctionStats.lastAuctionSync)}.` : "Синхронизация ещё не зафиксирована."}
                   </Text>
                 </Stack>
               </Group>

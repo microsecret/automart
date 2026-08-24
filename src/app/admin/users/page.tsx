@@ -9,6 +9,7 @@ import { Alert, Avatar, Badge, Box, Button, Divider, Group, Modal, Pagination, P
 import { IconBan, IconBrandTelegram, IconCircleCheck, IconExternalLink, IconMail, IconMessageCircle2, IconSearch, IconSend, IconShieldCheck, IconTag, IconUsers } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
+import { formatAdminDateTime } from "@/lib/admin-datetime"
 
 type DirectoryUser = {
   id: string
@@ -56,18 +57,7 @@ const STATUS_META = {
 } as const
 const STATUS_OPTIONS = Object.entries(STATUS_META).map(([value, meta]) => ({ value, label: meta.label }))
 
-function formatYekaterinburgRegistration(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "—"
-  return new Intl.DateTimeFormat("ru-RU", {
-    timeZone: "Asia/Yekaterinburg",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date).replace(",", " ·") + " ЕКБ"
-}
+
 
 function DirectorySkeleton() {
   return (
@@ -232,7 +222,7 @@ export default function AdminUsersPage() {
                           <Tooltip label="Отправлено сообщений" withArrow><Group gap={4}><IconMessageCircle2 size={14} color="#0ea5e9" /><Text size="xs" fw={700}>{user._count.messagesSent}</Text></Group></Tooltip>
                         </Group>
                       </Table.Td>
-                      <Table.Td><Text size="xs" c="dimmed" miw={132}>{formatYekaterinburgRegistration(user.createdAt)}</Text></Table.Td>
+                      <Table.Td><Text size="xs" c="dimmed" miw={132}>{formatAdminDateTime(user.createdAt)}</Text></Table.Td>
                       <Table.Td>
                         <Button variant="light" color="indigo" size="compact-xs" leftSection={<IconShieldCheck size={14} />} onClick={() => openRoleEditor(user)}>Управлять</Button>
                       </Table.Td>
