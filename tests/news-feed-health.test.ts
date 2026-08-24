@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { checkNewsFeed, isFeedBroken } from "../src/lib/news-feed-health.js"
+import { checkNewsFeed, isFeedBroken } from "../src/lib/news-feed-health.mjs"
 
 const NOW = new Date("2026-08-24T12:00:00Z")
 
