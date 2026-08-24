@@ -2361,6 +2361,12 @@ select {
   transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
+.listing-card:not(.listing-card--row) {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+}
+
 .listing-card::before {
   position: absolute;
   z-index: 2;
@@ -2606,6 +2612,16 @@ select {
   background: var(--market-surface);
 }
 
+.listing-card:not(.listing-card--row) .listing-card__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.listing-card__actions {
+  margin-top: auto;
+}
+
 /* Цветные метки состояния.
 
    Раньше карточка несла одну серую плашку «Премиум», и по списку было не
@@ -2728,6 +2744,51 @@ select {
 .listing-card__footer {
   min-height: 20px;
   border-top: 1px solid var(--market-line);
+}
+
+.market-details-cta {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--market-primary) 22%, var(--market-line));
+  border-radius: var(--radius-sm);
+  background: var(--market-primary-soft);
+  color: var(--market-ink);
+  font-size: var(--text-xs);
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+.market-details-cta svg {
+  transition: transform var(--ease-fast) var(--ease-out);
+}
+
+.listing-card__details-cta {
+  width: 100%;
+  margin-top: 8px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .listing-card:hover .market-details-cta,
+  .vehicle-detail-similar-card:hover .market-details-cta {
+    border-color: color-mix(in srgb, var(--market-primary) 42%, var(--market-line));
+    background: color-mix(in srgb, var(--market-primary-soft) 76%, var(--market-surface));
+  }
+
+  .listing-card:hover .market-details-cta svg,
+  .vehicle-detail-similar-card:hover .market-details-cta svg {
+    transform: translateX(2px);
+  }
+}
+
+.listing-card:active .market-details-cta,
+.vehicle-detail-similar-card:active .market-details-cta {
+  transform: translateY(1px) scale(0.99);
 }
 
 .listing-card[data-vehicle-type="part"] .listing-card__monthly-payment {
@@ -4584,7 +4645,75 @@ select {
 }
 
 .vehicle-detail-similar-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vehicle-detail-similar-card {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.vehicle-detail-similar-card__media {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  background: var(--market-surface-subtle);
+}
+
+.vehicle-detail-similar-card__image {
+  z-index: 1;
+  object-fit: cover;
+  transition: transform var(--ease-slow) var(--ease-out);
+}
+
+.vehicle-detail-similar-card__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  padding: var(--mantine-spacing-sm);
+}
+
+.vehicle-detail-similar-card__title {
+  min-height: 2.5em;
+  color: var(--market-ink);
+  line-height: 1.25;
+}
+
+.vehicle-detail-similar-card__price {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--track-title);
+}
+
+.vehicle-detail-similar-card__facts {
+  display: flex;
+  min-height: 25px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.vehicle-detail-similar-card__facts > .mantine-Text-root {
+  padding: 4px 7px;
+  border-radius: var(--radius-xs);
+  background: var(--market-surface-subtle);
+  color: var(--market-ink);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.vehicle-detail-similar-card__footer {
+  min-width: 0;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .vehicle-detail-similar-card:hover .vehicle-detail-similar-card__image {
+    transform: scale(1.025);
+  }
 }
 
 .moderation-listing-row {
@@ -4612,7 +4741,7 @@ select {
   }
 
   .vehicle-detail-similar-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -5460,6 +5589,13 @@ select {
   .listing-card:hover .listing-card__media img,
   .auction-card:hover .auction-card__media img {
     transform: none;
+  }
+
+  .market-details-cta,
+  .market-details-cta svg,
+  .vehicle-detail-similar-card__image {
+    transition: none;
+    transform: none !important;
   }
 }
 

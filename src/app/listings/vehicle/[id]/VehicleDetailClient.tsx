@@ -73,6 +73,7 @@ import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 import { filterMeaningfulSpecs } from "@/lib/spec-visibility"
 import NextImage from "next/image"
+import VehicleFallback from "@/components/listings/VehicleFallback"
 
 interface VehicleData {
   id: string
@@ -134,7 +135,21 @@ interface VehicleData {
     otherVehicles: { id: string; make: string; model: string; year: number; price: number }[]
   }
   reviews: { id: string; rating: number; comment: string | null; createdAt: Date; user: { name: string | null; image: string | null } }[]
-  similar: { id: string; title: string; price: number; year: number; listingId?: string }[]
+  similar: {
+    id: string
+    title: string
+    price: number
+    year: number
+    image: string | null
+    usageLabel: string | null
+    transmissionLabel: string | null
+    fuelTypeLabel: string | null
+    engineVolume: number | null
+    location: string
+    vehicleType: string
+    bodyType: string | null
+    listingId?: string
+  }[]
 }
 
 const VEHICLE_META: Record<string, { label: string; detailLabel: string; icon: React.ReactNode }> = {
@@ -691,11 +706,41 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       href={`/listings/vehicle/${item.id}`}
                       withBorder
                       radius="md"
-                      p="sm"
-                      className="market-linked-card"
+                      p={0}
+                      className="market-linked-card vehicle-detail-similar-card"
                     >
-                      <Text size="sm" fw={500} className="line-clamp-1">{item.title}</Text>
-                      <Text size="md" fw={700} c="indigo" mt={4}>{formatPriceShort(item.price)}</Text>
+                      <Box className="vehicle-detail-similar-card__media">
+                        <VehicleFallback type={item.vehicleType} bodyType={item.bodyType} compact />
+                        {item.image && (
+                          <NextImage
+                            src={item.image}
+                            alt={item.title}
+                            fill
+                            sizes="(max-width: 576px) 100vw, (max-width: 1152px) 50vw, 320px"
+                            className="vehicle-detail-similar-card__image"
+                          />
+                        )}
+                      </Box>
+                      <Box className="vehicle-detail-similar-card__content">
+                        <Text size="sm" fw={700} className="vehicle-detail-similar-card__title">{item.title}</Text>
+                        <Text size="lg" fw={800} c="var(--market-ink)" className="vehicle-detail-similar-card__price">{formatPriceShort(item.price)}</Text>
+                        <Box className="vehicle-detail-similar-card__facts">
+                          {item.usageLabel && <Text component="span">{item.usageLabel}</Text>}
+                          {item.transmissionLabel && <Text component="span">{item.transmissionLabel}</Text>}
+                          {item.fuelTypeLabel && <Text component="span">{item.fuelTypeLabel}</Text>}
+                          {item.engineVolume != null && <Text component="span">{item.engineVolume} л</Text>}
+                        </Box>
+                        <Group justify="space-between" gap="xs" wrap="nowrap" className="vehicle-detail-similar-card__footer">
+                          <Group gap={4} wrap="nowrap" style={{ minWidth: 0 }}>
+                            <IconMapPin size={14} stroke={1.8} aria-hidden="true" />
+                            <Text size="xs" c="var(--market-muted)" truncate>{item.location}</Text>
+                          </Group>
+                          <Box component="span" className="market-details-cta" aria-hidden="true">
+                            Подробнее
+                            <IconChevronRight size={15} stroke={2} />
+                          </Box>
+                        </Group>
+                      </Box>
                     </Card>
                   ))}
                 </Box>

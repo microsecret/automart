@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, UnstyledButton } from "@mantine/core"
-import { IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
+import { IconChevronRight, IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
@@ -353,31 +353,40 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             </Box>
           )}
 
-          {/* Низ — город и дата */}
-          <Group justify="space-between" gap={4} mt={6} pt={6} className="listing-card__footer">
-            {listing.location ? (
-              <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
-                <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
-                <Text fz="xs" c="var(--market-muted)" style={TRUNCATE_STYLE}>{listing.location}</Text>
-              </Group>
-            ) : <span />}
-            <Group gap={7} wrap="nowrap" style={{ flexShrink: 0 }}>
-              {typeof listing.views === "number" && listing.views > 0 && (
-                <Group gap={3} wrap="nowrap" className="listing-card__views">
-                  <IconEye size={11} stroke={1.8} aria-hidden="true" />
-                  <Text fz="xs">{new Intl.NumberFormat("ru-RU", { notation: "compact", maximumFractionDigits: 1 }).format(listing.views)}</Text>
+          <Box className="listing-card__actions">
+            {/* Низ — город и дата */}
+            <Group justify="space-between" gap={4} mt={6} pt={6} className="listing-card__footer">
+              {listing.location ? (
+                <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
+                  <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                  <Text fz="xs" c="var(--market-muted)" style={TRUNCATE_STYLE}>{listing.location}</Text>
                 </Group>
-              )}
-              {/* У свежего объявления дату в подвале не повторяем: метка
-                  «Сегодня» вверху уже это сказала, а строка отнимала место у
-                  города — длинные названия обрезались на середине. */}
-              {listing.createdAt && !isFresh && (
-                <Text fz="xs" c="var(--market-muted)" style={{ whiteSpace: "nowrap" }}>
-                  {formatRelativeDate(listing.createdAt)}
-                </Text>
-              )}
+              ) : <span />}
+              <Group gap={7} wrap="nowrap" style={{ flexShrink: 0 }}>
+                {typeof listing.views === "number" && listing.views > 0 && (
+                  <Group gap={3} wrap="nowrap" className="listing-card__views">
+                    <IconEye size={11} stroke={1.8} aria-hidden="true" />
+                    <Text fz="xs">{new Intl.NumberFormat("ru-RU", { notation: "compact", maximumFractionDigits: 1 }).format(listing.views)}</Text>
+                  </Group>
+                )}
+                {/* У свежего объявления дату в подвале не повторяем: метка
+                    «Сегодня» вверху уже это сказала, а строка отнимала место у
+                    города — длинные названия обрезались на середине. */}
+                {listing.createdAt && !isFresh && (
+                  <Text fz="xs" c="var(--market-muted)" style={{ whiteSpace: "nowrap" }}>
+                    {formatRelativeDate(listing.createdAt)}
+                  </Text>
+                )}
+              </Group>
             </Group>
-          </Group>
+
+            {/* Одна ссылка уже покрывает карточку. Видимый призыв остаётся
+                частью этой ссылки, а не создаёт второй одинаковый tab-stop. */}
+            <Box component="span" className="market-details-cta listing-card__details-cta" aria-hidden="true">
+              Подробнее
+              <IconChevronRight size={15} stroke={2} />
+            </Box>
+          </Box>
         </Box>
       </Card>
   )

@@ -194,13 +194,35 @@ export default async function VehicleDetailPage({ params }: PageProps) {
       otherVehicles: vehicle.user.vehicles.filter((v) => v.id !== vehicle.id),
     },
     reviews: listing?.reviews || [],
-    similar: similar.map((v) => ({
-      id: v.id,
-      title: `${v.year} ${v.make} ${v.model}`,
-      price: v.price,
-      year: v.year,
-      listingId: v.listings[0]?.id,
-    })),
+    similar: similar.map((v) => {
+      const similarUsageMeta = getUsageMeta(v.vehicleType)
+      const similarUsage = similarUsageMeta.field === "flightHours" ? v.flightHours
+        : similarUsageMeta.field === "operatingHours" ? v.operatingHours
+        : v.mileage
+      const similarImage = parseImages(v.images).find((image) => !image.includes("/placeholder/")) || null
+
+      return {
+        id: v.id,
+        title: `${v.year} ${v.make} ${v.model}`,
+        price: v.price,
+        year: v.year,
+        image: similarImage,
+        usageLabel: similarUsage == null
+          ? null
+          : `${similarUsage.toLocaleString("ru-RU")} ${similarUsageMeta.unit}`,
+        transmissionLabel: supportsTransmission(v.vehicleType) && v.transmission && v.transmission !== "OTHER"
+          ? findLabel(getTransmissionOptions(v.vehicleType), v.transmission)
+          : null,
+        fuelTypeLabel: v.fuelType && v.fuelType !== "OTHER"
+          ? findLabel(getFuelOptions(v.vehicleType), v.fuelType)
+          : null,
+        engineVolume: v.engineVolume,
+        location: v.location,
+        vehicleType: v.vehicleType,
+        bodyType: v.bodyType,
+        listingId: v.listings[0]?.id,
+      }
+    }),
   }
 
   const usageMeta = getUsageMeta(vehicle.vehicleType)
