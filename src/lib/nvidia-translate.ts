@@ -29,20 +29,20 @@ function nextProxy(): ProxyEndpoint | null {
  * напрямую. Прямой путь оставлен, чтобы окружение без блокировки работало
  * без лишнего звена.
  */
-async function requestCompletion(apiKey: string, body: string) {
+async function requestCompletion(apiKey: string, body: string, remainingBudgetMs: number) {
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }
   const proxy = nextProxy()
   if (!proxy) {
     const response = await fetch(API_URL, {
       method: "POST",
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(Math.max(1, Math.min(20_000, remainingBudgetMs))),
       headers,
       body,
     })
     return { status: response.status, ok: response.ok, text: () => response.text(), json: () => response.json() }
   }
 
-  const response = await proxyJsonPost(API_URL, proxy, { headers, body, timeoutMs: 30_000 })
+  const response = await proxyJsonPost(API_URL, proxy, { headers, body, timeoutMs: Math.max(1, Math.min(30_000, remainingBudgetMs)) })
   return {
     status: response.status,
     ok: response.ok,
@@ -69,6 +69,7 @@ function pickModel(text: string) {
 }
 const AUTH_FAILURE_COOLDOWN_MS = 5 * 60 * 1000
 const RATE_LIMIT_BACKOFF_MS = 1_200
+const TRANSLATION_TOTAL_BUDGET_MS = 45_000
 // Ключ, отвергнутый провайдером, пропускается до конца жизни процесса:
 // отозванный ключ сам не восстановится, а повторные попытки создают лишний
 // трафик и шум в логах на каждом импортируемом лоте.
@@ -226,9 +227,15 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
   if (Date.now() < authUnavailableUntil) return text
 
   const maxRetries = KEYS.length || 1
+  const translationDeadline = Date.now() + TRANSLATION_TOTAL_BUDGET_MS
   let lastError: Error | null = null
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const remainingBudgetMs = translationDeadline - Date.now()
+    if (remainingBudgetMs <= 0) {
+      lastError = new Error("Translation provider exceeded the total time budget")
+      break
+    }
     const apiKey = getNextKey()
     if (!apiKey) {
       lastError = new Error("No NVIDIA API keys configured")
@@ -252,7 +259,7 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
           // конца текста. Запас втрое покрывает кириллицу, которая длиннее
           // иероглифов, и разбивку на токены.
           max_tokens: responseTokenBudget(text),
-      }))
+      }), remainingBudgetMs)
 
       if (res.status === 429) {
         // Rate limit — пробуем следующий ключ. Причина запоминается: если

@@ -16,7 +16,7 @@ import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
 import { isPublicListingPolicyExcludedError } from "@/lib/auction-source-policy"
 import {
   AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT,
-  auctionSourceStageBudgetExceeded,
+  auctionSourceStageItemBudgetExceeded,
   auctionSourceStageStatus,
   remainingAuctionSourceItems,
 } from "@/lib/auction-sync-budget"
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         skippedKnown += 1
         continue
       }
-      if (auctionSourceStageBudgetExceeded(stageStartedAt)) {
+      if (auctionSourceStageItemBudgetExceeded(stageStartedAt)) {
         deferred = remainingAuctionSourceItems(catalog.candidates.length, candidateIndex)
         break
       }

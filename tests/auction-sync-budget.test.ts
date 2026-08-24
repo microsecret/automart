@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { auctionSourceStageBudgetExceeded, auctionSourceStageStatus, remainingAuctionSourceItems } from "../src/lib/auction-sync-budget.ts"
+import { auctionSourceStageBudgetExceeded, auctionSourceStageItemBudgetExceeded, auctionSourceStageStatus, remainingAuctionSourceItems } from "../src/lib/auction-sync-budget.ts"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { boundedSourceAttemptTimeout } from "../src/lib/authorized-source-http.ts"
 
@@ -16,6 +16,8 @@ test("stage оставляет минуту запаса до внешнего �
   const started = 1_000_000
   assert.equal(auctionSourceStageBudgetExceeded(started, started + 179_999), false)
   assert.equal(auctionSourceStageBudgetExceeded(started, started + 180_000), true)
+  assert.equal(auctionSourceStageItemBudgetExceeded(started, started + 119_999), false)
+  assert.equal(auctionSourceStageItemBudgetExceeded(started, started + 120_000), true)
 })
 
 test("отложенный хвост никогда не становится отрицательным", () => {

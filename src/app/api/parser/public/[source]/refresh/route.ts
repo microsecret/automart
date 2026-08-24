@@ -7,7 +7,7 @@ import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-poli
 import { isPublicListingPolicyExcludedError } from "@/lib/auction-source-policy"
 import {
   AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT,
-  auctionSourceStageBudgetExceeded,
+  auctionSourceStageItemBudgetExceeded,
   auctionSourceStageStatus,
   remainingAuctionSourceItems,
 } from "@/lib/auction-sync-budget"
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let consecutiveFailures = 0
     const failed: Array<{ id: string; error: string }> = []
     for (const [listingIndex, listing] of listings.entries()) {
-      if (auctionSourceStageBudgetExceeded(stageStartedAt)) {
+      if (auctionSourceStageItemBudgetExceeded(stageStartedAt)) {
         deferred = remainingAuctionSourceItems(listings.length, listingIndex)
         break
       }
