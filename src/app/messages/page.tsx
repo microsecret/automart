@@ -130,10 +130,10 @@ export default function MessagesPage() {
                   <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                     <Group justify="space-between" gap="sm">
                       <Text size="sm" fw={600} c="var(--market-ink)">{conv.otherUser.name || "Пользователь"}</Text>
-                      {conv.lastMessage && <Text size="xs" c="gray.4">{formatRelativeDate(conv.lastMessage.createdAt)}</Text>}
+                      {conv.lastMessage && <Text size="xs" c="var(--market-muted)">{formatRelativeDate(conv.lastMessage.createdAt)}</Text>}
                     </Group>
                     {conv.listing?.title && (
-                      <Text size="xs" c="#1c4291" className="line-clamp-1">{conv.listing.title}</Text>
+                      <Text size="xs" fw={600} c="var(--market-primary)" className="line-clamp-1">{conv.listing.title}</Text>
                     )}
                     <Group gap="xs" align="center">
                       <Text size="sm" c="dimmed" className="line-clamp-1" style={{ flex: 1 }}>

@@ -76,6 +76,7 @@
      на белом фоне не держал вес, из-за чего интерфейс читался блёклым.
      Оттенок взят из уже существующей палитры, поэтому бренд узнаваем. */
   --market-primary: #14306b;
+  --market-on-primary-muted: #eef2ff;
   --lewheel-wordmark-strong: #0b2050;
   /* Второй цвет системы. Раньше индиго отвечал и за навигацию, и за действие,
      поэтому взгляду не за что было зацепиться: всё одинаково важное. Янтарь
@@ -3392,20 +3393,29 @@ select {
 }
 
 .messages-conversation-row {
+  position: relative;
   display: block;
   padding: 14px 16px;
   border-bottom: 1px solid var(--market-line);
   color: inherit;
   text-decoration: none;
-  transition: background-color var(--ease-fast) var(--ease-out);
+  transition:
+    background-color var(--ease-fast) var(--ease-out),
+    box-shadow var(--ease-fast) var(--ease-out);
 }
 
 .messages-conversation-row:hover {
   background: var(--market-surface-subtle);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--market-primary) 42%, transparent);
 }
 
 .messages-conversation-row[data-unread] {
-  background: var(--mantine-color-indigo-0);
+  background: color-mix(in srgb, var(--market-primary-soft) 72%, var(--market-surface));
+  box-shadow: inset 3px 0 0 var(--market-primary);
+}
+
+.messages-conversation-row[data-unread]:hover {
+  background: color-mix(in srgb, var(--market-primary-soft) 90%, var(--market-surface));
 }
 
 .messages-conversation-row:focus-visible {
@@ -4839,7 +4849,7 @@ select {
 
 .message-bubble[data-own] {
   color: #ffffff;
-  background: var(--mantine-color-indigo-6);
+  background: var(--mantine-color-indigo-7);
   border-color: transparent;
 }
 

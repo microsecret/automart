@@ -256,7 +256,7 @@ function ConversationWorkspace() {
                           </SimpleGrid>
                         )}
                         {msg.content && <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>{msg.content}</Text>}
-                        <Text size="10px" c={isOwn ? "#b9caee" : "var(--mantine-color-dimmed)"}>{formatRelativeDate(msg.createdAt)}</Text>
+                        <Text size="10px" c={isOwn ? "var(--market-on-primary-muted)" : "var(--market-muted)"}>{formatRelativeDate(msg.createdAt)}</Text>
                       </Stack>
                     </Paper>
                   </Group>
