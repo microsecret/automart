@@ -145,6 +145,7 @@ export async function GET() {
     // Ось графика: последние семь московских суток, включая сегодняшние.
     const dailyTrafficDays = lastMoscowDayStarts(7, now)
     const dailyTrafficStart = dailyTrafficDays[0]
+    const previousListingPerformanceStart = new Date(dailyTrafficStart.getTime() - 7 * 24 * 60 * 60 * 1000)
     const [topPaths, recentVisitorEvents, trafficEventsWindow, dailyRegistrations, pendingListings, openReports, newAuctionInquiries, activeAuctionInquiries, pendingDeliveryOrganizations, openSupportTickets, waitingSupportTickets, activeSupportTickets, oldestPendingListing, oldestOpenReport, oldestNewInquiry, oldestActiveInquiry, oldestPendingPartner, oldestWaitingTicket, stuckPayments, oldestStuckPayment, latestAuctionSyncRuns, sourceSyncRuns, listingInventory, listingViewEventsWindow, listingMessagesWeek, soldListingsWeek, topListingViewGroups] = await Promise.all([
       prisma.visitEvent.groupBy({ by: ["path"], where: { createdAt: { gte: weekStart } }, _count: { path: true }, orderBy: { _count: { path: "desc" } }, take: 8 }),
       prisma.visitEvent.findMany({ where: { createdAt: { gte: weekStart }, userId: { not: null } }, orderBy: { createdAt: "desc" }, take: 50, include: { user: { select: { id: true, name: true, email: true, telegramUsername: true } } } }),
@@ -261,14 +262,14 @@ export async function GET() {
         select: { id: true, title: true, status: true, views: true, vehicleId: true, partId: true, createdAt: true, publishedAt: true, _count: { select: { favoritedBy: true } } },
       }),
       prisma.listingViewEvent.findMany({
-        where: { createdAt: { gte: previousWeek.from } },
+        where: { createdAt: { gte: previousListingPerformanceStart } },
         select: { listingId: true, ipHash: true, createdAt: true },
       }),
-      prisma.message.count({ where: { listingId: { not: null }, createdAt: { gte: weekStart } } }),
-      prisma.listingStatusEvent.count({ where: { toStatus: "SOLD", createdAt: { gte: weekStart } } }),
+      prisma.message.count({ where: { listingId: { not: null }, createdAt: { gte: dailyTrafficStart } } }),
+      prisma.listingStatusEvent.count({ where: { toStatus: "SOLD", createdAt: { gte: dailyTrafficStart } } }),
       prisma.listingViewEvent.groupBy({
         by: ["listingId"],
-        where: { createdAt: { gte: weekStart } },
+        where: { createdAt: { gte: dailyTrafficStart } },
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
         take: 5,
@@ -316,8 +317,12 @@ export async function GET() {
     const registrationConversionWeek = uniqueVisitorsWeek ? Math.min(100, Math.round(attributedRegistrationsWeek / uniqueVisitorsWeek * 1_000) / 10) : 0
     const recentVisitors = recentVisitorEvents.filter((visit, index, values) => visit.userId && values.findIndex((candidate) => candidate.userId === visit.userId) === index).slice(0, 10)
 
-    const listingViewsWeek = listingViewEventsWindow.filter((event) => event.createdAt >= weekStart)
-    const previousListingViewsWeek = listingViewEventsWindow.filter((event) => event.createdAt >= previousWeek.from && event.createdAt < previousWeek.to)
+    /* Карточки объявлений показываются за скользящие семь московских суток.
+       Календарная неделя обнуляла KPI каждый понедельник, хотя столбцы рядом
+       ещё показывали посещения предыдущих дней — визуально это выглядело как
+       потеря данных. */
+    const listingViewsWeek = listingViewEventsWindow.filter((event) => event.createdAt >= dailyTrafficStart)
+    const previousListingViewsWeek = listingViewEventsWindow.filter((event) => event.createdAt >= previousListingPerformanceStart && event.createdAt < dailyTrafficStart)
     const listingStatusCounts = listingInventory.reduce<Record<string, number>>((counts, listing) => {
       counts[listing.status] = (counts[listing.status] || 0) + 1
       return counts
@@ -588,7 +593,7 @@ export async function GET() {
         active: listingStatusCounts.ACTIVE || 0,
         pending: listingStatusCounts.PENDING_MODERATION || 0,
         sold: listingStatusCounts.SOLD || 0,
-        publishedWeek: listingInventory.filter((listing) => listing.publishedAt && listing.publishedAt >= weekStart).length,
+        publishedWeek: listingInventory.filter((listing) => listing.publishedAt && listing.publishedAt >= dailyTrafficStart).length,
         soldWeek: soldListingsWeek,
         totalViews: listingInventory.reduce((sum, listing) => sum + listing.views, 0),
         viewsWeek: listingViewsWeek.length,

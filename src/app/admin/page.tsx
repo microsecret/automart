@@ -956,12 +956,12 @@ export default function AdminDashboard() {
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="light" color="orange" size={38} radius="md"><IconTag size={19} /></ThemeIcon>
               <Stack gap={1}>
-                <Text size="sm" fw={700}>Объявления пользователей · неделя</Text>
-                <Text size="xs" c="dimmed">Личные объявления о транспорте и запчастях. Импортные автомобили из раздела аукционов сюда не входят.</Text>
+                <Text size="sm" fw={700}>Объявления пользователей · последние 7 дней</Text>
+                <Text size="xs" c="dimmed">Открытия карточек личных объявлений о транспорте и запчастях. Импортные автомобили из раздела аукционов сюда не входят.</Text>
               </Stack>
             </Group>
             <Badge variant="light" color={data.listingPerformance.viewsTrendWeek >= 0 ? "teal" : "red"}>
-              {data.listingPerformance.viewsTrendWeek >= 0 ? "+" : ""}{data.listingPerformance.viewsTrendWeek}% просмотров
+              {data.listingPerformance.viewsTrendWeek >= 0 ? "+" : ""}{data.listingPerformance.viewsTrendWeek}% к предыдущим 7 дням
             </Badge>
           </Group>
 

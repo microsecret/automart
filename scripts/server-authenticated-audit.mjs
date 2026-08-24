@@ -505,6 +505,33 @@ async function run() {
       && readinessRepeated?.issues?.every((issue) => issue.listingId !== legacyListingId),
     `${readinessRepeated?.enforced ?? "missing"} repeated changes`,
   )
+  const readinessRestored = await expect("/api/parser/listings/readiness", null, 200, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.PARSER_TOKEN}` },
+    body: JSON.stringify({ restoreAutoRejected: true }),
+  })
+  const legacyAfterRestore = await prisma.listing.findUniqueOrThrow({
+    where: { id: legacyListingId },
+    include: { statusEvents: true },
+  })
+  record(
+    "automatic readiness removals can be restored without losing publication history",
+    readinessRestored?.restored >= 1
+      && legacyAfterRestore.status === "ACTIVE"
+      && legacyAfterRestore.publishedAt instanceof Date
+      && legacyAfterRestore.statusEvents.some((event) => event.fromStatus === "REJECTED" && event.toStatus === "ACTIVE"),
+    `${legacyAfterRestore.status} · ${readinessRestored?.restored ?? 0} restored`,
+  )
+  const readinessRestoreRepeated = await expect("/api/parser/listings/readiness", null, 200, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.PARSER_TOKEN}` },
+    body: JSON.stringify({ restoreAutoRejected: true }),
+  })
+  record(
+    "automatic readiness recovery is idempotent",
+    readinessRestoreRepeated?.restored === 0,
+    `${readinessRestoreRepeated?.restored ?? "missing"} repeated restorations`,
+  )
 
   const vehicle = await expect("/api/vehicles", cookie, 201, {
     method: "POST",
