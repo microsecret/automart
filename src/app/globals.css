@@ -668,6 +668,18 @@ select {
     transition: opacity var(--ease-base) var(--ease-out);
   }
 
+  /* На странице лота кнопка чата поднимается над полосой заявки.
+
+     Замер на телефоне: круглая кнопка ложилась поверх правой части
+     кнопки «Заказать» — пересечение 40 на 34 пикселя. Нажатие в этой
+     зоне открывало чат вместо заявки, и площадка теряла обращение.
+
+     Полоса стоит на 92 пикселях и высотой около шестидесяти: 168
+     поднимает кнопку над ней с запасом. */
+  body:has(.auction-action-bar) .support-chat__launcher {
+    bottom: calc(168px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
   .support-chat__launcher:hover,
   .support-chat__launcher:focus-within {
     opacity: 1;
@@ -868,6 +880,17 @@ select {
 
 /* Обёртка нужна, чтобы подвал вышел из колонки контента: сам AppShell.Main
    отодвинут вправо на ширину меню. */
+/* Подвал не уходит под плавающую панель навигации.
+
+   Замер на телефоне: нижние ссылки подвала перекрывались панелью
+   целиком — нажать их было нельзя. Отступ у основного содержимого их не
+   защищал: подвал лежит рядом с ним, а не внутри. */
+@media (max-width: 640px) {
+  .app-footer-bleed {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .app-footer-bleed {
   position: relative;
   z-index: 120;

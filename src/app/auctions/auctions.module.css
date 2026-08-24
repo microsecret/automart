@@ -64,12 +64,40 @@
   font-size: var(--text-sm);
   line-height: 1.2;
   overflow: hidden;
-  /* Длинные названия («Mercedes-Benz», «KGM / SsangYong») в кнопку одной
-     строкой не помещаются: flex на подписи не переносит слова сам, поэтому
-     хвост срезался по overflow. Перенос по любому месту слова сохраняет
-     название целиком. */
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  /* Перенос только по дефисам и пробелам.
+
+     Прежний `overflow-wrap: anywhere` рассыпал названия по буквам: на
+     320 пикселях «Kia» превращалось в «K i a» столбиком, а
+     «Mercedes-Benz» — в тринадцать строк. Кнопке в две колонки остаётся
+     около двадцати пикселей под подпись, и перенос там не спасает.
+
+     Теперь «Mercedes-Benz» разойдётся на две строки по дефису, а «Kia»
+     останется словом. Что не поместилось — обрежется многоточием: это
+     честнее россыпи букв. */
+  text-overflow: ellipsis;
+}
+
+/* На узком экране значок встаёт над названием.
+
+   В две колонки при 320 пикселях кнопка шириной около 145: значок
+   занимает 34, счётчик справа — ещё столько же, названию остаётся
+   двадцать. Вертикальная раскладка отдаёт подписи всю ширину. */
+@media (max-width: 26em) {
+  .brandShortcut :global(.mantine-Button-inner) {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .brandShortcut :global(.mantine-Button-label) {
+    min-height: 0;
+    padding-inline: 2px;
+    font-size: var(--text-xs);
+  }
+
+  .brandShortcut {
+    min-height: 74px;
+    padding-block: 8px;
+  }
 }
 
 

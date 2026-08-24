@@ -62,9 +62,10 @@
 /* Кнопка меню слева — там же, где она в мобильной версии сайта. */
 .tg-shell__menu-button {
   display: flex;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  /* 44 пикселя — норма зоны нажатия для пальца. */
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   align-items: center;
   justify-content: center;
   border: 0;
@@ -380,7 +381,12 @@
 .tg-search {
   position: sticky;
   z-index: 4;
-  top: 0;
+  /* Под шапкой, а не под ней же.
+
+     Обе полосы липкие, но шапка выше по слою: при прокрутке поле
+     поиска целиком уходило под неё, и искать становилось нечем, пока
+     не вернёшься в самый верх. */
+  top: 64px;
   padding: 8px var(--tg-edge);
   background: var(--tg-elevated);
 }
