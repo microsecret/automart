@@ -8,6 +8,7 @@ import {
   normalizeAuctionMake,
   normalizeAuctionModel,
   normalizeAuctionTransmission,
+  preferAuctionMakeMatch,
 } from "@/lib/auction-normalization"
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { PublicListingPolicyExcludedError, isBobaedreamSoldListing, isCarsensorPriceOnRequest } from "@/lib/auction-source-policy"
@@ -161,10 +162,10 @@ const CHINESE_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
   [/时尚型/g, "Style"], [/悦尚型/g, "Comfort Style"],
   [/豪华型/g, "Luxury"], [/尊贵型/g, "Premium"], [/旗舰型/g, "Flagship"],
   // Модельные ряды, которые приходят иероглифами вместо латиницы.
-  [/途观/g, "Tiguan"], [/花冠/g, "Corolla"], [/揽胜星脉/g, "Range Rover Velar"],
+  [/途观/g, "Tiguan"], [/花冠/g, "Corolla"], [/朗逸/g, "Lavida"], [/揽胜星脉/g, "Range Rover Velar"],
   [/揽胜/g, "Range Rover"], [/轩逸/g, "Sylphy"], [/艾瑞泽/g, "Arrizo"],
   // Тип привода и кузова.
-  [/纯电动/g, "электро"], [/轿跑/g, "купе"], [/掀背/g, "Hatchback"],
+  [/纯电动/g, "электро"], [/四门轿跑/g, "Gran Coupe"], [/轿跑/g, "купе"], [/掀背/g, "Hatchback"],
   [/加长版/g, "удлинённая"], [/超长续航版/g, "Long Range"],
   [/都会版/g, "Urban"], [/美规平行进口/g, "американская версия"],
   [/汽车/g, ""], [/二手/g, ""],
@@ -945,7 +946,7 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   if (!html.includes(`usedcar-${candidate.sourceId}`) && !html.includes(`车源编号：<i>${candidate.sourceId}</i>`)) throw new PublicListingUnavailableError(`Iautos: карточка ${candidate.sourceId} отсутствует`)
   const title = htmlText(firstMatch(html, /<h1 class="title[^\"]*"[^>]*><span>([\s\S]*?)<\/span><\/h1>/i))
   if (!title) throw new Error(`Iautos: у карточки ${candidate.sourceId} нет названия`)
-  const makeEntry = CHINESE_MAKES.find(([label]) => title.includes(label))
+  const makeEntry = preferAuctionMakeMatch(title, CHINESE_MAKES)
   if (!makeEntry) throw new Error(`Iautos: не распознана марка «${diagnosticSourceLabel(title)}» карточки ${candidate.sourceId}`)
   // Источник иногда дублирует марку в начале строки («哈弗哈弗H6»), и снятие
   // одного вхождения оставляло иероглифы в модели — лот отбраковывался.

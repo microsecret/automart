@@ -1,7 +1,21 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { deriveAuctionDriveTypeFromText, normalizeAuctionModel } from "../src/lib/auction-normalization.ts"
+import { deriveAuctionDriveTypeFromText, normalizeAuctionModel, preferAuctionMakeMatch } from "../src/lib/auction-normalization.ts"
+
+test("prefers the manufacturer prefix over a model alias inside a source title", () => {
+  const candidates = [
+    ["4系", "BMW"],
+    ["朗逸", "Volkswagen"],
+    ["宝马", "BMW"],
+    ["大众", "Volkswagen"],
+  ] as const
+
+  assert.deepEqual(preferAuctionMakeMatch("宝马4系四门轿跑 425i", candidates), ["宝马", "BMW"])
+  assert.deepEqual(preferAuctionMakeMatch("大众朗逸 2022款", candidates), ["大众", "Volkswagen"])
+  assert.deepEqual(preferAuctionMakeMatch("朗逸 2022款", candidates), ["朗逸", "Volkswagen"])
+  assert.equal(preferAuctionMakeMatch("неизвестная модель", candidates), null)
+})
 
 test("keeps a plain model name untouched", () => {
   assert.equal(normalizeAuctionModel("Palisade"), "Palisade")

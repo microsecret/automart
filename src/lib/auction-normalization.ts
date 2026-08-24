@@ -109,6 +109,20 @@ export function normalizeAuctionMake(value: unknown) {
   return make ? AUCTION_MAKE_ALIASES[make] || make : null
 }
 
+/**
+ * Source titles can contain both the manufacturer and a model alias that is
+ * also used to infer a manufacturer. Prefer the label at the beginning of the
+ * title so «宝马4系» resolves through BMW (宝马), not through «4 Series» (4系).
+ */
+export function preferAuctionMakeMatch<T extends readonly [string, string]>(value: unknown, candidates: readonly T[]) {
+  if (typeof value !== "string") return null
+  const title = value.normalize("NFKC").trim()
+  if (!title) return null
+  return candidates.find(([label]) => title.startsWith(label))
+    || candidates.find(([label]) => title.includes(label))
+    || null
+}
+
 /** A generic provider bucket is not enough to present a trustworthy vehicle. */
 export function isIdentifiableAuctionMake(value: unknown) {
   const make = normalizeAuctionMake(value)
