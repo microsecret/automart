@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, SimpleGrid, Center, Paper, Button, ThemeIcon, Pagination, SegmentedControl } from "@mantine/core"
-import { IconHeart, IconHeartBroken, IconLayoutGrid, IconList } from "@tabler/icons-react"
+import { IconHeartBroken, IconLayoutGrid, IconList } from "@tabler/icons-react"
 import { useState } from "react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
@@ -30,7 +30,6 @@ export default function FavoritesPage() {
         <Group justify="space-between" align="center">
           <Stack gap={0}>
             <Group gap="sm" align="center">
-              <ThemeIcon variant="light" color="red" size={36} radius="md"><IconHeart size={20} fill="currentColor" /></ThemeIcon>
               <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Избранное</Text>
             </Group>
             {data && <Text size="xs" c="gray.5">{data.pagination.total} объявлений в избранном</Text>}

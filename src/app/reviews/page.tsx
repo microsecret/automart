@@ -4,7 +4,7 @@ import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Avatar, SimpleGrid, Rating, Divider, Pagination } from "@mantine/core"
-import { IconStar, IconMessage2 } from "@tabler/icons-react"
+import { IconMessage2 } from "@tabler/icons-react"
 import { formatRelativeDate } from "@/lib/format"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
@@ -63,7 +63,6 @@ export default function ReviewsPage() {
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
         <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="orange" size={36} radius="md"><IconStar size={20} fill="currentColor" /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Отзывы</Text>
             <Text size="xs" c="gray.5">{reviewCount} отзывов</Text>

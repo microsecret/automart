@@ -2,8 +2,7 @@
 export const dynamic = "force-dynamic"
 import { useState } from "react"
 import useSWR from "swr"
-import { Box, Stack, Group, Text, Paper, Select, Center, Loader, ThemeIcon, ScrollArea } from "@mantine/core"
-import { IconMapPin } from "@tabler/icons-react"
+import { Box, Stack, Group, Text, Paper, Select, Center, Loader, ScrollArea } from "@mantine/core"
 import Link from "next/link"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { formatPriceShort, parseImages } from "@/lib/format"
@@ -101,7 +100,6 @@ export default function MapPage() {
     <Box className="listing-map-page" p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
         <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconMapPin size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Карта объявлений</Text>
             <Text size="xs" c="gray.5">{listings.length} объявлений в городе {activeCity}</Text>

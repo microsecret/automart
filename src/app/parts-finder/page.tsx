@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, Checkbox } from "@mantine/core"
-import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake, IconX, IconArrowRight } from "@tabler/icons-react"
+import { IconSearch, IconCar, IconCheck, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake, IconX, IconArrowRight } from "@tabler/icons-react"
 import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILABILITY_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
@@ -321,7 +321,10 @@ function PartsContent() {
         {/* Заголовок */}
         <Group gap="sm" align="center" justify="space-between">
           <Group gap="sm">
-            <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconAdjustmentsHorizontal size={22} /></ThemeIcon>
+            {/* Значка перед заголовком нет: название раздела написано
+                словами, а значок сдвигал заголовок вправо — левый край
+                гулял между страницами (64 пикселя здесь против 10 у
+                карточек ниже). */}
             <Stack gap={0}>
               <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Каталог запчастей</Text>
               <Text size="xs" c="gray.5">{data?.pagination?.total || 0} запчастей · кросс-совместимость по авто</Text>
