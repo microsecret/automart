@@ -13,6 +13,7 @@ import {
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
 import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
+import { isPublicListingPolicyExcludedError } from "@/lib/auction-source-policy"
 import {
   AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT,
   auctionSourceStageBudgetExceeded,
@@ -93,7 +94,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         else skippedByPolicy += 1
         consecutiveFailures = 0
       } catch (error) {
-        if (isPublicListingUnavailableError(error)) {
+        if (isPublicListingPolicyExcludedError(error)) {
+          skippedByPolicy += 1
+          consecutiveFailures = 0
+        } else if (isPublicListingUnavailableError(error)) {
           unavailable += 1
           consecutiveFailures = 0
         } else {

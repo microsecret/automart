@@ -10,6 +10,7 @@ import {
   normalizeAuctionTransmission,
 } from "@/lib/auction-normalization"
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
+import { PublicListingPolicyExcludedError, isCarsensorPriceOnRequest } from "@/lib/auction-source-policy"
 import { extractIautosImages } from "@/lib/iautos-images"
 import { translateModelName } from "@/lib/nvidia-translate"
 import { lookupVehiclePower } from "@/lib/vehicle-power-reference"
@@ -1260,7 +1261,8 @@ async function fetchCarsensorListing(candidate: PublicAuctionCandidate): Promise
   const sourcePrice = asNumber(asText(offers?.price)?.replace(/,/g, ""))
   const pairs = tablePairs(html)
   const year = pairs.get("年式(初度登録年)")?.match(/(\d{4})/)
-  if (!make || !model || !sourcePrice || sourcePrice >= 999_999_999 || !year || /[\u3040-\u30FF\u3400-\u9FFF]/.test(make)) throw new Error(`CarSensor: неполная карточка ${candidate.sourceId}`)
+  if (isCarsensorPriceOnRequest(sourcePrice)) throw new PublicListingPolicyExcludedError(`CarSensor: карточка ${candidate.sourceId} опубликована без реальной цены`)
+  if (!make || !model || !sourcePrice || !year || /[\u3040-\u30FF\u3400-\u9FFF]/.test(make)) throw new Error(`CarSensor: неполная карточка ${candidate.sourceId}`)
   const carsensorImageHosts = new Set(["ccsrpcma.carsensor.net", "ccsrpcml.carsensor.net"])
   const images = [...new Set([...html.matchAll(/https:\/\/(?:ccsrpcma|ccsrpcml)\.carsensor\.net\/[^\s"')]+\.(?:jpg|jpeg|png|webp)/gi)]
     .map((match) => safeImage(match[0], carsensorImageHosts)).filter((url): url is string => Boolean(url)))].slice(0, 60)

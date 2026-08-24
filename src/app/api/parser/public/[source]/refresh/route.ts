@@ -4,6 +4,7 @@ import { fetchPublicAuctionListing, isPublicAuctionSource, isPublicListingUnavai
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
 import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
+import { isPublicListingPolicyExcludedError } from "@/lib/auction-source-policy"
 import {
   AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT,
   auctionSourceStageBudgetExceeded,
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         translated += result.translated
         consecutiveFailures = 0
       } catch (error) {
-        if (isPublicListingUnavailableError(error)) {
+        if (isPublicListingUnavailableError(error) || isPublicListingPolicyExcludedError(error)) {
           unavailable += 1
           consecutiveFailures = 0
           const sourceMissingChecks = listing.sourceMissingChecks + 1
