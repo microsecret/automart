@@ -8,6 +8,7 @@ import VehicleDetailClient from "./VehicleDetailClient"
 import { findLabel, BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import { cityInPrepositional } from "@/lib/geo"
 import { parseImages } from "@/lib/format"
+import { rankSimilarVehicles } from "@/lib/listing-similarity"
 
 export const dynamic = "force-dynamic"
 
@@ -112,17 +113,18 @@ export default async function VehicleDetailPage({ params }: PageProps) {
   if (!listing || !canPreview) notFound()
 
   // Похожие объявления
-  const similar = await prisma.vehicle.findMany({
+  const similarCandidates = await prisma.vehicle.findMany({
     where: {
       id: { not: vehicle.id },
-      make: vehicle.make,
-      price: { gte: vehicle.price * 0.7, lte: vehicle.price * 1.3 },
+      vehicleType: vehicle.vehicleType,
+      price: { gte: vehicle.price * 0.55, lte: vehicle.price * 1.65 },
       listings: { some: publicListingWhere },
     },
-    take: 4,
+    take: 32,
     include: { listings: { where: publicListingWhere, take: 1 } },
     orderBy: { createdAt: "desc" },
   })
+  const similar = rankSimilarVehicles(vehicle, similarCandidates, 4)
 
   // Преобразуем для клиента
   /* Снижение цены — сильный довод написать продавцу.
