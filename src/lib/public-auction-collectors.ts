@@ -13,6 +13,7 @@ import {
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { PublicListingPolicyExcludedError, isBobaedreamSoldListing, isCarsensorPriceOnRequest } from "@/lib/auction-source-policy"
 import { extractIautosImages } from "@/lib/iautos-images"
+import { localizeIautosModel } from "@/lib/iautos-model"
 import { translateModelName } from "@/lib/nvidia-translate"
 import { lookupVehiclePower } from "@/lib/vehicle-power-reference"
 import {
@@ -147,50 +148,6 @@ const CHINESE_MAKES: ReadonlyArray<readonly [string, string]> = [
   ["北汽", "BAIC"], ["极狐", "Arcfox"], ["岚图", "Voyah"],
   ["问界", "Aito"], ["腾势", "Denza"], ["零跑", "Leapmotor"],
   ["小米", "Xiaomi Auto"], ["海马", "Haima"],
-]
-
-const CHINESE_MODEL_TERMS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/200万辆悦享版/g, "юбилейная комплектация Enjoy"],
-  [/40TFSI豪华动感型B&O星夜版/g, "40 TFSI Luxury Dynamic B&O Starry Night"],
-  [/改款领先型M运动套装/g, "рестайлинг Leading, пакет M Sport"],
-  // Отдельные термины идут после составных правил: «改款» и «运动套装»
-  // оставались единственными иероглифами в названии, и лот отбраковывался
-  // целиком — так терялись Mercedes C-класса и BMW 3 серии.
-  [/运动套装/g, "Sport"], [/改款/g, "рестайлинг"],
-  // Суффиксы 型/版/款 у китайских комплектаций взаимозаменяемы, поэтому
-  // рядом с «时尚版» нужен и «时尚型»: без пары лот отбраковывался.
-  [/时尚型/g, "Style"], [/悦尚型/g, "Comfort Style"],
-  [/豪华型/g, "Luxury"], [/尊贵型/g, "Premium"], [/旗舰型/g, "Flagship"],
-  // Модельные ряды, которые приходят иероглифами вместо латиницы.
-  [/途观/g, "Tiguan"], [/花冠/g, "Corolla"], [/朗逸/g, "Lavida"], [/揽胜星脉/g, "Range Rover Velar"],
-  [/揽胜/g, "Range Rover"], [/轩逸/g, "Sylphy"], [/艾瑞泽/g, "Arrizo"],
-  // Тип привода и кузова.
-  [/纯电动/g, "электро"], [/四门轿跑/g, "Gran Coupe"], [/轿跑/g, "купе"], [/掀背/g, "Hatchback"],
-  [/加长版/g, "удлинённая"], [/超长续航版/g, "Long Range"],
-  [/都会版/g, "Urban"], [/美规平行进口/g, "американская версия"],
-  [/汽车/g, ""], [/二手/g, ""],
-  [/领先型/g, "Leading"], [/尊享版/g, "Premium"],
-  [/动感型运动版/g, "Dynamic Sport"], [/旗舰动感型/g, "Flagship Dynamic"],
-  [/星耀臻藏版/g, "Star Premium"], [/劲势版/g, "Power"], [/思域/g, "Civic"],
-  [/(\d{4})款/g, "$1"], [/([A-Z])级/gi, "$1-Class"], [/(\d+)系/g, "$1 Series"],
-  [/自动/g, "АКПП"], [/手动/g, "МКПП"], [/前驱/g, "передний привод"], [/后驱/g, "задний привод"],
-  [/四驱|全驱/g, "полный привод"], [/运动型|运动版/g, "Sport"], [/时尚版/g, "Style"],
-  [/豪华版/g, "Luxury"], [/尊贵版/g, "Premium"], [/旗舰版/g, "Flagship"], [/标准版/g, "Standard"],
-  [/舒适版/g, "Comfort"], [/卓越版/g, "Excellence"], [/臻享版/g, "Premium"],
-  [/\(国Ⅵ\)|\(国VI\)/gi, "экостандарт China VI"], [/\(国Ⅴ\)|\(国V\)/gi, "экостандарт China V"],
-  // Комплектации китайских кроссоверов: без них модель уходила в машинный
-  // перевод, который часто возвращал исходные иероглифы, и лот отбраковывался.
-  [/蓝标/g, "Blue Label"], [/红标/g, "Red Label"],
-  [/第三代/g, "3-е поколение"], [/第二代/g, "2-е поколение"],
-  // Составные комплектации идут раньше простых: «智联版» иначе съел бы часть
-  // «豪华智联版», и в названии остался бы обрывок «豪华Connect».
-  [/豪华智联版/g, "Luxury Connect"], [/超豪华版|超豪版/g, "Super Luxury"],
-  [/冠军版/g, "Champion"], [/智联版/g, "Connect"], [/互联版/g, "Connect"],
-  [/精英版/g, "Elite"], [/进取版/g, "Progressive"], [/领先版/g, "Leading"],
-  [/尊享版/g, "Premium"], [/尊贵型/g, "Premium"], [/豪华型/g, "Luxury"],
-  [/舒适型/g, "Comfort"], [/标准型/g, "Standard"], [/都市版/g, "Urban"],
-  [/两驱/g, "передний привод"], [/(\d+)座/g, "$1-местный"],
-  [/plus/gi, "Plus"], [/pro/gi, "Pro"], [/max/gi, "Max"],
 ]
 
 const YOUXIN_DAMAGE_SECTION_LABELS: Readonly<Record<string, string>> = {
@@ -708,12 +665,6 @@ function jsonLdObjects(html: string) {
   return objects
 }
 
-function localizeChineseModel(value: string) {
-  return CHINESE_MODEL_TERMS.reduce((model, [pattern, replacement]) => model.replace(pattern, replacement), value)
-    .replace(/\s+/g, " ")
-    .trim()
-}
-
 async function sourceHtml(source: PublicAuctionSource, url: string) {
   const rangeHeaders = source === "BEFORWARD" && /\/detail\d+\.xml$/i.test(url)
     ? { ...SOURCE_HEADERS, Range: "bytes=0-999999" }
@@ -960,7 +911,7 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   const power = sourcePowerHorsepower(pairs.get("发动机功率") || pairs.get("最大功率") || engineText)
   const fuelType = normalizeAuctionFuelType(pairs.get("燃料类型") || pairs.get("能源类型"))
 
-  const deterministicModel = normalizeAuctionModel(localizeChineseModel(modelOriginal))
+  const deterministicModel = normalizeAuctionModel(localizeIautosModel(modelOriginal))
   const model = deterministicModel || normalizeAuctionModel(await translateModelName(modelOriginal))
   if (!model) throw new Error(`Iautos: не переведена модель «${diagnosticSourceLabel(modelOriginal)}» карточки ${candidate.sourceId}`)
 
