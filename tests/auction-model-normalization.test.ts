@@ -23,6 +23,10 @@ test("drops the configuration tail Chinese storefronts put into the model", () =
     normalizeAuctionModel("A4L юбилейная комплектация Enjoy 2025 2.0T АКПП передний привод"),
     "A4L",
   )
+  assert.equal(
+    normalizeAuctionModel("Cayenne 2013 3.0T АКПП полный привод 美规版平行进口"),
+    "Cayenne 2013 3.0T",
+  )
 })
 
 test("keeps trim names buyers actually search for", () => {

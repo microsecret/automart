@@ -244,8 +244,13 @@ export function normalizeAuctionModel(value: unknown) {
   for (const [pattern, replacement] of MODEL_PHRASE_TERMS) model = model.replace(pattern, replacement)
   for (const [pattern, replacement] of KOREAN_MODEL_TERMS) model = model.replace(pattern, replacement)
   model = transliterateHangul(model).replace(/\s+/g, " ").trim()
-  if (!model || EAST_ASIAN_SCRIPT.test(model)) return null
-  return trimModelConfiguration(model) || null
+  // Китайские витрины часто оставляют исходную комплектацию после уже
+  // распознанного разделителя «АКПП / привод». Сначала снимаем этот хвост и
+  // только затем проверяем публичное обозначение: так остаточные иероглифы в
+  // комплектации не отбраковывают корректное «Cayenne 2013 3.0T».
+  const publicModel = trimModelConfiguration(model)
+  if (!publicModel || EAST_ASIAN_SCRIPT.test(publicModel)) return null
+  return publicModel
 }
 
 /** Prevents a failed machine translation from leaking source script into UI. */
