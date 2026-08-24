@@ -4013,7 +4013,7 @@ select {
   min-height: 126px;
   flex: 1;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(255,255,255,.98), #ffffff);
+  background: linear-gradient(180deg, var(--market-surface), color-mix(in srgb, var(--market-surface) 94%, var(--market-primary-soft)));
 }
 
 .part-result-card__title {
@@ -4047,38 +4047,38 @@ select {
 }
 
 .part-result-card__status-badge[data-tone="success"] {
-  color: #087443 !important;
-  background: #eafaf1 !important;
-  border-color: #c6efd7;
+  color: var(--market-success-text) !important;
+  background: var(--market-success-surface) !important;
+  border-color: var(--market-success-line);
 }
 
 .part-result-card__status-badge[data-tone="available"] {
-  color: #0f766e !important;
-  background: #e6fffb !important;
-  border-color: #b9eee5;
+  color: var(--market-success-text) !important;
+  background: var(--market-success-surface) !important;
+  border-color: var(--market-success-line);
 }
 
 .part-result-card__status-badge[data-tone="attention"] {
-  color: #a54a06 !important;
-  background: #fff4e5 !important;
-  border-color: #fed7aa;
+  color: var(--market-warning-text) !important;
+  background: var(--market-warning-surface) !important;
+  border-color: var(--market-warning-line);
 }
 
 .part-result-card__status-badge[data-tone="auction"] {
-  color: #7c3e05 !important;
-  background: #fff0dc !important;
-  border-color: #fed7aa;
+  color: var(--market-warning-text) !important;
+  background: var(--market-warning-surface) !important;
+  border-color: var(--market-warning-line);
 }
 
 .part-result-card__status-badge[data-tone="neutral"] {
-  color: #475569 !important;
+  color: var(--market-muted) !important;
   background: var(--market-surface-subtle) !important;
-  border-color: #dde3ea;
+  border-color: var(--market-line);
 }
 
 .part-result-card__metadata {
   min-height: 20px;
-  color: #64748b;
+  color: var(--market-muted);
 }
 
 .part-result-card__metadata-value {
@@ -4088,7 +4088,7 @@ select {
   padding: 2px 6px;
   border-radius: var(--radius-xs);
   background: var(--market-surface-subtle);
-  color: #64748b;
+  color: var(--market-muted);
   font-size: var(--text-caps);
   font-weight: 600;
   line-height: 1;
@@ -4099,8 +4099,8 @@ select {
 }
 
 .part-result-card__compatibility-chip {
-  color: #14306b !important;
-  background: #eef2fb !important;
+  color: var(--market-primary) !important;
+  background: var(--market-primary-soft) !important;
   border: 1px solid var(--market-line);
   font-weight: 700;
 }
@@ -4838,6 +4838,55 @@ select {
 /* Listing workflow and administration workspace */
 .create-listing-page {
   max-width: 860px;
+}
+
+.part-result-card__cta {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--market-primary) 28%, var(--market-line));
+  border-radius: var(--radius-sm);
+  background: var(--market-primary-soft);
+  color: var(--market-primary);
+  font-size: var(--text-xs);
+  font-weight: 750;
+  line-height: 1;
+  text-decoration: none;
+  transition: background-color var(--ease-fast) var(--ease-out), border-color var(--ease-fast) var(--ease-out), box-shadow var(--ease-fast) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+.part-result-card__cta svg {
+  transition: transform var(--ease-fast) var(--ease-out);
+}
+
+.part-result-card__cta:hover {
+  border-color: var(--market-primary);
+  background: color-mix(in srgb, var(--market-primary-soft) 72%, var(--market-surface));
+  box-shadow: var(--shadow-sm);
+  transform: translateY(var(--lift-sm));
+}
+
+.part-result-card__cta:hover svg {
+  transform: translateX(2px);
+}
+
+.part-result-card__cta:focus-visible {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .part-result-card__cta,
+  .part-result-card__cta svg {
+    transition: none;
+  }
+
+  .part-result-card__cta:hover,
+  .part-result-card__cta:hover svg {
+    transform: none;
+  }
 }
 
 .message-bubble {

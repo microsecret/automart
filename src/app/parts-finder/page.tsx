@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, Checkbox } from "@mantine/core"
-import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake, IconX } from "@tabler/icons-react"
+import { IconSearch, IconCar, IconCheck, IconAdjustmentsHorizontal, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake, IconX, IconArrowRight } from "@tabler/icons-react"
 import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILABILITY_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
@@ -416,8 +416,8 @@ function PartsContent() {
                               {p.compatibility && p.compatibility.length > 0 && (
                                 <Group gap={5} wrap="wrap" mt={2} className="part-result-card__compatibility">
                                   <Group gap={3}>
-                                    <IconCircleCheck size={13} color="#059669" />
-                                    <Text size="xs" fw={600} c="gray.6">Подходит:</Text>
+                                    <IconCircleCheck size={13} color="var(--market-success-text)" />
+                                    <Text size="xs" fw={600} c="var(--market-muted)">Подходит:</Text>
                                   </Group>
                                   {p.compatibility.slice(0, 4).map((c, i) => (
                                     <Badge key={i} className="part-result-card__compatibility-chip" size="xs" variant="light" color="indigo" radius="sm">{c.make} {c.model}</Badge>
@@ -429,8 +429,10 @@ function PartsContent() {
                               )}
 
                               <Group gap="xs" mt={4} justify="space-between" className="part-result-card__footer">
-                                <Text size="xs" c="gray.4">{p.location || "Город не указан"}</Text>
-                                <Text size="xs" fw={700} c="indigo.6">Подробнее →</Text>
+                                <Text size="xs" c="var(--market-muted)">{p.location || "Город не указан"}</Text>
+                                <Link className="part-result-card__cta" href={`/listings/part/${p.id}`} aria-label={`Подробнее о запчасти: ${p.name}`}>
+                                  <span>Подробнее</span><IconArrowRight size={14} aria-hidden="true" />
+                                </Link>
                               </Group>
                             </Stack>
                         </Box>
