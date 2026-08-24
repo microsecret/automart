@@ -6,7 +6,7 @@ import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Anchor, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal } from "@mantine/core"
-import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconCreditCard, IconReceipt, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
+import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -17,6 +17,7 @@ import VehicleFallback from "@/components/listings/VehicleFallback"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 import ShareInviteCard from "@/components/dashboard/ShareInviteCard"
 import GaragePanel, { type GarageResponse } from "@/components/dashboard/GaragePanel"
+import PromotionPanel, { type PromotionOrder } from "@/components/dashboard/PromotionPanel"
 
 type DashboardVehicle = {
   id: string
@@ -56,19 +57,6 @@ type DashboardFavorite = {
   id: string
   price: number
   vehicle: DashboardVehicle | null
-}
-
-type PromotionOrder = {
-  id: string
-  tariffId: string
-  amountRub: number
-  durationDays: number
-  status: string
-  provider: string
-  promoUntil: string | null
-  paidAt: string | null
-  createdAt: string
-  listing: { id: string; title: string; status: string }
 }
 
 type DashboardResponse = {
@@ -119,27 +107,6 @@ const DASHBOARD_TABS = new Set(["listings", "payments", "favorites", "garage", "
 const formatMemberSince = (value: string | null) => value
   ? new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(new Date(value))
   : "—"
-
-const formatRubles = (value: number) => new Intl.NumberFormat("ru-RU", {
-  style: "currency",
-  currency: "RUB",
-  maximumFractionDigits: 0,
-}).format(value)
-
-const PROMOTION_STATUS_META: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Ожидает оплаты", color: "yellow" },
-  PAID: { label: "Оплачено", color: "teal" },
-  FAILED: { label: "Ошибка оплаты", color: "red" },
-  CANCELED: { label: "Отменено", color: "gray" },
-  REFUNDED: { label: "Возврат", color: "blue" },
-  REVIEW_REQUIRED: { label: "Нужна проверка", color: "orange" },
-}
-
-const PROMOTION_TARIFF_LABELS: Record<string, string> = {
-  boost: "Поднятие в топ",
-  premium: "Премиум",
-  vip: "VIP-размещение",
-}
 
 export default function DashboardPage() {
   return (
@@ -464,84 +431,13 @@ function DashboardContent() {
         )}
 
         {tab === "payments" && (
-          <Stack gap="md">
-            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-              <Paper radius="md" p="md" withBorder>
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon color="indigo" variant="light" size={40} radius="md"><IconCreditCard size={20} /></ThemeIcon>
-                  <Stack gap={1}>
-                    <Text size="xs" c="dimmed">Оплачено за продвижение</Text>
-                    <Text fw={800} fz="xl">{formatRubles(stats.promotionSpentRub)}</Text>
-                  </Stack>
-                </Group>
-              </Paper>
-              <Paper radius="md" p="md" withBorder>
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon color="teal" variant="light" size={40} radius="md"><IconTrendingUp size={20} /></ThemeIcon>
-                  <Stack gap={1}>
-                    <Text size="xs" c="dimmed">Активные продвижения</Text>
-                    <Text fw={800} fz="xl">{stats.activePromotions}</Text>
-                  </Stack>
-                </Group>
-              </Paper>
-              <Paper radius="md" p="md" withBorder>
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon color="violet" variant="light" size={40} radius="md"><IconReceipt size={20} /></ThemeIcon>
-                  <Stack gap={1}>
-                    <Text size="xs" c="dimmed">Успешные оплаты</Text>
-                    <Text fw={800} fz="xl">{stats.promotionPaidCount}</Text>
-                  </Stack>
-                </Group>
-              </Paper>
-            </SimpleGrid>
-
-            <Paper radius="md" p={{ base: "md", md: "lg" }} withBorder>
-              <Group justify="space-between" align="flex-start" mb="md" gap="sm">
-                <Stack gap={1}>
-                  <Text fw={800} fz="lg">История продвижений</Text>
-                  <Text size="sm" c="dimmed">Здесь отображаются только реальные заказы и подтверждённые платежи.</Text>
-                </Stack>
-                <Button component={Link} href="/dashboard?tab=listings" variant="light" color="indigo" size="sm" leftSection={<IconTrendingUp size={16} />}>Выбрать объявление</Button>
-              </Group>
-
-              {data.promotionOrders.length === 0 ? (
-                <Center py={{ base: "xl", md: 48 }}>
-                  <Stack align="center" gap="sm" ta="center" maw={420}>
-                    <ThemeIcon color="indigo" variant="light" size={52} radius="xl"><IconReceipt size={25} /></ThemeIcon>
-                    <Text fw={700}>Оплат пока не было</Text>
-                    <Text size="sm" c="dimmed">Продвижение можно подключить у активного объявления после настройки платёжного провайдера.</Text>
-                    <Button onClick={() => selectTab("listings")} color="indigo" size="sm">Перейти к объявлениям</Button>
-                  </Stack>
-                </Center>
-              ) : (
-                <Stack gap="xs">
-                  {data.promotionOrders.map((order) => {
-                    const status = PROMOTION_STATUS_META[order.status] || { label: order.status, color: "gray" }
-                    return (
-                      <Paper key={order.id} radius="md" p="sm" withBorder>
-                        <Group justify="space-between" align="center" gap="md" wrap="wrap">
-                          <Stack gap={2} style={{ flex: 1, minWidth: 220 }}>
-                            <Group gap="xs">
-                              <Text fw={700} size="sm">{order.listing.title}</Text>
-                              <Badge size="xs" color={status.color} variant="light">{status.label}</Badge>
-                            </Group>
-                            <Text size="xs" c="dimmed">
-                              Тариф «{PROMOTION_TARIFF_LABELS[order.tariffId] || order.tariffId}» · {order.durationDays} дн. · заказ от {new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt))}
-                            </Text>
-                            {order.promoUntil && <Text size="xs" c="teal.7">Продвижение до {new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.promoUntil))}</Text>}
-                          </Stack>
-                          <Group gap="xs">
-                            <Text fw={800}>{formatRubles(order.amountRub)}</Text>
-                            <ActionIcon component={Link} href={`/listings/${order.listing.id}/promote`} color="indigo" variant="subtle" aria-label={`Открыть продвижение ${order.listing.title}`}><IconExternalLink size={17} /></ActionIcon>
-                          </Group>
-                        </Group>
-                      </Paper>
-                    )
-                  })}
-                </Stack>
-              )}
-            </Paper>
-          </Stack>
+          <PromotionPanel
+            spentRub={stats.promotionSpentRub}
+            activePromotions={stats.activePromotions}
+            paidCount={stats.promotionPaidCount}
+            orders={data.promotionOrders}
+            onViewListings={() => selectTab("listings")}
+          />
         )}
 
         {tab === "favorites" && (
