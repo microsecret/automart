@@ -6245,10 +6245,21 @@ h1[data-lw-hero] {
   pointer-events: none;
 }
 
+/* Стрелка сообщает только состояние панели. Короткий transform-переход
+   не задерживает частое действие и не затрагивает раскладку. */
+.catalog-filter-chevron {
+  transition: transform var(--ease-base) var(--ease-out);
+}
+
+.catalog-filter-chevron[data-open] {
+  transform: rotate(180deg);
+}
+
 /* При включённом ограничении движения переход не нужен — состояние
    меняется сразу, но само приглушение остаётся: оно несёт смысл. */
 @media (prefers-reduced-motion: reduce) {
-  .catalog-results {
+  .catalog-results,
+  .catalog-filter-chevron {
     transition: none;
   }
 }

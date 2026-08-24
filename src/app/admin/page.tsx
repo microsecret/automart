@@ -349,6 +349,7 @@ export default function AdminDashboard() {
   const maxDailyPageViews = Math.max(1, ...dailyTraffic.map((point) => point.pageViews))
   const dailyListingViews = data.listingPerformance.daily || []
   const maxDailyListingViews = Math.max(1, ...dailyListingViews.map((point) => point.views))
+  const listingViewsToday = dailyListingViews.at(-1)?.views ?? 0
   /* Очередь задач с возрастом самой старой.
 
      Счётчик отвечает «сколько», возраст — «что горит». Три задачи возрастом
@@ -908,16 +909,15 @@ export default function AdminDashboard() {
 
         {/* Просмотры сайта и аудитория */}
         <Alert color="indigo" variant="light" title="Как считаются просмотры и уникальные посетители">
-          Просмотр — каждое открытие экрана, включая переходы между разделами внутри сайта и смену фильтров каталога. Уникальный посетитель —
-          один IP-адрес за период: переходы по разным страницам и сервисам не создают новых уникальных посетителей. Сохраняется только необратимый
-          хеш IP; исходный адрес и автоматические bot/headless-запросы не учитываются. Периоды календарные по московскому времени: «сегодня» —
-          с 00:00 МСК, «неделя» — с понедельника, «месяц» — с первого числа.
+          «Экраны сайта» учитывают все разделы, переходы и смену фильтров каталога. Блок «Объявления пользователей» ниже считает только
+          открытия карточек транспорта и запчастей, поэтому эти показатели нельзя сравнивать напрямую. Уникальный посетитель определяется по необратимому хешу
+          IP; исходный адрес и автоматические bot/headless-запросы не учитываются. Периоды календарные по московскому времени.
         </Alert>
         <SimpleGrid cols={{ base: 1, xs: 2, lg: 7 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Просмотры · сегодня</Text></Group>
+            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Экраны сайта · сегодня</Text></Group>
             <Text size="xl" fw={800} mt="sm">{data.traffic.pageViewsDay}</Text>
-            <Text size="xs" c="gray.4">открытые экраны</Text>
+            <Text size="xs" c="gray.4">{data.traffic.pageViewsWeek} за неделю · все разделы</Text>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · неделя</Text></Group>
@@ -967,30 +967,31 @@ export default function AdminDashboard() {
 
           <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="xs">
             {[
-              ["Активные", data.listingPerformance.active],
-              ["Опубликовано", data.listingPerformance.publishedWeek],
-              ["Просмотры", data.listingPerformance.viewsWeek],
-              ["Уникальные", data.listingPerformance.uniqueViewersWeek],
-              ["Сообщения", data.listingPerformance.messageLeadsWeek],
-              ["Продано", data.listingPerformance.soldWeek],
-            ].map(([label, value]) => (
+              { label: "Активные", value: data.listingPerformance.active, detail: "публично видны" },
+              { label: "Опубликовано", value: data.listingPerformance.publishedWeek, detail: "за 7 дней" },
+              { label: "Открытия карточек", value: data.listingPerformance.viewsWeek, detail: `${listingViewsToday} сегодня · ${data.listingPerformance.totalViews} за всё время` },
+              { label: "Уникальные", value: data.listingPerformance.uniqueViewersWeek, detail: "за 7 дней" },
+              { label: "Сообщения", value: data.listingPerformance.messageLeadsWeek, detail: "за 7 дней" },
+              { label: "Продано", value: data.listingPerformance.soldWeek, detail: "за 7 дней" },
+            ].map(({ label, value, detail }) => (
               <Paper key={String(label)} withBorder radius="md" p="sm">
                 <Text size="lg" fw={800}>{value}</Text>
                 <Text size="10px" c="dimmed">{label}</Text>
+                <Text size="9px" c="gray.5" mt={2}>{detail}</Text>
               </Paper>
             ))}
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md" mt="md">
             <Paper withBorder radius="md" p="sm">
-              <Text size="xs" fw={700} mb="sm">Просмотры по дням</Text>
-              <Group h={120} align="flex-end" gap="xs" wrap="nowrap" role="img" aria-label="Просмотры объявлений за семь дней">
+              <Text size="xs" fw={700} mb="sm">Открытия карточек по дням</Text>
+              <Group h={120} align="flex-end" gap="xs" wrap="nowrap" role="img" aria-label="Открытия карточек объявлений за семь дней">
                 {dailyListingViews.map((point) => {
                   const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
                   const height = point.views ? Math.max(6, Math.round((point.views / maxDailyListingViews) * 88)) : 3
                   return (
                     <Stack key={point.date} gap={4} align="center" style={{ flex: 1, minWidth: 0 }}>
-                      <Tooltip label={`${point.views} просмотров · ${point.uniqueViewers} уникальных`} withArrow>
+                      <Tooltip label={`${point.views} открытий · ${point.uniqueViewers} уникальных посетителей`} withArrow>
                         <Box h={height} bg={point.views ? "orange.5" : "gray.3"} style={{ width: "clamp(12px, 3vw, 26px)", borderRadius: "6px 6px 2px 2px" }} />
                       </Tooltip>
                       <Text size="9px" c="dimmed">{label}</Text>

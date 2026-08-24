@@ -48,7 +48,7 @@ export default function CategoryShowcase() {
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="xs" mb="sm">
         <Box>
           <Text component="h2" className={styles.title}>Выберите направление</Text>
-          <Text className={styles.subtitle}>Транспорт и запчасти в одном каталоге — с проверкой, доставкой и сопровождением сделки.</Text>
+          <Text className={styles.subtitle}>Транспорт и запчасти в одном каталоге. Проверка, доставка и сопровождение сделки.</Text>
         </Box>
       </Group>
 
@@ -80,7 +80,7 @@ export default function CategoryShowcase() {
                     чем он успевал посмотреть каталог. */}
                 {typeof count === "number" && (
                   <Text className={styles.count} data-empty={count === 0 ? "true" : undefined}>
-                    {count === 0 ? "—" : count}
+                    {count}
                   </Text>
                 )}
               </Group>

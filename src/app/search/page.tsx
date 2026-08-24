@@ -19,9 +19,9 @@ function SearchContent() {
   const isPart = type === "part" || !!partType
   const partTypeLabel = PART_TYPES.find((item) => item.value === partType)?.label
   const pageTitle = make
-    ? `${make} — результаты поиска`
+    ? `${make}: результаты поиска`
     : isPart
-    ? `${partTypeLabel || "Запчасти"} — поиск`
+    ? `${partTypeLabel || "Запчасти"}: поиск`
     : q
     ? `Поиск: «${q}»`
     : "Результаты поиска"

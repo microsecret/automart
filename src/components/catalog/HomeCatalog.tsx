@@ -16,6 +16,7 @@ import { fetchJson } from "@/lib/api-client"
 import { CITY_COORDINATES } from "@/lib/cities"
 import { SEARCH_RADII_KM } from "@/lib/geo-distance"
 import { plural } from "@/lib/format"
+import { countActiveCatalogFilters } from "@/lib/catalog-filter-state"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import CategoryShowcase from "./CategoryShowcase"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
@@ -261,12 +262,24 @@ export default function HomePage(p: HomePageProps = {}) {
     setQuery(""); setPage(1)
   }
 
+  const clearPriceRange = () => {
+    setPriceFrom("")
+    setPriceTo("")
+    setPage(1)
+  }
+
   const clearSelectedMake = () => {
     setMake(null)
     setModel(null)
   }
 
-  const activeFilterCount = (make?1:0)+(model?1:0)+(priceFrom?1:0)+(priceTo?1:0)+(yearFrom?1:0)+(yearTo?1:0)+(city?1:0)+(mileageTo?1:0)+(transmission?1:0)+(fuelType.length?1:0)+(driveType?1:0)+(bodyType.length?1:0)+(subtype.length?1:0)+(engineVolumeFrom?1:0)+(engineVolumeTo?1:0)+(powerFrom?1:0)+(powerTo?1:0)+(color?1:0)+(condition.length?1:0)+(steeringWheel?1:0)+(documentsStatus?1:0)+(damageInfo?1:0)+(sellerType?1:0)+(availability?1:0)+(customsCleared!==null?1:0)+(ownersCountFrom?1:0)+(ownersCountTo?1:0)+(mileageFrom?1:0)+(keywords?1:0)
+  const activeFilterCount = countActiveCatalogFilters([
+    query, make, model, priceFrom, priceTo, yearFrom, yearTo, city, radius, mileageTo,
+    transmission, fuelType, driveType, bodyType, subtype, engineVolumeFrom,
+    engineVolumeTo, powerFrom, powerTo, color, condition, steeringWheel,
+    documentsStatus, damageInfo, sellerType, availability, customsCleared,
+    ownersCountFrom, ownersCountTo, mileageFrom, keywords,
+  ])
 /* Пришёл по ссылке с настроенным поиском — панель строится сразу.
 
      Иначе человек увидел бы выдачу, суженную условиями, которых на
@@ -304,7 +317,7 @@ export default function HomePage(p: HomePageProps = {}) {
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
       {p.showHero !== false && !p.categorySlug && !isReturning && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
-          <NextImage src="/images/home/automarket-hero.png" alt="LeWheel — транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
+          <NextImage src="/images/home/automarket-hero.png" alt="LeWheel: транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
           <Box className="home-auctions__scrim" />
           <Box className="home-auctions__content">
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
@@ -312,7 +325,7 @@ export default function HomePage(p: HomePageProps = {}) {
                 {/* Надпись-плашка над заголовком убрана: она повторяла то, что
                     заголовок и так говорит, и отодвигала его вниз. */}
                 <Text component="h1" data-lw-hero fw={800} fz={{base:28,md:42}} c="white" ff="var(--font-display),sans-serif" lh={1.08}>Найдите свой маршрут: транспорт, запчасти и аукционы.</Text>
-                <Text size="sm" c="rgba(255,255,255,0.84)" mt={12} maw={560}>От первого поиска до сделки и доставки — всё понятно, в одном кабинете и без лишних шагов.</Text>
+                <Text size="sm" c="rgba(255,255,255,0.84)" mt={12} maw={560}>От первого поиска до сделки и доставки. Всё понятно, в одном кабинете и без лишних шагов.</Text>
                 {/* Кнопки стояли к тексту почти вплотную и читались его
                     продолжением. Отступ над группой теперь заметно больше, чем
                     внутри неё, поэтому действие отделено от описания. */}
@@ -359,7 +372,7 @@ export default function HomePage(p: HomePageProps = {}) {
                     {isLoading
                       ? "Ищем…"
                       : (data?.pagination?.total ?? 0) > 0
-                      ? `Нашлось ${data?.pagination?.total} ${plural(data?.pagination?.total ?? 0, "объявление", "объявления", "объявлений")} — смотрите ниже`
+                      ? `Нашлось ${data?.pagination?.total} ${plural(data?.pagination?.total ?? 0, "объявление", "объявления", "объявлений")}. Смотрите ниже`
                       : "Ничего не нашлось. Попробуйте другое название или проверьте раскладку"}
                   </Text>
                 )}
@@ -569,7 +582,7 @@ export default function HomePage(p: HomePageProps = {}) {
               rightSection={
                 <Group gap={6}>
                   {activeFilterCount > 0 && <Badge size="xs" circle color={showAdvanced ? "dark" : "indigo"} variant="filled" style={{ minWidth: 20, height: 20 }}>{activeFilterCount}</Badge>}
-                  <IconChevronDown size={14} style={{ transform: showAdvanced ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+                  <IconChevronDown className="catalog-filter-chevron" data-open={showAdvanced || undefined} size={14} />
                 </Group>
               }
               styles={{ root: { fontWeight: 600 } }}
@@ -749,7 +762,7 @@ export default function HomePage(p: HomePageProps = {}) {
               </Box>
 
               <Group className="catalog-filter-advanced__actions" justify="space-between" gap="sm">
-                <Text size="xs" c="dimmed">Фильтры применяются сразу — выдача ниже уже обновлена.</Text>
+                <Text size="xs" c="dimmed">Фильтры применяются сразу. Выдача ниже уже обновлена.</Text>
                 <Group gap="xs">
                   {activeFilterCount > 0 && <Button variant="subtle" size="sm" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить фильтры</Button>}
                   <Button color="indigo" size="sm" radius="md" leftSection={<IconSearch size={15}/>} onClick={() => setShowAdvanced(false)}>
@@ -783,7 +796,7 @@ export default function HomePage(p: HomePageProps = {}) {
                   Следить за этим поиском
                 </Text>
                 <Text size="xs" c="dimmed">
-                  Сообщим в Telegram, когда появятся подходящие объявления — возвращаться и проверять не придётся.
+                  Сообщим в Telegram, когда появятся подходящие объявления. Возвращаться и проверять не придётся.
                 </Text>
               </Box>
             </Group>
@@ -801,7 +814,14 @@ export default function HomePage(p: HomePageProps = {}) {
 
           Приглушение говорит «идёт работа», сохраняя контекст. */}
       <Box className="catalog-results" data-updating={!isLoading && isValidating ? "true" : undefined}>
-      {isLoading ? (
+      {hasInvalidPriceRange ? (
+        <EmptyState
+          title="Исправьте диапазон цены"
+          description="Цена «от» должна быть меньше или равна цене «до». Очистите диапазон или укажите корректные значения."
+          actionLabel="Очистить цены"
+          onAction={clearPriceRange}
+        />
+      ) : isLoading ? (
         <ResultsGridSkeleton count={8} />
       ) : error ? (
         <AsyncErrorState
@@ -814,7 +834,7 @@ export default function HomePage(p: HomePageProps = {}) {
           title={activeFilterCount > 0 ? "Ничего не найдено" : "В этом разделе пока нет объявлений"}
           description={activeFilterCount > 0
             ? "Попробуйте изменить условия поиска или сбросить часть фильтров."
-            : "Раздел наполняется продавцами. Разместите объявление — оно появится в каталоге после проверки модератором."}
+            : "Раздел наполняется продавцами. Разместите объявление, и оно появится в каталоге после проверки модератором."}
           actionLabel={activeFilterCount > 0 ? "Сбросить фильтры" : undefined}
           onAction={activeFilterCount > 0 ? resetFilters : undefined}
         />
