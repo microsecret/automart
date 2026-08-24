@@ -83,7 +83,7 @@
 - [x] Карточка каталога запчастей использует рабочую CTA «Подробнее» с keyboard-focus, согласованной анимацией и `prefers-reduced-motion`; поверхности, статусы и совместимость читаются в обеих темах через семантические токены.
 - [~] Партнёрская заявка и CTA получили единый визуальный язык; распространить паттерн на важные empty/error/status-блоки.
 - [ ] Вынести цвета, elevation, radii, spacing и motion в токены; планово убрать 695 hard-coded цветов и 354 inline-style блока.
-- [ ] Разделить `catalog.ts`, `public-auction-collectors.ts`, `admin/page.tsx`, `dashboard/page.tsx`, `fuel-stations/route.ts` и `fuel-map/page.tsx` по ответственностям.
+- [~] Разделить `catalog.ts`, `public-auction-collectors.ts`, `admin/page.tsx`, `dashboard/page.tsx`, `fuel-stations/route.ts` и `fuel-map/page.tsx` по ответственностям. Из `dashboard/page.tsx` уже вынесен самостоятельный typed `GaragePanel` со всеми loading/error/empty/card-состояниями и действиями; монолит сокращён на 82 строки без дублирования API-логики.
 - [x] Шапка, подвал, кабинет, мобильная панель и Telegram Mini App используют один typed navigation registry с едиными URL и active-state.
 - [ ] Заменить повторяющиеся карточки метрик, callout, async-state и media fallback на общие компоненты с visual regression-тестами.
 - [~] Reduced motion учтён в анимациях, dark theme проверен на каталоге, контраст wordmark исправлен до WCAG AA; ещё нужны полные keyboard-only, 200% zoom и visual-regression прогоны ключевых страниц.
