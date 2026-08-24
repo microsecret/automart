@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Box, Group, Text, ThemeIcon, UnstyledButton } from "@mantine/core"
@@ -46,9 +47,25 @@ function resolveActiveId(pathname: string, tab: string | null): string | undefin
 }
 
 export default function DashboardNav({ active }: { active?: string }) {
+  /* Граница Suspense внутри компонента, а не на страницах.
+
+     Чтение строки запроса её требует, иначе сборка падает. Ставить её
+     на каждой странице, где полоса используется, — значит однажды
+     забыть: так и вышло с избранным. */
+  return (
+    <Suspense fallback={<NavTrack activeId={active} />}>
+      <NavWithLocation active={active} />
+    </Suspense>
+  )
+}
+
+function NavWithLocation({ active }: { active?: string }) {
   const pathname = usePathname() || ""
   const tab = useSearchParams().get("tab")
-  const activeId = active ?? resolveActiveId(pathname, tab)
+  return <NavTrack activeId={active ?? resolveActiveId(pathname, tab)} />
+}
+
+function NavTrack({ activeId }: { activeId?: string }) {
   return (
     <Box component="nav" className={styles.nav} aria-label="Разделы личного кабинета">
       <Group gap={4} wrap="nowrap" className={styles.track}>

@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Suspense } from "react"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 
 export const metadata: Metadata = {
@@ -20,11 +19,7 @@ export const metadata: Metadata = {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* Полоса определяет активный раздел по адресу, а для этого читает
-          строку запроса — та требует границы Suspense. */}
-      <Suspense fallback={null}>
-        <DashboardNav />
-      </Suspense>
+      <DashboardNav />
       {children}
     </>
   )
