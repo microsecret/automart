@@ -13,6 +13,12 @@ import {
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
 import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
+import {
+  AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT,
+  auctionSourceStageBudgetExceeded,
+  auctionSourceStageStatus,
+  remainingAuctionSourceItems,
+} from "@/lib/auction-sync-budget"
 
 export const dynamic = "force-dynamic"
 
@@ -28,6 +34,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const source = rawSource
 
   try {
+    const stageStartedAt = Date.now()
     const parserToken = process.env.PARSER_TOKEN
     if (!parserToken) return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
     if (request.headers.get("authorization") !== `Bearer ${parserToken}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -65,25 +72,43 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let unavailable = 0
     let skippedByPolicy = 0
     let skippedKnown = 0
+    let checked = 0
+    let deferred = 0
+    let consecutiveFailures = 0
 
-    for (const candidate of catalog.candidates) {
+    for (const [candidateIndex, candidate] of catalog.candidates.entries()) {
       if (items.length >= limit) break
       if (recentlyCheckedIds.has(candidate.sourceId)) {
         skippedKnown += 1
         continue
       }
+      if (auctionSourceStageBudgetExceeded(stageStartedAt)) {
+        deferred = remainingAuctionSourceItems(catalog.candidates.length, candidateIndex)
+        break
+      }
+      checked += 1
       try {
         const item = await fetchPublicAuctionListing(source, candidate)
         if (assessImportAge(item, maxAgeYears).eligible) items.push(item)
         else skippedByPolicy += 1
+        consecutiveFailures = 0
       } catch (error) {
-        if (isPublicListingUnavailableError(error)) unavailable += 1
-        else failed.push({ id: candidate.sourceId, error: error instanceof Error ? error.message : `Не удалось разобрать карточку ${source}` })
+        if (isPublicListingUnavailableError(error)) {
+          unavailable += 1
+          consecutiveFailures = 0
+        } else {
+          failed.push({ id: candidate.sourceId, error: error instanceof Error ? error.message : `Не удалось разобрать карточку ${source}` })
+          consecutiveFailures += 1
+          if (consecutiveFailures >= AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT) {
+            deferred = remainingAuctionSourceItems(catalog.candidates.length, candidateIndex + 1)
+            break
+          }
+        }
       }
     }
 
     const result = items.length ? await saveAuctionImportItems(items) : { created: 0, updated: 0, translated: 0, qualityHold: 0, qualityRestored: 0 }
-    const status = failed.length ? (items.length ? "PARTIAL" : "FAILED") : "SUCCEEDED"
+    const status = auctionSourceStageStatus(checked, failed.length, deferred)
     await prisma.auctionSyncRun.update({
       where: { id: syncRun.id },
       data: {
@@ -92,7 +117,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         error: failed.length && !items.length ? `${source}: в выдаче нет пригодных карточек` : null,
       },
     })
-    return NextResponse.json({ success: true, source, status, page, catalogTotal: catalog.total, discovered: catalog.candidates.length, imported: items.length, unavailable, skippedKnown, skippedByPolicy, excludedByPolicy, failed, ...result })
+    return NextResponse.json({ success: true, source, status, page, catalogTotal: catalog.total, discovered: catalog.candidates.length, checked, deferred, imported: items.length, unavailable, skippedKnown, skippedByPolicy, excludedByPolicy, failed, ...result })
   } catch (error) {
     // Пустая страница каталога — не поломка источника: площадка вернула
     // заглушку или страница вышла за границу выдачи. Такой прогон

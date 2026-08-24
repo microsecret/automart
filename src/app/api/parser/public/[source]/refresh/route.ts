@@ -4,6 +4,12 @@ import { fetchPublicAuctionListing, isPublicAuctionSource, isPublicListingUnavai
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
 import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
+import {
+  AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT,
+  auctionSourceStageBudgetExceeded,
+  auctionSourceStageStatus,
+  remainingAuctionSourceItems,
+} from "@/lib/auction-sync-budget"
 
 export const dynamic = "force-dynamic"
 
@@ -16,6 +22,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const source = rawSource
 
   try {
+    const stageStartedAt = Date.now()
     const parserToken = process.env.PARSER_TOKEN
     if (!parserToken) return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
     if (request.headers.get("authorization") !== `Bearer ${parserToken}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -35,16 +42,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let translated = 0
     let unavailable = 0
     let expired = 0
+    let checked = 0
+    let deferred = 0
+    let consecutiveFailures = 0
     const failed: Array<{ id: string; error: string }> = []
-    for (const listing of listings) {
+    for (const [listingIndex, listing] of listings.entries()) {
+      if (auctionSourceStageBudgetExceeded(stageStartedAt)) {
+        deferred = remainingAuctionSourceItems(listings.length, listingIndex)
+        break
+      }
+      checked += 1
       try {
         const item = await fetchPublicAuctionListing(source, listing)
         const result = await saveAuctionImportItems([item])
         updated += result.updated
         translated += result.translated
+        consecutiveFailures = 0
       } catch (error) {
         if (isPublicListingUnavailableError(error)) {
           unavailable += 1
+          consecutiveFailures = 0
           const sourceMissingChecks = listing.sourceMissingChecks + 1
           const shouldExpire = sourceMissingChecks >= 2
           await prisma.auctionListing.update({
@@ -55,14 +72,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         }
         await prisma.auctionListing.update({ where: { id: listing.id }, data: { lastChecked: new Date() } })
         failed.push({ id: listing.id, error: error instanceof Error ? error.message : `Не удалось проверить карточку ${source}` })
+        consecutiveFailures += 1
+        if (consecutiveFailures >= AUCTION_SOURCE_CONSECUTIVE_FAILURE_LIMIT) {
+          deferred = remainingAuctionSourceItems(listings.length, listingIndex + 1)
+          break
+        }
       }
     }
 
-    const status = failed.length ? (listings.length === failed.length ? "FAILED" : "PARTIAL") : "SUCCEEDED"
+    const status = auctionSourceStageStatus(checked, failed.length, deferred)
     await prisma.auctionSyncRun.update({
-      where: { id: syncRun.id }, data: { status, discovered: listings.length, imported: updated, updated, failed: failed.length, expired, completedAt: new Date() },
+      where: { id: syncRun.id }, data: { status, discovered: checked, imported: updated, updated, failed: failed.length, expired, completedAt: new Date() },
     })
-    return NextResponse.json({ success: true, source, status, refreshIntervalHours: refreshIntervalHours(source), checked: listings.length, refreshed: updated, unavailable, expired, failed, updated, translated })
+    return NextResponse.json({ success: true, source, status, refreshIntervalHours: refreshIntervalHours(source), checked, deferred, refreshed: updated, unavailable, expired, failed, updated, translated })
   } catch (error) {
     console.error(`${source} public refresh error:`, error)
     if (syncRunId) {

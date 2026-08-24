@@ -201,12 +201,15 @@ function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "POST", h
 }
 
 async function requestWithRedirects(rawUrl: URL, agent: https.Agent, method: "GET" | "POST", allowedHosts: ReadonlySet<string>, headers: Record<string, string>, body: string | undefined, timeoutMs: number, maxBytes: number) {
+  const deadlineAt = Date.now() + timeoutMs
   let url = rawUrl
   let currentMethod = method
   let currentBody = body
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
     if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) throw new Error("Источник перенаправил запрос на неподдерживаемый адрес")
-    const result = await requestTextOnce(url, agent, currentMethod, headers, currentBody, timeoutMs, maxBytes)
+    const remainingMs = deadlineAt - Date.now()
+    if (remainingMs <= 0) throw new Error("Источник превысил общий лимит времени")
+    const result = await requestTextOnce(url, agent, currentMethod, headers, currentBody, remainingMs, maxBytes)
     const location = result.headers.location
     if (result.status < 300 || result.status >= 400 || !location) return { ...result, url: url.toString() }
     url = new URL(location, url)
@@ -228,6 +231,11 @@ function retryAfterMs(headers: IncomingHttpHeaders) {
   return Number.isFinite(date) ? Math.max(0, date - Date.now()) : 0
 }
 
+export function boundedSourceAttemptTimeout(remainingMs: number, attemptsLeft: number) {
+  if (!Number.isFinite(remainingMs) || !Number.isFinite(attemptsLeft) || remainingMs <= 0 || attemptsLeft <= 0) return 0
+  return Math.max(1, Math.floor(remainingMs / Math.max(1, Math.floor(attemptsLeft))))
+}
+
 export async function authorizedSourceRequest(rawUrl: string, options: {
   allowedHosts: ReadonlySet<string>
   headers: Record<string, string>
@@ -237,12 +245,17 @@ export async function authorizedSourceRequest(rawUrl: string, options: {
   maxBytes: number
 }): Promise<SourceResponse> {
   const url = new URL(rawUrl)
+  const deadlineAt = Date.now() + options.timeoutMs
   let lastError: unknown = null
   let lastResponse: Awaited<ReturnType<typeof requestWithRedirects>> | null = null
-  for (const agent of transportCandidates(url.hostname)) {
+  const candidates = transportCandidates(url.hostname)
+  for (const [index, agent] of candidates.entries()) {
+    const remainingMs = deadlineAt - Date.now()
+    const attemptTimeoutMs = boundedSourceAttemptTimeout(remainingMs, candidates.length - index)
+    if (attemptTimeoutMs <= 0) break
     updateActiveRequests(agent, 1)
     try {
-      const response = await requestWithRedirects(url, agent, options.method || "GET", options.allowedHosts, options.headers, options.body, options.timeoutMs, options.maxBytes)
+      const response = await requestWithRedirects(url, agent, options.method || "GET", options.allowedHosts, options.headers, options.body, attemptTimeoutMs, options.maxBytes)
       lastResponse = response
       if (agent !== directAgent && RETRYABLE_SOURCE_STATUSES.has(response.status)) {
         markProxyFailure(agent, retryAfterMs(response.headers))

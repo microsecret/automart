@@ -92,8 +92,12 @@ a bounded, cached, allow-listed relay; bytes are streamed through memory and are
 never written to disk.
 
 The serialized collector retries short loopback failures within a 30-second
-budget. A source stage that reaches its four-minute timeout is recorded once
-and is not replayed by curl, keeping the shared deploy/collector lock bounded.
+budget. Discovery and freshness stages have a three-minute internal budget,
+leave the unprocessed tail for the next scheduled pass and stop after three
+consecutive source failures. Each outbound source request also has one shared
+deadline across proxies, direct transport and redirects, so retries cannot
+multiply the configured timeout. Curl's four-minute ceiling remains the outer
+safety net and the shared deploy/collector lock stays bounded.
 Explicit drivetrain badges in source-confirmed model names fill an otherwise
 empty canonical drive value for new Encar imports and by an idempotent deploy
 backfill for older active lots. Existing source values are never overwritten;
