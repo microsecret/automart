@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, Checkbox } from "@mantine/core"
-import { IconSearch, IconCar, IconCheck, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake, IconX, IconArrowRight } from "@tabler/icons-react"
+import { IconSearch, IconCar, IconCheck, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake, IconArrowRight } from "@tabler/icons-react"
 import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILABILITY_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
 import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
@@ -206,6 +206,13 @@ function PartsContent() {
     || conditions.length || availability.length || priceFrom || priceTo,
   )
 
+  /* Есть ли запчасти в разделе вообще.
+
+     Отличается от «нашлось по фильтрам»: пустая выдача при выбранных
+     условиях означает «уточните запрос», а пустой раздел — «здесь пока
+     никто ничего не разместил». */
+  const hasParts = Boolean(data?.pagination?.total) || hasActiveFilters
+
   const resetFilters = () => {
     setQ(""); setPartType(null); setSubcategory(null); setMake(null); setModel(null)
     setConditions([]); setAvailability([]); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1)
@@ -215,20 +222,16 @@ function PartsContent() {
   const CategoryBar = (
     <Paper radius="md" p="sm" withBorder className="parts-category-bar">
       <Stack gap={8}>
-        <Group gap="xs" justify="space-between">
-          <Group gap="xs"><ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconTools size={16} /></ThemeIcon><Text fw={800} fz="sm" ff="var(--font-display),sans-serif">Категории запчастей</Text></Group>
-          {/* Кнопка была subtle: на светлой карточке она читалась как пустой
-              прямоугольник в углу, а не как действие. */}
-          {partType && (
-            <Button variant="light" color="gray" size="compact-xs" leftSection={<IconX size={12} />} onClick={() => selectPartType(null)}>
-              Сбросить категорию
-            </Button>
-          )}
-        </Group>
-        <Group gap={6} wrap="wrap">
-          <Button size="compact-sm" radius="md" variant={!partType ? "filled" : "default"} color="indigo" onClick={() => selectPartType(null)}>Все запчасти</Button>
+        {/* Категории идут одним прокручиваемым рядом.
+
+            Прежде шестнадцать кнопок стояли в два ряда и занимали
+            пол-экрана над каталогом: глаз читал их подряд, а не находил
+            нужную. Заголовок со значком занимал ещё строку и ничего не
+            сообщал — кнопки говорят сами за себя. */}
+        <Group gap={6} wrap="nowrap" className="parts-category-row">
+          <Button size="compact-sm" radius="xl" variant={!partType ? "filled" : "default"} color="indigo" onClick={() => selectPartType(null)}>Все</Button>
           {PART_TYPES.map((t) => (
-            <Button key={t.value} size="compact-sm" radius="md" variant={partType === t.value ? "filled" : "default"} color="indigo" onClick={() => selectPartType(partType === t.value ? null : t.value)}>{t.label}</Button>
+            <Button key={t.value} size="compact-sm" radius="xl" variant={partType === t.value ? "filled" : "default"} color="indigo" onClick={() => selectPartType(partType === t.value ? null : t.value)}>{t.label}</Button>
           ))}
         </Group>
         <Group className="parts-condition-shortcuts" gap={6} wrap="wrap">
@@ -332,12 +335,21 @@ function PartsContent() {
           </Group>
         </Group>
 
-        {CategoryBar}
+        {/* Фильтры показываются, когда есть что фильтровать.
 
-        <Group gap="md" align="stretch" className="parts-workspace" wrap="wrap">
-          <Box style={{ flex: 1, minWidth: 0 }}>{FilterBar}</Box>
-          <Box className="parts-vehicle-inline">{VehiclePicker}</Box>
-        </Group>
+            Пять блоков стояли над пустым каталогом: человек видел стену
+            полей, которыми нечего настраивать, а приглашение разместить
+            первую запчасть уезжало за пределы экрана. */}
+        {(hasParts || hasActiveFilters) && (
+          <>
+            {CategoryBar}
+
+            <Group gap="md" align="stretch" className="parts-workspace" wrap="wrap">
+              <Box style={{ flex: 1, minWidth: 0 }}>{FilterBar}</Box>
+              <Box className="parts-vehicle-inline">{VehiclePicker}</Box>
+            </Group>
+          </>
+        )}
 
         {/* Область результатов держит высоту, пока данные не пришли.
 
