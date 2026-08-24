@@ -16,14 +16,14 @@
 
 .title {
   margin: 0;
-  color: #172033;
+  color: var(--market-ink);
   font: 850 clamp(1.5rem, 3vw, 2rem) / 1.08 var(--font-display), sans-serif;
   letter-spacing: -0.025em;
 }
 
 .subtitle {
   margin: 5px 0 0;
-  color: #64748b;
+  color: var(--market-muted);
   font-size: var(--text-sm);
 }
 
@@ -39,7 +39,7 @@
 
 .price {
   flex-shrink: 0;
-  color: #102a59;
+  color: var(--market-primary);
   font: 850 clamp(1.4rem, 3vw, 1.75rem) / 1 var(--font-display), sans-serif;
 }
 

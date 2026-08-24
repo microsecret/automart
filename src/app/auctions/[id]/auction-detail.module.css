@@ -14,6 +14,29 @@
   pointer-events: none;
 }
 
+.identityPill {
+  min-width: 0;
+  background: var(--market-surface-subtle);
+}
+
+.equipmentPanel {
+  background: linear-gradient(135deg, var(--market-surface-subtle) 0%, var(--market-surface) 56%);
+}
+
+.conditionPanel {
+  border-color: var(--market-success-line);
+  background: linear-gradient(135deg, var(--market-success-surface) 0%, var(--market-surface) 58%);
+}
+
+.conditionMetric {
+  background: color-mix(in srgb, var(--market-surface) 88%, transparent);
+}
+
+.orderCard {
+  border-color: var(--market-warning-line);
+  background: linear-gradient(135deg, var(--market-warning-surface) 0%, var(--market-surface) 100%);
+}
+
 .similarCard {
   display: flex;
   flex-direction: column;

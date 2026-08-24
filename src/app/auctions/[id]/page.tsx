@@ -312,7 +312,7 @@ function AuctionDetail() {
           </Button>
           <Button component={Link} href="/" variant="default" radius="xl" size="compact-sm" leftSection={<IconHome size={14} />}>Главная</Button>
           <Button component={Link} href="/auctions" variant="light" color="indigo" radius="xl" size="compact-sm" leftSection={<IconGavel size={14} />}>Все аукционы</Button>
-          <Paper px="sm" py={5} radius="xl" withBorder style={{ minWidth: 0, background: "#f8fafc" }}>
+          <Paper px="sm" py={5} radius="xl" withBorder className={styles.identityPill}>
             <Text size="xs" fw={700} c="var(--market-ink)" lineClamp={1}>{publicIdentity.title}</Text>
           </Paper>
         </Group>
@@ -415,7 +415,7 @@ function AuctionDetail() {
                       {publicSpecs.map((item) => (
                         <Group key={`${item.label}-${item.detail}`} justify="space-between" align="flex-start" gap="md" py="xs" px={{ base: 0, sm: "xs" }} wrap="nowrap" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
                           <Text size="sm" c="dimmed">{item.label}</Text>
-                          <Text size="sm" fw={item.available ? 700 : 500} ta="right" c={item.available ? "dark.8" : "gray.5"} style={{ overflowWrap: "anywhere" }}>{item.detail}</Text>
+                          <Text size="sm" fw={item.available ? 700 : 500} ta="right" c={item.available ? "var(--market-ink)" : "dimmed"} style={{ overflowWrap: "anywhere" }}>{item.detail}</Text>
                         </Group>
                       ))}
                     </SimpleGrid>
@@ -429,7 +429,7 @@ function AuctionDetail() {
                 </Paper>
 
               {equipment && (
-                <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f8fafc 0%, #fff 56%)" }}>
+                <Paper radius="md" p="md" withBorder className={styles.equipmentPanel}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
                       <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconCheck size={18} /></ThemeIcon><Box><Text fw={700} c="var(--market-ink)">Оснащение автомобиля</Text><Text size="xs" c="dimmed">Ключевые опции, отмеченные в открытой карточке {auctionSourceLabel(listing.source)}</Text></Box></Group>
@@ -437,7 +437,7 @@ function AuctionDetail() {
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                       {equipment.items.map((item) => (
-                        <Group key={item.label} gap="sm" justify="space-between" wrap="nowrap" p="xs" style={{ border: `1px solid ${item.available ? "var(--market-success-line)" : "#e2e8f0"}`, borderRadius: 10, background: item.available ? "var(--market-success-surface)" : "#f8fafc" }}>
+                        <Group key={item.label} gap="sm" justify="space-between" wrap="nowrap" p="xs" style={{ border: `1px solid ${item.available ? "var(--market-success-line)" : "var(--market-line)"}`, borderRadius: 10, background: item.available ? "var(--market-success-surface)" : "var(--market-surface-subtle)" }}>
                           <Group gap={7} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color={item.available ? "teal" : "gray"} variant="light">{item.available ? <IconCheck size={13} /> : <IconX size={13} />}</ThemeIcon><Text size="sm" fw={600}>{item.label}</Text></Group>
                           <Badge size="xs" color={item.available ? "teal" : "gray"} variant="light">{item.available ? "Есть" : "Нет"}</Badge>
                         </Group>
@@ -451,16 +451,16 @@ function AuctionDetail() {
               {conditionInfo?.damageReport && <AuctionDamageReport report={conditionInfo.damageReport} />}
 
               {conditionInfo && (
-                <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #fff 58%)", borderColor: "#99f6e4" }}>
+                <Paper radius="md" p="md" withBorder className={styles.conditionPanel}>
                   <Stack gap="sm">
                     <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
                       <Group gap="sm"><ThemeIcon variant="light" color={isRentalTransfer ? "blue" : "teal"} radius="md"><IconShieldCheck size={18} /></ThemeIcon><Box><Text fw={700} c="var(--market-ink)">{isRentalTransfer ? "Условия договора по данным" : "Проверка и история по данным"} {auctionSourceLabel(listing.source)}</Text><Text size="xs" c="dimmed">Показатели из открытой карточки источника</Text></Box></Group>
                       <Badge variant="light" color={isRentalTransfer ? "blue" : "teal"}>{isRentalTransfer ? "Не является ценой продажи" : "Проверяйте перед сделкой"}</Badge>
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: conditionInfo.newCarPriceRatioPct !== null ? 3 : 2 }} spacing="xs">
-                      {conditionInfo.newCarPriceRatioPct !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Цена относительно нового авто</Text><Group justify="space-between" mt={3}><Text fw={800} c="teal.8">{conditionInfo.newCarPriceRatioPct}%</Text><Text size="xs" c="dimmed">сравнение {auctionSourceLabel(listing.source)}</Text></Group><Progress value={conditionInfo.newCarPriceRatioPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
-                      {conditionInfo.inspectionSummary && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Техосмотр</Text><Text fw={700} size="sm" mt={4}>{conditionInfo.inspectionSummary}</Text></Paper>}
-                      {conditionInfo.insuranceRecordCount !== null && <Paper p="xs" radius="md" withBorder style={{ background: "rgba(255,255,255,.76)" }}><Text size="xs" c="dimmed">Страховые записи</Text><Text fw={800} size="lg" c="teal.8" mt={1}>{conditionInfo.insuranceRecordCount}</Text></Paper>}
+                      {conditionInfo.newCarPriceRatioPct !== null && <Paper p="xs" radius="md" withBorder className={styles.conditionMetric}><Text size="xs" c="dimmed">Цена относительно нового авто</Text><Group justify="space-between" mt={3}><Text fw={800} c="var(--market-success-text)">{conditionInfo.newCarPriceRatioPct}%</Text><Text size="xs" c="dimmed">сравнение {auctionSourceLabel(listing.source)}</Text></Group><Progress value={conditionInfo.newCarPriceRatioPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
+                      {conditionInfo.inspectionSummary && <Paper p="xs" radius="md" withBorder className={styles.conditionMetric}><Text size="xs" c="dimmed">Техосмотр</Text><Text fw={700} size="sm" mt={4}>{conditionInfo.inspectionSummary}</Text></Paper>}
+                      {conditionInfo.insuranceRecordCount !== null && <Paper p="xs" radius="md" withBorder className={styles.conditionMetric}><Text size="xs" c="dimmed">Страховые записи</Text><Text fw={800} size="lg" c="var(--market-success-text)" mt={1}>{conditionInfo.insuranceRecordCount}</Text></Paper>}
                     </SimpleGrid>
                     {conditionInfo.verifiedItems.length > 0 && <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                       {conditionInfo.verifiedItems.map((item) => <Paper key={`${item.label}-${item.status}`} p="xs" radius="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}><Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="teal" variant="light"><IconCheck size={13} /></ThemeIcon><Box><Text size="xs" c="dimmed">{item.label}</Text><Text fw={700} size="sm" c="var(--mantine-color-teal-text)">{item.status}</Text></Box></Group></Paper>)}
@@ -502,7 +502,7 @@ function AuctionDetail() {
 
           {/* Правая — заявка */}
           <Box className="auction-detail-layout__aside">
-            <Paper id="order" radius="md" p="lg" withBorder style={{ position: hasWideAuctionLayout ? undefined : "static", scrollMarginTop: 96, borderColor: "var(--market-warning-line)", background: "linear-gradient(135deg, #fff7ed 0%, #fff 100%)" }}>
+            <Paper id="order" radius="md" p="lg" withBorder className={styles.orderCard} style={{ position: hasWideAuctionLayout ? undefined : "static", scrollMarginTop: 96 }}>
               {submitted ? (
                 <Stack gap="md" align="center" py="md">
                   <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>
@@ -573,7 +573,7 @@ function AuctionDetail() {
                       </Group>
                       <Group justify="space-between" gap="xs" wrap="nowrap" className={styles.similarPriceRow}>
                         <Box>
-                          <Text fw={800} c="indigo.8">{formatPriceShort(similarListing.finalPrice)}</Text>
+                          <Text fw={800} c="var(--market-primary)">{formatPriceShort(similarListing.finalPrice)}</Text>
                           <Text size="10px" c="dimmed">предварительно под ключ</Text>
                         </Box>
                         <ThemeIcon variant="light" color="indigo" radius="xl" size={30}><IconArrowRight size={16} /></ThemeIcon>
