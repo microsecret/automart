@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
 import { Box, Group, Text, ThemeIcon, UnstyledButton } from "@mantine/core"
 import {
   IconCar,
@@ -26,13 +27,34 @@ const ITEM_ICONS = {
   profile: IconSettings,
 } satisfies Record<(typeof DASHBOARD_NAVIGATION)[number]["id"], typeof IconTag>
 
+/**
+ * Какой раздел кабинета открыт.
+ *
+ * Определяется по адресу, а не передаётся свойством: так полоса живёт в
+ * общей раскладке и её нельзя забыть, добавляя новую страницу.
+ */
+function resolveActiveId(pathname: string, tab: string | null): string | undefined {
+  if (pathname.startsWith("/dashboard/deliveries")) return "deliveries"
+  if (pathname.startsWith("/dashboard/documents")) return "documents"
+  if (pathname.startsWith("/favorites")) return "favorites"
+  if (pathname.startsWith("/messages")) return "messages"
+  if (pathname !== "/dashboard") return undefined
+
+  // Разделы самой страницы кабинета живут в строке запроса.
+  if (tab === "garage" || tab === "payments" || tab === "profile") return tab
+  return "listings"
+}
+
 export default function DashboardNav({ active }: { active?: string }) {
+  const pathname = usePathname() || ""
+  const tab = useSearchParams().get("tab")
+  const activeId = active ?? resolveActiveId(pathname, tab)
   return (
     <Box component="nav" className={styles.nav} aria-label="Разделы личного кабинета">
       <Group gap={4} wrap="nowrap" className={styles.track}>
         {DASHBOARD_NAVIGATION.map((item) => {
           const Icon = ITEM_ICONS[item.id]
-          const isActive = active === item.id
+          const isActive = activeId === item.id
           return (
             <UnstyledButton
               key={item.id}

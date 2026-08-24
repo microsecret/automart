@@ -4,7 +4,6 @@ import Link from "next/link"
 import useSWR from "swr"
 import { Badge, Box, Button, Center, Group, Paper, Skeleton, Stack, Text, ThemeIcon, Title } from "@mantine/core"
 import { IconDownload, IconFileDescription, IconFolderOpen, IconTruckDelivery } from "@tabler/icons-react"
-import DashboardNav from "@/components/dashboard/DashboardNav"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
@@ -47,13 +46,11 @@ export default function DashboardDocumentsPage() {
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" gap="md">
           <Stack gap={3}>
-            <Title order={1} size="h2">Мои документы</Title>
+            <Title order={1} size="h3">Мои документы</Title>
             <Text c="dimmed">Счета, договоры, квитанции и файлы по вашим доставкам в одном месте.</Text>
           </Stack>
           <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" leftSection={<IconTruckDelivery size={16} />}>Открыть доставки</Button>
         </Group>
-
-        <DashboardNav active="documents" />
 
         {isLoading ? (
           <Stack gap="xs">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} height={76} radius="md" />)}</Stack>

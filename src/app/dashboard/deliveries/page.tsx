@@ -10,7 +10,6 @@ import { IconArrowRight, IconBuildingWarehouse, IconCheck, IconChevronRight, Ico
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
-import DashboardNav from "@/components/dashboard/DashboardNav"
 import { formatPriceShort } from "@/lib/format"
 
 const sourceOptions = [
@@ -218,13 +217,12 @@ function DeliveriesWorkspace() {
   return (
     <Box p={{ base: "sm", md: "lg" }}>
       <Stack gap="md">
-        <DashboardNav active="deliveries" />
         <Paper radius="xl" p={{ base: "lg", md: 36 }} style={{ color: "white", overflow: "hidden", position: "relative", isolation: "isolate", background: "radial-gradient(circle at 88% 14%, rgba(139,92,246,.72), transparent 29%), linear-gradient(126deg, #071329 0%, #142c63 52%, #4038b9 100%)", boxShadow: "0 24px 60px rgba(25, 48, 103, .22)" }}>
           <Box aria-hidden style={{ position: "absolute", width: 260, height: 260, borderRadius: "50%", border: "1px solid rgba(255,255,255,.14)", right: -70, bottom: -150, zIndex: -1 }} />
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
             <Stack gap="xs" maw={650}>
               <Group gap="xs"><ThemeIcon size={36} radius="md" variant="white" color="indigo"><IconRoute size={19} /></ThemeIcon><Badge color="indigo" variant="white">Международная доставка</Badge></Group>
-              <Title order={1} fz={{ base: 28, md: 42 }} lh={1.04} lts="-.025em" ff="var(--font-display), sans-serif">Маршрут, документы и статусы — в одном кабинете</Title>
+              <Title order={1} size="h3" lh={1.04} lts="-.025em" ff="var(--font-display), sans-serif">Маршрут, документы и статусы — в одном кабинете</Title>
               <Text c="rgba(255,255,255,.8)" size="md" maw={610}>Сопровождаем автомобиль или запчасть от зарубежной площадки до выдачи в вашем городе. Партнёры и реквизиты появляются только после проверки.</Text>
               <Group gap="xs" mt="xs"><Badge color="cyan" variant="light">Прозрачные этапы</Badge><Badge color="violet" variant="light">Раздельные счета</Badge><Badge color="teal" variant="light">Проверенные партнёры</Badge></Group>
             </Stack>

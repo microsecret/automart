@@ -14,7 +14,6 @@ import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import DashboardNav from "@/components/dashboard/DashboardNav"
 import ShareInviteCard from "@/components/dashboard/ShareInviteCard"
 import GaragePanel, { type GarageResponse } from "@/components/dashboard/GaragePanel"
 import PromotionPanel, { type PromotionOrder } from "@/components/dashboard/PromotionPanel"
@@ -245,8 +244,6 @@ function DashboardContent() {
           </Group>
           <Button component={Link} href="/listings/create/vehicle" leftSection={<IconPlus size={16} />} color="indigo" radius="md" size="sm">Разместить</Button>
         </Group>
-
-        <DashboardNav active={tab} />
 
         {/* Момент сразу после регистрации — лучший, чтобы человек позвал
             знакомых: он как раз занят покупкой и разговаривает об этом. */}
