@@ -179,7 +179,8 @@ type AdminStats = {
     label: string
     total: number
     quarantined: number
-    fields: Array<{ key: string; label: string; filled: number; percent: number | null }>
+    completenessPercent: number | null
+    fields: Array<{ key: string; label: string; filled: number; missing: number; percent: number | null }>
   }>
   sourceTransport: {
     configured: number
@@ -748,7 +749,7 @@ export default function AdminDashboard() {
               <ThemeIcon variant="light" color="grape" size={36} radius="md"><IconListCheck size={18} /></ThemeIcon>
               <Stack gap={1}>
                 <Text size="sm" fw={700}>Полнота полей по источникам</Text>
-                <Text size="xs" c="dimmed">Доля лотов с заполненным полем. Низкий процент — пробел в парсере либо поле, которого нет у площадки.</Text>
+                <Text size="xs" c="dimmed">Только активные публичные лоты. Низкий процент — сигнал проверить парсер или доступность поля у площадки.</Text>
               </Stack>
             </Group>
             {data.sourceFieldMatrix.some((row) => row.quarantined > 0) && (
@@ -764,16 +765,37 @@ export default function AdminDashboard() {
                   <Group justify="space-between" mb={8} wrap="wrap" gap="xs">
                     <Group gap="xs">
                       <Text size="sm" fw={700}>{row.label}</Text>
-                      <Badge size="xs" variant="light" color="gray">{row.total.toLocaleString("ru-RU")} лотов</Badge>
+                      <Badge size="xs" variant="light" color="gray">{row.total.toLocaleString("ru-RU")} активных лотов</Badge>
+                      {row.completenessPercent !== null && (
+                        <Badge
+                          size="xs"
+                          variant="light"
+                          color={row.completenessPercent >= 80 ? "teal" : row.completenessPercent >= 50 ? "yellow" : "red"}
+                        >
+                          Полнота {row.completenessPercent}%
+                        </Badge>
+                      )}
                     </Group>
                     {row.quarantined > 0 && <Badge size="xs" variant="light" color="orange">Скрыто: {row.quarantined}</Badge>}
                   </Group>
+                  {row.total > 0 && row.fields.some((field) => field.percent !== null && field.percent < 40) && (
+                    <Group gap={5} mb="xs" wrap="wrap">
+                      <Text size="10px" c="dimmed">Требуют проверки:</Text>
+                      {row.fields.filter((field) => field.percent !== null && field.percent < 40).map((field) => (
+                        <Badge key={field.key} size="xs" variant="outline" color="red">
+                          {field.label}: {field.percent}%
+                        </Badge>
+                      ))}
+                    </Group>
+                  )}
                   <SimpleGrid cols={{ base: 2, sm: 3, lg: 5 }} spacing="xs">
                     {row.fields.map((field) => (
                       <Box key={field.key}>
                         <Group justify="space-between" gap={4} wrap="nowrap">
                           <Text size="xs" c="dimmed" truncate>{field.label}</Text>
-                          <Text size="xs" fw={700}>{field.percent === null ? "—" : `${field.percent}%`}</Text>
+                          <Text size="xs" fw={700} title={field.percent === null ? "Нет активных лотов" : `${field.filled} из ${row.total}`}>
+                            {field.percent === null ? "—" : `${field.percent}%`}
+                          </Text>
                         </Group>
                         <Progress
                           mt={3}

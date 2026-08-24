@@ -280,6 +280,15 @@ async function run() {
   record("admin dashboard exposes real support counters", Number.isSafeInteger(adminStats?.operations?.openSupportTickets) && Number.isSafeInteger(adminStats?.counts?.supportTickets), `${adminStats?.operations?.openSupportTickets ?? "missing"} open`)
   record("admin dashboard separates views, visitors, sessions and authenticated users", adminStats?.traffic?.pageViewsWeek >= 1 && adminStats?.traffic?.uniqueVisitorsWeek >= 1 && adminStats?.traffic?.sessionsWeek >= 1 && adminStats?.traffic?.authenticatedVisitorsWeek >= 1 && adminStats?.traffic?.attributedRegistrationsWeek >= 0 && adminStats?.traffic?.registrationConversionWeek <= 100 && adminStats?.traffic?.devices?.some((item) => item.key === "MOBILE") && adminStats?.traffic?.sources?.some((item) => item.key === "UTM:TELEGRAM"), `${adminStats?.traffic?.pageViewsWeek ?? 0} views · ${adminStats?.traffic?.uniqueVisitorsWeek ?? 0} visitors · ${adminStats?.traffic?.registrationConversionWeek ?? 0}% conversion`)
   record("source transport reports a valid bounded TCP pool", adminStats?.sourceTransport?.configurationValid === true && adminStats?.sourceTransport?.active + adminStats?.sourceTransport?.quarantined === adminStats?.sourceTransport?.configured && adminStats?.sourceTransport?.maxConnectionsPerProxy >= 1 && adminStats?.sourceTransport?.maxConnectionsPerProxy <= 50 && adminStats?.sourceTransport?.hardLimit === 50, `${adminStats?.sourceTransport?.active ?? 0}/${adminStats?.sourceTransport?.configured ?? 0} active · cap ${adminStats?.sourceTransport?.maxConnectionsPerProxy ?? "missing"}`)
+  const encarFieldMatrix = adminStats?.sourceFieldMatrix?.find((source) => source.source === "ENCAR")
+  record(
+    "source field matrix measures only current public lots and keeps quality quarantine separate",
+    encarFieldMatrix?.total === 2
+      && encarFieldMatrix?.quarantined === 1
+      && Number.isInteger(encarFieldMatrix?.completenessPercent)
+      && encarFieldMatrix?.fields?.every((field) => field.filled <= encarFieldMatrix.total && field.missing === encarFieldMatrix.total - field.filled),
+    encarFieldMatrix ? `${encarFieldMatrix.total} public · ${encarFieldMatrix.quarantined} held · ${encarFieldMatrix.completenessPercent}% complete` : "ENCAR missing",
+  )
   await prisma.user.update({ where: { id: revocableAdministrator.id }, data: { role: "USER" } })
   await expect("/api/admin/stats", revocableAdminCookie, 403)
   record("administrator role revocation takes effect on the next request", true, revocableAdministrator.id)

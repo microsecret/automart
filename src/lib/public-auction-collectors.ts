@@ -13,6 +13,11 @@ import { authorizedSourceGet } from "@/lib/authorized-source-http"
 import { extractIautosImages } from "@/lib/iautos-images"
 import { translateModelName } from "@/lib/nvidia-translate"
 import { lookupVehiclePower } from "@/lib/vehicle-power-reference"
+import {
+  auctionSourceHtmlText as htmlText,
+  auctionSourceTablePairs,
+  decodeAuctionSourceHtml as decodeHtml,
+} from "@/lib/auction-source-table.mjs"
 
 export const PUBLIC_AUCTION_SOURCES = [
   "IAUTOS",
@@ -446,27 +451,6 @@ function modelYearFromText(...values: Array<string | null | undefined>) {
     if (Number.isInteger(year) && year >= 1886 && year <= currentYear + 1) return year
   }
   return null
-}
-
-function decodeHtml(value: string) {
-  return value
-    .replace(/&nbsp;|&#160;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-}
-
-function htmlText(value: string | null | undefined) {
-  if (!value) return null
-  return decodeHtml(value)
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n\s+/g, "\n")
-    .trim() || null
 }
 
 function bobaedreamWon(value: string | null | undefined) {
@@ -935,13 +919,7 @@ function overviewPairs(html: string) {
 }
 
 function tablePairs(html: string) {
-  const result = new Map<string, string>()
-  for (const match of html.matchAll(/<th[^>]*>([\s\S]*?)<\/th>\s*<td[^>]*>([\s\S]*?)<\/td>/gi)) {
-    const key = htmlText(match[1])
-    const value = htmlText(match[2])
-    if (key && value) result.set(key, value)
-  }
-  return result
+  return auctionSourceTablePairs(html) as Map<string, string>
 }
 
 function sourcePowerHorsepower(value: unknown) {
@@ -1221,7 +1199,12 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
   const mileage = asNumber(pairs.get("Mileage")?.replace(/[^\d]/g, ""))
   const fuelType = normalizeAuctionFuelType(pairs.get("Fuel"))
   const transmission = normalizeAuctionTransmission(pairs.get("Transmission"))
-  const bodyType = normalizeAuctionBodyType(pairs.get("Body Type") || pairs.get("BodyType") || pairs.get("Vehicle Type"))
+  const bodyType = normalizeAuctionBodyType(
+    pairs.get("Body Type")
+      || pairs.get("BodyType")
+      || pairs.get("Vehicle Type")
+      || firstMatch(html, /\bspec_type=["']([^"']+)["']/i),
+  )
   const driveType = normalizeAuctionDriveType(pairs.get("Drive"))
   const power = sourcePowerHorsepower(pairs.get("Max Power") || pairs.get("Maximum Power"))
   const seats = asNumber(pairs.get("Seats")?.replace(/[^\d]/g, ""))

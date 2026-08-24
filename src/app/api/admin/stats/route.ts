@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { hoursSince } from "@/lib/queue-age"
 import { prisma } from "@/lib/prisma"
 import { AUCTION_SOURCE_MISSING_VALUE } from "@/lib/auction-source-details"
+import { QUALITY_HOLD_PREFIX } from "@/lib/auction-quality"
 import { AUCTION_SOURCE_OPTIONS, AUCTION_SOURCE_PIPELINES, auctionSourceCountry } from "@/lib/auction-sources"
 import { sourceProxyPoolStatus } from "@/lib/authorized-source-http"
 import { percentageChange, trafficVisitorIdentity } from "@/lib/analytics-identity"
@@ -403,9 +404,13 @@ export async function GET() {
     } catch {
       partnerFeedConfigurationValid = false
     }
-    // Матрица полноты полей: показывает, какие атрибуты источник реально
-    // отдаёт. Ставится по фактическим лотам, поэтому «пустая» колонка означает
-    // либо пробел в парсере, либо отсутствие поля у площадки.
+    // Матрица полноты полей строится только по текущему публичному каталогу.
+    // Старые, снятые и скрытые карточки описывают прошлую версию парсера и
+    // искажали диагностику после исправлений источника.
+    const publicAuctionWhere: Prisma.AuctionListingWhereInput = {
+      status: "ACTIVE",
+      adminHiddenAt: null,
+    }
     const publishedSourceSpec = (label: string): Prisma.AuctionListingWhereInput => ({
       AND: [
         { specsRu: { contains: `${label}:` } },
@@ -440,12 +445,16 @@ export async function GET() {
     ]
 
     const [sourceTotals, sourceQuarantined, ...sourceFieldCounts] = await Promise.all([
-      prisma.auctionListing.groupBy({ by: ["source"], _count: { _all: true } }),
-      prisma.auctionListing.groupBy({ by: ["source"], where: { adminHiddenAt: { not: null } }, _count: { _all: true } }),
+      prisma.auctionListing.groupBy({ by: ["source"], where: publicAuctionWhere, _count: { _all: true } }),
+      prisma.auctionListing.groupBy({
+        by: ["source"],
+        where: { status: "POLICY_EXCLUDED", adminHiddenReason: { startsWith: QUALITY_HOLD_PREFIX } },
+        _count: { _all: true },
+      }),
       ...QUALITY_FIELDS.map((field) =>
         prisma.auctionListing.groupBy({
           by: ["source"],
-          where: field.where,
+          where: { AND: [publicAuctionWhere, field.where] },
           _count: { _all: true },
         }),
       ),
@@ -460,24 +469,30 @@ export async function GET() {
 
     const sourceFieldMatrix = AUCTION_SOURCE_OPTIONS.map((source) => {
       const total = totalBySource.get(source.value) || 0
+      const fields = filledBySourceField.map(({ field, counts }) => {
+        const filled = Math.min(total, counts.get(source.value) || 0)
+        return {
+          key: field.key,
+          label: field.label,
+          filled,
+          missing: Math.max(0, total - filled),
+          // Без лотов процент не считается: 0 из 0 — это «нет данных», а не
+          // «источник ничего не отдаёт».
+          percent: total > 0 ? Math.round((filled / total) * 100) : null,
+        }
+      })
+      const totalFieldSlots = total * fields.length
+      const filledFieldSlots = fields.reduce((sum, field) => sum + field.filled, 0)
       return {
         source: source.value,
         label: source.label,
         total,
         quarantined: quarantinedBySource.get(source.value) || 0,
-        fields: filledBySourceField.map(({ field, counts }) => {
-          const filled = counts.get(source.value) || 0
-          return {
-            key: field.key,
-            label: field.label,
-            filled,
-            // Без лотов процент не считается: 0 из 0 — это «нет данных», а не
-            // «источник ничего не отдаёт».
-            percent: total > 0 ? Math.round((filled / total) * 100) : null,
-          }
-        }),
+        completenessPercent: totalFieldSlots > 0 ? Math.round((filledFieldSlots / totalFieldSlots) * 100) : null,
+        fields,
       }
-    }).filter((row) => row.total > 0)
+    }).filter((row) => row.total > 0 || row.quarantined > 0)
+      .sort((left, right) => (left.completenessPercent ?? 101) - (right.completenessPercent ?? 101) || right.total - left.total)
 
     const sourceCoverage = AUCTION_SOURCE_OPTIONS.map((source) => {
       const pipeline = AUCTION_SOURCE_PIPELINES[source.value]
