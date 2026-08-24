@@ -19,14 +19,10 @@ export const QUIET_HOURS_OK = 6
 /** Сколько часов тишины — уже поломка. */
 export const QUIET_HOURS_BROKEN = 24
 
-export type FeedState = "ok" | "quiet" | "broken" | "empty"
-
-export type FeedCheck = {
-  state: FeedState
-  /** Часов с последней новости; null — новостей нет вовсе. */
-  hoursSilent: number | null
-  message: string
-}
+/**
+ * @typedef {"ok" | "quiet" | "broken" | "empty"} FeedState
+ * @typedef {{ state: FeedState, hoursSilent: number | null, message: string }} FeedCheck
+ */
 
 /**
  * Оценка состояния канала.
@@ -36,7 +32,7 @@ export type FeedCheck = {
  * поднимать тревогу на каждой такой паузе значит приучить не смотреть на
  * предупреждения вовсе.
  */
-export function checkNewsFeed(lastPublishedAt: Date | string | null | undefined, now: Date = new Date()): FeedCheck {
+export function checkNewsFeed(lastPublishedAt, now = new Date()) {
   const last = toDate(lastPublishedAt)
 
   if (!last) {
@@ -80,12 +76,12 @@ export function checkNewsFeed(lastPublishedAt: Date | string | null | undefined,
 }
 
 /** Нужно ли поднимать тревогу. */
-export function isFeedBroken(check: FeedCheck): boolean {
+export function isFeedBroken(check) {
   return check.state === "broken" || check.state === "empty"
 }
 
 /** «26,4 часа» — с русским склонением, а не «26.4 hours». */
-function formatHours(hours: number): string {
+function formatHours(hours) {
   const whole = Math.floor(hours)
   const text = Number.isInteger(hours) ? String(whole) : String(hours).replace(".", ",")
 
@@ -98,7 +94,7 @@ function formatHours(hours: number): string {
   return `${text} часов`
 }
 
-function toDate(value: Date | string | null | undefined): Date | null {
+function toDate(value) {
   if (!value) return null
   const date = value instanceof Date ? value : new Date(value)
   return Number.isNaN(date.getTime()) ? null : date

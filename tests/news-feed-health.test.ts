@@ -1,7 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-// @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { checkNewsFeed, isFeedBroken } from "../src/lib/news-feed-health.ts"
+import { checkNewsFeed, isFeedBroken } from "../src/lib/news-feed-health.js"
 
 const NOW = new Date("2026-08-24T12:00:00Z")
 

@@ -12,7 +12,7 @@
  */
 
 import { PrismaClient } from "@prisma/client"
-import { checkNewsFeed, isFeedBroken } from "../src/lib/news-feed-health.ts"
+import { checkNewsFeed, isFeedBroken } from "../src/lib/news-feed-health.js"
 
 const prisma = new PrismaClient()
 
