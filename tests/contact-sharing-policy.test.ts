@@ -21,11 +21,19 @@ test("blocks phone numbers written as words", () => {
   assert.equal(inspectContactSharing("плюс 7 девять восемь семь 015 семь один 46").allowed, false)
 })
 
+test("blocks Unicode and zero-width phone obfuscation", () => {
+  assert.equal(inspectContactSharing("+٧ (٩٨٧) ٠١٥-٧١-٤٦").allowed, false)
+  assert.equal(inspectContactSharing("8\u200b9\u200b1\u200b2\u200b3\u200b4\u200b5\u200b6\u200b7\u200b8\u200b9").allowed, false)
+  assert.equal(inspectContactSharing("8️⃣9️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣").allowed, false)
+})
+
 test("blocks email, obfuscated email, links and messenger handles", () => {
   assert.equal(inspectContactSharing("mail@example.ru").allowed, false)
   assert.equal(inspectContactSharing("mail собака example точка ru").allowed, false)
   assert.equal(inspectContactSharing("https://example.ru/profile").allowed, false)
   assert.equal(inspectContactSharing("Напишите в телеграм @dealer_ufa").allowed, false)
+  assert.equal(inspectContactSharing("mail@exa\u200bmple.ru").allowed, false)
+  assert.equal(inspectContactSharing("Напишите в tеlеgгam @dealer_ufa").allowed, false)
 })
 
 test("audit summary never contains rejected content", () => {

@@ -13,11 +13,11 @@ export type ContactPolicyResult = {
   reasonCodes: ContactReasonCode[]
 }
 
-const PHONE_PATTERN = /(?:\+?\d[\s().\-–—]*){10,15}/u
+const PHONE_PATTERN = /(?:\+?\d[\s()./\\\-–—·•\p{So}]*){10,15}/u
 const EMAIL_PATTERN = /[\p{L}\d._%+-]+@[\p{L}\d.-]+\.[\p{L}]{2,}/iu
 const OBFUSCATED_EMAIL_PATTERN = /[\p{L}\d._-]+\s*(?:@|\(?\s*собак[аиу]?\s*\)?|\[?\s*at\s*\]?)\s*[\p{L}\d.-]+\s*(?:\.|\(?\s*точк[аиу]?\s*\)?|\[?\s*dot\s*\]?)\s*[\p{L}]{2,}/iu
 const LINK_PATTERN = /(?:https?:\/\/|www\.|(?:t|wa)\.me\/|[\p{L}\d-]+\.(?:ru|рф|com|net|org|io|me|app)(?:\/|\b))/iu
-const MESSENGER_PATTERN = /\b(?:telegram|телеграм(?:м|е|а)?|телега|whatsapp|ватсап|вотсап|viber|вайбер|signal|сигнал)\b/iu
+const MESSENGER_PATTERN = /\b(?:telegram|t[eе]l[eе]g[rг][aа]m|телеграм(?:м|е|а)?|телега|whatsapp|wh[aа]ts[aа]pp|ватсап|вотсап|viber|вайбер|signal|сигнал)\b/iu
 const SOCIAL_HANDLE_PATTERN = /(?:^|\s)@[a-z\d_]{5,}\b/iu
 
 const DIGIT_WORDS: ReadonlyArray<readonly [RegExp, string]> = [
@@ -33,8 +33,26 @@ const DIGIT_WORDS: ReadonlyArray<readonly [RegExp, string]> = [
   [/(?<![\p{L}\p{N}_])(?:девять|nine)(?![\p{L}\p{N}_])/giu, "9"],
 ]
 
+const UNICODE_DECIMAL_ZERO_POINTS = [
+  0x0660, // Arabic-Indic
+  0x06f0, // Eastern Arabic-Indic
+  0x0966, // Devanagari
+] as const
+
+function normalizeUnicodeDigits(value: string) {
+  return value.replace(/\p{Nd}/gu, (digit) => {
+    const codePoint = digit.codePointAt(0)
+    if (codePoint === undefined) return digit
+    for (const zero of UNICODE_DECIMAL_ZERO_POINTS) {
+      if (codePoint >= zero && codePoint <= zero + 9) return String(codePoint - zero)
+    }
+    return digit
+  })
+}
+
 function normalizeDigitWords(value: string) {
-  return DIGIT_WORDS.reduce((normalized, [pattern, digit]) => normalized.replace(pattern, digit), value.normalize("NFKC"))
+  const visible = normalizeUnicodeDigits(value.normalize("NFKC").replace(/[\p{Cf}\u034f\u20e3\ufe0f]/gu, ""))
+  return DIGIT_WORDS.reduce((normalized, [pattern, digit]) => normalized.replace(pattern, digit), visible)
 }
 
 /**
