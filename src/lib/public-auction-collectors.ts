@@ -10,7 +10,7 @@ import {
   normalizeAuctionTransmission,
 } from "@/lib/auction-normalization"
 import { authorizedSourceGet } from "@/lib/authorized-source-http"
-import { PublicListingPolicyExcludedError, isCarsensorPriceOnRequest } from "@/lib/auction-source-policy"
+import { PublicListingPolicyExcludedError, isBobaedreamSoldListing, isCarsensorPriceOnRequest } from "@/lib/auction-source-policy"
 import { extractIautosImages } from "@/lib/iautos-images"
 import { translateModelName } from "@/lib/nvidia-translate"
 import { lookupVehiclePower } from "@/lib/vehicle-power-reference"
@@ -81,6 +81,7 @@ const JAPANESE_MAKES: Readonly<Record<string, string>> = {
   "メルセデス・ベンツ": "Mercedes-Benz", "フォルクスワーゲン": "Volkswagen",
   "アウディ": "Audi", "ポルシェ": "Porsche", "ボルボ": "Volvo", "プジョー": "Peugeot",
   "ルノー": "Renault", "シトロエン": "Citroen", "フィアット": "Fiat", "ミニ": "MINI",
+  "アバルト": "Abarth",
   "ランドローバー": "Land Rover", "ジャガー": "Jaguar", "ジープ": "Jeep",
   "シボレー": "Chevrolet", "フォード": "Ford", "ヒョンデ": "Hyundai", "起亜": "Kia",
 }
@@ -1071,7 +1072,7 @@ async function fetchBobaedreamListing(candidate: PublicAuctionCandidate): Promis
   const titleBlock = firstMatch(html, /<div class="title-area">[\s\S]*?<h3 class="tit">([\s\S]*?)<\/h3>/i)
   const title = htmlText(titleBlock)?.split("-")[0]?.trim() || null
   const priceTenThousandWon = asNumber(firstMatch(html, /<div class="price-area">[\s\S]*?<span class="price">\s*<b[^>]*>\s*([\d,]+)\s*<\/b>\s*만원/i)?.replace(/,/g, ""))
-  if (!title) throw new PublicListingUnavailableError(`Bobaedream: карточка ${candidate.sourceId} снята с публикации`)
+  if (!title || isBobaedreamSoldListing(html)) throw new PublicListingUnavailableError(`Bobaedream: карточка ${candidate.sourceId} снята с публикации`)
 
   const [rawMake, ...modelParts] = title.split(/\s+/)
   const make = normalizeAuctionMake(rawMake)

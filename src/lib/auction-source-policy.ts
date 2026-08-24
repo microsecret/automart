@@ -12,3 +12,7 @@ export function isPublicListingPolicyExcludedError(error: unknown): error is Pub
 export function isCarsensorPriceOnRequest(value: number | null) {
   return value !== null && Number.isFinite(value) && value >= 999_999_999
 }
+
+export function isBobaedreamSoldListing(html: string) {
+  return /\[\s*판매완료\s*\]/.test(html)
+}
