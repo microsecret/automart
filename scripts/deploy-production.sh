@@ -64,7 +64,12 @@ node scripts/audit-listing-integrity.mjs || echo "Warning: listing integrity aud
 if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-auction-rate-cron.sh || echo "Warning: auction-rate cron was not installed"
   bash scripts/install-encar-collector-cron.sh || echo "Warning: Encar collector cron was not installed"
-  bash scripts/install-auction-telegram-cron.sh || echo "Warning: auction Telegram cron was not installed"
+  # Инсталлятор получает только разрешающий флаг. Раньше deploy не загружал
+  # .env вообще, принимал значение по умолчанию `off` и удалял уже включённое
+  # расписание при каждом релизе.
+  auction_telegram_cron_flag="$(node --env-file=.env -p 'process.env.AUTOMART_AUCTION_TELEGRAM_CRON || "off"')"
+  AUTOMART_AUCTION_TELEGRAM_CRON="$auction_telegram_cron_flag" \
+    bash scripts/install-auction-telegram-cron.sh || echo "Warning: auction Telegram cron was not installed"
   bash scripts/install-partner-sla-cron.sh || echo "Warning: partner SLA cron was not installed"
   bash scripts/install-analytics-prune-cron.sh || echo "Warning: analytics prune cron was not installed"
   bash scripts/install-message-attachment-prune-cron.sh || echo "Warning: message attachment prune cron was not installed"
