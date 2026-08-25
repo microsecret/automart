@@ -2,8 +2,10 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import {
   auctionHighlightMinimumFields,
+  auctionHighlightMaximumPriceRatio,
   auctionHighlightReadiness,
   parseAuctionHighlightListingId,
+  publishedAuctionSourceValue,
 } from "../src/lib/auction-telegram-highlight.mjs"
 
 const completeListing = {
@@ -44,4 +46,19 @@ test("порог полноты ограничен безопасным диап
   assert.equal(auctionHighlightMinimumFields("2"), 8)
   assert.equal(auctionHighlightMinimumFields("99"), 15)
   assert.equal(auctionHighlightMinimumFields("12.5"), 12)
+})
+
+test("автоподборка по умолчанию принимает только отличную цену", () => {
+  assert.equal(auctionHighlightMaximumPriceRatio(undefined), 0.82)
+  assert.equal(auctionHighlightMaximumPriceRatio(""), 0.82)
+  assert.equal(auctionHighlightMaximumPriceRatio("0.7"), 0.7)
+  assert.equal(auctionHighlightMaximumPriceRatio("2"), 0.99)
+  assert.equal(auctionHighlightMaximumPriceRatio("мусор"), 0.82)
+})
+
+test("заглушки источника не попадают в продающий текст", () => {
+  assert.equal(publishedAuctionSourceValue("Не опубликовано\u00a0источником"), null)
+  assert.equal(publishedAuctionSourceValue("  нет   данных "), null)
+  assert.equal(publishedAuctionSourceValue("—"), null)
+  assert.equal(publishedAuctionSourceValue("13 900 000 KRW"), "13 900 000 KRW")
 })

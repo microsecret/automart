@@ -7,8 +7,10 @@ import { fileURLToPath } from "node:url"
 import { PrismaClient } from "@prisma/client"
 import {
   auctionHighlightMinimumFields,
+  auctionHighlightMaximumPriceRatio,
   auctionHighlightReadiness,
   parseAuctionHighlightListingId,
+  publishedAuctionSourceValue,
 } from "../src/lib/auction-telegram-highlight.mjs"
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
@@ -50,7 +52,7 @@ const minFinalPrice = Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_FINAL_PRI
 // Значение по умолчанию намеренно ниже `maxGreatDealRatio`, иначе диапазон
 // отбора становится пустым и лента молча перестаёт публиковаться.
 const minMedianRatio = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MIN_MEDIAN_RATIO || 0.35), 0), 0.95)
-const maxGreatDealRatio = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_PRICE_RATIO || 0.88), 0.01), 0.99)
+const maxGreatDealRatio = auctionHighlightMaximumPriceRatio(process.env.TELEGRAM_AUCTION_MAX_PRICE_RATIO)
 if (minMedianRatio > maxGreatDealRatio) {
   // Перевёрнутый диапазон делает отбор невыполнимым, а лента при этом молчит
   // без единой ошибки. Такую конфигурацию лучше остановить на старте.
@@ -150,9 +152,8 @@ function parseSourceSpecs(value) {
     const separator = item.indexOf(":")
     if (separator <= 0) return []
     const label = normalizeText(item.slice(0, separator))
-    const detail = normalizeText(item.slice(separator + 1))
+    const detail = publishedAuctionSourceValue(item.slice(separator + 1))
     if (!label || !detail) return []
-    if (detail === "Не опубликовано источником") return []
     return { label, detail }
   }).filter(Boolean)
 }
@@ -171,7 +172,7 @@ function sourceSpec(value, label) {
     const candidate = normalizeText(entry)?.toLocaleLowerCase("ru-RU")
     return candidate?.startsWith(`${normalized}:`)
   }) : null
-  return line ? line.slice(line.indexOf(":") + 1).trim() : null
+  return line ? publishedAuctionSourceValue(line.slice(line.indexOf(":") + 1)) : null
 }
 
 function inspectionRows(conditionValue, sourceValue) {

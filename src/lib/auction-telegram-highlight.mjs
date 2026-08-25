@@ -1,11 +1,33 @@
 export const AUCTION_HIGHLIGHT_FIELD_COUNT = 15
 export const DEFAULT_AUCTION_HIGHLIGHT_MIN_FIELDS = 12
+export const DEFAULT_AUCTION_HIGHLIGHT_MAX_PRICE_RATIO = 0.82
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 /** @param {unknown} value */
 function meaningfulText(value) {
   return typeof value === "string" && value.trim().length > 0
+}
+
+const UNPUBLISHED_SOURCE_VALUES = new Set([
+  "не опубликовано источником",
+  "не указано",
+  "нет данных",
+  "n/a",
+  "—",
+  "-",
+])
+
+/**
+ * Возвращает только значение, которое можно честно показать в публикации.
+ * Источники используют обычные и неразрывные пробелы в одной и той же
+ * заглушке, поэтому сравнение идёт после их схлопывания.
+ * @param {unknown} value
+ */
+export function publishedAuctionSourceValue(value) {
+  if (!meaningfulText(value)) return null
+  const normalized = String(value).trim().replace(/\s+/g, " ")
+  return UNPUBLISHED_SOURCE_VALUES.has(normalized.toLocaleLowerCase("ru-RU")) ? null : normalized
 }
 
 /** @param {unknown} value */
@@ -33,6 +55,17 @@ export function auctionHighlightMinimumFields(value) {
   return Number.isInteger(number)
     ? Math.min(Math.max(number, 8), AUCTION_HIGHLIGHT_FIELD_COUNT)
     : DEFAULT_AUCTION_HIGHLIGHT_MIN_FIELDS
+}
+
+/** @param {unknown} value */
+export function auctionHighlightMaximumPriceRatio(value) {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return DEFAULT_AUCTION_HIGHLIGHT_MAX_PRICE_RATIO
+  }
+  const number = Number(value)
+  return Number.isFinite(number)
+    ? Math.min(Math.max(number, 0.01), 0.99)
+    : DEFAULT_AUCTION_HIGHLIGHT_MAX_PRICE_RATIO
 }
 
 /**
