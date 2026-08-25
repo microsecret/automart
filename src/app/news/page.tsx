@@ -15,6 +15,16 @@ export const metadata: Metadata = {
     title: "Автомобильные новости России и мира",
     description: "Свежие новости автомобилей, транспорта и авторынка.",
     type: "website",
+    images: [{
+      url: "/images/home/automarket-hero.png",
+      alt: "Автомобильные новости LeWheel",
+    }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Автомобильные новости России и мира",
+    description: "Свежие новости автомобилей, транспорта и авторынка.",
+    images: ["/images/home/automarket-hero.png"],
   },
 }
 

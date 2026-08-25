@@ -2,6 +2,8 @@
 // импортирует Prisma: он используется и на сервере, и в клиентском каталоге,
 // где серверные зависимости недопустимы.
 
+import { uniqueAuctionLandingsByPath as uniqueAuctionLandingsByPathRuntime } from "./auction-landing-paths.mjs"
+
 export const AUCTION_LANDING_COUNTRIES: Readonly<Record<string, { slug: string; nominative: string; genitive: string }>> = {
   KR: { slug: "koreya", nominative: "Корея", genitive: "Кореи" },
   JP: { slug: "yaponiya", nominative: "Япония", genitive: "Японии" },
@@ -24,6 +26,21 @@ export function makeSlug(make: string) {
     .toLocaleLowerCase("en-US")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
+}
+
+/**
+ * Оставляет по одной посадочной странице на публичный адрес.
+ *
+ * Источники могут прислать одну марку в разном регистре (например, MINI и
+ * Mini). Prisma справедливо считает их разными группами, но после makeSlug они
+ * ведут на один URL. Представителем оставляем самую крупную группу: тогда
+ * фильтр каталога и статистика страницы используют одно и то же исходное
+ * написание марки.
+ */
+export function uniqueAuctionLandingsByPath<
+  T extends { countrySlug: string; makeSlug: string; total: number },
+>(landings: readonly T[]): T[] {
+  return uniqueAuctionLandingsByPathRuntime(landings) as T[]
 }
 
 export function countryCodeFromSlug(slug: string) {

@@ -1,7 +1,12 @@
 import { prisma } from "@/lib/prisma"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 import { auctionMakeLabel } from "@/lib/auction-normalization"
-import { AUCTION_LANDING_COUNTRIES, MIN_LISTINGS_FOR_LANDING, makeSlug } from "@/lib/auction-landing-routes"
+import {
+  AUCTION_LANDING_COUNTRIES,
+  MIN_LISTINGS_FOR_LANDING,
+  makeSlug,
+  uniqueAuctionLandingsByPath,
+} from "@/lib/auction-landing-routes"
 
 export { AUCTION_LANDING_COUNTRIES, makeSlug } from "@/lib/auction-landing-routes"
 
@@ -53,7 +58,8 @@ export async function listAuctionLandings(): Promise<AuctionLanding[]> {
     })
   }
 
-  return landings.sort((left, right) => right.total - left.total)
+  return uniqueAuctionLandingsByPath(landings)
+    .sort((left, right) => right.total - left.total)
 }
 
 /** Находит направление по адресу страницы, сверяя его с текущим каталогом. */
