@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import styles from "./auction-intro.module.css"
 
 export const metadata: Metadata = {
   title: "Автомобильные аукционы Кореи, Китая, Японии и Европы",
@@ -32,8 +33,8 @@ export const metadata: Metadata = {
 export default function AuctionsLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="auction-intro">
-        <h1 className="auction-intro__title">Автомобильные аукционы мира</h1>
+      <div className={styles.intro}>
+        <h1 className={styles.title}>Автомобильные аукционы мира</h1>
         {/* Обещание совпадает с тем, что человек видит ниже.
 
             Прежний текст говорил «доставка и растаможка посчитаны для
@@ -42,7 +43,7 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
             действительно есть, но он на странице лота, а в списке стоит
             цена лота: разница доходит до миллиона рублей. Человек читал
             заголовок как «эти цифры итоговые» и обманывался. */}
-        <p className="auction-intro__lead">
+        <p className={styles.lead}>
           Корея, Китай, Япония, Европа и США — в одном каталоге. В списке — цена лота
           с комиссией в рублях; доставка, пошлина и утильсбор считаются в карточке
           машины по курсу ЦБ.
@@ -51,9 +52,9 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
             в сплошной строке глазу не за что зацепиться, и человек не видит,
             чем этот каталог отличается от чужой витрины. Разметка остаётся
             серверной — она нужна поисковику вместе с заголовком. */}
-        <ul className="auction-intro__facts">
+        <ul className={styles.facts}>
           <li data-tone="price">
-            <span className="auction-intro__icon" aria-hidden="true">
+            <span className={styles.icon} aria-hidden="true">
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.3 5 1.4 5 3.4-2.2 3.3-5 3.3-5-1.2-5-3.1" />
               </svg>
@@ -62,7 +63,7 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
             <span>В карточке машины: пошлина, утильсбор и доставка до вашего города</span>
           </li>
           <li data-tone="lots">
-            <span className="auction-intro__icon" aria-hidden="true">
+            <span className={styles.icon} aria-hidden="true">
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
                 <circle cx="12" cy="12" r="3.4" />
@@ -73,7 +74,7 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
             <span>Фотографии, пробег и состояние кузова — как в аукционном листе</span>
           </li>
           <li data-tone="delivery">
-            <span className="auction-intro__icon" aria-hidden="true">
+            <span className={styles.icon} aria-hidden="true">
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2.5 15.5V7.5a1 1 0 0 1 1-1h10v9M13.5 9.5h3.6l3.4 3.4v2.6" />
                 <circle cx="7" cy="17" r="1.9" />
