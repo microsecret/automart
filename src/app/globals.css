@@ -1754,6 +1754,57 @@ select {
   .auction-intro {
     padding: 14px 12px 0;
   }
+
+  /* На телефоне три полноширинные карточки занимали почти весь первый экран:
+     до фильтров и лотов приходилось прокручивать вводку на 500+ пикселей.
+     Преимущества остаются в серверном HTML и доступны свайпом, но собраны в
+     компактную snap-ленту. Первый пункт целиком и край следующего видны сразу
+     — это естественная подсказка, что лента продолжается. */
+  .auction-intro__facts {
+    grid-auto-columns: minmax(230px, 84%);
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    gap: 8px;
+    margin-top: 12px;
+    padding-bottom: 5px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auction-intro__facts::-webkit-scrollbar {
+    display: none;
+  }
+
+  .auction-intro__facts li {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    align-content: center;
+    min-height: 88px;
+    padding: 11px 12px;
+    scroll-snap-align: start;
+  }
+
+  .auction-intro__icon {
+    grid-row: 1 / 3;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+  }
+
+  .auction-intro__facts strong,
+  .auction-intro__facts span:not(.auction-intro__icon) {
+    grid-column: 2;
+  }
+
+  .auction-intro__facts span:not(.auction-intro__icon) {
+    font-size: var(--text-xs);
+    line-height: 1.35;
+  }
 }
 
 /* В тёмной теме подсветка холодная и слабее: белое пятно на тёмном фоне
