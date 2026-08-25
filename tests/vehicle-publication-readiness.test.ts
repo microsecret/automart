@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import {
   getMissingVehiclePublicationRequirements,
+  getVehiclePublicationReadiness,
   normalizeVehicleIdentity,
   readStoredVehicleSubtype,
   validateVehiclePublication,
@@ -26,6 +27,16 @@ test("полная карточка допускается к модерации
 test("неполная карточка перечисляет отсутствующие данные", () => {
   const missing = getMissingVehiclePublicationRequirements({ ...completeCar, power: null, documentsStatus: null, images: [] })
   assert.deepEqual(missing.map((item) => item.field), ["power", "documentsStatus", "images"])
+})
+
+test("сводка готовности использует тот же набор обязательных полей", () => {
+  const complete = getVehiclePublicationReadiness(completeCar)
+  assert.deepEqual(complete, { total: complete.total, completed: complete.total, ready: true, missing: [] })
+
+  const incomplete = getVehiclePublicationReadiness({ ...completeCar, price: 0, vin: null, images: [] })
+  assert.equal(incomplete.completed, incomplete.total - 3)
+  assert.equal(incomplete.ready, false)
+  assert.deepEqual(incomplete.missing.map((item) => item.field), ["price", "vin", "images"])
 })
 
 test("короткое описание и нулевая цена блокируют публикацию", () => {

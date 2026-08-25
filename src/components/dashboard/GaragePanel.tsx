@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { ActionIcon, Badge, Box, Button, Center, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconArrowRight, IconCar, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconArrowRight, IconCar, IconChecklist, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
 import BrandIcon from "@/components/brands/BrandIcon"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
@@ -23,6 +23,12 @@ export type GarageVehicle = {
   location: string
   images: string | null
   createdAt: string
+  publicationReadiness: {
+    total: number
+    completed: number
+    ready: boolean
+    missing: Array<{ field: string; label: string; unit?: string }>
+  }
 }
 
 export type GarageResponse = { vehicles: GarageVehicle[] }
@@ -59,6 +65,8 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
           {data.vehicles.map((vehicle) => {
             const vehicleImages = parseImages(vehicle.images)
             const vehicleImage = vehicleImages[0]
+            const readiness = vehicle.publicationReadiness
+            const missingLabels = readiness.missing.map((item) => item.label)
             return (
               <Paper key={vehicle.id} className="garage-vehicle-card" radius="md" withBorder style={{ overflow: "hidden" }}>
                 <Box className="garage-vehicle-card__media">
@@ -82,6 +90,24 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
                     <Badge color="violet" variant="light" size="xs">{findLabel(TRANSMISSIONS, vehicle.transmission)}</Badge>
                     {vehicle.color && <Badge color="gray" variant="outline" size="xs">{vehicle.color}</Badge>}
                   </Group>
+                  <Box className="garage-vehicle-card__readiness" data-ready={readiness.ready || undefined}>
+                    <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+                      <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+                        <IconChecklist size={16} aria-hidden="true" />
+                        <Text size="xs" fw={700} c="var(--market-ink)" truncate>
+                          Для объявления заполнено {readiness.completed} из {readiness.total}
+                        </Text>
+                      </Group>
+                      <Badge color={readiness.ready ? "teal" : "orange"} variant="light" size="xs" radius="sm">
+                        {readiness.ready ? "Готово" : `Осталось ${readiness.missing.length}`}
+                      </Badge>
+                    </Group>
+                    {!readiness.ready && (
+                      <Text size="11px" c="var(--market-muted)" mt={4} lineClamp={2}>
+                        Добавьте: {missingLabels.slice(0, 3).join(", ")}{missingLabels.length > 3 ? ` и ещё ${missingLabels.length - 3}` : ""}
+                      </Text>
+                    )}
+                  </Box>
                   <Group justify="space-between" align="center" mt={2}>
                     <Text size="xs" c="gray.5" truncate>{vehicle.location || "Город не указан"}</Text>
                     <Group gap={2} wrap="nowrap">
@@ -93,7 +119,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
                       </ActionIcon>
                     </Group>
                   </Group>
-                  <Button component={Link} href={`/listings/create/vehicle?garageId=${encodeURIComponent(vehicle.id)}`} variant="light" color="teal" size="xs" radius="md" fullWidth rightSection={<IconArrowRight size={14} />}>Создать объявление из гаража</Button>
+                  <Button component={Link} href={`/listings/create/vehicle?garageId=${encodeURIComponent(vehicle.id)}`} variant="light" color="teal" size="xs" radius="md" fullWidth rightSection={<IconArrowRight size={14} />}>Продолжить объявление</Button>
                 </Stack>
               </Paper>
             )
@@ -104,7 +130,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
           <Stack align="center" gap="sm" maw={420} ta="center">
             <ThemeIcon variant="light" color="teal" size={54} radius="xl"><IconCar size={27} /></ThemeIcon>
             <Text fw={700} fz="lg">В гараже пока нет автомобилей</Text>
-            <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно, а когда понадобится — создать из неё объявление без повторного ввода.</Text>
+            <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно. Когда понадобится, создайте из неё объявление без повторного ввода.</Text>
             <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>
           </Stack>
         </Center>

@@ -664,6 +664,22 @@ async function run() {
     `${garageCountBeforeInvalidVin} then ${garageCountAfterInvalidVin}`,
   )
 
+  const garageCountBeforeInvalidOption = await prisma.vehicle.count({
+    where: { userId: primary.id, category: { name: "Личный гараж" } },
+  })
+  await expect("/api/garage", cookie, 400, {
+    method: "POST",
+    body: JSON.stringify({ make: "Hyundai", model: "Tucson", year: 2022, condition: "SUPER" }),
+  })
+  const garageCountAfterInvalidOption = await prisma.vehicle.count({
+    where: { userId: primary.id, category: { name: "Личный гараж" } },
+  })
+  record(
+    "garage rejects an invalid select option without creating a record",
+    garageCountBeforeInvalidOption === garageCountAfterInvalidOption,
+    `${garageCountBeforeInvalidOption} then ${garageCountAfterInvalidOption}`,
+  )
+
   const garageVin = `LWGRGE${String(Date.now()).slice(-11)}`
   const garage = await expect("/api/garage", cookie, 201, {
     method: "POST",
@@ -686,6 +702,12 @@ async function run() {
       && garagePrefill?.vehicle?.ownersCount === 0
       && JSON.parse(garagePrefill?.vehicle?.images || "[]").length === 1,
     garagePrefill?.vehicle?.id || "missing",
+  )
+  record(
+    "garage reports publication readiness from the shared moderation contract",
+    garagePrefill?.vehicle?.publicationReadiness?.completed < garagePrefill?.vehicle?.publicationReadiness?.total
+      && garagePrefill.vehicle.publicationReadiness.missing.some((item) => item.field === "price"),
+    `${garagePrefill?.vehicle?.publicationReadiness?.completed ?? "missing"}/${garagePrefill?.vehicle?.publicationReadiness?.total ?? "missing"}`,
   )
 
   const garageUpdatePayload = {

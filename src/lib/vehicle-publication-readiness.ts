@@ -39,6 +39,13 @@ export type VehiclePublicationRequirement = {
   unit?: string
 }
 
+export type VehiclePublicationReadiness = {
+  total: number
+  completed: number
+  ready: boolean
+  missing: VehiclePublicationRequirement[]
+}
+
 const STORED_SUBTYPE_FIELDS: Readonly<Record<string, string>> = {
   MOTORCYCLE: "motorcycleType",
   TRUCK: "truckBodyType",
@@ -220,6 +227,18 @@ export function getMissingVehiclePublicationRequirements(input: VehiclePublicati
     if (requiredSpecs.has(requirement.field as RequiredSpecField)) return false
     return !isRequirementFilled(input, requirement.field)
   })
+}
+
+/** Компактная сводка для гаража, формы и других точек входа в публикацию. */
+export function getVehiclePublicationReadiness(input: VehiclePublicationInput): VehiclePublicationReadiness {
+  const requirements = getVehiclePublicationRequirements(input)
+  const missing = getMissingVehiclePublicationRequirements(input)
+  return {
+    total: requirements.length,
+    completed: requirements.length - missing.length,
+    ready: missing.length === 0,
+    missing,
+  }
 }
 
 export function describeMissingVehiclePublicationRequirements(

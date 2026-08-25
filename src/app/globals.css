@@ -3427,6 +3427,19 @@ select {
   backdrop-filter: blur(var(--blur-panel));
 }
 
+.garage-vehicle-card__readiness {
+  padding: 9px 10px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-sm);
+  color: var(--market-muted);
+  background: var(--market-surface-subtle);
+}
+
+.garage-vehicle-card__readiness[data-ready="true"] {
+  border-color: var(--market-success-line);
+  background: var(--market-success-surface);
+}
+
 .garage-photo-preview {
   aspect-ratio: 1;
   overflow: hidden;

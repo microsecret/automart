@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Prisma } from "@prisma/client"
 import { authOptions } from "@/lib/auth"
-import { validateVehicleEnergyAndModelYear } from "@/lib/constants"
+import {
+  AVAILABILITY_TYPES,
+  BODY_TYPES,
+  CONDITIONS,
+  DAMAGE_INFO,
+  DOCUMENT_STATUSES,
+  DRIVE_TYPES,
+  SELLER_TYPES,
+  STEERING_WHEELS,
+  getSelectableFuelOptions,
+  getSelectableTransmissionOptions,
+  validateVehicleEnergyAndModelYear,
+} from "@/lib/constants"
 import { prisma } from "@/lib/prisma"
-import { normalizeVehicleIdentity } from "@/lib/vehicle-publication-readiness"
+import { getVehiclePublicationReadiness, normalizeVehicleIdentity } from "@/lib/vehicle-publication-readiness"
 
 export const dynamic = "force-dynamic"
 
-const FUEL_TYPES = new Set(["GASOLINE", "DIESEL", "ELECTRIC", "HYBRID", "GAS", "OTHER"])
-const TRANSMISSION_TYPES = new Set(["MANUAL", "AUTOMATIC", "VARIATOR", "ROBOTIC"])
 const GARAGE_VEHICLE_SELECT = {
   id: true, make: true, model: true, year: true, mileage: true, vin: true,
   fuelType: true, transmission: true, bodyType: true, color: true,
@@ -18,6 +29,36 @@ const GARAGE_VEHICLE_SELECT = {
   availability: true, customsCleared: true, generation: true, keywords: true,
   location: true, description: true, images: true, createdAt: true,
 } as const
+
+type GarageVehicleRecord = Prisma.VehicleGetPayload<{ select: typeof GARAGE_VEHICLE_SELECT }>
+type GarageOption = readonly { value: string; label: string }[]
+
+function normalizeGarageOption(
+  value: unknown,
+  options: GarageOption,
+  label: string,
+  fallback: string | null = null,
+): { value: string | null; error: string | null } {
+  if (value == null || value === "") return { value: fallback, error: null }
+  if (typeof value !== "string" || !options.some((option) => option.value === value)) {
+    return { value: null, error: `Выберите ${label} из списка` }
+  }
+  return { value, error: null }
+}
+
+function serializeGarageVehicle(vehicle: GarageVehicleRecord) {
+  const vin = vehicle.vin?.startsWith("GARAGE-") ? null : vehicle.vin
+  return {
+    ...vehicle,
+    vin,
+    publicationReadiness: getVehiclePublicationReadiness({
+      ...vehicle,
+      vehicleType: "CAR",
+      vin,
+      price: 0,
+    }),
+  }
+}
 
 function optionalText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return null
@@ -43,8 +84,16 @@ function normalizeGarageVehiclePayload(body: unknown) {
   const model = optionalText(input.model, 80)
   const year = Number(input.year)
   const mileage = input.mileage === "" || input.mileage == null ? null : Number(input.mileage)
-  const fuelType = typeof input.fuelType === "string" && FUEL_TYPES.has(input.fuelType) ? input.fuelType : "GASOLINE"
-  const transmission = typeof input.transmission === "string" && TRANSMISSION_TYPES.has(input.transmission) ? input.transmission : "MANUAL"
+  const fuelType = normalizeGarageOption(input.fuelType, getSelectableFuelOptions("CAR"), "тип топлива", "GASOLINE")
+  const transmission = normalizeGarageOption(input.transmission, getSelectableTransmissionOptions("CAR"), "коробку передач", "MANUAL")
+  const bodyType = normalizeGarageOption(input.bodyType, BODY_TYPES, "тип кузова")
+  const driveType = normalizeGarageOption(input.driveType, DRIVE_TYPES, "привод")
+  const condition = normalizeGarageOption(input.condition, CONDITIONS, "состояние", "EXCELLENT")
+  const steeringWheel = normalizeGarageOption(input.steeringWheel, STEERING_WHEELS, "расположение руля")
+  const documentsStatus = normalizeGarageOption(input.documentsStatus, DOCUMENT_STATUSES, "статус документов")
+  const damageInfo = normalizeGarageOption(input.damageInfo, DAMAGE_INFO, "сведения о повреждениях")
+  const sellerType = normalizeGarageOption(input.sellerType, SELLER_TYPES, "тип продавца")
+  const availability = normalizeGarageOption(input.availability, AVAILABILITY_TYPES, "наличие автомобиля")
   const vin = optionalText(input.vin, 32)?.toUpperCase() || null
   const currentYear = new Date().getFullYear()
 
@@ -54,13 +103,16 @@ function normalizeGarageVehiclePayload(body: unknown) {
   if (mileage != null && (!Number.isInteger(mileage) || mileage < 0 || mileage > 3_000_000)) {
     return { error: "Проверьте пробег автомобиля" } as const
   }
+  const invalidOption = [fuelType, transmission, bodyType, driveType, condition, steeringWheel, documentsStatus, damageInfo, sellerType, availability]
+    .find((option) => option.error)
+  if (invalidOption?.error) return { error: invalidOption.error } as const
 
   const normalizedIdentity = vin ? normalizeVehicleIdentity("CAR", vin, null, null) : null
   if (normalizedIdentity && "error" in normalizedIdentity) {
     return { error: normalizedIdentity.error } as const
   }
 
-  const energyAndYearError = validateVehicleEnergyAndModelYear("CAR", make, model, year, fuelType)
+  const energyAndYearError = validateVehicleEnergyAndModelYear("CAR", make, model, year, fuelType.value || "GASOLINE")
   if (energyAndYearError) return { error: energyAndYearError } as const
 
   const images = Array.isArray(input.images)
@@ -74,21 +126,21 @@ function normalizeGarageVehiclePayload(body: unknown) {
       year,
       mileage,
       vin: normalizedIdentity?.vin || null,
-      fuelType,
-      transmission,
-      bodyType: optionalText(input.bodyType, 40),
+      fuelType: fuelType.value || "GASOLINE",
+      transmission: transmission.value || "MANUAL",
+      bodyType: bodyType.value,
       color: optionalText(input.color, 40),
       doors: optionalInteger(input.doors, 1, 8),
       engineVolume: optionalDecimal(input.engineVolume, 0.1, 20),
       power: optionalInteger(input.power, 1, 5000),
-      driveType: optionalText(input.driveType, 20),
-      condition: optionalText(input.condition, 32) || "EXCELLENT",
-      steeringWheel: optionalText(input.steeringWheel, 16),
+      driveType: driveType.value,
+      condition: condition.value || "EXCELLENT",
+      steeringWheel: steeringWheel.value,
       ownersCount: optionalInteger(input.ownersCount, 0, 100),
-      documentsStatus: optionalText(input.documentsStatus, 24),
-      damageInfo: optionalText(input.damageInfo, 24),
-      sellerType: optionalText(input.sellerType, 20),
-      availability: optionalText(input.availability, 24),
+      documentsStatus: documentsStatus.value,
+      damageInfo: damageInfo.value,
+      sellerType: sellerType.value,
+      availability: availability.value,
       customsCleared: typeof input.customsCleared === "boolean" ? input.customsCleared : null,
       generation: optionalText(input.generation, 80),
       keywords: optionalText(input.keywords, 500),
@@ -112,7 +164,7 @@ export async function GET(request: NextRequest) {
         select: GARAGE_VEHICLE_SELECT,
       })
       return vehicle
-        ? NextResponse.json({ vehicle: { ...vehicle, vin: vehicle.vin?.startsWith("GARAGE-") ? null : vehicle.vin } })
+        ? NextResponse.json({ vehicle: serializeGarageVehicle(vehicle) })
         : NextResponse.json({ error: "Автомобиль не найден в вашем гараже" }, { status: 404 })
     }
 
@@ -123,7 +175,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      vehicles: vehicles.map((vehicle) => ({ ...vehicle, vin: vehicle.vin?.startsWith("GARAGE-") ? null : vehicle.vin })),
+      vehicles: vehicles.map(serializeGarageVehicle),
     })
   } catch {
     return NextResponse.json({ error: "Не удалось загрузить автомобили из гаража" }, { status: 500 })
@@ -158,9 +210,10 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         categoryId: garageCategory.id,
       },
+      select: GARAGE_VEHICLE_SELECT,
     })
 
-    return NextResponse.json(vehicle, { status: 201 })
+    return NextResponse.json(serializeGarageVehicle(vehicle), { status: 201 })
   } catch (error: unknown) {
     if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
       return NextResponse.json({ error: "VIN уже существует" }, { status: 409 })
@@ -193,7 +246,7 @@ export async function PATCH(request: NextRequest) {
       where: { id, userId: session.user.id, category: { name: "Личный гараж" } },
       select: GARAGE_VEHICLE_SELECT,
     })
-    return NextResponse.json(vehicle)
+    return NextResponse.json(vehicle ? serializeGarageVehicle(vehicle) : null)
   } catch (error: unknown) {
     if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
       return NextResponse.json({ error: "VIN уже существует" }, { status: 409 })
