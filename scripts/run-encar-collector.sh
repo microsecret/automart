@@ -66,18 +66,9 @@ if [[ -n "${MOBILE_DE_API_USERNAME:-}" && -n "${MOBILE_DE_API_PASSWORD:-}" ]]; t
 fi
 run_stage "Configured partner/API feeds" "/api/parser/partner-feeds/sync" '{}'
 
-# Публикация лотов в чаты подчиняется тому же выключателю, что и её cron-задача.
-# Раньше флаг стоял только на cron, а сборщик постил самостоятельно после
-# каждого прогона — отключение выглядело выполненным, но посты продолжались.
-if [[ -n "${TELEGRAM_BOT_TOKEN:-}" && "${AUTOMART_AUCTION_TELEGRAM_CRON:-off}" == "on" ]]; then
-  echo "[$(date -Is)] Telegram auction highlights"
-  if ! node ./scripts/publish-auction-highlights.mjs --limit "${TELEGRAM_AUCTION_POST_LIMIT:-3}"; then
-    echo "[$(date -Is)] ERROR: Telegram auction highlights failed; collector data is preserved" >&2
-    FAILED_STAGES=$((FAILED_STAGES + 1))
-  fi
-else
-  echo "[$(date -Is)] Telegram auction highlights skipped (AUTOMART_AUCTION_TELEGRAM_CRON is off)"
-fi
+# Сбор данных и внешняя публикация разведены намеренно. Коллектор запускается
+# несколько раз в час и не должен превращать каждое обновление источника в
+# сообщение. Подборкой управляет только install-auction-telegram-cron.sh.
 
 if (( FAILED_STAGES > 0 )); then
   echo "[$(date -Is)] Collector completed with ${FAILED_STAGES} failed stage(s)" >&2
