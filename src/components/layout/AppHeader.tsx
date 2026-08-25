@@ -206,11 +206,9 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               сервисов и вместе с вкладками каталога вытеснял из шапки иконки
               кабинета и поиск. Пункты остались в меню и в боковой навигации. */}
 
-          {/* Кнопка занимает место наравне с поиском и вкладками. На 1440px
-              ряд переполнялся, и «Подать объявление» с «Войти» уезжали за
-              край экрана — проверка на живом сайте показала вылет на 115 и
-              211 пикселей. Показываем её там, где ряду хватает ширины; в
-              меню и боковой навигации пункт остаётся всегда. */}
+          {/* Партнёрство — ключевое действие площадки. На ноутбучной ширине
+              полный поисковый input уступает место иконке, поэтому CTA
+              остаётся в шапке, не выталкивая подачу объявления и вход. */}
           <Button
             component={Link}
             href="/dashboard/deliveries?partner=apply"
@@ -219,7 +217,8 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
             leftSection={<IconHeartHandshake size={15} stroke={1.9} />}
             className="partner-header-cta"
           >
-            Стать партнёром
+            <span className="partner-header-cta__full">Стать партнёром</span>
+            <span className="partner-header-cta__compact">Партнёрам</span>
           </Button>
 
           {/* ЦЕНТР: Поиск — максимальная ширина */}
@@ -330,7 +329,8 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               className="header-create-cta"
               styles={{ root: { height: 38, fontWeight: 700 } }}
             >
-              Подать объявление
+              <span className="header-create-cta__full">Подать объявление</span>
+              <span className="header-create-cta__compact">Подать</span>
             </Button>
 
             {session ? (

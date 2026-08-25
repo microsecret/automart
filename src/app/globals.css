@@ -1009,12 +1009,10 @@ select {
   display: none;
 }
 
-/* На ноутбучных ширинах полное поле поиска уступает место ключевым действиям.
-   В строке 1280px оно удерживало минимум 220px и выталкивало «Подать
-   объявление» и вход на 111px за правую границу. Поиск остаётся доступен
-   одной явной кнопкой, а поле возвращается, когда ему действительно хватает
-   места рядом со всеми разделами и пользовательскими действиями. */
-@media (max-width: 1439px) {
+/* На ноутбучных и обычных desktop-ширинах полное поле поиска уступает место
+   ключевым действиям «Стать партнёром», «Подать» и входу. Поиск остаётся
+   доступен одной явной кнопкой и разворачивается только на широком экране. */
+@media (max-width: 1699px) {
   .market-header-search {
     display: none !important;
   }
@@ -1424,19 +1422,33 @@ select {
   color: #8fa9de;
 }
 
-/* Кнопка «Стать партнёром» показывается там, где ряду хватает ширины.
-
-   На 1440px шапка переполнялась: поиск, пять вкладок, эта кнопка и правая
-   группа не помещались в строку, и «Подать объявление» с «Войти» уезжали за
-   край на 115 и 211 пикселей — проверка на живом сайте это показала. Пункт
-   остаётся в меню и боковой навигации, поэтому доступ к нему не теряется. */
+/* Кнопка «Стать партнёром» видна с первого desktop-брейкпоинта. До 1700px
+   место для неё отдаёт полный поисковый input, а на 1200–1439px подписи CTA
+   становятся короче без потери смысла. */
 .partner-header-cta {
   display: none;
 }
 
-@media (min-width: 1700px) {
+@media (min-width: 1200px) {
   .partner-header-cta {
     display: inline-flex;
+  }
+}
+
+.partner-header-cta__compact,
+.header-create-cta__compact {
+  display: none;
+}
+
+@media (min-width: 1200px) and (max-width: 1439px) {
+  .partner-header-cta__full,
+  .header-create-cta__full {
+    display: none;
+  }
+
+  .partner-header-cta__compact,
+  .header-create-cta__compact {
+    display: inline;
   }
 }
 
@@ -1458,7 +1470,7 @@ select {
   content: "";
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.88), transparent);
   transform: rotate(16deg);
-  animation: partner-header-glint 6s ease-in-out infinite;
+  animation: partner-header-glint 12s ease-in-out infinite;
 }
 
 .partner-header-cta:hover,
