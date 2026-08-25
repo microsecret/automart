@@ -220,14 +220,18 @@ function AuctionDetail() {
   useEffect(() => {
     if (galleryImages.length < 2 || typeof window === "undefined") return
 
-    // Decode only the active full-size image and one card-size neighbour.
+    // Decode only the active full-size image and two card-size neighbours.
     // Damage reports often contain dozens of remote photos; preloading several
     // 1600px renditions per click made the gallery compete with the UI itself.
+    // Both directions are warmed because the visible arrows are equivalent:
+    // previously «next» was instant while «previous» always started cold.
+    const previousImage = galleryImages[(activeImageIndex - 1 + galleryImages.length) % galleryImages.length]
     const nextImage = galleryImages[(activeImageIndex + 1) % galleryImages.length]
     const preloadUrls = [
       activeImageHighQuality,
+      auctionCardImageUrl(previousImage),
       auctionCardImageUrl(nextImage),
-    ].filter((imageUrl) => imageUrl && !loadedImageUrls.has(imageUrl))
+    ].filter((imageUrl, index, values) => imageUrl && values.indexOf(imageUrl) === index && !loadedImageUrls.has(imageUrl))
 
     let cancelled = false
     const preloadedImages = preloadUrls.map((imageUrl) => {
