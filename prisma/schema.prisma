@@ -79,6 +79,8 @@ model User {
   supportTickets                SupportTicket[]                @relation("SupportTicketRequester")
   assignedSupportTickets        SupportTicket[]                @relation("SupportTicketAssignee")
   supportMessages               SupportMessage[]               @relation("SupportMessageAuthor")
+  partRequests                  PartRequest[]                  @relation("PartRequestRequester")
+  partRequestOffers             PartRequestOffer[]             @relation("PartRequestOfferSeller")
 
   @@index([email])
 }
@@ -296,9 +298,10 @@ model PartStore {
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
-  parts   Part[]
-  batches PartImportBatch[]
-  orders  PartOrder[]
+  parts         Part[]
+  batches       PartImportBatch[]
+  orders        PartOrder[]
+  requestOffers PartRequestOffer[]
 
   @@index([ownerId])
   @@index([status])
@@ -362,6 +365,66 @@ model PartImportBatch {
 
   @@index([storeId, createdAt])
   @@index([status])
+}
+
+// Заявка «ищу деталь».
+// В разделе запчастей пока нет позиций: продавцы не пришли, а покупатели
+// заходят. Заявка переворачивает порядок — человек описывает деталь, а
+// магазины отвечают предложениями. Витрине не нужно быть полной, чтобы
+// раздел приносил пользу.
+model PartRequest {
+  id            String              @id @default(uuid())
+  partName      String?
+  oemNumber     String?
+  make          String?
+  model         String?
+  year          Int?
+  vin           String?
+  condition     String              @default("ANY") // NEW, USED, ANY
+  comment       String?
+  // Насколько заявка понятна продавцу, 0-100. Считается при записи:
+  // сортировать по нему в кабинете магазина дешевле, чем пересчитывать.
+  clarity       Int                 @default(0)
+  name          String
+  phone         String
+  email         String?
+  city          String?
+  contactMethod String              @default("PHONE") // PHONE, MESSENGER, EMAIL
+  status        String              @default("NEW") // NEW, IN_PROGRESS, ANSWERED, CLOSED
+  requesterId   String?
+  requester     User?               @relation("PartRequestRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  managerNotes  String?
+  closedAt      DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  offers        PartRequestOffer[]
+
+  @@index([status, createdAt])
+  @@index([requesterId, createdAt])
+  @@index([oemNumber])
+  @@index([make, model])
+}
+
+// Ответ магазина на заявку.
+model PartRequestOffer {
+  id            String      @id @default(uuid())
+  requestId     String
+  request       PartRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  storeId       String?
+  store         PartStore?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  sellerId      String?
+  seller        User?       @relation("PartRequestOfferSeller", fields: [sellerId], references: [id], onDelete: SetNull)
+  price         Int?
+  condition     String? // NEW, USED
+  leadTimeDays  Int?
+  comment       String?
+  status        String      @default("SENT") // SENT, ACCEPTED, DECLINED
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([requestId, createdAt])
+  @@index([storeId, status])
+  @@index([sellerId, createdAt])
 }
 
 model PartBid {

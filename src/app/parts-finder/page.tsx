@@ -10,6 +10,7 @@ import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILA
 import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
+import PartsShowcase from "@/components/parts/PartsShowcase"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
 type PartResult = {
@@ -33,6 +34,16 @@ type PartsResponse = {
 }
 
 const fetcher = fetchJson
+
+/** «1 запчасть», «2 запчасти», «5 запчастей»: без склонения счётчик читается как ошибка. */
+function formatPartsCount(total: number): string {
+  const lastTwo = total % 100
+  const lastOne = total % 10
+  if (lastTwo >= 11 && lastTwo <= 14) return `${total} запчастей`
+  if (lastOne === 1) return `${total} запчасть`
+  if (lastOne >= 2 && lastOne <= 4) return `${total} запчасти`
+  return `${total} запчастей`
+}
 
 function parseMultiValue(value: string | null) {
   return Array.from(new Set((value || "").split(",").map((item) => item.trim()).filter(Boolean)))
@@ -330,7 +341,14 @@ function PartsContent() {
                 карточек ниже). */}
             <Stack gap={0}>
               <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Каталог запчастей</Text>
-              <Text size="xs" c="gray.5">{data?.pagination?.total || 0} запчастей · кросс-совместимость по авто</Text>
+              {/* «0 запчастей» первой строкой сообщает, что смотреть нечего,
+                  и человек уходит, не дочитав. Пока каталог пуст, подпись
+                  говорит о том, что здесь можно сделать. */}
+              <Text size="xs" c="gray.5">
+                {data?.pagination?.total
+                  ? `${formatPartsCount(data.pagination.total)} · кросс-совместимость по авто`
+                  : "Заявка на деталь · подбор по авто · бесплатно"}
+              </Text>
             </Stack>
           </Group>
         </Group>
@@ -371,31 +389,20 @@ function PartsContent() {
                   onRetry={() => mutate()}
                 />
               ) : parts.length === 0 ? (
-                <Paper radius="md" p="xl" withBorder>
-                  <Center>
-                    <Stack align="center" gap="xs" maw={420} ta="center">
-                      <IconTools size={40} color="#a1a1aa" />
-                      {hasActiveFilters ? (
-                        <>
-                          <Text fw={600}>По этим условиям запчастей нет</Text>
-                          <Text size="sm" c="dimmed">Попробуйте убрать часть фильтров или поискать по названию детали.</Text>
-                          <Button variant="light" color="indigo" size="xs" mt={4} onClick={resetFilters}>Сбросить фильтры</Button>
-                        </>
-                      ) : (
-                        <>
-                          <Text fw={600}>Раздел запчастей пока пуст</Text>
-                          <Text size="sm" c="dimmed">
-                            Объявления появятся, когда продавцы начнут их размещать. Если у вас есть запчасти —
-                            разместите первое объявление, оно будет на виду.
-                          </Text>
-                          <Button component={Link} href="/listings/create/part" variant="light" color="indigo" size="xs" mt={4}>
-                            Разместить запчасть
-                          </Button>
-                        </>
-                      )}
-                    </Stack>
-                  </Center>
-                </Paper>
+                hasActiveFilters ? (
+                  <Paper radius="md" p="xl" withBorder>
+                    <Center>
+                      <Stack align="center" gap="xs" maw={420} ta="center">
+                        <IconTools size={40} color="#a1a1aa" />
+                        <Text fw={600}>По этим условиям запчастей нет</Text>
+                        <Text size="sm" c="dimmed">Попробуйте убрать часть фильтров или поискать по названию детали.</Text>
+                        <Button variant="light" color="indigo" size="xs" mt={4} onClick={resetFilters}>Сбросить фильтры</Button>
+                      </Stack>
+                    </Center>
+                  </Paper>
+                ) : (
+                  <PartsShowcase />
+                )
               ) : (
                 <SimpleGrid cols={{ base: 1, sm: 2, xl: 3 }} spacing="sm">
                   {parts.map((p) => {
