@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useColorScheme } from "@/components/providers/AppProviders"
 import { IconSun, IconMoon } from "@tabler/icons-react"
+import useSWR from "swr"
 import { fetchJson } from "@/lib/api-client"
 import {
   isNavigationItemActive,
@@ -84,6 +85,17 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
 
     return () => { isCurrent = false }
   }, [session])
+  /* Непрочитанные для точек на «Сообщениях» и «Уведомлениях». Раньше
+     точки горели всегда: ложный сигнал приучает не смотреть на настоящий.
+     Ключ совпадает с запросом бокового меню — SWR дедуплицирует. */
+  const { data: headerStats } = useSWR<{ stats?: { unreadMessages?: number; unreadNotifications?: number } }>(
+    session ? "/api/dashboard/stats" : null,
+    fetchJson,
+    { revalidateOnFocus: false, dedupingInterval: 20_000 },
+  )
+  const unreadMessages = headerStats?.stats?.unreadMessages || 0
+  const unreadNotifications = headerStats?.stats?.unreadNotifications || 0
+
   const { colorScheme, toggleScheme } = useColorScheme()
   const router = useRouter()
   const pathname = usePathname()
@@ -339,12 +351,12 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                     <IconHeart size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator></Box>
-                <Box visibleFrom="sm"><Indicator size={7} color="violet" offset={4}>
+                <Box visibleFrom="sm"><Indicator size={7} color="violet" offset={4} disabled={unreadMessages === 0}>
                   <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Сообщения">
                     <IconMessageCircle2 size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator></Box>
-                <Box visibleFrom="sm"><Indicator size={7} color="red" offset={4}>
+                <Box visibleFrom="sm"><Indicator size={7} color="red" offset={4} disabled={unreadNotifications === 0}>
                   <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Уведомления">
                     <IconBell size={18} stroke={1.8} />
                   </ActionIcon>

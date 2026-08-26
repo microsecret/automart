@@ -2,9 +2,10 @@
 export const dynamic = "force-dynamic"
 import { useSearchParams } from "next/navigation"
 import useSWR from "swr"
-import { Container, Stack, Title, Text, Center, Button, ThemeIcon, Box, Paper, Group, Loader, Divider } from "@mantine/core"
+import { ActionIcon, Container, Stack, Title, Text, Center, Button, ThemeIcon, Box, Paper, Group, Loader, Divider } from "@mantine/core"
 import { IconGitCompare, IconArrowLeft, IconX } from "@tabler/icons-react"
 import Link from "next/link"
+import { toggleCompare } from "@/lib/compare-list"
 import { useState, useEffect, Suspense } from "react"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { formatPrice } from "@/lib/format"
@@ -29,6 +30,7 @@ const fetcher = fetchJson
 
 type CompareVehicle = {
   id: string
+  listingId?: string
   make: string
   model: string
   year: number
@@ -159,8 +161,16 @@ function CompareContent() {
     if (saved) setLocalIds(saved.split(",").filter(Boolean))
   }, [])
 
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
   const urlIds = sp.get("ids")?.split(",").filter(Boolean) || []
-  const ids = [...new Set([...urlIds, ...localIds])].slice(0, 4)
+  const ids = [...new Set([...urlIds, ...localIds])].filter((id) => !removedIds.has(id)).slice(0, 4)
+
+  const removeOne = (listingId: string) => {
+    /* toggleCompare уберёт id из localStorage, если он там; id из адресной
+       строки дополнительно гасится локальным набором. */
+    toggleCompare(listingId)
+    setRemovedIds((current) => new Set([...current, listingId]))
+  }
 
   const { data, error, isLoading, mutate } = useSWR<CompareResponse>(
     ids.length > 0 ? "/api/listings?ids=" + ids.join(",") + "&limit=10" : null,
@@ -168,7 +178,7 @@ function CompareContent() {
   )
 
   const vehicles: ComparedVehicle[] = (data?.listings || []).flatMap((listing) =>
-    listing.vehicle ? [{ ...listing.vehicle, listingPrice: listing.price }] : []
+    listing.vehicle ? [{ ...listing.vehicle, listingPrice: listing.price, listingId: listing.id }] : []
   )
   const compareFields = getCompareFields().filter((field) => !field.visible || field.visible(vehicles))
   const listedPrices = vehicles.map((vehicle) => vehicle.listingPrice).filter((price) => Number.isFinite(price))
@@ -239,7 +249,7 @@ function CompareContent() {
           {/* Шапка таблицы — автомобили */}
           <Group gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180 }}>
             {/* Колонка с названиями полей */}
-            <Box style={{ width: 160, flexShrink: 0 }}>
+            <Box className="compare-sticky-col" style={{ width: 160, flexShrink: 0 }}>
               <Text size="xs" fw={700} c="gray.4" tt="uppercase" mt={60}>Характеристика</Text>
             </Box>
             {/* Колонки автомобилей */}
@@ -254,15 +264,28 @@ function CompareContent() {
                     <img src={image} alt={`${v.make} ${v.model}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   )}
                 </Box>
-                <Link href={`/listings/vehicle/${v.id}`} style={{ textDecoration: "none" }}>
-                  <Group gap="sm" mb={4}>
-                    <BrandIcon brand={v.make} size={32} />
-                    <Stack gap={0}>
-                      <Text fw={700} fz="sm" c="var(--market-ink)">{v.make} {v.model}</Text>
-                      <Text fz="xs" c="gray.5">{v.year}</Text>
-                    </Stack>
-                  </Group>
-                </Link>
+                <Group gap={4} mb={4} wrap="nowrap" align="flex-start" justify="space-between">
+                  <Link href={`/listings/vehicle/${v.id}`} style={{ textDecoration: "none", minWidth: 0 }}>
+                    <Group gap="sm" wrap="nowrap">
+                      <BrandIcon brand={v.make} size={32} />
+                      <Stack gap={0}>
+                        <Text fw={700} fz="sm" c="var(--market-ink)">{v.make} {v.model}</Text>
+                        <Text fz="xs" c="gray.5">{v.year}</Text>
+                      </Stack>
+                    </Group>
+                  </Link>
+                  {v.listingId && (
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      size="sm"
+                      aria-label={`Убрать ${v.make} ${v.model} из сравнения`}
+                      onClick={() => removeOne(v.listingId as string)}
+                    >
+                      <IconX size={14} />
+                    </ActionIcon>
+                  )}
+                </Group>
                 </Box>
               )
             })}
@@ -275,7 +298,7 @@ function CompareContent() {
               превращалось в белые полосы под серым текстом. */}
           {compareFields.map((field, idx) => (
             <Group key={field.key} gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180, background: idx % 2 === 0 ? "transparent" : "var(--market-surface-subtle)", padding: "6px 0", borderRadius: 4 }}>
-              <Box style={{ width: 160, flexShrink: 0 }}>
+              <Box className="compare-sticky-col" style={{ width: 160, flexShrink: 0 }}>
                 <Text size="xs" fw={600} c="gray.6" pl="xs">{field.label}</Text>
               </Box>
               {vehicles.map((v) => {

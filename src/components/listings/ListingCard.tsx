@@ -12,7 +12,6 @@ import VehicleFallback from "./VehicleFallback"
 import NextImage from "next/image"
 import { useCompare } from "@/hooks/useCompare"
 import { useFavorites } from "@/hooks/useFavorites"
-import { notifications } from "@mantine/notifications"
 
 export interface ListingCardData {
   id: string
@@ -109,12 +108,11 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
     e.preventDefault()
     e.stopPropagation()
     if (!isAuthenticated) {
-      notifications.show({
-        title: "Войдите, чтобы сохранить",
-        message: "Избранное синхронизируется между сайтом и Telegram после входа.",
-        color: "indigo",
-        autoClose: 7000,
-      })
+      /* Гостя ведём на вход с возвратом сюда же: тост без пути ко входу
+         обрывал действие — в строчном виде каталога та же кнопка давно
+         ведёт на вход, и плитка должна вести себя так же. */
+      const here = `${window.location.pathname}${window.location.search}`
+      window.location.assign(`/auth/signin?callbackUrl=${encodeURIComponent(here)}`)
       return
     }
 

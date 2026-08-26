@@ -3,13 +3,13 @@ export const dynamic = "force-dynamic"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, SimpleGrid, Center, Paper, Button, ThemeIcon, Pagination, SegmentedControl } from "@mantine/core"
-import { IconHeartBroken, IconLayoutGrid, IconList } from "@tabler/icons-react"
+import { IconHeart, IconHeartBroken, IconLayoutGrid, IconList } from "@tabler/icons-react"
 import { useState } from "react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import type { ListingCardData } from "@/components/listings/ListingCard"
 import { fetchJson } from "@/lib/api-client"
-import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import { ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 
 type FavoritesResponse = {
@@ -20,7 +20,7 @@ type FavoritesResponse = {
 export default function FavoritesPage() {
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
-  const { data, error, isLoading, mutate } = useSWR<FavoritesResponse>(`/api/favorites?page=${page}&limit=18`, fetchJson)
+  const { data, error, isLoading } = useSWR<FavoritesResponse>(`/api/favorites?page=${page}&limit=18`, fetchJson)
 
   const favorites = data?.favorites || []
 
@@ -44,7 +44,18 @@ export default function FavoritesPage() {
         {isLoading ? (
           <ResultsGridSkeleton count={8} mediaHeight={210} />
         ) : error ? (
-          <AsyncErrorState title="Не удалось загрузить избранное" description="Проверьте авторизацию и повторите запрос." onRetry={() => mutate()} backHref="/auth/signin" backLabel="Войти" />
+          /* Гость — не ошибка, а обычное состояние: смотреть каталог можно
+             без входа. «Проверьте авторизацию» читалось как поломка. */
+          <Paper radius="md" p="xl" withBorder>
+            <Center>
+              <Stack align="center" gap="sm" ta="center" maw={400}>
+                <ThemeIcon variant="light" color="indigo" size={56} radius="md"><IconHeart size={28} /></ThemeIcon>
+                <Text fw={700}>Войдите, чтобы видеть избранное</Text>
+                <Text size="sm" c="dimmed">Сохранённые объявления привязаны к аккаунту и синхронизируются с Telegram.</Text>
+                <Button component={Link} href="/auth/signin?callbackUrl=%2Ffavorites" color="indigo" size="sm">Войти</Button>
+              </Stack>
+            </Center>
+          </Paper>
         ) : favorites.length === 0 ? (
           <Paper radius="md" p="xl" withBorder>
             <Center>
