@@ -5,6 +5,7 @@ import useSWR from "swr"
 import { Alert, Badge, Box, Button, Card, Group, Loader, Modal, SegmentedControl, Stack, Text, Textarea, ThemeIcon } from "@mantine/core"
 import { IconBuildingStore, IconCheck, IconExternalLink, IconX } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { PART_STORE_STATUS, toneColor } from "@/lib/admin-status-tone"
 import { fetchJson } from "@/lib/api-client"
 
 type AdminStore = {
@@ -23,12 +24,12 @@ type AdminStore = {
   _count: { parts: number }
 }
 
-const STATUS_META: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Ждёт проверки", color: "orange" },
-  ACTIVE: { label: "Опубликован", color: "teal" },
-  SUSPENDED: { label: "Приостановлен", color: "red" },
-  DRAFT: { label: "Черновик", color: "gray" },
-}
+const STATUS_META: Record<string, { label: string; color: string }> = Object.fromEntries(
+  Object.entries(PART_STORE_STATUS).map(([key, descriptor]) => [
+    key,
+    { label: descriptor.label, color: toneColor(descriptor.tone) },
+  ]),
+)
 
 export default function PartStoreModerationPanel() {
   const [status, setStatus] = useState("PENDING")

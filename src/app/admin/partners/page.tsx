@@ -10,14 +10,17 @@ import type { MantineColor } from "@mantine/core"
 import { IconBuildingWarehouse, IconCheck, IconClipboardCheck, IconClock, IconFileSearch, IconMail, IconMessageCircle, IconRefresh, IconShieldCheck, IconX } from "@tabler/icons-react"
 import Link from "next/link"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { PARTNER_STATUS, toneColor } from "@/lib/admin-status-tone"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { describePartnerRating } from "@/lib/partner-sla"
 
 const STATUS_META: Record<string, { label: string; color: MantineColor; icon: typeof IconClock }> = {
-  PENDING: { label: "Ожидает проверки", color: "orange", icon: IconClock },
-  VERIFIED: { label: "Проверен", color: "teal", icon: IconShieldCheck },
-  REJECTED: { label: "Отклонён", color: "red", icon: IconX },
-  SUSPENDED: { label: "Приостановлен", color: "gray", icon: IconFileSearch },
+  PENDING: { label: PARTNER_STATUS.PENDING.label, color: toneColor(PARTNER_STATUS.PENDING.tone) as MantineColor, icon: IconClock },
+  VERIFIED: { label: PARTNER_STATUS.VERIFIED.label, color: toneColor(PARTNER_STATUS.VERIFIED.tone) as MantineColor, icon: IconShieldCheck },
+  REJECTED: { label: PARTNER_STATUS.REJECTED.label, color: toneColor(PARTNER_STATUS.REJECTED.tone) as MantineColor, icon: IconX },
+  /* «Приостановлен» был серым у партнёра и красным у магазина: одно и то
+     же решение выглядело то нейтральным, то аварийным. */
+  SUSPENDED: { label: PARTNER_STATUS.SUSPENDED.label, color: toneColor(PARTNER_STATUS.SUSPENDED.tone) as MantineColor, icon: IconFileSearch },
 }
 
 const SOURCE_OPTIONS = [

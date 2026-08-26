@@ -7,6 +7,7 @@ import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import { Alert, Avatar, Badge, Box, Button, Divider, Group, Modal, Pagination, Paper, ScrollArea, Select, SimpleGrid, Skeleton, Stack, Table, Text, Textarea, TextInput, ThemeIcon, Title, Tooltip } from "@mantine/core"
 import { IconBan, IconBrandTelegram, IconCircleCheck, IconExternalLink, IconMail, IconMessageCircle2, IconSearch, IconSend, IconShieldCheck, IconTag, IconUsers } from "@tabler/icons-react"
+import { USER_ACCOUNT_STATUS, toneColor } from "@/lib/admin-status-tone"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
 import { formatAdminDateTime } from "@/lib/admin-datetime"
@@ -50,10 +51,12 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
 }
 
 const ROLE_OPTIONS = Object.entries(ROLE_META).map(([value, meta]) => ({ value, label: meta.label }))
+/* Ограничения отделены от сбоев: «заблокирован» — это решение сотрудника,
+   а не авария, и красный поднимал ложную тревогу на каждой блокировке. */
 const STATUS_META = {
-  ACTIVE: { label: "Активен", color: "teal" },
-  RESTRICTED: { label: "Ограничен", color: "orange" },
-  BANNED: { label: "Заблокирован", color: "red" },
+  ACTIVE: { label: USER_ACCOUNT_STATUS.ACTIVE.label, color: toneColor(USER_ACCOUNT_STATUS.ACTIVE.tone) },
+  RESTRICTED: { label: USER_ACCOUNT_STATUS.RESTRICTED.label, color: toneColor(USER_ACCOUNT_STATUS.RESTRICTED.tone) },
+  BANNED: { label: USER_ACCOUNT_STATUS.BANNED.label, color: toneColor(USER_ACCOUNT_STATUS.BANNED.tone) },
 } as const
 const STATUS_OPTIONS = Object.entries(STATUS_META).map(([value, meta]) => ({ value, label: meta.label }))
 

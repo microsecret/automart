@@ -42,6 +42,7 @@ import {
   IconSend,
   IconUserCheck,
 } from "@tabler/icons-react"
+import { SUPPORT_TICKET_STATUS, toneColor } from "@/lib/admin-status-tone"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
@@ -106,12 +107,15 @@ const PRIORITY_OPTIONS = [
   { value: "URGENT", label: "Срочный" },
 ]
 
-const STATUS_META: Record<string, { label: string; color: string }> = {
-  OPEN: { label: "Помощник отвечает", color: "indigo" },
-  WAITING_OPERATOR: { label: "Ждёт оператора", color: "orange" },
-  IN_PROGRESS: { label: "В работе", color: "teal" },
-  CLOSED: { label: "Закрыто", color: "gray" },
-}
+/* Цвета берутся из общего словаря состояний: прежде «в работе» здесь было
+   бирюзовым — цветом успеха, и обращение выглядело решённым, пока им ещё
+   занимались. */
+const STATUS_META: Record<string, { label: string; color: string }> = Object.fromEntries(
+  Object.entries(SUPPORT_TICKET_STATUS).map(([key, descriptor]) => [
+    key,
+    { label: descriptor.label, color: toneColor(descriptor.tone) },
+  ]),
+)
 
 const PRIORITY_META: Record<string, { label: string; color: string }> = {
   LOW: { label: "Низкий", color: "gray" },

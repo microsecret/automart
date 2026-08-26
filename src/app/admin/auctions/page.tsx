@@ -15,6 +15,7 @@ import {
   IconExternalLink, IconGavel, IconLock, IconMail, IconMapPin, IconPhone,
   IconReceipt, IconShieldCheck, IconUserCheck,
 } from "@tabler/icons-react"
+import { AUCTION_INQUIRY_STATUS, toneColor } from "@/lib/admin-status-tone"
 import { formatRelativeDate } from "@/lib/format"
 import { formatQueueAge, hoursSince, queueUrgency } from "@/lib/queue-age"
 import { fetchJson } from "@/lib/api-client"
@@ -105,13 +106,14 @@ type AuctionStatsResponse = {
   byStatus?: Partial<Record<(typeof STATUSES)[number]["value"], number>>
 }
 
-const STATUSES = [
-  { value: "NEW", label: "Новые", color: "red" },
-  { value: "CONTACTED", label: "Уточнение", color: "orange" },
-  { value: "IN_PROGRESS", label: "В работе", color: "blue" },
-  { value: "CLOSED", label: "Закрыто", color: "gray" },
-  { value: "SOLD", label: "Выкуплено", color: "teal" },
-] as const
+/* Цвета из общего словаря состояний. Новая заявка была красной и
+   заглушала настоящие сбои: красный теперь означает только то, что
+   требует вмешательства сейчас. */
+const STATUSES = (["NEW", "CONTACTED", "IN_PROGRESS", "CLOSED", "SOLD"] as const).map((value) => ({
+  value,
+  label: AUCTION_INQUIRY_STATUS[value].label,
+  color: toneColor(AUCTION_INQUIRY_STATUS[value].tone),
+}))
 
 const INITIAL_PLATFORM_FEE = 30_000
 const INITIAL_DEPOSIT = 100_000
