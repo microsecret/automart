@@ -76,6 +76,8 @@ type GarageVehicleResponse = {
   }
 }
 
+const DRAFT_STORAGE_KEY = "vehicle-listing-draft-v1"
+
 export default function CreateVehiclePage() {
   return (
     <Suspense fallback={<Center py={100}><Loader color="indigo" /></Center>}>
@@ -117,8 +119,65 @@ function CreateVehicleWorkspace() {
   })
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/auth/signin")
+    /* callbackUrl возвращает в форму после входа: раньше истёкшая сессия
+       выкидывала на вход без возврата, и заполненное пропадало. */
+    if (status === "unauthenticated") router.push("/auth/signin?callbackUrl=%2Flistings%2Fcreate%2Fvehicle")
   }, [status, router])
+
+  /* === Черновик в браузере ===
+
+     Форма держит около сорока полей, и всё это жило только в памяти
+     вкладки: случайный «назад», обрыв сети или истёкшая сессия стирали
+     работу за пятнадцать минут — главная точка потери продавцов. Фото
+     здесь — уже загруженные адреса, поэтому восстанавливается и оно.
+
+     Гаражный режим не сохраняется: там форму наполняет сама машина из
+     гаража, и черновик перезаписал бы её данные. */
+  const draftRestoredRef = useRef(false)
+
+  useEffect(() => {
+    if (isGarageMode || draftRestoredRef.current) return
+    draftRestoredRef.current = true
+    try {
+      const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY)
+      if (!raw) return
+      const draft = JSON.parse(raw) as { f?: typeof f; images?: string[]; savedAt?: number }
+      if (!draft?.f) return
+      /* Черновик старше недели скорее мусор, чем работа. */
+      if (!draft.savedAt || Date.now() - draft.savedAt > 7 * 86_400_000) {
+        window.localStorage.removeItem(DRAFT_STORAGE_KEY)
+        return
+      }
+      const hasContent = Boolean(draft.f.make || draft.f.model || draft.f.title || draft.f.description || draft.images?.length)
+      if (!hasContent) return
+      setF((current) => ({ ...current, ...draft.f }))
+      if (draft.images?.length) replaceImages(draft.images)
+      notifications.show({
+        title: "Черновик восстановлен",
+        message: "Мы сохранили заполненное с прошлого раза. Продолжайте с того же места.",
+        color: "indigo",
+        autoClose: 8_000,
+      })
+    } catch {
+      /* Испорченный черновик не должен ломать форму. */
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGarageMode])
+
+  useEffect(() => {
+    if (isGarageMode) return
+    /* Пауза между нажатиями клавиш: писать в хранилище на каждый символ
+       незачем. */
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ f, images, savedAt: Date.now() }))
+      } catch {
+        /* Переполненное хранилище — не повод ронять форму. */
+      }
+    }, 800)
+    return () => window.clearTimeout(timer)
+  }, [f, images, isGarageMode])
 
   const loadCategories = useCallback(async () => {
     setCategoriesLoading(true)
@@ -189,7 +248,16 @@ function CreateVehicleWorkspace() {
     const make = value.trimStart()
     return make === previous.make ? previous : { ...previous, make, model: "" }
   })
-  const setVehicleType = (vehicleType: string) => setF((previous) => ({
+  const setVehicleType = (vehicleType: string) => setF((previous) => {
+    /* Случайный клик по соседнему типу затирал четырнадцать заполненных
+       полей без предупреждения. Если марка уже введена — спрашиваем;
+       подтверждение через confirm, а не модалку: смена типа посреди
+       заполнения — редкое действие, городить состояние ради него незачем. */
+    if (previous.vehicleType !== vehicleType && (previous.make || previous.vin || previous.model)) {
+      const agreed = window.confirm("Сменить тип транспорта? Марка, модель, VIN и характеристики будут очищены.")
+      if (!agreed) return previous
+    }
+    return {
     ...previous,
     vehicleType,
     make: "",
@@ -212,7 +280,8 @@ function CreateVehicleWorkspace() {
     availability: "",
     customsCleared: "",
     generation: "",
-  }))
+    }
+  })
   const usageMeta = getUsageMeta(f.vehicleType)
   const identityMeta = getVehicleIdentityMeta(f.vehicleType)
   // В форме «Другое» не предлагаем — оно остаётся только для показа лотов,
@@ -409,6 +478,9 @@ function CreateVehicleWorkspace() {
         }),
       })
 
+      /* Объявление создано — черновик больше не нужен: иначе следующая
+         подача начнётся с данных прошлой машины. */
+      try { window.localStorage.removeItem(DRAFT_STORAGE_KEY) } catch {}
       notifications.show({ title: "Отправлено на проверку", message: "Мы проверим объявление и опубликуем его после модерации.", color: "indigo" })
       const listingId = vehicle.listings[0]?.id
       router.push(`/dashboard?tab=listings${listingId ? `&created=${encodeURIComponent(listingId)}` : ""}`)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { isAdmin } from "@/lib/permissions"
 import ListingModerationActions from "@/components/listings/ListingModerationActions"
@@ -51,6 +51,7 @@ import {
   IconUsers,
   IconRoute,
   IconChevronLeft,
+  IconX,
   IconChevronRight,
   IconEye,
   IconSteeringWheel,
@@ -210,6 +211,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const [reviewText, setReviewText] = useState("")
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [reportOpened, setReportOpened] = useState(false)
+  /* Полноэкранный просмотр фото: клик по снимку раньше не делал ничего,
+     хотя именно так фото смотрят на всех больших площадках. */
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const [reportReason, setReportReason] = useState("MISLEADING")
   const [reportComment, setReportComment] = useState("")
   const [reportSubmitting, setReportSubmitting] = useState(false)
@@ -339,6 +343,18 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const moveImage = (direction: number) => {
     selectImage((activeImage + direction + images.length) % images.length)
   }
+
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "ArrowRight") moveImage(1)
+      if (event.key === "ArrowLeft") moveImage(-1)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightboxOpen, images.length])
+
   const typeMeta = VEHICLE_META[data.vehicleType] || VEHICLE_META.CAR
   const hasRoadVehicleDetails = ["CAR", "MOTORCYCLE", "TRUCK"].includes(data.vehicleType)
   const identityMeta = getVehicleIdentityMeta(data.vehicleType)
@@ -424,6 +440,8 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   {/* Главное изображение */}
                   <Box
                     className="vehicle-detail-gallery__media"
+                    style={{ cursor: hasImages && !imageFailed ? "zoom-in" : undefined }}
+                    onClick={() => { if (hasImages && !imageFailed) setLightboxOpen(true) }}
                     onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null }}
                     onTouchEnd={(event) => {
                       /* Порог в 40 пикселей отличает свайп от касания:
@@ -1024,6 +1042,69 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
           </Button>
         </Group>
       </Stack>
+    </Modal>
+
+    {/* Полноэкранный просмотр фото. Тёмный фон, стрелки, свайп и
+        клавиатура — так фото смотрят на всех больших площадках, а здесь
+        клик по снимку раньше не делал ничего. */}
+    <Modal
+      opened={lightboxOpen}
+      onClose={() => setLightboxOpen(false)}
+      fullScreen
+      padding={0}
+      withCloseButton={false}
+      styles={{ body: { background: "rgba(10, 14, 24, 0.97)", height: "100dvh" } }}
+      transitionProps={{ transition: "fade", duration: 160 }}
+    >
+      <Box
+        style={{ position: "relative", height: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}
+        onClick={() => setLightboxOpen(false)}
+        onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null }}
+        onTouchEnd={(event) => {
+          const startX = touchStartX.current
+          touchStartX.current = null
+          if (startX === null || images.length < 2) return
+          const delta = (event.changedTouches[0]?.clientX ?? startX) - startX
+          if (Math.abs(delta) < 40) return
+          moveImage(delta < 0 ? 1 : -1)
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={images[activeImage]}
+          alt={`${data.make} ${data.model} — фото ${activeImage + 1} в полном размере`}
+          style={{ maxWidth: "96vw", maxHeight: "92dvh", objectFit: "contain" }}
+          onClick={(event) => event.stopPropagation()}
+        />
+
+        <ActionIcon
+          aria-label="Закрыть просмотр"
+          variant="filled"
+          color="dark"
+          radius="xl"
+          size="lg"
+          pos="absolute"
+          top={16}
+          right={16}
+          onClick={() => setLightboxOpen(false)}
+        >
+          <IconX size={20} />
+        </ActionIcon>
+
+        {images.length > 1 && (
+          <>
+            <ActionIcon aria-label="Предыдущее фото" variant="filled" color="dark" radius="xl" size="lg" pos="absolute" left={16} top="50%" style={{ transform: "translateY(-50%)" }} onClick={(event) => { event.stopPropagation(); moveImage(-1) }}>
+              <IconChevronLeft size={20} />
+            </ActionIcon>
+            <ActionIcon aria-label="Следующее фото" variant="filled" color="dark" radius="xl" size="lg" pos="absolute" right={16} top="50%" style={{ transform: "translateY(-50%)" }} onClick={(event) => { event.stopPropagation(); moveImage(1) }}>
+              <IconChevronRight size={20} />
+            </ActionIcon>
+            <Badge pos="absolute" bottom={20} variant="filled" color="dark" size="lg" style={{ left: "50%", transform: "translateX(-50%)" }}>
+              {activeImage + 1} / {images.length}
+            </Badge>
+          </>
+        )}
+      </Box>
     </Modal>
 
     {/* Полоса связи на узких экранах.
