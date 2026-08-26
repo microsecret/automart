@@ -131,11 +131,15 @@ export default function NewsListClient({ initialData }: { initialData: NewsRespo
   const [sort, setSort] = useState<"recent" | "popular">("recent")
   const deferredQuery = useDeferredValue(query.trim())
   const isInitialFeed = page === 1 && !deferredQuery && sort === "recent"
-  // Главная новость занимает две колонки из трёх, поэтому при 12 карточках
-  // сетка получала 13 ячеек и последний ряд оставался с дырой. Там, где
-  // главной нет, дыру давал бы уже нечётный остаток, поэтому лимит зависит
-  // от неё: 11 карточек с главной и 12 без — оба варианта дают полные ряды.
-  const newsUrl = `/api/news?page=${page}&limit=${isInitialFeed ? 11 : 12}&sort=${sort}${deferredQuery ? `&q=${encodeURIComponent(deferredQuery)}` : ""}`
+  /* Двадцать новостей на страницу вместо одиннадцати: лента обновляется
+     по нескольку раз в день, и при прежнем шаге читатель уходил на вторую
+     страницу, не досмотрев свежее за сутки.
+
+     Главная новость занимает две колонки из трёх, поэтому счёт ячеек с ней
+     и без неё разный: 20 карточек с главной дают 21 ячейку (семь полных
+     рядов), 21 карточка без главной — те же семь рядов. Иначе последний
+     ряд остаётся с дырой. */
+  const newsUrl = `/api/news?page=${page}&limit=${isInitialFeed ? 20 : 21}&sort=${sort}${deferredQuery ? `&q=${encodeURIComponent(deferredQuery)}` : ""}`
   const { data: liveData, error, isLoading, mutate } = useSWR<NewsResponse>(newsUrl, fetchJson, {
     fallbackData: isInitialFeed ? initialData : undefined,
     keepPreviousData: true,

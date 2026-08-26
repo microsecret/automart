@@ -1,0 +1,140 @@
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { Anchor, Badge, Box, Breadcrumbs, Card, Container, Group, Stack, Text, Title } from "@mantine/core"
+import { IconEye, IconMessages, IconPin } from "@tabler/icons-react"
+import { prisma } from "@/lib/prisma"
+import { TOPICS_PER_PAGE } from "@/lib/forum"
+import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
+import NewTopicForm from "./NewTopicForm"
+
+type Props = { params: Promise<{ section: string }>; searchParams: Promise<{ page?: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { section: slug } = await params
+  const section = await prisma.forumSection.findUnique({
+    where: { slug },
+    select: { title: true, description: true },
+  })
+  if (!section) return { title: "Раздел не найден — LeWheel" }
+
+  return {
+    title: `${section.title} — форум LeWheel`,
+    description: section.description || `Обсуждения в разделе «${section.title}» на форуме автолюбителей LeWheel.`,
+  }
+}
+
+export const revalidate = 60
+
+export default async function ForumSectionPage({ params, searchParams }: Props) {
+  const { section: slug } = await params
+  const { page: pageParam } = await searchParams
+  const page = Math.max(1, Number.parseInt(pageParam || "1", 10) || 1)
+
+  const section = await prisma.forumSection.findUnique({
+    where: { slug },
+    select: { id: true, slug: true, title: true, description: true, topicCount: true },
+  })
+  if (!section) notFound()
+
+  const topics = await prisma.forumTopic.findMany({
+    where: { sectionId: section.id, deletedAt: null },
+    /* Закреплённые сверху, дальше — по свежести последнего сообщения:
+       живое обсуждение важнее давно созданной темы. */
+    orderBy: [{ isPinned: "desc" }, { lastPostAt: "desc" }],
+    skip: (page - 1) * TOPICS_PER_PAGE,
+    take: TOPICS_PER_PAGE,
+    select: {
+      slug: true, title: true, isPinned: true, isClosed: true,
+      views: true, replyCount: true, lastPostAt: true,
+      author: { select: { name: true } },
+    },
+  })
+
+  const totalPages = Math.max(1, Math.ceil(section.topicCount / TOPICS_PER_PAGE))
+
+  return (
+    <Container size="lg" py={{ base: "md", md: "xl" }}>
+      <Stack gap="md">
+        <Breadcrumbs separator="›">
+          <Anchor component={Link} href="/forum" size="xs" c="var(--market-muted)">Форум</Anchor>
+          <Text size="xs" c="var(--market-muted)">{section.title}</Text>
+        </Breadcrumbs>
+
+        <Box>
+          <Title order={1} fz={{ base: 22, md: 30 }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
+            {section.title}
+          </Title>
+          {section.description && <Text size="sm" c="var(--market-muted)" mt={4}>{section.description}</Text>}
+        </Box>
+
+        <NewTopicForm sectionSlug={section.slug} />
+
+        {topics.length === 0 ? (
+          <Card withBorder radius="md" p="xl">
+            <Stack align="center" gap={6} ta="center">
+              <Text fw={700} c="var(--market-ink)">Здесь пока не обсуждали</Text>
+              <Text size="sm" c="var(--market-muted)" maw={420}>
+                Задайте вопрос — на форуме отвечают владельцы, которые уже прошли через это.
+              </Text>
+            </Stack>
+          </Card>
+        ) : (
+          <Stack gap={6}>
+            {topics.map((topic) => (
+              <Card
+                key={topic.slug}
+                component={Link}
+                href={`/forum/${section.slug}/${topic.slug}`}
+                withBorder
+                radius="md"
+                p="sm"
+                className="forum-topic-row"
+              >
+                <Group justify="space-between" wrap="nowrap" gap="sm" align="flex-start">
+                  <Box style={{ minWidth: 0 }}>
+                    <Group gap={6} wrap="nowrap">
+                      {topic.isPinned && <IconPin size={13} color="var(--mantine-color-indigo-6)" />}
+                      <Text fw={600} fz="sm" c="var(--market-ink)" lineClamp={2}>{topic.title}</Text>
+                      {topic.isClosed && <Badge size="xs" variant="light" color="gray">закрыта</Badge>}
+                    </Group>
+                    <Text size="xs" c="var(--market-muted)" mt={3}>
+                      {topic.author.name || "Участник"} · {formatAdminDateTimeShort(topic.lastPostAt)}
+                    </Text>
+                  </Box>
+
+                  <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
+                    <Group gap={3}>
+                      <IconMessages size={12} color="var(--market-muted)" />
+                      <Text size="xs" c="var(--market-muted)" style={{ fontVariantNumeric: "tabular-nums" }}>
+                        {topic.replyCount}
+                      </Text>
+                    </Group>
+                    <Group gap={3}>
+                      <IconEye size={12} color="var(--market-muted)" />
+                      <Text size="xs" c="var(--market-muted)" style={{ fontVariantNumeric: "tabular-nums" }}>
+                        {topic.views}
+                      </Text>
+                    </Group>
+                  </Group>
+                </Group>
+              </Card>
+            ))}
+          </Stack>
+        )}
+
+        {totalPages > 1 && (
+          <Group justify="center" gap="xs">
+            {page > 1 && (
+              <Anchor component={Link} href={`/forum/${section.slug}?page=${page - 1}`} size="sm">Назад</Anchor>
+            )}
+            <Text size="sm" c="var(--market-muted)">Страница {page} из {totalPages}</Text>
+            {page < totalPages && (
+              <Anchor component={Link} href={`/forum/${section.slug}?page=${page + 1}`} size="sm">Дальше</Anchor>
+            )}
+          </Group>
+        )}
+      </Stack>
+    </Container>
+  )
+}

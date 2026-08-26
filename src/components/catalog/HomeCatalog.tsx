@@ -595,6 +595,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Text size="10px" c="dimmed" fw={800} tt="uppercase">Цена, ₽</Text>
               <Group gap={4} wrap="nowrap">
                 <TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} />
+                <Text className="catalog-price-range__dash" aria-hidden="true">—</Text>
                 <TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} />
               </Group>
             </Box>

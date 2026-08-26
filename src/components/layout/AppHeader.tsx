@@ -1,7 +1,8 @@
 "use client"
 
 import { Box, Burger, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake, IconTruckDelivery } from "@tabler/icons-react"
+import { IconSearch, IconBell, IconMessageCircle2,
+  IconMessages, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake, IconTruckDelivery } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -42,6 +43,7 @@ const PRIMARY_ICONS = {
   parts: <IconTools size={14} />,
   auctions: <IconGavel size={14} />,
   news: <IconNews size={14} />,
+  forum: <IconMessages size={14} />,
 } satisfies Record<(typeof PRIMARY_NAVIGATION)[number]["id"], React.ReactNode>
 
 const PLATFORM_ICONS = {

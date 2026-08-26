@@ -66,6 +66,9 @@ test("активный раздел учитывает вложенные мар
   assert.equal(isNavigationItemActive("/news", auctions), false)
 })
 
-test("мобильная панель выводит аукционы и новости без дублирования кабинета", () => {
-  assert.deepEqual(SITE_MOBILE_NAVIGATION.map((item) => item.id), ["home", "auctions", "create", "news", "messages"])
+test("мобильная панель ведёт на форум, а не дублирует кабинет", () => {
+  // Форум занял место новостей: новости живут в шапке и читаются разом, а
+  // форум без входа с телефона не заживёт — именно туда возвращаются за
+  // ответом на свой вопрос.
+  assert.deepEqual(SITE_MOBILE_NAVIGATION.map((item) => item.id), ["home", "auctions", "create", "forum", "messages"])
 })

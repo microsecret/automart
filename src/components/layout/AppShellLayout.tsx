@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import {
   IconBell, IconBrain, IconCar, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation,
-  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMotorbike, IconNews,
+  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMessages, IconMotorbike, IconNews,
   IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
   IconBuildingStore, IconClipboardList, IconGift, IconTractor, IconTruck, IconTruckDelivery,
 } from "@tabler/icons-react"
@@ -59,7 +59,7 @@ const MOBILE_ICONS = {
   home: IconHome2,
   auctions: IconGavel,
   create: IconPlus,
-  news: IconNews,
+  forum: IconMessages,
   messages: IconMessageCircle2,
 } satisfies Record<(typeof SITE_MOBILE_NAVIGATION)[number]["id"], typeof IconHome2>
 

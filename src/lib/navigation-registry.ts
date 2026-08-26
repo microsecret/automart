@@ -18,6 +18,7 @@ export const PRIMARY_NAVIGATION = [
   { id: "parts", label: "Запчасти", href: "/parts-finder", activePrefixes: ["/listings/part"] },
   { id: "auctions", label: "Аукционы", href: "/auctions" },
   { id: "news", label: "Новости", href: "/news" },
+  { id: "forum", label: "Форум", href: "/forum" },
 ] as const satisfies readonly NavigationItem[]
 
 export const PLATFORM_NAVIGATION = [
@@ -89,7 +90,10 @@ export const SITE_MOBILE_NAVIGATION = [
   { id: "home", label: "Главная", href: "/" },
   { id: "auctions", label: "Аукционы", href: "/auctions" },
   { id: "create", label: "Подать", href: CREATE_VEHICLE_HREF },
-  { id: "news", label: "Новости", href: "/news" },
+  /* Форум вместо новостей: новости живут в шапке и читаются разом, а форум
+     без входа с телефона не заживёт — именно туда возвращаются за ответом
+     на свой вопрос, и именно он приводит людей из поиска. */
+  { id: "forum", label: "Форум", href: "/forum" },
   { id: "messages", label: "Чаты", href: "/messages" },
 ] as const satisfies readonly NavigationItem[]
 

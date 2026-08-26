@@ -30,7 +30,7 @@ export default async function NewsPage() {
   // трёх, поэтому двенадцать карточек дают тринадцать ячеек и последний ряд
   // остаётся с дырой. Клиент запрашивает столько же — иначе до подгрузки
   // SWR показывались серверные двенадцать и ряд рвался.
-  const initialPage = await getNewsPage({ page: 1, limit: 11 })
+  const initialPage = await getNewsPage({ page: 1, limit: 20 })
 
   return (
     <NewsListClient

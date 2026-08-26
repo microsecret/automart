@@ -44,6 +44,8 @@ model User {
   favoriteListings              Listing[]                      @relation("Favorites")
   partBids                      PartBid[]
   reviews                       Review[]                       @relation("Reviewer")
+  forumTopics                   ForumTopic[]                   @relation("ForumTopicAuthor")
+  forumPosts                    ForumPost[]                    @relation("ForumPostAuthor")
   messagesSent                  Message[]                      @relation("MessageSender")
   messagesReceived              Message[]                      @relation("MessageReceiver")
   messageAttachments            MessageAttachment[]            @relation("MessageAttachmentUploader")
@@ -1537,4 +1539,92 @@ model TranslationCache {
   updatedAt  DateTime @updatedAt
 
   @@index([updatedAt])
+}
+
+/// Раздел форума.
+///
+/// Форум решает задачу, которой не решает каталог: приводит людей, ещё не
+/// готовых покупать. Человек ищет «как растаможить машину из Кореи» и
+/// попадает на площадку задолго до того, как соберётся за машиной.
+///
+/// Разделы устроены по трём осям сразу — география, происхождение марки и
+/// тема. Так делает drom.ru, и так человек ищет: одному нужен «Урал», другому
+/// «китайские», третьему «запчасти».
+model ForumSection {
+  id    String @id @default(uuid())
+  /// Человекочитаемый адрес: /forum/ural, /forum/china.
+  slug  String @unique
+  title String
+  /// Короткое пояснение под названием в списке разделов.
+  description String?
+  /// Ось: REGION, ORIGIN или TOPIC. Определяет группу в списке разделов.
+  groupKey    String
+  /// Порядок внутри группы: разделы перечисляются осмысленно, а не по алфавиту.
+  position    Int    @default(0)
+
+  /// Счётчики хранятся полями, а не считаются запросом: список разделов
+  /// открывается на каждый заход, а COUNT по всем темам и сообщениям на
+  /// SQLite при росте форума становится самым дорогим запросом страницы.
+  topicCount Int @default(0)
+  postCount  Int @default(0)
+
+  lastPostAt DateTime?
+
+  createdAt DateTime @default(now())
+  topics    ForumTopic[]
+
+  @@index([groupKey, position])
+}
+
+/// Тема форума.
+model ForumTopic {
+  id        String @id @default(uuid())
+  slug      String @unique
+  title     String
+  sectionId String
+  section   ForumSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User @relation("ForumTopicAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// Закреплённые темы идут первыми: правила раздела и важные объявления.
+  isPinned Boolean @default(false)
+  /// Закрытая тема доступна для чтения, но не для ответов.
+  isClosed Boolean @default(false)
+
+  views      Int @default(0)
+  replyCount Int @default(0)
+
+  /// Дата последнего сообщения: по ней сортируется список тем. Хранится
+  /// полем, иначе каждая сортировка тянула бы подзапрос по всем сообщениям.
+  lastPostAt DateTime @default(now())
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  /// Мягкое удаление: тема с обсуждением не исчезает бесследно.
+  deletedAt DateTime?
+
+  posts ForumPost[]
+
+  @@index([sectionId, isPinned, lastPostAt])
+  @@index([authorId])
+  @@index([deletedAt])
+}
+
+/// Сообщение в теме.
+model ForumPost {
+  id       String @id @default(uuid())
+  topicId  String
+  topic    ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User @relation("ForumPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  content  String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  /// Мягкое удаление: на месте удалённого модератором сообщения остаётся
+  /// пометка, иначе ответы на него теряют смысл.
+  deletedAt DateTime?
+
+  @@index([topicId, createdAt])
+  @@index([authorId])
 }
