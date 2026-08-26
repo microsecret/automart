@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Anchor, Avatar, Badge, Box, Breadcrumbs, Card, Container, Group, Stack, Text, Title } from "@mantine/core"
 import { prisma } from "@/lib/prisma"
 import { pluralReplies, POSTS_PER_PAGE } from "@/lib/forum"
+import { renderForumMarkup, stripForumMarkup } from "@/lib/forum-markup"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
 import ReplyForm from "./ReplyForm"
 
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   /* Описание из первого сообщения: поисковая выдача показывает именно
      его, и осмысленный отрывок приводит людей лучше шаблонной строки. */
-  const excerpt = topic.posts[0]?.content.replace(/\s+/g, " ").slice(0, 155) || ""
+  const excerpt = stripForumMarkup(topic.posts[0]?.content || "").slice(0, 155)
 
   return {
     title: `${topic.title} — ${topic.section.title} — форум LeWheel`,
@@ -99,15 +100,20 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                   </Group>
                   {/* Удалённое сообщение оставляет пометку: без неё ответы на
                       него теряют смысл, а разговор — нить. */}
-                  <Text
-                    size="sm"
-                    mt={4}
-                    c={post.deletedAt ? "var(--market-muted)" : undefined}
-                    fs={post.deletedAt ? "italic" : undefined}
-                    style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-                  >
-                    {post.deletedAt ? "Сообщение удалено модератором" : post.content}
-                  </Text>
+                  {post.deletedAt ? (
+                    <Text size="sm" mt={4} c="var(--market-muted)" fs="italic">
+                      Сообщение удалено модератором
+                    </Text>
+                  ) : (
+                    <Box
+                      className="forum-post-body"
+                      mt={4}
+                      /* Разметка собрана своим разбором: всё постороннее
+                         экранировано, наружу выходят только семь
+                         разрешённых конструкций — см. lib/forum-markup.ts. */
+                      dangerouslySetInnerHTML={{ __html: renderForumMarkup(post.content) }}
+                    />
+                  )}
                 </Box>
               </Group>
             </Card>

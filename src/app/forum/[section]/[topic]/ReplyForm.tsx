@@ -4,8 +4,9 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { Button, Card, Group, Stack, Text, Textarea } from "@mantine/core"
+import { Button, Card, Group, Stack, Text } from "@mantine/core"
 import { validatePostContent } from "@/lib/forum"
+import MarkupEditor from "@/components/forum/MarkupEditor"
 
 /** Ответ в теме. */
 export default function ReplyForm({ topicId, returnPath }: { topicId: string; returnPath: string }) {
@@ -60,14 +61,13 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
   return (
     <Card withBorder radius="md" p="sm">
       <Stack gap="xs">
-        <Textarea
+        <MarkupEditor
           label="Ваш ответ"
           placeholder="Поделитесь опытом — что сработало, а что нет"
           value={content}
-          onChange={(event) => setContent(event.currentTarget.value)}
+          onChange={setContent}
           minRows={3}
-          autosize
-          size="sm"
+          disabled={sending}
         />
         {error && <Text size="xs" c="red.6">{error}</Text>}
         <Group>

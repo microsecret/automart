@@ -4,10 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { Button, Card, Collapse, Group, Stack, Text, Textarea, TextInput } from "@mantine/core"
+import { Button, Card, Collapse, Group, Stack, Text, TextInput } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { IconPlus } from "@tabler/icons-react"
 import { TOPIC_TITLE_MAX, validatePostContent, validateTopicTitle } from "@/lib/forum"
+import MarkupEditor from "@/components/forum/MarkupEditor"
 
 /**
  * Создание темы прямо в разделе.
@@ -97,14 +98,13 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
               maxLength={TOPIC_TITLE_MAX}
               size="sm"
             />
-            <Textarea
+            <MarkupEditor
               label="Подробности"
               placeholder="Опишите ситуацию: что за машина, что смущает, какой опыт уже есть"
               value={content}
-              onChange={(event) => setContent(event.currentTarget.value)}
+              onChange={setContent}
               minRows={4}
-              autosize
-              size="sm"
+              disabled={sending}
             />
             {error && <Text size="xs" c="red.6">{error}</Text>}
             <Group gap="xs">

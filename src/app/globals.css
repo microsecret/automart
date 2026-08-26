@@ -6625,3 +6625,86 @@ h1[data-lw-hero] {
     transition: none;
   }
 }
+
+/* === Форум: тело сообщения и панель форматирования ===
+   Теги приходят из своего разбора Markdown, поэтому набор известен
+   заранее — оформляем ровно семь конструкций и ничего сверх. */
+
+.forum-post-body {
+  color: var(--mantine-color-text);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.forum-post-body p {
+  margin: 0 0 8px;
+}
+
+.forum-post-body p:last-child {
+  margin-bottom: 0;
+}
+
+.forum-post-body strong {
+  font-weight: 700;
+}
+
+.forum-post-body ul,
+.forum-post-body ol {
+  margin: 0 0 8px;
+  padding-left: 22px;
+}
+
+.forum-post-body li {
+  margin-bottom: 2px;
+}
+
+/* Цитата — вертикальной чертой, а не курсивом: курсивом набирают целые
+   абзацы чужого текста, и читать их тяжело. */
+.forum-post-body blockquote {
+  margin: 0 0 8px;
+  padding: 4px 0 4px 12px;
+  border-left: 3px solid color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
+  color: var(--market-muted);
+}
+
+.forum-post-body code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--market-surface-subtle);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.83em;
+}
+
+.forum-post-body a {
+  color: var(--market-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.forum-post-body del {
+  color: var(--market-muted);
+}
+
+/* Панель: кнопки в одну линию, разделители между смысловыми группами. */
+.markup-toolbar {
+  padding: 3px 4px;
+  border: 1px solid var(--market-field-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface-subtle);
+}
+
+.markup-toolbar__divider {
+  width: 1px;
+  height: 18px;
+  margin-inline: 3px;
+  background: var(--market-line);
+}
+
+.markup-preview {
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1px solid var(--market-field-line);
+  border-radius: var(--radius-md);
+  background: var(--market-field);
+}
