@@ -12,6 +12,7 @@ import {
   IconSend, IconUsers, IconUserCheck, IconUserOff,
 } from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+import { broadcastBlockReason, describeBroadcast, type BroadcastAudience } from "@/lib/broadcast-confirmation"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
 type Stats = {
@@ -73,7 +74,7 @@ export default function TelegramBroadcastPage() {
     fetchJson,
   )
   const [text, setText] = useState("")
-  const [audience, setAudience] = useState("all")
+  const [audience, setAudience] = useState<BroadcastAudience>("all")
   const [sending, setSending] = useState(false)
   const [lotInput, setLotInput] = useState("")
   const [highlightPreview, setHighlightPreview] = useState<HighlightPreview | null>(null)
@@ -89,8 +90,17 @@ export default function TelegramBroadcastPage() {
       : stats.reachable
     : null
 
+  /* Между «нажал» и «ушло всем» не было ни одного шага, на котором можно
+     остановиться: опечатка разлеталась по всей базе бота без возможности
+     отозвать. */
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const blockReason = broadcastBlockReason(text, audienceSize)
+  const confirmation = describeBroadcast(audience, audienceSize, text)
+
   const send = async () => {
     if (!text.trim() || sending) return
+    setConfirmOpen(false)
     setSending(true)
     try {
       const result = await fetchJson<BroadcastResult>("/api/admin/telegram-broadcast", {
@@ -336,7 +346,7 @@ export default function TelegramBroadcastPage() {
               <Text size="sm" fw={700} mb={6}>Кому отправить</Text>
               <SegmentedControl
                 value={audience}
-                onChange={setAudience}
+                onChange={(value) => setAudience(value as BroadcastAudience)}
                 data={[
                   { value: "all", label: "Всем" },
                   { value: "unregistered", label: "Не закончившим" },
@@ -370,9 +380,10 @@ export default function TelegramBroadcastPage() {
               <Button
                 leftSection={<IconSend size={16} />}
                 color="indigo"
-                onClick={() => void send()}
+                onClick={() => setConfirmOpen(true)}
                 loading={sending}
-                disabled={!text.trim() || !audienceSize}
+                disabled={Boolean(blockReason)}
+                title={blockReason || undefined}
               >
                 {sending ? "Отправляем" : "Отправить"}
               </Button>
@@ -427,6 +438,38 @@ export default function TelegramBroadcastPage() {
             <Button variant="default" disabled={publishLoading} onClick={() => setConfirmHighlight(false)}>Отмена</Button>
             <Button color="teal" loading={publishLoading} onClick={() => void publishHighlight()}>
               Опубликовать
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Подтверждение рассылки.
+
+          Раньше сообщение уходило по одному нажатию: между решением и
+          отправкой не было шага, на котором можно остановиться, а отозвать
+          рассылку нельзя. Число получателей стоит и в заголовке, и на
+          кнопке — именно оно останавливает руку, а не слово «внимание». */}
+      <Modal
+        opened={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title={confirmation.title}
+        radius="md"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm">{confirmation.message}</Text>
+
+          <Group justify="flex-end" gap="sm">
+            <Button variant="subtle" color="gray" onClick={() => setConfirmOpen(false)}>
+              Отмена
+            </Button>
+            <Button
+              color={confirmation.large ? "red" : "indigo"}
+              leftSection={<IconSend size={16} />}
+              onClick={() => void send()}
+              loading={sending}
+            >
+              {confirmation.confirmLabel}
             </Button>
           </Group>
         </Stack>
