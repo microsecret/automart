@@ -33,7 +33,14 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
 
   const section = await prisma.forumSection.findUnique({
     where: { slug },
-    select: { id: true, slug: true, title: true, description: true, topicCount: true },
+    select: {
+      id: true, slug: true, title: true, description: true, topicCount: true,
+      parent: { select: { slug: true, title: true } },
+      children: {
+        orderBy: { position: "asc" },
+        select: { slug: true, title: true, description: true, topicCount: true, postCount: true },
+      },
+    },
   })
   if (!section) notFound()
 
@@ -58,6 +65,13 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
       <Stack gap="md">
         <Breadcrumbs separator="›">
           <Anchor component={Link} href="/forum" size="xs" c="var(--market-muted)">Форум</Anchor>
+          {/* Родитель в крошках: из подраздела «Toyota» нужен путь назад к
+              «Японским автомобилям», а не только к корню форума. */}
+          {section.parent && (
+            <Anchor component={Link} href={`/forum/${section.parent.slug}`} size="xs" c="var(--market-muted)">
+              {section.parent.title}
+            </Anchor>
+          )}
           <Text size="xs" c="var(--market-muted)">{section.title}</Text>
         </Breadcrumbs>
 
@@ -67,6 +81,36 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
           </Title>
           {section.description && <Text size="sm" c="var(--market-muted)" mt={4}>{section.description}</Text>}
         </Box>
+
+        {/* Подразделы идут первыми: у родительского раздела своих тем
+            обычно нет, и человеку нужен переход глубже, а не форма. */}
+        {section.children.length > 0 && (
+          <Card withBorder radius="md" p={0} className="forum-group">
+            <Box className="forum-group__head">
+              <Text fw={800} fz="sm" c="var(--market-ink)">Подразделы</Text>
+            </Box>
+            <Stack gap={0}>
+              {section.children.map((child) => (
+                <Box key={child.slug} className="forum-row">
+                  <Box className="forum-row__main">
+                    <Anchor component={Link} href={`/forum/${child.slug}`} className="forum-row__title">
+                      {child.title}
+                    </Anchor>
+                    {child.description && <Text className="forum-row__description">{child.description}</Text>}
+                  </Box>
+                  <Box className="forum-row__stats">
+                    <Text className="forum-row__stat">
+                      <span className="forum-row__stat-label">Тем: </span>{child.topicCount}
+                    </Text>
+                    <Text className="forum-row__stat forum-row__stat--muted">
+                      <span className="forum-row__stat-label">Сообщений: </span>{child.postCount}
+                    </Text>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+          </Card>
+        )}
 
         <NewTopicForm sectionSlug={section.slug} />
 

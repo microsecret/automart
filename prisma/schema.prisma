@@ -1562,6 +1562,16 @@ model ForumSection {
   /// Порядок внутри группы: разделы перечисляются осмысленно, а не по алфавиту.
   position    Int    @default(0)
 
+  /// Родительский раздел.
+  ///
+  /// Плоский список из двадцати трёх разделов не вмещает того, как люди
+  /// на самом деле ищут: владельцу Camry нужен не «японские автомобили», а
+  /// раздел про его машину. Вложенность даёт и точный адрес обсуждения, и
+  /// отдельную страницу под поисковый запрос «форум Toyota Camry».
+  parentId String?
+  parent   ForumSection?  @relation("SectionTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children ForumSection[] @relation("SectionTree")
+
   /// Счётчики хранятся полями, а не считаются запросом: список разделов
   /// открывается на каждый заход, а COUNT по всем темам и сообщениям на
   /// SQLite при росте форума становится самым дорогим запросом страницы.
@@ -1574,6 +1584,7 @@ model ForumSection {
   topics    ForumTopic[]
 
   @@index([groupKey, position])
+  @@index([parentId, position])
 }
 
 /// Тема форума.
