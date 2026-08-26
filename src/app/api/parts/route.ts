@@ -189,9 +189,23 @@ export async function GET(request: NextRequest) {
       prisma.part.count({ where }),
     ])
 
+    /* Сколько позиций в каталоге вообще, без учёта фильтров.
+    
+       Страница обязана отличать «по этому запросу ничего нет» от «раздел
+       пуст»: в первом случае уместно предложить сбросить фильтры, во
+       втором это отправляет человека крутить настройки впустую. Ссылки
+       из бокового меню ведут сюда с выбранной категорией, и без этого
+       числа половина входов в раздел упиралась в плашку «ничего нет».
+    
+       Считаем только когда выдача пуста: на обычной странице лишний
+       запрос ни к чему. */
+    const catalogTotal = total === 0
+      ? await prisma.part.count({ where: { OR: [{ listings: { some: publicListingWhere } }, { store: { status: "ACTIVE" } }] } })
+      : total
+
     return NextResponse.json({
       parts: parts.map((part) => ({ ...part, availability: part.availability || "IN_STOCK" })),
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      pagination: { page, limit, total, pages: Math.ceil(total / limit), catalogTotal },
     })
   } catch (error) {
     console.error("Parts GET error:", error)

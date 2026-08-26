@@ -30,7 +30,9 @@ type PartResult = {
 
 type PartsResponse = {
   parts: PartResult[]
-  pagination: { total: number; pages: number; limit: number }
+  /* catalogTotal — сколько позиций в каталоге без учёта фильтров:
+     нужен, чтобы отличить «нет по запросу» от «раздел пуст». */
+  pagination: { total: number; pages: number; limit: number; catalogTotal?: number }
 }
 
 const fetcher = fetchJson
@@ -222,7 +224,15 @@ function PartsContent() {
      Отличается от «нашлось по фильтрам»: пустая выдача при выбранных
      условиях означает «уточните запрос», а пустой раздел — «здесь пока
      никто ничего не разместил». */
-  const hasParts = Boolean(data?.pagination?.total) || hasActiveFilters
+  /* Пуст ли раздел на самом деле.
+  
+     Прежде выбранный фильтр сам по себе считался признаком непустого
+     каталога, и по ссылке из бокового меню (?partType=ENGINE) человек
+     видел «По этим условиям запчастей нет» вместо витрины. Ссылок таких
+     шесть, то есть половина входов в раздел упиралась в плашку. */
+  const catalogEmpty = data ? (data.pagination?.catalogTotal ?? data.pagination?.total ?? 0) === 0 : false
+
+  const hasParts = Boolean(data?.pagination?.total) || (hasActiveFilters && !catalogEmpty)
 
   const resetFilters = () => {
     setQ(""); setPartType(null); setSubcategory(null); setMake(null); setModel(null)
@@ -389,7 +399,7 @@ function PartsContent() {
                   onRetry={() => mutate()}
                 />
               ) : parts.length === 0 ? (
-                hasActiveFilters ? (
+                hasActiveFilters && !catalogEmpty ? (
                   <Paper radius="md" p="xl" withBorder>
                     <Center>
                       <Stack align="center" gap="xs" maw={420} ta="center">
