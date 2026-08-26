@@ -52,6 +52,7 @@ import {
   IconRoute,
   IconChevronLeft,
   IconX,
+  IconChartLine,
   IconChevronRight,
   IconEye,
   IconSteeringWheel,
@@ -80,6 +81,7 @@ interface VehicleData {
   id: string
   /** Последнее снижение цены, если оно было в течение месяца. */
   priceDrop?: { amount: number; at: string } | null
+  priceHistory?: Array<{ oldPrice: number; newPrice: number; at: string }>
   make: string
   model: string
   year: number
@@ -214,6 +216,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   /* Полноэкранный просмотр фото: клик по снимку раньше не делал ничего,
      хотя именно так фото смотрят на всех больших площадках. */
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [priceHistoryOpen, setPriceHistoryOpen] = useState(false)
   const [reportReason, setReportReason] = useState("MISLEADING")
   const [reportComment, setReportComment] = useState("")
   const [reportSubmitting, setReportSubmitting] = useState(false)
@@ -845,6 +848,42 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     выдуманной ставке 2,5% без банка и условий. Обещание
                     кредита, которого площадка не даёт, — прямой риск
                     претензий. Вернуть можно с настоящим банком-партнёром. */}
+                {/* История цены. Данные копились с первого дня, но
+                    показывалось лишь последнее снижение бейджем. Движение
+                    цены — довод в переговорах, и на больших площадках
+                    такой блок стандарт. */}
+                {(data.priceHistory?.length ?? 0) > 0 && (
+                  <Box mb="xs">
+                    <UnstyledButton onClick={() => setPriceHistoryOpen((value) => !value)} aria-expanded={priceHistoryOpen}>
+                      <Group gap={4}>
+                        <IconChartLine size={13} color="var(--market-muted)" />
+                        <Text size="xs" c="var(--market-muted)" td="underline">
+                          История цены ({data.priceHistory!.length})
+                        </Text>
+                      </Group>
+                    </UnstyledButton>
+                    {priceHistoryOpen && (
+                      <Stack gap={4} mt={6}>
+                        {data.priceHistory!.map((event) => {
+                          const dropped = event.newPrice < event.oldPrice
+                          return (
+                            <Group key={event.at} gap={6} wrap="nowrap">
+                              <Text size="xs" c="var(--market-muted)" w={78} style={{ fontVariantNumeric: "tabular-nums" }}>
+                                {new Date(event.at).toLocaleDateString("ru-RU")}
+                              </Text>
+                              <Text size="xs" fw={600} c={dropped ? "teal" : "var(--market-muted)"} style={{ fontVariantNumeric: "tabular-nums" }}>
+                                {formatPrice(event.newPrice)}
+                              </Text>
+                              <Text size="xs" c={dropped ? "teal" : "orange"}>
+                                {dropped ? "↓" : "↑"} {formatPrice(Math.abs(event.newPrice - event.oldPrice))}
+                              </Text>
+                            </Group>
+                          )
+                        })}
+                      </Stack>
+                    )}
+                  </Box>
+                )}
                 <Group gap={6}>
                   <IconMapPin size={13} color="var(--market-muted)" />
                   <Text size="xs" c="var(--market-muted)">{data.location}</Text>

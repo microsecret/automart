@@ -87,11 +87,12 @@ export default async function VehicleDetailPage({ params }: PageProps) {
 
              Движение цены говорит покупателю больше, чем сама цена:
              снижение — знак готовности торговаться, и человек решается
-             написать. Берём одно последнее событие: цепочка изменений
-             интересна разве что аналитику. */
+             написать. Последнее событие питает бейдж «Снижена», короткая
+             цепочка — блок истории: на больших площадках это стандарт, и
+             данные уже копились, просто не показывались. */
           priceEvents: {
             orderBy: { createdAt: "desc" },
-            take: 1,
+            take: 10,
             select: { oldPrice: true, newPrice: true, createdAt: true },
           },
         },
@@ -137,9 +138,16 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     ? { amount: lastPriceEvent.oldPrice - lastPriceEvent.newPrice, at: lastPriceEvent.createdAt.toISOString() }
     : null
 
+  const priceHistory = (listing?.priceEvents || []).map((event) => ({
+    oldPrice: event.oldPrice,
+    newPrice: event.newPrice,
+    at: event.createdAt.toISOString(),
+  }))
+
   const data = {
     id: vehicle.id,
     priceDrop,
+    priceHistory,
     make: vehicle.make,
     model: vehicle.model,
     year: vehicle.year,
