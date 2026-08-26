@@ -78,18 +78,14 @@ export default function CategoryShowcase() {
                     работает и ждёт первое объявление. Пять нулей из семи
                     плиток на главном экране отпугивали покупателя раньше,
                     чем он успевал посмотреть каталог. */}
-                {typeof count === "number" && (
-                  <Text className={styles.count} data-empty={count === 0 ? "true" : undefined}>
-                    {count}
-                  </Text>
+                {typeof count === "number" && count > 0 && (
+                  <Text className={styles.count}>{count}</Text>
                 )}
               </Group>
               <Text className={styles.label}>{label}</Text>
               <Text className={styles.hint}>{hint}</Text>
-              {typeof count === "number" && (
-                count > 0
-                  ? <Text className={styles.meta}>{count} {plural(count)}</Text>
-                  : <Text className={styles.meta} data-empty="true">Разместите первым</Text>
+              {typeof count === "number" && count > 0 && (
+                <Text className={styles.meta}>{count} {plural(count)}</Text>
               )}
             </Paper>
           )

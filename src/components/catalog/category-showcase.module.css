@@ -202,3 +202,31 @@
   color: var(--tone, var(--market-primary));
   opacity: 0.75;
 }
+
+/* Карточки направлений появляются волной за героем: перечисление, а не
+   одновременный хлопок. Задержки короткие — глаз успевает прочитать
+   порядок, но не ждёт. */
+@media (prefers-reduced-motion: no-preference) {
+  .card {
+    animation: showcase-rise 280ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+
+  .card:nth-child(2) { animation-delay: 40ms; }
+  .card:nth-child(3) { animation-delay: 80ms; }
+  .card:nth-child(4) { animation-delay: 120ms; }
+  .card:nth-child(5) { animation-delay: 160ms; }
+  .card:nth-child(6) { animation-delay: 200ms; }
+  .card:nth-child(7) { animation-delay: 240ms; }
+}
+
+@keyframes showcase-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

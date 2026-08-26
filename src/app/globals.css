@@ -6400,3 +6400,31 @@ h1[data-lw-hero] {
   background: var(--market-surface);
   box-shadow: 4px 0 8px -6px rgb(13 27 50 / 25%);
 }
+
+/* === Вход главного экрана ===
+   Первое впечатление: заголовок, поиск и плашка шагов поднимаются на
+   свои места один раз при загрузке. Только transform и opacity — без
+   перерисовок макета; тем, кто просил меньше движения, страница
+   отдаётся сразу собранной. */
+
+@keyframes home-hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-auctions__content {
+    animation: home-hero-rise 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+
+  .home-auctions__summary {
+    animation: home-hero-rise 320ms cubic-bezier(0.23, 1, 0.32, 1) 90ms both;
+  }
+}
