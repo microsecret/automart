@@ -79,6 +79,9 @@ export async function sendEmailVerification(emailInput: string, name?: string | 
   const greeting = escapeHtml(name?.trim() || "Здравствуйте")
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
+    /* Зависшая почтовая служба не должна держать воркер: forgot-password
+       — публичный маршрут. */
+    signal: AbortSignal.timeout(10_000),
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
@@ -109,6 +112,9 @@ export async function sendPasswordResetEmail(emailInput: string, name?: string |
   const greeting = escapeHtml(name?.trim() || "Здравствуйте")
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
+    /* Зависшая почтовая служба не должна держать воркер: forgot-password
+       — публичный маршрут. */
+    signal: AbortSignal.timeout(10_000),
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",

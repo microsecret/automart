@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { referralCodeForUser } from "@/lib/referral"
 
 export const dynamic = "force-dynamic"
@@ -16,6 +17,13 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Требуется вход" }, { status: 401 })
+
+  /* Проверка кода перебирает базу пользователей — самый дорогой запрос
+     группы, и он был единственным без ограничения частоты. */
+  const limit = rateLimit(`referral-claim:${session.user.id}`, { windowMs: 15 * 60_000, maxRequests: 10 })
+  if (!limit.success) {
+    return NextResponse.json({ error: "Слишком много попыток. Попробуйте позже." }, { status: 429, headers: rateLimitHeaders(limit) })
+  }
 
   const body = await request.json().catch(() => null)
   const code = typeof body?.code === "string" ? body.code.trim().toUpperCase().slice(0, 16) : ""

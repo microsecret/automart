@@ -68,6 +68,9 @@ export async function createYookassaPayment(
       "Authorization": authHeader(config),
       "Idempotence-Key": input.idempotenceKey,
     },
+    /* Зависшая касса не должна держать воркер: создание платежа стоит в
+       пользовательском запросе. */
+    signal: AbortSignal.timeout(12_000),
     body: JSON.stringify({
       amount: { value: formatRubAmount(input.amountRub), currency: "RUB" },
       capture: true,
@@ -95,6 +98,9 @@ export async function createYookassaPayment(
 export async function fetchYookassaPayment(config: YookassaConfig, paymentId: string): Promise<YookassaPayment> {
   const response = await fetch(`${API_BASE}/payments/${encodeURIComponent(paymentId)}`, {
     headers: { "Authorization": authHeader(config) },
+    /* Перечитывание платежа стоит в обработчике уведомлений: таймаут
+       возвращает 500, и ЮKassa повторит уведомление позже. */
+    signal: AbortSignal.timeout(10_000),
   })
 
   if (!response.ok) {

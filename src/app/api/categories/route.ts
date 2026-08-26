@@ -17,7 +17,10 @@ export async function GET() {
         vehicleType: getVehicleTypeForCategoryName(category.name),
       })),
     })
-  } catch {
-    return NextResponse.json({ categories: [] })
+  } catch (error) {
+    /* Сбой базы — не «категорий нет»: ответ 200 с пустым списком прятал
+       поломку и от клиента, и от мониторинга. */
+    console.error("Не удалось загрузить категории:", error)
+    return NextResponse.json({ error: "Категории временно недоступны" }, { status: 503 })
   }
 }

@@ -185,33 +185,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Вы уже оставляли отзыв об этом объявлении" }, { status: 409 })
     }
 
-    // Create the review
-    const review = await prisma.review.create({
-      data: {
-        rating: normalizedRating,
-        comment: normalizedComment || null,
-        userId: session.user.id,
-        listingId,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
+    /* Гонку двух одновременных запросов ловит уникальный индекс базы:
+       проверка выше — только для дружелюбного текста без исключения. */
+    const reviewData = {
+      rating: normalizedRating,
+      comment: normalizedComment || null,
+      userId: session.user.id,
+      listingId,
+    }
+    let review
+    try {
+      review = await prisma.review.create({
+        data: reviewData,
+        include: {
+          user: { select: { id: true, name: true, image: true } },
+          listing: { select: { id: true, title: true, price: true, vehicleId: true, partId: true } },
         },
-        listing: {
-          select: {
-            id: true,
-            title: true,
-            price: true,
-            vehicleId: true,
-            partId: true,
-          }
-        }
+      })
+    } catch (creationError) {
+      if ((creationError as { code?: string })?.code === "P2002") {
+        return NextResponse.json({ error: "Вы уже оставляли отзыв об этом объявлении" }, { status: 409 })
       }
-    })
+      throw creationError
+    }
 
     return NextResponse.json(review, { status: 201 })
   } catch (error) {

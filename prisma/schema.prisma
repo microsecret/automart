@@ -636,6 +636,11 @@ model Review {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Один отзыв автора на объявление: проверка «уже оставлен» шла кодом
+  // без ограничения в базе, и два одновременных запроса создавали два
+  // отзыва, вдвое искажая среднюю оценку. NULL здесь не конфликтует —
+  // отзывы без привязки к объявлению не ограничены.
+  @@unique([userId, listingId])
   @@index([userId])
   @@index([rating])
   @@index([createdAt])
