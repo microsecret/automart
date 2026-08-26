@@ -786,9 +786,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 >
                   {formatPrice(data.price)}
                 </Text>
-                <Badge variant="filled" color="green" size="sm" radius="sm" mb="xs" leftSection={<IconCheck size={12} />}>
-                  Справедливая цена
-                </Badge>
+                {/* Здесь стоял бейдж «Справедливая цена» — на каждом
+                    объявлении, без какого-либо расчёта. Фальшивый сигнал
+                    доверия хуже его отсутствия: он обесценивает и
+                    настоящие бейджи, и создаёт претензии покупателей.
+                    Вернуть можно только вместе с честной оценкой рынка. */}
                 {/* Снижение цены — сильный довод написать продавцу: оно
                     говорит о готовности торговаться. Показывается только
                     падение и только свежее, за последний месяц. */}
@@ -805,10 +807,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     Снижена на {formatPrice(data.priceDrop.amount)}
                   </Badge>
                 )}
-                <Group gap={6} mb="xs">
-                  <Text size="xs" c="var(--market-muted)">в кредит от</Text>
-                  <Text size="sm" fw={700} c="indigo">{Math.round(data.price * 0.025 / 1000)}к ₽/мес</Text>
-                </Group>
+                {/* Здесь была строка «в кредит от N ₽/мес», посчитанная по
+                    выдуманной ставке 2,5% без банка и условий. Обещание
+                    кредита, которого площадка не даёт, — прямой риск
+                    претензий. Вернуть можно с настоящим банком-партнёром. */}
                 <Group gap={6}>
                   <IconMapPin size={13} color="var(--market-muted)" />
                   <Text size="xs" c="var(--market-muted)">{data.location}</Text>
@@ -887,7 +889,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Tooltip label="Сравнить с другими" withArrow>
                       <Button
                         component={Link}
-                        href={`/compare?ids=${data.id}`}
+                        href={data.listingId ? `/compare?ids=${data.listingId}` : "/compare"}
                         size="sm"
                         radius="md"
                         variant="default"
@@ -938,10 +940,10 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </Stack>
                 </Group>
                 <Divider mb="sm" />
-                <Group gap={6} mb="xs">
-                  <IconShieldCheck size={16} color="#10b981" />
-                  <Text size="sm" c="var(--market-muted)">Проверенный продавец</Text>
-                </Group>
+                {/* Здесь стоял значок «Проверенный продавец» — у каждого
+                    продавца без исключения, при том что проверки в модели
+                    данных нет. Вернуть можно только вместе с настоящей
+                    верификацией. */}
                 {data.seller.otherVehicles.length > 0 && (
                   <Box mt="sm">
                     <Text size="xs" c="var(--market-muted)" mb={6}>Другие объявления ({data.seller.otherVehicles.length})</Text>
@@ -1007,6 +1009,52 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         </Group>
       </Stack>
     </Modal>
+
+    {/* Полоса связи на узких экранах.
+
+        Правая колонка с ценой и кнопками на телефоне уезжает в самый низ:
+        до «Показать телефон» — пять-семь экранов прокрутки мимо галереи,
+        характеристик и описания. Полоса держит единственное действие
+        страницы под рукой — так же, как у аукционных лотов.
+
+        Владельцу не показывается: он на своей карточке не звонит сам себе. */}
+    {session?.user?.id !== data.seller.id && (
+      <Box className="listing-action-bar">
+        <Box className="listing-action-bar__price">
+          <Text className="listing-action-bar__amount">{formatPrice(data.price)}</Text>
+          <Text className="listing-action-bar__note">{data.make} {data.model}, {data.year}</Text>
+        </Box>
+        {phone ? (
+          <Button component="a" href={`tel:${phone}`} color="indigo" size="md" radius="md" leftSection={<IconPhone size={16} />}>
+            {phone}
+          </Button>
+        ) : (
+          <Button
+            color="indigo"
+            size="md"
+            radius="md"
+            leftSection={<IconPhone size={16} />}
+            onClick={() => void revealPhone()}
+            loading={contactRevealing}
+            disabled={!data.listingId}
+          >
+            Телефон
+          </Button>
+        )}
+        <Button
+          variant="light"
+          color="indigo"
+          size="md"
+          radius="md"
+          component={Link}
+          href={`/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}`}
+          aria-label="Написать продавцу"
+          px={12}
+        >
+          <IconMessageCircle2 size={18} />
+        </Button>
+      </Box>
+    )}
     </>
   )
 }

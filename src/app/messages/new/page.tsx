@@ -19,7 +19,11 @@ function NewMessageContent() {
 
   useEffect(() => {
     if (status !== "loading" && !session) {
-      router.replace("/auth/signin")
+      /* Возврат после входа обязателен: человек нажал «Написать
+         продавцу», и без callbackUrl он оказывался на главной — намерение
+         и объявление терялись на самом дорогом шаге воронки. */
+      const here = `${window.location.pathname}${window.location.search}`
+      router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(here)}`)
     }
   }, [router, session, status])
 

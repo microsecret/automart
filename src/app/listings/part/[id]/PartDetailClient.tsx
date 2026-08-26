@@ -30,7 +30,6 @@ import {
   IconHeart,
   IconPhone,
   IconMessageCircle2,
-  IconShieldCheck,
   IconMapPin,
   IconTool,
   IconHash,
@@ -410,10 +409,8 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   </Stack>
                 </Group>
                 <Divider mb="sm" />
-                <Group gap={6}>
-                  <IconShieldCheck size={16} color="#10b981" />
-                  <Text size="sm" c="var(--market-muted)">Проверенный продавец</Text>
-                </Group>
+                {/* Значок «Проверенный продавец» убран: он стоял у всех
+                    без проверки. Вернуть — только с настоящей верификацией. */}
                 {data.seller.otherParts.length > 0 && (
                   <Box mt="sm">
                     <Text size="xs" c="var(--market-muted)" mb={6}>Другие запчасти ({data.seller.otherParts.length})</Text>

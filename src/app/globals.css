@@ -1012,10 +1012,11 @@ select {
   display: none;
 }
 
-/* На ноутбучных и обычных desktop-ширинах полное поле поиска уступает место
-   ключевым действиям «Стать партнёром», «Подать» и входу. Поиск остаётся
-   доступен одной явной кнопкой и разворачивается только на широком экране. */
-@media (max-width: 1699px) {
+/* Ниже 1200px полю тесно рядом с кнопками — остаётся явная кнопка
+   поиска. Прежняя граница была 1699px: поле пропадало на всех ноутбуках,
+   а на телефоне кнопку прятал ещё и visibleFrom — у маркетплейса не
+   оставалось поиска нигде, кроме прокрутки главной до фильтров. */
+@media (max-width: 74.99em) {
   .market-header-search {
     display: none !important;
   }
@@ -6310,5 +6311,81 @@ h1[data-lw-hero] {
   .parts-category-card:hover {
     transform: none;
     box-shadow: none;
+  }
+}
+
+/* === Полоса связи на карточке объявления ===
+   Правая колонка с ценой и кнопками на телефоне уезжает в самый низ
+   страницы: до «Показать телефон» пять-семь экранов прокрутки. Полоса
+   держит связь с продавцом под рукой — как у аукционных лотов. */
+
+.listing-action-bar {
+  position: fixed;
+  z-index: 200;
+  right: 0;
+  left: 0;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  /* Над плавающей нижней навигацией — та же арифметика, что у аукционов. */
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  padding: 10px 14px;
+  border-top: 1px solid var(--market-line);
+  background: var(--market-surface);
+  box-shadow: 0 -1px 2px rgb(13 27 50 / 6%), 0 -8px 24px -12px rgb(13 27 50 / 18%);
+}
+
+/* Полоса нужна только там, где колонка с кнопками уехала вниз:
+   на широких экранах она стоит рядом с галереей и полоса — лишний слой. */
+@media (max-width: 72em) {
+  .listing-action-bar {
+    display: flex;
+    animation: listing-action-bar-in 240ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+}
+
+.listing-action-bar__price {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.listing-action-bar__amount {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: var(--track-title);
+  color: var(--market-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.listing-action-bar__note {
+  overflow: hidden;
+  font-size: 0.7rem;
+  line-height: 1.25;
+  color: var(--market-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Появление снизу один раз при загрузке: прибытие полосы, не украшение. */
+@keyframes listing-action-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listing-action-bar {
+    animation: none;
   }
 }

@@ -21,11 +21,9 @@ export function formatPrice(price: number | null | undefined): string {
 }
 
 
-/** Ориентировочный ежемесячный платёж для краткого показа в карточке. */
-export function formatMonthlyPayment(price: number | null | undefined): string | null {
-  if (!price || !Number.isFinite(price) || price <= 100_000) return null
-  return `от ${formatPriceShort(Math.round(price * 0.025))}/мес`
-}
+/* Функция «ориентировочного платежа» удалена: она умножала цену на
+   выдуманные 2,5% и показывала это как условия кредита. Честный расчёт
+   остался в интерактивном калькуляторе, где человек сам задаёт ставку. */
 
 /** Относительная дата: "2 дня назад", "только что" */
 export function formatRelativeDate(date: Date | string | null | undefined): string {

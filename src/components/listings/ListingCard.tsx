@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, UnstyledButton } from "@mantine/core"
 import { IconChevronRight, IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
+import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
@@ -92,7 +92,6 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   // иначе при двух метках счётчик оказывался бы поверх них.
   const tagsOffset = 8 + (listing.isFeatured ? 76 : 0) + (isFresh ? 78 : 0)
 
-  const monthlyPayment = formatMonthlyPayment(listing.price)
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
   const usageMeta = getUsageMeta(vehicleType)
   const usageValue = usageMeta.field === "flightHours" ? listing.vehicle?.flightHours
@@ -316,11 +315,9 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             <Text className="listing-card__price" fw={800} fz={22} lh={1.05} c="var(--market-ink)" ff="var(--font-display),sans-serif" style={{ letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
               {formatPriceShort(listing.price)}
             </Text>
-            {monthlyPayment && (
-              <Text className="listing-card__monthly-payment" fz="10px" c="var(--market-muted)" style={{ whiteSpace: "nowrap" }}>
-                {monthlyPayment}
-              </Text>
-            )}
+            {/* Строка «от N ₽/мес» убрана: она считалась по выдуманной
+                ставке 2,5% без банка и условий. Обещать кредит, которого
+                площадка не даёт, нельзя. */}
           </Group>
 
           {/* Заголовок */}

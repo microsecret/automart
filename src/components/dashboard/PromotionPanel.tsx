@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { ActionIcon, Badge, Button, Center, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
 import { IconCreditCard, IconExternalLink, IconReceipt, IconTrendingUp } from "@tabler/icons-react"
+import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
 
 export type PromotionOrder = {
   id: string
@@ -94,14 +95,37 @@ export default function PromotionPanel({ spentRub, activePromotions, paidCount, 
         </Group>
 
         {orders.length === 0 ? (
-          <Center py={{ base: "xl", md: 48 }}>
-            <Stack align="center" gap="sm" ta="center" maw={420}>
-              <ThemeIcon color="indigo" variant="light" size={52} radius="xl"><IconReceipt size={25} /></ThemeIcon>
-              <Text fw={700}>Оплат пока не было</Text>
-              <Text size="sm" c="dimmed">Продвижение можно подключить у активного объявления после настройки платёжного провайдера.</Text>
-              <Button onClick={onViewListings} color="indigo" size="sm">Перейти к объявлениям</Button>
+          /* Пустое состояние показывает тарифы, а не бухгалтерию.
+
+             Прежний текст «после настройки платёжного провайдера» был
+             языком разработчика: раздел, куда продавец заходит узнать про
+             продвижение, не называл ни цен, ни выгоды — и не продавал. */
+          <Stack gap="md" py="sm">
+            <Stack align="center" gap={4} ta="center">
+              <Text fw={700}>Поднимите объявление — его увидят первым</Text>
+              <Text size="sm" c="dimmed" maw={460}>
+                Продвинутые объявления показываются выше в поиске. Оплата картой, включение сразу после оплаты.
+              </Text>
             </Stack>
-          </Center>
+            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+              {Object.values(PROMOTION_TARIFFS).map((tariff) => (
+                <Paper key={tariff.id} radius="md" p="md" withBorder>
+                  <Stack gap={4}>
+                    <Text fw={800} fz="sm">{tariff.title}</Text>
+                    <Text fw={800} fz="lg" c="indigo" ff="var(--font-display),sans-serif">
+                      {tariff.amountRub.toLocaleString("ru-RU")} ₽
+                    </Text>
+                    <Text size="xs" c="dimmed">{tariff.durationDays} дн. · {tariff.description}</Text>
+                  </Stack>
+                </Paper>
+              ))}
+            </SimpleGrid>
+            <Center>
+              <Button onClick={onViewListings} color="indigo" size="sm" leftSection={<IconTrendingUp size={16} />}>
+                Выбрать объявление для продвижения
+              </Button>
+            </Center>
+          </Stack>
         ) : (
           <Stack gap="xs">
             {orders.map((order) => {

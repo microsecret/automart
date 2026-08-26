@@ -59,7 +59,8 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (status === "loading") return
-    if (!session) router.push("/auth/signin")
+    /* callbackUrl возвращает в сообщения после входа. */
+    if (!session) router.push("/auth/signin?callbackUrl=%2Fmessages")
   }, [session, status, router])
 
   const conversations = data?.conversations || []

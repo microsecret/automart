@@ -6,7 +6,7 @@ import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Anchor, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal } from "@mantine/core"
-import { IconLayoutDashboard, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
+import { IconLayoutDashboard, IconMessageCircle2, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -66,6 +66,7 @@ type DashboardResponse = {
     reviewsCount: number
     garageCount: number
     avgRating: number
+    unreadMessages: number
     memberSince: string | null
     promotionPaidCount: number
     promotionSpentRub: number
@@ -298,7 +299,7 @@ function DashboardContent() {
             { label: "Просмотры", value: stats.totalViews, icon: <IconEye size={18} />, color: "#0891b2", bg: "#ecfeff" },
             { label: "Избранное", value: stats.favoritesCount, icon: <IconHeart size={18} />, color: "#e11d48", bg: "#fff1f2" },
             { label: "Отзывы", value: stats.reviewsCount, icon: <IconStar size={18} />, color: "#ea580c", bg: "#fff7ed" },
-            { label: "В гараже", value: stats.garageCount, icon: <IconCar size={18} />, color: "#059669", bg: "#ecfdf5" },
+            { label: "Сообщения", value: stats.unreadMessages > 0 ? `+${stats.unreadMessages}` : 0, icon: <IconMessageCircle2 size={18} />, color: "#059669", bg: "#ecfdf5" },
             { label: "Рейтинг", value: stats.avgRating || "—", icon: <IconTrendingUp size={18} />, color: "#1c4291", bg: "#f5f3ff" },
           ].map((s) => (
             <Paper key={s.label} radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-border)" }}>
@@ -413,11 +414,29 @@ function DashboardContent() {
                           </Group>
                         </Group>
                       </Stack>
-                      <Group gap={4}>
-                        <ActionIcon component={Link} href={href} variant="subtle" color="gray" size="sm" aria-label={`Открыть ${l.title}`}><IconExternalLink size={16} /></ActionIcon>
-                        <ActionIcon component={Link} href={`/listings/${l.id}/edit`} variant="subtle" color="indigo" size="sm" aria-label={`Редактировать ${l.title}`}><IconEdit size={16} /></ActionIcon>
-                        <ActionIcon component={Link} href={`/listings/${l.id}/promote`} variant="subtle" color="violet" size="sm" aria-label={`Продвинуть ${l.title}`}><IconTrendingUp size={16} /></ActionIcon>
-                        <ActionIcon variant="subtle" color="red" size="sm" aria-label={`Архивировать ${l.title}`} onClick={() => setRemovalConfirmation({ kind: "listing", id: l.id, title: l.title })}><IconTrash size={16} /></ActionIcon>
+                      <Group gap={6} wrap="wrap">
+                        {/* Продвижение — заметной кнопкой со словом, а не
+                            безымянной иконкой: платная услуга была
+                            практически невидима. Показывается только у
+                            активного объявления — для черновика сервер
+                            отвечает отказом, и продавец добирался до
+                            выбора тарифа лишь затем, чтобы увидеть ошибку. */}
+                        {l.status === LISTING_STATUS.ACTIVE && (
+                          <Button
+                            component={Link}
+                            href={`/listings/${l.id}/promote`}
+                            size="compact-sm"
+                            radius="md"
+                            variant="light"
+                            color="violet"
+                            leftSection={<IconTrendingUp size={14} />}
+                          >
+                            Продвинуть
+                          </Button>
+                        )}
+                        <ActionIcon component={Link} href={href} variant="subtle" color="gray" size="md" aria-label={`Открыть ${l.title}`}><IconExternalLink size={16} /></ActionIcon>
+                        <ActionIcon component={Link} href={`/listings/${l.id}/edit`} variant="subtle" color="indigo" size="md" aria-label={`Редактировать ${l.title}`}><IconEdit size={16} /></ActionIcon>
+                        <ActionIcon variant="subtle" color="red" size="md" aria-label={`Архивировать ${l.title}`} onClick={() => setRemovalConfirmation({ kind: "listing", id: l.id, title: l.title })}><IconTrash size={16} /></ActionIcon>
                       </Group>
                     </Group>
                   </Paper>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio } from "@mantine/core"
 import { IconHeart, IconMapPin , IconScale } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatMonthlyPayment, formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
+import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { hasBrandLogo } from "@/components/brands/BrandLogo"
@@ -54,7 +54,6 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
     : `${new Intl.NumberFormat("ru-RU").format(numericUsage)} ${usageMeta.unit}`
   const showBrandMark = isVehicle && hasBrandLogo(listing.vehicle!.make)
   const isFav = favoriteIds.has(listing.id)
-  const monthlyPayment = formatMonthlyPayment(listing.price)
   const missingMediaLabel = isVehicle
     ? `${vehicleTypeLabel(vehicleType, listing.vehicle?.bodyType)} · без фото`
     : "Запчасть · без фото"
@@ -157,7 +156,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   <Text className="listing-card__price" fw={800} fz={20} c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
                     {formatPriceShort(listing.price)}
                   </Text>
-                  {monthlyPayment && <Text className="listing-card__monthly-payment" fz="10px" c="gray.5" style={{ whiteSpace: "nowrap" }}>{monthlyPayment}</Text>}
+                  {/* Кредитная строка убрана: считалась по выдуманной ставке. */}
                 </Stack>
               </Group>
 

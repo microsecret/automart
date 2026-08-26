@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { absoluteUrl } from "@/lib/site-url"
 import { getPromotionTariff } from "@/lib/promotion-tariffs"
+import { createYookassaPayment, yookassaConfig } from "@/lib/yookassa"
 
 export const dynamic = "force-dynamic"
 
@@ -31,15 +32,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Продвижение доступно только активному объявлению" }, { status: 409 })
     }
 
+    /* Выбор кассы. ЮKassa первая: Stripe не работает в России с 2022
+       года, и для покупателей с российскими картами он бесполезен.
+       Stripe оставлен запасным на случай зарубежной кассы. */
+    const yooConfig = yookassaConfig()
     const stripeSecret = process.env.STRIPE_SECRET_KEY
-    if (!stripeSecret) {
+    if (!yooConfig && !stripeSecret) {
       return NextResponse.json(
         { error: "Онлайн-оплата пока не подключена. Продвижение не активировано." },
         { status: 503 },
       )
     }
 
-    const stripe = new Stripe(stripeSecret)
     const order = await prisma.promotionOrder.create({
       data: {
         listingId: listing.id,
@@ -47,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         tariffId: tariff.id,
         amountRub: tariff.amountRub,
         durationDays: tariff.durationDays,
-        provider: "STRIPE",
+        provider: yooConfig ? "YOOKASSA" : "STRIPE",
       },
       select: { id: true },
     })
@@ -57,6 +61,37 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       userId: session.user.id,
       promotionType: tariff.id.toUpperCase(),
     }
+    if (yooConfig) {
+      try {
+        const payment = await createYookassaPayment(yooConfig, {
+          amountRub: tariff.amountRub,
+          description: `${tariff.title}: ${listing.title}`.slice(0, 128),
+          returnUrl: absoluteUrl(`/listings/${listing.id}/promote?payment=success`),
+          metadata,
+          /* Ключ идемпотентности — id заказа: повтор запроса при обрыве
+             сети не создаёт второй платёж на ту же покупку. */
+          idempotenceKey: order.id,
+        })
+
+        const confirmationUrl = payment.confirmation?.confirmation_url
+        if (!confirmationUrl) throw new Error("ЮKassa не вернула адрес страницы оплаты")
+
+        await prisma.promotionOrder.update({
+          where: { id: order.id },
+          data: { providerCheckoutId: payment.id },
+        })
+
+        return NextResponse.json({ checkoutUrl: confirmationUrl })
+      } catch (error) {
+        await prisma.promotionOrder.updateMany({
+          where: { id: order.id, status: "PENDING" },
+          data: { status: "FAILED" },
+        })
+        throw error
+      }
+    }
+
+    const stripe = new Stripe(stripeSecret as string)
     try {
       const checkout = await stripe.checkout.sessions.create({
         mode: "payment",

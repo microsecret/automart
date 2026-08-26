@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { canModeratorTransition, isListingStatus, LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { can } from "@/lib/permissions"
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
+import { moderationNotice } from "@/lib/listing-moderation-notify"
 import { readStoredVehicleSubtype, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
 
 export const dynamic = "force-dynamic"
@@ -50,7 +51,7 @@ export async function PATCH(request: NextRequest) {
     if (!id || !isListingStatus(status)) return NextResponse.json({ error: "Некорректные параметры" }, { status: 400 })
     if (status === LISTING_STATUS.REJECTED && !reason) return NextResponse.json({ error: "Укажите причину отклонения" }, { status: 400 })
 
-    const listing = await prisma.listing.findUnique({ where: { id }, select: { id: true, status: true, deletedAt: true, vehicle: true } })
+    const listing = await prisma.listing.findUnique({ where: { id }, select: { id: true, status: true, deletedAt: true, vehicle: true, userId: true, title: true } })
     if (!listing || listing.deletedAt) return NextResponse.json({ error: "Не найдено" }, { status: 404 })
     if (!canModeratorTransition(listing.status as typeof LISTING_STATUS[keyof typeof LISTING_STATUS], status)) {
       return NextResponse.json({ error: "Этот переход статуса недоступен" }, { status: 409 })
@@ -93,6 +94,28 @@ export async function PATCH(request: NextRequest) {
       summary: `Объявление: статус «${adminAuditValueLabel(listing.status)}» → «${adminAuditValueLabel(status)}»${reason ? `; причина: ${reason}` : ""}`,
       metadata: { previousStatus: listing.status, nextStatus: status, reason },
     })
+
+    /* Решение модератора — самое важное для продавца событие, а
+       уведомления о нём не было вовсе: одобренное объявление никто не
+       начинал продвигать, отклонённое не исправляли. Сбой уведомления
+       не должен ломать модерацию, поэтому он только записывается. */
+    const notice = moderationNotice(status, listing.title, reason)
+    if (notice) {
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: listing.userId,
+            title: notice.title,
+            content: notice.content,
+            type: notice.type,
+            relatedId: listing.id,
+            relatedType: "LISTING",
+          },
+        })
+      } catch (notifyError) {
+        console.error("Не удалось уведомить продавца о модерации:", notifyError)
+      }
+    }
 
     return NextResponse.json({ listing: updated })
   } catch (error) {

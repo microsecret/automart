@@ -95,7 +95,8 @@ function ConversationWorkspace() {
 
   useEffect(() => {
     if (status === "loading") return
-    if (!session) router.push("/auth/signin")
+    /* callbackUrl возвращает в этот же диалог после входа. */
+    if (!session) router.push(`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname)}`)
   }, [session, status, router])
 
   useEffect(() => {
@@ -209,6 +210,24 @@ function ConversationWorkspace() {
                 <ThemeIcon size={54} radius="xl" variant="light" color="indigo"><IconMessageCircle2 size={26} /></ThemeIcon>
                 <Text fw={700}>Начните диалог</Text>
                 <Text size="sm" c="dimmed" ta="center">Уточните состояние, документы или условия сделки. Не публикуйте личные данные в сообщениях.</Text>
+
+                {/* Готовые первые фразы. Пустое поле — самый высокий
+                    барьер к первому сообщению: человек не знает, с чего
+                    начать, и уходит. Шаблон подставляется в поле, а не
+                    отправляется сразу — фразу можно дописать. */}
+                <Group gap={6} justify="center" wrap="wrap" maw={420}>
+                  {["Здравствуйте! Ещё продаёте?", "Торг уместен?", "Когда можно посмотреть?"].map((template) => (
+                    <Button
+                      key={template}
+                      size="compact-sm"
+                      radius="xl"
+                      variant="default"
+                      onClick={() => setText((current) => current.trim() ? current : template)}
+                    >
+                      {template}
+                    </Button>
+                  ))}
+                </Group>
               </Stack>
             </Center>
           ) : (
