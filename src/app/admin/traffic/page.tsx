@@ -6,8 +6,9 @@ import {
   Badge, Box, Card, Container, Group, Progress, SegmentedControl,
   SimpleGrid, Stack, Text, ThemeIcon, Title,
 } from "@mantine/core"
-import { IconChartBar, IconDeviceMobile, IconExternalLink, IconClock, IconSpeakerphone, IconTrendingUp, IconTrendingDown } from "@tabler/icons-react"
+import { IconChartBar, IconDeviceMobile, IconExternalLink, IconClock, IconSpeakerphone } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
+import { AdminStatCard } from "@/components/admin/AdminStatCard"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
 type Row = { name: string; visitors: number }
@@ -107,47 +108,34 @@ export default function TrafficPage() {
           />
         ) : (
           <>
+            {/* Четыре карточки раскрывались вручную — сорок строк почти
+                одинаковой разметки. Перебор по массиву и общий компонент
+                держат единый вид со всеми остальными страницами. */}
             <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
-              <Card withBorder radius="md" p="md">
-                <Text fz={28} fw={800} ff="var(--font-display),sans-serif" lh={1}>
-                  {isLoading ? "—" : data?.totals.uniqueVisitors.toLocaleString("ru")}
-                </Text>
-                <Text size="sm" fw={600} mt={4}>Уникальных посетителей</Text>
-                {typeof change === "number" && (
-                  <Group gap={4} mt={4}>
-                    <ThemeIcon variant="light" size={20} radius="sm" color={change >= 0 ? "teal" : "red"}>
-                      {change >= 0 ? <IconTrendingUp size={12} /> : <IconTrendingDown size={12} />}
-                    </ThemeIcon>
-                    <Text size="xs" c={change >= 0 ? "teal.7" : "red.7"} fw={600}>
-                      {change >= 0 ? "+" : ""}{change}% к прошлому периоду
-                    </Text>
-                  </Group>
-                )}
-              </Card>
-
-              <Card withBorder radius="md" p="md">
-                <Text fz={28} fw={800} ff="var(--font-display),sans-serif" lh={1}>
-                  {isLoading ? "—" : data?.totals.views.toLocaleString("ru")}
-                </Text>
-                <Text size="sm" fw={600} mt={4}>Просмотров страниц</Text>
-                <Text size="xs" c="dimmed">{data?.periodLabel}</Text>
-              </Card>
-
-              <Card withBorder radius="md" p="md">
-                <Text fz={28} fw={800} ff="var(--font-display),sans-serif" lh={1}>
-                  {isLoading || !data ? "—" : (data.totals.views / Math.max(1, data.totals.uniqueVisitors)).toFixed(1)}
-                </Text>
-                <Text size="sm" fw={600} mt={4}>Страниц на человека</Text>
-                <Text size="xs" c="dimmed">Глубина просмотра</Text>
-              </Card>
-
-              <Card withBorder radius="md" p="md">
-                <Text fz={28} fw={800} ff="var(--font-display),sans-serif" lh={1}>
-                  {isLoading || !peakHour ? "—" : `${peakHour.hour}:00`}
-                </Text>
-                <Text size="sm" fw={600} mt={4}>Час пика</Text>
-                <Text size="xs" c="dimmed">По Москве · когда запускать рассылку</Text>
-              </Card>
+              {[
+                {
+                  value: isLoading ? "—" : data?.totals.uniqueVisitors.toLocaleString("ru"),
+                  label: "Уникальных посетителей",
+                  changePercent: typeof change === "number" ? change : undefined,
+                },
+                {
+                  value: isLoading ? "—" : data?.totals.views.toLocaleString("ru"),
+                  label: "Просмотров страниц",
+                  hint: data?.periodLabel,
+                },
+                {
+                  value: isLoading || !data ? "—" : (data.totals.views / Math.max(1, data.totals.uniqueVisitors)).toFixed(1),
+                  label: "Страниц на человека",
+                  hint: "Глубина просмотра",
+                },
+                {
+                  value: isLoading || !peakHour ? "—" : `${peakHour.hour}:00`,
+                  label: "Час пика",
+                  hint: "По Москве · когда запускать рассылку",
+                },
+              ].map((card) => (
+                <AdminStatCard key={card.label} {...card} />
+              ))}
             </SimpleGrid>
 
             <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }} spacing="sm">

@@ -188,7 +188,10 @@ export default function TelegramBroadcastPage() {
   ] : []
 
   return (
-    <Container size="lg" py="lg">
+    <Container size="lg" p={{ base: "sm", md: "md" }}>
+      {/* Боковые отступы обязательны: py без них прижимал содержимое к
+          краям экрана на телефоне — тот же дефект, что уже чинили на
+          странице посещаемости. */}
       <Stack gap="lg">
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={42} radius="md"><IconBrandTelegram size={22} /></ThemeIcon>

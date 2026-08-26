@@ -20,6 +20,7 @@ import { IconChevronDown, IconHistory, IconSearch } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
+import { formatAdminDateTime } from "@/lib/admin-datetime"
 import classes from "./AdminAuditLog.module.css"
 
 type AuditEvent = {
@@ -82,13 +83,10 @@ const ENTITY_FILTERS = [
   ...Object.entries(ENTITY_LABELS).map(([value, label]) => ({ value, label })),
 ]
 
-function formatAuditTime(value: string) {
-  return new Intl.DateTimeFormat("ru-RU", {
-    dateStyle: "short",
-    timeStyle: "medium",
-    timeZone: "Asia/Yekaterinburg",
-  }).format(new Date(value))
-}
+/* Своя функция форматирования показывала екатеринбургское время, тогда
+   как вся остальная админка живёт по Москве: сотрудник сверял «когда
+   пришла заявка» с «когда её обработали» и получал расхождение в два часа,
+   ничем не обозначенное. Формат теперь общий. */
 
 /**
  * Журнал решений администраторов: кто, что и когда изменил.
@@ -186,7 +184,7 @@ export default function AdminAuditLog() {
                       {ENTITY_LABELS[event.entityType] || event.entityType}
                     </Badge>
                   </Group>
-                  <Text size="xs" c="dimmed">{formatAuditTime(event.createdAt)} ЕКБ</Text>
+                  <Text size="xs" c="dimmed">{formatAdminDateTime(event.createdAt)}</Text>
                 </Group>
                 <Text size="sm" fw={550}>{event.summary}</Text>
                 <Group mt={6} gap="xs" justify="space-between" wrap="wrap">

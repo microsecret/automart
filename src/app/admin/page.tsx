@@ -915,41 +915,33 @@ export default function AdminDashboard() {
           IP; исходный адрес и автоматические bot/headless-запросы не учитываются. Периоды календарные по московскому времени.
         </Alert>
         <SimpleGrid cols={{ base: 1, xs: 2, lg: 7 }} spacing="sm">
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconActivity size={17} /></ThemeIcon><Text size="xs" c="gray.5">Экраны сайта · сегодня</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.pageViewsDay}</Text>
-            <Text size="xs" c="gray.4">{data.traffic.pageViewsWeek} за неделю · все разделы</Text>
-          </Card>
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные посетители · неделя</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitorsWeek}</Text>
-            <Text size="xs" c={data.traffic.uniqueVisitorsTrendWeek >= 0 ? "teal.6" : "red.6"}>{data.traffic.uniqueVisitorsTrendWeek >= 0 ? "+" : ""}{data.traffic.uniqueVisitorsTrendWeek}% к прошлой неделе</Text>
-          </Card>
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="violet" size={34} radius="md"><IconEye size={17} /></ThemeIcon><Text size="xs" c="gray.5">Сессии · неделя</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.sessionsWeek}</Text>
-            <Text size="xs" c="gray.4">отказы: {data.traffic.bounceRateWeek}%</Text>
-          </Card>
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="teal" size={34} radius="md"><IconUsers size={17} /></ThemeIcon><Text size="xs" c="gray.5">Вошли в аккаунт · неделя</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.authenticatedVisitorsWeek}</Text>
-            <Text size="xs" c="gray.4">уникальные пользователи</Text>
-          </Card>
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="orange" size={34} radius="md"><IconTrendingUp size={17} /></ThemeIcon><Text size="xs" c="gray.5">Конверсия · неделя</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.registrationConversionWeek}%</Text>
-            <Text size="xs" c="gray.4">{data.traffic.attributedRegistrationsWeek} новых аккаунтов с визитом</Text>
-          </Card>
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="blue" size={34} radius="md"><IconWorld size={17} /></ThemeIcon><Text size="xs" c="gray.5">Уникальные · месяц</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.uniqueVisitorsMonth}</Text>
-            <Text size="xs" c="gray.4">{data.traffic.periodLabels.month} · {data.traffic.newVisitorsWeek} новых за неделю</Text>
-          </Card>
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={34} radius="md"><IconBrandTelegram size={17} /></ThemeIcon><Text size="xs" c="gray.5">Telegram Mini App</Text></Group>
-            <Text size="xl" fw={800} mt="sm">{data.traffic.telegramMiniAppVisitorsDay}</Text>
-            <Text size="xs" c="gray.4">сегодня · {data.traffic.telegramMiniAppVisitorsWeek} за неделю</Text>
-          </Card>
+          {/* Семь карточек раскрывались вручную — тридцать пять строк
+              почти одинаковой разметки. Перебор по массиву: правка вида
+              теперь делается в одном месте, а не в семи. */}
+          {[
+            { icon: <IconActivity size={17} />, color: "cyan", label: "Экраны сайта · сегодня", value: data.traffic.pageViewsDay, hint: `${data.traffic.pageViewsWeek} за неделю · все разделы` },
+            { icon: <IconWorld size={17} />, color: "indigo", label: "Уникальные посетители · неделя", value: data.traffic.uniqueVisitorsWeek, trend: data.traffic.uniqueVisitorsTrendWeek },
+            { icon: <IconEye size={17} />, color: "violet", label: "Сессии · неделя", value: data.traffic.sessionsWeek, hint: `отказы: ${data.traffic.bounceRateWeek}%` },
+            { icon: <IconUsers size={17} />, color: "teal", label: "Вошли в аккаунт · неделя", value: data.traffic.authenticatedVisitorsWeek, hint: "уникальные пользователи" },
+            { icon: <IconTrendingUp size={17} />, color: "orange", label: "Конверсия · неделя", value: `${data.traffic.registrationConversionWeek}%`, hint: `${data.traffic.attributedRegistrationsWeek} новых аккаунтов с визитом` },
+            { icon: <IconWorld size={17} />, color: "blue", label: "Уникальные · месяц", value: data.traffic.uniqueVisitorsMonth, hint: `${data.traffic.periodLabels.month} · ${data.traffic.newVisitorsWeek} новых за неделю` },
+            { icon: <IconBrandTelegram size={17} />, color: "cyan", label: "Telegram Mini App", value: data.traffic.telegramMiniAppVisitorsDay, hint: `сегодня · ${data.traffic.telegramMiniAppVisitorsWeek} за неделю` },
+          ].map((card) => (
+            <Card key={card.label} className="admin-insight-card" withBorder radius="md" p="md">
+              <Group gap="sm">
+                <ThemeIcon variant="light" color={card.color} size={34} radius="md">{card.icon}</ThemeIcon>
+                <Text size="xs" c="gray.5">{card.label}</Text>
+              </Group>
+              <Text size="xl" fw={800} mt="sm" style={{ fontVariantNumeric: "tabular-nums" }}>{card.value}</Text>
+              {typeof card.trend === "number" ? (
+                <Text size="xs" c={card.trend >= 0 ? "teal.6" : "red.6"}>
+                  {card.trend >= 0 ? "+" : ""}{card.trend}% к прошлой неделе
+                </Text>
+              ) : (
+                <Text size="xs" c="gray.4">{card.hint}</Text>
+              )}
+            </Card>
+          ))}
         </SimpleGrid>
 
         <Card className="admin-insight-card" withBorder radius="md" p="md">

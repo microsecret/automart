@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireAdminSession, runAdminRoute } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
 import { QUALITY_HOLD_PREFIX } from "@/lib/auction-quality"
@@ -10,12 +9,13 @@ import { deriveAuctionSourceRunHealth } from "@/lib/auction-source-health"
 export const dynamic = "force-dynamic"
 
 export async function GET() {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user?.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+  /* Роль сравнивалась строкой напрямую, в обход нормализации из
+     permissions.ts: на тех же данных маршрут вёл себя иначе, чем соседние.
+     Теперь проверка общая. */
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
 
+  return runAdminRoute("Статистика аукционов", async () => {
     const now = new Date()
     const [
       byStatus, total, totalAuctions, visibleAuctions, latestAuctionCheck, recent,
@@ -125,7 +125,5 @@ export async function GET() {
         SOLD: statusCounts.SOLD || 0,
       },
     })
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 })
-  }
+  }, "Не удалось загрузить статистику аукционов")
 }
