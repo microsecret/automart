@@ -203,7 +203,7 @@ export default function AdminSupportPage() {
   const counters = list.data?.counters
 
   return (
-    <Box p={{ base: "xs", sm: "md" }}>
+    <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
         <Card className="admin-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" gap="md" wrap="wrap">

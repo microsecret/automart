@@ -76,7 +76,9 @@ export default function TrafficPage() {
   }
 
   return (
-    <Container size="xl" py="lg">
+    /* Отступы по общей шкале админки: было py="lg" без боковых полей, и
+       при переходе с соседней вкладки содержимое смещалось. */
+    <Container size="xl" p={{ base: "sm", md: "md" }}>
       <Stack gap="lg">
         <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
           <Group gap="sm">

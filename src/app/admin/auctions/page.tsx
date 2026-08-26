@@ -203,7 +203,7 @@ export default function AdminAuctionsPage() {
   }
 
   return (
-    <Box p={{ base: "sm", md: "lg" }}>
+    <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="lg">
         <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
           <Group gap="sm" align="center" wrap="nowrap">
