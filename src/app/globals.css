@@ -6482,7 +6482,9 @@ h1[data-lw-hero] {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 11px 14px;
+  /* Плотнее: при 11 пикселях восемь округов занимали весь экран, и
+     сравнить активность разделов было нельзя без прокрутки. */
+  padding: 8px 14px;
   border-bottom: 1px solid color-mix(in srgb, var(--market-line) 60%, transparent);
 }
 
@@ -6508,26 +6510,29 @@ h1[data-lw-hero] {
 }
 
 .forum-row__description {
-  margin-top: 2px;
+  margin-top: 1px;
   color: var(--market-muted);
   font-size: 0.78rem;
   line-height: 1.4;
 }
 
 .forum-row__children {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  line-height: 1.5;
+  margin-top: 3px;
+  font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 .forum-row__children-label {
+  /* Мелкая подпись, а не второй заголовок: жирным она перебивала
+     название раздела и ряд читался снизу вверх. */
   color: var(--market-muted);
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .forum-row__child {
   color: var(--market-muted);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-decoration: none;
 }
 
