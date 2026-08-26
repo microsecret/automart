@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/category/water", "/category/air",
     "/services", "/services/valuation", "/services/history-check", "/services/smart-matching", "/services/safe-deal", "/services/legal-documents", "/services/fuel-map",
     "/help/sell", "/help/safety", "/help/rules", "/help/support", "/legal/privacy", "/legal/terms",
-    "/parts-finder", "/auctions",
+    "/parts-finder", "/auctions", "/forum",
   ]
 
   const pages: MetadataRoute.Sitemap = [
@@ -34,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const auctionPolicy = buildPublicAuctionPolicy(now)
-    const [news, vehicleListings, partListings, auctions] = await Promise.all([
+    const [news, vehicleListings, partListings, auctions, forumSections, forumTopics] = await Promise.all([
       prisma.news.findMany({
         where: { publishedAt: { lte: now } },
         select: { id: true, slug: true, publishedAt: true, updatedAt: true },
@@ -59,6 +59,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         where: auctionPolicy.where,
         select: { id: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
+        take: 10_000,
+      }),
+      prisma.forumSection.findMany({
+        select: { slug: true, lastPostAt: true },
+        orderBy: { position: "asc" },
+      }),
+      /* Темы форума — главный источник поискового трафика: человек ищет
+         «стоит ли брать Haval Jolion» и попадает на площадку. */
+      prisma.forumTopic.findMany({
+        where: { deletedAt: null },
+        select: { slug: true, section: { select: { slug: true } }, lastPostAt: true },
+        orderBy: { lastPostAt: "desc" },
         take: 10_000,
       }),
     ])
@@ -123,6 +135,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: store.updatedAt,
         changeFrequency: "daily" as const,
         priority: 0.8,
+      })),
+      ...forumSections.map((section) => ({
+        url: `${baseUrl}/forum/${section.slug}`,
+        lastModified: section.lastPostAt || now,
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+      })),
+      ...forumTopics.map((topic) => ({
+        url: `${baseUrl}/forum/${topic.section.slug}/${topic.slug}`,
+        lastModified: topic.lastPostAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
       })),
     ]
   } catch (error) {
