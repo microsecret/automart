@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { isAdmin } from "@/lib/permissions"
 import ListingModerationActions from "@/components/listings/ListingModerationActions"
@@ -215,6 +215,9 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
   const [reportSubmitting, setReportSubmitting] = useState(false)
   const { data: session } = useSession()
   const [activeImage, setActiveImage] = useState(0)
+  /* Начало касания для свайпа галереи: на телефоне фото листают пальцем,
+     а не стрелками по 28 пикселей. */
+  const touchStartX = useRef<number | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
   const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
@@ -419,7 +422,20 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               {hasImages ? (
                 <>
                   {/* Главное изображение */}
-                  <Box className="vehicle-detail-gallery__media">
+                  <Box
+                    className="vehicle-detail-gallery__media"
+                    onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null }}
+                    onTouchEnd={(event) => {
+                      /* Порог в 40 пикселей отличает свайп от касания:
+                         меньший сдвиг — это тап, и листать по нему нельзя. */
+                      const startX = touchStartX.current
+                      touchStartX.current = null
+                      if (startX === null || images.length < 2) return
+                      const delta = (event.changedTouches[0]?.clientX ?? startX) - startX
+                      if (Math.abs(delta) < 40) return
+                      moveImage(delta < 0 ? 1 : -1)
+                    }}
+                  >
                     {imageFailed ? (
                       <Stack align="center" justify="center" gap="xs" h="100%" c="dimmed">
                         <IconCar size={42} stroke={1.5} />
@@ -590,13 +606,13 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 <VinField label="VIN" value={data.vin} />
                 {usageDisplay && <VinField label={usageMeta.label} value={usageDisplay} status="ok" />}
                 <VinField label="Владельцев по ПТС" value={data.ownersCount ? String(data.ownersCount) : "Не указано"} status="ok" />
-                <VinField label="Проверка ограничений" value="Подключается отдельно" />
-                <VinField label="История ДТП" value="Подключается отдельно" />
               </Box>
-              <Group mt="md" gap="xs">
-                <IconShieldCheck size={14} color="#16a34a" />
-                <Text size="xs" c="var(--market-success-text)">Проверка по внешним базам будет показана после подключения провайдера.</Text>
-              </Group>
+              {/* Строки «Проверка ограничений: подключается отдельно» и
+                  «История ДТП: подключается отдельно» убраны: блок обещал
+                  ровно то, ради чего его открывают, и тут же признавался,
+                  что этого нет. Заглушка на месте ожидаемой проверки хуже
+                  честного отсутствия — вернём вместе с настоящим
+                  провайдером отчётов. */}
             </Card>}
 
             {/* Безопасная сделка */}
