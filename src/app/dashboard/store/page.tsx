@@ -1,5 +1,6 @@
 "use client"
 
+import { PART_TYPES } from "@/lib/constants"
 import { useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
@@ -82,12 +83,12 @@ const ORIGIN_OPTIONS = [
   { value: "RU", label: "Россия" },
 ]
 
-const PART_TYPE_LABELS: Record<string, string> = {
-  ENGINE: "Двигатель", TRANSMISSION: "Трансмиссия", SUSPENSION: "Подвеска", BRAKES: "Тормоза",
-  ELECTRICAL: "Электрика", BODY: "Кузов", INTERIOR: "Салон", WHEELS: "Колёса", LIGHTING: "Оптика",
-  COOLING: "Охлаждение", EXHAUST: "Выхлоп", STEERING: "Рулевое", ACCESSORIES: "Аксессуары",
-  CONSUMABLES: "Расходники", OTHER: "Другое",
-}
+/* Подписи берутся из общего словаря PART_TYPES: локальная копия
+   разошлась с ним — тип OTHER подписывался «Запчасти» на витрине и
+   «Другое» в кабинете. */
+const PART_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  PART_TYPES.map((type) => [type.value, type.label]),
+)
 
 export default function StoreWorkspacePage() {
   const { data, error, isLoading, mutate } = useSWR<{ stores: Store[]; access?: PartnerAccess }>("/api/stores", fetchJson, { revalidateOnFocus: false })

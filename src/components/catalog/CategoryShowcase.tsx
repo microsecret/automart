@@ -1,5 +1,6 @@
 "use client"
 
+import { plural as sharedPlural } from "@/lib/format"
 import Link from "next/link"
 import useSWR from "swr"
 import { Box, Group, Paper, SimpleGrid, Text, ThemeIcon } from "@mantine/core"
@@ -29,12 +30,10 @@ const DIRECTIONS = [
   { slug: "parts", href: "/parts-finder", label: "Запчасти", hint: "Подбор по вашему автомобилю", Icon: IconTools, tone: "red" },
 ] as const
 
+/* Склонение берётся из общей функции: это правило было написано в
+   проекте трижды, и каждая копия — риск разойтись при следующей правке. */
 function plural(count: number) {
-  const mod10 = count % 10
-  const mod100 = count % 100
-  if (mod10 === 1 && mod100 !== 11) return "объявление"
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "объявления"
-  return "объявлений"
+  return sharedPlural(count, "объявление", "объявления", "объявлений")
 }
 
 export default function CategoryShowcase() {

@@ -1,3 +1,4 @@
+import { plural as sharedPlural } from "@/lib/format"
 import { prisma } from "@/lib/prisma"
 import { telegramApi } from "@/lib/telegram"
 import { markTelegramContactBlocked } from "@/lib/telegram-contacts"
@@ -23,12 +24,10 @@ const SEND_PAUSE_MS = 60
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/* Склонение берётся из общей функции: правило было написано в проекте
+   трижды, и каждая копия — риск разойтись при следующей правке. */
 function plural(count: number) {
-  const mod10 = count % 10
-  const mod100 = count % 100
-  if (mod10 === 1 && mod100 !== 11) return "новый вариант"
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "новых варианта"
-  return "новых вариантов"
+  return sharedPlural(count, "новый вариант", "новых варианта", "новых вариантов")
 }
 
 /** Сколько подходящих записей появилось после указанного момента. */

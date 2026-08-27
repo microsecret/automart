@@ -1,3 +1,4 @@
+import { PART_TYPES } from "@/lib/constants"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -15,12 +16,12 @@ const ORIGIN_LABELS: Record<string, string> = {
   CN: "Китай", KR: "Корея", JP: "Япония", DE: "Европа", RU: "Россия",
 }
 
-const PART_TYPE_LABELS: Record<string, string> = {
-  ENGINE: "Двигатель", TRANSMISSION: "Трансмиссия", SUSPENSION: "Подвеска", BRAKES: "Тормоза",
-  ELECTRICAL: "Электрика", BODY: "Кузов", INTERIOR: "Салон", WHEELS: "Колёса", LIGHTING: "Оптика",
-  COOLING: "Охлаждение", EXHAUST: "Выхлоп", STEERING: "Рулевое", ACCESSORIES: "Аксессуары",
-  CONSUMABLES: "Расходники", OTHER: "Запчасти",
-}
+/* Подписи берутся из общего словаря PART_TYPES: локальная копия
+   разошлась с ним — тип OTHER подписывался «Запчасти» на витрине и
+   «Другое» в кабинете. */
+const PART_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  PART_TYPES.map((type) => [type.value, type.label]),
+)
 
 /** Витрина публикуется только после проверки: черновик виден лишь владельцу. */
 async function getPublicStore(slug: string) {
