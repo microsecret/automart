@@ -101,3 +101,49 @@ export function pluralTopics(count: number): string {
   if (lastOne >= 2 && lastOne <= 4) return "темы"
   return "тем"
 }
+
+/**
+ * Раздел форума по марке автомобиля.
+ *
+ * Карточка машины и форум живут порознь: человек смотрит Haval Jolion и
+ * не знает, что о нём уже спрашивали. Сопоставление даёт ссылку прямо с
+ * карточки — и посетителю польза, и форуму жизнь.
+ *
+ * Список неполный намеренно: марки без своего раздела ссылки не
+ * получают. Отправлять человека в «Европейские прочие» с вопросом про
+ * конкретную машину — обманывать ожидание.
+ */
+const MAKE_SECTIONS: Readonly<Record<string, string>> = {
+  toyota: "toyota", lexus: "lexus",
+  nissan: "nissan", honda: "honda", mazda: "mazda",
+  subaru: "subaru", mitsubishi: "mitsubishi",
+  suzuki: "suzuki-isuzu", isuzu: "suzuki-isuzu",
+
+  volkswagen: "volkswagen", vw: "volkswagen",
+  bmw: "bmw", "mercedes-benz": "mercedes", mercedes: "mercedes", audi: "audi",
+  opel: "opel-porsche", porsche: "opel-porsche",
+
+  hyundai: "hyundai", kia: "kia",
+  genesis: "genesis-ssangyong", ssangyong: "genesis-ssangyong",
+
+  haval: "haval", chery: "chery-exeed", exeed: "chery-exeed",
+  geely: "geely", changan: "changan-omoda", omoda: "changan-omoda",
+  jaecoo: "changan-omoda", zeekr: "li-zeekr-byd", byd: "li-zeekr-byd",
+
+  ford: "ford-chevrolet", chevrolet: "ford-chevrolet",
+  jeep: "jeep-dodge-tesla", dodge: "jeep-dodge-tesla", tesla: "jeep-dodge-tesla",
+
+  lada: "lada", ваз: "lada", уаз: "uaz-gaz", газ: "uaz-gaz",
+  москвич: "moskvich-retro",
+
+  renault: "renault-peugeot-citroen", peugeot: "renault-peugeot-citroen",
+  citroen: "renault-peugeot-citroen",
+  skoda: "skoda-volvo", volvo: "skoda-volvo",
+}
+
+/** Адрес раздела форума для марки; null — своего раздела нет. */
+export function forumSectionForMake(make: string | null | undefined): string | null {
+  if (!make) return null
+  const key = make.trim().toLowerCase().replace(/\s+/g, "-")
+  return MAKE_SECTIONS[key] ?? null
+}

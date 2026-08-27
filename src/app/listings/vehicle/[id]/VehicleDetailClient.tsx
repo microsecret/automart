@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { isAdmin } from "@/lib/permissions"
+import { forumSectionForMake } from "@/lib/forum"
 import ListingModerationActions from "@/components/listings/ListingModerationActions"
 import {
   Container,
@@ -53,6 +54,7 @@ import {
   IconChevronLeft,
   IconX,
   IconChartLine,
+  IconMessages,
   IconChevronRight,
   IconEye,
   IconSteeringWheel,
@@ -1017,6 +1019,25 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     продавца без исключения, при том что проверки в модели
                     данных нет. Вернуть можно только вместе с настоящей
                     верификацией. */}
+                {/* Обсуждение марки на форуме.
+
+                    Карточка и форум жили порознь: человек смотрел Haval
+                    Jolion и не знал, что о нём уже спрашивали. Ссылка
+                    появляется только у марок со своим разделом — отправлять
+                    в «Европейские прочие» значит обманывать ожидание. */}
+                {forumSectionForMake(data.make) && (
+                  <Anchor
+                    component={Link}
+                    href={`/forum/${forumSectionForMake(data.make)}`}
+                    size="xs"
+                    mt="sm"
+                    style={{ display: "flex", alignItems: "center", gap: 5 }}
+                  >
+                    <IconMessages size={13} />
+                    Обсуждения {data.make} на форуме
+                  </Anchor>
+                )}
+
                 {data.seller.otherVehicles.length > 0 && (
                   <Box mt="sm">
                     <Text size="xs" c="var(--market-muted)" mb={6}>Другие объявления ({data.seller.otherVehicles.length})</Text>

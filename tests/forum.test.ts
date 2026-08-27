@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { pluralReplies, pluralTopics, topicSlug, validatePostContent, validateTopicTitle } from "../src/lib/forum.ts"
+import { forumSectionForMake, pluralReplies, pluralTopics, topicSlug, validatePostContent, validateTopicTitle } from "../src/lib/forum.ts"
 
 test("адрес темы транслитерируется", () => {
   // Кириллица в адресе превращается в проценты: такую ссылку нельзя ни
@@ -66,4 +66,24 @@ test("склонение тем", () => {
   assert.equal(pluralTopics(2), "темы")
   assert.equal(pluralTopics(5), "тем")
   assert.equal(pluralTopics(112), "тем")
+})
+
+test("раздел форума по марке", () => {
+  // Ссылка с карточки машины в обсуждение её марки: без неё человек не
+  // узнаёт, что о его машине уже спрашивали.
+  assert.equal(forumSectionForMake("Haval"), "haval")
+  assert.equal(forumSectionForMake("TOYOTA"), "toyota")
+  assert.equal(forumSectionForMake("mercedes-benz"), "mercedes")
+})
+
+test("марка с пробелом распознаётся", () => {
+  assert.equal(forumSectionForMake("Mercedes Benz"), "mercedes")
+})
+
+test("марка без своего раздела ссылки не даёт", () => {
+  // Отправлять с вопросом про конкретную машину в «Европейские прочие»
+  // значит обманывать ожидание.
+  assert.equal(forumSectionForMake("Bentley"), null)
+  assert.equal(forumSectionForMake(""), null)
+  assert.equal(forumSectionForMake(null), null)
 })
