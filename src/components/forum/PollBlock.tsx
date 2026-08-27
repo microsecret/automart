@@ -82,7 +82,10 @@ export default function PollBlock({ poll, canVote }: Props) {
       /* Свежие цифры приходят вместе с ответом: перезапрашивать тему
          целиком ради результата, который сам же и изменил, незачем. */
       if (Array.isArray(data?.options)) setOptions(data.options)
-      setMyVotes(selected)
+      /* Отмеченным ставим то, что записал сервер, а не то, что отправили:
+         запись отсеивает варианты чужого опроса, и своя догадка показала
+         бы галочку там, где голоса нет. */
+      setMyVotes(Array.isArray(data?.voted) ? data.voted : selected)
     } catch {
       setError("Не удалось записать голос")
     } finally {

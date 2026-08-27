@@ -184,3 +184,19 @@ test("рост полосы отключается при отказе от дв
   const reduced = css.slice(css.indexOf("forum-poll__bar"))
   assert.match(reduced, /prefers-reduced-motion[\s\S]*?forum-poll__bar\s*\{\s*animation: none/)
 })
+
+test("отмеченным возвращается записанное, а не присланное", () => {
+  /* Запись отсеивает варианты чужого опроса. Верни маршрут присланное —
+     клиент поставил бы галочку там, где голоса нет. */
+  const route = readFileSync(new URL("../src/app/api/forum/polls/vote/route.ts", import.meta.url), "utf8")
+  assert.match(route, /forumPollVote\.findMany/)
+  assert.doesNotMatch(route, /voted: optionIds/)
+})
+
+test("чужие голоса поимённо наружу не выходят", () => {
+  /* На форуме о деньгах и марках это повод для придирок к человеку, а не
+     к его доводам. Наружу идут только сводные числа. */
+  const route = readFileSync(new URL("../src/app/api/forum/polls/vote/route.ts", import.meta.url), "utf8")
+  const votesQuery = route.slice(route.indexOf("forumPollVote.findMany"))
+  assert.match(votesQuery, /userId: guard\.userId/)
+})

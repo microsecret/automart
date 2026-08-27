@@ -37,11 +37,23 @@ export async function POST(request: NextRequest) {
   const result = await castPollVote({ pollId, optionIds, userId: guard.userId })
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status })
 
-  const options = await prisma.forumPollOption.findMany({
-    where: { pollId },
-    select: { id: true, text: true, votes: true },
-    orderBy: { position: "asc" },
-  })
+  const [options, votes] = await Promise.all([
+    prisma.forumPollOption.findMany({
+      where: { pollId },
+      /* Только сводные числа: кто за что голосовал, наружу не выходит —
+         на форуме о деньгах и марках это повод для придирок к человеку,
+         а не к его доводам. */
+      select: { id: true, text: true, votes: true },
+      orderBy: { position: "asc" },
+    }),
+    prisma.forumPollVote.findMany({
+      where: { pollId, userId: guard.userId },
+      select: { optionId: true },
+    }),
+  ])
 
-  return NextResponse.json({ options, voted: optionIds })
+  /* Отмеченным возвращается записанное, а не присланное: запись
+     отсеивает варианты чужого опроса, и вернув присланное, клиент
+     поставил бы галочку там, где голоса нет. */
+  return NextResponse.json({ options, voted: votes.map((vote) => vote.optionId) })
 }
