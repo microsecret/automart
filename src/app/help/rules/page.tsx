@@ -1,5 +1,14 @@
+"use client"
+
 import { Box, Stack, Text, Paper, ThemeIcon, Group, SimpleGrid, Badge, Divider, List } from "@mantine/core"
 import { IconScale, IconCheck, IconX, IconInfoCircle } from "@tabler/icons-react"
+
+/* Страница остаётся клиентской из-за составного компонента List.Item:
+   при оптимизации импортов пакетов Mantine такие вложенные компоненты не
+   разрешаются на сервере, и сборка падает с «Element type is invalid».
+   Остальные семь справочных страниц переведены на сервер — у них
+   составных компонентов нет. */
+
 
 export default function RulesPage() {
   return (
