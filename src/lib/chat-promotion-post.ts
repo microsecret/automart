@@ -98,7 +98,22 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
 
   const listingUrl = `${options.siteUrl.replace(/\/$/, "")}/listings/vehicle/${listing.id}`
 
-  const buttons: PostButton[] = [{ text: "🔎 Смотреть объявление", url: listingUrl }]
+  const buttons: PostButton[] = []
+
+  /* Открытие в приложении идёт первым: из чата человек уже в Telegram, и
+     приложение открывается прямо здесь, а ссылка на сайт выбрасывает его
+     в браузер, где он заново входит в учётную запись.
+
+     Кнопка появляется только если известно имя бота: без него ссылка
+     вида «https://t.me/undefined» просто не откроется. */
+  if (options.botUsername) {
+    buttons.push({
+      text: "🚗 Открыть в приложении",
+      url: `https://t.me/${options.botUsername}?startapp=listing_${listing.id}`,
+    })
+  }
+
+  buttons.push({ text: "🔎 Открыть на сайте", url: listingUrl })
 
   /* Кнопка «Написать» ведёт в бот, а не напрямую продавцу: прямая ссылка
      раскрыла бы его аккаунт всем читателям чата, включая тех, кто

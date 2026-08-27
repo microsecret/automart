@@ -22,6 +22,7 @@ import { describePendingSteps, resumeButtonLabel } from "@/lib/telegram-registra
 import { touchTelegramContact } from "@/lib/telegram-contacts"
 import { absoluteUrl } from "@/lib/site-url"
 import { forwardNoticeText, isChannelForward } from "@/lib/telegram-forward-guard"
+import { rememberUserChat } from "@/lib/listing-chat-autopost"
 
 export const dynamic = "force-dynamic"
 
@@ -374,6 +375,11 @@ async function handleMessage(message: TelegramMessage) {
 
   if (message.chat.type === "group" || message.chat.type === "supergroup") {
     await registerTelegramGroup(message.chat)
+
+    /* Запоминаем, что этот человек пишет здесь: по этой связи его
+       объявление уйдёт именно в этот чат, а не в общий поток. Ждать
+       ответа незачем — обработка сообщения от неё не зависит. */
+    void rememberUserChat({ telegramId, chatId })
     const command = message.text?.trim().toLowerCase().split(/\s+/)[0]?.split("@")[0]
     if (command === "/promo_on" || command === "/promo_off") {
       const member = await telegramApi<{ status: string }>("getChatMember", { chat_id: chatId, user_id: message.from.id }).catch(() => null)

@@ -40,13 +40,28 @@ const START_PARAM_ROUTES: Record<string, string> = {
   promo: "/auctions?from=telegram",
 }
 
+/* Объявление из поста в чате: listing_<идентификатор>.
+
+   Идентификатор проверяется по набору символов, а не подставляется как
+   есть: без проверки чужая строка в параметре увела бы человека на
+   произвольный адрес внутри приложения. */
+const LISTING_PARAM = /^listing_([0-9a-f-]{16,40})$/i
+
 function resolveStartRoute(initData: string): string | null {
   try {
     const startParam = (
       new URLSearchParams(initData).get("start_param")
       || new URLSearchParams(window.location.search).get("start")
     )?.trim()
-    return (startParam && START_PARAM_ROUTES[startParam]) || null
+    if (!startParam) return null
+
+    const known = START_PARAM_ROUTES[startParam]
+    if (known) return known
+
+    const listing = startParam.match(LISTING_PARAM)
+    if (listing) return `/listings/vehicle/${listing[1]}?from=telegram`
+
+    return null
   } catch {
     return null
   }

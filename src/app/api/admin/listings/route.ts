@@ -5,6 +5,7 @@ import { canModeratorTransition, isListingStatus, LISTING_STATUS } from "@/lib/l
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 import { moderationNotice } from "@/lib/listing-moderation-notify"
 import { readStoredVehicleSubtype, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
+import { autopostListingToChat } from "@/lib/listing-chat-autopost"
 
 export const dynamic = "force-dynamic"
 
@@ -79,6 +80,17 @@ export async function PATCH(request: NextRequest) {
       })
       return next
     })
+
+    /* Одобренное объявление уходит в чат продавца — тот, откуда он сам
+       пришёл. Публикуем здесь, а не при создании: в чат должно попадать
+       проверенное, иначе бот разносит по группам то, что модератор ещё
+       не видел.
+
+       Ответа не ждём: отправка в Telegram занимает секунды, а решение
+       модератора не должно на них останавливаться. */
+    if (status === LISTING_STATUS.ACTIVE) {
+      void autopostListingToChat(id)
+    }
 
     await recordAdminAudit({
       actorId: session.user.id,

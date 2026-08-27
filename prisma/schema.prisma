@@ -50,6 +50,7 @@ model User {
   forumReactions                ForumReaction[]                @relation("ForumReactionAuthor")
   forumSubscriptions            ForumSubscription[]            @relation("ForumSubscriber")
   forumReports                  ForumReport[]                  @relation("ForumReporter")
+  telegramChats                 TelegramUserChat[]             @relation("TelegramChatMember")
 
   /// Репутация на форуме: сумма полученных реакций и отмеченных ответов.
   ///
@@ -510,6 +511,8 @@ model Listing {
   statusEvents    ListingStatusEvent[]
   priceEvents     ListingPriceEvent[]
   revisions       ListingRevision[]
+  /// Бесплатные публикации в чатах Telegram.
+  chatPosts       ListingChatPost[]
   reports         ListingReport[]
   promotionOrders PromotionOrder[]
   viewEvents      ListingViewEvent[]
@@ -1026,6 +1029,56 @@ model TelegramContact {
   @@index([lastBroadcastAt])
 }
 
+/// Бесплатная публикация объявления в чате продавца.
+///
+/// Отдельно от ChatPromotionPost: тот привязан к оплаченному заказу и
+/// живёт по его сроку, а эта запись нужна лишь для того, чтобы не
+/// отправить одно объявление в тот же чат дважды.
+model ListingChatPost {
+  id        String @id @default(uuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  chatId    String
+
+  /// Идентификатор сообщения: по нему пост убирается, когда объявление
+  /// снимают с площадки.
+  messageId Int
+
+  publishedAt DateTime  @default(now())
+  removedAt   DateTime?
+
+  /// Одно объявление — один пост в чате. Ограничение в базе: объявление
+  /// могли снять и вернуть, а два одинаковых поста подряд раздражают
+  /// больше, чем их отсутствие.
+  @@unique([listingId, chatId])
+  @@index([chatId, publishedAt])
+}
+
+/// Из какого чата человек пришёл на площадку.
+///
+/// Объявление уходит именно туда: его увидят те, среди кого продавец уже
+/// состоит, а не посторонние из общего потока. Для форума под Владивосток
+/// это разница между «продаю Prado» среди своих и тем же объявлением
+/// среди всей страны.
+///
+/// Связь записывается, когда человек пишет в группе с ботом: там видно и
+/// его, и чат сразу. При регистрации на сайте таких сведений нет вовсе.
+model TelegramUserChat {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation("TelegramChatMember", fields: [userId], references: [id], onDelete: Cascade)
+  chatId String
+  chat   TelegramChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  /// Когда человека последний раз видели в этом чате. По ней выбирается
+  /// чат для публикации, если он состоит в нескольких: свежий ближе.
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, chatId])
+  @@index([userId, lastSeenAt])
+}
+
 model TelegramChat {
   id               String    @id
   type             String
@@ -1038,6 +1091,8 @@ model TelegramChat {
   lastError        String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  members TelegramUserChat[]
 
   @@index([active, marketingEnabled, lastPromoAt])
   @@index([lastSeenAt])
