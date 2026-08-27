@@ -46,6 +46,7 @@ model User {
   reviews                       Review[]                       @relation("Reviewer")
   forumTopics                   ForumTopic[]                   @relation("ForumTopicAuthor")
   forumPosts                    ForumPost[]                    @relation("ForumPostAuthor")
+  forumPollVotes                ForumPollVote[]                @relation("ForumPollVoter")
   messagesSent                  Message[]                      @relation("MessageSender")
   messagesReceived              Message[]                      @relation("MessageReceiver")
   messageAttachments            MessageAttachment[]            @relation("MessageAttachmentUploader")
@@ -1617,6 +1618,9 @@ model ForumTopic {
   deletedAt DateTime?
 
   posts ForumPost[]
+  /// Опрос необязателен и всегда один: два голосования в одном
+  /// обсуждении делят внимание, и оба остаются недоголосованными.
+  poll  ForumPoll?
 
   @@index([sectionId, isPinned, lastPostAt])
   @@index([authorId])
@@ -1640,6 +1644,74 @@ model ForumPost {
 
   @@index([topicId, createdAt])
   @@index([authorId])
+}
+
+/// Опрос в теме форума.
+///
+/// Вопрос «какую взять» повторяется в каждом втором обсуждении, и ответы
+/// тонут в сотне сообщений. Опрос собирает то же мнение в цифру, которую
+/// видно сразу, и удерживает человека в теме: проголосовавший приходит
+/// смотреть, чем кончилось.
+///
+/// Опрос один на тему: два опроса в одном обсуждении делят внимание и
+/// оба остаются недоголосованными.
+model ForumPoll {
+  id      String     @id @default(uuid())
+  topicId String     @unique
+  topic   ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  question String
+  /// Можно ли отметить несколько вариантов. Для «какую модель взяли»
+  /// нужен один ответ, для «что менял по гарантии» — сразу несколько.
+  multiple Boolean @default(false)
+
+  /// Срок голосования. Пустой — бессрочно: обсуждение модели живёт
+  /// годами, и закрывать такой опрос по календарю незачем.
+  closesAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  options ForumPollOption[]
+  votes   ForumPollVote[]
+}
+
+/// Вариант ответа.
+///
+/// Счётчик голосов хранится полем, а не считается запросом: страница темы
+/// открывается на каждый заход, и COUNT по всем голосам при живом опросе
+/// становится самым дорогим запросом страницы.
+model ForumPollOption {
+  id     String    @id @default(uuid())
+  pollId String
+  poll   ForumPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  text     String
+  position Int @default(0)
+  votes    Int @default(0)
+
+  ballots ForumPollVote[]
+
+  @@index([pollId, position])
+}
+
+/// Голос участника.
+///
+/// Ограничение уникальности стоит в базе, а не в проверке кода: два
+/// нажатия подряд с телефона уходят двумя запросами одновременно, и
+/// проверка «уже голосовал» пропустит оба.
+model ForumPollVote {
+  id       String          @id @default(uuid())
+  pollId   String
+  poll     ForumPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId String
+  option   ForumPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User            @relation("ForumPollVoter", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([optionId, userId])
+  @@index([pollId, userId])
 }
 
 /// Публикация объявления в чате сети.

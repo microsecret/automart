@@ -2,11 +2,14 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Anchor, Avatar, Badge, Box, Breadcrumbs, Card, Container, Group, Stack, Text, Title } from "@mantine/core"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { pluralReplies, POSTS_PER_PAGE } from "@/lib/forum"
 import { renderForumMarkup, stripForumMarkup } from "@/lib/forum-markup"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
 import PostBody from "@/components/forum/PostBody"
+import PollBlock from "@/components/forum/PollBlock"
 import ReplyForm from "./ReplyForm"
 
 type Props = { params: Promise<{ section: string; topic: string }>; searchParams: Promise<{ page?: string }> }
@@ -38,12 +41,29 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
   const { page: pageParam } = await searchParams
   const page = Math.max(1, Number.parseInt(pageParam || "1", 10) || 1)
 
+  /* Сессия нужна ради опроса: показать человеку его собственный голос
+     можно, только зная, кто он. Гостю опрос виден, но без голосования. */
+  const session = await getServerSession(authOptions)
+  const viewerId = session?.user?.id ?? null
+
   const topic = await prisma.forumTopic.findFirst({
     where: { slug: topicSlugParam, deletedAt: null },
     select: {
       id: true, title: true, isClosed: true, replyCount: true, createdAt: true,
       author: { select: { name: true, image: true } },
       section: { select: { slug: true, title: true } },
+      poll: {
+        select: {
+          id: true, question: true, multiple: true, closesAt: true,
+          options: { select: { id: true, text: true, votes: true }, orderBy: { position: "asc" } },
+          /* Только свои голоса: чужие здесь не нужны, а выбирать их все
+             значит тянуть с базы список на тысячу строк ради одной
+             галочки. */
+          votes: viewerId
+            ? { where: { userId: viewerId }, select: { optionId: true } }
+            : false,
+        },
+      },
     },
   })
   if (!topic || topic.section.slug !== sectionSlug) notFound()
@@ -86,6 +106,23 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
             {topic.isClosed && <Badge size="xs" variant="light" color="gray">закрыта</Badge>}
           </Group>
         </Box>
+
+        {/* Опрос над обсуждением и только на первой странице: он относится
+            к теме целиком, а не к сообщению, и на пятой странице ответов
+            выглядел бы вставкой посреди разговора. */}
+        {topic.poll && page === 1 && (
+          <PollBlock
+            canVote={Boolean(viewerId)}
+            poll={{
+              id: topic.poll.id,
+              question: topic.poll.question,
+              multiple: topic.poll.multiple,
+              closesAt: topic.poll.closesAt ? topic.poll.closesAt.toISOString() : null,
+              options: topic.poll.options,
+              myVotes: (topic.poll.votes || []).map((vote) => vote.optionId),
+            }}
+          />
+        )}
 
         <Stack gap="xs">
           {posts.map((post) => (

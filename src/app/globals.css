@@ -6907,6 +6907,58 @@ h1[data-lw-hero] {
   background: var(--market-field);
 }
 
+/* === Опрос в теме === */
+
+.forum-poll {
+  margin: 10px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface-subtle);
+}
+
+.forum-poll__icon {
+  color: var(--market-primary);
+  flex-shrink: 0;
+}
+
+.forum-poll__track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--market-line);
+  overflow: hidden;
+}
+
+/* Полоса растёт от нуля при первом показе результата: рост показывает,
+   что цифра относится к целому, а не просто нарисована. Дальше она
+   стоит — результат читают часто, и повторять движение при каждом
+   заходе значит мешать. */
+.forum-poll__bar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--market-primary);
+  transform-origin: left;
+  animation: forum-poll-grow 250ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes forum-poll-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Свой голос выделен рамкой слева: среди пяти полос собственный выбор
+   иначе теряется, а именно его человек ищет глазами первым. */
+.forum-poll__result[data-mine="true"] {
+  padding-left: 8px;
+  border-left: 2px solid var(--market-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forum-poll__bar {
+    animation: none;
+  }
+}
+
 /* Карточка обсуждения на главной: тот же отклик, что у карточек
    направлений — рамка и лёгкий подъём, без тяжёлой тени. */
 .forum-highlight {

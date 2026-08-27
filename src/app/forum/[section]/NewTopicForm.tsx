@@ -9,6 +9,8 @@ import { notifications } from "@mantine/notifications"
 import { IconPlus } from "@tabler/icons-react"
 import { TOPIC_TITLE_MAX, validatePostContent, validateTopicTitle } from "@/lib/forum"
 import MarkupEditor from "@/components/forum/MarkupEditor"
+import PollDraftFields, { EMPTY_POLL_DRAFT, type PollDraftState } from "@/components/forum/PollDraftFields"
+import { validatePollDraft } from "@/lib/forum-poll"
 
 /**
  * Создание темы прямо в разделе.
@@ -22,6 +24,7 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
   const [opened, setOpened] = useState(false)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
+  const [poll, setPoll] = useState<PollDraftState>(EMPTY_POLL_DRAFT)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,6 +57,22 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
       return
     }
 
+    /* Опрос проверяем здесь же, а не после публикации темы: иначе
+       человек узнает об ошибке в опросе, когда тема уже создана и
+       исправлять поздно. */
+    if (poll.enabled) {
+      const pollCheck = validatePollDraft({
+        question: poll.question,
+        options: poll.options,
+        multiple: poll.multiple,
+        closesInDays: poll.closesInDays ? Number(poll.closesInDays) : null,
+      })
+      if (!pollCheck.ok) {
+        setError(pollCheck.error)
+        return
+      }
+    }
+
     setSending(true)
     setError(null)
     try {
@@ -64,6 +83,31 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) throw new Error(payload?.error || "Не удалось создать тему")
+
+      /* Опрос создаётся вторым запросом, уже к готовой теме. Его неудача
+         не отменяет публикации: тема написана и опубликована, а опрос
+         автор добавит потом — терять текст из-за него было бы обидно. */
+      if (poll.enabled) {
+        const pollResponse = await fetch("/api/forum/polls", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topicId: payload.topic.id,
+            question: poll.question,
+            options: poll.options,
+            multiple: poll.multiple,
+            closesInDays: poll.closesInDays ? Number(poll.closesInDays) : null,
+          }),
+        })
+        if (!pollResponse.ok) {
+          const pollPayload = await pollResponse.json().catch(() => null)
+          notifications.show({
+            title: "Тема создана, опрос — нет",
+            message: pollPayload?.error || "Опрос не удалось добавить",
+            color: "orange",
+          })
+        }
+      }
 
       notifications.show({ title: "Тема создана", message: "Ваш вопрос опубликован", color: "indigo" })
       router.push(`/forum/${sectionSlug}/${payload.topic.slug}`)
@@ -106,6 +150,7 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
               minRows={4}
               disabled={sending}
             />
+            <PollDraftFields value={poll} onChange={setPoll} disabled={sending} />
             {error && <Text size="xs" c="red.6">{error}</Text>}
             <Group gap="xs">
               <Button color="indigo" size="sm" radius="md" loading={sending} onClick={() => void submit()}>
