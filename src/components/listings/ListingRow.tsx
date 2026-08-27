@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Card, Text, Group, Badge, Box, Stack, ActionIcon, AspectRatio } from "@mantine/core"
 import { IconHeart, IconMapPin , IconScale } from "@tabler/icons-react"
 import Link from "next/link"
@@ -38,7 +38,12 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
     : `/listings/part/${listing.part!.id}`
 
   const images = parseImages(isVehicle ? listing.vehicle!.images : listing.part?.images)
-  const sourceImage = images[0] || ""
+  /* Кадр и память касания: в строчном виде показывалось только первое фото
+     из двенадцати, и посмотреть остальные можно было лишь открыв
+     объявление. */
+  const [activeImg, setActiveImg] = useState(0)
+  const touchStartX = useRef<number | null>(null)
+  const sourceImage = images[activeImg] || images[0] || ""
   const image = sourceImage.includes("/placeholder/") ? "" : sourceImage
   const hasDisplayImage = Boolean(image) && !imageFailed
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
@@ -104,6 +109,20 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
             data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
             pos="relative"
             style={{ width: 180, flexShrink: 0, background: "var(--mantine-color-gray-1)", lineHeight: 0 }}
+            onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null }}
+            onTouchEnd={(event) => {
+              /* Порог в 40 пикселей отличает свайп от касания: меньший
+                 сдвиг — это тап по карточке. */
+              const startX = touchStartX.current
+              touchStartX.current = null
+              if (startX === null || images.length < 2) return
+              const delta = (event.changedTouches[0]?.clientX ?? startX) - startX
+              if (Math.abs(delta) < 40) return
+              event.preventDefault()
+              setActiveImg((current) => (current + (delta < 0 ? 1 : -1) + images.length) % images.length)
+              setImageFailed(false)
+              setImageLoaded(false)
+            }}
           >
             {hasDisplayImage ? (
               <AspectRatio ratio={4 / 3} w={180}>
@@ -124,6 +143,14 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
               </AspectRatio>
             ) : (
               <Box h="100%" className="listing-card__media" data-empty-media="true"><VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact /></Box>
+            )}
+            {/* Счётчик кадров: показывает, что фото можно листать. */}
+            {hasDisplayImage && images.length > 1 && (
+              <Box pos="absolute" bottom={6} right={6} style={{ pointerEvents: "none" }}>
+                <Badge size="xs" variant="filled" color="dark" radius="sm">
+                  {activeImg + 1}/{images.length}
+                </Badge>
+              </Box>
             )}
             {listing.isFeatured && (
               <Box pos="absolute" top={6} left={6}>
