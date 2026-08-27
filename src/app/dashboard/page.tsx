@@ -17,6 +17,7 @@ import VehicleFallback from "@/components/listings/VehicleFallback"
 import ShareInviteCard from "@/components/dashboard/ShareInviteCard"
 import GaragePanel, { type GarageResponse } from "@/components/dashboard/GaragePanel"
 import PromotionPanel, { type PromotionOrder } from "@/components/dashboard/PromotionPanel"
+import { FORUM_SIGNATURE_MAX } from "@/lib/forum"
 
 type DashboardVehicle = {
   id: string
@@ -98,6 +99,7 @@ type AccountProfileResponse = {
     role: string
     createdAt: string
     registrationChannel: "TELEGRAM" | "WEB"
+    forumSignature: string | null
   }
 }
 type RemovalConfirmation = { kind: "listing" | "garage"; id: string; title: string }
@@ -124,6 +126,7 @@ function DashboardContent() {
   const [tab, setTab] = useState("listings")
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false)
   const [profileName, setProfileName] = useState("")
+  const [profileSignature, setProfileSignature] = useState("")
   const [isProfileSaving, setIsProfileSaving] = useState(false)
   const [garageDeletingId, setGarageDeletingId] = useState<string | null>(null)
   const [removalConfirmation, setRemovalConfirmation] = useState<RemovalConfirmation | null>(null)
@@ -164,6 +167,12 @@ function DashboardContent() {
     setProfileName(session?.user?.name || "")
   }, [session?.user?.name])
 
+  /* Подпись приходит из учётной записи, а не из сессии: в сессии её нет,
+     и без этого поле открывалось бы пустым поверх сохранённого текста. */
+  useEffect(() => {
+    setProfileSignature(accountData?.user?.forumSignature || "")
+  }, [accountData?.user?.forumSignature])
+
   useEffect(() => {
     const requestedTab = searchParams.get("tab")
     setTab(requestedTab && DASHBOARD_TABS.has(requestedTab) ? requestedTab : "listings")
@@ -175,7 +184,7 @@ function DashboardContent() {
       const payload = await fetchJson<ProfileUpdateResponse>("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: profileName }),
+        body: JSON.stringify({ name: profileName, forumSignature: profileSignature }),
       })
 
       await updateSession({ name: payload.user.name })
@@ -585,6 +594,17 @@ function DashboardContent() {
               ) : (
                 <Stack gap="xs">
                   <TextInput label="Отображаемое имя" value={profileName} onChange={(event) => setProfileName(event.currentTarget.value)} maxLength={60} />
+                  {/* Подпись видна под каждым сообщением на форуме:
+                      ответ «у меня так же было» значит разное от
+                      владельца той же машины и от постороннего. */}
+                  <TextInput
+                    label="Подпись на форуме"
+                    placeholder="Например: Haval Jolion 2023, Москва"
+                    description="Видна под вашими сообщениями. Без ссылок."
+                    value={profileSignature}
+                    onChange={(event) => setProfileSignature(event.currentTarget.value)}
+                    maxLength={FORUM_SIGNATURE_MAX}
+                  />
                   <Group gap="xs">
                     <Button size="sm" color="indigo" loading={isProfileSaving} onClick={handleProfileSave}>Сохранить</Button>
                     <Button size="sm" variant="subtle" color="gray" disabled={isProfileSaving} onClick={() => { setProfileName(session?.user?.name || ""); setIsProfileEditorOpen(false) }}>Отмена</Button>

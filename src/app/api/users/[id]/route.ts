@@ -30,6 +30,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         telegramVerifiedAt: true,
         role: true,
         createdAt: true,
+        /* Подпись на форуме: её правит владелец учётной записи в
+           кабинете, и без неё поле открывалось бы пустым поверх
+           сохранённого текста. */
+        forumSignature: true,
       }
     })
 

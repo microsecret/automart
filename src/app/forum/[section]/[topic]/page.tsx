@@ -78,7 +78,7 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
     take: POSTS_PER_PAGE,
     select: {
       id: true, content: true, createdAt: true, deletedAt: true, authorId: true, isBestAnswer: true,
-      author: { select: { id: true, name: true, image: true, forumReputation: true, forumBestAnswers: true } },
+      author: { select: { id: true, name: true, image: true, forumReputation: true, forumBestAnswers: true, forumPostCount: true, forumSignature: true } },
     },
   })
 
@@ -143,17 +143,39 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                 </Avatar>
                 <Box style={{ minWidth: 0, flex: 1 }}>
                   <Group gap={6} wrap="wrap">
-                    <Text fw={700} fz="xs" c="var(--market-ink)">{post.author.name || "Участник"}</Text>
+                    {/* Имя ведёт на профиль: увидев дельный ответ, читатель
+                        первым делом хочет понять, кто это написал. */}
+                    {post.author.name ? (
+                      <Anchor
+                        component={Link}
+                        href={`/forum/users/${encodeURIComponent(post.author.name)}`}
+                        fw={700}
+                        fz="xs"
+                        c="var(--market-ink)"
+                        underline="hover"
+                      >
+                        {post.author.name}
+                      </Anchor>
+                    ) : (
+                      <Text fw={700} fz="xs" c="var(--market-ink)">Участник</Text>
+                    )}
                     {/* Звание вместо голого числа очков: «Знаток» говорит
                         читателю больше, чем «240», а разбираться в шкале
                         ради чужого ответа никто не станет. Ниже десяти
                         очков подписи нет — новичок её не заслужил, а
                         «Новичок» читается хуже пустоты. */}
                     {reputationRank(post.author.forumReputation) && (
-                      <Text fz="xs" c="var(--market-muted)">{reputationRank(post.author.forumReputation)}</Text>
+                      <Badge size="xs" variant="light" color="indigo">
+                        {reputationRank(post.author.forumReputation)}
+                      </Badge>
+                    )}
+                    {post.author.forumPostCount > 0 && (
+                      <Text fz="xs" c="var(--market-muted)" title="Сообщений на форуме">
+                        {post.author.forumPostCount} сообщ.
+                      </Text>
                     )}
                     {post.author.forumBestAnswers > 0 && (
-                      <Text fz="xs" c="var(--market-muted)" title="Ответов, решивших вопрос">
+                      <Text fz="xs" c="var(--mantine-color-teal-7)" title="Ответов, решивших вопрос">
                         помог {pluralTimes(post.author.forumBestAnswers)}
                       </Text>
                     )}
@@ -173,6 +195,16 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                        нет наведения, и без обработчика нажатия скрытый
                        ответ остался бы скрытым навсегда. */
                     <PostBody html={renderForumMarkup(post.content)} mt={4} />
+                  )}
+
+                  {/* Подпись автора: чем ездит, чем занимается. Ответ «у
+                      меня так же было» значит разное от владельца той же
+                      машины и от постороннего. Мельче текста и отделена
+                      чертой — она справка, а не часть разговора. */}
+                  {!post.deletedAt && post.author.forumSignature && (
+                    <Text fz={11} c="var(--market-muted)" mt={6} className="forum-signature">
+                      {post.author.forumSignature}
+                    </Text>
                   )}
 
                   {/* Под удалённым сообщением реакций нет: оценивать

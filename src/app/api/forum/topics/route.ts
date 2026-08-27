@@ -63,6 +63,14 @@ export async function POST(request: NextRequest) {
       data: { topicCount: { increment: 1 }, postCount: { increment: 1 }, lastPostAt: now },
     })
 
+    /* Первое сообщение темы тоже считается: иначе у автора, который
+       только заводит темы и не отвечает в чужих, счётчик остался бы на
+       нуле при десятке написанных сообщений. */
+    await tx.user.update({
+      where: { id: session.user.id },
+      data: { forumPostCount: { increment: 1 } },
+    })
+
     return created
   })
 

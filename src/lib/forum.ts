@@ -19,6 +19,11 @@ export const TOPIC_TITLE_MAX = 140
 export const POST_MIN = 2
 export const POST_MAX = 10_000
 /** Сообщений на странице темы. */
+/* Подпись под сообщениями: два десятка символов на «Jolion 2023, Москва»
+   хватает, а длинная подпись у активного участника занимает больше места,
+   чем его же ответ. */
+export const FORUM_SIGNATURE_MAX = 80
+
 export const POSTS_PER_PAGE = 20
 /** Тем на странице раздела. */
 export const TOPICS_PER_PAGE = 25

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { FORUM_SIGNATURE_MAX } from "@/lib/forum"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -117,9 +118,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH current user profile. The endpoint intentionally exposes only the
-// display name: phone, email and Telegram identity have separate verification
-// flows and must not be silently changed from the dashboard.
+// PATCH current user profile. The endpoint exposes the display name and the
+// forum signature only: phone, email and Telegram identity have separate
+// verification flows and must not be silently changed from the dashboard.
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -134,10 +135,32 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Укажите имя от 2 до 60 символов" }, { status: 400 })
     }
 
+    /* Подпись под сообщениями форума. Приходит не всегда: имя меняют
+       отдельно от неё, и отсутствие поля не должно стирать написанное. */
+    const signatureGiven = typeof payload?.forumSignature === "string"
+    const signature = signatureGiven ? payload.forumSignature.trim().replace(/\s+/g, " ") : null
+
+    if (signature !== null && signature.length > FORUM_SIGNATURE_MAX) {
+      return NextResponse.json(
+        { error: `Подпись длиннее ${FORUM_SIGNATURE_MAX} символов` },
+        { status: 400 },
+      )
+    }
+
+    /* Ссылки в подписи запрещены: подпись видна под каждым сообщением
+       человека, и ссылка в ней это реклама на всю площадку, которую
+       модератору пришлось бы вычищать по одному сообщению. */
+    if (signature && /https?:\/\/|www\.|@[a-z0-9_]{3,}|t\.me\//i.test(signature)) {
+      return NextResponse.json(
+        { error: "Ссылки и упоминания в подписи не допускаются" },
+        { status: 400 },
+      )
+    }
+
     const user = await prisma.user.update({
       where: { id: session.user.id },
-      data: { name },
-      select: { id: true, name: true, email: true, image: true },
+      data: signatureGiven ? { name, forumSignature: signature || null } : { name },
+      select: { id: true, name: true, email: true, image: true, forumSignature: true },
     })
 
     return NextResponse.json({ user })

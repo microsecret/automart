@@ -50,6 +50,13 @@ export async function POST(request: NextRequest) {
       where: { id: topic.sectionId },
       data: { postCount: { increment: 1 }, lastPostAt: now },
     })
+    /* Счётчик автора в той же сделке, что и остальные: разъедься он с
+       действительностью — под именем человека будет одно число, а
+       сообщений в базе другое. */
+    await tx.user.update({
+      where: { id: session.user.id },
+      data: { forumPostCount: { increment: 1 } },
+    })
     return created
   })
 
