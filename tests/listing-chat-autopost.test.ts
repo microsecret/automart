@@ -136,3 +136,31 @@ test("чужая строка в параметре никуда не уводи
     assert.ok(!rule.test(bad), `пропущено: ${bad}`)
   }
 })
+
+// === Уборка постов снятых объявлений ===
+
+test("пост убирается, когда объявление сняли", () => {
+  /* Пост на снятое объявление ведёт на пустую страницу: человек нажимает
+     кнопку из чата и попадает в никуда. */
+  assert.match(autopost, /export async function cleanupSoldListingPosts/)
+  assert.match(autopost, /listing: \{ deletedAt: \{ not: null \} \}/)
+  assert.match(autopost, /listing: \{ status: \{ not: "ACTIVE" \} \}/)
+})
+
+test("уборка идёт по расписанию, а не при снятии", () => {
+  /* Ловить момент снятия в каждом из мест, где объявление меняют, значит
+     забыть об одном из них. */
+  const schedule = read("../src/app/api/telegram/chat-promotion/route.ts")
+  assert.match(schedule, /cleanupSoldListingPosts\(\)/)
+})
+
+test("удалённое вручную сообщение не держит запись", () => {
+  // Telegram ответит ошибкой, и это не повод оставлять запись висеть.
+  const cleanup = autopost.slice(autopost.indexOf("cleanupSoldListingPosts"))
+  assert.match(cleanup, /deleteMessage[\s\S]{0,160}catch\(\(\) => \{\}\)/)
+  assert.match(cleanup, /removedAt: new Date\(\)/)
+})
+
+test("убранное второй раз не трогается", () => {
+  assert.match(autopost, /removedAt: null/)
+})

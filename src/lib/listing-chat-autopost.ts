@@ -227,3 +227,54 @@ async function sendPost(
 
   return album[0].message_id
 }
+
+/**
+ * Убирает из чатов посты снятых объявлений.
+ *
+ * Пост на снятое объявление ведёт на пустую страницу: человек нажимает
+ * кнопку из чата и попадает в никуда, а чат при этом выглядит
+ * заброшенным.
+ *
+ * Запускается по расписанию вместе с уборкой платных постов: ловить
+ * момент снятия объявления в каждом из мест, где его меняют, значит
+ * забыть об одном из них.
+ */
+export async function cleanupSoldListingPosts(): Promise<number> {
+  try {
+    const stale = await prisma.listingChatPost.findMany({
+      where: {
+        removedAt: null,
+        /* Снятое, проданное, удалённое — всё, чего больше нет на
+           площадке. Условие через listing, а не через отдельное поле:
+           одно место правды вместо двух расходящихся. */
+        OR: [
+          { listing: { deletedAt: { not: null } } },
+          { listing: { status: { not: "ACTIVE" } } },
+        ],
+      },
+      select: { id: true, chatId: true, messageId: true },
+      take: 200,
+    })
+
+    let removed = 0
+    for (const post of stale) {
+      /* Сообщение могли удалить руками в самом чате — тогда Telegram
+         ответит ошибкой, и это не повод оставлять запись висеть. */
+      await telegramApi("deleteMessage", {
+        chat_id: post.chatId,
+        message_id: post.messageId,
+      }).catch(() => {})
+
+      await prisma.listingChatPost.update({
+        where: { id: post.id },
+        data: { removedAt: new Date() },
+      })
+      removed += 1
+    }
+
+    return removed
+  } catch (error) {
+    console.error("Уборка постов снятых объявлений:", error)
+    return 0
+  }
+}
