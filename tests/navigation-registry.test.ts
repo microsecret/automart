@@ -72,3 +72,29 @@ test("мобильная панель ведёт на форум, а не дуб
   // ответом на свой вопрос.
   assert.deepEqual(SITE_MOBILE_NAVIGATION.map((item) => item.id), ["home", "auctions", "create", "forum", "messages"])
 })
+
+test("форум доступен в приложении Telegram обоими путями", () => {
+  /* Нижняя панель прячется при прокрутке, а выезжающее меню открывают
+     осознанно. Форум был только в панели, и человек, закрывший её, не
+     находил форум в приложении вовсе — при том что новости из меню
+     доступны. Проверяются оба пути, чтобы пропажа не повторилась. */
+  const inTabs = TELEGRAM_TAB_NAVIGATION.some((item) => item.id === "forum")
+  assert.ok(inTabs, "форума нет в нижней панели приложения")
+
+  const inMenu = TELEGRAM_MENU_NAVIGATION
+    .flatMap((section) => section.items)
+    .some((item) => item.id === "forum")
+  assert.ok(inMenu, "форума нет в выезжающем меню приложения")
+})
+
+test("ссылки форума в приложении помечены источником", () => {
+  // Без пометки переход из приложения считается заходом с сайта, и
+  // страница открывается в обычной вёрстке, а не в приложении.
+  const links = [
+    ...TELEGRAM_TAB_NAVIGATION,
+    ...TELEGRAM_MENU_NAVIGATION.flatMap((section) => section.items),
+  ].filter((item) => item.id === "forum")
+
+  assert.ok(links.length >= 2, "ожидались обе ссылки на форум")
+  for (const link of links) assert.match(link.href, /from=telegram/)
+})

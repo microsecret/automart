@@ -129,6 +129,10 @@ export const TELEGRAM_MENU_NAVIGATION = [
       { id: "vehicles", label: "Свежие объявления", href: "/telegram" },
       { id: "auctions", label: "Мировые аукционы", href: "/telegram?tab=auctions" },
       { id: "news", label: "Новости авторынка", href: "/telegram?tab=news" },
+      /* Форум есть и в нижней панели, и здесь. Панель прячется при
+         прокрутке, а меню открывают осознанно: без этой строки человек,
+         закрывший панель, форум в приложении не находил вовсе. */
+      { id: "forum", label: "Форум автолюбителей", href: "/forum?from=telegram" },
       { id: "parts", label: "Запчасти", href: "/parts-finder?from=telegram" },
     ],
   },
