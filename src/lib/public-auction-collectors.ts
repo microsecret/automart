@@ -15,6 +15,7 @@ import { PublicListingPolicyExcludedError, isBobaedreamSoldListing, isCarsensorP
 import { extractIautosImages } from "@/lib/iautos-images"
 import { localizeIautosModel } from "@/lib/iautos-model"
 import { translateModelName } from "@/lib/nvidia-translate"
+import { assessPowerPolicy } from "@/lib/auction-power-policy"
 import { lookupVehiclePower } from "@/lib/vehicle-power-reference"
 import {
   auctionSourceHtmlText as htmlText,
@@ -910,6 +911,17 @@ async function fetchIautosListing(candidate: PublicAuctionCandidate): Promise<Au
   const engineText = pairs.get("发动机") || firstMatch(title, /(\d+(?:\.\d+)?L)/i)
   const power = sourcePowerHorsepower(pairs.get("发动机功率") || pairs.get("最大功率") || engineText)
   const fuelType = normalizeAuctionFuelType(pairs.get("燃料类型") || pairs.get("能源类型"))
+
+  /* Отбраковка до перевода: мощность и топливо уже разобраны выше, а
+     перевод названия — платный запрос к языковой модели. Машина сверх
+     порога льготного утильсбора в каталоге не нужна, и тратить на неё
+     запрос незачем. */
+  const powerVerdict = assessPowerPolicy({ power, fuelType })
+  if (!powerVerdict.eligible) {
+    throw new PublicListingPolicyExcludedError(
+      `Iautos: карточка ${candidate.sourceId} мощнее порога льготного утильсбора (${power} л.с. при пороге ${powerVerdict.limitHp})`,
+    )
+  }
 
   const deterministicModel = normalizeAuctionModel(localizeIautosModel(modelOriginal))
   const model = deterministicModel || normalizeAuctionModel(await translateModelName(modelOriginal))

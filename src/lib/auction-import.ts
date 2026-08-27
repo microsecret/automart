@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { translateListingFields, translateToRussian } from "@/lib/nvidia-translate"
+import { passesPowerPolicy } from "@/lib/auction-power-policy"
 import { isUsableShortTranslation } from "@/lib/translation-refusal"
 import { calculateAuctionRubPricing, getAuctionExchangeRates, getAuctionRateToRub } from "@/lib/exchange-rates"
 import { estimatedAuctionServiceFee } from "@/lib/auction-service-fee"
@@ -186,7 +187,10 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
       const sourceTextChanged = item.descriptionOrig !== existing.descriptionOrig || item.specsOrig !== existing.specsOrig
       const needsTranslationRefresh = sourceTextChanged || hasUntranslatedForeignText(existing.descriptionOrig, existing.descriptionRu) || hasUntranslatedForeignText(existing.specsOrig, existing.specsRu)
       let translatedFields: { descriptionRu: string | null; specsRu: string | null } | null = null
-      if (needsTranslationRefresh && (item.descriptionOrig || item.specsOrig)) {
+      /* Перевод только для лотов, прошедших отбор по мощности: машина
+         сверх порога льготного утильсбора в каталоге не нужна, а запрос к
+         языковой модели за неё платный. */
+      if (needsTranslationRefresh && passesPowerPolicy(item) && (item.descriptionOrig || item.specsOrig)) {
         try {
           translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig })
         } catch {
@@ -289,7 +293,7 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
 
     let descriptionRu: string | null = null
     let translatedSpecsRu: string | null = null
-    if (item.descriptionOrig || item.specsOrig) {
+    if (passesPowerPolicy(item) && (item.descriptionOrig || item.specsOrig)) {
       try {
         const translatedFields = await translateListingFields({ description: item.descriptionOrig, specs: item.specsOrig })
         descriptionRu = translatedFields.descriptionRu

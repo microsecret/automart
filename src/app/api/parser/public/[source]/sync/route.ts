@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems, type AuctionImportItem } from "@/lib/auction-import"
 import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
+import { passesPowerPolicy } from "@/lib/auction-power-policy"
 import {
   discoverPublicAuctionCandidates,
   fetchPublicAuctionListing,
@@ -90,7 +91,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       checked += 1
       try {
         const item = await fetchPublicAuctionListing(source, candidate)
-        if (assessImportAge(item, maxAgeYears).eligible) items.push(item)
+        /* Мощность проверяется здесь, до импорта: машина сверх порога
+           льготного утильсбора покупателю не нужна — сбор для неё растёт
+           в десятки раз, — а перевод её описания стоит запроса к платной
+           языковой модели. Раньше такие лоты переводились впустую. */
+        if (assessImportAge(item, maxAgeYears).eligible && passesPowerPolicy(item)) items.push(item)
         else skippedByPolicy += 1
         consecutiveFailures = 0
       } catch (error) {
