@@ -238,7 +238,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           {/* ЦЕНТР: Поиск — максимальная ширина */}
           <Popover opened={shouldShowSuggestions} position="bottom-start" width="target" offset={8} shadow="lg" radius="lg" withinPortal>
             <Popover.Target>
-              <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 420 }} visibleFrom="lg">
+              <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ maxWidth: 420 }}>
                 <TextInput
                   placeholder="Марка, модель или город"
                   leftSection={<IconSearch size={16} color="gray.4" />}

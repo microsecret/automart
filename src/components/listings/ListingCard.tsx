@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, UnstyledButton } from "@mantine/core"
 import { IconChevronRight, IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
 import Link from "next/link"
@@ -58,6 +58,10 @@ const TRUNCATE_STYLE: React.CSSProperties = {
 
 export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const [activeImg, setActiveImg] = useState(0)
+  /* Начало касания для листания фото пальцем: в каталоге снимки
+     перелистывались только точками, а их рисуется пять при двенадцати
+     кадрах — до остальных добраться было нельзя, не открывая объявление. */
+  const touchStartX = useRef<number | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
@@ -138,6 +142,25 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         {/* Фото область */}
         <Box
           className="listing-card__media"
+          onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null }}
+          onTouchEnd={(event) => {
+            /* Порог в 40 пикселей отличает свайп от касания: меньший сдвиг
+               — это тап по карточке, и листать по нему нельзя. */
+            const startX = touchStartX.current
+            touchStartX.current = null
+            if (startX === null || images.length < 2) return
+            const delta = (event.changedTouches[0]?.clientX ?? startX) - startX
+            if (Math.abs(delta) < 40) return
+            /* Свайп не должен открывать объявление: поверх фото лежит
+               ссылка на всю карточку. */
+            event.preventDefault()
+            setActiveImg((current) => {
+              const next = delta < 0 ? current + 1 : current - 1
+              return (next + images.length) % images.length
+            })
+            setImageFailed(false)
+            setImageLoaded(false)
+          }}
           data-empty-media={!hasDisplayImage || undefined}
           data-image-loading={hasDisplayImage && !imageLoaded ? "true" : undefined}
           data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
