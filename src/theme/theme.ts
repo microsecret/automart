@@ -11,9 +11,18 @@ const indigo: MantineColorsTuple = [
   "#2b56b0", "#1c4291", "#14306b", "#102a59", "#0b2050",
 ]
 
+/* Серая шкала задана числами, а не ссылками на переменные Mantine.
+   Ступени 5-7 и 9 раньше ссылались на `--mantine-color-gray-6`,
+   `--mantine-color-gray-7` и `--mantine-color-text` — то есть частью на
+   самих себя. Такая ссылка не разрешается, цвет остаётся неопределённым,
+   и значок наследует цвет родителя: на белой панели редактора значки
+   «жирный», «курсив», «цитата» оказались белыми на белом.
+
+   Шкала одна на светлую и тёмную тему: Mantine сам подбирает ступень по
+   теме, а ступени 5-7 держат контраст на обоих фонах. */
 const gray: MantineColorsTuple = [
-  "#fcfcfd", "#f4f4f5", "#e4e4e7", "#d4d4d8", "var(--mantine-color-dimmed)",
-  "var(--mantine-color-dimmed)", "var(--mantine-color-gray-6)", "var(--mantine-color-gray-7)", "#27272a", "var(--mantine-color-text)",
+  "#fcfcfd", "#f4f4f5", "#e4e4e7", "#d4d4d8", "#a1a1aa",
+  "#71717a", "#52525b", "#3f3f46", "#27272a", "#18181b",
 ]
 
 export const theme = createTheme({

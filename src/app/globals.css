@@ -6849,6 +6849,27 @@ h1[data-lw-hero] {
   background: var(--market-surface-subtle);
 }
 
+/* Цвет значков задан явно, а не отдан варианту кнопки.
+
+   Замер контраста: на светлой панели #f6f8fc серый #52525b даёт 7.3, на
+   тёмной #171820 светлый #a1a1aa даёт 6.9 — обе выше нормы 4.5. Оттенок
+   из шкалы Mantine в тёмной теме давал 3.66, то есть ниже нормы. */
+.markup-toolbar .mantine-Button-root {
+  color: #52525b;
+}
+
+.markup-toolbar .mantine-Button-root:hover:not(:disabled) {
+  color: var(--market-ink);
+}
+
+[data-mantine-color-scheme="dark"] .markup-toolbar .mantine-Button-root {
+  color: #a1a1aa;
+}
+
+[data-mantine-color-scheme="dark"] .markup-toolbar .mantine-Button-root:hover:not(:disabled) {
+  color: #f4f4f5;
+}
+
 /* На телефоне кнопки крупнее. Шестнадцать значков высотой 26 пикселей в
    два ряда попадают под палец через раз: рекомендуемый минимум зоны
    нажатия 44 пикселя, а разница между «поставил жирный» и «открыл
