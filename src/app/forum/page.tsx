@@ -75,6 +75,14 @@ export default async function ForumPage() {
             уже разобрали год назад. */}
         <ForumSearchField initialQuery="" />
 
+        {/* Ссылка на участников: без неё страницу не найти, а она
+            показывает, что на форуме есть кому отвечать. */}
+        <Group gap="md">
+          <Anchor component={Link} href="/forum/users" size="sm" c="var(--market-muted)">
+            Участники форума
+          </Anchor>
+        </Group>
+
         {FORUM_GROUPS.map((group) => {
           const groupRoots = roots.filter((root) => root.groupKey === group.key)
           if (!groupRoots.length) return null
