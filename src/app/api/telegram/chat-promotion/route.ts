@@ -1,6 +1,6 @@
 import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { cleanupExpiredChatPromotions, runChatPromotionDelivery } from "@/lib/chat-promotion-delivery"
+import { cleanupExpiredChatPromotions, notifyExpiringChatPromotions, runChatPromotionDelivery } from "@/lib/chat-promotion-delivery"
 
 export const dynamic = "force-dynamic"
 
@@ -28,8 +28,11 @@ export async function POST(request: NextRequest) {
        снятый закреп истёкшего размещения освобождает его для нового. */
     const cleaned = await cleanupExpiredChatPromotions()
     const delivered = await runChatPromotionDelivery()
+    /* Предупреждение о скором окончании — после публикации: сначала
+       делаем оплаченную работу, потом напоминаем о продлении. */
+    const warned = await notifyExpiringChatPromotions()
 
-    return NextResponse.json({ success: true, ...delivered, removed: cleaned.removed })
+    return NextResponse.json({ success: true, ...delivered, removed: cleaned.removed, notified: warned.notified })
   } catch (error) {
     console.error("Публикация продвижения в чатах:", error)
     return NextResponse.json({ error: "Не удалось выполнить публикацию" }, { status: 500 })

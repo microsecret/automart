@@ -2,12 +2,14 @@
 
 import Link from "next/link"
 import { ActionIcon, Badge, Button, Center, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconCreditCard, IconExternalLink, IconReceipt, IconTrendingUp } from "@tabler/icons-react"
+import { IconBrandTelegram, IconCreditCard, IconExternalLink, IconReceipt, IconTrendingUp } from "@tabler/icons-react"
 import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
 
 export type PromotionOrder = {
   id: string
   tariffId: string
+  /** Число публикаций в чатах — приходит из статистики кабинета. */
+  _count?: { chatPosts: number }
   amountRub: number
   durationDays: number
   status: string
@@ -41,6 +43,15 @@ const PROMOTION_STATUS_META: Record<string, { label: string; color: string }> = 
 const PROMOTION_TARIFF_LABELS: Record<string, string> = Object.fromEntries(
   Object.values(PROMOTION_TARIFFS).map((tariff) => [tariff.id, tariff.title]),
 )
+
+/** «в 11 чатах» — с русским склонением. */
+function pluralChats(count: number): string {
+  const lastTwo = count % 100
+  const lastOne = count % 10
+  if (lastTwo >= 11 && lastTwo <= 14) return "чатах"
+  if (lastOne === 1) return "чате"
+  return "чатах"
+}
 
 const formatRubles = (value: number) => new Intl.NumberFormat("ru-RU", {
   style: "currency",
@@ -143,6 +154,17 @@ export default function PromotionPanel({ spentRub, activePromotions, paidCount, 
                         Тариф «{PROMOTION_TARIFF_LABELS[order.tariffId] || order.tariffId}» · {order.durationDays} дн. · заказ от {formatOrderDate(order.createdAt)}
                       </Text>
                       {order.promoUntil && <Text size="xs" c="teal.7">Продвижение до {formatOrderDate(order.promoUntil)}</Text>}
+                      {/* Публикации в чатах: продавец платит за охват и
+                          должен видеть, что размещение состоялось, а не
+                          верить на слово. */}
+                      {(order._count?.chatPosts ?? 0) > 0 && (
+                        <Group gap={4}>
+                          <IconBrandTelegram size={12} color="var(--mantine-color-blue-6)" />
+                          <Text size="xs" c="blue.7">
+                            Опубликовано в {order._count!.chatPosts} {pluralChats(order._count!.chatPosts)}
+                          </Text>
+                        </Group>
+                      )}
                     </Stack>
                     <Group gap="xs">
                       <Text fw={800}>{formatRubles(order.amountRub)}</Text>

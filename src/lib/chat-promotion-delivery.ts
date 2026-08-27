@@ -221,6 +221,63 @@ export async function cleanupExpiredChatPromotions() {
   return { removed }
 }
 
+/**
+ * Предупреждает продавцов о скором окончании размещения.
+ *
+ * Человек забывает, когда истекает оплаченный месяц, и объявление молча
+ * пропадает из чатов. Предупреждение за три дня даёт время продлить —
+ * и площадке возвращает плательщика, который иначе ушёл бы просто по
+ * невнимательности.
+ */
+export async function notifyExpiringChatPromotions() {
+  const now = new Date()
+  const soon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+
+  const orders = await prisma.promotionOrder.findMany({
+    where: {
+      tariffId: "chats",
+      status: "PAID",
+      promoUntil: { gt: now, lte: soon },
+    },
+    select: {
+      id: true,
+      userId: true,
+      promoUntil: true,
+      listingId: true,
+      listing: { select: { title: true } },
+    },
+  })
+
+  let notified = 0
+  for (const order of orders) {
+    /* Повторно не предупреждаем: уведомление привязано к заказу, и
+       проверка по нему надёжнее отдельного поля-флага. */
+    const already = await prisma.notification.findFirst({
+      where: { userId: order.userId, relatedId: order.id, relatedType: "CHAT_PROMOTION_EXPIRY" },
+      select: { id: true },
+    })
+    if (already) continue
+
+    const until = order.promoUntil ? order.promoUntil.toLocaleDateString("ru-RU") : "скоро"
+
+    await prisma.notification.create({
+      data: {
+        userId: order.userId,
+        title: "Размещение в чатах заканчивается",
+        content:
+          `«${order.listing?.title || "Объявление"}» показывается в чатах до ${until}. ` +
+          "Продлите размещение, чтобы объявление не пропало из лент.",
+        type: "INFO",
+        relatedId: order.id,
+        relatedType: "CHAT_PROMOTION_EXPIRY",
+      },
+    })
+    notified += 1
+  }
+
+  return { notified }
+}
+
 /** Разбор поля с фотографиями: в базе они лежат строкой JSON. */
 function parseImages(value: string | null): string[] {
   if (!value) return []

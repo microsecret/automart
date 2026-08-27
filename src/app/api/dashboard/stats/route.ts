@@ -87,6 +87,9 @@ export async function GET() {
           paidAt: true,
           createdAt: true,
           listing: { select: { id: true, title: true, status: true } },
+          /* Число публикаций в чатах: продавец платит за охват и должен
+             видеть, что размещение действительно состоялось. */
+          _count: { select: { chatPosts: { where: { removedAt: null } } } },
         },
         orderBy: { createdAt: "desc" },
         take: 20,
