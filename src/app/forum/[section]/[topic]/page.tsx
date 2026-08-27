@@ -10,6 +10,9 @@ import { renderForumMarkup, stripForumMarkup } from "@/lib/forum-markup"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
 import PostBody from "@/components/forum/PostBody"
 import PollBlock from "@/components/forum/PollBlock"
+import PostReactions from "@/components/forum/PostReactions"
+import { canMarkBestAnswer, canReactToPost, pluralTimes, reputationRank } from "@/lib/forum-reputation"
+import { loadPostReactions } from "@/lib/forum-reputation-store"
 import ReplyForm from "./ReplyForm"
 
 type Props = { params: Promise<{ section: string; topic: string }>; searchParams: Promise<{ page?: string }> }
@@ -49,7 +52,7 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
   const topic = await prisma.forumTopic.findFirst({
     where: { slug: topicSlugParam, deletedAt: null },
     select: {
-      id: true, title: true, isClosed: true, replyCount: true, createdAt: true,
+      id: true, title: true, isClosed: true, replyCount: true, createdAt: true, authorId: true,
       author: { select: { name: true, image: true } },
       section: { select: { slug: true, title: true } },
       poll: {
@@ -74,10 +77,14 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
     skip: (page - 1) * POSTS_PER_PAGE,
     take: POSTS_PER_PAGE,
     select: {
-      id: true, content: true, createdAt: true, deletedAt: true,
-      author: { select: { name: true, image: true } },
+      id: true, content: true, createdAt: true, deletedAt: true, authorId: true, isBestAnswer: true,
+      author: { select: { id: true, name: true, image: true, forumReputation: true, forumBestAnswers: true } },
     },
   })
+
+  /* Реакции всей страницы одним запросом: двадцать сообщений это
+     двадцать обращений к базе там, где хватает одного. */
+  const reactions = await loadPostReactions(posts.map((post) => post.id), viewerId)
 
   /* Просмотр считается без ожидания ответа: задержка страницы ради
      счётчика не оправдана, а потеря одного просмотра при сбое не важна. */
@@ -126,14 +133,30 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
 
         <Stack gap="xs">
           {posts.map((post) => (
-            <Card key={post.id} withBorder radius="md" p="sm">
+            /* Лучший ответ выделен рамкой: человек, пришедший из
+               поиска, должен найти его, не читая сорок сообщений. */
+            <Card key={post.id} withBorder radius="md" p="sm"
+              className={post.isBestAnswer ? "forum-post-card forum-post-card--best" : "forum-post-card"}>
               <Group gap="sm" align="flex-start" wrap="nowrap">
                 <Avatar src={post.author.image} size={34} radius="xl" color="indigo">
                   {(post.author.name || "У").slice(0, 1).toUpperCase()}
                 </Avatar>
                 <Box style={{ minWidth: 0, flex: 1 }}>
-                  <Group gap={6}>
+                  <Group gap={6} wrap="wrap">
                     <Text fw={700} fz="xs" c="var(--market-ink)">{post.author.name || "Участник"}</Text>
+                    {/* Звание вместо голого числа очков: «Знаток» говорит
+                        читателю больше, чем «240», а разбираться в шкале
+                        ради чужого ответа никто не станет. Ниже десяти
+                        очков подписи нет — новичок её не заслужил, а
+                        «Новичок» читается хуже пустоты. */}
+                    {reputationRank(post.author.forumReputation) && (
+                      <Text fz="xs" c="var(--market-muted)">{reputationRank(post.author.forumReputation)}</Text>
+                    )}
+                    {post.author.forumBestAnswers > 0 && (
+                      <Text fz="xs" c="var(--market-muted)" title="Ответов, решивших вопрос">
+                        помог {pluralTimes(post.author.forumBestAnswers)}
+                      </Text>
+                    )}
                     <Text fz="xs" c="var(--market-muted)">{formatAdminDateTimeShort(post.createdAt)}</Text>
                   </Group>
                   {/* Удалённое сообщение оставляет пометку: без неё ответы на
@@ -150,6 +173,28 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                        нет наведения, и без обработчика нажатия скрытый
                        ответ остался бы скрытым навсегда. */
                     <PostBody html={renderForumMarkup(post.content)} mt={4} />
+                  )}
+
+                  {/* Под удалённым сообщением реакций нет: оценивать
+                      пометку «удалено модератором» нечего. */}
+                  {!post.deletedAt && (
+                    <PostReactions
+                      postId={post.id}
+                      counts={reactions.get(post.id)?.counts || {}}
+                      mine={reactions.get(post.id)?.mine || []}
+                      canReact={canReactToPost({
+                        postAuthorId: post.authorId,
+                        viewerId,
+                        postDeleted: false,
+                      })}
+                      isBestAnswer={post.isBestAnswer}
+                      canMarkBest={canMarkBestAnswer({
+                        topicAuthorId: topic.authorId,
+                        postAuthorId: post.authorId,
+                        viewerId,
+                        postDeleted: false,
+                      })}
+                    />
                   )}
                 </Box>
               </Group>

@@ -6907,6 +6907,44 @@ h1[data-lw-hero] {
   background: var(--market-field);
 }
 
+/* === Реакции и лучший ответ === */
+
+/* Лучший ответ виден до чтения: рамка и подложка слева. Человек,
+   пришедший из поиска с тем же вопросом, должен найти решение, не
+   пролистав сорок сообщений. */
+.forum-post-card--best {
+  border-color: var(--mantine-color-teal-5) !important;
+  box-shadow: inset 3px 0 0 var(--mantine-color-teal-5);
+}
+
+/* Реакцию нажимают часто — движение почти незаметное: только вдавливание
+   под пальцем, без всплытия и подсветки. */
+.forum-reaction {
+  transition: background 120ms var(--ease-out), color 120ms var(--ease-out);
+}
+
+.forum-reaction:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Отключённая реакция гостю показывается цифрой, а не серым пятном:
+   она сообщает, сколько людей отметило ответ, и это полезно и без
+   возможности нажать. */
+.forum-reaction:disabled {
+  opacity: 0.75;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forum-reaction {
+    transition: none;
+  }
+
+  .forum-reaction:active:not(:disabled) {
+    transform: none;
+  }
+}
+
 /* === Опрос в теме === */
 
 .forum-poll {
