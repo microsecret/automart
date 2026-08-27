@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import type { Prisma } from "@prisma/client"
+import { requireUser } from "@/lib/api-session-guard"
 import { authOptions } from "@/lib/auth"
 import {
   AVAILABILITY_TYPES,
@@ -225,8 +226,9 @@ export async function POST(request: NextRequest) {
 /** PATCH /api/garage?id=... — обновить приватную карточку своего автомобиля. */
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const id = request.nextUrl.searchParams.get("id")?.trim()
     if (!id) return NextResponse.json({ error: "Не указан автомобиль" }, { status: 400 })
@@ -258,8 +260,9 @@ export async function PATCH(request: NextRequest) {
 /** DELETE /api/garage?id=... — удалить только свой автомобиль из личного гаража. */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const id = request.nextUrl.searchParams.get("id")?.trim()
     if (!id) return NextResponse.json({ error: "Не указан автомобиль" }, { status: 400 })

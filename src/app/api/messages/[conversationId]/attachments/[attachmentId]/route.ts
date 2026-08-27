@@ -1,8 +1,7 @@
 import { readFile } from "fs/promises"
 import path from "path"
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireUser } from "@/lib/api-session-guard"
 import { prisma } from "@/lib/prisma"
 import { isSafeMessageAttachmentStorageKey, messageAttachmentsDirectory } from "@/lib/message-attachments"
 
@@ -12,8 +11,9 @@ export const dynamic = "force-dynamic"
 export async function GET(_: NextRequest, { params }: { params: Promise<{ conversationId: string; attachmentId: string }> }) {
   try {
     const { conversationId, attachmentId } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const attachment = await prisma.messageAttachment.findFirst({
       where: { id: attachmentId, message: { conversationId } },

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireUser } from "@/lib/api-session-guard"
 import { prisma } from "@/lib/prisma"
 import { isDeliveryAdmin } from "@/lib/delivery-access"
 
@@ -8,8 +7,9 @@ export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const userId = session.user.id
     const documents = await prisma.deliveryDocument.findMany({

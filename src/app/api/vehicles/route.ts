@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { requireUser } from "@/lib/api-session-guard"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AVAILABILITY_TYPES, BODY_TYPES, CONDITIONS, DAMAGE_INFO, DOCUMENT_STATUSES, DRIVE_TYPES, SELLER_TYPES, STEERING_WHEELS, getSelectableFuelOptions, getSelectableTransmissionOptions, supportsTransmission, validateVehicleEnergyAndModelYear } from "@/lib/constants"
@@ -58,8 +59,9 @@ function normalizeTypeDetails(value: unknown, vehicleType: string) {
 /** GET /api/vehicles — собственные легковые авто для защищённых сервисов. */
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) return NextResponse.json({ error: "Необходимо войти в аккаунт" }, { status: 401 })
+    const guard = await requireUser()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const vehicles = await prisma.vehicle.findMany({
       where: { userId: session.user.id, vehicleType: "CAR" },
