@@ -1,5 +1,3 @@
-"use client"
-export const dynamic = "force-dynamic"
 import { Box, Stack, Text, Paper, ThemeIcon, Group, SimpleGrid, Alert } from "@mantine/core"
 import { IconShieldCheck, IconAlertTriangle, IconChecks, IconEye, IconCash, IconMapPin, IconPhone } from "@tabler/icons-react"
 

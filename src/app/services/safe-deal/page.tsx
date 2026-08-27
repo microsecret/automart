@@ -1,5 +1,3 @@
-"use client"
-export const dynamic = "force-dynamic"
 import Link from "next/link"
 import { Box, Stack, Title, Text, Card, Group, ThemeIcon, SimpleGrid, Button, Alert } from "@mantine/core"
 import { IconShieldCheck, IconCheck, IconWallet, IconFileCheck, IconKey } from "@tabler/icons-react"

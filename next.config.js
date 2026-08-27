@@ -101,7 +101,18 @@ const nextConfig = {
   // Next's Windows prerender workers can terminate with 0xC0000409 when this
   // large route set is generated in parallel. Keep local Windows builds
   // deterministic; Linux production builds retain Next's normal concurrency.
-  ...(process.platform === 'win32' ? { experimental: { cpus: 1 } } : {}),
+  // Иконки и компоненты Mantine импортируются «бочкой»: одна строка
+  // `import { IconCar } from "@tabler/icons-react"` тянет в сборку весь
+  // пакет. В проекте 178 разных иконок и около девяноста таких импортов
+  // Mantine — без этой настройки в клиентский бандл уезжают сотни
+  // килобайт неиспользуемого кода.
+  //
+  // Настройка Windows остаётся: локальные сборки падали с 0xC0000409 при
+  // параллельной генерации большого набора маршрутов.
+  experimental: {
+    optimizePackageImports: ["@tabler/icons-react", "@mantine/core", "@mantine/hooks"],
+    ...(process.platform === 'win32' ? { cpus: 1 } : {}),
+  },
   async headers() {
     // Next применяет все совпавшие правила подряд, поэтому общий шаблон
     // перезаписал бы заголовки Mini App. Маршрут Mini App исключён из общего

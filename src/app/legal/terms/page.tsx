@@ -1,5 +1,3 @@
-"use client"
-export const dynamic = "force-dynamic"
 import { Box, Stack, Text, Paper, ThemeIcon, Group, Badge } from "@mantine/core"
 import { IconFileText } from "@tabler/icons-react"
 

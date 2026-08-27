@@ -1,11 +1,13 @@
 "use client"
 
+import dynamic from "next/dynamic"
+
 import { AppShell, Avatar, Badge, Box, Button, Divider, Group, NavLink, Paper, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core"
 import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import {
   IconBell, IconBrain, IconCar, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation,
-  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMessages, IconMotorbike, IconNews,
+  IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMessages, IconMotorbike,
   IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
   IconBuildingStore, IconClipboardList, IconGift, IconTractor, IconTruck, IconTruckDelivery,
 } from "@tabler/icons-react"
@@ -14,7 +16,12 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense, useEffect } from "react"
 import { useDisclosure } from "@mantine/hooks"
 import AppAnalytics from "@/components/analytics/AppAnalytics"
-import SupportChat from "@/components/support/SupportChat"
+/* Чат поддержки грузится по требованию: он висит кнопкой в углу на
+   каждой странице, но открывают его единицы. Прямой импорт тянул в общий
+   бандл два десятка компонентов Mantine ради этой кнопки.
+
+   ssr: false — чат целиком клиентский, на сервере отрисовывать нечего. */
+const SupportChat = dynamic(() => import("@/components/support/SupportChat"), { ssr: false })
 import { fetchJson } from "@/lib/api-client"
 import {
   AUCTION_COUNTRY_NAVIGATION,
