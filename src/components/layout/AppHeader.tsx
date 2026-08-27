@@ -185,7 +185,12 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
         boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
       }}
     >
-      <Container size="xl" px={{ base: "sm", md: "md" }} style={{ height: "var(--app-header-height)" }}>
+      {/* Шапка занимает всю ширину экрана, а не фиксированные 1320 пикселей
+          контейнера xl. Замер показал: при экране 1600 контейнер давал ряду
+          1288 пикселей, тогда как логотипу, вкладкам, «Сервисам», кнопке
+          партнёра и правым кнопкам нужен 1511 — кнопка «Войти» уходила за
+          край. Содержимое ряда и так ограничено своими размерами. */}
+      <Container fluid px={{ base: "sm", md: "md" }} style={{ height: "var(--app-header-height)" }}>
         <Group h="100%" gap="sm" wrap="nowrap" align="center" justify="space-between">
           {/* ЛЕВО: Лого */}
           {onNavigationToggle && <Burger hiddenFrom="md" opened={navigationOpened} onClick={onNavigationToggle} size="sm" aria-label={navigationOpened ? "Закрыть навигацию" : "Открыть навигацию"} />}
