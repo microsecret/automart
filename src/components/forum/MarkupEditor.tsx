@@ -22,6 +22,7 @@ import {
   IconVideo,
 } from "@tabler/icons-react"
 import { applyLinePrefix, applyMarkup, renderForumMarkup } from "@/lib/forum-markup"
+import PostBody from "@/components/forum/PostBody"
 
 /**
  * Поле сообщения с панелью форматирования.
@@ -297,12 +298,10 @@ export default function MarkupEditor({
       {preview ? (
         <Box className="markup-preview">
           {value.trim() ? (
-            <div
-              className="forum-post-body"
-              /* Разметка собрана своим разбором с экранированием всего
-                 постороннего — см. src/lib/forum-markup.ts. */
-              dangerouslySetInnerHTML={{ __html: renderForumMarkup(value) }}
-            />
+            /* Тем же компонентом, что и в теме: иначе спойлер в
+               предпросмотре не раскрывался бы, и автор не мог проверить,
+               что именно спрятал. */
+            <PostBody html={renderForumMarkup(value)} />
           ) : (
             <Text size="sm" c="var(--market-muted)">Здесь появится то, что увидят читатели.</Text>
           )}
