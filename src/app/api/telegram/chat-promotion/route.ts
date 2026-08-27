@@ -1,29 +1,17 @@
-import crypto from "crypto"
-import { NextRequest, NextResponse } from "next/server"
 import { cleanupExpiredChatPromotions, notifyExpiringChatPromotions, runChatPromotionDelivery } from "@/lib/chat-promotion-delivery"
+import { createTelegramWorkerRoute } from "@/lib/telegram-worker-route"
 
 export const dynamic = "force-dynamic"
 
 /**
  * Публикация оплаченных объявлений в сети чатов.
  *
- * Вызывается по расписанию с тем же ключом, что и остальные задачи бота:
- * маршрут открыт в интернет, а публикация в сотню тысяч подписчиков —
- * не то действие, которое можно запустить со стороны.
+ * Проверка ключа и обработка ошибок — в общей обёртке: маршрут открыт в
+ * интернет, а публикация в сотню тысяч подписчиков не то действие,
+ * которое можно запустить со стороны.
  */
-function hasValidSecret(request: NextRequest, secret: string) {
-  const received = request.headers.get("x-telegram-bot-api-secret-token") || ""
-  const expectedBuffer = Buffer.from(secret)
-  const receivedBuffer = Buffer.from(received)
-  return expectedBuffer.length === receivedBuffer.length && crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
-}
-
-export async function POST(request: NextRequest) {
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET
-  if (!secret) return NextResponse.json({ error: "Telegram не настроен" }, { status: 503 })
-  if (!hasValidSecret(request, secret)) return NextResponse.json({ error: "Требуется ключ" }, { status: 401 })
-
-  try {
+export const POST = createTelegramWorkerRoute(
+  async () => {
     /* Сначала уборка, потом публикация: место закрепа в группе одно, и
        снятый закреп истёкшего размещения освобождает его для нового. */
     const cleaned = await cleanupExpiredChatPromotions()
@@ -32,9 +20,7 @@ export async function POST(request: NextRequest) {
        делаем оплаченную работу, потом напоминаем о продлении. */
     const warned = await notifyExpiringChatPromotions()
 
-    return NextResponse.json({ success: true, ...delivered, removed: cleaned.removed, notified: warned.notified })
-  } catch (error) {
-    console.error("Публикация продвижения в чатах:", error)
-    return NextResponse.json({ error: "Не удалось выполнить публикацию" }, { status: 500 })
-  }
-}
+    return { success: true, ...delivered, removed: cleaned.removed, notified: warned.notified }
+  },
+  { label: "Публикация продвижения в чатах", errorMessage: "Не удалось выполнить публикацию" },
+)
