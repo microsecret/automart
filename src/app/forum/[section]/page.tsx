@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { Anchor, Badge, Box, Breadcrumbs, Card, Container, Group, Stack, Text, Title } from "@mantine/core"
 import { IconEye, IconMessages, IconPin } from "@tabler/icons-react"
 import { prisma } from "@/lib/prisma"
-import { TOPICS_PER_PAGE } from "@/lib/forum"
+import { TOPICS_PER_PAGE, topicPrefixMeta } from "@/lib/forum"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
 import NewTopicForm from "./NewTopicForm"
 
@@ -52,9 +52,12 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
     skip: (page - 1) * TOPICS_PER_PAGE,
     take: TOPICS_PER_PAGE,
     select: {
-      slug: true, title: true, isPinned: true, isClosed: true,
+      slug: true, title: true, isPinned: true, isClosed: true, prefix: true,
       views: true, replyCount: true, lastPostAt: true,
       author: { select: { name: true } },
+      /* Признак решённости: одно поле вместо полной выборки сообщений.
+         Отметка одна на тему, поэтому хватает первого найденного. */
+      posts: { where: { isBestAnswer: true }, select: { id: true }, take: 1 },
     },
   })
 
@@ -139,6 +142,19 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
                   <Box style={{ minWidth: 0 }}>
                     <Group gap={6} wrap="nowrap">
                       {topic.isPinned && <IconPin size={13} color="var(--mantine-color-indigo-6)" />}
+                      {/* Метка перед заголовком: в списке из двадцати тем
+                          глаз ищет «Решено» и «Помогите», а не читает
+                          заголовки подряд. Решённый вопрос перебивает
+                          исходную метку — тому, кто ищет ответ, важнее
+                          он, чем то, что когда-то просили помощи. */}
+                      {(() => {
+                        const meta = topicPrefixMeta(topic.prefix, topic.posts.length > 0)
+                        return meta ? (
+                          <Badge size="xs" variant="light" color={meta.color} style={{ flexShrink: 0 }}>
+                            {meta.label}
+                          </Badge>
+                        ) : null
+                      })()}
                       <Text fw={600} fz="sm" c="var(--market-ink)" lineClamp={2}>{topic.title}</Text>
                       {topic.isClosed && <Badge size="xs" variant="light" color="gray">закрыта</Badge>}
                     </Group>

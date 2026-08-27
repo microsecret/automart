@@ -18,12 +18,12 @@ export const TOPIC_TITLE_MIN = 8
 export const TOPIC_TITLE_MAX = 140
 export const POST_MIN = 2
 export const POST_MAX = 10_000
-/** Сообщений на странице темы. */
 /* Подпись под сообщениями: два десятка символов на «Jolion 2023, Москва»
    хватает, а длинная подпись у активного участника занимает больше места,
    чем его же ответ. */
 export const FORUM_SIGNATURE_MAX = 80
 
+/** Сообщений на странице темы. */
 export const POSTS_PER_PAGE = 20
 /** Тем на странице раздела. */
 export const TOPICS_PER_PAGE = 25
@@ -64,6 +64,94 @@ export function validatePostContent(content: string): string | null {
   if (trimmed.length < POST_MIN) return "Сообщение пустое"
   if (trimmed.length > POST_MAX) return `Сообщение длиннее ${POST_MAX} символов`
   return null
+}
+
+/**
+ * Метки тем.
+ *
+ * Метка организует раздел лучше, чем деление на подразделы: в одном
+ * списке видно, где просят помощи, где уже нашли решение, а где продают.
+ * Список короткий намеренно — десяток меток человек не читает, а
+ * выбирает первую попавшуюся.
+ *
+ * «Решено» в этом списке нет: её ставит не автор, а отметка лучшего
+ * ответа. Метка, которую надо не забыть поставить руками после того, как
+ * вопрос решился, не ставится никогда.
+ */
+export const TOPIC_PREFIXES = [
+  { value: "HELP", label: "Помогите", color: "orange" },
+  { value: "QUESTION", label: "Вопрос", color: "blue" },
+  { value: "REPORT", label: "Отчёт", color: "grape" },
+  { value: "SELL", label: "Продам", color: "teal" },
+  { value: "BUY", label: "Куплю", color: "cyan" },
+] as const
+
+export type TopicPrefix = (typeof TOPIC_PREFIXES)[number]["value"]
+
+/** Метка, которую ставит система: тема с отмеченным ответом. */
+export const SOLVED_PREFIX = { value: "SOLVED", label: "Решено", color: "green" } as const
+
+const PREFIX_SET = new Set<string>(TOPIC_PREFIXES.map((item) => item.value))
+
+export function isTopicPrefix(value: string): value is TopicPrefix {
+  return PREFIX_SET.has(value)
+}
+
+/** Подпись и цвет метки для показа. */
+export function topicPrefixMeta(prefix: string | null, hasBestAnswer: boolean) {
+  /* Решённый вопрос перебивает исходную метку: человеку, который ищет
+     ответ, важнее «Решено», чем то, что когда-то просили помощи. */
+  if (hasBestAnswer) return SOLVED_PREFIX
+  if (!prefix) return null
+  return TOPIC_PREFIXES.find((item) => item.value === prefix) || null
+}
+
+/* Сколько времени автор может править своё сообщение.
+
+   Не бессрочно: разговор строится на том, что написано. Если через год
+   переписать ответ, на который сослались десять человек, ветка потеряет
+   смысл, а согласившиеся окажутся согласны с чужим текстом. Сутки
+   покрывают всё, ради чего правка нужна на деле: опечатка, забытая
+   фотография, уточнение после первого ответа. */
+export const POST_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000
+
+export type PostEditPermission =
+  | { allowed: true }
+  | { allowed: false; reason: string }
+
+/**
+ * Может ли человек править это сообщение.
+ *
+ * Модератор правит без ограничения по времени: он чистит спам и
+ * запрещённое, а это находят и через месяц.
+ */
+export function canEditPost(input: {
+  postAuthorId: string
+  postCreatedAt: Date
+  postDeleted: boolean
+  topicClosed: boolean
+  viewerId: string | null
+  viewerIsModerator?: boolean
+  now?: Date
+}): PostEditPermission {
+  if (!input.viewerId) return { allowed: false, reason: "Требуется вход" }
+  if (input.postDeleted) return { allowed: false, reason: "Сообщение удалено" }
+
+  if (input.viewerIsModerator) return { allowed: true }
+
+  if (input.postAuthorId !== input.viewerId) {
+    return { allowed: false, reason: "Править можно только свои сообщения" }
+  }
+  /* Закрытая тема не правится и автором: закрывают её как раз тогда,
+     когда разговор пора остановить. */
+  if (input.topicClosed) return { allowed: false, reason: "Тема закрыта" }
+
+  const age = (input.now?.getTime() ?? Date.now()) - input.postCreatedAt.getTime()
+  if (age > POST_EDIT_WINDOW_MS) {
+    return { allowed: false, reason: "Править можно в течение суток после публикации" }
+  }
+
+  return { allowed: true }
 }
 
 /**

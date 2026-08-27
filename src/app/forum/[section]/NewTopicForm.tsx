@@ -4,10 +4,10 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { Button, Card, Collapse, Group, Stack, Text, TextInput } from "@mantine/core"
+import { Button, Card, Collapse, Group, Select, Stack, Text, TextInput } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { IconPlus } from "@tabler/icons-react"
-import { TOPIC_TITLE_MAX, validatePostContent, validateTopicTitle } from "@/lib/forum"
+import { TOPIC_PREFIXES, TOPIC_TITLE_MAX, validatePostContent, validateTopicTitle } from "@/lib/forum"
 import MarkupEditor from "@/components/forum/MarkupEditor"
 import PollDraftFields, { EMPTY_POLL_DRAFT, type PollDraftState } from "@/components/forum/PollDraftFields"
 import { validatePollDraft } from "@/lib/forum-poll"
@@ -24,6 +24,7 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
   const [opened, setOpened] = useState(false)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
+  const [prefix, setPrefix] = useState<string | null>(null)
   const [poll, setPoll] = useState<PollDraftState>(EMPTY_POLL_DRAFT)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +80,7 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
       const response = await fetch("/api/forum/topics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ section: sectionSlug, title: title.trim(), content: content.trim() }),
+        body: JSON.stringify({ section: sectionSlug, title: title.trim(), content: content.trim(), prefix }),
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) throw new Error(payload?.error || "Не удалось создать тему")
@@ -141,6 +142,21 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
               onChange={(event) => setTitle(event.currentTarget.value)}
               maxLength={TOPIC_TITLE_MAX}
               size="sm"
+            />
+            {/* Метка необязательна: тема без неё нормальна, а принуждение
+                выбрать из списка заканчивается тем, что все жмут первый
+                пункт. «Решено» в списке нет — её ставит отметка лучшего
+                ответа, а не автор. */}
+            <Select
+              label="Метка"
+              placeholder="без метки"
+              data={TOPIC_PREFIXES.map((item) => ({ value: item.value, label: item.label }))}
+              value={prefix}
+              onChange={setPrefix}
+              clearable
+              size="sm"
+              w={200}
+              disabled={sending}
             />
             <MarkupEditor
               label="Подробности"

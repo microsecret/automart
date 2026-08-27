@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { Button, Card, Group, Stack, Text } from "@mantine/core"
 import { validatePostContent } from "@/lib/forum"
 import MarkupEditor from "@/components/forum/MarkupEditor"
+import { QUOTE_EVENT, buildQuote, type QuoteRequest } from "@/lib/forum-quote"
 
 /** Ответ в теме. */
 export default function ReplyForm({ topicId, returnPath }: { topicId: string; returnPath: string }) {
@@ -15,6 +16,31 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
   const [content, setContent] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  /* Цитата приходит событием от кнопки под сообщением: она в другой
+     части дерева, и общего родителя у них нет. Подробности — в
+     src/lib/forum-quote.ts. */
+  useEffect(() => {
+    const onQuote = (event: Event) => {
+      const request = (event as CustomEvent<QuoteRequest>).detail
+      if (!request) return
+
+      /* Цитата добавляется к написанному, а не заменяет его: человек мог
+         уже набрать половину ответа, прежде чем решил процитировать. */
+      setContent((current) => {
+        const prefix = current.trim() ? `${current.replace(/\s+$/, "")}\n\n` : ""
+        return prefix + buildQuote(request)
+      })
+
+      /* Поле внизу страницы: без прокрутки нажатие «Цитировать» выглядит
+         так, будто ничего не произошло. */
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
+
+    window.addEventListener(QUOTE_EVENT, onQuote)
+    return () => window.removeEventListener(QUOTE_EVENT, onQuote)
+  }, [])
 
   if (!session) {
     return (
@@ -59,7 +85,7 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
   }
 
   return (
-    <Card withBorder radius="md" p="sm">
+    <Card withBorder radius="md" p="sm" ref={cardRef}>
       <Stack gap="xs">
         <MarkupEditor
           label="Ваш ответ"

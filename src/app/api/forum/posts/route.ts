@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
-import { validatePostContent } from "@/lib/forum"
+import { canEditPost, validatePostContent } from "@/lib/forum"
+import { isModerator } from "@/lib/permissions"
 
 export const dynamic = "force-dynamic"
 
@@ -61,4 +62,65 @@ export async function POST(request: NextRequest) {
   })
 
   return NextResponse.json({ post }, { status: 201 })
+}
+
+/**
+ * PATCH /api/forum/posts — поправить своё сообщение.
+ *
+ * Без правки опечатку в номере детали или в годе выпуска исправить
+ * нечем, а отвечать самому себе «извините, там 2019» — это лишнее
+ * сообщение в каждой теме.
+ */
+export async function PATCH(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return NextResponse.json({ error: "Требуется вход" }, { status: 401 })
+
+  const limit = rateLimit(`forum:edit:${session.user.id}`, { windowMs: 10 * 60_000, maxRequests: 30 })
+  if (!limit.success) {
+    return NextResponse.json(
+      { error: "Слишком много правок подряд. Подождите немного." },
+      { status: 429, headers: rateLimitHeaders(limit) },
+    )
+  }
+
+  const body = await request.json().catch(() => null)
+  const postId = typeof body?.postId === "string" ? body.postId : ""
+  const content = typeof body?.content === "string" ? body.content.trim() : ""
+
+  const contentError = validatePostContent(content)
+  if (contentError) return NextResponse.json({ error: contentError }, { status: 400 })
+
+  const post = await prisma.forumPost.findUnique({
+    where: { id: postId },
+    select: {
+      id: true,
+      authorId: true,
+      createdAt: true,
+      deletedAt: true,
+      topic: { select: { isClosed: true } },
+    },
+  })
+  if (!post) return NextResponse.json({ error: "Сообщение не найдено" }, { status: 404 })
+
+  const permission = canEditPost({
+    postAuthorId: post.authorId,
+    postCreatedAt: post.createdAt,
+    postDeleted: post.deletedAt !== null,
+    topicClosed: post.topic.isClosed,
+    viewerId: session.user.id,
+    viewerIsModerator: isModerator(session.user.role),
+  })
+  if (!permission.allowed) {
+    return NextResponse.json({ error: permission.reason }, { status: 403 })
+  }
+
+  /* Метка правки ставится всегда: читатель должен видеть, что текст под
+     чужим ответом менялся после того, как ему ответили. */
+  const updated = await prisma.forumPost.update({
+    where: { id: post.id },
+    data: { content, editedAt: new Date() },
+    select: { id: true, content: true, editedAt: true },
+  })
+
+  return NextResponse.json({ post: updated })
 }

@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
-import { topicSlug, validatePostContent, validateTopicTitle } from "@/lib/forum"
+import { isTopicPrefix, topicSlug, validatePostContent, validateTopicTitle } from "@/lib/forum"
 
 export const dynamic = "force-dynamic"
 
@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
   const sectionSlug = typeof body?.section === "string" ? body.section.trim() : ""
   const title = typeof body?.title === "string" ? body.title.trim() : ""
   const content = typeof body?.content === "string" ? body.content.trim() : ""
+  /* Метка необязательна: тема без неё нормальна, а принуждение выбрать
+     из списка заканчивается тем, что все жмут первый пункт. */
+  const prefix = typeof body?.prefix === "string" && isTopicPrefix(body.prefix) ? body.prefix : null
 
   const titleError = validateTopicTitle(title)
   if (titleError) return NextResponse.json({ error: titleError }, { status: 400 })
@@ -51,6 +54,7 @@ export async function POST(request: NextRequest) {
         sectionId: section.id,
         authorId: session.user.id,
         lastPostAt: now,
+        prefix,
         posts: { create: { authorId: session.user.id, content } },
       },
       select: { id: true, slug: true },

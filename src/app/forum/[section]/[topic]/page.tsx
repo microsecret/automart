@@ -10,8 +10,9 @@ import { renderForumMarkup, stripForumMarkup } from "@/lib/forum-markup"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
 import PostBody from "@/components/forum/PostBody"
 import PollBlock from "@/components/forum/PollBlock"
-import PostReactions from "@/components/forum/PostReactions"
+import PostActions from "@/components/forum/PostActions"
 import { canMarkBestAnswer, canReactToPost, pluralTimes, reputationRank } from "@/lib/forum-reputation"
+import { canEditPost } from "@/lib/forum"
 import { loadPostReactions } from "@/lib/forum-reputation-store"
 import ReplyForm from "./ReplyForm"
 
@@ -77,7 +78,7 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
     skip: (page - 1) * POSTS_PER_PAGE,
     take: POSTS_PER_PAGE,
     select: {
-      id: true, content: true, createdAt: true, deletedAt: true, authorId: true, isBestAnswer: true,
+      id: true, content: true, createdAt: true, deletedAt: true, authorId: true, isBestAnswer: true, editedAt: true,
       author: { select: { id: true, name: true, image: true, forumReputation: true, forumBestAnswers: true, forumPostCount: true, forumSignature: true } },
     },
   })
@@ -91,6 +92,11 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
   void prisma.forumTopic.update({ where: { id: topic.id }, data: { views: { increment: 1 } } }).catch(() => {})
 
   const totalPages = Math.max(1, Math.ceil((topic.replyCount + 1) / POSTS_PER_PAGE))
+
+  /* Номер сообщения в теме, а не на странице: на него ссылаются в
+     разговоре («смотри #12»), и нумерация, начинающаяся заново на каждой
+     странице, такую ссылку сделала бы бессмысленной. */
+  const firstPostNumber = (page - 1) * POSTS_PER_PAGE + 1
 
   return (
     <Container size="md" py={{ base: "md", md: "xl" }}>
@@ -132,10 +138,11 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
         )}
 
         <Stack gap="xs">
-          {posts.map((post) => (
+          {posts.map((post, index) => (
             /* Лучший ответ выделен рамкой: человек, пришедший из
                поиска, должен найти его, не читая сорок сообщений. */
             <Card key={post.id} withBorder radius="md" p="sm"
+              id={`post-${post.id}`}
               className={post.isBestAnswer ? "forum-post-card forum-post-card--best" : "forum-post-card"}>
               <Group gap="sm" align="flex-start" wrap="nowrap">
                 <Avatar src={post.author.image} size={34} radius="xl" color="indigo">
@@ -180,6 +187,18 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                       </Text>
                     )}
                     <Text fz="xs" c="var(--market-muted)">{formatAdminDateTimeShort(post.createdAt)}</Text>
+                    {/* Номер сообщения ссылкой на само сообщение: в длинной
+                        ветке на ответ ссылаются («смотри #12»), и без
+                        такой ссылки остаётся пересказывать своими словами. */}
+                    <Anchor
+                      href={`#post-${post.id}`}
+                      fz="xs"
+                      c="var(--market-muted)"
+                      underline="hover"
+                      title="Ссылка на это сообщение"
+                    >
+                      #{firstPostNumber + index}
+                    </Anchor>
                   </Group>
                   {/* Удалённое сообщение оставляет пометку: без неё ответы на
                       него теряют смысл, а разговор — нить. */}
@@ -210,8 +229,11 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                   {/* Под удалённым сообщением реакций нет: оценивать
                       пометку «удалено модератором» нечего. */}
                   {!post.deletedAt && (
-                    <PostReactions
+                    <PostActions
                       postId={post.id}
+                      authorName={post.author.name || "Участник"}
+                      rawContent={post.content}
+                      plainContent={stripForumMarkup(post.content)}
                       counts={reactions.get(post.id)?.counts || {}}
                       mine={reactions.get(post.id)?.mine || []}
                       canReact={canReactToPost({
@@ -219,6 +241,18 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                         viewerId,
                         postDeleted: false,
                       })}
+                      /* Цитировать может любой вошедший, включая автора
+                         сообщения: уточнять собственный ответ ссылкой на
+                         его же кусок — обычное дело в длинной ветке. */
+                      canQuote={Boolean(viewerId) && !topic.isClosed}
+                      canEdit={canEditPost({
+                        postAuthorId: post.authorId,
+                        postCreatedAt: post.createdAt,
+                        postDeleted: false,
+                        topicClosed: topic.isClosed,
+                        viewerId,
+                      }).allowed}
+                      editedAt={post.editedAt ? formatAdminDateTimeShort(post.editedAt) : null}
                       isBestAnswer={post.isBestAnswer}
                       canMarkBest={canMarkBestAnswer({
                         topicAuthorId: topic.authorId,
