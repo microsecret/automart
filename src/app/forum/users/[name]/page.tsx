@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Anchor, Avatar, Badge, Box, Breadcrumbs, Card, Container, Group, Stack, Text, Title } from "@mantine/core"
-import { IconMessageCircle2, IconStar, IconTrophy } from "@tabler/icons-react"
+import { Anchor, Avatar, Badge, Box, Breadcrumbs, Button, Card, Container, Group, Stack, Text, Title } from "@mantine/core"
+import { IconMessage, IconMessageCircle2, IconStar, IconTrophy } from "@tabler/icons-react"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { stripForumMarkup } from "@/lib/forum-markup"
 import { pluralTimes, reputationRank } from "@/lib/forum-reputation"
@@ -62,6 +64,12 @@ export default async function ForumMemberPage({ params }: Props) {
   const member = await findMember(name)
   if (!member) notFound()
 
+  /* Кнопка «написать» нужна вошедшему и не самому себе: писать себе
+     некуда, а гостю кнопка предложила бы вход ради действия, которого он
+     ещё не хотел. */
+  const session = await getServerSession(authOptions)
+  const canWrite = Boolean(session?.user?.id) && session?.user?.id !== member.id
+
   /* Последние ответы, а не все: страница участника нужна, чтобы понять,
      о чём человек говорит и насколько по делу, и десяти сообщений для
      этого достаточно. */
@@ -110,6 +118,23 @@ export default async function ForumMemberPage({ params }: Props) {
                   и разметка со ссылкой в ней это реклама на всю площадку. */}
               {member.forumSignature && (
                 <Text size="sm" mt={8} c="var(--market-ink)">{member.forumSignature}</Text>
+              )}
+
+              {/* Написать человеку — то, ради чего его и ищут на форуме:
+                  дельный ответ рождает вопрос, который в теме задавать
+                  незачем. */}
+              {canWrite && (
+                <Button
+                  component={Link}
+                  href={`/messages/new?recipientId=${encodeURIComponent(member.id)}`}
+                  variant="light"
+                  color="indigo"
+                  size="compact-sm"
+                  mt={10}
+                  leftSection={<IconMessage size={14} />}
+                >
+                  Написать
+                </Button>
               )}
 
               <Group gap="lg" mt={12} wrap="wrap">
