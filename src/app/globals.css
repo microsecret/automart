@@ -6701,12 +6701,183 @@ h1[data-lw-hero] {
   color: var(--market-muted);
 }
 
+/* === Возможности сообщений форума === */
+
+/* Заголовки внутри сообщения мельче заголовка темы: название темы — h1
+   страницы, и разбор поломки не должен спорить с ним по громкости. */
+.forum-post-body h2,
+.forum-post-body h3 {
+  margin: 14px 0 6px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.forum-post-body h2 { font-size: 1.05rem; }
+.forum-post-body h3 { font-size: 0.95rem; }
+
+.forum-post-body h2:first-child,
+.forum-post-body h3:first-child {
+  margin-top: 0;
+}
+
+.forum-post-body hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--market-line);
+}
+
+/* Картинка ограничена по высоте: фотография с телефона в полный рост
+   занимает три экрана, и ответов под ней не найти. */
+.forum-post-body .forum-image {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  width: auto;
+  margin: 8px 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--market-line);
+  object-fit: contain;
+  background: var(--market-surface-subtle);
+}
+
+/* Соотношение сторон задано заранее: без него страница дёргается, когда
+   рамка проигрывателя догружается и раздвигает текст. */
+.forum-post-body .forum-video {
+  position: relative;
+  margin: 10px 0;
+  aspect-ratio: 16 / 9;
+  max-width: 640px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--market-line);
+  background: #000;
+}
+
+.forum-post-body .forum-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Блок кода: моноширинный, с прокруткой вбок. Перенос строк здесь вреден
+   — номер ошибки, разорванный посередине, не найдётся поиском. */
+.forum-post-body .forum-code {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--market-line);
+  background: var(--market-surface-subtle);
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.forum-post-body .forum-code code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+  white-space: pre;
+}
+
+/* Таблица прокручивается внутри своей обёртки: пять столбцов не влезают
+   в экран телефона, а без обёртки вбок листалась бы вся страница. */
+.forum-post-body .forum-table-wrap {
+  margin: 10px 0;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--market-line);
+}
+
+.forum-post-body .forum-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+
+.forum-post-body .forum-table th,
+.forum-post-body .forum-table td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--market-line);
+  white-space: nowrap;
+}
+
+.forum-post-body .forum-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.forum-post-body .forum-table th {
+  background: var(--market-surface-subtle);
+  font-weight: 600;
+}
+
+/* Спойлер закрашен до нажатия. Цвет текста тот же, что фон: выделить и
+   скопировать содержимое можно, но случайно прочитать — нет. */
+.forum-post-body .forum-spoiler {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--market-control-line, var(--market-line));
+  color: transparent;
+  cursor: pointer;
+  transition: color 120ms var(--ease-out), background 120ms var(--ease-out);
+}
+
+.forum-post-body .forum-spoiler:hover,
+.forum-post-body .forum-spoiler:focus-visible,
+.forum-post-body .forum-spoiler[data-open="true"] {
+  background: var(--market-surface-subtle);
+  color: var(--mantine-color-text);
+}
+
+.forum-post-body .forum-mention {
+  color: var(--market-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.forum-post-body .forum-mention:hover {
+  text-decoration: underline;
+}
+
 /* Панель: кнопки в одну линию, разделители между смысловыми группами. */
 .markup-toolbar {
   padding: 3px 4px;
   border: 1px solid var(--market-field-line);
   border-radius: var(--radius-md);
   background: var(--market-surface-subtle);
+}
+
+/* Зона перетаскивания — само поле ввода. Отдельной рамки «бросьте файл
+   сюда» нет: она занимает место у всех ради действия, которым
+   пользуется меньшинство. Подсветка появляется только когда файл уже
+   тащат над полем. */
+.markup-dropzone {
+  position: relative;
+  border-radius: var(--radius-md);
+  transition: box-shadow 120ms var(--ease-out);
+}
+
+.markup-dropzone--active {
+  box-shadow: 0 0 0 2px var(--market-primary);
+}
+
+.markup-dropzone--active::after {
+  content: "Отпустите — картинка загрузится";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 6px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--market-primary);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .markup-dropzone {
+    transition: none;
+  }
 }
 
 .markup-toolbar__divider {

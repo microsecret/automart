@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { pluralReplies, POSTS_PER_PAGE } from "@/lib/forum"
 import { renderForumMarkup, stripForumMarkup } from "@/lib/forum-markup"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
+import PostBody from "@/components/forum/PostBody"
 import ReplyForm from "./ReplyForm"
 
 type Props = { params: Promise<{ section: string; topic: string }>; searchParams: Promise<{ page?: string }> }
@@ -105,14 +106,13 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                       Сообщение удалено модератором
                     </Text>
                   ) : (
-                    <Box
-                      className="forum-post-body"
-                      mt={4}
-                      /* Разметка собрана своим разбором: всё постороннее
-                         экранировано, наружу выходят только семь
-                         разрешённых конструкций — см. lib/forum-markup.ts. */
-                      dangerouslySetInnerHTML={{ __html: renderForumMarkup(post.content) }}
-                    />
+                    /* Разметка собрана на сервере: всё постороннее
+                       экранировано, наружу выходят только разрешённые
+                       конструкции — см. lib/forum-markup.ts. Вывод
+                       отдельным компонентом ради спойлеров: на телефоне
+                       нет наведения, и без обработчика нажатия скрытый
+                       ответ остался бы скрытым навсегда. */
+                    <PostBody html={renderForumMarkup(post.content)} mt={4} />
                   )}
                 </Box>
               </Group>
