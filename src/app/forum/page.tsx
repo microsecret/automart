@@ -81,6 +81,12 @@ export default async function ForumPage() {
           <Anchor component={Link} href="/forum/users" size="sm" c="var(--market-muted)">
             Участники форума
           </Anchor>
+          {/* Ссылка видна всем: гость, нажав её, попадёт на вход — это
+              честнее, чем прятать раздел, о существовании которого он не
+              узнает. */}
+          <Anchor component={Link} href="/forum/subscriptions" size="sm" c="var(--market-muted)">
+            Мои темы
+          </Anchor>
         </Group>
 
         {FORUM_GROUPS.map((group) => {
