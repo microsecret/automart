@@ -1,7 +1,7 @@
 "use client"
 
 import { Button, Group, Paper, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconBuildingWarehouse, IconChartBar, IconGavel, IconBrandTelegram, IconHeadset, IconLayoutDashboard, IconUsers } from "@tabler/icons-react"
+import { IconBuildingWarehouse, IconChartBar, IconGavel, IconBrandTelegram, IconHeadset, IconLayoutDashboard, IconUsers, IconMessages } from "@tabler/icons-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -12,6 +12,7 @@ const ADMIN_SECTIONS = [
   { href: "/admin/auctions", label: "Аукционы", icon: IconGavel, match: (pathname: string) => pathname.startsWith("/admin/auctions") },
   { href: "/admin/partners", label: "Партнёры", icon: IconBuildingWarehouse, match: (pathname: string) => pathname.startsWith("/admin/partners") },
   { href: "/admin/support", label: "Поддержка", icon: IconHeadset, match: (pathname: string) => pathname.startsWith("/admin/support") },
+  { href: "/admin/forum", label: "Форум", icon: IconMessages, match: (pathname: string) => pathname.startsWith("/admin/forum") },
   { href: "/admin/traffic", label: "Посещаемость", icon: IconChartBar, match: (pathname: string) => pathname.startsWith("/admin/traffic") },
   { href: "/admin/telegram", label: "Рассылка", icon: IconBrandTelegram, match: (pathname: string) => pathname.startsWith("/admin/telegram") },
 ]

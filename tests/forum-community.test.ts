@@ -139,3 +139,64 @@ test("подписка гостю не показывается", () => {
   const page = read("../src/app/forum/[section]/[topic]/page.tsx")
   assert.match(page, /viewerId && \([\s\S]{0,200}SubscribeButton/)
 })
+
+// === Очередь жалоб у модератора ===
+
+const adminRoute = read("../src/app/api/admin/forum-reports/route.ts")
+
+test("очередь жалоб закрыта от посторонних", () => {
+  assert.match(adminRoute, /requireModeratorSession/)
+})
+
+test("неразобранные показываются первыми", () => {
+  /* Разобранные нужны редко, и держать их вперемешку значит заставлять
+     модератора искать работу глазами. */
+  assert.match(adminRoute, /resolved \? \{ resolvedAt: \{ not: null \} \} : \{ resolvedAt: null \}/)
+})
+
+test("удаление сообщения закрывает жалобу одной сделкой", () => {
+  /* Жалоба, оставшаяся открытой при удалённом сообщении, вернётся в
+     очередь второй раз. */
+  const deleteBlock = adminRoute.slice(adminRoute.indexOf('action === "delete-post"'))
+  assert.match(deleteBlock, /\$transaction/)
+  assert.match(deleteBlock, /deletedAt: new Date\(\)/)
+  assert.match(deleteBlock, /resolvedAt: new Date\(\)/)
+})
+
+test("удаление уменьшает счётчик сообщений автора", () => {
+  // Удалённое сообщение не должно продолжать работать на его репутацию.
+  const deleteBlock = adminRoute.slice(
+    adminRoute.indexOf('action === "delete-post"'),
+    adminRoute.indexOf('action === "restore-post"'),
+  )
+  assert.match(deleteBlock, /forumPostCount: \{ decrement: 1 \}/)
+})
+
+test("восстановление возвращает счётчик", () => {
+  // Иначе после ошибочного удаления число у автора останется заниженным.
+  const restoreBlock = adminRoute.slice(adminRoute.indexOf('action === "restore-post"'))
+  assert.match(restoreBlock, /forumPostCount: \{ increment: 1 \}/)
+  assert.match(restoreBlock, /deletedAt: null/)
+})
+
+test("удаление мягкое", () => {
+  /* На месте сообщения остаётся пометка, иначе ответы на него теряют
+     смысл. */
+  assert.doesNotMatch(adminRoute, /forumPost\.delete\(/)
+})
+
+test("неизвестное действие отклоняется", () => {
+  assert.match(adminRoute, /Неизвестное действие/)
+})
+
+test("раздел форума есть в меню админки", () => {
+  // Без ссылки очередь никто не найдёт.
+  const nav = read("../src/components/admin/AdminWorkspaceNavigation.tsx")
+  assert.match(nav, /href: "\/admin\/forum"/)
+})
+
+test("из очереди можно перейти к сообщению", () => {
+  // Разбирать жалобу, не видя разговора вокруг, нельзя.
+  const page = read("../src/app/admin/forum/page.tsx")
+  assert.match(page, /#post-\$\{report\.post\.id\}/)
+})
