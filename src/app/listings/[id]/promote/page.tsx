@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { useEffect, useState, useTransition } from "react"
 import { useParams } from "next/navigation"
 import { Box, Stack, Text, Paper, Group, Button, SimpleGrid, ThemeIcon, Badge, Modal, Divider, Skeleton } from "@mantine/core"
-import { IconFlame, IconStar, IconArrowUp, IconCheck, IconCreditCard, IconShieldCheck, IconChartBar } from "@tabler/icons-react"
+import { IconBrandTelegram, IconFlame, IconStar, IconArrowUp, IconCheck, IconCreditCard, IconShieldCheck, IconChartBar } from "@tabler/icons-react"
 import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
@@ -14,6 +14,25 @@ type ListingViewsResponse = { views: number }
 type PromoteResponse = { checkoutUrl: string }
 
 const PROMO_OPTIONS = [
+  /* Показ в чатах стоит первым: он дешевле остальных и даёт охват,
+     которого нет у продвижения внутри каталога — сто четырнадцать тысяч
+     подписчиков одиннадцати региональных групп. Для продавца это самое
+     понятное предложение, и прятать его за более дорогими незачем. */
+  {
+    ...PROMOTION_TARIFFS.CHATS,
+    desc: PROMOTION_TARIFFS.CHATS.description,
+    price: PROMOTION_TARIFFS.CHATS.amountRub,
+    days: PROMOTION_TARIFFS.CHATS.durationDays,
+    icon: IconBrandTelegram,
+    color: "#0088cc",
+    bg: "#e7f5ff",
+    features: [
+      "11 чатов сети — 114 000 подписчиков",
+      "До 9 фотографий альбомом",
+      "Кнопка «Написать продавцу» в посте",
+      "Закрепление поста в чате",
+    ],
+  },
   { ...PROMOTION_TARIFFS.BOOST, desc: PROMOTION_TARIFFS.BOOST.description, price: PROMOTION_TARIFFS.BOOST.amountRub, days: PROMOTION_TARIFFS.BOOST.durationDays, icon: IconArrowUp, color: "#0891b2", bg: "#ecfeff", features: ["Поднятие в топ выдачи", "Статистика просмотров"] },
   { ...PROMOTION_TARIFFS.PREMIUM, desc: PROMOTION_TARIFFS.PREMIUM.description, price: PROMOTION_TARIFFS.PREMIUM.amountRub, days: PROMOTION_TARIFFS.PREMIUM.durationDays, icon: IconFlame, color: "#ea580c", bg: "var(--market-warning-surface)", features: ["Всё из «Поднятия»", "Бейдж Премиум на карточке", "Выделение цветом"] },
   { ...PROMOTION_TARIFFS.VIP, desc: PROMOTION_TARIFFS.VIP.description, price: PROMOTION_TARIFFS.VIP.amountRub, days: PROMOTION_TARIFFS.VIP.durationDays, icon: IconStar, color: "#1c4291", bg: "#f5f3ff", features: ["Всё из «Премиум»", "Закрепление на главной", "Максимальный приоритет", "Бейдж VIP"] },

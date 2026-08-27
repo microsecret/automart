@@ -35,11 +35,12 @@ const PROMOTION_STATUS_META: Record<string, { label: string; color: string }> = 
   REVIEW_REQUIRED: { label: "Нужна проверка", color: "orange" },
 }
 
-const PROMOTION_TARIFF_LABELS: Record<string, string> = {
-  boost: "Поднятие в топ",
-  premium: "Премиум",
-  vip: "VIP-размещение",
-}
+/* Названия берутся из самих тарифов, а не дублируются списком: прежний
+   список не знал о тарифе чатов, и продавец увидел бы в своих оплатах
+   «chats» вместо «Показ в чатах». */
+const PROMOTION_TARIFF_LABELS: Record<string, string> = Object.fromEntries(
+  Object.values(PROMOTION_TARIFFS).map((tariff) => [tariff.id, tariff.title]),
+)
 
 const formatRubles = (value: number) => new Intl.NumberFormat("ru-RU", {
   style: "currency",
