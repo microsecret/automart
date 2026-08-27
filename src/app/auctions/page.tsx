@@ -5,6 +5,7 @@ import useSWR from "swr"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Collapse, Divider, Progress, UnstyledButton } from "@mantine/core"
+import NextImage from "next/image"
 import { IconBolt, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
@@ -154,12 +155,27 @@ function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; 
     return () => window.clearTimeout(timer)
   }, [image, loaded, failed])
 
+  /* Картинка отдаётся оптимизированной: домены аукционных CDN уже
+     разрешены в next.config.js, но раздел показывал оригиналы по
+     несколько мегабайт в слот шириной около трёхсот пикселей.
+
+     sizes считается по сетке карточек: до четырёх колонок на широком
+     экране, две на планшете, одна на телефоне. */
   return (
     <Box className="auction-card__media" data-empty-media={!hasImage || undefined} data-loading={hasImage && !loaded || undefined}>
       {!hasImage && <VehicleFallback type="CAR" compact />}
       {hasImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={identity.title} referrerPolicy="no-referrer" onLoad={() => setLoaded(true)} onError={() => setFailed(true)} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" />
+        <NextImage
+          src={image}
+          alt={identity.title}
+          fill
+          sizes="(max-width: 48em) 100vw, (max-width: 62em) 50vw, (max-width: 75em) 33vw, 25vw"
+          referrerPolicy="no-referrer"
+          priority={priority}
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+          style={{ objectFit: "cover" }}
+        />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
           <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
