@@ -541,6 +541,8 @@ model PromotionOrder {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
+  chatPosts          ChatPromotionPost[]
+
   @@index([status, createdAt])
   @@index([userId, createdAt])
   @@index([listingId, createdAt])
@@ -1638,4 +1640,33 @@ model ForumPost {
 
   @@index([topicId, createdAt])
   @@index([authorId])
+}
+
+/// Публикация объявления в чате сети.
+///
+/// Продвижение в чатах отличается от продвижения в каталоге тем, что
+/// оставляет следы вне площадки: пост в чужой ленте и закреп, который
+/// занимает единственное место закрепа в группе. Поэтому каждая
+/// публикация записывается — иначе по истечении срока нечем снять
+/// закреп и удалить сообщение.
+model ChatPromotionPost {
+  id      String @id @default(uuid())
+  orderId String
+  order   PromotionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// Идентификатор чата: строка, потому что Telegram отдаёт большие числа.
+  chatId String
+  /// Идентификатор сообщения в чате — по нему снимается закреп и удаление.
+  messageId Int
+  /// Закреплён ли пост сейчас. В группе закреп один, поэтому новый
+  /// вытесняет прежний, и это поле показывает, чей закреп действует.
+  pinned Boolean @default(false)
+
+  publishedAt DateTime  @default(now())
+  /// Когда пост убран: по истечении срока или снятии объявления.
+  removedAt   DateTime?
+
+  @@index([orderId, publishedAt])
+  @@index([chatId, publishedAt])
+  @@index([removedAt])
 }

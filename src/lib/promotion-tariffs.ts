@@ -15,6 +15,17 @@ export const PROMOTION_TARIFFS = {
     durationDays: 7,
     isFeatured: true,
   },
+  /* Продвижение в сети Telegram-чатов: одиннадцать региональных групп,
+     114 тысяч подписчиков суммарно. Цена ниже продвижения на Авито при
+     большем охвате — площадка зарабатывает объёмом, а не ценой. */
+  CHATS: {
+    id: "chats",
+    title: "Показ в чатах",
+    description: "Объявление публикуется в 11 региональных чатах с закрепом",
+    amountRub: 300,
+    durationDays: 30,
+    isFeatured: false,
+  },
   VIP: {
     id: "vip",
     title: "VIP-размещение",
