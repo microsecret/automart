@@ -5,6 +5,7 @@ import { IconMap2, IconMessages, IconCar, IconTool } from "@tabler/icons-react"
 import { prisma } from "@/lib/prisma"
 import { FORUM_GROUPS, pluralTopics } from "@/lib/forum"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
+import ForumSearchField from "@/components/forum/ForumSearchField"
 
 export const metadata: Metadata = {
   title: "Форум автолюбителей — LeWheel",
@@ -68,6 +69,11 @@ export default async function ForumPage() {
               : "Форумы по маркам, регионам России и темам: ремонт, запчасти, растаможка, выбор машины. Спросите тех, кто уже ездит."}
           </Text>
         </Box>
+
+        {/* Поиск над разделами: человек с поломкой ищет готовый разбор, а
+            не выбирает раздел. Без поиска он заведёт новую тему о том, что
+            уже разобрали год назад. */}
+        <ForumSearchField initialQuery="" />
 
         {FORUM_GROUPS.map((group) => {
           const groupRoots = roots.filter((root) => root.groupKey === group.key)

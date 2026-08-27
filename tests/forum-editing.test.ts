@@ -149,3 +149,53 @@ test("номер сообщения сквозной, а не постранич
   const page = read("../src/app/forum/[section]/[topic]/page.tsx")
   assert.match(page, /const firstPostNumber = \(page - 1\) \* POSTS_PER_PAGE \+ 1/)
 })
+
+// === Поиск по форуму ===
+
+test("поиск ищет и в заголовках, и в тексте сообщений", () => {
+  /* Половина вопросов сформулирована в первом сообщении, а не в
+     заголовке: «стучит спереди» в заголовке, а номер детали в тексте. */
+  const page = read("../src/app/forum/search/page.tsx")
+  assert.match(page, /containsAnyCase\("title", query\)/)
+  assert.match(page, /containsAnyCase\("content", query\)/)
+})
+
+test("поиск учитывает кириллицу", () => {
+  /* База SQLite: её LIKE не различает регистр только для латиницы, и
+     «камаз» не нашёл бы «КАМАЗ». Подробности в search-terms.ts. */
+  const page = read("../src/app/forum/search/page.tsx")
+  assert.match(page, /from "@\/lib\/search-terms"/)
+})
+
+test("удалённые сообщения не попадают в поиск", () => {
+  const page = read("../src/app/forum/search/page.tsx")
+  assert.match(page, /deletedAt: null/)
+})
+
+test("слишком короткий запрос отклоняется", () => {
+  // По одной букве найдётся полфорума, и выбрать в списке будет нечего.
+  const page = read("../src/app/forum/search/page.tsx")
+  assert.match(page, /query\.length < 3/)
+  const field = read("../src/components/forum/ForumSearchField.tsx")
+  assert.match(field, /query\.length < 3/)
+})
+
+test("страницы поиска не идут в поисковую выдачу", () => {
+  /* Они плодят тысячи адресов с одинаковым содержимым и размывают вес
+     настоящих тем. */
+  const page = read("../src/app/forum/search/page.tsx")
+  assert.match(page, /robots: \{ index: false/)
+})
+
+test("поиск открыт гостю", () => {
+  /* Именно так на форум приходят из поисковика: требовать вход, чтобы
+     посмотреть, есть ли ответ, значит терять этих людей. */
+  const page = read("../src/app/forum/search/page.tsx")
+  assert.doesNotMatch(page, /requireUser|getServerSession/)
+})
+
+test("поиск доступен с главной форума", () => {
+  // Иначе его никто не найдёт.
+  const forumPage = read("../src/app/forum/page.tsx")
+  assert.match(forumPage, /<ForumSearchField/)
+})
