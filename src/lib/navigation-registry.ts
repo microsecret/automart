@@ -155,7 +155,12 @@ export const TELEGRAM_TAB_NAVIGATION = [
   { id: "vehicles", label: "Свежее", href: "/telegram" },
   { id: "auctions", label: "Аукционы", href: "/telegram?tab=auctions" },
   { id: "create", label: "Продать", href: `${CREATE_VEHICLE_HREF}?source=telegram` },
-  { id: "news", label: "Новости", href: "/telegram?tab=news" },
+  /* Форум вместо новостей: новости читаются разом и не требуют
+     возвращения, а форум — место, куда человек приходит за ответом на
+     свой вопрос и возвращается за ним. В мобильном меню сайта замена
+     сделана по той же причине. Новости остаются доступны из выезжающего
+     меню приложения. */
+  { id: "forum", label: "Форум", href: "/forum?from=telegram" },
   { id: "profile", label: "Профиль", href: "/dashboard?from=telegram" },
 ] as const satisfies readonly NavigationItem[]
 

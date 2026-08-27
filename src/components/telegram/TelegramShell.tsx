@@ -12,6 +12,7 @@ import {
   IconList,
   IconMenu2,
   IconMessageCircle2,
+  IconMessages,
   IconNews,
   IconPlus,
   IconTool,
@@ -83,7 +84,7 @@ const TAB_ICONS = {
   vehicles: IconCar,
   auctions: IconGavel,
   create: IconPlus,
-  news: IconNews,
+  forum: IconMessages,
   profile: IconUser,
 } satisfies Record<(typeof TELEGRAM_TAB_NAVIGATION)[number]["id"], typeof IconCar>
 
