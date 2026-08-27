@@ -57,6 +57,56 @@ function buildPromoText() {
 
 export const TELEGRAM_PROMO_TEXT = buildPromoText()
 
+/**
+ * Второй текст рассылки — предложение платного продвижения.
+ *
+ * Один и тот же пост, повторяемый месяцами, перестают замечать. Тексты
+ * чередуются: сервисный рассказывает о площадке, этот зовёт продавцов
+ * подключить размещение в сети чатов и приносит деньги.
+ */
+function buildPromotionOfferText() {
+  const botUsername = getTelegramBotUsername()
+  return [
+    "📣 <b>Продаёте машину? Разместим её за вас во всех чатах сети</b>",
+    "",
+    "Ваше объявление появится в <b>11 региональных чатах</b> — Уфа, Казань, Москва, Екатеринбург, Тюмень, Владивосток и другие города.",
+    "",
+    "✅ До 9 фотографий альбомом",
+    "✅ Кнопка «Написать продавцу» прямо в посте",
+    "✅ Закрепление поста в чате",
+    "✅ Повторные публикации весь месяц",
+    "",
+    "💳 <b>300 ₽ за месяц</b> — дешевле продвижения на других площадках.",
+    "",
+    "📝 Разместить объявление на сайте по-прежнему <b>бесплатно</b>.",
+    "",
+    `🌐 <a href="${absoluteUrl("/?utm_source=telegram&utm_campaign=chat_promo")}">lewheel.ru</a>`,
+    botUsername ? `🤖 Официальный бот: @${botUsername}` : null,
+  ].filter(Boolean).join("\n")
+}
+
+export const TELEGRAM_PROMOTION_OFFER_TEXT = buildPromotionOfferText()
+
+/**
+ * Кнопки предложения продвижения: путь к оплате и к бесплатной подаче.
+ *
+ * Бесплатная подача рядом с платной услугой не мешает продажам, а
+ * снимает недоверие: человек видит, что деньги берут за охват, а не за
+ * саму возможность разместиться.
+ */
+function promotionOfferKeyboard() {
+  const botUsername = getTelegramBotUsername()
+  return {
+    inline_keyboard: [
+      [{ text: "🚀 Подключить продвижение", url: absoluteUrl("/dashboard?tab=listings&utm_source=telegram&utm_campaign=chat_promo") }],
+      [
+        { text: "➕ Разместить бесплатно", url: botUsername ? `https://t.me/${botUsername}?startapp=create` : absoluteUrl("/listings/create/vehicle?utm_source=telegram&utm_campaign=chat_promo") },
+        { text: "🌐 На сайт", url: absoluteUrl("/?utm_source=telegram&utm_campaign=chat_promo") },
+      ],
+    ],
+  }
+}
+
 function promoKeyboard() {
   const botUsername = getTelegramBotUsername()
   const miniAppUrl = botUsername ? `https://t.me/${botUsername}?startapp=promo` : absoluteUrl("/telegram")
@@ -128,20 +178,28 @@ export async function processTelegramMarketingCampaign() {
         failed += 1
         continue
       }
+      /* Тексты чередуются от раза к разу: один и тот же пост, повторяемый
+         месяцами, перестают замечать. Половина суток на текст — признак,
+         одинаковый для всех чатов в одном прогоне и меняющийся между
+         прогонами. */
+      const offerTurn = Math.floor(claimedAt.getTime() / (12 * 60 * 60 * 1000)) % 2 === 1
+      const promoText = offerTurn ? TELEGRAM_PROMOTION_OFFER_TEXT : TELEGRAM_PROMO_TEXT
+      const promoMarkup = offerTurn ? promotionOfferKeyboard() : promoKeyboard()
+
       let sent: TelegramSentMessage
       try {
         sent = await telegramPhotoApi<TelegramSentMessage>({
           chat_id: chat.id,
-          caption: TELEGRAM_PROMO_TEXT,
+          caption: promoText,
           parse_mode: "HTML",
-          reply_markup: promoKeyboard(),
+          reply_markup: promoMarkup,
         })
       } catch {
         sent = await telegramApi<TelegramSentMessage>("sendMessage", {
           chat_id: chat.id,
-          text: TELEGRAM_PROMO_TEXT,
+          text: promoText,
           parse_mode: "HTML",
-          reply_markup: promoKeyboard(),
+          reply_markup: promoMarkup,
         })
       }
       await prisma.telegramChat.update({
