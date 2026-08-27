@@ -10,6 +10,7 @@ import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX,
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { COUNTRY_FLAGS, getBrandsByCategory } from "@/lib/catalog"
+import { CATALOG_FIRST_PAGE_KEY } from "@/lib/catalog-first-page"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, SORT_OPTIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, OWNERS_COUNT_OPTIONS, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, SPECIAL_TYPES, WATER_TYPES, AIR_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
 import { fetchJson } from "@/lib/api-client"
@@ -22,6 +23,9 @@ import CategoryShowcase from "./CategoryShowcase"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
+  /* Первая страница витрины, отрисованная на сервере: без неё робот
+     видел разметку без единой ссылки на объявление. */
+  initialListings?: ListingsResponse
   initialQuery?: string
   initialMake?: string
   initialPartType?: string
@@ -294,7 +298,19 @@ export default function HomePage(p: HomePageProps = {}) {
     else window.history.replaceState(null, "", target)
   }, [urlRead, query, make, model, priceFrom, priceTo, yearFrom, yearTo, city, radius, sort, page, mileageTo, transmission, fuelType, driveType, bodyType, subtype, engineVolumeFrom, engineVolumeTo, powerFrom, powerTo, color, condition, steeringWheel, documentsStatus, damageInfo, sellerType, availability, customsCleared, ownersCountFrom, ownersCountTo, mileageFrom, keywords])
 
-  const { data, error, isLoading, isValidating, mutate } = useSWR<ListingsResponse>(hasInvalidPriceRange ? null : "/api/listings?" + buildQuery(), fetcher)
+  const listingsKey = hasInvalidPriceRange ? null : "/api/listings?" + buildQuery()
+
+  /* Стартовое наполнение отдаёт сервер, но только для витрины без
+     фильтров: как только посетитель что-то выбрал, ключ меняется и
+     подставлять сюда прежние карточки нельзя — на миг показался бы
+     список, не отвечающий фильтру. */
+  const { data, error, isLoading, isValidating, mutate } = useSWR<ListingsResponse>(
+    listingsKey,
+    fetcher,
+    listingsKey === CATALOG_FIRST_PAGE_KEY && p.initialListings
+      ? { fallbackData: p.initialListings }
+      : undefined,
+  )
 
   const resetFilters = () => {
     setMake(null); setModel(null); setPriceFrom(""); setPriceTo("")
