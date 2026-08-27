@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { isAdmin } from "@/lib/permissions"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 import { moscowHour } from "@/lib/moscow-periods"
 import {
@@ -21,8 +19,8 @@ function countUnique(events: { visitorKey: string | null; ipHash: string | null 
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!isAdmin(session?.user?.role)) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
 
   const raw = new URL(request.url).searchParams.get("period")
   const period: TrafficPeriod = isTrafficPeriod(raw) ? raw : "week"

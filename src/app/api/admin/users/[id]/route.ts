@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 import { getTelegramMiniAppUrl, telegramApi } from "@/lib/telegram"
-import { isAdmin, normalizeUserRole, USER_ROLE } from "@/lib/permissions"
+import { normalizeUserRole, USER_ROLE } from "@/lib/permissions"
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
@@ -11,14 +10,9 @@ export const dynamic = "force-dynamic"
 const ACCOUNT_STATUSES = new Set(["ACTIVE", "RESTRICTED", "BANNED"])
 const ASSIGNABLE_ROLES = new Set(Object.values(USER_ROLE))
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions)
-  return session?.user?.id && isAdmin(session.user.role) ? session : null
-}
-
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: "Доступ только для администраторов" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
   const { id } = await params
   const user = await prisma.user.findUnique({
     where: { id },
@@ -41,8 +35,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: "Доступ только для администраторов" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
+  const session = guard.session
   const { id } = await params
   if (id === session.user.id) return NextResponse.json({ error: "Нельзя менять собственные права или статус" }, { status: 409 })
 
@@ -102,8 +97,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: "Доступ только для администраторов" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
+  const session = guard.session
   const { id } = await params
   const payload = await request.json().catch(() => null)
   const title = typeof payload?.title === "string" ? payload.title.trim().replace(/\s+/g, " ") : ""

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { isAdmin } from "@/lib/permissions"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 import { recordAdminAudit } from "@/lib/admin-audit"
 import { buildReferralBalance, resolveReferralTier } from "@/lib/referral"
@@ -10,10 +8,8 @@ export const dynamic = "force-dynamic"
 
 /** Партнёры с начислениями: кому и сколько площадка должна перевести. */
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id || !isAdmin(session.user.role)) {
-    return NextResponse.json({ error: "Доступ только для администраторов" }, { status: 403 })
-  }
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
 
   const [rewards, payouts] = await Promise.all([
     prisma.referralReward.groupBy({
@@ -68,10 +64,9 @@ export async function GET() {
 
 /** Фиксирует перевод, который администратор уже провёл по расчётному счёту. */
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id || !isAdmin(session.user.role)) {
-    return NextResponse.json({ error: "Доступ только для администраторов" }, { status: 403 })
-  }
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
+  const session = guard.session
 
   const body = await request.json().catch(() => null)
   const partnerId = typeof body?.partnerId === "string" ? body.partnerId : ""

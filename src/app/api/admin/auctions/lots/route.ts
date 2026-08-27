@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { isAdmin } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions)
-  return session?.user?.id && isAdmin(session.user.role) ? session : null
-}
-
 export async function GET(request: NextRequest) {
-  if (!await requireAdmin()) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
   const q = request.nextUrl.searchParams.get("q")?.trim().slice(0, 80) || ""
   const visibility = request.nextUrl.searchParams.get("visibility") === "hidden" ? "hidden" : "visible"
   const where = {
@@ -30,8 +24,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
+  const session = guard.session
   const body = await request.json().catch(() => null)
   const id = typeof body?.id === "string" ? body.id : ""
   const action = body?.action === "RESTORE" ? "RESTORE" : body?.action === "HIDE" ? "HIDE" : null

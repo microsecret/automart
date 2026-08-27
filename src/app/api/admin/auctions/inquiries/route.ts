@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 import { makeDeliveryCode } from "@/lib/delivery"
-import { isAdmin } from "@/lib/permissions"
 import { inspectContactSharing } from "@/lib/contact-sharing-policy"
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
@@ -40,8 +38,8 @@ function readMoney(value: unknown, minimum: number, maximum: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id || !isAdmin(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const guard = await requireAdminSession()
+    if (guard.denied) return guard.denied
     const status = request.nextUrl.searchParams.get("status")
     if (status && !INQUIRY_STATUSES.has(status)) return NextResponse.json({ error: "Некорректный статус заявки" }, { status: 400 })
 
@@ -107,8 +105,9 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id || !isAdmin(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const guard = await requireAdminSession()
+    if (guard.denied) return guard.denied
+    const session = guard.session
     const body = await request.json().catch(() => null)
     if (!isPlainObject(body)) return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 })
     const action = typeof body.action === "string" ? body.action : "UPDATE"

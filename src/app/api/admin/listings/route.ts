@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requirePermission } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 import { canModeratorTransition, isListingStatus, LISTING_STATUS } from "@/lib/listing-lifecycle"
-import { can } from "@/lib/permissions"
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 import { moderationNotice } from "@/lib/listing-moderation-notify"
 import { readStoredVehicleSubtype, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
@@ -13,10 +11,8 @@ export const dynamic = "force-dynamic"
 /** GET /api/admin/listings — все объявления для модерации */
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || !can(session.user?.role, "listing:moderate")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+    const guard = await requirePermission("listing:moderate")
+    if (guard.denied) return guard.denied
 
     const listings = await prisma.listing.findMany({
       include: {
@@ -39,10 +35,9 @@ export async function GET() {
 /** PATCH /api/admin/listings — решение модератора с неизменяемым аудитом */
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || !can(session.user?.role, "listing:moderate")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+    const guard = await requirePermission("listing:moderate")
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const body = await request.json().catch(() => null)
     const id = typeof body?.id === "string" ? body.id : ""
@@ -127,10 +122,9 @@ export async function PATCH(request: NextRequest) {
 /** DELETE /api/admin/listings — мягко удалить объявление (модератор) */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || !can(session.user?.role, "listing:remove:any")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+    const guard = await requirePermission("listing:remove:any")
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")

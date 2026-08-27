@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
-import { isAdmin, normalizeUserRole, USER_ROLE } from "@/lib/permissions"
+import { normalizeUserRole, USER_ROLE } from "@/lib/permissions"
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
@@ -17,8 +16,9 @@ const ASSIGNABLE_ROLES = new Set<string>([
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id || !isAdmin(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const guard = await requireAdminSession()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const { id } = await params
     const payload = await request.json().catch(() => null)

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
-import { isAdmin, USER_ROLE } from "@/lib/permissions"
+import { USER_ROLE } from "@/lib/permissions"
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 
 export const dynamic = "force-dynamic"
@@ -25,8 +24,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 /** GET /api/admin/delivery-organizations — реестр партнёров для проверки администратором. */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id || !isAdmin(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const guard = await requireAdminSession()
+    if (guard.denied) return guard.denied
 
     const status = request.nextUrl.searchParams.get("status") || "PENDING"
     const limit = parseLimit(request.nextUrl.searchParams.get("limit"))
@@ -64,8 +63,9 @@ export async function GET(request: NextRequest) {
 /** PATCH /api/admin/delivery-organizations — фиксирует решение администратора по реквизитам. */
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id || !isAdmin(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const guard = await requireAdminSession()
+    if (guard.denied) return guard.denied
+    const session = guard.session
 
     const payload: unknown = await request.json().catch(() => null)
     if (!isPlainObject(payload)) return NextResponse.json({ error: "Некорректное тело запроса" }, { status: 400 })

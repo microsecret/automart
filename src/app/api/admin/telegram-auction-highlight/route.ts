@@ -2,9 +2,7 @@ import { execFile } from "node:child_process"
 import path from "node:path"
 import { promisify } from "node:util"
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { isAdmin } from "@/lib/permissions"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { recordAdminAudit } from "@/lib/admin-audit"
@@ -85,8 +83,9 @@ function listingIdFrom(value: unknown) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!isAdmin(session?.user?.role)) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
+  const session = guard.session
 
   const limit = rateLimit(`telegram-highlight-preview:${session?.user?.id || getClientIp(request)}`, {
     windowMs: 5 * 60_000,
@@ -117,8 +116,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!isAdmin(session?.user?.role)) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
+  const session = guard.session
 
   const limit = rateLimit(`telegram-highlight-send:${session?.user?.id || getClientIp(request)}`, {
     windowMs: 15 * 60_000,

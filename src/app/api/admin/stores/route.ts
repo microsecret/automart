@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { isAdmin } from "@/lib/permissions"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -10,10 +8,8 @@ const ALLOWED_STATUSES = new Set(["DRAFT", "PENDING", "ACTIVE", "SUSPENDED"])
 
 /** Реестр магазинов для проверки: доступен только администратору. */
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id || !isAdmin(session.user.role)) {
-    return NextResponse.json({ error: "Доступ только для администраторов" }, { status: 403 })
-  }
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
 
   const status = request.nextUrl.searchParams.get("status") || "PENDING"
   if (!ALLOWED_STATUSES.has(status)) {

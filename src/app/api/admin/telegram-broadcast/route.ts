@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
-import { authOptions } from "@/lib/auth"
-import { isAdmin } from "@/lib/permissions"
+import { requireAdminSession } from "@/lib/admin-route-guard"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { getTelegramContactStats } from "@/lib/telegram-contacts"
 import { sendTelegramBroadcast, type BroadcastAudience } from "@/lib/telegram-broadcast"
@@ -14,8 +12,8 @@ const AUDIENCES: BroadcastAudience[] = ["all", "unregistered", "registered"]
 
 /** GET — сводка по контактам бота для админки. */
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!isAdmin(session?.user?.role)) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
 
   try {
     // История нужна вместе со сводкой: администратор должен видеть, что уже
@@ -41,8 +39,9 @@ export async function GET() {
 
 /** POST — разослать сообщение выбранной аудитории. */
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!isAdmin(session?.user?.role)) return NextResponse.json({ error: "Нет прав" }, { status: 403 })
+  const guard = await requireAdminSession()
+  if (guard.denied) return guard.denied
+  const session = guard.session
 
   // Рассылка уходит тысячам людей и её нельзя отозвать: ограничитель защищает
   // от случайной двойной отправки по повторному нажатию кнопки.
