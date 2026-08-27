@@ -14,6 +14,9 @@ import PostActions from "@/components/forum/PostActions"
 import { canMarkBestAnswer, canReactToPost, pluralTimes, reputationRank } from "@/lib/forum-reputation"
 import { canEditPost } from "@/lib/forum"
 import { loadPostReactions } from "@/lib/forum-reputation-store"
+import { canReportPost } from "@/lib/forum-reports"
+import { isSubscribed } from "@/lib/forum-subscriptions"
+import SubscribeButton from "@/components/forum/SubscribeButton"
 import ReplyForm from "./ReplyForm"
 
 type Props = { params: Promise<{ section: string; topic: string }>; searchParams: Promise<{ page?: string }> }
@@ -87,6 +90,10 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
      двадцать обращений к базе там, где хватает одного. */
   const reactions = await loadPostReactions(posts.map((post) => post.id), viewerId)
 
+  /* Состояние подписки: кнопка должна показывать, включены ли уже
+     уведомления, иначе человек подписывается повторно и отписывается. */
+  const subscribed = await isSubscribed(topic.id, viewerId)
+
   /* Просмотр считается без ожидания ответа: задержка страницы ради
      счётчика не оправдана, а потеря одного просмотра при сбое не важна. */
   void prisma.forumTopic.update({ where: { id: topic.id }, data: { views: { increment: 1 } } }).catch(() => {})
@@ -118,6 +125,14 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
             </Text>
             {topic.isClosed && <Badge size="xs" variant="light" color="gray">закрыта</Badge>}
           </Group>
+
+          {/* Подписка под заголовком: её включают, прочитав первое
+              сообщение и решив, что тема стоит внимания. */}
+          {viewerId && (
+            <Box mt={8}>
+              <SubscribeButton topicId={topic.id} initialSubscribed={subscribed} />
+            </Box>
+          )}
         </Box>
 
         {/* Опрос над обсуждением и только на первой странице: он относится
@@ -252,6 +267,11 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                         topicClosed: topic.isClosed,
                         viewerId,
                       }).allowed}
+                      canReport={canReportPost({
+                        postAuthorId: post.authorId,
+                        viewerId,
+                        postDeleted: false,
+                      })}
                       editedAt={post.editedAt ? formatAdminDateTimeShort(post.editedAt) : null}
                       isBestAnswer={post.isBestAnswer}
                       canMarkBest={canMarkBestAnswer({

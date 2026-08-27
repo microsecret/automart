@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { canEditPost, validatePostContent } from "@/lib/forum"
 import { isModerator } from "@/lib/permissions"
+import { notifyTopicSubscribers } from "@/lib/forum-subscriptions"
 
 export const dynamic = "force-dynamic"
 
@@ -28,7 +29,13 @@ export async function POST(request: NextRequest) {
 
   const topic = await prisma.forumTopic.findFirst({
     where: { id: topicId, deletedAt: null },
-    select: { id: true, isClosed: true, sectionId: true },
+    select: {
+      id: true, isClosed: true, sectionId: true,
+      /* Заголовок и адрес нужны уведомлению: «вам ответили» без указания
+         темы ничего не говорит, когда подписок десяток. */
+      title: true, slug: true,
+      section: { select: { slug: true } },
+    },
   })
   if (!topic) return NextResponse.json({ error: "Тема не найдена" }, { status: 404 })
   if (topic.isClosed) return NextResponse.json({ error: "Тема закрыта для ответов" }, { status: 409 })
@@ -59,6 +66,18 @@ export async function POST(request: NextRequest) {
       data: { forumPostCount: { increment: 1 } },
     })
     return created
+  })
+
+  /* Уведомления после транзакции, а не внутри: рассылка по двум сотням
+     подписчиков не должна держать сделку открытой, а её сбой — отменять
+     уже написанный ответ. */
+  void notifyTopicSubscribers({
+    topicId: topic.id,
+    topicTitle: topic.title,
+    topicSlug: topic.slug,
+    sectionSlug: topic.section.slug,
+    authorId: session.user.id,
+    authorName: session.user.name ?? null,
   })
 
   return NextResponse.json({ post }, { status: 201 })

@@ -56,6 +56,10 @@ export async function POST(request: NextRequest) {
         lastPostAt: now,
         prefix,
         posts: { create: { authorId: session.user.id, content } },
+        /* Автор подписан на свою тему сразу: он задал вопрос и ждёт
+           ответа больше всех, а требовать отдельного нажатия — значит
+           потерять его же. */
+        subscriptions: { create: { userId: session.user.id } },
       },
       select: { id: true, slug: true },
     })

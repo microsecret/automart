@@ -3,10 +3,11 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Badge, Button, Group, Stack, Text, Tooltip } from "@mantine/core"
-import { IconBulb, IconCheck, IconHeart, IconPencil, IconQuote } from "@tabler/icons-react"
+import { IconBulb, IconCheck, IconFlag, IconHeart, IconPencil, IconQuote } from "@tabler/icons-react"
 import { REACTION_KINDS } from "@/lib/forum-reputation"
 import { requestQuote } from "@/lib/forum-quote"
 import MarkupEditor from "@/components/forum/MarkupEditor"
+import ReportDialog from "@/components/forum/ReportDialog"
 import { validatePostContent } from "@/lib/forum"
 
 /**
@@ -30,6 +31,7 @@ type Props = {
   canReact: boolean
   canQuote: boolean
   canEdit: boolean
+  canReport: boolean
   editedAt: string | null
   isBestAnswer: boolean
   canMarkBest: boolean
@@ -45,6 +47,7 @@ export default function PostActions({
   canReact,
   canQuote,
   canEdit,
+  canReport,
   editedAt,
   isBestAnswer: initialBest,
   canMarkBest,
@@ -58,6 +61,7 @@ export default function PostActions({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(rawContent)
   const [editError, setEditError] = useState<string | null>(null)
+  const [reporting, setReporting] = useState(false)
 
   const react = async (kind: string) => {
     if (!canReact || busy) return
@@ -234,6 +238,27 @@ export default function PostActions({
         <Badge size="sm" variant="light" color="teal" leftSection={<IconCheck size={12} />}>
           Решило вопрос
         </Badge>
+      )}
+
+      {canReport && (
+        <>
+          {/* Жалоба последней в ряду и серым: она нужна редко, и заметная
+              кнопка рядом с реакциями провоцирует нажимать её вместо
+              возражения по существу. */}
+          <Button
+            variant="subtle"
+            color="gray"
+            size="compact-xs"
+            px={7}
+            className="forum-reaction"
+            leftSection={<IconFlag size={13} />}
+            onClick={() => setReporting(true)}
+            disabled={busy !== null}
+          >
+            Пожаловаться
+          </Button>
+          <ReportDialog postId={postId} opened={reporting} onClose={() => setReporting(false)} />
+        </>
       )}
 
       {canMarkBest && (
