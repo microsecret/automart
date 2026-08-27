@@ -882,7 +882,7 @@ export default function HomePage(p: HomePageProps = {}) {
           человек приглядывался.
 
           Приглушение говорит «идёт работа», сохраняя контекст. */}
-      <Box className="catalog-results" data-updating={!isLoading && isValidating ? "true" : undefined}>
+      <Box className="catalog-results" data-probe-key={listingsKey || "null"} data-probe-init={p.initialListings ? "есть" : "нет"} data-updating={!isLoading && isValidating ? "true" : undefined}>
       {hasInvalidPriceRange ? (
         <EmptyState
           title="Исправьте диапазон цены"
