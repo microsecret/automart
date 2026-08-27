@@ -882,7 +882,7 @@ export default function HomePage(p: HomePageProps = {}) {
           человек приглядывался.
 
           Приглушение говорит «идёт работа», сохраняя контекст. */}
-      <Box className="catalog-results" data-probe-key={listingsKey || "null"} data-probe-init={p.initialListings ? "есть" : "нет"} data-updating={!isLoading && isValidating ? "true" : undefined}>
+      <Box className="catalog-results" data-updating={!isLoading && isValidating ? "true" : undefined}>
       {hasInvalidPriceRange ? (
         <EmptyState
           title="Исправьте диапазон цены"
@@ -890,7 +890,14 @@ export default function HomePage(p: HomePageProps = {}) {
           actionLabel="Очистить цены"
           onAction={clearPriceRange}
         />
-      ) : isLoading ? (
+      ) : isLoading && !data ? (
+        /* Условие «и нет данных», а не просто isLoading.
+
+           SWR держит isLoading истинным на первом проходе даже когда
+           fallbackData уже заполнил data: замер на продакшене показал
+           ключ и стартовые данные на месте, а в разметке всё равно
+           заглушку. Поисковый робот получал «Загружаем объявления»
+           вместо семи карточек. */
         <ResultsGridSkeleton count={8} />
       ) : error ? (
         <AsyncErrorState
