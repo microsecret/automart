@@ -78,6 +78,7 @@ import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 import { filterMeaningfulSpecs } from "@/lib/spec-visibility"
 import NextImage from "next/image"
 import VehicleFallback from "@/components/listings/VehicleFallback"
+import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-intent"
 
 interface VehicleData {
   id: string
@@ -239,7 +240,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         message: "После входа вы вернётесь к этому автомобилю, а избранное будет доступно на всех устройствах.",
         color: "indigo",
       })
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/vehicle/${data.id}`)}`)
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(returnUrlWithIntent(`/listings/vehicle/${data.id}`, "favorite"))}`)
       return
     }
     void toggleFavorite(data.listingId)
@@ -252,7 +253,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
         message: "Так контакты продавцов защищены от автоматического сбора.",
         color: "indigo",
       })
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/vehicle/${data.id}`)}`)
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(returnUrlWithIntent(`/listings/vehicle/${data.id}`, "phone"))}`)
       return
     }
 
@@ -275,6 +276,31 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
       setContactRevealing(false)
     }
   }
+  /* Намерение, отложенное на время входа.
+
+     Человек нажал «Показать телефон», ушёл регистрироваться и вернулся —
+     и должен был нажать кнопку заново. Половина на этом уходит: они уже
+     сделали шаг, который от них требовали, и не понимают, почему ничего
+     не произошло.
+
+     Выполняется один раз: признак снимается сразу, а намерение убирается
+     из адреса — иначе обновление страницы открывало бы телефон снова, а
+     «Назад» вело бы по кругу. */
+  const intentDone = useRef(false)
+  useEffect(() => {
+    if (intentDone.current || !session || !data.listingId) return
+
+    const intent = readIntent(window.location.search)
+    if (!intent) return
+
+    intentDone.current = true
+    window.history.replaceState(null, "", stripIntent(window.location.pathname + window.location.search))
+
+    if (intent === "phone") void revealPhone()
+    if (intent === "favorite") void toggleFavorite(data.listingId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, data.listingId])
+
   const selectImage = (index: number) => {
     setActiveImage(index)
     setImageFailed(false)
