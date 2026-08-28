@@ -11,6 +11,10 @@ const autopost = read("../src/lib/listing-chat-autopost.ts")
    форума, и держать его в двух местах значит однажды поправить одно и
    забыть про другое. */
 const sender = read("../src/lib/telegram-post-sender.ts")
+/* Чтение снимков вынесено в общий модуль: им пользуются и бесплатная
+   публикация, и платное продвижение. */
+const photoFiles = read("../src/lib/telegram-photo-files.ts")
+const paidDelivery = read("../src/lib/chat-promotion-delivery.ts")
 const post = read("../src/lib/chat-promotion-post.ts")
 const webhook = read("../src/app/api/telegram/webhook/route.ts")
 const moderation = read("../src/app/api/admin/listings/route.ts")
@@ -128,8 +132,17 @@ test("свои снимки уходят файлом, а не ссылкой", 
 test("читаются только файлы из /uploads", () => {
   /* Адрес приходит из базы: «/uploads/../../etc/passwd» не должен
      превращаться в чтение чужого файла. */
-  assert.match(sender, /startsWith\("\/uploads\/"\)/)
-  assert.match(sender, /name\.includes\("\.\."\)/)
+  assert.match(photoFiles, /startsWith\("\/uploads\/"\)/)
+  assert.match(photoFiles, /name\.includes\("\.\."\)/)
+})
+
+test("платное продвижение шлёт снимки тем же способом", () => {
+  /* Там адрес и вовсе передавался относительным — «/uploads/...», —
+     а такой Telegram отвергает сразу: оплаченное продвижение уходило бы
+     в чаты вовсе без фотографий. */
+  assert.match(paidDelivery, /readLocalPhotos/)
+  assert.match(paidDelivery, /telegramPhotoApi/)
+  assert.doesNotMatch(paidDelivery, /photo: post\.photos\[0\] \}/)
 })
 
 test("внешний адрес остаётся ссылкой", () => {

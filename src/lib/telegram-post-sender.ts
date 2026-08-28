@@ -7,9 +7,8 @@
  * это в двух местах значит однажды поправить одно и забыть про другое.
  */
 
-import { readFile } from "node:fs/promises"
-import path from "node:path"
 import { telegramApi, telegramPhotoApi, type TelegramUpload } from "@/lib/telegram"
+import { readLocalPhotos, photoMime } from "@/lib/telegram-photo-files"
 import { absoluteUrl } from "@/lib/site-url"
 
 export type OutgoingPost = {
@@ -25,48 +24,6 @@ export type OutgoingPost = {
  * объявление», у обсуждения — «Читать обсуждение», и общая формулировка
  * звучала бы мимо в обоих случаях.
  */
-/**
- * Читает свои снимки с диска, чтобы отправить их байтами.
- *
- * Ссылку на наши картинки Telegram не берёт: на `https://lewheel.ru/
- * uploads/...` он отвечает «failed to get HTTP URL content», хотя файл
- * открывается и браузером, и curl, а сторонние картинки уходят. Все
- * десять объявлений площадки не попали бы в чаты вовсе.
- *
- * Читаются только пути внутри /uploads: адрес приходит из базы, и
- * запрос вида «/uploads/../../etc/passwd» не должен превращаться в
- * чтение чужого файла. Внешние адреса остаются ссылками — их Telegram
- * забирает сам.
- */
-async function readLocalPhotos(photos: string[]): Promise<Map<string, Buffer>> {
-  const files = new Map<string, Buffer>()
-  const root = path.join(process.cwd(), "public", "uploads")
-
-  for (const photo of photos) {
-    if (!photo.startsWith("/uploads/")) continue
-
-    const name = photo.slice("/uploads/".length)
-    /* Имя файла и ничего больше: ни каталогов, ни переходов вверх. */
-    if (!/^[A-Za-z0-9._-]+$/.test(name) || name.includes("..")) continue
-
-    try {
-      files.set(photo, await readFile(path.join(root, name)))
-    } catch {
-      /* Файла нет на диске — снимок уйдёт ссылкой и, скорее всего, не
-         дойдёт; это лучше, чем потерять весь пост. */
-    }
-  }
-
-  return files
-}
-
-/** Вид вложения по расширению: Telegram смотрит на имя файла. */
-function photoMime(name: string): string {
-  if (/\.png$/i.test(name)) return "image/png"
-  if (/\.webp$/i.test(name)) return "image/webp"
-  return "image/jpeg"
-}
-
 export async function sendChatPost(
   chatId: string,
   post: OutgoingPost,

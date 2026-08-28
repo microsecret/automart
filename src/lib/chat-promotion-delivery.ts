@@ -12,7 +12,8 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import { telegramApi, getTelegramBotUsername } from "@/lib/telegram"
+import { telegramApi, telegramPhotoApi, getTelegramBotUsername, type TelegramUpload } from "@/lib/telegram"
+import { readLocalPhotos, photoMime } from "@/lib/telegram-photo-files"
 import { absoluteUrl } from "@/lib/site-url"
 import { buildChatPost, type PromotedListing } from "@/lib/chat-promotion-post"
 
@@ -33,13 +34,52 @@ type SendResult = { chatId: string; messageId: number | null; error?: string }
  */
 async function publishToChat(chatId: string, post: ReturnType<typeof buildChatPost>): Promise<SendResult> {
   try {
+    /* Снимки уходят байтами, а не ссылкой: Telegram отвечает «failed to
+       get HTTP URL content» на любую картинку с нашего домена. Здесь
+       адрес и вовсе передавался относительным — «/uploads/...», — а
+       такой Telegram отвергает сразу, и оплаченное продвижение уходило
+       бы в чаты вовсе без фотографий. Подробности в
+       telegram-photo-files. */
+    const local = await readLocalPhotos(post.photos)
+
     if (post.photos.length > 1) {
-      await telegramApi("sendMediaGroup", {
-        chat_id: chatId,
-        media: post.photos.map((url) => ({ type: "photo", media: url })),
+      const uploads: TelegramUpload[] = []
+      const media = post.photos.map((url, index) => {
+        const file = local.get(url)
+        if (!file) return { type: "photo", media: absoluteUrl(url) }
+
+        const field = `photo${index}`
+        uploads.push({
+          field,
+          filename: url.slice(url.lastIndexOf("/") + 1),
+          contentType: photoMime(url),
+          data: file,
+        })
+        return { type: "photo", media: `attach://${field}` }
       })
+
+      if (uploads.length) {
+        await telegramPhotoApi({ chat_id: chatId, media }, { method: "sendMediaGroup", uploads })
+      } else {
+        await telegramApi("sendMediaGroup", { chat_id: chatId, media })
+      }
     } else if (post.photos.length === 1) {
-      await telegramApi("sendPhoto", { chat_id: chatId, photo: post.photos[0] })
+      const single = post.photos[0]
+      const file = local.get(single)
+
+      if (file) {
+        await telegramPhotoApi({ chat_id: chatId }, {
+          uploads: [{
+            field: "photo",
+            filename: single.slice(single.lastIndexOf("/") + 1),
+            contentType: photoMime(single),
+            data: file,
+          }],
+        })
+      } else {
+        /* Внешний адрес Telegram забирает сам — читать его неоткуда. */
+        await telegramApi("sendPhoto", { chat_id: chatId, photo: absoluteUrl(single) })
+      }
     }
 
     const message = await telegramApi<{ message_id: number }>("sendMessage", {
