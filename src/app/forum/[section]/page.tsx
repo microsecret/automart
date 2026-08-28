@@ -75,6 +75,24 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
 
   const totalPages = Math.max(1, Math.ceil(section.topicCount / TOPICS_PER_PAGE))
 
+  /* Свежие обсуждения с площадки — только для пустого раздела.
+
+     Из девяноста девяти разделов темы есть в тринадцати: человек заходит
+     в раздел своей марки и видит «здесь пока не обсуждали». Пустая
+     страница отталкивает сильнее, чем отсутствие раздела — а разговор
+     идёт, просто не здесь. */
+  const elsewhere = topics.length === 0
+    ? await prisma.forumTopic.findMany({
+        where: { deletedAt: null, sectionId: { not: section.id } },
+        orderBy: { lastPostAt: "desc" },
+        take: 6,
+        select: {
+          slug: true, title: true,
+          section: { select: { slug: true, title: true } },
+        },
+      })
+    : []
+
   return (
     <Container size="lg" py={{ base: "md", md: "xl" }}>
       <Stack gap="md">
@@ -136,6 +154,31 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
               <Text size="sm" c="var(--market-muted)" maw={420}>
                 Задайте вопрос — на форуме отвечают владельцы, которые уже прошли через это.
               </Text>
+
+              {/* Обсуждения из других разделов: человек видит, что форум
+                  живой, и уходит читать вместо того, чтобы закрыть
+                  вкладку. */}
+              {elsewhere.length > 0 && (
+                <Stack gap={4} mt="md" w="100%" maw={520}>
+                  <Text size="xs" fw={600} c="var(--market-muted)" ta="left">
+                    Сейчас обсуждают в других разделах
+                  </Text>
+                  {elsewhere.map((item) => (
+                    <Anchor
+                      key={item.slug}
+                      component={Link}
+                      href={`/forum/${item.section.slug}/${item.slug}`}
+                      size="sm"
+                      ta="left"
+                      c="var(--market-ink)"
+                      underline="hover"
+                    >
+                      {item.title}
+                      <Text component="span" fz="xs" c="var(--market-muted)"> · {item.section.title}</Text>
+                    </Anchor>
+                  ))}
+                </Stack>
+              )}
             </Stack>
           </Card>
         ) : (
