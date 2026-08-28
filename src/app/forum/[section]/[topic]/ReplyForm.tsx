@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { Button, Card, Group, Stack, Text } from "@mantine/core"
+import { IconBrandTelegram } from "@tabler/icons-react"
 import { validatePostContent } from "@/lib/forum"
 import MarkupEditor from "@/components/forum/MarkupEditor"
 import { QUOTE_EVENT, buildQuote, type QuoteRequest } from "@/lib/forum-quote"
@@ -16,6 +17,19 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
   const [content, setContent] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+
+  /* Человек, пришедший из чата, входа по паролю не проходил: у него его
+     просто нет. Отправлять его на форму пароля — тупик, из которого он
+     уходит. Бот заводит учётную запись тремя шагами и возвращает сюда.
+
+     Признак читается после отрисовки: на сервере адреса нет, и проверка
+     прямо в разметке дала бы мигание — сначала общий текст, потом
+     нужный. */
+  const [fromTelegram, setFromTelegram] = useState(false)
+  useEffect(() => {
+    setFromTelegram(new URLSearchParams(window.location.search).get("from") === "telegram")
+  }, [])
   const cardRef = useRef<HTMLDivElement>(null)
 
   /* Цитата приходит событием от кнопки под сообщением: она в другой
@@ -45,12 +59,37 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
   if (!session) {
     return (
       <Card withBorder radius="md" p="sm">
-        <Group justify="space-between" gap="sm" wrap="wrap">
-          <Text size="sm" c="var(--market-muted)">Войдите, чтобы ответить в теме</Text>
-          <Button component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(returnPath)}`} size="xs" radius="md" color="indigo">
-            Войти
-          </Button>
-        </Group>
+        <Stack gap="xs">
+          <Text size="sm" c="var(--market-muted)">
+            {fromTelegram
+              ? "Чтобы ответить, заведите аккаунт в боте — это три шага и пара минут."
+              : "Войдите, чтобы ответить в теме"}
+          </Text>
+          <Group gap="xs" wrap="wrap">
+            {fromTelegram && botUsername && (
+              <Button
+                component="a"
+                href={`https://t.me/${botUsername}`}
+                size="xs"
+                radius="md"
+                color="indigo"
+                leftSection={<IconBrandTelegram size={14} />}
+              >
+                Открыть бот
+              </Button>
+            )}
+            <Button
+              component={Link}
+              href={`/auth/signin?callbackUrl=${encodeURIComponent(returnPath)}`}
+              size="xs"
+              radius="md"
+              variant={fromTelegram ? "subtle" : "filled"}
+              color="indigo"
+            >
+              {fromTelegram ? "У меня уже есть аккаунт" : "Войти"}
+            </Button>
+          </Group>
+        </Stack>
       </Card>
     )
   }

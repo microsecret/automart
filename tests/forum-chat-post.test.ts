@@ -146,3 +146,19 @@ test("отправка идёт через общий модуль", () => {
   assert.match(broadcast, /sendChatPost/)
   assert.match(broadcast, /buttonsCaption: "Читать обсуждение:"/)
 })
+
+test("пришедшему из чата показан путь, а не тупик", () => {
+  /* Человек из чата входа по паролю не проходил: у него его просто нет.
+     Отправлять его на форму пароля — тупик, из которого он уходит. */
+  const form = read("../src/app/forum/[section]/[topic]/ReplyForm.tsx")
+  assert.match(form, /fromTelegram/)
+  assert.match(form, /https:\/\/t\.me\/\$\{botUsername\}/)
+  assert.match(form, /три шага/)
+})
+
+test("признак чата читается после отрисовки", () => {
+  /* На сервере адреса нет, и проверка прямо в разметке дала бы мигание:
+     сначала общий текст, потом нужный. */
+  const form = read("../src/app/forum/[section]/[topic]/ReplyForm.tsx")
+  assert.match(form, /useEffect\(\(\) => \{\s*setFromTelegram/)
+})
