@@ -200,3 +200,47 @@ test("из очереди можно перейти к сообщению", () =
   const page = read("../src/app/admin/forum/page.tsx")
   assert.match(page, /#post-\$\{report\.post\.id\}/)
 })
+
+// === Модерация тем ===
+
+const topicRoute = read("../src/app/api/admin/forum-topics/route.ts")
+
+test("модерация тем закрыта от посторонних", () => {
+  assert.match(topicRoute, /requireModeratorSession/)
+})
+
+test("перенос двигает счётчики обоих разделов одной сделкой", () => {
+  /* Разъедься они, и в списке разделов будет «12 тем» там, где их
+     одиннадцать, а восстановить правду можно только полным пересчётом. */
+  const moveBlock = topicRoute.slice(topicRoute.indexOf('action === "move"'))
+  assert.match(moveBlock, /\$transaction/)
+  assert.match(moveBlock, /topicCount: \{ decrement: 1 \}, postCount: \{ decrement: postCount \}/)
+  assert.match(moveBlock, /topicCount: \{ increment: 1 \}, postCount: \{ increment: postCount \}/)
+})
+
+test("сообщения считаются один раз", () => {
+  // Два подсчёта одного и того же — лишний запрос и повод разойтись.
+  const moveBlock = topicRoute.slice(topicRoute.indexOf('action === "move"'))
+  const counts = moveBlock.match(/forumPost\.count/g) || []
+  assert.equal(counts.length, 1, `подсчётов сообщений: ${counts.length}`)
+})
+
+test("перенос в тот же раздел отклоняется", () => {
+  assert.match(topicRoute, /Тема уже в этом разделе/)
+})
+
+test("после переноса человек попадает на новый адрес", () => {
+  /* Адрес темы содержит раздел: прежний после переноса ведёт в никуда. */
+  const panel = read("../src/components/forum/TopicModeration.tsx")
+  assert.match(panel, /router\.replace\(`\/forum\/\$\{payload\.sectionSlug\}\/\$\{payload\.slug\}`\)/)
+})
+
+test("разделы для переноса тянутся только модератору", () => {
+  // Сотня строк в списке не нужна тем, кто просто читает тему.
+  const page = read("../src/app/forum/[section]/[topic]/page.tsx")
+  assert.match(page, /isModer\s*\n?\s*\? await prisma\.forumSection\.findMany/)
+})
+
+test("неизвестное действие над темой отклоняется", () => {
+  assert.match(topicRoute, /Неизвестное действие/)
+})

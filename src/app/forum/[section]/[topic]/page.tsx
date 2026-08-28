@@ -17,6 +17,8 @@ import { loadPostReactions } from "@/lib/forum-reputation-store"
 import { canReportPost } from "@/lib/forum-reports"
 import { isSubscribed } from "@/lib/forum-subscriptions"
 import SubscribeButton from "@/components/forum/SubscribeButton"
+import TopicModeration from "@/components/forum/TopicModeration"
+import { isModerator } from "@/lib/permissions"
 import ReplyForm from "./ReplyForm"
 
 type Props = { params: Promise<{ section: string; topic: string }>; searchParams: Promise<{ page?: string }> }
@@ -56,7 +58,7 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
   const topic = await prisma.forumTopic.findFirst({
     where: { slug: topicSlugParam, deletedAt: null },
     select: {
-      id: true, title: true, isClosed: true, replyCount: true, createdAt: true, authorId: true,
+      id: true, title: true, isClosed: true, isPinned: true, replyCount: true, createdAt: true, authorId: true,
       author: { select: { name: true, image: true } },
       section: { select: { slug: true, title: true } },
       poll: {
@@ -93,6 +95,16 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
   /* Состояние подписки: кнопка должна показывать, включены ли уже
      уведомления, иначе человек подписывается повторно и отписывается. */
   const subscribed = await isSubscribed(topic.id, viewerId)
+
+  /* Разделы для переноса тянутся только модератору: сотня строк в
+     выпадающем списке не нужна тем, кто просто читает тему. */
+  const isModer = isModerator(session?.user?.role)
+  const sections = isModer
+    ? await prisma.forumSection.findMany({
+        orderBy: [{ groupKey: "asc" }, { position: "asc" }],
+        select: { slug: true, title: true },
+      })
+    : []
 
   /* Просмотр считается без ожидания ответа: задержка страницы ради
      счётчика не оправдана, а потеря одного просмотра при сбое не важна. */
@@ -131,6 +143,20 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
           {viewerId && (
             <Box mt={8}>
               <SubscribeButton topicId={topic.id} initialSubscribed={subscribed} />
+            </Box>
+          )}
+
+          {/* Действия модератора отдельной строкой под подпиской: они
+              нужны редко, и мешать их с кнопкой читателя значит путать
+              обоих. */}
+          {isModer && (
+            <Box mt={6}>
+              <TopicModeration
+                topicId={topic.id}
+                isPinned={topic.isPinned}
+                isClosed={topic.isClosed}
+                sections={sections.map((item) => ({ value: item.slug, label: item.title }))}
+              />
             </Box>
           )}
         </Box>
