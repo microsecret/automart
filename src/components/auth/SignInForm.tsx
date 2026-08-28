@@ -31,10 +31,14 @@ export default function SignInForm() {
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false)
   const [verificationState, setVerificationState] = useState<string | null>(null)
   const [callbackUrl, setCallbackUrl] = useState("/dashboard")
+  /* Пришёл из чата: пароля у него, скорее всего, нет вовсе — признак
+     несут ссылки от объявления до формы входа. */
+  const [fromTelegram, setFromTelegram] = useState(false)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setVerificationState(params.get("verified"))
     setCallbackUrl(getSafeCallbackUrl(params.get("callbackUrl")))
+    setFromTelegram(params.get("from") === "telegram")
   }, [])
 
   const form = useForm({
@@ -134,7 +138,11 @@ export default function SignInForm() {
           Войти через Telegram
         </Button>
         <Text size="xs" c="gray.5" ta="center">
-          Регистрация проходит в боте — за минуту, без анкеты
+          {fromTelegram
+            /* Он пришёл из группы по кнопке: у него уже есть Telegram, и
+               сказать надо не «зарегистрируйтесь», а «вам сюда». */
+            ? "Вы пришли из чата — вход в один шаг, пароль не нужен"
+            : "Регистрация проходит в боте — за минуту, без анкеты"}
         </Text>
       </Stack>
 

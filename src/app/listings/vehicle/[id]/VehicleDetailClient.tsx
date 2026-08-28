@@ -210,6 +210,18 @@ function formatDetailValue(key: string, value: string | number | boolean) {
 }
 
 export default function VehicleDetailClient({ data }: { data: VehicleData }) {
+  /* Человек, пришедший из чата, входа по паролю не проходил: у него его
+     просто нет. Признак нужно донести до формы входа, иначе она встретит
+     его полем пароля — тупиком, из которого он уходит.
+
+     Читается после отрисовки: на сервере адреса нет, и проверка прямо в
+     разметке дала бы расхождение разметки сервера и браузера. */
+  const [fromTelegram, setFromTelegram] = useState(false)
+  useEffect(() => {
+    setFromTelegram(new URLSearchParams(window.location.search).get("from") === "telegram")
+  }, [])
+  const messageHref = `/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}${fromTelegram ? "&from=telegram" : ""}`
+
   const [viewCount, setViewCount] = useState(data.views)
   const [phone, setPhone] = useState<string | null>(null)
   const [contactRevealing, setContactRevealing] = useState(false)
@@ -974,7 +986,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     color="indigo"
                     leftSection={<IconMessageCircle2 size={18} />}
                     component={Link}
-                    href={`/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}`}
+                    href={messageHref}
                   >
                     Написать продавцу
                   </Button>
@@ -1241,7 +1253,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
           size="md"
           radius="md"
           component={Link}
-          href={`/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}`}
+          href={messageHref}
           aria-label="Написать продавцу"
           px={12}
         >

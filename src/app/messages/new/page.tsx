@@ -23,9 +23,15 @@ function NewMessageContent() {
          продавцу», и без callbackUrl он оказывался на главной — намерение
          и объявление терялись на самом дорогом шаге воронки. */
       const here = `${window.location.pathname}${window.location.search}`
-      router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(here)}`)
+
+      /* Признак «из чата» переносится на форму входа: человек, пришедший
+         из Telegram, пароля не заводил, и форма пароля для него тупик.
+         Без переноса он терялся здесь, на последнем шаге перед входом. */
+      const fromTelegram = searchParams.get("from") === "telegram"
+      const signIn = `/auth/signin?callbackUrl=${encodeURIComponent(here)}${fromTelegram ? "&from=telegram" : ""}`
+      router.replace(signIn)
     }
-  }, [router, session, status])
+  }, [router, searchParams, session, status])
 
   useEffect(() => {
     if (!session || !recipientId) return
