@@ -30,6 +30,14 @@ export type PublishedInput = {
   chatTitle: string | null
   siteUrl: string
   botUsername?: string
+  /**
+   * Объявление публиковалось раньше, а в чат уходит только сейчас.
+   *
+   * Досылает те объявления, что были одобрены до появления рассылки.
+   * Говорить их продавцу «объявление опубликовано» нельзя: оно
+   * опубликовано неделю назад, и такое сообщение читается как сбой.
+   */
+  alreadyPublished?: boolean
 }
 
 /**
@@ -46,10 +54,16 @@ export function buildPublishedMessage(input: PublishedInput): PublishedMessage {
   const site = input.siteUrl.replace(/\/$/, "")
   const path = `/listings/vehicle/${input.listingId}`
 
-  const lines = [`✅ <b>Объявление опубликовано</b>`, "", `«${escapeHtml(name)}» прошло проверку и видно покупателям.`]
+  const lines = input.alreadyPublished
+    /* Объявление давно на площадке — новость здесь только про чат, и
+       заголовок обязан говорить именно о ней. */
+    ? [`📣 <b>Объявление ушло в чат</b>`, "", `«${escapeHtml(name)}» показали подписчикам группы.`]
+    : [`✅ <b>Объявление опубликовано</b>`, "", `«${escapeHtml(name)}» прошло проверку и видно покупателям.`]
 
   if (input.chatTitle) {
-    lines.push("", `📣 Отправили в чат «${escapeHtml(input.chatTitle)}» — его увидят подписчики группы.`)
+    lines.push("", input.alreadyPublished
+      ? `Чат: «${escapeHtml(input.chatTitle)}».`
+      : `📣 Отправили в чат «${escapeHtml(input.chatTitle)}» — его увидят подписчики группы.`)
   }
 
   /* Продвижение упомянуто одной строкой и без нажима: человек только что

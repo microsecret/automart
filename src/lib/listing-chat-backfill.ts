@@ -16,6 +16,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { autopostListingToChat } from "@/lib/listing-chat-autopost"
+import { notifyListingPublished } from "@/lib/listing-published-notify"
 
 /**
  * Сколько объявлений уходит за один запуск.
@@ -84,6 +85,15 @@ export async function backfillListingChatPosts(): Promise<BackfillResult> {
       result.failed += 1
       continue
     }
+
+    /* Продавцу говорим, что машину показали подписчикам: без этого
+       человек не узнаёт, что получил от площадки, и не понимает, за что
+       потом платить продвижение.
+
+       Текст здесь свой: объявление опубликовано давно, и сообщение
+       «объявление опубликовано» читалось бы как сбой. */
+    void notifyListingPublished(listing.id, chatTitle, { alreadyPublished: true })
+
     result.sent += 1
   }
 

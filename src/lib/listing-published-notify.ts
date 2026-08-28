@@ -28,6 +28,7 @@ import { buildPublishedMessage } from "@/lib/listing-published-message"
 export async function notifyListingPublished(
   listingId: string,
   chatTitle: string | null,
+  options: { alreadyPublished?: boolean } = {},
 ): Promise<boolean> {
   try {
     const listing = await prisma.listing.findUnique({
@@ -54,6 +55,7 @@ export async function notifyListingPublished(
       chatTitle,
       siteUrl: absoluteUrl("/"),
       botUsername: getTelegramBotUsername() ?? undefined,
+      alreadyPublished: options.alreadyPublished,
     })
 
     await telegramApi("sendMessage", {

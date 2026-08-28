@@ -57,3 +57,26 @@ test("пустой заголовок не оставляет пустых ка�
   const message = buildPublishedMessage({ ...base, title: "   " })
   assert.ok(message.text.includes("«Объявление»"))
 })
+
+test("досылка не говорит «объявление опубликовано»", () => {
+  /* Объявление на площадке неделю, а в чат уходит только сейчас: такое
+     сообщение читалось бы как сбой. Новость здесь про чат. */
+  const message = buildPublishedMessage({ ...base, alreadyPublished: true })
+  assert.ok(!message.text.includes("прошло проверку"))
+  assert.ok(message.text.includes("ушло в чат"))
+  assert.ok(message.text.includes("Авторынок Казань"))
+})
+
+test("свежее объявление сохраняет прежний текст", () => {
+  // Правка не должна менять то, что видит продавец при одобрении.
+  const message = buildPublishedMessage(base)
+  assert.ok(message.text.includes("опубликовано"))
+  assert.ok(message.text.includes("прошло проверку"))
+})
+
+test("кнопки одинаковы в обоих случаях", () => {
+  // Человеку в любом случае нужен путь к объявлению.
+  const fresh = buildPublishedMessage(base)
+  const late = buildPublishedMessage({ ...base, alreadyPublished: true })
+  assert.deepEqual(fresh.buttons, late.buttons)
+})
