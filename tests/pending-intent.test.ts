@@ -71,3 +71,12 @@ test("возврат всегда на ту же страницу", () => {
   const rules = read("../src/lib/pending-intent.ts")
   assert.doesNotMatch(rules, /https?:\/\//, "в правилах не должно быть внешних адресов")
 })
+
+test("на странице запчасти намерение тоже не теряется", () => {
+  /* Та же кнопка телефона, та же потеря: человек уходил на вход и
+     возвращался к ненажатой кнопке. */
+  const part = read("../src/app/listings/part/[id]/PartDetailClient.tsx")
+  assert.match(part, /returnUrlWithIntent\(`\/listings\/part\/\$\{data\.id\}`, "phone"\)/)
+  assert.match(part, /returnUrlWithIntent\(`\/listings\/part\/\$\{data\.id\}`, "favorite"\)/)
+  assert.match(part, /intentDone\.current = true/)
+})

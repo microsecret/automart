@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import {
   Container,
@@ -50,6 +50,7 @@ import { notifications } from "@mantine/notifications"
 import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { useFavorites } from "@/hooks/useFavorites"
+import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-intent"
 import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 
 const PART_TYPES_MAP: Record<string, string> = {
@@ -131,7 +132,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
         message: "Избранное синхронизируется между сайтом и Telegram после авторизации.",
         color: "indigo",
       })
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/part/${data.id}`)}`)
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(returnUrlWithIntent(`/listings/part/${data.id}`, "favorite"))}`)
       return
     }
     void toggleFavorite(data.listingId)
@@ -143,6 +144,24 @@ export default function PartDetailClient({ data }: { data: PartData }) {
     setActiveImage(index)
     setImageFailed(false)
   }
+  /* Намерение, отложенное на время входа: человек нажал «Показать
+     телефон», ушёл регистрироваться и вернулся — кнопку нажимать заново
+     не нужно. Подробности в src/lib/pending-intent.ts. */
+  const intentDone = useRef(false)
+  useEffect(() => {
+    if (intentDone.current || !session || !data.listingId) return
+
+    const intent = readIntent(window.location.search)
+    if (!intent) return
+
+    intentDone.current = true
+    window.history.replaceState(null, "", stripIntent(window.location.pathname + window.location.search))
+
+    if (intent === "phone") void revealPhone()
+    if (intent === "favorite") void toggleFavorite(data.listingId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, data.listingId])
+
   const revealPhone = async () => {
     if (!data.listingId || phone || contactRevealing) return
     if (!session) {
@@ -151,7 +170,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
         message: "Так контакты продавцов защищены от автоматического сбора.",
         color: "indigo",
       })
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/listings/part/${data.id}`)}`)
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(returnUrlWithIntent(`/listings/part/${data.id}`, "phone"))}`)
       return
     }
 
