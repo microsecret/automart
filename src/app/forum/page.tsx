@@ -55,6 +55,22 @@ export default async function ForumPage() {
   }
 
   const allTopics = roots.reduce((sum, root) => sum + (totals.get(root.id)?.topics || 0), 0)
+  const allPosts = roots.reduce((sum, root) => sum + (totals.get(root.id)?.posts || 0), 0)
+
+  /* Статистика внизу страницы: цифры показывают, что площадка живая.
+     Пустой форум без единого числа выглядит заброшенным, даже когда на
+     нём есть готовые разборы.
+
+     Два счётчика вместо выборки: участников и последнего пришедшего
+     хватает, а список всех писавших ради одной строки тянуть незачем. */
+  const [members, newest] = await Promise.all([
+    prisma.user.count({ where: { forumPostCount: { gt: 0 } } }),
+    prisma.user.findFirst({
+      where: { forumPostCount: { gt: 0 } },
+      orderBy: { createdAt: "desc" },
+      select: { name: true },
+    }),
+  ])
 
   return (
     <Container size="xl" py={{ base: "md", md: "xl" }}>
@@ -174,6 +190,30 @@ export default async function ForumPage() {
             </Card>
           )
         })}
+
+        {/* Статистика форума: цифры показывают, что площадка живая.
+            Строка внизу, а не вверху — сначала человек ищет свой раздел,
+            и только потом ему интересно, сколько тут людей. */}
+        {allTopics > 0 && (
+          <Card withBorder radius="md" p="sm">
+            <Group gap="lg" wrap="wrap" justify="center">
+              <Text fz="xs" c="var(--market-muted)">
+                Тем: <Text component="span" fw={700} c="var(--market-ink)">{allTopics}</Text>
+              </Text>
+              <Text fz="xs" c="var(--market-muted)">
+                Сообщений: <Text component="span" fw={700} c="var(--market-ink)">{allPosts}</Text>
+              </Text>
+              <Text fz="xs" c="var(--market-muted)">
+                Участников: <Text component="span" fw={700} c="var(--market-ink)">{members}</Text>
+              </Text>
+              {newest?.name && (
+                <Text fz="xs" c="var(--market-muted)">
+                  Новый участник: <Text component="span" fw={600} c="var(--market-ink)">{newest.name}</Text>
+                </Text>
+              )}
+            </Group>
+          </Card>
+        )}
       </Stack>
     </Container>
   )

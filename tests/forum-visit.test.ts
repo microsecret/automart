@@ -97,3 +97,17 @@ test("проверка новизны в тесте совпадает с мод
   assert.match(store, /return input\.lastPostAt\.getTime\(\) > input\.lastVisitAt\.getTime\(\)/)
   assert.match(store, /VISIT_WINDOW_MS = 14 \* 24 \* 60 \* 60 \* 1000/)
 })
+
+test("статистика форума считается двумя запросами, а не выборкой", () => {
+  /* Участников и последнего пришедшего хватает, а список всех писавших
+     ради одной строки тянуть незачем. */
+  const page = read("../src/app/forum/page.tsx")
+  assert.match(page, /prisma\.user\.count\(\{ where: \{ forumPostCount: \{ gt: 0 \} \} \}\)/)
+  assert.match(page, /orderBy: \{ createdAt: "desc" \}/)
+})
+
+test("статистика не показывается на пустом форуме", () => {
+  // «Тем: 0, сообщений: 0» выглядит хуже, чем отсутствие строки.
+  const page = read("../src/app/forum/page.tsx")
+  assert.match(page, /allTopics > 0 && \(/)
+})
