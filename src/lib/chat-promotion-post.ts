@@ -52,6 +52,59 @@ function formatPrice(price: number): string {
   return `${Math.round(price).toLocaleString("ru-RU")} ₽`
 }
 
+/**
+ * Коробка и топливо по-русски.
+ *
+ * В базе они хранятся кодами, и пост уходил в чаты со строкой
+ * «MANUAL · GASOLINE» — латиницей, машинными словами. Подписчик в чате
+ * Казани читает объявление на своём языке, а не в терминах базы.
+ *
+ * Словарь продублирован строками, а не взят из constants: этот модуль
+ * проверяется тестовым запускателем node, который не разбирает
+ * псевдоним «@/», и связывать витрину с деревом импортов приложения
+ * незачем — здесь всего десять пар.
+ *
+ * «OTHER» переводится не «Другая», а в пустоту: это отсутствие
+ * сведений, а не характеристика. Строка «⚙️ 2010 г. · Другая · Другое»
+ * не говорит ничего, а место занимает.
+ */
+const SPEC_LABELS: Record<string, string> = {
+  MANUAL: "механика",
+  AUTOMATIC: "автомат",
+  VARIATOR: "вариатор",
+  ROBOTIC: "робот",
+  GASOLINE: "бензин",
+  PETROL: "бензин",
+  DIESEL: "дизель",
+  ELECTRIC: "электро",
+  HYBRID: "гибрид",
+  GAS: "газ",
+}
+
+/**
+ * Переводит код характеристики.
+ *
+ * Готовое русское слово проходит как есть: часть источников отдаёт
+ * «Автомат» вместо «AUTOMATIC», и отбрасывать его было бы потерей
+ * настоящих сведений.
+ *
+ * Неизвестный латинский код не показывается: молчание честнее
+ * английского слова посреди русского объявления.
+ */
+function specLabel(code: string | null | undefined): string | null {
+  if (typeof code !== "string") return null
+  const value = code.trim()
+  if (!value) return null
+
+  const known = SPEC_LABELS[value.toUpperCase()]
+  if (known) return known
+
+  /* Кириллица — уже готовая подпись, а не код из базы. */
+  if (/[а-яё]/i.test(value)) return value
+
+  return null
+}
+
 /** «165 000 км». */
 function formatMileage(mileage: number): string {
   return `${Math.round(mileage).toLocaleString("ru-RU")} км`
@@ -75,8 +128,10 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
   if (listing.year) specs.push(`${listing.year} г.`)
   if (listing.mileage) specs.push(formatMileage(listing.mileage))
   if (listing.power) specs.push(`${Math.round(listing.power)} л.с.`)
-  if (listing.transmission) specs.push(escapeHtml(listing.transmission))
-  if (listing.fuelType) specs.push(escapeHtml(listing.fuelType))
+  const transmission = specLabel(listing.transmission)
+  if (transmission) specs.push(escapeHtml(transmission))
+  const fuel = specLabel(listing.fuelType)
+  if (fuel) specs.push(escapeHtml(fuel))
 
   const lines: string[] = [
     `🚗 <b>${escapeHtml(listing.title)}</b>`,
