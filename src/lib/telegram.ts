@@ -342,11 +342,51 @@ async function telegramApiOnce<T = unknown>(method: string, payload: Record<stri
   })
 }
 
-export async function telegramPhotoApi<T = unknown>(payload: Record<string, unknown>) {
+/** Файл, уходящий в Telegram телом запроса. */
+export type TelegramUpload = {
+  /** Имя поля: «photo» у одиночного снимка, произвольное у альбома. */
+  field: string
+  /** Имя файла — Telegram по нему определяет вид вложения. */
+  filename: string
+  contentType: string
+  data: Buffer
+}
+
+/**
+ * Отправка с файлами в теле запроса.
+ *
+ * Ссылку на наши картинки Telegram не берёт: на запрос
+ * `https://lewheel.ru/uploads/...` он отвечает «failed to get HTTP URL
+ * content», хотя файл открывается и браузером, и curl. Сторонние
+ * картинки при этом уходят, а любая с нашего домена — нет; вероятная
+ * причина в том, что сертификат подписан корнем ISRG Root X2 на
+ * эллиптических кривых, который серверы Telegram не знают.
+ *
+ * Проверено на продакшене: та же фотография по ссылке даёт ошибку, а
+ * телом запроса уходит. Поэтому свои снимки отправляются байтами — так
+ * доставка не зависит от того, дойдёт ли Telegram до нашего сервера.
+ */
+export async function telegramPhotoApi<T = unknown>(
+  payload: Record<string, unknown>,
+  options: { method?: string; uploads?: TelegramUpload[] } = {},
+) {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not configured")
 
-  const photo = await readFile(path.join(process.cwd(), "public", "images", "telegram-service-infographic.png"))
+  const method = options.method ?? "sendPhoto"
+
+  /* Без списка файлов уходит служебная картинка рассылки: этот вызов
+     существовал раньше и остаётся рабочим без изменений на стороне
+     вызывающего. */
+  const uploads = options.uploads ?? [
+    {
+      field: "photo",
+      filename: "lewheel-service.png",
+      contentType: "image/png",
+      data: await readFile(path.join(process.cwd(), "public", "images", "telegram-service-infographic.png")),
+    },
+  ]
+
   const boundary = `----LeWheelTelegram${crypto.randomBytes(12).toString("hex")}`
   const chunks: Buffer[] = []
   for (const [key, rawValue] of Object.entries(payload)) {
@@ -354,9 +394,15 @@ export async function telegramPhotoApi<T = unknown>(payload: Record<string, unkn
     const value = typeof rawValue === "object" ? JSON.stringify(rawValue) : String(rawValue)
     chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`))
   }
-  chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="photo"; filename="lewheel-service.png"\r\nContent-Type: image/png\r\n\r\n`))
-  chunks.push(photo)
-  chunks.push(Buffer.from(`\r\n--${boundary}--\r\n`))
+  for (const upload of uploads) {
+    chunks.push(Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="${upload.field}"; filename="${upload.filename}"\r\n` +
+      `Content-Type: ${upload.contentType}\r\n\r\n`,
+    ))
+    chunks.push(upload.data)
+    chunks.push(Buffer.from("\r\n"))
+  }
+  chunks.push(Buffer.from(`--${boundary}--\r\n`))
   const requestBody = Buffer.concat(chunks)
 
   return new Promise<T>((resolve, reject) => {
@@ -378,16 +424,17 @@ export async function telegramPhotoApi<T = unknown>(payload: Record<string, unkn
       hostname: "api.telegram.org",
       family: 4,
       port: 443,
-      path: `/bot${token}/sendPhoto`,
+      path: `/bot${token}/${method}`,
       method: "POST",
       headers: {
         "Content-Type": `multipart/form-data; boundary=${boundary}`,
         "Content-Length": requestBody.length,
       },
-      // Двенадцати секунд достаточно для картинки в несколько сотен килобайт.
-      // Тридцать копили зависшие запросы: уведомление всё равно уходит
-      // текстом по запасному пути, а ждать полминуты незачем.
-      timeout: 12_000,
+      /* Двенадцати секунд хватало одной картинке в несколько сотен
+         килобайт. Альбом объявления — до девяти снимков, и на медленном
+         канале он в этот срок не укладывается: срок растёт вместе с
+         размером тела, но не больше минуты. */
+      timeout: Math.min(60_000, 12_000 + Math.floor(requestBody.length / 100_000) * 4_000),
     }, (response) => {
       let responseBody = ""
       response.setEncoding("utf8")
@@ -411,7 +458,7 @@ export async function telegramPhotoApi<T = unknown>(payload: Record<string, unkn
     })
     request.on("error", fail)
     request.on("timeout", () => {
-      fail(new Error("Telegram API sendPhoto timed out"))
+      fail(new Error(`Telegram API ${method} timed out`))
       request.destroy()
     })
     request.end(requestBody)

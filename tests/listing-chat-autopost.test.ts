@@ -113,7 +113,28 @@ test("несколько фотографий уходят альбомом", ()
 test("подпись только у первой фотографии альбома", () => {
   /* Telegram показывает её под альбомом, а повторённая на каждой
      дублируется в уведомлениях. */
-  assert.match(sender, /index === 0 \? \{ caption/)
+  assert.match(sender, /index === 0[\s\S]{0,250}caption: post\.caption/)
+})
+
+test("свои снимки уходят файлом, а не ссылкой", () => {
+  /* Ссылку на наши картинки Telegram не берёт: на «/uploads/...» он
+     отвечает «failed to get HTTP URL content», хотя файл открывается и
+     браузером, и curl. Проверено на продакшене. */
+  assert.match(sender, /readLocalPhotos/)
+  assert.match(sender, /telegramPhotoApi/)
+  assert.match(sender, /attach:\/\/\$\{field\}/)
+})
+
+test("читаются только файлы из /uploads", () => {
+  /* Адрес приходит из базы: «/uploads/../../etc/passwd» не должен
+     превращаться в чтение чужого файла. */
+  assert.match(sender, /startsWith\("\/uploads\/"\)/)
+  assert.match(sender, /name\.includes\("\.\."\)/)
+})
+
+test("внешний адрес остаётся ссылкой", () => {
+  // Чужую картинку читать неоткуда, и Telegram забирает её сам.
+  assert.match(sender, /absoluteUrl/)
 })
 
 test("кнопки идут ответом на альбом", () => {
