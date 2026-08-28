@@ -61,18 +61,40 @@ test("теги в названии экранируются", () => {
   assert.doesNotMatch(post.caption, /<b>Camry/)
 })
 
-test("кнопка «Написать» ведёт в бот, а не к аккаунту продавца", () => {
-  // Прямая ссылка раскрыла бы аккаунт продавца всем читателям чата.
+test("кнопка «Написать» не раскрывает аккаунт продавца", () => {
+  /* Прямая ссылка на продавца показала бы его всем читателям чата,
+     включая тех, кто машиной не интересуется. Кнопка ведёт на страницу
+     объявления, где связь идёт через площадку. */
   const post = buildChatPost({ ...base, sellerTelegramId: "12345" }, { siteUrl: SITE, botUsername: "lewheel_bot" })
   const write = post.buttons.find((b) => b.text.includes("Написать"))
   assert.ok(write)
-  assert.match(write.url, /t\.me\/lewheel_bot/)
   assert.doesNotMatch(write.url, /12345/)
+  assert.match(write.url, /\/listings\/vehicle\//)
 })
 
-test("без имени бота кнопки «Написать» нет", () => {
-  const post = buildChatPost({ ...base, sellerTelegramId: "12345" }, { siteUrl: SITE })
+test("кнопка «Написать» не ведёт в бот по /start", () => {
+  /* Так было раньше, и бот такого параметра не понимает: на любой
+     /start он отвечает шагом регистрации — человек нажимал «Написать
+     продавцу» и получал анкету. */
+  const post = buildChatPost({ ...base, sellerTelegramId: "12345" }, { siteUrl: SITE, botUsername: "lewheel_bot" })
+  const write = post.buttons.find((b) => b.text.includes("Написать"))
+  assert.ok(write)
+  assert.doesNotMatch(write.url, /start=listing_/)
+})
+
+test("без продавца в Telegram кнопки «Написать» нет", () => {
+  const post = buildChatPost({ ...base, sellerTelegramId: null }, { siteUrl: SITE, botUsername: "lewheel_bot" })
   assert.equal(post.buttons.some((b) => b.text.includes("Написать")), false)
+})
+
+test("кнопки не ведут через startapp", () => {
+  /* Telegram отвечает «bot invalid»: ссылка работает только у ботов с
+     настроенным главным мини-приложением, а у нашего его нет —
+     приложение подключено кнопкой меню. */
+  const post = buildChatPost(base, { siteUrl: SITE, botUsername: "lewheel_bot" })
+  for (const button of post.buttons) {
+    assert.doesNotMatch(button.url, /startapp=/)
+  }
 })
 
 test("в посте всегда есть путь к объявлению и к размещению", () => {

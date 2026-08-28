@@ -91,20 +91,24 @@ export function buildForumChatPost(
 
   const buttons: { text: string; url: string }[] = []
 
-  /* Открытие в приложении первым: из чата человек уже в Telegram, и
-     приложение открывается прямо здесь, а ссылка на сайт выбрасывает его
-     в браузер, где он заново входит в учётную запись. */
-  if (options.botUsername) {
-    buttons.push({
-      text: topic.hasPoll ? "📊 Ответить в приложении" : "💬 Ответить в приложении",
-      /* Раздел и тема вместе: адрес темы содержит раздел, и без него
-         страница отвечает «не найдено». Разделитель «__» — двойное
-         подчёркивание: одинарное встречается в самих адресах. */
-      url: `https://t.me/${options.botUsername}?startapp=forum_${topic.sectionSlug}__${topic.topicSlug}`,
-    })
-  }
+  /* Ссылка на тему первой: за ней человек и нажимает.
 
-  buttons.push({ text: "🔎 Открыть на сайте", url: `${site}${topicPath}` })
+     Раньше здесь стояло «t.me/<бот>?startapp=forum_…», но Telegram
+     отвечает на неё «bot invalid»: она работает только у ботов с
+     настроенным главным мини-приложением, а у нашего его нет — getMe
+     отдаёт «has_main_web_app: false», приложение подключено кнопкой
+     меню. Настраивается это в BotFather, кодом не исправить. */
+  buttons.push({
+    text: topic.hasPoll ? "📊 Ответить в теме" : "💬 Открыть обсуждение",
+    url: `${site}${topicPath}?from=telegram`,
+  })
+
+  /* Приложение — отдельной кнопкой: оно открывает форум целиком, а не
+     эту тему, и как способ прочитать обсуждение проигрывает прямой
+     ссылке выше. */
+  if (options.botUsername) {
+    buttons.push({ text: "📱 Открыть приложение", url: `https://t.me/${options.botUsername}` })
+  }
 
   return { photos, caption, buttons }
 }

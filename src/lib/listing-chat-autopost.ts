@@ -186,7 +186,12 @@ export async function autopostListingToChat(listingId: string): Promise<string |
 
     const post = buildChatPost(
       {
-        id: listing.id,
+        /* Идентификатор машины, а не объявления: страница открывается по
+           адресу /listings/vehicle/<id машины>, и по id объявления сайт
+           отвечает «такой страницы нет». Платное продвижение всегда
+           передавало верный, а бесплатная публикация — нет, и все кнопки
+           в постах вели в никуда. */
+        id: listing.vehicle.id,
         title: listing.title,
         price: listing.price,
         sellerTelegramId: listing.user.telegramId,

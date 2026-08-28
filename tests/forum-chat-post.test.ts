@@ -26,27 +26,28 @@ test("в посте есть заголовок, текст и раздел", ()
   assert.match(post.caption, /Механик/)
 })
 
-test("кнопка приложения ведёт на тему с разделом", () => {
+test("первая кнопка ведёт на тему с разделом", () => {
   /* Адрес темы содержит раздел: без него страница отвечает «не
      найдено». */
   const post = buildForumChatPost(base, options)
-  const app = post.buttons.find((b) => /приложении/.test(b.text))
-  assert.ok(app, "кнопки приложения нет")
-  assert.match(app.url, /startapp=forum_haval__stuk-v-podveske-haval-jolion-a1b2c3/)
+  assert.match(post.buttons[0].url, /\/forum\/haval\/stuk-v-podveske-haval-jolion-a1b2c3/)
 })
 
-test("кнопка сайта ведёт на полный адрес темы", () => {
+test("кнопки не ведут через startapp", () => {
+  /* Telegram отвечает «bot invalid»: ссылка работает только у ботов с
+     настроенным главным мини-приложением, а у нашего его нет — getMe
+     отдаёт «has_main_web_app: false». */
   const post = buildForumChatPost(base, options)
-  const site = post.buttons.find((b) => /сайте/.test(b.text))
-  assert.ok(site)
-  assert.equal(site.url, "https://lewheel.ru/forum/haval/stuk-v-podveske-haval-jolion-a1b2c3")
+  for (const button of post.buttons) {
+    assert.doesNotMatch(button.url, /startapp=/)
+  }
 })
 
-test("без имени бота остаётся только ссылка на сайт", () => {
+test("без имени бота остаётся только ссылка на тему", () => {
   // Ссылка вида «https://t.me/undefined» просто не откроется.
   const post = buildForumChatPost(base, { siteUrl: "https://lewheel.ru/" })
   assert.equal(post.buttons.length, 1)
-  assert.match(post.buttons[0].text, /сайте/)
+  assert.match(post.buttons[0].url, /\/forum\/haval\//)
 })
 
 test("про опрос сказано отдельно", () => {
@@ -54,9 +55,7 @@ test("про опрос сказано отдельно", () => {
      который читать не собирался. */
   const post = buildForumChatPost({ ...base, hasPoll: true }, options)
   assert.match(post.caption, /голосование/i)
-  const app = post.buttons.find((b) => /приложении/.test(b.text))
-  assert.ok(app, "кнопки приложения нет")
-  assert.match(app.text, /Ответить/)
+  assert.match(post.buttons[0].text, /Ответить/)
 })
 
 test("теги из заголовка не проходят в пост", () => {
