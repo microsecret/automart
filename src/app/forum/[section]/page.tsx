@@ -3,7 +3,10 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Anchor, Badge, Box, Breadcrumbs, Card, Container, Group, Stack, Text, Title } from "@mantine/core"
 import { IconEye, IconMessages, IconPin } from "@tabler/icons-react"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { hasNewSince, readAndMarkVisit } from "@/lib/forum-visit"
 import { TOPICS_PER_PAGE, topicPrefixMeta } from "@/lib/forum"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
 import NewTopicForm from "./NewTopicForm"
@@ -24,7 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export const revalidate = 60
+/* Кэша здесь больше нет: страница показывает личное — подсветку тем, где
+   писали с прошлого захода именно этого человека. С кэшем её увидели бы
+   все одинаковой, из ответа первого зашедшего. */
+export const dynamic = "force-dynamic"
 
 export default async function ForumSectionPage({ params, searchParams }: Props) {
   const { section: slug } = await params
@@ -43,6 +49,12 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
     },
   })
   if (!section) notFound()
+
+  /* Прошлый заход читается до отметки нынешнего: запиши мы сначала —
+     подсвечивать было бы нечего, «прошлый заход» стал бы этой самой
+     секундой. */
+  const session = await getServerSession(authOptions)
+  const lastVisitAt = await readAndMarkVisit(session?.user?.id ?? null)
 
   const topics = await prisma.forumTopic.findMany({
     where: { sectionId: section.id, deletedAt: null },
@@ -157,6 +169,12 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
                       })()}
                       <Text fw={600} fz="sm" c="var(--market-ink)" lineClamp={2}>{topic.title}</Text>
                       {topic.isClosed && <Badge size="xs" variant="light" color="gray">закрыта</Badge>}
+                      {/* Точка вместо слова «новое»: она читается краем
+                          глаза при беге по списку, а подпись пришлось бы
+                          прочитать у каждой из двадцати пяти строк. */}
+                      {hasNewSince({ lastPostAt: topic.lastPostAt, lastVisitAt }) && (
+                        <Box className="forum-topic-new" title="Есть новые сообщения" />
+                      )}
                     </Group>
                     <Text size="xs" c="var(--market-muted)" mt={3}>
                       {topic.author.name || "Участник"} · {formatAdminDateTimeShort(topic.lastPostAt)}
