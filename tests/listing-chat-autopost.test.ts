@@ -14,6 +14,7 @@ const sender = read("../src/lib/telegram-post-sender.ts")
 /* Чтение снимков вынесено в общий модуль: им пользуются и бесплатная
    публикация, и платное продвижение. */
 const photoFiles = read("../src/lib/telegram-photo-files.ts")
+const collage = read("../src/lib/photo-collage.ts")
 const paidDelivery = read("../src/lib/chat-promotion-delivery.ts")
 const post = read("../src/lib/chat-promotion-post.ts")
 const webhook = read("../src/app/api/telegram/webhook/route.ts")
@@ -110,21 +111,35 @@ test("до девяти фотографий", () => {
   assert.match(post, /slice\(0, MAX_POST_PHOTOS\)/)
 })
 
-test("несколько фотографий уходят альбомом", () => {
-  // Человек должен увидеть машину со всех сторон, а не один кадр.
-  assert.match(sender, /sendMediaGroup/)
+test("пост уходит одним сообщением", () => {
+  /* Telegram не даёт кнопки на альбоме: пост уходил снимками, а под ними
+     оторванной строкой с кнопками — в чате это два разных поста. */
+  assert.doesNotMatch(sender, /sendMediaGroup/)
+  assert.doesNotMatch(sender, /reply_to_message_id/)
 })
 
-test("одна фотография принимает кнопки на себя", () => {
-  /* Тогда пост уходит единственным сообщением — лучший случай, и ради
-     него отдельная ветка. */
-  assert.match(sender, /photos\.length === 1[\s\S]{0,900}reply_markup: keyboard/)
+test("снимки склеиваются в одну картинку", () => {
+  /* Одна фотография кнопки принимает — так в сообщении есть и все
+     снимки, и текст, и кнопки. */
+  assert.match(sender, /buildPhotoCollage/)
+  assert.match(collage, /MAX_COLLAGE_PHOTOS = 9/)
 })
 
-test("под кнопками нет предпросмотра ссылки", () => {
-  /* Второе сообщение тянуло карточку той же страницы, на которую ведут
-     кнопки: пост читался как два разных. */
-  assert.match(sender, /reply_to_message_id[\s\S]{0,300}disable_web_page_preview: true/)
+test("склейка не рвётся на непрочитанном снимке", () => {
+  // Пропущенный в середине оставил бы дыру в сетке.
+  assert.match(sender, /files\.length === wanted\.length/)
+})
+
+test("если склейка не удалась, уходит первый снимок", () => {
+  // Пост без части фотографий лучше, чем его отсутствие.
+  assert.match(sender, /const single = wanted\[0\]/)
+})
+
+test("главный снимок остаётся крупным", () => {
+  /* Он идёт первым и занимает верх: человек видит машину целиком, а не
+     девять марок размером с ноготь. */
+  assert.match(collage, /heroHeight/)
+  assert.match(collage, /position: "attention"/)
 })
 
 test("свои снимки уходят файлом, а не ссылкой", () => {

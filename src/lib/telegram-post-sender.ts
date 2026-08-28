@@ -1,20 +1,22 @@
 /**
- * Отправка поста с фотографиями и кнопками в чат.
+ * Отправка поста в чат — одним сообщением.
  *
- * Telegram не позволяет прикрепить кнопки к альбому, поэтому пост уходит
- * двумя сообщениями: сначала снимки, следом кнопки ответом на альбом —
- * так они привязаны к нему и не выглядят отдельным постом ни к чему.
+ * Telegram не позволяет прикрепить кнопки к альбому: пост уходил двумя
+ * сообщениями — снимки, а под ними оторванная строка «Открыть
+ * объявление:» с кнопками и предпросмотром той же ссылки. В чате это
+ * читалось как два разных поста подряд.
  *
- * Второе сообщение раньше тянуло предпросмотр ссылки: под кнопками
- * появлялась карточка той же страницы, на которую они ведут, и пост
- * читался как два разных. Предпросмотр отключён.
+ * Одна фотография кнопки принимает. Поэтому снимки склеиваются в сетку и
+ * уходят единственным изображением: в сообщении есть и все фотографии, и
+ * текст, и кнопки. Склейка — в photo-collage.
  *
  * Порядок общий для объявлений и обсуждений форума: держать его в двух
  * местах значит однажды поправить одно и забыть про другое.
  */
 
-import { telegramApi, telegramPhotoApi, type TelegramUpload } from "@/lib/telegram"
+import { telegramApi, telegramPhotoApi } from "@/lib/telegram"
 import { readLocalPhotos, photoMime } from "@/lib/telegram-photo-files"
+import { buildPhotoCollage, MAX_COLLAGE_PHOTOS } from "@/lib/photo-collage"
 import { absoluteUrl } from "@/lib/site-url"
 
 export type OutgoingPost = {
@@ -26,14 +28,14 @@ export type OutgoingPost = {
 /**
  * Отправляет пост и возвращает идентификатор сообщения.
  *
- * Подпись под кнопками задаётся вызывающим: у объявления это «Открыть
- * объявление», у обсуждения — «Читать обсуждение», и общая формулировка
- * звучала бы мимо в обоих случаях.
+ * Подпись под кнопками больше не нужна — они стоят прямо под
+ * фотографией. Параметр оставлен, чтобы не править вызывающих ради
+ * строки, которая нигде не видна.
  */
 export async function sendChatPost(
   chatId: string,
   post: OutgoingPost,
-  options: { buttonsCaption?: string } = {},
+  _options: { buttonsCaption?: string } = {},
 ): Promise<number | null> {
   const keyboard = { inline_keyboard: post.buttons.map((button) => [button]) }
 
@@ -53,87 +55,67 @@ export async function sendChatPost(
   /* Свои снимки читаются с диска: ссылку на наш домен Telegram не берёт —
      отвечает «failed to get HTTP URL content». Подробности в
      telegram-photo-files. */
-  const local = await readLocalPhotos(post.photos)
+  const wanted = post.photos.slice(0, MAX_COLLAGE_PHOTOS)
+  const local = await readLocalPhotos(wanted)
 
-  /* Одна фотография принимает кнопки прямо на себя — тогда пост уходит
-     единственным сообщением, и это лучший случай. */
-  if (post.photos.length === 1) {
-    const single = post.photos[0]
-    const file = local.get(single)
+  /* Склейка возможна, только когда все снимки прочитаны: пропущенный в
+     середине оставил бы дыру в сетке. */
+  const files = wanted.map((photo) => local.get(photo)).filter((data): data is Buffer => Boolean(data))
+  const collage = files.length === wanted.length && files.length > 1
+    ? await buildPhotoCollage(files.map((data) => ({ data })))
+    : null
 
-    const sent = file
-      ? await telegramPhotoApi<{ message_id: number }>(
-          {
-            chat_id: chatId,
-            caption: post.caption,
-            parse_mode: "HTML",
-            reply_markup: keyboard,
-          },
-          {
-            uploads: [{
-              field: "photo",
-              filename: single.slice(single.lastIndexOf("/") + 1),
-              contentType: photoMime(single),
-              data: file,
-            }],
-          },
-        ).catch(() => null)
-      /* Внешний адрес Telegram забирает сам — читать его неоткуда. */
-      : await telegramApi<{ message_id: number }>("sendPhoto", {
+  if (collage) {
+    const sent = await telegramPhotoApi<{ message_id: number }>(
+      {
+        chat_id: chatId,
+        caption: post.caption,
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      },
+      {
+        uploads: [{
+          field: "photo",
+          filename: "listing.jpg",
+          contentType: "image/jpeg",
+          data: collage,
+        }],
+      },
+    ).catch(() => null)
+
+    if (sent?.message_id) return sent.message_id
+    /* Склеенная картинка не ушла — падаем на первый снимок: пост без
+       части фотографий лучше, чем его отсутствие. */
+  }
+
+  const single = wanted[0]
+  const file = local.get(single)
+
+  const sent = file
+    ? await telegramPhotoApi<{ message_id: number }>(
+        {
           chat_id: chatId,
-          photo: absoluteUrl(single),
           caption: post.caption,
           parse_mode: "HTML",
           reply_markup: keyboard,
-        }).catch(() => null)
-
-    return sent?.message_id ?? null
-  }
-
-  /* Файлы в альбоме называются по имени поля через «attach://» — так
-     Telegram связывает описание вложения с его байтами в теле запроса. */
-  const uploads: TelegramUpload[] = []
-  const media = post.photos.map((photo, index) => {
-    const file = local.get(photo)
-    const caption = index === 0
-      /* Подпись только у первой: Telegram показывает её под альбомом, а
-         повторённая на каждой фотографии дублируется в уведомлениях. */
-      ? { caption: post.caption, parse_mode: "HTML" }
-      : {}
-
-    if (!file) return { type: "photo", media: absoluteUrl(photo), ...caption }
-
-    const field = `photo${index}`
-    uploads.push({
-      field,
-      filename: photo.slice(photo.lastIndexOf("/") + 1),
-      contentType: photoMime(photo),
-      data: file,
-    })
-    return { type: "photo", media: `attach://${field}`, ...caption }
-  })
-
-  const album = uploads.length
-    ? await telegramPhotoApi<{ message_id: number }[]>(
-        { chat_id: chatId, media },
-        { method: "sendMediaGroup", uploads },
+        },
+        {
+          uploads: [{
+            field: "photo",
+            filename: single.slice(single.lastIndexOf("/") + 1),
+            contentType: photoMime(single),
+            data: file,
+          }],
+        },
       ).catch(() => null)
-    : await telegramApi<{ message_id: number }[]>("sendMediaGroup", {
+    /* Внешний адрес Telegram забирает сам — читать его неоткуда. */
+    : await telegramApi<{ message_id: number }>("sendPhoto", {
         chat_id: chatId,
-        media,
+        photo: absoluteUrl(single),
+        caption: post.caption,
+        parse_mode: "HTML",
+        reply_markup: keyboard,
       }).catch(() => null)
 
-  if (!album?.length) return null
-
-  await telegramApi("sendMessage", {
-    chat_id: chatId,
-    text: options.buttonsCaption || "Открыть:",
-    reply_to_message_id: album[0].message_id,
-    reply_markup: keyboard,
-    /* Без этого под кнопками появлялась карточка той же страницы, на
-       которую они ведут, и пост читался как два разных сообщения. */
-    disable_web_page_preview: true,
-  }).catch(() => {})
-
-  return album[0].message_id
+  return sent?.message_id ?? null
 }
