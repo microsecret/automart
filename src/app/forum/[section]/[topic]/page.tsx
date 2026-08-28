@@ -117,7 +117,50 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
      странице, такую ссылку сделала бы бессмысленной. */
   const firstPostNumber = (page - 1) * POSTS_PER_PAGE + 1
 
+  /* Разметка обсуждения для поисковика.
+
+     Без неё тема выглядит обычной страницей: поисковик не понимает, что
+     это вопрос с ответами, и не показывает её в выдаче с ответом.
+     Строится только на первой странице — на пятой она описывала бы
+     обсуждение неполно и путала бы поисковик двумя разными описаниями
+     одного разговора. */
+  const firstPost = posts.find((post) => !post.deletedAt)
+  const jsonLd = page === 1 && firstPost ? {
+    "@context": "https://schema.org",
+    "@type": "DiscussionForumPosting",
+    "headline": topic.title,
+    "text": stripForumMarkup(firstPost.content).slice(0, 500),
+    "datePublished": topic.createdAt.toISOString(),
+    "author": { "@type": "Person", "name": topic.author.name || "Участник" },
+    "interactionStatistic": {
+      "@type": "InteractionCounter",
+      "interactionType": "https://schema.org/CommentAction",
+      "userInteractionCount": topic.replyCount,
+    },
+    /* Ответы перечислены: именно по ним поисковик показывает в выдаче
+       решение, а не только сам вопрос. */
+    "comment": posts
+      .filter((post) => !post.deletedAt && post.id !== firstPost.id)
+      .slice(0, 10)
+      .map((post) => ({
+        "@type": "Comment",
+        "text": stripForumMarkup(post.content).slice(0, 300),
+        "datePublished": post.createdAt.toISOString(),
+        "author": { "@type": "Person", "name": post.author.name || "Участник" },
+      })),
+  } : null
+
   return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          /* Скобка заменяется на её экранированную запись, а не на саму
+             себя: иначе сообщение с «</script>» закрыло бы блок разметки
+             и остальное попало бы на страницу как разметка. */
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\u003c") }}
+        />
+      )}
     <Container size="md" py={{ base: "md", md: "xl" }}>
       <Stack gap="md">
         <Breadcrumbs separator="›">
@@ -335,5 +378,6 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
         )}
       </Stack>
     </Container>
+    </>
   )
 }

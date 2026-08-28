@@ -244,3 +244,59 @@ test("разделы для переноса тянутся только мод�
 test("неизвестное действие над темой отклоняется", () => {
   assert.match(topicRoute, /Неизвестное действие/)
 })
+
+// === Разметка обсуждения для поисковика ===
+
+const topicPage = read("../src/app/forum/[section]/[topic]/page.tsx")
+
+test("у темы есть разметка обсуждения", () => {
+  /* Без неё тема выглядит обычной страницей: поисковик не понимает, что
+     это вопрос с ответами, и не показывает её в выдаче с ответом. */
+  assert.match(topicPage, /"@type": "DiscussionForumPosting"/)
+  assert.match(topicPage, /application\/ld\+json/)
+})
+
+test("ответы перечислены в разметке", () => {
+  /* Именно по ним поисковик показывает в выдаче решение, а не только сам
+     вопрос. */
+  assert.match(topicPage, /"@type": "Comment"/)
+})
+
+test("разметка строится только на первой странице", () => {
+  /* На пятой она описывала бы обсуждение неполно и путала бы поисковик
+     двумя разными описаниями одного разговора. */
+  assert.match(topicPage, /page === 1 && firstPost/)
+})
+
+test("удалённые сообщения в разметку не попадают", () => {
+  // Под пометкой «удалено модератором» текста нет.
+  assert.match(topicPage, /filter\(\(post\) => !post\.deletedAt/)
+})
+
+test("разметка идёт без пометок Markdown", () => {
+  // Звёздочки и решётки в описании страницы выглядят мусором.
+  assert.match(topicPage, /stripForumMarkup\(firstPost\.content\)/)
+})
+
+test("угловая скобка в разметке экранирована", () => {
+  /* Иначе сообщение с закрывающим тегом script закрыло бы блок разметки,
+     и остальное попало бы на страницу как разметка. Проверяем, что в
+     замене стоит экранированная запись, а не сам символ. */
+  const replacement = topicPage.match(/replace\(\/<\/g, "([^"]+)"\)/)?.[1]
+  // Шесть символов: обратный слэш, u, 0, 0, 3, c.
+  assert.equal(replacement?.length, 6, `в замене стоит ${JSON.stringify(replacement)}`)
+  assert.match(replacement || "", /u003c$/)
+})
+
+test("страница участников есть в карте сайта", () => {
+  /* Она отвечает на запрос «кто отвечает на форуме» и ведёт вглубь. */
+  const sitemap = read("../src/app/sitemap.ts")
+  assert.match(sitemap, /"\/forum\/users"/)
+})
+
+test("поиск и подписки в карту не идут", () => {
+  /* Первый плодит адреса с одинаковым содержимым, второй личный. */
+  const sitemap = read("../src/app/sitemap.ts")
+  assert.doesNotMatch(sitemap, /"\/forum\/search"/)
+  assert.doesNotMatch(sitemap, /"\/forum\/subscriptions"/)
+})
