@@ -34,13 +34,29 @@ export type CollageInput = { data: Buffer }
 /**
  * Сколько снимков ставить в ряд под главным.
  *
- * Два ряда по три — предел, за которым машина на снимке перестаёт
- * читаться. Для меньшего числа ряд короче, и снимки крупнее.
+ * Ряды должны заполняться целиком: три плитки по две в ряд оставляли бы
+ * вторую строку из одной плитки, прижатой влево, и половину ширины
+ * пустой — это читается как сбой вёрстки, а не как раскладка.
+ *
+ * Поэтому число в ряду подбирается делителем: три снимка идут по три,
+ * четыре — по два, шесть — по три. Когда ровного деления нет (пять,
+ * семь), берём то, при котором последний ряд полнее.
+ *
+ * Больше трёх в ряд не ставим: машина на плитке шириной в четверть
+ * перестаёт читаться.
  */
 function rowSize(rest: number): number {
-  if (rest <= 2) return 2
-  if (rest <= 4) return 2
-  return 3
+  if (rest <= 3) return rest
+
+  /* Ровное деление — лучший случай: ни одного полупустого ряда. */
+  for (const size of [3, 2]) {
+    if (rest % size === 0) return size
+  }
+
+  /* Ровного нет: берём то, при котором последний ряд полнее. Ноль
+     означает ровное деление и сюда не попадает, поэтому сравниваем
+     остатки напрямую. */
+  return rest % 3 >= rest % 2 ? 3 : 2
 }
 
 /**
@@ -80,14 +96,21 @@ export async function buildPhotoCollage(photos: CollageInput[]): Promise<Buffer 
     for (let i = 0; i < rest; i += 1) {
       const row = Math.floor(i / perRow)
       const col = i % perRow
+
+      /* Плитки неполного ряда растягиваются на свободное место: одна
+         плитка шириной в треть, прижатая влево, с пустотой справа
+         читается как сбой вёрстки, а не как раскладка. */
+      const inThisRow = Math.min(perRow, rest - row * perRow)
+      const width = Math.floor((WIDTH - GAP * (inThisRow - 1)) / inThisRow)
+
       const tile = await sharp(items[i + 1].data)
-        .resize(cellWidth, cellHeight, { fit: "cover", position: "attention" })
+        .resize(width, cellHeight, { fit: "cover", position: "attention" })
         .toBuffer()
 
       layers.push({
         input: tile,
         top: heroHeight + GAP + row * (cellHeight + GAP),
-        left: col * (cellWidth + GAP),
+        left: col * (width + GAP),
       })
     }
 
