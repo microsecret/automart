@@ -524,6 +524,14 @@ model Listing {
   revisions       ListingRevision[]
   /// Бесплатные публикации в чатах Telegram.
   chatPosts       ListingChatPost[]
+
+  /// Сколько раз напоминали продавцу о продвижении и когда последний раз.
+  ///
+  /// Предложение звучит один раз — в уведомлении об одобрении. Если
+  /// человек тогда не купил, повода вернуться к нему больше нет:
+  /// объявление висит, покупатели не идут, а он сидит и ждёт.
+  promotionNudges  Int       @default(0)
+  lastPromotionNudgeAt DateTime?
   reports         ListingReport[]
   promotionOrders PromotionOrder[]
   viewEvents      ListingViewEvent[]
