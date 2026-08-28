@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { FORUM_SIGNATURE_MAX } from "@/lib/forum"
+import { isSafeImageUrl } from "@/lib/forum-markup"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -157,9 +158,27 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    /* Аватар: адрес картинки, уже загруженной через /api/upload.
+
+       Проверяется тем же правилом, что и картинки форума: чужой адрес в
+       этом поле — это счётчик посещений в руках постороннего, ведь аватар
+       грузится у каждого, кто увидит сообщение или объявление автора. */
+    const imageGiven = typeof payload?.image === "string"
+    const image = imageGiven ? payload.image.trim() : null
+
+    if (image && !isSafeImageUrl(image)) {
+      return NextResponse.json({ error: "Недопустимый адрес картинки" }, { status: 400 })
+    }
+
     const user = await prisma.user.update({
       where: { id: session.user.id },
-      data: signatureGiven ? { name, forumSignature: signature || null } : { name },
+      data: {
+        name,
+        ...(signatureGiven ? { forumSignature: signature || null } : {}),
+        /* Пустая строка снимает аватар: так человек может вернуть букву
+           вместо картинки, не заводя отдельной кнопки. */
+        ...(imageGiven ? { image: image || null } : {}),
+      },
       select: { id: true, name: true, email: true, image: true, forumSignature: true },
     })
 

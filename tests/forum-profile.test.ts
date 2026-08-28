@@ -44,7 +44,9 @@ test("отсутствие подписи в запросе не стирает 
   /* Имя меняют отдельно от подписи, и запрос без этого поля не должен
      обнулять написанное. */
   assert.match(usersRoute, /const signatureGiven = typeof payload\?\.forumSignature === "string"/)
-  assert.match(usersRoute, /signatureGiven \? \{ name, forumSignature/)
+  /* Поле добавляется условным разворотом: без него в data не попадает
+     ничего, и сохранённое остаётся на месте. */
+  assert.match(usersRoute, /\.\.\.\(signatureGiven \? \{ forumSignature/)
 })
 
 // === Счётчик сообщений ===
@@ -109,4 +111,35 @@ test("кнопка не показывается гостю и самому се
      которого он ещё не хотел. */
   assert.match(memberPage, /session\?\.user\?\.id !== member\.id/)
   assert.match(memberPage, /canWrite && \(/)
+})
+
+// === Аватар в кабинете ===
+
+test("аватар можно загрузить", () => {
+  /* Раньше картинка приходила только из Telegram: у тех, кто
+     зарегистрировался на сайте, под каждым сообщением стояла буква. */
+  const panel = read("../src/components/dashboard/AvatarUpload.tsx")
+  assert.match(panel, /\/api\/upload/)
+  const dashboard = read("../src/app/dashboard/page.tsx")
+  assert.match(dashboard, /<AvatarUpload/)
+})
+
+test("чужой адрес картинки в аватар не проходит", () => {
+  /* Чужой адрес — счётчик посещений в руках постороннего: аватар
+     грузится у каждого, кто увидит сообщение или объявление автора. */
+  assert.match(usersRoute, /isSafeImageUrl\(image\)/)
+  assert.match(usersRoute, /Недопустимый адрес картинки/)
+})
+
+test("аватар можно убрать", () => {
+  // Пустая строка возвращает букву вместо картинки.
+  assert.match(usersRoute, /image: image \|\| null/)
+  const panel = read("../src/components/dashboard/AvatarUpload.tsx")
+  assert.match(panel, /onChange\(null\)/)
+})
+
+test("аватар сохраняется вместе с именем", () => {
+  /* Два сохранения подряд человеку показались бы сбоем. */
+  const dashboard = read("../src/app/dashboard/page.tsx")
+  assert.match(dashboard, /name: profileName, forumSignature: profileSignature, image: profileImage/)
 })

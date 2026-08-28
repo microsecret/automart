@@ -18,6 +18,7 @@ import ShareInviteCard from "@/components/dashboard/ShareInviteCard"
 import GaragePanel, { type GarageResponse } from "@/components/dashboard/GaragePanel"
 import PromotionPanel, { type PromotionOrder } from "@/components/dashboard/PromotionPanel"
 import { FORUM_SIGNATURE_MAX } from "@/lib/forum"
+import AvatarUpload from "@/components/dashboard/AvatarUpload"
 
 type DashboardVehicle = {
   id: string
@@ -127,6 +128,7 @@ function DashboardContent() {
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false)
   const [profileName, setProfileName] = useState("")
   const [profileSignature, setProfileSignature] = useState("")
+  const [profileImage, setProfileImage] = useState<string | null>(null)
   const [isProfileSaving, setIsProfileSaving] = useState(false)
   const [garageDeletingId, setGarageDeletingId] = useState<string | null>(null)
   const [removalConfirmation, setRemovalConfirmation] = useState<RemovalConfirmation | null>(null)
@@ -171,7 +173,8 @@ function DashboardContent() {
      и без этого поле открывалось бы пустым поверх сохранённого текста. */
   useEffect(() => {
     setProfileSignature(accountData?.user?.forumSignature || "")
-  }, [accountData?.user?.forumSignature])
+    setProfileImage(accountData?.user?.image ?? null)
+  }, [accountData?.user?.forumSignature, accountData?.user?.image])
 
   useEffect(() => {
     const requestedTab = searchParams.get("tab")
@@ -184,13 +187,15 @@ function DashboardContent() {
       const payload = await fetchJson<ProfileUpdateResponse>("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: profileName, forumSignature: profileSignature }),
+        body: JSON.stringify({ name: profileName, forumSignature: profileSignature, image: profileImage ?? "" }),
       })
 
-      await updateSession({ name: payload.user.name })
+      /* Картинка идёт в сессию вместе с именем: иначе аватар в шапке
+         останется прежним до перезахода. */
+      await updateSession({ name: payload.user.name, image: profileImage })
       await mutateAccount()
       setIsProfileEditorOpen(false)
-      notifications.show({ title: "Профиль обновлён", message: "Отображаемое имя сохранено.", color: "teal" })
+      notifications.show({ title: "Профиль обновлён", message: "Изменения сохранены.", color: "teal" })
     } catch (error) {
       notifications.show({ title: "Не удалось сохранить", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
     } finally {
@@ -593,6 +598,14 @@ function DashboardContent() {
                 <Button variant="light" color="indigo" size="sm" leftSection={<IconSettings size={16} />} radius="md" onClick={() => setIsProfileEditorOpen(true)}>Редактировать профиль</Button>
               ) : (
                 <Stack gap="xs">
+                  {/* Фото профиля первым: человек узнаёт себя по картинке
+                      раньше, чем по имени. */}
+                  <AvatarUpload
+                    currentImage={profileImage}
+                    name={profileName}
+                    onChange={setProfileImage}
+                    disabled={isProfileSaving}
+                  />
                   <TextInput label="Отображаемое имя" value={profileName} onChange={(event) => setProfileName(event.currentTarget.value)} maxLength={60} />
                   {/* Подпись видна под каждым сообщением на форуме:
                       ответ «у меня так же было» значит разное от
