@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { Button, Card, Collapse, Group, Select, Stack, Text, TextInput } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconPlus } from "@tabler/icons-react"
+import { IconBrandTelegram, IconPlus } from "@tabler/icons-react"
 import { TOPIC_PREFIXES, TOPIC_TITLE_MAX, validatePostContent, validateTopicTitle } from "@/lib/forum"
 import MarkupEditor from "@/components/forum/MarkupEditor"
 import PollDraftFields, { EMPTY_POLL_DRAFT, type PollDraftState } from "@/components/forum/PollDraftFields"
@@ -28,22 +28,51 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
   const [poll, setPoll] = useState<PollDraftState>(EMPTY_POLL_DRAFT)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+
+  /* Признак читается после отрисовки: на сервере адреса нет, и проверка
+     прямо в разметке дала бы мигание. */
+  const [fromTelegram, setFromTelegram] = useState(false)
+  useEffect(() => {
+    setFromTelegram(new URLSearchParams(window.location.search).get("from") === "telegram")
+  }, [])
 
   if (!session) {
     return (
       <Card withBorder radius="md" p="sm">
-        <Group justify="space-between" gap="sm" wrap="wrap">
-          <Text size="sm" c="var(--market-muted)">Войдите, чтобы задать вопрос или ответить</Text>
-          <Button
-            component={Link}
-            href={`/auth/signin?callbackUrl=${encodeURIComponent(`/forum/${sectionSlug}`)}`}
-            size="xs"
-            radius="md"
-            color="indigo"
-          >
-            Войти
-          </Button>
-        </Group>
+        <Stack gap="xs">
+          <Text size="sm" c="var(--market-muted)">
+            {fromTelegram
+              ? "Чтобы задать вопрос, заведите аккаунт в боте — это три шага и пара минут."
+              : "Войдите, чтобы задать вопрос или ответить"}
+          </Text>
+          <Group gap="xs" wrap="wrap">
+            {/* Человек, пришедший из чата, входа по паролю не проходил: у
+                него его просто нет, и форма пароля для него тупик. */}
+            {fromTelegram && botUsername && (
+              <Button
+                component="a"
+                href={`https://t.me/${botUsername}`}
+                size="xs"
+                radius="md"
+                color="indigo"
+                leftSection={<IconBrandTelegram size={14} />}
+              >
+                Открыть бот
+              </Button>
+            )}
+            <Button
+              component={Link}
+              href={`/auth/signin?callbackUrl=${encodeURIComponent(`/forum/${sectionSlug}`)}`}
+              size="xs"
+              radius="md"
+              variant={fromTelegram ? "subtle" : "filled"}
+              color="indigo"
+            >
+              {fromTelegram ? "У меня уже есть аккаунт" : "Войти"}
+            </Button>
+          </Group>
+        </Stack>
       </Card>
     )
   }
