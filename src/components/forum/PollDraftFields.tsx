@@ -1,7 +1,7 @@
 "use client"
 
 import { ActionIcon, Box, Button, Checkbox, Group, Select, Stack, Text, TextInput } from "@mantine/core"
-import { IconPlus, IconX } from "@tabler/icons-react"
+import { IconChartBar, IconPlus, IconX } from "@tabler/icons-react"
 import { POLL_LIMITS } from "@/lib/forum-poll"
 
 /**
@@ -10,6 +10,10 @@ import { POLL_LIMITS } from "@/lib/forum-poll"
  * Опрос необязателен и по умолчанию свёрнут: большинству тем он не
  * нужен, а развёрнутая форма из вопроса, пяти вариантов и срока сбивает
  * с главного — написать сам вопрос.
+ *
+ * Раскрывается кнопкой, а не галочкой: галочка терялась среди полей
+ * формы настолько, что владелец площадки решил, будто опросов на форуме
+ * нет вовсе.
  *
  * Состояние держит форма темы: опрос создаётся вторым запросом, уже
  * после темы, и черновик нужен ей целиком.
@@ -71,13 +75,38 @@ export default function PollDraftFields({ value, onChange, disabled }: Props) {
 
   return (
     <Box>
-      <Checkbox
-        size="sm"
-        label="Добавить опрос"
-        checked={value.enabled}
-        onChange={(event) => set({ enabled: event.currentTarget.checked })}
-        disabled={disabled}
-      />
+      {/* Кнопка, а не галочка: галочка терялась среди полей формы, и
+          владелец площадки решил, что опросов на форуме нет вовсе.
+          Пояснение рядом — человек не обязан догадываться, зачем ему
+          голосование в своей теме. */}
+      {!value.enabled ? (
+        <Button
+          variant="light"
+          color="indigo"
+          size="compact-sm"
+          leftSection={<IconChartBar size={15} />}
+          onClick={() => set({ enabled: true })}
+          disabled={disabled}
+        >
+          Добавить опрос к теме
+        </Button>
+      ) : (
+        <Group justify="space-between" wrap="wrap" gap="xs">
+          <Group gap={6}>
+            <IconChartBar size={16} color="var(--market-primary)" />
+            <Text size="sm" fw={600} c="var(--market-ink)">Опрос в теме</Text>
+          </Group>
+          <Button
+            variant="subtle"
+            color="gray"
+            size="compact-xs"
+            onClick={() => set({ enabled: false })}
+            disabled={disabled}
+          >
+            Убрать
+          </Button>
+        </Group>
+      )}
 
       {value.enabled && (
         <Stack gap="xs" mt="xs" pl={26}>
