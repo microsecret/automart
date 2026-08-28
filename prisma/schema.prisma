@@ -1053,6 +1053,28 @@ model TelegramContact {
 /// Отдельно от ChatPromotionPost: тот привязан к оплаченному заказу и
 /// живёт по его сроку, а эта запись нужна лишь для того, чтобы не
 /// отправить одно объявление в тот же чат дважды.
+/// Публикация обсуждения форума в чате.
+///
+/// Форум с тринадцатью темами не растёт сам: человек не заходит проверять
+/// площадку, о которой не помнит. А в чатах уже сидят те, кому вопрос
+/// интересен — их надо позвать, а не ждать.
+///
+/// Запись нужна, чтобы не отправить одну тему в тот же чат дважды: без
+/// неё она уходила бы по кругу при каждом запуске рассылки.
+model ForumChatPost {
+  id      String     @id @default(uuid())
+  topicId String
+  topic   ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  chatId  String
+
+  messageId Int
+
+  publishedAt DateTime @default(now())
+
+  @@unique([topicId, chatId])
+  @@index([publishedAt])
+}
+
 model ListingChatPost {
   id        String @id @default(uuid())
   listingId String
@@ -1733,6 +1755,7 @@ model ForumTopic {
 
   posts ForumPost[]
   subscriptions ForumSubscription[]
+  chatPosts     ForumChatPost[]
   /// Опрос необязателен и всегда один: два голосования в одном
   /// обсуждении делят внимание, и оба остаются недоголосованными.
   poll  ForumPoll?

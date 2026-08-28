@@ -7,6 +7,10 @@ import { readFileSync } from "node:fs"
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8")
 
 const autopost = read("../src/lib/listing-chat-autopost.ts")
+/* Отправка вынесена в общий модуль: тот же порядок нужен обсуждениям
+   форума, и держать его в двух местах значит однажды поправить одно и
+   забыть про другое. */
+const sender = read("../src/lib/telegram-post-sender.ts")
 const post = read("../src/lib/chat-promotion-post.ts")
 const webhook = read("../src/app/api/telegram/webhook/route.ts")
 const moderation = read("../src/app/api/admin/listings/route.ts")
@@ -78,18 +82,18 @@ test("до девяти фотографий", () => {
 })
 
 test("несколько фотографий уходят альбомом", () => {
-  assert.match(autopost, /sendMediaGroup/)
+  assert.match(sender, /sendMediaGroup/)
 })
 
 test("подпись только у первой фотографии альбома", () => {
   /* Telegram показывает её под альбомом, а повторённая на каждой
      дублируется в уведомлениях. */
-  assert.match(autopost, /index === 0 \? \{ caption/)
+  assert.match(sender, /index === 0 \? \{ caption/)
 })
 
 test("кнопки идут ответом на альбом", () => {
   // Telegram не поддерживает кнопки на альбоме.
-  assert.match(autopost, /reply_to_message_id: album\[0\]\.message_id/)
+  assert.match(sender, /reply_to_message_id: album\[0\]\.message_id/)
 })
 
 // === Кнопки ===

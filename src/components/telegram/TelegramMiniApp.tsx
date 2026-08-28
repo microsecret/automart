@@ -47,6 +47,15 @@ const START_PARAM_ROUTES: Record<string, string> = {
    произвольный адрес внутри приложения. */
 const LISTING_PARAM = /^listing_([0-9a-f-]{16,40})$/i
 
+/* Тема форума: forum_<раздел>__<тема>.
+
+   Раздел и тема вместе, потому что адрес темы содержит раздел и без него
+   страница отвечает «не найдено». Разделитель двойной: в самих адресах
+   встречаются дефисы, но не подчёркивания, и одинарное могло бы попасться
+   внутри. Набор символов проверяется — иначе чужая строка в параметре
+   увела бы человека на произвольный адрес внутри приложения. */
+const FORUM_PARAM = /^forum_([a-z0-9-]{1,80})__([a-z0-9-]{1,120})$/i
+
 function resolveStartRoute(initData: string): string | null {
   try {
     const startParam = (
@@ -60,6 +69,9 @@ function resolveStartRoute(initData: string): string | null {
 
     const listing = startParam.match(LISTING_PARAM)
     if (listing) return `/listings/vehicle/${listing[1]}?from=telegram`
+
+    const forum = startParam.match(FORUM_PARAM)
+    if (forum) return `/forum/${forum[1]}/${forum[2]}?from=telegram`
 
     return null
   } catch {

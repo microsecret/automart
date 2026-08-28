@@ -18,6 +18,10 @@ import { prisma } from "@/lib/prisma"
 import { telegramApi, getTelegramBotUsername } from "@/lib/telegram"
 import { absoluteUrl } from "@/lib/site-url"
 import { buildChatPost, type PromotedListing } from "@/lib/chat-promotion-post"
+/* Отправка вынесена в общий модуль: тот же порядок нужен и обсуждениям
+   форума, а держать его в двух местах значит однажды поправить одно и
+   забыть про другое. */
+import { sendChatPost } from "@/lib/telegram-post-sender"
 
 /**
  * Запоминает, что человек пишет в этом чате.
@@ -142,7 +146,7 @@ export async function autopostListingToChat(listingId: string): Promise<boolean>
       { botUsername: getTelegramBotUsername() ?? undefined, siteUrl: absoluteUrl("/") },
     )
 
-    const sent = await sendPost(chatId, post)
+    const sent = await sendChatPost(chatId, post, { buttonsCaption: "Открыть объявление:" })
     if (!sent) return false
 
     /* Запись публикации: по ней видно, что объявление уже уходило, и она
@@ -167,65 +171,6 @@ function parseImages(raw: string | null): string[] {
   } catch {
     return []
   }
-}
-
-/**
- * Отправляет пост и возвращает идентификатор сообщения.
- *
- * Несколько фотографий уходят альбомом, а кнопки — отдельным сообщением
- * следом: Telegram не поддерживает кнопки на альбоме, и другого способа
- * показать их вместе с девятью снимками нет.
- */
-async function sendPost(
-  chatId: string,
-  post: { photos: string[]; caption: string; buttons: { text: string; url: string }[] },
-): Promise<number | null> {
-  const keyboard = { inline_keyboard: post.buttons.map((button) => [button]) }
-
-  if (post.photos.length === 0) {
-    const sent = await telegramApi<{ message_id: number }>("sendMessage", {
-      chat_id: chatId,
-      text: post.caption,
-      parse_mode: "HTML",
-      reply_markup: keyboard,
-    }).catch(() => null)
-    return sent?.message_id ?? null
-  }
-
-  if (post.photos.length === 1) {
-    const sent = await telegramApi<{ message_id: number }>("sendPhoto", {
-      chat_id: chatId,
-      photo: absoluteUrl(post.photos[0]),
-      caption: post.caption,
-      parse_mode: "HTML",
-      reply_markup: keyboard,
-    }).catch(() => null)
-    return sent?.message_id ?? null
-  }
-
-  const album = await telegramApi<{ message_id: number }[]>("sendMediaGroup", {
-    chat_id: chatId,
-    media: post.photos.map((photo, index) => ({
-      type: "photo",
-      media: absoluteUrl(photo),
-      /* Подпись только у первой: Telegram показывает её под альбомом, а
-         повторённая на каждой фотографии дублируется в уведомлениях. */
-      ...(index === 0 ? { caption: post.caption, parse_mode: "HTML" } : {}),
-    })),
-  }).catch(() => null)
-
-  if (!album?.length) return null
-
-  /* Кнопки следом, ответом на альбом: так они привязаны к нему визуально
-     и не выглядят отдельным сообщением ни к чему. */
-  await telegramApi("sendMessage", {
-    chat_id: chatId,
-    text: "Открыть объявление:",
-    reply_to_message_id: album[0].message_id,
-    reply_markup: keyboard,
-  }).catch(() => {})
-
-  return album[0].message_id
 }
 
 /**
