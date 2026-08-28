@@ -27,11 +27,16 @@ const CHAT_INTERVAL_MS = 24 * 60 * 60 * 1000
 /**
  * Сколько ответов нужно, чтобы позвать людей.
  *
- * Тема без единого ответа выглядит навязчиво: человек приходит по ссылке
- * и видит вопрос, на который никто не ответил. Один ответ уже показывает,
- * что разговор пошёл.
+ * Тема с ответом лучше: человек приходит по ссылке и видит, что разговор
+ * пошёл. Но пока форум молодой, таких тем нет вовсе — и правило
+ * блокировало бы рассылку целиком, замыкая круг: людей не зовём, потому
+ * что не отвечают, а не отвечают, потому что не зовём.
+ *
+ * Поэтому темы с ответами идут первыми, а если их нет — зовём на свежие
+ * без ответов. Для них пост честно говорит «вопрос ждёт ответа», а не
+ * притворяется живым обсуждением.
  */
-const MIN_REPLIES = 1
+const PREFERRED_REPLIES = 1
 
 /** Сколько дней тема считается свежей. */
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
@@ -77,20 +82,16 @@ export async function broadcastForumTopics(): Promise<ForumBroadcastResult> {
       continue
     }
 
-    const topic = await prisma.forumTopic.findFirst({
-      where: {
-        deletedAt: null,
-        isClosed: false,
-        replyCount: { gte: MIN_REPLIES },
-        createdAt: { gt: new Date(now.getTime() - MAX_AGE_MS) },
-        /* В этот чат тему ещё не слали: повтор раздражает сильнее, чем
-           отсутствие поста. */
-        chatPosts: { none: { chatId: chat.id } },
-      },
-      /* Самая живая: по свежести последнего сообщения, а не создания —
-           тема, где спорят третий день, интереснее вчерашней тишины. */
-      orderBy: { lastPostAt: "desc" },
-      select: {
+    const baseWhere = {
+      deletedAt: null,
+      isClosed: false,
+      createdAt: { gt: new Date(now.getTime() - MAX_AGE_MS) },
+      /* В этот чат тему ещё не слали: повтор раздражает сильнее, чем
+         отсутствие поста. */
+      chatPosts: { none: { chatId: chat.id } },
+    }
+
+    const select = {
         id: true,
         title: true,
         slug: true,
@@ -104,8 +105,22 @@ export async function broadcastForumTopics(): Promise<ForumBroadcastResult> {
           take: 1,
           select: { content: true },
         },
-      },
-    })
+    } as const
+
+    /* Сначала темы с ответами: разговор, который уже пошёл, интереснее
+       вопроса без ответа. Если таких нет — зовём на свежий вопрос, иначе
+       рассылка не начнётся никогда. */
+    const topic =
+      await prisma.forumTopic.findFirst({
+        where: { ...baseWhere, replyCount: { gte: PREFERRED_REPLIES } },
+        orderBy: { lastPostAt: "desc" },
+        select,
+      })
+      ?? await prisma.forumTopic.findFirst({
+        where: baseWhere,
+        orderBy: { createdAt: "desc" },
+        select,
+      })
 
     if (!topic || topic.posts.length === 0) {
       result.skipped += 1
@@ -125,6 +140,7 @@ export async function broadcastForumTopics(): Promise<ForumBroadcastResult> {
         topicSlug: topic.slug,
         images: extractImages(firstPost),
         hasPoll: topic.poll !== null,
+        awaitingAnswer: topic.replyCount === 0,
       },
       { botUsername, siteUrl },
     )

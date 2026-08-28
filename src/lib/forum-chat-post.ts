@@ -27,6 +27,9 @@ export type ForumTopicPost = {
   images: string[]
   /** Есть ли в теме опрос — про него стоит сказать отдельно. */
   hasPoll: boolean
+  /** Ответов ещё нет: пост честно зовёт ответить, а не притворяется
+      живым обсуждением. */
+  awaitingAnswer?: boolean
 }
 
 export type ChatTopicPost = {
@@ -71,6 +74,10 @@ export function buildForumChatPost(
     /* Про опрос сказано отдельно: голосование — самое лёгкое действие,
        на которое соглашается человек, который читать не собирался. */
     lines.push("", "📊 В теме идёт голосование — можно ответить одним нажатием.")
+  } else if (topic.awaitingAnswer) {
+    /* Честно, а не «присоединяйтесь к обсуждению»: человек перейдёт и
+       увидит вопрос без единого ответа, и обман запомнится. */
+    lines.push("", "❓ Вопрос пока без ответа — подскажете?")
   }
 
   lines.push("", `<i>${escapeHtml(topic.sectionTitle)} · ${escapeHtml(topic.authorName || "Участник")}</i>`)

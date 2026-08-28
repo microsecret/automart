@@ -95,10 +95,20 @@ test("не чаще одной темы в сутки на чат", () => {
   assert.match(broadcast, /publishedAt: \{ gt: new Date\(now\.getTime\(\) - CHAT_INTERVAL_MS\) \}/)
 })
 
-test("тема без ответов не рассылается", () => {
-  /* Человек приходит по ссылке и видит вопрос, на который никто не
-     ответил. */
-  assert.match(broadcast, /replyCount: \{ gte: MIN_REPLIES \}/)
+test("темы с ответами идут первыми", () => {
+  /* Разговор, который уже пошёл, интереснее вопроса без ответа. Но если
+     таких тем нет вовсе, рассылка не должна вставать: иначе круг
+     замыкается — людей не зовём, потому что не отвечают, а не отвечают,
+     потому что не зовём. */
+  assert.match(broadcast, /replyCount: \{ gte: PREFERRED_REPLIES \}/)
+  assert.match(broadcast, /\?\? await prisma\.forumTopic\.findFirst/)
+})
+
+test("тема без ответов честно названа вопросом", () => {
+  /* Человек перейдёт и увидит вопрос без единого ответа — обман
+     запомнится. */
+  const post = buildForumChatPost({ ...base, awaitingAnswer: true }, options)
+  assert.match(post.caption, /без ответа/)
 })
 
 test("закрытые и удалённые темы не рассылаются", () => {
