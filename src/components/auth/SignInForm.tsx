@@ -13,8 +13,9 @@ import {
   Alert,
   Anchor,
   Group,
+  Divider,
 } from "@mantine/core"
-import { IconAlertCircle, IconAt, IconLock } from "@tabler/icons-react"
+import { IconAlertCircle, IconAt, IconLock, IconBrandTelegram } from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type ResendVerificationResponse = { message?: string }
@@ -114,6 +115,31 @@ export default function SignInForm() {
       {info && <Alert color="green" variant="light" radius="md">{info}</Alert>}
       {needsEmailVerification && <Button variant="light" color="indigo" onClick={resendVerification} loading={loading}>Отправить письмо повторно</Button>}
 
+      {/* Telegram первым, пароль вторым.
+
+          Девяносто девять человек из ста двадцати пришли через Telegram, а
+          страница встречала их полем пароля, которого у них нет: ссылка на
+          бота была мелким текстом под формой. За сутки восемьдесят шесть
+          человек открыли форму подачи объявления и создали одно. */}
+      <Stack gap="xs">
+        <Button
+          component={Link}
+          href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+          fullWidth
+          size="md"
+          radius="md"
+          color="indigo"
+          leftSection={<IconBrandTelegram size={18} />}
+        >
+          Войти через Telegram
+        </Button>
+        <Text size="xs" c="gray.5" ta="center">
+          Регистрация проходит в боте — за минуту, без анкеты
+        </Text>
+      </Stack>
+
+      <Divider label="или по паролю" labelPosition="center" />
+
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
           <TextInput
@@ -142,16 +168,8 @@ export default function SignInForm() {
       <Text size="xs" c="gray.5" ta="right"><Link href="/auth/forgot-password" style={{ color: "#1c4291" }}>Забыли пароль?</Link></Text>
     </form>
 
-      <Group justify="center">
-        <Text size="sm" c="gray.5" ta="center">
-          Нет аккаунта?{" "}
-          <Anchor component={Link} href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`} size="sm" c="indigo" fw={500}>
-            Зарегистрироваться через Telegram
-          </Anchor>
-          <br />
-          <Text component="span" size="xs" c="gray.5">Регистрация проходит в боте — за минуту, без анкеты</Text>
-        </Text>
-      </Group>
+      {/* Прежняя ссылка внизу убрана: то же предложение теперь стоит
+          наверху кнопкой, и повторять его дважды незачем. */}
     </Stack>
   )
 }
