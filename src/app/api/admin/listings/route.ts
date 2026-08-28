@@ -6,6 +6,7 @@ import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
 import { moderationNotice } from "@/lib/listing-moderation-notify"
 import { readStoredVehicleSubtype, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
 import { autopostListingToChat } from "@/lib/listing-chat-autopost"
+import { notifyListingPublished } from "@/lib/listing-published-notify"
 
 export const dynamic = "force-dynamic"
 
@@ -81,15 +82,21 @@ export async function PATCH(request: NextRequest) {
       return next
     })
 
-    /* Одобренное объявление уходит в чат продавца — тот, откуда он сам
-       пришёл. Публикуем здесь, а не при создании: в чат должно попадать
-       проверенное, иначе бот разносит по группам то, что модератор ещё
-       не видел.
+    /* Одобренное объявление уходит в чат своего города. Публикуем здесь,
+       а не при создании: в чат должно попадать проверенное, иначе бот
+       разносит по группам то, что модератор ещё не видел.
+
+       Следом продавцу приходит сообщение в бот. Раньше о публикации
+       говорил только колокольчик на сайте, а из ста двадцати человек сто
+       девятнадцать пришли из Telegram и на сайт заходят редко —
+       одобренное объявление они не видели и не начинали продвигать.
 
        Ответа не ждём: отправка в Telegram занимает секунды, а решение
-       модератора не должно на них останавливаться. */
+       модератора не должно на них останавливаться. Порядок при этом
+       важен — уведомление называет чат, куда объявление ушло, и потому
+       ждёт публикации. */
     if (status === LISTING_STATUS.ACTIVE) {
-      void autopostListingToChat(id)
+      void autopostListingToChat(id).then((chatTitle) => notifyListingPublished(id, chatTitle))
     }
 
     await recordAdminAudit({

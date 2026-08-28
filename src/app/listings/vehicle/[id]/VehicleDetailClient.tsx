@@ -79,6 +79,7 @@ import { filterMeaningfulSpecs } from "@/lib/spec-visibility"
 import NextImage from "next/image"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-intent"
+import { isUploadedImage } from "@/lib/uploaded-image"
 
 interface VehicleData {
   id: string
@@ -506,7 +507,16 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                            это около сорока килобайт. */
                         priority
                         sizes="(max-width: 62em) 100vw, 620px"
-                        unoptimized={!images[activeImage].startsWith("/")}
+                        /* Загруженные людьми снимки идут мимо оптимизатора:
+                           Next составляет список файлов public при сборке, и
+                           всё, что легло туда позже, для него не существует —
+                           оптимизатор отвечает «не является изображением», а
+                           страница показывает пустоту. Сжимать их и не нужно:
+                           загрузка уже уменьшает кадр до 1920 и жмёт с
+                           качеством 82. */
+                        unoptimized={
+                          !images[activeImage].startsWith("/") || isUploadedImage(images[activeImage])
+                        }
                         onError={() => setImageFailed(true)}
                         style={{ objectFit: "cover" }}
                       />
@@ -566,7 +576,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                               height={80}
                               sizes="110px"
                               loading={i < 3 ? "eager" : "lazy"}
-                              unoptimized={!img.startsWith("/")}
+                              unoptimized={!img.startsWith("/") || isUploadedImage(img)}
                               onError={(event) => { (event.currentTarget as HTMLImageElement).style.opacity = "0" }}
                               style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             />
@@ -783,7 +793,8 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                             fill
                             sizes="(max-width: 576px) 100vw, (max-width: 1152px) 50vw, 320px"
                             className="vehicle-detail-similar-card__image"
-                          />
+                unoptimized={isUploadedImage(item.image)}
+              />
                         )}
                       </Box>
                       <Box className="vehicle-detail-similar-card__content">

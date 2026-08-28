@@ -18,10 +18,22 @@ const miniApp = read("../src/components/telegram/TelegramMiniApp.tsx")
 
 // === Куда уходит объявление ===
 
-test("объявление уходит в чат, откуда пришёл продавец", () => {
-  /* Его увидят те, среди кого он уже состоит: для чата под Владивосток
-     это разница между «продаю Prado» среди своих и тем же объявлением
-     среди всей страны. */
+test("чат выбирается по городу машины, а не по привычкам продавца", () => {
+  /* Человек, который пишет в чат Уфы, а машину продаёт в Казани,
+     показывал её не тем людям: за машиной в другой регион не поедут. */
+  assert.match(autopost, /pickChatTitleForCity/)
+  assert.match(autopost, /city: listing\.vehicle\.location/)
+})
+
+test("город без своего чата уходит в общий чат страны", () => {
+  /* Чата под Марий Эл нет, но машина продаётся: показать всей стране
+     лучше, чем не показать никому. */
+  assert.match(autopost, /FALLBACK_CHAT_TITLE/)
+})
+
+test("членство в чате осталось запасным ходом", () => {
+  /* Если не нашлось ни чата области, ни общего — объявление уйдёт туда,
+     где продавца знают: это лучше, чем не отправить вовсе. */
   assert.match(autopost, /prisma\.telegramUserChat\.findFirst/)
   assert.match(autopost, /orderBy: \{ lastSeenAt: "desc" \}/)
 })
@@ -56,9 +68,22 @@ test("решение модератора не ждёт отправки в Tele
   assert.match(moderation, /void autopostListingToChat\(id\)/)
 })
 
+test("после публикации продавцу пишет бот", () => {
+  /* О публикации говорил только колокольчик на сайте, а из ста двадцати
+     человек сто девятнадцать пришли из Telegram и на сайт заходят редко:
+     одобренное объявление они не видели и не начинали продвигать. */
+  assert.match(moderation, /notifyListingPublished\(id, chatTitle\)/)
+})
+
+test("уведомление называет чат, куда ушло объявление", () => {
+  /* Без этого бесплатная рассылка остаётся для продавца невидимой, и он
+     не понимает, за что платить продвижение. */
+  assert.match(autopost, /return chat\.title/)
+})
+
 test("снятое объявление в чат не уходит", () => {
   // Пост на снятое объявление — ссылка в никуда.
-  assert.match(autopost, /listing\.status !== "ACTIVE"\) return false/)
+  assert.match(autopost, /listing\.status !== "ACTIVE"\) return null/)
   assert.match(autopost, /listing\.deletedAt/)
 })
 

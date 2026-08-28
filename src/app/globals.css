@@ -2428,6 +2428,67 @@ select {
   inset: 0;
 }
 
+/* Стрелки листания фото в карточке.
+
+   Слой 2 — над ссылкой внутри области фото (слой 1), иначе нажатие
+   открывало бы объявление вместо смены кадра.
+
+   Скрыты по умолчанию и проявляются при наведении на карточку: каталог
+   — это сетка из десятков плиток, и восемь постоянных стрелок поверх
+   фотографий превращают её в панель управления. Скрытие сделано через
+   opacity, а не display: у display нет промежуточных состояний, и
+   стрелка возникала бы рывком.
+
+   Показываются только там, где есть настоящий указатель. На телефоне
+   листают пальцем — свайп по фото уже работает, — а касание вызывает
+   ложное наведение: стрелка появлялась бы после тапа и оставалась
+   висеть до нажатия в другом месте. */
+.listing-card__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.42);
+  border-radius: 50%;
+  opacity: 0;
+  backdrop-filter: blur(2px);
+  transform: translateY(-50%);
+  transition: opacity var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out);
+}
+
+.listing-card__arrow[data-side="prev"] { left: 8px; }
+.listing-card__arrow[data-side="next"] { right: 8px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .listing-card:hover .listing-card__arrow {
+    opacity: 1;
+  }
+
+  .listing-card__arrow:hover {
+    background: rgba(0, 0, 0, 0.62);
+  }
+}
+
+/* С клавиатуры стрелка нужна видимой независимо от наведения: иначе
+   человек переводит на неё фокус и не видит, где он находится. */
+.listing-card__arrow:focus-visible {
+  opacity: 1;
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
+/* Меньше движения — стрелки остаются, исчезает только проявление:
+   без них листать мышью нечем, а это не украшение. */
+@media (prefers-reduced-motion: reduce) {
+  .listing-card__arrow {
+    transition: none;
+  }
+}
+
 .listing-card__media[data-empty-media]::before {
   position: absolute;
   z-index: 0;

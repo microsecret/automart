@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, UnstyledButton } from "@mantine/core"
-import { IconChevronRight, IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
+import { IconChevronLeft, IconChevronRight, IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
@@ -12,6 +12,7 @@ import VehicleFallback from "./VehicleFallback"
 import NextImage from "next/image"
 import { useCompare } from "@/hooks/useCompare"
 import { useFavorites } from "@/hooks/useFavorites"
+import { isUploadedImage } from "@/lib/uploaded-image"
 
 export interface ListingCardData {
   id: string
@@ -108,6 +109,19 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const isFav = favoriteIds.has(listing.id)
   const missingMediaLabel = "Без фото"
 
+  /* Смена кадра одним местом: свайп, стрелки и точки меняли состояние
+     тремя одинаковыми кусками, и признак загрузки в одном из них забыть
+     было легко — кадр менялся, а плашка ожидания оставалась висеть.
+
+     Шаг закольцован: с последнего кадра «вперёд» ведёт на первый. В
+     каталоге человек листает бегло, и тупик на краю читается как
+     сломанная кнопка. */
+  const showImage = (next: number) => {
+    setActiveImg(((next % images.length) + images.length) % images.length)
+    setImageFailed(false)
+    setImageLoaded(false)
+  }
+
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -154,12 +168,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             /* Свайп не должен открывать объявление: поверх фото лежит
                ссылка на всю карточку. */
             event.preventDefault()
-            setActiveImg((current) => {
-              const next = delta < 0 ? current + 1 : current - 1
-              return (next + images.length) % images.length
-            })
-            setImageFailed(false)
-            setImageLoaded(false)
+            showImage(delta < 0 ? activeImg + 1 : activeImg - 1)
           }}
           data-empty-media={!hasDisplayImage || undefined}
           data-image-loading={hasDisplayImage && !imageLoaded ? "true" : undefined}
@@ -201,12 +210,41 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 onLoad={() => setImageLoaded(true)}
                 onError={() => { setImageFailed(true); setImageLoaded(false) }}
                 loading="lazy"
+                unoptimized={isUploadedImage(displayImage)}
               />
               )}
             </>
           </AspectRatio>
           {images.length > 1 && (
             <>
+              {/* Стрелки листания.
+
+                  Точки и свайп закрывали только палец: на мыши свайпа нет,
+                  а точек рисуется пять при большем числе кадров — до
+                  остальных добраться было нельзя, не открывая объявление.
+
+                  Появляются при наведении на карточку и только там, где
+                  есть настоящий указатель: на телефоне листают пальцем, и
+                  постоянные стрелки поверх фото там только мешают. Правила
+                  показа — в listing-card.css, рядом с остальным видом
+                  карточки. */}
+              {[-1, 1].map((step) => (
+                <UnstyledButton
+                  key={step}
+                  className="listing-card__arrow"
+                  data-side={step < 0 ? "prev" : "next"}
+                  onClick={(event) => {
+                    /* Поверх фото лежит ссылка на всю карточку: без этого
+                       нажатие на стрелку открывало бы объявление. */
+                    event.preventDefault()
+                    event.stopPropagation()
+                    showImage(activeImg + step)
+                  }}
+                  aria-label={step < 0 ? "Предыдущее фото" : "Следующее фото"}
+                >
+                  {step < 0 ? <IconChevronLeft size={18} stroke={2.2} /> : <IconChevronRight size={18} stroke={2.2} />}
+                </UnstyledButton>
+              ))}
               {/* Точки навигации */}
               {/* Точка остаётся маленькой визуально, но зона нажатия — 44px,
                   как требует норма для пальца: попасть в шестипиксельную
@@ -216,7 +254,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 {images.slice(0, 5).map((_, i) => (
                   <UnstyledButton
                     key={i}
-                    onClick={() => { setActiveImg(i); setImageFailed(false); setImageLoaded(false) }}
+                    onClick={() => showImage(i)}
                     aria-label={`Показать фото ${i + 1} из ${images.length}`}
                     aria-current={i === activeImg ? "true" : undefined}
                     style={{

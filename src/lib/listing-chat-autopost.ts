@@ -5,10 +5,14 @@
  * есть почти никогда: человек размещал машину и ждал звонков от тех, кто
  * сам зайдёт на сайт.
  *
- * Бесплатно объявление уходит в один чат — тот, откуда пришёл сам
- * продавец. Его увидят те, среди кого он уже состоит: для чата под
- * Владивосток это разница между «продаю Prado» среди своих и тем же
+ * Бесплатно объявление уходит в один чат — тот, что отвечает городу
+ * машины. Для чата под Уфу это разница между «продаю Приору в
+ * Октябрьском» среди тех, кто может за ней приехать, и тем же
  * объявлением среди всей страны.
+ *
+ * Раньше чат выбирался по тому, где видели самого продавца. Человек,
+ * который пишет в чат Уфы, а машину продаёт в Казани, показывал её не
+ * тем людям: за машиной в другой регион не поедут.
  *
  * Платное продвижение остаётся тем, чем было: все чаты сети, закреп и
  * повторные размещения — за это и платят.
@@ -22,6 +26,7 @@ import { buildChatPost, type PromotedListing } from "@/lib/chat-promotion-post"
    форума, а держать его в двух местах значит однажды поправить одно и
    забыть про другое. */
 import { sendChatPost } from "@/lib/telegram-post-sender"
+import { pickChatTitleForCity, FALLBACK_CHAT_TITLE } from "@/lib/city-chat-routing"
 
 /**
  * Запоминает, что человек пишет в этом чате.
@@ -60,25 +65,75 @@ export async function rememberUserChat(input: { telegramId: string; chatId: stri
   }
 }
 
+/** Чат вместе с названием: название уходит продавцу в уведомлении.
+
+    Название может быть пустым: бота могли добавить в группу до того, как
+    ей дали имя. Тогда продавцу про чат просто не скажут. */
+type PickedChat = { id: string; title: string | null }
+
 /**
- * Куда публиковать объявление этого продавца.
+ * Куда публиковать объявление — по городу машины.
  *
- * Если он пишет в нескольких чатах — берётся тот, где его видели
- * последним: это ближе всего к «откуда он пришёл» из тех сведений, что
- * у нас есть.
+ * Сначала выбирался чат, где продавца видели последним. Для человека,
+ * который пишет в чат Уфы, а машину продаёт в Казани, это значило
+ * объявление не для тех людей: за машиной в другой регион не поедут.
+ *
+ * Город машины — признак вернее: он есть в каждом объявлении и не
+ * зависит от того, писал ли продавец в чаты вообще. Правила разбора — в
+ * city-chat-routing, они проверяются тестами отдельно.
+ *
+ * Членство осталось запасным ходом: если чата под область нет ни
+ * подходящего, ни общего, объявление уйдёт туда, где продавца знают, —
+ * это лучше, чем не отправить вовсе.
  */
-async function pickChatForSeller(userId: string): Promise<string | null> {
+async function pickChatForListing(input: { userId: string; city: string | null }): Promise<PickedChat | null> {
+  const byCity = await findChatByTitle(pickChatTitleForCity(input.city))
+  if (byCity) return byCity
+
+  /* Города не хватило — общий чат страны. Он мог быть выключен, тогда
+     идём дальше. */
+  const fallback = await findChatByTitle(FALLBACK_CHAT_TITLE)
+  if (fallback) return fallback
+
+  return pickChatForSeller(input.userId)
+}
+
+/**
+ * Ищет живой чат по названию.
+ *
+ * Названия чатов задаёт владелец в Telegram, и переименование там ничем
+ * не отзывается у нас — поэтому сравнение нестрогое, по вхождению
+ * ключевого слова, а не по точному равенству.
+ */
+async function findChatByTitle(title: string): Promise<PickedChat | null> {
+  const chat = await prisma.telegramChat.findFirst({
+    where: {
+      /* Только живые чаты с включённой рассылкой: в чат, где бота
+         выключили, объявление слать нельзя. */
+      active: true,
+      marketingEnabled: true,
+      title: { contains: title },
+    },
+    select: { id: true, title: true },
+  })
+  return chat ? { id: chat.id, title: chat.title } : null
+}
+
+/**
+ * Запасной ход: чат, где продавца видели последним.
+ *
+ * Используется, когда по городу чат не нашёлся и общего чата тоже нет.
+ */
+async function pickChatForSeller(userId: string): Promise<PickedChat | null> {
   const membership = await prisma.telegramUserChat.findFirst({
     where: {
       userId,
-      /* Только живые чаты с включённой рассылкой: в чат, где бота
-         выключили, объявление слать нельзя. */
       chat: { active: true, marketingEnabled: true },
     },
     orderBy: { lastSeenAt: "desc" },
-    select: { chatId: true },
+    select: { chatId: true, chat: { select: { title: true } } },
   })
-  return membership?.chatId ?? null
+  return membership ? { id: membership.chatId, title: membership.chat.title } : null
 }
 
 /**
@@ -88,7 +143,7 @@ async function pickChatForSeller(userId: string): Promise<string | null> {
  * журнала: публикация в чат — приятное дополнение, и её неудача не
  * должна отменять само объявление.
  */
-export async function autopostListingToChat(listingId: string): Promise<boolean> {
+export async function autopostListingToChat(listingId: string): Promise<string | null> {
   try {
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
@@ -111,20 +166,23 @@ export async function autopostListingToChat(listingId: string): Promise<boolean>
 
     /* Публикуем только то, что видно на площадке: черновик или снятое
        объявление в чате — это ссылка в никуда. */
-    if (!listing || listing.deletedAt || listing.status !== "ACTIVE") return false
-    if (!listing.vehicle) return false
+    if (!listing || listing.deletedAt || listing.status !== "ACTIVE") return null
+    if (!listing.vehicle) return null
 
-    const chatId = await pickChatForSeller(listing.userId)
-    if (!chatId) return false
+    const chat = await pickChatForListing({
+      userId: listing.userId,
+      city: listing.vehicle.location,
+    })
+    if (!chat) return null
 
     /* Уже публиковали — второй раз не шлём: объявление могли снять и
        вернуть, а два одинаковых поста в чате раздражают больше, чем их
        отсутствие. */
     const already = await prisma.listingChatPost.findFirst({
-      where: { chatId, listingId: listing.id },
+      where: { chatId: chat.id, listingId: listing.id },
       select: { id: true },
     })
-    if (already) return false
+    if (already) return null
 
     const post = buildChatPost(
       {
@@ -146,19 +204,22 @@ export async function autopostListingToChat(listingId: string): Promise<boolean>
       { botUsername: getTelegramBotUsername() ?? undefined, siteUrl: absoluteUrl("/") },
     )
 
-    const sent = await sendChatPost(chatId, post, { buttonsCaption: "Открыть объявление:" })
-    if (!sent) return false
+    const sent = await sendChatPost(chat.id, post, { buttonsCaption: "Открыть объявление:" })
+    if (!sent) return null
 
     /* Запись публикации: по ней видно, что объявление уже уходило, и она
        же нужна уборке, если объявление снимут. */
     await prisma.listingChatPost.create({
-      data: { chatId, listingId: listing.id, messageId: sent },
+      data: { chatId: chat.id, listingId: listing.id, messageId: sent },
     })
 
-    return true
+    /* Название возвращается наверх: продавцу в уведомлении надо сказать,
+       в какой именно чат ушло объявление, — иначе бесплатная рассылка
+       остаётся для него невидимой. */
+    return chat.title
   } catch (error) {
     console.error("Публикация объявления в чат:", error)
-    return false
+    return null
   }
 }
 
