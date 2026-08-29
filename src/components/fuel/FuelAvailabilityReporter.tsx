@@ -408,10 +408,38 @@ export default function FuelAvailabilityReporter({
               loading="lazy"
               style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 10, display: "block" }}
             />
-            {withPhoto.comment && (
-              <Text size="xs" c="dimmed" mt={4}>{withPhoto.comment}</Text>
-            )}
+            {/* Комментарий вынесен в общий список ниже: под снимком он
+                показывался только при наличии фотографии. */}
           </Box>
+        )
+      })()}
+
+      {/* Комментарии водителей — отдельно от снимка.
+
+          Раньше комментарий показывался только под фотографией: без неё
+          он пропадал вовсе, хотя именно текст часто и есть главное. «На
+          табло не горит, по факту есть», «лимит 30 литров», «очередь на
+          въезде» — такое не выразить кнопками, и оно решает, ехать ли.
+
+          Показываются все свежие, не только последний: два разных
+          человека сообщают разное, и выбрать за них нельзя. */}
+      {(() => {
+        const notes = availability
+          .filter((item) => item.comment && item.updatedAt)
+          .slice(0, 3)
+        if (notes.length === 0) return null
+
+        return (
+          <Stack gap={4}>
+            {notes.map((item) => (
+              <Paper key={item.fuel} withBorder radius="md" p={6} bg="var(--market-surface-subtle)">
+                <Text size="xs" c="var(--market-ink)">{item.comment}</Text>
+                <Text size="10px" c="dimmed" mt={2}>
+                  {item.label} · {item.updatedAt ? formatAge(new Date(item.updatedAt)) : ""}
+                </Text>
+              </Paper>
+            ))}
+          </Stack>
         )
       })()}
 

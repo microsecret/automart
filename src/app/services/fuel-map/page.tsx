@@ -627,7 +627,15 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 
           return (
             <Box key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-pin" style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 15px), 0)` }}>
-              <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-cluster-state={clusterState || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{ ...(networkIdentity && !isCluster && !fresh.length ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
+              <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-cluster-state={clusterState || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{
+                /* Цвет сети на кружке всегда, а не только когда нет
+                   отметок: человек узнаёт свою заправку по цвету раньше,
+                   чем читает буквы. Наличие при этом видно по кольцу —
+                   зелёному или красному вокруг кружка. */
+                ...(networkIdentity && !isCluster
+                  ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor }
+                  : {}),
+              }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
             </Box>
           )
         })}
@@ -718,6 +726,13 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 <Text size="xs" fw={700} lineClamp={1}>{selectedStation.name}</Text>
                 <Text size="10px" c="dimmed" lineClamp={1}>
                   {selectedStation.address || selectedStationAddress || "Уточняем адрес…"}
+                  {/* Расстояние от центра карты: человек смотрит на
+                      участок, который сам выбрал, и «1,2 км» отвечает на
+                      вопрос «далеко ли отсюда» без открытия маршрута. */}
+                  {(() => {
+                    const km = getDistanceInKilometers(coordinates, selectedStation)
+                    return km > 0.05 ? ` · ${km < 1 ? `${Math.round(km * 1000)} м` : `${km.toFixed(1).replace(".", ",")} км`}` : ""
+                  })()}
                 </Text>
               </Box>
             </Group>

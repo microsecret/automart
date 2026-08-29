@@ -183,15 +183,26 @@ test("тег OpenStreetMap на плашке отличается от отме�
 })
 
 test("цвета обозначений совпадают с цветами меток", () => {
-  // Разойдись они на тон, и подпись перестала бы объяснять карту.
+  /* Разойдись они на тон, и подпись перестала бы объяснять карту.
+     Наличие показывается кольцом, а не заливкой: заливка затирала цвет
+     сети, и человек переставал отличать Лукойл от Роснефти. */
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
-  const markerYes = css.match(/fuel-map-marker\[data-reported="yes"\]\s*\{\s*background:\s*([^;]+);/)?.[1]
-  const legendYes = css.match(/legend > span\[data-reported="yes"\]::before \{ background: ([^;]+); \}/)?.[1]
-  assert.ok(markerYes && legendYes)
-  assert.equal(markerYes.trim(), legendYes.trim())
+
+  for (const [state, expected] of [["yes", "#16a34a"], ["no", "#dc2626"]] as const) {
+    const marker = css.slice(css.indexOf(`fuel-map-marker[data-reported="${state}"]`))
+    assert.ok(marker.slice(0, 140).includes(expected), `у метки «${state}» другой цвет`)
+
+    const legend = css.slice(css.indexOf(`legend > span[data-reported="${state}"]`))
+    assert.ok(legend.slice(0, 100).includes(expected), `у обозначения «${state}» другой цвет`)
+  }
 })
 
-// === Снимок табло ===
+test("цвет сети виден и при отметках", () => {
+  /* Заливка по наличию затирала фирменный цвет: заправка становилась
+     просто зелёной, и человек переставал узнавать свою сеть. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /networkIdentity && !isCluster\s*\?\s*\{ backgroundColor/)
+})
 
 test("снимок берётся из самой свежей отметки", () => {
   /* Фотография часовой давности говорит о заправке больше, чем
@@ -351,4 +362,26 @@ test("цену можно исправить нажатием", () => {
   const reporter = readFileSync(new URL("../src/components/fuel/FuelPriceReporter.tsx", import.meta.url), "utf8")
   assert.match(reporter, /component="button"/)
   assert.match(reporter, /setPrice\(\(entry\.priceKopecks \/ 100\)/)
+})
+
+test("комментарии видны без фотографии", () => {
+  /* Раньше комментарий показывался только под снимком: без него
+     пропадал, хотя именно текст часто и есть главное — «на табло не
+     горит, по факту есть», «лимит 30 литров». */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /item\.comment && item\.updatedAt/)
+})
+
+test("в карточке на карте видно расстояние", () => {
+  // «1,2 км» отвечает на вопрос «далеко ли» без открытия маршрута.
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /getDistanceInKilometers\(coordinates, selectedStation\)/)
+})
+
+test("плашки читаются на телефоне", () => {
+  /* Кегль 10 и ширина 168 под солнцем не разбираются, а смотрят на карту
+     именно там. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const plate = css.slice(css.indexOf(".fuel-map-plate {"))
+  assert.match(plate.slice(0, 600), /max-width: 210px/)
 })

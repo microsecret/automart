@@ -3729,7 +3729,11 @@ select {
   display: flex;
   align-items: stretch;
   overflow: hidden;
-  max-width: 168px;
+  /* Плашки были мелкими: 168 пикселей и кегль 10 — на телефоне под
+     солнцем такое не читается, а именно там на карту и смотрят. Ширина и
+     шрифт подняты до того размера, при котором марка топлива и цена
+     разбираются на ходу. */
+  max-width: 210px;
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 7px;
   background: rgba(17, 17, 20, 0.88);
@@ -3748,10 +3752,10 @@ select {
    ничего не присваивают. */
 .fuel-map-plate__logo {
   display: grid;
-  width: 22px;
-  flex: 0 0 22px;
+  width: 26px;
+  flex: 0 0 26px;
   place-items: center;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -3766,28 +3770,28 @@ select {
 
 .fuel-map-plate__body {
   display: grid;
-  gap: 1px;
-  padding: 3px 7px 4px;
+  gap: 2px;
+  padding: 4px 8px 5px;
   min-width: 0;
 }
 
 .fuel-map-plate__title {
   overflow: hidden;
   color: rgba(255, 255, 255, 0.95);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .fuel-map-plate__fuels {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   align-items: baseline;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.25;
   font-variant-numeric: tabular-nums;
 }
 
@@ -3807,11 +3811,13 @@ select {
 
 /* Цена мельче марки и без знака рубля: место на плашке дороже точности
    оформления, а «62» рядом с «92» человек читает верно. */
+/* Цена — то, ради чего половина открывает карту: она не должна быть
+   мельче марки, к которой относится. */
 .fuel-map-plate__price {
-  margin-left: 2px;
-  font-size: 9px;
+  margin-left: 3px;
+  font-size: 10px;
   font-weight: 800;
-  opacity: 0.86;
+  opacity: 0.92;
 }
 
 /* Хвостик книзу указывает на саму точку: без него плашка висит в воздухе
@@ -3863,12 +3869,18 @@ select {
 /* Отметки водителей важнее тегов OpenStreetMap: те говорят про
    ассортимент вообще, а эти — про наличие сейчас. Поэтому цвет по
    отметкам перекрывает и цвет сети, и качество данных. */
+/* Наличие показывается кольцом, а не заливкой.
+
+   Заливка затирала цвет сети: заправка становилась просто зелёной, и
+   человек переставал отличать Лукойл от Роснефти. Кольцо оставляет
+   фирменный цвет внутри и добавляет ответ на второй вопрос — есть ли
+   топливо. Оба сведения видны разом. */
 .fuel-map-marker[data-reported="yes"] {
-  background: #16a34a;
+  box-shadow: 0 0 0 3px #16a34a, var(--shadow-md);
 }
 
 .fuel-map-marker[data-reported="no"] {
-  background: #dc2626;
+  box-shadow: 0 0 0 3px #dc2626, var(--shadow-md);
 }
 
 .fuel-map-marker[data-cluster] {
