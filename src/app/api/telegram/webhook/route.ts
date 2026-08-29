@@ -1,5 +1,6 @@
 import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
+import { handleFuelCallback, handleFuelLocation } from "@/lib/fuel-bot-handler"
 import {
   canModerateTelegramChat,
   completeTelegramRegistration,
@@ -61,7 +62,17 @@ type TelegramMessage = {
   is_automatic_forward?: boolean
 }
 
-type TelegramUpdate = { message?: TelegramMessage }
+/* Нажатия на кнопки отбрасывались вовсе: бот их не понимал, и любая
+   кнопка с callback_data молча ничего не делала. Отметка топлива из бота
+   без них невозможна. */
+type TelegramCallbackQuery = {
+  id: string
+  data?: string
+  from?: { id: number }
+  message?: { message_id: number; chat: { id: number } }
+}
+
+type TelegramUpdate = { message?: TelegramMessage; callback_query?: TelegramCallbackQuery }
 type TelegramSentMessage = { message_id: number }
 
 const MODERATION_NOTICE_COOLDOWN_MS = 60 * 60 * 1000
@@ -332,6 +343,25 @@ async function sendRegistrationComplete(chatId: string, name?: string | null) {
     "",
     "🔑 Входить больше не нужно: приложение узнаёт вас по Telegram.",
     "На сайте — почта или телефон и ваш пароль.",
+    "",
+    /* Про карту АЗС здесь, а не отдельным сообщением: человек только что
+       прошёл регистрацию и читает это письмо внимательнее, чем будет
+       читать что-либо от нас в ближайший месяц.
+
+       Просьба позвать друзей стоит рядом с пользой, а не отдельно: карта
+       наличия работает ровно настолько, насколько людей на ней. Пустая
+       карта не поможет никому, и объяснить это надо в тот момент, когда
+       человек понял, зачем она ему самому. */
+    "⛽ <b>А ещё у нас карта: где сейчас есть бензин</b>",
+    "Наличие отмечают сами водители — кто заправился, отметил за две секунды.",
+    "",
+    "📍 <b>Отметить можно прямо отсюда:</b> пришлите точку скрепкой, стоя на заправке,",
+    "и бот спросит кнопками, что там есть. Открывать карту не нужно.",
+    "",
+    "🔔 Можно подписаться: сообщим, когда на нужной АЗС появится 92-й.",
+    "",
+    "👥 <b>Расскажите знакомым автомобилистам.</b> Чем больше нас, тем точнее карта —",
+    "и тем меньше все стоим в очередях впустую.",
   ].join("\n"))
 }
 
@@ -702,7 +732,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  /* Нажатие кнопки: отвечаем сразу, обработку не ждём — Telegram крутит
+     кнопку у человека, пока не получит ответ. */
+  if (update.callback_query) {
+    const query = update.callback_query
+    const chatId = query.message?.chat?.id
+    const messageId = query.message?.message_id
+    const telegramId = query.from?.id
+
+    if (query.data && chatId && messageId && telegramId) {
+      void handleFuelCallback({
+        callbackId: query.id,
+        chatId: String(chatId),
+        messageId,
+        telegramId: String(telegramId),
+        data: query.data,
+      }).catch((error) => console.error("Telegram callback error:", error))
+    }
+
+    return NextResponse.json({ ok: true })
+  }
+
   if (!update.message) return NextResponse.json({ ok: true })
+
+  /* Присланная точка — это отметка наличия топлива на ближайшей АЗС.
+     Человек за рулём шлёт её скрепкой одним нажатием, и это единственный
+     способ отметить, не открывая карту. */
+  const location = update.message.location as { latitude?: number; longitude?: number } | undefined
+  if (
+    update.message.chat?.type === "private"
+    && typeof location?.latitude === "number"
+    && typeof location?.longitude === "number"
+  ) {
+    void handleFuelLocation(String(update.message.chat.id), {
+      latitude: location.latitude,
+      longitude: location.longitude,
+    }).catch((error) => console.error("Telegram location error:", error))
+
+    return NextResponse.json({ ok: true })
+  }
 
   // Обработка запускается, но ответ не ждёт её завершения.
   //
