@@ -198,7 +198,7 @@ function getFuelAvailabilityPresentation(station: FuelStation) {
   return { label: "Нет live-статуса", description: "остаток не опубликован", color: "gray", icon: <IconClock size={14} /> }
 }
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, pricesByStation }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
@@ -210,6 +210,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
      подписывается. Без них карта показывает только то, что знает
      OpenStreetMap, — то есть ассортимент вообще, а не наличие сейчас. */
   availabilityByStation: Record<string, StationAvailability[]>
+  /* Цены от водителей: на плашке видно, почём топливо, — иначе за ценой
+     надо открывать карточку каждой заправки по очереди. */
+  pricesByStation: Record<string, ConsensusPrice[]>
 }) {
   const [zoom, setZoom] = useState(11)
   /* Выбранный источник плиток живёт в браузере: человек выбрал тёмную
@@ -226,6 +229,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   })
   const tileSource = findTileSource(tileSourceId)
   const [viewportCenter, setViewportCenter] = useState(coordinates)
+  /* Заказанный кадр перерисовки: держим ссылку, чтобы отменить его при
+     следующем движении и не копить очередь устаревших положений. */
+  const pendingFrame = useRef<number | null>(null)
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [clusterHint, setClusterHint] = useState<string | null>(null)
@@ -354,6 +360,12 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     setIsDragging(false)
   }
 
+  /* Незаконченный кадр после снятия компонента обновил бы состояние
+     несуществующего узла — React на это ругается в консоль. */
+  useEffect(() => () => {
+    if (pendingFrame.current !== null) cancelAnimationFrame(pendingFrame.current)
+  }, [])
+
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragState.current
     if (!drag || drag.pointerId !== event.pointerId) return
@@ -368,7 +380,19 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     const nextY = Math.max(edgePadding, Math.min(worldSize - edgePadding, start.y - deltaY))
     const nextCenter = worldToCoordinates(nextX, nextY, zoom)
     viewportCenterRef.current = nextCenter
-    setViewportCenter(nextCenter)
+
+    /* Состояние обновляется раз на кадр, а не на каждое движение пальца.
+       Событий pointermove браузер шлёт до сотни в секунду, и на каждом
+       перерисовывалось всё дерево: плитки, метки, подписи. Карта дёргалась
+       именно поэтому — работы было втрое больше, чем кадров.
+
+       Кадр отменяется при следующем движении: рисуем последнее положение,
+       а не очередь устаревших. */
+    if (pendingFrame.current !== null) cancelAnimationFrame(pendingFrame.current)
+    pendingFrame.current = requestAnimationFrame(() => {
+      pendingFrame.current = null
+      setViewportCenter(viewportCenterRef.current)
+    })
   }
 
   const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -436,7 +460,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
       <Box ref={mapInteractionRef} className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}. Стрелки перемещают карту, плюс и минус меняют масштаб.`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onKeyDown={handleKeyDown}>
         <Box className="fuel-map-canvas__tile-layer" aria-hidden="true">
         {tiles.map((tile) => (
-          <Image key={tile.key} src={buildTileUrl(tileSource.url, zoom, tile.x, tile.y)} style={{ left: tile.left, top: tile.top }} alt="" aria-hidden="true" />
+          <Image key={tile.key} src={buildTileUrl(tileSource.url, zoom, tile.x, tile.y)} style={{ transform: `translate3d(${tile.left}px, ${tile.top}px, 0)` }} alt="" aria-hidden="true" />
         ))}
         </Box>
         {markers.map((marker, index) => {
@@ -456,26 +480,92 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
             (latest, row) => (!latest || (row.updatedAt && row.updatedAt > latest) ? row.updatedAt : latest),
             null,
           )
-          /* Подпись только при близком масштабе: на весь город это сотни
-             подписей внахлёст, и карта перестаёт читаться. */
-          const showLabel = zoom >= 13 && fresh.length > 0
+          /* Цены водителей по этой точке: на плашке они стоят рядом с
+             маркой, и за ценой не надо открывать карточку. */
+          const prices = isCluster ? [] : (pricesByStation[firstStation.id] || [])
+          const priceByFuel = new Map(prices.map((row) => [row.fuel, row.priceKopecks]))
+
+          /* Плашка вместо кружка — при близком масштабе.
+
+             Кружок отвечает только на вопрос «здесь заправка»: чтобы
+             узнать сеть, наличие и цену, надо нажать и прочитать
+             карточку. На плашке это видно сразу, и человек за рулём
+             выбирает заправку глазами, а не перебором.
+
+             Далеко плашки не показываются: на весь город их сотни, они
+             перекрывают друг друга, и карта перестаёт читаться. Там
+             остаётся кружок — он мелкий и не мешает. */
+          const showPlate = !isCluster && zoom >= 14
 
           const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${getStationDataSummary(firstStation)}`
-          return (
-            <Box key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-pin" style={{ left: marker.left, top: marker.top }}>
-              <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{ ...(networkIdentity && !isCluster && !fresh.length ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
-              {showLabel && (
-                /* Марки с цветом и возрастом отметки прямо на карте:
-                    человек за рулём видит ответ, не открывая карточку. */
-                <Box className="fuel-map-pin__label" aria-hidden="true">
-                  {newestAt && <span className="fuel-map-pin__age">{formatAge(new Date(newestAt))}</span>}
-                  {fresh.slice(0, 5).map((row) => (
-                    <span key={row.fuel} className="fuel-map-pin__fuel" data-state={row.state === "YES" ? "yes" : "no"}>
-                      {row.label}
+
+          if (showPlate) {
+            /* Марки: сначала отмеченные водителями, потом те, что знает
+               OpenStreetMap. Отметка свежее и вернее тега, но когда её
+               нет, тег лучше пустоты. */
+            const plateFuels = fresh.length
+              ? fresh.slice(0, 4).map((row) => ({
+                  key: row.fuel,
+                  label: row.label,
+                  state: row.state === "YES" ? "yes" : "no",
+                  price: priceByFuel.get(row.fuel) ?? null,
+                }))
+              : firstStation.fuels.slice(0, 3).map((fuel) => ({
+                  key: fuel,
+                  label: fuel,
+                  state: "unknown" as const,
+                  price: null,
+                }))
+
+            return (
+              <Box
+                key={firstStation.id}
+                className="fuel-map-pin"
+                data-plate="true"
+                style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 100%), 0)` }}
+              >
+                <UnstyledButton
+                  className="fuel-map-plate"
+                  data-selected={isSelected || undefined}
+                  data-reported={fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => handleMarkerClick(marker)}
+                  aria-label={label}
+                >
+                  {/* Полоска цвета сети слева: Лукойл красный, Башнефть
+                      синяя — человек узнаёт свою заправку по цвету, не
+                      читая. */}
+                  {networkIdentity && (
+                    <span className="fuel-map-plate__brand" style={{ background: networkIdentity.color }} aria-hidden="true" />
+                  )}
+                  <span className="fuel-map-plate__body">
+                    <span className="fuel-map-plate__title">
+                      {networkIdentity?.label || firstStation.name}
                     </span>
-                  ))}
-                </Box>
-              )}
+                    {plateFuels.length > 0 && (
+                      <span className="fuel-map-plate__fuels">
+                        {plateFuels.map((item) => (
+                          <span key={item.key} className="fuel-map-plate__fuel" data-state={item.state}>
+                            {item.label}
+                            {item.price !== null && (
+                              <b className="fuel-map-plate__price">{(item.price / 100).toFixed(0)}</b>
+                            )}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </span>
+                </UnstyledButton>
+                {/* Хвостик книзу: он и указывает на саму точку — без него
+                    плашка висит в воздухе рядом с заправкой. */}
+                <span className="fuel-map-plate__tail" aria-hidden="true" />
+              </Box>
+            )
+          }
+
+          return (
+            <Box key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-pin" style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 15px), 0)` }}>
+              <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{ ...(networkIdentity && !isCluster && !fresh.length ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
             </Box>
           )
         })}
@@ -776,6 +866,15 @@ export default function FuelMapPage() {
      Ограничение в сорок точек: список показывает восемь ближайших, и
      тянуть отметки по всему городу ради них незачем. */
   const nearbyStationIds = displayedStations.slice(0, 40).map((station) => station.id).join(",")
+  /* Цены по всем видимым точкам — для плашек на карте. Тем же одним
+     запросом, что и отметки: по одной на точку вышло бы триста запросов
+     на открытие карты. */
+  const { data: nearbyPricesData } = useSWR<FuelPriceReportsResponse>(
+    nearbyStationIds ? `/api/fuel-prices?stations=${encodeURIComponent(nearbyStationIds)}` : null,
+    fetchJson,
+    { revalidateOnFocus: false },
+  )
+
   const { data: nearbyAvailabilityData } = useSWR<{ stations?: Record<string, StationAvailability[]> }>(
     nearbyStationIds ? `/api/fuel-availability?stations=${encodeURIComponent(nearbyStationIds)}` : null,
     fetchJson,
@@ -887,7 +986,7 @@ export default function FuelMapPage() {
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
-            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} availabilityByStation={nearbyAvailabilityData?.stations || {}} /></Box>
+            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} availabilityByStation={nearbyAvailabilityData?.stations || {}} pricesByStation={nearbyPricesData?.stations || {}} /></Box>
             <Paper className="fuel-map-list" radius="md" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? (
                 /* Первое открытие города занимает секунд семь: точки

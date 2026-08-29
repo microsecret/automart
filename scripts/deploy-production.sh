@@ -73,6 +73,7 @@ if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-partner-sla-cron.sh || echo "Warning: partner SLA cron was not installed"
   bash scripts/install-analytics-prune-cron.sh || echo "Warning: analytics prune cron was not installed"
   bash scripts/install-listing-backfill-cron.sh || echo "Warning: listing backfill cron was not installed"
+  bash scripts/install-fuel-invite-cron.sh || echo "Warning: fuel invite cron was not installed"
   bash scripts/install-message-attachment-prune-cron.sh || echo "Warning: message attachment prune cron was not installed"
 fi
 npm run type-check

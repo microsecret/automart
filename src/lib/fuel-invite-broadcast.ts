@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma"
 import { getTelegramBotUsername } from "@/lib/telegram"
 import { absoluteUrl } from "@/lib/site-url"
 import { sendChatPost } from "@/lib/telegram-post-sender"
-import { buildFuelInvitePost } from "@/lib/fuel-invite-post"
+import { buildFuelInvitePost, cityFromChatTitle } from "@/lib/fuel-invite-post"
 import { STALE_WINDOW_MS } from "@/lib/fuel-availability"
 
 /**
@@ -26,8 +26,19 @@ import { STALE_WINDOW_MS } from "@/lib/fuel-availability"
  */
 const CHAT_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000
 
-/** Картинка приглашения — она же обложка сервиса. */
-const INVITE_IMAGE = "/images/fuel-map-invite.png"
+/**
+ * Приглашение уходит текстом, без картинки.
+ *
+ * Обложка бота рассказывает про авторынок, а не про заправки, и ставить
+ * её сюда значило бы обещать одно, а показывать другое. Рисовать картинку
+ * из ничего хуже, чем обойтись без неё: пост и так уходит одним
+ * сообщением с кнопками, а первая строка текста работает лучше любой
+ * заставки — человек читает её, а не разглядывает.
+ *
+ * Когда появится настоящий снимок карты с метками, он встанет сюда одной
+ * строкой.
+ */
+const INVITE_IMAGE: string | null = null
 
 export type InviteBroadcastResult = {
   chats: number
@@ -83,7 +94,7 @@ export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
 
     const messageId = await sendChatPost(
       chat.id,
-      { photos: [INVITE_IMAGE], caption: post.text, buttons: post.buttons },
+      { photos: INVITE_IMAGE ? [INVITE_IMAGE] : [], caption: post.text, buttons: post.buttons },
       { buttonsCaption: "Открыть:" },
     )
 
@@ -99,26 +110,4 @@ export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
   }
 
   return result
-}
-
-/**
- * Достаёт город из названия чата.
- *
- * «Авторынок Казань» → «Казань», «АВТОРЫНОК УФА/Башкортостан» → «Уфа».
- * Общий чат страны города не имеет — там приглашение говорит про сервис
- * вообще, и это правильно: его читают из разных городов.
- */
-export function cityFromChatTitle(title: string | null): string | null {
-  if (!title) return null
-
-  const cleaned = title
-    .replace(/авторынок/gi, "")
-    .replace(/\/.*$/, "")
-    .trim()
-
-  if (!cleaned || /росси/i.test(cleaned)) return null
-
-  /* Приводим к обычному написанию: в названиях чатов встречается
-     «АВТОРЫНОК УФА», и «карта АЗС УФА» в посте выглядит криком. */
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase()
 }

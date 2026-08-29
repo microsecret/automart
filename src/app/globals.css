@@ -3662,14 +3662,27 @@ select {
   overflow: hidden;
 }
 
+/* Плитки двигаются трансформацией, а не смещением.
+
+   Раньше положение задавалось left/top: браузер на каждом кадре
+   пересчитывал раскладку для всех плиток разом, и карта дёргалась при
+   перетаскивании. Трансформация идёт мимо раскладки и рисуется
+   видеокартой — та же работа обходится в разы дешевле.
+
+   will-change предупреждает браузер, что слой будет двигаться: без него
+   он поднимает плитки на отдельный слой уже в движении, и первый рывок
+   всё равно виден. */
 .fuel-map-canvas__tile-layer > img {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 256px;
   height: 256px;
   max-width: none;
   max-height: none;
   user-select: none;
   pointer-events: none;
+  will-change: transform;
 }
 
 /* Точка на карте: кружок и подпись под ним.
@@ -3680,58 +3693,138 @@ select {
    при смене масштаба. */
 .fuel-map-pin {
   position: absolute;
+  top: 0;
+  left: 0;
   z-index: 2;
   display: grid;
   justify-items: center;
-  transform: translate(-50%, -50%);
   pointer-events: none;
+  /* Положение задаётся трансформацией из разметки — меток на карте
+     десятки, и пересчёт раскладки для каждой на каждом кадре был второй
+     причиной рывков после плиток.
+
+     Центровка тоже там: кружок должен стоять на своей точке, а не рядом.
+     По горизонтали сдвиг на половину ширины обёртки, по вертикали — на
+     половину высоты кружка, чтобы подпись под ним не тянула метку вверх. */
+  will-change: transform;
 }
+
 
 .fuel-map-pin > * {
   pointer-events: auto;
 }
 
-/* Марки топлива по свежим отметкам водителей.
+/* Плашка заправки: бренд, марки топлива и цена — без нажатия.
 
-   Человек за рулём видит ответ, не открывая карточку: какие марки есть,
-   каких нет и когда смотрели. Именно это отличает карту наличия от
-   справочника заправок.
+   Кружок отвечал только «здесь заправка»: чтобы узнать сеть, наличие и
+   цену, надо было нажать и прочитать карточку. Человек за рулём так не
+   делает — ему нужно выбрать глазами за секунду.
 
-   Цвет несёт состояние, но не в одиночку: зачёркнутая марка читается и
-   при дальтонизме, и на выцветшем экране под солнцем. */
-.fuel-map-pin__label {
+   Размер держится маленьким намеренно: плашек на экране два десятка, и
+   каждый лишний пиксель множится. Отсюда мелкий кегль, узкие отступы и
+   не больше четырёх марок. */
+.fuel-map-plate {
   display: flex;
-  gap: 3px;
-  align-items: center;
-  margin-top: 3px;
-  padding: 2px 5px;
-  border-radius: 6px;
-  background: rgba(17, 17, 20, 0.82);
-  backdrop-filter: blur(2px);
-  white-space: nowrap;
+  align-items: stretch;
+  overflow: hidden;
+  max-width: 168px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 7px;
+  background: rgba(17, 17, 20, 0.88);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+  backdrop-filter: blur(3px);
+  transition: box-shadow var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out);
+}
+
+/* Цвет сети полоской слева: Лукойл красный, Башнефть синяя — свою
+   заправку человек узнаёт по цвету, не читая. */
+.fuel-map-plate__brand {
+  width: 4px;
+  flex: 0 0 4px;
+}
+
+.fuel-map-plate__body {
+  display: grid;
+  gap: 1px;
+  padding: 3px 7px 4px;
+  min-width: 0;
+}
+
+.fuel-map-plate__title {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.95);
   font-size: 10px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fuel-map-plate__fuels {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
-.fuel-map-pin__age {
-  margin-right: 2px;
-  color: rgba(255, 255, 255, 0.62);
-  font-weight: 600;
-}
+/* Цвет несёт состояние, но не один: зачёркнутая марка читается и при
+   дальтонизме, и на выцветшем под солнцем экране. */
+.fuel-map-plate__fuel[data-state="yes"] { color: #4ade80; }
 
-.fuel-map-pin__fuel[data-state="yes"] {
-  color: #4ade80;
-}
-
-.fuel-map-pin__fuel[data-state="no"] {
+.fuel-map-plate__fuel[data-state="no"] {
   color: #f87171;
   text-decoration: line-through;
   text-decoration-thickness: 1px;
 }
 
-.fuel-map-marker {
+/* Марка из тегов OpenStreetMap: она говорит про ассортимент вообще, а не
+   про наличие сейчас, и поэтому приглушена — чтобы не путали с отметкой. */
+.fuel-map-plate__fuel[data-state="unknown"] { color: rgba(255, 255, 255, 0.5); }
+
+/* Цена мельче марки и без знака рубля: место на плашке дороже точности
+   оформления, а «62» рядом с «92» человек читает верно. */
+.fuel-map-plate__price {
+  margin-left: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  opacity: 0.86;
+}
+
+/* Хвостик книзу указывает на саму точку: без него плашка висит в воздухе
+   рядом с заправкой, и непонятно, к какой из соседних она относится. */
+.fuel-map-plate__tail {
+  width: 0;
+  height: 0;
+  border-top: 5px solid rgba(17, 17, 20, 0.88);
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fuel-map-plate:hover {
+    border-color: #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.5);
+  }
+}
+
+.fuel-map-plate:focus-visible,
+.fuel-map-plate[data-selected] {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.6);
+  outline: none;
+}
+
+/* Выбранная плашка поднимается над соседями целиком, вместе с хвостиком. */
+.fuel-map-pin[data-plate]:hover,
+.fuel-map-pin[data-plate]:focus-within {
+  z-index: 4;
+}
+
+.fuel-map-marker {.fuel-map-marker {
   position: relative;
   display: grid;
   width: 30px;

@@ -119,3 +119,28 @@ export function buildFuelShareText(input: { siteUrl: string; city?: string | nul
     `${site}/services/fuel-map`,
   ].join("\n")
 }
+
+/**
+ * Достаёт город из названия чата.
+ *
+ * «Авторынок Казань» → «Казань», «АВТОРЫНОК УФА/Башкортостан» → «Уфа».
+ * Общий чат страны города не имеет — там приглашение говорит про сервис
+ * вообще, и это правильно: его читают из разных городов.
+ *
+ * Живёт здесь, а не рядом с рассылкой: там модуль тянет Prisma, и
+ * проверить чистую функцию тестами было бы нельзя.
+ */
+export function cityFromChatTitle(title: string | null): string | null {
+  if (!title) return null
+
+  const cleaned = title
+    .replace(/авторынок/gi, "")
+    .replace(/\/.*$/, "")
+    .trim()
+
+  if (!cleaned || /росси/i.test(cleaned)) return null
+
+  /* Приводим к обычному написанию: в названиях чатов встречается
+     «АВТОРЫНОК УФА», и «карта АЗС УФА» в посте выглядит криком. */
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase()
+}

@@ -137,10 +137,26 @@ test("цвет метки идёт от отметок, а не от тегов 
   assert.match(page, /data-reported=\{!isCluster && fresh\.length/)
 })
 
-test("подпись с марками показывается только вблизи", () => {
-  // На весь город это сотни подписей внахлёст.
+test("плашка показывается только вблизи", () => {
+  /* На весь город плашек сотни, они перекрывают друг друга, и карта
+     перестаёт читаться. Далеко остаётся мелкий кружок. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /zoom >= 13 && fresh\.length > 0/)
+  assert.match(page, /showPlate = !isCluster && zoom >= 14/)
+})
+
+test("на плашке видны бренд, марки и цена", () => {
+  /* Кружок отвечал только «здесь заправка»: за сетью, наличием и ценой
+     надо было открывать карточку. Человек за рулём так не делает. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /fuel-map-plate__brand/)
+  assert.match(page, /fuel-map-plate__fuel/)
+  assert.match(page, /fuel-map-plate__price/)
+})
+
+test("цена на плашке приходит одним запросом на все точки", () => {
+  // По одному на точку вышло бы триста запросов на открытие карты.
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /nearbyPricesData/)
 })
 
 test("на метке только свежие отметки", () => {
@@ -153,7 +169,14 @@ test("состояние читается не только цветом", () =>
   /* Зачёркнутая марка понятна и при дальтонизме, и на выцветшем экране
      под солнцем. */
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
-  assert.match(css, /fuel-map-pin__fuel\[data-state="no"\][\s\S]{0,160}line-through/)
+  assert.match(css, /fuel-map-plate__fuel\[data-state="no"\][\s\S]{0,160}line-through/)
+})
+
+test("тег OpenStreetMap на плашке отличается от отметки водителя", () => {
+  /* Тег говорит про ассортимент вообще, отметка — про наличие сейчас.
+     Путать их нельзя: человек поедет за топливом, которого нет. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /fuel-map-plate__fuel\[data-state="unknown"\]/)
 })
 
 test("цвета обозначений совпадают с цветами меток", () => {
