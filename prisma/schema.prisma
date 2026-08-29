@@ -1598,6 +1598,11 @@ model FuelAvailabilityReport {
   // фотография табло снимает спор быстрее любого счётчика подтверждений.
   photo     String? // адрес в /uploads
   comment   String? // до 200 знаков
+  // Название заправки на момент отметки: точки живут в OpenStreetMap, а не
+  // у нас, и без этого поля сводка по городу называла бы их кодами вида
+  // «osm-node-123», а уведомление подписчику — просто «АЗС».
+  stationName String?
+  city        String?
   userId    String?
   user      User?    @relation("FuelAvailabilityReporter", fields: [userId], references: [id], onDelete: SetNull)
   ipHash    String? // антиспам без хранения адреса
@@ -1638,6 +1643,19 @@ model FuelSubscription {
 // не узнают: на сайт заходят единицы. Запись нужна, чтобы не звать один и
 // тот же чат чаще, чем раз в трое суток.
 model FuelInvitePost {
+  id          String   @id @default(uuid())
+  chatId      String
+  messageId   Int
+  publishedAt DateTime @default(now())
+
+  @@index([chatId, publishedAt])
+}
+
+// Утренняя сводка по топливу, отправленная в чат.
+//
+// Нужна, чтобы не слать её дважды в сутки: сводка утренняя, вторая за день
+// ничего не добавляет, а чат превращает в ленту уведомлений.
+model FuelDigestPost {
   id          String   @id @default(uuid())
   chatId      String
   messageId   Int

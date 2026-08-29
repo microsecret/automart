@@ -152,6 +152,16 @@ export async function POST(request: NextRequest) {
     ? body.comment.trim().slice(0, 200)
     : null
 
+  /* Название и город сохраняются вместе с отметкой: точки живут в
+     OpenStreetMap, а не у нас, и без них сводка по городу называла бы
+     заправки кодами, а уведомление подписчику — просто «АЗС». */
+  const stationNameRaw = typeof body?.stationName === "string" && body.stationName.trim()
+    ? body.stationName.trim().slice(0, 120)
+    : null
+  const cityRaw = typeof body?.city === "string" && body.city.trim()
+    ? body.city.trim().slice(0, 80)
+    : null
+
   const ipHash = hashClientIp(ip)
 
   /* Состояние до отметки: подписчиков будим только на переходе «нет или
@@ -191,6 +201,8 @@ export async function POST(request: NextRequest) {
       queue: entry.state === "YES" ? queue : null,
       photo,
       comment,
+      stationName: stationNameRaw,
+      city: cityRaw,
       userId,
       ipHash,
     })),
@@ -236,10 +248,8 @@ export async function POST(request: NextRequest) {
      Условие то же, что и раньше: переход «нет или неизвестно» → «есть».
      Иначе отметка на заправке, где топливо и так весь день есть, слала
      бы уведомление всем подписчикам. */
-  const stationName = typeof body?.stationName === "string" && body.stationName.trim()
-    ? body.stationName.trim().slice(0, 120)
-    : "АЗС"
-  const city = typeof body?.city === "string" ? body.city.trim().slice(0, 80) : ""
+  const stationName = stationNameRaw || "АЗС"
+  const city = cityRaw || ""
 
   for (const entry of entries) {
     if (entry.state !== "YES" || wasAvailable.has(entry.fuel)) continue
