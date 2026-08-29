@@ -123,6 +123,13 @@ function registrationKeyboard(registerLabel: string) {
     inline_keyboard: [
       [{ text: registerLabel, url: startUrl }],
       ...(createUrl ? [[{ text: "🚗 Разместить объявление", url: createUrl }]] : []),
+      /* Карта АЗС отдельной кнопкой: в дефицит топлива это самое частое,
+         зачем открывают приложение, и человек не должен искать её в меню.
+
+         Вход не нужен — карта открыта всем, отметить наличие можно и без
+         учётной записи. Поэтому кнопка стоит выше отчётов, которые без
+         регистрации бесполезны. */
+      [{ text: "⛽ Где есть бензин", url: absoluteUrl("/services/fuel-map?from=telegram") }],
       [{ text: "📋 Отчёты об авто", url: VEHICLE_REPORTS_CHAT_URL }],
     ],
   }

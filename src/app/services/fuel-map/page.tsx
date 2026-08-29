@@ -794,7 +794,27 @@ export default function FuelMapPage() {
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="md" p="sm" withBorder style={{ gridColumn: "span 2" }}>
-              {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">
+              {isLoading ? (
+                /* Первое открытие города занимает секунд семь: точки
+                   приходят из OpenStreetMap, и запрос по площади города
+                   быстрее не становится. Повторные открытия отвечают за
+                   секунду — их закрывает кэш.
+
+                   Всё это время человек видел пустой кружок и не понимал,
+                   работает ли сервис. Теперь видно, что именно грузится и
+                   откуда, — ожидание с объяснением переносится вчетверо
+                   легче, чем такое же молча. */
+                <Center h={460}>
+                  <Stack align="center" gap={10}>
+                    <Loader size="sm" color="indigo" />
+                    <Text size="sm" fw={600} c="var(--market-ink)">Ищем заправки{areaLabel ? ` — ${areaLabel}` : ""}</Text>
+                    <Text size="xs" c="dimmed" ta="center" maw={260}>
+                      Первое открытие города занимает несколько секунд.
+                      Дальше карта откроется сразу.
+                    </Text>
+                  </Stack>
+                </Center>
+              ) : filteredStations.length ? <Stack gap="xs">
                 {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} availabilityRows={selectedStationAvailability} onAvailabilityReported={handleAvailabilityReported} city={city} /></Box>}
                 {listedStations.map((station) => (
                 <FuelStationCard

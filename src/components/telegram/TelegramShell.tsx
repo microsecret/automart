@@ -7,6 +7,11 @@ import type { TelegramThemeParams } from "@/lib/telegram-webapp"
 import {
   IconCar,
   IconFileDescription,
+  IconShieldCheck,
+  IconCoin,
+  IconSparkles,
+  IconShieldLock,
+  IconGasStation,
   IconGavel,
   IconHeart,
   IconList,
@@ -78,14 +83,23 @@ const MENU_ICONS: Record<string, typeof IconCar | null> = {
   garage: IconCar,
   deliveries: IconTruckDelivery,
   documents: IconFileDescription,
+  /* Сервисы: без значков строки меню сливаются в список текста, и глаз
+     не за что зацепить — а именно здесь человек ищет то, за чем вернулся. */
+  "fuel-map": IconGasStation,
+  "history-check": IconShieldCheck,
+  valuation: IconCoin,
+  "smart-matching": IconSparkles,
+  "safe-deal": IconShieldLock,
+  "legal-documents": IconFileDescription,
+  forum: IconMessages,
 }
 
 const TAB_ICONS = {
   vehicles: IconCar,
-  auctions: IconGavel,
+  fuel: IconGasStation,
   create: IconPlus,
+  news: IconNews,
   forum: IconMessages,
-  profile: IconUser,
 } satisfies Record<(typeof TELEGRAM_TAB_NAVIGATION)[number]["id"], typeof IconCar>
 
 const MENU_SECTIONS = TELEGRAM_MENU_NAVIGATION.map((section) => ({

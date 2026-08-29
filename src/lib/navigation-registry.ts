@@ -148,6 +148,16 @@ export const TELEGRAM_MENU_NAVIGATION = [
     ],
   },
   {
+    /* Услуги были только на сайте: человек, зашедший через приложение,
+       не знал ни про карту АЗС, ни про проверку истории — а это ровно то,
+       за чем он пришёл бы второй раз.
+
+       Список берётся из общего SERVICE_NAVIGATION, а не переписывается:
+       иначе новая услуга появилась бы на сайте и не появилась здесь. */
+    title: "Сервисы",
+    items: SERVICE_NAVIGATION.map((item) => ({ ...item, href: `${item.href}?from=telegram` })),
+  },
+  {
     title: "Аукционы по странам",
     items: AUCTION_COUNTRY_NAVIGATION
       .filter((item) => item.id !== "US")
@@ -155,17 +165,28 @@ export const TELEGRAM_MENU_NAVIGATION = [
   },
 ] as const satisfies readonly NavigationSection[]
 
+/**
+ * Нижние вкладки приложения — пять, больше не помещается на телефоне.
+ *
+ * Отбор идёт по частоте возвращения, а не по важности раздела:
+ *
+ * • «Бензин» вместо «Профиля». В дефицит топлива человек открывает карту
+ *   АЗС по нескольку раз в день, тогда как в кабинет заходит раз в
+ *   неделю — и попадает туда из выезжающего меню, где ему и место.
+ *
+ * • «Новости» вместо «Аукционов». Аукционы — большой раздел для тех, кто
+ *   уже решил везти машину из-за границы: таких единицы, и они доходят
+ *   до него из меню. Новости открывают между делом, как ленту.
+ *
+ * • Форум остался: место, куда человек приходит за ответом на свой
+ *   вопрос и возвращается за ним.
+ */
 export const TELEGRAM_TAB_NAVIGATION = [
   { id: "vehicles", label: "Свежее", href: "/telegram" },
-  { id: "auctions", label: "Аукционы", href: "/telegram?tab=auctions" },
+  { id: "fuel", label: "Бензин", href: "/services/fuel-map?from=telegram" },
   { id: "create", label: "Продать", href: `${CREATE_VEHICLE_HREF}?source=telegram` },
-  /* Форум вместо новостей: новости читаются разом и не требуют
-     возвращения, а форум — место, куда человек приходит за ответом на
-     свой вопрос и возвращается за ним. В мобильном меню сайта замена
-     сделана по той же причине. Новости остаются доступны из выезжающего
-     меню приложения. */
+  { id: "news", label: "Новости", href: "/telegram?tab=news" },
   { id: "forum", label: "Форум", href: "/forum?from=telegram" },
-  { id: "profile", label: "Профиль", href: "/dashboard?from=telegram" },
 ] as const satisfies readonly NavigationItem[]
 
 function navigationPath(href: string): string {

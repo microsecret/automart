@@ -108,3 +108,49 @@ test("ссылки форума в приложении помечены ист�
   assert.ok(links.length >= 2, "ожидались обе ссылки на форум")
   for (const link of links) assert.match(link.href, /from=telegram/)
 })
+
+// === Вкладки приложения ===
+
+test("в нижнем меню приложения пять вкладок", () => {
+  // Больше на телефоне не помещается: подписи начинают обрезаться.
+  assert.equal(TELEGRAM_TAB_NAVIGATION.length, 5)
+})
+
+test("карта АЗС есть в нижнем меню приложения", () => {
+  /* В дефицит топлива человек открывает её по нескольку раз в день —
+     чаще, чем заходит в кабинет. */
+  assert.ok(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("/services/fuel-map")))
+})
+
+test("кабинет и аукционы убраны из нижнего меню, но остались в выезжающем", () => {
+  /* Кабинет открывают раз в неделю, аукционы — единицы тех, кто уже решил
+     везти машину из-за границы. Пропасть из приложения они при этом не
+     должны. */
+  assert.equal(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("/dashboard")), false)
+  assert.equal(TELEGRAM_TAB_NAVIGATION.some((item) => item.id === "auctions"), false)
+
+  const menuHrefs = TELEGRAM_MENU_NAVIGATION.flatMap((section) => section.items.map((item) => item.href))
+  assert.ok(menuHrefs.some((href) => href.includes("/dashboard")))
+  assert.ok(menuHrefs.some((href) => href.includes("tab=auctions")))
+})
+
+test("сервисы сайта доступны из приложения", () => {
+  /* Человек, зашедший через приложение, не знал ни про карту АЗС, ни про
+     проверку истории — а это ровно то, за чем он вернулся бы. */
+  const menuHrefs = TELEGRAM_MENU_NAVIGATION.flatMap((section) => section.items.map((item) => item.href))
+  for (const service of SERVICE_NAVIGATION) {
+    assert.ok(
+      menuHrefs.some((href) => href.startsWith(service.href)),
+      `сервис ${service.label} потерян в приложении`,
+    )
+  }
+})
+
+test("ссылки приложения помечены источником", () => {
+  /* По признаку from=telegram страницы понимают, что человек пришёл из
+     бота, и не встречают его формой пароля. */
+  for (const item of TELEGRAM_TAB_NAVIGATION) {
+    if (item.href.startsWith("/telegram")) continue
+    assert.match(item.href, /from=telegram|source=telegram/, `${item.label} без признака источника`)
+  }
+})
