@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Badge, Box, Button, Group, Paper, Stack, Text, TextInput, UnstyledButton } from "@mantine/core"
+import { Badge, Box, Button, Group, NumberInput, Paper, Stack, Text, TextInput, UnstyledButton } from "@mantine/core"
 import { IconCamera, IconCheck, IconX } from "@tabler/icons-react"
 import {
   AVAILABILITY_FUELS,
@@ -67,6 +67,9 @@ export default function FuelAvailabilityReporter({
      отметки от единиц. */
   const [photo, setPhoto] = useState<string | null>(null)
   const [comment, setComment] = useState("")
+  /* Цена вводится вместе с наличием: отдельным блоком её не ставил
+     никто — человек отмечал топливо, закрывал карточку и уезжал. */
+  const [price, setPrice] = useState<string | number>("")
   const [uploading, setUploading] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -81,7 +84,7 @@ export default function FuelAvailabilityReporter({
       const response = await fetch("/api/fuel-availability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stationId, stationName, city, latitude, longitude, fuel, state, queue, photo, comment }),
+        body: JSON.stringify({ stationId, stationName, city, latitude, longitude, fuel, state, queue, photo, comment, price: price || null }),
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) throw new Error(payload?.error || "Не удалось отправить отметку")
@@ -92,6 +95,7 @@ export default function FuelAvailabilityReporter({
          следующая будет про другую заправку или другую марку. */
       setPhoto(null)
       setComment("")
+      setPrice("")
       /* Отметка держится на виду недолго: человек уже уехал, и подтверждение
          нужно ровно на то, чтобы он понял — засчитано. */
       setSavedFuel(fuel)
@@ -199,6 +203,43 @@ export default function FuelAvailabilityReporter({
                 onClick={() => void send(openFuel, "NO", null)}
               >
                 Нет
+              </Button>
+            </Group>
+
+            {/* Цена рядом с «есть» — одним движением.
+
+                Раньше цена жила отдельным блоком ниже: человек отмечал
+                наличие, закрывал карточку и уезжал, а цену не ставил
+                никто. Между тем это то, ради чего половина открывает
+                карту вообще.
+
+                Поле необязательное: нажал «есть» — записалось и без
+                цены. Отметка остаётся делом двух секунд. */}
+            <Group gap={6} align="center">
+              <NumberInput
+                size="xs"
+                radius="md"
+                placeholder="Цена, ₽/л"
+                value={price}
+                onChange={setPrice}
+                min={10}
+                max={300}
+                decimalScale={2}
+                step={0.5}
+                hideControls
+                style={{ flex: 1 }}
+                aria-label={`Цена ${AVAILABILITY_FUEL_LABELS[openFuel]}, рублей за литр`}
+              />
+              <Button
+                size="xs"
+                radius="md"
+                color="teal"
+                variant="light"
+                disabled={!price}
+                loading={sending}
+                onClick={() => void send(openFuel, "YES", null)}
+              >
+                Есть, по этой цене
               </Button>
             </Group>
 

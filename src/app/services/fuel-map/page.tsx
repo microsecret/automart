@@ -134,6 +134,16 @@ function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
   if (source.includes("teboil") || source.includes("тебойл")) return { label: "Teboil", shortLabel: "TB", color: "#d52331", textColor: "#fff" }
   if (source.includes("нефтьмагистраль")) return { label: "Нефтьмагистраль", shortLabel: "НМ", color: "#1d1d1f", textColor: "#fff" }
   if (source.includes("irbis") || source.includes("ирбис")) return { label: "Irbis", shortLabel: "IR", color: "#e65825", textColor: "#fff" }
+  /* Сети, встречающиеся в справочнике достаточно часто, чтобы человек
+     узнавал их по цвету. Список рос по мере того, как на карте
+     попадались безымянные точки там, где заправка на деле известная. */
+  if (source.includes("шелл") || source.includes("shell")) return { label: "Shell", shortLabel: "SH", color: "#fbce07", textColor: "#1f2937" }
+  if (source.includes("нефтьм") || source.includes("трасса")) return { label: "Трасса", shortLabel: "ТР", color: "#0f766e", textColor: "#fff" }
+  if (source.includes("сургут")) return { label: "Сургутнефтегаз", shortLabel: "СН", color: "#00693c", textColor: "#fff" }
+  if (source.includes("газпром") || source.includes("gazprom")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff" }
+  if (source.includes("опти") || source.includes("opti")) return { label: "Опти", shortLabel: "ОП", color: "#e11d48", textColor: "#fff" }
+  if (source.includes("нефтегаз")) return { label: "Нефтегаз", shortLabel: "НГ", color: "#155e75", textColor: "#fff" }
+  if (source.includes("автодор") || source.includes("трасса м")) return { label: "Автодор", shortLabel: "АД", color: "#7c2d12", textColor: "#fff" }
   return null
 }
 
@@ -555,11 +565,31 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   onClick={() => handleMarkerClick(marker)}
                   aria-label={label}
                 >
-                  {/* Полоска цвета сети слева: Лукойл красный, Башнефть
-                      синяя — человек узнаёт свою заправку по цвету, не
-                      читая. */}
-                  {networkIdentity && (
-                    <span className="fuel-map-plate__brand" style={{ background: networkIdentity.color }} aria-hidden="true" />
+                  {/* Знак сети слева: фирменный цвет и две буквы.
+
+                      Цветной полоски было мало — человек видел, что
+                      заправка «красная», но не понимал, Лукойл это или
+                      Опти. Настоящие логотипы ставить нельзя: это чужие
+                      товарные знаки, и на карте они означали бы
+                      согласованное присутствие сети, которого нет.
+
+                      Буквы решают то же: «ЛК» на красном человек читает
+                      как Лукойл с одного взгляда, а спутать с чужим
+                      знаком это невозможно. */}
+                  {networkIdentity ? (
+                    <span
+                      className="fuel-map-plate__logo"
+                      style={{ background: networkIdentity.color, color: networkIdentity.textColor }}
+                      aria-hidden="true"
+                    >
+                      {networkIdentity.shortLabel}
+                    </span>
+                  ) : (
+                    /* Сеть не распознана: серый знак заправки вместо
+                       букв — иначе плашка выглядит сломанной. */
+                    <span className="fuel-map-plate__logo" data-unknown="true" aria-hidden="true">
+                      <IconGasStation size={11} />
+                    </span>
                   )}
                   <span className="fuel-map-plate__body">
                     <span className="fuel-map-plate__title">

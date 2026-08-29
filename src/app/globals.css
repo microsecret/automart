@@ -3624,7 +3624,9 @@ select {
    меньше этого бесполезна, лучше пусть страница прокрутится. */
 .fuel-map-canvas {
   position: relative;
-  min-height: min(72vh, 640px);
+  /* Карта во всю доступную высоту: на широком экране это почти окно
+     целиком, потому что смотрят на неё, а не на список рядом. */
+  min-height: min(78vh, 760px);
   overflow: hidden;
   background: var(--market-surface-subtle);
 }
@@ -3737,11 +3739,29 @@ select {
   transition: box-shadow var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out);
 }
 
-/* Цвет сети полоской слева: Лукойл красный, Башнефть синяя — свою
-   заправку человек узнаёт по цвету, не читая. */
-.fuel-map-plate__brand {
-  width: 4px;
-  flex: 0 0 4px;
+/* Знак сети: фирменный цвет и две буквы.
+
+   Цветной полоски было мало — человек видел «красную» заправку, но не
+   понимал, Лукойл это или Опти. Настоящие логотипы ставить нельзя: чужие
+   товарные знаки на карте означали бы согласованное присутствие сети,
+   которого нет. Буквы на фирменном цвете читаются так же быстро и
+   ничего не присваивают. */
+.fuel-map-plate__logo {
+  display: grid;
+  width: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* Сеть не распознана: серый знак заправки вместо букв — иначе плашка
+   выглядит сломанной. */
+.fuel-map-plate__logo[data-unknown] {
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .fuel-map-plate__body {

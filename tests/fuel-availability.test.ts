@@ -97,7 +97,10 @@ test("отметка наличия не заменяет прежнюю, а д�
   /* У цены голос один и уточняется, а у наличия накопление подтверждений
      и есть суть: «есть 92, отметили пятеро» весит больше одной отметки. */
   const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
-  assert.doesNotMatch(route, /updateMany/)
+  /* Проверяем именно отметки наличия: updateMany в файле есть, но он
+     относится к цене — у неё голос один и уточняется, тогда как у
+     наличия накопление подтверждений и есть суть. */
+  assert.doesNotMatch(route, /fuelAvailabilityReport\.updateMany/)
   assert.match(route, /fuelAvailabilityReport\.create/)
 })
 
@@ -148,7 +151,7 @@ test("на плашке видны бренд, марки и цена", () => {
   /* Кружок отвечал только «здесь заправка»: за сетью, наличием и ценой
      надо было открывать карточку. Человек за рулём так не делает. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /fuel-map-plate__brand/)
+  assert.match(page, /fuel-map-plate__logo/)
   assert.match(page, /fuel-map-plate__fuel/)
   assert.match(page, /fuel-map-plate__price/)
 })
@@ -243,4 +246,46 @@ test("снимок не обязателен для отметки", () => {
      бы получать отметки от единиц. */
   const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
   assert.match(reporter, /state: "YES", null\)|send\(openFuel, "YES", null\)/)
+})
+
+// === Цена ===
+
+test("цена ставится вместе с наличием", () => {
+  /* Раньше она жила отдельным блоком: человек отмечал топливо, закрывал
+     карточку и уезжал, а цену не ставил никто. */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /Есть, по этой цене/)
+  assert.match(reporter, /price: price \|\| null/)
+})
+
+test("цена необязательна", () => {
+  // Нажал «есть» — записалось и без цены, отметка остаётся делом двух секунд.
+  const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
+  assert.match(route, /priceRub !== null/)
+})
+
+test("цена не сохраняется, когда топлива нет", () => {
+  /* «Нет 92 по 60 рублей» бессмысленно, а в согласованную цену такая
+     отметка попала бы. */
+  const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
+  assert.match(route, /priceRub !== null && state === "YES"/)
+})
+
+test("сбой записи цены не отменяет отметку наличия", () => {
+  // Наличие важнее, и человек уже нажал кнопку.
+  const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
+  assert.match(route, /Запись цены/)
+})
+
+test("знак сети виден на плашке", () => {
+  /* Цветной полоски было мало: человек видел «красную» заправку, но не
+     понимал, Лукойл это или Опти. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /fuel-map-plate__logo/)
+  assert.match(page, /networkIdentity\.shortLabel/)
+})
+
+test("нераспознанная сеть не ломает плашку", () => {
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /data-unknown="true"/)
 })

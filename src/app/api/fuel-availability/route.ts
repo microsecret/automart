@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { notifyFuelSubscribers } from "@/lib/fuel-subscription-notify"
+import { parseReportedPrice } from "@/lib/fuel-price-reports"
 import {
   AVAILABILITY_FUEL_LABELS,
   STALE_WINDOW_MS,
@@ -132,6 +133,11 @@ export async function POST(request: NextRequest) {
     ? body.comment.trim().slice(0, 200)
     : null
 
+  /* Цена приходит вместе с наличием: отдельным действием её не ставил
+     никто. Пишется в ту же таблицу ценовых отметок, что и раньше, —
+     карта и карточка читают её оттуда, ничего менять не пришлось. */
+  const priceRub = parseReportedPrice(body?.price)
+
   const ipHash = hashClientIp(ip)
 
   /* Состояние до отметки: подписчиков будим только на переходе «нет или
@@ -176,6 +182,29 @@ export async function POST(request: NextRequest) {
     take: 100,
     select: { fuel: true, state: true, queue: true, photo: true, comment: true, userId: true, createdAt: true },
   })
+
+  /* Цена сохраняется, только когда топливо есть: «нет 92 по 60 рублей»
+     бессмысленно, а в согласованную цену такая отметка попадёт. */
+  if (priceRub !== null && state === "YES") {
+    await prisma.fuelPriceReport.updateMany({
+      where: {
+        stationId,
+        fuel,
+        status: "ACTIVE",
+        ...(userId ? { userId } : { userId: null, ipHash }),
+      },
+      data: { status: "SUPERSEDED" },
+    }).catch(() => undefined)
+
+    await prisma.fuelPriceReport.create({
+      data: { stationId, latitude, longitude, fuel, priceRub, userId, ipHash },
+    }).catch((error) => {
+      /* Сбой записи цены не должен отменять отметку наличия: наличие
+         важнее, и человек уже нажал кнопку. */
+      console.error("[fuel-availability] Запись цены:", error)
+      return null
+    })
+  }
 
   const availability = summarizeAvailability(reports)
 
