@@ -8,6 +8,7 @@ import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
+import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
 
 type FuelStation = {
   id: string
@@ -58,6 +59,9 @@ const MAX_ZOOM = 14
 const STATION_LIST_PAGE_SIZE = 24
 const EMPTY_STATIONS: FuelStation[] = []
 const EMPTY_REPORTED_PRICES: ConsensusPrice[] = []
+/* Постоянная ссылка на пустой список: новый массив на каждый разбор
+   заставлял бы карточку перерисовываться без причины. */
+const EMPTY_AVAILABILITY: StationAvailability[] = []
 
 type FuelPriceReportsResponse = {
   stations: Record<string, ConsensusPrice[]>
@@ -508,13 +512,15 @@ function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoadin
   )
 }
 
-function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShowOnMap, reportedPrices, onPricesReported }: {
+function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShowOnMap, reportedPrices, onPricesReported, availabilityRows, onAvailabilityReported }: {
   station: FuelStation
   resolvedAddress: string | null
   isAddressLoading: boolean
   onShowOnMap: (station: FuelStation) => void
   reportedPrices: ConsensusPrice[]
   onPricesReported: (stationId: string, prices: ConsensusPrice[]) => void
+  availabilityRows: StationAvailability[]
+  onAvailabilityReported: (stationId: string, rows: StationAvailability[]) => void
 }) {
   const network = getStationNetwork(station)
   const source = getStationSourceLabel(station)
@@ -549,6 +555,16 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
           ))}</SimpleGrid> : <Paper radius="md" p="sm" withBorder style={{ background: "rgba(255,255,255,.78)" }}><Text size="sm" c="dimmed">Типы топлива не опубликованы этой точкой.</Text></Paper>}
           <Text size="xs" c="dimmed" mt={6}>{station.status === "UNKNOWN" ? "Это справочная точка: не считаем отсутствие live-статуса отсутствием топлива." : `${statusUpdated ? `Данные поставщика: ${statusUpdated}. ` : "Данные поставщика без времени обновления. "}Наличие уточняйте перед поездкой.`}</Text>
         </Box>
+
+        {/* Наличие выше цены: в дефицит человек ищет не «где дешевле», а
+            «где вообще есть». Цену он и так примерно знает. */}
+        <FuelAvailabilityReporter
+          stationId={station.id}
+          latitude={station.latitude}
+          longitude={station.longitude}
+          availability={availabilityRows}
+          onReported={(rows) => onAvailabilityReported(station.id, rows)}
+        />
 
         <FuelPriceReporter
           stationId={station.id}
@@ -646,6 +662,22 @@ export default function FuelMapPage() {
   const selectedStationPrices = (selectedStationId && reportedPricesData?.stations?.[selectedStationId]) || EMPTY_REPORTED_PRICES
   const handlePricesReported = (stationId: string, prices: ConsensusPrice[]) => {
     mutateReportedPrices((current) => ({ stations: { ...(current?.stations || {}), [stationId]: prices } }), { revalidate: false })
+  }
+
+  /* Наличие приходит своим запросом: оно меняется за минуты, тогда как
+     справочник точек кэшируется надолго, а цены — часами. */
+  const availabilityUrl = selectedStationId ? `/api/fuel-availability?stations=${encodeURIComponent(selectedStationId)}` : null
+  const { data: availabilityData, mutate: mutateAvailability } = useSWR<{ stations?: Record<string, StationAvailability[]> }>(
+    availabilityUrl,
+    fetchJson,
+    /* Обновление при возврате на вкладку здесь уместно, в отличие от цен:
+       человек мог отойти к колонке и вернуться — за это время наличие
+       успевает измениться. */
+    { revalidateOnFocus: true },
+  )
+  const selectedStationAvailability = (selectedStationId && availabilityData?.stations?.[selectedStationId]) || EMPTY_AVAILABILITY
+  const handleAvailabilityReported = (stationId: string, rows: StationAvailability[]) => {
+    mutateAvailability((current) => ({ stations: { ...(current?.stations || {}), [stationId]: rows } }), { revalidate: false })
   }
   const listedStations = selectedStationKey
     ? displayedStations.filter((station) => `${station.sourceType}-${station.id}` !== selectedStationKey)
@@ -753,7 +785,7 @@ export default function FuelMapPage() {
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="md" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">
-                {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} /></Box>}
+                {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} availabilityRows={selectedStationAvailability} onAvailabilityReported={handleAvailabilityReported} /></Box>}
                 {listedStations.map((station) => (
                 <FuelStationCard
                   key={`${station.sourceType}-${station.id}`}

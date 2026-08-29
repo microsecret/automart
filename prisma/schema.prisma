@@ -114,6 +114,7 @@ model User {
   communicationModerationEvents CommunicationModerationEvent[] @relation("CommunicationModerationSender")
   reportsCreated                ListingReport[]                @relation("ListingReportReporter")
   fuelPriceReports              FuelPriceReport[]              @relation("FuelPriceReporter")
+  fuelAvailabilityReports       FuelAvailabilityReport[]      @relation("FuelAvailabilityReporter")
   adminAuditEvents              AdminAuditEvent[]              @relation("AdminAuditActor")
   partStores                    PartStore[]                    @relation("PartStoreOwner")
   partOrders                    PartOrder[]                    @relation("PartOrderBuyer")
@@ -1572,6 +1573,33 @@ model FuelPriceReport {
 
   @@index([stationId, fuel, createdAt])
   @@index([status, createdAt])
+  @@index([userId, createdAt])
+}
+
+// Наличие топлива на АЗС по отметкам водителей.
+//
+// Цена на карте была, а наличия не было — и в дефицит именно оно решает,
+// ехать ли на заправку. Цену человек примерно знает; чего он не знает, так
+// это привезли ли сегодня 92-й и какая очередь.
+//
+// Отдельная таблица, а не поле в FuelPriceReport: у наличия своя жизнь —
+// оно живёт часами, а не неделю, и отмечается в разы чаще цены.
+model FuelAvailabilityReport {
+  id        String   @id @default(uuid())
+  stationId String // тот же идентификатор точки, что у ценовых отметок
+  latitude  Float
+  longitude Float
+  fuel      String // AI92, AI95, AI98, AI100, DT, GAS
+  state     String // YES, NO
+  queue     String? // NONE, SMALL, BIG — уточнение к «есть»
+  userId    String?
+  user      User?    @relation("FuelAvailabilityReporter", fields: [userId], references: [id], onDelete: SetNull)
+  ipHash    String? // антиспам без хранения адреса
+  createdAt DateTime @default(now())
+
+  // Сводка читает свежие отметки по точке и виду топлива — этот порядок и
+  // нужен индексу.
+  @@index([stationId, createdAt])
   @@index([userId, createdAt])
 }
 
