@@ -127,7 +127,7 @@ test("кабинет и аукционы убраны из нижнего мен
      везти машину из-за границы. Пропасть из приложения они при этом не
      должны. */
   assert.equal(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("/dashboard")), false)
-  assert.equal(TELEGRAM_TAB_NAVIGATION.some((item) => item.id === "auctions"), false)
+  assert.equal(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("tab=auctions")), false)
 
   const menuHrefs = TELEGRAM_MENU_NAVIGATION.flatMap((section) => section.items.map((item) => item.href))
   assert.ok(menuHrefs.some((href) => href.includes("/dashboard")))

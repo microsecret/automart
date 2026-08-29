@@ -10,6 +10,7 @@ import { fetchJson } from "@/lib/api-client"
 import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
 import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
 import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
+import FuelNearbyList from "@/components/fuel/FuelNearbyList"
 
 type FuelStation = {
   id: string
@@ -686,6 +687,19 @@ export default function FuelMapPage() {
     { revalidateOnFocus: true },
   )
   const selectedStationAvailability = (selectedStationId && availabilityData?.stations?.[selectedStationId]) || EMPTY_AVAILABILITY
+
+  /* Отметки по всем видимым точкам разом — для списка «куда ехать».
+     Запрашивать их по одной значило бы триста запросов на открытие карты;
+     маршрут принимает список и отвечает одним ответом.
+
+     Ограничение в сорок точек: список показывает восемь ближайших, и
+     тянуть отметки по всему городу ради них незачем. */
+  const nearbyStationIds = displayedStations.slice(0, 40).map((station) => station.id).join(",")
+  const { data: nearbyAvailabilityData } = useSWR<{ stations?: Record<string, StationAvailability[]> }>(
+    nearbyStationIds ? `/api/fuel-availability?stations=${encodeURIComponent(nearbyStationIds)}` : null,
+    fetchJson,
+    { revalidateOnFocus: false },
+  )
   const handleAvailabilityReported = (stationId: string, rows: StationAvailability[]) => {
     mutateAvailability((current) => ({ stations: { ...(current?.stations || {}), [stationId]: rows } }), { revalidate: false })
   }
@@ -815,6 +829,23 @@ export default function FuelMapPage() {
                   </Stack>
                 </Center>
               ) : filteredStations.length ? <Stack gap="xs">
+                {/* «Куда ехать» первым делом: человек за рулём открывает
+                    карту с этим вопросом, а не чтобы разглядывать метки.
+                    Список появляется только по нажатию — положение
+                    спрашивается тогда, когда понятно зачем. */}
+                <FuelNearbyList
+                  stations={displayedStations.slice(0, 40).map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    latitude: item.latitude,
+                    longitude: item.longitude,
+                  }))}
+                  availabilityByStation={nearbyAvailabilityData?.stations || {}}
+                  onSelect={(stationId) => {
+                    const found = displayedStations.find((item) => item.id === stationId)
+                    if (found) showStationOnMap(found)
+                  }}
+                />
                 {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} availabilityRows={selectedStationAvailability} onAvailabilityReported={handleAvailabilityReported} city={city} /></Box>}
                 {listedStations.map((station) => (
                 <FuelStationCard
