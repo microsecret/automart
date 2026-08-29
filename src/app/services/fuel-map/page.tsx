@@ -978,6 +978,31 @@ export default function FuelMapPage() {
   const areaLabel = data?.areaLabel || place || city
   const isViewingMapArea = Boolean(requestedCoordinates)
   const hasUnloadedMapArea = getDistanceInKilometers(coordinates, viewportCoordinates) > 0.35
+
+  /* Точки подгружаются сами, когда карту сдвинули.
+
+     Раньше нужно было нажать «Загрузить участок»: человек двигал карту к
+     своему посёлку, видел пустоту и решал, что заправок там нет. В
+     Чекмагуше их шесть, включая три Башнефти, — API их отдаёт, но карта
+     не спрашивала.
+
+     Ждём полторы секунды после остановки: без паузы запрос улетал бы на
+     каждое движение пальца, а OpenStreetMap за такое ограничивает
+     доступ. Полторы секунды — время, за которое человек успевает
+     остановиться и посмотреть на карту.
+
+     Порог в километр, а не 350 метров: мелкие сдвиги в пределах города
+     ничего не меняют, точки уже загружены с запасом. */
+  useEffect(() => {
+    const km = getDistanceInKilometers(coordinates, viewportCoordinates)
+    if (km <= 1) return
+
+    const timer = window.setTimeout(() => {
+      setRequestedCoordinates(viewportCoordinates)
+    }, 1500)
+
+    return () => window.clearTimeout(timer)
+  }, [coordinates, viewportCoordinates])
   const allStations = data?.stations ?? EMPTY_STATIONS
   const centerLatitude = coordinates.latitude
   const centerLongitude = coordinates.longitude
@@ -1235,7 +1260,7 @@ export default function FuelMapPage() {
           </Text>
           <Group gap={6} wrap="nowrap">
             <Button variant="subtle" color="gray" size="compact-xs" leftSection={<IconRefresh size={13} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button>
-            {hasUnloadedMapArea && (
+            {hasUnloadedMapArea && !isLoading && !isValidating && (
               /* Кнопка появляется, только когда карту сдвинули за
                  пределы загруженного: постоянная «участок загружен»
                  занимала место и ничего не сообщала. */

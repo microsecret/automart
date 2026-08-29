@@ -385,3 +385,27 @@ test("плашки читаются на телефоне", () => {
   const plate = css.slice(css.indexOf(".fuel-map-plate {"))
   assert.match(plate.slice(0, 600), /max-width: 210px/)
 })
+
+// === Охват карты ===
+
+test("точки подгружаются сами при движении карты", () => {
+  /* Раньше надо было нажать «Загрузить участок»: человек двигал карту к
+     своему посёлку, видел пустоту и решал, что заправок там нет. В
+     Чекмагуше их двадцать в радиусе сорока километров. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /setRequestedCoordinates\(viewportCoordinates\)\s*\}, 1500\)/)
+})
+
+test("предел точек берёт Москву целиком", () => {
+  /* Замерено на живых данных: в радиусе 40 км от центра Москвы 1235
+     заправок. Прежние 600 обрезали её ровно вдвое — окраины на карту не
+     попадали вовсе. */
+  const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
+  assert.match(route, /out center tags 1500;/)
+})
+
+test("радиус охвата больше города", () => {
+  // Сорок километров закрывают город с пригородами и участок трассы.
+  const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
+  assert.match(route, /requestedCoordinates \? 40_000/)
+})

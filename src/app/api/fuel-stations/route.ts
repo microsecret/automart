@@ -686,12 +686,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Выберите город из списка или введите населённый пункт либо трассу" }, { status: 400 })
   }
 
-  const radius = requestedCoordinates ? 30_000 : place ? 26_000 : 22_000
+  /* Радиус охвата.
+
+     Было 22–30 км, и этого не хватало: в большом городе заправки на
+     окраинах не попадали в выборку вовсе, а при переходе к соседнему
+     посёлку карта оставалась пустой, пока человек не сдвинет её вплотную.
+
+     Сорок километров закрывают город с пригородами и участок трассы
+     между посёлками. Больше брать нельзя: запрос к OpenStreetMap растёт
+     квадратично площади и начинает отваливаться по времени.
+
+     Замерено на живых данных: в радиусе 40 км от центра Москвы 1235
+     заправок, ответ приходит за четыре секунды. Предел в 1500 берёт их
+     все с запасом — прежние 600 обрезали Москву ровно вдвое, и окраины
+     на карту не попадали вовсе. */
+  const radius = requestedCoordinates ? 40_000 : place ? 36_000 : 32_000
   // Крупные заправочные комплексы нанесены отношениями, а не точками, поэтому
   // без `relation` часть сетевых АЗС просто отсутствует на карте. Лимит выдачи
   // поднят: в плотной городской застройке 180 точек обрывались задолго до
   // границы запрошенного радиуса.
-  const query = `[out:json][timeout:24];(node["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});relation["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude}););out center tags 600;`
+  const query = `[out:json][timeout:24];(node["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});relation["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude}););out center tags 1500;`
   const directoryCacheKey = getDirectoryCacheKey(coordinates, radius)
   const cachedDirectory = directoryStationCache.get(directoryCacheKey)
   const directoryPromise = !forceRefresh && cachedDirectory && cachedDirectory.expiresAt > Date.now()
