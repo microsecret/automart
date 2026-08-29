@@ -3824,7 +3824,7 @@ select {
   z-index: 4;
 }
 
-.fuel-map-marker {.fuel-map-marker {
+.fuel-map-marker {
   position: relative;
   display: grid;
   width: 30px;
