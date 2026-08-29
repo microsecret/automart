@@ -110,15 +110,29 @@ export default function FuelPriceReporter({ stationId, latitude, longitude, pric
           {prices.map((entry) => {
             const updated = formatUpdatedAt(entry.updatedAt)
             return (
+              /* Цена нажимается: открывает форму с этой маркой и текущим
+                 значением. Раньше её нельзя было исправить — человек
+                 видел устаревшую цену и не мог поправить, не разбираясь,
+                 где отдельная кнопка «Отметить цену» и какую марку
+                 выбрать заново. */
               <Badge
                 key={entry.fuel}
                 size="sm"
                 variant="light"
                 color="teal"
+                component="button"
+                type="button"
+                onClick={() => {
+                  setFuel(entry.fuel)
+                  setPrice((entry.priceKopecks / 100).toFixed(2).replace(".", ","))
+                  setIsOpen(true)
+                }}
+                style={{ cursor: "pointer" }}
                 leftSection={<IconUsers size={11} />}
                 title={`${entry.confirmations} подтверждени${entry.confirmations === 1 ? "е" : entry.confirmations < 5 ? "я" : "й"}${updated ? `, обновлено ${updated}` : ""}`}
               >
                 {entry.label} · {formatReportedPrice(entry.priceKopecks)} ₽ · {entry.confirmations}
+                {updated ? ` · ${updated}` : ""}
               </Badge>
             )
           })}

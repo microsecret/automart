@@ -335,3 +335,20 @@ test("из карточки на карте можно отметить и по�
   assert.ok(page.includes("Отметить"), "кнопка отметки")
   assert.match(page, /yandex\.ru\/maps\/\?rtext/)
 })
+
+test("цена обновляется в карточке сразу после отметки", () => {
+  /* Цена уходит вместе с наличием, но живёт в своём запросе: без
+     обновления человек видел «цен пока никто не отмечал» и ставил
+     снова, решив, что не сохранилось. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /mutateNearbyPrices/)
+  assert.match(page, /mutateReportedPrices\(\)/)
+})
+
+test("цену можно исправить нажатием", () => {
+  /* Раньше её нельзя было поправить: человек видел устаревшую цену и не
+     мог её изменить, не разбираясь, где отдельная кнопка. */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelPriceReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /component="button"/)
+  assert.match(reporter, /setPrice\(\(entry\.priceKopecks \/ 100\)/)
+})

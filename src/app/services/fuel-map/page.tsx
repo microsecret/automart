@@ -1038,7 +1038,7 @@ export default function FuelMapPage() {
   /* Цены по всем видимым точкам — для плашек на карте. Тем же одним
      запросом, что и отметки: по одной на точку вышло бы триста запросов
      на открытие карты. */
-  const { data: nearbyPricesData } = useSWR<FuelPriceReportsResponse>(
+  const { data: nearbyPricesData, mutate: mutateNearbyPrices } = useSWR<FuelPriceReportsResponse>(
     nearbyStationIds ? `/api/fuel-prices?stations=${encodeURIComponent(nearbyStationIds)}` : null,
     fetchJson,
     { revalidateOnFocus: false },
@@ -1051,6 +1051,12 @@ export default function FuelMapPage() {
   )
   const handleAvailabilityReported = (stationId: string, rows: StationAvailability[]) => {
     mutateAvailability((current) => ({ stations: { ...(current?.stations || {}), [stationId]: rows } }), { revalidate: false })
+
+    /* Цена уходит вместе с отметкой наличия, но живёт в своём запросе:
+       без этого человек ставил цену, а в списке оставалось «цен пока
+       никто не отмечал» — он решал, что не сохранилось, и ставил снова. */
+    void mutateReportedPrices()
+    void mutateNearbyPrices()
   }
   const listedStations = selectedStationKey
     ? displayedStations.filter((station) => `${station.sourceType}-${station.id}` !== selectedStationKey)

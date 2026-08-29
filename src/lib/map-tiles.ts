@@ -31,8 +31,34 @@ export type TileSource = {
 
 export const TILE_SOURCES: TileSource[] = [
   {
-    id: "voyager",
+    id: "osm",
     label: "Карта",
+    /* OpenStreetMap первым, хотя рисунок у него беднее CARTO.
+
+       CARTO отдаёт плитки серверу, но браузеру с чужого домена подсовывает
+       картинку «API KEY REQUIRED» — проверено на живом сайте, карта была
+       заклеена этой надписью. Их бесплатный тариф требует ключа, и без
+       него источник работает только в проверках curl.
+
+       OpenStreetMap отдаёт всем и без ключа. Он и остаётся основным, пока
+       не появится оплаченный ключ CARTO или официальный Яндекса. */
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    maxZoom: 19,
+    attribution: "© OpenStreetMap",
+  },
+  {
+    id: "topo",
+    label: "Подробная",
+    /* OpenTopoMap: та же основа, но с рельефом и более плотной подписью
+       мелких улиц. Полезен в частном секторе, где заправка стоит во
+       дворе. Отдаёт без ключа. */
+    url: "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+    maxZoom: 17,
+    attribution: "© OpenStreetMap, © OpenTopoMap",
+  },
+  {
+    id: "voyager",
+    label: "Мягкая",
     /* CARTO Voyager — тот же OpenStreetMap, но отрисованный по-человечески:
        улицы различимы по значимости, подписи читаются на телефоне, цвета
        спокойные. Стандартная схема OSM рядом с ним выглядит чертежом.
@@ -62,17 +88,10 @@ export const TILE_SOURCES: TileSource[] = [
     attribution: "© Esri",
     dark: true,
   },
-  {
-    id: "osm",
-    label: "OSM",
-    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-    maxZoom: 19,
-    attribution: "© OpenStreetMap",
-  },
 ]
 
 /** Источник по умолчанию, если в окружении ничего не задано. */
-export const DEFAULT_TILE_SOURCE_ID = "voyager"
+export const DEFAULT_TILE_SOURCE_ID = "osm"
 
 export function findTileSource(id: string | null | undefined): TileSource {
   const found = TILE_SOURCES.find((source) => source.id === id)
