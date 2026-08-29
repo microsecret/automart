@@ -1,0 +1,159 @@
+"use client"
+
+import { useState } from "react"
+import { Button, Divider, Group, Modal, Stack, Text } from "@mantine/core"
+import { IconBell, IconCheck } from "@tabler/icons-react"
+import { AVAILABILITY_FUEL_LABELS, type AvailabilityFuel } from "@/lib/fuel-availability"
+
+/**
+ * Подписка на появление топлива.
+ *
+ * Отметки отвечают «есть ли сейчас», а человеку с пустым баком нужно
+ * знать, когда появится: иначе он открывает карту двадцать раз за день
+ * или не открывает вовсе.
+ *
+ * Три вида подписки идут от узкого к широкому — так человек читает сверху
+ * вниз и останавливается на первом подходящем: сначала «вся заправка»,
+ * потом «эта марка здесь», потом «марка по городу».
+ */
+export default function FuelSubscribeButton({
+  stationId,
+  stationName,
+  city,
+}: {
+  stationId: string
+  stationName: string
+  city: string
+}) {
+  const [opened, setOpened] = useState(false)
+  const [sending, setSending] = useState<string | null>(null)
+  const [done, setDone] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const subscribe = async (
+    kind: "STATION" | "STATION_FUEL" | "CITY_FUEL",
+    fuel: AvailabilityFuel | null,
+  ) => {
+    const key = `${kind}:${fuel ?? ""}`
+    setSending(key)
+    setError(null)
+    try {
+      const response = await fetch("/api/fuel-subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, stationId, stationName, fuel, city }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || "Не удалось подписаться")
+
+      setDone(key)
+      /* Подтверждение держится недолго: человек уже понял, что подписан, а
+         постоянная галочка мешает подписаться на другую марку. */
+      window.setTimeout(() => setDone(null), 2500)
+    } catch (subscribeError) {
+      setError(subscribeError instanceof Error ? subscribeError.message : "Не удалось подписаться")
+    } finally {
+      setSending(null)
+    }
+  }
+
+  const label = (kind: string, fuel: string | null) => {
+    const key = `${kind}:${fuel ?? ""}`
+    return done === key ? <IconCheck size={16} /> : null
+  }
+
+  return (
+    <>
+      <Button
+        size="compact-sm"
+        variant="light"
+        color="indigo"
+        leftSection={<IconBell size={14} />}
+        onClick={() => setOpened(true)}
+      >
+        Уведомить, когда появится
+      </Button>
+
+      <Modal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        title="Подписка на уведомления"
+        radius="md"
+        centered
+      >
+        <Stack gap="sm">
+          <Text size="sm" c="dimmed">{stationName}</Text>
+
+          <Stack gap={4}>
+            <Text size="sm" fw={600}>Вся заправка</Text>
+            <Text size="xs" c="dimmed">Сообщим, когда тут появится любое топливо</Text>
+            <Button
+              variant="default"
+              radius="md"
+              loading={sending === "STATION:"}
+              rightSection={label("STATION", null)}
+              onClick={() => void subscribe("STATION", null)}
+            >
+              Подписаться на заправку
+            </Button>
+          </Stack>
+
+          <Divider />
+
+          <Stack gap={4}>
+            <Text size="sm" fw={600}>Конкретная марка здесь</Text>
+            <Text size="xs" c="dimmed">Когда на этом адресе появится выбранная марка</Text>
+            <Group grow gap={6}>
+              {(["AI92", "AI95", "DT"] as AvailabilityFuel[]).map((fuel) => (
+                <Button
+                  key={fuel}
+                  variant="default"
+                  radius="md"
+                  loading={sending === `STATION_FUEL:${fuel}`}
+                  rightSection={label("STATION_FUEL", fuel)}
+                  onClick={() => void subscribe("STATION_FUEL", fuel)}
+                >
+                  {AVAILABILITY_FUEL_LABELS[fuel]}
+                </Button>
+              ))}
+            </Group>
+          </Stack>
+
+          <Divider />
+
+          <Stack gap={4}>
+            <Text size="sm" fw={600}>Марка по всему городу</Text>
+            <Text size="xs" c="dimmed">
+              {city ? `Когда выбранная марка появится в любой АЗС города ${city}` : "Город не определён"}
+            </Text>
+            <Group grow gap={6}>
+              {(["AI92", "AI95", "DT"] as AvailabilityFuel[]).map((fuel) => (
+                <Button
+                  key={fuel}
+                  variant="default"
+                  radius="md"
+                  disabled={!city}
+                  loading={sending === `CITY_FUEL:${fuel}`}
+                  rightSection={label("CITY_FUEL", fuel)}
+                  onClick={() => void subscribe("CITY_FUEL", fuel)}
+                >
+                  {AVAILABILITY_FUEL_LABELS[fuel]}
+                </Button>
+              ))}
+            </Group>
+          </Stack>
+
+          {error && <Text size="xs" c="red.6">{error}</Text>}
+
+          {/* Уведомление приходит в бот: сказать об этом надо здесь, иначе
+              человек ждёт его на сайте и не понимает, почему не приходит. */}
+          <Text size="xs" c="dimmed">
+            Уведомления приходят в Telegram-бот. Не чаще раза в час по одной подписке.
+          </Text>
+
+          <Button onClick={() => setOpened(false)} radius="md">Готово</Button>
+        </Stack>
+      </Modal>
+    </>
+  )
+}

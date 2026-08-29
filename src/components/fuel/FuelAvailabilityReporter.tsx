@@ -34,12 +34,19 @@ export type StationAvailability = {
  */
 export default function FuelAvailabilityReporter({
   stationId,
+  stationName,
+  city,
   latitude,
   longitude,
   availability,
   onReported,
 }: {
   stationId: string
+  /* Название и город уходят вместе с отметкой: по ним строится текст
+     уведомления подписчикам, а на сервере этих сведений нет — точки
+     приходят из OpenStreetMap и в базе не хранятся. */
+  stationName: string
+  city: string
   latitude: number
   longitude: number
   availability: StationAvailability[]
@@ -59,7 +66,7 @@ export default function FuelAvailabilityReporter({
       const response = await fetch("/api/fuel-availability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stationId, latitude, longitude, fuel, state, queue }),
+        body: JSON.stringify({ stationId, stationName, city, latitude, longitude, fuel, state, queue }),
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) throw new Error(payload?.error || "Не удалось отправить отметку")

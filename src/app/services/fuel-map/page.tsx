@@ -9,6 +9,7 @@ import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
 import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
+import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
 
 type FuelStation = {
   id: string
@@ -512,7 +513,7 @@ function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoadin
   )
 }
 
-function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShowOnMap, reportedPrices, onPricesReported, availabilityRows, onAvailabilityReported }: {
+function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShowOnMap, reportedPrices, onPricesReported, availabilityRows, onAvailabilityReported, city }: {
   station: FuelStation
   resolvedAddress: string | null
   isAddressLoading: boolean
@@ -521,6 +522,9 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
   onPricesReported: (stationId: string, prices: ConsensusPrice[]) => void
   availabilityRows: StationAvailability[]
   onAvailabilityReported: (stationId: string, rows: StationAvailability[]) => void
+  /* Город выбран на странице, а не хранится у точки: подписка «марка по
+     городу» заводится именно на него. */
+  city: string
 }) {
   const network = getStationNetwork(station)
   const source = getStationSourceLabel(station)
@@ -560,6 +564,8 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
             «где вообще есть». Цену он и так примерно знает. */}
         <FuelAvailabilityReporter
           stationId={station.id}
+          stationName={station.name}
+          city={city}
           latitude={station.latitude}
           longitude={station.longitude}
           availability={availabilityRows}
@@ -575,6 +581,10 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
         />
 
         <Group gap="xs" wrap="wrap">
+          {/* Подписка рядом с отметками, а не в конце карточки: человек,
+              увидевший «нет 92», хочет узнать, когда появится, — именно в
+              этот момент, а не пролистав до маршрута. */}
+          <FuelSubscribeButton stationId={station.id} stationName={station.name} city={city} />
           <Button size="compact-sm" color="indigo" variant="light" leftSection={<IconMapPin size={14} />} onClick={() => onShowOnMap(station)}>Показать на карте</Button>
           <Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" size="compact-sm" color="indigo" variant="light" leftSection={<IconRoute size={14} />}>Маршрут</Button>
           {station.openingHours && <Badge variant="outline" color="gray" leftSection={<IconClock size={12} />}>{station.openingHours}</Badge>}
@@ -785,7 +795,7 @@ export default function FuelMapPage() {
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
             <Paper className="fuel-map-list" radius="md" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? <Center h={460}><Loader size="sm" color="indigo" /></Center> : filteredStations.length ? <Stack gap="xs">
-                {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} availabilityRows={selectedStationAvailability} onAvailabilityReported={handleAvailabilityReported} /></Box>}
+                {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} availabilityRows={selectedStationAvailability} onAvailabilityReported={handleAvailabilityReported} city={city} /></Box>}
                 {listedStations.map((station) => (
                 <FuelStationCard
                   key={`${station.sourceType}-${station.id}`}

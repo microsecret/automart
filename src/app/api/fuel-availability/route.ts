@@ -4,7 +4,9 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { notifyFuelSubscribers } from "@/lib/fuel-subscription-notify"
 import {
+  AVAILABILITY_FUEL_LABELS,
   STALE_WINDOW_MS,
   isAvailabilityFuel,
   isAvailabilityState,
@@ -120,6 +122,19 @@ export async function POST(request: NextRequest) {
 
   const ipHash = hashClientIp(ip)
 
+  /* Состояние до отметки: подписчиков будим только на переходе «нет или
+     неизвестно» → «есть». Иначе каждая отметка «есть 92» на заправке, где
+     он и так весь день есть, слала бы уведомление всем подписчикам. */
+  const beforeRows = await prisma.fuelAvailabilityReport.findMany({
+    where: { stationId, createdAt: { gte: new Date(Date.now() - STALE_WINDOW_MS) } },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    select: { fuel: true, state: true, queue: true, createdAt: true },
+  })
+  const wasAvailable = summarizeAvailability(beforeRows).some(
+    (row) => row.fuel === fuel && row.state === "YES",
+  )
+
   /* Повторная отметка не заменяет прежнюю, а добавляется: у цены голос
      один и уточняется, а у наличия накопление подтверждений и есть суть —
      «есть 92, отметили пятеро» доверия заслуживает больше, чем одна
@@ -148,5 +163,24 @@ export async function POST(request: NextRequest) {
     select: { fuel: true, state: true, queue: true, createdAt: true },
   })
 
-  return NextResponse.json({ availability: summarizeAvailability(reports) }, { status: 201 })
+  const availability = summarizeAvailability(reports)
+
+  /* Топливо появилось — будим подписчиков. Ответа не ждём: отправка не
+     должна задерживать ответ человеку, который только что отметил. */
+  if (state === "YES" && !wasAvailable) {
+    const nowAvailable = availability.some((row) => row.fuel === fuel && row.state === "YES")
+    if (nowAvailable) {
+      void notifyFuelSubscribers({
+        stationId,
+        stationName: typeof body?.stationName === "string" && body.stationName.trim()
+          ? body.stationName.trim().slice(0, 120)
+          : "АЗС",
+        city: typeof body?.city === "string" ? body.city.trim().slice(0, 80) : "",
+        fuel,
+        fuelLabel: AVAILABILITY_FUEL_LABELS[fuel],
+      })
+    }
+  }
+
+  return NextResponse.json({ availability }, { status: 201 })
 }
