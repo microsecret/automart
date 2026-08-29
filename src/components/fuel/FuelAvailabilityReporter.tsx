@@ -19,6 +19,12 @@ export type StationAvailability = {
   confirmations: number
   updatedAt: string | null
   queue: QueueLevel | null
+  /* Насколько крепкие сведения: 0–100. Карта говорила «есть 92» как
+     факт, а за этим могла стоять одна отметка восьмичасовой давности. */
+  confidencePercent: number
+  confidenceLabel: "высокая" | "средняя" | "низкая"
+  /** «1 метка за 8 ч» — из чего сложилось число. */
+  confidenceNote: string
   photo: string | null
   comment: string | null
 }
@@ -146,6 +152,21 @@ export default function FuelAvailabilityReporter({
               {/* Возраст отметки — половина ответа: по свежести человек сам
                   решает, верить ли. */}
               {age && !justSaved && <Text fz={9} c="dimmed" lh={1.2}>{age}</Text>}
+              {/* Уверенность вместо голого «есть».
+
+                  Карта говорила «есть 92» как факт, а за этим могла стоять
+                  одна отметка восьмичасовой давности. Человек ехал и
+                  возвращался ни с чем — второй раз он на карту уже не
+                  смотрел.
+
+                  Число показывается только когда сведения слабые: при
+                  высокой уверенности оно лишний шум, а при низкой —
+                  предупреждение. */}
+              {known && !justSaved && known.confidenceLabel !== "высокая" && (
+                <Text fz={9} c={known.confidenceLabel === "низкая" ? "orange.7" : "dimmed"} lh={1.2}>
+                  {known.confidencePercent}% · {known.confidenceNote}
+                </Text>
+              )}
             </UnstyledButton>
           )
         })}
@@ -266,6 +287,54 @@ export default function FuelAvailabilityReporter({
           </Stack>
         </Paper>
       )}
+
+      {/* Подтверждение чужой отметки одним нажатием.
+
+          Сделать свою отметку — выбрать марку, потом «есть» или «нет».
+          Подтвердить чужую — одно нажатие, и человек соглашается охотнее.
+          А уверенность от подтверждения растёт так же, как от новой
+          отметки: это и есть та самая вторая метка, которой не хватало.
+
+          Показывается, только когда есть что подтверждать и сведения не
+          железные: при высокой уверенности лишний вопрос раздражает. */}
+      {(() => {
+        const weak = availability.find(
+          (item) => item.state !== "UNKNOWN" && item.confidenceLabel !== "высокая",
+        )
+        if (!weak) return null
+
+        return (
+          <Paper withBorder radius="md" p="xs" bg="var(--market-surface-subtle)">
+            <Stack gap={6}>
+              <Text size="xs" c="dimmed">
+                {weak.label}: {weak.state === "YES" ? "есть" : "нет"} — {weak.confidenceNote}.
+                Это всё ещё так?
+              </Text>
+              <Group grow gap={6}>
+                <Button
+                  size="xs"
+                  radius="md"
+                  color="teal"
+                  leftSection={<IconCheck size={14} />}
+                  loading={sending}
+                  onClick={() => void send(weak.fuel, weak.state === "YES" ? "YES" : "NO", null)}
+                >
+                  Да, подтверждаю
+                </Button>
+                <Button
+                  size="xs"
+                  radius="md"
+                  variant="default"
+                  loading={sending}
+                  onClick={() => void send(weak.fuel, weak.state === "YES" ? "NO" : "YES", null)}
+                >
+                  Уже нет
+                </Button>
+              </Group>
+            </Stack>
+          </Paper>
+        )
+      })()}
 
       {/* Снимок табло и подпись — там, где они есть. Показывается один,
           самый свежий: галерея из шести фотографий одной колонки не

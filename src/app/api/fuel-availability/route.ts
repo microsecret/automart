@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     where: { stationId: { in: stationIds }, createdAt: { gte: since } },
     orderBy: { createdAt: "desc" },
     take: REPORT_HISTORY_LIMIT,
-    select: { stationId: true, fuel: true, state: true, queue: true, photo: true, comment: true, createdAt: true },
+    select: { stationId: true, fuel: true, state: true, queue: true, photo: true, comment: true, userId: true, createdAt: true },
   })
 
   const byStation = new Map<string, Array<{ fuel: string; state: string; queue: string | null; createdAt: Date }>>()
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     where: { stationId, createdAt: { gte: new Date(Date.now() - STALE_WINDOW_MS) } },
     orderBy: { createdAt: "desc" },
     take: 100,
-    select: { fuel: true, state: true, queue: true, photo: true, comment: true, createdAt: true },
+    select: { fuel: true, state: true, queue: true, photo: true, comment: true, userId: true, createdAt: true },
   })
   const wasAvailable = summarizeAvailability(beforeRows).some(
     (row) => row.fuel === fuel && row.state === "YES",
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     where: { stationId, createdAt: { gte: since } },
     orderBy: { createdAt: "desc" },
     take: 100,
-    select: { fuel: true, state: true, queue: true, photo: true, comment: true, createdAt: true },
+    select: { fuel: true, state: true, queue: true, photo: true, comment: true, userId: true, createdAt: true },
   })
 
   const availability = summarizeAvailability(reports)

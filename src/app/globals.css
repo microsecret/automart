@@ -3599,42 +3599,42 @@ select {
   }
 }
 
-.fuel-map-hero {
-  position: relative;
-  overflow: hidden;
-  color: white;
-  background: linear-gradient(128deg, #17175d 0%, #102a59 52%, #0f766e 120%);
-  box-shadow: var(--shadow-lg);
+/* Полоса управления над картой.
+
+   Заменила синюю шапку с заголовком и описанием: та занимала пол-экрана,
+   а под ней шли ещё два ряда служебного — до карты человек добирался
+   прокруткой, на телефоне двумя.
+
+   Здесь всё то же управление в одну строку: поиск, город, топливо, сеть.
+   На узком экране поля переносятся, но остаются мелкими. */
+.fuel-map-controls {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--market-surface);
 }
 
-.fuel-map-hero::after {
-  content: "";
-  position: absolute;
-  inset: auto -62px -112px auto;
-  width: 260px;
-  height: 260px;
-  border: 1px solid rgba(255,255,255,0.22);
-  border-radius: 50%;
-  box-shadow: 0 0 0 28px rgba(255,255,255,0.05), 0 0 0 56px rgba(255,255,255,0.035);
-}
+/* Карта занимает то, что осталось от экрана.
 
-.fuel-map-hero > * {
-  position: relative;
-  z-index: 1;
-}
+   Было 460 пикселей — на телефоне треть высоты, и человек видел скорее
+   рамку карты, чем карту. Теперь она тянется до низа окна за вычетом
+   шапки сайта и полосы управления.
 
-.fuel-map-hero__control {
-  min-width: min(100%, 270px);
-  background: rgba(255,255,255,0.94);
-  border-color: rgba(255,255,255,0.32);
-  box-shadow: var(--shadow-lg);
-}
-
+   Нижняя граница в 320 пикселей нужна на совсем коротких экранах: карта
+   меньше этого бесполезна, лучше пусть страница прокрутится. */
 .fuel-map-canvas {
   position: relative;
-  min-height: 460px;
+  min-height: min(72vh, 640px);
   overflow: hidden;
   background: var(--market-surface-subtle);
+}
+
+@media (max-width: 640px) {
+  .fuel-map-canvas {
+    /* На телефоне вычитаем шапку сайта, полосу управления и нижнее меню
+       приложения — карта занимает всё остальное. */
+    min-height: max(320px, calc(100dvh - 210px));
+  }
 }
 
 .fuel-map-canvas__tiles {
@@ -3859,6 +3859,28 @@ select {
   font-size: var(--text-caps);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  transition: box-shadow var(--ease-base) var(--ease-out);
+}
+
+/* Кольцо кластера по наличию топлива внутри.
+
+   Кружок показывал только число — «5 АЗС», и человек на дальнем масштабе
+   не знал, стоит ли туда приближаться: может, там везде пусто. Кольцо
+   отвечает на это, не заставляя приближать карту.
+
+   Цвет по доле заправок с топливом: зелёное — почти везде есть,
+   оранжевое — где-то есть, красное — нигде. Серое без кольца означает,
+   что там просто никто не отмечал, и это честнее, чем красное. */
+.fuel-map-marker[data-cluster-state="yes"] {
+  box-shadow: 0 0 0 3px #16a34a, var(--shadow-md);
+}
+
+.fuel-map-marker[data-cluster-state="some"] {
+  box-shadow: 0 0 0 3px #f59e0b, var(--shadow-md);
+}
+
+.fuel-map-marker[data-cluster-state="no"] {
+  box-shadow: 0 0 0 3px #dc2626, var(--shadow-md);
 }
 
 .fuel-map-marker__network {

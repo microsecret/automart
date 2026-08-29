@@ -17,8 +17,12 @@
  *   здесь дешевле: съездить зря хуже, чем не поехать на всякий случай.
  *   Поэтому при равном числе свежих отметок побеждает «нет».
  *
- * Модуль без импортов: он должен проверяться тестами без базы.
+ * Модуль без импортов, кроме правил уверенности: всё должно проверяться
+ * тестами без базы.
  */
+
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { calculateConfidence, describeConfidence } from "./fuel-confidence.ts"
 
 /** Виды топлива те же, что у ценовых отметок: списки не должны расходиться. */
 export const AVAILABILITY_FUELS = ["AI92", "AI95", "AI98", "AI100", "DT", "GAS"] as const
@@ -79,6 +83,10 @@ export function isQueueLevel(value: unknown): value is QueueLevel {
 export type AvailabilityReportRow = {
   fuel: string
   state: string
+  /* Кто отметил: у вошедшего в учётную запись отметка весит больше —
+     анонимную накрутить проще, и она чаще случайна. Признак выводится
+     из userId, чтобы вызывающему не пришлось его считать. */
+  userId?: string | null
   queue?: string | null
   /** Снимок колонки — доказательство к отметке. */
   photo?: string | null
@@ -98,6 +106,12 @@ export type FuelAvailability = {
   updatedAt: Date | null
   /** Очередь по свежим отметкам «есть»; null — не сообщали. */
   queue: QueueLevel | null
+  /** Насколько крепкие сведения: 0–100. */
+  confidencePercent: number
+  /** Уверенность словами — по ней решают быстрее, чем по числу. */
+  confidenceLabel: "высокая" | "средняя" | "низкая"
+  /** «1 метка за 8 ч» — из чего сложилось число. */
+  confidenceNote: string
   /** Снимок из самой свежей отметки, если он был. */
   photo: string | null
   /** Подпись из самой свежей отметки, если она была. */
@@ -155,11 +169,25 @@ export function summarizeAvailability(
       null,
     )
 
+    /* Уверенность считается по всем отметкам этого топлива, а не только
+       по победившим: разногласие как раз и должно ронять число. */
+    const confidence = calculateConfidence(
+      source.map((row) => ({
+        state: row.state === "YES" ? "YES" as const : "NO" as const,
+        createdAt: row.createdAt,
+        authorized: Boolean(row.userId),
+      })),
+      now,
+    )
+
     result.push({
       fuel,
       label: AVAILABILITY_FUEL_LABELS[fuel],
       state,
       confirmations: winning.length,
+      confidencePercent: confidence.percent,
+      confidenceLabel: confidence.label,
+      confidenceNote: describeConfidence(confidence),
       updatedAt,
       queue: state === "YES" ? pickQueue(yes) : null,
       photo: typeof newest?.photo === "string" ? newest.photo : null,

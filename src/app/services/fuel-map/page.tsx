@@ -472,6 +472,29 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           /* Отметки водителей по этой точке: они и есть ответ на вопрос
              «есть ли топливо сейчас», тогда как теги OpenStreetMap
              говорят лишь про ассортимент вообще. */
+          /* Состояние кластера: сколько заправок внутри с топливом.
+
+             Кружок показывал только число — «5 АЗС», и человек не знал,
+             стоит ли туда приближаться. Теперь кольцо красится по доле:
+             зелёное — почти везде есть, красное — почти нигде. Решение
+             принимается на дальнем масштабе, без приближения. */
+          const clusterState = isCluster
+            ? (() => {
+                let withFuel = 0
+                let known = 0
+                for (const station of marker.stations) {
+                  const rows = (availabilityByStation[station.id] || [])
+                    .filter((row) => row.updatedAt && isFresh(new Date(row.updatedAt)))
+                  if (rows.length === 0) continue
+                  known += 1
+                  if (rows.some((row) => row.state === "YES")) withFuel += 1
+                }
+                if (known === 0) return "unknown"
+                const share = withFuel / known
+                return share >= 0.6 ? "yes" : share > 0 ? "some" : "no"
+              })()
+            : null
+
           const reported = isCluster ? [] : (availabilityByStation[firstStation.id] || [])
           const fresh = reported.filter((row) => row.updatedAt && isFresh(new Date(row.updatedAt)))
           const anyYes = fresh.some((row) => row.state === "YES")
@@ -565,7 +588,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 
           return (
             <Box key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-pin" style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 15px), 0)` }}>
-              <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{ ...(networkIdentity && !isCluster && !fresh.length ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
+              <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-cluster-state={clusterState || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{ ...(networkIdentity && !isCluster && !fresh.length ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
             </Box>
           )
         })}
@@ -956,32 +979,118 @@ export default function FuelMapPage() {
   return (
     <Box className="service-page service-page--fuel-map" p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
-        <Paper className="fuel-map-hero" radius="xl" p={{ base: "lg", md: "xl" }}>
-          <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
-            <Stack gap="sm" maw={680}>
-              <Group gap="sm"><ThemeIcon size={44} radius="lg" variant="white" color="indigo"><IconGasStation size={23} /></ThemeIcon><Badge variant="white" color="dark" radius="xl">СЕРВИС ДЛЯ ПОЕЗДКИ</Badge></Group>
-              <Box><Text component="h1" c="white" ff="var(--font-display),sans-serif">Карта АЗС России</Text><Text c="rgba(255,255,255,0.8)" mt={8} maw={620}>Выберите город, посмотрите открытые точки заправок и сразу постройте маршрут в привычном картографическом сервисе.</Text></Box>
-              <Text size="xs" c="rgba(255,255,255,0.64)">Ищите любой населённый пункт или участок трассы по России. Цены и фактическое наличие показываются только от подтверждённого поставщика.</Text>
-            </Stack>
-            <Paper className="fuel-map-hero__control" radius="md" p="md" withBorder>
-              <Text size="xs" fw={700} tt="uppercase" c="gray.6" mb={6}>Населённый пункт или трасса</Text>
-              <Box component="form" onSubmit={handlePlaceSearch}><TextInput aria-label="Введите населённый пункт или трассу" placeholder="Например: Уфа или М-5 Урал" value={placeQuery} onChange={(event) => setPlaceQuery(event.currentTarget.value)} rightSection={<ActionIcon type="submit" size="sm" variant="subtle" color="indigo" aria-label="Открыть место на карте"><IconSearch size={16} /></ActionIcon>} /></Box>
-              <Text size="xs" fw={700} tt="uppercase" c="gray.6" mt="sm" mb={6}>Быстрый выбор города</Text>
-              <Select aria-label="Выберите город" data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))} value={place ? null : city} onChange={handleCityChange} searchable size="sm" placeholder="Выберите город" />
-              <Text size="xs" fw={700} tt="uppercase" c="gray.6" mt="sm" mb={6}>Показать топливо</Text>
-              <Select aria-label="Выберите тип топлива" data={FUEL_FILTERS} value={fuelFilter} onChange={(value) => setFuelFilter(value || "")} size="sm" />
-              <Text size="xs" fw={700} tt="uppercase" c="gray.6" mt="sm" mb={6}>Сеть АЗС</Text>
-              <Select aria-label="Выберите сеть АЗС" data={networkFilters} value={networkFilter} onChange={(value) => setNetworkFilter(value || "")} size="sm" searchable nothingFoundMessage="Сеть не найдена" />
-            </Paper>
+        {/* Шапка убрана.
+
+            Синий блок с заголовком и описанием занимал пол-экрана, а под
+            ним стояли ещё три ряда служебных панелей: до карты человек
+            добирался прокруткой. На телефоне — двумя.
+
+            Сервисом пользуются за рулём: человек открывает карту, чтобы
+            за секунду увидеть, где есть бензин. Заголовок «Карта АЗС
+            России» этому не помогает — он сообщает то, что человек и так
+            знает, раз сюда пришёл.
+
+            Вместо шапки — одна строка управления над картой: поиск,
+            город, топливо, сеть. Всё, что было в панели, осталось; ушли
+            только заголовок, описание и воздух вокруг них. */}
+        <Paper className="fuel-map-controls" radius="md" p="xs" withBorder>
+          <Group gap={6} wrap="wrap" align="center">
+            <Box component="form" onSubmit={handlePlaceSearch} style={{ flex: "1 1 220px", minWidth: 180 }}>
+              <TextInput
+                aria-label="Введите населённый пункт или трассу"
+                placeholder="Город, посёлок или участок трассы"
+                value={placeQuery}
+                onChange={(event) => setPlaceQuery(event.currentTarget.value)}
+                size="xs"
+                leftSection={<IconSearch size={14} />}
+                rightSection={
+                  /* Сброс поиска, когда он задан: без него человек,
+                     нашедший участок трассы, не может вернуться к городу —
+                     выбор в списке ниже перекрыт поиском. */
+                  place ? (
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      size="sm"
+                      onClick={() => { setPlace(null); setPlaceQuery("") }}
+                      aria-label="Сбросить поиск места"
+                    >
+                      <IconX size={13} />
+                    </ActionIcon>
+                  ) : (
+                    <ActionIcon type="submit" size="sm" variant="subtle" color="indigo" aria-label="Найти место на карте">
+                      <IconSearch size={14} />
+                    </ActionIcon>
+                  )
+                }
+              />
+            </Box>
+            <Select
+              aria-label="Выберите город"
+              data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))}
+              value={place ? null : city}
+              onChange={(value) => { if (value) { setPlace(null); setPlaceQuery(""); setCity(value) } }}
+              searchable
+              size="xs"
+              w={150}
+              placeholder="Город"
+            />
+            <Select
+              aria-label="Выберите тип топлива"
+              data={FUEL_FILTERS}
+              value={fuelFilter}
+              onChange={(value) => setFuelFilter(value || "all")}
+              size="xs"
+              w={130}
+            />
+            <Select
+              aria-label="Выберите сеть АЗС"
+              data={networkFilters}
+              value={networkFilter}
+              onChange={(value) => setNetworkFilter(value || "all")}
+              size="xs"
+              w={140}
+            />
           </Group>
         </Paper>
 
-        <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-          <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconMapPin size={18} /></ThemeIcon><Box><Text fw={700}>{isViewingMapArea ? "Заправки на выбранном участке" : `Заправки рядом с ${areaLabel}`}</Text><Text size="xs" c="dimmed">{data ? `${filteredStations.length} из ${data.stations.length} точек в подборке${data.coverage.dataMode === "LIVE" ? " · статусы от поставщика" : " · справочник OSM"}` : "Загружаем точки"}</Text></Box></Group>
-          <Group gap="xs"><Button variant="light" color="indigo" size="xs" leftSection={<IconRefresh size={14} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button><Button color={hasUnloadedMapArea ? "indigo" : "gray"} variant={hasUnloadedMapArea ? "filled" : "light"} size="xs" leftSection={<IconMapPin size={14} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>{hasUnloadedMapArea ? "Загрузить текущий участок" : "Участок загружен"}</Button></Group>
+        {/* Название области и кнопки — одной строкой.
+
+            Раньше это занимало отдельный ряд с крупным значком и
+            двумя строками текста, а под ним шла ещё панель со
+            сводкой источника. Три ряда служебного до карты — это
+            экран прокрутки на телефоне, тогда как человеку нужна
+            сама карта. */}
+        <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+          <Text size="sm" fw={600} c="var(--market-ink)" lineClamp={1}>
+            {isViewingMapArea ? "Заправки на участке" : areaLabel}
+            {data ? <Text component="span" size="xs" c="dimmed" ml={6}>{filteredStations.length}</Text> : null}
+          </Text>
+          <Group gap={6} wrap="nowrap">
+            <Button variant="subtle" color="gray" size="compact-xs" leftSection={<IconRefresh size={13} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button>
+            {hasUnloadedMapArea && (
+              /* Кнопка появляется, только когда карту сдвинули за
+                 пределы загруженного: постоянная «участок загружен»
+                 занимала место и ничего не сообщала. */
+              <Button color="indigo" variant="filled" size="compact-xs" leftSection={<IconMapPin size={13} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>Загрузить участок</Button>
+            )}
+          </Group>
         </Group>
 
-        {data && <Paper radius="md" p="sm" withBorder><Group justify="space-between" gap="xs" wrap="wrap"><Group gap="xs"><Badge size="sm" variant="light" color={data.coverage.dataMode === "LIVE" ? (data.coverage.liveDataStale ? "orange" : "teal") : "gray"}>{data.coverage.dataMode === "LIVE" ? (data.coverage.liveDataStale ? "Последние live-данные" : "Live: цены и наличие") : "Справочный режим"}</Badge><Text size="xs" c="dimmed">{data.coverage.dataMode === "LIVE" ? (data.coverage.liveDataStale ? "Поставщик временно недоступен — показываем последнюю сохранённую выборку." : "Цены, наличие и время обновления получены от поставщика.") : data.coverage.liveProviderConfigured ? "Поставщик временно не вернул данные для участка." : "Подключите официальный API-ключ, чтобы видеть цены и наличие; точки уже доступны из OSM."}</Text></Group>{data.coverage.rateLimitRemaining !== null && <Badge size="xs" color="gray" variant="outline">API: осталось {data.coverage.rateLimitRemaining.toLocaleString("ru-RU")} из {data.coverage.rateLimitLimit?.toLocaleString("ru-RU") || "лимита"}</Badge>}</Group></Paper>}
+        {/* Панель режима данных убрана.
+
+            Она объясняла, откуда взяты сведения: «Live: цены и
+            наличие», «Справочный режим», остаток лимита API. Человеку
+            за рулём это не говорит ничего — ему нужно знать, где есть
+            бензин, а не по какому договору получены точки.
+
+            Единственное, что стоило внимания, — сбой поставщика. Он
+            теперь показывается строкой ниже и только когда случился. */}
+        {data?.coverage.liveDataStale && (
+          <Text size="xs" c="orange.7">
+            Поставщик временно недоступен — показываем последнюю сохранённую выборку.
+          </Text>
+        )}
         {hasUnloadedMapArea && <Paper radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-indigo-2)", background: "var(--mantine-color-indigo-0)" }}><Group gap="xs" wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="indigo" variant="light"><IconMapPin size={14} /></ThemeIcon><Text size="sm" c="indigo.9">Вы переместили карту. Загрузите текущий участок, чтобы обновить список АЗС, расстояния и доступные справочные данные.</Text></Group></Paper>}
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
