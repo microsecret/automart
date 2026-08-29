@@ -80,6 +80,10 @@ export type AvailabilityReportRow = {
   fuel: string
   state: string
   queue?: string | null
+  /** Снимок колонки — доказательство к отметке. */
+  photo?: string | null
+  /** Короткая подпись к снимку. */
+  comment?: string | null
   createdAt: Date
 }
 
@@ -94,6 +98,10 @@ export type FuelAvailability = {
   updatedAt: Date | null
   /** Очередь по свежим отметкам «есть»; null — не сообщали. */
   queue: QueueLevel | null
+  /** Снимок из самой свежей отметки, если он был. */
+  photo: string | null
+  /** Подпись из самой свежей отметки, если она была. */
+  comment: string | null
 }
 
 /**
@@ -139,6 +147,14 @@ export function summarizeAvailability(
       null,
     )
 
+    /* Снимок берётся из самой свежей отметки победившего состояния:
+       фотография часовой давности говорит о заправке больше, чем
+       вчерашняя, даже если вчерашняя чётче. */
+    const newest = winning.reduce<AvailabilityReportRow | null>(
+      (latest, row) => (latest === null || row.createdAt > latest.createdAt ? row : latest),
+      null,
+    )
+
     result.push({
       fuel,
       label: AVAILABILITY_FUEL_LABELS[fuel],
@@ -146,6 +162,8 @@ export function summarizeAvailability(
       confirmations: winning.length,
       updatedAt,
       queue: state === "YES" ? pickQueue(yes) : null,
+      photo: typeof newest?.photo === "string" ? newest.photo : null,
+      comment: typeof newest?.comment === "string" ? newest.comment : null,
     })
   }
 

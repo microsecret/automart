@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     where: { stationId: { in: stationIds }, createdAt: { gte: since } },
     orderBy: { createdAt: "desc" },
     take: REPORT_HISTORY_LIMIT,
-    select: { stationId: true, fuel: true, state: true, queue: true, createdAt: true },
+    select: { stationId: true, fuel: true, state: true, queue: true, photo: true, comment: true, createdAt: true },
   })
 
   const byStation = new Map<string, Array<{ fuel: string; state: string; queue: string | null; createdAt: Date }>>()
@@ -120,6 +120,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Некорректные координаты точки" }, { status: 400 })
   }
 
+  /* Снимок принимается только свой, из /uploads: без проверки в поле
+     легла бы любая чужая ссылка, и карта показывала бы картинку с
+     постороннего сайта под видом фотографии колонки. */
+  const rawPhoto = typeof body?.photo === "string" ? body.photo.trim() : ""
+  const photo = /^\/uploads\/[A-Za-z0-9._-]+$/.test(rawPhoto) ? rawPhoto : null
+
+  /* Комментарий короткий: это подпись к снимку, а не сообщение. Длинный
+     всё равно не поместится в карточке и превратит карту в переписку. */
+  const comment = typeof body?.comment === "string" && body.comment.trim()
+    ? body.comment.trim().slice(0, 200)
+    : null
+
   const ipHash = hashClientIp(ip)
 
   /* Состояние до отметки: подписчиков будим только на переходе «нет или
@@ -129,7 +141,7 @@ export async function POST(request: NextRequest) {
     where: { stationId, createdAt: { gte: new Date(Date.now() - STALE_WINDOW_MS) } },
     orderBy: { createdAt: "desc" },
     take: 100,
-    select: { fuel: true, state: true, queue: true, createdAt: true },
+    select: { fuel: true, state: true, queue: true, photo: true, comment: true, createdAt: true },
   })
   const wasAvailable = summarizeAvailability(beforeRows).some(
     (row) => row.fuel === fuel && row.state === "YES",
@@ -150,6 +162,8 @@ export async function POST(request: NextRequest) {
       fuel,
       state,
       queue: state === "YES" ? queue : null,
+      photo,
+      comment,
       userId,
       ipHash,
     },
@@ -160,7 +174,7 @@ export async function POST(request: NextRequest) {
     where: { stationId, createdAt: { gte: since } },
     orderBy: { createdAt: "desc" },
     take: 100,
-    select: { fuel: true, state: true, queue: true, createdAt: true },
+    select: { fuel: true, state: true, queue: true, photo: true, comment: true, createdAt: true },
   })
 
   const availability = summarizeAvailability(reports)

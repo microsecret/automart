@@ -164,3 +164,60 @@ test("цвета обозначений совпадают с цветами м�
   assert.ok(markerYes && legendYes)
   assert.equal(markerYes.trim(), legendYes.trim())
 })
+
+// === Снимок табло ===
+
+test("снимок берётся из самой свежей отметки", () => {
+  /* Фотография часовой давности говорит о заправке больше, чем
+     вчерашняя, даже если вчерашняя чётче. */
+  const rows = summarizeAvailability([
+    { fuel: "AI92", state: "YES", photo: "/uploads/old.jpg", createdAt: ago(120) },
+    { fuel: "AI92", state: "YES", photo: "/uploads/new.jpg", createdAt: ago(10) },
+  ], NOW)
+  assert.equal(rows[0].photo, "/uploads/new.jpg")
+})
+
+test("снимок проигравшего состояния не показывается", () => {
+  /* Победило «нет», а снимок был у «есть»: показать его значило бы
+     подтвердить фотографией то, чего карта не утверждает. */
+  const rows = summarizeAvailability([
+    { fuel: "AI92", state: "YES", photo: "/uploads/yes.jpg", createdAt: ago(30) },
+    { fuel: "AI92", state: "NO", createdAt: ago(20) },
+    { fuel: "AI92", state: "NO", createdAt: ago(10) },
+  ], NOW)
+  assert.equal(rows[0].state, "NO")
+  assert.equal(rows[0].photo, null)
+})
+
+test("отметка без снимка не ломает сводку", () => {
+  const rows = summarizeAvailability([{ fuel: "AI92", state: "YES", createdAt: ago(10) }], NOW)
+  assert.equal(rows[0].photo, null)
+  assert.equal(rows[0].comment, null)
+})
+
+test("чужая ссылка вместо снимка не принимается", () => {
+  /* Без проверки в поле легла бы любая ссылка, и карта показывала бы
+     картинку с постороннего сайта под видом фотографии колонки. */
+  const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
+  assert.ok(route.includes(".test(rawPhoto)"), "адрес снимка должен проверяться")
+  assert.ok(route.includes("uploads"), "принимаются только свои файлы")
+})
+
+test("комментарий обрезается до подписи", () => {
+  // Длинный не поместится в карточке и превратит карту в переписку.
+  const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
+  assert.match(route, /slice\(0, 200\)/)
+})
+
+test("на телефоне открывается камера, а не галерея", () => {
+  // Человек снимает колонку, а не ищет её среди своих фотографий.
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /capture="environment"/)
+})
+
+test("снимок не обязателен для отметки", () => {
+  /* Человек у колонки отмечает за две секунды. Требовать снимок значило
+     бы получать отметки от единиц. */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /state: "YES", null\)|send\(openFuel, "YES", null\)/)
+})

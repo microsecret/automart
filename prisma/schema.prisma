@@ -1593,6 +1593,11 @@ model FuelAvailabilityReport {
   fuel      String // AI92, AI95, AI98, AI100, DT, GAS
   state     String // YES, NO
   queue     String? // NONE, SMALL, BIG — уточнение к «есть»
+  // Снимок колонки и короткий комментарий: доказательство к отметке.
+  // Спорная отметка — обычное дело, когда топливо кончается на глазах, и
+  // фотография табло снимает спор быстрее любого счётчика подтверждений.
+  photo     String? // адрес в /uploads
+  comment   String? // до 200 знаков
   userId    String?
   user      User?    @relation("FuelAvailabilityReporter", fields: [userId], references: [id], onDelete: SetNull)
   ipHash    String? // антиспам без хранения адреса

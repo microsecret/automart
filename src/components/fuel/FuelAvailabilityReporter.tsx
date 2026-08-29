@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Badge, Box, Button, Group, Paper, Stack, Text, UnstyledButton } from "@mantine/core"
-import { IconCheck, IconX } from "@tabler/icons-react"
+import { Badge, Box, Button, Group, Paper, Stack, Text, TextInput, UnstyledButton } from "@mantine/core"
+import { IconCamera, IconCheck, IconX } from "@tabler/icons-react"
 import {
   AVAILABILITY_FUELS,
   AVAILABILITY_FUEL_LABELS,
@@ -19,6 +19,8 @@ export type StationAvailability = {
   confirmations: number
   updatedAt: string | null
   queue: QueueLevel | null
+  photo: string | null
+  comment: string | null
 }
 
 /**
@@ -53,6 +55,13 @@ export default function FuelAvailabilityReporter({
   onReported?: (next: StationAvailability[]) => void
 }) {
   const [openFuel, setOpenFuel] = useState<AvailabilityFuel | null>(null)
+  /* Снимок и подпись необязательны и живут отдельно от нажатия «есть» /
+     «нет»: человек у колонки отмечает за две секунды, а фотографирует
+     только если считает нужным. Требовать снимок значило бы получать
+     отметки от единиц. */
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [comment, setComment] = useState("")
+  const [uploading, setUploading] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [savedFuel, setSavedFuel] = useState<AvailabilityFuel | null>(null)
@@ -66,13 +75,17 @@ export default function FuelAvailabilityReporter({
       const response = await fetch("/api/fuel-availability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stationId, stationName, city, latitude, longitude, fuel, state, queue }),
+        body: JSON.stringify({ stationId, stationName, city, latitude, longitude, fuel, state, queue, photo, comment }),
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) throw new Error(payload?.error || "Не удалось отправить отметку")
 
       onReported?.(payload.availability || [])
       setOpenFuel(null)
+      /* Снимок и подпись сбрасываются: они относились к этой отметке, а
+         следующая будет про другую заправку или другую марку. */
+      setPhoto(null)
+      setComment("")
       /* Отметка держится на виду недолго: человек уже уехал, и подтверждение
          нужно ровно на то, чтобы он понял — засчитано. */
       setSavedFuel(fuel)
@@ -186,10 +199,95 @@ export default function FuelAvailabilityReporter({
               ))}
             </Group>
 
+            {/* Снимок табло — доказательство к отметке. Спорная отметка
+                обычна, когда топливо кончается на глазах, и фотография
+                снимает спор быстрее любого счётчика подтверждений.
+
+                capture="environment" открывает на телефоне заднюю камеру
+                сразу: человек снимает колонку, а не ищет её в галерее. */}
+            <Group gap={6} align="center">
+              <Button
+                size="xs"
+                radius="md"
+                variant={photo ? "light" : "default"}
+                color={photo ? "teal" : "gray"}
+                leftSection={photo ? <IconCheck size={14} /> : <IconCamera size={14} />}
+                loading={uploading}
+                onClick={() => document.getElementById(`fuel-photo-${stationId}`)?.click()}
+              >
+                {photo ? "Снимок добавлен" : "Снять табло"}
+              </Button>
+              {photo && (
+                <Button size="xs" radius="md" variant="subtle" color="gray" onClick={() => setPhoto(null)}>
+                  Убрать
+                </Button>
+              )}
+              <input
+                id={`fuel-photo-${stationId}`}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={async (event) => {
+                  const file = event.currentTarget.files?.[0]
+                  event.currentTarget.value = ""
+                  if (!file) return
+
+                  setUploading(true)
+                  setError(null)
+                  try {
+                    const form = new FormData()
+                    form.append("file", file)
+                    const response = await fetch("/api/upload", { method: "POST", body: form })
+                    const payload = await response.json().catch(() => null)
+                    if (!response.ok) throw new Error(payload?.error || "Не удалось загрузить снимок")
+                    setPhoto(payload.url || payload.path || null)
+                  } catch (uploadError) {
+                    setError(uploadError instanceof Error ? uploadError.message : "Не удалось загрузить снимок")
+                  } finally {
+                    setUploading(false)
+                  }
+                }}
+              />
+            </Group>
+
+            {/* Подпись к снимку, а не сообщение: длинная не поместится в
+                карточке и превратит карту в переписку. */}
+            <TextInput
+              size="xs"
+              radius="md"
+              placeholder="Комментарий: очередь, лимит на бак, что-то ещё"
+              value={comment}
+              onChange={(event) => setComment(event.currentTarget.value.slice(0, 200))}
+              disabled={sending}
+            />
+
             {error && <Text size="xs" c="red.6">{error}</Text>}
           </Stack>
         </Paper>
       )}
+
+      {/* Снимок табло и подпись — там, где они есть. Показывается один,
+          самый свежий: галерея из шести фотографий одной колонки не
+          говорит больше, чем последняя, а карточку растягивает. */}
+      {(() => {
+        const withPhoto = availability.find((item) => item.photo)
+        if (!withPhoto?.photo) return null
+        return (
+          <Box>
+            <Box
+              component="img"
+              src={withPhoto.photo}
+              alt={`Табло на заправке, отметка про ${withPhoto.label}`}
+              loading="lazy"
+              style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 10, display: "block" }}
+            />
+            {withPhoto.comment && (
+              <Text size="xs" c="dimmed" mt={4}>{withPhoto.comment}</Text>
+            )}
+          </Box>
+        )
+      })()}
 
       {/* Очередь и число подтверждений — там, где они есть: пустые строки
           «подтверждений: 0» только зашумляют карточку. */}
