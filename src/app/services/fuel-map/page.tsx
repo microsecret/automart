@@ -12,6 +12,7 @@ import FuelAvailabilityReporter, { type StationAvailability } from "@/components
 import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
 import FuelNearbyList from "@/components/fuel/FuelNearbyList"
 import { formatAge, isFresh } from "@/lib/fuel-availability"
+import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 
 type FuelStation = {
   id: string
@@ -211,6 +212,19 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   availabilityByStation: Record<string, StationAvailability[]>
 }) {
   const [zoom, setZoom] = useState(11)
+  /* Выбранный источник плиток живёт в браузере: человек выбрал тёмную
+     карту один раз, и она остаётся тёмной при следующем заходе. Хранить
+     это на сервере незачем — выбор личный и ничего не стоит потерять. */
+  const [tileSourceId, setTileSourceId] = useState(() => {
+    if (typeof window === "undefined") return TILE_SOURCES[0].id
+    try {
+      return window.localStorage.getItem("lewheel:map-tiles") || TILE_SOURCES[0].id
+    } catch {
+      /* Приватное окно или запрет на хранилище — не повод падать. */
+      return TILE_SOURCES[0].id
+    }
+  })
+  const tileSource = findTileSource(tileSourceId)
   const [viewportCenter, setViewportCenter] = useState(coordinates)
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -422,7 +436,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
       <Box ref={mapInteractionRef} className={`fuel-map-canvas__tiles${isDragging ? " is-dragging" : ""}`} aria-label={`Интерактивная карта точек АЗС: ${city}. Стрелки перемещают карту, плюс и минус меняют масштаб.`} role="region" tabIndex={0} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onKeyDown={handleKeyDown}>
         <Box className="fuel-map-canvas__tile-layer" aria-hidden="true">
         {tiles.map((tile) => (
-          <Image key={tile.key} src={`https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`} style={{ left: tile.left, top: tile.top }} alt="" aria-hidden="true" />
+          <Image key={tile.key} src={buildTileUrl(tileSource.url, zoom, tile.x, tile.y)} style={{ left: tile.left, top: tile.top }} alt="" aria-hidden="true" />
         ))}
         </Box>
         {markers.map((marker, index) => {
@@ -466,11 +480,38 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           )
         })}
       </Box>
+      {/* Переключатель вида карты.
+
+          Схема OpenStreetMap выглядит как чертёж из двухтысячных рядом с
+          картой, которую человек видит каждый день в навигаторе. Выбор
+          запоминается в браузере: сменил один раз — осталось навсегда. */}
+      <Group className="fuel-map-canvas__tiles-switch" gap={3}>
+        {TILE_SOURCES.map((source) => (
+          <UnstyledButton
+            key={source.id}
+            onClick={() => {
+              setTileSourceId(source.id)
+              try {
+                window.localStorage.setItem("lewheel:map-tiles", source.id)
+              } catch {
+                /* Приватное окно: выбор просто не запомнится. */
+              }
+            }}
+            data-active={source.id === tileSourceId || undefined}
+            className="fuel-map-tile-option"
+            aria-label={`Вид карты: ${source.label}`}
+            aria-pressed={source.id === tileSourceId}
+          >
+            {source.label}
+          </UnstyledButton>
+        ))}
+      </Group>
+
       <Group className="fuel-map-canvas__controls" gap={4}>
         <Tooltip label="Уменьшить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom - 1)} aria-label="Уменьшить масштаб карты"><IconMinus size={15} /></ActionIcon></Tooltip>
         <Tooltip label="Увеличить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom + 1)} aria-label="Увеличить масштаб карты"><IconPlus size={15} /></ActionIcon></Tooltip>
       </Group>
-      <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · тяните карту, масштабируйте колесом</Text></Box>
+      <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · {tileSource.attribution}</Text></Box>
       {/* Обозначения переписаны под отметки водителей: раньше они объясняли
      качество данных OpenStreetMap — «есть live-данные», «сеть указана», —
      а человек смотрит на карту с вопросом «где есть бензин», и цвет
