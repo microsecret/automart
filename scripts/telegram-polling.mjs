@@ -242,7 +242,11 @@ async function poll() {
         const updates = await telegramApi("getUpdates", {
           offset,
           timeout: pollTimeoutSeconds,
-          allowed_updates: ["message"],
+          /* Нажатия на кнопки нужны отметке топлива из бота: человек
+             шлёт точку, бот спрашивает кнопками «есть / нет». Без
+             callback_query они не приходят вовсе, и любая кнопка молча
+             ничего не делает. */
+          allowed_updates: ["message", "callback_query"],
         }, (pollTimeoutSeconds + 15) * 1_000)
 
         if (connectivityFailed) {
