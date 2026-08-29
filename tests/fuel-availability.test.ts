@@ -119,7 +119,7 @@ test("адрес не хранится, только его хеш", () => {
 test("очередь сохраняется только при «есть»", () => {
   // Стоять не за чем.
   const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
-  assert.match(route, /queue: state === "YES" \? queue : null/)
+  assert.match(route, /entry\.state === "YES" \? queue : null/)
 })
 
 test("наличие показывается выше цены", () => {
@@ -256,30 +256,30 @@ test("снимок не обязателен для отметки", () => {
   /* Человек у колонки отмечает за две секунды. Требовать снимок значило
      бы получать отметки от единиц. */
   const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
-  assert.match(reporter, /state: "YES", null\)|send\(openFuel, "YES", null\)/)
+  assert.match(reporter, /disabled=\{filled\.length === 0\}/)
 })
 
 // === Цена ===
 
-test("цена ставится вместе с наличием", () => {
-  /* Раньше она жила отдельным блоком: человек отмечал топливо, закрывал
-     карточку и уезжал, а цену не ставил никто. */
+test("цена ставится вместе с наличием, по всем маркам разом", () => {
+  /* Человек стоит у табло, где все цены сразу. Вводить их по одной
+     марке — значит открывать форму пять раз; за рулём этого не делают. */
   const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
-  assert.match(reporter, /Есть, по этой цене/)
-  assert.match(reporter, /price: price \|\| null/)
+  assert.match(reporter, /entries: filled\.map/)
+  assert.match(reporter, /price: row\.price \|\| null/)
 })
 
 test("цена необязательна", () => {
-  // Нажал «есть» — записалось и без цены, отметка остаётся делом двух секунд.
+  // Нажал «есть» — записалось и без цены.
   const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
-  assert.match(route, /priceRub !== null/)
+  assert.match(route, /if \(entry\.price === null\) continue/)
 })
 
 test("цена не сохраняется, когда топлива нет", () => {
   /* «Нет 92 по 60 рублей» бессмысленно, а в согласованную цену такая
      отметка попала бы. */
   const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
-  assert.match(route, /priceRub !== null && state === "YES"/)
+  assert.match(route, /raw\.state === "YES" \? parseReportedPrice/)
 })
 
 test("сбой записи цены не отменяет отметку наличия", () => {
@@ -303,19 +303,17 @@ test("нераспознанная сеть не ломает плашку", () 
 
 // === Исправления по жалобам ===
 
-test("подтверждение не лезет постоянно", () => {
-  /* Условием была «не высокая» уверенность — а средняя бывает почти
-     всегда, и плашка висела поверх поля цены. Вопрос, который задают
-     каждый раз, перестают читать. */
+test("незаполненные марки не уходят на сервер", () => {
+  /* Пустая строка — это «не смотрел», а не «нет». Присылать её значило
+     бы записывать отсутствие топлива там, где человек просто не глядел. */
   const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
-  assert.match(reporter, /confidenceLabel !== "низкая"/)
-  assert.match(reporter, /60 \* 60 \* 1000/)
+  assert.match(reporter, /filter\(\(row\) => row\.state !== null\)/)
 })
 
-test("подтверждение прячется, пока открыта форма отметки", () => {
-  // Человек уже отвечает на тот же вопрос кнопками выше.
+test("очередь одна на заправку", () => {
+  /* Она не бывает разной у 92-го и 95-го — машины стоят в общую. */
   const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
-  assert.match(reporter, /if \(!stale \|\| openFuel\) return null/)
+  assert.match(reporter, /Очередь одна на заправку/)
 })
 
 test("без геолокации список считает от центра карты", () => {
@@ -379,11 +377,11 @@ test("в карточке на карте видно расстояние", () =
 })
 
 test("плашки читаются на телефоне", () => {
-  /* Кегль 10 и ширина 168 под солнцем не разбираются, а смотрят на карту
-     именно там. */
+  /* Мелкий кегль под солнцем не разбирается, а смотрят на карту именно
+     там. */
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
   const plate = css.slice(css.indexOf(".fuel-map-plate {"))
-  assert.match(plate.slice(0, 600), /max-width: 210px/)
+  assert.match(plate.slice(0, 700), /max-width: 2[0-9]{2}px/)
 })
 
 // === Охват карты ===
@@ -408,4 +406,26 @@ test("радиус охвата больше города", () => {
   // Сорок километров закрывают город с пригородами и участок трассы.
   const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
   assert.match(route, /requestedCoordinates \? 40_000/)
+})
+
+test("в списке видно расстояние до заправки", () => {
+  /* Список отвечал «вот другие заправки», но не «сколько до них ехать» —
+     а это и есть вопрос человека. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /distanceKm=\{getDistanceInKilometers\(selectedStation \|\| coordinates, station\)\}/)
+})
+
+test("заправкой можно поделиться", () => {
+  /* Человек нашёл, где есть бензин, и первое, что делает, — говорит
+     другу. Без кнопки он переписывает адрес руками, а чаще не
+     переписывает вовсе. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /navigator\.share/)
+  assert.match(page, /clipboard\?\.writeText/)
+})
+
+test("в текст для отправки попадает наличие", () => {
+  // Ссылка без «есть 92» не отвечает на вопрос, ради которого её шлют.
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /Есть: \$\{withFuel\.join/)
 })

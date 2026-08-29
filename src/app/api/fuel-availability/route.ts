@@ -9,6 +9,7 @@ import { parseReportedPrice } from "@/lib/fuel-price-reports"
 import {
   AVAILABILITY_FUEL_LABELS,
   STALE_WINDOW_MS,
+  type AvailabilityFuel,
   isAvailabilityFuel,
   isAvailabilityState,
   isQueueLevel,
@@ -99,20 +100,38 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => null)
   const stationId = typeof body?.stationId === "string" ? body.stationId.trim() : ""
-  const fuel = body?.fuel
-  const state = body?.state
   const queue = body?.queue ?? null
   const latitude = Number(body?.latitude)
   const longitude = Number(body?.longitude)
 
+  /* Отметки принимаются списком: человек стоит у табло, где все цены
+     сразу, и вводить их по одной марке за раз — значит заставлять его
+     открывать форму пять раз. За рулём он этого не сделает.
+
+     Одиночная отметка превращается в список из одной: так продолжают
+     работать прежние вызовы, включая отметку из бота, где кнопка шлёт
+     ровно одну марку. */
+  const rawEntries = Array.isArray(body?.entries)
+    ? body.entries
+    : [{ fuel: body?.fuel, state: body?.state, price: body?.price }]
+
+  const entries: Array<{ fuel: AvailabilityFuel; state: "YES" | "NO"; price: number | null }> = []
+  for (const raw of rawEntries) {
+    if (!isAvailabilityFuel(raw?.fuel) || !isAvailabilityState(raw?.state)) continue
+    entries.push({
+      fuel: raw.fuel,
+      state: raw.state,
+      /* Цена только к «есть»: «нет 92 по 60 рублей» бессмысленно, а в
+         согласованную цену такая отметка попала бы. */
+      price: raw.state === "YES" ? parseReportedPrice(raw.price) : null,
+    })
+  }
+
   if (!STATION_ID_PATTERN.test(stationId)) {
     return NextResponse.json({ error: "Некорректная точка на карте" }, { status: 400 })
   }
-  if (!isAvailabilityFuel(fuel)) {
-    return NextResponse.json({ error: "Выберите вид топлива" }, { status: 400 })
-  }
-  if (!isAvailabilityState(state)) {
-    return NextResponse.json({ error: "Отметьте, есть топливо или нет" }, { status: 400 })
+  if (entries.length === 0) {
+    return NextResponse.json({ error: "Отметьте хотя бы одну марку топлива" }, { status: 400 })
   }
   if (queue !== null && !isQueueLevel(queue)) {
     return NextResponse.json({ error: "Некорректная отметка очереди" }, { status: 400 })
@@ -133,11 +152,6 @@ export async function POST(request: NextRequest) {
     ? body.comment.trim().slice(0, 200)
     : null
 
-  /* Цена приходит вместе с наличием: отдельным действием её не ставил
-     никто. Пишется в ту же таблицу ценовых отметок, что и раньше, —
-     карта и карточка читают её оттуда, ничего менять не пришлось. */
-  const priceRub = parseReportedPrice(body?.price)
-
   const ipHash = hashClientIp(ip)
 
   /* Состояние до отметки: подписчиков будим только на переходе «нет или
@@ -149,8 +163,11 @@ export async function POST(request: NextRequest) {
     take: 100,
     select: { fuel: true, state: true, queue: true, photo: true, comment: true, userId: true, createdAt: true },
   })
-  const wasAvailable = summarizeAvailability(beforeRows).some(
-    (row) => row.fuel === fuel && row.state === "YES",
+  const before = summarizeAvailability(beforeRows)
+  /* Какие марки были в наличии до отметки: подписчиков будим только на
+     переходе «нет или неизвестно» → «есть». */
+  const wasAvailable = new Set(
+    before.filter((row) => row.state === "YES").map((row) => row.fuel),
   )
 
   /* Повторная отметка не заменяет прежнюю, а добавляется: у цены голос
@@ -160,20 +177,49 @@ export async function POST(request: NextRequest) {
 
      От накрутки защищает предел частоты выше: одного человека он
      ограничивает сорока отметками в час на все заправки. */
-  await prisma.fuelAvailabilityReport.create({
-    data: {
+  /* Отметки пишутся по одной на марку — так их и читает сводка. Очередь,
+     снимок и комментарий относятся к заправке целиком, но хранятся при
+     каждой записи: разносить их по отдельной таблице ради трёх полей
+     значило бы усложнить чтение вдвое. */
+  await prisma.fuelAvailabilityReport.createMany({
+    data: entries.map((entry) => ({
       stationId,
       latitude,
       longitude,
-      fuel,
-      state,
-      queue: state === "YES" ? queue : null,
+      fuel: entry.fuel,
+      state: entry.state,
+      queue: entry.state === "YES" ? queue : null,
       photo,
       comment,
       userId,
       ipHash,
-    },
+    })),
   })
+
+  /* Цены пишутся отдельно: у цены голос один и уточняется, тогда как у
+     наличия накопление подтверждений и есть суть. */
+  for (const entry of entries) {
+    if (entry.price === null) continue
+
+    await prisma.fuelPriceReport.updateMany({
+      where: {
+        stationId,
+        fuel: entry.fuel,
+        status: "ACTIVE",
+        ...(userId ? { userId } : { userId: null, ipHash }),
+      },
+      data: { status: "SUPERSEDED" },
+    }).catch(() => undefined)
+
+    await prisma.fuelPriceReport.create({
+      data: { stationId, latitude, longitude, fuel: entry.fuel, priceRub: entry.price, userId, ipHash },
+    }).catch((error) => {
+      /* Сбой записи цены не отменяет отметку наличия: наличие важнее, и
+         человек уже нажал кнопку. */
+      console.error("[fuel-availability] Запись цены:", error)
+      return null
+    })
+  }
 
   const since = new Date(Date.now() - STALE_WINDOW_MS)
   const reports = await prisma.fuelAvailabilityReport.findMany({
@@ -183,46 +229,31 @@ export async function POST(request: NextRequest) {
     select: { fuel: true, state: true, queue: true, photo: true, comment: true, userId: true, createdAt: true },
   })
 
-  /* Цена сохраняется, только когда топливо есть: «нет 92 по 60 рублей»
-     бессмысленно, а в согласованную цену такая отметка попадёт. */
-  if (priceRub !== null && state === "YES") {
-    await prisma.fuelPriceReport.updateMany({
-      where: {
-        stationId,
-        fuel,
-        status: "ACTIVE",
-        ...(userId ? { userId } : { userId: null, ipHash }),
-      },
-      data: { status: "SUPERSEDED" },
-    }).catch(() => undefined)
-
-    await prisma.fuelPriceReport.create({
-      data: { stationId, latitude, longitude, fuel, priceRub, userId, ipHash },
-    }).catch((error) => {
-      /* Сбой записи цены не должен отменять отметку наличия: наличие
-         важнее, и человек уже нажал кнопку. */
-      console.error("[fuel-availability] Запись цены:", error)
-      return null
-    })
-  }
-
   const availability = summarizeAvailability(reports)
 
-  /* Топливо появилось — будим подписчиков. Ответа не ждём: отправка не
-     должна задерживать ответ человеку, который только что отметил. */
-  if (state === "YES" && !wasAvailable) {
-    const nowAvailable = availability.some((row) => row.fuel === fuel && row.state === "YES")
-    if (nowAvailable) {
-      void notifyFuelSubscribers({
-        stationId,
-        stationName: typeof body?.stationName === "string" && body.stationName.trim()
-          ? body.stationName.trim().slice(0, 120)
-          : "АЗС",
-        city: typeof body?.city === "string" ? body.city.trim().slice(0, 80) : "",
-        fuel,
-        fuelLabel: AVAILABILITY_FUEL_LABELS[fuel],
-      })
-    }
+  /* Подписчиков будим по каждой марке, что появилась.
+
+     Условие то же, что и раньше: переход «нет или неизвестно» → «есть».
+     Иначе отметка на заправке, где топливо и так весь день есть, слала
+     бы уведомление всем подписчикам. */
+  const stationName = typeof body?.stationName === "string" && body.stationName.trim()
+    ? body.stationName.trim().slice(0, 120)
+    : "АЗС"
+  const city = typeof body?.city === "string" ? body.city.trim().slice(0, 80) : ""
+
+  for (const entry of entries) {
+    if (entry.state !== "YES" || wasAvailable.has(entry.fuel)) continue
+
+    const nowAvailable = availability.some((row) => row.fuel === entry.fuel && row.state === "YES")
+    if (!nowAvailable) continue
+
+    void notifyFuelSubscribers({
+      stationId,
+      stationName,
+      city,
+      fuel: entry.fuel,
+      fuelLabel: AVAILABILITY_FUEL_LABELS[entry.fuel] || entry.fuel,
+    })
   }
 
   return NextResponse.json({ availability }, { status: 201 })

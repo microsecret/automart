@@ -105,8 +105,8 @@ test("подписчиков будим только на переходе «н�
   /* Иначе каждая отметка «есть 92» там, где он и так весь день есть,
      слала бы уведомление всем подписчикам. */
   const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
-  assert.match(route, /wasAvailable/)
-  assert.match(route, /state === "YES" && !wasAvailable/)
+  assert.match(route, /wasAvailable\.has\(entry\.fuel\)/)
+  assert.match(route, /entry\.state !== "YES" \|\| wasAvailable/)
 })
 
 test("чужую подписку снять нельзя", () => {

@@ -135,12 +135,11 @@ test("число показывается только при слабых св�
   assert.match(reporter, /confidenceLabel !== "высокая"/)
 })
 
-test("чужую отметку можно подтвердить одним нажатием", () => {
-  /* Сделать свою — выбрать марку, потом «есть» или «нет». Подтвердить
-     чужую — одно нажатие, и человек соглашается охотнее. */
+test("цена вводится по каждой марке", () => {
+  /* Человек стоит у табло, где все цены сразу: вводить их по одной —
+     значит открывать форму пять раз. */
   const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
-  assert.match(reporter, /Да, подтверждаю/)
-  assert.match(reporter, /Уже нет/)
+  assert.match(reporter, /aria-label=\{`Цена \$\{AVAILABILITY_FUEL_LABELS\[fuel\]\}/)
 })
 
 test("вес отметки зависит от того, кто отметил", () => {

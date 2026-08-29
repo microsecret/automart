@@ -29,16 +29,28 @@ export type StationAvailability = {
   comment: string | null
 }
 
+/** Что человек отметил по одной марке в форме. */
+type DraftEntry = {
+  state: "YES" | "NO" | null
+  price: string | number
+}
+
+const EMPTY_DRAFT: DraftEntry = { state: null, price: "" }
+
 /**
  * Отметка наличия топлива на АЗС.
  *
- * Главное здесь — скорость. Человек стоит у колонки с телефоном в руке и
- * отмечает по дороге: если это дольше двух нажатий, он не отметит вовсе,
- * а без отметок карта мертва.
+ * Человек стоит у табло, где все цены и все марки видны сразу. Раньше
+ * форма спрашивала по одной марке за раз: чтобы отметить 92-й, 95-й и
+ * дизель, надо было открыть её трижды и трижды нажать «есть». За рулём
+ * этого не делают — отмечали одну марку и уезжали.
  *
- * Поэтому сетка марок сразу видна, а нажатие на марку открывает только
- * «есть» и «нет». Очередь — необязательное уточнение после «есть», и её
- * пропуск ничего не ломает.
+ * Теперь форма показывает все марки строками: у каждой «есть», «нет» и
+ * поле цены. Очередь, снимок и комментарий относятся к заправке целиком
+ * и стоят внизу — их заполняют реже.
+ *
+ * Сетка марок над формой осталась: по ней человек читает, что здесь
+ * сейчас, не открывая ничего.
  */
 export default function FuelAvailabilityReporter({
   stationId,
@@ -60,46 +72,72 @@ export default function FuelAvailabilityReporter({
   availability: StationAvailability[]
   onReported?: (next: StationAvailability[]) => void
 }) {
-  const [openFuel, setOpenFuel] = useState<AvailabilityFuel | null>(null)
-  /* Снимок и подпись необязательны и живут отдельно от нажатия «есть» /
-     «нет»: человек у колонки отмечает за две секунды, а фотографирует
-     только если считает нужным. Требовать снимок значило бы получать
-     отметки от единиц. */
+  const [isOpen, setIsOpen] = useState(false)
+  const [draft, setDraft] = useState<Record<string, DraftEntry>>({})
+  const [queue, setQueue] = useState<QueueLevel | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [comment, setComment] = useState("")
-  /* Цена вводится вместе с наличием: отдельным блоком её не ставил
-     никто — человек отмечал топливо, закрывал карточку и уезжал. */
-  const [price, setPrice] = useState<string | number>("")
   const [uploading, setUploading] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [savedFuel, setSavedFuel] = useState<AvailabilityFuel | null>(null)
+  const [saved, setSaved] = useState(false)
 
   const byFuel = new Map(availability.map((item) => [item.fuel, item]))
 
-  const send = async (fuel: AvailabilityFuel, state: "YES" | "NO", queue: QueueLevel | null) => {
+  const entryOf = (fuel: AvailabilityFuel) => draft[fuel] || EMPTY_DRAFT
+
+  const setEntry = (fuel: AvailabilityFuel, patch: Partial<DraftEntry>) => {
+    setDraft((current) => ({ ...current, [fuel]: { ...(current[fuel] || EMPTY_DRAFT), ...patch } }))
+  }
+
+  /* Отмеченные марки: только они уходят на сервер. Пустые строки — это
+     «не смотрел», а не «нет», и присылать их нельзя. */
+  const filled = AVAILABILITY_FUELS
+    .map((fuel) => ({ fuel, ...entryOf(fuel) }))
+    .filter((row) => row.state !== null)
+
+  const send = async () => {
+    if (filled.length === 0) {
+      setError("Отметьте хотя бы одну марку")
+      return
+    }
+
     setSending(true)
     setError(null)
     try {
       const response = await fetch("/api/fuel-availability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stationId, stationName, city, latitude, longitude, fuel, state, queue, photo, comment, price: price || null }),
+        body: JSON.stringify({
+          stationId,
+          stationName,
+          city,
+          latitude,
+          longitude,
+          queue,
+          photo,
+          comment,
+          entries: filled.map((row) => ({
+            fuel: row.fuel,
+            state: row.state,
+            price: row.price || null,
+          })),
+        }),
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) throw new Error(payload?.error || "Не удалось отправить отметку")
 
       onReported?.(payload.availability || [])
-      setOpenFuel(null)
-      /* Снимок и подпись сбрасываются: они относились к этой отметке, а
-         следующая будет про другую заправку или другую марку. */
+      setIsOpen(false)
+      setDraft({})
+      setQueue(null)
       setPhoto(null)
       setComment("")
-      setPrice("")
-      /* Отметка держится на виду недолго: человек уже уехал, и подтверждение
-         нужно ровно на то, чтобы он понял — засчитано. */
-      setSavedFuel(fuel)
-      window.setTimeout(() => setSavedFuel(null), 2000)
+
+      /* Подтверждение держится недолго: человек уже уехал, и оно нужно
+         ровно на то, чтобы он понял — засчитано. */
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 2500)
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "Не удалось отправить отметку")
     } finally {
@@ -109,35 +147,28 @@ export default function FuelAvailabilityReporter({
 
   return (
     <Stack gap="xs">
-      <Group justify="space-between" align="baseline">
+      <Group justify="space-between" align="center">
         <Text size="sm" fw={600}>Есть ли топливо</Text>
         <Text size="xs" c="dimmed">по отметкам водителей</Text>
       </Group>
 
-      {/* Марки сеткой: человек ищет свою глазами, а не в выпадающем списке.
-          Цвет несёт состояние, но не в одиночку — рядом стоит подпись
-          «есть»/«нет», иначе карта нечитаема при дальтонизме. */}
+      {/* Сетка марок: человек читает, что здесь сейчас, не открывая
+          форму. Цвет несёт состояние, но не в одиночку — рядом стоит
+          подпись «есть»/«нет», иначе карта нечитаема при дальтонизме. */}
       <Box style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
         {AVAILABILITY_FUELS.map((fuel) => {
           const known = byFuel.get(fuel)
           const state = known?.state ?? "UNKNOWN"
           const age = known?.updatedAt ? formatAge(new Date(known.updatedAt)) : null
-          const isOpen = openFuel === fuel
-          const justSaved = savedFuel === fuel
 
           return (
-            <UnstyledButton
+            <Box
               key={fuel}
-              onClick={() => setOpenFuel(isOpen ? null : fuel)}
-              disabled={sending}
-              aria-label={`Отметить наличие ${AVAILABILITY_FUEL_LABELS[fuel]}`}
-              aria-expanded={isOpen}
               style={{
                 padding: "8px 6px",
                 borderRadius: 10,
                 border: `1px solid ${
-                  isOpen ? "var(--mantine-color-indigo-5)"
-                  : state === "YES" ? "var(--mantine-color-teal-4)"
+                  state === "YES" ? "var(--mantine-color-teal-4)"
                   : state === "NO" ? "var(--mantine-color-red-4)"
                   : "var(--market-line)"
                 }`,
@@ -145,118 +176,119 @@ export default function FuelAvailabilityReporter({
                   : state === "NO" ? "var(--mantine-color-red-0)"
                   : "var(--market-surface-subtle)",
                 textAlign: "center",
-                cursor: "pointer",
-                transition: "border-color 170ms cubic-bezier(0.25, 1, 0.5, 1)",
               }}
             >
               <Text fw={700} fz={15} lh={1.1}>{AVAILABILITY_FUEL_LABELS[fuel]}</Text>
               <Text fz={10} c={state === "YES" ? "teal.7" : state === "NO" ? "red.7" : "dimmed"} lh={1.3}>
-                {justSaved ? "записано" : state === "YES" ? "есть" : state === "NO" ? "нет" : "не отмечали"}
+                {state === "YES" ? "есть" : state === "NO" ? "нет" : "не отмечали"}
               </Text>
-              {/* Возраст отметки — половина ответа: по свежести человек сам
-                  решает, верить ли. */}
-              {age && !justSaved && <Text fz={9} c="dimmed" lh={1.2}>{age}</Text>}
-              {/* Уверенность вместо голого «есть».
-
-                  Карта говорила «есть 92» как факт, а за этим могла стоять
-                  одна отметка восьмичасовой давности. Человек ехал и
-                  возвращался ни с чем — второй раз он на карту уже не
-                  смотрел.
-
-                  Число показывается только когда сведения слабые: при
-                  высокой уверенности оно лишний шум, а при низкой —
-                  предупреждение. */}
-              {known && !justSaved && known.confidenceLabel !== "высокая" && (
+              {/* Возраст отметки — половина ответа: по свежести человек
+                  сам решает, верить ли. */}
+              {age && <Text fz={9} c="dimmed" lh={1.2}>{age}</Text>}
+              {/* Уверенность показывается, только когда сведения слабые:
+                  при высокой она лишний шум, при низкой — предупреждение. */}
+              {known && known.confidenceLabel !== "высокая" && (
                 <Text fz={9} c={known.confidenceLabel === "низкая" ? "orange.7" : "dimmed"} lh={1.2}>
-                  {known.confidencePercent}% · {known.confidenceNote}
+                  {known.confidencePercent}%
                 </Text>
               )}
-            </UnstyledButton>
+            </Box>
           )
         })}
       </Box>
 
-      {openFuel && (
+      {!isOpen ? (
+        <Button
+          size="sm"
+          radius="md"
+          color={saved ? "teal" : "indigo"}
+          variant={saved ? "light" : "filled"}
+          leftSection={saved ? <IconCheck size={16} /> : undefined}
+          onClick={() => setIsOpen(true)}
+        >
+          {saved ? "Записали, спасибо" : "Отметить, что здесь есть"}
+        </Button>
+      ) : (
         <Paper withBorder radius="md" p="xs" bg="var(--market-surface-subtle)">
           <Stack gap={8}>
             <Text size="xs" c="dimmed">
-              {AVAILABILITY_FUEL_LABELS[openFuel]} — что на заправке сейчас?
+              Отметьте марки, которые видите на табло. Цена — если знаете.
             </Text>
-            <Group grow gap={6}>
-              <Button
-                size="sm"
-                radius="md"
-                color="teal"
-                leftSection={<IconCheck size={16} />}
-                loading={sending}
-                onClick={() => void send(openFuel, "YES", null)}
-              >
-                Есть
-              </Button>
-              <Button
-                size="sm"
-                radius="md"
-                color="red"
-                variant="light"
-                leftSection={<IconX size={16} />}
-                loading={sending}
-                onClick={() => void send(openFuel, "NO", null)}
-              >
-                Нет
-              </Button>
-            </Group>
 
-            {/* Цена рядом с «есть» — одним движением.
+            {/* Все марки строками: человек проходит табло сверху вниз и
+                отмечает разом, а не открывает форму пять раз. */}
+            <Stack gap={4}>
+              {AVAILABILITY_FUELS.map((fuel) => {
+                const entry = entryOf(fuel)
+                return (
+                  <Group key={fuel} gap={6} wrap="nowrap" align="center">
+                    <Text fw={700} fz={13} w={38} style={{ flex: "0 0 38px" }}>
+                      {AVAILABILITY_FUEL_LABELS[fuel]}
+                    </Text>
 
-                Раньше цена жила отдельным блоком ниже: человек отмечал
-                наличие, закрывал карточку и уезжал, а цену не ставил
-                никто. Между тем это то, ради чего половина открывает
-                карту вообще.
+                    <Button
+                      size="compact-xs"
+                      radius="md"
+                      color="teal"
+                      variant={entry.state === "YES" ? "filled" : "default"}
+                      onClick={() => setEntry(fuel, { state: entry.state === "YES" ? null : "YES" })}
+                      aria-pressed={entry.state === "YES"}
+                      aria-label={`${AVAILABILITY_FUEL_LABELS[fuel]} есть`}
+                      px={10}
+                    >
+                      <IconCheck size={13} />
+                    </Button>
 
-                Поле необязательное: нажал «есть» — записалось и без
-                цены. Отметка остаётся делом двух секунд. */}
+                    <Button
+                      size="compact-xs"
+                      radius="md"
+                      color="red"
+                      variant={entry.state === "NO" ? "filled" : "default"}
+                      onClick={() => setEntry(fuel, { state: entry.state === "NO" ? null : "NO", price: "" })}
+                      aria-pressed={entry.state === "NO"}
+                      aria-label={`${AVAILABILITY_FUEL_LABELS[fuel]} нет`}
+                      px={10}
+                    >
+                      <IconX size={13} />
+                    </Button>
+
+                    {/* Цена только к «есть»: у отсутствующего топлива её
+                        не бывает, и поле там сбивает с толку. */}
+                    <NumberInput
+                      size="xs"
+                      radius="md"
+                      placeholder="₽/л"
+                      value={entry.price}
+                      onChange={(value) => setEntry(fuel, { price: value, state: entry.state ?? "YES" })}
+                      min={10}
+                      max={300}
+                      decimalScale={2}
+                      step={0.5}
+                      hideControls
+                      disabled={entry.state === "NO"}
+                      style={{ flex: 1 }}
+                      aria-label={`Цена ${AVAILABILITY_FUEL_LABELS[fuel]}, рублей за литр`}
+                    />
+                  </Group>
+                )
+              })}
+            </Stack>
+
+            {/* Очередь одна на заправку: она не бывает разной у 92-го и
+                95-го — машины стоят в общую. */}
             <Group gap={6} align="center">
-              <NumberInput
-                size="xs"
-                radius="md"
-                placeholder="Цена, ₽/л"
-                value={price}
-                onChange={setPrice}
-                min={10}
-                max={300}
-                decimalScale={2}
-                step={0.5}
-                hideControls
-                style={{ flex: 1 }}
-                aria-label={`Цена ${AVAILABILITY_FUEL_LABELS[openFuel]}, рублей за литр`}
-              />
-              <Button
-                size="xs"
-                radius="md"
-                color="teal"
-                variant="light"
-                disabled={!price}
-                loading={sending}
-                onClick={() => void send(openFuel, "YES", null)}
-              >
-                Есть, по этой цене
-              </Button>
-            </Group>
-
-            {/* Очередь — необязательное уточнение: человек, которому некогда,
-                просто нажмёт «есть» и уедет. */}
-            <Text size="xs" c="dimmed">Есть и очередь:</Text>
-            <Group grow gap={6}>
-              {(["SMALL", "BIG"] as QueueLevel[]).map((queue) => (
+              <Text size="xs" c="dimmed" style={{ flex: "0 0 auto" }}>Очередь:</Text>
+              {(["NONE", "SMALL", "BIG"] as QueueLevel[]).map((level) => (
                 <Button
-                  key={queue}
-                  size="xs"
+                  key={level}
+                  size="compact-xs"
                   radius="md"
-                  variant="default"
-                  loading={sending}
-                  onClick={() => void send(openFuel, "YES", queue)}
+                  variant={queue === level ? "filled" : "default"}
+                  color="indigo"
+                  onClick={() => setQueue(queue === level ? null : level)}
+                  aria-pressed={queue === level}
                 >
-                  {QUEUE_LABELS[queue]}
+                  {QUEUE_LABELS[level]}
                 </Button>
               ))}
             </Group>
@@ -313,120 +345,51 @@ export default function FuelAvailabilityReporter({
               />
             </Group>
 
-            {/* Подпись к снимку, а не сообщение: длинная не поместится в
+            {/* Подпись к отметке, а не сообщение: длинная не поместится в
                 карточке и превратит карту в переписку. */}
             <TextInput
               size="xs"
               radius="md"
-              placeholder="Комментарий: очередь, лимит на бак, что-то ещё"
+              placeholder="Комментарий: лимит на бак, что-то ещё"
               value={comment}
               onChange={(event) => setComment(event.currentTarget.value.slice(0, 200))}
               disabled={sending}
             />
 
             {error && <Text size="xs" c="red.6">{error}</Text>}
+
+            <Group grow gap={6}>
+              <Button
+                size="sm"
+                radius="md"
+                color="indigo"
+                loading={sending}
+                disabled={filled.length === 0}
+                onClick={() => void send()}
+              >
+                {filled.length > 1 ? `Отправить (${filled.length})` : "Отправить"}
+              </Button>
+              <Button
+                size="sm"
+                radius="md"
+                variant="default"
+                onClick={() => { setIsOpen(false); setError(null) }}
+              >
+                Отмена
+              </Button>
+            </Group>
           </Stack>
         </Paper>
       )}
-
-      {/* Подтверждение чужой отметки одним нажатием.
-
-          Сделать свою отметку — выбрать марку, потом «есть» или «нет».
-          Подтвердить чужую — одно нажатие, и человек соглашается охотнее.
-          А уверенность от подтверждения растёт так же, как от новой
-          отметки: это и есть та самая вторая метка, которой не хватало.
-
-          Показывается, только когда есть что подтверждать и сведения не
-          железные: при высокой уверенности лишний вопрос раздражает. */}
-      {(() => {
-        /* Спрашиваем, только когда сведения по-настоящему устарели.
-
-           Раньше условием была «не высокая» уверенность — а средняя
-           бывает почти всегда, и плашка висела постоянно, перекрывая
-           поле цены. Вопрос, который задают каждый раз, перестают
-           читать.
-
-           Теперь порог другой: отметке больше часа и уверенность низкая.
-           Свежую подтверждать незачем — она и так свежая; при средней
-           уверенности человек видит проценты и решает сам. */
-        const stale = availability.find((item) => {
-          if (item.state === "UNKNOWN" || !item.updatedAt) return false
-          if (item.confidenceLabel !== "низкая") return false
-          return Date.now() - new Date(item.updatedAt).getTime() > 60 * 60 * 1000
-        })
-
-        /* Не показываем, пока открыта форма отметки: человек уже отвечает
-           на тот же вопрос кнопками выше, и второй вопрос рядом сбивает. */
-        if (!stale || openFuel) return null
-        const weak = stale
-
-        return (
-          <Paper withBorder radius="md" p="xs" bg="var(--market-surface-subtle)">
-            <Stack gap={6}>
-              <Text size="xs" c="dimmed">
-                {weak.label}: {weak.state === "YES" ? "есть" : "нет"} — {weak.confidenceNote}.
-                Это всё ещё так?
-              </Text>
-              <Group grow gap={6}>
-                <Button
-                  size="xs"
-                  radius="md"
-                  color="teal"
-                  leftSection={<IconCheck size={14} />}
-                  loading={sending}
-                  onClick={() => void send(weak.fuel, weak.state === "YES" ? "YES" : "NO", null)}
-                >
-                  Да, подтверждаю
-                </Button>
-                <Button
-                  size="xs"
-                  radius="md"
-                  variant="default"
-                  loading={sending}
-                  onClick={() => void send(weak.fuel, weak.state === "YES" ? "NO" : "YES", null)}
-                >
-                  Уже нет
-                </Button>
-              </Group>
-            </Stack>
-          </Paper>
-        )
-      })()}
-
-      {/* Снимок табло и подпись — там, где они есть. Показывается один,
-          самый свежий: галерея из шести фотографий одной колонки не
-          говорит больше, чем последняя, а карточку растягивает. */}
-      {(() => {
-        const withPhoto = availability.find((item) => item.photo)
-        if (!withPhoto?.photo) return null
-        return (
-          <Box>
-            <Box
-              component="img"
-              src={withPhoto.photo}
-              alt={`Табло на заправке, отметка про ${withPhoto.label}`}
-              loading="lazy"
-              style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 10, display: "block" }}
-            />
-            {/* Комментарий вынесен в общий список ниже: под снимком он
-                показывался только при наличии фотографии. */}
-          </Box>
-        )
-      })()}
 
       {/* Комментарии водителей — отдельно от снимка.
 
           Раньше комментарий показывался только под фотографией: без неё
           он пропадал вовсе, хотя именно текст часто и есть главное. «На
           табло не горит, по факту есть», «лимит 30 литров», «очередь на
-          въезде» — такое не выразить кнопками, и оно решает, ехать ли.
-
-          Показываются все свежие, не только последний: два разных
-          человека сообщают разное, и выбрать за них нельзя. */}
+          въезде» — такое не выразить кнопками, и оно решает, ехать ли. */}
       {(() => {
-        const notes = availability
-          .filter((item) => item.comment && item.updatedAt)
-          .slice(0, 3)
+        const notes = availability.filter((item) => item.comment && item.updatedAt).slice(0, 3)
         if (notes.length === 0) return null
 
         return (
@@ -440,6 +403,23 @@ export default function FuelAvailabilityReporter({
               </Paper>
             ))}
           </Stack>
+        )
+      })()}
+
+      {/* Снимок табло — там, где он есть. Показывается один, самый
+          свежий: галерея из шести фотографий одной колонки не говорит
+          больше, чем последняя, а карточку растягивает. */}
+      {(() => {
+        const withPhoto = availability.find((item) => item.photo)
+        if (!withPhoto?.photo) return null
+        return (
+          <Box
+            component="img"
+            src={withPhoto.photo}
+            alt={`Табло на заправке, отметка про ${withPhoto.label}`}
+            loading="lazy"
+            style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 10, display: "block" }}
+          />
         )
       })()}
 

@@ -789,6 +789,42 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               >
                 Маршрут
               </Button>
+              {/* Поделиться заправкой.
+
+                  Человек нашёл, где есть бензин, и первое, что он делает,
+                  — говорит об этом другу или в чат. Без кнопки он
+                  переписывает адрес руками, а чаще не переписывает вовсе,
+                  и находка остаётся при нём.
+
+                  Системное окно «поделиться» само предлагает Telegram,
+                  WhatsApp и что там ещё установлено; на настольном
+                  браузере его нет, и тогда ссылка копируется в буфер. */}
+              <Button
+                size="compact-xs"
+                variant="default"
+                onClick={() => {
+                  const rows = availabilityByStation[selectedStation.id] || []
+                  const withFuel = rows
+                    .filter((row) => row.state === "YES" && row.updatedAt && isFresh(new Date(row.updatedAt)))
+                    .map((row) => row.label)
+
+                  const text = [
+                    `⛽ ${selectedStation.name}`,
+                    selectedStation.address || "",
+                    withFuel.length ? `Есть: ${withFuel.join(", ")}` : "",
+                    `https://yandex.ru/maps/?pt=${selectedStation.longitude},${selectedStation.latitude}&z=17`,
+                  ].filter(Boolean).join("\n")
+
+                  if (typeof navigator !== "undefined" && navigator.share) {
+                    void navigator.share({ title: selectedStation.name, text }).catch(() => undefined)
+                    return
+                  }
+
+                  void navigator.clipboard?.writeText(text).catch(() => undefined)
+                }}
+              >
+                Поделиться
+              </Button>
             </Group>
           </Paper>
         )
@@ -797,12 +833,16 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   )
 }
 
-function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoading, onShowOnMap }: {
+function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoading, onShowOnMap, distanceKm }: {
   station: FuelStation
   isSelected: boolean
   resolvedAddress?: string | null
   isAddressLoading?: boolean
   onShowOnMap: (station: FuelStation) => void
+  /* Расстояние до этой заправки: от выбранной, если человек уже выбрал,
+     иначе от центра карты. Список без него отвечал «вот другие
+     заправки», но не «сколько до них ехать» — а это и есть вопрос. */
+  distanceKm?: number | null
 }) {
   const dataQuality = getStationDataQuality(station)
   const network = getStationNetwork(station)
@@ -842,7 +882,19 @@ function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoadin
         <Group gap="sm" wrap="nowrap">
           <ThemeIcon variant={networkIdentity ? "filled" : "light"} color={iconColor} radius="md" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkIdentity ? networkIdentity.shortLabel : <IconGasStation size={17} />}</ThemeIcon>
           <Box style={{ minWidth: 0 }}>
-            <Text fw={700} size="sm" lineClamp={1}>{station.name}</Text>
+            <Group gap={6} wrap="nowrap" align="baseline">
+              <Text fw={700} size="sm" lineClamp={1}>{station.name}</Text>
+              {/* Расстояние рядом с названием, а не в хвосте меток: после
+                  «какая заправка» это второй вопрос человека, и ответ на
+                  него не должен теряться среди значков. */}
+              {typeof distanceKm === "number" && distanceKm > 0.05 && (
+                <Text size="xs" fw={600} c="indigo.6" style={{ flex: "0 0 auto" }}>
+                  {distanceKm < 1
+                    ? `${Math.round(distanceKm * 1000)} м`
+                    : `${distanceKm.toFixed(1).replace(".", ",")} км`}
+                </Text>
+              )}
+            </Group>
             <Text size="xs" c="dimmed" lineClamp={2}>{displayAddress || (isAddressLoading ? "Уточняем адрес по OSM…" : "Адрес не указан")}</Text>
           </Box>
         </Group>
@@ -1074,7 +1126,25 @@ export default function FuelMapPage() {
 
      Ограничение в сорок точек: список показывает восемь ближайших, и
      тянуть отметки по всему городу ради них незачем. */
-  const nearbyStationIds = displayedStations.slice(0, 40).map((station) => station.id).join(",")
+  /* Отметки и цены запрашиваются по точкам, ближайшим к центру карты, а
+     не по первым сорока из списка.
+
+     Список отсортирован по расстоянию от центра города, а человек может
+     смотреть на окраину — там отметки не запрашивались вовсе, и плашки
+     оставались без цены и наличия. Точек на карте больше тысячи, все
+     сразу спрашивать нельзя: адрес запроса не поместится.
+
+     Сто ближайших к тому месту, куда человек смотрит, покрывают экран с
+     запасом на любом масштабе. */
+  const nearbyStationIds = useMemo(() => {
+    const center = viewportCoordinates
+    return [...filteredStations]
+      .map((station) => ({ station, km: getDistanceInKilometers(center, station) }))
+      .sort((left, right) => left.km - right.km)
+      .slice(0, 100)
+      .map((row) => row.station.id)
+      .join(",")
+  }, [filteredStations, viewportCoordinates])
   /* Цены по всем видимым точкам — для плашек на карте. Тем же одним
      запросом, что и отметки: по одной на точку вышло бы триста запросов
      на открытие карты. */
@@ -1335,6 +1405,7 @@ export default function FuelMapPage() {
                   station={station}
                   isSelected={selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType}
                   onShowOnMap={showStationOnMap}
+                  distanceKm={getDistanceInKilometers(selectedStation || coordinates, station)}
                 />
               ))}{hasMoreStations && <Button variant="light" color="indigo" size="xs" fullWidth onClick={() => setVisibleStationCount((current) => current + STATION_LIST_PAGE_SIZE)}>Показать ещё {Math.min(STATION_LIST_PAGE_SIZE, filteredStations.length - displayedStations.length)} из {filteredStations.length}</Button>}</Stack> : <Center h={460}><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={44} radius="xl"><IconGasStation size={22} /></ThemeIcon><Text fw={700}>Точки не найдены</Text><Text size="xs" c="dimmed" ta="center">Выберите другой тип топлива, город или обновите данные.</Text></Stack></Center>}
             </Paper>
