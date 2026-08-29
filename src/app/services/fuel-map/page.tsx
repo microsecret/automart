@@ -11,6 +11,7 @@ import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPr
 import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
 import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
 import FuelNearbyList from "@/components/fuel/FuelNearbyList"
+import { formatAge, isFresh } from "@/lib/fuel-availability"
 
 type FuelStation = {
   id: string
@@ -196,7 +197,7 @@ function getFuelAvailabilityPresentation(station: FuelStation) {
   return { label: "Нет live-статуса", description: "остаток не опубликован", color: "gray", icon: <IconClock size={14} /> }
 }
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
@@ -204,6 +205,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   selectedStationAddress: string | null
   onSelect: (station: FuelStation) => void
   onViewportChange: (coordinates: { latitude: number; longitude: number }) => void
+  /* Отметки водителей по видимым точкам: по ним метка красится и
+     подписывается. Без них карта показывает только то, что знает
+     OpenStreetMap, — то есть ассортимент вообще, а не наличие сейчас. */
+  availabilityByStation: Record<string, StationAvailability[]>
 }) {
   const [zoom, setZoom] = useState(11)
   const [viewportCenter, setViewportCenter] = useState(coordinates)
@@ -426,8 +431,39 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           const dataQuality = getStationDataQuality(firstStation)
           const networkIdentity = getNetworkIdentity(firstStation)
           const isSelected = marker.stations.some((station) => selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType)
+          /* Отметки водителей по этой точке: они и есть ответ на вопрос
+             «есть ли топливо сейчас», тогда как теги OpenStreetMap
+             говорят лишь про ассортимент вообще. */
+          const reported = isCluster ? [] : (availabilityByStation[firstStation.id] || [])
+          const fresh = reported.filter((row) => row.updatedAt && isFresh(new Date(row.updatedAt)))
+          const anyYes = fresh.some((row) => row.state === "YES")
+          const anyNo = fresh.some((row) => row.state === "NO")
+          const newestAt = fresh.reduce<string | null>(
+            (latest, row) => (!latest || (row.updatedAt && row.updatedAt > latest) ? row.updatedAt : latest),
+            null,
+          )
+          /* Подпись только при близком масштабе: на весь город это сотни
+             подписей внахлёст, и карта перестаёт читаться. */
+          const showLabel = zoom >= 13 && fresh.length > 0
+
           const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${getStationDataSummary(firstStation)}`
-          return <UnstyledButton key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-selected={isSelected || undefined} style={{ left: marker.left, top: marker.top, ...(networkIdentity && !isCluster ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
+          return (
+            <Box key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-pin" style={{ left: marker.left, top: marker.top }}>
+              <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{ ...(networkIdentity && !isCluster && !fresh.length ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : {}) }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
+              {showLabel && (
+                /* Марки с цветом и возрастом отметки прямо на карте:
+                    человек за рулём видит ответ, не открывая карточку. */
+                <Box className="fuel-map-pin__label" aria-hidden="true">
+                  {newestAt && <span className="fuel-map-pin__age">{formatAge(new Date(newestAt))}</span>}
+                  {fresh.slice(0, 5).map((row) => (
+                    <span key={row.fuel} className="fuel-map-pin__fuel" data-state={row.state === "YES" ? "yes" : "no"}>
+                      {row.label}
+                    </span>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          )
         })}
       </Box>
       <Group className="fuel-map-canvas__controls" gap={4}>
@@ -435,7 +471,11 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         <Tooltip label="Увеличить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom + 1)} aria-label="Увеличить масштаб карты"><IconPlus size={15} /></ActionIcon></Tooltip>
       </Group>
       <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · тяните карту, масштабируйте колесом</Text></Box>
-      <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-quality="live">Есть live-данные</Text><Text component="span" data-quality="fuel">Топливо отмечено</Text><Text component="span" data-quality="network">Сеть указана</Text><Text component="span" data-quality="basic">Без тегов</Text></Box>
+      {/* Обозначения переписаны под отметки водителей: раньше они объясняли
+     качество данных OpenStreetMap — «есть live-данные», «сеть указана», —
+     а человек смотрит на карту с вопросом «где есть бензин», и цвет
+     метки теперь отвечает именно на него. */}
+      <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-reported="yes">Топливо есть</Text><Text component="span" data-reported="no">Топлива нет</Text><Text component="span" data-quality="fuel">Не отмечали</Text></Box>
       {clusterHint && <Paper className="fuel-map-cluster-hint" radius="md" p="xs" withBorder aria-live="polite"><Text size="xs" fw={600}>{clusterHint}</Text><Button size="compact-xs" variant="subtle" color="indigo" onClick={() => setClusterHint(null)}>Понятно</Button></Paper>}
       {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite"><Group justify="space-between" gap="xs" wrap="nowrap"><Text size="xs" fw={700} lineClamp={1}>{selectedStation.name}</Text><Badge size="xs" color={getStationStatus(selectedStation).color} variant="light">{getStationStatus(selectedStation).label}</Badge></Group><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || selectedStationAddress || getStationNetwork(selectedStation) || "Уточняем адрес по OSM…"}</Text><Group gap={4} mt={4} wrap="wrap">{selectedStation.prices.length ? selectedStation.prices.slice(0, 3).map((price) => <Badge key={price.fuel} size="xs" color="teal" variant="light">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>) : selectedStation.fuels.length ? selectedStation.fuels.slice(0, 4).map((fuel) => <Badge key={fuel} size="xs" color="teal" variant="light">{fuel}</Badge>) : <Badge size="xs" color="gray" variant="light">Ассортимент не указан</Badge>}</Group><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{formatStationTimestamp(selectedStation.statusUpdatedAt) ? `Обновлено: ${formatStationTimestamp(selectedStation.statusUpdatedAt)}` : selectedStation.fuels.length ? "Топливо отмечено в OpenStreetMap" : getStationDataSummary(selectedStation)}</Text></Paper>}
     </Paper>
@@ -806,7 +846,7 @@ export default function FuelMapPage() {
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
           <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
-            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} /></Box>
+            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} availabilityByStation={nearbyAvailabilityData?.stations || {}} /></Box>
             <Paper className="fuel-map-list" radius="md" p="sm" withBorder style={{ gridColumn: "span 2" }}>
               {isLoading ? (
                 /* Первое открытие города занимает секунд семь: точки

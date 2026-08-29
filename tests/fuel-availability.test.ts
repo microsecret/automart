@@ -127,3 +127,40 @@ test("наличие показывается выше цены", () => {
   assert.ok(availabilityAt > 0 && priceAt > 0)
   assert.ok(availabilityAt < priceAt, "наличие должно идти раньше цены")
 })
+
+// === Метки на карте ===
+
+test("цвет метки идёт от отметок, а не от тегов OpenStreetMap", () => {
+  /* Теги говорят про ассортимент вообще, отметки — про наличие сейчас.
+     Человек смотрит на карту со вторым вопросом. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /data-reported=\{!isCluster && fresh\.length/)
+})
+
+test("подпись с марками показывается только вблизи", () => {
+  // На весь город это сотни подписей внахлёст.
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /zoom >= 13 && fresh\.length > 0/)
+})
+
+test("на метке только свежие отметки", () => {
+  // Вчерашнее «есть 92» на карте хуже, чем ничего.
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /isFresh\(new Date\(row\.updatedAt\)\)/)
+})
+
+test("состояние читается не только цветом", () => {
+  /* Зачёркнутая марка понятна и при дальтонизме, и на выцветшем экране
+     под солнцем. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /fuel-map-pin__fuel\[data-state="no"\][\s\S]{0,160}line-through/)
+})
+
+test("цвета обозначений совпадают с цветами меток", () => {
+  // Разойдись они на тон, и подпись перестала бы объяснять карту.
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const markerYes = css.match(/fuel-map-marker\[data-reported="yes"\]\s*\{\s*background:\s*([^;]+);/)?.[1]
+  const legendYes = css.match(/legend > span\[data-reported="yes"\]::before \{ background: ([^;]+); \}/)?.[1]
+  assert.ok(markerYes && legendYes)
+  assert.equal(markerYes.trim(), legendYes.trim())
+})

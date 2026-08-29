@@ -3672,9 +3672,67 @@ select {
   pointer-events: none;
 }
 
-.fuel-map-marker {
+/* Точка на карте: кружок и подпись под ним.
+
+   Раньше кружок позиционировался сам и сдвигался на половину своего
+   размера. Теперь его держит обёртка — иначе подпись с марками топлива
+   пришлось бы двигать вторым набором вычислений, и они разъезжались бы
+   при смене масштаба. */
+.fuel-map-pin {
   position: absolute;
   z-index: 2;
+  display: grid;
+  justify-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.fuel-map-pin > * {
+  pointer-events: auto;
+}
+
+/* Марки топлива по свежим отметкам водителей.
+
+   Человек за рулём видит ответ, не открывая карточку: какие марки есть,
+   каких нет и когда смотрели. Именно это отличает карту наличия от
+   справочника заправок.
+
+   Цвет несёт состояние, но не в одиночку: зачёркнутая марка читается и
+   при дальтонизме, и на выцветшем экране под солнцем. */
+.fuel-map-pin__label {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  margin-top: 3px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(17, 17, 20, 0.82);
+  backdrop-filter: blur(2px);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.fuel-map-pin__age {
+  margin-right: 2px;
+  color: rgba(255, 255, 255, 0.62);
+  font-weight: 600;
+}
+
+.fuel-map-pin__fuel[data-state="yes"] {
+  color: #4ade80;
+}
+
+.fuel-map-pin__fuel[data-state="no"] {
+  color: #f87171;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.fuel-map-marker {
+  position: relative;
   display: grid;
   width: 30px;
   height: 30px;
@@ -3686,8 +3744,18 @@ select {
   background: #ea580c;
   box-shadow: var(--shadow-md);
   cursor: pointer;
-  transform: translate(-50%, -50%);
   transition: transform var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
+}
+
+/* Отметки водителей важнее тегов OpenStreetMap: те говорят про
+   ассортимент вообще, а эти — про наличие сейчас. Поэтому цвет по
+   отметкам перекрывает и цвет сети, и качество данных. */
+.fuel-map-marker[data-reported="yes"] {
+  background: #16a34a;
+}
+
+.fuel-map-marker[data-reported="no"] {
+  background: #dc2626;
 }
 
 .fuel-map-marker[data-cluster] {
@@ -3724,14 +3792,23 @@ select {
   box-shadow: var(--shadow-sm);
 }
 
+/* Сдвиг на половину размера ушёл на обёртку, поэтому здесь остаётся
+   только увеличение: с прежним translate кружок отъезжал бы вверх-влево
+   ещё раз и терял связь со своей точкой. */
 .fuel-map-marker:hover,
 .fuel-map-marker:focus-visible,
 .fuel-map-marker[data-selected] {
-  z-index: 4;
   background: #1c4291;
   box-shadow: 0 0 0 4px rgba(255,255,255,0.72), 0 7px 16px rgba(49,46,129,.42);
   outline: none;
-  transform: translate(-50%, -50%) scale(1.12);
+  transform: scale(1.12);
+}
+
+/* Поднимать надо всю точку с подписью: поднятый кружок оставлял бы свою
+   подпись под соседними метками. */
+.fuel-map-pin:hover,
+.fuel-map-pin:focus-within {
+  z-index: 4;
 }
 
 .fuel-map-canvas__controls {
@@ -3795,7 +3872,11 @@ select {
   content: "";
 }
 
-.fuel-map-canvas__legend > span[data-quality="fuel"]::before { background: #0f766e; }
+/* Цвета обозначений совпадают с цветами меток: разойдись они хоть на
+   тон, и подпись перестала бы объяснять карту. */
+.fuel-map-canvas__legend > span[data-reported="yes"]::before { background: #16a34a; }
+.fuel-map-canvas__legend > span[data-reported="no"]::before { background: #dc2626; }
+.fuel-map-canvas__legend > span[data-quality="fuel"]::before { background: #ea580c; }
 .fuel-map-canvas__legend > span[data-quality="live"]::before { background: #16a34a; }
 .fuel-map-canvas__legend > span[data-quality="network"]::before { background: #ea580c; }
 
