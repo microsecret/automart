@@ -144,7 +144,7 @@ test("плашка показывается только вблизи", () => {
   /* На весь город плашек сотни, они перекрывают друг друга, и карта
      перестаёт читаться. Далеко остаётся мелкий кружок. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /showPlate = !isCluster && zoom >= 14/)
+  assert.match(page, /showPlate = !isCluster && zoom >= 12/)
 })
 
 test("на плашке видны бренд, марки и цена", () => {
@@ -288,4 +288,50 @@ test("знак сети виден на плашке", () => {
 test("нераспознанная сеть не ломает плашку", () => {
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
   assert.match(page, /data-unknown="true"/)
+})
+
+// === Исправления по жалобам ===
+
+test("подтверждение не лезет постоянно", () => {
+  /* Условием была «не высокая» уверенность — а средняя бывает почти
+     всегда, и плашка висела поверх поля цены. Вопрос, который задают
+     каждый раз, перестают читать. */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /confidenceLabel !== "низкая"/)
+  assert.match(reporter, /60 \* 60 \* 1000/)
+})
+
+test("подтверждение прячется, пока открыта форма отметки", () => {
+  // Человек уже отвечает на тот же вопрос кнопками выше.
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /if \(!stale \|\| openFuel\) return null/)
+})
+
+test("без геолокации список считает от центра карты", () => {
+  /* Список без положения бесполезнее, чем с приблизительным: человек всё
+     равно видит, где топливо есть. */
+  const nearby = readFileSync(new URL("../src/components/fuel/FuelNearbyList.tsx", import.meta.url), "utf8")
+  assert.match(nearby, /fallbackOrigin/)
+})
+
+test("причина отказа геолокации объясняется по-разному", () => {
+  /* Общее «не удалось» не говорило, отказал ли человек сам, слаб ли
+     сигнал или дело в браузере. */
+  const nearby = readFileSync(new URL("../src/components/fuel/FuelNearbyList.tsx", import.meta.url), "utf8")
+  assert.match(nearby, /failure\?\.code === 1/)
+  assert.match(nearby, /failure\?\.code === 3/)
+})
+
+test("всплывающая карточка показывает наличие и цену", () => {
+  /* Раньше в ней были только адрес и ассортимент из OpenStreetMap —
+     ответа на вопрос «есть ли бензин» не было. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /Здесь ещё не отмечали наличие/)
+  assert.match(page, /priceByFuel\.get\(row\.fuel\)/)
+})
+
+test("из карточки на карте можно отметить и построить маршрут", () => {
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.ok(page.includes("Отметить"), "кнопка отметки")
+  assert.match(page, /yandex\.ru\/maps\/\?rtext/)
 })

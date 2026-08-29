@@ -528,7 +528,16 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
              Далеко плашки не показываются: на весь город их сотни, они
              перекрывают друг друга, и карта перестаёт читаться. Там
              остаётся кружок — он мелкий и не мешает. */
-          const showPlate = !isCluster && zoom >= 14
+          /* Плашка с двенадцатого масштаба, а не с четырнадцатого.
+
+             Карта открывается на одиннадцатом, точки перестают
+             группироваться сразу после него — и на двенадцатом-
+             тринадцатом человек видел голые кружки без названия сети.
+             Ровно то состояние, в котором карту открывают чаще всего.
+
+             Ниже двенадцатого плашки не нужны: там точки ещё собраны в
+             кластеры, а поверх них плашка не поместится. */
+          const showPlate = !isCluster && zoom >= 12
 
           const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${getStationDataSummary(firstStation)}`
 
@@ -661,7 +670,114 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
      метки теперь отвечает именно на него. */}
       <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-reported="yes">Топливо есть</Text><Text component="span" data-reported="no">Топлива нет</Text><Text component="span" data-quality="fuel">Не отмечали</Text></Box>
       {clusterHint && <Paper className="fuel-map-cluster-hint" radius="md" p="xs" withBorder aria-live="polite"><Text size="xs" fw={600}>{clusterHint}</Text><Button size="compact-xs" variant="subtle" color="indigo" onClick={() => setClusterHint(null)}>Понятно</Button></Paper>}
-      {selectedStation && <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite"><Group justify="space-between" gap="xs" wrap="nowrap"><Text size="xs" fw={700} lineClamp={1}>{selectedStation.name}</Text><Badge size="xs" color={getStationStatus(selectedStation).color} variant="light">{getStationStatus(selectedStation).label}</Badge></Group><Text size="10px" c="dimmed" lineClamp={1}>{selectedStation.address || selectedStationAddress || getStationNetwork(selectedStation) || "Уточняем адрес по OSM…"}</Text><Group gap={4} mt={4} wrap="wrap">{selectedStation.prices.length ? selectedStation.prices.slice(0, 3).map((price) => <Badge key={price.fuel} size="xs" color="teal" variant="light">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>) : selectedStation.fuels.length ? selectedStation.fuels.slice(0, 4).map((fuel) => <Badge key={fuel} size="xs" color="teal" variant="light">{fuel}</Badge>) : <Badge size="xs" color="gray" variant="light">Ассортимент не указан</Badge>}</Group><Text size="10px" c="indigo.7" mt={3} lineClamp={1}>{formatStationTimestamp(selectedStation.statusUpdatedAt) ? `Обновлено: ${formatStationTimestamp(selectedStation.statusUpdatedAt)}` : selectedStation.fuels.length ? "Топливо отмечено в OpenStreetMap" : getStationDataSummary(selectedStation)}</Text></Paper>}
+      {selectedStation && (() => {
+        /* Всплывающая карточка на карте.
+
+           Раньше она показывала только сведения из OpenStreetMap: адрес,
+           ассортимент вообще, время обновления справочника. Ответа на
+           вопрос «есть ли бензин сейчас» в ней не было — за ним надо
+           было прокручивать страницу до карточки в списке справа, а на
+           телефоне список вообще под картой.
+
+           Теперь здесь главное: что есть по отметкам, почём и насколько
+           этому верить. Всё остальное осталось в подробной карточке. */
+        const rows = availabilityByStation[selectedStation.id] || []
+        const fresh = rows.filter((row) => row.updatedAt && isFresh(new Date(row.updatedAt)))
+        const prices = pricesByStation[selectedStation.id] || []
+        const priceByFuel = new Map(prices.map((row) => [row.fuel, row.priceKopecks]))
+        const newest = fresh.reduce<string | null>(
+          (latest, row) => (!latest || (row.updatedAt && row.updatedAt > latest) ? row.updatedAt : latest),
+          null,
+        )
+        const weakest = fresh.find((row) => row.confidenceLabel !== "высокая")
+        const identity = getNetworkIdentity(selectedStation)
+
+        return (
+          <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite">
+            <Group gap={6} wrap="nowrap" align="center" mb={4}>
+              {identity && (
+                <Box
+                  style={{
+                    display: "grid",
+                    placeItems: "center",
+                    width: 24,
+                    height: 24,
+                    borderRadius: 6,
+                    background: identity.color,
+                    color: identity.textColor,
+                    fontSize: 9,
+                    fontWeight: 800,
+                    flex: "0 0 24px",
+                  }}
+                  aria-hidden="true"
+                >
+                  {identity.shortLabel}
+                </Box>
+              )}
+              <Box style={{ minWidth: 0, flex: 1 }}>
+                <Text size="xs" fw={700} lineClamp={1}>{selectedStation.name}</Text>
+                <Text size="10px" c="dimmed" lineClamp={1}>
+                  {selectedStation.address || selectedStationAddress || "Уточняем адрес…"}
+                </Text>
+              </Box>
+            </Group>
+
+            {/* Что есть сейчас — с ценой рядом с маркой. */}
+            {fresh.length > 0 ? (
+              <Group gap={4} wrap="wrap" mb={4}>
+                {fresh.slice(0, 5).map((row) => {
+                  const kopecks = priceByFuel.get(row.fuel)
+                  return (
+                    <Badge
+                      key={row.fuel}
+                      size="sm"
+                      variant="light"
+                      color={row.state === "YES" ? "teal" : "red"}
+                      styles={row.state === "NO" ? { label: { textDecoration: "line-through" } } : undefined}
+                    >
+                      {row.label}
+                      {row.state === "YES" && kopecks ? ` · ${Math.round(kopecks / 100)} ₽` : ""}
+                    </Badge>
+                  )
+                })}
+              </Group>
+            ) : (
+              /* Отметок нет — так и говорим. Молчание человек читает как
+                 «топлива нет», и это неправда. */
+              <Text size="10px" c="dimmed" mb={4}>Здесь ещё не отмечали наличие</Text>
+            )}
+
+            {/* Возраст и уверенность — по ним человек решает, верить ли. */}
+            {newest && (
+              <Text size="10px" c={weakest ? "orange.7" : "dimmed"} mb={6}>
+                {formatAge(new Date(newest))}
+                {weakest ? ` · уверенность ${weakest.confidencePercent}%` : ""}
+              </Text>
+            )}
+
+            <Group gap={4} grow>
+              <Button
+                size="compact-xs"
+                color="indigo"
+                variant="light"
+                onClick={() => onSelect(selectedStation)}
+              >
+                Отметить
+              </Button>
+              <Button
+                component="a"
+                href={`https://yandex.ru/maps/?rtext=~${selectedStation.latitude}%2C${selectedStation.longitude}&rtt=auto`}
+                target="_blank"
+                rel="noreferrer"
+                size="compact-xs"
+                variant="default"
+              >
+                Маршрут
+              </Button>
+            </Group>
+          </Paper>
+        )
+      })()}
     </Paper>
   )
 }
@@ -1160,6 +1276,7 @@ export default function FuelMapPage() {
                     longitude: item.longitude,
                   }))}
                   availabilityByStation={nearbyAvailabilityData?.stations || {}}
+                  fallbackOrigin={coordinates}
                   onSelect={(stationId) => {
                     const found = displayedStations.find((item) => item.id === stationId)
                     if (found) showStationOnMap(found)

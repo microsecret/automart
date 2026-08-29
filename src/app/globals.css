@@ -4087,14 +4087,34 @@ select {
   backdrop-filter: blur(var(--blur-panel));
 }
 
+/* Всплывающая карточка выбранной заправки.
+
+   Раньше она была узкой полоской с адресом: наличие, цена и кнопки
+   стояли в списке справа, а на телефоне — под картой, куда надо
+   прокручивать. Человек нажимал метку и не получал ответа на вопрос, с
+   которым пришёл.
+
+   Теперь она шире и содержит главное. На телефоне растягивается почти на
+   всю ширину и прижимается к низу — так до неё дотягивается большой
+   палец, а карта сверху остаётся видна. */
 .fuel-map-selected {
   position: absolute;
   z-index: 5;
   left: 12px;
   bottom: 12px;
-  max-width: min(260px, calc(100% - 150px));
-  background: rgba(255,255,255,.94);
-  box-shadow: var(--shadow-md);
+  width: min(300px, calc(100% - 24px));
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(var(--blur-panel));
+}
+
+@media (max-width: 640px) {
+  .fuel-map-selected {
+    right: 8px;
+    left: 8px;
+    bottom: 8px;
+    width: auto;
+  }
 }
 
 .fuel-map-list {

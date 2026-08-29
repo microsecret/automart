@@ -22,10 +22,14 @@ export default function FuelNearbyList({
   stations,
   availabilityByStation,
   onSelect,
+  fallbackOrigin,
 }: {
   stations: NearbyStation[]
   availabilityByStation: Record<string, Array<{ fuel: string; state: string; updatedAt: string | null }>>
   onSelect?: (stationId: string) => void
+  /* Центр карты: от него считаем расстояния, если положение недоступно.
+     Список без положения бесполезнее, чем с приблизительным. */
+  fallbackOrigin?: { latitude: number; longitude: number }
 }) {
   const [origin, setOrigin] = useState<{ latitude: number; longitude: number } | null>(null)
   const [fuel, setFuel] = useState<AvailabilityFuel>("AI92")
@@ -34,7 +38,8 @@ export default function FuelNearbyList({
 
   const locate = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setError("Браузер не умеет определять положение")
+      setError("Браузер не умеет определять положение. Показываем заправки в центре карты.")
+      if (fallbackOrigin) setOrigin(fallbackOrigin)
       return
     }
 
@@ -45,11 +50,26 @@ export default function FuelNearbyList({
         setOrigin({ latitude: position.coords.latitude, longitude: position.coords.longitude })
         setAsking(false)
       },
-      () => {
-        /* Отказ — обычное дело, а не сбой: человек мог просто не захотеть.
-           Поэтому текст без упрёка и с подсказкой, что делать дальше. */
-        setError("Не удалось определить положение. Разрешите доступ в браузере или выберите город выше.")
+      (failure) => {
+        /* Причина отказа разная, и совет должен быть разный.
+
+           Общее «не удалось определить положение» ничего не объясняло:
+           человек не знал, отказал ли он сам, слаб ли сигнал или дело в
+           браузере. И главное — список после этого не работал вовсе,
+           хотя показать ближайшие к центру карты можно и без спутника. */
+        const reason = failure?.code === 1
+          ? "Доступ к положению запрещён. Разрешите его в настройках браузера — или смотрите заправки в центре карты."
+          : failure?.code === 3
+          ? "Спутники не отвечают. Под крышей это обычное дело — попробуйте на улице или смотрите заправки в центре карты."
+          : "Положение определить не вышло. Показываем заправки в центре карты."
+
+        setError(reason)
         setAsking(false)
+
+        /* Запасной путь: считаем от центра карты. Список без положения
+           бесполезнее, чем с приблизительным, — человек всё равно видит,
+           где топливо есть, и сам понимает, далеко ли. */
+        if (fallbackOrigin) setOrigin(fallbackOrigin)
       },
       { timeout: 10_000, maximumAge: 60_000 },
     )

@@ -339,10 +339,26 @@ export default function FuelAvailabilityReporter({
           Показывается, только когда есть что подтверждать и сведения не
           железные: при высокой уверенности лишний вопрос раздражает. */}
       {(() => {
-        const weak = availability.find(
-          (item) => item.state !== "UNKNOWN" && item.confidenceLabel !== "высокая",
-        )
-        if (!weak) return null
+        /* Спрашиваем, только когда сведения по-настоящему устарели.
+
+           Раньше условием была «не высокая» уверенность — а средняя
+           бывает почти всегда, и плашка висела постоянно, перекрывая
+           поле цены. Вопрос, который задают каждый раз, перестают
+           читать.
+
+           Теперь порог другой: отметке больше часа и уверенность низкая.
+           Свежую подтверждать незачем — она и так свежая; при средней
+           уверенности человек видит проценты и решает сам. */
+        const stale = availability.find((item) => {
+          if (item.state === "UNKNOWN" || !item.updatedAt) return false
+          if (item.confidenceLabel !== "низкая") return false
+          return Date.now() - new Date(item.updatedAt).getTime() > 60 * 60 * 1000
+        })
+
+        /* Не показываем, пока открыта форма отметки: человек уже отвечает
+           на тот же вопрос кнопками выше, и второй вопрос рядом сбивает. */
+        if (!stale || openFuel) return null
+        const weak = stale
 
         return (
           <Paper withBorder radius="md" p="xs" bg="var(--market-surface-subtle)">
