@@ -29,7 +29,20 @@ export function useMarketplaceImageUpload(initialImages: string[] = []) {
 
     setUploadingImages(true)
     try {
-      const urls = await Promise.all(selected.slice(0, freeSlots).map(async (file) => {
+      const batch = selected.slice(0, freeSlots)
+      /* Каждая фотография живёт своей судьбой.
+
+         Здесь стоял Promise.all: первый же отказ отменял всё
+         присвоение, и снимки, уже загруженные на сервер, в форму не
+         попадали. Человек выбирал восемь фотографий с телефона, ждал
+         минуту на мобильном интернете и получал пустую сетку с
+         сообщением об ошибке — при том что четыре из них лежали на
+         сервере.
+
+         allSettled доводит до конца все: удачные добавляются, про
+         неудачные говорим числом, чтобы человек знал, сколько
+         доложить. */
+      const outcomes = await Promise.allSettled(batch.map(async (file) => {
         const formData = new FormData()
         formData.append("file", file)
         const response = await fetch("/api/upload", { method: "POST", body: formData })
@@ -37,8 +50,27 @@ export function useMarketplaceImageUpload(initialImages: string[] = []) {
         if (!response.ok || !result.url) throw new Error(result.error || "Не удалось загрузить фотографию")
         return result.url
       }))
-      setImages((current) => Array.from(new Set([...current, ...urls])).slice(0, MAX_IMAGES))
-      if (selected.length > freeSlots) {
+
+      const urls = outcomes.flatMap((outcome) => outcome.status === "fulfilled" ? [outcome.value] : [])
+      const failed = outcomes.length - urls.length
+
+      if (urls.length) {
+        setImages((current) => Array.from(new Set([...current, ...urls])).slice(0, MAX_IMAGES))
+      }
+
+      if (failed > 0) {
+        /* Первая причина отказа вернее общих слов: «файл больше 10 МБ»
+           подсказывает, что делать, а «повторите попытку» — нет. */
+        const firstError = outcomes.find((outcome) => outcome.status === "rejected") as PromiseRejectedResult | undefined
+        const reason = firstError?.reason instanceof Error ? firstError.reason.message : null
+        notifications.show({
+          title: urls.length ? "Загрузились не все фото" : "Не удалось загрузить фото",
+          message: urls.length
+            ? `Добавлено ${urls.length} из ${outcomes.length}${reason ? `. ${reason}` : ""}`
+            : reason || "Повторите попытку.",
+          color: urls.length ? "orange" : "red",
+        })
+      } else if (selected.length > freeSlots) {
         notifications.show({ title: "Добавлены не все фото", message: `Добавлено ${freeSlots} из ${selected.length}: достигнут лимит.`, color: "orange" })
       }
     } catch (error) {

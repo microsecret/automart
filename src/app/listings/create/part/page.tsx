@@ -1,6 +1,6 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl } from "@mantine/core"
@@ -15,6 +15,15 @@ import styles from "../listing-create-form.module.css"
 
 type CreatedPartResponse = { id: string }
 
+/* Где лежит черновик карточки запчасти.
+
+   Форма ТС свой черновик сохраняла, а эта — нет: название, цена, номер
+   по каталогу, описание и, главное, список совместимости, который
+   человек собирает по одной машине. Случайный «назад» или обрыв связи
+   стирали работу целиком, притом что фотографии уже лежали на сервере
+   — терялись даже их адреса. */
+const PART_DRAFT_STORAGE_KEY = "part-listing-draft-v1"
+
 export default function CreatePartPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -26,11 +35,60 @@ export default function CreatePartPage() {
   })
   const [compat, setCompat] = useState<{ make: string; model: string; generation: string; engine: string; yearFrom: string; yearTo: string }[]>([])
   const [newCompat, setNewCompat] = useState({ make: "", model: "", generation: "", engine: "", yearFrom: "", yearTo: "" })
-  const { images, uploadingImages, uploadPhotos, removeImage } = useMarketplaceImageUpload()
+  const { images, uploadingImages, uploadPhotos, removeImage, replaceImages } = useMarketplaceImageUpload()
+  /* Показывать ошибки полей только после попытки отправить: подсвечивать
+     пустое поле, к которому человек ещё не подходил, — придирка. */
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+  const draftRestoredRef = useRef(false)
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/signin")
   }, [status, router])
+
+  /* Восстановление черновика — тем же порядком, что в форме ТС. */
+  useEffect(() => {
+    if (draftRestoredRef.current) return
+    draftRestoredRef.current = true
+    try {
+      const raw = window.localStorage.getItem(PART_DRAFT_STORAGE_KEY)
+      if (!raw) return
+      const draft = JSON.parse(raw) as { f?: typeof f; compat?: typeof compat; images?: string[]; savedAt?: number }
+      if (!draft?.f) return
+      /* Черновик старше недели скорее мусор, чем работа. */
+      if (!draft.savedAt || Date.now() - draft.savedAt > 7 * 86_400_000) {
+        window.localStorage.removeItem(PART_DRAFT_STORAGE_KEY)
+        return
+      }
+      const hasContent = Boolean(draft.f.name || draft.f.description || draft.f.oemNumber || draft.compat?.length || draft.images?.length)
+      if (!hasContent) return
+      setF((current) => ({ ...current, ...draft.f }))
+      if (draft.compat?.length) setCompat(draft.compat)
+      if (draft.images?.length) replaceImages(draft.images)
+      notifications.show({
+        title: "Черновик восстановлен",
+        message: "Мы сохранили заполненное с прошлого раза. Продолжайте с того же места.",
+        color: "indigo",
+        autoClose: 8_000,
+      })
+    } catch {
+      /* Испорченный черновик не должен ломать форму. */
+      window.localStorage.removeItem(PART_DRAFT_STORAGE_KEY)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    /* Пауза между нажатиями клавиш: писать в хранилище на каждый символ
+       незачем. */
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(PART_DRAFT_STORAGE_KEY, JSON.stringify({ f, compat, images, savedAt: Date.now() }))
+      } catch {
+        /* Переполненное хранилище — не повод ронять форму. */
+      }
+    }, 800)
+    return () => window.clearTimeout(timer)
+  }, [f, compat, images])
 
   if (status === "loading") return <Center py={100}><Loader color="indigo" /></Center>
   if (!session) return null
@@ -48,8 +106,19 @@ export default function CreatePartPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!f.name || !f.price) {
-      notifications.show({ title: "Ошибка", message: "Заполните название и цену", color: "red" })
+    setSubmitAttempted(true)
+    if (!f.name.trim() || !f.price) {
+      /* Раньше здесь был только всплывающий значок в углу: ни одно поле
+         не подсвечивалось, страница не прокручивалась к пропуску, и на
+         телефоне человек видел сообщение, не понимая, куда смотреть. */
+      notifications.show({
+        title: "Не хватает данных",
+        message: !f.name.trim() ? "Укажите название запчасти" : "Укажите цену",
+        color: "red",
+      })
+      const missingField = document.getElementById(!f.name.trim() ? "part-name" : "part-price")
+      missingField?.scrollIntoView({ behavior: "smooth", block: "center" })
+      missingField?.focus({ preventScroll: true })
       return
     }
     setLoading(true)
@@ -74,6 +143,12 @@ export default function CreatePartPage() {
           auctionMinStep: f.auctionMinStep ? Number(f.auctionMinStep) : null,
         }),
       })
+      /* Карточка ушла на модерацию — черновик больше не нужен. */
+      try {
+        window.localStorage.removeItem(PART_DRAFT_STORAGE_KEY)
+      } catch {
+        /* Хранилище закрыто настройками: черновик просто останется. */
+      }
       notifications.show({ title: "Отправлено на проверку", message: "Мы проверим карточку и опубликуем её после модерации.", color: "indigo" })
       router.push(`/listings/part/${data.id}`)
     } catch (err) {
@@ -128,13 +203,13 @@ export default function CreatePartPage() {
                   </Stack>
                   <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
                 </Group>
-                <TextInput label="Название" placeholder="Колодки тормозные передние" required value={f.name} onChange={(e) => set("name", e.target.value)} size="sm" />
+                <TextInput id="part-name" label="Название" placeholder="Колодки тормозные передние" required value={f.name} onChange={(e) => set("name", e.target.value)} size="sm" error={submitAttempted && !f.name.trim() ? "Укажите название запчасти" : undefined} />
                 <Group gap="sm" grow>
                   <Select label="Категория" data={PART_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.partType} onChange={(v) => { set("partType", v || ""); set("subcategory", "") }} size="sm" />
                   {subcats.length > 0 && <Select label="Подкатегория" data={subcats.map(s => ({ value: s, label: s }))} value={f.subcategory} onChange={(v) => set("subcategory", v || "")} size="sm" />}
                 </Group>
                 <Group gap="sm" grow>
-                  <NumberInput label="Цена, ₽" placeholder="4500" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} />
+                  <NumberInput id="part-price" label="Цена, ₽" placeholder="4500" required value={f.price ? Number(f.price) : undefined} onChange={(v) => set("price", String(v || ""))} size="sm" min={0} inputMode="numeric" error={submitAttempted && !f.price ? "Укажите цену" : undefined} />
                   <TextInput label="OEM номер" placeholder="04465-0E040" value={f.oemNumber} onChange={(e) => set("oemNumber", e.target.value)} size="sm" />
                 </Group>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
@@ -204,8 +279,15 @@ export default function CreatePartPage() {
                   <Select label="Модель" placeholder={newCompat.make ? "Любая модель" : "Сначала марка"} data={newCompat.make ? getModels(newCompat.make, "cars").map(m => ({ value: m, label: m })) : []} searchable disabled={!newCompat.make} value={newCompat.model} onChange={(v) => setNewCompat({ ...newCompat, model: v || "" })} size="xs" />
                   <TextInput label="Поколение" placeholder="Например, XV40" value={newCompat.generation} onChange={(e) => setNewCompat({ ...newCompat, generation: e.target.value })} size="xs" />
                   <TextInput label="Двигатель" placeholder="2.0 / 1GR-FE" value={newCompat.engine} onChange={(e) => setNewCompat({ ...newCompat, engine: e.target.value })} size="xs" />
-                  <TextInput label="Год от" placeholder="2012" value={newCompat.yearFrom} onChange={(e) => setNewCompat({ ...newCompat, yearFrom: e.target.value })} size="xs" type="number" />
-                  <TextInput label="Год до" placeholder="2020" value={newCompat.yearTo} onChange={(e) => setNewCompat({ ...newCompat, yearTo: e.target.value })} size="xs" type="number" />
+                  {/* Цифровая клавиатура и только цифры.
+
+                      Здесь стоял type="number": на Android он даёт
+                      цифры вперемешку с «e», «-» и точкой, а колесо
+                      мыши на настольном браузере незаметно меняет уже
+                      введённый год. Год — четыре цифры и ничего
+                      больше. */}
+                  <TextInput label="Год от" placeholder="2012" value={newCompat.yearFrom} onChange={(e) => setNewCompat({ ...newCompat, yearFrom: e.target.value.replace(/\D/g, "").slice(0, 4) })} size="xs" inputMode="numeric" maxLength={4} />
+                  <TextInput label="Год до" placeholder="2020" value={newCompat.yearTo} onChange={(e) => setNewCompat({ ...newCompat, yearTo: e.target.value.replace(/\D/g, "").slice(0, 4) })} size="xs" inputMode="numeric" maxLength={4} />
                 </SimpleGrid>
                 <Group justify="flex-end"><Button type="button" variant="light" color="indigo" size="sm" onClick={addCompat} leftSection={<IconPlus size={14} />}>Добавить автомобиль</Button></Group>
                 <Text size="xs" c="var(--market-muted)">Добавьте все совместимые авто — запчасть найдут больше покупателей</Text>

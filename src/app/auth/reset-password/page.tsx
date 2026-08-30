@@ -3,7 +3,7 @@
 import { FormEvent, Suspense, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Alert, Box, Button, Card, Center, Container, Loader, Stack, Text, TextInput, ThemeIcon } from "@mantine/core"
+import { Alert, Box, Button, Card, Center, Container, Loader, PasswordInput, Stack, Text, ThemeIcon } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { IconCar, IconCheck, IconLock, IconMailOff } from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
@@ -94,8 +94,39 @@ function ResetPasswordWorkspace() {
             <form onSubmit={handleSubmit}>
               <Stack gap="md">
                 <Alert icon={<IconLock size={16} />} color="indigo" variant="light" radius="md">Минимум 8 символов. После смены пароля все активные сессии будут завершены.</Alert>
-                <TextInput label="Новый пароль" required type="password" value={password} onChange={(event) => setPassword(event.currentTarget.value)} minLength={8} maxLength={128} autoComplete="new-password" />
-                <TextInput label="Повторите пароль" required type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.currentTarget.value)} minLength={8} maxLength={128} autoComplete="new-password" />
+                {/* Поле пароля с кнопкой «показать» и проверкой на месте.
+
+                    Здесь стояли обычные текстовые поля со скрытым
+                    вводом: на телефоне человек вслепую набирал восемь
+                    с лишним символов дважды и узнавал о расхождении
+                    только после нажатия «Сохранить» — всплывающим
+                    сообщением, причём оба поля оставались заполненными
+                    старыми значениями, и было непонятно, какое из них
+                    править.
+
+                    Требование про восемь символов стояло только в
+                    атрибуте поля, то есть показывалось подсказкой
+                    браузера, а не текстом рядом. */}
+                <PasswordInput
+                  label="Новый пароль"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.currentTarget.value)}
+                  minLength={8}
+                  maxLength={128}
+                  autoComplete="new-password"
+                  error={password.length > 0 && password.length < 8 ? "Минимум 8 символов" : undefined}
+                />
+                <PasswordInput
+                  label="Повторите пароль"
+                  required
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.currentTarget.value)}
+                  minLength={8}
+                  maxLength={128}
+                  autoComplete="new-password"
+                  error={confirmPassword.length > 0 && password !== confirmPassword ? "Пароли не совпадают" : undefined}
+                />
                 <Button type="submit" size="md" color="indigo" radius="md" loading={loading} fullWidth>Сохранить новый пароль</Button>
                 <Text size="xs" c="gray.5" ta="center"><Link href="/auth/signin" style={{ color: "#1c4291" }}>Вернуться ко входу</Link></Text>
               </Stack>

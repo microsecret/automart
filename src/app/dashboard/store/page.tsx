@@ -358,9 +358,16 @@ export default function StoreWorkspacePage() {
                   <Text size="xs" c="dimmed" mb="sm">Нужны для проверки магазина перед публикацией.</Text>
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                     <TextInput label="Юридическое название" placeholder="ООО «АвтоДеталь»" value={form.legalName} onChange={(event) => setForm({ ...form, legalName: event.currentTarget.value })} />
-                    <TextInput label="ИНН" placeholder="7701234567" value={form.inn} onChange={(event) => setForm({ ...form, inn: event.currentTarget.value })} />
-                    <TextInput label="Телефон" placeholder="+7 900 000-00-00" value={form.contactPhone} onChange={(event) => setForm({ ...form, contactPhone: event.currentTarget.value })} />
-                    <TextInput label="Email" placeholder="shop@example.ru" value={form.contactEmail} onChange={(event) => setForm({ ...form, contactEmail: event.currentTarget.value })} />
+                    <TextInput label="ИНН" placeholder="7701234567" value={form.inn} onChange={(event) => setForm({ ...form, inn: event.currentTarget.value })} inputMode="numeric" />
+                    {/* Клавиатура под вводимое.
+
+                        Оба поля открывали буквенную клавиатуру: чтобы
+                        набрать номер, человек переключался на цифровую
+                        панель, а «+» там ещё уровнем глубже. Тип поля
+                        подсказывает телефону, что показать, а
+                        autoComplete позволяет подставить сохранённое. */}
+                    <TextInput label="Телефон" placeholder="+7 900 000-00-00" value={form.contactPhone} onChange={(event) => setForm({ ...form, contactPhone: event.currentTarget.value })} type="tel" inputMode="tel" autoComplete="tel" />
+                    <TextInput label="Email" placeholder="shop@example.ru" value={form.contactEmail} onChange={(event) => setForm({ ...form, contactEmail: event.currentTarget.value })} type="email" inputMode="email" autoComplete="email" />
                   </SimpleGrid>
                 </Box>
 
