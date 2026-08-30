@@ -1201,6 +1201,21 @@ export default function AdminDashboard() {
             <Card className="admin-action-card" component={Link} href="/parts-finder" withBorder radius="md" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="green" size={32} radius="md"><IconTag size={16} /></ThemeIcon><Text size="xs" fw={500}>Запчасти</Text></Group>
             </Card>
+            {/* Поддержка, форум и посещаемость — то, куда администратор
+                ходит каждый день, и до них приходилось добираться через
+                верхний ряд разделов. */}
+            <Card className="admin-action-card" component={Link} href="/admin/support" withBorder radius="md" p="sm">
+              <Group gap="sm"><ThemeIcon variant="light" color="grape" size={32} radius="md"><IconHeadset size={16} /></ThemeIcon><Text size="xs" fw={500}>Поддержка</Text></Group>
+            </Card>
+            <Card className="admin-action-card" component={Link} href="/admin/forum" withBorder radius="md" p="sm">
+              <Group gap="sm"><ThemeIcon variant="light" color="teal" size={32} radius="md"><IconMessageCircle2 size={16} /></ThemeIcon><Text size="xs" fw={500}>Форум</Text></Group>
+            </Card>
+            <Card className="admin-action-card" component={Link} href="/admin/traffic" withBorder radius="md" p="sm">
+              <Group gap="sm"><ThemeIcon variant="light" color="violet" size={32} radius="md"><IconActivity size={16} /></ThemeIcon><Text size="xs" fw={500}>Посещаемость</Text></Group>
+            </Card>
+            <Card className="admin-action-card" component={Link} href="/admin/telegram" withBorder radius="md" p="sm">
+              <Group gap="sm"><ThemeIcon variant="light" color="blue" size={32} radius="md"><IconBrandTelegram size={16} /></ThemeIcon><Text size="xs" fw={500}>Рассылка</Text></Group>
+            </Card>
             <Card className="admin-action-card" component={Link} href="/messages" withBorder radius="md" p="sm">
               <Group gap="sm"><ThemeIcon variant="light" color="cyan" size={32} radius="md"><IconMessageCircle2 size={16} /></ThemeIcon><Text size="xs" fw={500}>Сообщения</Text></Group>
             </Card>
