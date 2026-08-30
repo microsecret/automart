@@ -7,7 +7,7 @@ import { ActionIcon, Alert, Box, Stack, Text, Center, Loader, SimpleGrid, Card, 
 import type { MantineColor } from "@mantine/core"
 import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld, IconRefresh, IconDatabase, IconGavel, IconAlertTriangle, IconBuildingWarehouse, IconCheck, IconClock, IconListCheck, IconShieldCheck, IconCreditCard, IconCoins, IconReceipt, IconLockCheck, IconHeadset, IconBrandTelegram } from "@tabler/icons-react"
 import Link from "next/link"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
 import ListingReportModerationPanel from "@/components/moderation/ListingReportModerationPanel"
 import AdminAuditLog from "@/components/admin/AdminAuditLog"
@@ -311,7 +311,35 @@ const PAYMENT_STATUS_META: Record<string, { label: string; color: MantineColor }
   REVIEW_REQUIRED: { label: "Нужна проверка", color: "orange" },
 }
 
+const ADMIN_TABS = ["overview", "operations", "sources", "monetization", "moderation"] as const
+
 export default function AdminDashboard() {
+  /* Выбранная вкладка живёт в адресе.
+
+     Раньше она нигде не сохранялась: обновил страницу — вернулся на
+     «Обзор», а ссылкой на нужную вкладку поделиться было нельзя.
+     Администратор разбирает очередь задач и после каждой правки
+     возвращался к началу.
+
+     Читаем после первой отрисовки: на сервере адреса нет, и решение,
+     принятое там, разошлось бы с клиентским. */
+  const [tab, setTab] = useState<string | null>(null)
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab")
+    if (requested && (ADMIN_TABS as readonly string[]).includes(requested)) setTab(requested)
+  }, [])
+
+  const changeTab = (value: string | null) => {
+    if (!value) return
+    setTab(value)
+    /* replaceState, а не push: вкладки — это не переходы по страницам, и
+       кнопка «назад» должна уводить из админки, а не листать вкладки. */
+    const url = new URL(window.location.href)
+    url.searchParams.set("tab", value)
+    window.history.replaceState(null, "", url.toString())
+  }
+
   const { data, error, isLoading, isValidating, mutate } = useSWR<AdminStats>("/api/admin/stats", fetchAdminStats)
   const { data: auctionStats, isValidating: isAuctionStatsValidating, mutate: mutateAuctionStats } = useSWR<AuctionAdminStats>("/api/admin/auctions/stats", fetchJson)
 
@@ -417,7 +445,13 @@ export default function AdminDashboard() {
         {/* Панель открывается на том, что требует решения: если очередь не
             разобрана, статистика подождёт. При пустой очереди сразу виден
             обзор, а не пустой список задач. */}
-        <Tabs defaultValue={actionsTotal > 0 ? "operations" : "overview"} variant="pills" color="indigo" keepMounted={false}>
+        <Tabs
+          value={tab || (actionsTotal > 0 ? "operations" : "overview")}
+          onChange={changeTab}
+          variant="pills"
+          color="indigo"
+          keepMounted={false}
+        >
           <Tabs.List mb="md" grow aria-label="Разделы панели администратора">
             <Tabs.Tab value="overview" leftSection={<IconTrendingUp size={16} />}>Обзор</Tabs.Tab>
             <Tabs.Tab value="operations" leftSection={<IconListCheck size={16} />}>Задачи <Badge size="xs" variant="filled" color={actionsTotal ? "orange" : "teal"}>{actionsTotal}</Badge></Tabs.Tab>

@@ -231,7 +231,13 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
             приложения внизу есть панель вкладок. */}
         {fromTelegram && !pathname?.startsWith("/telegram") && <TelegramReturnBar />}
         {children}
-        {isAuthRoute && <SupportChat />}
+        {/* Чат поддержки есть и здесь.
+
+            Раньше он показывался только на страницах входа: человек в
+            приложении Telegram или в мини-аппе не мог написать в
+            поддержку вовсе — а именно оттуда чаще всего и пишут, потому
+            что там непривычная оболочка и больше поводов растеряться. */}
+        <SupportChat />
       </Box>
     )
   }

@@ -700,6 +700,16 @@ select {
     bottom: calc(168px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
+  /* В мини-приложении кнопка поднимается над панелью вкладок.
+
+     Панель стоит внизу и высотой 58 пикселей, а под ней ещё бывает
+     главная кнопка Telegram. Кнопка поддержки на 92 пикселях ложилась на
+     край вкладки «Бензин» — самой правой: нажатие открывало чат вместо
+     карты заправок. */
+  body:has(.tg-nav) .support-chat__launcher {
+    bottom: calc(var(--tg-nav-height, 58px) + var(--tg-main-button-height, 0px) + 18px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
   .support-chat__launcher:hover,
   .support-chat__launcher:focus-within {
     opacity: 1;
