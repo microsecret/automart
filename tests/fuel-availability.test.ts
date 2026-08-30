@@ -828,3 +828,23 @@ test("группа показывает состав по сетям, а не т
   /* Число остаётся читаемым: под ним сплошная подложка. */
   assert.match(css, /fuel-map-marker__count/)
 })
+
+test("бензиновая сеть не становится газовой из-за названия", () => {
+  /* Проверка по названию ловила «Газпромнефть» — обычную бензиновую
+     сеть, у которой в имени есть «газ». Замер по сорока трём городам:
+     из 1798 точек, попавших в газовые, четыреста с лишним оказались
+     Газпромнефтью, и на карте они красились бирюзовым как АГЗС.
+     Человек с газобаллонным оборудованием поехал бы туда зря. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  const fn = page.slice(page.indexOf("function getGenericIdentity"), page.indexOf("function getDistanceInKilometers"))
+
+  /* Решает ассортимент: бензин в колонках — заправка бензиновая, чем
+     бы её ни назвали. */
+  assert.match(fn, /const hasPetrol = /)
+  assert.match(fn, /hasGasFuel && !hasPetrol/)
+
+  /* Название учитывается только там, где ассортимент пуст, и по
+     полному слову: «газ» внутри «Газпромнефти» ничего не значит. */
+  assert.match(fn, /!fuels && /)
+  assert.doesNotMatch(fn, /name\.includes\("газ"\)/)
+})

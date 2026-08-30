@@ -225,8 +225,27 @@ function formatKopecks(kopecks: number) {
 function getGenericIdentity(station: FuelStation): NetworkIdentity {
   const fuels = station.fuels.join(" ").toLocaleLowerCase("ru-RU")
   const name = station.name.toLocaleLowerCase("ru-RU")
-  const isGas = name.includes("агзс") || name.includes("газ")
-    || (fuels.includes("газ") && !/аи|дт/.test(fuels))
+
+  /* Решает ассортимент, а не слово в названии.
+
+     Проверка по названию ловила «Газпромнефть» — обычную бензиновую
+     сеть, у которой в имени есть «газ». Замер по сорока трём городам:
+     из 1798 точек, попавших в газовые, четыреста с лишним оказались
+     Газпромнефтью, и на карте они красились бирюзовым как АГЗС.
+     Человек с газобаллонным оборудованием поехал бы туда зря.
+
+     Бензин в ассортименте — значит, заправка бензиновая, чем бы её ни
+     назвали. Газовой считаем ту, где газ есть, а бензина нет. */
+  const hasPetrol = /аи|дт|бензин|дизел/.test(fuels)
+  const hasGasFuel = fuels.includes("газ") || fuels.includes("lpg") || fuels.includes("cng")
+
+  /* Название учитывается только там, где ассортимент неизвестен: у
+     трёхсот семидесяти точек он пуст, и «АГЗС» в имени — единственная
+     подсказка. Полное слово, а не подстрока: «газ» внутри
+     «Газпромнефти» ничего не значит. */
+  const namedGasOnly = !fuels && /(^|\W)(агзс|агнкс|автогаз|метан|пропан)(\W|$)/.test(name)
+
+  const isGas = (hasGasFuel && !hasPetrol) || namedGasOnly
   const isCharger = name.includes("зарядка") || fuels.includes("зарядка") || fuels.includes("ev")
 
   if (isCharger) return { label: "Зарядка EV", shortLabel: "EV", color: "#0284c7", textColor: "#fff" }
