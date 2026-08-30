@@ -395,6 +395,17 @@ function normalizeLiveStation(value: unknown): FuelStationPayload | null {
   }
 }
 
+/** Расстояние между точками в километрах: нужно, чтобы понять, город
+    вокруг или трасса, и выбрать радиус выборки. */
+function getDistanceInKilometers(from: Coordinates, to: Coordinates) {
+  const radians = (value: number) => value * Math.PI / 180
+  const latitudeDelta = radians(to.latitude - from.latitude)
+  const longitudeDelta = radians(to.longitude - from.longitude)
+  const value = Math.sin(latitudeDelta / 2) ** 2
+    + Math.cos(radians(from.latitude)) * Math.cos(radians(to.latitude)) * Math.sin(longitudeDelta / 2) ** 2
+  return 6371 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value))
+}
+
 function getDistanceSquared(first: FuelStationPayload, second: FuelStationPayload) {
   const latitude = first.latitude - second.latitude
   const longitude = (first.longitude - second.longitude) * Math.cos(((first.latitude + second.latitude) / 2) * Math.PI / 180)
@@ -735,21 +746,28 @@ export async function GET(request: NextRequest) {
      заправок, ответ приходит за четыре секунды. Предел в 1500 берёт их
      все с запасом — прежние 600 обрезали Москву ровно вдвое, и окраины
      на карту не попадали вовсе. */
-  /* Вне городов радиус больше.
+  /* Вне городов радиус больше — но решает местность, а не запрос.
 
      Сорок километров рассчитаны на город: там в этом круге больше
      тысячи заправок, и Overpass отвечает четыре секунды. На трассе и
-     вокруг райцентра в том же круге их полтора десятка — запрос
-     возвращается почти сразу, а человек видит пустую карту и решает,
-     что заправок нет вовсе. Между Уфой и Оренбургом их полсотни, но
-     стоят они через тридцать-сорок километров, и в круг попадала
-     одна-две.
+     вокруг райцентра в том же круге их полтора десятка — человек видит
+     пустую карту и решает, что заправок нет вовсе. Между Уфой и
+     Оренбургом их полсотни, но стоят они через тридцать-сорок
+     километров, и в круг попадала одна-две.
 
-     Поэтому за пределами списка городов радиус вдвое шире. Ошибиться
-     здесь дёшево: лишняя площадь в пустой местности почти ничего не
-     стоит по времени, а недобор оставляет водителя без заправок. */
-  const isKnownCity = !requestedCoordinates && !place && Boolean(CITY_COORDINATES[city])
-  const radius = isKnownCity ? 32_000 : requestedCoordinates ? 80_000 : 60_000
+     Радиус выбирается по расстоянию до ближайшего известного города, а
+     не по тому, пришли ли координаты с карты. Иначе сдвиг карты внутри
+     Москвы на двести метров переключал радиус с тридцати двух
+     километров на восемьдесят: запрос тяжелел вчетверо, шёл десять
+     секунд и промахивался мимо кэша, потому что радиус входит в ключ.
+
+     Порог в пятьдесят километров: дальше него городская плотность
+     заканчивается даже у миллионников. */
+  const nearestCityDistance = Object.values(CITY_COORDINATES).reduce((closest, cityPoint) => {
+    const km = getDistanceInKilometers(coordinates, cityPoint)
+    return km < closest ? km : closest
+  }, Number.POSITIVE_INFINITY)
+  const radius = nearestCityDistance <= 50 ? 32_000 : 80_000
   // Крупные заправочные комплексы нанесены отношениями, а не точками, поэтому
   // без `relation` часть сетевых АЗС просто отсутствует на карте. Лимит выдачи
   // поднят: в плотной городской застройке 180 точек обрывались задолго до
