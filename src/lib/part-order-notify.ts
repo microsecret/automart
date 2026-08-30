@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma"
-import { getTelegramMiniAppUrl, telegramApi } from "@/lib/telegram"
+/* Кнопки открывают ту страницу, которую обещают: раньше все три
+   вели на главный экран мини-приложения, и человек, которому написали
+   «новый заказ», попадал в ленту машин. */
+import { getTelegramPageUrl, telegramApi } from "@/lib/telegram"
 
 // Заказ приходит в кабинет, но продавец туда не смотрит постоянно: без
 // уведомления обращение может пролежать сутки, а покупатель за это время
@@ -60,7 +63,7 @@ export async function notifyStoreOwnerAboutOrder(order: OrderNotification) {
 
     if (!store.owner.telegramId || !store.owner.telegramVerifiedAt) return
 
-    const miniAppUrl = getTelegramMiniAppUrl()
+    const miniAppUrl = getTelegramPageUrl("/dashboard/store")
     const lines = [
       `🛒 <b>Новый заказ · ${escapeHtml(store.name)}</b>`,
       "",
@@ -153,7 +156,7 @@ export async function notifyBuyerAboutOrderStatus(orderId: string, nextStatus: s
 
     if (!order.buyer.telegramId || !order.buyer.telegramVerifiedAt) return
 
-    const miniAppUrl = getTelegramMiniAppUrl()
+    const miniAppUrl = getTelegramPageUrl("/dashboard/orders")
     await telegramApi("sendMessage", {
       chat_id: order.buyer.telegramId,
       text: [
@@ -219,7 +222,7 @@ export async function notifyStoreOwnerAboutCancellation(orderId: string, statusR
     const owner = order.store.owner
     if (!owner?.telegramId || !owner.telegramVerifiedAt) return
 
-    const miniAppUrl = getTelegramMiniAppUrl()
+    const miniAppUrl = getTelegramPageUrl("/dashboard/store")
     await telegramApi("sendMessage", {
       chat_id: owner.telegramId,
       text: [

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { getTelegramMiniAppUrl, telegramApi } from "@/lib/telegram"
+import { getTelegramPageUrl, telegramApi } from "@/lib/telegram"
 import { markTelegramContactBlocked } from "@/lib/telegram-contacts"
 
 /**
@@ -88,7 +88,11 @@ export async function notifyNewMessage(messageId: string): Promise<void> {
       ? `${rawPreview.slice(0, MAX_PREVIEW)}…`
       : rawPreview
 
-    const miniAppUrl = getTelegramMiniAppUrl()
+    /* Кнопка открывает сам разговор, а не ленту машин. Продавцу пишут
+       по конкретному объявлению, и «Ответить», ведущее на главный
+       экран, заставляло искать этот разговор заново — при том что
+       уведомление ровно о нём. */
+    const miniAppUrl = getTelegramPageUrl(`/messages/${message.conversationId}`)
     const lines = [
       `💬 <b>${escapeHtml(message.sender?.name || "Покупатель")} написал вам</b>`,
       message.listing?.title ? `📋 ${escapeHtml(message.listing.title)}` : null,

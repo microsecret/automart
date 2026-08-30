@@ -465,6 +465,8 @@ export async function telegramPhotoApi<T = unknown>(
   })
 }
 
+import { buildTelegramPageUrl } from "@/lib/telegram-page-url"
+
 export function getTelegramMiniAppUrl() {
   const value = process.env.TELEGRAM_MINI_APP_URL?.trim()
   if (!value) return null
@@ -475,6 +477,22 @@ export function getTelegramMiniAppUrl() {
   } catch {
     return null
   }
+}
+
+/**
+ * Адрес страницы сайта, открываемой как мини-приложение.
+ *
+ * Кнопки под уведомлениями обещали конкретное — «Открыть заказы», «Мои
+ * заказы», — а вели на главный экран мини-приложения: человек попадал в
+ * ленту машин и дальше искал нужное сам. Мини-приложение это тот же
+ * сайт, поэтому нужную страницу можно открыть прямо, пометив её как
+ * переход из Telegram — иначе к ней приедут десктопная шапка с подвалом.
+ *
+ * Возвращает null там же, где и адрес мини-приложения: без него кнопку
+ * показывать нельзя.
+ */
+export function getTelegramPageUrl(path: string) {
+  return buildTelegramPageUrl(getTelegramMiniAppUrl(), path)
 }
 
 export function getTelegramBotUsername() {

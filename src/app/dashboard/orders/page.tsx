@@ -194,8 +194,16 @@ export default function BuyerOrdersPage() {
                     </Timeline>
                   )}
 
+                  {/* Дата последнего движения. Заказ мог висеть
+                      «подтверждён» неделю, и человек не понимал, вчера
+                      это случилось или месяц назад: шкала шагов
+                      показывает, где заказ, но не когда он туда попал —
+                      а именно это решает, звонить сейчас или подождать. */}
                   <Text size="10px" c="dimmed" mt="sm">
                     Оформлен {new Date(order.createdAt).toLocaleString("ru-RU")}
+                    {order.updatedAt !== order.createdAt && (
+                      <> · {meta.label.toLowerCase()} {new Date(order.updatedAt).toLocaleString("ru-RU")}</>
+                    )}
                   </Text>
                 </Card>
               )

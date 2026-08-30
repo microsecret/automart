@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { getTelegramMiniAppUrl, telegramApi } from "@/lib/telegram"
+import { getTelegramPageUrl, telegramApi } from "@/lib/telegram"
 import { offerSummary } from "@/lib/part-request-offer"
 
 /* Тот же приём, что в соседнем уведомлении о заказах: Telegram
@@ -61,7 +61,10 @@ export async function notifyBuyerAboutPartOffer(input: {
 
     if (!buyer.telegramId || !buyer.telegramVerifiedAt) return
 
-    const miniAppUrl = getTelegramMiniAppUrl()
+    /* Кнопка открывает сами заявки, а не главный экран: обещать
+       «открыть заявки» и высадить человека в ленту машин — значит
+       заставить его искать вручную то, о чём его только что известили. */
+    const miniAppUrl = getTelegramPageUrl("/dashboard/part-requests")
     await telegramApi("sendMessage", {
       chat_id: buyer.telegramId,
       text: [`<b>${escapeHtml(title)}</b>`, "", escapeHtml(content)].join("\n"),
