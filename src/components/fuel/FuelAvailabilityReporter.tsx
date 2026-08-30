@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge, Box, Button, Group, NumberInput, Paper, Stack, Text, TextInput, UnstyledButton } from "@mantine/core"
-import { IconCamera, IconCheck, IconX } from "@tabler/icons-react"
+import { IconCamera, IconCheck } from "@tabler/icons-react"
 import {
   AVAILABILITY_FUELS,
   AVAILABILITY_FUEL_LABELS,
@@ -11,6 +11,7 @@ import {
   type AvailabilityFuel,
   type QueueLevel,
 } from "@/lib/fuel-availability"
+import { tapFeedback } from "@/lib/telegram-webapp"
 
 export type StationAvailability = {
   fuel: AvailabilityFuel
@@ -40,17 +41,18 @@ const EMPTY_DRAFT: DraftEntry = { state: null, price: "" }
 /**
  * Отметка наличия топлива на АЗС.
  *
- * Человек стоит у табло, где все цены и все марки видны сразу. Раньше
- * форма спрашивала по одной марке за раз: чтобы отметить 92-й, 95-й и
- * дизель, надо было открыть её трижды и трижды нажать «есть». За рулём
- * этого не делают — отмечали одну марку и уезжали.
+ * Человек стоит у колонки с телефоном в одной руке. Прошлая форма
+ * спрашивала по каждой марке отдельной строкой: подпись, кнопка «есть»,
+ * кнопка «нет», поле цены — четыре мелких цели в ряд шириной с ладонь.
+ * Попасть в такую на ходу нельзя, и отметку бросали на середине.
  *
- * Теперь форма показывает все марки строками: у каждой «есть», «нет» и
- * поле цены. Очередь, снимок и комментарий относятся к заправке целиком
- * и стоят внизу — их заполняют реже.
+ * Теперь главный вопрос задаётся одним движением: крупные кнопки марок,
+ * которые человек включает по тому, что видит на табло. Нажал 92 и 95 —
+ * значит, они есть. Ничего нет вовсе — отдельная кнопка внизу, она
+ * гасит все марки разом.
  *
- * Сетка марок над формой осталась: по ней человек читает, что здесь
- * сейчас, не открывая ничего.
+ * Цены, очередь, снимок и комментарий уехали под кнопку «Подробнее»:
+ * их заполняет меньшинство, а место они занимали всё.
  */
 export default function FuelAvailabilityReporter({
   stationId,
@@ -81,6 +83,10 @@ export default function FuelAvailabilityReporter({
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  /* Цены, очередь, снимок и комментарий свёрнуты по умолчанию: их
+     заполняет меньшинство, а разложенными они занимали весь экран и
+     отодвигали кнопку отправки за пределы видимого. */
+  const [showDetails, setShowDetails] = useState(false)
 
   const byFuel = new Map(availability.map((item) => [item.fuel, item]))
 
@@ -96,9 +102,31 @@ export default function FuelAvailabilityReporter({
     .map((fuel) => ({ fuel, ...entryOf(fuel) }))
     .filter((row) => row.state !== null)
 
+  const hasAnyYes = filled.some((row) => row.state === "YES")
+  /* «Нет вообще» — когда все марки помечены как отсутствующие. Кнопка
+     показывает своё состояние, а не притворяется обычной. */
+  const isNothingAtAll = filled.length === AVAILABILITY_FUELS.length && !hasAnyYes
+
+  /** Одно касание по марке: было пусто — стало «есть», было «есть» — сброс. */
+  const toggleFuel = (fuel: AvailabilityFuel) => {
+    tapFeedback("light")
+    const current = entryOf(fuel).state
+    setEntry(fuel, current === "YES" ? { state: null, price: "" } : { state: "YES" })
+  }
+
+  /** «Нет вообще»: гасит все марки разом, повторное нажатие снимает. */
+  const markNothing = () => {
+    tapFeedback("medium")
+    if (isNothingAtAll) {
+      setDraft({})
+      return
+    }
+    setDraft(Object.fromEntries(AVAILABILITY_FUELS.map((fuel) => [fuel, { state: "NO" as const, price: "" }])))
+  }
+
   const send = async () => {
     if (filled.length === 0) {
-      setError("Отметьте хотя бы одну марку")
+      setError("Отметьте, что есть на колонке")
       return
     }
 
@@ -129,10 +157,12 @@ export default function FuelAvailabilityReporter({
 
       onReported?.(payload.availability || [])
       setIsOpen(false)
+      setShowDetails(false)
       setDraft({})
       setQueue(null)
       setPhoto(null)
       setComment("")
+      tapFeedback("medium")
 
       /* Подтверждение держится недолго: человек уже уехал, и оно нужно
          ровно на то, чтобы он понял — засчитано. */
@@ -155,31 +185,16 @@ export default function FuelAvailabilityReporter({
       {/* Сетка марок: человек читает, что здесь сейчас, не открывая
           форму. Цвет несёт состояние, но не в одиночку — рядом стоит
           подпись «есть»/«нет», иначе карта нечитаема при дальтонизме. */}
-      <Box style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+      <Box className="fuel-report__status">
         {AVAILABILITY_FUELS.map((fuel) => {
           const known = byFuel.get(fuel)
           const state = known?.state ?? "UNKNOWN"
           const age = known?.updatedAt ? formatAge(new Date(known.updatedAt)) : null
 
           return (
-            <Box
-              key={fuel}
-              style={{
-                padding: "8px 6px",
-                borderRadius: 10,
-                border: `1px solid ${
-                  state === "YES" ? "var(--mantine-color-teal-4)"
-                  : state === "NO" ? "var(--mantine-color-red-4)"
-                  : "var(--market-line)"
-                }`,
-                background: state === "YES" ? "var(--mantine-color-teal-0)"
-                  : state === "NO" ? "var(--mantine-color-red-0)"
-                  : "var(--market-surface-subtle)",
-                textAlign: "center",
-              }}
-            >
-              <Text fw={700} fz={15} lh={1.1}>{AVAILABILITY_FUEL_LABELS[fuel]}</Text>
-              <Text fz={10} c={state === "YES" ? "teal.7" : state === "NO" ? "red.7" : "dimmed"} lh={1.3}>
+            <Box key={fuel} className="fuel-report__status-cell" data-state={state.toLowerCase()}>
+              <Text fw={800} fz={16} lh={1.1}>{AVAILABILITY_FUEL_LABELS[fuel]}</Text>
+              <Text fz={10} lh={1.3} className="fuel-report__status-word">
                 {state === "YES" ? "есть" : state === "NO" ? "нет" : "не отмечали"}
               </Text>
               {/* Возраст отметки — половина ответа: по свежести человек
@@ -199,185 +214,204 @@ export default function FuelAvailabilityReporter({
 
       {!isOpen ? (
         <Button
-          size="sm"
+          className="fuel-report__open"
+          size="md"
           radius="md"
-          color={saved ? "teal" : "indigo"}
+          color={saved ? "teal" : undefined}
           variant={saved ? "light" : "filled"}
-          leftSection={saved ? <IconCheck size={16} /> : undefined}
-          onClick={() => setIsOpen(true)}
+          leftSection={saved ? <IconCheck size={18} /> : undefined}
+          onClick={() => { tapFeedback("light"); setIsOpen(true) }}
+          fullWidth
         >
-          {saved ? "Записали, спасибо" : "Отметить, что здесь есть"}
+          {saved ? "Записали, спасибо" : "Внести данные"}
         </Button>
       ) : (
-        <Paper withBorder radius="md" p="xs" bg="var(--market-surface-subtle)">
-          <Stack gap={8}>
-            <Text size="xs" c="dimmed">
-              Отметьте марки, которые видите на табло. Цена — если знаете.
-            </Text>
+        <Paper withBorder radius="md" p="sm" className="fuel-report">
+          <Stack gap={10}>
+            <Text size="sm" fw={700}>Какое топливо есть сейчас</Text>
 
-            {/* Все марки строками: человек проходит табло сверху вниз и
-                отмечает разом, а не открывает форму пять раз. */}
-            <Stack gap={4}>
+            {/* Марки крупными кнопками: человек смотрит на колонку и
+                отмечает то, что видит, одним касанием на каждую. Прошлая
+                форма требовала попасть в одну из четырёх мелких целей в
+                строке — на ходу это не выходило. */}
+            <Box className="fuel-report__grid">
               {AVAILABILITY_FUELS.map((fuel) => {
                 const entry = entryOf(fuel)
                 return (
-                  <Group key={fuel} gap={6} wrap="nowrap" align="center">
-                    <Text fw={700} fz={13} w={38} style={{ flex: "0 0 38px" }}>
-                      {AVAILABILITY_FUEL_LABELS[fuel]}
-                    </Text>
-
-                    <Button
-                      size="compact-xs"
-                      radius="md"
-                      color="teal"
-                      variant={entry.state === "YES" ? "filled" : "default"}
-                      onClick={() => setEntry(fuel, { state: entry.state === "YES" ? null : "YES" })}
-                      aria-pressed={entry.state === "YES"}
-                      aria-label={`${AVAILABILITY_FUEL_LABELS[fuel]} есть`}
-                      px={10}
-                    >
-                      <IconCheck size={13} />
-                    </Button>
-
-                    <Button
-                      size="compact-xs"
-                      radius="md"
-                      color="red"
-                      variant={entry.state === "NO" ? "filled" : "default"}
-                      onClick={() => setEntry(fuel, { state: entry.state === "NO" ? null : "NO", price: "" })}
-                      aria-pressed={entry.state === "NO"}
-                      aria-label={`${AVAILABILITY_FUEL_LABELS[fuel]} нет`}
-                      px={10}
-                    >
-                      <IconX size={13} />
-                    </Button>
-
-                    {/* Цена только к «есть»: у отсутствующего топлива её
-                        не бывает, и поле там сбивает с толку. */}
-                    <NumberInput
-                      size="xs"
-                      radius="md"
-                      placeholder="₽/л"
-                      value={entry.price}
-                      onChange={(value) => setEntry(fuel, { price: value, state: entry.state ?? "YES" })}
-                      min={10}
-                      max={300}
-                      decimalScale={2}
-                      step={0.5}
-                      hideControls
-                      disabled={entry.state === "NO"}
-                      style={{ flex: 1 }}
-                      aria-label={`Цена ${AVAILABILITY_FUEL_LABELS[fuel]}, рублей за литр`}
-                    />
-                  </Group>
+                  <UnstyledButton
+                    key={fuel}
+                    className="fuel-report__fuel"
+                    data-active={entry.state === "YES" || undefined}
+                    data-off={entry.state === "NO" || undefined}
+                    onClick={() => toggleFuel(fuel)}
+                    aria-pressed={entry.state === "YES"}
+                    aria-label={`${AVAILABILITY_FUEL_LABELS[fuel]} есть`}
+                  >
+                    {AVAILABILITY_FUEL_LABELS[fuel]}
+                  </UnstyledButton>
                 )
               })}
-            </Stack>
+            </Box>
 
-            {/* Очередь одна на заправку: она не бывает разной у 92-го и
-                95-го — машины стоят в общую. */}
-            <Group gap={6} align="center">
-              <Text size="xs" c="dimmed" style={{ flex: "0 0 auto" }}>Очередь:</Text>
-              {(["NONE", "SMALL", "BIG"] as QueueLevel[]).map((level) => (
-                <Button
-                  key={level}
-                  size="compact-xs"
-                  radius="md"
-                  variant={queue === level ? "filled" : "default"}
-                  color="indigo"
-                  onClick={() => setQueue(queue === level ? null : level)}
-                  aria-pressed={queue === level}
-                >
-                  {QUEUE_LABELS[level]}
-                </Button>
-              ))}
-            </Group>
+            {/* Отдельная кнопка вместо шести нажатий «нет»: пустая
+                заправка — частый и самый ценный отчёт, и он не должен
+                стоить дороже, чем отметить наличие. */}
+            <UnstyledButton
+              className="fuel-report__nothing"
+              data-active={isNothingAtAll || undefined}
+              onClick={markNothing}
+              aria-pressed={isNothingAtAll}
+            >
+              Топлива нет вообще
+            </UnstyledButton>
 
-            {/* Снимок табло — доказательство к отметке. Спорная отметка
-                обычна, когда топливо кончается на глазах, и фотография
-                снимает спор быстрее любого счётчика подтверждений.
-
-                capture="environment" открывает на телефоне заднюю камеру
-                сразу: человек снимает колонку, а не ищет её в галерее. */}
-            <Group gap={6} align="center">
-              <Button
-                size="xs"
-                radius="md"
-                variant={photo ? "light" : "default"}
-                color={photo ? "teal" : "gray"}
-                leftSection={photo ? <IconCheck size={14} /> : <IconCamera size={14} />}
-                loading={uploading}
-                onClick={() => document.getElementById(`fuel-photo-${stationId}`)?.click()}
+            {/* Подробности свёрнуты: цену, очередь и снимок заполняет
+                меньшинство, а места они занимали столько же, сколько
+                главный вопрос. */}
+            {!showDetails ? (
+              <UnstyledButton
+                className="fuel-report__more"
+                onClick={() => { tapFeedback("light"); setShowDetails(true) }}
               >
-                {photo ? "Снимок добавлен" : "Снять табло"}
-              </Button>
-              {photo && (
-                <Button size="xs" radius="md" variant="subtle" color="gray" onClick={() => setPhoto(null)}>
-                  Убрать
-                </Button>
-              )}
-              <input
-                id={`fuel-photo-${stationId}`}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                hidden
-                onChange={async (event) => {
-                  const file = event.currentTarget.files?.[0]
-                  event.currentTarget.value = ""
-                  if (!file) return
+                Добавить цены, очередь и снимок
+              </UnstyledButton>
+            ) : (
+              <Stack gap={10}>
+                {/* Цена только к тем маркам, что человек отметил: у
+                    отсутствующего топлива её не бывает, а спрашивать
+                    цену того, чего он не видел, бессмысленно. */}
+                {hasAnyYes && (
+                  <Box>
+                    <Text size="xs" c="dimmed" mb={6}>Цены, ₽/л</Text>
+                    <Box className="fuel-report__prices">
+                      {filled.filter((row) => row.state === "YES").map(({ fuel }) => (
+                        <NumberInput
+                          key={fuel}
+                          size="sm"
+                          radius="md"
+                          label={AVAILABILITY_FUEL_LABELS[fuel]}
+                          placeholder="—"
+                          value={entryOf(fuel).price}
+                          onChange={(value) => setEntry(fuel, { price: value })}
+                          min={10}
+                          max={300}
+                          decimalScale={2}
+                          step={0.5}
+                          hideControls
+                          inputMode="decimal"
+                          aria-label={`Цена ${AVAILABILITY_FUEL_LABELS[fuel]}, рублей за литр`}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
 
-                  setUploading(true)
-                  setError(null)
-                  try {
-                    const form = new FormData()
-                    form.append("file", file)
-                    const response = await fetch("/api/upload", { method: "POST", body: form })
-                    const payload = await response.json().catch(() => null)
-                    if (!response.ok) throw new Error(payload?.error || "Не удалось загрузить снимок")
-                    setPhoto(payload.url || payload.path || null)
-                  } catch (uploadError) {
-                    setError(uploadError instanceof Error ? uploadError.message : "Не удалось загрузить снимок")
-                  } finally {
-                    setUploading(false)
-                  }
-                }}
-              />
-            </Group>
+                {/* Очередь одна на заправку: она не бывает разной у 92-го и
+                    95-го — машины стоят в общую. */}
+                <Box>
+                  <Text size="xs" c="dimmed" mb={6}>Очередь</Text>
+                  <Box className="fuel-report__queue">
+                    {(["NONE", "SMALL", "BIG"] as QueueLevel[]).map((level) => (
+                      <UnstyledButton
+                        key={level}
+                        className="fuel-report__queue-option"
+                        data-active={queue === level || undefined}
+                        onClick={() => { tapFeedback("light"); setQueue(queue === level ? null : level) }}
+                        aria-pressed={queue === level}
+                      >
+                        {QUEUE_LABELS[level]}
+                      </UnstyledButton>
+                    ))}
+                  </Box>
+                </Box>
 
-            {/* Подпись к отметке, а не сообщение: длинная не поместится в
-                карточке и превратит карту в переписку. */}
-            <TextInput
-              size="xs"
-              radius="md"
-              placeholder="Комментарий: лимит на бак, что-то ещё"
-              value={comment}
-              onChange={(event) => setComment(event.currentTarget.value.slice(0, 200))}
-              disabled={sending}
-            />
+                {/* Снимок табло — доказательство к отметке. Спорная отметка
+                    обычна, когда топливо кончается на глазах, и фотография
+                    снимает спор быстрее любого счётчика подтверждений.
+
+                    capture="environment" открывает на телефоне заднюю камеру
+                    сразу: человек снимает колонку, а не ищет её в галерее. */}
+                <Group gap={6} align="center">
+                  <Button
+                    size="sm"
+                    radius="md"
+                    variant={photo ? "light" : "default"}
+                    color={photo ? "teal" : "gray"}
+                    leftSection={photo ? <IconCheck size={16} /> : <IconCamera size={16} />}
+                    loading={uploading}
+                    onClick={() => document.getElementById(`fuel-photo-${stationId}`)?.click()}
+                    style={{ flex: 1 }}
+                  >
+                    {photo ? "Снимок добавлен" : "Сфотографировать колонку"}
+                  </Button>
+                  {photo && (
+                    <Button size="sm" radius="md" variant="subtle" color="gray" onClick={() => setPhoto(null)}>
+                      Убрать
+                    </Button>
+                  )}
+                  <input
+                    id={`fuel-photo-${stationId}`}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    hidden
+                    onChange={async (event) => {
+                      const file = event.currentTarget.files?.[0]
+                      event.currentTarget.value = ""
+                      if (!file) return
+
+                      setUploading(true)
+                      setError(null)
+                      try {
+                        const form = new FormData()
+                        form.append("file", file)
+                        const response = await fetch("/api/upload", { method: "POST", body: form })
+                        const payload = await response.json().catch(() => null)
+                        if (!response.ok) throw new Error(payload?.error || "Не удалось загрузить снимок")
+                        setPhoto(payload.url || payload.path || null)
+                      } catch (uploadError) {
+                        setError(uploadError instanceof Error ? uploadError.message : "Не удалось загрузить снимок")
+                      } finally {
+                        setUploading(false)
+                      }
+                    }}
+                  />
+                </Group>
+
+                {/* Подпись к отметке, а не сообщение: длинная не поместится в
+                    карточке и превратит карту в переписку. */}
+                <TextInput
+                  size="sm"
+                  radius="md"
+                  placeholder="Комментарий: лимит на бак, что-то ещё"
+                  value={comment}
+                  onChange={(event) => setComment(event.currentTarget.value.slice(0, 200))}
+                  disabled={sending}
+                />
+              </Stack>
+            )}
 
             {error && <Text size="xs" c="red.6">{error}</Text>}
 
-            <Group grow gap={6}>
-              <Button
-                size="sm"
-                radius="md"
-                color="indigo"
-                loading={sending}
-                disabled={filled.length === 0}
-                onClick={() => void send()}
-              >
-                {filled.length > 1 ? `Отправить (${filled.length})` : "Отправить"}
-              </Button>
-              <Button
-                size="sm"
-                radius="md"
-                variant="default"
-                onClick={() => { setIsOpen(false); setError(null) }}
-              >
-                Отмена
-              </Button>
-            </Group>
+            {/* Отправка внизу и во всю ширину: это последнее действие, и
+                на телефоне оно должно попадать под большой палец. */}
+            <Button
+              className="fuel-report__send"
+              size="md"
+              radius="md"
+              loading={sending}
+              disabled={filled.length === 0}
+              onClick={() => void send()}
+              fullWidth
+            >
+              Отправить
+            </Button>
+            <UnstyledButton
+              className="fuel-report__cancel"
+              onClick={() => { setIsOpen(false); setShowDetails(false); setError(null) }}
+            >
+              Отмена
+            </UnstyledButton>
           </Stack>
         </Paper>
       )}

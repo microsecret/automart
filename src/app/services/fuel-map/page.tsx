@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
 import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Image, Loader, Paper, Select, SimpleGrid, Stack, Text, TextInput, ThemeIcon, Tooltip, UnstyledButton } from "@mantine/core"
+import { useMediaQuery } from "@mantine/hooks"
 import { IconCheck, IconClock, IconExternalLink, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconRoute, IconSearch, IconX } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
@@ -13,6 +14,7 @@ import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
 import FuelNearbyList from "@/components/fuel/FuelNearbyList"
 import { formatAge, isFresh } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
+import { tapFeedback } from "@/lib/telegram-webapp"
 
 type FuelStation = {
   id: string
@@ -344,11 +346,25 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   }), [center.x, center.y, mapViewport.height, mapViewport.width, stations, zoom])
 
   const markers = useMemo<MapMarker[]>(() => {
-    if (zoom > 11) return visibleStations.map(({ station, left, top }) => ({ left, top, stations: [station] }))
+    /* Группировка держится до четырнадцатого масштаба, а не до
+       двенадцатого.
+
+       Раньше на двенадцатом все точки распадались по отдельности: в
+       городе их больше тысячи, и экран превращался в кашу из
+       перекрывающихся меток. Попасть пальцем в нужную было нельзя.
+
+       На четырнадцатом видно квартал — там точки уже не налезают друг
+       на друга, и распад оправдан. */
+    if (zoom > 13) return visibleStations.map(({ station, left, top }) => ({ left, top, stations: [station] }))
 
     const clusters = new Map<string, MapMarker>()
     visibleStations.forEach(({ station, left, top }) => {
-      const key = `${Math.round(left / 56)}:${Math.round(top / 56)}`
+      /* Ячейка группировки — 72 пикселя вместо 56.
+
+         Метка занимает 44 пикселя (палец), и при ячейке в 56 соседние
+         группы стояли впритык. Семьдесят два дают промежуток, в котором
+         глаз различает их как отдельные. */
+      const key = `${Math.round(left / 72)}:${Math.round(top / 72)}`
       const existing = clusters.get(key)
       if (existing) {
         const count = existing.stations.length
@@ -770,24 +786,49 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               </Text>
             )}
 
+            {/* Главное действие отдельной строкой во всю ширину.
+
+                Раньше «Отметить» стояло в одном ряду с маршрутом и
+                «поделиться»: три кнопки высотой в двадцать два пикселя
+                на ширину телефона. Ради этого действия сервис и
+                существует — оно не должно быть самым мелким на карточке. */}
+            <Button
+              className="fuel-report__open"
+              size="sm"
+              radius="md"
+              fullWidth
+              mb={6}
+              onClick={() => { tapFeedback("light"); onSelect(selectedStation) }}
+            >
+              Внести данные
+            </Button>
+
             <Group gap={4} grow>
-              <Button
-                size="compact-xs"
-                color="indigo"
-                variant="light"
-                onClick={() => onSelect(selectedStation)}
-              >
-                Отметить
-              </Button>
+              {/* Маршрут в двух навигаторах, а не в одном.
+
+                  Кнопка вела только в Яндекс. У кого он не стоит, тот
+                  упирался в веб-версию и переносил адрес руками, а чаще
+                  не ехал вовсе. 2ГИС стоит у половины водителей в
+                  городах, и выбор здесь ничего не стоит. */}
               <Button
                 component="a"
                 href={`https://yandex.ru/maps/?rtext=~${selectedStation.latitude}%2C${selectedStation.longitude}&rtt=auto`}
                 target="_blank"
                 rel="noreferrer"
-                size="compact-xs"
+                size="compact-sm"
                 variant="default"
               >
-                Маршрут
+                Яндекс
+              </Button>
+              <Button
+                component="a"
+                href={`https://2gis.ru/directions/points/|${selectedStation.longitude},${selectedStation.latitude}`}
+                target="_blank"
+                rel="noreferrer"
+                size="compact-sm"
+                variant="default"
+              >
+                2ГИС
               </Button>
               {/* Поделиться заправкой.
 
@@ -800,7 +841,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   WhatsApp и что там ещё установлено; на настольном
                   браузере его нет, и тогда ссылка копируется в буфер. */}
               <Button
-                size="compact-xs"
+                size="compact-sm"
                 variant="default"
                 onClick={() => {
                   const rows = availabilityByStation[selectedStation.id] || []
@@ -1004,6 +1045,19 @@ function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShow
 }
 
 export default function FuelMapPage() {
+  /* Телефон и мини-приложение против настольного окна.
+
+     На широком экране карта и список стоят рядом: место есть, и
+     переключаться между ними не нужно. На телефоне так не выходит —
+     список в половину экрана оставляет карте полосу, на которой не
+     видно ни одной заправки. Там список уходит в нижний лист.
+
+     getInitialValueInEffect: false — раскладка должна быть верной на
+     первом кадре, иначе лист прыгает у человека на глазах. */
+  const isNarrow = useMediaQuery("(max-width: 62em)", false, { getInitialValueInEffect: false })
+  /* Лист развёрнут или свёрнут. Свёрнутый показывает первую карточку и
+     ручку — этого хватает, чтобы понять, что список там есть. */
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false)
   const [city, setCity] = useState("Москва")
   const [placeQuery, setPlaceQuery] = useState("")
   const [place, setPlace] = useState<string | null>(null)
@@ -1217,6 +1271,17 @@ export default function FuelMapPage() {
 
   const showStationOnMap = (station: FuelStation) => {
     setSelectedStation(station)
+    /* На телефоне карточка живёт в нижнем листе: выбрав заправку в
+       свёрнутом листе, человек иначе не увидел бы ничего — карточка
+       осталась бы за краем экрана.
+
+       Прокрутка к карте нужна только на широком экране: там карта и
+       список стоят рядом, и до карты действительно надо доехать. В
+       листе она и так под пальцем. */
+    if (isNarrow) {
+      setIsSheetExpanded(true)
+      return
+    }
     document.getElementById("fuel-station-map")?.scrollIntoView({ behavior: "smooth", block: "center" })
   }
 
@@ -1297,19 +1362,38 @@ export default function FuelMapPage() {
               w={150}
               placeholder="Город"
             />
-            <Select
-              aria-label="Выберите тип топлива"
-              data={FUEL_FILTERS}
-              value={fuelFilter}
-              onChange={(value) => setFuelFilter(value || "all")}
-              size="xs"
-              w={130}
-            />
+            {/* Топливо — лентой кнопок, а не выпадающим списком.
+
+                Список требовал трёх действий: нажать, дождаться
+                раскрытия, выбрать строку — и всё это выбирая между
+                четырьмя вариантами, которые помещаются в строку.
+                Здесь нужная марка нажимается сразу.
+
+                Лента прокручивается вбок: на узком экране редкие
+                варианты уезжают за край, а частые — 92, 95, ДТ —
+                остаются видны. */}
+            <Box className="fuel-map-fuel-chips" role="group" aria-label="Тип топлива">
+              {FUEL_FILTERS.map((option) => (
+                <UnstyledButton
+                  key={option.value || "all"}
+                  className="fuel-map-fuel-chip"
+                  data-active={fuelFilter === option.value || undefined}
+                  onClick={() => { tapFeedback("light"); setFuelFilter(option.value) }}
+                  aria-pressed={fuelFilter === option.value}
+                >
+                  {option.value ? option.label.replace("АИ‑", "") : "Все"}
+                </UnstyledButton>
+              ))}
+            </Box>
             <Select
               aria-label="Выберите сеть АЗС"
               data={networkFilters}
               value={networkFilter}
-              onChange={(value) => setNetworkFilter(value || "all")}
+              /* Пустая строка, а не «all»: фильтр сравнивает значение с
+                 ключом сети, и слово «all» не совпадало ни с одной —
+                 сброс на «Все сети» очищал список вместо того, чтобы
+                 показать всё. */
+              onChange={(value) => setNetworkFilter(value || "")}
               size="xs"
               w={140}
             />
@@ -1356,9 +1440,38 @@ export default function FuelMapPage() {
         {hasUnloadedMapArea && <Paper radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-indigo-2)", background: "var(--mantine-color-indigo-0)" }}><Group gap="xs" wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="indigo" variant="light"><IconMapPin size={14} /></ThemeIcon><Text size="sm" c="indigo.9">Вы переместили карту. Загрузите текущий участок, чтобы обновить список АЗС, расстояния и доступные справочные данные.</Text></Group></Paper>}
 
         {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
-          <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md">
+          <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md" className="fuel-map-layout">
             <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} availabilityByStation={nearbyAvailabilityData?.stations || {}} pricesByStation={nearbyPricesData?.stations || {}} /></Box>
-            <Paper className="fuel-map-list" radius="md" p="sm" withBorder style={{ gridColumn: "span 2" }}>
+            <Paper
+              className="fuel-map-list"
+              radius="md"
+              p="sm"
+              withBorder
+              style={{ gridColumn: "span 2" }}
+              /* На телефоне список превращается в нижний лист: карта
+                 занимает экран целиком, а список поднимается над ней и
+                 тянется пальцем. Раскрытие держится состоянием, а не
+                 жестом-догадкой: за рулём промахнуться легче, чем
+                 попасть, и лист не должен схлопываться сам. */
+              data-sheet={isNarrow || undefined}
+              data-expanded={isNarrow && isSheetExpanded ? true : undefined}
+            >
+              {isNarrow && (
+                <UnstyledButton
+                  className="fuel-map-sheet__handle"
+                  onClick={() => { tapFeedback("light"); setIsSheetExpanded((current) => !current) }}
+                  aria-expanded={isSheetExpanded}
+                  aria-label={isSheetExpanded ? "Свернуть список заправок" : "Развернуть список заправок"}
+                >
+                  <span className="fuel-map-sheet__grip" aria-hidden="true" />
+                  <Text size="xs" fw={700} c="var(--market-ink)">
+                    {selectedStation
+                      ? selectedStation.name
+                      : `Заправки рядом${data ? ` · ${filteredStations.length}` : ""}`}
+                  </Text>
+                </UnstyledButton>
+              )}
+
               {isLoading ? (
                 /* Первое открытие города занимает секунд семь: точки
                    приходят из OpenStreetMap, и запрос по площади города
