@@ -13,6 +13,7 @@ import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
 import FuelShareButton from "@/components/fuel/FuelShareButton"
 import { formatAge, isFresh } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
+import { getGenericIdentity, getNetworkIdentity, getStationIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
 import { tapFeedback } from "@/lib/telegram-webapp"
 
 type FuelStation = {
@@ -109,13 +110,6 @@ type MapMarker = {
 
 type StationDataQuality = "live" | "fuel" | "network" | "basic"
 
-type NetworkIdentity = {
-  label: string
-  shortLabel: string
-  color: string
-  textColor: string
-}
-
 function getStationNetwork(station: FuelStation) {
   return station.brand || station.operator || null
 }
@@ -124,84 +118,6 @@ function getStationNetworkKey(station: FuelStation) {
   return getNetworkIdentity(station)?.label || getStationNetwork(station) || null
 }
 
-function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
-  const source = `${station.name} ${station.brand || ""} ${station.operator || ""}`.toLocaleLowerCase("ru-RU")
-  if (source.includes("лукойл")) return { label: "Лукойл", shortLabel: "ЛК", color: "#d8202f", textColor: "#fff" }
-  if (source.includes("роснефть")) return { label: "Роснефть", shortLabel: "РН", color: "#f6c514", textColor: "#1f2937" }
-  if (source.includes("газпром")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff" }
-  if (source.includes("татнефть")) return { label: "Татнефть", shortLabel: "ТН", color: "#139b5a", textColor: "#fff" }
-  if (source.includes("башнефть")) return { label: "Башнефть", shortLabel: "БН", color: "#183b6d", textColor: "#fff" }
-  if (source.includes("teboil") || source.includes("тебойл")) return { label: "Teboil", shortLabel: "TB", color: "#d52331", textColor: "#fff" }
-  if (source.includes("нефтьмагистраль")) return { label: "Нефтьмагистраль", shortLabel: "НМ", color: "#1d1d1f", textColor: "#fff" }
-  if (source.includes("irbis") || source.includes("ирбис")) return { label: "Irbis", shortLabel: "IR", color: "#e65825", textColor: "#fff" }
-  /* Сети, встречающиеся в справочнике достаточно часто, чтобы человек
-     узнавал их по цвету. Список рос по мере того, как на карте
-     попадались безымянные точки там, где заправка на деле известная. */
-  if (source.includes("шелл") || source.includes("shell")) return { label: "Shell", shortLabel: "SH", color: "#fbce07", textColor: "#1f2937" }
-  if (source.includes("нефтьм") || source.includes("трасса")) return { label: "Трасса", shortLabel: "ТР", color: "#0f766e", textColor: "#fff" }
-  if (source.includes("сургут")) return { label: "Сургутнефтегаз", shortLabel: "СН", color: "#00693c", textColor: "#fff" }
-  if (source.includes("газпром") || source.includes("gazprom")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff" }
-  if (source.includes("опти") || source.includes("opti")) return { label: "Опти", shortLabel: "ОП", color: "#e11d48", textColor: "#fff" }
-  if (source.includes("нефтегаз")) return { label: "Нефтегаз", shortLabel: "НГ", color: "#155e75", textColor: "#fff" }
-  if (source.includes("автодор") || source.includes("трасса м")) return { label: "Автодор", shortLabel: "АД", color: "#7c2d12", textColor: "#fff" }
-  /* Сети, добавленные по замеру живой карты.
-
-     Считал по семи городам от Уфы до Краснодара: у ТАИФ-НК шестьдесят
-     шесть точек, у ПРАЙМ восемнадцать, у Воронежской топливной
-     семнадцать — все они висели серыми, будто безымянные заправки, и
-     человек не находил свою сеть глазами.
-
-     Цвета взяты с фирменного оформления самих сетей. Порядок проверок
-     важен: сначала более длинные и точные названия, иначе «газпром»
-     перехватит «газпром газомоторное топливо». */
-  if (source.includes("таиф")) return { label: "ТАИФ-НК", shortLabel: "ТФ", color: "#00954e", textColor: "#fff" }
-  if (source.includes("прайм") || source.includes("prime")) return { label: "ПРАЙМ", shortLabel: "ПР", color: "#e8112d", textColor: "#fff" }
-  if (source.includes("воронежская топливная") || source.includes("втк")) return { label: "ВТК", shortLabel: "ВТ", color: "#0a5c36", textColor: "#fff" }
-  if (source.includes("тнк")) return { label: "ТНК", shortLabel: "ТНК", color: "#0b60a8", textColor: "#fff" }
-  if (source.includes("эверон")) return { label: "Эверон", shortLabel: "ЭВ", color: "#1f6feb", textColor: "#fff" }
-  if (source.includes("ортк")) return { label: "ОРТК", shortLabel: "ОР", color: "#b45309", textColor: "#fff" }
-  if (source.includes("трансазс")) return { label: "ТрансАЗС", shortLabel: "ТА", color: "#334155", textColor: "#fff" }
-  if (source.includes("комплекс-ойл") || source.includes("комплекс ойл")) return { label: "Комплекс-ойл", shortLabel: "КО", color: "#7c3aed", textColor: "#fff" }
-  if (source.includes("ммк")) return { label: "ММК", shortLabel: "ММК", color: "#0f172a", textColor: "#fff" }
-  if (source.includes("нефтегазсеть") || source.includes("nps")) return { label: "NPS", shortLabel: "NPS", color: "#0891b2", textColor: "#fff" }
-  /* Ещё сети из замера по десяти городам: каждая по десятку-двадцатку
-     точек, но вместе это сотни заправок, висевших безымянными. */
-  if (source.includes("новатэк") || source.includes("novatek")) return { label: "Новатэк", shortLabel: "НВ", color: "#0072bc", textColor: "#fff" }
-  if (source.includes("нефтехимпром")) return { label: "Нефтехимпром", shortLabel: "НХ", color: "#166534", textColor: "#fff" }
-  if (source.includes("ggroup") || source.includes("g-group")) return { label: "GGroup", shortLabel: "GG", color: "#1e3a8a", textColor: "#fff" }
-  if (source.includes("олви")) return { label: "Олви", shortLabel: "ОЛ", color: "#b91c1c", textColor: "#fff" }
-  if (source.includes("nafta")) return { label: "Nafta24", shortLabel: "NF", color: "#0f766e", textColor: "#fff" }
-  if (source.includes("tamic")) return { label: "Tamic Energy", shortLabel: "TM", color: "#c2410c", textColor: "#fff" }
-  if (source.includes("rusoil") || source.includes("русойл")) return { label: "Rusoil", shortLabel: "RU", color: "#1d4ed8", textColor: "#fff" }
-  if (source.includes("ликом")) return { label: "Ликом", shortLabel: "ЛИ", color: "#7c2d12", textColor: "#fff" }
-  if (source.includes("донако")) return { label: "Донако", shortLabel: "ДН", color: "#0891b2", textColor: "#fff" }
-  if (source.includes("сибнефть")) return { label: "Сибнефть", shortLabel: "СБ", color: "#1e40af", textColor: "#fff" }
-  if (source.includes("калина")) return { label: "Калина Ойл", shortLabel: "КЛ", color: "#be123c", textColor: "#fff" }
-  if (source.includes("промнефть")) return { label: "Промнефть", shortLabel: "ПН", color: "#334155", textColor: "#fff" }
-
-  /* Газовые сети: у них своя палитра, и путать их с бензиновыми
-     нельзя — человек с газобаллонным оборудованием ищет именно их. */
-  if (
-    source.includes("экогаз") || source.includes("сигмагаз") || source.includes("газомоторное")
-    || source.includes("автогаз") || source.includes("интрансгаз") || source.includes("мосавтогаз")
-    || source.includes("нягань-газ")
-  ) {
-    return { label: "Газовая АЗС", shortLabel: "ГАЗ", color: "#0d9488", textColor: "#fff" }
-  }
-  return null
-}
-
-/**
- * Цена в рублях с копейками.
- *
- * Цены округлялись до рубля: «64 ₽» вместо 63,70. Разница в семьдесят
- * копеек на литр — это сорок рублей на бак, и именно по ней человек
- * выбирает между двумя заправками на одном перекрёстке. Округление
- * стирало ровно то, ради чего цену смотрят.
- *
- * Ровные рубли пишутся без хвоста: «64 ₽», а не «64,00 ₽» — нули
- * ничего не сообщают и удлиняют плашку, которой на карте и так тесно.
- */
 function formatKopecks(kopecks: number) {
   const roubles = kopecks / 100
   return new Intl.NumberFormat("ru-RU", {
@@ -222,39 +138,6 @@ function formatKopecks(kopecks: number) {
  * Газовую от бензиновой человек с газобаллонным оборудованием
  * различает первым делом — она и красится своим цветом.
  */
-function getGenericIdentity(station: FuelStation): NetworkIdentity {
-  const fuels = station.fuels.join(" ").toLocaleLowerCase("ru-RU")
-  const name = station.name.toLocaleLowerCase("ru-RU")
-
-  /* Решает ассортимент, а не слово в названии.
-
-     Проверка по названию ловила «Газпромнефть» — обычную бензиновую
-     сеть, у которой в имени есть «газ». Замер по сорока трём городам:
-     из 1798 точек, попавших в газовые, четыреста с лишним оказались
-     Газпромнефтью, и на карте они красились бирюзовым как АГЗС.
-     Человек с газобаллонным оборудованием поехал бы туда зря.
-
-     Бензин в ассортименте — значит, заправка бензиновая, чем бы её ни
-     назвали. Газовой считаем ту, где газ есть, а бензина нет. */
-  const hasPetrol = /аи|дт|бензин|дизел/.test(fuels)
-  const hasGasFuel = fuels.includes("газ") || fuels.includes("lpg") || fuels.includes("cng")
-
-  /* Название учитывается только там, где ассортимент неизвестен: у
-     трёхсот семидесяти точек он пуст, и «АГЗС» в имени — единственная
-     подсказка. Полное слово, а не подстрока: «газ» внутри
-     «Газпромнефти» ничего не значит. */
-  const namedGasOnly = !fuels && /(^|\W)(агзс|агнкс|автогаз|метан|пропан)(\W|$)/.test(name)
-
-  const isGas = (hasGasFuel && !hasPetrol) || namedGasOnly
-  const isCharger = name.includes("зарядка") || fuels.includes("зарядка") || fuels.includes("ev")
-
-  if (isCharger) return { label: "Зарядка EV", shortLabel: "EV", color: "#0284c7", textColor: "#fff" }
-  if (isGas) return { label: "Газовая АЗС", shortLabel: "ГАЗ", color: "#0d9488", textColor: "#fff" }
-  /* Обычная безымянная заправка: нейтральный грифель, чтобы не
-     притворяться сетью, но и не выпадать из общего вида карты. */
-  return { label: "АЗС", shortLabel: "АЗС", color: "#475569", textColor: "#fff" }
-}
-
 function getDistanceInKilometers(from: { latitude: number; longitude: number }, to: { latitude: number; longitude: number }) {
   const radians = (value: number) => value * Math.PI / 180
   const latitudeDelta = radians(to.latitude - from.latitude)
@@ -662,7 +545,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           const isCluster = marker.stations.length > 1
           const firstStation = marker.stations[0]
           const dataQuality = getStationDataQuality(firstStation)
-          const networkIdentity = getNetworkIdentity(firstStation)
+          /* Вид топлива важнее вывески: у метановой станции с «газпром»
+             в названии значок должен быть газовым, а не фирменным. */
+          const networkIdentity = getStationIdentity(firstStation)
           const isSelected = marker.stations.some((station) => selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType)
           /* Отметки водителей по этой точке: они и есть ответ на вопрос
              «есть ли топливо сейчас», тогда как теги OpenStreetMap
@@ -683,7 +568,14 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
             ? (() => {
                 const counts = new Map<string, { identity: NetworkIdentity; count: number }>()
                 for (const station of marker.stations) {
-                  const identity = getNetworkIdentity(station)
+                  /* Газовая станция в счёт сети не идёт, даже если в её
+                     названии есть «газпром»: иначе группа метановых
+                     заправок покрасилась бы фирменным синим бензиновой
+                     сети. */
+                  const generic = getGenericIdentity(station)
+                  const identity = generic.shortLabel === "ГАЗ" || generic.shortLabel === "EV"
+                    ? null
+                    : getNetworkIdentity(station)
                   if (!identity) continue
                   const current = counts.get(identity.label)
                   if (current) current.count += 1
@@ -747,7 +639,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
              кластеры, а поверх них плашка не поместится. */
           /* Сеть, а если её нет — вид заправки по ассортименту.
              Так плашка выглядит одинаково у всех точек карты. */
-          const plateIdentity = networkIdentity || getGenericIdentity(firstStation)
+          const plateIdentity = networkIdentity
 
           /* Состав группы по сетям — для кольца вокруг числа.
 
@@ -758,7 +650,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
             ? (() => {
                 const shares = new Map<string, number>()
                 for (const station of marker.stations) {
-                  const color = (getNetworkIdentity(station) || getGenericIdentity(station)).color
+                  const color = getStationIdentity(station).color
                   shares.set(color, (shares.get(color) || 0) + 1)
                 }
                 /* Одна сеть на всю группу — кольцо не нужно: заливка уже
@@ -1017,7 +909,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           null,
         )
         const weakest = fresh.find((row) => row.confidenceLabel !== "высокая")
-        const identity = getNetworkIdentity(selectedStation)
+        const identity = getStationIdentity(selectedStation)
         const distanceKm = getDistanceInKilometers(coordinates, selectedStation)
 
         /* Марки, которые есть по свежим отметкам: ради них заправкой и
@@ -1046,15 +938,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         return (
           <Paper className="fuel-map-selected" radius="md" withBorder aria-live="polite">
             <Box className="fuel-map-selected__head">
-              {identity && (
-                <span
-                  className="fuel-map-selected__logo"
-                  style={{ background: identity.color, color: identity.textColor }}
-                  aria-hidden="true"
-                >
-                  {identity.shortLabel}
-                </span>
-              )}
+              {/* Значок есть у каждой точки: у сетевой — фирменный, у
+                  безымянной — по виду топлива. Раньше он показывался
+                  только сетевым, и человек, открывший газовую заправку,
+                  не находил в карточке того значка, по которому нашёл
+                  её на карте. */}
+              <span
+                className="fuel-map-selected__logo"
+                style={{ background: identity.color, color: identity.textColor }}
+                aria-hidden="true"
+              >
+                {identity.shortLabel}
+              </span>
               <Box style={{ minWidth: 0, flex: 1 }}>
                 <Text size="sm" fw={800} lineClamp={1}>{selectedStation.name}</Text>
                 <Text size="xs" c="dimmed" lineClamp={1}>

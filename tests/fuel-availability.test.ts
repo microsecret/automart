@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { readFileSync } from "node:fs"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { getStationIdentity } from "../src/lib/fuel-station-identity.ts"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { formatAge, isFresh, summarizeAvailability } from "../src/lib/fuel-availability.ts"
 
 const NOW = new Date("2026-08-29T12:00:00Z")
@@ -301,18 +303,22 @@ test("знак есть у всех точек карты", () => {
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
   assert.match(page, /fuel-map-plate__logo/)
   assert.match(page, /plateIdentity\.shortLabel/)
-  /* Запасной вид берётся по ассортименту: газовая, зарядка или АЗС. */
-  assert.match(page, /const plateIdentity = networkIdentity \|\| getGenericIdentity/)
+
+  /* Запасной вид берётся по ассортименту: газовая, зарядка или АЗС —
+     проверяем поведение, а не строку в файле. */
+  for (const name of ["Лукойл", "АЗС", "АГЗС", "Зарядка"]) {
+    const identity = getStationIdentity({ name, fuels: [] })
+    assert.ok(identity.shortLabel.length > 0, `нет знака у «${name}»`)
+  }
 })
 
 test("безымянная заправка получает вид по ассортименту", () => {
   /* У трёхсот семидесяти точек название буквально «АЗС», ещё у сорока
      «АГЗС». Названия не будет, но тип колонок известен. */
-  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /function getGenericIdentity/)
   /* Газовую от бензиновой человек с ГБО различает первым делом. */
-  assert.match(page, /Газовая АЗС/)
-  assert.match(page, /Зарядка EV/)
+  assert.equal(getStationIdentity({ name: "АГЗС", fuels: [] }).label, "Газовая АЗС")
+  assert.equal(getStationIdentity({ name: "Зарядка", fuels: ["EV"] }).label, "Зарядка EV")
+  assert.equal(getStationIdentity({ name: "АЗС", fuels: ["АИ-95"] }).label, "АЗС")
 })
 
 // === Исправления по жалобам ===
@@ -795,13 +801,18 @@ test("крупные сети России узнаются на карте", ()
   /* Замер по семи городам: у ТАИФ-НК шестьдесят шесть точек, у ПРАЙМ
      восемнадцать, у Воронежской топливной семнадцать — все они висели
      серыми, будто безымянные заправки. */
-  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  for (const network of ["таиф", "прайм", "воронежская топливная", "тнк", "эверон"]) {
-    assert.ok(page.includes(`source.includes("${network}")`), `сеть не распознаётся: ${network}`)
+  for (const [name, label] of [
+    ["ТАИФ-НК", "ТАИФ-НК"],
+    ["ПРАЙМ", "ПРАЙМ"],
+    ["Воронежская топливная компания", "ВТК"],
+    ["ТНК", "ТНК"],
+    ["Эверон", "Эверон"],
+  ]) {
+    assert.equal(getStationIdentity({ name, fuels: ["АИ-95"] }).label, label, `сеть не распознаётся: ${name}`)
   }
   /* Газовые сети отдельной палитрой: человек с газобаллонным
      оборудованием ищет именно их. */
-  assert.match(page, /Газовая АЗС/)
+  assert.equal(getStationIdentity({ name: "ЭКОГАЗ", fuels: [] }).label, "Газовая АЗС")
 })
 
 test("точки не пропадают, пока грузится новый участок", () => {
@@ -835,18 +846,15 @@ test("бензиновая сеть не становится газовой и�
      из 1798 точек, попавших в газовые, четыреста с лишним оказались
      Газпромнефтью, и на карте они красились бирюзовым как АГЗС.
      Человек с газобаллонным оборудованием поехал бы туда зря. */
-  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  const fn = page.slice(page.indexOf("function getGenericIdentity"), page.indexOf("function getDistanceInKilometers"))
-
   /* Решает ассортимент: бензин в колонках — заправка бензиновая, чем
      бы её ни назвали. */
-  assert.match(fn, /const hasPetrol = /)
-  assert.match(fn, /hasGasFuel && !hasPetrol/)
+  assert.equal(getStationIdentity({ name: "Газпромнефть", fuels: ["АИ-95", "ДТ"] }).label, "Газпромнефть")
+  assert.equal(getStationIdentity({ name: "Заправка", fuels: ["LPG"] }).label, "Газовая АЗС")
 
   /* Название учитывается только там, где ассортимент пуст, и по
      полному слову: «газ» внутри «Газпромнефти» ничего не значит. */
-  assert.match(fn, /!fuels && /)
-  assert.doesNotMatch(fn, /name\.includes\("газ"\)/)
+  assert.equal(getStationIdentity({ name: "Газпромнефть", fuels: [] }).label, "Газпромнефть")
+  assert.equal(getStationIdentity({ name: "АГЗС у трассы", fuels: [] }).label, "Газовая АЗС")
 })
 
 test("карту можно тянуть пальцем с любого места, включая метки", () => {
