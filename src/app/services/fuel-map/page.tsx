@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
 import { useSearchParams } from "next/navigation"
-import { ActionIcon, Badge, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
+import { ActionIcon, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
 import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconX } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES, findNearestCity } from "@/lib/cities"
 import { fetchJson } from "@/lib/api-client"
@@ -114,11 +114,6 @@ type NetworkIdentity = {
   shortLabel: string
   color: string
   textColor: string
-  /* Знак сети в фирменных цветах: человек находит свою заправку по
-     нему быстрее, чем читает две буквы. Файлы лежат у нас, а не
-     подгружаются с чужих сайтов: те меняют адреса и блокируют чужой
-     трафик, и знак пропал бы у всех разом. */
-  logo?: string
 }
 
 function getStationNetwork(station: FuelStation) {
@@ -131,21 +126,21 @@ function getStationNetworkKey(station: FuelStation) {
 
 function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
   const source = `${station.name} ${station.brand || ""} ${station.operator || ""}`.toLocaleLowerCase("ru-RU")
-  if (source.includes("лукойл")) return { label: "Лукойл", shortLabel: "ЛК", color: "#d8202f", textColor: "#fff", logo: "/brand/fuel/lukoil.svg" }
-  if (source.includes("роснефть")) return { label: "Роснефть", shortLabel: "РН", color: "#f6c514", textColor: "#1f2937", logo: "/brand/fuel/rosneft.svg" }
-  if (source.includes("газпром")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff", logo: "/brand/fuel/gazprom.svg" }
-  if (source.includes("татнефть")) return { label: "Татнефть", shortLabel: "ТН", color: "#139b5a", textColor: "#fff", logo: "/brand/fuel/tatneft.svg" }
-  if (source.includes("башнефть")) return { label: "Башнефть", shortLabel: "БН", color: "#183b6d", textColor: "#fff", logo: "/brand/fuel/bashneft.svg" }
-  if (source.includes("teboil") || source.includes("тебойл")) return { label: "Teboil", shortLabel: "TB", color: "#d52331", textColor: "#fff", logo: "/brand/fuel/teboil.svg" }
-  if (source.includes("нефтьмагистраль")) return { label: "Нефтьмагистраль", shortLabel: "НМ", color: "#1d1d1f", textColor: "#fff", logo: "/brand/fuel/neftmagistral.svg" }
+  if (source.includes("лукойл")) return { label: "Лукойл", shortLabel: "ЛК", color: "#d8202f", textColor: "#fff" }
+  if (source.includes("роснефть")) return { label: "Роснефть", shortLabel: "РН", color: "#f6c514", textColor: "#1f2937" }
+  if (source.includes("газпром")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff" }
+  if (source.includes("татнефть")) return { label: "Татнефть", shortLabel: "ТН", color: "#139b5a", textColor: "#fff" }
+  if (source.includes("башнефть")) return { label: "Башнефть", shortLabel: "БН", color: "#183b6d", textColor: "#fff" }
+  if (source.includes("teboil") || source.includes("тебойл")) return { label: "Teboil", shortLabel: "TB", color: "#d52331", textColor: "#fff" }
+  if (source.includes("нефтьмагистраль")) return { label: "Нефтьмагистраль", shortLabel: "НМ", color: "#1d1d1f", textColor: "#fff" }
   if (source.includes("irbis") || source.includes("ирбис")) return { label: "Irbis", shortLabel: "IR", color: "#e65825", textColor: "#fff" }
   /* Сети, встречающиеся в справочнике достаточно часто, чтобы человек
      узнавал их по цвету. Список рос по мере того, как на карте
      попадались безымянные точки там, где заправка на деле известная. */
-  if (source.includes("шелл") || source.includes("shell")) return { label: "Shell", shortLabel: "SH", color: "#fbce07", textColor: "#1f2937", logo: "/brand/fuel/shell.svg" }
+  if (source.includes("шелл") || source.includes("shell")) return { label: "Shell", shortLabel: "SH", color: "#fbce07", textColor: "#1f2937" }
   if (source.includes("нефтьм") || source.includes("трасса")) return { label: "Трасса", shortLabel: "ТР", color: "#0f766e", textColor: "#fff" }
-  if (source.includes("сургут")) return { label: "Сургутнефтегаз", shortLabel: "СН", color: "#00693c", textColor: "#fff", logo: "/brand/fuel/surgut.svg" }
-  if (source.includes("газпром") || source.includes("gazprom")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff", logo: "/brand/fuel/gazprom.svg" }
+  if (source.includes("сургут")) return { label: "Сургутнефтегаз", shortLabel: "СН", color: "#00693c", textColor: "#fff" }
+  if (source.includes("газпром") || source.includes("gazprom")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff" }
   if (source.includes("опти") || source.includes("opti")) return { label: "Опти", shortLabel: "ОП", color: "#e11d48", textColor: "#fff" }
   if (source.includes("нефтегаз")) return { label: "Нефтегаз", shortLabel: "НГ", color: "#155e75", textColor: "#fff" }
   if (source.includes("автодор") || source.includes("трасса м")) return { label: "Автодор", shortLabel: "АД", color: "#7c2d12", textColor: "#fff" }
@@ -713,21 +708,13 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                       style={{ background: networkIdentity.color, color: networkIdentity.textColor }}
                       aria-hidden="true"
                     >
-                      {/* Знак сети картинкой, буквы — запасной вариант.
+                      {/* Две буквы вместо рисованного знака.
 
-                          Картинка узнаётся быстрее, чем читаются две
-                          буквы: человек ищет глазами привычный знак, а
-                          не расшифровывает сокращение. Для сетей, знака
-                          которых у нас нет, остаются буквы — пустое
-                          место хуже. */}
-                      {networkIdentity.logo
-                        /* Обычный img, а не next/image: это готовый SVG
-                           в 22 пикселя — оптимизировать в нём нечего, а
-                           обёртка next/image добавила бы разметку на
-                           каждую из сотен меток карты. */
-                        // eslint-disable-next-line @next/next/no-img-element
-                        ? <img src={networkIdentity.logo} alt="" width={22} height={22} loading="lazy" decoding="async" />
-                        : networkIdentity.shortLabel}
+                          Нарисованные знаки сетей узнавались хуже
+                          настоящих логотипов и при этом занимали место
+                          на плашке. Буквы на фирменном цвете читаются
+                          мгновенно и не притворяются товарным знаком. */}
+                      {networkIdentity.shortLabel}
                     </span>
                   ) : (
                     /* Сеть не распознана: серый знак заправки вместо
@@ -893,14 +880,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               {identity && (
                 <span
                   className="fuel-map-selected__logo"
-                  style={{ background: identity.logo ? "#fff" : identity.color, color: identity.textColor }}
+                  style={{ background: identity.color, color: identity.textColor }}
                   aria-hidden="true"
                 >
-                  {identity.logo
-                    /* Тот же довод, что и на плашке: готовый SVG. */
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img src={identity.logo} alt="" width={26} height={26} loading="lazy" decoding="async" />
-                    : identity.shortLabel}
+                  {identity.shortLabel}
                 </span>
               )}
               <Box style={{ minWidth: 0, flex: 1 }}>
@@ -962,30 +945,64 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 </Box>
               )}
 
+              {/* Шкала уверенности отдельной строкой под статусом.
+
+                  Процент числом человек читает, но не чувствует: «44%»
+                  и «68%» выглядят одинаково, пока не сравнишь их между
+                  собой. Полоса показывает, много это или мало, с
+                  одного взгляда, и поясняет, из чего число сложилось —
+                  «1 метка за 8 ч» честнее голого процента. */}
+              {fresh.length > 0 && weakest && (
+                <Box>
+                  <span className="fuel-status__meter" data-level={weakest.confidenceLabel} aria-hidden="true">
+                    <span style={{ width: `${Math.max(6, weakest.confidencePercent)}%` }} />
+                  </span>
+                  <Text size="10px" c="dimmed" mt={4}>
+                    Уверенность {weakest.confidenceLabel} · {weakest.confidenceNote}
+                  </Text>
+                </Box>
+              )}
+
               {/* Что есть сейчас — над вкладками, всегда на виду.
 
                   Это главный ответ, ради которого карточку открыли.
                   Прятать его во вкладку значило бы просить лишнее
                   нажатие за тем, что человек и так пришёл узнать. */}
               {fresh.length > 0 ? (
-                <Group gap={4} wrap="wrap">
+                <Box className="fuel-tiles">
                   {fresh.slice(0, 6).map((row) => {
                     const kopecks = priceByFuel.get(row.fuel)
                     return (
-                      <Badge
+                      /* Плитка марки: наличие, цена и свежесть вместе.
+
+                         Бейдж «92 · 63,20 ₽» отвечал на два вопроса из
+                         трёх: было видно, что есть и почём, но не
+                         видно, когда это отметили. Возраст стоял одной
+                         строкой на всю карточку, хотя у каждой марки он
+                         свой — 92-й могли отметить час назад, а 95-й
+                         пять минут.
+
+                         Плитка собирает всё про одну марку в одном
+                         месте, как в форме отметки: так человек читает
+                         её целиком, не сверяя строки между собой. */
+                      <Box
                         key={row.fuel}
-                        size="lg"
-                        radius="sm"
-                        variant="light"
-                        color={row.state === "YES" ? "teal" : "red"}
-                        styles={row.state === "NO" ? { label: { textDecoration: "line-through" } } : undefined}
+                        className="fuel-tile"
+                        data-state={row.state === "YES" ? "yes" : "no"}
                       >
-                        {row.label}
-                        {row.state === "YES" && kopecks ? ` · ${formatKopecks(kopecks)} ₽` : ""}
-                      </Badge>
+                        <span className="fuel-tile__label">{row.label}</span>
+                        {row.state === "YES" && kopecks ? (
+                          <span className="fuel-tile__price">{formatKopecks(kopecks)} ₽</span>
+                        ) : (
+                          <span className="fuel-tile__state">{row.state === "YES" ? "есть" : "нет"}</span>
+                        )}
+                        {row.updatedAt && (
+                          <span className="fuel-tile__age">{formatAge(new Date(row.updatedAt))}</span>
+                        )}
+                      </Box>
                     )
                   })}
-                </Group>
+                </Box>
               ) : (
                 /* Отметок нет — так и говорим. Молчание человек читает как
                    «топлива нет», и это неправда. */

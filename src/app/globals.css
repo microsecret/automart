@@ -3770,13 +3770,10 @@ select {
 
 /* Знак сети — белый кружок с фирменными буквами.
 
-   Прошлая версия делала подложку из цвета текста с прозрачностью, и
-   на синей Башнефти получался почти невидимый белый на синем: буквы
-   пропадали, а плашка выглядела безымянной.
-
-   Белый кружок читается на любом фирменном цвете — тёмно-синем,
-   красном, жёлтом — и повторяет то, как сети показывают себя сами:
-   знак на светлой подложке. */
+   Подложка из цвета текста с прозрачностью давала на синей Башнефти
+   почти невидимый белый на синем: буквы пропадали, плашка выглядела
+   безымянной. Белый кружок читается на любом фирменном цвете —
+   тёмно-синем, красном, жёлтом. */
 .fuel-map-plate[data-branded] .fuel-map-plate__logo {
   margin: 3px 0 3px 3px;
   width: 26px;
@@ -3786,6 +3783,7 @@ select {
   background: #fff !important;
   color: var(--plate-brand) !important;
   font-size: 10px;
+  font-weight: 800;
   box-shadow: 0 1px 3px rgb(15 23 42 / .25);
 }
 
@@ -8548,4 +8546,127 @@ h1[data-lw-hero] {
 
 :root[data-mantine-color-scheme="dark"] .fuel-status[data-state="no"] {
   background: color-mix(in srgb, var(--market-surface) 82%, #dc2626);
+}
+
+/* Плитки марок: наличие, цена и свежесть вместе.
+
+   Бейдж «92 · 63,20 ₽» отвечал на два вопроса из трёх: видно, что
+   есть и почём, но не видно, когда это отметили. Возраст стоял одной
+   строкой на всю карточку, хотя у каждой марки он свой — 92-й могли
+   отметить час назад, а 95-й пять минут. */
+.fuel-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.fuel-tile {
+  display: grid;
+  gap: 1px;
+  padding: 7px 6px;
+  border: 1px solid var(--market-line);
+  border-radius: 10px;
+  background: var(--market-surface-subtle);
+  text-align: center;
+}
+
+.fuel-tile__label {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--market-ink);
+}
+
+/* Цена крупнее подписи «есть»: когда она известна, это и есть ответ. */
+.fuel-tile__price {
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.fuel-tile__state {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.fuel-tile__age {
+  font-size: 9px;
+  line-height: 1.2;
+  color: var(--market-label);
+}
+
+.fuel-tile[data-state="yes"] {
+  border-color: var(--mantine-color-teal-4);
+  background: var(--mantine-color-teal-0);
+}
+
+.fuel-tile[data-state="yes"] .fuel-tile__price,
+.fuel-tile[data-state="yes"] .fuel-tile__state {
+  color: var(--mantine-color-teal-7);
+}
+
+.fuel-tile[data-state="no"] {
+  border-color: var(--mantine-color-red-4);
+  background: var(--mantine-color-red-0);
+}
+
+.fuel-tile[data-state="no"] .fuel-tile__label {
+  text-decoration: line-through;
+  opacity: .75;
+}
+
+.fuel-tile[data-state="no"] .fuel-tile__state {
+  color: var(--mantine-color-red-7);
+}
+
+/* Тёмная тема: заливки Mantine рассчитаны на белый фон и в темноте
+   светятся пятном, на котором не виден текст. */
+:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="yes"] {
+  background: color-mix(in srgb, var(--market-surface) 76%, #16a34a);
+}
+
+:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="no"] {
+  background: color-mix(in srgb, var(--market-surface) 76%, #dc2626);
+}
+
+:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="yes"] .fuel-tile__price,
+:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="yes"] .fuel-tile__state {
+  color: var(--mantine-color-teal-3);
+}
+
+:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="no"] .fuel-tile__state {
+  color: var(--mantine-color-red-3);
+}
+
+/* Шкала уверенности под статусом.
+
+   Процент числом человек читает, но не чувствует: «44%» и «68%»
+   выглядят одинаково, пока не сравнишь. Полоса показывает, много это
+   или мало, с одного взгляда — и цветом повторяет то же. */
+.fuel-status__meter {
+  display: block;
+  height: 5px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--market-line) 70%, transparent);
+}
+
+.fuel-status__meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #16a34a;
+  transition: width var(--ease-slow) var(--ease-out);
+}
+
+.fuel-status__meter[data-level="средняя"] > span { background: #f59e0b; }
+.fuel-status__meter[data-level="низкая"] > span { background: #dc2626; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fuel-status__meter > span {
+    transition: none;
+  }
 }

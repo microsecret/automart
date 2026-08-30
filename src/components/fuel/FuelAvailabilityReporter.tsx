@@ -114,8 +114,21 @@ export default function FuelAvailabilityReporter({
     const hasPetrol = /аи|92|95|98|100|дт|бензин|дизел/.test(tags)
 
     const narrowed = AVAILABILITY_FUELS.filter((fuel) => {
-      if (byFuel.get(fuel)?.state && byFuel.get(fuel)?.state !== "UNKNOWN") return true
+      /* Ассортимент важнее прошлых отметок.
+
+         Раньше марка оставалась, если её кто-то когда-то отмечал, — и
+         на бензиновой Башнефти висел газ только потому, что кто-то
+         однажды нажал по нему «нет». Отметка «нет газа» на заправке,
+         где газа не бывает, ничего не сообщает и место занимает.
+
+         Тег в OpenStreetMap описывает, что за колонки на станции
+         вообще стоят, и это не меняется от нажатий. Он и решает. */
       if (fuel === "GAS") return hasGas
+      /* Марку бензина оставляем и по прошлой отметке: теги бензина в
+         OSM неполны — часто указан только «дизель», хотя 92-й и 95-й
+         на станции есть. С газом такой беды нет: его отмечают, потому
+         что он редкость. */
+      if (byFuel.get(fuel)?.state && byFuel.get(fuel)?.state !== "UNKNOWN") return true
       return hasPetrol
     })
 

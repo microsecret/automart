@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Shell">
-  <circle cx="32" cy="32" r="31" fill="#fbce07"/>
-  <path d="M32 14c9 0 16 8 16 18v10H16V32c0-10 7-18 16-18Z" fill="#dd1d21"/>
-  <path d="M32 14v28M24 17l-3 25M40 17l3 25" stroke="#fbce07" stroke-width="2.6" fill="none"/>
-</svg>

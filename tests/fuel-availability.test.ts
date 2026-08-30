@@ -681,14 +681,43 @@ test("сетка марок не дублирует бейджи карточк�
   assert.doesNotMatch(reporter, /className="fuel-report__status"/)
 })
 
-test("у сетей выводится фирменный знак, а не две буквы", () => {
-  /* Картинка узнаётся быстрее, чем читается сокращение: человек ищет
-     глазами привычный знак, а не расшифровывает «БН». */
+test("сеть узнаётся по буквам на фирменном цвете", () => {
+  /* Рисованные знаки сетей узнавались хуже настоящих логотипов и
+     занимали место на плашке. Буквы на фирменном цвете читаются
+     мгновенно и не притворяются товарным знаком. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /brand\/fuel\/bashneft\.svg/)
-  assert.match(page, /brand\/fuel\/lukoil\.svg/)
-  /* Для сетей без знака остаются буквы: пустое место хуже. */
-  assert.match(page, /: networkIdentity\.shortLabel/)
+  assert.match(page, /networkIdentity\.shortLabel/)
+  assert.doesNotMatch(page, /brand\/fuel\//)
+})
+
+test("плитка марки показывает цену и свежесть", () => {
+  /* Бейдж «92 · 63,20 ₽» отвечал на два вопроса из трёх: видно, что
+     есть и почём, но не видно, когда отметили. Возраст стоял одной
+     строкой на всю карточку, хотя у каждой марки он свой. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /fuel-tile__price/)
+  assert.match(page, /fuel-tile__age/)
+})
+
+test("уверенность показана шкалой, а не только числом", () => {
+  /* Процент числом человек читает, но не чувствует: «44%» и «68%»
+     выглядят одинаково, пока не сравнишь их между собой. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /fuel-status__meter/)
+  assert.match(page, /confidenceNote/)
+})
+
+test("газ не показывается на бензиновой заправке даже после отметки", () => {
+  /* Марка оставалась, если её кто-то когда-то отмечал, — и на
+     бензиновой Башнефти висел газ только потому, что кто-то однажды
+     нажал по нему «нет». */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  const narrowed = reporter.slice(reporter.indexOf("const narrowed"), reporter.indexOf("return narrowed.length"))
+  /* Проверка по тегу идёт раньше проверки по отметкам. */
+  assert.ok(
+    narrowed.indexOf('fuel === "GAS"') < narrowed.indexOf('!== "UNKNOWN"'),
+    "ассортимент должен решать раньше прошлых отметок",
+  )
 })
 
 test("карта АЗС есть в главном меню", () => {
