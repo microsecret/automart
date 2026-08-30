@@ -237,6 +237,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [clusterHint, setClusterHint] = useState<string | null>(null)
+  /* Открытая вкладка карточки. «Отметить» первой: ради неё сервис и
+     существует, а цены с комментариями человек смотрит выборочно. */
+  const [activeTab, setActiveTab] = useState<"report" | "prices" | "notes">("report")
   const mapInteractionRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ pointerId: number; clientX: number; clientY: number; center: { latitude: number; longitude: number } } | null>(null)
   const viewportCenterRef = useRef(viewportCenter)
@@ -733,6 +736,16 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
            делятся. */
         const availableFuels = fresh.filter((row) => row.state === "YES").map((row) => row.label)
 
+        /* Комментарии водителей — по всем маркам, а не по одной.
+
+           «Лимит 30 литров», «на табло не горит, по факту есть»,
+           «очередь на въезде» — такое не выразить кнопками, и оно
+           решает, ехать ли. Свежие сверху: вчерашняя запись про очередь
+           сегодня уже ничего не значит. */
+        const stationNotes = selectedStationAvailability
+          .filter((row) => row.comment && row.updatedAt)
+          .sort((left, right) => (right.updatedAt || "").localeCompare(left.updatedAt || ""))
+
         return (
           <Paper className="fuel-map-selected" radius="md" withBorder aria-live="polite">
             <Box className="fuel-map-selected__head">
@@ -773,7 +786,11 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
             </Box>
 
             <Box className="fuel-map-selected__body">
-              {/* Что есть сейчас — с ценой рядом с маркой. */}
+              {/* Что есть сейчас — над вкладками, всегда на виду.
+
+                  Это главный ответ, ради которого карточку открыли.
+                  Прятать его во вкладку значило бы просить лишнее
+                  нажатие за тем, что человек и так пришёл узнать. */}
               {fresh.length > 0 ? (
                 <Group gap={4} wrap="wrap">
                   {fresh.slice(0, 6).map((row) => {
@@ -807,22 +824,6 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 </Text>
               )}
 
-              {/* Отметка наличия прямо в карточке.
-
-                  Раньше форма жила в списке сбоку: человек нажимал метку
-                  на карте, потом искал ту же заправку в списке справа и
-                  только там мог отметить. Два поиска одного и того же
-                  ради одного действия — до него не доходили. */}
-              <FuelAvailabilityReporter
-                stationId={selectedStation.id}
-                stationName={selectedStation.name}
-                city={city}
-                latitude={selectedStation.latitude}
-                longitude={selectedStation.longitude}
-                availability={selectedStationAvailability}
-                onReported={(next) => onAvailabilityReported(selectedStation.id, next)}
-              />
-
               <Group gap={6} grow>
                 <FuelSubscribeButton
                   stationId={selectedStation.id}
@@ -843,13 +844,90 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 />
               </Group>
 
-              <FuelPriceReporter
-                stationId={selectedStation.id}
-                latitude={selectedStation.latitude}
-                longitude={selectedStation.longitude}
-                prices={selectedStationPrices}
-                onReported={(next) => onPricesReported(selectedStation.id, next)}
-              />
+              {/* Вкладки: отметка, цены, комментарии.
+
+                  Карточка выкладывала всё одной лентой: марки, форма
+                  отметки, кнопки, цены, а под ними чужие комментарии. На
+                  телефоне до цен надо было прокрутить полтора экрана, и
+                  человек их просто не находил.
+
+                  Три вкладки отвечают трём разным вопросам, и человек
+                  открывает тот, что ему нужен. «Отметить» стоит первой:
+                  ради неё сервис и существует. */}
+              <Box className="fuel-card-tabs" role="tablist" aria-label="Сведения о заправке">
+                {([
+                  { id: "report" as const, label: "Отметить" },
+                  { id: "prices" as const, label: "Цены", count: selectedStationPrices.length },
+                  { id: "notes" as const, label: "Комментарии", count: stationNotes.length },
+                ]).map((tab) => (
+                  <UnstyledButton
+                    key={tab.id}
+                    role="tab"
+                    className="fuel-card-tab"
+                    data-active={activeTab === tab.id || undefined}
+                    aria-selected={activeTab === tab.id}
+                    onClick={() => { tapFeedback("light"); setActiveTab(tab.id) }}
+                  >
+                    {tab.label}
+                    {/* Число рядом с названием: по нему видно, есть ли
+                        там что-то, не открывая вкладку. */}
+                    {tab.count ? <span className="fuel-card-tab__count">{tab.count}</span> : null}
+                  </UnstyledButton>
+                ))}
+              </Box>
+
+              {activeTab === "report" && (
+                /* Отметка наличия прямо в карточке.
+
+                   Раньше форма жила в списке сбоку: человек нажимал метку
+                   на карте, потом искал ту же заправку в списке справа и
+                   только там мог отметить. Два поиска одного и того же
+                   ради одного действия — до него не доходили. */
+                <FuelAvailabilityReporter
+                  stationId={selectedStation.id}
+                  stationName={selectedStation.name}
+                  city={city}
+                  latitude={selectedStation.latitude}
+                  longitude={selectedStation.longitude}
+                  availability={selectedStationAvailability}
+                  onReported={(next) => onAvailabilityReported(selectedStation.id, next)}
+                />
+              )}
+
+              {activeTab === "prices" && (
+                <FuelPriceReporter
+                  stationId={selectedStation.id}
+                  latitude={selectedStation.latitude}
+                  longitude={selectedStation.longitude}
+                  prices={selectedStationPrices}
+                  onReported={(next) => onPricesReported(selectedStation.id, next)}
+                />
+              )}
+
+              {activeTab === "notes" && (
+                /* Комментарии водителей.
+
+                   «На табло не горит, по факту есть», «лимит 30 литров»,
+                   «очередь на въезде» — такое не выразить кнопками, и оно
+                   решает, ехать ли. Раньше показывались только три
+                   последних и терялись в хвосте карточки. */
+                stationNotes.length > 0 ? (
+                  <Stack gap={6}>
+                    {stationNotes.map((note) => (
+                      <Paper key={`${note.fuel}-${note.updatedAt}`} withBorder radius="md" p={8} bg="var(--market-surface-subtle)">
+                        <Text size="xs" c="var(--market-ink)">{note.comment}</Text>
+                        <Text size="10px" c="dimmed" mt={3}>
+                          {note.label} · {note.updatedAt ? formatAge(new Date(note.updatedAt)) : ""}
+                        </Text>
+                      </Paper>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Text size="xs" c="dimmed">
+                    Комментариев пока нет. Заметили лимит на бак или очередь — напишите в отметке.
+                  </Text>
+                )
+              )}
             </Box>
           </Paper>
         )

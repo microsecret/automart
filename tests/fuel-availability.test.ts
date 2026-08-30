@@ -390,12 +390,47 @@ test("у цены видно, насколько ей верить", () => {
   assert.match(css, /data-level="низкая"\] > span \{ background: #dc2626/)
 })
 
-test("комментарии видны без фотографии", () => {
+test("комментарии видны без фотографии и не обрезаны тремя", () => {
   /* Раньше комментарий показывался только под снимком: без него
      пропадал, хотя именно текст часто и есть главное — «на табло не
-     горит, по факту есть», «лимит 30 литров». */
+     горит, по факту есть», «лимит 30 литров».
+
+     Теперь у комментариев своя вкладка в карточке: показываются все, а
+     не три последних, и свежие сверху. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /row\.comment && row\.updatedAt/)
+  assert.match(page, /const stationNotes/)
+  assert.match(page, /activeTab === "notes"/)
+  /* Прежнего обрезания до трёх быть не должно. */
   const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
-  assert.match(reporter, /item\.comment && item\.updatedAt/)
+  assert.doesNotMatch(reporter, /\.slice\(0, 3\)/)
+})
+
+test("карточка разделена на вкладки", () => {
+  /* Карточка выкладывала всё одной лентой: марки, форма, кнопки, цены,
+     чужие комментарии. На телефоне до цен надо было прокрутить
+     полтора экрана, и человек их не находил. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /fuel-card-tabs/)
+  assert.match(page, /activeTab === "report"/)
+  assert.match(page, /activeTab === "prices"/)
+  /* Наличие остаётся над вкладками: это главный ответ, ради которого
+     карточку открыли, и прятать его за нажатие нельзя. */
+  const tabsAt = page.indexOf("fuel-card-tabs")
+  const freshAt = page.indexOf("fresh.slice(0, 6)")
+  assert.ok(freshAt > 0 && freshAt < tabsAt, "марки должны стоять выше вкладок")
+})
+
+test("наведение на метку не стирает цвет наличия", () => {
+  /* Раньше hover красил метку тёмно-синим: наведя курсор на зелёную
+     заправку, человек видел синюю и терял ответ ровно в тот момент,
+     когда к ней тянулся. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const hoverBlock = css.slice(css.indexOf(".fuel-map-marker:hover"), css.indexOf(".fuel-map-marker:hover") + 400)
+  assert.doesNotMatch(hoverBlock, /background: #1c4291/)
+  /* Выбранная метка пульсирует, потому что карточка закрывает часть
+     карты и человек терял из виду, какую точку нажал. */
+  assert.match(css, /fuel-marker-pulse/)
 })
 
 test("в карточке на карте видно расстояние", () => {

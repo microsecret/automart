@@ -3975,13 +3975,69 @@ select {
 /* Сдвиг на половину размера ушёл на обёртку, поэтому здесь остаётся
    только увеличение: с прежним translate кружок отъезжал бы вверх-влево
    ещё раз и терял связь со своей точкой. */
+/* Наведение и выбор поднимают метку, но не перекрашивают её.
+
+   Раньше здесь стоял тёмно-синий фон: наведя курсор на зелёную
+   заправку, человек видел синюю и терял ответ на свой вопрос ровно в
+   тот момент, когда к ней тянулся. Цвет несёт наличие и меняться от
+   наведения не должен — достаточно белого ободка и увеличения. */
 .fuel-map-marker:hover,
 .fuel-map-marker:focus-visible,
 .fuel-map-marker[data-selected] {
-  background: #1c4291;
-  box-shadow: 0 0 0 4px rgba(255,255,255,0.72), 0 7px 16px rgba(49,46,129,.42);
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.82), 0 7px 16px rgba(15,23,42,.34);
   outline: none;
   transform: scale(1.12);
+}
+
+/* Выбранная метка пульсирует расходящимся кольцом.
+
+   Карточка открывается снизу и закрывает собой часть карты: человек
+   терял из виду, какую именно точку он нажал, и нажимал соседнюю.
+   Кольцо расходится от метки и возвращает взгляд к ней.
+
+   Кольцо повторяет цвет наличия: зелёная метка пульсирует зелёным,
+   красная красным, серая — нейтральным. Так подсветка не спорит с
+   ответом, который метка уже даёт. */
+.fuel-map-marker[data-selected]::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 2px solid #64748b;
+  border-radius: 50%;
+  opacity: 0;
+  animation: fuel-marker-pulse 1.8s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
+.fuel-map-marker[data-selected][data-reported="yes"]::after,
+.fuel-map-marker[data-selected][data-cluster-state="yes"]::after {
+  border-color: #16a34a;
+}
+
+.fuel-map-marker[data-selected][data-reported="no"]::after,
+.fuel-map-marker[data-selected][data-cluster-state="no"]::after {
+  border-color: #dc2626;
+}
+
+@keyframes fuel-marker-pulse {
+  0% {
+    opacity: .55;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fuel-map-marker[data-selected]::after {
+    animation: none;
+  }
 }
 
 /* Поднимать надо всю точку с подписью: поднятый кружок оставлял бы свою
@@ -4509,6 +4565,66 @@ select {
 
 .fuel-report {
   background: var(--market-surface-subtle);
+}
+
+/* Вкладки карточки: отметка, цены, комментарии.
+
+   Карточка выкладывала всё одной лентой, и на телефоне до цен надо
+   было прокрутить полтора экрана — их просто не находили. Три вкладки
+   отвечают трём разным вопросам. */
+.fuel-card-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--market-surface-subtle);
+}
+
+.fuel-card-tab {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 9px;
+  color: var(--market-label);
+  font-size: 12px;
+  font-weight: 700;
+  transition: background-color var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out);
+}
+
+/* Открытая вкладка поднимается на белое: подчёркивание снизу на
+   телефоне съедается краем экрана и читается хуже заливки. */
+.fuel-card-tab[data-active] {
+  background: var(--market-surface);
+  color: var(--market-ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.fuel-card-tab:focus-visible {
+  outline: 3px solid var(--market-focus);
+  outline-offset: -2px;
+}
+
+/* Число рядом с названием: видно, есть ли там что-то, не открывая. */
+.fuel-card-tab__count {
+  display: inline-grid;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--market-primary) 16%, transparent);
+  color: var(--market-primary);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fuel-card-tab {
+    transition: none;
+  }
 }
 
 /* Цена со шкалой уверенности.
