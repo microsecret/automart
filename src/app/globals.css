@@ -4374,6 +4374,25 @@ select {
 .fuel-map-canvas__legend > span[data-quality="live"]::before { background: #16a34a; }
 .fuel-map-canvas__legend > span[data-quality="network"]::before { background: #ea580c; }
 
+/* Объяснение пустой карты.
+
+   Фильтры складываются, и сочетание «Башнефть + Газ» даёт ноль точек.
+   Карточка стоит по центру, а не в углу: это не подсказка на полях, а
+   ответ на вопрос «куда всё делось». */
+.fuel-map-empty-filter {
+  position: absolute;
+  z-index: 7;
+  top: 50%;
+  left: 50%;
+  max-width: min(340px, calc(100% - 32px));
+  padding: 12px 14px;
+  transform: translate(-50%, -50%);
+  border-color: color-mix(in srgb, var(--market-primary) 30%, var(--market-line));
+  background: var(--market-surface);
+  box-shadow: var(--shadow-lg);
+  animation: fuel-selected-in var(--ease-slow) var(--ease-out);
+}
+
 .fuel-map-cluster-hint {
   position: absolute;
   z-index: 6;

@@ -202,9 +202,12 @@ function getCoordinates(element: OverpassElement): Coordinates | null {
 function getStationName(tags: Record<string, string>) {
   const publishedName = tags.name?.trim()
   const brandOrOperator = tags.brand?.trim() || tags.operator?.trim()
-  const hasGenericName = !publishedName || /^(азс|агзс|fuel)$/iu.test(publishedName)
+  const hasGenericName = !publishedName || /^(азс|агзс|fuel|charging station)$/iu.test(publishedName)
 
   if (brandOrOperator && hasGenericName) return brandOrOperator
+  /* Безымянная зарядка — не «АЗС»: человек на электромобиле ищет
+     розетку, а не бензин, и подпись должна говорить именно об этом. */
+  if (hasGenericName && tags.amenity === "charging_station") return "Зарядная станция"
   return publishedName || brandOrOperator || "АЗС"
 }
 
@@ -654,6 +657,16 @@ function normalizeDirectoryStations(elements: OverpassElement[]) {
       .filter(([tag]) => hasPublishedFuelTag(tags[tag]))
       .map(([, label]) => label)
 
+    /* Зарядная станция опознаётся по типу объекта.
+
+       У неё нет тегов fuel:*, и ассортимент выходил пустым: точка
+       приезжала безымянной серой меткой, а фильтр «Зарядка EV» её не
+       находил. Человек на электромобиле видел пустую карту там, где
+       зарядки есть. */
+    if (tags.amenity === "charging_station" && !fuels.includes("Зарядка EV")) {
+      fuels.push("Зарядка EV")
+    }
+
     return [{
       id: `osm-${element.type}-${element.id}`,
       sourceType: element.type,
@@ -772,7 +785,24 @@ export async function GET(request: NextRequest) {
   // без `relation` часть сетевых АЗС просто отсутствует на карте. Лимит выдачи
   // поднят: в плотной городской застройке 180 точек обрывались задолго до
   // границы запрошенного радиуса.
-  const buildQuery = (metres: number) => `[out:json][timeout:24];(node["amenity"="fuel"](around:${metres},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${metres},${coordinates.latitude},${coordinates.longitude});relation["amenity"="fuel"](around:${metres},${coordinates.latitude},${coordinates.longitude}););out center tags 2500;`
+  /* Зарядные станции — отдельный тег.
+
+     Фильтр «Зарядка EV» на карте был, а показывать ему было нечего:
+     запрос тянул только amenity=fuel, и электрозаправка попадала в
+     ответ лишь тогда, когда стояла при обычной АЗС и была помечена
+     тегом fuel:electricity. Отдельно стоящие зарядки — а их
+     большинство — не приезжали вовсе, и человек на электромобиле видел
+     пустую карту. */
+  const buildQuery = (metres: number) => {
+    const near = `around:${metres},${coordinates.latitude},${coordinates.longitude}`
+    return `[out:json][timeout:24];(`
+      + `node["amenity"="fuel"](${near});`
+      + `way["amenity"="fuel"](${near});`
+      + `relation["amenity"="fuel"](${near});`
+      + `node["amenity"="charging_station"](${near});`
+      + `way["amenity"="charging_station"](${near});`
+      + `);out center tags 2500;`
+  }
   const query = buildQuery(radius)
   const directoryCacheKey = getDirectoryCacheKey(coordinates, radius)
   const cachedDirectory = directoryStationCache.get(directoryCacheKey)

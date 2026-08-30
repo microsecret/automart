@@ -1,6 +1,6 @@
 import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { handleFuelCallback, handleFuelLocation } from "@/lib/fuel-bot-handler"
+import { handleFuelCallback, handleFuelLocation, handleLiveLocation } from "@/lib/fuel-bot-handler"
 import {
   canModerateTelegramChat,
   completeTelegramRegistration,
@@ -458,6 +458,40 @@ async function handleMessage(message: TelegramMessage) {
     return
   }
 
+  /* Рассказ про трансляцию геопозиции.
+
+     Возможность есть, но о ней никто не знает: человек не догадается,
+     что если включить трансляцию, площадка сама спросит его на заправке.
+     А это единственный способ получить отметку от того, кто за рулём, —
+     сайт он не откроет. */
+  if (message.text?.trim().toLowerCase().match(/^\/(fuel|benzin|бензин)/) && message.chat.type === "private") {
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: [
+        "⛽ <b>Отмечайте заправки, не отвлекаясь от дороги</b>",
+        "",
+        "Включите трансляцию геопозиции: скрепка → «Геопозиция» → «Транслировать».",
+        "",
+        "Дальше ничего делать не нужно. Когда вы постоите у заправки — я спрошу, какое там топливо и почём. Одно нажатие, и другие водители не поедут туда впустую.",
+        "",
+        "Можно и разово: пришлите точку скрепкой, и я найду ближайшую АЗС.",
+      ].join("\n"),
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🗺 Карта заправок", url: absoluteUrl("/services/fuel-map") }],
+          [{
+            text: "📤 Рассказать друзьям",
+            url: `https://t.me/share/url?url=${encodeURIComponent(absoluteUrl("/services/fuel-map"))}`
+              + `&text=${encodeURIComponent("Где сейчас есть бензин — карта отметок водителей")}`,
+          }],
+        ],
+      },
+    })
+    return
+  }
+
   if (message.text?.trim().toLowerCase().startsWith("/help") && message.chat.type === "private") {
     const user = await getTelegramUser(telegramId)
     await sendRegistrationStep(chatId, getTelegramRegistrationStep(user), message.from.first_name, user?.name)
@@ -749,6 +783,26 @@ export async function POST(request: NextRequest) {
         data: query.data,
       }).catch((error) => console.error("Telegram callback error:", error))
     }
+
+    return NextResponse.json({ ok: true })
+  }
+
+  /* Обновление живой геолокации приходит правкой прежнего сообщения.
+
+     Человек включает трансляцию один раз, а дальше Telegram присылает
+     новую точку раз в минуту-две — как edited_message, не как новое
+     сообщение. Без этой ветки трансляция была для площадки невидима:
+     приходила только первая точка, и всё. */
+  const editedLocation = (update as { edited_message?: { chat?: { id?: number | string; type?: string }; location?: { latitude?: number; longitude?: number } } }).edited_message
+  if (
+    editedLocation?.chat?.type === "private"
+    && typeof editedLocation.location?.latitude === "number"
+    && typeof editedLocation.location?.longitude === "number"
+  ) {
+    void handleLiveLocation(String(editedLocation.chat.id), {
+      latitude: editedLocation.location.latitude,
+      longitude: editedLocation.location.longitude,
+    }).catch((error) => console.error("Telegram live location error:", error))
 
     return NextResponse.json({ ok: true })
   }

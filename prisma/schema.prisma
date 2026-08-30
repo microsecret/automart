@@ -956,6 +956,40 @@ model VisitEvent {
 }
 
 // One-time codes delivered by the Telegram bot for phone login.
+/// Живая геолокация водителя рядом с заправкой.
+///
+/// Человек за рулём не станет открывать карту и заполнять форму — ему
+/// некогда. Но он может один раз включить в боте «транслировать
+/// геопозицию», и дальше площадка сама поймёт, что он остановился у АЗС.
+///
+/// Замер по отметкам: заправка занимает пять-семь минут вместе с
+/// очередью. Значит, простоял пятнадцать — точно заправлялся, и спросить
+/// его о ценах уместно: он только что видел табло.
+///
+/// Запись живёт недолго и перезаписывается при каждом обновлении точки:
+/// это не история перемещений, а короткая память «где он сейчас».
+model FuelPresence {
+  id           String   @id @default(uuid())
+  /// Чат Telegram: по нему бот пишет и по нему же узнаёт человека.
+  chatId       String   @unique
+  /// Точка, у которой человек стоит.
+  stationId    String
+  stationName  String
+  latitude     Float
+  longitude    Float
+  /// Когда он оказался здесь впервые в этой стоянке.
+  arrivedAt    DateTime @default(now())
+  /// Последнее обновление живой геолокации.
+  seenAt       DateTime @default(now())
+  /// Когда спросили об отметке: второй раз спрашивать нельзя.
+  promptedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([seenAt])
+  @@index([stationId, seenAt])
+}
+
 model TelegramAuthCode {
   id         String    @id @default(uuid())
   phone      String

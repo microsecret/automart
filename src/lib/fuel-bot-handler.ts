@@ -10,15 +10,23 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import { telegramApi } from "@/lib/telegram"
+import { getTelegramMiniAppUrl, telegramApi } from "@/lib/telegram"
 import { absoluteUrl } from "@/lib/site-url"
 import {
   buildAction,
+  distanceKm,
   formatDistance,
   matchStation,
   parseAction,
   type BotStation,
 } from "@/lib/fuel-bot-report"
+import {
+  decidePresencePrompt,
+  isSameStop,
+  presencePromptText,
+  PRESENCE_RADIUS_KM,
+  PRESENCE_STALE_MINUTES,
+} from "@/lib/fuel-presence"
 import {
   AVAILABILITY_FUEL_LABELS,
   STALE_WINDOW_MS,
@@ -254,4 +262,143 @@ export async function handleFuelCallback(input: {
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
+/**
+ * Обновление живой геолокации: человек транслирует геопозицию.
+ *
+ * Карта живёт отметками, а отмечают редко: за рулём никто не открывает
+ * сайт и не заполняет форму — заправился и уехал. Но если человек один
+ * раз включил трансляцию, площадка видит, что он остановился у АЗС, и
+ * может спросить в тот единственный момент, когда ответ ничего не стоит:
+ * он стоит у колонки и только что видел табло.
+ *
+ * Ничего не спрашиваем, пока он не простоял достаточно долго: заправка
+ * занимает пять-семь минут вместе с очередью, и вопрос через две минуты
+ * означал бы, что мы приняли светофор за колонку.
+ */
+export async function handleLiveLocation(
+  chatId: string,
+  point: { latitude: number; longitude: number },
+): Promise<void> {
+  /* Дешёвая проверка раньше дорогой.
+
+     Telegram шлёт обновление трансляции раз в минуту с каждого телефона.
+     При тысяче водителей это тысяча обращений в минуту, и каждое лезло
+     бы в справочник заправок — свой HTTP-запрос, а при промахе кэша ещё
+     и поход в OpenStreetMap на две секунды.
+
+     Почти все обновления приходят от того, кто уже стоит у известной нам
+     точки: сверить расстояние до неё стоит одного чтения строки по
+     уникальному индексу. Справочник дёргаем только когда человек
+     действительно уехал с прежнего места. */
+  /* Протухшие стоянки убираем попутно.
+
+     Отдельная задача по расписанию ради таблицы, где строк столько же,
+     сколько людей с включённой трансляцией, не окупается. Раз в сотню
+     обновлений проходим по старым записям — этого хватает, чтобы
+     таблица не росла: человек выключил трансляцию, и его строка
+     исчезает в ближайшие минуты. */
+  if (Math.random() < 0.01) {
+    const stale = new Date(Date.now() - PRESENCE_STALE_MINUTES * 60_000 * 4)
+    void prisma.fuelPresence.deleteMany({ where: { seenAt: { lt: stale } } }).catch(() => undefined)
+  }
+
+  const known = await prisma.fuelPresence.findUnique({ where: { chatId } })
+  if (known && distanceKm(point, { latitude: known.latitude, longitude: known.longitude }) <= PRESENCE_RADIUS_KM) {
+    const updated = await prisma.fuelPresence.update({
+      where: { chatId },
+      data: { seenAt: new Date(), latitude: point.latitude, longitude: point.longitude },
+    })
+
+    const decision = decidePresencePrompt(updated)
+    if (decision.action !== "ask") return
+
+    await prisma.fuelPresence.update({ where: { chatId }, data: { promptedAt: new Date() } })
+    await sendPresencePrompt(chatId, updated.stationId, updated.stationName)
+    return
+  }
+
+  const stations = await findStationsNear(point)
+  const nearest = stations
+    .map((station) => ({ station, km: distanceKm(point, station) }))
+    .sort((first, second) => first.km - second.km)[0]
+
+  /* Уехал с заправки — забываем стоянку. Иначе, вернувшись через час, он
+     получил бы вопрос о точке, у которой давно не стоит. */
+  if (!nearest || nearest.km > PRESENCE_RADIUS_KM) {
+    await prisma.fuelPresence.deleteMany({ where: { chatId } }).catch(() => undefined)
+    return
+  }
+
+  const existing = await prisma.fuelPresence.findUnique({ where: { chatId } })
+  const sameStop = isSameStop(existing?.stationId || null, nearest.station.id)
+
+  const record = sameStop && existing
+    ? await prisma.fuelPresence.update({
+        where: { chatId },
+        data: { seenAt: new Date(), latitude: point.latitude, longitude: point.longitude },
+      })
+    : await prisma.fuelPresence.create({
+        data: {
+          chatId,
+          stationId: nearest.station.id,
+          stationName: nearest.station.name,
+          latitude: point.latitude,
+          longitude: point.longitude,
+          arrivedAt: new Date(),
+          seenAt: new Date(),
+          /* Смена заправки обнуляет и отметку о вопросе: на новой точке
+             спросить уместно, даже если только что спрашивали. */
+          promptedAt: null,
+        },
+      }).catch(async () => {
+        /* Гонка двух обновлений подряд: запись уже создана соседним
+           запросом — просто обновим её. */
+        return prisma.fuelPresence.update({
+          where: { chatId },
+          data: {
+            stationId: nearest.station.id,
+            stationName: nearest.station.name,
+            latitude: point.latitude,
+            longitude: point.longitude,
+            arrivedAt: new Date(),
+            seenAt: new Date(),
+            promptedAt: null,
+          },
+        })
+      })
+
+  const decision = decidePresencePrompt(record)
+  if (decision.action !== "ask") return
+
+  await prisma.fuelPresence.update({ where: { chatId }, data: { promptedAt: new Date() } })
+  await sendPresencePrompt(chatId, record.stationId, record.stationName)
+}
+
+/** Приглашение отметить заправку: одно сообщение с тремя путями. */
+async function sendPresencePrompt(chatId: string, stationId: string, stationName: string) {
+  const miniAppUrl = getTelegramMiniAppUrl()
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(absoluteUrl("/services/fuel-map"))}`
+    + `&text=${encodeURIComponent("Где сейчас есть бензин — карта отметок водителей")}`
+
+  await telegramApi("sendMessage", {
+    chat_id: chatId,
+    text: presencePromptText(stationName),
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+    reply_markup: {
+      inline_keyboard: [
+        /* Два пути к одному действию: в приложении и на сайте. Человек
+           за рулём выбирает то, что у него уже открыто. */
+        [{ text: "⛽ Отметить прямо здесь", callback_data: `fuel:report:${stationId}` }],
+        miniAppUrl
+          ? [{ text: "📱 Открыть в приложении", web_app: { url: absoluteUrl("/services/fuel-map?from=telegram") } }]
+          : [{ text: "🗺 Открыть карту", url: absoluteUrl("/services/fuel-map") }],
+        /* Позвать друзей: чем больше отмечающих, тем точнее карта — и
+           тем меньше поездок впустую у каждого. */
+        [{ text: "📤 Рассказать друзьям", url: shareUrl }],
+      ],
+    },
+  }).catch(() => undefined)
 }

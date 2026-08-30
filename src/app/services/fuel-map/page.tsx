@@ -77,6 +77,10 @@ const FUEL_FILTERS = [
   { value: "АИ‑92", label: "АИ‑92" },
   { value: "АИ‑95", label: "АИ‑95" },
   { value: "АИ‑98", label: "АИ‑98" },
+  /* АИ-100 есть у каждой четвёртой заправки в замере по Уфе — 24 точки
+     из ста. Фильтра для него не было, и владелец машины на сотом искал
+     её глазами по всей карте. */
+  { value: "АИ‑100", label: "АИ‑100" },
   { value: "ДТ", label: "ДТ" },
   { value: "Газ", label: "Газ" },
   { value: "Зарядка EV", label: "Зарядка EV" },
@@ -1761,6 +1765,37 @@ function FuelMapContent() {
             </ActionIcon>
           </Tooltip>
         </Box>
+
+        {/* Почему карта опустела.
+
+            Фильтры складываются: выбрав сеть «Башнефть» и марку «Газ»,
+            человек получает пустую карту — у этой сети газа нет. Раньше
+            она просто пустела молча, и это читалось как поломка сервиса,
+            а не как «такого сочетания не бывает». */}
+        {!isLoading && !error && allStations.length > 0 && filteredStations.length === 0 && (
+          <Paper className="fuel-map-empty-filter" radius="md" p="sm" withBorder aria-live="polite">
+            <Text size="sm" fw={700}>Под эти условия ничего не нашлось</Text>
+            <Text size="xs" c="dimmed" mt={2}>
+              {networkFilter && fuelFilter
+                ? `У сети «${networkFilter}» здесь нет марки «${fuelFilter}».`
+                : fuelFilter
+                  ? `Марки «${fuelFilter}» на этом участке нет.`
+                  : `Сети «${networkFilter}» на этом участке нет.`}
+            </Text>
+            <Group gap="xs" mt="sm">
+              {fuelFilter && (
+                <Button size="compact-xs" variant="light" color="indigo" onClick={() => setFuelFilter("")}>
+                  Показать всё топливо
+                </Button>
+              )}
+              {networkFilter && (
+                <Button size="compact-xs" variant="light" color="indigo" onClick={() => setNetworkFilter("")}>
+                  Показать все сети
+                </Button>
+              )}
+            </Group>
+          </Paper>
+        )}
 
         {/* Состояние загрузки поверх карты.
 
