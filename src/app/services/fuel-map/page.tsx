@@ -627,6 +627,17 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   }
 
   const handleMarkerClick = (marker: MapMarker) => {
+    /* Перетаскивание не открывает карточку.
+
+       Метки больше не гасят нажатие — иначе карту нельзя потянуть,
+       положив палец на плашку. Но тогда любое движение, начатое с
+       метки, заканчивалось бы открытием карточки: человек тянул карту и
+       получал всплывшую панель поверх неё.
+
+       Порог движения задаёт сама карта: три пикселя отличают дрожание
+       пальца от осознанного перетаскивания. */
+    if (isDragging) return
+
     if (marker.stations.length === 1) {
       setClusterHint(null)
       onSelect(marker.stations[0])
@@ -823,7 +834,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                     "--plate-brand": networkIdentity.color,
                     "--plate-brand-ink": networkIdentity.textColor,
                   } as CSSProperties : undefined}
-                  onPointerDown={(event) => event.stopPropagation()}
+                  /* Событие не останавливается: карта должна видеть палец.
+
+                     Раньше метка гасила нажатие, и карту нельзя было
+                     потянуть, положив палец на плашку — а их на экране
+                     десятки, и попасть в просвет между ними на ходу
+                     почти невозможно. Человек тянул, карта стояла,
+                     страница уезжала вниз.
+
+                     Нажатие при этом не потерялось: обработчик клика
+                     срабатывает только тогда, когда палец не двигался.
+                     Проверка живёт в самой карте — она и знает, было
+                     перетаскивание или нет. */
                   onClick={() => handleMarkerClick(marker)}
                   aria-label={label}
                 >
@@ -917,7 +939,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                    честно отвечает тому, сколько заправок этой сети
                    внутри. */
                 ...(clusterRing ? { backgroundImage: clusterRing } : {}),
-              }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? (
+              }} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? (
                 /* Число в элементе, а не голым текстом: под кольцом
                    состава лежит сплошная подложка, и цифру надо поднять
                    поверх неё — текстовый узел так не поднять. */

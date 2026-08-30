@@ -848,3 +848,20 @@ test("бензиновая сеть не становится газовой и�
   assert.match(fn, /!fuels && /)
   assert.doesNotMatch(fn, /name\.includes\("газ"\)/)
 })
+
+test("карту можно тянуть пальцем с любого места, включая метки", () => {
+  /* Метки гасили нажатие, и карту нельзя было потянуть, положив палец
+     на плашку — а их на экране десятки. Человек тянул, карта стояла, а
+     страница уезжала вниз, будто окно сворачивается. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.doesNotMatch(page, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/)
+  /* Перетаскивание при этом не открывает карточку: иначе движение,
+     начатое с метки, всплывало бы панелью поверх карты. */
+  assert.match(page, /if \(isDragging\) return/)
+
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  /* Жест внутри карты принадлежит карте, где бы палец ни лёг. */
+  assert.match(css, /\.fuel-map-canvas \*,/)
+  /* Карточка точки — исключение: её содержимое надо прокручивать. */
+  assert.match(css, /\.fuel-map-selected \*\s*\{\s*touch-action: auto/)
+})

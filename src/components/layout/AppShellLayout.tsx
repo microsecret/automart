@@ -65,7 +65,7 @@ const SERVICE_COLORS = {
 
 const MOBILE_ICONS = {
   home: IconHome2,
-  auctions: IconGavel,
+  "fuel-map": IconGasStation,
   create: IconPlus,
   forum: IconMessages,
   messages: IconMessageCircle2,

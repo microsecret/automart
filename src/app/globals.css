@@ -3679,13 +3679,47 @@ select {
   }
 }
 
+/* Жесты внутри карты принадлежат карте.
+
+   touch-action стоял только на слое плиток, а метки, плашки и кнопки
+   лежат поверх отдельными элементами. Палец, попавший на плашку — а их
+   на экране десятки, — карту не двигал: браузер считал это обычным
+   касанием страницы и уводил её вниз, будто человек сворачивает окно.
+   Перетащить карту получалось, только попав в просвет между метками.
+
+   Правило распространяется на всё содержимое карты: где бы палец ни
+   лёг, страница остаётся на месте.
+
+   overscroll-behavior добавлен туда же: дотянув карту до края, человек
+   иначе начинал тянуть страницу за ней. */
+.fuel-map-canvas,
+.fuel-map-canvas *,
+.fuel-map-canvas__tiles {
+  touch-action: none;
+}
+
+.fuel-map-canvas {
+  overscroll-behavior: contain;
+}
+
+/* Карточка точки — исключение: внутри неё форма отметки, список цен и
+   комментарии, и их надо прокручивать пальцем. */
+.fuel-map-selected,
+.fuel-map-selected * {
+  touch-action: auto;
+}
+
+.fuel-map-selected__body {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
 .fuel-map-canvas__tiles {
   position: absolute;
   inset: 0;
   overflow: hidden;
   background: #dce9df;
   cursor: grab;
-  touch-action: none;
 }
 
 .fuel-map-canvas__tiles:focus-visible {
