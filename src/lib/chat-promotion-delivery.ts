@@ -28,9 +28,15 @@ type SendResult = { chatId: string; messageId: number | null; error?: string }
 /**
  * Публикует объявление в одном чате.
  *
- * Фотографии уходят альбомом, текст — отдельным сообщением с кнопками:
- * Telegram не позволяет прикрепить кнопки к альбому, а кнопки здесь
- * важнее — ради них продвижение и покупают.
+ * Фотографии уходят альбомом, кнопки — отдельным сообщением: Telegram
+ * не позволяет прикрепить кнопки к альбому, а кнопки здесь важнее —
+ * ради них продвижение и покупают.
+ *
+ * Описание при этом едет подписью к первому снимку. Раньше оно было
+ * только во втором сообщении, и человек, пересылавший пост другу,
+ * отправлял голые фотографии без цены, года и города — либо текст без
+ * единой картинки. Пересылают тут постоянно: ради этого объявление в
+ * чат и попадает.
  */
 async function publishToChat(chatId: string, post: ReturnType<typeof buildChatPost>): Promise<SendResult> {
   try {
@@ -45,8 +51,12 @@ async function publishToChat(chatId: string, post: ReturnType<typeof buildChatPo
     if (post.photos.length > 1) {
       const uploads: TelegramUpload[] = []
       const media = post.photos.map((url, index) => {
+        /* Подпись только у первого снимка: у остальных Telegram её
+           игнорирует, а у альбома с несколькими подписями поведение
+           клиентов расходится. */
+        const caption = index === 0 ? { caption: post.caption, parse_mode: "HTML" } : {}
         const file = local.get(url)
-        if (!file) return { type: "photo", media: absoluteUrl(url) }
+        if (!file) return { type: "photo", media: absoluteUrl(url), ...caption }
 
         const field = `photo${index}`
         uploads.push({
@@ -55,7 +65,7 @@ async function publishToChat(chatId: string, post: ReturnType<typeof buildChatPo
           contentType: photoMime(url),
           data: file,
         })
-        return { type: "photo", media: `attach://${field}` }
+        return { type: "photo", media: `attach://${field}`, ...caption }
       })
 
       if (uploads.length) {
@@ -68,7 +78,7 @@ async function publishToChat(chatId: string, post: ReturnType<typeof buildChatPo
       const file = local.get(single)
 
       if (file) {
-        await telegramPhotoApi({ chat_id: chatId }, {
+        await telegramPhotoApi({ chat_id: chatId, caption: post.caption, parse_mode: "HTML" }, {
           uploads: [{
             field: "photo",
             filename: single.slice(single.lastIndexOf("/") + 1),
@@ -78,13 +88,13 @@ async function publishToChat(chatId: string, post: ReturnType<typeof buildChatPo
         })
       } else {
         /* Внешний адрес Telegram забирает сам — читать его неоткуда. */
-        await telegramApi("sendPhoto", { chat_id: chatId, photo: absoluteUrl(single) })
+        await telegramApi("sendPhoto", { chat_id: chatId, photo: absoluteUrl(single), caption: post.caption, parse_mode: "HTML" })
       }
     }
 
     const message = await telegramApi<{ message_id: number }>("sendMessage", {
       chat_id: chatId,
-      text: post.caption,
+      text: post.actionText,
       parse_mode: "HTML",
       disable_web_page_preview: true,
       reply_markup: { inline_keyboard: post.buttons.map((button) => [{ text: button.text, url: button.url }]) },

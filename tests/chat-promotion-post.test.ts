@@ -143,3 +143,28 @@ test("«Открыть объявление» остаётся первым, а 
   assert.ok(post.buttons[0].text.includes("Открыть объявление"))
   assert.ok(post.buttons[post.buttons.length - 1].text.includes("Разместить"))
 })
+
+test("описание едет подписью к фото, а не отдельным текстом", () => {
+  /* Пересылая пост другу, человек отправлял голые фотографии без цены,
+     года и города — либо текст без единой картинки: описание жило во
+     втором сообщении. Пересылают тут постоянно, ради этого объявление
+     в чат и попадает. */
+  const post = buildChatPost(base, { siteUrl: SITE })
+  assert.ok(post.caption.includes(base.title), "в подписи нет названия")
+  assert.match(post.caption, /2.350.000.₽/)
+  assert.ok(post.caption.includes(base.city), "в подписи нет города")
+
+  /* Второе сообщение несёт только кнопки: всё существенное уже сказано
+     подписью, и повторять его значит показать человеку одно и то же
+     дважды подряд. */
+  assert.ok(!post.actionText.includes(base.title), "текст кнопок повторяет подпись")
+  assert.ok(post.actionText.length < 80, "текст при кнопках должен быть коротким")
+})
+
+test("подпись укладывается в лимит Telegram", () => {
+  /* Подпись к фото ограничена 1024 знаками: длиннее Telegram обрезает
+     сам, в произвольном месте — посреди слова или тега. */
+  const long = { ...base, title: "Очень длинное название ".repeat(60) }
+  const post = buildChatPost(long, { siteUrl: SITE })
+  assert.ok(post.caption.length <= 1024, `подпись ${post.caption.length} знаков`)
+})

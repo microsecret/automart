@@ -38,6 +38,7 @@ export type ChatPost = {
   photos: string[]
   /** Подпись под альбомом или самостоятельное сообщение. */
   caption: string
+  actionText: string
   buttons: PostButton[]
 }
 
@@ -142,7 +143,10 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
   if (specs.length) lines.push(`⚙️ ${specs.join(" · ")}`)
   if (listing.city) lines.push(`📍 ${escapeHtml(listing.city)}`)
 
-  lines.push("", "👇 Напишите продавцу прямо из чата")
+  /* Подпись едет вместе с фотографиями, поэтому в ней только то, что
+     человек читает глазами: название, цена, характеристики, город.
+     Призыв к действию относится к кнопкам и живёт во втором
+     сообщении — вместе с ними. */
 
   let caption = lines.join("\n")
   /* Подпись длиннее лимита Telegram обрезается самим мессенджером в
@@ -208,7 +212,14 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
     url: `${options.siteUrl.replace(/\/$/, "")}/listings/create/vehicle`,
   })
 
-  return { photos, caption, buttons }
+  return {
+    photos,
+    caption,
+    /* Текст сообщения с кнопками: коротко, потому что всё существенное
+       уже сказано подписью к снимкам. */
+    actionText: "👇 Открыть объявление или написать продавцу",
+    buttons,
+  }
 }
 
 /**
