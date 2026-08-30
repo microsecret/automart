@@ -1,6 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useState, useEffect, useRef } from "react"
+import { useTelegramClosingGuard } from "@/lib/use-telegram-closing-guard"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl } from "@mantine/core"
@@ -33,6 +34,12 @@ export default function CreatePartPage() {
     make: "", model: "", location: "Москва", subcategory: "", oemNumber: "", sellerType: "OWNER", availability: "IN_STOCK",
     saleFormat: "FIXED", auctionEndsAt: "", auctionStartPrice: "", auctionMinStep: "",
   })
+  /* Внутри Telegram приложение закрывается свайпом вниз, и делается это
+     случайно чаще, чем осознанно. Форма длинная, черновиков в
+     мини-приложении нет — заполненное пропадало молча. Вопрос задаётся
+     только когда есть что терять. */
+  useTelegramClosingGuard(Boolean(f.name || f.description || f.price))
+
   const [compat, setCompat] = useState<{ make: string; model: string; generation: string; engine: string; yearFrom: string; yearTo: string }[]>([])
   const [newCompat, setNewCompat] = useState({ make: "", model: "", generation: "", engine: "", yearFrom: "", yearTo: "" })
   const { images, uploadingImages, uploadPhotos, removeImage, replaceImages } = useMarketplaceImageUpload()

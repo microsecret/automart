@@ -51,6 +51,9 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
             <NextImage
               className="news-list-card__image"
               src={article.imageUrl}
+              /* Пустое описание намеренно: ссылка-обёртка выше уже
+                 говорит «Открыть новость: заголовок», и повтор заставил
+                 бы читалку произносить его дважды. */
               alt=""
               fill
               sizes={featured ? "(max-width: 62em) 100vw, 776px" : "(max-width: 62em) 100vw, 378px"}

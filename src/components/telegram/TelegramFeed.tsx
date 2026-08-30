@@ -185,7 +185,7 @@ function TelegramFeedCard({ listing }: { listing: FeedListing }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
-            alt=""
+            alt={vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : listing.title}
             loading="lazy"
             decoding="async"
             onError={() => setFailed(true)}

@@ -140,7 +140,7 @@ function AuctionCard({ lot }: { lot: AuctionLot }) {
       <Box className="tg-card__media">
         {lot.imageUrl && !failed ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={lot.imageUrl} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+          <img src={lot.imageUrl} alt={`${lot.make} ${lot.model}`} loading="lazy" decoding="async" onError={() => setFailed(true)} />
         ) : (
           <Box className="tg-card__media-empty"><IconPhotoOff size={22} /></Box>
         )}

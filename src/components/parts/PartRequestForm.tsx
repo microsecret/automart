@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Alert, Button, Group, Select, Stack, Text, TextInput, Textarea } from "@mantine/core"
 import { IconCheck, IconSearch } from "@tabler/icons-react"
+import { useTelegramClosingGuard } from "@/lib/use-telegram-closing-guard"
 import { PART_TYPES } from "@/lib/constants"
 
 /**
@@ -33,6 +34,11 @@ export default function PartRequestForm({ presetCategory = null, onSuccess }: Pr
   const [comment, setComment] = useState("")
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
+
+  /* Заявку заполняют с телефона, часто внутри Telegram, где приложение
+     закрывается случайным свайпом. Здесь теряется не только описание
+     детали, но и контакты — без них магазину некуда ответить. */
+  useTelegramClosingGuard(Boolean(partName || oemNumber || phone))
 
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)

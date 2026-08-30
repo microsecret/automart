@@ -48,7 +48,7 @@ function MapListingResult({ listing, city }: { listing: MapListing; city: string
           <VehicleFallback type={vehicle.vehicleType || "CAR"} bodyType={vehicle.bodyType} compact />
           {displayImage && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={displayImage} alt="" onError={() => setImageFailed(true)} loading="lazy" decoding="async" />
+            <img src={displayImage} alt={`${vehicle.make} ${vehicle.model}`} onError={() => setImageFailed(true)} loading="lazy" decoding="async" />
           )}
         </Box>
         <Stack gap={2} miw={0} style={{ flex: 1 }}>

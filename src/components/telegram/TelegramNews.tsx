@@ -94,7 +94,7 @@ function NewsCard({ item }: { item: NewsItem }) {
       {item.imageUrl && !failed ? (
         <Box className="tg-card__media">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.imageUrl} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+          <img src={item.imageUrl} alt={item.title} loading="lazy" decoding="async" onError={() => setFailed(true)} />
         </Box>
       ) : (
         <Box className="tg-card__media tg-card__media--flat">
