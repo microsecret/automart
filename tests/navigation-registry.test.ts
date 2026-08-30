@@ -36,7 +36,11 @@ test("все действия подачи объявления ведут на 
   ]
 
   assert.equal(telegramHrefs.some((href) => href.includes("/listings/create/quick")), false)
-  assert.equal(TELEGRAM_TAB_NAVIGATION.find((item) => item.id === "create")?.href, `${CREATE_VEHICLE_HREF}?source=telegram`)
+  /* Подача в мини-приложении переехала на главную кнопку Telegram: она
+     стоит в том же нижнем краю экрана, что и панель вкладок, и две
+     одинаковые цели друг на друге только мешали. Вкладки «create» в
+     панели больше нет. */
+  assert.equal(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes(CREATE_VEHICLE_HREF)), false)
   assert.equal(SITE_MOBILE_NAVIGATION.find((item) => item.id === "create")?.href, CREATE_VEHICLE_HREF)
 })
 
@@ -95,22 +99,20 @@ const telegramTabItems: { id: string; href: string }[] =
     href: item.href,
   }))
 
-test("форум доступен в приложении Telegram обоими путями", () => {
-  /* Нижняя панель прячется при прокрутке, а выезжающее меню открывают
-     осознанно. Форум был только в панели, и человек, закрывший её, не
-     находил форум в приложении вовсе — при том что новости из меню
-     доступны. Проверяются оба пути, чтобы пропажа не повторилась. */
-  assert.ok(telegramTabItems.some((item) => item.id === "forum"), "форума нет в нижней панели приложения")
+test("форум доступен в приложении Telegram", () => {
+  /* Форум ушёл из нижней панели в выезжающее меню: панель теперь ведёт
+     только внутрь мини-приложения, а форум открывает обычный сайт, где
+     нет ни панели, ни возврата. Пропасть он при этом не должен. */
   assert.ok(telegramMenuItems.some((item) => item.id === "forum"), "форума нет в выезжающем меню приложения")
 })
 
-test("ссылки форума в приложении помечены источником", () => {
+test("ссылки на сайт из приложения помечены источником", () => {
   // Без пометки переход из приложения считается заходом с сайта, и
   // страница открывается в обычной вёрстке, а не в приложении.
   const links = [...telegramTabItems, ...telegramMenuItems]
-    .filter((item) => item.id === "forum")
+    .filter((item) => item.href.startsWith("/forum") || item.href.startsWith("/services/fuel-map"))
 
-  assert.ok(links.length >= 2, "ожидались обе ссылки на форум")
+  assert.ok(links.length >= 2, "ожидались ссылки на форум и карту")
   for (const link of links) assert.match(link.href, /from=telegram/)
 })
 
@@ -127,16 +129,28 @@ test("карта АЗС есть в нижнем меню приложения",
   assert.ok(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("/services/fuel-map")))
 })
 
-test("кабинет и аукционы убраны из нижнего меню, но остались в выезжающем", () => {
-  /* Кабинет открывают раз в неделю, аукционы — единицы тех, кто уже решил
-     везти машину из-за границы. Пропасть из приложения они при этом не
-     должны. */
+test("кабинет убран из нижнего меню, но остался в выезжающем", () => {
+  /* Кабинет открывают раз в неделю — в панели из пяти мест ему не место,
+     но пропасть из приложения он не должен. */
   assert.equal(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("/dashboard")), false)
-  assert.equal(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("tab=auctions")), false)
 
   const menuHrefs = TELEGRAM_MENU_NAVIGATION.flatMap((section) => section.items.map((item) => item.href))
   assert.ok(menuHrefs.some((href) => href.includes("/dashboard")))
-  assert.ok(menuHrefs.some((href) => href.includes("tab=auctions")))
+})
+
+test("панель приложения ведёт внутрь него, а не на сайт", () => {
+  /* Прежний состав уводил наружу и оставлял там: «Продать» и «Форум»
+     открывали обычный сайт с десктопной шапкой и подвалом во вьюпорте
+     телефона, а вернуться в ленту было нечем — панели там уже нет.
+
+     Аукционы и сообщения при этом были написаны и работали внутри
+     приложения, но попасть в них можно было только через выезжающее
+     меню: человек не знал, что они есть. Поэтому решение о переносе
+     аукционов в меню пересмотрено — они вернулись в панель. */
+  const insideApp = TELEGRAM_TAB_NAVIGATION.filter((item) => item.href.startsWith("/telegram"))
+  assert.ok(insideApp.length >= 4, "почти все вкладки должны вести внутрь приложения")
+  assert.ok(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("tab=auctions")))
+  assert.ok(TELEGRAM_TAB_NAVIGATION.some((item) => item.href.includes("tab=chats")))
 })
 
 test("сервисы сайта доступны из приложения", () => {

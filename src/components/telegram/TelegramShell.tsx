@@ -19,7 +19,6 @@ import {
   IconMessageCircle2,
   IconMessages,
   IconNews,
-  IconPlus,
   IconTool,
   IconTruckDelivery,
   IconX,
@@ -96,10 +95,10 @@ const MENU_ICONS: Record<string, typeof IconCar | null> = {
 
 const TAB_ICONS = {
   vehicles: IconCar,
-  fuel: IconGasStation,
-  create: IconPlus,
+  auctions: IconGavel,
+  chats: IconMessageCircle2,
   news: IconNews,
-  forum: IconMessages,
+  fuel: IconGasStation,
 } satisfies Record<(typeof TELEGRAM_TAB_NAVIGATION)[number]["id"], typeof IconCar>
 
 const MENU_SECTIONS = TELEGRAM_MENU_NAVIGATION.map((section) => ({
@@ -110,7 +109,9 @@ const MENU_SECTIONS = TELEGRAM_MENU_NAVIGATION.map((section) => ({
 const TABS = TELEGRAM_TAB_NAVIGATION.map((item) => ({
   ...item,
   Icon: TAB_ICONS[item.id],
-  accent: item.id === "create",
+  /* Выделенной вкладки в панели больше нет: подача переехала на главную
+     кнопку Telegram, которая и без того заметнее всего. */
+  accent: false,
 }))
 
 export default function TelegramShell({
@@ -262,6 +263,41 @@ export default function TelegramShell({
      узком экране заголовок переносится. Замер показал 67 пикселей там,
      где предполагалось 64, и верх поля прятался под шапкой. */
   const headRef = useRef<HTMLDivElement>(null)
+  /* Кнопка «назад» платформы.
+
+     В типе она описана, но не вызывалась ни разу — то есть её просто
+     не было. Комментарий рядом утверждал, что «назад» возвращает к
+     предыдущей вкладке; на деле человек, ушедший из ленты в объявление
+     или в меню, мог вернуться только закрыв приложение целиком:
+     вертикальные жесты в мини-приложении отключены, а другой кнопки
+     нет.
+
+     На корневой ленте кнопка не нужна: возвращаться оттуда некуда, и
+     лишняя стрелка предлагала бы выйти из приложения. */
+  useEffect(() => {
+    const webApp = window.Telegram?.WebApp
+    const backButton = webApp?.BackButton
+    if (!backButton) return
+
+    const isRoot = activeTab === "/telegram"
+    const goBack = () => {
+      webApp?.HapticFeedback?.impactOccurred("light")
+      window.history.back()
+    }
+
+    if (isRoot) {
+      backButton.hide()
+      return
+    }
+
+    backButton.onClick(goBack)
+    backButton.show()
+    return () => {
+      backButton.offClick(goBack)
+      backButton.hide()
+    }
+  }, [activeTab])
+
   useEffect(() => {
     const head = headRef.current
     if (!head) return
@@ -278,7 +314,14 @@ export default function TelegramShell({
   }, [title, subtitle])
 
   return (
-    <Box className="tg-shell" data-ready={ready || undefined}>
+    <Box
+      className="tg-shell"
+      data-ready={ready || undefined}
+      /* Панель вкладок стоит над главной кнопкой Telegram, а когда
+         кнопки нет — возвращается к нижнему краю: пустая полоса под ней
+         выглядела бы обрывом страницы. */
+      data-main-button={mainAction === false || !signedIn ? "hidden" : undefined}
+    >
       <Box className="tg-shell__head" ref={headRef}>
         {/* Кнопка меню слева, как в мобильной версии сайта. */}
         <button

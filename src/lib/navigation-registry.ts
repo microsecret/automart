@@ -201,12 +201,26 @@ export const TELEGRAM_MENU_NAVIGATION = [
  * • Форум остался: место, куда человек приходит за ответом на свой
  *   вопрос и возвращается за ним.
  */
+/* Нижняя панель мини-приложения ведёт только внутрь него самого.
+
+   Прежний состав уводил человека наружу и оставлял там: «Бензин» и
+   «Форум» открывали обычный сайт с десктопной шапкой, подвалом и
+   боковым каталогом во вьюпорте телефона, а вернуться в ленту было
+   нечем — панели там уже нет.
+
+   «Продать» дублировала главную кнопку Telegram, которая стоит ровно в
+   том же нижнем краю экрана: две одинаковые цели друг на друге.
+   Подача осталась за главной кнопкой — она заметнее и всегда под рукой.
+
+   Вместо них — «Аукционы» и «Сообщения». Обе вкладки давно написаны и
+   работают, но попасть в них можно было только через выезжающее меню:
+   человек не знал, что они есть. */
 export const TELEGRAM_TAB_NAVIGATION = [
   { id: "vehicles", label: "Свежее", href: "/telegram" },
-  { id: "fuel", label: "Бензин", href: "/services/fuel-map?from=telegram" },
-  { id: "create", label: "Продать", href: `${CREATE_VEHICLE_HREF}?source=telegram` },
+  { id: "auctions", label: "Аукционы", href: "/telegram?tab=auctions" },
+  { id: "chats", label: "Сообщения", href: "/telegram?tab=chats" },
   { id: "news", label: "Новости", href: "/telegram?tab=news" },
-  { id: "forum", label: "Форум", href: "/forum?from=telegram" },
+  { id: "fuel", label: "Бензин", href: "/services/fuel-map?from=telegram" },
 ] as const satisfies readonly NavigationItem[]
 
 function navigationPath(href: string): string {

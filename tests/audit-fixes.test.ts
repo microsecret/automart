@@ -315,3 +315,32 @@ test("сбой загрузки в мини-аппе не выглядит пу�
     assert.match(source, /mutate\(\)/, `нет обновления: ${file}`)
   }
 })
+
+test("кнопка «назад» Telegram подключена", () => {
+  /* В типе она описана, но не вызывалась ни разу — то есть её просто не
+     было. Человек, ушедший из ленты в объявление или в меню, мог
+     вернуться только закрыв приложение: вертикальные жесты в
+     мини-приложении отключены, а другой кнопки нет. */
+  const shell = readFileSync(new URL("../src/components/telegram/TelegramShell.tsx", import.meta.url), "utf8")
+  assert.match(shell, /backButton\.show\(\)/)
+  assert.match(shell, /backButton\.onClick\(goBack\)/)
+  /* На корневой ленте кнопка не нужна: возвращаться оттуда некуда, и
+     лишняя стрелка предлагала бы выйти из приложения. */
+  assert.match(shell, /if \(isRoot\) \{\s*backButton\.hide\(\)/)
+  /* Подписка снимается: иначе при смене вкладки обработчики копятся. */
+  assert.match(shell, /backButton\.offClick\(goBack\)/)
+})
+
+test("панель вкладок не лежит под главной кнопкой Telegram", () => {
+  /* Кнопка платформы рисуется в самом низу экрана во всю ширину, а
+     панель стояла там же: пять вкладок либо оказывались под ней, либо
+     выдавливались за край. */
+  const css = readFileSync(new URL("../src/app/telegram/telegram.css", import.meta.url), "utf8")
+  assert.match(css, /--tg-main-button-height/)
+  assert.match(css, /\.tg-nav \{[^}]*bottom: var\(--tg-main-button-height/)
+  /* Кнопки нет — панель возвращается к нижнему краю. */
+  assert.match(css, /\[data-main-button="hidden"\]/)
+
+  const shell = readFileSync(new URL("../src/components/telegram/TelegramShell.tsx", import.meta.url), "utf8")
+  assert.match(shell, /data-main-button=/)
+})
