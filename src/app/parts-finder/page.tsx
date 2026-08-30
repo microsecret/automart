@@ -129,6 +129,19 @@ function PartsContent() {
     setSubcategory((current) => current === validSubcategory ? current : validSubcategory)
   }, [urlPartType, urlSubcategory])
 
+  /* Пока адрес не прочитан, писать его нельзя.
+
+     Здесь два эффекта работают со строкой запроса: один раскладывает
+     её в состояния, другой собирает обратно. Порядок между ними не
+     задан, и запись успевала сработать раньше чтения — со свежими,
+     ещё пустыми состояниями. Заход по ссылке из бокового меню вида
+     /parts-finder?partType=ENGINE (таких шесть) мог потерять параметр
+     до того, как он применится.
+
+     Тот же приём уже отлажен на странице аукционов, где эта ошибка
+     съедала выбранную страну. */
+  const [urlRead, setUrlRead] = useState(false)
+
   useEffect(() => {
     const params = new URLSearchParams(searchKey)
     setQ(params.get("q") || "")
@@ -140,6 +153,7 @@ function PartsContent() {
     setPriceFrom(params.get("priceFrom") || "")
     setPriceTo(params.get("priceTo") || "")
     setPage(Number(params.get("page")) || 1)
+    setUrlRead(true)
   }, [searchKey])
 
   const selectPartType = (nextPartType: string | null) => {
@@ -166,7 +180,17 @@ function PartsContent() {
     router.replace(query ? `/parts-finder?${query}` : "/parts-finder", { scroll: false })
   }
 
-  const partBrandOptions = getBrandsByCategory("cars").map((brand) => ({ value: brand.name, label: brand.name }))
+  /* Список марок собирается один раз, а не на каждую перерисовку.
+
+     Он строится из постоянного справочника и не зависит ни от чего на
+     странице, но стоял прямо в теле компонента: каждый набранный
+     символ в поиске создавал новый массив, а выпадающий список с
+     поиском пересобирался заново вместо того, чтобы просто
+     отфильтровать готовый. */
+  const partBrandOptions = useMemo(
+    () => getBrandsByCategory("cars").map((brand) => ({ value: brand.name, label: brand.name })),
+    [],
+  )
   const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}&category=cars` : null
   const { data: modelsData, error: modelsError, isLoading: isModelsLoading } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
   const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
@@ -205,6 +229,7 @@ function PartsContent() {
   const parts: PartResult[] = data?.parts || []
 
   useEffect(() => {
+    if (!urlRead) return
     const params = new URLSearchParams()
     if (q) params.set("q", q)
     if (partType) params.set("partType", partType)
@@ -221,7 +246,7 @@ function PartsContent() {
     if (nextSearchKey !== searchKey) {
       router.replace(nextSearchKey ? `/parts-finder?${nextSearchKey}` : "/parts-finder", { scroll: false })
     }
-  }, [availability, conditions, make, model, page, partType, priceFrom, priceTo, q, router, saleFormat, searchKey, subcategory])
+  }, [urlRead, availability, conditions, make, model, page, partType, priceFrom, priceTo, q, router, saleFormat, searchKey, subcategory])
 
   /* Раздел пуст или фильтр не подошёл — это разные ситуации.
 

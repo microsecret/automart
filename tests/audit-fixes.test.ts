@@ -147,3 +147,61 @@ test("гараж не отдаётся целиком", () => {
   const list = route.slice(route.indexOf('const vehicles = await prisma.vehicle.findMany'))
   assert.match(list.slice(0, 320), /take: 200/)
 })
+
+test("полоса заказа не висит в пустоте на планшете", () => {
+  /* Полоса рисуется до 992 пикселей, а нижнее меню появляется только
+     до 640: в промежутке она стояла на 92 пикселях над пустотой, а
+     кнопка поддержки оказывалась под ней — нажатие открывало чат
+     вместо заявки. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const bar = css.slice(css.indexOf(".auction-action-bar {"))
+  assert.match(bar.slice(0, 900), /bottom: 0;/)
+  /* Подъём над меню перенесён туда, где меню действительно есть. */
+  assert.match(css, /@media \(max-width: 640px\) \{\s*\.auction-action-bar \{\s*bottom: calc\(92px/)
+  /* Кнопка поддержки поднимается над полосой и на планшете. */
+  assert.match(css, /@media \(min-width: 641px\) and \(max-width: 61\.99em\)/)
+})
+
+test("фильтр запчастей не теряет параметр из ссылки меню", () => {
+  /* Два эффекта работают со строкой запроса: один раскладывает её в
+     состояния, другой собирает обратно. Запись успевала сработать
+     раньше чтения, и заход по /parts-finder?partType=ENGINE мог
+     потерять параметр. */
+  const page = readFileSync(new URL("../src/app/parts-finder/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /const \[urlRead, setUrlRead\]/)
+  assert.match(page, /if \(!urlRead\) return/)
+  assert.match(page, /setUrlRead\(true\)/)
+})
+
+test("карточка лота разбирает список снимков один раз", () => {
+  /* Разбор JSON стоял прямо в разметке дважды подряд: сначала чтобы
+     узнать, больше ли одного снимка, потом чтобы вывести число. */
+  const page = readFileSync(new URL("../src/app/auctions/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /const imageCount = parseAuctionImages\(l\.images\)/)
+  assert.doesNotMatch(page, /\(parseAuctionImages\(l\.images\)\?\.length \|\| 0\) > 1/)
+})
+
+test("список марок в фильтре запчастей не пересобирается на каждый символ", () => {
+  /* Он строится из постоянного справочника, но стоял в теле
+     компонента: каждый набранный символ создавал новый массив, и
+     выпадающий список пересобирался заново. */
+  const page = readFileSync(new URL("../src/app/parts-finder/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /const partBrandOptions = useMemo\(/)
+})
+
+test("лимитер не перебирает всю карту на каждый запрос", () => {
+  /* Полный перебор ради самой старой записи шёл на каждую новую после
+     заполнения — ровно тогда, когда лимитер нужен больше всего, он сам
+     становился узким местом. */
+  const limiter = readFileSync(new URL("../src/lib/rate-limit.ts", import.meta.url), "utf8")
+  assert.match(limiter, /evictCount/)
+  assert.doesNotMatch(limiter, /earliestReset/)
+})
+
+test("прогон парсера mobile.de ограничен по времени", () => {
+  /* Тридцать карточек по двадцать секунд таймаута — до десяти минут,
+     за которые cron успевает запустить следующий прогон поверх. */
+  const route = readFileSync(new URL("../src/app/api/parser/mobile-de/refresh/route.ts", import.meta.url), "utf8")
+  assert.match(route, /RUN_DEADLINE_MS/)
+  assert.match(route, /skippedByDeadline/)
+})

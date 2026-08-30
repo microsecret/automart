@@ -651,6 +651,15 @@ function AuctionsPageContent() {
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm">
             {listings.map((l, listingIndex) => {
               const identity = auctionVehicleIdentity(l.make, l.model)
+              /* Список снимков разбирается один раз на карточку.
+
+                 Строка с картинками приходит из базы в JSON, и разбор
+                 её стоял прямо в разметке — дважды подряд в одном
+                 выражении: сначала чтобы узнать, больше ли одного,
+                 потом чтобы вывести число. На двадцати четырёх
+                 карточках это полсотни лишних разборов на каждую
+                 перерисовку страницы. */
+              const imageCount = parseAuctionImages(l.images)?.length || 0
               const rentalTransfer = isRentalTransferListing(l.conditionInfo)
               const displayedPrice = rentalTransfer ? l.priceRub : l.finalPrice
               const priceSignal = rentalTransfer ? null : auctionPriceSignal(displayedPrice, analytics?.medianFinalPrice)
@@ -683,7 +692,7 @@ function AuctionsPageContent() {
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
                       <Badge className={styles.resultSpec} size="xs" variant="light" color={l.power ? "violet" : "gray"} leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
                       {rentalTransfer && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue">Переоформление аренды</Badge>}
-                      {(parseAuctionImages(l.images)?.length || 0) > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue" leftSection={<IconPhoto size={12} />}>Фото: {parseAuctionImages(l.images)?.length}</Badge>}
+                      {imageCount > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue" leftSection={<IconPhoto size={12} />}>Фото: {imageCount}</Badge>}
                       {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">

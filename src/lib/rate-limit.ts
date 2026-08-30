@@ -50,15 +50,25 @@ export function rateLimit(
 
   if (!record || now > record.resetTime) {
     if (requests.size >= MAX_RATE_LIMIT_BUCKETS) {
-      let earliestKey: string | null = null
-      let earliestReset = Number.POSITIVE_INFINITY
-      for (const [key, value] of requests) {
-        if (value.resetTime < earliestReset) {
-          earliestKey = key
-          earliestReset = value.resetTime
-        }
+      /* Вытесняем пачкой, а не по одному.
+
+         Здесь шёл полный перебор карты ради самой старой записи — и
+         так на каждую новую запись после заполнения. Ровно в тот
+         момент, когда лимитер нужен больше всего (перебор адресов
+         забивает карту), он сам начинал стоить десять тысяч сравнений
+         на запрос и превращался в то узкое место, от которого должен
+         защищать.
+
+         Map в JavaScript хранит ключи в порядке вставки, поэтому
+         первые в обходе — самые давние. Снимаем десятую часть разом:
+         следующие тысяча записей укладываются без единого перебора. */
+      const evictCount = Math.max(1, Math.floor(MAX_RATE_LIMIT_BUCKETS / 10))
+      let evicted = 0
+      for (const key of requests.keys()) {
+        requests.delete(key)
+        evicted += 1
+        if (evicted >= evictCount) break
       }
-      if (earliestKey) requests.delete(earliestKey)
     }
     requests.set(identifier, { count: 1, resetTime: now + options.windowMs })
     return { success: true, remaining: options.maxRequests - 1, resetIn: options.windowMs }
