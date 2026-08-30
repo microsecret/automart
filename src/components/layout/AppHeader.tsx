@@ -71,6 +71,7 @@ const HEADER_ACCOUNT_ICONS = {
   listings: <IconLayoutDashboard size={15} />,
   favorites: <IconHeart size={15} />,
   garage: <IconCar size={15} />,
+  "part-requests": <IconSearch size={15} />,
   deliveries: <IconTruckDelivery size={15} />,
   documents: <IconFileDescription size={15} />,
   messages: <IconMessageCircle2 size={15} />,
@@ -384,11 +385,20 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                     <IconMessageCircle2 size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator></Box>
-                <Box visibleFrom="sm"><Indicator size={7} color="red" offset={4} disabled={unreadNotifications === 0}>
+                {/* Колокольчик виден и на телефоне.
+
+                    Избранное и сообщения человек открывает сам, когда
+                    захочет, — уведомление же приходит без спроса, и
+                    узнать о нём иначе неоткуда: точка над колокольчиком
+                    единственный признак, что ответили по заявке или
+                    одобрили объявление. Раньше на телефоне не было и
+                    его: пункт в меню счётчика не показывает, а меню
+                    ещё нужно открыть. */}
+                <Indicator size={7} color="red" offset={4} disabled={unreadNotifications === 0}>
                   <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Уведомления">
                     <IconBell size={18} stroke={1.8} />
                   </ActionIcon>
-                </Indicator></Box>
+                </Indicator>
                 <Box visibleFrom="sm"><Divider orientation="vertical" mx={2} h={26} /></Box>
                 <Menu shadow="md" width={220} position="bottom-end" radius="md" offset={4}>
                   <Menu.Target>

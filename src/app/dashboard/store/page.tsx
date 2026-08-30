@@ -15,6 +15,7 @@ import {
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import StoreOrdersPanel from "@/components/store/StoreOrdersPanel"
 import StoreCatalogPanel from "@/components/store/StoreCatalogPanel"
+import StoreRequestsPanel from "@/components/store/StoreRequestsPanel"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type Store = {
@@ -435,6 +436,17 @@ export default function StoreWorkspacePage() {
             </Card>
 
             <StoreOrdersPanel storeId={store.id} />
+
+            {/* Заявки покупателей — рядом с заказами.
+
+                Люди ищут детали, которых нет ни в одном каталоге, и
+                форма обещает им ответ в течение дня. Раньше эти заявки
+                не доходили ни до кого: список на сервере был написан, а
+                запрашивать его было некому.
+
+                Видны только работающему магазину: в заявке телефон
+                человека, и черновику его показывать нельзя. */}
+            {store.status === "ACTIVE" && <StoreRequestsPanel />}
 
             {store._count.parts > 0 && <StoreCatalogPanel storeId={store.id} />}
 

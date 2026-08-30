@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic"
 import useSWR, { useSWRConfig } from "swr"
 import { useState } from "react"
 import { Alert, ActionIcon, Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Button, Badge, Tooltip } from "@mantine/core"
-import { IconBell, IconBellRinging, IconCheck, IconCircleCheck, IconAlertTriangle, IconInfoCircle, IconAlertCircle } from "@tabler/icons-react"
+import { IconBell, IconBellRinging, IconCheck, IconChevronRight, IconCircleCheck, IconAlertTriangle, IconInfoCircle, IconAlertCircle } from "@tabler/icons-react"
+import Link from "next/link"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { notificationHref } from "@/lib/notification-link"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type Notification = {
@@ -14,6 +16,8 @@ type Notification = {
   content: string
   isRead: boolean
   createdAt: string
+  relatedType?: string | null
+  relatedId?: string | null
 }
 
 type NotificationsResponse = { notifications: Notification[] }
@@ -118,6 +122,10 @@ export default function NotificationsPage() {
             {notifications.map((n) => {
               const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.INFO
               const Icon = cfg.icon
+              /* Уведомление о предмете открывает предмет: раньше человек
+                 читал «пришло предложение по вашей заявке» и шёл искать
+                 её руками через меню. */
+              const href = notificationHref(n.relatedType, n.relatedId)
               return (
                 <Paper key={n.id} radius="md" p="md" withBorder style={{ opacity: n.isRead ? 0.72 : 1 }}>
                   <Group gap="sm" align="flex-start" wrap="nowrap">
@@ -130,6 +138,20 @@ export default function NotificationsPage() {
                         {!n.isRead && <Badge size="xs" color="indigo" variant="light">Новое</Badge>}
                       </Group>
                       <Text fz="sm" c="dimmed">{n.content}</Text>
+                      {href && (
+                        <Button
+                          component={Link}
+                          href={href}
+                          variant="subtle"
+                          size="compact-xs"
+                          color="indigo"
+                          rightSection={<IconChevronRight size={13} />}
+                          onClick={() => { if (!n.isRead) void markRead(n.id) }}
+                          style={{ alignSelf: "flex-start", marginTop: 4 }}
+                        >
+                          Перейти
+                        </Button>
+                      )}
                       <Text fz="xs" c="gray.5" mt={2}>{formatNotificationTime(n.createdAt)}</Text>
                     </Stack>
                     {!n.isRead && (
