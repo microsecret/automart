@@ -423,7 +423,18 @@ export default function AdminDashboard() {
                 <Badge variant="white" color="indigo" size="sm">ПАНЕЛЬ УПРАВЛЕНИЯ</Badge>
                 {/* Статус отражает состояние очереди, а не факт того, что
                     страница открылась: «система онлайн» не несло информации. */}
-                <Badge variant="dot" color={actionsTotal > 0 ? "orange" : "teal"} size="sm">
+                {/* На эту метку смотрят первым делом — она и открывает
+                    очередь. Раньше она только сообщала число, и до
+                    задач приходилось добираться вкладкой ниже. */}
+                <Badge
+                  variant="dot"
+                  color={actionsTotal > 0 ? "orange" : "teal"}
+                  size="sm"
+                  component="button"
+                  type="button"
+                  onClick={() => changeTab("operations")}
+                  style={{ cursor: "pointer" }}
+                >
                   {actionsTotal > 0 ? `${actionsTotal} ждут решения` : "Очередь разобрана"}
                 </Badge>
                 {lastSyncLabel && <Badge variant="dot" color="gray" size="sm">Импорт: {lastSyncLabel}</Badge>}
