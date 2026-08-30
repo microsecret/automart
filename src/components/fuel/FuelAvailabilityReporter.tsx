@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge, Box, Button, Group, NumberInput, Paper, Stack, Text, TextInput, UnstyledButton } from "@mantine/core"
-import { IconCamera, IconCheck } from "@tabler/icons-react"
+import { IconCamera, IconCheck, IconRefresh } from "@tabler/icons-react"
 import {
   AVAILABILITY_FUELS,
   AVAILABILITY_FUEL_LABELS,
@@ -81,6 +81,9 @@ export default function FuelAvailabilityReporter({
   const [comment, setComment] = useState("")
   const [uploading, setUploading] = useState(false)
   const [sending, setSending] = useState(false)
+  /* Подтверждение чужой отметки идёт своим запросом и своим ожиданием:
+     кнопка «да» не должна блокировать форму отправки. */
+  const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   /* Цены, очередь, снимок и комментарий свёрнуты по умолчанию: их
@@ -89,6 +92,55 @@ export default function FuelAvailabilityReporter({
   const [showDetails, setShowDetails] = useState(false)
 
   const byFuel = new Map(availability.map((item) => [item.fuel, item]))
+
+  /* Что можно подтвердить: марки с известным состоянием и отметкой не
+     новее получаса.
+
+     Полчаса — граница, за которой подтверждение начинает что-то
+     значить. Раньше него человек подтверждал бы отметку, сделанную
+     почти одновременно с ним, и накручивал уверенность вместо того,
+     чтобы её проверять. */
+  const CONFIRM_AFTER_MS = 30 * 60 * 1000
+  const confirmable = availability.filter((item) => (
+    item.state !== "UNKNOWN"
+    && item.updatedAt
+    && Date.now() - new Date(item.updatedAt).getTime() > CONFIRM_AFTER_MS
+  ))
+
+  /** Подтвердить то, что уже написано: те же марки, текущее время. */
+  const confirmCurrent = async () => {
+    if (confirmable.length === 0) return
+    tapFeedback("medium")
+    setConfirming(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/fuel-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stationId,
+          stationName,
+          city,
+          latitude,
+          longitude,
+          queue: null,
+          photo: null,
+          comment: "",
+          entries: confirmable.map((item) => ({ fuel: item.fuel, state: item.state, price: null })),
+        }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || "Не удалось подтвердить")
+
+      onReported?.(payload.availability || [])
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 2500)
+    } catch (confirmError) {
+      setError(confirmError instanceof Error ? confirmError.message : "Не удалось подтвердить")
+    } finally {
+      setConfirming(false)
+    }
+  }
 
   const entryOf = (fuel: AvailabilityFuel) => draft[fuel] || EMPTY_DRAFT
 
@@ -211,6 +263,47 @@ export default function FuelAvailabilityReporter({
           )
         })}
       </Box>
+
+      {/* Подтверждение чужой отметки одним нажатием.
+
+          Отметка стареет молча: «есть 92» часовой давности выглядит так
+          же уверенно, как пятиминутная, хотя за час бензин разбирают.
+          Просить человека заново заполнять форму ради того же ответа
+          бессмысленно — он видит ровно то, что уже написано, и ему
+          достаточно кивнуть.
+
+          «Да» отправляет те же марки с текущим временем: отметка
+          молодеет, уверенность растёт. «Изменилось» открывает форму,
+          потому что тут уже надо сказать, что именно стало другим.
+
+          Блок показывается только при живой чужой отметке: подтверждать
+          пустоту нечего, а свежую минутную — незачем. */}
+      {!isOpen && confirmable.length > 0 && (
+        <Paper withBorder radius="md" p="xs" className="fuel-report__confirm">
+          <Text size="xs" fw={600} mb={6}>Это всё ещё актуально?</Text>
+          <Group gap={6} grow>
+            <Button
+              size="sm"
+              radius="md"
+              color="teal"
+              leftSection={<IconCheck size={15} />}
+              loading={confirming}
+              onClick={() => void confirmCurrent()}
+            >
+              Да, подтверждаю
+            </Button>
+            <Button
+              size="sm"
+              radius="md"
+              variant="default"
+              leftSection={<IconRefresh size={15} />}
+              onClick={() => { tapFeedback("light"); setIsOpen(true) }}
+            >
+              Изменилось
+            </Button>
+          </Group>
+        </Paper>
+      )}
 
       {!isOpen ? (
         <Button

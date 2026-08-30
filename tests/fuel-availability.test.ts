@@ -429,17 +429,51 @@ test("в карточке видно расстояние до заправки"
   assert.match(page, /const distanceKm = getDistanceInKilometers\(coordinates, selectedStation\)/)
 })
 
-test("заправкой можно поделиться", () => {
+test("заправкой можно поделиться в сети, которыми пользуются", () => {
   /* Человек нашёл, где есть бензин, и первое, что делает, — говорит
-     другу. Без кнопки он переписывает адрес руками, а чаще не
-     переписывает вовсе. */
-  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /navigator\.share/)
-  assert.match(page, /clipboard\?\.writeText/)
+     другу. Прежняя кнопка на настольном браузере молча копировала
+     ссылку: нажал, ничего не произошло, непонятно, сработало ли. */
+  const share = readFileSync(new URL("../src/components/fuel/FuelShareButton.tsx", import.meta.url), "utf8")
+  assert.match(share, /t\.me\/share\/url/)
+  assert.match(share, /vk\.com\/share\.php/)
+  assert.match(share, /api\.whatsapp\.com\/send/)
+  assert.match(share, /navigator\.share/)
+  assert.match(share, /clipboard\.writeText/)
+  /* Подтверждение обязательно: без него человек жмёт «скопировать»
+     второй раз, не зная, сработало ли. */
+  assert.match(share, /Скопировано/)
 })
 
 test("в текст для отправки попадает наличие", () => {
   // Ссылка без «есть 92» не отвечает на вопрос, ради которого её шлют.
+  const share = readFileSync(new URL("../src/components/fuel/FuelShareButton.tsx", import.meta.url), "utf8")
+  assert.match(share, /Есть: \$\{availableFuels\.join/)
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /Есть: \$\{withFuel\.join/)
+  assert.match(page, /availableFuels=\{availableFuels\}/)
+})
+
+test("цена показывается с копейками", () => {
+  /* Округление до рубля стирало ровно то, ради чего цену смотрят:
+     разница в семьдесят копеек на литр — сорок рублей на бак, и по ней
+     человек выбирает между двумя заправками на перекрёстке. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /function formatKopecks/)
+  assert.match(page, /maximumFractionDigits: 2/)
+  /* Ровные рубли остаются без хвоста: «64 ₽», а не «64,00 ₽». */
+  assert.match(page, /Number\.isInteger\(roubles\) \? 0 : 2/)
+  /* Старое округление до рубля не должно вернуться. */
+  assert.doesNotMatch(page, /Math\.round\(kopecks \/ 100\)/)
+  assert.doesNotMatch(page, /\(item\.price \/ 100\)\.toFixed\(0\)/)
+})
+
+test("чужую отметку можно подтвердить одним нажатием", () => {
+  /* Отметка стареет молча: «есть 92» часовой давности выглядит так же
+     уверенно, как пятиминутная. Просить заполнять форму заново ради
+     того же ответа бессмысленно. */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /Это всё ещё актуально/)
+  assert.match(reporter, /confirmCurrent/)
+  /* Подтверждать нечего, пока отметка свежая: иначе человек накручивает
+     уверенность вместо того, чтобы её проверять. */
+  assert.match(reporter, /CONFIRM_AFTER_MS/)
 })

@@ -9,6 +9,7 @@ import { fetchJson } from "@/lib/api-client"
 import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
 import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
 import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
+import FuelShareButton from "@/components/fuel/FuelShareButton"
 import { formatAge, isFresh } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { tapFeedback } from "@/lib/telegram-webapp"
@@ -143,6 +144,25 @@ function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
   if (source.includes("нефтегаз")) return { label: "Нефтегаз", shortLabel: "НГ", color: "#155e75", textColor: "#fff" }
   if (source.includes("автодор") || source.includes("трасса м")) return { label: "Автодор", shortLabel: "АД", color: "#7c2d12", textColor: "#fff" }
   return null
+}
+
+/**
+ * Цена в рублях с копейками.
+ *
+ * Цены округлялись до рубля: «64 ₽» вместо 63,70. Разница в семьдесят
+ * копеек на литр — это сорок рублей на бак, и именно по ней человек
+ * выбирает между двумя заправками на одном перекрёстке. Округление
+ * стирало ровно то, ради чего цену смотрят.
+ *
+ * Ровные рубли пишутся без хвоста: «64 ₽», а не «64,00 ₽» — нули
+ * ничего не сообщают и удлиняют плашку, которой на карте и так тесно.
+ */
+function formatKopecks(kopecks: number) {
+  const roubles = kopecks / 100
+  return new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: Number.isInteger(roubles) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(roubles)
 }
 
 function getDistanceInKilometers(from: { latitude: number; longitude: number }, to: { latitude: number; longitude: number }) {
@@ -592,7 +612,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                           <span key={item.key} className="fuel-map-plate__fuel" data-state={item.state}>
                             {item.label}
                             {item.price !== null && (
-                              <b className="fuel-map-plate__price">{(item.price / 100).toFixed(0)}</b>
+                              <b className="fuel-map-plate__price">{formatKopecks(item.price)}</b>
                             )}
                           </span>
                         ))}
@@ -693,22 +713,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         const identity = getNetworkIdentity(selectedStation)
         const distanceKm = getDistanceInKilometers(coordinates, selectedStation)
 
-        const shareStation = () => {
-          const withFuel = fresh.filter((row) => row.state === "YES").map((row) => row.label)
-          const text = [
-            `⛽ ${selectedStation.name}`,
-            selectedStation.address || selectedStationAddress || "",
-            withFuel.length ? `Есть: ${withFuel.join(", ")}` : "",
-            `https://yandex.ru/maps/?pt=${selectedStation.longitude},${selectedStation.latitude}&z=17`,
-          ].filter(Boolean).join("\n")
-
-          if (typeof navigator !== "undefined" && navigator.share) {
-            void navigator.share({ title: selectedStation.name, text }).catch(() => undefined)
-            return
-          }
-
-          void navigator.clipboard?.writeText(text).catch(() => undefined)
-        }
+        /* Марки, которые есть по свежим отметкам: ради них заправкой и
+           делятся. */
+        const availableFuels = fresh.filter((row) => row.state === "YES").map((row) => row.label)
 
         return (
           <Paper className="fuel-map-selected" radius="md" withBorder aria-live="polite">
@@ -765,7 +772,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                         styles={row.state === "NO" ? { label: { textDecoration: "line-through" } } : undefined}
                       >
                         {row.label}
-                        {row.state === "YES" && kopecks ? ` · ${Math.round(kopecks / 100)} ₽` : ""}
+                        {row.state === "YES" && kopecks ? ` · ${formatKopecks(kopecks)} ₽` : ""}
                       </Badge>
                     )
                   })}
@@ -806,19 +813,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   stationName={selectedStation.name}
                   city={city}
                 />
-                {/* Поделиться заправкой.
+                {/* Поделиться: выбор сетей виден сразу.
 
-                    Человек нашёл, где есть бензин, и первое, что он
-                    делает, — говорит об этом другу или в чат. Без кнопки
-                    он переписывает адрес руками, а чаще не переписывает
-                    вовсе, и находка остаётся при нём.
-
-                    Системное окно «поделиться» само предлагает Telegram,
-                    WhatsApp и что там ещё установлено; на настольном
-                    браузере его нет, и тогда ссылка копируется в буфер. */}
-                <Button size="compact-sm" variant="default" onClick={shareStation}>
-                  Поделиться
-                </Button>
+                    Прежняя кнопка на настольном браузере молча
+                    копировала ссылку — нажал, ничего не произошло, и
+                    было непонятно, сработало ли. */}
+                <FuelShareButton
+                  stationName={selectedStation.name}
+                  address={selectedStation.address || selectedStationAddress}
+                  latitude={selectedStation.latitude}
+                  longitude={selectedStation.longitude}
+                  availableFuels={availableFuels}
+                />
               </Group>
 
               <FuelPriceReporter

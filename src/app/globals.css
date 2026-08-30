@@ -4511,6 +4511,20 @@ select {
   background: var(--market-surface-subtle);
 }
 
+/* Подтверждение чужой отметки.
+
+   Зелёная подложка отделяет вопрос «это ещё актуально?» от формы: это
+   не ввод данных, а согласие с тем, что уже написано, и оно стоит
+   одного нажатия. */
+.fuel-report__confirm {
+  border-color: color-mix(in srgb, #16a34a 34%, var(--market-line));
+  background: color-mix(in srgb, var(--market-surface) 88%, #16a34a);
+}
+
+:root[data-mantine-color-scheme="dark"] .fuel-report__confirm {
+  background: color-mix(in srgb, var(--market-surface) 82%, #16a34a);
+}
+
 /* Что здесь по отметкам: читается без открытия формы. */
 .fuel-report__status {
   display: grid;
@@ -4570,16 +4584,105 @@ select {
 
 /* Кнопка открытия формы: главное действие страницы, поэтому во всю
    ширину и в цвете акцента, а не служебной серой строкой. */
+/* Зелёная, а не оранжевая.
+
+   Оранжевый на этой карте занят: им красятся кластеры, где топливо
+   есть не везде. Кнопка того же цвета читалась как ещё один статус, а
+   не как действие. Зелёный здесь не спорит с метками — на них он
+   означает «есть топливо», и на кнопке продолжает ту же мысль:
+   расскажи, что здесь есть. */
 .fuel-report__open {
+  position: relative;
   min-height: 48px;
-  background: var(--market-accent);
-  color: var(--market-accent-ink);
+  overflow: hidden;
+  background: #16a34a;
+  color: #fff;
   font-weight: 800;
 }
 
 @media (hover: hover) {
   .fuel-report__open:not([data-loading]):hover {
-    background: color-mix(in srgb, var(--market-accent) 88%, #000);
+    background: #15803d;
+  }
+}
+
+/* Волна от места нажатия.
+
+   Кнопка отвечала только сменой цвета, и на телефоне палец эту смену
+   закрывает собой: человек не понимал, засчиталось ли нажатие, и жал
+   второй раз. Волна расходится из-под пальца и видна по краям. */
+.fuel-report__open::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / .55);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: none;
+}
+
+.fuel-report__open:active::after {
+  animation: fuel-ripple 520ms var(--ease-out);
+}
+
+@keyframes fuel-ripple {
+  from {
+    opacity: .6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(26);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fuel-report__open:active::after {
+    animation: none;
+  }
+}
+
+/* Поделиться: цветная кнопка вместо серой служебной.
+
+   Пересылка — второе по частоте действие после отметки: человек нашёл
+   бензин и говорит об этом в чат. Серой кнопкой это выглядело как
+   настройка, которую можно не трогать. */
+.fuel-share {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--market-primary) 42%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--market-primary-soft);
+  color: var(--market-primary);
+  font-size: 13px;
+  font-weight: 700;
+  transition: background-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+.fuel-share:active {
+  transform: scale(0.97);
+}
+
+.fuel-share:focus-visible {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fuel-share {
+    transition: none;
+  }
+
+  .fuel-share:active {
+    transform: none;
   }
 }
 
