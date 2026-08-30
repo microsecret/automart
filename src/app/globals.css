@@ -4511,6 +4511,100 @@ select {
   background: var(--market-surface-subtle);
 }
 
+/* Цена со шкалой уверенности.
+
+   Бейдж «АИ-92 · 63,70 ₽ · 1» показывал цену как факт: за ней могла
+   стоять одна отметка пятичасовой давности, а число подтверждений
+   рядом читалось как порядковый номер. Полоса отвечает прямо: чем
+   крепче сведения, тем она длиннее и зеленее. */
+.fuel-price-row {
+  display: grid;
+  width: 100%;
+  padding: 7px 8px;
+  grid-template-columns: 54px auto 1fr;
+  grid-template-areas:
+    "fuel value meter"
+    "note note note";
+  align-items: center;
+  gap: 3px 8px;
+  border: 1px solid var(--market-line);
+  border-radius: 10px;
+  background: var(--market-surface);
+  text-align: left;
+  transition: border-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .fuel-price-row:hover {
+    border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-line));
+  }
+}
+
+.fuel-price-row:active {
+  transform: scale(0.99);
+}
+
+.fuel-price-row:focus-visible {
+  outline: 3px solid var(--market-focus);
+  outline-offset: 2px;
+}
+
+.fuel-price-row__fuel {
+  grid-area: fuel;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--market-label);
+}
+
+/* Цена — самое крупное в строке: за ней сюда и смотрят. Табличные
+   цифры держат разряды на месте, когда строк несколько. */
+.fuel-price-row__value {
+  grid-area: value;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--market-ink);
+}
+
+.fuel-price-row__meter {
+  grid-area: meter;
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--market-line) 70%, transparent);
+}
+
+.fuel-price-row__meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #16a34a;
+  transition: width var(--ease-slow) var(--ease-out);
+}
+
+/* Цвет несёт то же, что и длина: слабую цену видно, даже не сравнивая
+   полосы между собой. */
+.fuel-price-row__meter[data-level="средняя"] > span { background: #f59e0b; }
+.fuel-price-row__meter[data-level="низкая"] > span { background: #dc2626; }
+
+.fuel-price-row__note {
+  grid-area: note;
+  font-size: 10px;
+  color: var(--market-label);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fuel-price-row,
+  .fuel-price-row__meter > span {
+    transition: none;
+  }
+
+  .fuel-price-row:active {
+    transform: none;
+  }
+}
+
 /* Подтверждение чужой отметки.
 
    Зелёная подложка отделяет вопрос «это ещё актуально?» от формы: это

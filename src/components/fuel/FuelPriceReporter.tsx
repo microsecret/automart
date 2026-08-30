@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Badge, Box, Button, Group, NumberInput, Paper, Select, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconCheck, IconCoin, IconUsers } from "@tabler/icons-react"
+import { Box, Button, Group, NumberInput, Paper, Select, Stack, Text, ThemeIcon, UnstyledButton } from "@mantine/core"
+import { IconCheck, IconCoin } from "@tabler/icons-react"
 import { FUEL_REPORT_LABELS, FUEL_REPORT_TYPES, formatReportedPrice } from "@/lib/fuel-price-reports"
 
 export type ConsensusPrice = {
@@ -11,6 +11,12 @@ export type ConsensusPrice = {
   priceKopecks: number
   confirmations: number
   updatedAt: string
+  /* Насколько крепкая цена: считается теми же правилами, что и наличие
+     — свежесть отметок, их число и согласие между ними. */
+  confidencePercent: number
+  confidenceLabel: "высокая" | "средняя" | "низкая"
+  /** «2 метки за 3 ч» — из чего сложилось число. */
+  confidenceNote: string
 }
 
 const FUEL_OPTIONS = FUEL_REPORT_TYPES.map((fuel) => ({ value: fuel, label: FUEL_REPORT_LABELS[fuel] }))
@@ -106,37 +112,42 @@ export default function FuelPriceReporter({ stationId, latitude, longitude, pric
       </Group>
 
       {prices.length ? (
-        <Group gap={6} wrap="wrap">
+        /* Цены строками со шкалой уверенности, а не бейджами.
+
+           Бейдж «АИ-92 · 63,70 ₽ · 1» показывал цену как факт: за ней
+           могла стоять одна отметка пятичасовой давности, и человек ехал
+           платить на три рубля больше. Число подтверждений стояло рядом,
+           но читалось как порядковый номер, а не как надёжность.
+
+           Шкала отвечает на это прямо: чем крепче сведения, тем длиннее
+           полоса. Цена по-прежнему нажимается — открывает форму с этой
+           маркой, чтобы устаревшую можно было поправить. */
+        <Stack gap={4}>
           {prices.map((entry) => {
             const updated = formatUpdatedAt(entry.updatedAt)
             return (
-              /* Цена нажимается: открывает форму с этой маркой и текущим
-                 значением. Раньше её нельзя было исправить — человек
-                 видел устаревшую цену и не мог поправить, не разбираясь,
-                 где отдельная кнопка «Отметить цену» и какую марку
-                 выбрать заново. */
-              <Badge
+              <UnstyledButton
                 key={entry.fuel}
-                size="sm"
-                variant="light"
-                color="teal"
-                component="button"
-                type="button"
+                className="fuel-price-row"
                 onClick={() => {
                   setFuel(entry.fuel)
                   setPrice((entry.priceKopecks / 100).toFixed(2).replace(".", ","))
                   setIsOpen(true)
                 }}
-                style={{ cursor: "pointer" }}
-                leftSection={<IconUsers size={11} />}
-                title={`${entry.confirmations} подтверждени${entry.confirmations === 1 ? "е" : entry.confirmations < 5 ? "я" : "й"}${updated ? `, обновлено ${updated}` : ""}`}
+                aria-label={`Поправить цену ${entry.label}, сейчас ${formatReportedPrice(entry.priceKopecks)} рублей, уверенность ${entry.confidencePercent}%`}
               >
-                {entry.label} · {formatReportedPrice(entry.priceKopecks)} ₽ · {entry.confirmations}
-                {updated ? ` · ${updated}` : ""}
-              </Badge>
+                <span className="fuel-price-row__fuel">{entry.label}</span>
+                <span className="fuel-price-row__value">{formatReportedPrice(entry.priceKopecks)} ₽</span>
+                <span className="fuel-price-row__meter" data-level={entry.confidenceLabel} aria-hidden="true">
+                  <span style={{ width: `${Math.max(6, entry.confidencePercent)}%` }} />
+                </span>
+                <span className="fuel-price-row__note">
+                  {entry.confidenceNote}{updated ? ` · ${updated}` : ""}
+                </span>
+              </UnstyledButton>
             )
           })}
-        </Group>
+        </Stack>
       ) : !isOpen ? (
         <Text size="xs" c="dimmed">Цен пока никто не отмечал. Заправились здесь — подскажите цену другим водителям.</Text>
       ) : null}

@@ -36,10 +36,10 @@ export async function GET(request: NextRequest) {
     where: { stationId: { in: stationIds }, status: "ACTIVE" },
     orderBy: { createdAt: "desc" },
     take: REPORT_HISTORY_LIMIT,
-    select: { stationId: true, fuel: true, priceRub: true, createdAt: true },
+    select: { stationId: true, fuel: true, priceRub: true, createdAt: true, userId: true },
   })
 
-  const byStation = new Map<string, Array<{ fuel: string; priceRub: number; createdAt: Date }>>()
+  const byStation = new Map<string, Array<{ fuel: string; priceRub: number; createdAt: Date; userId: string | null }>>()
   for (const report of reports) {
     const bucket = byStation.get(report.stationId)
     if (bucket) bucket.push(report)
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     where: { stationId, status: "ACTIVE" },
     orderBy: { createdAt: "desc" },
     take: 60,
-    select: { fuel: true, priceRub: true, createdAt: true },
+    select: { fuel: true, priceRub: true, createdAt: true, userId: true },
   })
 
   return NextResponse.json({ prices: buildConsensusPrices(reports) }, { status: 201 })

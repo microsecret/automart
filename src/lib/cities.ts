@@ -705,3 +705,37 @@ export const CITY_COORDINATES: Record<string, CityCoordinates> = {
 }
 
 export const FUEL_MAP_CITIES = Object.keys(CITY_COORDINATES)
+
+/**
+ * Ближайший город к точке и расстояние до него в километрах.
+ *
+ * Нужен в двух местах, и оба про одно и то же — «где человек».
+ *
+ * На карте АЗС по нему выбирается город при первом заходе: человек из
+ * Уфы каждый раз открывал Москву и менял город руками. На сервере — по
+ * нему выбирается радиус выборки: в городе заправки стоят плотно, на
+ * трассе редко, и круг нужен разный.
+ *
+ * Список городов невелик (несколько сотен), перебор занимает доли
+ * миллисекунды — заводить пространственный индекс здесь не за чем.
+ */
+export function findNearestCity(point: CityCoordinates) {
+  const radians = (value: number) => value * Math.PI / 180
+  let nearestName: string | null = null
+  let nearestKm = Number.POSITIVE_INFINITY
+
+  for (const [name, city] of Object.entries(CITY_COORDINATES)) {
+    const latitudeDelta = radians(city.latitude - point.latitude)
+    const longitudeDelta = radians(city.longitude - point.longitude)
+    const value = Math.sin(latitudeDelta / 2) ** 2
+      + Math.cos(radians(point.latitude)) * Math.cos(radians(city.latitude)) * Math.sin(longitudeDelta / 2) ** 2
+    const km = 6371 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value))
+
+    if (km < nearestKm) {
+      nearestKm = km
+      nearestName = name
+    }
+  }
+
+  return { name: nearestName, km: nearestKm }
+}

@@ -4,6 +4,9 @@
 // значение: медиану свежих отметок с числом подтверждений, чтобы опечатка или
 // одиночная выдумка не выглядели как факт.
 
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { calculateConfidence, describeConfidence } from "./fuel-confidence.ts"
+
 export const FUEL_REPORT_TYPES = ["AI92", "AI95", "AI98", "AI100", "DT", "GAS"] as const
 export type FuelReportType = (typeof FUEL_REPORT_TYPES)[number]
 
@@ -52,6 +55,8 @@ export type FuelPriceReportRow = {
   fuel: string
   priceRub: number
   createdAt: Date
+  /** Отметка вошедшего человека весит больше: анонимную накрутить проще. */
+  userId?: string | null
 }
 
 export type ConsensusPrice = {
@@ -60,6 +65,15 @@ export type ConsensusPrice = {
   priceKopecks: number
   confirmations: number
   updatedAt: string
+  /* Насколько крепкая цена: 0–100.
+     Цена показывалась как факт, а за ней могла стоять одна отметка
+     пятичасовой давности — человек ехал и платил на три рубля больше.
+     Теми же правилами, что и наличие: свежесть, число отметок,
+     согласие между ними. */
+  confidencePercent: number
+  confidenceLabel: "высокая" | "средняя" | "низкая"
+  /** «2 метки за 3 ч» — из чего сложилось число. */
+  confidenceNote: string
 }
 
 /**
@@ -93,12 +107,27 @@ export function buildConsensusPrices(reports: FuelPriceReportRow[], now = new Da
     if (!agreeing.length) continue
 
     const latest = agreeing.reduce((newest, report) => (report.createdAt > newest ? report.createdAt : newest), agreeing[0].createdAt)
+    /* Уверенность считается теми же правилами, что и у наличия:
+       согласные с медианой идут как «да», разошедшиеся — как «нет».
+       Пятеро, назвавшие одну цену, весят больше одного, а вчерашняя
+       отметка — меньше получасовой. */
+    const confidence = calculateConfidence(
+      bucket.map((report) => ({
+        state: Math.abs(report.priceRub - consensusPrice) <= consensusPrice * OUTLIER_RATIO ? "YES" as const : "NO" as const,
+        createdAt: report.createdAt,
+        authorized: Boolean(report.userId),
+      })),
+      now,
+    )
     consensus.push({
       fuel,
       label: FUEL_REPORT_LABELS[fuel],
       priceKopecks: consensusPrice,
       confirmations: agreeing.length,
       updatedAt: latest.toISOString(),
+      confidencePercent: confidence.percent,
+      confidenceLabel: confidence.label,
+      confidenceNote: describeConfidence(confidence),
     })
   }
 

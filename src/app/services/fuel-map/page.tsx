@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEven
 import useSWR from "swr"
 import { ActionIcon, Badge, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
 import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconX } from "@tabler/icons-react"
-import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
+import { CITY_COORDINATES, FUEL_MAP_CITIES, findNearestCity } from "@/lib/cities"
 import { fetchJson } from "@/lib/api-client"
 import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
 import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
@@ -249,12 +249,28 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   }), [center.x, center.y, mapViewport.height, mapViewport.width])
   const updateZoom = (nextZoom: number) => setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom)))
 
+  /* Карта возвращается к обзорному масштабу только при смене места, а
+     не на любое обновление координат.
+
+     Раньше эффект слушал сами координаты. Человек приближал карту,
+     сдвиг подгружал новый участок, сервер отвечал уточнённым центром —
+     и масштаб откатывался к одиннадцатому. Со стороны это выглядело
+     так, будто нажатие на заправку отменяет приближение: приблизил,
+     ткнул, тебя выбросило назад.
+
+     Теперь сброс привязан к названию места. Сменил город или нашёл
+     посёлок — карта показывает его целиком; двигаешь и приближаешь
+     внутри — масштаб твой. */
+  const areaKey = city
   useEffect(() => {
     const nextCenter = { latitude: coordinates.latitude, longitude: coordinates.longitude }
     setViewportCenter(nextCenter)
     viewportCenterRef.current = nextCenter
     setZoom(11)
-  }, [coordinates.latitude, coordinates.longitude])
+    /* Координаты намеренно не в зависимостях: они меняются при каждой
+       подгрузке участка, а сброс нужен только на смене места. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [areaKey])
 
   const selectedLatitude = selectedStation?.latitude
   const selectedLongitude = selectedStation?.longitude
@@ -842,8 +858,32 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   )
 }
 
+/** Где хранится выбранный город: тот же ключ читается при следующем заходе. */
+const CITY_STORAGE_KEY = "lewheel:fuel-city"
+
 export default function FuelMapPage() {
-  const [city, setCity] = useState("Москва")
+  /* Город берётся из прошлого выбора, а не начинается с Москвы.
+
+     Человек из Уфы открывал карту, видел Москву и менял город руками —
+     каждый раз, после каждого захода. Выбор личный и ничего не стоит
+     потерять, поэтому хранится в браузере, а не на сервере.
+
+     Ниже, если выбора ещё не было, город определяется по координатам:
+     сперва из Telegram, затем из браузера. */
+  const [city, setCity] = useState(() => {
+    if (typeof window === "undefined") return "Москва"
+    try {
+      const saved = window.localStorage.getItem(CITY_STORAGE_KEY)
+      return saved && CITY_COORDINATES[saved] ? saved : "Москва"
+    } catch {
+      /* Приватное окно или запрет на хранилище — не повод падать. */
+      return "Москва"
+    }
+  })
+  /* Определение по местоположению делается один раз за сеанс: человек
+     мог сознательно уехать смотреть другой город, и второе срабатывание
+     вернуло бы его обратно. */
+  const hasLocatedRef = useRef(false)
   const [placeQuery, setPlaceQuery] = useState("")
   const [place, setPlace] = useState<string | null>(null)
   const [fuelFilter, setFuelFilter] = useState("")
@@ -1042,6 +1082,60 @@ export default function FuelMapPage() {
     if (nextPlace === place) void mutate()
     else setPlace(nextPlace)
   }
+
+  /* Выбранный город запоминается: следующий заход открывается на нём. */
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CITY_STORAGE_KEY, city)
+    } catch {
+      /* Хранилище закрыто настройками — выбор просто не запомнится. */
+    }
+  }, [city])
+
+  /* Город по местоположению — при первом заходе, пока человек ничего не
+     выбирал сам.
+
+     Источник — обычная браузерная геолокация: внутри мини-приложения
+     Telegram она тоже работает, потому что там открыт тот же движок
+     браузера. Отдельный Location API Telegram не используется — он
+     требует свежей версии клиента, а выигрыша не даёт.
+
+     Отказ ничего не ломает: остаётся Москва, а город меняется списком,
+     как и раньше. Спрашивать разрешение повторно после отказа нельзя —
+     это выглядит как навязчивость и всё равно не работает. */
+  useEffect(() => {
+    if (hasLocatedRef.current) return
+    /* Человек уже выбирал город раньше — его выбор важнее координат. */
+    try {
+      if (window.localStorage.getItem(CITY_STORAGE_KEY)) {
+        hasLocatedRef.current = true
+        return
+      }
+    } catch {
+      /* Хранилище недоступно: определяем по координатам. */
+    }
+
+    hasLocatedRef.current = true
+
+    const applyPoint = (latitude: number, longitude: number) => {
+      const nearest = findNearestCity({ latitude, longitude })
+      /* Дальше двухсот километров ближайший город уже не описывает
+         место: человек в тайге получил бы город, до которого полдня
+         езды. Тогда честнее оставить выбор за ним. */
+      if (!nearest.name || nearest.km > 200) return
+      setCity(nearest.name)
+    }
+
+    if (typeof navigator === "undefined" || !navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => applyPoint(position.coords.latitude, position.coords.longitude),
+      () => {
+        /* Отказ или сбой: остаётся город по умолчанию. */
+      },
+      { enableHighAccuracy: false, timeout: 8_000, maximumAge: 10 * 60 * 1000 },
+    )
+  }, [])
 
   const handleRefresh = () => setLiveRefreshTimestamp(Date.now())
 

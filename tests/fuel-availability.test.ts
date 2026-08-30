@@ -366,8 +366,28 @@ test("цену можно исправить нажатием", () => {
   /* Раньше её нельзя было поправить: человек видел устаревшую цену и не
      мог её изменить, не разбираясь, где отдельная кнопка. */
   const reporter = readFileSync(new URL("../src/components/fuel/FuelPriceReporter.tsx", import.meta.url), "utf8")
-  assert.match(reporter, /component="button"/)
+  assert.match(reporter, /<UnstyledButton\s+key=\{entry\.fuel\}/)
   assert.match(reporter, /setPrice\(\(entry\.priceKopecks \/ 100\)/)
+})
+
+test("у цены видно, насколько ей верить", () => {
+  /* Цена показывалась как факт: за «АИ-92 · 63,70 ₽ · 1» могла стоять
+     одна отметка пятичасовой давности, и человек ехал платить на три
+     рубля больше. Число подтверждений рядом читалось как порядковый
+     номер, а не как надёжность. */
+  const consensus = readFileSync(new URL("../src/lib/fuel-price-reports.ts", import.meta.url), "utf8")
+  assert.match(consensus, /calculateConfidence/)
+  assert.match(consensus, /confidencePercent/)
+  /* Отметка вошедшего весит больше — как и у наличия. */
+  assert.match(consensus, /authorized: Boolean\(report\.userId\)/)
+
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelPriceReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /fuel-price-row__meter/)
+
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  /* Цвет несёт то же, что и длина полосы: слабую цену видно, не
+     сравнивая полосы между собой. */
+  assert.match(css, /data-level="низкая"\] > span \{ background: #dc2626/)
 })
 
 test("комментарии видны без фотографии", () => {
@@ -480,4 +500,31 @@ test("чужую отметку можно подтвердить одним н�
   /* Подтверждать нечего, пока отметка свежая: иначе человек накручивает
      уверенность вместо того, чтобы её проверять. */
   assert.match(reporter, /CONFIRM_AFTER_MS/)
+})
+
+test("приближение карты не сбрасывается при подгрузке участка", () => {
+  /* Человек приближал карту, сдвиг подгружал новый участок, сервер
+     отвечал уточнённым центром — и масштаб откатывался к обзорному.
+     Со стороны это выглядело так, будто нажатие на заправку отменяет
+     приближение. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  /* Сброс привязан к названию места, а не к координатам: они меняются
+     при каждой подгрузке. */
+  assert.match(page, /const areaKey = city/)
+  assert.match(page, /\}, \[areaKey\]\)/)
+})
+
+test("город запоминается и определяется по местоположению", () => {
+  /* Человек из Уфы открывал карту, видел Москву и менял город руками —
+     каждый раз, после каждого захода. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /CITY_STORAGE_KEY/)
+  assert.match(page, /findNearestCity/)
+  assert.match(page, /getCurrentPosition/)
+  /* Определение не спорит с выбором человека: если он уже выбирал
+     город, координаты его не переопределяют. */
+  assert.match(page, /hasLocatedRef/)
+
+  const cities = readFileSync(new URL("../src/lib/cities.ts", import.meta.url), "utf8")
+  assert.match(cities, /export function findNearestCity/)
 })
