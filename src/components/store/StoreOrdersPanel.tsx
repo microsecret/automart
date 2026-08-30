@@ -158,7 +158,19 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
                         позвонить, а не искать номер в переписке. */}
                     <Group gap="sm" mt={8} wrap="wrap">
                       <Text size="sm" fw={700}>{order.contactName}</Text>
-                      <Group gap={4}><IconPhone size={13} /><Text size="sm" component="a" href={`tel:${order.contactPhone}`} style={{ color: "inherit" }}>{order.contactPhone}</Text></Group>
+                      {/* Номер кнопкой, а не строкой: продавец звонит с
+                          телефона, и попасть пальцем в текст между
+                          именем и почтой почти нельзя. */}
+                      <Button
+                        component="a"
+                        href={`tel:${order.contactPhone.replace(/[^\d+]/g, "")}`}
+                        size="compact-sm"
+                        variant="light"
+                        color="teal"
+                        leftSection={<IconPhone size={14} />}
+                      >
+                        {order.contactPhone}
+                      </Button>
                       {order.contactEmail && <Group gap={4}><IconMail size={13} /><Text size="xs" c="dimmed">{order.contactEmail}</Text></Group>}
                       {order.city && <Group gap={4}><IconMapPin size={13} /><Text size="xs" c="dimmed">{order.city}</Text></Group>}
                     </Group>
