@@ -178,6 +178,17 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   const pendingFrame = useRef<number | null>(null)
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [isDragging, setIsDragging] = useState(false)
+  /* То же самое, но читается синхронно.
+
+     Клик приходит сразу за отпусканием кнопки, в том же цикле событий, а
+     состояние React к этому моменту ещё не обновилось: обработчик метки
+     видел «идёт перетаскивание» и молча ничего не открывал. На телефоне
+     это случалось редко, а мышью — почти всегда: между нажатием и
+     отпусканием курсор успевает сместиться на несколько пикселей.
+
+     Состояние оставлено рядом: по нему меняется курсор, и для этого
+     перерисовка нужна. */
+  const isDraggingRef = useRef(false)
   const [clusterHint, setClusterHint] = useState<string | null>(null)
   /* Открытая вкладка карточки. «Отметить» первой: ради неё сервис и
      существует, а цены с комментариями человек смотрит выборочно. */
@@ -404,6 +415,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     }
 
     dragState.current = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, center: viewportCenter }
+    isDraggingRef.current = false
     setIsDragging(false)
   }
 
@@ -438,7 +450,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     if (!drag || drag.pointerId !== event.pointerId) return
     const deltaX = event.clientX - drag.clientX
     const deltaY = event.clientY - drag.clientY
-    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) setIsDragging(true)
+    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+      isDraggingRef.current = true
+      setIsDragging(true)
+    }
 
     const start = coordinatesToWorld(drag.center.latitude, drag.center.longitude, zoom)
     const worldSize = TILE_SIZE * (2 ** zoom)
@@ -472,6 +487,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     if (activePointers.current.size < 2 && pinchState.current) {
       pinchState.current = null
       dragState.current = null
+      /* Щипок — тоже жест, а не нажатие: после него карточка открыться
+         не должна. Ref сбросится на следующем нажатии. */
+      isDraggingRef.current = true
       onViewportChange(viewportCenterRef.current)
       return
     }
@@ -479,6 +497,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     if (dragState.current?.pointerId !== event.pointerId) return
     dragState.current = null
     onViewportChange(viewportCenterRef.current)
+    /* Ref сбрасывается на следующем нажатии, а не здесь: клик придёт
+       сразу за этим обработчиком и должен увидеть, что перетаскивание
+       было. Состояние гасим отложенно — только ради курсора. */
     window.setTimeout(() => setIsDragging(false), 0)
   }
 
@@ -530,8 +551,13 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
        получал всплывшую панель поверх неё.
 
        Порог движения задаёт сама карта: три пикселя отличают дрожание
-       пальца от осознанного перетаскивания. */
-    if (isDragging) return
+       пальца от осознанного перетаскивания.
+
+       Читаем ref, а не состояние: клик приходит в том же цикле событий,
+       что и отпускание кнопки, и состояние React к этому моменту ещё
+       старое. Мышью это ломало открытие карточки почти всегда — курсор
+       между нажатием и отпусканием смещается на несколько пикселей. */
+    if (isDraggingRef.current) return
 
     if (marker.stations.length === 1) {
       setClusterHint(null)
@@ -1271,6 +1297,11 @@ function FuelMapContent() {
      мог сознательно уехать смотреть другой город, и второе срабатывание
      вернуло бы его обратно. */
   const hasLocatedRef = useRef(false)
+  /* Человек выбрал город сам — геолокация больше не вмешивается.
+     Ref, а не состояние: значение читается внутри обработчика браузера,
+     который замкнул на себе первый рендер и о новом состоянии не
+     узнает. */
+  const chosenCityRef = useRef(false)
   const [placeQuery, setPlaceQuery] = useState("")
   const [place, setPlace] = useState<string | null>(null)
   const [fuelFilter, setFuelFilter] = useState("")
@@ -1486,6 +1517,25 @@ function FuelMapContent() {
     setViewportCoordinates(cityCoordinates)
   }, [city, cityCoordinates])
 
+  /* Найденное место открывается на карте.
+
+     Поиск задавал только запрос к серверу: точки приезжали новые, а
+     карта оставалась там, где стояла. Человек искал «Уфа», нажимал ввод
+     и продолжал смотреть на Челябинск — со стороны это выглядело так,
+     будто поиск не сработал вовсе.
+
+     Ждём координаты из ответа: они точнее справочника, потому что
+     сервер разбирает и посёлки, и участки трасс, которых в списке
+     городов нет. */
+  const placeCoordinatesKey = place && data?.coordinates
+    ? `${data.coordinates.latitude},${data.coordinates.longitude}`
+    : null
+
+  useEffect(() => {
+    if (!placeCoordinatesKey || !data?.coordinates) return
+    setViewportCoordinates(data.coordinates)
+  }, [placeCoordinatesKey])
+
   /* Смена фильтра снимает выбор: выбранная заправка могла не пройти
      новый фильтр, и карточка висела бы над картой, где её метки уже
      нет. */
@@ -1556,6 +1606,12 @@ function FuelMapContent() {
     hasLocatedRef.current = true
 
     const applyPoint = (latitude: number, longitude: number) => {
+      /* Ответ браузера приходит через секунды, и за это время человек
+         успевает выбрать город сам. Раньше проверка шла один раз при
+         загрузке: выбрал Уфу, пришёл ответ геолокации — и карта молча
+         возвращалась в Челябинск, а в поле оставалась «Уфа». */
+      if (chosenCityRef.current) return
+
       const nearest = findNearestCity({ latitude, longitude })
       /* Дальше двухсот километров ближайший город уже не описывает
          место: человек в тайге получил бы город, до которого полдня
@@ -1666,7 +1722,7 @@ function FuelMapContent() {
             aria-label="Выберите город"
             data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))}
             value={place ? null : city}
-            onChange={(value) => { if (value) { setPlace(null); setPlaceQuery(""); setCity(value) } }}
+            onChange={(value) => { if (value) { chosenCityRef.current = true; setPlace(null); setPlaceQuery(""); setCity(value) } }}
             searchable
             size="sm"
             radius="xl"

@@ -864,12 +864,49 @@ test("карту можно тянуть пальцем с любого мест
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
   assert.doesNotMatch(page, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/)
   /* Перетаскивание при этом не открывает карточку: иначе движение,
-     начатое с метки, всплывало бы панелью поверх карты. */
-  assert.match(page, /if \(isDragging\) return/)
+     начатое с метки, всплывало бы панелью поверх карты.
+
+     Проверка идёт по ref, а не по состоянию React: клик приходит в том
+     же цикле событий, что и отпускание кнопки, и состояние к этому
+     моменту ещё старое. Мышью это ломало открытие карточки почти
+     всегда — курсор между нажатием и отпусканием смещается на
+     несколько пикселей. */
+  assert.match(page, /if \(isDraggingRef\.current\) return/)
+  assert.match(page, /isDraggingRef\.current = true/)
 
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
   /* Жест внутри карты принадлежит карте, где бы палец ни лёг. */
   assert.match(css, /\.fuel-map-canvas \*,/)
   /* Карточка точки — исключение: её содержимое надо прокручивать. */
   assert.match(css, /\.fuel-map-selected \*\s*\{\s*touch-action: auto/)
+})
+
+test("выбранный город не перебивается геолокацией", () => {
+  /* Ответ браузера о местоположении приходит через секунды, и за это
+     время человек успевает выбрать город сам. Проверка шла один раз при
+     загрузке: выбрал Уфу, пришёл ответ — карта молча возвращалась в
+     Челябинск, а в поле оставалась «Уфа». */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /chosenCityRef\.current = true/)
+  const applyPoint = page.slice(page.indexOf("const applyPoint"), page.indexOf("navigator.geolocation.getCurrentPosition"))
+  assert.match(applyPoint, /if \(chosenCityRef\.current\) return/)
+})
+
+test("найденное место открывается на карте", () => {
+  /* Поиск задавал только запрос к серверу: точки приезжали новые, а
+     карта оставалась там, где стояла. Человек искал «Уфа», нажимал ввод
+     и продолжал смотреть на Челябинск. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /placeCoordinatesKey/)
+  assert.match(page, /setViewportCoordinates\(data\.coordinates\)/)
+})
+
+test("мышью карту тянут без выделения текста", () => {
+  /* touch-action решает только жесты пальцем. На десктопе, начав тянуть
+     с плашки заправки, человек попадал не в панораму, а в выделение
+     текста: браузер подсвечивал «Башнефть ДТ АИ-92», карта стояла. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const rule = css.slice(css.indexOf("Мышью карту тоже нужно тянуть"), css.indexOf("Карточка точки — исключение: в ней адрес"))
+  assert.match(rule, /user-select: none/)
+  assert.match(rule, /-webkit-user-drag: none/)
 })
