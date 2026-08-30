@@ -114,6 +114,11 @@ type NetworkIdentity = {
   shortLabel: string
   color: string
   textColor: string
+  /* Знак сети в фирменных цветах: человек находит свою заправку по
+     нему быстрее, чем читает две буквы. Файлы лежат у нас, а не
+     подгружаются с чужих сайтов: те меняют адреса и блокируют чужой
+     трафик, и знак пропал бы у всех разом. */
+  logo?: string
 }
 
 function getStationNetwork(station: FuelStation) {
@@ -126,21 +131,21 @@ function getStationNetworkKey(station: FuelStation) {
 
 function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
   const source = `${station.name} ${station.brand || ""} ${station.operator || ""}`.toLocaleLowerCase("ru-RU")
-  if (source.includes("лукойл")) return { label: "Лукойл", shortLabel: "ЛК", color: "#d8202f", textColor: "#fff" }
-  if (source.includes("роснефть")) return { label: "Роснефть", shortLabel: "РН", color: "#f6c514", textColor: "#1f2937" }
-  if (source.includes("газпром")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff" }
-  if (source.includes("татнефть")) return { label: "Татнефть", shortLabel: "ТН", color: "#139b5a", textColor: "#fff" }
-  if (source.includes("башнефть")) return { label: "Башнефть", shortLabel: "БН", color: "#183b6d", textColor: "#fff" }
-  if (source.includes("teboil") || source.includes("тебойл")) return { label: "Teboil", shortLabel: "TB", color: "#d52331", textColor: "#fff" }
-  if (source.includes("нефтьмагистраль")) return { label: "Нефтьмагистраль", shortLabel: "НМ", color: "#1d1d1f", textColor: "#fff" }
+  if (source.includes("лукойл")) return { label: "Лукойл", shortLabel: "ЛК", color: "#d8202f", textColor: "#fff", logo: "/brand/fuel/lukoil.svg" }
+  if (source.includes("роснефть")) return { label: "Роснефть", shortLabel: "РН", color: "#f6c514", textColor: "#1f2937", logo: "/brand/fuel/rosneft.svg" }
+  if (source.includes("газпром")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff", logo: "/brand/fuel/gazprom.svg" }
+  if (source.includes("татнефть")) return { label: "Татнефть", shortLabel: "ТН", color: "#139b5a", textColor: "#fff", logo: "/brand/fuel/tatneft.svg" }
+  if (source.includes("башнефть")) return { label: "Башнефть", shortLabel: "БН", color: "#183b6d", textColor: "#fff", logo: "/brand/fuel/bashneft.svg" }
+  if (source.includes("teboil") || source.includes("тебойл")) return { label: "Teboil", shortLabel: "TB", color: "#d52331", textColor: "#fff", logo: "/brand/fuel/teboil.svg" }
+  if (source.includes("нефтьмагистраль")) return { label: "Нефтьмагистраль", shortLabel: "НМ", color: "#1d1d1f", textColor: "#fff", logo: "/brand/fuel/neftmagistral.svg" }
   if (source.includes("irbis") || source.includes("ирбис")) return { label: "Irbis", shortLabel: "IR", color: "#e65825", textColor: "#fff" }
   /* Сети, встречающиеся в справочнике достаточно часто, чтобы человек
      узнавал их по цвету. Список рос по мере того, как на карте
      попадались безымянные точки там, где заправка на деле известная. */
-  if (source.includes("шелл") || source.includes("shell")) return { label: "Shell", shortLabel: "SH", color: "#fbce07", textColor: "#1f2937" }
+  if (source.includes("шелл") || source.includes("shell")) return { label: "Shell", shortLabel: "SH", color: "#fbce07", textColor: "#1f2937", logo: "/brand/fuel/shell.svg" }
   if (source.includes("нефтьм") || source.includes("трасса")) return { label: "Трасса", shortLabel: "ТР", color: "#0f766e", textColor: "#fff" }
-  if (source.includes("сургут")) return { label: "Сургутнефтегаз", shortLabel: "СН", color: "#00693c", textColor: "#fff" }
-  if (source.includes("газпром") || source.includes("gazprom")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff" }
+  if (source.includes("сургут")) return { label: "Сургутнефтегаз", shortLabel: "СН", color: "#00693c", textColor: "#fff", logo: "/brand/fuel/surgut.svg" }
+  if (source.includes("газпром") || source.includes("gazprom")) return { label: "Газпромнефть", shortLabel: "ГП", color: "#0a7cc1", textColor: "#fff", logo: "/brand/fuel/gazprom.svg" }
   if (source.includes("опти") || source.includes("opti")) return { label: "Опти", shortLabel: "ОП", color: "#e11d48", textColor: "#fff" }
   if (source.includes("нефтегаз")) return { label: "Нефтегаз", shortLabel: "НГ", color: "#155e75", textColor: "#fff" }
   if (source.includes("автодор") || source.includes("трасса м")) return { label: "Автодор", shortLabel: "АД", color: "#7c2d12", textColor: "#fff" }
@@ -708,7 +713,21 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                       style={{ background: networkIdentity.color, color: networkIdentity.textColor }}
                       aria-hidden="true"
                     >
-                      {networkIdentity.shortLabel}
+                      {/* Знак сети картинкой, буквы — запасной вариант.
+
+                          Картинка узнаётся быстрее, чем читаются две
+                          буквы: человек ищет глазами привычный знак, а
+                          не расшифровывает сокращение. Для сетей, знака
+                          которых у нас нет, остаются буквы — пустое
+                          место хуже. */}
+                      {networkIdentity.logo
+                        /* Обычный img, а не next/image: это готовый SVG
+                           в 22 пикселя — оптимизировать в нём нечего, а
+                           обёртка next/image добавила бы разметку на
+                           каждую из сотен меток карты. */
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={networkIdentity.logo} alt="" width={22} height={22} loading="lazy" decoding="async" />
+                        : networkIdentity.shortLabel}
                     </span>
                   ) : (
                     /* Сеть не распознана: серый знак заправки вместо
@@ -874,10 +893,14 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               {identity && (
                 <span
                   className="fuel-map-selected__logo"
-                  style={{ background: identity.color, color: identity.textColor }}
+                  style={{ background: identity.logo ? "#fff" : identity.color, color: identity.textColor }}
                   aria-hidden="true"
                 >
-                  {identity.shortLabel}
+                  {identity.logo
+                    /* Тот же довод, что и на плашке: готовый SVG. */
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={identity.logo} alt="" width={26} height={26} loading="lazy" decoding="async" />
+                    : identity.shortLabel}
                 </span>
               )}
               <Box style={{ minWidth: 0, flex: 1 }}>

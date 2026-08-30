@@ -7,7 +7,6 @@ import {
   AVAILABILITY_FUELS,
   AVAILABILITY_FUEL_LABELS,
   QUEUE_LABELS,
-  formatAge,
   type AvailabilityFuel,
   type QueueLevel,
 } from "@/lib/fuel-availability"
@@ -263,36 +262,13 @@ export default function FuelAvailabilityReporter({
         <Text size="sm" fw={600}>Есть ли топливо</Text>
         <Text size="xs" c="dimmed">по отметкам водителей</Text>
       </Group>
+      {/* Сетка «есть ли топливо» убрана из формы.
 
-      {/* Сетка марок: человек читает, что здесь сейчас, не открывая
-          форму. Цвет несёт состояние, но не в одиночку — рядом стоит
-          подпись «есть»/«нет», иначе карта нечитаема при дальтонизме. */}
-      <Box className="fuel-report__status">
-        {visibleFuels.map((fuel) => {
-          const known = byFuel.get(fuel)
-          const state = known?.state ?? "UNKNOWN"
-          const age = known?.updatedAt ? formatAge(new Date(known.updatedAt)) : null
-
-          return (
-            <Box key={fuel} className="fuel-report__status-cell" data-state={state.toLowerCase()}>
-              <Text fw={800} fz={16} lh={1.1}>{AVAILABILITY_FUEL_LABELS[fuel]}</Text>
-              <Text fz={10} lh={1.3} className="fuel-report__status-word">
-                {state === "YES" ? "есть" : state === "NO" ? "нет" : "не отмечали"}
-              </Text>
-              {/* Возраст отметки — половина ответа: по свежести человек
-                  сам решает, верить ли. */}
-              {age && <Text fz={9} c="dimmed" lh={1.2}>{age}</Text>}
-              {/* Уверенность показывается, только когда сведения слабые:
-                  при высокой она лишний шум, при низкой — предупреждение. */}
-              {known && known.confidenceLabel !== "высокая" && (
-                <Text fz={9} c={known.confidenceLabel === "низкая" ? "orange.7" : "dimmed"} lh={1.2}>
-                  {known.confidencePercent}%
-                </Text>
-              )}
-            </Box>
-          )
-        })}
-      </Box>
+          Она повторяла бейджи марок, которые стоят выше в карточке:
+          там «92 · 63,20 ₽» зелёным, здесь «92 / есть / 14 мин
+          назад» — одно и то же двумя способами, на два экрана
+          прокрутки. Возраст и уверенность теперь в статусной строке
+          над бейджами, а форма занимается только вводом. */}
 
       {/* Подтверждение чужой отметки одним нажатием.
 

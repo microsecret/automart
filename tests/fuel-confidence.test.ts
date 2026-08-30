@@ -131,8 +131,11 @@ test("уверенность доходит до карточки", () => {
 test("число показывается только при слабых сведениях", () => {
   /* При высокой уверенности оно лишний шум, при низкой —
      предупреждение. */
-  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
-  assert.match(reporter, /confidenceLabel !== "высокая"/)
+  /* Живёт в статусной строке карточки: сетка марок в форме повторяла
+     бейджи выше и была убрана. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /confidenceLabel !== "высокая"/)
+  assert.match(page, /fuel-status__confidence/)
 })
 
 test("цена вводится по каждой марке", () => {

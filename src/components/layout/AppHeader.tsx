@@ -42,6 +42,7 @@ const PRIMARY_ICONS = {
   listings: <IconCar size={14} />,
   parts: <IconTools size={14} />,
   auctions: <IconGavel size={14} />,
+  "fuel-map": <IconGasStation size={14} />,
   news: <IconNews size={14} />,
   forum: <IconMessages size={14} />,
 } satisfies Record<(typeof PRIMARY_NAVIGATION)[number]["id"], React.ReactNode>

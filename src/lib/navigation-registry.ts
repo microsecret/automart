@@ -17,6 +17,17 @@ export const PRIMARY_NAVIGATION = [
   { id: "listings", label: "Объявления", href: "/", activePrefixes: ["/category", "/search"] },
   { id: "parts", label: "Запчасти", href: "/parts-finder", activePrefixes: ["/listings/part"] },
   { id: "auctions", label: "Аукционы", href: "/auctions" },
+  /* Карта АЗС вынесена в главное меню.
+
+     Она лежала третьим пунктом внутри «Сервисов» — до неё доходили
+     двумя нажатиями, зная, что искать. При этом в дефицит топлива это
+     самый нужный инструмент на сайте, и заходят на него чаще, чем на
+     аукционы.
+
+     «Где заправиться», а не «Карта АЗС»: название говорит о задаче
+     человека, а не об устройстве раздела. И не «Где бензин» — так
+     называется чужой сервис, с которым нас незачем путать. */
+  { id: "fuel-map", label: "Где заправиться", shortLabel: "Заправки", href: "/services/fuel-map" },
   { id: "news", label: "Новости", href: "/news" },
   { id: "forum", label: "Форум", href: "/forum" },
 ] as const satisfies readonly NavigationItem[]

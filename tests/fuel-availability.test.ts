@@ -673,3 +673,31 @@ test("статус заправки читается строкой, а не т�
      бесполезна. */
   assert.match(page, /fuel-status__confidence/)
 })
+
+test("сетка марок не дублирует бейджи карточки", () => {
+  /* «92 · 63,20 ₽» зелёным в карточке и «92 / есть / 14 мин назад» в
+     форме — одно и то же двумя способами, на два экрана прокрутки. */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.doesNotMatch(reporter, /className="fuel-report__status"/)
+})
+
+test("у сетей выводится фирменный знак, а не две буквы", () => {
+  /* Картинка узнаётся быстрее, чем читается сокращение: человек ищет
+     глазами привычный знак, а не расшифровывает «БН». */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /brand\/fuel\/bashneft\.svg/)
+  assert.match(page, /brand\/fuel\/lukoil\.svg/)
+  /* Для сетей без знака остаются буквы: пустое место хуже. */
+  assert.match(page, /: networkIdentity\.shortLabel/)
+})
+
+test("карта АЗС есть в главном меню", () => {
+  /* Она лежала третьим пунктом внутри «Сервисов» — до неё доходили
+     двумя нажатиями, зная, что искать, тогда как в дефицит это самый
+     нужный инструмент на сайте. */
+  const nav = readFileSync(new URL("../src/lib/navigation-registry.ts", import.meta.url), "utf8")
+  const primary = nav.slice(nav.indexOf("PRIMARY_NAVIGATION"), nav.indexOf("PLATFORM_NAVIGATION"))
+  assert.match(primary, /services\/fuel-map/)
+  /* Название про задачу человека, а не про устройство раздела. */
+  assert.match(primary, /Где заправиться/)
+})
