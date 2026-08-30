@@ -53,7 +53,7 @@ function formatAge(value: string) {
  * минуту, «фильтр на японку» требует переписки — вперемешку хорошие
  * заявки хоронятся под плохими. Порядок задаёт сервер.
  */
-export default function StoreRequestsPanel() {
+export default function StoreRequestsPanel({ storeId }: { storeId: string }) {
   const { data, error, isLoading, mutate } = useSWR<{ requests: PartRequest[] }>(
     "/api/parts/requests?limit=30",
     fetchJson,
@@ -78,6 +78,10 @@ export default function StoreRequestsPanel() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          /* От чьего имени отвечаем: аккаунт может вести несколько
+             магазинов, и покупателю уходит телефон именно того, что
+             открыт в кабинете. */
+          storeId,
           price: form.price === "" ? null : Number(form.price),
           condition: form.condition || null,
           leadTimeDays: form.leadTimeDays === "" ? null : Number(form.leadTimeDays),

@@ -107,7 +107,13 @@ export default function StoreWorkspacePage() {
   const [statusState, setStatusState] = useState<"idle" | "saving">("idle")
   const [statusError, setStatusError] = useState<string | null>(null)
 
-  const store = data?.stores?.[0] || null
+  /* Аккаунту разрешено вести до трёх магазинов, а кабинет всегда
+     показывал первый: второй и третий существовали в базе и на витрине,
+     но владелец не мог ни открыть их, ни поправить, ни увидеть заказы —
+     они пропадали из его кабинета насовсем. */
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(null)
+  const stores = data?.stores || []
+  const store = stores.find((item) => item.id === activeStoreId) || stores[0] || null
   const access = data?.access || null
 
   const createStore = async () => {
@@ -385,6 +391,24 @@ export default function StoreWorkspacePage() {
           </Card>
         ) : (
           <>
+            {/* Переключатель появляется, только когда магазинов правда
+                несколько: одному владельцу лишний ряд кнопок ни к чему. */}
+            {stores.length > 1 && (
+              <Group gap={6} wrap="wrap">
+                {stores.map((item) => (
+                  <Button
+                    key={item.id}
+                    size="compact-sm"
+                    variant={item.id === store.id ? "filled" : "default"}
+                    color="indigo"
+                    onClick={() => setActiveStoreId(item.id)}
+                  >
+                    {item.name}
+                  </Button>
+                ))}
+              </Group>
+            )}
+
             <Card withBorder radius="md" p="md">
               <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
                 <Box>
@@ -446,7 +470,7 @@ export default function StoreWorkspacePage() {
 
                 Видны только работающему магазину: в заявке телефон
                 человека, и черновику его показывать нельзя. */}
-            {store.status === "ACTIVE" && <StoreRequestsPanel />}
+            {store.status === "ACTIVE" && <StoreRequestsPanel storeId={store.id} />}
 
             {store._count.parts > 0 && <StoreCatalogPanel storeId={store.id} />}
 

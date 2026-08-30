@@ -35,9 +35,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   /* Отвечают только работающие магазины: заявка с телефоном человека
      не должна быть видна кому попало, и черновой магазин её не видит
-     даже в списке. */
+     даже в списке.
+
+     Аккаунт может вести до трёх магазинов, поэтому кабинет говорит, от
+     чьего имени отвечает: иначе предложение ушло бы от первого
+     попавшегося, и покупатель получил бы телефон не того магазина. */
+  const body = await request.json().catch(() => null)
+  const requestedStoreId = typeof body?.storeId === "string" ? body.storeId : null
+
   const store = await prisma.partStore.findFirst({
-    where: { ownerId: session.user.id, status: "ACTIVE" },
+    where: {
+      ownerId: session.user.id,
+      status: "ACTIVE",
+      ...(requestedStoreId ? { id: requestedStoreId } : {}),
+    },
     select: { id: true, name: true },
   })
   if (!store) {
@@ -56,7 +67,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Заявка уже закрыта" }, { status: 409 })
   }
 
-  const parsed = parsePartOffer(await request.json().catch(() => null))
+  const parsed = parsePartOffer(body)
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
   const data = parsed.data
 
