@@ -38,7 +38,10 @@ export default function TrafficBarChart({
 }) {
   const [active, setActive] = useState<number | null>(null)
 
-  const max = Math.max(1, ...points.map((point) => point.value))
+  /* Оба ряда по одной шкале: просмотров всегда больше, и если считать
+     их отдельно, столбцы посетителей вытянутся до той же высоты — на
+     графике разница исчезнет, хотя она и есть главный ответ. */
+  const max = Math.max(1, ...points.map((point) => Math.max(point.value, point.secondary || 0)))
   const peak = points.reduce((best, point, index) => (point.value > points[best]?.value ? index : best), 0)
   const total = points.reduce((sum, point) => sum + point.value, 0)
 
@@ -50,8 +53,24 @@ export default function TrafficBarChart({
     )
   }
 
+  const hasSecondary = points.some((point) => point.secondary != null && point.secondary > point.value)
+
   return (
     <Box style={{ position: "relative" }}>
+      {/* Легенда только когда рядов правда два: у графика по часам
+          второго нет, и подпись про просмотры сбивала бы с толку. */}
+      {hasSecondary && (
+        <Group gap="md" mb="xs">
+          <Group gap={5} wrap="nowrap">
+            <Box style={{ width: 9, height: 9, borderRadius: 2, background: "var(--mantine-color-indigo-5)" }} />
+            <Text size="10px" c="dimmed">{valueLabel}</Text>
+          </Group>
+          <Group gap={5} wrap="nowrap">
+            <Box style={{ width: 9, height: 9, borderRadius: 2, background: "var(--mantine-color-indigo-1)" }} />
+            <Text size="10px" c="dimmed">{secondaryLabel}</Text>
+          </Group>
+        </Group>
+      )}
       <Group gap={3} align="flex-end" wrap="nowrap" style={{ height, overflow: "hidden" }}>
         {points.map((point, index) => {
           /* Минимальная высота у ненулевого столбца: единственный визит в
@@ -69,19 +88,39 @@ export default function TrafficBarChart({
               onMouseEnter={() => setActive(index)}
               onMouseLeave={() => setActive(null)}
             >
-              <Box
-                style={{
-                  width: "100%",
-                  height: barHeight,
-                  borderRadius: "4px 4px 2px 2px",
-                  background: point.value === 0
-                    ? "var(--mantine-color-gray-3)"
-                    : isPeak || isActive
-                      ? "var(--mantine-color-indigo-6)"
-                      : "var(--mantine-color-indigo-3)",
-                  transition: "background var(--ease-fast) var(--ease-out), height var(--ease-slow) var(--ease-out)",
-                }}
-              />
+              {/* Просмотры бледной подложкой, посетители плотным столбцом
+                  поверх: видно и объём, и сколько за ним живых людей.
+                  Раздельные графики заставляли сравнивать глазами два
+                  разных масштаба. */}
+              <Box style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "flex-end" }}>
+                {point.secondary != null && point.secondary > point.value && (
+                  <Box
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      width: "100%",
+                      height: Math.max(6, Math.round((point.secondary / max) * height)),
+                      borderRadius: "4px 4px 2px 2px",
+                      background: "var(--mantine-color-indigo-1)",
+                      transition: "height var(--ease-slow) var(--ease-out)",
+                    }}
+                  />
+                )}
+                <Box
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: barHeight,
+                    borderRadius: "4px 4px 2px 2px",
+                    background: point.value === 0
+                      ? "var(--mantine-color-gray-3)"
+                      : isPeak || isActive
+                        ? "var(--mantine-color-indigo-6)"
+                        : "var(--mantine-color-indigo-4)",
+                    transition: "background var(--ease-fast) var(--ease-out), height var(--ease-slow) var(--ease-out)",
+                  }}
+                />
+              </Box>
             </Box>
           )
         })}

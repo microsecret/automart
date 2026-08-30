@@ -403,7 +403,17 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
        Оставались кнопки «плюс-минус» в углу, до которых на ходу не
        дотягиваются. */
     activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    event.currentTarget.setPointerCapture(event.pointerId)
+    /* Захват указателя ставится не здесь, а при первом же движении.
+
+       Захват перенаправляет карте все последующие события этого
+       указателя — и клик в том числе: браузер отдаёт его элементу с
+       захватом, а не плашке заправки, по которой человек нажал. Нажатие
+       на метку доходило до карты и умирало там, карточка не
+       открывалась.
+
+       Захват нужен только для перетаскивания — чтобы карта не
+       «отцеплялась», когда курсор ушёл за её край. Значит и ставить его
+       надо тогда, когда перетаскивание действительно началось. */
 
     if (activePointers.current.size === 2) {
       /* Второй палец начинает щипок: запоминаем исходное расстояние и
@@ -416,6 +426,15 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         startZoom: zoom,
       }
       dragState.current = null
+      /* Щипок — уже жест, и захват здесь нужен сразу: пальцы уезжают за
+         край карты чаще, чем курсор. Карточку он не заденет — двумя
+         пальцами по метке не нажимают. */
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId)
+      } catch {
+        /* Указатель отпустили в тот же миг — щипка не будет. */
+      }
+      isDraggingRef.current = true
       return
     }
 
@@ -456,6 +475,16 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     const deltaX = event.clientX - drag.clientX
     const deltaY = event.clientY - drag.clientY
     if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+      if (!isDraggingRef.current) {
+        /* Началось перетаскивание — теперь захват уместен: он удержит
+           карту, даже если курсор уедет за её край. */
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId)
+        } catch {
+          /* Указатель мог уже отпуститься: без захвата перетаскивание
+             просто закончится на границе карты. */
+        }
+      }
       isDraggingRef.current = true
       setIsDragging(true)
     }

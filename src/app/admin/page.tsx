@@ -1085,43 +1085,44 @@ export default function AdminDashboard() {
               одно и то же дважды. */}
         </Card>
 
+        {/* Разделы, устройства и источники переехали на «Посещаемость».
+
+            Четыре блока показывали здесь ровно то же, что и там, только
+            за одну неделю и без переключения периодов: администратор
+            читал одни и те же цифры дважды и не понимал, какие из них
+            свежее. Аналитика теперь живёт в одном месте, а обзор
+            отвечает на другой вопрос — что требует решения прямо
+            сейчас. */}
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Text size="sm" fw={700} c="var(--market-ink)" mb={2}>Самые просматриваемые разделы · неделя</Text>
-            <Text size="xs" c="dimmed" mb="sm">Названия показаны по-русски; число справа — открытия страниц.</Text>
-            <Stack gap="xs">
-              {data.traffic.topPaths.map((item) => (
-                <Group key={item.path} justify="space-between" wrap="nowrap"><Text size="xs" fw={600} c="gray.7" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{screenLabel(item.path)}</Text><Badge size="sm" variant="light" color="indigo">{item.count} просм.</Badge></Group>
-              ))}
-              {!data.traffic.topPaths.length && <Text size="xs" c="gray.4">Данные появятся после первых просмотров страниц.</Text>}
-            </Stack>
+          <Card className="admin-insight-card" withBorder radius="md" p="md" component={Link} href="/admin/traffic" style={{ textDecoration: "none", color: "inherit" }}>
+            <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
+              <Box>
+                <Text size="sm" fw={700} c="var(--market-ink)">Посещаемость</Text>
+                <Text size="xs" c="dimmed" mt={2}>
+                  Разделы, города, устройства и источники — за сутки, неделю или месяц
+                </Text>
+              </Box>
+              <ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconActivity size={17} /></ThemeIcon>
+            </Group>
+            <Group gap="lg" mt="md">
+              <Box>
+                <Text size="xl" fw={800} lh={1}>{data.traffic.uniqueVisitorsWeek}</Text>
+                <Text size="10px" c="dimmed">уникальных за неделю</Text>
+              </Box>
+              <Box>
+                <Text size="xl" fw={800} lh={1}>{data.traffic.pageViewsWeek}</Text>
+                <Text size="10px" c="dimmed">просмотров</Text>
+              </Box>
+            </Group>
           </Card>
+
           <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Text size="sm" fw={600} c="var(--market-ink)" mb="sm">Последние идентифицированные посетители</Text>
+            <Text size="sm" fw={600} c="var(--market-ink)" mb="sm">Последние вошедшие</Text>
             <Stack gap="xs">
               {data.traffic.recentVisitors.slice(0, 6).map((visit) => (
-                <Group key={visit.id} justify="space-between"><Text size="xs" c="gray.6">{visit.user?.name || visit.user?.email || "Пользователь"}</Text><Text size="xs" c="gray.4">{new Date(visit.createdAt).toLocaleDateString("ru-RU")}</Text></Group>
+                <Group key={visit.id} justify="space-between"><Text size="xs" c="gray.6">{visit.user?.name || "Без имени"}</Text><Text size="xs" c="gray.5">{formatAdminDateTime(visit.createdAt)}</Text></Group>
               ))}
-              {!data.traffic.recentVisitors.length && <Text size="xs" c="gray.4">Пока нет авторизованных визитов.</Text>}
-            </Stack>
-          </Card>
-        </SimpleGrid>
-
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Text size="sm" fw={700} mb="sm">Устройства уникальных посетителей · неделя</Text>
-            <Stack gap="xs">
-              {data.traffic.devices.map((item) => (
-                <Group key={item.key} justify="space-between"><Text size="xs" c="gray.6">{DEVICE_LABELS[item.key] || item.key}</Text><Badge variant="light" color="cyan">{item.count}</Badge></Group>
-              ))}
-            </Stack>
-          </Card>
-          <Card className="admin-insight-card" withBorder radius="md" p="md">
-            <Text size="sm" fw={700} mb="sm">Источники уникальных посетителей · неделя</Text>
-            <Stack gap="xs">
-              {data.traffic.sources.map((item) => (
-                <Group key={item.key} justify="space-between"><Text size="xs" c="gray.6">{item.key.startsWith("UTM:") ? item.key : SOURCE_LABELS[item.key] || item.key}</Text><Badge variant="light" color="violet">{item.count}</Badge></Group>
-              ))}
+              {!data.traffic.recentVisitors.length && <Text size="xs" c="gray.4">Пока нет авторизованных визитов</Text>}
             </Stack>
           </Card>
         </SimpleGrid>

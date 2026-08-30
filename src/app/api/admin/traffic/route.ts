@@ -65,6 +65,9 @@ export async function GET(request: NextRequest) {
     const byCampaign = new Map<string, Set<string>>()
     const byPath = new Map<string, number>()
     const byHour = new Map<number, Set<string>>()
+    /* Просмотры рядом с посетителями: десять человек, открывших по
+       странице, и один, открывший десять, — разные истории. */
+    const viewsByHour = new Map<number, number>()
     /* Раздел вместо адреса: список путей отвечает «куда заходят», а
        владелец смотрит, живёт ли раздел запчастей и окупается ли карта. */
     const bySection = new Map<string, { label: string; group: string; visitors: Set<string>; views: number }>()
@@ -127,6 +130,7 @@ export async function GET(request: NextRequest) {
       const hour = moscowHour(event.createdAt)
       if (!byHour.has(hour)) byHour.set(hour, new Set())
       byHour.get(hour)!.add(visitor)
+      viewsByHour.set(hour, (viewsByHour.get(hour) || 0) + 1)
     }
 
     const toList = (map: Map<string, Set<string>>) =>
@@ -260,6 +264,7 @@ export async function GET(request: NextRequest) {
       hourly: Array.from({ length: 24 }, (_, hour) => ({
         hour,
         visitors: byHour.get(hour)?.size || 0,
+        views: viewsByHour.get(hour) || 0,
       })),
     })
   } catch (error) {

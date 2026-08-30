@@ -910,3 +910,23 @@ test("мышью карту тянут без выделения текста", 
   assert.match(rule, /user-select: none/)
   assert.match(rule, /-webkit-user-drag: none/)
 })
+
+test("захват указателя ставится только при перетаскивании", () => {
+  /* Захват перенаправляет карте все события указателя — и клик в том
+     числе: браузер отдаёт его элементу с захватом, а не плашке
+     заправки, по которой нажали. Нажатие доходило до карты и умирало
+     там, карточка не открывалась.
+
+     Захват нужен только чтобы карта не «отцеплялась», когда курсор ушёл
+     за её край, — значит и ставить его надо тогда, когда перетаскивание
+     действительно началось. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  const down = page.slice(page.indexOf("const handlePointerDown"), page.indexOf("const handlePointerMove"))
+  const move = page.slice(page.indexOf("const handlePointerMove"), page.indexOf("const handlePointerEnd"))
+
+  /* В обработчике нажатия захват допустим только внутри ветки щипка:
+     двумя пальцами по метке не нажимают. */
+  const beforePinch = down.slice(0, down.indexOf("activePointers.current.size === 2"))
+  assert.doesNotMatch(beforePinch, /setPointerCapture/)
+  assert.match(move, /setPointerCapture/)
+})

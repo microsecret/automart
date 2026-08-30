@@ -27,7 +27,7 @@ type TrafficResponse = {
   daily: { day: string; visitors: number; views: number }[]
   groups: { group: string; label: string; visitors: number; views: number }[]
   topPaths: { path: string; label: string; views: number }[]
-  hourly: { hour: number; visitors: number }[]
+  hourly: { hour: number; visitors: number; views: number }[]
 }
 
 /**
@@ -254,6 +254,7 @@ export default function TrafficPage() {
                       label: String(item.hour),
                       title: `${item.hour}:00`,
                       value: item.visitors,
+                      secondary: item.views,
                     }))}
                   />
                 )}
