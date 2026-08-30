@@ -119,6 +119,7 @@ export default function TelegramShell({
   title,
   subtitle,
   mainAction = true,
+  signedIn = true,
 }: {
   children: React.ReactNode
   activeTab?: string
@@ -126,6 +127,17 @@ export default function TelegramShell({
   subtitle?: string
   /** Показывать ли кнопку платформы «Разместить объявление». */
   mainAction?: boolean
+  /* Прошёл ли человек вход.
+
+     Главная кнопка ведёт на форму подачи, а она закрыта: без входа
+     человек внутри Telegram упирался в форму почты и пароля, которых у
+     него нет и быть не может — он пришёл из бота. Тупик на самой
+     заметной кнопке приложения.
+
+     Бот эту ловушку обходит: его кнопки ведут через мини-приложение,
+     где вход происходит сам. Здесь делаем то же — кнопка ждёт, пока
+     вход завершится. */
+  signedIn?: boolean
 }) {
   const [ready, setReady] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -218,7 +230,7 @@ export default function TelegramShell({
 
        На вкладке подачи её нет: звать туда, где человек уже находится,
        незачем. */
-    if (mainAction === false) {
+    if (mainAction === false || !signedIn) {
       webApp.MainButton?.hide()
       return
     }
@@ -242,7 +254,7 @@ export default function TelegramShell({
       webApp.MainButton?.offClick(openCreate)
       webApp.MainButton?.hide()
     }
-  }, [mainAction])
+  }, [mainAction, signedIn])
 
   /* Высота шапки нужна полю поиска: оно липнет под неё.
 

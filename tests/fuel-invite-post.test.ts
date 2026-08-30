@@ -64,7 +64,11 @@ test("первая кнопка ведёт на карту", () => {
 
 test("без имени бота остаётся только карта", () => {
   const post = buildFuelInvitePost({ siteUrl: "https://lewheel.ru/" })
-  assert.equal(post.buttons.length, 1)
+  /* Карта и пересылка: вторая работает без бота, потому что ведёт на
+     сайт — пост живёт в городском чате, и переслать его должно быть
+     можно всем. */
+  assert.equal(post.buttons.length, 2)
+  assert.ok(post.buttons[1].url.includes("t.me/share/url"))
 })
 
 test("подпись укладывается в предел Telegram", () => {

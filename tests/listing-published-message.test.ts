@@ -35,15 +35,21 @@ test("первая кнопка ведёт в приложение, вторая
   // Человек читает сообщение в Telegram: приложение открывается прямо
   // здесь, а сайт выбрасывает его в браузер на повторный вход.
   const message = buildPublishedMessage(base)
-  assert.equal(message.buttons.length, 2)
+  /* Три кнопки: открыть в приложении, посмотреть на сайте и отправить
+     друзьям — последняя добавлена, потому что поздравление о публикации
+     это ровно тот момент, когда человек готов показать машину знакомым. */
+  assert.equal(message.buttons.length, 3)
   assert.ok(message.buttons[0].url.startsWith("https://t.me/lewheel_bot?startapp=listing_veh123"))
   assert.equal(message.buttons[1].url, "https://lewheel.ru/listings/vehicle/veh123")
 })
 
 test("без имени бота остаётся одна ссылка на сайт", () => {
   const message = buildPublishedMessage({ ...base, botUsername: undefined })
-  assert.equal(message.buttons.length, 1)
+  /* Без имени бота остаются сайт и пересылка: она ведёт на сайт и
+     работает независимо от бота. */
+  assert.equal(message.buttons.length, 2)
   assert.ok(message.buttons[0].url.includes("lewheel.ru"))
+  assert.ok(message.buttons[1].url.includes("t.me/share/url"))
 })
 
 test("угловые скобки в заголовке экранируются", () => {

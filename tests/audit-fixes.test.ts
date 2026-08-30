@@ -275,3 +275,43 @@ test("кнопка поддержки не перехватывает «Напи
   /* И последние пиксели страницы больше не прячутся под полосой. */
   assert.match(css, /body:has\(\.listing-action-bar\) \{\s*padding-bottom/)
 })
+
+test("объявление и карту можно переслать из сообщения бота", () => {
+  /* Продавец получал поздравление с публикацией и две кнопки — обе для
+     него самого. Чтобы отправить машину в семейный чат, надо было
+     копировать ссылку руками, и почти никто этого не делал. */
+  const message = readFileSync(new URL("../src/lib/listing-published-message.ts", import.meta.url), "utf8")
+  assert.match(message, /Отправить друзьям/)
+  assert.match(message, /t\.me\/share\/url/)
+
+  /* Пост про карту живёт в городском чате, где его читают сотни
+     человек, и каждый второй знает кого-то, кому карта нужнее. */
+  const invite = readFileSync(new URL("../src/lib/fuel-invite-post.ts", import.meta.url), "utf8")
+  assert.match(invite, /Переслать другу/)
+  assert.match(invite, /t\.me\/share\/url/)
+})
+
+test("главная кнопка мини-аппа не ведёт в форму пароля", () => {
+  /* Кнопка «Разместить объявление» вела прямо на форму подачи, а она
+     закрыта входом: пришедший из бота человек упирался в форму почты и
+     пароля, которых у него нет. Тупик на самой заметной кнопке. */
+  const shell = readFileSync(new URL("../src/components/telegram/TelegramShell.tsx", import.meta.url), "utf8")
+  assert.match(shell, /signedIn\?: boolean/)
+  assert.match(shell, /mainAction === false \|\| !signedIn/)
+
+  const app = readFileSync(new URL("../src/components/telegram/TelegramMiniApp.tsx", import.meta.url), "utf8")
+  assert.match(app, /signedIn=\{status === "ready"\}/)
+})
+
+test("сбой загрузки в мини-аппе не выглядит пустым разделом", () => {
+  /* Ошибка из SWR не бралась вовсе: упавший запрос давал пустые данные,
+     и человек читал «Пока пусто. В этом разделе ещё нет объявлений».
+     В мобильной сети это регулярно, и вывод получался противоположный
+     правде — «площадка пустая». */
+  for (const file of ["TelegramFeed", "TelegramAuctions", "TelegramNews"]) {
+    const source = readFileSync(new URL(`../src/components/telegram/${file}.tsx`, import.meta.url), "utf8")
+    assert.match(source, /Не удалось загрузить/, `нет состояния ошибки: ${file}`)
+    assert.match(source, /Повторить/, `нечем повторить: ${file}`)
+    assert.match(source, /mutate\(\)/, `нет обновления: ${file}`)
+  }
+})

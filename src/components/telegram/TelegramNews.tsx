@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Box, Loader, Stack, Text } from "@mantine/core"
+import { Box, Button, Loader, Stack, Text } from "@mantine/core"
 import { IconEye, IconMessageCircle2, IconNews } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { newsHref } from "@/lib/news"
@@ -31,7 +31,7 @@ type NewsItem = {
 type NewsResponse = { news: NewsItem[] }
 
 export default function TelegramNews() {
-  const { data, isLoading } = useSWR<NewsResponse>("/api/news?limit=20", fetchJson, {
+  const { data, error, isLoading, mutate } = useSWR<NewsResponse>("/api/news?limit=20", fetchJson, {
     revalidateOnFocus: false,
   })
 
@@ -40,6 +40,22 @@ export default function TelegramNews() {
       <Stack align="center" py={48} gap="xs">
         <Loader size="sm" color="var(--tg-accent)" />
         <Text size="xs" c="var(--tg-hint)">Загружаем новости…</Text>
+      </Stack>
+    )
+  }
+
+  /* Сбой запроса — не то же самое, что пустая лента.
+
+     Ошибка из SWR не бралась вовсе: упавший запрос показывал «Новостей
+     пока нет», хотя они есть. Повторить было нечем. */
+  if (error) {
+    return (
+      <Stack align="center" py={48} gap={10}>
+        <Text fw={700} c="var(--tg-text)">Не удалось загрузить</Text>
+        <Text size="xs" c="var(--tg-hint)" ta="center" maw={260}>
+          Проверьте связь и попробуйте ещё раз.
+        </Text>
+        <Button size="sm" className="tg-button" onClick={() => void mutate()}>Повторить</Button>
       </Stack>
     )
   }

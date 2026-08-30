@@ -3,7 +3,7 @@
 import { useDeferredValue, useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Badge, Box, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
+import { Badge, Box, Button, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
 import { IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { formatMileage, formatPriceShort } from "@/lib/format-numbers"
@@ -40,7 +40,7 @@ export default function TelegramAuctions() {
   const query = new URLSearchParams({ limit: "24" })
   if (deferredSearch.length > 1) query.set("make", deferredSearch)
 
-  const { data, isLoading, isValidating } = useSWR<AuctionResponse>(`/api/auctions?${query}`, fetchJson, {
+  const { data, error, isLoading, isValidating, mutate } = useSWR<AuctionResponse>(`/api/auctions?${query}`, fetchJson, {
     revalidateOnFocus: false,
     keepPreviousData: true,
   })
@@ -80,6 +80,26 @@ export default function TelegramAuctions() {
 
   const lots = data?.listings || []
   const searching = deferredSearch.length > 1
+
+  /* Сбой запроса — не то же самое, что пустой раздел.
+
+     Ошибка из SWR не бралась вовсе: упавший запрос давал пустые данные,
+     и человек видел «пусто». В мобильной сети это случается регулярно,
+     и вывод получался противоположный правде. */
+  if (error) {
+    return (
+      <>
+        {searchField}
+        <Stack align="center" py={48} gap={10}>
+          <Text fw={700} c="var(--tg-text)">Не удалось загрузить</Text>
+          <Text size="xs" c="var(--tg-hint)" ta="center" maw={270}>
+            Проверьте связь и попробуйте ещё раз — лоты никуда не делись.
+          </Text>
+          <Button size="sm" className="tg-button" onClick={() => void mutate()}>Повторить</Button>
+        </Stack>
+      </>
+    )
+  }
 
   if (!lots.length) {
     return (

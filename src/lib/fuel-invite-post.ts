@@ -94,6 +94,20 @@ export function buildFuelInvitePost(input: InviteInput): InvitePost {
     buttons.push({ text: "⛽ Отмечать через бота", url: `https://t.me/${input.botUsername}` })
   }
 
+  /* Кнопка пересылки.
+
+     Пост живёт в городском чате, где его читают сотни человек, и
+     каждый второй знает кого-то, кому карта нужнее. Но переслать её
+     можно было только руками — выделить, скопировать, найти чат.
+
+     Ссылка t.me/share открывает выбор чата прямо в Telegram, а текст
+     для пересылки в этом же файле уже написан: три строки, которые
+     читаются как совет, а не как реклама. */
+  buttons.push({
+    text: "📤 Переслать другу",
+    url: `https://t.me/share/url?url=${encodeURIComponent(`${site}/services/fuel-map`)}&text=${encodeURIComponent("Где сейчас есть бензин — карта отметок водителей")}`,
+  })
+
   return { text: lines.join("\n"), buttons }
 }
 

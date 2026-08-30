@@ -152,7 +152,7 @@ export default function TelegramMiniApp() {
 
   if (status === "browser" || status === "error") {
     return (
-      <TelegramShell title={heading.title} subtitle={heading.subtitle} activeTab={heading.href}>
+      <TelegramShell title={heading.title} subtitle={heading.subtitle} activeTab={heading.href} signedIn={false}>
         <Stack gap="md">
           <Box className="tg-notice" data-tone={status === "error" ? "error" : undefined}>
             {status === "error" ? <IconAlertTriangle size={18} /> : <IconBrandTelegram size={18} />}
@@ -184,7 +184,15 @@ export default function TelegramMiniApp() {
   }
 
   return (
-    <TelegramShell title={heading.title} subtitle={heading.subtitle} activeTab={heading.href}>
+    <TelegramShell
+      title={heading.title}
+      subtitle={heading.subtitle}
+      activeTab={heading.href}
+      /* Кнопка «Разместить объявление» появляется только после входа:
+         иначе она вела в форму пароля, которой у пришедшего из бота
+         нет. */
+      signedIn={status === "ready"}
+    >
       {/* Лента показывается сразу, вход подтягивается сбоку.
 
           Здесь стоял экран ожидания со спиннером: человек открывал

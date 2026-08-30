@@ -3,7 +3,7 @@
 import { useDeferredValue, useMemo, useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Badge, Box, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
+import { Badge, Box, Button, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
 import { IconMapPin, IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { formatMileage, formatPriceShort } from "@/lib/format-numbers"
@@ -56,7 +56,7 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
   if (vehicleType) query.set("vehicleType", vehicleType)
   if (deferredSearch.length > 1) query.set("q", deferredSearch)
 
-  const { data, isLoading, isValidating } = useSWR<FeedResponse>(`/api/listings?${query}`, fetchJson, {
+  const { data, error, isLoading, isValidating, mutate } = useSWR<FeedResponse>(`/api/listings?${query}`, fetchJson, {
     revalidateOnFocus: false,
     keepPreviousData: true,
   })
@@ -101,6 +101,29 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
 
   const listings = data?.listings || []
   const searching = deferredSearch.length > 1
+
+  /* Сбой запроса — не то же самое, что пустой раздел.
+
+     Ошибка из SWR не бралась вовсе: упавший запрос давал пустые данные,
+     и человек видел «Пока пусто. В этом разделе ещё нет объявлений».
+     В мобильной сети это случается регулярно, и вывод получался
+     противоположный правде — «площадка пустая», после чего человек
+     уходит. Повторить было нечем: кнопки нет, обновления по возврату
+     на вкладку тоже. */
+  if (error) {
+    return (
+      <>
+        {searchField}
+        <Stack align="center" py={48} gap={10}>
+          <Text fw={700} c="var(--tg-text)">Не удалось загрузить</Text>
+          <Text size="xs" c="var(--tg-hint)" ta="center" maw={270}>
+            Проверьте связь и попробуйте ещё раз — объявления никуда не делись.
+          </Text>
+          <Button size="sm" className="tg-button" onClick={() => void mutate()}>Повторить</Button>
+        </Stack>
+      </>
+    )
+  }
 
   if (!listings.length) {
     return (
