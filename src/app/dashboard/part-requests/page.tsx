@@ -95,7 +95,7 @@ export default function MyPartRequestsPage() {
               Вы ещё не оставляли заявок. Если нужной детали нет в каталоге — опишите её,
               и магазины ответят ценой и сроком.
             </Text>
-            <Button component={Link} href="/parts" variant="light" color="indigo">
+            <Button component={Link} href="/parts-finder" variant="light" color="indigo">
               Найти запчасть
             </Button>
           </Stack>
@@ -136,7 +136,7 @@ export default function MyPartRequestsPage() {
                                 <Group gap={6} wrap="wrap">
                                   <IconBuildingStore size={15} />
                                   {offer.store ? (
-                                    <Anchor component={Link} href={`/parts/stores/${offer.store.slug}`} fw={600} size="sm">
+                                    <Anchor component={Link} href={`/store/${offer.store.slug}`} fw={600} size="sm">
                                       {offer.store.name}
                                     </Anchor>
                                   ) : (
