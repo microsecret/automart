@@ -112,6 +112,15 @@ export default function DeliveryOrderPage() {
   const [uploadTarget, setUploadTarget] = useState<{ paymentId?: string; category: string; label: string } | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  /* Пока запрос идёт, кнопка должна быть занята.
+
+     Здесь этого не было: на медленной связи человек не видел отклика и
+     нажимал второй раз — в ленте появлялись два одинаковых этапа, а в
+     сделке два счёта на одну сумму. Покупатель видел дубли и удалить
+     их не мог. Рядом, у загрузки документа, состояние уже есть — то
+     есть это был пропуск, а не решение. */
+  const [savingEvent, setSavingEvent] = useState(false)
+  const [savingPayment, setSavingPayment] = useState(false)
 
   if (isLoading) return <Center py={100}><Loader color="indigo" /></Center>
   if (error || !data?.order) return <Box py={80}><AsyncErrorState title="Не удалось открыть сделку" description={error?.message || "Сделка не найдена или у вас нет к ней доступа."} onRetry={() => void mutate()} backHref="/dashboard/deliveries" backLabel="К доставкам" /></Box>
@@ -137,6 +146,8 @@ export default function DeliveryOrderPage() {
 
   const addEvent = async (event: FormEvent) => {
     event.preventDefault()
+    if (savingEvent) return
+    setSavingEvent(true)
     try {
       await fetchJson(`/api/delivery-orders/${order.id}/events`, {
         method: "POST",
@@ -149,11 +160,15 @@ export default function DeliveryOrderPage() {
       mutate()
     } catch (error: unknown) {
       notifications.show({ title: "Не удалось обновить маршрут", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
+    } finally {
+      setSavingEvent(false)
     }
   }
 
   const addPayment = async (event: FormEvent) => {
     event.preventDefault()
+    if (savingPayment) return
+    setSavingPayment(true)
     try {
       await fetchJson(`/api/delivery-orders/${order.id}/payments`, {
         method: "POST",
@@ -166,6 +181,8 @@ export default function DeliveryOrderPage() {
       mutate()
     } catch (error: unknown) {
       notifications.show({ title: "Не удалось добавить счёт", message: error instanceof Error ? error.message : "Повторите попытку", color: "red" })
+    } finally {
+      setSavingPayment(false)
     }
   }
 
@@ -244,9 +261,9 @@ export default function DeliveryOrderPage() {
       </SimpleGrid>
     </Stack>
 
-    <Modal opened={eventOpened} onClose={() => setEventOpened(false)} title="Подтвердить новый этап" centered radius="lg"><form onSubmit={addEvent}><Stack gap="sm"><Text size="sm" c="dimmed">Доступен только следующий этап, пауза или отмена. Не подтверждайте этап без документа или подтверждения партнёра.</Text><Select required label="Этап" data={availableNextStatuses.map((status) => ({ value: status, label: DELIVERY_STATUS_META[status].label }))} value={eventForm.status} onChange={(value) => setEventForm({ ...eventForm, status: value || "" })} /><TextInput label="Заголовок в ленте" placeholder="По умолчанию — название этапа" value={eventForm.title} onChange={(event) => setEventForm({ ...eventForm, title: event.currentTarget.value })} /><Textarea label="Что подтверждено" required minRows={3} value={eventForm.description} onChange={(event) => setEventForm({ ...eventForm, description: event.currentTarget.value })} /><TextInput label="Следующий шаг для покупателя" value={eventForm.nextAction} onChange={(event) => setEventForm({ ...eventForm, nextAction: event.currentTarget.value })} /><TextInput type="datetime-local" label="Ожидаемый срок следующего действия" value={eventForm.expectedAt} onChange={(event) => setEventForm({ ...eventForm, expectedAt: event.currentTarget.value })} /><Button type="submit" color="indigo">Сохранить подтверждённый этап</Button></Stack></form></Modal>
+    <Modal opened={eventOpened} onClose={() => setEventOpened(false)} title="Подтвердить новый этап" centered radius="lg" closeOnClickOutside={false}><form onSubmit={addEvent}><Stack gap="sm"><Text size="sm" c="dimmed">Доступен только следующий этап, пауза или отмена. Не подтверждайте этап без документа или подтверждения партнёра.</Text><Select required label="Этап" data={availableNextStatuses.map((status) => ({ value: status, label: DELIVERY_STATUS_META[status].label }))} value={eventForm.status} onChange={(value) => setEventForm({ ...eventForm, status: value || "" })} /><TextInput label="Заголовок в ленте" placeholder="По умолчанию — название этапа" value={eventForm.title} onChange={(event) => setEventForm({ ...eventForm, title: event.currentTarget.value })} /><Textarea label="Что подтверждено" required minRows={3} value={eventForm.description} onChange={(event) => setEventForm({ ...eventForm, description: event.currentTarget.value })} /><TextInput label="Следующий шаг для покупателя" value={eventForm.nextAction} onChange={(event) => setEventForm({ ...eventForm, nextAction: event.currentTarget.value })} /><TextInput type="datetime-local" label="Ожидаемый срок следующего действия" value={eventForm.expectedAt} onChange={(event) => setEventForm({ ...eventForm, expectedAt: event.currentTarget.value })} /><Button type="submit" color="indigo" loading={savingEvent}>Сохранить подтверждённый этап</Button></Stack></form></Modal>
 
-    <Modal opened={paymentOpened} onClose={() => setPaymentOpened(false)} title="Добавить счёт в сделку" centered radius="lg"><form onSubmit={addPayment}><Stack gap="sm"><Text size="sm" c="dimmed">Сайт не переводит деньги. Укажите назначение, счёт и получателя из проверенного договора.</Text><Select required label="Назначение" data={Object.entries(DELIVERY_PAYMENT_META).map(([value, label]) => ({ value, label }))} value={paymentForm.category} onChange={(value) => setPaymentForm({ ...paymentForm, category: value || "DEPOSIT" })} /><SimpleGrid cols={2}><TextInput required type="number" min="1" label="Сумма" value={paymentForm.amount} onChange={(event) => setPaymentForm({ ...paymentForm, amount: event.currentTarget.value })} /><Select label="Валюта" data={["RUB", "CNY", "KRW", "JPY", "USD", "EUR"]} value={paymentForm.currency} onChange={(value) => setPaymentForm({ ...paymentForm, currency: value || "RUB" })} /></SimpleGrid><TextInput label="Получатель" value={paymentForm.payeeName} onChange={(event) => setPaymentForm({ ...paymentForm, payeeName: event.currentTarget.value })} /><TextInput label="Номер счёта" value={paymentForm.invoiceNumber} onChange={(event) => setPaymentForm({ ...paymentForm, invoiceNumber: event.currentTarget.value })} /><Textarea label="Назначение и инструкция" minRows={3} value={paymentForm.instruction} onChange={(event) => setPaymentForm({ ...paymentForm, instruction: event.currentTarget.value })} /><TextInput type="datetime-local" label="Срок оплаты" value={paymentForm.dueAt} onChange={(event) => setPaymentForm({ ...paymentForm, dueAt: event.currentTarget.value })} /><Button type="submit" color="indigo">Опубликовать счёт</Button></Stack></form></Modal>
+    <Modal opened={paymentOpened} onClose={() => setPaymentOpened(false)} title="Добавить счёт в сделку" centered radius="lg" closeOnClickOutside={false}><form onSubmit={addPayment}><Stack gap="sm"><Text size="sm" c="dimmed">Сайт не переводит деньги. Укажите назначение, счёт и получателя из проверенного договора.</Text><Select required label="Назначение" data={Object.entries(DELIVERY_PAYMENT_META).map(([value, label]) => ({ value, label }))} value={paymentForm.category} onChange={(value) => setPaymentForm({ ...paymentForm, category: value || "DEPOSIT" })} /><SimpleGrid cols={2}><TextInput required type="number" min="1" label="Сумма" value={paymentForm.amount} onChange={(event) => setPaymentForm({ ...paymentForm, amount: event.currentTarget.value })} /><Select label="Валюта" data={["RUB", "CNY", "KRW", "JPY", "USD", "EUR"]} value={paymentForm.currency} onChange={(value) => setPaymentForm({ ...paymentForm, currency: value || "RUB" })} /></SimpleGrid><TextInput label="Получатель" value={paymentForm.payeeName} onChange={(event) => setPaymentForm({ ...paymentForm, payeeName: event.currentTarget.value })} /><TextInput label="Номер счёта" value={paymentForm.invoiceNumber} onChange={(event) => setPaymentForm({ ...paymentForm, invoiceNumber: event.currentTarget.value })} /><Textarea label="Назначение и инструкция" minRows={3} value={paymentForm.instruction} onChange={(event) => setPaymentForm({ ...paymentForm, instruction: event.currentTarget.value })} /><TextInput type="datetime-local" label="Срок оплаты" value={paymentForm.dueAt} onChange={(event) => setPaymentForm({ ...paymentForm, dueAt: event.currentTarget.value })} /><Button type="submit" color="indigo" loading={savingPayment}>Опубликовать счёт</Button></Stack></form></Modal>
 
     <Modal opened={Boolean(uploadTarget)} onClose={() => { setUploadTarget(null); setSelectedFile(null) }} title={uploadTarget?.label || "Загрузить документ"} centered radius="lg"><Stack gap="sm"><Text size="sm" c="dimmed">Файл хранится закрыто и выдаётся только участникам этой сделки. Поддерживаются PDF, JPG, PNG и WebP до 20 МБ.</Text><FileInput label="Файл" placeholder="Выберите файл" accept="application/pdf,image/jpeg,image/png,image/webp" value={selectedFile} onChange={setSelectedFile} clearable /><Button disabled={!selectedFile} loading={uploading} color="indigo" leftSection={<IconUpload size={16} />} onClick={uploadDocument}>Загрузить защищённо</Button></Stack></Modal>
   </Box>

@@ -320,7 +320,17 @@ function DeliveriesWorkspace() {
         </Paper>
       </Stack>
 
-      <Modal opened={opened} onClose={() => setOpened(false)} title="Заявка на международную доставку" centered radius="xl" size="lg">
+      {/* Случайный промах мимо окна не стирает заявку.
+
+          В форме семь полей: маршрут, сроки, описание груза. На
+          телефоне палец легко попадает по фону рядом с окном, и оно
+          закрывалось — заполненное оставалось в памяти вкладки, но
+          человек об этом не знал и начинал заново, а уйдя со страницы,
+          терял всё.
+
+          Крестик и «Отмена» никуда не делись: закрыть окно по-прежнему
+          можно, но осознанно. */}
+      <Modal opened={opened} onClose={() => setOpened(false)} title="Заявка на международную доставку" centered radius="xl" size="lg" closeOnClickOutside={false}>
         <form onSubmit={createOrder}><Stack gap="sm">
           <Text size="sm" c="dimmed">Это заявка на сопровождение, а не платёж. Сначала согласуем маршрут, партнёра и документы.</Text>
           {form.auctionListingId && <Badge color="orange" variant="light">Выбран лот аукциона — он будет привязан к сделке</Badge>}

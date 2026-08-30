@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
@@ -24,6 +24,54 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
   const [opened, setOpened] = useState(false)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
+  /* Черновик темы переживает уход со страницы.
+
+     Кнопка «Отмена» сворачивает форму, а не очищает её, — но при уходе
+     со страницы пропадали и заголовок, и текст. На телефоне
+     переключение на другое приложение регулярно выгружает вкладку, а
+     тему пишут дольше, чем ответ.
+
+     sessionStorage: черновик нужен на время этого захода. Ключ с
+     разделом — в каждом разделе тема своя. */
+  const draftKey = `forum-topic-draft:${sectionSlug}`
+  const draftRestoredRef = useRef(false)
+
+  useEffect(() => {
+    if (draftRestoredRef.current) return
+    draftRestoredRef.current = true
+    try {
+      const raw = window.sessionStorage.getItem(draftKey)
+      if (!raw) return
+      const draft = JSON.parse(raw) as { title?: string; content?: string }
+      if (draft.title) setTitle(draft.title)
+      if (draft.content) setContent(draft.content)
+      /* Форма раскрывается сама: иначе человек не увидит, что его
+         текст сохранён, и напишет заново. */
+      if (draft.title || draft.content) setOpened(true)
+    } catch {
+      /* Испорченный черновик не должен ломать форму. */
+      try {
+        window.sessionStorage.removeItem(draftKey)
+      } catch {
+        /* Хранилище закрыто настройками. */
+      }
+    }
+  }, [draftKey])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        if (title.trim() || content.trim()) {
+          window.sessionStorage.setItem(draftKey, JSON.stringify({ title, content }))
+        } else {
+          window.sessionStorage.removeItem(draftKey)
+        }
+      } catch {
+        /* Переполненное хранилище не должно ломать форму. */
+      }
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [title, content, draftKey])
   const [prefix, setPrefix] = useState<string | null>(null)
   const [poll, setPoll] = useState<PollDraftState>(EMPTY_POLL_DRAFT)
   const [sending, setSending] = useState(false)
@@ -139,6 +187,12 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
         }
       }
 
+      /* Тема опубликована — черновик больше не нужен. */
+      try {
+        window.sessionStorage.removeItem(draftKey)
+      } catch {
+        /* Хранилище закрыто: черновик останется до конца сеанса. */
+      }
       notifications.show({ title: "Тема создана", message: "Ваш вопрос опубликован", color: "indigo" })
       router.push(`/forum/${sectionSlug}/${payload.topic.slug}`)
     } catch (submitError) {

@@ -16,6 +16,42 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
   const router = useRouter()
   const [content, setContent] = useState("")
   const [sending, setSending] = useState(false)
+  /* Черновик ответа переживает уход со страницы.
+
+     Редактор рассчитан на длинные тексты — списки, таблицы, вставку
+     картинок, — то есть площадка сама поощряет писать помногу. Но
+     написанное жило только в памяти вкладки: на телефоне переключение
+     на другое приложение регулярно выгружает страницу, и человек
+     возвращался к пустому полю.
+
+     sessionStorage, а не localStorage: черновик нужен на время этого
+     захода, а не навсегда. Ключ с номером темы — в разных темах
+     ответы разные. */
+  const draftKey = `forum-reply-draft:${topicId}`
+  const draftRestoredRef = useRef(false)
+
+  useEffect(() => {
+    if (draftRestoredRef.current) return
+    draftRestoredRef.current = true
+    try {
+      const saved = window.sessionStorage.getItem(draftKey)
+      if (saved) setContent(saved)
+    } catch {
+      /* Приватное окно или запрет на хранилище — не повод падать. */
+    }
+  }, [draftKey])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        if (content.trim()) window.sessionStorage.setItem(draftKey, content)
+        else window.sessionStorage.removeItem(draftKey)
+      } catch {
+        /* Переполненное хранилище не должно ломать ответ. */
+      }
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [content, draftKey])
   const [error, setError] = useState<string | null>(null)
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
 
@@ -115,6 +151,12 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
       if (!response.ok) throw new Error(payload?.error || "Не удалось отправить ответ")
 
       setContent("")
+      /* Ответ отправлен — черновик больше не нужен. */
+      try {
+        window.sessionStorage.removeItem(draftKey)
+      } catch {
+        /* Хранилище закрыто: черновик просто останется до конца сеанса. */
+      }
       router.refresh()
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Не удалось отправить ответ")

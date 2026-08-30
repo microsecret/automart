@@ -65,3 +65,49 @@ test("новый пароль вводится с возможностью ег�
   assert.match(page, /Пароли не совпадают/)
   assert.match(page, /Минимум 8 символов" : undefined/)
 })
+
+test("кнопки этапа и счёта блокируются на время запроса", () => {
+  /* Состояния загрузки не было: на медленной связи человек не видел
+     отклика и нажимал второй раз — в ленте появлялись два одинаковых
+     этапа, а в сделке два счёта на одну сумму. Покупатель видел дубли
+     и удалить их не мог. */
+  const page = readFileSync(new URL("../src/app/dashboard/deliveries/[id]/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /savingEvent/)
+  assert.match(page, /savingPayment/)
+  assert.match(page, /loading=\{savingEvent\}/)
+  assert.match(page, /loading=\{savingPayment\}/)
+  /* Повторный вызов отсекается и до запроса: состояние успевает не
+     обновиться при быстром двойном нажатии. */
+  assert.match(page, /if \(savingEvent\) return/)
+})
+
+test("длинные формы не закрываются промахом мимо окна", () => {
+  /* На телефоне палец легко попадает по фону рядом с окном, и
+     заполненное пропадало. Крестик и «Отмена» остаются. */
+  const deliveries = readFileSync(new URL("../src/app/dashboard/deliveries/page.tsx", import.meta.url), "utf8")
+  assert.match(deliveries, /closeOnClickOutside=\{false\}/)
+
+  const detail = readFileSync(new URL("../src/app/dashboard/deliveries/[id]/page.tsx", import.meta.url), "utf8")
+  assert.equal((detail.match(/closeOnClickOutside=\{false\}/g) || []).length, 2)
+
+  /* Заказ запчасти закрывается свободно только после отправки: до неё
+     там заполненные поля. */
+  const order = readFileSync(new URL("../src/components/store/PartOrderButton.tsx", import.meta.url), "utf8")
+  assert.match(order, /closeOnClickOutside=\{state === "sent"\}/)
+})
+
+test("форум сохраняет черновик ответа и темы", () => {
+  /* Редактор рассчитан на длинные тексты, но написанное жило только в
+     памяти вкладки: на телефоне переключение на другое приложение
+     регулярно выгружает страницу. */
+  const reply = readFileSync(new URL("../src/app/forum/[section]/[topic]/ReplyForm.tsx", import.meta.url), "utf8")
+  assert.match(reply, /forum-reply-draft:\$\{topicId\}/)
+  assert.match(reply, /sessionStorage/)
+  assert.match(reply, /removeItem\(draftKey\)/)
+
+  const topic = readFileSync(new URL("../src/app/forum/[section]/NewTopicForm.tsx", import.meta.url), "utf8")
+  assert.match(topic, /forum-topic-draft:\$\{sectionSlug\}/)
+  /* Форма раскрывается сама: иначе человек не увидит, что текст
+     сохранён, и напишет заново. */
+  assert.match(topic, /setOpened\(true\)/)
+})

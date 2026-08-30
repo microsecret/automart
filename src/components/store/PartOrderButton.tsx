@@ -72,7 +72,10 @@ export default function PartOrderButton({ partId, itemName, priceRub, supplyMode
         Заказать
       </Button>
 
-      <Modal opened={opened} onClose={close} title={state === "sent" ? "Заказ отправлен" : "Заказ позиции"} centered>
+      {/* Промах мимо окна не стирает заполненное: в форме несколько
+          полей, и на телефоне палец легко попадает по фону. Крестик и
+          «Отмена» никуда не делись — закрыть можно осознанно. */}
+      <Modal opened={opened} onClose={close} title={state === "sent" ? "Заказ отправлен" : "Заказ позиции"} centered closeOnClickOutside={state === "sent"}>
         {state === "sent" ? (
           <Stack gap="sm" align="center" ta="center" py="sm">
             <ThemeIcon size={52} radius="xl" color="teal" variant="light"><IconCheck size={26} /></ThemeIcon>
