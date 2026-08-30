@@ -1,12 +1,17 @@
 import Link from "next/link"
 import { Box, Text, Paper, Group, Stack, ThemeIcon, SimpleGrid, Anchor } from "@mantine/core"
-import { IconShieldCheck, IconHelpCircle, IconScale, IconMessage2, IconCar, IconLock } from "@tabler/icons-react"
+import { IconShieldCheck, IconHelpCircle, IconScale, IconMessage2, IconCar, IconLock, IconSearch } from "@tabler/icons-react"
 
 const SECTIONS = [
   { icon: IconCar, title: "Как продать авто", desc: "Пошаговое руководство для продавцов", href: "/help/sell", color: "#1c4291" },
   { icon: IconShieldCheck, title: "Сопровождение сделки", desc: "Проверка документов, статусы и сопровождение покупки", href: "/services/safe-deal", color: "#059669" },
   { icon: IconLock, title: "Безопасность", desc: "Как защититься от мошенников", href: "/help/safety", color: "#dc2626" },
   { icon: IconScale, title: "Правила площадки", desc: "Условия использования, модерация", href: "/help/rules", color: "#1c4291" },
+  /* Заявка на деталь. Справка рассказывала, как продать машину и куда
+     жаловаться, но не про самый частый тупик покупателя: нужной детали
+     нет ни в одном каталоге, и человек уходит, не зная, что её можно
+     заказать через заявку. */
+  { icon: IconSearch, title: "Не нашли запчасть", desc: "Оставьте заявку — магазины ответят ценой и сроком", href: "/parts-finder", color: "#4f46e5" },
   { icon: IconMessage2, title: "Поддержка", desc: "Связаться с командой поддержки", href: "/help/support", color: "#ea580c" },
   { icon: IconHelpCircle, title: "Частые вопросы", desc: "Ответы на популярные вопросы", href: "/help/support", color: "#0891b2" },
 ]
