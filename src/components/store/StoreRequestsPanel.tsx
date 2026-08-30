@@ -137,8 +137,12 @@ export default function StoreRequestsPanel({ storeId }: { storeId: string }) {
             const mine = request.offers?.[0] || null
             return (
               <Card key={request.id} withBorder radius="md" p="sm">
-                <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
-                  <Box style={{ minWidth: 0, flex: 1 }}>
+                {/* На узком экране кнопка уходит вниз, а не сжимает
+                    название детали: «Задний амортизатор Toyota Camry» с
+                    номером рядом иначе обрезается на середине — как в
+                    соседней панели заказов. */}
+                <Group justify="space-between" align="flex-start" gap="sm" wrap="wrap">
+                  <Box style={{ minWidth: 180, flex: 1 }}>
                     <Group gap={6} wrap="wrap" mb={2}>
                       <Text fw={700} size="sm">{request.partName || "Деталь без названия"}</Text>
                       {request.oemNumber && <Badge size="xs" variant="light" color="teal">{request.oemNumber}</Badge>}

@@ -164,10 +164,13 @@ export default function MyPartRequestsPage() {
                                   <Button
                                     component="a"
                                     href={`tel:${offer.store.contactPhone.replace(/[^\d+]/g, "")}`}
-                                    size="compact-sm"
+                                    /* Главное действие страницы, и нажимают
+                                       его пальцем: узкая кнопка на 28
+                                       пикселей промахивается. */
+                                    size="sm"
                                     variant="light"
                                     color="teal"
-                                    leftSection={<IconPhone size={14} />}
+                                    leftSection={<IconPhone size={16} />}
                                   >
                                     Позвонить
                                   </Button>

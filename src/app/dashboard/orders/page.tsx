@@ -172,13 +172,30 @@ export default function BuyerOrdersPage() {
                           <IconBuildingStore size={14} />
                           <Text size="sm" fw={700}>{order.store.name}</Text>
                         </Group>
-                        {order.store.contactPhone && (
-                          <Group gap={5}><IconPhone size={13} /><Text size="xs" component="a" href={`tel:${order.store.contactPhone}`} style={{ color: "inherit" }}>{order.store.contactPhone}</Text></Group>
-                        )}
                         {order.store.contactEmail && (
                           <Group gap={5} mt={2}><IconMail size={13} /><Text size="xs" c="dimmed">{order.store.contactEmail}</Text></Group>
                         )}
-                        <Button component={Link} href={`/store/${order.store.slug}`} size="compact-xs" variant="light" color="indigo" mt={8} fullWidth>
+                        {/* Звонок — то, ради чего человек сюда смотрит:
+                            заказ едет, и вопрос «где он» решается голосом.
+                            Телефон был мелкой строкой в десять пикселей,
+                            по которой пальцем не попасть, а полноширинная
+                            кнопка вела на витрину — разглядывать её в этот
+                            момент незачем. */}
+                        {order.store.contactPhone && (
+                          <Button
+                            component="a"
+                            href={`tel:${order.store.contactPhone.replace(/[^\d+]/g, "")}`}
+                            size="sm"
+                            variant="light"
+                            color="teal"
+                            leftSection={<IconPhone size={16} />}
+                            mt={8}
+                            fullWidth
+                          >
+                            Позвонить
+                          </Button>
+                        )}
+                        <Button component={Link} href={`/store/${order.store.slug}`} size="compact-sm" variant="subtle" color="indigo" mt={6} fullWidth>
                           Витрина магазина
                         </Button>
                       </Card>
