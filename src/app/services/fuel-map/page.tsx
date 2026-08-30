@@ -908,6 +908,37 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
             </Box>
 
             <Box className="fuel-map-selected__body">
+              {/* Ответ строкой, до подробностей.
+
+                  Марки бейджами отвечали «что есть», но не отвечали
+                  «ехать или нет»: человек читал шесть значков и сам
+                  сводил их в вывод. Строка делает это за него —
+                  «Топливо есть» зелёным, «Топлива нет» красным, — а
+                  бейджи ниже уточняют, какое именно.
+
+                  Пустая заправка объявляется прямо: молчание человек
+                  читает как «данных нет», и разница между «никто не
+                  отмечал» и «отметили, что пусто» теряется. */}
+              {fresh.length > 0 && (
+                <Box className="fuel-status" data-state={availableFuels.length ? "yes" : "no"}>
+                  <span className="fuel-status__icon" aria-hidden="true">
+                    <IconGasStation size={18} />
+                  </span>
+                  <span className="fuel-status__body">
+                    <b>{availableFuels.length ? "Топливо есть" : "Топлива нет"}</b>
+                    <span className="fuel-status__note">
+                      {newest ? `обновлено ${formatAge(new Date(newest))}` : "по отметкам водителей"}
+                    </span>
+                  </span>
+                  {/* Уверенность рядом со статусом, а не отдельной
+                      строкой ниже: она говорит, насколько верить именно
+                      этому ответу, и в отрыве от него бесполезна. */}
+                  {weakest && (
+                    <span className="fuel-status__confidence">{weakest.confidencePercent}%</span>
+                  )}
+                </Box>
+              )}
+
               {/* Что есть сейчас — над вкладками, всегда на виду.
 
                   Это главный ответ, ради которого карточку открыли.
@@ -938,12 +969,11 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 <Text size="xs" c="dimmed">Здесь ещё не отмечали наличие</Text>
               )}
 
-              {/* Возраст и уверенность — по ним человек решает, верить ли. */}
-              {newest && (
-                <Text size="xs" c={weakest ? "orange.7" : "dimmed"}>
-                  Обновлено {formatAge(new Date(newest))}
-                  {weakest ? ` · уверенность ${weakest.confidencePercent}%` : ""}
-                </Text>
+              {/* Строка «обновлено» осталась только там, где отметок
+                  нет вовсе: при отметках это уже сказано в статусе
+                  выше, и повторять значит занимать место дважды. */}
+              {!fresh.length && newest && (
+                <Text size="xs" c="dimmed">Обновлено {formatAge(new Date(newest))}</Text>
               )}
 
 

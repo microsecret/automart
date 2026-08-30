@@ -3737,9 +3737,9 @@ select {
      солнцем такое не читается, а именно там на карту и смотрят. Ширина и
      шрифт подняты до того размера, при котором марка топлива и цена
      разбираются на ходу. */
-  max-width: 250px;
+  max-width: 290px;
   border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 7px;
+  border-radius: 9px;
   background: rgba(17, 17, 20, 0.88);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
   cursor: pointer;
@@ -3768,20 +3768,34 @@ select {
   color: var(--plate-brand-ink);
 }
 
-/* Квадратик с буквами на фирменной плашке сливался бы с фоном — он
-   того же цвета. Здесь он становится подложкой из цвета текста. */
+/* Знак сети — белый кружок с фирменными буквами.
+
+   Прошлая версия делала подложку из цвета текста с прозрачностью, и
+   на синей Башнефти получался почти невидимый белый на синем: буквы
+   пропадали, а плашка выглядела безымянной.
+
+   Белый кружок читается на любом фирменном цвете — тёмно-синем,
+   красном, жёлтом — и повторяет то, как сети показывают себя сами:
+   знак на светлой подложке. */
 .fuel-map-plate[data-branded] .fuel-map-plate__logo {
-  background: color-mix(in srgb, var(--plate-brand-ink) 22%, transparent) !important;
-  color: var(--plate-brand-ink) !important;
+  margin: 3px 0 3px 3px;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border-radius: 50%;
+  background: #fff !important;
+  color: var(--plate-brand) !important;
+  font-size: 10px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / .25);
 }
 
-/* Марки топлива на светлых фирменных цветах (жёлтая Роснефть) теряли
-   контраст: белый по жёлтому не читается. Тёмная подложка возвращает
-   его, не трогая фирменный фон вокруг. */
+/* Марки на светлых фирменных цветах (жёлтая Роснефть) теряли контраст:
+   белый по жёлтому не читается. Тёмная подложка возвращает его, не
+   трогая фирменный фон вокруг. */
 .fuel-map-plate[data-branded] .fuel-map-plate__fuels {
-  padding: 1px 4px;
-  border-radius: 4px;
-  background: rgb(17 17 20 / .55);
+  padding: 2px;
+  border-radius: 7px;
+  background: rgb(17 17 20 / .48);
 }
 
 /* Знак сети: фирменный цвет и две буквы.
@@ -3816,12 +3830,14 @@ select {
   min-width: 0;
 }
 
+/* Название сети крупнее марок: сначала человек узнаёт заправку, потом
+   читает, что на ней есть. */
 .fuel-map-plate__title {
   overflow: hidden;
   color: rgba(255, 255, 255, 0.95);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.3;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3841,11 +3857,33 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
+/* Марка топлива — обведённая пилюля, а не голый текст.
+
+   Подряд идущие «92 95 98 ДТ» сливались в строку, и человек читал их
+   как один номер, особенно когда под маркой стояла цена. Рамка вокруг
+   каждой отделяет одну от другой: видно, что это отдельные позиции, а
+   не части числа. */
 .fuel-map-plate__fuel {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1px;
+  padding: 2px 6px;
+  border: 1px solid rgb(255 255 255 / .28);
+  border-radius: 6px;
+  background: rgb(255 255 255 / .1);
+}
+
+/* Марка, которой нет, обводится красным: зачёркивания мало на
+   маленькой плашке под солнцем. */
+.fuel-map-plate__fuel[data-state="no"] {
+  border-color: rgb(248 113 113 / .5);
+  background: rgb(248 113 113 / .12);
+}
+
+.fuel-map-plate__fuel[data-state="yes"] {
+  border-color: rgb(74 222 128 / .5);
+  background: rgb(74 222 128 / .14);
 }
 
 /* Цвет несёт состояние, но не один: зачёркнутая марка читается и при
@@ -8430,4 +8468,84 @@ h1[data-lw-hero] {
   .market-header-tab {
     padding-inline: 8px !important;
   }
+}
+
+/* Статус заправки строкой: ответ до подробностей.
+
+   Марки бейджами отвечали «что есть», но не отвечали «ехать или нет»:
+   человек читал шесть значков и сам сводил их в вывод. Строка делает
+   это за него, а бейджи ниже уточняют, какое именно топливо. */
+.fuel-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--market-line);
+  border-radius: 12px;
+  background: var(--market-surface-subtle);
+}
+
+.fuel-status__icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--market-surface);
+  color: var(--market-label);
+}
+
+.fuel-status__body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.fuel-status__note {
+  color: var(--market-label);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Процент рядом со статусом, а не строкой ниже: он говорит, насколько
+   верить именно этому ответу, и в отрыве от него бесполезен. */
+.fuel-status__confidence {
+  flex: 0 0 auto;
+  color: var(--mantine-color-orange-7);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.fuel-status[data-state="yes"] {
+  border-color: color-mix(in srgb, #16a34a 38%, var(--market-line));
+  background: color-mix(in srgb, var(--market-surface) 88%, #16a34a);
+}
+
+.fuel-status[data-state="yes"] .fuel-status__icon {
+  background: #16a34a;
+  color: #fff;
+}
+
+.fuel-status[data-state="no"] {
+  border-color: color-mix(in srgb, #dc2626 38%, var(--market-line));
+  background: color-mix(in srgb, var(--market-surface) 88%, #dc2626);
+}
+
+.fuel-status[data-state="no"] .fuel-status__icon {
+  background: #dc2626;
+  color: #fff;
+}
+
+:root[data-mantine-color-scheme="dark"] .fuel-status[data-state="yes"] {
+  background: color-mix(in srgb, var(--market-surface) 82%, #16a34a);
+}
+
+:root[data-mantine-color-scheme="dark"] .fuel-status[data-state="no"] {
+  background: color-mix(in srgb, var(--market-surface) 82%, #dc2626);
 }

@@ -641,3 +641,35 @@ test("подписка и «поделиться» стоят ниже вкла�
   const subscribeAt = page.indexOf("<FuelSubscribeButton")
   assert.ok(tabsAt > 0 && subscribeAt > tabsAt, "кнопки должны стоять ниже вкладок")
 })
+
+test("знак сети виден на фирменной плашке", () => {
+  /* Подложка делалась из цвета текста с прозрачностью, и на синей
+     Башнефти получался почти невидимый белый на синем: буквы
+     пропадали, а плашка выглядела безымянной. Белый кружок читается на
+     любом фирменном цвете. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const rule = css.slice(css.indexOf('.fuel-map-plate[data-branded] .fuel-map-plate__logo'))
+  assert.match(rule.slice(0, 320), /background: #fff/)
+  assert.match(rule.slice(0, 320), /color: var\(--plate-brand\)/)
+})
+
+test("марка топлива на плашке обведена рамкой", () => {
+  /* Подряд идущие «92 95 98 ДТ» сливались в строку, и человек читал их
+     как один номер — особенно когда под маркой стояла цена. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const rule = css.slice(css.indexOf('.fuel-map-plate__fuel {'))
+  assert.match(rule.slice(0, 260), /border: 1px solid/)
+  assert.match(rule.slice(0, 260), /border-radius/)
+})
+
+test("статус заправки читается строкой, а не только значками", () => {
+  /* Марки бейджами отвечали «что есть», но не отвечали «ехать или
+     нет»: человек читал шесть значков и сам сводил их в вывод. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /fuel-status/)
+  assert.match(page, /Топливо есть/)
+  assert.match(page, /Топлива нет/)
+  /* Уверенность стоит рядом со статусом: в отрыве от него она
+     бесполезна. */
+  assert.match(page, /fuel-status__confidence/)
+})
