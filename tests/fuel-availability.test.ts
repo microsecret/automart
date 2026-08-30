@@ -197,11 +197,16 @@ test("цвета обозначений совпадают с цветами м�
   }
 })
 
-test("цвет сети виден и при отметках", () => {
-  /* Заливка по наличию затирала фирменный цвет: заправка становилась
-     просто зелёной, и человек переставал узнавать свою сеть. */
+test("наличие красит метку, сеть остаётся там, где наличие неизвестно", () => {
+  /* Кольцо в три пикселя вокруг фирменного цвета терялось на карте с
+     домами и дорогами: человек, ищущий бензин, видел мешанину цветов
+     сетей вместо ответа. Теперь наличие красит кружок целиком, а
+     фирменный цвет остаётся там, где отметок нет. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /networkIdentity && !isCluster\s*\?\s*\{ backgroundColor/)
+  assert.match(page, /networkIdentity && !isCluster && fresh\.length === 0/)
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /\.fuel-map-marker\[data-reported="yes"\] \{\s*background: #16a34a/)
+  assert.match(css, /\.fuel-map-marker\[data-reported="no"\] \{\s*background: #dc2626/)
 })
 
 test("снимок берётся из самой свежей отметки", () => {
@@ -339,10 +344,13 @@ test("всплывающая карточка показывает наличи�
   assert.match(page, /priceByFuel\.get\(row\.fuel\)/)
 })
 
-test("из карточки на карте можно отметить и построить маршрут", () => {
+test("отметка наличия делается прямо в карточке на карте", () => {
+  /* Раньше форма жила в списке сбоку: человек нажимал метку на карте,
+     потом искал ту же заправку в списке справа и только там мог
+     отметить. Списка больше нет, форма стоит в карточке. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.ok(page.includes("Отметить"), "кнопка отметки")
-  assert.match(page, /yandex\.ru\/maps\/\?rtext/)
+  assert.match(page, /<FuelAvailabilityReporter/)
+  assert.match(page, /selectedStationAvailability/)
 })
 
 test("цена обновляется в карточке сразу после отметки", () => {
@@ -397,22 +405,28 @@ test("точки подгружаются сами при движении ка�
 test("предел точек берёт Москву целиком", () => {
   /* Замерено на живых данных: в радиусе 40 км от центра Москвы 1235
      заправок. Прежние 600 обрезали её ровно вдвое — окраины на карту не
-     попадали вовсе. */
+     попадали вовсе. Предел поднят вместе с радиусом за городом. */
   const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
-  assert.match(route, /out center tags 1500;/)
+  assert.match(route, /out center tags 2500;/)
 })
 
-test("радиус охвата больше города", () => {
-  // Сорок километров закрывают город с пригородами и участок трассы.
+test("за городом радиус охвата шире", () => {
+  /* Сорок километров рассчитаны на город. На трассе в том же круге
+     полтора десятка заправок, и человек видел пустую карту там, где
+     они стоят через тридцать-сорок километров. */
   const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
-  assert.match(route, /requestedCoordinates \? 40_000/)
+  assert.match(route, /isKnownCity \? 32_000 : requestedCoordinates \? 80_000 : 60_000/)
+  /* Широкий радиус в городе упёрся бы в таймаут Overpass — на этот
+     случай запрос повторяется вдвое уже. */
+  assert.match(route, /retrying with a smaller radius/)
 })
 
-test("в списке видно расстояние до заправки", () => {
-  /* Список отвечал «вот другие заправки», но не «сколько до них ехать» —
-     а это и есть вопрос человека. */
+test("в карточке видно расстояние до заправки", () => {
+  /* Список рядом с картой убран: строка «Роснефть, 1,1 км» не
+     показывает, по пути это или в обратную сторону. Расстояние
+     осталось там, где человек читает про саму заправку. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /distanceKm=\{getDistanceInKilometers\(selectedStation \|\| coordinates, station\)\}/)
+  assert.match(page, /const distanceKm = getDistanceInKilometers\(coordinates, selectedStation\)/)
 })
 
 test("заправкой можно поделиться", () => {

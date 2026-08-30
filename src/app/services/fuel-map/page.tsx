@@ -2,16 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
-import { ActionIcon, Anchor, Badge, Box, Button, Center, Group, Image, Loader, Paper, Select, SimpleGrid, Stack, Text, TextInput, ThemeIcon, Tooltip, UnstyledButton } from "@mantine/core"
-import { useMediaQuery } from "@mantine/hooks"
-import { IconCheck, IconClock, IconExternalLink, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconRoute, IconSearch, IconX } from "@tabler/icons-react"
+import { ActionIcon, Badge, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
+import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconX } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES } from "@/lib/cities"
-import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
 import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
 import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
-import FuelNearbyList from "@/components/fuel/FuelNearbyList"
 import { formatAge, isFresh } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { tapFeedback } from "@/lib/telegram-webapp"
@@ -62,7 +59,6 @@ type FuelStationAddressResponse = {
 const TILE_SIZE = 256
 const MIN_ZOOM = 9
 const MAX_ZOOM = 14
-const STATION_LIST_PAGE_SIZE = 24
 const EMPTY_STATIONS: FuelStation[] = []
 const EMPTY_REPORTED_PRICES: ConsensusPrice[] = []
 /* Постоянная ссылка на пустой список: новый массив на каждый разбор
@@ -175,49 +171,23 @@ function getStationDataSummary(station: FuelStation) {
   return "Точка АЗС без подробных тегов"
 }
 
-function getStationStatus(station: FuelStation) {
-  if (station.status === "FUEL") return { label: "Есть топливо", color: "teal" }
-  if (station.status === "NO_FUEL") return { label: "Нет топлива", color: "red" }
-  return { label: "Нет live-данных", color: "gray" }
-}
 
-function getStationSourceLabel(station: FuelStation) {
-  if (station.dataSource === "MERGED") return { label: "OSM + поставщик", color: "indigo" }
-  if (station.dataSource === "ZAPRAVKIN") return { label: "Поставщик", color: "indigo" }
-  return { label: "Справочник OSM", color: "gray" }
-}
-
-function formatStationTimestamp(value: string | null) {
-  if (!value) return null
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return null
-  return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(date)
-}
-
-function formatFuelPrice(price: number | null) {
-  return price === null ? null : new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(price)
-}
-
-function getStationFuelRows(station: FuelStation) {
-  const priceByFuel = new Map(station.prices.map((price) => [price.fuel, price]))
-  return Array.from(new Set([...station.fuels, ...station.prices.map((price) => price.fuel)]))
-    .map((fuel) => ({ fuel, price: priceByFuel.get(fuel)?.price ?? null, updatedAt: priceByFuel.get(fuel)?.updatedAt ?? null }))
-}
-
-function getFuelAvailabilityPresentation(station: FuelStation) {
-  if (station.status === "FUEL") return { label: "Есть", description: "подтверждено поставщиком", color: "teal", icon: <IconCheck size={14} /> }
-  if (station.status === "NO_FUEL") return { label: "Нет", description: "сообщил поставщик", color: "red", icon: <IconX size={14} /> }
-  return { label: "Нет live-статуса", description: "остаток не опубликован", color: "gray", icon: <IconClock size={14} /> }
-}
-
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, pricesByStation }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
   selectedStation: FuelStation | null
   selectedStationAddress: string | null
-  onSelect: (station: FuelStation) => void
+  /* null закрывает карточку: крестик снимает выбор, а не выбирает
+     что-то ещё. */
+  onSelect: (station: FuelStation | null) => void
   onViewportChange: (coordinates: { latitude: number; longitude: number }) => void
+  /* Отметки и цены выбранной точки: карточка живёт на карте, и форма
+     отметки теперь тоже здесь — значит, ей нужны эти данные. */
+  selectedStationPrices: ConsensusPrice[]
+  selectedStationAvailability: StationAvailability[]
+  onPricesReported: (stationId: string, prices: ConsensusPrice[]) => void
+  onAvailabilityReported: (stationId: string, rows: StationAvailability[]) => void
   /* Отметки водителей по видимым точкам: по ним метка красится и
      подписывается. Без них карта показывает только то, что знает
      OpenStreetMap, — то есть ассортимент вообще, а не наличие сейчас. */
@@ -525,10 +495,6 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           const fresh = reported.filter((row) => row.updatedAt && isFresh(new Date(row.updatedAt)))
           const anyYes = fresh.some((row) => row.state === "YES")
           const anyNo = fresh.some((row) => row.state === "NO")
-          const newestAt = fresh.reduce<string | null>(
-            (latest, row) => (!latest || (row.updatedAt && row.updatedAt > latest) ? row.updatedAt : latest),
-            null,
-          )
           /* Цены водителей по этой точке: на плашке они стоят рядом с
              маркой, и за ценой не надо открывать карточку. */
           const prices = isCluster ? [] : (pricesByStation[firstStation.id] || [])
@@ -644,11 +610,19 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           return (
             <Box key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-pin" style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 15px), 0)` }}>
               <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-cluster-state={clusterState || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{
-                /* Цвет сети на кружке всегда, а не только когда нет
-                   отметок: человек узнаёт свою заправку по цвету раньше,
-                   чем читает буквы. Наличие при этом видно по кольцу —
-                   зелёному или красному вокруг кружка. */
-                ...(networkIdentity && !isCluster
+                /* Цвет сети — только там, где про наличие ничего не
+                   известно.
+
+                   Раньше он стоял всегда, а наличие показывалось тонким
+                   кольцом вокруг. На карте с домами и дорогами кольцо в
+                   три пикселя теряется, и человек, ищущий бензин, видел
+                   мешанину фирменных цветов вместо ответа.
+
+                   Теперь наличие красит кружок целиком: зелёный есть,
+                   красный нет. Сеть при этом никуда не делась — её
+                   буквы стоят внутри кружка, а на плашке рядом
+                   фирменный знак с названием. */
+                ...(networkIdentity && !isCluster && fresh.length === 0
                   ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor }
                   : {}),
               }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
@@ -695,16 +669,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
       <Box className="fuel-map-canvas__legend" aria-label="Обозначения точек на карте"><Text component="span" data-reported="yes">Топливо есть</Text><Text component="span" data-reported="no">Топлива нет</Text><Text component="span" data-quality="fuel">Не отмечали</Text></Box>
       {clusterHint && <Paper className="fuel-map-cluster-hint" radius="md" p="xs" withBorder aria-live="polite"><Text size="xs" fw={600}>{clusterHint}</Text><Button size="compact-xs" variant="subtle" color="indigo" onClick={() => setClusterHint(null)}>Понятно</Button></Paper>}
       {selectedStation && (() => {
-        /* Всплывающая карточка на карте.
+        /* Карточка точки — единственное место, где человек читает про
+           заправку и отмечает наличие.
 
-           Раньше она показывала только сведения из OpenStreetMap: адрес,
-           ассортимент вообще, время обновления справочника. Ответа на
-           вопрос «есть ли бензин сейчас» в ней не было — за ним надо
-           было прокручивать страницу до карточки в списке справа, а на
-           телефоне список вообще под картой.
+           Список рядом с картой убран: он отвечал на тот же вопрос
+           хуже, потому что строка «Роснефть, 1,1 км» не показывает, по
+           пути это или в обратную сторону. Всё, что было в списке,
+           переехало сюда — к метке, на которую человек нажал.
 
-           Теперь здесь главное: что есть по отметкам, почём и насколько
-           этому верить. Всё остальное осталось в подробной карточке. */
+           Кнопок навигаторов здесь нет. Они уводили человека из
+           сервиса ровно в тот момент, когда от него нужна отметка, а
+           маршрут до заправки, которую он видит на карте, он строит
+           сам и в своём навигаторе. */
         const rows = availabilityByStation[selectedStation.id] || []
         const fresh = rows.filter((row) => row.updatedAt && isFresh(new Date(row.updatedAt)))
         const prices = pricesByStation[selectedStation.id] || []
@@ -715,158 +691,144 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         )
         const weakest = fresh.find((row) => row.confidenceLabel !== "высокая")
         const identity = getNetworkIdentity(selectedStation)
+        const distanceKm = getDistanceInKilometers(coordinates, selectedStation)
+
+        const shareStation = () => {
+          const withFuel = fresh.filter((row) => row.state === "YES").map((row) => row.label)
+          const text = [
+            `⛽ ${selectedStation.name}`,
+            selectedStation.address || selectedStationAddress || "",
+            withFuel.length ? `Есть: ${withFuel.join(", ")}` : "",
+            `https://yandex.ru/maps/?pt=${selectedStation.longitude},${selectedStation.latitude}&z=17`,
+          ].filter(Boolean).join("\n")
+
+          if (typeof navigator !== "undefined" && navigator.share) {
+            void navigator.share({ title: selectedStation.name, text }).catch(() => undefined)
+            return
+          }
+
+          void navigator.clipboard?.writeText(text).catch(() => undefined)
+        }
 
         return (
-          <Paper className="fuel-map-selected" radius="md" p="xs" withBorder aria-live="polite">
-            <Group gap={6} wrap="nowrap" align="center" mb={4}>
+          <Paper className="fuel-map-selected" radius="md" withBorder aria-live="polite">
+            <Box className="fuel-map-selected__head">
               {identity && (
-                <Box
-                  style={{
-                    display: "grid",
-                    placeItems: "center",
-                    width: 24,
-                    height: 24,
-                    borderRadius: 6,
-                    background: identity.color,
-                    color: identity.textColor,
-                    fontSize: 9,
-                    fontWeight: 800,
-                    flex: "0 0 24px",
-                  }}
+                <span
+                  className="fuel-map-selected__logo"
+                  style={{ background: identity.color, color: identity.textColor }}
                   aria-hidden="true"
                 >
                   {identity.shortLabel}
-                </Box>
+                </span>
               )}
               <Box style={{ minWidth: 0, flex: 1 }}>
-                <Text size="xs" fw={700} lineClamp={1}>{selectedStation.name}</Text>
-                <Text size="10px" c="dimmed" lineClamp={1}>
+                <Text size="sm" fw={800} lineClamp={1}>{selectedStation.name}</Text>
+                <Text size="xs" c="dimmed" lineClamp={1}>
                   {selectedStation.address || selectedStationAddress || "Уточняем адрес…"}
                   {/* Расстояние от центра карты: человек смотрит на
                       участок, который сам выбрал, и «1,2 км» отвечает на
                       вопрос «далеко ли отсюда» без открытия маршрута. */}
-                  {(() => {
-                    const km = getDistanceInKilometers(coordinates, selectedStation)
-                    return km > 0.05 ? ` · ${km < 1 ? `${Math.round(km * 1000)} м` : `${km.toFixed(1).replace(".", ",")} км`}` : ""
-                  })()}
+                  {distanceKm > 0.05
+                    ? ` · ${distanceKm < 1 ? `${Math.round(distanceKm * 1000)} м` : `${distanceKm.toFixed(1).replace(".", ",")} км`}`
+                    : ""}
                 </Text>
               </Box>
-            </Group>
+              {/* Закрыть карточку: без крестика она снимается только
+                  повторным нажатием на ту же метку, а её к этому
+                  моменту закрывает сама карточка. */}
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                radius="xl"
+                onClick={() => onSelect(null)}
+                aria-label="Закрыть карточку заправки"
+                className="fuel-map-selected__close"
+              >
+                <IconX size={16} />
+              </ActionIcon>
+            </Box>
 
-            {/* Что есть сейчас — с ценой рядом с маркой. */}
-            {fresh.length > 0 ? (
-              <Group gap={4} wrap="wrap" mb={4}>
-                {fresh.slice(0, 5).map((row) => {
-                  const kopecks = priceByFuel.get(row.fuel)
-                  return (
-                    <Badge
-                      key={row.fuel}
-                      size="sm"
-                      variant="light"
-                      color={row.state === "YES" ? "teal" : "red"}
-                      styles={row.state === "NO" ? { label: { textDecoration: "line-through" } } : undefined}
-                    >
-                      {row.label}
-                      {row.state === "YES" && kopecks ? ` · ${Math.round(kopecks / 100)} ₽` : ""}
-                    </Badge>
-                  )
-                })}
+            <Box className="fuel-map-selected__body">
+              {/* Что есть сейчас — с ценой рядом с маркой. */}
+              {fresh.length > 0 ? (
+                <Group gap={4} wrap="wrap">
+                  {fresh.slice(0, 6).map((row) => {
+                    const kopecks = priceByFuel.get(row.fuel)
+                    return (
+                      <Badge
+                        key={row.fuel}
+                        size="lg"
+                        radius="sm"
+                        variant="light"
+                        color={row.state === "YES" ? "teal" : "red"}
+                        styles={row.state === "NO" ? { label: { textDecoration: "line-through" } } : undefined}
+                      >
+                        {row.label}
+                        {row.state === "YES" && kopecks ? ` · ${Math.round(kopecks / 100)} ₽` : ""}
+                      </Badge>
+                    )
+                  })}
+                </Group>
+              ) : (
+                /* Отметок нет — так и говорим. Молчание человек читает как
+                   «топлива нет», и это неправда. */
+                <Text size="xs" c="dimmed">Здесь ещё не отмечали наличие</Text>
+              )}
+
+              {/* Возраст и уверенность — по ним человек решает, верить ли. */}
+              {newest && (
+                <Text size="xs" c={weakest ? "orange.7" : "dimmed"}>
+                  Обновлено {formatAge(new Date(newest))}
+                  {weakest ? ` · уверенность ${weakest.confidencePercent}%` : ""}
+                </Text>
+              )}
+
+              {/* Отметка наличия прямо в карточке.
+
+                  Раньше форма жила в списке сбоку: человек нажимал метку
+                  на карте, потом искал ту же заправку в списке справа и
+                  только там мог отметить. Два поиска одного и того же
+                  ради одного действия — до него не доходили. */}
+              <FuelAvailabilityReporter
+                stationId={selectedStation.id}
+                stationName={selectedStation.name}
+                city={city}
+                latitude={selectedStation.latitude}
+                longitude={selectedStation.longitude}
+                availability={selectedStationAvailability}
+                onReported={(next) => onAvailabilityReported(selectedStation.id, next)}
+              />
+
+              <Group gap={6} grow>
+                <FuelSubscribeButton
+                  stationId={selectedStation.id}
+                  stationName={selectedStation.name}
+                  city={city}
+                />
+                {/* Поделиться заправкой.
+
+                    Человек нашёл, где есть бензин, и первое, что он
+                    делает, — говорит об этом другу или в чат. Без кнопки
+                    он переписывает адрес руками, а чаще не переписывает
+                    вовсе, и находка остаётся при нём.
+
+                    Системное окно «поделиться» само предлагает Telegram,
+                    WhatsApp и что там ещё установлено; на настольном
+                    браузере его нет, и тогда ссылка копируется в буфер. */}
+                <Button size="compact-sm" variant="default" onClick={shareStation}>
+                  Поделиться
+                </Button>
               </Group>
-            ) : (
-              /* Отметок нет — так и говорим. Молчание человек читает как
-                 «топлива нет», и это неправда. */
-              <Text size="10px" c="dimmed" mb={4}>Здесь ещё не отмечали наличие</Text>
-            )}
 
-            {/* Возраст и уверенность — по ним человек решает, верить ли. */}
-            {newest && (
-              <Text size="10px" c={weakest ? "orange.7" : "dimmed"} mb={6}>
-                {formatAge(new Date(newest))}
-                {weakest ? ` · уверенность ${weakest.confidencePercent}%` : ""}
-              </Text>
-            )}
-
-            {/* Главное действие отдельной строкой во всю ширину.
-
-                Раньше «Отметить» стояло в одном ряду с маршрутом и
-                «поделиться»: три кнопки высотой в двадцать два пикселя
-                на ширину телефона. Ради этого действия сервис и
-                существует — оно не должно быть самым мелким на карточке. */}
-            <Button
-              className="fuel-report__open"
-              size="sm"
-              radius="md"
-              fullWidth
-              mb={6}
-              onClick={() => { tapFeedback("light"); onSelect(selectedStation) }}
-            >
-              Внести данные
-            </Button>
-
-            <Group gap={4} grow>
-              {/* Маршрут в двух навигаторах, а не в одном.
-
-                  Кнопка вела только в Яндекс. У кого он не стоит, тот
-                  упирался в веб-версию и переносил адрес руками, а чаще
-                  не ехал вовсе. 2ГИС стоит у половины водителей в
-                  городах, и выбор здесь ничего не стоит. */}
-              <Button
-                component="a"
-                href={`https://yandex.ru/maps/?rtext=~${selectedStation.latitude}%2C${selectedStation.longitude}&rtt=auto`}
-                target="_blank"
-                rel="noreferrer"
-                size="compact-sm"
-                variant="default"
-              >
-                Яндекс
-              </Button>
-              <Button
-                component="a"
-                href={`https://2gis.ru/directions/points/|${selectedStation.longitude},${selectedStation.latitude}`}
-                target="_blank"
-                rel="noreferrer"
-                size="compact-sm"
-                variant="default"
-              >
-                2ГИС
-              </Button>
-              {/* Поделиться заправкой.
-
-                  Человек нашёл, где есть бензин, и первое, что он делает,
-                  — говорит об этом другу или в чат. Без кнопки он
-                  переписывает адрес руками, а чаще не переписывает вовсе,
-                  и находка остаётся при нём.
-
-                  Системное окно «поделиться» само предлагает Telegram,
-                  WhatsApp и что там ещё установлено; на настольном
-                  браузере его нет, и тогда ссылка копируется в буфер. */}
-              <Button
-                size="compact-sm"
-                variant="default"
-                onClick={() => {
-                  const rows = availabilityByStation[selectedStation.id] || []
-                  const withFuel = rows
-                    .filter((row) => row.state === "YES" && row.updatedAt && isFresh(new Date(row.updatedAt)))
-                    .map((row) => row.label)
-
-                  const text = [
-                    `⛽ ${selectedStation.name}`,
-                    selectedStation.address || "",
-                    withFuel.length ? `Есть: ${withFuel.join(", ")}` : "",
-                    `https://yandex.ru/maps/?pt=${selectedStation.longitude},${selectedStation.latitude}&z=17`,
-                  ].filter(Boolean).join("\n")
-
-                  if (typeof navigator !== "undefined" && navigator.share) {
-                    void navigator.share({ title: selectedStation.name, text }).catch(() => undefined)
-                    return
-                  }
-
-                  void navigator.clipboard?.writeText(text).catch(() => undefined)
-                }}
-              >
-                Поделиться
-              </Button>
-            </Group>
+              <FuelPriceReporter
+                stationId={selectedStation.id}
+                latitude={selectedStation.latitude}
+                longitude={selectedStation.longitude}
+                prices={selectedStationPrices}
+                onReported={(next) => onPricesReported(selectedStation.id, next)}
+              />
+            </Box>
           </Paper>
         )
       })()}
@@ -874,190 +836,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   )
 }
 
-function FuelStationCard({ station, isSelected, resolvedAddress, isAddressLoading, onShowOnMap, distanceKm }: {
-  station: FuelStation
-  isSelected: boolean
-  resolvedAddress?: string | null
-  isAddressLoading?: boolean
-  onShowOnMap: (station: FuelStation) => void
-  /* Расстояние до этой заправки: от выбранной, если человек уже выбрал,
-     иначе от центра карты. Список без него отвечал «вот другие
-     заправки», но не «сколько до них ехать» — а это и есть вопрос. */
-  distanceKm?: number | null
-}) {
-  const dataQuality = getStationDataQuality(station)
-  const network = getStationNetwork(station)
-  const networkIdentity = getNetworkIdentity(station)
-  const networkLabel =
-    network && network.toLocaleLowerCase("ru-RU") !== station.name.toLocaleLowerCase("ru-RU") ? network : null
-  const stationStatus = getStationStatus(station)
-  const sourceLabel = getStationSourceLabel(station)
-  const iconColor = dataQuality === "live" ? stationStatus.color : dataQuality === "fuel" ? "teal" : dataQuality === "network" ? "orange" : "gray"
-  const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
-  const displayAddress = station.address || resolvedAddress
-  const selectStation = () => onShowOnMap(station)
-
-  return (
-    <Paper
-      className="fuel-station-card"
-      data-selected={isSelected || undefined}
-      radius="md"
-      p="sm"
-      withBorder
-      onClick={selectStation}
-      data-clickable
-      // Карточка выбирает станцию на карте, поэтому должна быть доступна и с
-      // клавиатуры: без role и обработки Enter/Space до неё нельзя добраться
-      // без мыши.
-      role="button"
-      tabIndex={0}
-      aria-pressed={isSelected}
-      aria-label={`Показать ${station.name} на карте`}
-      onKeyDown={(event) => {
-        if (event.key !== "Enter" && event.key !== " ") return
-        event.preventDefault()
-        selectStation()
-      }}
-    >
-      <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
-        <Group gap="sm" wrap="nowrap">
-          <ThemeIcon variant={networkIdentity ? "filled" : "light"} color={iconColor} radius="md" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkIdentity ? networkIdentity.shortLabel : <IconGasStation size={17} />}</ThemeIcon>
-          <Box style={{ minWidth: 0 }}>
-            <Group gap={6} wrap="nowrap" align="baseline">
-              <Text fw={700} size="sm" lineClamp={1}>{station.name}</Text>
-              {/* Расстояние рядом с названием, а не в хвосте меток: после
-                  «какая заправка» это второй вопрос человека, и ответ на
-                  него не должен теряться среди значков. */}
-              {typeof distanceKm === "number" && distanceKm > 0.05 && (
-                <Text size="xs" fw={600} c="indigo.6" style={{ flex: "0 0 auto" }}>
-                  {distanceKm < 1
-                    ? `${Math.round(distanceKm * 1000)} м`
-                    : `${distanceKm.toFixed(1).replace(".", ",")} км`}
-                </Text>
-              )}
-            </Group>
-            <Text size="xs" c="dimmed" lineClamp={2}>{displayAddress || (isAddressLoading ? "Уточняем адрес по OSM…" : "Адрес не указан")}</Text>
-          </Box>
-        </Group>
-        {station.sourceType !== "provider" && <Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id.replace(/^osm-[^-]+-/, "")}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} aria-label={`Открыть ${station.name} в OpenStreetMap`}><IconExternalLink size={16} /></Anchor>}
-      </Group>
-      <Group mt={8} gap={5} wrap="wrap">
-        {networkLabel && <Badge size="xs" variant={networkIdentity ? "filled" : "outline"} color="orange" style={networkIdentity ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor } : undefined}>{networkLabel}</Badge>}
-        <Badge size="xs" variant="light" color={stationStatus.color}>{stationStatus.label}</Badge>
-        <Badge size="xs" variant="outline" color={sourceLabel.color}>{sourceLabel.label}</Badge>
-        {station.prices.length
-          ? station.prices.map((price) => <Badge key={`${price.fuel}-${price.price}`} size="xs" variant="light" color="teal">{price.fuel}{formatFuelPrice(price.price) ? ` · ${formatFuelPrice(price.price)} ₽` : ""}</Badge>)
-          : station.fuels.length
-            ? station.fuels.map((fuel) => <Badge key={fuel} size="xs" variant="light" color="teal">{fuel}</Badge>)
-            : <Badge size="xs" variant="outline" color="gray">Ассортимент не указан</Badge>}
-        {station.openingHours && <Badge size="xs" variant="outline" color="gray">{station.openingHours}</Badge>}
-        {isSelected && !station.address && resolvedAddress && <Badge size="xs" variant="outline" color="blue">Адрес OSM</Badge>}
-      </Group>
-      <Text size="10px" c="dimmed" mt={7}>{statusUpdated ? `Данные обновлены: ${statusUpdated}` : getStationDataSummary(station)}</Text>
-      <Group mt={8} gap={4}>
-        <Button variant="subtle" color="indigo" size="compact-xs" onClick={(event) => { event.stopPropagation(); selectStation() }} leftSection={<IconMapPin size={13} />}>На карте</Button>
-        <Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} variant="subtle" color="indigo" size="compact-xs" leftSection={<IconRoute size={13} />}>Маршрут</Button>
-      </Group>
-    </Paper>
-  )
-}
-
-function FuelStationDetails({ station, resolvedAddress, isAddressLoading, onShowOnMap, reportedPrices, onPricesReported, availabilityRows, onAvailabilityReported, city }: {
-  station: FuelStation
-  resolvedAddress: string | null
-  isAddressLoading: boolean
-  onShowOnMap: (station: FuelStation) => void
-  reportedPrices: ConsensusPrice[]
-  onPricesReported: (stationId: string, prices: ConsensusPrice[]) => void
-  availabilityRows: StationAvailability[]
-  onAvailabilityReported: (stationId: string, rows: StationAvailability[]) => void
-  /* Город выбран на странице, а не хранится у точки: подписка «марка по
-     городу» заводится именно на него. */
-  city: string
-}) {
-  const network = getStationNetwork(station)
-  const source = getStationSourceLabel(station)
-  const stationStatus = getStationStatus(station)
-  const fuelRows = getStationFuelRows(station)
-  const availability = getFuelAvailabilityPresentation(station)
-  const displayAddress = station.address || resolvedAddress
-  const statusUpdated = formatStationTimestamp(station.statusUpdatedAt)
-
-  return (
-    <Paper radius="md" p="md" withBorder style={{ borderColor: "#8fa9de", background: "linear-gradient(135deg, #eef2fb 0%, #fff 56%)" }}>
-      <Stack gap="sm">
-        <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
-          <Group gap="sm" wrap="nowrap">
-            <ThemeIcon color="indigo" variant="light" radius="md" size="lg"><IconGasStation size={20} /></ThemeIcon>
-            <Box style={{ minWidth: 0 }}><Text fw={800} c="var(--market-ink)" lineClamp={2}>{station.name}</Text><Text size="xs" c="dimmed">{network || "АЗС"} · {source.label}</Text></Box>
-          </Group>
-          <Badge color={stationStatus.color} variant="light">{stationStatus.label}</Badge>
-        </Group>
-
-        <Paper radius="md" p="sm" withBorder style={{ background: "rgba(255,255,255,.78)" }}>
-          <Group gap="xs" align="flex-start" wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="indigo" variant="light"><IconMapPin size={14} /></ThemeIcon><Box><Text size="xs" c="dimmed">Адрес</Text><Text size="sm" fw={600}>{displayAddress || (isAddressLoading ? "Уточняем адрес по OpenStreetMap…" : "Адрес не опубликован")}</Text></Box></Group>
-        </Paper>
-
-        <Box>
-          <Group justify="space-between" mb={6}><Text size="sm" fw={700}>Топливо и наличие</Text><Badge size="xs" color={availability.color} variant="light">{availability.description}</Badge></Group>
-          {fuelRows.length ? <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">{fuelRows.map((fuel) => (
-            <Paper key={fuel.fuel} radius="md" p="xs" withBorder style={{ background: "rgba(255,255,255,.78)" }}>
-              <Group justify="space-between" gap="xs" wrap="nowrap"><Text fw={700} size="sm">{fuel.fuel}</Text><Badge size="xs" color={availability.color} variant="light" leftSection={availability.icon}>{availability.label}</Badge></Group>
-              <Text size="xs" c="dimmed" mt={3}>{formatFuelPrice(fuel.price) ? `${formatFuelPrice(fuel.price)} ₽/л` : station.status === "UNKNOWN" ? "Цена не опубликована" : "Цена не опубликована поставщиком"}</Text>
-            </Paper>
-          ))}</SimpleGrid> : <Paper radius="md" p="sm" withBorder style={{ background: "rgba(255,255,255,.78)" }}><Text size="sm" c="dimmed">Типы топлива не опубликованы этой точкой.</Text></Paper>}
-          <Text size="xs" c="dimmed" mt={6}>{station.status === "UNKNOWN" ? "Это справочная точка: не считаем отсутствие live-статуса отсутствием топлива." : `${statusUpdated ? `Данные поставщика: ${statusUpdated}. ` : "Данные поставщика без времени обновления. "}Наличие уточняйте перед поездкой.`}</Text>
-        </Box>
-
-        {/* Наличие выше цены: в дефицит человек ищет не «где дешевле», а
-            «где вообще есть». Цену он и так примерно знает. */}
-        <FuelAvailabilityReporter
-          stationId={station.id}
-          stationName={station.name}
-          city={city}
-          latitude={station.latitude}
-          longitude={station.longitude}
-          availability={availabilityRows}
-          onReported={(rows) => onAvailabilityReported(station.id, rows)}
-        />
-
-        <FuelPriceReporter
-          stationId={station.id}
-          latitude={station.latitude}
-          longitude={station.longitude}
-          prices={reportedPrices}
-          onReported={(prices) => onPricesReported(station.id, prices)}
-        />
-
-        <Group gap="xs" wrap="wrap">
-          {/* Подписка рядом с отметками, а не в конце карточки: человек,
-              увидевший «нет 92», хочет узнать, когда появится, — именно в
-              этот момент, а не пролистав до маршрута. */}
-          <FuelSubscribeButton stationId={station.id} stationName={station.name} city={city} />
-          <Button size="compact-sm" color="indigo" variant="light" leftSection={<IconMapPin size={14} />} onClick={() => onShowOnMap(station)}>Показать на карте</Button>
-          <Button component="a" href={`https://www.openstreetmap.org/directions?from=&to=${station.latitude}%2C${station.longitude}`} target="_blank" rel="noreferrer" size="compact-sm" color="indigo" variant="light" leftSection={<IconRoute size={14} />}>Маршрут</Button>
-          {station.openingHours && <Badge variant="outline" color="gray" leftSection={<IconClock size={12} />}>{station.openingHours}</Badge>}
-          {station.sourceType !== "provider" && <Anchor href={`https://www.openstreetmap.org/${station.sourceType}/${station.id.replace(/^osm-[^-]+-/, "")}`} target="_blank" rel="noreferrer" size="xs">Источник OSM</Anchor>}
-        </Group>
-      </Stack>
-    </Paper>
-  )
-}
-
 export default function FuelMapPage() {
-  /* Телефон и мини-приложение против настольного окна.
-
-     На широком экране карта и список стоят рядом: место есть, и
-     переключаться между ними не нужно. На телефоне так не выходит —
-     список в половину экрана оставляет карте полосу, на которой не
-     видно ни одной заправки. Там список уходит в нижний лист.
-
-     getInitialValueInEffect: false — раскладка должна быть верной на
-     первом кадре, иначе лист прыгает у человека на глазах. */
-  const isNarrow = useMediaQuery("(max-width: 62em)", false, { getInitialValueInEffect: false })
-  /* Лист развёрнут или свёрнут. Свёрнутый показывает первую карточку и
-     ручку — этого хватает, чтобы понять, что список там есть. */
-  const [isSheetExpanded, setIsSheetExpanded] = useState(false)
   const [city, setCity] = useState("Москва")
   const [placeQuery, setPlaceQuery] = useState("")
   const [place, setPlace] = useState<string | null>(null)
@@ -1066,7 +845,6 @@ export default function FuelMapPage() {
   const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
   const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
   const [requestedCoordinates, setRequestedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
-  const [visibleStationCount, setVisibleStationCount] = useState(STATION_LIST_PAGE_SIZE)
   const [liveRefreshTimestamp, setLiveRefreshTimestamp] = useState<number | null>(null)
   const cityCoordinates = CITY_COORDINATES[city] || CITY_COORDINATES["Москва"]
   const fuelStationsUrl = useMemo(() => {
@@ -1082,8 +860,6 @@ export default function FuelMapPage() {
   const { data, error, isLoading, isValidating, mutate } = useSWR<FuelStationsResponse>(fuelStationsUrl, fetchJson, { revalidateOnFocus: false })
   const coordinates = data?.coordinates || requestedCoordinates || cityCoordinates
   const areaLabel = data?.areaLabel || place || city
-  const isViewingMapArea = Boolean(requestedCoordinates)
-  const hasUnloadedMapArea = getDistanceInKilometers(coordinates, viewportCoordinates) > 0.35
 
   /* Точки подгружаются сами, когда карту сдвинули.
 
@@ -1137,9 +913,6 @@ export default function FuelMapPage() {
       - getDistanceInKilometers({ latitude: centerLatitude, longitude: centerLongitude }, second)
     ))
   }, [allStations, centerLatitude, centerLongitude, fuelFilter, networkFilter])
-  const displayedStations = filteredStations.slice(0, visibleStationCount)
-  const hasMoreStations = displayedStations.length < filteredStations.length
-  const selectedStationKey = selectedStation ? `${selectedStation.sourceType}-${selectedStation.id}` : null
   const selectedAddress = selectedStation?.address
   const selectedAddressLatitude = selectedStation?.latitude
   const selectedAddressLongitude = selectedStation?.longitude
@@ -1148,7 +921,7 @@ export default function FuelMapPage() {
     const params = new URLSearchParams({ detail: "address", latitude: selectedAddressLatitude.toFixed(6), longitude: selectedAddressLongitude.toFixed(6) })
     return `/api/fuel-stations?${params.toString()}`
   }, [selectedAddress, selectedAddressLatitude, selectedAddressLongitude])
-  const { data: selectedStationAddressData, isLoading: isStationAddressLoading } = useSWR<FuelStationAddressResponse>(selectedStationAddressUrl, fetchJson, { revalidateOnFocus: false })
+  const { data: selectedStationAddressData } = useSWR<FuelStationAddressResponse>(selectedStationAddressUrl, fetchJson, { revalidateOnFocus: false })
   const selectedStationAddress = selectedStation?.address || selectedStationAddressData?.address || null
 
   // Цены водителей приходят отдельным запросом: справочник точек кэшируется
@@ -1222,24 +995,18 @@ export default function FuelMapPage() {
     void mutateReportedPrices()
     void mutateNearbyPrices()
   }
-  const listedStations = selectedStationKey
-    ? displayedStations.filter((station) => `${station.sourceType}-${station.id}` !== selectedStationKey)
-    : displayedStations
 
   useEffect(() => {
     setSelectedStation(null)
     setRequestedCoordinates(null)
     setViewportCoordinates(cityCoordinates)
-    setVisibleStationCount(STATION_LIST_PAGE_SIZE)
   }, [city, cityCoordinates])
 
-  useEffect(() => {
-    setVisibleStationCount(STATION_LIST_PAGE_SIZE)
-  }, [fuelStationsUrl])
-
+  /* Смена фильтра снимает выбор: выбранная заправка могла не пройти
+     новый фильтр, и карточка висела бы над картой, где её метки уже
+     нет. */
   useEffect(() => {
     setSelectedStation(null)
-    setVisibleStationCount(STATION_LIST_PAGE_SIZE)
   }, [fuelFilter, networkFilter])
 
   // A refresh can replace an OSM/provider record with a newer snapshot. Keep
@@ -1260,37 +1027,6 @@ export default function FuelMapPage() {
     if (refreshedStation !== selectedStation) setSelectedStation(refreshedStation)
   }, [allStations, selectedStation])
 
-  useEffect(() => {
-    if (!selectedStation) return
-
-    const selectedIndex = allStations.findIndex((station) => station.id === selectedStation.id && station.sourceType === selectedStation.sourceType)
-    if (selectedIndex >= visibleStationCount) {
-      setVisibleStationCount((current) => Math.max(current, Math.ceil((selectedIndex + 1) / STATION_LIST_PAGE_SIZE) * STATION_LIST_PAGE_SIZE))
-    }
-  }, [allStations, selectedStation, visibleStationCount])
-
-  const showStationOnMap = (station: FuelStation) => {
-    setSelectedStation(station)
-    /* На телефоне карточка живёт в нижнем листе: выбрав заправку в
-       свёрнутом листе, человек иначе не увидел бы ничего — карточка
-       осталась бы за краем экрана.
-
-       Прокрутка к карте нужна только на широком экране: там карта и
-       список стоят рядом, и до карты действительно надо доехать. В
-       листе она и так под пальцем. */
-    if (isNarrow) {
-      setIsSheetExpanded(true)
-      return
-    }
-    document.getElementById("fuel-station-map")?.scrollIntoView({ behavior: "smooth", block: "center" })
-  }
-
-  const handleCityChange = (value: string | null) => {
-    setCity(value || "Москва")
-    setPlace(null)
-    setPlaceQuery("")
-  }
-
   const handlePlaceSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const nextPlace = placeQuery.trim().replace(/\s+/g, " ")
@@ -1303,230 +1039,166 @@ export default function FuelMapPage() {
 
   const handleRefresh = () => setLiveRefreshTimestamp(Date.now())
 
+
   return (
-    <Box className="service-page service-page--fuel-map" p={{ base: "sm", md: "md" }}>
-      <Stack gap="md">
-        {/* Шапка убрана.
+    <Box className="service-page service-page--fuel-map">
+      {/* Карта занимает экран целиком.
 
-            Синий блок с заголовком и описанием занимал пол-экрана, а под
-            ним стояли ещё три ряда служебных панелей: до карты человек
-            добирался прокруткой. На телефоне — двумя.
+          Раньше рядом стоял список заправок в две колонки из пяти. Он
+          отвечал на тот же вопрос, что и карта, — «где заправка», — но
+          хуже: без расположения на местности строчка «Роснефть, 1,1 км»
+          не говорит, по пути это или в обратную сторону.
 
-            Сервисом пользуются за рулём: человек открывает карту, чтобы
-            за секунду увидеть, где есть бензин. Заголовок «Карта АЗС
-            России» этому не помогает — он сообщает то, что человек и так
-            знает, раз сюда пришёл.
+          Всё, что было в списке, ушло в карточку точки: она открывается
+          нажатием на метку и показывает наличие, цены и действия там же,
+          где человек смотрит. Экран остался один, и он весь карта. */}
+      <Box className="fuel-map-shell">
+        <FuelStationMap
+          city={areaLabel}
+          coordinates={coordinates}
+          stations={filteredStations}
+          selectedStation={selectedStation}
+          selectedStationAddress={selectedStationAddress}
+          onSelect={setSelectedStation}
+          onViewportChange={setViewportCoordinates}
+          availabilityByStation={nearbyAvailabilityData?.stations || {}}
+          pricesByStation={nearbyPricesData?.stations || {}}
+          selectedStationPrices={selectedStationPrices}
+          selectedStationAvailability={selectedStationAvailability}
+          onPricesReported={handlePricesReported}
+          onAvailabilityReported={handleAvailabilityReported}
+        />
 
-            Вместо шапки — одна строка управления над картой: поиск,
-            город, топливо, сеть. Всё, что было в панели, осталось; ушли
-            только заголовок, описание и воздух вокруг них. */}
-        <Paper className="fuel-map-controls" radius="md" p="xs" withBorder>
-          <Group gap={6} wrap="wrap" align="center">
-            <Box component="form" onSubmit={handlePlaceSearch} style={{ flex: "1 1 220px", minWidth: 180 }}>
-              <TextInput
-                aria-label="Введите населённый пункт или трассу"
-                placeholder="Город, посёлок или участок трассы"
-                value={placeQuery}
-                onChange={(event) => setPlaceQuery(event.currentTarget.value)}
-                size="xs"
-                leftSection={<IconSearch size={14} />}
-                rightSection={
-                  /* Сброс поиска, когда он задан: без него человек,
-                     нашедший участок трассы, не может вернуться к городу —
-                     выбор в списке ниже перекрыт поиском. */
-                  place ? (
-                    <ActionIcon
-                      variant="subtle"
-                      color="gray"
-                      size="sm"
-                      onClick={() => { setPlace(null); setPlaceQuery("") }}
-                      aria-label="Сбросить поиск места"
-                    >
-                      <IconX size={13} />
-                    </ActionIcon>
-                  ) : (
-                    <ActionIcon type="submit" size="sm" variant="subtle" color="indigo" aria-label="Найти место на карте">
-                      <IconSearch size={14} />
-                    </ActionIcon>
-                  )
-                }
-              />
-            </Box>
-            <Select
-              aria-label="Выберите город"
-              data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))}
-              value={place ? null : city}
-              onChange={(value) => { if (value) { setPlace(null); setPlaceQuery(""); setCity(value) } }}
-              searchable
-              size="xs"
-              w={150}
-              placeholder="Город"
+        {/* Панель управления поверх карты, а не над ней.
+
+            Отдельной строкой она отнимала у карты полосу высотой с
+            собственный рост. Поверх — не отнимает ничего: карта под ней
+            продолжается, а сама панель занимает верхний край, куда
+            всё равно не смотрят. */}
+        <Box className="fuel-map-topbar">
+          <Box component="form" onSubmit={handlePlaceSearch} className="fuel-map-topbar__search">
+            <TextInput
+              aria-label="Введите населённый пункт или трассу"
+              placeholder="Город, посёлок или участок трассы"
+              value={placeQuery}
+              onChange={(event) => setPlaceQuery(event.currentTarget.value)}
+              size="sm"
+              radius="xl"
+              leftSection={<IconSearch size={15} />}
+              rightSection={
+                /* Сброс поиска, когда он задан: без него человек,
+                   нашедший участок трассы, не может вернуться к городу —
+                   выбор в списке ниже перекрыт поиском. */
+                place ? (
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size="sm"
+                    onClick={() => { setPlace(null); setPlaceQuery("") }}
+                    aria-label="Сбросить поиск места"
+                  >
+                    <IconX size={14} />
+                  </ActionIcon>
+                ) : null
+              }
             />
-            {/* Топливо — лентой кнопок, а не выпадающим списком.
+          </Box>
 
-                Список требовал трёх действий: нажать, дождаться
-                раскрытия, выбрать строку — и всё это выбирая между
-                четырьмя вариантами, которые помещаются в строку.
-                Здесь нужная марка нажимается сразу.
+          {/* Топливо — лентой кнопок, а не выпадающим списком.
 
-                Лента прокручивается вбок: на узком экране редкие
-                варианты уезжают за край, а частые — 92, 95, ДТ —
-                остаются видны. */}
-            <Box className="fuel-map-fuel-chips" role="group" aria-label="Тип топлива">
-              {FUEL_FILTERS.map((option) => (
-                <UnstyledButton
-                  key={option.value || "all"}
-                  className="fuel-map-fuel-chip"
-                  data-active={fuelFilter === option.value || undefined}
-                  onClick={() => { tapFeedback("light"); setFuelFilter(option.value) }}
-                  aria-pressed={fuelFilter === option.value}
-                >
-                  {option.value ? option.label.replace("АИ‑", "") : "Все"}
-                </UnstyledButton>
-              ))}
-            </Box>
-            <Select
-              aria-label="Выберите сеть АЗС"
-              data={networkFilters}
-              value={networkFilter}
-              /* Пустая строка, а не «all»: фильтр сравнивает значение с
-                 ключом сети, и слово «all» не совпадало ни с одной —
-                 сброс на «Все сети» очищал список вместо того, чтобы
-                 показать всё. */
-              onChange={(value) => setNetworkFilter(value || "")}
-              size="xs"
-              w={140}
-            />
-          </Group>
-        </Paper>
+              Список стоил трёх действий ради выбора между вариантами,
+              которые помещаются в строку. Здесь нужная марка нажимается
+              сразу, а лента прокручивается вбок: частые 92, 95 и ДТ
+              остаются на виду, редкие уезжают за край. */}
+          <Box className="fuel-map-fuel-chips" role="group" aria-label="Тип топлива">
+            {FUEL_FILTERS.map((option) => (
+              <UnstyledButton
+                key={option.value || "all"}
+                className="fuel-map-fuel-chip"
+                data-active={fuelFilter === option.value || undefined}
+                onClick={() => { tapFeedback("light"); setFuelFilter(option.value) }}
+                aria-pressed={fuelFilter === option.value}
+              >
+                {option.value ? option.label.replace("АИ‑", "") : "Все"}
+              </UnstyledButton>
+            ))}
+          </Box>
 
-        {/* Название области и кнопки — одной строкой.
+          <Select
+            aria-label="Выберите город"
+            data={FUEL_MAP_CITIES.map((value) => ({ value, label: value }))}
+            value={place ? null : city}
+            onChange={(value) => { if (value) { setPlace(null); setPlaceQuery(""); setCity(value) } }}
+            searchable
+            size="sm"
+            radius="xl"
+            className="fuel-map-topbar__city"
+            placeholder="Город"
+          />
 
-            Раньше это занимало отдельный ряд с крупным значком и
-            двумя строками текста, а под ним шла ещё панель со
-            сводкой источника. Три ряда служебного до карты — это
-            экран прокрутки на телефоне, тогда как человеку нужна
-            сама карта. */}
-        <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
-          <Text size="sm" fw={600} c="var(--market-ink)" lineClamp={1}>
-            {isViewingMapArea ? "Заправки на участке" : areaLabel}
-            {data ? <Text component="span" size="xs" c="dimmed" ml={6}>{filteredStations.length}</Text> : null}
-          </Text>
-          <Group gap={6} wrap="nowrap">
-            <Button variant="subtle" color="gray" size="compact-xs" leftSection={<IconRefresh size={13} />} onClick={handleRefresh} loading={isLoading || isValidating}>Обновить</Button>
-            {hasUnloadedMapArea && !isLoading && !isValidating && (
-              /* Кнопка появляется, только когда карту сдвинули за
-                 пределы загруженного: постоянная «участок загружен»
-                 занимала место и ничего не сообщала. */
-              <Button color="indigo" variant="filled" size="compact-xs" leftSection={<IconMapPin size={13} />} onClick={() => setRequestedCoordinates(viewportCoordinates)} loading={isLoading || isValidating}>Загрузить участок</Button>
-            )}
-          </Group>
-        </Group>
+          <Select
+            aria-label="Выберите сеть АЗС"
+            data={networkFilters}
+            value={networkFilter}
+            /* Пустая строка, а не «all»: фильтр сравнивает значение с
+               ключом сети, и слово «all» не совпадало ни с одной —
+               сброс на «Все сети» очищал список вместо того, чтобы
+               показать всё. */
+            onChange={(value) => setNetworkFilter(value || "")}
+            size="sm"
+            radius="xl"
+            className="fuel-map-topbar__network"
+          />
 
-        {/* Панель режима данных убрана.
-
-            Она объясняла, откуда взяты сведения: «Live: цены и
-            наличие», «Справочный режим», остаток лимита API. Человеку
-            за рулём это не говорит ничего — ему нужно знать, где есть
-            бензин, а не по какому договору получены точки.
-
-            Единственное, что стоило внимания, — сбой поставщика. Он
-            теперь показывается строкой ниже и только когда случился. */}
-        {data?.coverage.liveDataStale && (
-          <Text size="xs" c="orange.7">
-            Поставщик временно недоступен — показываем последнюю сохранённую выборку.
-          </Text>
-        )}
-        {hasUnloadedMapArea && <Paper radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-indigo-2)", background: "var(--mantine-color-indigo-0)" }}><Group gap="xs" wrap="nowrap"><ThemeIcon size="sm" radius="xl" color="indigo" variant="light"><IconMapPin size={14} /></ThemeIcon><Text size="sm" c="indigo.9">Вы переместили карту. Загрузите текущий участок, чтобы обновить список АЗС, расстояния и доступные справочные данные.</Text></Group></Paper>}
-
-        {error ? <AsyncErrorState title="Не удалось получить точки АЗС" description="Картографический источник временно недоступен. Повторите попытку позже." onRetry={() => mutate()} /> : (
-          <SimpleGrid cols={{ base: 1, lg: 5 }} spacing="md" className="fuel-map-layout">
-            <Box style={{ gridColumn: "span 3" }}><FuelStationMap city={areaLabel} coordinates={coordinates} stations={filteredStations} selectedStation={selectedStation} selectedStationAddress={selectedStationAddress} onSelect={setSelectedStation} onViewportChange={setViewportCoordinates} availabilityByStation={nearbyAvailabilityData?.stations || {}} pricesByStation={nearbyPricesData?.stations || {}} /></Box>
-            <Paper
-              className="fuel-map-list"
-              radius="md"
-              p="sm"
-              withBorder
-              style={{ gridColumn: "span 2" }}
-              /* На телефоне список превращается в нижний лист: карта
-                 занимает экран целиком, а список поднимается над ней и
-                 тянется пальцем. Раскрытие держится состоянием, а не
-                 жестом-догадкой: за рулём промахнуться легче, чем
-                 попасть, и лист не должен схлопываться сам. */
-              data-sheet={isNarrow || undefined}
-              data-expanded={isNarrow && isSheetExpanded ? true : undefined}
+          <Tooltip label="Обновить данные">
+            <ActionIcon
+              variant="default"
+              size="lg"
+              radius="xl"
+              onClick={handleRefresh}
+              loading={isLoading || isValidating}
+              aria-label="Обновить данные о заправках"
             >
-              {isNarrow && (
-                <UnstyledButton
-                  className="fuel-map-sheet__handle"
-                  onClick={() => { tapFeedback("light"); setIsSheetExpanded((current) => !current) }}
-                  aria-expanded={isSheetExpanded}
-                  aria-label={isSheetExpanded ? "Свернуть список заправок" : "Развернуть список заправок"}
-                >
-                  <span className="fuel-map-sheet__grip" aria-hidden="true" />
-                  <Text size="xs" fw={700} c="var(--market-ink)">
-                    {selectedStation
-                      ? selectedStation.name
-                      : `Заправки рядом${data ? ` · ${filteredStations.length}` : ""}`}
-                  </Text>
-                </UnstyledButton>
-              )}
+              <IconRefresh size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Box>
 
-              {isLoading ? (
-                /* Первое открытие города занимает секунд семь: точки
-                   приходят из OpenStreetMap, и запрос по площади города
-                   быстрее не становится. Повторные открытия отвечают за
-                   секунду — их закрывает кэш.
+        {/* Состояние загрузки поверх карты.
 
-                   Всё это время человек видел пустой кружок и не понимал,
-                   работает ли сервис. Теперь видно, что именно грузится и
-                   откуда, — ожидание с объяснением переносится вчетверо
-                   легче, чем такое же молча. */
-                <Center h={460}>
-                  <Stack align="center" gap={10}>
-                    <Loader size="sm" color="indigo" />
-                    <Text size="sm" fw={600} c="var(--market-ink)">Ищем заправки{areaLabel ? ` — ${areaLabel}` : ""}</Text>
-                    <Text size="xs" c="dimmed" ta="center" maw={260}>
-                      Первое открытие города занимает несколько секунд.
-                      Дальше карта откроется сразу.
-                    </Text>
-                  </Stack>
-                </Center>
-              ) : filteredStations.length ? <Stack gap="xs">
-                {/* «Куда ехать» первым делом: человек за рулём открывает
-                    карту с этим вопросом, а не чтобы разглядывать метки.
-                    Список появляется только по нажатию — положение
-                    спрашивается тогда, когда понятно зачем. */}
-                <FuelNearbyList
-                  stations={displayedStations.slice(0, 40).map((item) => ({
-                    id: item.id,
-                    name: item.name,
-                    latitude: item.latitude,
-                    longitude: item.longitude,
-                  }))}
-                  availabilityByStation={nearbyAvailabilityData?.stations || {}}
-                  fallbackOrigin={coordinates}
-                  onSelect={(stationId) => {
-                    const found = displayedStations.find((item) => item.id === stationId)
-                    if (found) showStationOnMap(found)
-                  }}
-                />
-                {selectedStation && <Box className="fuel-map-list__selection" aria-live="polite"><Group justify="space-between" gap="xs" mb={4}><Text size="xs" fw={800} tt="uppercase" c="indigo.7">Карточка АЗС</Text><Button size="compact-xs" variant="subtle" color="gray" onClick={() => setSelectedStation(null)}>Скрыть</Button></Group><FuelStationDetails station={selectedStation} resolvedAddress={selectedStationAddress} isAddressLoading={isStationAddressLoading} onShowOnMap={showStationOnMap} reportedPrices={selectedStationPrices} onPricesReported={handlePricesReported} availabilityRows={selectedStationAvailability} onAvailabilityReported={handleAvailabilityReported} city={city} /></Box>}
-                {listedStations.map((station) => (
-                <FuelStationCard
-                  key={`${station.sourceType}-${station.id}`}
-                  station={station}
-                  isSelected={selectedStation?.id === station.id && selectedStation.sourceType === station.sourceType}
-                  onShowOnMap={showStationOnMap}
-                  distanceKm={getDistanceInKilometers(selectedStation || coordinates, station)}
-                />
-              ))}{hasMoreStations && <Button variant="light" color="indigo" size="xs" fullWidth onClick={() => setVisibleStationCount((current) => current + STATION_LIST_PAGE_SIZE)}>Показать ещё {Math.min(STATION_LIST_PAGE_SIZE, filteredStations.length - displayedStations.length)} из {filteredStations.length}</Button>}</Stack> : <Center h={460}><Stack align="center" gap="xs"><ThemeIcon variant="light" color="gray" size={44} radius="xl"><IconGasStation size={22} /></ThemeIcon><Text fw={700}>Точки не найдены</Text><Text size="xs" c="dimmed" ta="center">Выберите другой тип топлива, город или обновите данные.</Text></Stack></Center>}
-            </Paper>
-          </SimpleGrid>
+            Первое открытие города занимает несколько секунд: точки
+            приходят из OpenStreetMap. Всё это время человек видел пустую
+            карту и не понимал, работает ли сервис. */}
+        {isLoading && (
+          <Paper className="fuel-map-toast" radius="xl" p="xs" withBorder>
+            <Group gap={8} wrap="nowrap">
+              <Loader size="xs" />
+              <Text size="xs" fw={600}>Ищем заправки{areaLabel ? ` — ${areaLabel}` : ""}</Text>
+            </Group>
+          </Paper>
         )}
 
-        <Paper radius="md" p="md" withBorder className="fuel-map-note"><Group gap="sm" align="flex-start" wrap="nowrap"><ThemeIcon variant="light" color="cyan" radius="md"><IconMapPin size={18} /></ThemeIcon><Stack gap={2}><Text size="sm" c="dimmed">{data?.disclaimer || "Точки и открытые теги предоставлены OpenStreetMap. Ассортимент, цены и наличие топлива уточняйте на АЗС."}</Text>{data?.coverage.dataMode === "LIVE" && data.coverage.providerAttributionUrl && <Anchor size="xs" href={data.coverage.providerAttributionUrl} target="_blank" rel="noreferrer">Данные об АЗС: Заправкин</Anchor>}</Stack></Group></Paper>
-      </Stack>
+        {!isLoading && !error && filteredStations.length === 0 && (
+          <Paper className="fuel-map-toast" radius="xl" p="xs" withBorder>
+            <Text size="xs" fw={600}>Точки не найдены. Смените топливо, сеть или город.</Text>
+          </Paper>
+        )}
+
+        {data?.coverage.liveDataStale && (
+          <Paper className="fuel-map-toast" radius="xl" p="xs" withBorder>
+            <Text size="xs" c="orange.7" fw={600}>Поставщик недоступен — показываем сохранённую выборку.</Text>
+          </Paper>
+        )}
+
+        {error && (
+          <Paper className="fuel-map-toast" radius="xl" p="sm" withBorder>
+            <Stack gap={6}>
+              <Text size="xs" fw={700}>Не удалось получить точки АЗС</Text>
+              <Button size="compact-sm" variant="light" onClick={() => mutate()}>Повторить</Button>
+            </Stack>
+          </Paper>
+        )}
+      </Box>
     </Box>
   )
 }

@@ -120,10 +120,22 @@ const OVERPASS_ENDPOINTS = [
 const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search"
 const ZAPRAVKIN_BASE_URL = (process.env.ZAPRAVKIN_API_URL || "https://api.zapravkin24.ru/v1").replace(/\/$/, "")
 const PLACE_CACHE_TTL = 1000 * 60 * 60 * 12
-const DIRECTORY_STATION_CACHE_TTL = 1000 * 60 * 20
+/* Справочник заправок держится шесть часов вместо двадцати минут.
+
+   Двадцать минут — срок для сведений, которые меняются: цены, наличие,
+   очередь. Здесь же сам список точек из OpenStreetMap: новые заправки
+   появляются раз в месяцы, а закрываются ещё реже. Каждые двадцать
+   минут мы заново ждали четыре секунды ради того же ответа.
+
+   Наличие и цены это не задерживает — они приходят своими запросами со
+   своим сроком. */
+const DIRECTORY_STATION_CACHE_TTL = 1000 * 60 * 60 * 6
 const STATION_ADDRESS_CACHE_TTL = 1000 * 60 * 60 * 24 * 7
 const LIVE_STATION_CACHE_TTL = 1000 * 45
-const MAX_DIRECTORY_CACHE_ENTRIES = 80
+/* Ячеек хранится больше: одна ячейка сетки — это участок в четыре
+   километра, и восьмидесяти хватало на пару крупных городов. Человек с
+   трассы, проехавший триста километров, вытеснял из памяти Москву. */
+const MAX_DIRECTORY_CACHE_ENTRIES = 400
 const MAX_STATION_ADDRESS_CACHE_ENTRIES = 600
 const MAX_LIVE_STATION_CACHE_ENTRIES = 80
 const LIVE_STATION_PAGE_LIMIT = 200
@@ -204,15 +216,38 @@ function stationPriority(station: FuelStationPayload) {
   return namedOrBranded + publishedLiveStatus + taggedFuels + hasAddress
 }
 
+/**
+ * Ключ кэша — ячейка сетки, а не точка.
+ *
+ * Ключ округлялся до трёх знаков, то есть примерно до ста метров. При
+ * этом сама выборка берётся радиусом в тридцать-сорок километров:
+ * сдвинув карту на двести метров, человек получал промах мимо кэша и
+ * ждал четыре секунды, пока Overpass отдаст ровно те же точки, которые
+ * уже лежали в памяти.
+ *
+ * Сетка в четыре километра — примерно восьмая часть радиуса. Соседняя
+ * ячейка отличается от текущей меньше чем на восьмую часть выборки, и
+ * заправки на краю не теряются, потому что радиус берётся с запасом от
+ * центра ячейки. Зато любое движение внутри города попадает в кэш.
+ */
+const CACHE_GRID_DEGREES = 0.04
+
+function getGridCell(coordinates: Coordinates) {
+  const latitude = Math.round(coordinates.latitude / CACHE_GRID_DEGREES) * CACHE_GRID_DEGREES
+  /* По долготе шаг сетки растягивается к северу: на широте Москвы
+     градус долготы вдвое короче градуса широты, и одинаковый шаг дал бы
+     ячейки вдвое уже нужного. */
+  const longitudeStep = CACHE_GRID_DEGREES / Math.max(0.25, Math.cos(coordinates.latitude * Math.PI / 180))
+  const longitude = Math.round(coordinates.longitude / longitudeStep) * longitudeStep
+  return `${latitude.toFixed(3)}:${longitude.toFixed(3)}`
+}
+
 function getDirectoryCacheKey(coordinates: Coordinates, radius: number) {
-  // Карта предлагает обновлять участок уже после сдвига примерно на 350 м.
-  // Точность ~100 м не позволяет вернуть набор АЗС от другой видимой области,
-  // но всё ещё объединяет повторные запросы из одной точки.
-  return `${coordinates.latitude.toFixed(3)}:${coordinates.longitude.toFixed(3)}:${radius}`
+  return `${getGridCell(coordinates)}:${radius}`
 }
 
 function getLiveStationsCacheKey(coordinates: Coordinates, radius: number) {
-  return `${coordinates.latitude.toFixed(3)}:${coordinates.longitude.toFixed(3)}:${radius}`
+  return `${getGridCell(coordinates)}:${radius}`
 }
 
 function cacheDirectoryStations(key: string, stations: FuelStationPayload[]) {
@@ -700,21 +735,47 @@ export async function GET(request: NextRequest) {
      заправок, ответ приходит за четыре секунды. Предел в 1500 берёт их
      все с запасом — прежние 600 обрезали Москву ровно вдвое, и окраины
      на карту не попадали вовсе. */
-  const radius = requestedCoordinates ? 40_000 : place ? 36_000 : 32_000
+  /* Вне городов радиус больше.
+
+     Сорок километров рассчитаны на город: там в этом круге больше
+     тысячи заправок, и Overpass отвечает четыре секунды. На трассе и
+     вокруг райцентра в том же круге их полтора десятка — запрос
+     возвращается почти сразу, а человек видит пустую карту и решает,
+     что заправок нет вовсе. Между Уфой и Оренбургом их полсотни, но
+     стоят они через тридцать-сорок километров, и в круг попадала
+     одна-две.
+
+     Поэтому за пределами списка городов радиус вдвое шире. Ошибиться
+     здесь дёшево: лишняя площадь в пустой местности почти ничего не
+     стоит по времени, а недобор оставляет водителя без заправок. */
+  const isKnownCity = !requestedCoordinates && !place && Boolean(CITY_COORDINATES[city])
+  const radius = isKnownCity ? 32_000 : requestedCoordinates ? 80_000 : 60_000
   // Крупные заправочные комплексы нанесены отношениями, а не точками, поэтому
   // без `relation` часть сетевых АЗС просто отсутствует на карте. Лимит выдачи
   // поднят: в плотной городской застройке 180 точек обрывались задолго до
   // границы запрошенного радиуса.
-  const query = `[out:json][timeout:24];(node["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude});relation["amenity"="fuel"](around:${radius},${coordinates.latitude},${coordinates.longitude}););out center tags 1500;`
+  const buildQuery = (metres: number) => `[out:json][timeout:24];(node["amenity"="fuel"](around:${metres},${coordinates.latitude},${coordinates.longitude});way["amenity"="fuel"](around:${metres},${coordinates.latitude},${coordinates.longitude});relation["amenity"="fuel"](around:${metres},${coordinates.latitude},${coordinates.longitude}););out center tags 2500;`
+  const query = buildQuery(radius)
   const directoryCacheKey = getDirectoryCacheKey(coordinates, radius)
   const cachedDirectory = directoryStationCache.get(directoryCacheKey)
   const directoryPromise = !forceRefresh && cachedDirectory && cachedDirectory.expiresAt > Date.now()
     ? Promise.resolve(cachedDirectory.stations)
-    : requestStations(query).then((result) => {
-        const stations = normalizeDirectoryStations(result.elements || [])
-        cacheDirectoryStations(directoryCacheKey, stations)
-        return stations
-      })
+    : requestStations(query)
+        /* Широкий радиус выгоден в поле и опасен в городе: сдвинув
+           карту к Москве, человек просит восемьдесят километров, где
+           заправок тысячи, и Overpass отваливается по времени. Тогда
+           повторяем запрос вдвое уже — лучше половина участка, чем
+           пустая карта и сообщение об ошибке. */
+        .catch((error) => {
+          if (radius <= 40_000) throw error
+          console.warn("Wide fuel-station query failed, retrying with a smaller radius", error instanceof Error ? error.message : "Unknown error")
+          return requestStations(buildQuery(Math.round(radius / 2)))
+        })
+        .then((result) => {
+          const stations = normalizeDirectoryStations(result.elements || [])
+          cacheDirectoryStations(directoryCacheKey, stations)
+          return stations
+        })
   const [directoryResult, liveResult] = await Promise.allSettled([
     directoryPromise,
     requestLiveStations(coordinates, radius, forceRefresh),
@@ -765,9 +826,19 @@ export async function GET(request: NextRequest) {
     disclaimer,
   }, {
     headers: {
+      /* Справочный режим кэшируется надолго и отдаётся устаревшим,
+         пока обновляется.
+
+         Список точек OpenStreetMap меняется раз в месяцы, а человек за
+         рулём открывает карту по нескольку раз за поездку. Пять минут
+         означали, что каждое второе открытие снова ждёт Overpass.
+
+         stale-while-revalidate отдаёт прошлый ответ мгновенно и
+         обновляет его в фоне: карта появляется сразу, а свежие точки
+         подтягиваются к следующему открытию. */
       "Cache-Control": dataMode === "LIVE"
         ? "public, max-age=30, s-maxage=60, stale-while-revalidate=120"
-        : "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400",
+        : "public, max-age=1800, s-maxage=21600, stale-while-revalidate=604800",
     },
   })
 }

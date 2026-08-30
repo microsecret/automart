@@ -3885,11 +3885,15 @@ select {
    фирменный цвет внутри и добавляет ответ на второй вопрос — есть ли
    топливо. Оба сведения видны разом. */
 .fuel-map-marker[data-reported="yes"] {
-  box-shadow: 0 0 0 3px #16a34a, var(--shadow-md);
+  background: #16a34a;
+  color: #fff;
+  box-shadow: var(--shadow-md);
 }
 
 .fuel-map-marker[data-reported="no"] {
-  box-shadow: 0 0 0 3px #dc2626, var(--shadow-md);
+  background: #dc2626;
+  color: #fff;
+  box-shadow: var(--shadow-md);
 }
 
 /* Группа крупнее одиночной метки: в неё чаще целятся, и по размеру
@@ -3898,11 +3902,17 @@ select {
   width: 46px;
   height: 46px;
   border-color: rgba(255,255,255,.96);
-  background: #14306b;
+  /* Серый по умолчанию, а не тёмно-синий.
+
+     Синий кружок читался как «фирменный цвет сервиса» и ничего не
+     говорил о заправках внутри. Человек смотрит на карту с одним
+     вопросом — есть ли бензин, — и цвет должен отвечать на него или
+     честно молчать. Серое молчит: «здесь не отмечали». */
+  background: #64748b;
   font-size: var(--text-caps);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  transition: box-shadow var(--ease-base) var(--ease-out);
+  transition: box-shadow var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out);
 }
 
 /* Кольцо кластера по наличию топлива внутри.
@@ -3914,16 +3924,22 @@ select {
    Цвет по доле заправок с топливом: зелёное — почти везде есть,
    оранжевое — где-то есть, красное — нигде. Серое без кольца означает,
    что там просто никто не отмечал, и это честнее, чем красное. */
+/* Заливкой, а не кольцом.
+
+   Кольцо в три пикселя вокруг тёмно-синего кружка на карте с домами и
+   дорогами не читается: цвет теряется в общем шуме, и человек всё
+   равно приближает, чтобы понять. Заливка видна боковым зрением с
+   любого масштаба — ровно то, что нужно за рулём. */
 .fuel-map-marker[data-cluster-state="yes"] {
-  box-shadow: 0 0 0 3px #16a34a, var(--shadow-md);
+  background: #16a34a;
 }
 
 .fuel-map-marker[data-cluster-state="some"] {
-  box-shadow: 0 0 0 3px #f59e0b, var(--shadow-md);
+  background: #f59e0b;
 }
 
 .fuel-map-marker[data-cluster-state="no"] {
-  box-shadow: 0 0 0 3px #dc2626, var(--shadow-md);
+  background: #dc2626;
 }
 
 .fuel-map-marker__network {
@@ -3933,20 +3949,26 @@ select {
   line-height: 1;
 }
 
-.fuel-map-marker[data-quality="fuel"] {
-  background: #0f766e;
-  box-shadow: var(--shadow-md);
-}
+/* Точка без отметок водителей — серая.
 
-.fuel-map-marker[data-quality="live"] {
-  background: #16a34a;
-  box-shadow: 0 0 0 3px rgba(255,255,255,.86), 0 5px 14px rgba(22, 163, 74, 0.42);
+   Раньше цвет здесь означал качество данных OpenStreetMap: бирюзовый —
+   «теги топлива есть», оранжевый — «указана сеть». Человек за рулём
+   читал это как светофор наличия и ехал на бирюзовую, где топлива
+   могло не быть месяц.
+
+   Серый честен: про эту заправку сейчас ничего не известно. Зелёный и
+   красный оставлены отметкам, которые действительно про наличие. */
+.fuel-map-marker[data-quality="fuel"],
+.fuel-map-marker[data-quality="live"],
+.fuel-map-marker[data-quality="network"] {
+  background: #64748b;
+  box-shadow: var(--shadow-md);
 }
 
 .fuel-map-marker[data-quality="basic"] {
   width: 26px;
   height: 26px;
-  background: #64748b;
+  background: #94a3b8;
   box-shadow: var(--shadow-sm);
 }
 
@@ -4120,23 +4142,76 @@ select {
    Теперь она шире и содержит главное. На телефоне растягивается почти на
    всю ширину и прижимается к низу — так до неё дотягивается большой
    палец, а карта сверху остаётся видна. */
+/* Карточка точки: теперь в ней живёт и форма отметки.
+
+   Раньше карточка показывала три строки и отправляла человека за
+   отметкой в список сбоку. Списка больше нет, и всё делается здесь —
+   значит, карточке нужна высота и прокрутка внутри. */
 .fuel-map-selected {
   position: absolute;
-  z-index: 5;
+  z-index: 8;
   left: 12px;
   bottom: 12px;
-  width: min(300px, calc(100% - 24px));
-  background: rgba(255, 255, 255, 0.96);
+  display: flex;
+  width: min(360px, calc(100% - 24px));
+  max-height: calc(100% - 96px);
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--market-surface);
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(var(--blur-panel));
 }
 
-@media (max-width: 640px) {
+/* Шапка карточки не уезжает при прокрутке: название заправки нужно
+   видеть, пока заполняешь отметку. */
+.fuel-map-selected__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--market-line);
+  background: var(--market-surface);
+}
+
+.fuel-map-selected__logo {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.fuel-map-selected__close {
+  flex: 0 0 auto;
+}
+
+.fuel-map-selected__body {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* На телефоне карточка становится нижним листом во всю ширину: место
+   под большим пальцем, и карта над ней остаётся видимой. */
+@media (max-width: 62em) {
   .fuel-map-selected {
-    right: 8px;
-    left: 8px;
-    bottom: 8px;
+    right: 0;
+    bottom: 0;
+    left: 0;
     width: auto;
+    max-height: 80%;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
@@ -4144,6 +4219,118 @@ select {
   max-height: 500px;
   overflow: auto;
   background: var(--market-surface);
+}
+
+/* ── Карта на весь экран ──────────────────────────────────────────────
+
+   Рядом с картой стоял список заправок в две колонки из пяти. Он
+   отвечал на тот же вопрос, что и карта, — «где заправка», — но хуже:
+   строка «Роснефть, 1,1 км» не показывает, по пути это или в обратную
+   сторону. При этом он забирал у карты半 экрана.
+
+   Теперь экран один и он весь карта. Всё, что было в списке, живёт в
+   карточке точки, которая открывается нажатием на метку. */
+.service-page--fuel-map {
+  padding: 0;
+}
+
+.fuel-map-shell {
+  position: relative;
+  /* Шапка сайта — единственное, что остаётся над картой. */
+  height: calc(100dvh - 72px);
+  min-height: 420px;
+}
+
+.fuel-map-shell .fuel-map-canvas {
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Панель управления поверх карты, а не над ней.
+
+   Отдельной строкой она отнимала у карты полосу высотой с собственный
+   рост. Поверх — не отнимает ничего: карта под ней продолжается. */
+.fuel-map-topbar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: 10px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--market-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--market-surface) 92%, transparent);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(8px);
+}
+
+.fuel-map-topbar__search {
+  flex: 1 1 240px;
+  min-width: 160px;
+}
+
+.fuel-map-topbar__city {
+  width: 150px;
+  flex: 0 0 auto;
+}
+
+.fuel-map-topbar__network {
+  width: 150px;
+  flex: 0 0 auto;
+}
+
+/* Короткие сообщения поверх карты вместо панелей в потоке.
+
+   «Ищем заправки», «точки не найдены», сбой поставщика — всё это
+   раньше занимало по строке над картой и сдвигало её вниз. Плашка
+   поверх ничего не сдвигает и уходит сама. */
+.fuel-map-toast {
+  position: absolute;
+  bottom: 84px;
+  left: 50%;
+  z-index: 7;
+  max-width: min(90vw, 420px);
+  transform: translateX(-50%);
+  background: var(--market-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+/* На телефоне панель переносится в две строки: поля поиска и города
+   рядом не помещаются, а сжимать их до нечитаемого нельзя. */
+@media (max-width: 62em) {
+  .fuel-map-shell {
+    /* Ниже — нижнее меню приложения. */
+    height: calc(100dvh - 60px);
+  }
+
+  .fuel-map-topbar {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    flex-wrap: wrap;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .fuel-map-topbar__search {
+    flex: 1 1 100%;
+    order: -1;
+  }
+
+  .fuel-map-topbar__city,
+  .fuel-map-topbar__network {
+    width: auto;
+    flex: 1 1 40%;
+  }
+
+  .fuel-map-toast {
+    bottom: 72px;
+  }
 }
 
 /* Топливо лентой кнопок вместо выпадающего списка.
