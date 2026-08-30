@@ -15,6 +15,7 @@ import { formatAge, isFresh } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { getGenericIdentity, getNetworkIdentity, getStationIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
 import { TILE_SIZE, coordinatesToWorld, getDistanceInKilometers, worldToCoordinates } from "@/lib/map-geometry"
+import { plural } from "@/lib/format"
 import { tapFeedback } from "@/lib/telegram-webapp"
 
 type FuelStation = {
@@ -918,7 +919,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         <Tooltip label="Уменьшить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom - 1)} aria-label="Уменьшить масштаб карты"><IconMinus size={15} /></ActionIcon></Tooltip>
         <Tooltip label="Увеличить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom + 1)} aria-label="Увеличить масштаб карты"><IconPlus size={15} /></ActionIcon></Tooltip>
       </Group>
-      <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} точек · {tileSource.attribution}</Text></Box>
+      <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} {plural(visibleStations.length, "точка", "точки", "точек")} · {tileSource.attribution}</Text></Box>
       {/* Обозначения переписаны под отметки водителей: раньше они объясняли
      качество данных OpenStreetMap — «есть live-данные», «сеть указана», —
      а человек смотрит на карту с вопросом «где есть бензин», и цвет
