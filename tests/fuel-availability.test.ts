@@ -503,12 +503,46 @@ test("заправкой можно поделиться в сети, котор
   assert.match(share, /Скопировано/)
 })
 
-test("в текст для отправки попадает наличие", () => {
-  // Ссылка без «есть 92» не отвечает на вопрос, ради которого её шлют.
+test("в тексте для отправки есть наличие, цены и свежесть", () => {
+  /* «Есть: 92» получатель читал как загадку: 92 чего, у кого, когда.
+     Без цены и свежести сообщение не отвечает на вопрос, ради
+     которого его шлют. */
   const share = readFileSync(new URL("../src/components/fuel/FuelShareButton.tsx", import.meta.url), "utf8")
-  assert.match(share, /Есть: \$\{availableFuels\.join/)
+  assert.match(share, /Есть в наличии: \$\{availableFuels\.join/)
+  assert.match(share, /Цены: \$\{priceSummary\}/)
+  assert.match(share, /По отметкам водителей/)
+
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
   assert.match(page, /availableFuels=\{availableFuels\}/)
+  assert.match(page, /priceSummary=\{sharePriceSummary\}/)
+})
+
+test("ссылка из «поделиться» ведёт на нашу карту, а не в Яндекс", () => {
+  /* Человек пересылал другу ссылку на Яндекс.Карты: тот видел точку на
+     чужой карте, где нет ни наличия, ни цен, ни возможности отметить.
+     Сервис отдавал свою находку конкуренту и не получал ни одного
+     нового человека. */
+  const share = readFileSync(new URL("../src/components/fuel/FuelShareButton.tsx", import.meta.url), "utf8")
+  assert.match(share, /\/services\/fuel-map\?station=/)
+  assert.doesNotMatch(share, /yandex\.ru\/maps/)
+
+  /* По такой ссылке карта открывается сразу на нужной заправке. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /searchParams\.get\("station"\)/)
+  assert.match(page, /setSelectedStation\(target\)/)
+})
+
+test("форма не спрашивает про топливо, которого на заправке нет", () => {
+  /* На газовой АЗС человек видел вопрос про 92-й, которого там не
+     бывает, и наоборот. */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /const visibleFuels/)
+  assert.match(reporter, /hasGas/)
+  /* Но живая отметка вернее тега: если марку уже отмечали, она
+     остаётся, потому что теги в OSM часто неполны. */
+  assert.match(reporter, /!== "UNKNOWN"\) return true/)
+  /* И если после сужения не осталось ничего — показываем всё. */
+  assert.match(reporter, /narrowed\.length \? narrowed : AVAILABILITY_FUELS/)
 })
 
 test("цена показывается с копейками", () => {

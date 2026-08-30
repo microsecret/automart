@@ -61,6 +61,7 @@ export default function FuelAvailabilityReporter({
   latitude,
   longitude,
   availability,
+  stationFuels,
   onReported,
 }: {
   stationId: string
@@ -72,6 +73,10 @@ export default function FuelAvailabilityReporter({
   latitude: number
   longitude: number
   availability: StationAvailability[]
+  /* Что за заправка по данным OpenStreetMap: газовая, бензиновая или
+     смешанная. Форма спрашивала все шесть марок подряд, и на газовой
+     АЗС человек видел вопрос про 92-й, которого там не бывает. */
+  stationFuels?: string[]
   onReported?: (next: StationAvailability[]) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -92,6 +97,31 @@ export default function FuelAvailabilityReporter({
   const [showDetails, setShowDetails] = useState(false)
 
   const byFuel = new Map(availability.map((item) => [item.fuel, item]))
+
+  /* Какие марки показывать.
+
+     На газовой заправке нет 92-го, на бензиновой — газа, и спрашивать
+     про них значит просить человека отвечать на пустое место. Список
+     сужается по тегам OpenStreetMap.
+
+     Марка остаётся, если её уже кто-то отмечал: живая отметка вернее
+     тега, а теги в OSM часто неполны. И если после сужения не осталось
+     ничего — показываем всё: пустая форма хуже лишней марки. */
+  const visibleFuels = (() => {
+    const tags = (stationFuels || []).join(" ").toLocaleLowerCase("ru-RU")
+    if (!tags) return AVAILABILITY_FUELS
+
+    const hasGas = tags.includes("газ") || tags.includes("lpg") || tags.includes("cng")
+    const hasPetrol = /аи|92|95|98|100|дт|бензин|дизел/.test(tags)
+
+    const narrowed = AVAILABILITY_FUELS.filter((fuel) => {
+      if (byFuel.get(fuel)?.state && byFuel.get(fuel)?.state !== "UNKNOWN") return true
+      if (fuel === "GAS") return hasGas
+      return hasPetrol
+    })
+
+    return narrowed.length ? narrowed : AVAILABILITY_FUELS
+  })()
 
   /* Что можно подтвердить: марки с известным состоянием и отметкой не
      новее получаса.
@@ -150,14 +180,14 @@ export default function FuelAvailabilityReporter({
 
   /* Отмеченные марки: только они уходят на сервер. Пустые строки — это
      «не смотрел», а не «нет», и присылать их нельзя. */
-  const filled = AVAILABILITY_FUELS
+  const filled = visibleFuels
     .map((fuel) => ({ fuel, ...entryOf(fuel) }))
     .filter((row) => row.state !== null)
 
   const hasAnyYes = filled.some((row) => row.state === "YES")
   /* «Нет вообще» — когда все марки помечены как отсутствующие. Кнопка
      показывает своё состояние, а не притворяется обычной. */
-  const isNothingAtAll = filled.length === AVAILABILITY_FUELS.length && !hasAnyYes
+  const isNothingAtAll = filled.length === visibleFuels.length && !hasAnyYes
 
   /** Одно касание по марке: было пусто — стало «есть», было «есть» — сброс. */
   const toggleFuel = (fuel: AvailabilityFuel) => {
@@ -173,7 +203,7 @@ export default function FuelAvailabilityReporter({
       setDraft({})
       return
     }
-    setDraft(Object.fromEntries(AVAILABILITY_FUELS.map((fuel) => [fuel, { state: "NO" as const, price: "" }])))
+    setDraft(Object.fromEntries(visibleFuels.map((fuel) => [fuel, { state: "NO" as const, price: "" }])))
   }
 
   const send = async () => {
@@ -238,7 +268,7 @@ export default function FuelAvailabilityReporter({
           форму. Цвет несёт состояние, но не в одиночку — рядом стоит
           подпись «есть»/«нет», иначе карта нечитаема при дальтонизме. */}
       <Box className="fuel-report__status">
-        {AVAILABILITY_FUELS.map((fuel) => {
+        {visibleFuels.map((fuel) => {
           const known = byFuel.get(fuel)
           const state = known?.state ?? "UNKNOWN"
           const age = known?.updatedAt ? formatAge(new Date(known.updatedAt)) : null
@@ -328,7 +358,7 @@ export default function FuelAvailabilityReporter({
                 форма требовала попасть в одну из четырёх мелких целей в
                 строке — на ходу это не выходило. */}
             <Box className="fuel-report__grid">
-              {AVAILABILITY_FUELS.map((fuel) => {
+              {visibleFuels.map((fuel) => {
                 const entry = entryOf(fuel)
                 return (
                   <UnstyledButton

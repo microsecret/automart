@@ -3747,6 +3747,43 @@ select {
   transition: box-shadow var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out);
 }
 
+/* Плашка узнаваемой сети красится её фирменным цветом.
+
+   Раньше все плашки были одинаково тёмными, а фирменный цвет жил
+   только в квадратике с буквами — по нему сеть приходилось выискивать.
+   В навигаторе человек находит свою заправку по цвету, не читая
+   подписей, и здесь работает та же привычка: синяя Башнефть, красный
+   Лукойл, жёлтая Роснефть видны боковым зрением.
+
+   Цвет фирменный, но логотипы не ставятся: чужие товарные знаки на
+   карте означали бы согласованное присутствие сети, которого нет. */
+.fuel-map-plate[data-branded] {
+  border-color: color-mix(in srgb, var(--plate-brand) 60%, #fff);
+  background: color-mix(in srgb, var(--plate-brand) 88%, #11111400);
+}
+
+/* Название сети на фирменном фоне: цвет текста берётся из самой сети,
+   иначе тёмные буквы теряются на тёмно-синем, а белые — на жёлтом. */
+.fuel-map-plate[data-branded] .fuel-map-plate__title {
+  color: var(--plate-brand-ink);
+}
+
+/* Квадратик с буквами на фирменной плашке сливался бы с фоном — он
+   того же цвета. Здесь он становится подложкой из цвета текста. */
+.fuel-map-plate[data-branded] .fuel-map-plate__logo {
+  background: color-mix(in srgb, var(--plate-brand-ink) 22%, transparent) !important;
+  color: var(--plate-brand-ink) !important;
+}
+
+/* Марки топлива на светлых фирменных цветах (жёлтая Роснефть) теряли
+   контраст: белый по жёлтому не читается. Тёмная подложка возвращает
+   его, не трогая фирменный фон вокруг. */
+.fuel-map-plate[data-branded] .fuel-map-plate__fuels {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgb(17 17 20 / .55);
+}
+
 /* Знак сети: фирменный цвет и две буквы.
 
    Цветной полоски было мало — человек видел «красную» заправку, но не
@@ -3791,12 +3828,24 @@ select {
 
 .fuel-map-plate__fuels {
   display: flex;
-  gap: 6px;
-  align-items: baseline;
+  gap: 7px;
+  /* Марка и цена стоят столбиком, а не в строку.
+
+     Строкой «92 63,20 95 98» человек читал как один длинный номер и
+     не понимал, где кончается марка и начинается цена — особенно с
+     копейками. Цена под своей маркой снимает вопрос без разделителей. */
+  align-items: flex-start;
   font-size: 12px;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
+}
+
+.fuel-map-plate__fuel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
 }
 
 /* Цвет несёт состояние, но не один: зачёркнутая марка читается и при
@@ -3813,15 +3862,14 @@ select {
    про наличие сейчас, и поэтому приглушена — чтобы не путали с отметкой. */
 .fuel-map-plate__fuel[data-state="unknown"] { color: rgba(255, 255, 255, 0.5); }
 
-/* Цена мельче марки и без знака рубля: место на плашке дороже точности
-   оформления, а «62» рядом с «92» человек читает верно. */
-/* Цена — то, ради чего половина открывает карту: она не должна быть
-   мельче марки, к которой относится. */
+/* Цена стоит под своей маркой и чуть мельче её: марка отвечает «что
+   есть», цена — «почём», и первый вопрос главнее. */
 .fuel-map-plate__price {
-  margin-left: 3px;
-  font-size: 11px;
+  display: block;
+  font-size: 10px;
   font-weight: 800;
-  opacity: 0.92;
+  opacity: 0.95;
+  white-space: nowrap;
 }
 
 /* Хвостик книзу указывает на саму точку: без него плашка висит в воздухе
@@ -4315,6 +4363,7 @@ select {
   left: 10px;
   z-index: 7;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 8px;
@@ -4325,9 +4374,19 @@ select {
   backdrop-filter: blur(8px);
 }
 
+/* Панель переносится на две строки, когда всё не помещается.
+
+   В одну строку не влезали поиск, семь марок топлива, два списка и
+   кнопка обновления: «Зарядка EV» обрезалась на середине, а на узком
+   ноутбуке уезжал и выбор сети. Перенос честнее сжатия — читаются все
+   элементы, а не половина.
+
+   Поиск идёт первой строкой целиком: он самый широкий и в остатке
+   строки всё равно оказывался огрызком. */
 .fuel-map-topbar__search {
-  flex: 1 1 240px;
-  min-width: 160px;
+  flex: 1 1 100%;
+  min-width: 0;
+  order: -1;
 }
 
 .fuel-map-topbar__city {
@@ -4977,14 +5036,44 @@ select {
 
 /* Развернуть подробности: служебное действие, поэтому текстом, а не
    ещё одной крупной кнопкой рядом с главными. */
+/* «Добавить цены» и «Отмена»: видимые кнопки, а не серые надписи.
+
+   Оба были простым текстом без рамки: на телефоне человек не понимал,
+   что по ним можно нажать, и искал, где закрыть форму. Рамка отвечает
+   на этот вопрос, а приглушённый цвет оставляет их второстепенными
+   рядом с зелёной «Отправить». */
 .fuel-report__more,
 .fuel-report__cancel {
-  min-height: 40px;
+  display: grid;
+  min-height: 44px;
+  place-items: center;
+  border: 1px solid var(--market-line);
   border-radius: 10px;
+  background: var(--market-surface);
   color: var(--market-label);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
+  transition: border-color var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .fuel-report__more:hover,
+  .fuel-report__cancel:hover {
+    border-color: color-mix(in srgb, var(--market-ink) 32%, var(--market-line));
+    background: var(--market-surface-subtle);
+  }
+}
+
+/* «Добавить цены» ведёт вперёд по форме, поэтому намекает зелёным —
+   тем же, что и главное действие, но краем. */
+.fuel-report__more {
+  border-color: color-mix(in srgb, #16a34a 34%, var(--market-line));
+  color: #15803d;
+}
+
+:root[data-mantine-color-scheme="dark"] .fuel-report__more {
+  color: #4ade80;
 }
 
 .fuel-report__prices {
@@ -5023,9 +5112,29 @@ select {
 
 /* Отправка: последнее действие, поэтому во всю ширину и внизу — под
    большим пальцем. */
+/* Отправка — того же зелёного, что и «Внести данные».
+
+   Кнопка была синей по умолчанию Mantine: на одном экране оказывались
+   зелёная «внести», жёлтые марки и синяя «отправить» — три разных
+   обещания там, где действие одно. */
 .fuel-report__send {
   min-height: 48px;
+  background: #16a34a;
+  color: #fff;
   font-weight: 800;
+}
+
+@media (hover: hover) {
+  .fuel-report__send:not([data-loading]):not(:disabled):hover {
+    background: #15803d;
+  }
+}
+
+/* Неактивная кнопка не должна выглядеть зелёной: пока не отмечена ни
+   одна марка, отправлять нечего, и цвет обещал бы обратное. */
+.fuel-report__send:disabled {
+  background: var(--market-surface-subtle);
+  color: var(--market-label);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,6 +5,13 @@ import { Menu, UnstyledButton } from "@mantine/core"
 import { IconBrandTelegram, IconBrandVk, IconBrandWhatsapp, IconCheck, IconLink, IconShare } from "@tabler/icons-react"
 import { tapFeedback } from "@/lib/telegram-webapp"
 
+/* Домен для ссылки: на клиенте — тот, где человек сейчас, чтобы с
+   тестового стенда не расходились ссылки на продакшн. */
+function shareOrigin() {
+  if (typeof window !== "undefined" && window.location?.origin) return window.location.origin
+  return "https://lewheel.ru"
+}
+
 /**
  * Поделиться заправкой.
  *
@@ -21,28 +28,61 @@ import { tapFeedback } from "@/lib/telegram-webapp"
  * которая на десктопе ничего не делает, хуже её отсутствия.
  */
 export default function FuelShareButton({
+  stationId,
   stationName,
   address,
   latitude,
   longitude,
   availableFuels,
+  priceSummary,
+  updatedLabel,
   className,
 }: {
+  /** Нужен для ссылки: по ней карта открывается сразу на этой точке. */
+  stationId: string
   stationName: string
   address: string | null
   latitude: number
   longitude: number
   /** Марки, которые есть по свежим отметкам: ради них и пересылают. */
   availableFuels: string[]
+  /** «92 — 63,20 ₽»: цена решает не меньше наличия. */
+  priceSummary?: string
+  /** «13 минут назад»: без свежести наличие ничего не значит. */
+  updatedLabel?: string
   className?: string
 }) {
   const [copied, setCopied] = useState(false)
 
-  const mapUrl = `https://yandex.ru/maps/?pt=${longitude},${latitude}&z=17`
+  /* Ссылка ведёт на нашу карту, а не в Яндекс.
+
+     Раньше человек пересылал другу ссылку на Яндекс.Карты: тот видел
+     точку на чужой карте, где нет ни наличия, ни цен, ни возможности
+     отметить. Сервис отдавал свою же находку конкуренту и не получал
+     ни одного нового человека.
+
+     Адрес открывает карту сразу на этой заправке: id точки плюс
+     координаты, чтобы её нашли даже когда у пришедшего запомнен
+     другой город. */
+  const mapUrl = `${shareOrigin()}/services/fuel-map?station=${encodeURIComponent(stationId)}&lat=${latitude.toFixed(5)}&lng=${longitude.toFixed(5)}`
+
+  /* Текст называет вещи своими именами.
+
+     «Есть: 92» человек читал как загадку: 92 чего, у кого, когда.
+     Теперь сказано, что это бензин, что сведения от водителей и
+     насколько они свежие — по этому получатель решает, ехать ли. */
+  const fuelsLine = availableFuels.length
+    ? `Есть в наличии: ${availableFuels.join(", ")}`
+    : "Наличие пока никто не отмечал"
+  const priceLine = priceSummary ? `Цены: ${priceSummary}` : ""
+  const freshnessLine = updatedLabel ? `По отметкам водителей, обновлено ${updatedLabel}` : "По отметкам водителей"
+
   const text = [
     `⛽ ${stationName}`,
     address || "",
-    availableFuels.length ? `Есть: ${availableFuels.join(", ")}` : "",
+    fuelsLine,
+    priceLine,
+    freshnessLine,
   ].filter(Boolean).join("\n")
   const fullText = `${text}\n${mapUrl}`
 

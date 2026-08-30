@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
+import { useSearchParams } from "next/navigation"
 import { ActionIcon, Badge, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
 import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconX } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES, findNearestCity } from "@/lib/cities"
@@ -591,6 +592,15 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   className="fuel-map-plate"
                   data-selected={isSelected || undefined}
                   data-reported={fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined}
+                  data-branded={networkIdentity ? true : undefined}
+                  /* Фирменный цвет уходит в плашку целиком, а не только
+                     в квадратик с буквами. Своя сеть узнаётся с одного
+                     взгляда — так же, как в навигаторе, — и человек
+                     находит привычную заправку, не читая подписи. */
+                  style={networkIdentity ? {
+                    "--plate-brand": networkIdentity.color,
+                    "--plate-brand-ink": networkIdentity.textColor,
+                  } as CSSProperties : undefined}
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => handleMarkerClick(marker)}
                   aria-label={label}
@@ -736,6 +746,15 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
            делятся. */
         const availableFuels = fresh.filter((row) => row.state === "YES").map((row) => row.label)
 
+        /* Цены для пересылки: только те марки, что есть в наличии.
+           Цена отсутствующего топлива в сообщении сбивает с толку. */
+        const sharePriceSummary: string | undefined = fresh
+          .flatMap((row) => {
+            const kopecks = row.state === "YES" ? priceByFuel.get(row.fuel) : null
+            return kopecks ? [`${row.label} — ${formatKopecks(kopecks)} ₽`] : []
+          })
+          .join(", ") || undefined
+
         /* Комментарии водителей — по всем маркам, а не по одной.
 
            «Лимит 30 литров», «на табло не горит, по факту есть»,
@@ -836,11 +855,16 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                     копировала ссылку — нажал, ничего не произошло, и
                     было непонятно, сработало ли. */}
                 <FuelShareButton
+                  stationId={selectedStation.id}
                   stationName={selectedStation.name}
                   address={selectedStation.address || selectedStationAddress}
                   latitude={selectedStation.latitude}
                   longitude={selectedStation.longitude}
                   availableFuels={availableFuels}
+                  /* Цена и свежесть уходят вместе со ссылкой: получателю
+                     они говорят больше, чем название заправки. */
+                  priceSummary={sharePriceSummary}
+                  updatedLabel={newest ? formatAge(new Date(newest)) ?? undefined : undefined}
                 />
               </Group>
 
@@ -890,6 +914,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   latitude={selectedStation.latitude}
                   longitude={selectedStation.longitude}
                   availability={selectedStationAvailability}
+                  /* Ассортимент из OSM: на газовой заправке форма не
+                     спрашивает про 92-й, на бензиновой — про газ. */
+                  stationFuels={selectedStation.fuels}
                   onReported={(next) => onAvailabilityReported(selectedStation.id, next)}
                 />
               )}
@@ -939,7 +966,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 /** Где хранится выбранный город: тот же ключ читается при следующем заходе. */
 const CITY_STORAGE_KEY = "lewheel:fuel-city"
 
-export default function FuelMapPage() {
+function FuelMapContent() {
   /* Город берётся из прошлого выбора, а не начинается с Москвы.
 
      Человек из Уфы открывал карту, видел Москву и менял город руками —
@@ -1009,7 +1036,39 @@ export default function FuelMapPage() {
 
     return () => window.clearTimeout(timer)
   }, [coordinates, viewportCoordinates])
+  const searchParams = useSearchParams()
   const allStations = data?.stations ?? EMPTY_STATIONS
+
+  /* Заправка из ссылки: ?station=osm-node-123.
+     По такой ссылке человек приходит из чужого сообщения, и карта
+     должна открыться сразу на нужной точке, а не на городе вообще.
+     Срабатывает один раз: дальше выбор за человеком. */
+  const sharedStationId = searchParams.get("station")
+  const openedSharedRef = useRef(false)
+  /* Координаты в ссылке нужны, чтобы станция вообще попала в выборку:
+     без них карта откроется на запомненном городе, а заправка может
+     быть в другом. Читаются один раз при первой отрисовке. */
+  const sharedLatitude = Number(searchParams.get("lat"))
+  const sharedLongitude = Number(searchParams.get("lng"))
+  const appliedSharedPointRef = useRef(false)
+  useEffect(() => {
+    if (appliedSharedPointRef.current) return
+    if (!sharedStationId || !Number.isFinite(sharedLatitude) || !Number.isFinite(sharedLongitude)) return
+    appliedSharedPointRef.current = true
+    const point = { latitude: sharedLatitude, longitude: sharedLongitude }
+    setRequestedCoordinates(point)
+    setViewportCoordinates(point)
+    /* Город подписью: человек должен видеть, куда его привели. */
+    const nearest = findNearestCity(point)
+    if (nearest.name && nearest.km <= 200) setCity(nearest.name)
+  }, [sharedStationId, sharedLatitude, sharedLongitude])
+  useEffect(() => {
+    if (openedSharedRef.current || !sharedStationId) return
+    const target = allStations.find((station) => station.id === sharedStationId)
+    if (!target) return
+    openedSharedRef.current = true
+    setSelectedStation(target)
+  }, [allStations, sharedStationId])
   const centerLatitude = coordinates.latitude
   const centerLongitude = coordinates.longitude
   const networkFilters = useMemo(() => {
@@ -1378,5 +1437,26 @@ export default function FuelMapPage() {
         )}
       </Box>
     </Box>
+  )
+}
+
+/**
+ * Страница карты.
+ *
+ * Обёртка нужна из-за чтения адресной строки: ссылка вида
+ * ?station=osm-node-123 открывает карту сразу на этой заправке — по
+ * такой ссылке человек и приходит из чужого сообщения. В Next чтение
+ * параметров требует границы Suspense, иначе вся страница рендерится
+ * только на клиенте и теряет предзагрузку.
+ */
+export default function FuelMapPage() {
+  return (
+    <Suspense fallback={(
+      <Box className="service-page service-page--fuel-map">
+        <Box className="fuel-map-shell" />
+      </Box>
+    )}>
+      <FuelMapContent />
+    </Suspense>
   )
 }
