@@ -974,7 +974,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           .sort((left, right) => (right.updatedAt || "").localeCompare(left.updatedAt || ""))
 
         return (
-          <Paper className="fuel-map-selected" radius="md" withBorder aria-live="polite">
+          /* key по точке: без него React переиспользует тот же узел, и
+             при переходе на соседнюю заправку карточка меняет содержимое
+             молча — человек не замечает, что смотрит уже на другую. */
+          <Paper key={selectedStation.id} className="fuel-map-selected" radius="md" withBorder aria-live="polite">
             <Box className="fuel-map-selected__head">
               {/* Значок есть у каждой точки: у сетевой — фирменный, у
                   безымянной — по виду топлива. Раньше он показывался
