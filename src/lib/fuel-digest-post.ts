@@ -120,5 +120,13 @@ export function buildFuelDigest(input: DigestInput): DigestPost {
     buttons.push({ text: "⛽ Отметить из бота", url: `https://t.me/${input.botUsername}` })
   }
 
+  /* Пост зовёт рассказать знакомым — и не давал этого сделать: человек
+     пересылал сообщение вручную, теряя и картинку, и кнопки. Здесь же
+     карта — тот самый случай, когда пересылка полезна соседу по пробке. */
+  buttons.push({
+    text: "📤 Поделиться",
+    url: `https://t.me/share/url?url=${encodeURIComponent(`${site}/services/fuel-map`)}&text=${encodeURIComponent("Где сейчас есть бензин — карта отметок водителей")}`,
+  })
+
   return { text: lines.join("\n"), buttons }
 }

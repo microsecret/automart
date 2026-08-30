@@ -17,13 +17,13 @@ test("кнопка открывает обещанную страницу, а н
 test("страница помечается как переход из Telegram", () => {
   // Без пометки к странице приедут десктопная шапка и подвал.
   const url = buildTelegramPageUrl(BASE, "/messages/abc")
-  assert.equal(new URL(url).searchParams.get("from"), "telegram")
+  assert.equal(new URL(String(url)).searchParams.get("from"), "telegram")
 })
 
 test("собственные параметры страницы сохраняются", () => {
   const url = buildTelegramPageUrl(BASE, "/messages?filter=unread")
-  assert.equal(new URL(url).searchParams.get("filter"), "unread")
-  assert.equal(new URL(url).searchParams.get("from"), "telegram")
+  assert.equal(new URL(String(url)).searchParams.get("filter"), "unread")
+  assert.equal(new URL(String(url)).searchParams.get("from"), "telegram")
 })
 
 test("чужой адрес не подставляется", () => {

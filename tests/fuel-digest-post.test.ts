@@ -111,3 +111,20 @@ test("сводка уходит утром, а не вечером", () => {
   const cron = readFileSync(new URL("../scripts/install-fuel-digest-cron.sh", import.meta.url), "utf8")
   assert.match(cron, /JOB="5 5 \* \* \*/)
 })
+
+test("сводкой можно поделиться в один тап", () => {
+  /* Пост зовёт рассказать знакомым и раньше не давал этого сделать:
+     человек пересылал сообщение вручную, теряя картинку и кнопки. */
+  const post = buildFuelDigest({ ...base, stations: [station] })
+  const share = post.buttons.find((button) => button.text.includes("Поделиться"))
+  assert.ok(share, "кнопки «Поделиться» нет")
+  assert.match(share.url, /^https:\/\/t\.me\/share\/url\?url=/)
+  assert.ok(decodeURIComponent(share.url).includes("/services/fuel-map"))
+})
+
+test("«Открыть карту» остаётся первой кнопкой", () => {
+  /* Поделиться человек захочет после того, как посмотрит: главное
+     действие не должно уезжать вниз под второстепенные. */
+  const post = buildFuelDigest({ ...base, stations: [station] })
+  assert.ok(post.buttons[0].text.includes("Открыть карту"))
+})

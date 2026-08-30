@@ -124,3 +124,22 @@ test("рекламный пост ведёт в кабинет и на разм�
   assert.ok(offer.buttons.some((b) => b.url.includes("/dashboard")))
   assert.ok(offer.buttons.some((b) => b.url.includes("/listings/create")))
 })
+
+test("объявлением можно поделиться в один тап", () => {
+  /* Пересылая пост руками, человек отправлял другу картинку без кнопок,
+     и тот сам искал объявление на сайте. */
+  const post = buildChatPost(base, { siteUrl: SITE })
+  const share = post.buttons.find((button) => button.text.includes("Поделиться"))
+  assert.ok(share, "кнопки «Поделиться» нет")
+  const decoded = decodeURIComponent(share.url)
+  assert.ok(decoded.includes(base.id), "ссылка ведёт не на это объявление")
+  assert.ok(decoded.includes(base.title), "в пересылке нет названия машины")
+})
+
+test("«Открыть объявление» остаётся первым, а приглашение продавцу последним", () => {
+  /* Читатель чата пришёл смотреть машину: главное действие не должно
+     уезжать под кнопки для тех, кто продаёт сам. */
+  const post = buildChatPost(base, { siteUrl: SITE })
+  assert.ok(post.buttons[0].text.includes("Открыть объявление"))
+  assert.ok(post.buttons[post.buttons.length - 1].text.includes("Разместить"))
+})

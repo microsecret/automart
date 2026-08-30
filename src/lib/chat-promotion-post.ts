@@ -193,6 +193,16 @@ export function buildChatPost(listing: PromotedListing, options: { botUsername?:
     })
   }
 
+  /* Поделиться — тем, кто увидел машину и знает, кому она нужна.
+
+     Пересылая пост руками, человек отправлял другу картинку без кнопок:
+     дальше тот сам искал объявление на сайте. Ссылка с готовым текстом
+     доводит его до той же страницы одним нажатием. */
+  buttons.push({
+    text: "📤 Поделиться",
+    url: `https://t.me/share/url?url=${encodeURIComponent(listingUrl)}&text=${encodeURIComponent(listing.title)}`,
+  })
+
   buttons.push({
     text: "➕ Разместить своё объявление",
     url: `${options.siteUrl.replace(/\/$/, "")}/listings/create/vehicle`,
