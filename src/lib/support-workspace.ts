@@ -59,6 +59,9 @@ export function normalizeSupportPhone(value: unknown) {
 type ResolveVisitorOptions = {
   userId?: string | null
   createIfMissing?: boolean
+  /* Откуда человек пишет: мини-приложение, телефон или компьютер.
+     Оператор увидит это пометкой и не станет спрашивать. */
+  platform?: string | null
 }
 
 export async function resolveVisitorSupportTicket(request: NextRequest, options: ResolveVisitorOptions = {}) {
@@ -101,14 +104,14 @@ export async function resolveVisitorSupportTicket(request: NextRequest, options:
 
   if (userId) {
     const ticket = await prisma.supportTicket.create({
-      data: { userId, publicTokenHash: hashGuestToken(createGuestToken()) },
+      data: { userId, publicTokenHash: hashGuestToken(createGuestToken()), platform: options.platform || null },
     })
     return { ticket, newGuestToken: null }
   }
 
   const newGuestToken = createGuestToken()
   const ticket = await prisma.supportTicket.create({
-    data: { publicTokenHash: hashGuestToken(newGuestToken) },
+    data: { publicTokenHash: hashGuestToken(newGuestToken), platform: options.platform || null },
   })
   return { ticket, newGuestToken }
 }

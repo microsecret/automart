@@ -105,6 +105,7 @@ export async function GET(request: NextRequest) {
         status: ticket.status,
         mode: ticket.mode,
         priority: ticket.priority,
+        platform: ticket.platform,
         guest: {
           name: ticket.guestName,
           email: ticket.guestEmail,

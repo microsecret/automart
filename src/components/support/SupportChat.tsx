@@ -61,6 +61,10 @@ type SupportChatResponse = {
   } | null
   messages: SupportMessage[]
   quickReplies: string[]
+  /* Откуда человек пишет и как его встретить: сервер определяет это по
+     пометке в адресе и строке клиента. */
+  platform?: string
+  greeting?: string
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
@@ -188,8 +192,14 @@ export default function SupportChat() {
                     <Group gap="sm" align="flex-start" wrap="nowrap">
                       <ThemeIcon variant="light" color="indigo" radius="xl"><IconRobot size={17} /></ThemeIcon>
                       <Stack gap={5}>
-                        <Text size="sm" fw={700}>Здравствуйте! Я помощник LeWheel.</Text>
-                        <Text size="xs" c="dimmed">Подскажу по регистрации, объявлениям, доставке и аукционам. Если инструкции недостаточно, приглашу оператора и сохраню всю переписку.</Text>
+                        {/* Приветствие называет платформу, а не
+                            спрашивает о ней: если мы ошиблись, человек
+                            поправит одним словом, а если угадали —
+                            разговор начнётся сразу с дела. */}
+                        <Text size="sm" fw={700}>
+                          {chat.data?.greeting || "Здравствуйте! Я помощник LeWheel."}
+                        </Text>
+                        <Text size="xs" c="dimmed">Подскажу по объявлениям, запчастям, карте заправок, доставке и аукционам. Если инструкции недостаточно, приглашу оператора и сохраню всю переписку.</Text>
                       </Stack>
                     </Group>
                   </Paper>

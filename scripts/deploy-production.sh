@@ -51,6 +51,13 @@ npx prisma generate
 # be calculated. The step still fails the deployment when no usable rate exists,
 # but a CBR outage no longer blocks a release while the stored snapshot is less
 # than a day old: those prices are still accurate.
+# Статьи базы знаний для чата поддержки: помощник отвечает только тем, о
+# чём в базе написано, и без этого шага новые разделы остаются для него
+# невидимыми. Запуск идемпотентный — статья с тем же slug обновляется.
+node scripts/seed-support-knowledge.mjs || echo "Warning: support knowledge seed failed; chat keeps the previous articles"
+# Тема о технических ошибках на форуме: каждый писал оператору одно и то
+# же в отдельной переписке, и починки оставались невидимыми.
+node scripts/seed-forum-support-section.mjs || echo "Warning: forum support topic seed failed"
 node scripts/refresh-auction-rates.mjs
 node scripts/enforce-encar-import-age-policy.mjs
 node scripts/reconcile-transport-categories.mjs

@@ -820,6 +820,12 @@ model SupportTicket {
   status              String           @default("OPEN") // OPEN, WAITING_OPERATOR, IN_PROGRESS, CLOSED
   mode                String           @default("AI") // AI, OPERATOR
   priority            String           @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  // Откуда человек пишет: TELEGRAM, MOBILE, DESKTOP. Один и тот же
+  // вопрос решается по-разному в приложении, на телефоне и за
+  // компьютером — оператор спрашивал это первым сообщением и терял
+  // минуту, а половина людей отвечала «с телефона», не различая
+  // приложение и браузер.
+  platform            String?
   assignedToId        String?
   assignedTo          User?            @relation("SupportTicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   lastMessageAt       DateTime         @default(now())

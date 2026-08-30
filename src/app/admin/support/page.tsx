@@ -43,6 +43,7 @@ import {
   IconUserCheck,
 } from "@tabler/icons-react"
 import { SUPPORT_TICKET_STATUS, toneColor } from "@/lib/admin-status-tone"
+import { SUPPORT_PLATFORM_SHORT } from "@/lib/support-platform"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
@@ -53,6 +54,8 @@ type TicketListItem = {
   status: string
   mode: string
   priority: string
+  /* Откуда человек пишет: приложение, телефон или компьютер. */
+  platform: string | null
   guest: { name: string | null; email: string | null; phone: string | null }
   user: { id: string; name: string | null; email: string | null; phone: string | null; telegramUsername: string | null } | null
   assignedTo: { id: string; name: string | null; email: string | null } | null
@@ -270,6 +273,15 @@ export default function AdminSupportPage() {
                             <Group gap={5}>
                               <Badge size="xs" color={statusMeta.color}>{statusMeta.label}</Badge>
                               <Badge size="xs" variant="light" color={priorityMeta.color}>{priorityMeta.label}</Badge>
+                              {/* Откуда пишут: один и тот же вопрос
+                                  решается по-разному в приложении, на
+                                  телефоне и за компьютером. Оператор
+                                  спрашивал это первым сообщением. */}
+                              {item.platform && SUPPORT_PLATFORM_SHORT[item.platform as keyof typeof SUPPORT_PLATFORM_SHORT] && (
+                                <Badge size="xs" variant="light" color="cyan">
+                                  {SUPPORT_PLATFORM_SHORT[item.platform as keyof typeof SUPPORT_PLATFORM_SHORT]}
+                                </Badge>
+                              )}
                               <Badge size="xs" variant="outline" color="gray">{item.messagesCount}</Badge>
                             </Group>
                           </Stack>

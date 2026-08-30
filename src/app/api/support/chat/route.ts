@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { detectSupportPlatform, supportGreeting, supportQuickReplies, type SupportPlatform } from "@/lib/support-platform"
 import {
   buildSupportKnowledgeAnswer,
   normalizeSupportEmail,
@@ -41,12 +42,15 @@ function serializeMessage(message: {
   }
 }
 
-async function buildVisitorPayload(ticketId: string) {
+async function buildVisitorPayload(ticketId: string, platform: SupportPlatform = "DESKTOP") {
   const ticket = await prisma.supportTicket.findUniqueOrThrow({
     where: { id: ticketId },
     include: {
       messages: { orderBy: { createdAt: "asc" }, take: 200 },
       assignedTo: { select: { name: true } },
+      /* Имя нужно для приветствия: обращаться по имени человека,
+         который вошёл, вежливее, чем «здравствуйте». */
+      user: { select: { name: true } },
     },
   })
 
@@ -62,8 +66,29 @@ async function buildVisitorPayload(ticketId: string) {
       updatedAt: ticket.updatedAt.toISOString(),
     },
     messages: ticket.messages.map(serializeMessage),
-    quickReplies: SUPPORT_QUICK_REPLIES,
+    /* Подсказки под платформу: в приложении спрашивают про вход и
+       страницы, на телефоне — про фотографии, на десктопе — про подачу
+       объявления. */
+    quickReplies: supportQuickReplies(ticket.platform as SupportPlatform || platform),
+    platform: ticket.platform || platform,
+    greeting: supportGreeting(ticket.platform as SupportPlatform || platform, ticket.user?.name || ticket.guestName),
   }
+}
+
+/**
+ * Откуда пришёл запрос.
+ *
+ * Мини-приложение помечает свои переходы в адресе, мобильный браузер
+ * узнаётся по строке клиента. Оператор увидит это пометкой на карточке
+ * обращения и не будет спрашивать первым сообщением.
+ */
+function platformFromRequest(request: NextRequest) {
+  return detectSupportPlatform({
+    fromTelegram: request.nextUrl.searchParams.get("from") === "telegram"
+      || request.headers.get("referer")?.includes("from=telegram")
+      || false,
+    userAgent: request.headers.get("user-agent"),
+  })
 }
 
 async function optionalSession() {
@@ -85,11 +110,18 @@ export async function GET(request: NextRequest) {
   try {
     const session = await optionalSession()
     const userId = typeof session?.user?.id === "string" ? session.user.id : null
+    const platform = platformFromRequest(request)
     const { ticket } = await resolveVisitorSupportTicket(request, { userId })
 
     if (!ticket) {
       return NextResponse.json(
-        { ticket: null, messages: [], quickReplies: SUPPORT_QUICK_REPLIES },
+        {
+        ticket: null,
+        messages: [],
+        quickReplies: supportQuickReplies(platform),
+        platform,
+        greeting: supportGreeting(platform, session?.user?.name),
+      },
         { headers: rateLimitHeaders(limit) },
       )
     }
@@ -98,7 +130,7 @@ export async function GET(request: NextRequest) {
       where: { id: ticket.id },
       data: { lastReadByVisitorAt: new Date() },
     })
-    return NextResponse.json(await buildVisitorPayload(ticket.id), { headers: rateLimitHeaders(limit) })
+    return NextResponse.json(await buildVisitorPayload(ticket.id, platform), { headers: rateLimitHeaders(limit) })
   } catch (error) {
     console.error("Support chat read error:", error)
     return NextResponse.json({ error: "Не удалось загрузить обращение" }, { status: 500 })
@@ -141,9 +173,11 @@ export async function POST(request: NextRequest) {
 
     const session = await optionalSession()
     const userId = typeof session?.user?.id === "string" ? session.user.id : null
+    const platform = platformFromRequest(request)
     const { ticket, newGuestToken } = await resolveVisitorSupportTicket(request, {
       userId,
       createIfMissing: action !== "CLOSE",
+      platform,
     })
     if (!ticket) {
       return NextResponse.json(
@@ -246,7 +280,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const response = NextResponse.json(await buildVisitorPayload(ticket.id), {
+    const response = NextResponse.json(await buildVisitorPayload(ticket.id, platform), {
       headers: rateLimitHeaders(limit),
     })
     if (newGuestToken) setSupportCookie(response, newGuestToken)
