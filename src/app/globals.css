@@ -8819,3 +8819,66 @@ h1[data-lw-hero] {
     transform: none;
   }
 }
+
+/* ── Модальное окно на телефоне ───────────────────────────────────────
+
+   Окна ставились по центру экрана: на настольном мониторе это верно,
+   на телефоне нет. Форма упиралась в клавиатуру — поле ввода уходило
+   под неё, содержимое прокручивалось внутри узкого окошка посреди
+   экрана, а закрыть его можно было только мелким крестиком в углу.
+
+   Ниже 640 пикселей окно становится нижним листом: приезжает снизу,
+   занимает ширину экрана, скруглено только сверху и заканчивается у
+   нижнего края. Палец дотягивается до кнопок, клавиатура поднимает
+   лист вместе с полем. Так же ведут себя окна в мобильных
+   приложениях — человеку не нужно этому учиться. */
+@media (max-width: 640px) {
+  .app-modal__inner {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .app-modal__content,
+  /* Эта модалка задаёт свой класс содержимого и тем самым теряла
+     общий: форма партнёрской заявки — как раз тот случай, где лист
+     нужнее всего, там несколько полей и клавиатура. */
+  .partner-application-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    /* Не во весь экран: полоска карты или списка сверху показывает, что
+       окно можно закрыть, и человек не чувствует себя запертым. */
+    max-height: 92dvh !important;
+    margin: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+    /* Вырез снизу у телефонов без кнопки: без запаса кнопка «Сохранить»
+       попадала бы под системную полосу. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    animation: app-modal-sheet-in var(--ease-slow) var(--ease-out);
+  }
+
+  /* Шапка окна не уезжает при прокрутке: заголовок отвечает, о чём
+     речь, а крестик остаётся под рукой. */
+  .app-modal__content .mantine-Modal-header,
+  .partner-application-modal .mantine-Modal-header,
+  .partner-application-modal__header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+}
+
+@keyframes app-modal-sheet-in {
+  from {
+    transform: translateY(14%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal__content,
+  .partner-application-modal {
+    animation: none !important;
+  }
+}

@@ -205,3 +205,23 @@ test("прогон парсера mobile.de ограничен по времен
   assert.match(route, /RUN_DEADLINE_MS/)
   assert.match(route, /skippedByDeadline/)
 })
+
+test("модальные окна на телефоне открываются нижним листом", () => {
+  /* centered: true ставит окно по центру экрана: на настольном
+     мониторе это верно, на телефоне форма упиралась в клавиатуру —
+     поле ввода уходило под неё, а закрыть окно можно было только
+     мелким крестиком в углу. */
+  const theme = readFileSync(new URL("../src/theme/theme.ts", import.meta.url), "utf8")
+  assert.match(theme, /app-modal__content/)
+
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const sheet = css.slice(css.indexOf(".app-modal__inner"))
+  assert.match(sheet.slice(0, 900), /align-items: flex-end/)
+  assert.match(sheet.slice(0, 1400), /border-radius: 18px 18px 0 0/)
+  /* Вырез снизу у телефонов без кнопки: без запаса кнопка «Сохранить»
+     попадала бы под системную полосу. */
+  assert.match(sheet.slice(0, 1400), /env\(safe-area-inset-bottom/)
+  /* Модалка, задающая свой класс содержимого, тоже становится листом:
+     иначе форма партнёрской заявки осталась бы по центру. */
+  assert.match(sheet.slice(0, 1400), /\.partner-application-modal/)
+})
