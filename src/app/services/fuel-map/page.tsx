@@ -14,6 +14,7 @@ import FuelShareButton from "@/components/fuel/FuelShareButton"
 import { formatAge, isFresh } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { getGenericIdentity, getNetworkIdentity, getStationIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
+import { TILE_SIZE, coordinatesToWorld, getDistanceInKilometers, worldToCoordinates } from "@/lib/map-geometry"
 import { tapFeedback } from "@/lib/telegram-webapp"
 
 type FuelStation = {
@@ -59,7 +60,6 @@ type FuelStationAddressResponse = {
   source: "OPENSTREETMAP"
 }
 
-const TILE_SIZE = 256
 const MIN_ZOOM = 9
 const MAX_ZOOM = 14
 const EMPTY_STATIONS: FuelStation[] = []
@@ -80,27 +80,6 @@ const FUEL_FILTERS = [
   { value: "Газ", label: "Газ" },
   { value: "Зарядка EV", label: "Зарядка EV" },
 ]
-
-function coordinatesToWorld(latitude: number, longitude: number, zoom: number) {
-  const worldSize = TILE_SIZE * (2 ** zoom)
-  const latitudeRadians = latitude * Math.PI / 180
-  return {
-    x: ((longitude + 180) / 360) * worldSize,
-    y: (1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * worldSize,
-  }
-}
-
-function worldToCoordinates(x: number, y: number, zoom: number) {
-  const worldSize = TILE_SIZE * (2 ** zoom)
-  const normalizedX = ((x % worldSize) + worldSize) % worldSize
-  const boundedY = Math.max(0, Math.min(worldSize, y))
-  const latitudeRadians = Math.PI - (2 * Math.PI * boundedY) / worldSize
-
-  return {
-    latitude: (180 / Math.PI) * Math.atan(Math.sinh(latitudeRadians)),
-    longitude: (normalizedX / worldSize) * 360 - 180,
-  }
-}
 
 type MapMarker = {
   left: number
@@ -138,16 +117,6 @@ function formatKopecks(kopecks: number) {
  * Газовую от бензиновой человек с газобаллонным оборудованием
  * различает первым делом — она и красится своим цветом.
  */
-function getDistanceInKilometers(from: { latitude: number; longitude: number }, to: { latitude: number; longitude: number }) {
-  const radians = (value: number) => value * Math.PI / 180
-  const latitudeDelta = radians(to.latitude - from.latitude)
-  const longitudeDelta = radians(to.longitude - from.longitude)
-  const latitudeFrom = radians(from.latitude)
-  const latitudeTo = radians(to.latitude)
-  const value = Math.sin(latitudeDelta / 2) ** 2 + Math.cos(latitudeFrom) * Math.cos(latitudeTo) * Math.sin(longitudeDelta / 2) ** 2
-  return 6371 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value))
-}
-
 function getStationDataQuality(station: FuelStation): StationDataQuality {
   if (station.status !== "UNKNOWN" || station.prices.length) return "live"
   if (station.fuels.length) return "fuel"
