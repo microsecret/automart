@@ -730,3 +730,39 @@ test("карта АЗС есть в главном меню", () => {
   /* Название про задачу человека, а не про устройство раздела. */
   assert.match(primary, /Где заправиться/)
 })
+
+test("плашка без данных зовёт отметить, а не молчит", () => {
+  /* Из ста пятидесяти шести точек города у сорока одной в OSM не
+     указаны марки топлива — это небольшие частные АЗС, которые никто
+     не размечал. Их плашка выходила пустой, будто карта сломалась. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /needsFirstReport/)
+  assert.match(page, /Отметьте, что здесь есть/)
+})
+
+test("закрытую заправку можно отметить отдельно от пустых колонок", () => {
+  /* Для человека за рулём это разное: у пустых колонок можно дождаться
+     подвоза, к запертым воротам ехать бессмысленно вовсе. */
+  const reporter = readFileSync(new URL("../src/components/fuel/FuelAvailabilityReporter.tsx", import.meta.url), "utf8")
+  assert.match(reporter, /markClosed/)
+  assert.match(reporter, /Заправка не работает/)
+  /* Отдельного состояния в базе нет: закрытая заправка — это «нет
+     всего» с пояснением, которое уходит комментарием. */
+  assert.match(reporter, /CLOSED_NOTE/)
+  /* Одно состояние снимает другое: пустые колонки и запертые ворота не
+     могут быть отмечены одновременно. */
+  assert.match(reporter, /if \(isClosed\) setComment\(""\)/)
+})
+
+test("шапка не переполняется на ноутбуке", () => {
+  /* Пунктов стало шесть, а рядом «Сервисы», «Стать партнёром», поиск и
+     четыре иконки кабинета: ряд переставал помещаться, вкладки
+     наезжали на кнопки, колокольчик уходил за край. */
+  const header = readFileSync(new URL("../src/components/layout/AppHeader.tsx", import.meta.url), "utf8")
+  assert.match(header, /SECONDARY_HEADER_TABS/)
+  /* Открытый раздел не прячется: человек должен видеть, где он. */
+  assert.match(header, /&& !item\.active \? " market-header-tab--secondary"/)
+
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /@media \(max-width: 1400px\) \{\s*\.market-header-tab--secondary \{\s*display: none/)
+})

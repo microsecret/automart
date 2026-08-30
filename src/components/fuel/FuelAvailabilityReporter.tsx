@@ -208,13 +208,34 @@ export default function FuelAvailabilityReporter({
     setEntry(fuel, current === "YES" ? { state: null, price: "" } : { state: "YES" })
   }
 
+  /* Отмечена ли заправка как закрытая: по этому признаку кнопка
+     показывает своё состояние, а в комментарий уходит пояснение. */
+  const CLOSED_NOTE = "Заправка не работает"
+  const isClosed = comment.trim() === CLOSED_NOTE
+
+  /** «Заправка не работает»: то же «нет всего» плюс пояснение. */
+  const markClosed = () => {
+    tapFeedback("medium")
+    if (isClosed) {
+      setDraft({})
+      setComment("")
+      return
+    }
+    setDraft(Object.fromEntries(visibleFuels.map((fuel) => [fuel, { state: "NO" as const, price: "" }])))
+    setComment(CLOSED_NOTE)
+  }
+
   /** «Нет вообще»: гасит все марки разом, повторное нажатие снимает. */
   const markNothing = () => {
     tapFeedback("medium")
     if (isNothingAtAll) {
       setDraft({})
+      if (isClosed) setComment("")
       return
     }
+    /* Пометка о закрытии снимается: колонки пусты — это не то же
+       самое, что запертые ворота. */
+    if (isClosed) setComment("")
     setDraft(Object.fromEntries(visibleFuels.map((fuel) => [fuel, { state: "NO" as const, price: "" }])))
   }
 
@@ -368,14 +389,36 @@ export default function FuelAvailabilityReporter({
             {/* Отдельная кнопка вместо шести нажатий «нет»: пустая
                 заправка — частый и самый ценный отчёт, и он не должен
                 стоить дороже, чем отметить наличие. */}
-            <UnstyledButton
-              className="fuel-report__nothing"
-              data-active={isNothingAtAll || undefined}
-              onClick={markNothing}
-              aria-pressed={isNothingAtAll}
-            >
-              Топлива нет вообще
-            </UnstyledButton>
+            <Box className="fuel-report__nothing-row">
+              <UnstyledButton
+                className="fuel-report__nothing"
+                data-active={isNothingAtAll && !isClosed || undefined}
+                onClick={markNothing}
+                aria-pressed={isNothingAtAll && !isClosed}
+              >
+                Топлива нет вообще
+              </UnstyledButton>
+
+              {/* «Заправка закрыта» — отдельный ответ.
+
+                  Пустые колонки и закрытая станция для человека за рулём
+                  означают разное: в первом случае можно подождать
+                  подвоза, во втором ехать сюда бессмысленно вовсе. Раньше
+                  оба случая сводились к «топлива нет», и приехавший к
+                  запертым воротам не мог предупредить остальных.
+
+                  Отдельного состояния в базе нет и заводить его ради
+                  этого не нужно: закрытая заправка — это «нет всего» с
+                  пояснением, а пояснение и так уходит комментарием. */}
+              <UnstyledButton
+                className="fuel-report__closed"
+                data-active={isClosed || undefined}
+                onClick={markClosed}
+                aria-pressed={isClosed}
+              >
+                Заправка не работает
+              </UnstyledButton>
+            </Box>
 
             {/* Подробности свёрнуты: цену, очередь и снимок заполняет
                 меньшинство, а места они занимали столько же, сколько

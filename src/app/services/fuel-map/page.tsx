@@ -667,6 +667,20 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   price: null,
                 }))
 
+            /* Заправка, про которую не известно ничего.
+
+               Из ста пятидесяти шести точек города у сорока одной в
+               OpenStreetMap не указаны марки топлива — это небольшие
+               частные АЗС, которые никто не размечал. Их плашка выходила
+               пустой: название и ничего больше, будто карта сломалась.
+
+               Молчание здесь хуже прямого вопроса. Пустая плашка
+               выглядит как отсутствие данных, а приглашение отметить
+               объясняет, откуда данные вообще берутся, и зовёт человека
+               их добавить — таких точек четверть карты, и заполнить их
+               могут только водители. */
+            const needsFirstReport = plateFuels.length === 0
+
             return (
               <Box
                 key={firstStation.id}
@@ -727,6 +741,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                     <span className="fuel-map-plate__title">
                       {networkIdentity?.label || firstStation.name}
                     </span>
+                    {needsFirstReport && (
+                      <span className="fuel-map-plate__ask">Отметьте, что здесь есть</span>
+                    )}
                     {plateFuels.length > 0 && (
                       <span className="fuel-map-plate__fuels">
                         {plateFuels.map((item) => (

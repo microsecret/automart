@@ -38,6 +38,12 @@ type NavigationItem = {
   active: boolean
 }
 
+/* Вкладки, которые прячутся первыми при нехватке места.
+
+   Аукционы, новости и форум открывают реже, чем объявления, запчасти
+   и заправки, и все они есть в меню «Сервисы» и в боковом меню. */
+const SECONDARY_HEADER_TABS = new Set(["/auctions", "/news", "/forum"])
+
 const PRIMARY_ICONS = {
   listings: <IconCar size={14} />,
   parts: <IconTools size={14} />,
@@ -213,7 +219,21 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                 size="compact-sm"
                 leftSection={item.icon || <IconCar size={14} />}
                 aria-current={item.active ? "page" : undefined}
-                className={`market-header-tab${item.active ? " market-header-tab--active" : ""}`}
+                /* Второстепенные вкладки прячутся, когда шапка перестаёт
+                   вмещать всё.
+
+                   Пунктов стало шесть, а рядом ещё «Сервисы», «Стать
+                   партнёром», поиск и иконки кабинета: на ноутбуке ряд
+                   переставал помещаться, вкладки наезжали на кнопки, а
+                   колокольчик уходил за правый край.
+
+                   Прячем те, до которых доходят реже: они остаются в
+                   меню «Сервисы» и в боковой навигации, а объявления,
+                   запчасти и заправки — то, ради чего сюда приходят, —
+                   видны всегда. */
+                className={`market-header-tab${item.active ? " market-header-tab--active" : ""}${
+                  SECONDARY_HEADER_TABS.has(item.href) && !item.active ? " market-header-tab--secondary" : ""
+                }`}
               >
                 {item.label}
               </Button>
