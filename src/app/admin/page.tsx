@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 
 
 import useSWR from "swr"
-import { ActionIcon, Alert, Box, Stack, Text, Center, Loader, SimpleGrid, Card, Paper, ThemeIcon, Title, Group, Badge, Progress, Button, Tooltip, Timeline, Tabs } from "@mantine/core"
+import { ActionIcon, Alert, Box, Stack, Text, Center, Loader, SimpleGrid, Card, Paper, ThemeIcon, Title, Group, Badge, Progress, Button, Tooltip, Timeline, Tabs, SegmentedControl } from "@mantine/core"
 import type { MantineColor } from "@mantine/core"
 import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld, IconRefresh, IconDatabase, IconGavel, IconAlertTriangle, IconBuildingWarehouse, IconCheck, IconClock, IconListCheck, IconShieldCheck, IconCreditCard, IconCoins, IconReceipt, IconLockCheck, IconHeadset, IconBrandTelegram } from "@tabler/icons-react"
 import Link from "next/link"
@@ -325,6 +325,8 @@ export default function AdminDashboard() {
      Читаем после первой отрисовки: на сервере адреса нет, и решение,
      принятое там, разошлось бы с клиентским. */
   const [tab, setTab] = useState<string | null>(null)
+  /* Период для блока аудитории: один на все карточки сразу. */
+  const [trafficPeriod, setTrafficPeriod] = useState("week")
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("tab")
@@ -964,35 +966,93 @@ export default function AdminDashboard() {
           открытия карточек транспорта и запчастей, поэтому эти показатели нельзя сравнивать напрямую. Уникальный посетитель определяется по необратимому хешу
           IP; исходный адрес и автоматические bot/headless-запросы не учитываются. Периоды календарные по московскому времени.
         </Alert>
-        <SimpleGrid cols={{ base: 1, xs: 2, lg: 7 }} spacing="sm">
-          {/* Семь карточек раскрывались вручную — тридцать пять строк
-              почти одинаковой разметки. Перебор по массиву: правка вида
-              теперь делается в одном месте, а не в семи. */}
+        {/* Один период на весь блок.
+
+            Раньше карточки жили каждая в своём: «экраны сегодня»,
+            «уникальные за неделю», «уникальные за месяц» — и сравнить их
+            между собой было нельзя, потому что они о разных отрезках.
+            Владелец смотрит на семь чисел и не понимает, какое из них с
+            каким соотносится. */}
+        <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+          <Text size="sm" fw={700} c="var(--market-ink)">Аудитория</Text>
+          <SegmentedControl
+            size="xs"
+            value={trafficPeriod}
+            onChange={setTrafficPeriod}
+            data={[
+              { value: "day", label: "Сутки" },
+              { value: "week", label: "Неделя" },
+              { value: "month", label: "Месяц" },
+            ]}
+          />
+        </Group>
+
+        <SimpleGrid cols={{ base: 1, xs: 2, lg: 6 }} spacing="sm">
           {[
-            { icon: <IconActivity size={17} />, color: "cyan", label: "Экраны сайта · сегодня", value: data.traffic.pageViewsDay, hint: `${data.traffic.pageViewsWeek} за неделю · все разделы` },
-            { icon: <IconWorld size={17} />, color: "indigo", label: "Уникальные посетители · неделя", value: data.traffic.uniqueVisitorsWeek, trend: data.traffic.uniqueVisitorsTrendWeek },
-            { icon: <IconEye size={17} />, color: "violet", label: "Сессии · неделя", value: data.traffic.sessionsWeek, hint: `отказы: ${data.traffic.bounceRateWeek}%` },
-            { icon: <IconUsers size={17} />, color: "teal", label: "Вошли в аккаунт · неделя", value: data.traffic.authenticatedVisitorsWeek, hint: "уникальные пользователи" },
-            { icon: <IconTrendingUp size={17} />, color: "orange", label: "Конверсия · неделя", value: `${data.traffic.registrationConversionWeek}%`, hint: `${data.traffic.attributedRegistrationsWeek} новых аккаунтов с визитом` },
-            { icon: <IconWorld size={17} />, color: "blue", label: "Уникальные · месяц", value: data.traffic.uniqueVisitorsMonth, hint: `${data.traffic.periodLabels.month} · ${data.traffic.newVisitorsWeek} новых за неделю` },
-            { icon: <IconBrandTelegram size={17} />, color: "cyan", label: "Telegram Mini App", value: data.traffic.telegramMiniAppVisitorsDay, hint: `сегодня · ${data.traffic.telegramMiniAppVisitorsWeek} за неделю` },
+            {
+              icon: <IconWorld size={17} />,
+              color: "indigo",
+              label: "Уникальные посетители",
+              value: trafficPeriod === "day" ? data.traffic.uniqueVisitorsDay
+                : trafficPeriod === "month" ? data.traffic.uniqueVisitorsMonth
+                : data.traffic.uniqueVisitorsWeek,
+              hint: data.traffic.periodLabels[trafficPeriod as keyof typeof data.traffic.periodLabels],
+            },
+            {
+              icon: <IconActivity size={17} />,
+              color: "cyan",
+              label: "Просмотры страниц",
+              value: trafficPeriod === "day" ? data.traffic.pageViewsDay
+                : trafficPeriod === "month" ? data.traffic.pageViewsMonth
+                : data.traffic.pageViewsWeek,
+              hint: "Все разделы и смены фильтров",
+            },
+            {
+              icon: <IconEye size={17} />,
+              color: "violet",
+              label: "Сессии · неделя",
+              value: data.traffic.sessionsWeek,
+              hint: `отказы: ${data.traffic.bounceRateWeek}%`,
+            },
+            {
+              icon: <IconUsers size={17} />,
+              color: "teal",
+              label: "Вошли в аккаунт · неделя",
+              value: data.traffic.authenticatedVisitorsWeek,
+              hint: "уникальные пользователи",
+            },
+            {
+              icon: <IconTrendingUp size={17} />,
+              color: "orange",
+              label: "Конверсия · неделя",
+              value: `${data.traffic.registrationConversionWeek}%`,
+              hint: `${data.traffic.attributedRegistrationsWeek} новых аккаунтов с визитом`,
+            },
+            {
+              /* Мини-приложение даёт больше половины трафика: без своей
+                 карточки этот канал терялся среди прочих источников. */
+              icon: <IconBrandTelegram size={17} />,
+              color: "blue",
+              label: "Telegram Mini App",
+              value: data.traffic.telegramMiniAppVisitorsDay,
+              hint: `${data.traffic.telegramMiniAppVisitorsWeek} за неделю`,
+            },
           ].map((card) => (
             <Card key={card.label} className="admin-insight-card" withBorder radius="md" p="md">
               <Group gap="sm">
                 <ThemeIcon variant="light" color={card.color} size={34} radius="md">{card.icon}</ThemeIcon>
                 <Text size="xs" c="gray.5">{card.label}</Text>
               </Group>
-              <Text size="xl" fw={800} mt="sm" style={{ fontVariantNumeric: "tabular-nums" }}>{card.value}</Text>
-              {typeof card.trend === "number" ? (
-                <Text size="xs" c={card.trend >= 0 ? "teal.6" : "red.6"}>
-                  {card.trend >= 0 ? "+" : ""}{card.trend}% к прошлой неделе
-                </Text>
-              ) : (
-                <Text size="xs" c="gray.4">{card.hint}</Text>
-              )}
+              <Text size="xl" fw={800} mt="xs" c="var(--market-ink)">{card.value}</Text>
+              {card.hint && <Text size="10px" c="gray.5" mt={2}>{card.hint}</Text>}
             </Card>
           ))}
         </SimpleGrid>
+
+        {/* Прежние семь карточек убраны: каждая жила в своём периоде
+            («экраны сегодня», «уникальные за неделю», «уникальные за
+            месяц»), и сравнить их между собой было нельзя. Пять карточек
+            выше отвечают на те же вопросы, но об одном отрезке. */}
 
         <Card className="admin-insight-card" withBorder radius="md" p="md">
           <Group justify="space-between" align="flex-start" gap="md" wrap="wrap" mb="md">
