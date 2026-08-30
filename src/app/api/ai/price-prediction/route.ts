@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { valuateFromMarket } from "@/lib/market-valuation"
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,24 +20,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Выберите автомобиль и укажите период от 1 до 36 месяцев" }, { status: 400 })
     }
 
-    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { id: true, userId: true, year: true, price: true, vehicleType: true } })
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { id: true, userId: true, year: true, price: true, vehicleType: true, make: true, model: true, mileage: true } })
     if (!vehicle) return NextResponse.json({ error: "Автомобиль не найден" }, { status: 404 })
     if (vehicle.userId !== session.user.id) return NextResponse.json({ error: "Прогноз доступен только владельцу автомобиля" }, { status: 403 })
     if (vehicle.vehicleType !== "CAR") return NextResponse.json({ error: "Прогноз пока доступен для легковых автомобилей" }, { status: 400 })
 
-    const currentPrice = Math.max(200_000, vehicle.price || 0)
+    /* Точка отсчёта — рынок, а не цена из объявления.
+
+       Прогноз брал цену, которую продавец сам же и указал, и уводил её
+       вниз по амортизации. Если человек выставил машину вдвое дороже
+       рынка, прогноз добросовестно обещал ему вдвое дороже рынка через
+       год. Цена продавца — это его желание, а не стоимость.
+
+       Рыночная оценка по сопоставимым лотам даёт настоящую точку
+       отсчёта; от неё и считается амортизация. */
+    const marketListings = await prisma.auctionListing.findMany({
+      where: { priceRub: { gt: 0 }, year: { gte: vehicle.year - 5, lte: vehicle.year + 5 } },
+      orderBy: { createdAt: "desc" },
+      take: 2_000,
+      select: { make: true, model: true, year: true, mileage: true, priceRub: true },
+    })
+    const market = valuateFromMarket(marketListings, {
+      make: vehicle.make,
+      model: vehicle.model,
+      year: vehicle.year,
+      mileage: vehicle.mileage,
+    })
+
+    /* Нет сопоставимых лотов — остаётся цена объявления. Это слабее, и
+       уверенность ниже, но отказывать в прогнозе из-за редкой марки
+       было бы хуже: человек не виноват, что его машину редко возят. */
+    const currentPrice = market
+      ? market.estimatedValue
+      : Math.max(200_000, vehicle.price || 0)
+
     const age = Math.max(0, new Date().getFullYear() - vehicle.year)
     const monthlyDepreciationRate = Math.min(0.015, 0.004 + age * 0.0002)
     const predictedPrice = Math.max(Math.round(currentPrice * (1 - monthlyDepreciationRate) ** months), Math.round(currentPrice * 0.2))
-    const confidenceScore = Math.max(0.5, 0.88 - 0.006 * months)
+    /* Уверенность прогноза не выше уверенности его точки отсчёта:
+       предсказание на шатком основании не становится твёрже от того,
+       что срок короткий. */
+    const baseConfidence = market ? market.confidencePercent / 100 : 0.5
+    const confidenceScore = Math.max(0.2, Math.min(baseConfidence, 0.88 - 0.006 * months))
 
     const aiLog = await prisma.aIServiceLog.create({
       data: {
         serviceType: "PRICE_PREDICTION",
         status: "COMPLETED",
-        provider: "PLATFORM_RULES_V1",
+        provider: market ? "MARKET_COMPARABLES_V1" : "PLATFORM_RULES_V1",
         subjectVehicleId: vehicle.id,
-        inputData: JSON.stringify({ vehicleId: vehicle.id, monthsAhead: months, currentPrice, year: vehicle.year }),
+        inputData: JSON.stringify({ vehicleId: vehicle.id, monthsAhead: months, currentPrice, year: vehicle.year, basedOnMarket: Boolean(market), sampleSize: market?.sampleSize ?? 0 }),
         resultData: JSON.stringify({ predictedPrice, confidenceScore, monthlyDepreciationRate, timestamp: new Date().toISOString() }),
         userId: session.user.id,
       },
@@ -46,7 +79,14 @@ export async function POST(request: NextRequest) {
       predictedPrice,
       confidenceScore,
       monthsAhead: months,
-      disclaimer: "Прогноз основан только на данных объявления и типовом коэффициенте амортизации. Он не учитывает реальный спрос, ДТП, курс валют или состояние рынка.",
+      /* Видно, на чём стоит прогноз: рыночная точка отсчёта или цена
+         из объявления — это ответы разного веса. */
+      basedOnMarket: Boolean(market),
+      currentPrice,
+      sampleSize: market?.sampleSize ?? 0,
+      disclaimer: market
+        ? "Отсчёт — медиана цен похожих машин из базы аукционных лотов, дальше применяется типовая амортизация. Прогноз не учитывает спрос, ДТП и курс валют."
+        : "Похожих машин в базе слишком мало, поэтому отсчёт взят из вашего объявления и уводится вниз по типовому коэффициенту амортизации. Это грубая оценка.",
       aiLogId: aiLog.id,
     })
   } catch (error) {

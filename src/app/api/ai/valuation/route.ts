@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
-
-const CURRENT_YEAR = new Date().getFullYear()
+import { valuateFromMarket } from "@/lib/market-valuation"
 
 function conditionFactor(condition: string) {
   return ({ NEW: 1.08, LIKE_NEW: 1.03, EXCELLENT: 1, GOOD: 0.94, FAIR: 0.84, POOR: 0.7 } as Record<string, number>)[condition] || 0.94
@@ -60,32 +59,67 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Предварительная оценка пока доступна для легковых автомобилей" }, { status: 400 })
     }
 
-    // This is intentionally deterministic. It is a transparent preliminary
-    // estimate from the seller's data, not a claim of a live market or registry check.
-    const basePrice = Math.max(200_000, vehicle.price || 0)
-    const ageFactor = Math.max(0.48, 1 - (CURRENT_YEAR - vehicle.year) * 0.025)
-    const mileageFactor = vehicle.mileage
-      ? Math.max(0.55, 1 - (vehicle.mileage / 100_000) * 0.28)
-      : 1
+    /* Оценка идёт от рынка, а не от цены продавца.
+
+       Прежний расчёт брал за основу цену, которую продавец сам же и
+       указал, умножал её на возраст, пробег и состояние — и всегда
+       возвращал число меньше введённого. Человек спрашивал «сколько
+       стоит моя машина», а получал «на столько-то меньше, чем вы
+       написали». Про рынок это не говорило ничего.
+
+       Теперь берутся настоящие лоты: в базе их больше восьми тысяч с
+       ценой и пробегом из десяти источников. Похожие машины приводятся
+       к возрасту и пробегу оцениваемой, и по этому ряду считается
+       медиана.
+
+       Выборка ограничена свежими лотами: цены годовой давности говорят
+       о прошлогоднем рынке. Две тысячи — с запасом на любую марку,
+       дальше выборка только тяжелеет, не становясь точнее. */
+    const marketListings = await prisma.auctionListing.findMany({
+      where: { priceRub: { gt: 0 }, year: { gte: vehicle.year - 5, lte: vehicle.year + 5 } },
+      orderBy: { createdAt: "desc" },
+      take: 2_000,
+      select: { make: true, model: true, year: true, mileage: true, priceRub: true },
+    })
+
+    const market = valuateFromMarket(marketListings, {
+      make: vehicle.make,
+      model: vehicle.model,
+      year: vehicle.year,
+      mileage: vehicle.mileage,
+    })
+
+    /* Состояние машины рынок не знает: в аукционных лотах его нет.
+       Поправка остаётся, но применяется к рыночной медиане, а не к
+       цене продавца. */
     const stateFactor = conditionFactor(vehicle.condition)
-    const estimatedValue = Math.round(basePrice * ageFactor * mileageFactor * stateFactor)
-    const min = Math.round(estimatedValue * 0.88)
-    const max = Math.round(estimatedValue * 1.12)
+
+    /* Сравнивать не с чем — честно говорим об этом, а не выдаём
+       выдуманное число за оценку: человек примет его за рынок и будет
+       торговаться по нему. */
+    if (!market) {
+      return NextResponse.json({
+        error: "Пока не с чем сравнивать: похожих машин в базе слишком мало для рыночной оценки.",
+      }, { status: 422 })
+    }
+
+    const estimatedValue = Math.round(market.estimatedValue * stateFactor)
+    const min = Math.round(market.min * stateFactor)
+    const max = Math.round(market.max * stateFactor)
 
     const aiLog = await prisma.aIServiceLog.create({
       data: {
         serviceType: "VALUATION",
         status: "COMPLETED",
-        provider: "PLATFORM_RULES_V1",
+        provider: "MARKET_COMPARABLES_V1",
         subjectVehicleId: vehicle.id,
         inputData: JSON.stringify({ vehicleId: vehicle.id, make: vehicle.make, model: vehicle.model, year: vehicle.year, mileage: vehicle.mileage, condition: vehicle.condition, price: vehicle.price }),
         resultData: JSON.stringify({
           estimatedValue, min, max,
-          factors: {
-            ageFactor,
-            mileageFactor,
-            stateFactor,
-          },
+          sampleSize: market.sampleSize,
+          matchLevel: market.matchLevel,
+          confidencePercent: market.confidencePercent,
+          stateFactor,
           timestamp: new Date().toISOString()
         }),
         userId: session.user.id
@@ -96,12 +130,14 @@ export async function POST(request: NextRequest) {
       estimatedValue,
       min,
       max,
-      disclaimer: "Предварительная оценка по данным вашего объявления. Она не является офертой, экспертизой или независимой рыночной оценкой.",
-      factors: {
-        ageFactor,
-        mileageFactor,
-        stateFactor,
-      },
+      /* Человек должен видеть, на чём стоит число: двадцать лотов той
+         же модели и три разномастных лота того же года — разного веса
+         ответы, и разница между ними важнее самой цифры. */
+      sampleSize: market.sampleSize,
+      matchLevel: market.matchLevel,
+      confidencePercent: market.confidencePercent,
+      confidenceLabel: market.confidenceLabel,
+      disclaimer: "Оценка по ценам похожих машин из базы аукционных лотов, приведённым к возрасту и пробегу вашей. Она не является офертой, экспертизой или независимой рыночной оценкой.",
       aiLogId: aiLog.id
     })
   } catch (error) {
