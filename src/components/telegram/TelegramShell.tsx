@@ -161,6 +161,41 @@ export default function TelegramShell({
     return () => window.clearTimeout(timeout)
   }, [menuMounted, menuOpen])
 
+  /* Пока меню открыто, страница под ним стоит.
+
+     Затемнение перекрывало ленту только на вид: палец по нему двигал
+     список машин, и, закрыв меню, человек оказывался в другом месте
+     ленты, чем был. На телефоне это первое, что происходит, — по
+     затемнению нажимают, чтобы закрыть, и попутно смахивают.
+
+     Позиция запоминается и возвращается: фиксация страницы сама по
+     себе отматывает её наверх. */
+  useEffect(() => {
+    if (!menuMounted) return
+
+    const scrollY = window.scrollY
+    const { body } = document
+    const previous = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    }
+
+    body.style.position = "fixed"
+    body.style.top = `-${scrollY}px`
+    body.style.width = "100%"
+    body.style.overflow = "hidden"
+
+    return () => {
+      body.style.position = previous.position
+      body.style.top = previous.top
+      body.style.width = previous.width
+      body.style.overflow = previous.overflow
+      window.scrollTo({ top: scrollY, behavior: "auto" })
+    }
+  }, [menuMounted])
+
   useEffect(() => {
     if (!menuMounted) return
     const handleKeyDown = (event: KeyboardEvent) => {

@@ -7,6 +7,7 @@ import { Alert, Autocomplete, Stack, Text, Paper, TextInput, Textarea, Select, N
 import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
+import { useTelegramClosingGuard } from "@/lib/use-telegram-closing-guard"
 import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import { describeRequiredSpecs } from "@/lib/listing-required-specs"
 import { getMissingVehiclePublicationRequirements, getVehiclePublicationRequirements, type VehiclePublicationField } from "@/lib/vehicle-publication-readiness"
@@ -164,6 +165,17 @@ function CreateVehicleWorkspace() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGarageMode])
+
+  /* Внутри Telegram приложение переспрашивает перед закрытием.
+
+     Черновик здесь есть и восстанавливается, но человек о нём не
+     знает: закрыв приложение свайпом посреди заполнения, он видит
+     потерю, а не сохранение, и второй раз за форму не садится.
+     Вопрос «точно закрыть?» стоит дешевле, чем брошенное объявление.
+
+     Спрашиваем только когда есть что терять — по тому же признаку,
+     что и черновик: марка или цена заполнены. */
+  useTelegramClosingGuard(!isGarageMode && Boolean(f.make || f.model || f.price))
 
   useEffect(() => {
     if (isGarageMode) return

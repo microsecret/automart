@@ -385,3 +385,41 @@ test("тема Telegram не перезаписывает выбор темы с
     "выбор человека должен проверяться раньше темы мессенджера",
   )
 })
+
+test("смена вкладки в мини-приложении начинается сверху", () => {
+  /* Вкладки переключаются сменой параметра в адресе, а не переходом на
+     другую страницу: React не размонтирует оболочку, и позиция
+     прокрутки сохраняется. Человек долистывал ленту до двадцатой
+     машины, нажимал «Новости» — и оказывался в середине списка. */
+  const app = readFileSync(new URL("../src/components/telegram/TelegramMiniApp.tsx", import.meta.url), "utf8")
+  assert.match(app, /previousTabRef/)
+  assert.match(app, /window\.scrollTo\(\{ top: 0/)
+  /* Первая отрисовка пропускается: иначе сбился бы возврат по кнопке
+     «назад», когда браузер восстанавливает прежнее положение. */
+  assert.match(app, /if \(previousTabRef\.current === tab\) return/)
+})
+
+test("меню мини-приложения останавливает страницу под собой", () => {
+  /* Затемнение перекрывало ленту только на вид: палец по нему двигал
+     список машин, и, закрыв меню, человек оказывался в другом месте
+     ленты, чем был. */
+  const shell = readFileSync(new URL("../src/components/telegram/TelegramShell.tsx", import.meta.url), "utf8")
+  assert.match(shell, /body\.style\.position = "fixed"/)
+  /* Позиция возвращается: фиксация страницы сама по себе отматывает её
+     наверх. */
+  assert.match(shell, /window\.scrollTo\(\{ top: scrollY/)
+})
+
+test("мини-приложение переспрашивает перед закрытием с начатой формой", () => {
+  /* Приложение закрывается одним движением, и делается это случайно
+     чаще, чем осознанно. Метод подтверждения был описан в типе с
+     пояснением «нужно там, где есть незаполненная форма» — и не
+     вызывался нигде. */
+  const guard = readFileSync(new URL("../src/lib/use-telegram-closing-guard.ts", import.meta.url), "utf8")
+  assert.match(guard, /enableClosingConfirmation/)
+  /* Пустая форма закрывается без лишних окон. */
+  assert.match(guard, /disableClosingConfirmation/)
+
+  const create = readFileSync(new URL("../src/app/listings/create/vehicle/page.tsx", import.meta.url), "utf8")
+  assert.match(create, /useTelegramClosingGuard/)
+})

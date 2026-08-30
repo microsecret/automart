@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
@@ -88,6 +88,24 @@ export default function TelegramMiniApp() {
      не закрывает приложение — как в любом мобильном приложении. */
   const rawTab = useSearchParams().get("tab")
   const tab = rawTab === "auctions" || rawTab === "news" || rawTab === "chats" ? rawTab : "vehicles"
+  /* Смена вкладки начинается сверху.
+
+     Вкладки переключаются сменой параметра в адресе, а не переходом на
+     другую страницу: React не размонтирует оболочку, и позиция
+     прокрутки сохраняется. Человек долистывал ленту до двадцатой
+     машины, нажимал «Новости» — и оказывался в середине списка
+     новостей, не понимая, куда попал.
+
+     Первая отрисовка пропускается: на ней прокрутка и так наверху, а
+     лишний вызов сбил бы возврат по кнопке «назад», когда браузер
+     восстанавливает прежнее положение. */
+  const previousTabRef = useRef(tab)
+  useEffect(() => {
+    if (previousTabRef.current === tab) return
+    previousTabRef.current = tab
+    window.scrollTo({ top: 0, behavior: "auto" })
+  }, [tab])
+
   const [status, setStatus] = useState<Status>("loading")
   const [message, setMessage] = useState("")
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
