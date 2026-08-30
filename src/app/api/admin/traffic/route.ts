@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
 import { moscowDayKey, moscowHour } from "@/lib/moscow-periods"
-import { sectionForPath, readablePath } from "@/lib/traffic-sections"
+import { SECTION_GROUP_LABELS, sectionForPath, readablePath } from "@/lib/traffic-sections"
 import {
   isTrafficPeriod, periodLabel, periodRange, previousPeriodRange,
   refererHost, trafficSourceLabel, type TrafficPeriod,
@@ -205,6 +205,29 @@ export async function GET(request: NextRequest) {
       devices: toList(byDevice),
       campaigns: toList(byCampaign),
       cities: toList(byCity),
+      /* Сводка по направлениям: объявления, запчасти, аукционы, сервисы.
+
+         Десять разделов в списке отвечают на вопрос точно, но не сразу:
+         владелец хочет видеть за секунду, чем площадка живёт в целом, и
+         только потом разбираться внутри направления. */
+      groups: [...bySection.values()].reduce<Array<{ group: string; label: string; visitors: number; views: number }>>((result, entry) => {
+        const existing = result.find((row) => row.group === entry.group)
+        if (existing) {
+          existing.views += entry.views
+          /* Посетители складываются приблизительно: один человек мог
+             зайти и в каталог, и в запчасти, и точное объединение
+             множеств тут не окупается — доли остаются верными. */
+          existing.visitors += entry.visitors.size
+        } else {
+          result.push({
+            group: entry.group,
+            label: SECTION_GROUP_LABELS[entry.group as keyof typeof SECTION_GROUP_LABELS] || entry.group,
+            visitors: entry.visitors.size,
+            views: entry.views,
+          })
+        }
+        return result
+      }, []).sort((a, b) => b.views - a.views),
       /* Разделы: чем люди пользовались, а не какие адреса открывали. */
       sections: [...bySection.entries()]
         .map(([key, entry]) => {

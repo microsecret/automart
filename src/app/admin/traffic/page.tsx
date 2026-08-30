@@ -25,6 +25,7 @@ type TrafficResponse = {
   cities: Row[]
   sections: { key: string; label: string; group: string; visitors: number; views: number; previousVisitors: number; change: number | null }[]
   daily: { day: string; visitors: number; views: number }[]
+  groups: { group: string; label: string; visitors: number; views: number }[]
   topPaths: { path: string; label: string; views: number }[]
   hourly: { hour: number; visitors: number }[]
 }
@@ -171,6 +172,48 @@ export default function TrafficPage() {
                   ищет машину, а не откуда подключился. */}
               {renderList("Города", <IconMapPin size={15} />, data?.cities, "Город никто ещё не выбирал")}
             </SimpleGrid>
+
+            {/* Чем площадка живёт в целом.
+
+                Десять разделов в списке отвечают точно, но не сразу:
+                владельцу нужно за секунду увидеть, что перевешивает —
+                объявления, запчасти или сервисы, — и только потом
+                разбираться внутри направления. */}
+            {data && data.groups.length > 0 && (
+              <Card withBorder radius="md" p="md">
+                <Text size="sm" fw={700} mb="sm">Направления</Text>
+                <Group gap={2} wrap="nowrap" mb="sm" style={{ height: 12, borderRadius: 6, overflow: "hidden" }}>
+                  {data.groups.map((group, index) => {
+                    const share = (group.views / Math.max(1, data.totals.views)) * 100
+                    const colors = ["indigo", "teal", "orange", "violet", "cyan", "grape", "gray"]
+                    return (
+                      <Box
+                        key={group.group}
+                        title={`${group.label}: ${group.views} просмотров`}
+                        style={{
+                          width: `${share}%`,
+                          height: "100%",
+                          background: `var(--mantine-color-${colors[index % colors.length]}-5)`,
+                        }}
+                      />
+                    )
+                  })}
+                </Group>
+                <Group gap="md" wrap="wrap">
+                  {data.groups.map((group, index) => {
+                    const colors = ["indigo", "teal", "orange", "violet", "cyan", "grape", "gray"]
+                    const share = Math.round((group.views / Math.max(1, data.totals.views)) * 100)
+                    return (
+                      <Group key={group.group} gap={6} wrap="nowrap">
+                        <Box style={{ width: 8, height: 8, borderRadius: 2, background: `var(--mantine-color-${colors[index % colors.length]}-5)` }} />
+                        <Text size="xs">{group.label}</Text>
+                        <Text size="xs" c="dimmed" fw={600}>{share}%</Text>
+                      </Group>
+                    )
+                  })}
+                </Group>
+              </Card>
+            )}
 
             {/* Динамика по дням.
 
