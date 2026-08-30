@@ -861,9 +861,15 @@ function CreateVehicleWorkspace() {
                   accept="image/jpeg,image/png,image/webp"
                   multiple
                   clearable
-                  capture={isTelegramMiniApp ? "environment" : undefined}
+                  /* Без capture. Он открывает камеру сразу и отрезает
+                     галерею, а машину фотографируют заранее — при мойке,
+                     на свету, с разных сторон. Подпись обещала «снять или
+                     выбрать», выбрать при этом было нельзя.
+
+                     На карте АЗС capture остаётся: там снимок колонки
+                     делается на месте и прямо сейчас. */
                   disabled={uploadingImages || images.length >= 12}
-                  placeholder={isTelegramMiniApp ? "Снять или выбрать фотографии" : "Выберите фотографии"}
+                  placeholder="Выберите или снимите фотографии"
                   onChange={uploadPhotos}
                   leftSection={<IconPhoto size={16} />}
                   error={fieldError("images")}
