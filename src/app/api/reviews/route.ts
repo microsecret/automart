@@ -97,12 +97,19 @@ export async function GET(request: NextRequest) {
       prisma.review.count({
         where
       }),
-      Promise.all(ratings.map((rating) => prisma.review.count({ where: { AND: [where, { rating }] } }))),
+      /* Разбивка по оценкам — одной группировкой, а не пятью счётами.
+
+         Здесь стояло пять отдельных count, и каждый заново прогонял
+         тот же фильтр, включая связь с объявлением. Вместе с выборкой
+         и общим счётом выходило семь запросов на один просмотр
+         страницы отзывов — на эндпоинте, открытом всем без входа. */
+      prisma.review.groupBy({ by: ["rating"], where, _count: { _all: true } }),
     ])
 
-    const distribution = ratings.map((rating, index) => ({
+    const countByRating = new Map(ratingCounts.map((row) => [row.rating, row._count._all]))
+    const distribution = ratings.map((rating) => ({
       rating,
-      count: ratingCounts[index] ?? 0,
+      count: countByRating.get(rating) ?? 0,
     }))
     const ratingTotal = distribution.reduce((sum, item) => sum + item.count, 0)
     const averageRating = ratingTotal > 0

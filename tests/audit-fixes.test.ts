@@ -88,3 +88,62 @@ test("кнопки категорий запчастей дорастают до
   const mobile = css.slice(css.indexOf(".parts-category-bar .mantine-Button-root"))
   assert.match(mobile.slice(0, 900), /min-height: 44px/)
 })
+
+test("рассылка сохранённых поисков не делает запрос на каждую подписку", () => {
+  /* countNewMatches вызывался внутри цикла по всем подпискам, а сама
+     выборка шла без ограничения: при десяти тысячах подписок это
+     десять тысяч одинаковых запросов подряд в одном прогоне. */
+  const notify = readFileSync(new URL("../src/lib/saved-search-notify.ts", import.meta.url), "utf8")
+  assert.match(notify, /countCache/)
+  assert.match(notify, /countNewMatchesCached/)
+  /* Выборка ограничена, а первыми идут те, кого дольше не уведомляли:
+     иначе при обрезании списка одни и те же подписки всегда
+     оставались бы в хвосте. */
+  assert.match(notify, /MAX_SEARCHES_PER_RUN/)
+  assert.match(notify, /orderBy: \{ lastNotifiedAt: "asc" \}/)
+})
+
+test("каталог получил индексы под свои сортировки", () => {
+  /* Фильтр «активное и не удалённое» с сортировкой по цене или дате
+     покрывался индексами наполовину: строки отбирались по одному
+     условию, а сортировались уже в памяти. */
+  const schema = readFileSync(new URL("../prisma/schema.prisma", import.meta.url), "utf8")
+  assert.match(schema, /@@index\(\[status, deletedAt, price, id\]\)/)
+  assert.match(schema, /@@index\(\[status, deletedAt, createdAt, id\]\)/)
+  /* Дедупликация просмотра ищет по паре «объявление и отпечаток». */
+  assert.match(schema, /@@index\(\[listingId, ipHash, createdAt\]\)/)
+
+  const migration = readFileSync(
+    new URL("../prisma/migrations/20260830140000_catalog_sort_indexes/migration.sql", import.meta.url),
+    "utf8",
+  )
+  assert.match(migration, /Listing_status_deletedAt_price_id_idx/)
+  assert.match(migration, /ListingViewEvent_listingId_ipHash_createdAt_idx/)
+})
+
+test("галерея лота не обрывает загрузку своих же снимков", () => {
+  /* Список загруженных был и в зависимостях эффекта, и менялся внутри
+     него: каждая догруженная картинка перезапускала эффект, а уборка
+     обнуляла onload у ещё летящих запросов — часть снимков навсегда
+     оставалась в состоянии «грузится». */
+  const page = readFileSync(new URL("../src/app/auctions/[id]/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /loadedImageUrlsRef/)
+  const deps = page.slice(page.indexOf("}, [activeImageHighQuality, activeImageIndex, galleryImages"))
+  assert.doesNotMatch(deps.slice(0, 120), /loadedImageUrls\]/)
+})
+
+test("разбивка отзывов считается одной группировкой", () => {
+  /* Пять отдельных count заново прогоняли тот же фильтр со связью:
+     семь запросов на один просмотр публичной страницы отзывов. */
+  const route = readFileSync(new URL("../src/app/api/reviews/route.ts", import.meta.url), "utf8")
+  assert.match(route, /groupBy\(\{ by: \["rating"\]/)
+  assert.doesNotMatch(route, /ratings\.map\(\(rating\) => prisma\.review\.count/)
+})
+
+test("гараж не отдаётся целиком", () => {
+  /* Выборка шла без ограничения, с тридцатью полями на машину, и по
+     каждой считалась готовность к публикации. */
+  const route = readFileSync(new URL("../src/app/api/garage/route.ts", import.meta.url), "utf8")
+  const list = route.slice(route.indexOf('const vehicles = await prisma.vehicle.findMany'))
+  assert.match(list.slice(0, 320), /take: 200/)
+})

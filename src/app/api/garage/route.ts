@@ -169,10 +169,20 @@ export async function GET(request: NextRequest) {
         : NextResponse.json({ error: "Автомобиль не найден в вашем гараже" }, { status: 404 })
     }
 
+    /* Гараж отдаётся не целиком.
+
+       Выборка шла без ограничения, а на каждую машину тянулись все
+       тридцать полей вместе с описанием и снимками, и следом по каждой
+       считалась готовность к публикации. Сколько машин человек добавит,
+       ничем не ограничено, так что запрос рос вместе с его гаражом.
+
+       Двести машин — с большим запасом для личного гаража; тот, у кого
+       их больше, всё равно не рассматривает их одним списком. */
     const vehicles = await prisma.vehicle.findMany({
       where: { userId: session.user.id, category: { name: "Личный гараж" } },
       select: GARAGE_VEHICLE_SELECT,
       orderBy: { createdAt: "desc" },
+      take: 200,
     })
 
     return NextResponse.json({

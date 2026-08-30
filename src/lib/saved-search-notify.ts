@@ -44,6 +44,20 @@ async function countNewMatches(scope: SavedSearchScope, since: Date) {
   })
 }
 
+/**
+ * Сколько подписок разбирается за один прогон.
+ *
+ * Выборка шла без ограничения: при десяти тысячах подписок задача
+ * тянула их все разом и на каждой делала запрос к базе. Одна долгая
+ * рассылка блокировала следующие, а сбой в середине означал, что часть
+ * людей осталась без уведомления.
+ *
+ * Полторы тысячи проходят за секунды, а cron идёт каждые несколько
+ * минут: очередь разбирается, даже когда подписок станет вдесятеро
+ * больше.
+ */
+const MAX_SEARCHES_PER_RUN = 1_500
+
 export async function processSavedSearchNotifications(now = new Date()) {
   const searches = await prisma.savedSearch.findMany({
     where: { notifyTelegram: true },
@@ -51,7 +65,32 @@ export async function processSavedSearchNotifications(now = new Date()) {
       id: true, title: true, scope: true, query: true, lastNotifiedAt: true,
       user: { select: { telegramId: true } },
     },
+    /* Первыми — те, кого не уведомляли дольше всех: иначе при обрезании
+       списка одни и те же подписки всегда оказывались бы в хвосте и не
+       получали ничего. */
+    orderBy: { lastNotifiedAt: "asc" },
+    take: MAX_SEARCHES_PER_RUN,
   })
+
+  /* Счёт новых записей кэшируется по паре «раздел и момент».
+
+     Запрос шёл на каждую подписку отдельно, хотя считает он одно и то
+     же: сколько объявлений появилось после такого-то времени. У
+     большинства людей lastNotifiedAt совпадает с точностью до прогона
+     рассылки, и десять тысяч подписок давали десять тысяч одинаковых
+     запросов подряд.
+
+     Момент округляется до минуты: отличие в секунды меняет ответ разве
+     что на единицу, а совпадений становится на порядок больше. */
+  const countCache = new Map<string, number>()
+  const countNewMatchesCached = async (scope: SavedSearchScope, since: Date) => {
+    const key = `${scope}:${Math.floor(since.getTime() / 60_000)}`
+    const cached = countCache.get(key)
+    if (cached !== undefined) return cached
+    const value = await countNewMatches(scope, since)
+    countCache.set(key, value)
+    return value
+  }
 
   const dayAgo = new Date(now.getTime() - 24 * 60 * 60_000)
   const sentToday = new Map<string, number>()
@@ -69,7 +108,7 @@ export async function processSavedSearchNotifications(now = new Date()) {
     }
 
     const since = search.lastNotifiedAt || dayAgo
-    const count = await countNewMatches(search.scope as SavedSearchScope, since)
+    const count = await countNewMatchesCached(search.scope as SavedSearchScope, since)
     if (count === 0) {
       skipped += 1
       continue

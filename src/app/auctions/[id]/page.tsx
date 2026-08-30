@@ -1,6 +1,6 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useEffect, useMemo, useState, Suspense } from "react"
+import { useEffect, useMemo, useRef, useState, Suspense } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import useSWR from "swr"
@@ -151,6 +151,19 @@ function AuctionDetail() {
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(() => new Set())
   const [loadedImageUrls, setLoadedImageUrls] = useState<Set<string>>(() => new Set())
+  /* Тот же список, но доступный эффекту без перезапуска.
+
+     Состояние нужно разметке: по нему рисуется индикатор загрузки
+     активного снимка. Но когда оно же стояло в зависимостях эффекта
+     предзагрузки, каждая догруженная картинка перезапускала эффект, а
+     его уборка обнуляла onload у ещё летящих запросов. При тридцати
+     фотографиях в отчёте о повреждениях часть снимков так и оставалась
+     в состоянии «грузится» навсегда, и открытие большого снимка не
+     срабатывало.
+
+     Ссылка меняется молча и читается в момент проверки — эффект
+     перезапускается только при смене снимка, как и задумано. */
+  const loadedImageUrlsRef = useRef<Set<string>>(new Set())
   // Keep the detail usable even if a webview reports an unusual viewport to
   // CSS: the 340px enquiry panel must never squeeze the vehicle content.
   const hasWideAuctionLayout = useMediaQuery("(min-width: 62em)", false, { getInitialValueInEffect: false })
@@ -231,7 +244,7 @@ function AuctionDetail() {
       activeImageHighQuality,
       auctionCardImageUrl(previousImage),
       auctionCardImageUrl(nextImage),
-    ].filter((imageUrl, index, values) => imageUrl && values.indexOf(imageUrl) === index && !loadedImageUrls.has(imageUrl))
+    ].filter((imageUrl, index, values) => imageUrl && values.indexOf(imageUrl) === index && !loadedImageUrlsRef.current.has(imageUrl))
 
     let cancelled = false
     const preloadedImages = preloadUrls.map((imageUrl) => {
@@ -240,6 +253,9 @@ function AuctionDetail() {
       preloaded.referrerPolicy = "no-referrer"
       preloaded.onload = () => {
         if (cancelled) return
+        /* Ссылка обновляется всегда: по ней эффект узнаёт, что снимок
+           уже прогрет, и не запрашивает его снова. */
+        loadedImageUrlsRef.current.add(imageUrl)
         setLoadedImageUrls((previous) => previous.has(imageUrl) ? previous : new Set(previous).add(imageUrl))
       }
       preloaded.src = imageUrl
@@ -252,14 +268,18 @@ function AuctionDetail() {
         image.onload = null
       })
     }
-  }, [activeImageHighQuality, activeImageIndex, galleryImages, loadedImageUrls])
+    /* loadedImageUrls намеренно не в зависимостях: он меняется на
+       каждой догруженной картинке, а перезапуск здесь обрывает ещё
+       летящие запросы. Свежий список читается через ссылку выше. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeImageHighQuality, activeImageIndex, galleryImages])
 
   const warmGalleryImage = (imageUrl: string) => {
     if (typeof window === "undefined") return
 
     const highQualityUrl = highQualityAuctionImageUrl(imageUrl)
     for (const renditionUrl of [auctionCardImageUrl(imageUrl), highQualityUrl]) {
-      if (!renditionUrl || (renditionUrl === highQualityUrl && loadedImageUrls.has(highQualityUrl))) continue
+      if (!renditionUrl || (renditionUrl === highQualityUrl && loadedImageUrlsRef.current.has(highQualityUrl))) continue
       const preloaded = new window.Image()
       preloaded.decoding = "async"
       preloaded.referrerPolicy = "no-referrer"

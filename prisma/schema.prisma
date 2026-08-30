@@ -554,6 +554,12 @@ model Listing {
   @@index([status, createdAt])
   @@index([userId, status, updatedAt])
   @@index([deletedAt])
+  // Каталог фильтрует по «активное и не удалённое», сортирует по цене
+  // или дате и разбивает совпадения по id. Индексы порознь покрывали
+  // это наполовину: строки отбирались по одному условию, а сортировка
+  // шла уже в памяти.
+  @@index([status, deletedAt, price, id])
+  @@index([status, deletedAt, createdAt, id])
 }
 
 // Individual listing opens for time-based seller/admin analytics. Raw IP
@@ -571,6 +577,10 @@ model ListingViewEvent {
 
   @@index([listingId, createdAt])
   @@index([ipHash, createdAt])
+  // Дедупликация просмотра ищет по паре «объявление и отпечаток
+  // адреса» за последний час: порознь эти индексы заставляли базу
+  // перебирать все события популярного объявления.
+  @@index([listingId, ipHash, createdAt])
   @@index([userId, createdAt])
   // Статистика выбирает просмотры за период по одному createdAt: составные
   // индексы такой запрос не покрывают.
