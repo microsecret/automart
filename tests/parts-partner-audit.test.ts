@@ -81,3 +81,30 @@ test("причина не стирается при обычном перехо�
   assert.match(route, /\.\.\.\(nextStatus === "CANCELLED" \? \{ statusReason \} : \{\}\)/)
   assert.doesNotMatch(route, /statusReason: nextStatus === "CANCELLED" \? statusReason : null/)
 })
+
+test("товар магазина открывается из каталога, а не даёт 404", () => {
+  /* Товары магазинов создаются импортом прайса и объявлений не
+     получают — только запись позиции. Поиск их показывает, а страница
+     детали требовала объявление и отвечала «не найдено»: покупатель
+     находил деталь в каталоге, нажимал и упирался в пустую страницу.
+     Заказать можно было только с витрины магазина, куда ещё надо
+     догадаться зайти. */
+  const page = readFileSync(new URL("../src/app/listings/part/[id]/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /const fromActiveStore = part\.store\?\.status === "ACTIVE"/)
+  assert.match(page, /if \(!fromActiveStore && \(!listing \|\| !canPreview\)\) notFound\(\)/)
+
+  /* Приостановленный или черновой магазин по-прежнему закрыт: его
+     товары не показываются и в поиске. */
+  assert.doesNotMatch(page, /if \(!listing \|\| !canPreview\) notFound\(\)/)
+})
+
+test("деталь из магазина можно заказать прямо со страницы", () => {
+  /* Открыв товар магазина, покупатель не мог его заказать: кнопки на
+     странице не было, заказ жил только на витрине. */
+  const client = readFileSync(new URL("../src/app/listings/part/[id]/PartDetailClient.tsx", import.meta.url), "utf8")
+  assert.match(client, /import PartOrderButton/)
+  assert.match(client, /\{data\.store && \(/)
+  /* Условия поставки уходят в форму заказа: покупатель должен видеть
+     срок до того, как оставит заявку. */
+  assert.match(client, /leadTimeDaysMin=\{data\.leadTimeDaysMin/)
+})

@@ -52,6 +52,7 @@ import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { useFavorites } from "@/hooks/useFavorites"
 import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-intent"
 import ListingViewTracker from "@/components/analytics/ListingViewTracker"
+import PartOrderButton from "@/components/store/PartOrderButton"
 
 const PART_TYPES_MAP: Record<string, string> = {
   ENGINE: "Двигатель", TRANSMISSION: "Трансмиссия", SUSPENSION: "Подвеска",
@@ -97,6 +98,13 @@ interface PartData {
   auctionMinStep: number | null
   bids: { id: string; amount: number; createdAt: Date; user: { name: string | null } }[]
   listingId?: string
+  /* Магазин, если позиция из его прайса: по нему на странице
+     появляется заказ. Товары магазинов объявлений не имеют, и заказать
+     их можно было только с витрины — куда ещё надо догадаться зайти. */
+  store?: { slug: string; name: string } | null
+  supplyMode?: string | null
+  leadTimeDaysMin?: number | null
+  leadTimeDaysMax?: number | null
   views: number
   seller: {
     id: string
@@ -400,6 +408,22 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
               <Card withBorder radius="md" p="lg">
                 <Stack gap="sm">
+                  {/* Заказ — главное действие для товара магазина.
+
+                      Он стоит первым: телефон и переписка нужны, когда
+                      что-то неясно, а заказ — то, ради чего человек
+                      открыл страницу. */}
+                  {data.store && (
+                    <PartOrderButton
+                      partId={data.id}
+                      itemName={data.name}
+                      priceRub={data.price}
+                      supplyMode={data.supplyMode === "STOCK" ? "STOCK" : "ORDER"}
+                      leadTimeDaysMin={data.leadTimeDaysMin ?? null}
+                      leadTimeDaysMax={data.leadTimeDaysMax ?? null}
+                      storeName={data.store.name}
+                    />
+                  )}
                   {phone ? (
                     <Button component="a" href={`tel:${phone}`} size="lg" radius="md" leftSection={<IconPhone size={18} />} variant="light" color="indigo">
                       {phone}

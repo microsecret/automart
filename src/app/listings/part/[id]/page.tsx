@@ -44,6 +44,15 @@ export default async function PartDetailPage({ params }: PageProps) {
         select: { id: true, make: true, model: true, generation: true, yearFrom: true, yearTo: true, engine: true },
         orderBy: { make: "asc" },
       },
+      /* Магазин, если позиция пришла из его прайса.
+
+         Товары магазинов создаются импортом и объявления не получают —
+         только запись позиции. Поиск их показывает, а страница детали
+         требовала объявление и отвечала «не найдено»: покупатель
+         находил деталь в каталоге, нажимал на неё и упирался в пустую
+         страницу. Заказать можно было только с витрины магазина, куда
+         ещё надо догадаться зайти. */
+      store: { select: { id: true, slug: true, name: true, status: true } },
       user: {
         select: {
           id: true, name: true, image: true, createdAt: true,
@@ -79,7 +88,17 @@ export default async function PartDetailPage({ params }: PageProps) {
       isListingModerator(session?.user?.role)
     ),
   )
-  if (!listing || !canPreview) notFound()
+
+  /* Позиция работающего магазина открывается и без объявления.
+
+     Всё, что нужно странице, лежит в самой позиции — название, цена,
+     совместимость, снимки; объявление давало только идентификатор для
+     отзывов и ставок, а у магазинного товара их и не бывает.
+
+     Приостановленный или черновой магазин по-прежнему закрыт: его
+     товары не показываются и в поиске. */
+  const fromActiveStore = part.store?.status === "ACTIVE"
+  if (!fromActiveStore && (!listing || !canPreview)) notFound()
 
   const data = {
     id: part.id,
@@ -107,6 +126,15 @@ export default async function PartDetailPage({ params }: PageProps) {
     auctionCurrentPrice: part.auctionCurrentPrice,
     auctionMinStep: part.auctionMinStep,
     bids: part.bids,
+    /* Магазин и условия поставки: по ним на странице появляется кнопка
+       заказа. Без них покупатель открывал деталь и не мог её заказать —
+       заказ жил только на витрине магазина. */
+    store: part.store?.status === "ACTIVE" && part.store.slug
+      ? { slug: part.store.slug, name: part.store.name }
+      : null,
+    supplyMode: part.supplyMode,
+    leadTimeDaysMin: part.leadTimeDaysMin,
+    leadTimeDaysMax: part.leadTimeDaysMax,
     listingId: listing?.id,
     views: listing?.views || 0,
     seller: {
