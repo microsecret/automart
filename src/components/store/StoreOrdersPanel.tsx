@@ -37,6 +37,17 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 
 // Следующий шаг всегда один: продавцу не нужно выбирать из списка статусов,
 // достаточно подтвердить, что заказ продвинулся.
+/* Отказ — самое частое, что продавец пишет покупателю, и пишет он его
+   скупо: «нет». Человек на том конце ждал деталь и не понимает, искать
+   ли дальше или ждать поставки. Готовые формулировки отвечают на это
+   одним нажатием и остаются редактируемыми. */
+const CANCEL_REASONS = [
+  "Позиции нет в наличии",
+  "Закончилась у поставщика, привезти не сможем",
+  "Не подходит к вашей машине — нужен VIN для точного подбора",
+  "Цена изменилась, свяжитесь с нами",
+]
+
 const NEXT_STEP: Record<string, { status: string; label: string } | null> = {
   NEW: { status: "CONFIRMED", label: "Подтвердить" },
   CONFIRMED: { status: "IN_DELIVERY", label: "Отправлен" },
@@ -184,6 +195,19 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
           <Text size="sm">
             Заказ «{cancelTarget?.itemName}» будет отменён. Причина поможет покупателю понять, что произошло.
           </Text>
+          <Group gap={6} wrap="wrap">
+            {CANCEL_REASONS.map((preset) => (
+              <Button
+                key={preset}
+                size="compact-xs"
+                variant={reason === preset ? "filled" : "default"}
+                color="gray"
+                onClick={() => setReason(preset)}
+              >
+                {preset}
+              </Button>
+            ))}
+          </Group>
           <Textarea
             required
             label="Причина отмены"

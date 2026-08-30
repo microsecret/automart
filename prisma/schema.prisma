@@ -24,6 +24,13 @@ model User {
   telegramVerifiedAt DateTime?
   role               String    @default("USER") // USER, ADMIN, MODERATOR
   accountStatus      String    @default("ACTIVE") // ACTIVE, RESTRICTED, BANNED
+  // Код партнёра. Выводится из id хешем и потому обратно не
+  // разворачивается: найти владельца кода можно было только перебором
+  // пользователей, ограниченным двумя тысячами. Партнёр, приведший
+  // человека после того, как за ним зарегистрировались две тысячи
+  // новых, переставал находиться — приглашение молча терялось вместе с
+  // его вознаграждением. Поле заполняется при первом обращении.
+  referralCode       String?   @unique
   restrictionReason  String?
   statusUpdatedAt    DateTime?
   hashedPassword     String?

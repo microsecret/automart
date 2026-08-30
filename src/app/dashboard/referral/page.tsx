@@ -9,6 +9,7 @@ import {
 import { IconCheck, IconCopy, IconGift, IconUsers, IconWallet } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
+import { plural } from "@/lib/format"
 
 type ReferralData = {
   code: string
@@ -122,8 +123,12 @@ export default function ReferralPage() {
         {data.nextTier && (
           <Card withBorder radius="md" p="md">
             <Group justify="space-between" gap="xs" wrap="wrap" mb={6}>
+              {/* Фраза обрывалась на числе: «нужно ещё 3» — чего? Уровень
+                  двигают не приглашённые, а те из них, кто оплатил, и
+                  это единственное, чего человек не может угадать сам. */}
               <Text size="sm" fw={700}>
-                До ставки {data.nextTier.tier.percent}% нужно ещё {data.nextTier.needed}
+                До ставки {data.nextTier.tier.percent}% нужно ещё {data.nextTier.needed}{" "}
+                {plural(data.nextTier.needed, "оплативший друг", "оплативших друга", "оплативших друзей")}
               </Text>
               <Badge variant="light" color="indigo">{data.nextTier.tier.label}</Badge>
             </Group>

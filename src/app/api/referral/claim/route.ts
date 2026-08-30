@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { referralCodeForUser } from "@/lib/referral"
+import { ensureReferralCode } from "@/lib/referral-accrual"
 
 export const dynamic = "force-dynamic"
 
@@ -38,24 +39,38 @@ export async function POST(request: NextRequest) {
   // принадлежит тому, кто привёл первым.
   if (existing) return NextResponse.json({ attached: false, reason: "Приглашение уже закреплено" })
 
-  // Код выводится из идентификатора, поэтому владелец ищется среди тех, кто
-  // уже кого-то пригласил, а если таких нет — среди активных аккаунтов.
-  // Перебор ограничен: при росте базы код стоит вынести в поле пользователя.
-  const knownPartners = await prisma.referralAttribution.findMany({
-    where: { code },
-    select: { partnerId: true },
-    take: 1,
+  /* Владелец кода ищется по индексу. Код выводится из идентификатора
+     хешем и обратно не разворачивается, поэтому раньше его искали
+     перебором двух тысяч свежих аккаунтов — партнёр, за которым успели
+     зарегистрироваться две тысячи новых людей, переставал находиться, и
+     приглашение молча терялось вместе с его вознаграждением. */
+  const byCode = await prisma.user.findFirst({
+    where: { referralCode: code, accountStatus: "ACTIVE" },
+    select: { id: true },
   })
 
-  let partnerId = knownPartners[0]?.partnerId || null
+  let partnerId = byCode?.id || null
+
+  /* Уже закреплённое приглашение с тем же кодом — второй надёжный
+     источник: партнёр приводил людей и до появления поля. */
+  if (!partnerId) {
+    const known = await prisma.referralAttribution.findFirst({
+      where: { code },
+      select: { partnerId: true },
+    })
+    partnerId = known?.partnerId || null
+  }
+
+  /* Остаются те, кто получил ссылку до заполнения поля и ещё никого не
+     привёл. Перебор здесь запасной и работает по всей базе, а найденному
+     партнёру код сразу записывается — второй раз перебирать не придётся. */
   if (!partnerId) {
     const candidates = await prisma.user.findMany({
-      where: { accountStatus: "ACTIVE" },
+      where: { accountStatus: "ACTIVE", referralCode: null },
       select: { id: true },
-      orderBy: { createdAt: "desc" },
-      take: 2_000,
     })
     partnerId = candidates.find((candidate) => referralCodeForUser(candidate.id) === code)?.id || null
+    if (partnerId) await ensureReferralCode(partnerId)
   }
 
   const partner = partnerId ? { id: partnerId } : null

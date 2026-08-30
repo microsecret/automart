@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { buildReferralBalance, nextReferralTier, referralCodeForUser, resolveReferralTier } from "@/lib/referral"
+import { buildReferralBalance, nextReferralTier, resolveReferralTier } from "@/lib/referral"
+import { ensureReferralCode } from "@/lib/referral-accrual"
 import { getSiteUrl } from "@/lib/site-url"
 
 export const dynamic = "force-dynamic"
@@ -52,9 +53,14 @@ export async function GET() {
   const tier = resolveReferralTier(distinctPaidInvitees.length)
   const next = nextReferralTier(distinctPaidInvitees.length)
 
+  /* Открывая кабинет, партнёр видит свой код — здесь же он и
+     записывается в базу. Иначе искать владельца кода пришлось бы
+     перебором, а перебор был ограничен и терял старых партнёров. */
+  const code = await ensureReferralCode(partnerId)
+
   return NextResponse.json({
-    code: referralCodeForUser(partnerId),
-    link: `${getSiteUrl()}/?ref=${referralCodeForUser(partnerId)}`,
+    code,
+    link: `${getSiteUrl()}/?ref=${code}`,
     tier,
     nextTier: next,
     stats: {
