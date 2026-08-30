@@ -14,6 +14,7 @@ import AdminAuditLog from "@/components/admin/AdminAuditLog"
 import PartStoreModerationPanel from "@/components/admin/PartStoreModerationPanel"
 import ReferralPayoutPanel from "@/components/admin/ReferralPayoutPanel"
 import TrafficLineChart from "@/components/admin/TrafficLineChart"
+import TrafficBarChart from "@/components/admin/TrafficBarChart"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { compareByUrgency, formatQueueAge, queueUrgency } from "@/lib/queue-age"
 import { fetchJson } from "@/lib/api-client"
@@ -381,9 +382,7 @@ export default function AdminDashboard() {
 
   const total = c.listings || 1
   const dailyTraffic = data.traffic.daily || []
-  const maxDailyPageViews = Math.max(1, ...dailyTraffic.map((point) => point.pageViews))
   const dailyListingViews = data.listingPerformance.daily || []
-  const maxDailyListingViews = Math.max(1, ...dailyListingViews.map((point) => point.views))
   const listingViewsToday = dailyListingViews.at(-1)?.views ?? 0
   /* Очередь задач с возрастом самой старой.
 
@@ -1029,20 +1028,20 @@ export default function AdminDashboard() {
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md" mt="md">
             <Paper withBorder radius="md" p="sm">
               <Text size="xs" fw={700} mb="sm">Открытия карточек по дням</Text>
-              <Group h={120} align="flex-end" gap="xs" wrap="nowrap" role="img" aria-label="Открытия карточек объявлений за семь дней">
-                {dailyListingViews.map((point) => {
-                  const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
-                  const height = point.views ? Math.max(6, Math.round((point.views / maxDailyListingViews) * 88)) : 3
-                  return (
-                    <Stack key={point.date} gap={4} align="center" style={{ flex: 1, minWidth: 0 }}>
-                      <Tooltip label={`${point.views} открытий · ${point.uniqueViewers} уникальных посетителей`} withArrow>
-                        <Box h={height} bg={point.views ? "orange.5" : "gray.3"} style={{ width: "clamp(12px, 3vw, 26px)", borderRadius: "6px 6px 2px 2px" }} />
-                      </Tooltip>
-                      <Text size="9px" c="dimmed">{label}</Text>
-                    </Stack>
-                  )
-                })}
-              </Group>
+              {/* Общий столбчатый график: тот же вид, что на странице
+                  посещаемости. Раньше здесь была своя разметка с другими
+                  отступами и другим наведением. */}
+              <TrafficBarChart
+                points={dailyListingViews.map((point) => ({
+                  label: new Intl.DateTimeFormat("ru-RU", { day: "2-digit", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`)),
+                  title: new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`)),
+                  value: point.views,
+                  secondary: point.uniqueViewers,
+                }))}
+                valueLabel="открытий"
+                secondaryLabel="уникальных посетителей"
+                height={120}
+              />
             </Paper>
             <Paper withBorder radius="md" p="sm">
               <Group justify="space-between" mb="sm"><Text size="xs" fw={700}>Лучшие объявления</Text><Badge size="xs" variant="light" color="orange">конверсия {data.listingPerformance.leadConversionWeek}%</Badge></Group>
@@ -1079,23 +1078,11 @@ export default function AdminDashboard() {
             <TrafficLineChart points={dailyTraffic} />
           </Paper>
 
-          <SimpleGrid cols={{ base: 2, xs: 4, sm: 7 }} spacing="xs">
-            {dailyTraffic.map((point) => {
-              const label = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${point.date}T00:00:00Z`))
-              return (
-                <Paper key={point.date} withBorder radius="md" p="xs">
-                  <Text size="xs" c="dimmed" fw={700}>{label}</Text>
-                  <Text size="lg" fw={800} mt={4}>{point.pageViews}</Text>
-                  <Text size="10px" c="dimmed">просмотров · {point.uniqueVisitors} уник.</Text>
-                  <Progress value={(point.pageViews / maxDailyPageViews) * 100} color="indigo" size="sm" radius="xl" mt="xs" aria-label={`${label}: ${point.pageViews} просмотров страниц`} />
-                    <Group justify="space-between" gap={4} mt={6} wrap="nowrap">
-                      <Text size="10px" c="dimmed">рег. {point.registrations}</Text>
-                      <Badge size="xs" variant="light" color={point.newListings ? "violet" : "gray"}>{point.newListings} объявл.</Badge>
-                    </Group>
-                </Paper>
-              )
-            })}
-          </SimpleGrid>
+          {/* Семь карточек с теми же числами убраны: график выше уже
+              показывает и просмотры, и посетителей, и регистрации, и
+              объявления — по дням и в сравнении между собой. Карточки
+              повторяли его цифрами, занимали экран и заставляли читать
+              одно и то же дважды. */}
         </Card>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">

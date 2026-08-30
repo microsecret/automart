@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({})) as {
       path?: unknown
       screen?: unknown
+      city?: unknown
       visitorKey?: unknown
       sessionKey?: unknown
       referer?: unknown
@@ -84,6 +85,12 @@ export async function POST(request: NextRequest) {
        можно — но выгоды в этом нет: он влияет только на разбивку
        статистики, не на права и не на данные. */
     const fromTelegramApp = body.fromTelegramApp === true
+
+    /* Город человек выбирает сам — на карте заправок или в фильтре
+       каталога. Длину режем: это подпись для отчёта, а не поле поиска. */
+    const city = typeof body.city === "string" && body.city.trim().length > 1
+      ? body.city.trim().slice(0, 80)
+      : null
     const campaign = composeCampaignAttribution(body.campaign, body.campaignContent)
     const ipHash = hashAnalyticsIp(clientIp)
 
@@ -109,6 +116,7 @@ export async function POST(request: NextRequest) {
         deviceType: classifyDevice(userAgent),
         trafficSource: classifyTrafficSource(referer, utmSource, request, fromTelegramApp),
         campaign,
+        city,
         userId: session?.user?.id || null,
       },
     })

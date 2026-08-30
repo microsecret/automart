@@ -16,6 +16,18 @@ function storageValue(storage: Storage, key: string) {
   return value
 }
 
+/** Выбранный человеком город: карта заправок и фильтр каталога. */
+function readSelectedCity() {
+  try {
+    const fromMap = window.localStorage.getItem("lewheel:fuel-city")
+    const fromCatalog = window.localStorage.getItem("lewheel:catalog-city")
+    return (fromCatalog || fromMap || "").slice(0, 80) || null
+  } catch {
+    /* Хранилище закрыто настройками — город просто не узнаем. */
+    return null
+  }
+}
+
 export default function AppAnalytics() {
   const pathname = usePathname()
   /* Смена фильтров каталога меняет только строку запроса, а `usePathname`
@@ -73,6 +85,14 @@ export default function AppAnalytics() {
            адрес вручную. Признак платформы есть только внутри
            мессенджера, поэтому он и отличает канал. */
         fromTelegramApp: typeof window !== "undefined" && Boolean(window.Telegram?.WebApp?.initData),
+        /* Город, который человек выбрал сам.
+
+           По хешу адреса его не узнать — хеш необратим, и это правильно.
+           Но выбранный на карте заправок или в фильтре каталога город
+           человек назвал сам: это честнее любой геобазы, потому что
+           говорит, где он ищет, а не откуда подключился. Владельцу
+           нужно именно первое — в каких городах живёт площадка. */
+        city: readSelectedCity(),
         ...attribution,
       }),
       keepalive: true,

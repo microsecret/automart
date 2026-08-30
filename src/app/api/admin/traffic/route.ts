@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
-import { moscowHour } from "@/lib/moscow-periods"
+import { moscowDayKey, moscowHour } from "@/lib/moscow-periods"
+import { sectionForPath, readablePath } from "@/lib/traffic-sections"
 import {
   isTrafficPeriod, periodLabel, periodRange, previousPeriodRange,
   refererHost, trafficSourceLabel, type TrafficPeriod,
@@ -38,6 +39,9 @@ export async function GET(request: NextRequest) {
         select: {
           createdAt: true, path: true, visitorKey: true, ipHash: true,
           referer: true, trafficSource: true, deviceType: true, campaign: true,
+          /* Город человек выбирает сам, userId отличает своего от гостя:
+             владелец спрашивает и «откуда заходят», и «сколько вошедших». */
+          city: true, userId: true,
         },
         // Ограничение защищает от выборки в сотни тысяч строк на месячном
         // периоде: точность счётчиков от этого не страдает на текущих объёмах.
@@ -59,6 +63,13 @@ export async function GET(request: NextRequest) {
     const byCampaign = new Map<string, Set<string>>()
     const byPath = new Map<string, number>()
     const byHour = new Map<number, Set<string>>()
+    /* Раздел вместо адреса: список путей отвечает «куда заходят», а
+       владелец смотрит, живёт ли раздел запчастей и окупается ли карта. */
+    const bySection = new Map<string, { label: string; group: string; visitors: Set<string>; views: number }>()
+    const byCity = new Map<string, Set<string>>()
+    const byDay = new Map<string, { visitors: Set<string>; views: number }>()
+    const signedIn = new Set<string>()
+    const viewsPerVisitor = new Map<string, number>()
 
     for (const event of events) {
       const visitor = event.visitorKey || event.ipHash
@@ -85,6 +96,30 @@ export async function GET(request: NextRequest) {
 
       byPath.set(event.path, (byPath.get(event.path) || 0) + 1)
 
+      const section = sectionForPath(event.path)
+      if (!bySection.has(section.key)) {
+        bySection.set(section.key, { label: section.label, group: section.group, visitors: new Set(), views: 0 })
+      }
+      const sectionEntry = bySection.get(section.key)!
+      sectionEntry.visitors.add(visitor)
+      sectionEntry.views += 1
+
+      if (event.city) {
+        if (!byCity.has(event.city)) byCity.set(event.city, new Set())
+        byCity.get(event.city)!.add(visitor)
+      }
+
+      /* Динамика по дням: одна цифра за период не показывает, был ли
+         рост ровным или это всплеск одного дня. */
+      const day = moscowDayKey(event.createdAt)
+      if (!byDay.has(day)) byDay.set(day, { visitors: new Set(), views: 0 })
+      const dayEntry = byDay.get(day)!
+      dayEntry.visitors.add(visitor)
+      dayEntry.views += 1
+
+      if (event.userId) signedIn.add(visitor)
+      viewsPerVisitor.set(visitor, (viewsPerVisitor.get(visitor) || 0) + 1)
+
       // Час берётся московский: сервер живёт в UTC и без пересчёта пик
       // активности смещался бы на три часа назад.
       const hour = moscowHour(event.createdAt)
@@ -101,6 +136,17 @@ export async function GET(request: NextRequest) {
     const uniqueVisitors = countUnique(events)
     const previousVisitors = countUnique(previousEvents)
 
+    /* Сколько страниц открывает один человек. Одно посещение на
+       посетителя означает, что люди приходят и сразу уходят, а десять —
+       что площадкой действительно пользуются. */
+    const totalViews = events.length
+    const viewsPerVisit = uniqueVisitors > 0 ? Math.round((totalViews / uniqueVisitors) * 10) / 10 : 0
+
+    /* Один экран за визит — это отказ: человек открыл страницу и ушёл,
+       не заглянув дальше. */
+    const bounced = [...viewsPerVisitor.values()].filter((count) => count <= 1).length
+    const bounceRate = uniqueVisitors > 0 ? Math.round((bounced / uniqueVisitors) * 100) : 0
+
     return NextResponse.json({
       period,
       periodLabel: periodLabel(period, now),
@@ -113,12 +159,31 @@ export async function GET(request: NextRequest) {
           ? Math.round(((uniqueVisitors - previousVisitors) / previousVisitors) * 100)
           : null,
       },
+      totalsExtra: {
+        viewsPerVisit,
+        bounceRate,
+        signedInVisitors: signedIn.size,
+        /* Доля вошедших: гость смотрит, вошедший действует. Владельцу
+           важно, растёт ли вторая половина. */
+        signedInShare: uniqueVisitors > 0 ? Math.round((signedIn.size / uniqueVisitors) * 100) : 0,
+      },
       sources: toList(bySource),
       referers: toList(byReferer),
       devices: toList(byDevice),
       campaigns: toList(byCampaign),
+      cities: toList(byCity),
+      /* Разделы: чем люди пользовались, а не какие адреса открывали. */
+      sections: [...bySection.entries()]
+        .map(([key, entry]) => ({ key, label: entry.label, group: entry.group, visitors: entry.visitors.size, views: entry.views }))
+        .sort((a, b) => b.visitors - a.visitors),
+      /* Динамика по дням: ровный рост или всплеск одного дня. */
+      daily: [...byDay.entries()]
+        .map(([day, entry]) => ({ day, visitors: entry.visitors.size, views: entry.views }))
+        .sort((a, b) => a.day.localeCompare(b.day)),
+      /* Понятное имя рядом с адресом: «/listings/vehicle/1f020612-75f5…»
+         владелец не узнаёт — он не помнит машины по коду. */
       topPaths: [...byPath.entries()]
-        .map(([path, views]) => ({ path, views }))
+        .map(([path, views]) => ({ path, label: readablePath(path), views }))
         .sort((a, b) => b.views - a.views)
         .slice(0, TOP_LIMIT),
       // Активность по часам показывает, когда запускать рассылку.

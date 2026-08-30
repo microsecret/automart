@@ -6,7 +6,8 @@ import {
   Badge, Box, Card, Container, Group, Progress, SegmentedControl,
   SimpleGrid, Stack, Text, ThemeIcon, Title,
 } from "@mantine/core"
-import { IconChartBar, IconDeviceMobile, IconExternalLink, IconClock, IconSpeakerphone } from "@tabler/icons-react"
+import { IconChartBar, IconDeviceMobile, IconExternalLink, IconClock, IconSpeakerphone, IconMapPin, IconLayoutGrid, IconTrendingUp } from "@tabler/icons-react"
+import TrafficBarChart from "@/components/admin/TrafficBarChart"
 import { fetchJson } from "@/lib/api-client"
 import { AdminStatCard } from "@/components/admin/AdminStatCard"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
@@ -16,11 +17,15 @@ type Row = { name: string; visitors: number }
 type TrafficResponse = {
   periodLabel: string
   totals: { views: number; uniqueVisitors: number; previousVisitors: number; change: number | null }
+  totalsExtra: { viewsPerVisit: number; bounceRate: number; signedInVisitors: number; signedInShare: number }
   sources: Row[]
   referers: Row[]
   devices: Row[]
   campaigns: Row[]
-  topPaths: { path: string; views: number }[]
+  cities: Row[]
+  sections: { key: string; label: string; group: string; visitors: number; views: number }[]
+  daily: { day: string; visitors: number; views: number }[]
+  topPaths: { path: string; label: string; views: number }[]
   hourly: { hour: number; visitors: number }[]
 }
 
@@ -46,7 +51,6 @@ export default function TrafficPage() {
     (best, item) => (item.visitors > best.visitors ? item : best),
     { hour: 0, visitors: 0 },
   )
-  const maxHourly = Math.max(1, ...(data?.hourly.map((item) => item.visitors) || [1]))
 
   const renderList = (title: string, icon: ReactNode, rows: Row[] | undefined, empty: string) => {
     const max = Math.max(1, ...(rows?.map((row) => row.visitors) || [1]))
@@ -111,7 +115,7 @@ export default function TrafficPage() {
             {/* Четыре карточки раскрывались вручную — сорок строк почти
                 одинаковой разметки. Перебор по массиву и общий компонент
                 держат единый вид со всеми остальными страницами. */}
-            <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
+            <SimpleGrid cols={{ base: 2, md: 3, xl: 5 }} spacing="sm">
               {[
                 {
                   value: isLoading ? "—" : data?.totals.uniqueVisitors.toLocaleString("ru"),
@@ -124,9 +128,20 @@ export default function TrafficPage() {
                   hint: data?.periodLabel,
                 },
                 {
-                  value: isLoading || !data ? "—" : (data.totals.views / Math.max(1, data.totals.uniqueVisitors)).toFixed(1),
+                  value: isLoading || !data ? "—" : String(data.totalsExtra.viewsPerVisit),
                   label: "Страниц на человека",
-                  hint: "Глубина просмотра",
+                  /* Одна страница за визит — люди приходят и уходят;
+                     десять — площадкой действительно пользуются. */
+                  hint: data && data.totalsExtra.bounceRate > 0
+                    ? `Ушли сразу: ${data.totalsExtra.bounceRate}%`
+                    : "Глубина просмотра",
+                },
+                {
+                  value: isLoading || !data ? "—" : data.totalsExtra.signedInVisitors.toLocaleString("ru"),
+                  label: "Вошли в аккаунт",
+                  /* Гость смотрит, вошедший действует: владельцу важно,
+                     растёт ли вторая половина. */
+                  hint: data ? `${data.totalsExtra.signedInShare}% от всех` : undefined,
                 },
                 {
                   value: isLoading || !peakHour ? "—" : `${peakHour.hour}:00`,
@@ -143,41 +158,105 @@ export default function TrafficPage() {
               {renderList("Кампании и кнопки", <IconSpeakerphone size={15} />, data?.campaigns, "Переходов по размеченным кнопкам пока не было")}
               {renderList("Сайты-источники", <IconExternalLink size={15} />, data?.referers, "Переходов со сторонних сайтов не было")}
               {renderList("Устройства", <IconDeviceMobile size={15} />, data?.devices, "Пока нет данных")}
+              {/* Город человек выбирает сам — на карте заправок или в
+                  фильтре каталога. Это честнее геобазы: говорит, где он
+                  ищет машину, а не откуда подключился. */}
+              {renderList("Города", <IconMapPin size={15} />, data?.cities, "Город никто ещё не выбирал")}
             </SimpleGrid>
 
-            <Card withBorder radius="md" p="md">
-              <Group gap="xs" mb="sm">
-                <ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconClock size={15} /></ThemeIcon>
-                <Text size="sm" fw={700}>Активность по часам (МСК)</Text>
-              </Group>
-              {/* Столбики, а не таблица: провалы и пики видно с одного взгляда. */}
-              <Group gap={3} align="flex-end" h={90} wrap="nowrap">
-                {data?.hourly.map((item) => (
-                  <Box key={item.hour} style={{ flex: 1, minWidth: 0 }}>
-                    <Box
-                      title={`${item.hour}:00 — ${item.visitors}`}
-                      style={{
-                        height: `${Math.max(3, (item.visitors / maxHourly) * 72)}px`,
-                        background: item.visitors === maxHourly
-                          ? "var(--market-accent)"
-                          : "color-mix(in srgb, var(--market-primary) 45%, transparent)",
-                        borderRadius: "var(--radius-xs)",
-                      }}
-                    />
-                    <Text size="9px" c="dimmed" ta="center" mt={3}>
-                      {item.hour % 3 === 0 ? item.hour : ""}
-                    </Text>
+            {/* Динамика по дням.
+
+                Одна цифра за период не говорит, был ли рост ровным или
+                это всплеск одного дня: неделя с сотней посетителей может
+                означать и пятнадцать каждый день, и сотню в понедельник
+                при тишине после. */}
+            {data && data.daily.length > 1 && (
+              <Card withBorder radius="md" p="md">
+                <Group gap="xs" mb="md">
+                  <ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconTrendingUp size={15} /></ThemeIcon>
+                  <Text size="sm" fw={700}>Посетители по дням</Text>
+                </Group>
+                <TrafficBarChart
+                  points={data.daily.map((item) => ({
+                    label: item.day.slice(8),
+                    title: new Date(item.day).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }),
+                    value: item.visitors,
+                    secondary: item.views,
+                  }))}
+                  height={150}
+                />
+              </Card>
+            )}
+
+            <SimpleGrid cols={{ base: 1, xl: 2 }} spacing="sm">
+              <Card withBorder radius="md" p="md">
+                <Group gap="xs" mb="md">
+                  <ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconClock size={15} /></ThemeIcon>
+                  <Box>
+                    <Text size="sm" fw={700}>Активность по часам</Text>
+                    <Text size="xs" c="dimmed">По Москве · пик подсвечен</Text>
                   </Box>
-                ))}
-              </Group>
-            </Card>
+                </Group>
+                {data && (
+                  <TrafficBarChart
+                    points={data.hourly.map((item) => ({
+                      label: String(item.hour),
+                      title: `${item.hour}:00`,
+                      value: item.visitors,
+                    }))}
+                  />
+                )}
+              </Card>
+
+              {/* Чем пользуются, а не какие адреса открывают.
+
+                  Список путей не отвечает на вопрос владельца: живёт ли
+                  раздел запчастей, окупается ли карта заправок. Сорок
+                  строк с кодами объявлений вытесняли из отчёта всё
+                  остальное. */}
+              <Card withBorder radius="md" p="md">
+                <Group gap="xs" mb="md">
+                  <ThemeIcon variant="light" color="teal" size={28} radius="md"><IconLayoutGrid size={15} /></ThemeIcon>
+                  <Box>
+                    <Text size="sm" fw={700}>Чем пользуются</Text>
+                    <Text size="xs" c="dimmed">Разделы по числу посетителей</Text>
+                  </Box>
+                </Group>
+                {data && data.sections.length > 0 ? (
+                  <Stack gap={8}>
+                    {data.sections.slice(0, 10).map((item) => {
+                      const share = Math.round((item.visitors / Math.max(1, data.totals.uniqueVisitors)) * 100)
+                      return (
+                        <Box key={item.key}>
+                          <Group justify="space-between" gap="xs" wrap="nowrap" mb={3}>
+                            <Text size="sm" lineClamp={1}>{item.label}</Text>
+                            <Group gap={6} wrap="nowrap">
+                              <Text size="xs" c="dimmed">{item.views} просм.</Text>
+                              <Badge variant="light" color="teal" size="sm">{item.visitors}</Badge>
+                            </Group>
+                          </Group>
+                          <Progress value={share} color="teal" size="sm" radius="xl" />
+                        </Box>
+                      )
+                    })}
+                  </Stack>
+                ) : (
+                  <Text size="sm" c="dimmed">Пока нет данных</Text>
+                )}
+              </Card>
+            </SimpleGrid>
 
             <Card withBorder radius="md" p="md">
               <Text size="sm" fw={700} mb="sm">Популярные страницы</Text>
               <Stack gap={6}>
                 {data?.topPaths.map((item) => (
                   <Group key={item.path} justify="space-between" gap="xs" wrap="nowrap">
-                    <Text size="sm" lineClamp={1}>{item.path}</Text>
+                    <Box style={{ minWidth: 0 }}>
+                      <Text size="sm" lineClamp={1}>{item.label}</Text>
+                      {item.label !== item.path && (
+                        <Text size="10px" c="dimmed" lineClamp={1}>{item.path}</Text>
+                      )}
+                    </Box>
                     <Badge variant="light" color="indigo" size="sm">{item.views}</Badge>
                   </Group>
                 ))}

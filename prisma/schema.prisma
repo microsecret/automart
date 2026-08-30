@@ -932,6 +932,11 @@ model VisitEvent {
   deviceType    String?
   trafficSource String?
   campaign      String?
+  // Город, который человек выбрал сам — на карте заправок или в фильтре
+  // каталога. По хешу адреса его не узнать, и это правильно: хеш
+  // необратим. Но выбранный город честнее любой геобазы — он говорит,
+  // где человек ищет, а не откуда подключился.
+  city          String?
   userId        String?
   user          User?    @relation(fields: [userId], references: [id], name: "UserVisitEvents")
   createdAt     DateTime @default(now())
@@ -946,6 +951,8 @@ model VisitEvent {
   // Посетитель без кук опознаётся по ipHash: без индекса каждый его
   // просмотр страницы сканировал таблицу целиком.
   @@index([ipHash, createdAt])
+  // Сводка по городам за период: без индекса она сканирует таблицу.
+  @@index([city, createdAt])
 }
 
 // One-time codes delivered by the Telegram bot for phone login.
