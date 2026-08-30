@@ -293,17 +293,26 @@ test("сбой записи цены не отменяет отметку нал
   assert.match(route, /Запись цены/)
 })
 
-test("знак сети виден на плашке", () => {
+test("знак есть у всех точек карты", () => {
   /* Цветной полоски было мало: человек видел «красную» заправку, но не
-     понимал, Лукойл это или Опти. */
+     понимал, Лукойл это или Опти. А нераспознанные точки получали
+     серый значок без подписи и читались как поломка — таких больше
+     четырёхсот на десять городов. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
   assert.match(page, /fuel-map-plate__logo/)
-  assert.match(page, /networkIdentity\.shortLabel/)
+  assert.match(page, /plateIdentity\.shortLabel/)
+  /* Запасной вид берётся по ассортименту: газовая, зарядка или АЗС. */
+  assert.match(page, /const plateIdentity = networkIdentity \|\| getGenericIdentity/)
 })
 
-test("нераспознанная сеть не ломает плашку", () => {
+test("безымянная заправка получает вид по ассортименту", () => {
+  /* У трёхсот семидесяти точек название буквально «АЗС», ещё у сорока
+     «АГЗС». Названия не будет, но тип колонок известен. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /data-unknown="true"/)
+  assert.match(page, /function getGenericIdentity/)
+  /* Газовую от бензиновой человек с ГБО различает первым делом. */
+  assert.match(page, /Газовая АЗС/)
+  assert.match(page, /Зарядка EV/)
 })
 
 // === Исправления по жалобам ===
@@ -686,7 +695,7 @@ test("сеть узнаётся по буквам на фирменном цве
      занимали место на плашке. Буквы на фирменном цвете читаются
      мгновенно и не притворяются товарным знаком. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /networkIdentity\.shortLabel/)
+  assert.match(page, /plateIdentity\.shortLabel/)
   assert.doesNotMatch(page, /brand\/fuel\//)
 })
 
@@ -793,4 +802,29 @@ test("крупные сети России узнаются на карте", ()
   /* Газовые сети отдельной палитрой: человек с газобаллонным
      оборудованием ищет именно их. */
   assert.match(page, /Газовая АЗС/)
+})
+
+test("точки не пропадают, пока грузится новый участок", () => {
+  /* Адрес запроса меняется при сдвиге карты, и без keepPreviousData
+     SWR отбрасывал прошлый ответ: на две-три секунды карта пустела
+     совсем. Со стороны это выглядело как поломка — человек приближал
+     карту и терял всё, что видел. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  /* Три запроса: точки, цены и отметки — мигал каждый по-своему. */
+  assert.equal((page.match(/keepPreviousData: true/g) || []).length, 3)
+})
+
+test("группа показывает состав по сетям, а не только преобладающую", () => {
+  /* Один цвет говорил про преобладающую сеть, а в группе из восьми
+     заправок их обычно три-четыре: было не видно, есть ли среди них
+     своя, пока не приблизишь карту. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /clusterRing/)
+  assert.match(page, /conic-gradient/)
+  /* Одна сеть на группу — кольцо не нужно: заливка уже сказала всё. */
+  assert.match(page, /if \(shares\.size < 2\) return null/)
+
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  /* Число остаётся читаемым: под ним сплошная подложка. */
+  assert.match(css, /fuel-map-marker__count/)
 })

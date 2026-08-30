@@ -8895,3 +8895,40 @@ h1[data-lw-hero] {
     animation: none !important;
   }
 }
+
+/* Кольцо состава группы: доли сетей вокруг числа.
+
+   Один цвет говорил только про преобладающую сеть, а в группе из
+   восьми заправок их обычно три-четыре. Кольцо показывает состав
+   целиком — по нему видно, есть ли среди них своя, ещё до приближения
+   карты.
+
+   Само число при этом остаётся на сплошной подложке: градиент под
+   цифрой сделал бы её нечитаемой. Подложка — псевдоэлемент внутри
+   кольца, а цифра лежит поверх. */
+.fuel-map-marker[data-cluster]::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  z-index: 0;
+  border-radius: 50%;
+  background: var(--market-ink);
+}
+
+.fuel-map-marker[data-cluster] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Цифра лежит поверх подложки. */
+.fuel-map-marker__count {
+  position: relative;
+  z-index: 1;
+}
+
+.fuel-map-marker[data-cluster] {
+  position: relative;
+  isolation: isolate;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(15 23 42 / .45);
+}

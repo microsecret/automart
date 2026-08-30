@@ -164,9 +164,28 @@ function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
   if (source.includes("комплекс-ойл") || source.includes("комплекс ойл")) return { label: "Комплекс-ойл", shortLabel: "КО", color: "#7c3aed", textColor: "#fff" }
   if (source.includes("ммк")) return { label: "ММК", shortLabel: "ММК", color: "#0f172a", textColor: "#fff" }
   if (source.includes("нефтегазсеть") || source.includes("nps")) return { label: "NPS", shortLabel: "NPS", color: "#0891b2", textColor: "#fff" }
+  /* Ещё сети из замера по десяти городам: каждая по десятку-двадцатку
+     точек, но вместе это сотни заправок, висевших безымянными. */
+  if (source.includes("новатэк") || source.includes("novatek")) return { label: "Новатэк", shortLabel: "НВ", color: "#0072bc", textColor: "#fff" }
+  if (source.includes("нефтехимпром")) return { label: "Нефтехимпром", shortLabel: "НХ", color: "#166534", textColor: "#fff" }
+  if (source.includes("ggroup") || source.includes("g-group")) return { label: "GGroup", shortLabel: "GG", color: "#1e3a8a", textColor: "#fff" }
+  if (source.includes("олви")) return { label: "Олви", shortLabel: "ОЛ", color: "#b91c1c", textColor: "#fff" }
+  if (source.includes("nafta")) return { label: "Nafta24", shortLabel: "NF", color: "#0f766e", textColor: "#fff" }
+  if (source.includes("tamic")) return { label: "Tamic Energy", shortLabel: "TM", color: "#c2410c", textColor: "#fff" }
+  if (source.includes("rusoil") || source.includes("русойл")) return { label: "Rusoil", shortLabel: "RU", color: "#1d4ed8", textColor: "#fff" }
+  if (source.includes("ликом")) return { label: "Ликом", shortLabel: "ЛИ", color: "#7c2d12", textColor: "#fff" }
+  if (source.includes("донако")) return { label: "Донако", shortLabel: "ДН", color: "#0891b2", textColor: "#fff" }
+  if (source.includes("сибнефть")) return { label: "Сибнефть", shortLabel: "СБ", color: "#1e40af", textColor: "#fff" }
+  if (source.includes("калина")) return { label: "Калина Ойл", shortLabel: "КЛ", color: "#be123c", textColor: "#fff" }
+  if (source.includes("промнефть")) return { label: "Промнефть", shortLabel: "ПН", color: "#334155", textColor: "#fff" }
+
   /* Газовые сети: у них своя палитра, и путать их с бензиновыми
      нельзя — человек с газобаллонным оборудованием ищет именно их. */
-  if (source.includes("экогаз") || source.includes("сигмагаз") || source.includes("газомоторное")) {
+  if (
+    source.includes("экогаз") || source.includes("сигмагаз") || source.includes("газомоторное")
+    || source.includes("автогаз") || source.includes("интрансгаз") || source.includes("мосавтогаз")
+    || source.includes("нягань-газ")
+  ) {
     return { label: "Газовая АЗС", shortLabel: "ГАЗ", color: "#0d9488", textColor: "#fff" }
   }
   return null
@@ -189,6 +208,32 @@ function formatKopecks(kopecks: number) {
     minimumFractionDigits: Number.isInteger(roubles) ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(roubles)
+}
+
+/**
+ * Вид заправки, когда сеть не распознана.
+ *
+ * По десяти городам таких точек больше четырёхсот: у трёхсот
+ * семидесяти в OpenStreetMap название буквально «АЗС», ещё у сорока —
+ * «АГЗС». Названия у них нет и не будет, но тип колонок известен из
+ * ассортимента, и одного этого достаточно, чтобы плашка перестала
+ * выглядеть сломанной и встала в общий строй с сетевыми.
+ *
+ * Газовую от бензиновой человек с газобаллонным оборудованием
+ * различает первым делом — она и красится своим цветом.
+ */
+function getGenericIdentity(station: FuelStation): NetworkIdentity {
+  const fuels = station.fuels.join(" ").toLocaleLowerCase("ru-RU")
+  const name = station.name.toLocaleLowerCase("ru-RU")
+  const isGas = name.includes("агзс") || name.includes("газ")
+    || (fuels.includes("газ") && !/аи|дт/.test(fuels))
+  const isCharger = name.includes("зарядка") || fuels.includes("зарядка") || fuels.includes("ev")
+
+  if (isCharger) return { label: "Зарядка EV", shortLabel: "EV", color: "#0284c7", textColor: "#fff" }
+  if (isGas) return { label: "Газовая АЗС", shortLabel: "ГАЗ", color: "#0d9488", textColor: "#fff" }
+  /* Обычная безымянная заправка: нейтральный грифель, чтобы не
+     притворяться сетью, но и не выпадать из общего вида карты. */
+  return { label: "АЗС", shortLabel: "АЗС", color: "#475569", textColor: "#fff" }
 }
 
 function getDistanceInKilometers(from: { latitude: number; longitude: number }, to: { latitude: number; longitude: number }) {
@@ -670,6 +715,39 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 
              Ниже двенадцатого плашки не нужны: там точки ещё собраны в
              кластеры, а поверх них плашка не поместится. */
+          /* Сеть, а если её нет — вид заправки по ассортименту.
+             Так плашка выглядит одинаково у всех точек карты. */
+          const plateIdentity = networkIdentity || getGenericIdentity(firstStation)
+
+          /* Состав группы по сетям — для кольца вокруг числа.
+
+             Считаем доли по числу точек: сектор тем шире, чем больше
+             заправок этой сети внутри. Безымянные идут своим цветом,
+             а не выпадают из круга — иначе кольцо врало бы про состав. */
+          const clusterRing = isCluster
+            ? (() => {
+                const shares = new Map<string, number>()
+                for (const station of marker.stations) {
+                  const color = (getNetworkIdentity(station) || getGenericIdentity(station)).color
+                  shares.set(color, (shares.get(color) || 0) + 1)
+                }
+                /* Одна сеть на всю группу — кольцо не нужно: заливка уже
+                   сказала всё, а сплошное кольцо поверх неё только
+                   утолщает контур. */
+                if (shares.size < 2) return null
+
+                const total = marker.stations.length
+                let offset = 0
+                const stops: string[] = []
+                for (const [color, count] of shares) {
+                  const end = offset + (count / total) * 360
+                  stops.push(`${color} ${offset}deg ${end}deg`)
+                  offset = end
+                }
+                return `conic-gradient(${stops.join(", ")})`
+              })()
+            : null
+
           const showPlate = !isCluster && zoom >= 12
 
           const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${getStationDataSummary(firstStation)}`
@@ -741,27 +819,21 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                       Буквы решают то же: «ЛК» на красном человек читает
                       как Лукойл с одного взгляда, а спутать с чужим
                       знаком это невозможно. */}
-                  {networkIdentity ? (
-                    <span
-                      className="fuel-map-plate__logo"
-                      style={{ background: networkIdentity.color, color: networkIdentity.textColor }}
-                      aria-hidden="true"
-                    >
-                      {/* Две буквы вместо рисованного знака.
+                  {/* Знак есть у всех точек карты.
 
-                          Нарисованные знаки сетей узнавались хуже
-                          настоящих логотипов и при этом занимали место
-                          на плашке. Буквы на фирменном цвете читаются
-                          мгновенно и не притворяются товарным знаком. */}
-                      {networkIdentity.shortLabel}
-                    </span>
-                  ) : (
-                    /* Сеть не распознана: серый знак заправки вместо
-                       букв — иначе плашка выглядит сломанной. */
-                    <span className="fuel-map-plate__logo" data-unknown="true" aria-hidden="true">
-                      <IconGasStation size={11} />
-                    </span>
-                  )}
+                      У сети — её буквы на фирменном цвете, у безымянной
+                      заправки — вид по ассортименту: газовая, зарядка
+                      или просто АЗС. Раньше нераспознанные получали
+                      серый значок без подписи и читались как поломка, а
+                      таких больше четырёхсот на десять городов: у трёхсот
+                      семидесяти название буквально «АЗС». */}
+                  <span
+                    className="fuel-map-plate__logo"
+                    style={{ background: plateIdentity.color, color: plateIdentity.textColor }}
+                    aria-hidden="true"
+                  >
+                    {plateIdentity.shortLabel}
+                  </span>
                   <span className="fuel-map-plate__body">
                     <span className="fuel-map-plate__title">
                       {networkIdentity?.label || firstStation.name}
@@ -815,8 +887,22 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 ...(clusterNetwork && clusterState === "unknown"
                   ? { backgroundColor: clusterNetwork.color, color: clusterNetwork.textColor }
                   : {}),
+                /* Кольцо из долей сетей внутри группы.
+
+                   Один цвет говорил только про преобладающую сеть, а в
+                   группе из восьми заправок их обычно три-четыре. Кольцо
+                   показывает состав целиком: по нему видно, есть ли
+                   среди них твоя, ещё до приближения карты.
+
+                   Доли считаются по числу точек, поэтому ширина сектора
+                   честно отвечает тому, сколько заправок этой сети
+                   внутри. */
+                ...(clusterRing ? { backgroundImage: clusterRing } : {}),
               }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? (
-                marker.stations.length
+                /* Число в элементе, а не голым текстом: под кольцом
+                   состава лежит сплошная подложка, и цифру надо поднять
+                   поверх неё — текстовый узел так не поднять. */
+                <span className="fuel-map-marker__count">{marker.stations.length}</span>
               ) : (
                 /* Значок колонки вместо букв сети.
 
@@ -1256,7 +1342,21 @@ function FuelMapContent() {
     if (liveRefreshTimestamp && Date.now() - liveRefreshTimestamp < 12_000) params.set("refresh", String(liveRefreshTimestamp))
     return `/api/fuel-stations?${params.toString()}`
   }, [city, place, requestedCoordinates, liveRefreshTimestamp])
-  const { data, error, isLoading, isValidating, mutate } = useSWR<FuelStationsResponse>(fuelStationsUrl, fetchJson, { revalidateOnFocus: false })
+  /* Точки не исчезают, пока грузится новый участок.
+
+     Адрес запроса меняется при сдвиге карты, и без keepPreviousData
+     SWR отбрасывал прошлый ответ: на две-три секунды карта пустела
+     совсем, а потом точки появлялись заново. Со стороны это выглядело
+     как поломка — человек приближал карту и терял всё, что видел.
+
+     Прошлые точки остаются на экране, пока не придут новые. Они с
+     соседнего участка и почти все те же самые: карта перерисовывается
+     без провала в пустоту. */
+  const { data, error, isLoading, isValidating, mutate } = useSWR<FuelStationsResponse>(
+    fuelStationsUrl,
+    fetchJson,
+    { revalidateOnFocus: false, keepPreviousData: true },
+  )
   const coordinates = data?.coordinates || requestedCoordinates || cityCoordinates
   const areaLabel = data?.areaLabel || place || city
 
@@ -1409,13 +1509,18 @@ function FuelMapContent() {
   const { data: nearbyPricesData, mutate: mutateNearbyPrices } = useSWR<FuelPriceReportsResponse>(
     nearbyStationIds ? `/api/fuel-prices?stations=${encodeURIComponent(nearbyStationIds)}` : null,
     fetchJson,
-    { revalidateOnFocus: false },
+    /* Список точек меняется при каждом сдвиге карты, и без сохранения
+       прошлого ответа цены на плашках мигали: пропадали на время
+       запроса и появлялись снова. */
+    { revalidateOnFocus: false, keepPreviousData: true },
   )
 
   const { data: nearbyAvailabilityData } = useSWR<{ stations?: Record<string, StationAvailability[]> }>(
     nearbyStationIds ? `/api/fuel-availability?stations=${encodeURIComponent(nearbyStationIds)}` : null,
     fetchJson,
-    { revalidateOnFocus: false },
+    /* То же и для отметок: без этого метки на секунду теряли цвет
+       наличия и снова становились серыми. */
+    { revalidateOnFocus: false, keepPreviousData: true },
   )
   const handleAvailabilityReported = (stationId: string, rows: StationAvailability[]) => {
     mutateAvailability((current) => ({ stations: { ...(current?.stations || {}), [stationId]: rows } }), { revalidate: false })
