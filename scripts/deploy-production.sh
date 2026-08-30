@@ -4,6 +4,24 @@ set -euo pipefail
 # The collector script and this deployment both touch the running parser
 # surface. Holding the same lock prevents cron from calling routes that exist
 # on disk but are not served by the previous process yet.
+# Обновляем код до всего остального.
+#
+# bash читает скрипт по мере выполнения, а не целиком: git pull посреди
+# файла сдвигает позицию чтения, и следующие строки берутся из новой
+# версии со старого смещения. Шаги, добавленные в том же релизе,
+# пропускались молча — именно так не отработало наполнение базы знаний
+# и форума, и запускать их пришлось руками.
+#
+# Поэтому обновляемся первым делом и сразу перезапускаем себя: второй
+# запуск читает уже цельный новый файл. Флаг в окружении защищает от
+# бесконечного цикла, а замок берётся после — им владеет тот процесс,
+# который дойдёт до сборки.
+if [ -z "${AUTOMART_DEPLOY_RELOADED:-}" ]; then
+  git pull --ff-only origin master
+  export AUTOMART_DEPLOY_RELOADED=1
+  exec bash "$0" "$@"
+fi
+
 if command -v flock >/dev/null 2>&1; then
   exec 9>/tmp/automart-encar-collector.lock
   # A complete serialized source pass can legitimately take about half an hour
@@ -22,7 +40,6 @@ fi
 
 # Run on the production host from the repository root. Secrets stay in the
 # server environment; this script deliberately never writes them to the repo.
-git pull --ff-only origin master
 if ! migration_output="$(npx prisma migrate deploy 2>&1)"; then
   printf '%s\n' "$migration_output" >&2
 
