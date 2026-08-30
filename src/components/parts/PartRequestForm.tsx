@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Alert, Button, Group, Select, Stack, Text, TextInput, Textarea } from "@mantine/core"
 import { IconCheck, IconSearch } from "@tabler/icons-react"
 import { useTelegramClosingGuard } from "@/lib/use-telegram-closing-guard"
@@ -42,6 +43,7 @@ export default function PartRequestForm({ presetCategory = null, onSuccess }: Pr
 
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [tracked, setTracked] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
 
@@ -80,6 +82,7 @@ export default function PartRequestForm({ presetCategory = null, onSuccess }: Pr
         return
       }
 
+      setTracked(Boolean(data.tracked))
       setSent(true)
       onSuccess?.()
     } catch {
@@ -102,6 +105,19 @@ export default function PartRequestForm({ presetCategory = null, onSuccess }: Pr
           Магазины запчастей увидят её и свяжутся с вами по телефону. Обычно первые
           предложения приходят в течение дня.
         </Text>
+        {tracked ? (
+          <Button component={Link} href="/dashboard/part-requests" size="compact-sm" variant="light" color="teal" mt="sm">
+            Смотреть ответы магазинов
+          </Button>
+        ) : (
+          /* Заявку оставляют и без входа: связать её не с чем, ответы в
+             кабинете такому человеку не покажутся, и обещать их нельзя —
+             остаётся телефон, который он указал сам. */
+          <Text size="xs" c="dimmed" mt="sm">
+            Ответы придут звонком на указанный номер. Войдите — и предложения с ценой
+            будут видны в кабинете.
+          </Text>
+        )}
       </Alert>
     )
   }

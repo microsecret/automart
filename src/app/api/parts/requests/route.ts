@@ -86,7 +86,13 @@ export async function POST(request: NextRequest) {
     select: { id: true, createdAt: true },
   })
 
-  return NextResponse.json({ id: created.id, success: true }, { status: 201, headers: rateLimitHeaders(limit) })
+  /* Вошедший увидит ответы магазинов у себя в кабинете, а гость — нет:
+     заявку не с чем связать, и ответ придёт только звонком. Форма должна
+     сказать об этом честно, а не обещать одно и то же обоим. */
+  return NextResponse.json(
+    { id: created.id, success: true, tracked: Boolean(session?.user?.id) },
+    { status: 201, headers: rateLimitHeaders(limit) },
+  )
 }
 
 /**
