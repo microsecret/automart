@@ -766,3 +766,31 @@ test("шапка не переполняется на ноутбуке", () => {
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
   assert.match(css, /@media \(max-width: 1400px\) \{\s*\.market-header-tab--secondary \{\s*display: none/)
 })
+
+test("ассортимент виден до того, как кто-то отметил наличие", () => {
+  /* В карточке стояла одна строка «Здесь ещё не отмечали наличие», и
+     человек не видел, какие колонки на станции вообще есть. Чтобы это
+     узнать, надо было открыть форму отметки: сведения из OSM лежали в
+     карточке, но показывались только тому, кто уже решил отмечать. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /На станции есть колонки/)
+  assert.match(page, /data-state="unknown"/)
+
+  /* Серый цвет честно молчит про наличие: зелёный или красный здесь
+     соврали бы. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /\.fuel-tile\[data-state="unknown"\]/)
+})
+
+test("крупные сети России узнаются на карте", () => {
+  /* Замер по семи городам: у ТАИФ-НК шестьдесят шесть точек, у ПРАЙМ
+     восемнадцать, у Воронежской топливной семнадцать — все они висели
+     серыми, будто безымянные заправки. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  for (const network of ["таиф", "прайм", "воронежская топливная", "тнк", "эверон"]) {
+    assert.ok(page.includes(`source.includes("${network}")`), `сеть не распознаётся: ${network}`)
+  }
+  /* Газовые сети отдельной палитрой: человек с газобаллонным
+     оборудованием ищет именно их. */
+  assert.match(page, /Газовая АЗС/)
+})

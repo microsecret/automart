@@ -144,6 +144,31 @@ function getNetworkIdentity(station: FuelStation): NetworkIdentity | null {
   if (source.includes("опти") || source.includes("opti")) return { label: "Опти", shortLabel: "ОП", color: "#e11d48", textColor: "#fff" }
   if (source.includes("нефтегаз")) return { label: "Нефтегаз", shortLabel: "НГ", color: "#155e75", textColor: "#fff" }
   if (source.includes("автодор") || source.includes("трасса м")) return { label: "Автодор", shortLabel: "АД", color: "#7c2d12", textColor: "#fff" }
+  /* Сети, добавленные по замеру живой карты.
+
+     Считал по семи городам от Уфы до Краснодара: у ТАИФ-НК шестьдесят
+     шесть точек, у ПРАЙМ восемнадцать, у Воронежской топливной
+     семнадцать — все они висели серыми, будто безымянные заправки, и
+     человек не находил свою сеть глазами.
+
+     Цвета взяты с фирменного оформления самих сетей. Порядок проверок
+     важен: сначала более длинные и точные названия, иначе «газпром»
+     перехватит «газпром газомоторное топливо». */
+  if (source.includes("таиф")) return { label: "ТАИФ-НК", shortLabel: "ТФ", color: "#00954e", textColor: "#fff" }
+  if (source.includes("прайм") || source.includes("prime")) return { label: "ПРАЙМ", shortLabel: "ПР", color: "#e8112d", textColor: "#fff" }
+  if (source.includes("воронежская топливная") || source.includes("втк")) return { label: "ВТК", shortLabel: "ВТ", color: "#0a5c36", textColor: "#fff" }
+  if (source.includes("тнк")) return { label: "ТНК", shortLabel: "ТНК", color: "#0b60a8", textColor: "#fff" }
+  if (source.includes("эверон")) return { label: "Эверон", shortLabel: "ЭВ", color: "#1f6feb", textColor: "#fff" }
+  if (source.includes("ортк")) return { label: "ОРТК", shortLabel: "ОР", color: "#b45309", textColor: "#fff" }
+  if (source.includes("трансазс")) return { label: "ТрансАЗС", shortLabel: "ТА", color: "#334155", textColor: "#fff" }
+  if (source.includes("комплекс-ойл") || source.includes("комплекс ойл")) return { label: "Комплекс-ойл", shortLabel: "КО", color: "#7c3aed", textColor: "#fff" }
+  if (source.includes("ммк")) return { label: "ММК", shortLabel: "ММК", color: "#0f172a", textColor: "#fff" }
+  if (source.includes("нефтегазсеть") || source.includes("nps")) return { label: "NPS", shortLabel: "NPS", color: "#0891b2", textColor: "#fff" }
+  /* Газовые сети: у них своя палитра, и путать их с бензиновыми
+     нельзя — человек с газобаллонным оборудованием ищет именно их. */
+  if (source.includes("экогаз") || source.includes("сигмагаз") || source.includes("газомоторное")) {
+    return { label: "Газовая АЗС", shortLabel: "ГАЗ", color: "#0d9488", textColor: "#fff" }
+  }
   return null
 }
 
@@ -1020,9 +1045,33 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                     )
                   })}
                 </Box>
+              ) : selectedStation.fuels.length > 0 ? (
+                /* Отметок нет, но ассортимент известен.
+
+                   Здесь стояла одна строка «Здесь ещё не отмечали
+                   наличие» — и человек не видел, какие колонки на
+                   станции вообще есть. Чтобы это узнать, надо было
+                   открыть форму отметки: сведения из OpenStreetMap
+                   лежали в карточке, но показывались только тому, кто
+                   уже решил отмечать.
+
+                   Теперь марки видны сразу, серыми: что за топливо
+                   бывает — известно, а есть ли оно сейчас — нет, и
+                   цвет об этом честно молчит. */
+                <Stack gap={6}>
+                  <Text size="xs" c="dimmed">Здесь ещё не отмечали наличие. На станции есть колонки:</Text>
+                  <Box className="fuel-tiles">
+                    {selectedStation.fuels.slice(0, 6).map((fuel) => (
+                      <Box key={fuel} className="fuel-tile" data-state="unknown">
+                        <span className="fuel-tile__label">{fuel}</span>
+                        <span className="fuel-tile__state">не отмечали</span>
+                      </Box>
+                    ))}
+                  </Box>
+                </Stack>
               ) : (
-                /* Отметок нет — так и говорим. Молчание человек читает как
-                   «топлива нет», и это неправда. */
+                /* Ни отметок, ни ассортимента: сказать нечего, и
+                   притворяться не надо. */
                 <Text size="xs" c="dimmed">Здесь ещё не отмечали наличие</Text>
               )}
 

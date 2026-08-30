@@ -8683,6 +8683,19 @@ h1[data-lw-hero] {
   color: var(--mantine-color-teal-7);
 }
 
+/* Марка известна, наличие — нет.
+
+   Ассортимент приходит из OpenStreetMap: какие колонки на станции
+   стоят, известно, а есть ли в них топливо сейчас — нет. Серый цвет
+   об этом честно молчит, тогда как зелёный или красный соврали бы. */
+.fuel-tile[data-state="unknown"] {
+  border-style: dashed;
+}
+
+.fuel-tile[data-state="unknown"] .fuel-tile__state {
+  color: var(--market-label);
+}
+
 .fuel-tile[data-state="no"] {
   border-color: var(--mantine-color-red-4);
   background: var(--mantine-color-red-0);
