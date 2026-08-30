@@ -749,3 +749,29 @@
   }
 }
 
+
+/* Значок непрочитанных на вкладке.
+
+   Счётчик был только внутри строки чата — там, куда ещё надо дойти.
+   Человек, которому написал продавец, узнавал об этом, лишь открыв
+   вкладку наугад. */
+.tg-nav__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.tg-nav__badge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e03131;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}

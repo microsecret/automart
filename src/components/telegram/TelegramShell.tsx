@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import type { TelegramThemeParams } from "@/lib/telegram-webapp"
+import { fetchJson } from "@/lib/api-client"
 import {
   IconCar,
   IconFileDescription,
@@ -141,6 +143,18 @@ export default function TelegramShell({
   signedIn?: boolean
 }) {
   const [ready, setReady] = useState(false)
+  /* Непрочитанные сообщения для значка на вкладке.
+
+     Тот же адрес, что у шапки сайта и бокового меню, и с теми же
+     условиями: запрос дорогой, и три места не должны дёргать его
+     каждое по-своему. */
+  const { data: shellStats } = useSWR<{ stats?: { unreadMessages?: number } }>(
+    "/api/dashboard/stats",
+    fetchJson,
+    { revalidateOnFocus: false, dedupingInterval: 20_000 },
+  )
+  const unreadMessages = shellStats?.stats?.unreadMessages || 0
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuMounted, setMenuMounted] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -452,7 +466,19 @@ export default function TelegramShell({
               onClick={() => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")}
               aria-current={active ? "page" : undefined}
             >
-              <Icon size={accent ? 21 : 19} stroke={active ? 2.2 : 1.8} />
+              <Box className="tg-nav__icon">
+                <Icon size={accent ? 21 : 19} stroke={active ? 2.2 : 1.8} />
+                {/* Непрочитанные видно, не заходя в переписку.
+
+                    Счётчик был только внутри строки чата — то есть
+                    там, куда ещё надо дойти. Человек, которому написал
+                    продавец, узнавал об этом, лишь открыв вкладку
+                    наугад: уведомление приходит не всем, а красной
+                    точки на вкладке не было. */}
+                {href.includes("tab=chats") && unreadMessages > 0 && (
+                  <span className="tg-nav__badge">{unreadMessages > 9 ? "9+" : unreadMessages}</span>
+                )}
+              </Box>
               <Text component="span" className="tg-nav__label">{label}</Text>
             </Link>
           )

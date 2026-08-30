@@ -423,3 +423,40 @@ test("мини-приложение переспрашивает перед за
   const create = readFileSync(new URL("../src/app/listings/create/vehicle/page.tsx", import.meta.url), "utf8")
   assert.match(create, /useTelegramClosingGuard/)
 })
+
+test("новому человеку показывают приглашение, а не ошибку", () => {
+  /* Вход не проходил по двум разным причинам — сервис незнаком вовсе
+     или регистрация брошена на полпути, — но обоим показывали красную
+     плашку со значком предупреждения и текстом «Регистрация не
+     завершена». Первый читал это как обвинение в том, чего не делал, и
+     видел на первом же экране. */
+  const app = readFileSync(new URL("../src/components/telegram/TelegramMiniApp.tsx", import.meta.url), "utf8")
+  assert.match(app, /"signup"/)
+  /* Проверяем сообщение человеку, а не упоминание в пояснениях — там
+     прежний текст назван как исправленный. */
+  assert.doesNotMatch(app, /setMessage\("Регистрация не завершена/)
+  /* Тревожный вид остаётся только настоящей ошибке. */
+  assert.match(app, /data-tone=\{status === "error" \? "error" : undefined\}/)
+})
+
+test("человека внутри Telegram не выгоняют советом открыть Telegram", () => {
+  /* Пустой initData при живой платформе — это открытие по прямой
+     ссылке или старый клиент: человек внутри Telegram. Ему советовали
+     «откройте внутри Telegram» и предлагали уйти на сайт. */
+  const app = readFileSync(new URL("../src/components/telegram/TelegramMiniApp.tsx", import.meta.url), "utf8")
+  assert.match(app, /if \(!webApp\) \{/)
+  assert.match(app, /if \(!webApp\.initData\) \{/)
+  assert.match(app, /Откройте приложение кнопкой в боте/)
+})
+
+test("непрочитанные видно на вкладке сообщений", () => {
+  /* Счётчик был только внутри строки чата — там, куда ещё надо дойти.
+     Человек, которому написал продавец, узнавал об этом, лишь открыв
+     вкладку наугад. */
+  const shell = readFileSync(new URL("../src/components/telegram/TelegramShell.tsx", import.meta.url), "utf8")
+  assert.match(shell, /tg-nav__badge/)
+  assert.match(shell, /href\.includes\("tab=chats"\) && unreadMessages > 0/)
+  /* Тот же адрес и те же условия, что у шапки сайта: запрос дорогой, и
+     три места не должны дёргать его каждое по-своему. */
+  assert.match(shell, /dedupingInterval: 20_000/)
+})

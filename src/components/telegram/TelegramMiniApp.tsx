@@ -79,7 +79,14 @@ function resolveStartRoute(initData: string): string | null {
   }
 }
 
-type Status = "loading" | "ready" | "browser" | "error"
+/* Состояния входа.
+
+   «browser» — человек открыл ссылку в обычном браузере, вне Telegram.
+   «signup» — он внутри Telegram, но боту незнаком: приглашение, а не
+   ошибка. «error» — вход сорвался по-настоящему. Раньше два последних
+   были одним, и новому человеку показывали тревожный значок с текстом
+   «Регистрация не завершена» за действие, которого он не совершал. */
+type Status = "loading" | "ready" | "browser" | "signup" | "error"
 
 export default function TelegramMiniApp() {
   /* Раздел читается из адреса, а не хранится в состоянии.
@@ -117,9 +124,19 @@ export default function TelegramMiniApp() {
       const webApp = await waitForTelegramWebApp()
       if (disposed) return
 
-      if (!webApp || !webApp.initData) {
+      if (!webApp) {
         setStatus("browser")
         setMessage("Это приложение открывается кнопкой внутри Telegram.")
+        return
+      }
+
+      if (!webApp.initData) {
+        /* Платформа есть, а данных нет: человек внутри Telegram, но
+           открыл приложение по прямой ссылке или в старом клиенте.
+           Раньше ему советовали «откройте внутри Telegram» — там, где
+           он уже находится, — и предлагали уйти на сайт. */
+        setStatus("signup")
+        setMessage("Откройте приложение кнопкой в боте — так Telegram передаст ваш профиль.")
         return
       }
 
@@ -128,8 +145,17 @@ export default function TelegramMiniApp() {
         if (disposed) return
 
         if (!result?.ok) {
-          setStatus("error")
-          setMessage("Регистрация не завершена. Вернитесь в бот и пройдите три шага: телефон, почта и пароль.")
+          /* Вход не прошёл по двум разным причинам, и человеку они
+             видятся по-разному: одному сервис незнаком вовсе, другой
+             начал регистрацию и бросил. Обоим показывали одинаковый
+             текст «Регистрация не завершена» с тревожным значком —
+             первый читал это как обвинение в том, чего не делал.
+
+             Различить их здесь нельзя: сервер отвечает одинаково. Но
+             приглашение подходит обоим — тот, кто начал, поймёт, куда
+             вернуться, а новый не испугается. */
+          setStatus("signup")
+          setMessage("Чтобы отмечать и писать продавцам, нужен профиль — бот заведёт его за три шага.")
           return
         }
 
@@ -168,15 +194,21 @@ export default function TelegramMiniApp() {
   } as const
   const heading = HEADINGS[tab]
 
-  if (status === "browser" || status === "error") {
+  if (status === "browser" || status === "signup" || status === "error") {
     return (
       <TelegramShell title={heading.title} subtitle={heading.subtitle} activeTab={heading.href} signedIn={false}>
         <Stack gap="md">
+          {/* Тревожный вид — только настоящей ошибке.
+
+              Приглашение зарегистрироваться и сорвавшийся вход
+              выглядели одинаково: красная плашка со значком
+              предупреждения. Человек, впервые открывший приложение,
+              видел её на первом же экране. */}
           <Box className="tg-notice" data-tone={status === "error" ? "error" : undefined}>
             {status === "error" ? <IconAlertTriangle size={18} /> : <IconBrandTelegram size={18} />}
             <Text size="sm">{message}</Text>
           </Box>
-          {status === "error" && botUsername && (
+          {(status === "error" || status === "signup") && botUsername && (
             <Button
               component="a"
               href={`https://t.me/${botUsername}`}
@@ -184,7 +216,7 @@ export default function TelegramMiniApp() {
               className="tg-button"
               fullWidth
             >
-              Открыть бот
+              {status === "signup" ? "Открыть бот и завести профиль" : "Открыть бот"}
             </Button>
           )}
           {status === "browser" && (
