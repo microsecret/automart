@@ -597,3 +597,47 @@ test("город запоминается и определяется по ме�
   const cities = readFileSync(new URL("../src/lib/cities.ts", import.meta.url), "utf8")
   assert.match(cities, /export function findNearestCity/)
 })
+
+test("карта увеличивается щипком двумя пальцами", () => {
+  /* Код видел только один указатель: второй палец не существовал для
+     карты вовсе, и щипковое увеличение — то, чем на телефоне
+     пользуются в первую очередь, — просто не работало. Оставались
+     кнопки «плюс-минус» в углу, до которых на ходу не дотягиваются. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /activePointers/)
+  assert.match(page, /pinchState/)
+  /* Масштаб карты удваивается на каждом шаге, поэтому расстояние между
+     пальцами переводится в шаги логарифмом по основанию два. */
+  assert.match(page, /Math\.log2\(distance \/ pinch\.startDistance\)/)
+})
+
+test("страница карты не кэшируется на год", () => {
+  /* Next пререндерил её статической и отдавал с s-maxage=31536000. В
+     разметке лежит ссылка на сборку кода, и после каждого выката
+     человек с телефона открывал старую версию, пока не чистил браузер
+     вручную. */
+  const layout = readFileSync(new URL("../src/app/services/fuel-map/layout.tsx", import.meta.url), "utf8")
+  assert.match(layout, /export const dynamic = "force-dynamic"/)
+})
+
+test("группа заправок красится цветом преобладающей сети", () => {
+  /* Группа была серым кружком с числом: «5 АЗС» не говорило, чьи это
+     заправки, и человек приближал карту только чтобы узнать, есть ли
+     среди них его сеть. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /clusterNetwork/)
+  /* Но только когда сеть действительно преобладает: в пёстрой группе
+     фирменный цвет соврал бы про её состав. */
+  assert.match(page, /best\.count >= Math\.ceil\(marker\.stations\.length \/ 2\)/)
+  /* И только когда наличие неизвестно: оно важнее принадлежности. */
+  assert.match(page, /clusterNetwork && clusterState === "unknown"/)
+})
+
+test("подписка и «поделиться» стоят ниже вкладок", () => {
+  /* Они отодвигали вниз то, ради чего карточку открывают: отметку,
+     цены и комментарии. На телефоне это стоило экрана прокрутки. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  const tabsAt = page.indexOf("fuel-card-tabs")
+  const subscribeAt = page.indexOf("<FuelSubscribeButton")
+  assert.ok(tabsAt > 0 && subscribeAt > tabsAt, "кнопки должны стоять ниже вкладок")
+})

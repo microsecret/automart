@@ -243,6 +243,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   const [activeTab, setActiveTab] = useState<"report" | "prices" | "notes">("report")
   const mapInteractionRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ pointerId: number; clientX: number; clientY: number; center: { latitude: number; longitude: number } } | null>(null)
+  /* Все пальцы на экране: по двум из них считается щипковое увеличение. */
+  const activePointers = useRef(new Map<number, { x: number; y: number }>())
+  const pinchState = useRef<{ startDistance: number; startZoom: number } | null>(null)
   const viewportCenterRef = useRef(viewportCenter)
   const mapViewport = viewportSize.width > 0 && viewportSize.height > 0 ? viewportSize : { width: 768, height: 460 }
   const center = useMemo(() => coordinatesToWorld(viewportCenter.latitude, viewportCenter.longitude, zoom), [viewportCenter.latitude, viewportCenter.longitude, zoom])
@@ -391,8 +394,32 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return
-    dragState.current = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, center: viewportCenter }
+
+    /* Каждый палец запоминается отдельно.
+
+       Раньше код видел только один указатель: второй палец не
+       существовал для карты вовсе, и щипковое увеличение — то, чем на
+       телефоне пользуются в первую очередь, — просто не работало.
+       Оставались кнопки «плюс-минус» в углу, до которых на ходу не
+       дотягиваются. */
+    activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
     event.currentTarget.setPointerCapture(event.pointerId)
+
+    if (activePointers.current.size === 2) {
+      /* Второй палец начинает щипок: запоминаем исходное расстояние и
+         масштаб, дальше считаем от них. Перетаскивание на это время
+         прекращается — иначе карта поедет вслед за сжимающимися
+         пальцами. */
+      const [first, second] = Array.from(activePointers.current.values())
+      pinchState.current = {
+        startDistance: Math.hypot(second.x - first.x, second.y - first.y),
+        startZoom: zoom,
+      }
+      dragState.current = null
+      return
+    }
+
+    dragState.current = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, center: viewportCenter }
     setIsDragging(false)
   }
 
@@ -403,6 +430,26 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   }, [])
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    /* Положение пальца обновляется всегда: по нему считается щипок. */
+    if (activePointers.current.has(event.pointerId)) {
+      activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    }
+
+    /* Щипок: масштаб меняется по тому, во сколько раз разошлись пальцы.
+
+       Логарифм по основанию два — потому что каждый шаг масштаба карты
+       удваивает её: развели пальцы вдвое, приблизились на единицу. */
+    const pinch = pinchState.current
+    if (pinch && activePointers.current.size >= 2) {
+      const [first, second] = Array.from(activePointers.current.values())
+      const distance = Math.hypot(second.x - first.x, second.y - first.y)
+      if (distance > 0 && pinch.startDistance > 0) {
+        const nextZoom = pinch.startZoom + Math.log2(distance / pinch.startDistance)
+        setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(nextZoom))))
+      }
+      return
+    }
+
     const drag = dragState.current
     if (!drag || drag.pointerId !== event.pointerId) return
     const deltaX = event.clientX - drag.clientX
@@ -432,8 +479,20 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   }
 
   const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (dragState.current?.pointerId !== event.pointerId) return
+    activePointers.current.delete(event.pointerId)
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+
+    /* Пальцев стало меньше двух — щипок закончился. Оставшийся палец
+       не должен тут же начать тащить карту рывком от места, где он
+       оказался: перетаскивание начнётся со следующего касания. */
+    if (activePointers.current.size < 2 && pinchState.current) {
+      pinchState.current = null
+      dragState.current = null
+      onViewportChange(viewportCenterRef.current)
+      return
+    }
+
+    if (dragState.current?.pointerId !== event.pointerId) return
     dragState.current = null
     onViewportChange(viewportCenterRef.current)
     window.setTimeout(() => setIsDragging(false), 0)
@@ -514,6 +573,33 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
              стоит ли туда приближаться. Теперь кольцо красится по доле:
              зелёное — почти везде есть, красное — почти нигде. Решение
              принимается на дальнем масштабе, без приближения. */
+          /* Преобладающая сеть в группе.
+
+             Группа была серым кружком с числом: «5 АЗС» не говорило,
+             чьи это заправки, и человек приближал карту только чтобы
+             узнать, есть ли среди них его сеть. Цвет отвечает на это
+             сразу — как отвечает цвет одиночной метки. */
+          const clusterNetwork = isCluster
+            ? (() => {
+                const counts = new Map<string, { identity: NetworkIdentity; count: number }>()
+                for (const station of marker.stations) {
+                  const identity = getNetworkIdentity(station)
+                  if (!identity) continue
+                  const current = counts.get(identity.label)
+                  if (current) current.count += 1
+                  else counts.set(identity.label, { identity, count: 1 })
+                }
+                let best: { identity: NetworkIdentity; count: number } | null = null
+                for (const entry of counts.values()) {
+                  if (!best || entry.count > best.count) best = entry
+                }
+                /* Цветом красим только когда сеть действительно
+                   преобладает: в пёстрой группе фирменный цвет соврал
+                   бы про её состав. */
+                return best && best.count >= Math.ceil(marker.stations.length / 2) ? best.identity : null
+              })()
+            : null
+
           const clusterState = isCluster
             ? (() => {
                 let withFuel = 0
@@ -674,7 +760,24 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 ...(networkIdentity && !isCluster && fresh.length === 0
                   ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor }
                   : {}),
-              }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? marker.stations.length : networkIdentity ? <span className="fuel-map-marker__network">{networkIdentity.shortLabel}</span> : <IconGasStation size={15} />}</UnstyledButton>
+                /* Группа окрашивается в цвет преобладающей сети, когда
+                   наличие внутри неизвестно: «5 АЗС» серым кружком не
+                   говорило, чьи это заправки. Когда наличие известно,
+                   оно важнее — цвет остаётся зелёным или красным. */
+                ...(clusterNetwork && clusterState === "unknown"
+                  ? { backgroundColor: clusterNetwork.color, color: clusterNetwork.textColor }
+                  : {}),
+              }} onPointerDown={(event) => event.stopPropagation()} onClick={() => handleMarkerClick(marker)} aria-label={label} title={isCluster ? `${marker.stations.length} АЗС` : `${firstStation.name} · ${getStationDataSummary(firstStation)}`}>{isCluster ? (
+                marker.stations.length
+              ) : (
+                /* Значок колонки вместо букв сети.
+
+                   Две буквы читались медленнее, чем узнаётся картинка:
+                   человек ищет на карте заправку, а не расшифровывает
+                   аббревиатуру. Сеть при этом никуда не делась — она в
+                   цвете кружка и в подписи на плашке рядом. */
+                <IconGasStation size={17} stroke={2.2} />
+              )}</UnstyledButton>
             </Box>
           )
         })}
@@ -843,30 +946,6 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 </Text>
               )}
 
-              <Group gap={6} grow>
-                <FuelSubscribeButton
-                  stationId={selectedStation.id}
-                  stationName={selectedStation.name}
-                  city={city}
-                />
-                {/* Поделиться: выбор сетей виден сразу.
-
-                    Прежняя кнопка на настольном браузере молча
-                    копировала ссылку — нажал, ничего не произошло, и
-                    было непонятно, сработало ли. */}
-                <FuelShareButton
-                  stationId={selectedStation.id}
-                  stationName={selectedStation.name}
-                  address={selectedStation.address || selectedStationAddress}
-                  latitude={selectedStation.latitude}
-                  longitude={selectedStation.longitude}
-                  availableFuels={availableFuels}
-                  /* Цена и свежесть уходят вместе со ссылкой: получателю
-                     они говорят больше, чем название заправки. */
-                  priceSummary={sharePriceSummary}
-                  updatedLabel={newest ? formatAge(new Date(newest)) ?? undefined : undefined}
-                />
-              </Group>
 
               {/* Вкладки: отметка, цены, комментарии.
 
@@ -955,6 +1034,39 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   </Text>
                 )
               )}
+
+              {/* Подписка и «поделиться» — внизу карточки.
+
+                  Они стояли сразу под наличием и отодвигали вниз то,
+                  ради чего карточку открывают: отметку, цены и
+                  комментарии. Оба действия второстепенны — их делают
+                  после того, как прочитали главное, а не вместо.
+
+                  На телефоне это стоило целого экрана прокрутки. */}
+              <Group gap={6} grow>
+                <FuelSubscribeButton
+                  stationId={selectedStation.id}
+                  stationName={selectedStation.name}
+                  city={city}
+                />
+                {/* Поделиться: выбор сетей виден сразу.
+
+                    Прежняя кнопка на настольном браузере молча
+                    копировала ссылку — нажал, ничего не произошло, и
+                    было непонятно, сработало ли. */}
+                <FuelShareButton
+                  stationId={selectedStation.id}
+                  stationName={selectedStation.name}
+                  address={selectedStation.address || selectedStationAddress}
+                  latitude={selectedStation.latitude}
+                  longitude={selectedStation.longitude}
+                  availableFuels={availableFuels}
+                  /* Цена и свежесть уходят вместе со ссылкой: получателю
+                     они говорят больше, чем название заправки. */
+                  priceSummary={sharePriceSummary}
+                  updatedLabel={newest ? formatAge(new Date(newest)) ?? undefined : undefined}
+                />
+              </Group>
             </Box>
           </Paper>
         )
