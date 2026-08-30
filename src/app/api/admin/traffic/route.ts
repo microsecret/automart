@@ -50,7 +50,9 @@ export async function GET(request: NextRequest) {
       }),
       prisma.visitEvent.findMany({
         where: { createdAt: { gte: previous.from, lt: previous.to } },
-        select: { visitorKey: true, ipHash: true },
+        /* Путь нужен, чтобы сравнить разделы: «карта заправок выросла
+           вдвое» полезнее, чем «посетителей стало больше». */
+        select: { visitorKey: true, ipHash: true, path: true },
         take: 50_000,
       }),
     ])
@@ -136,6 +138,33 @@ export async function GET(request: NextRequest) {
     const uniqueVisitors = countUnique(events)
     const previousVisitors = countUnique(previousEvents)
 
+    /* Тот же разбор для прошлого периода: рост считается по разделам, а
+       не только по площадке целиком. */
+    const previousBySection = new Map<string, Set<string>>()
+    const previousVisitorSet = new Set<string>()
+    for (const event of previousEvents) {
+      const visitor = event.visitorKey || event.ipHash
+      if (!visitor) continue
+      previousVisitorSet.add(visitor)
+      const key = sectionForPath(event.path).key
+      if (!previousBySection.has(key)) previousBySection.set(key, new Set())
+      previousBySection.get(key)!.add(visitor)
+    }
+
+    /* Новые и вернувшиеся.
+
+       Сто посетителей за неделю — это сто новых людей или двадцать
+       постоянных, зашедших по пять раз? Ответ меняет решение: в первом
+       случае площадку находят, но не возвращаются, во втором — наоборот.
+
+       Вернувшимся считаем того, кто был и в прошлом отрезке. */
+    const currentVisitors = new Set<string>()
+    for (const event of events) {
+      const visitor = event.visitorKey || event.ipHash
+      if (visitor) currentVisitors.add(visitor)
+    }
+    const returning = [...currentVisitors].filter((visitor) => previousVisitorSet.has(visitor)).length
+
     /* Сколько страниц открывает один человек. Одно посещение на
        посетителя означает, что люди приходят и сразу уходят, а десять —
        что площадкой действительно пользуются. */
@@ -166,6 +195,10 @@ export async function GET(request: NextRequest) {
         /* Доля вошедших: гость смотрит, вошедший действует. Владельцу
            важно, растёт ли вторая половина. */
         signedInShare: uniqueVisitors > 0 ? Math.round((signedIn.size / uniqueVisitors) * 100) : 0,
+        returningVisitors: returning,
+        newVisitors: Math.max(0, uniqueVisitors - returning),
+        /* Доля вернувшихся: площадку находят или ею пользуются? */
+        returningShare: uniqueVisitors > 0 ? Math.round((returning / uniqueVisitors) * 100) : 0,
       },
       sources: toList(bySource),
       referers: toList(byReferer),
@@ -174,7 +207,21 @@ export async function GET(request: NextRequest) {
       cities: toList(byCity),
       /* Разделы: чем люди пользовались, а не какие адреса открывали. */
       sections: [...bySection.entries()]
-        .map(([key, entry]) => ({ key, label: entry.label, group: entry.group, visitors: entry.visitors.size, views: entry.views }))
+        .map(([key, entry]) => {
+          const before = previousBySection.get(key)?.size || 0
+          return {
+            key,
+            label: entry.label,
+            group: entry.group,
+            visitors: entry.visitors.size,
+            views: entry.views,
+            previousVisitors: before,
+            /* Рост в процентах: раздел, выросший вдвое с двух человек до
+               четырёх, и раздел, потерявший половину аудитории, требуют
+               разного внимания. */
+            change: before > 0 ? Math.round(((entry.visitors.size - before) / before) * 100) : null,
+          }
+        })
         .sort((a, b) => b.visitors - a.visitors),
       /* Динамика по дням: ровный рост или всплеск одного дня. */
       daily: [...byDay.entries()]

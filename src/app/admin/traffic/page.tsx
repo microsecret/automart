@@ -17,13 +17,13 @@ type Row = { name: string; visitors: number }
 type TrafficResponse = {
   periodLabel: string
   totals: { views: number; uniqueVisitors: number; previousVisitors: number; change: number | null }
-  totalsExtra: { viewsPerVisit: number; bounceRate: number; signedInVisitors: number; signedInShare: number }
+  totalsExtra: { viewsPerVisit: number; bounceRate: number; signedInVisitors: number; signedInShare: number; returningVisitors: number; newVisitors: number; returningShare: number }
   sources: Row[]
   referers: Row[]
   devices: Row[]
   campaigns: Row[]
   cities: Row[]
-  sections: { key: string; label: string; group: string; visitors: number; views: number }[]
+  sections: { key: string; label: string; group: string; visitors: number; views: number; previousVisitors: number; change: number | null }[]
   daily: { day: string; visitors: number; views: number }[]
   topPaths: { path: string; label: string; views: number }[]
   hourly: { hour: number; visitors: number }[]
@@ -115,7 +115,7 @@ export default function TrafficPage() {
             {/* Четыре карточки раскрывались вручную — сорок строк почти
                 одинаковой разметки. Перебор по массиву и общий компонент
                 держат единый вид со всеми остальными страницами. */}
-            <SimpleGrid cols={{ base: 2, md: 3, xl: 5 }} spacing="sm">
+            <SimpleGrid cols={{ base: 2, md: 3, xl: 6 }} spacing="sm">
               {[
                 {
                   value: isLoading ? "—" : data?.totals.uniqueVisitors.toLocaleString("ru"),
@@ -142,6 +142,14 @@ export default function TrafficPage() {
                   /* Гость смотрит, вошедший действует: владельцу важно,
                      растёт ли вторая половина. */
                   hint: data ? `${data.totalsExtra.signedInShare}% от всех` : undefined,
+                },
+                {
+                  value: isLoading || !data ? "—" : data.totalsExtra.returningVisitors.toLocaleString("ru"),
+                  label: "Вернулись",
+                  /* Сто посетителей — это сто новых людей или двадцать
+                     постоянных? Ответ меняет решение: в первом случае
+                     площадку находят, но не возвращаются. */
+                  hint: data ? `${data.totalsExtra.returningShare}% · новых ${data.totalsExtra.newVisitors}` : undefined,
                 },
                 {
                   value: isLoading || !peakHour ? "—" : `${peakHour.hour}:00`,
@@ -231,6 +239,14 @@ export default function TrafficPage() {
                           <Group justify="space-between" gap="xs" wrap="nowrap" mb={3}>
                             <Text size="sm" lineClamp={1}>{item.label}</Text>
                             <Group gap={6} wrap="nowrap">
+                              {/* Рост важнее самого числа: раздел, потерявший
+                                  половину аудитории, требует внимания даже
+                                  когда цифра ещё большая. */}
+                              {item.change !== null && item.change !== 0 && (
+                                <Text size="xs" fw={600} c={item.change > 0 ? "teal" : "red"}>
+                                  {item.change > 0 ? "+" : ""}{item.change}%
+                                </Text>
+                              )}
                               <Text size="xs" c="dimmed">{item.views} просм.</Text>
                               <Badge variant="light" color="teal" size="sm">{item.visitors}</Badge>
                             </Group>
