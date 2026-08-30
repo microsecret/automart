@@ -99,10 +99,11 @@ export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Требуется вход" }, { status: 401 })
 
-  const hasStore = await prisma.partStore.count({
+  const ownStores = await prisma.partStore.findMany({
     where: { ownerId: session.user.id, status: "ACTIVE" },
+    select: { id: true },
   })
-  if (!hasStore) {
+  if (ownStores.length === 0) {
     return NextResponse.json({ error: "Заявки видны владельцам магазинов запчастей" }, { status: 403 })
   }
 
@@ -122,6 +123,14 @@ export async function GET(request: NextRequest) {
       year: true, condition: true, comment: true, city: true, clarity: true,
       status: true, createdAt: true,
       _count: { select: { offers: true } },
+      /* Свой ответ на заявке. Магазин видел только общее число
+         предложений и не понимал, отвечал ли он сам: жал «Ответить»
+         второй раз вслепую, заново вспоминая цену, которую уже называл. */
+      offers: {
+        where: { storeId: { in: ownStores.map((store) => store.id) } },
+        select: { id: true, price: true, leadTimeDays: true, createdAt: true },
+        take: 1,
+      },
     },
   })
 

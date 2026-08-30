@@ -22,6 +22,8 @@ type PartRequest = {
   status: string
   createdAt: string
   _count: { offers: number }
+  /* Ответ этого магазина, если он уже был. */
+  offers: Array<{ id: string; price: number | null; leadTimeDays: number | null; createdAt: string }>
 }
 
 const CONDITION_LABELS: Record<string, string> = {
@@ -132,6 +134,7 @@ export default function StoreRequestsPanel({ storeId }: { storeId: string }) {
           {requests.map((request) => {
             const age = formatAge(request.createdAt)
             const vehicle = [request.make, request.model, request.year].filter(Boolean).join(" ")
+            const mine = request.offers?.[0] || null
             return (
               <Card key={request.id} withBorder radius="md" p="sm">
                 <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
@@ -144,17 +147,33 @@ export default function StoreRequestsPanel({ storeId }: { storeId: string }) {
                     {vehicle && <Text size="xs" c="dimmed">{vehicle}</Text>}
                     {request.comment && <Text size="xs" c="var(--market-ink)" mt={4} lineClamp={2}>{request.comment}</Text>}
                     <Text size="10px" c="dimmed" mt={4}>
-                      {[request.city, age, request._count.offers > 0 ? `предложений: ${request._count.offers}` : null]
-                        .filter(Boolean).join(" · ")}
+                      {[
+                        request.city,
+                        age,
+                        mine ? "вы уже ответили" : null,
+                        request._count.offers > 0 ? `предложений: ${request._count.offers}` : null,
+                      ].filter(Boolean).join(" · ")}
                     </Text>
                   </Box>
+                  {/* Свой прежний ответ подставляется в форму: магазин
+                      правит цену, а не вспоминает её заново. */}
                   <Button
                     size="compact-sm"
-                    color="indigo"
+                    color={mine ? "gray" : "indigo"}
+                    variant={mine ? "light" : "filled"}
                     leftSection={<IconSend size={14} />}
-                    onClick={() => { setTarget(request); setFormError(null) }}
+                    onClick={() => {
+                      setTarget(request)
+                      setFormError(null)
+                      setForm({
+                        price: mine?.price ?? "",
+                        condition: "",
+                        leadTimeDays: mine?.leadTimeDays ?? "",
+                        comment: "",
+                      })
+                    }}
                   >
-                    Ответить
+                    {mine ? "Изменить" : "Ответить"}
                   </Button>
                 </Group>
               </Card>
