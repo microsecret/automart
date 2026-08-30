@@ -307,7 +307,12 @@ export default function TrafficPage() {
             </SimpleGrid>
 
             <Card withBorder radius="md" p="md">
-              <Text size="sm" fw={700} mb="sm">Популярные страницы</Text>
+              {/* Отдельные страницы, а не разделы: блок «Чем пользуются»
+                  выше отвечает «живёт ли раздел запчастей», а этот —
+                  «какие именно объявления смотрят». Разные вопросы, и
+                  оба нужны. */}
+              <Text size="sm" fw={700}>Самые открываемые страницы</Text>
+              <Text size="xs" c="dimmed" mb="sm">Конкретные адреса · число открытий</Text>
               <Stack gap={6}>
                 {data?.topPaths.map((item) => (
                   <Group key={item.path} justify="space-between" gap="xs" wrap="nowrap">
