@@ -2,7 +2,7 @@ import { PART_TYPES } from "@/lib/constants"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Badge, Box, Card, Container, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core"
+import { Badge, Box, Button, Card, Container, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core"
 import { IconBuildingStore, IconMapPin, IconTruckDelivery } from "@tabler/icons-react"
 import StructuredData from "@/components/seo/StructuredData"
 import PartOrderButton from "@/components/store/PartOrderButton"
@@ -118,8 +118,20 @@ export default async function StorefrontPage({ params }: PageProps) {
         )}
 
         {parts.length === 0 ? (
+          /* Пустой каталог был тупиком: человек читал «пока пуст» и
+             уходил. Магазин при этом ищет заявки в кабинете — заявку
+             можно оставить прямо отсюда, и она до него дойдёт. */
           <Card withBorder radius="md" p="xl">
-            <Text ta="center" c="dimmed">Каталог магазина пока пуст.</Text>
+            <Stack align="center" gap="sm">
+              <Text ta="center" c="dimmed">Каталог магазина пока пуст.</Text>
+              <Text ta="center" size="sm" maw={420}>
+                Если ищете конкретную деталь — опишите её. Магазины отвечают ценой и сроком,
+                обычно в течение дня.
+              </Text>
+              <Button component={Link} href="/parts-finder" variant="light" color="indigo">
+                Оставить заявку на деталь
+              </Button>
+            </Stack>
           </Card>
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">

@@ -67,6 +67,15 @@ export default function ForgotPasswordPage() {
                 <Text size="xs" c="gray.5" ta="center">
                   Вспомнили пароль? <Link href="/auth/signin" style={{ color: "#1c4291" }}>Войти</Link>
                 </Text>
+                {/* Запасной путь. Почта — единственный способ на этой
+                    странице, и когда отправка недоступна, человек
+                    упирается в тупик, хотя вход по телефону работает и
+                    Telegram-бот узнаёт его без пароля вовсе. */}
+                <Text size="xs" c="gray.5" ta="center">
+                  Нет доступа к почте? Войдите{" "}
+                  <Link href="/auth/signin" style={{ color: "#1c4291" }}>по номеру телефона</Link>
+                  {" "}или через Telegram-бота.
+                </Text>
               </Stack>
             </form>
           </Card>
