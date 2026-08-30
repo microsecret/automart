@@ -32,6 +32,7 @@ import {
   IconX,
 } from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+import { useTelegramSession } from "@/lib/use-telegram-session"
 
 type SupportArticle = {
   id: string
@@ -79,6 +80,7 @@ function safeArticleUrl(value: string | null | undefined) {
 }
 
 export default function SupportChat() {
+  const fromTelegram = useTelegramSession()
   const [open, setOpen] = useState(false)
   const [text, setText] = useState("")
   const [sending, setSending] = useState(false)
@@ -226,7 +228,17 @@ export default function SupportChat() {
                           )}
                           <Text size="xs" style={{ whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{message.content}</Text>
                           {actionUrl && (
-                            <Button component={Link} href={actionUrl} size="compact-xs" variant={visitor ? "white" : "light"} mt="xs">
+                            /* Из приложения Telegram переход сохраняет
+                               пометку: без неё к странице приедут
+                               десктопная шапка с подвалом, и человек
+                               окажется на чужом на вид сайте. */
+                            <Button
+                              component={Link}
+                              href={fromTelegram ? `${actionUrl}${actionUrl.includes("?") ? "&" : "?"}from=telegram` : actionUrl}
+                              size="compact-xs"
+                              variant={visitor ? "white" : "light"}
+                              mt="xs"
+                            >
                               {article?.actionLabel || "Открыть"}
                             </Button>
                           )}
