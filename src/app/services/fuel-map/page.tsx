@@ -248,6 +248,49 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     return () => mapNode.removeEventListener("wheel", handleNativeWheel)
   }, [])
 
+  /* Выбранная точка подводится под карточку.
+
+     Карточка открывается в левом нижнем углу, а нажать можно по точке в
+     любом месте — хоть у верхнего края. Человек нажимал на заправку
+     справа вверху и не понимал, что что-то открылось: карточка
+     появлялась там, куда он не смотрел, а на широком экране её ещё и
+     заслоняли плашки соседних заправок.
+
+     Точка переезжает в верхнюю треть: карточка внизу её не закрывает, и
+     видно обе — и метку, и то, что о ней написано. Двигаем только когда
+     точка действительно мешает: если она уже в удобном месте, дёргать
+     карту под человеком незачем. */
+  useEffect(() => {
+    if (!selectedStation) return
+    const mapNode = mapInteractionRef.current
+    if (!mapNode) return
+
+    const bounds = mapNode.getBoundingClientRect()
+    if (bounds.width < 1 || bounds.height < 1) return
+
+    const center = coordinatesToWorld(viewportCenter.latitude, viewportCenter.longitude, zoom)
+    const point = coordinatesToWorld(selectedStation.latitude, selectedStation.longitude, zoom)
+    const offsetX = point.x - center.x
+    const offsetY = point.y - center.y
+
+    /* Удобная зона: середина по горизонтали и верхняя треть по
+       вертикали. Карточка занимает низ и левый край. */
+    const comfortableLeft = -bounds.width / 2 + 24
+    const comfortableRight = bounds.width / 2 - 24
+    const comfortableTop = -bounds.height / 2 + 24
+    const comfortableBottom = 0
+
+    if (offsetX > comfortableLeft && offsetX < comfortableRight
+      && offsetY > comfortableTop && offsetY < comfortableBottom) return
+
+    const target = worldToCoordinates(point.x, point.y + bounds.height / 4, zoom)
+    setViewportCenter(target)
+    /* selectedStation в зависимостях один: карта подводится в ответ на
+       выбор, а не на каждый сдвиг — иначе она тянула бы точку обратно,
+       пока человек её отодвигает. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStation])
+
   useEffect(() => {
     const mapNode = mapInteractionRef.current
     if (!mapNode) return

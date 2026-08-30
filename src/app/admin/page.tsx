@@ -335,13 +335,19 @@ export default function AdminDashboard() {
   const c = data.counts
   const stats: AdminMetric[] = [
     { label: "Пользователи", value: c.users, icon: <IconUsers size={18} />, color: "indigo", href: "/admin/users", new: data.recent.newUsers },
-    { label: "Объявления", value: c.listings, icon: <IconTag size={18} />, color: "blue", new: data.recent.newListings },
-    { label: "Транспорт", value: c.vehicles, icon: <IconCar size={18} />, color: "teal" },
-    { label: "Запчасти", value: c.parts, icon: <IconCar size={18} />, color: "green" },
-    { label: "Сообщения", value: c.messages, icon: <IconMessageCircle2 size={18} />, color: "cyan" },
-    { label: "Отзывы", value: c.reviews, icon: <IconStar size={18} />, color: "orange" },
-    { label: "Уведомления", value: c.notifications, icon: <IconBell size={18} />, color: "red" },
-    { label: "AI-запросы", value: c.aiLogs, icon: <IconRobot size={18} />, color: "violet" },
+    /* Каждая карточка открывает свой раздел.
+
+       Раньше вели только «Пользователи» и «Поддержка»: остальные семь
+       показывали число и не нажимались. Администратор видел «25
+       уведомлений» и не мог их открыть — счётчик без перехода читается
+       как поломка, а не как решение показать одну цифру. */
+    { label: "Объявления", value: c.listings, icon: <IconTag size={18} />, color: "blue", href: "/moderation", new: data.recent.newListings },
+    { label: "Транспорт", value: c.vehicles, icon: <IconCar size={18} />, color: "teal", href: "/?type=vehicle" },
+    { label: "Запчасти", value: c.parts, icon: <IconCar size={18} />, color: "green", href: "/parts-finder" },
+    { label: "Сообщения", value: c.messages, icon: <IconMessageCircle2 size={18} />, color: "cyan", href: "/messages" },
+    { label: "Отзывы", value: c.reviews, icon: <IconStar size={18} />, color: "orange", href: "/moderation" },
+    { label: "Уведомления", value: c.notifications, icon: <IconBell size={18} />, color: "red", href: "/notifications" },
+    { label: "AI-запросы", value: c.aiLogs, icon: <IconRobot size={18} />, color: "violet", href: "/admin/traffic" },
     { label: "Поддержка", value: c.supportTickets, icon: <IconHeadset size={18} />, color: "grape", href: "/admin/support" },
   ]
 

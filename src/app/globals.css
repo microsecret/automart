@@ -3715,6 +3715,27 @@ select {
   touch-action: none;
 }
 
+/* Мышью карту тоже нужно тянуть с любого места.
+
+   touch-action решает только жесты пальцем. На десктопе, начав тянуть с
+   плашки заправки, человек попадал не в панораму, а в выделение текста:
+   браузер подсвечивал «Башнефть ДТ АИ-92», карта стояла на месте, и со
+   стороны это выглядело как зависание. Перетаскивание картинок отменяем
+   там же — иначе плитка уезжает призраком вслед за курсором. */
+.fuel-map-canvas,
+.fuel-map-canvas * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Карточка точки — исключение: в ней адрес и цены, которые копируют. */
+.fuel-map-selected,
+.fuel-map-selected * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 .fuel-map-canvas {
   overscroll-behavior: contain;
 }
@@ -6817,6 +6838,27 @@ select {
   border-color: var(--market-field-line) !important;
   box-shadow: var(--shadow-md);
   transform: translateY(var(--lift-md));
+}
+
+/* Карточка-ссылка отличается от карточки-цифры.
+
+   Раньше поднимались при наведении обе, и администратор не понимал, что
+   нажимается, а что нет: половина карточек молча не реагировала на
+   нажатие. Курсор-рука и подсветка рамки отвечают на это до нажатия. */
+.admin-metric-card__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-metric-card__link:hover .admin-metric-card {
+  border-color: var(--market-primary) !important;
+}
+
+.admin-metric-card__link:focus-visible {
+  border-radius: var(--radius-md);
+  outline: 2px solid var(--market-primary);
+  outline-offset: 2px;
 }
 
 .admin-moderation-panel {
