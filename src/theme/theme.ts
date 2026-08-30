@@ -307,7 +307,15 @@ export const theme = createTheme({
        Класс задаётся здесь, а раскладка — в globals.css: медиазапросы
        в объекте стилей Mantine не поддерживает. */
     Modal: {
-      defaultProps: { radius: "md", centered: true },
+      /* Слой выше нижнего меню.
+
+         По умолчанию Mantine ставит окну двухсотый слой, а плавающее
+         меню внизу экрана стоит на двухсот пятидесятом. На телефоне
+         окно раскрывается нижним листом вплотную к краю — и меню
+         накрывало его нижние восемьдесят пикселей, ровно там, где
+         стоит главная кнопка: «Отправить заявку», «Отменить заказ».
+         Человек видел кнопку и не мог по ней попасть. */
+      defaultProps: { radius: "md", centered: true, zIndex: 300 },
       classNames: { content: "app-modal__content", inner: "app-modal__inner" },
       styles: { title: { fontFamily: "var(--font-display), sans-serif", fontWeight: 700 } },
     },

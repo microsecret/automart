@@ -163,7 +163,24 @@ function ConversationWorkspace() {
   const userId = session.user.id
 
   return (
-    <Container size="lg" py="xl" style={{ height: "calc(100vh - 72px - 80px)", minHeight: 620 }}>
+    /* Высота считается от видимой части экрана, а не от «стекла».
+
+       Стояло `100vh` и жёсткие 620 пикселей минимума. На телефоне это
+       давало три беды разом: `vh` не учитывает адресную строку, минимум
+       в 620 не давал окну сжаться, а под всем этим ещё 92 пикселя
+       отступа под нижнее меню. Поле ввода с кнопкой «Отправить»
+       оказывалось за нижним краем — до него надо было прокручивать
+       страницу, борясь с прокруткой самой переписки.
+
+       `dvh` следует за адресной строкой и за клавиатурой: список
+       сообщений сжимается, а поле ввода остаётся на виду. Минимум снят
+       — на телефоне высоту задаёт экран, а не число в коде. */
+    <Container
+      size="lg"
+      py={{ base: "xs", sm: "xl" }}
+      className="messages-conversation"
+      style={{ height: "calc(100dvh - var(--app-header-height, 72px) - 24px)" }}
+    >
       <Stack gap="md" style={{ height: "100%" }}>
         <Paper withBorder radius="xl" px="sm" py="xs">
         <Group gap="sm" justify="space-between" wrap="nowrap">

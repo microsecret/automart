@@ -1,5 +1,5 @@
 import "./globals.css"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Manrope, IBM_Plex_Sans } from "next/font/google"
 import { ColorSchemeScript } from "@mantine/core"
 import AppProviders from "@/components/providers/AppProviders"
@@ -37,6 +37,25 @@ if (process.env.GOOGLE_SITE_VERIFICATION) verification.google = process.env.GOOG
 if (process.env.YANDEX_SITE_VERIFICATION) verification.yandex = process.env.YANDEX_SITE_VERIFICATION
 if (process.env.BING_SITE_VERIFICATION) otherVerification["msvalidate.01"] = process.env.BING_SITE_VERIFICATION
 if (Object.keys(otherVerification).length > 0) verification.other = otherVerification
+
+/**
+ * Область отрисовки доходит до краёв экрана.
+ *
+ * Без `viewportFit: "cover"` браузер отдаёт `env(safe-area-inset-*)`
+ * равным нулю — и все отступы под вырез экрана, которые расставлены по
+ * проекту, не делают ничего. На айфоне это значит, что нижнее меню,
+ * полоса заказа на странице лота и кнопки в нижних листах уезжают под
+ * системную полосу жестов: вместо нажатия срабатывает свайп «домой».
+ *
+ * Правило одно на весь сайт, поэтому и живёт в корневом макете: десяток
+ * аккуратно написанных `env(safe-area-inset-bottom)` в стилях начинают
+ * работать разом.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),

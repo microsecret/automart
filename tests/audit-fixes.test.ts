@@ -225,3 +225,53 @@ test("модальные окна на телефоне открываются �
      иначе форма партнёрской заявки осталась бы по центру. */
   assert.match(sheet.slice(0, 1400), /\.partner-application-modal/)
 })
+
+test("область отрисовки доходит до краёв экрана", () => {
+  /* Без viewportFit браузер отдаёт env(safe-area-inset-*) равным нулю,
+     и все отступы под вырез экрана по проекту не делают ничего: на
+     айфоне нижнее меню и полосы действий уезжают под системную полосу
+     жестов, и вместо нажатия срабатывает свайп «домой». */
+  const layout = readFileSync(new URL("../src/app/layout.tsx", import.meta.url), "utf8")
+  assert.match(layout, /export const viewport: Viewport/)
+  assert.match(layout, /viewportFit: "cover"/)
+})
+
+test("нижнее меню учитывает вырез экрана", () => {
+  /* Меню стояло на двенадцати пикселях от края, а полоса жестов на
+     айфоне занимает тридцать четыре: кнопка «Подать объявление»
+     оказывалась под ней. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  /* Правило живёт в мобильном медиазапросе, а не в общем блоке. */
+  assert.match(css, /\.mobile-bottom-nav \{[^}]*bottom: calc\(12px \+ env\(safe-area-inset-bottom/)
+})
+
+test("модальное окно не перекрывается нижним меню", () => {
+  /* Mantine ставит окну двухсотый слой, меню — на двухсот пятидесятом:
+     нижний лист терял свои нижние восемьдесят пикселей, ровно там, где
+     стоит главная кнопка. */
+  const theme = readFileSync(new URL("../src/theme/theme.ts", import.meta.url), "utf8")
+  assert.match(theme, /zIndex: 300/)
+
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /body:has\(\.app-modal__inner\) \.mobile-bottom-nav/)
+})
+
+test("поле ввода переписки не уезжает под клавиатуру", () => {
+  /* Стояло 100vh и жёсткие 620 пикселей минимума: поле с кнопкой
+     «Отправить» оказывалось за нижним краем, и до него надо было
+     прокручивать страницу, борясь с прокруткой самой переписки. */
+  const page = readFileSync(new URL("../src/app/messages/[conversationId]/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /100dvh/)
+  assert.doesNotMatch(page, /minHeight: 620/)
+  assert.doesNotMatch(page, /calc\(100vh/)
+})
+
+test("кнопка поддержки не перехватывает «Написать продавцу»", () => {
+  /* Защита была написана только для аукциона: на странице объявления
+     круглая кнопка ложилась на самую правую кнопку полосы, и нажатие
+     открывало чат поддержки вместо письма продавцу. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /body:has\(\.listing-action-bar\) \.support-chat__launcher/)
+  /* И последние пиксели страницы больше не прячутся под полосой. */
+  assert.match(css, /body:has\(\.listing-action-bar\) \{\s*padding-bottom/)
+})
