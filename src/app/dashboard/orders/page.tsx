@@ -1,9 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import {
-  Alert, Badge, Box, Button, Card, Container, Group, Loader, Stack, Text, ThemeIcon, Timeline, Title,
+  Alert, Badge, Box, Button, Card, Container, Group, Loader, Modal, Stack, Text, Textarea, ThemeIcon, Timeline, Title,
 } from "@mantine/core"
 import {
   IconBuildingStore, IconCheck, IconClipboardList, IconMail, IconPhone, IconTruckDelivery, IconX,
@@ -48,6 +49,45 @@ const FLOW = ["NEW", "CONFIRMED", "IN_DELIVERY", "DONE"]
 
 export default function BuyerOrdersPage() {
   const { data, error, isLoading, mutate } = useSWR<{ orders: BuyerOrder[] }>("/api/my-orders", fetchJson, { revalidateOnFocus: false })
+
+  /* Отмена заказа покупателем.
+
+     Раньше её не было вовсе: передумал, нашёл дешевле, ошибся с
+     количеством — оставалось звонить в магазин и просить отменить, а
+     пока продавец не нажмёт кнопку, заказ висел в работе.
+
+     Причина обязательна: магазин по ней понимает, стоит ли предложить
+     что-то взамен, и это та же причина, которую требуют от продавца
+     при его отмене. */
+  const [cancelTarget, setCancelTarget] = useState<BuyerOrder | null>(null)
+  const [cancelReason, setCancelReason] = useState("")
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+
+  const cancelOrder = async () => {
+    if (!cancelTarget || cancelling) return
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      const response = await fetch(`/api/part-orders/${cancelTarget.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED", statusReason: cancelReason.trim() }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        setCancelError(typeof payload?.error === "string" ? payload.error : "Не удалось отменить заказ")
+        return
+      }
+      setCancelTarget(null)
+      setCancelReason("")
+      await mutate()
+    } catch {
+      setCancelError("Нет связи с сервером. Попробуйте ещё раз.")
+    } finally {
+      setCancelling(false)
+    }
+  }
 
   if (error) {
     return (
@@ -109,6 +149,21 @@ export default function BuyerOrdersPage() {
                       {order.statusReason && (
                         <Alert color="red" variant="light" mt="sm" icon={<IconX size={15} />}>{order.statusReason}</Alert>
                       )}
+                      {/* Отменить можно, пока заказ не уехал: после
+                          отправки товар уже в пути, и решение остаётся
+                          за магазином. */}
+                      {(order.status === "NEW" || order.status === "CONFIRMED") && (
+                        <Button
+                          size="compact-sm"
+                          variant="subtle"
+                          color="red"
+                          mt="sm"
+                          leftSection={<IconX size={14} />}
+                          onClick={() => { setCancelTarget(order); setCancelReason(""); setCancelError(null) }}
+                        >
+                          Отменить заказ
+                        </Button>
+                      )}
                     </Box>
 
                     {order.store && (
@@ -148,6 +203,44 @@ export default function BuyerOrdersPage() {
           </Stack>
         )}
       </Stack>
+
+      {/* Подтверждение отмены.
+
+          Отмена необратима — заказ из неё уже не вернуть, — поэтому она
+          спрашивает причину и не закрывается промахом мимо окна. */}
+      <Modal
+        opened={Boolean(cancelTarget)}
+        onClose={() => setCancelTarget(null)}
+        title="Отменить заказ"
+        centered
+        closeOnClickOutside={false}
+      >
+        <Stack gap="sm">
+          <Text size="sm">
+            {cancelTarget ? `«${cancelTarget.itemName}»` : ""} — заказ будет отменён, и магазин получит уведомление.
+          </Text>
+          <Textarea
+            label="Причина отмены"
+            description="Магазин по ней поймёт, стоит ли предложить что-то взамен"
+            placeholder="Нашёл дешевле, ошибся с количеством, передумал"
+            minRows={3}
+            value={cancelReason}
+            onChange={(event) => setCancelReason(event.currentTarget.value.slice(0, 500))}
+          />
+          {cancelError && <Alert color="red" variant="light">{cancelError}</Alert>}
+          <Group gap="xs" justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={() => setCancelTarget(null)}>Не отменять</Button>
+            <Button
+              color="red"
+              loading={cancelling}
+              disabled={!cancelReason.trim()}
+              onClick={() => void cancelOrder()}
+            >
+              Отменить заказ
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   )
 }

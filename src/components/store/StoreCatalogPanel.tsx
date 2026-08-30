@@ -7,7 +7,7 @@ import {
   ActionIcon, Alert, Badge, Box, Button, Card, Group, Loader, Modal, NumberInput, Select,
   Stack, Table, Text, TextInput, ThemeIcon,
 } from "@mantine/core"
-import { IconEdit, IconPackage, IconSearch, IconTrash } from "@tabler/icons-react"
+import { IconEdit, IconPackage, IconPlus, IconSearch, IconTrash } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
@@ -43,6 +43,13 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
   )
 
   const [editTarget, setEditTarget] = useState<StorePart | null>(null)
+  /* Добавление позиции руками.
+
+     Единственным способом наполнить каталог был импорт файла: продавец
+     с пятью деталями упирался в заблокированную кнопку «Отправить на
+     проверку» и должен был сверстать таблицу, чтобы продать одну
+     колодку. Форма здесь та же, что и для правки, — поля совпадают. */
+  const [isCreating, setIsCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<StorePart | null>(null)
   const [form, setForm] = useState({ name: "", price: 0 as string | number, supplyMode: "ORDER", leadMin: "" as string | number, leadMax: "" as string | number })
   const [isSaving, setIsSaving] = useState(false)
@@ -61,15 +68,15 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
   }
 
   const save = async () => {
-    if (!editTarget) return
+    if (!editTarget && !isCreating) return
     setIsSaving(true)
     setActionError(null)
     try {
       const response = await fetch(`/api/stores/${storeId}/parts`, {
-        method: "PATCH",
+        method: isCreating ? "POST" : "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          partId: editTarget.id,
+          ...(editTarget ? { partId: editTarget.id } : {}),
           name: form.name,
           price: Number(form.price),
           supplyMode: form.supplyMode,
@@ -83,10 +90,18 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
         return
       }
       setEditTarget(null)
+      setIsCreating(false)
       await mutate()
     } finally {
       setIsSaving(false)
     }
+  }
+
+  /** Открывает пустую форму: новая позиция «под заказ» без срока. */
+  const startCreating = () => {
+    setForm({ name: "", price: "", supplyMode: "ORDER", leadMin: "", leadMax: "" })
+    setActionError(null)
+    setIsCreating(true)
   }
 
   const remove = async () => {
@@ -115,10 +130,19 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
           <ThemeIcon variant="light" color="indigo" size={34} radius="md"><IconPackage size={17} /></ThemeIcon>
           <Box>
             <Text fw={700} size="sm">Каталог магазина</Text>
-            <Text size="xs" c="dimmed">Правка цены, срока и наличия по одной позиции.</Text>
+            <Text size="xs" c="dimmed">Добавление и правка позиций по одной, без файла.</Text>
           </Box>
         </Group>
         <Group gap="xs" wrap="nowrap">
+          {/* Добавить позицию руками.
+
+              Наполнить каталог можно было только импортом таблицы:
+              продавец с пятью деталями упирался в заблокированную
+              кнопку «Отправить на проверку» и должен был верстать CSV,
+              чтобы продать одну колодку. */}
+          <Button size="xs" color="indigo" leftSection={<IconPlus size={14} />} onClick={startCreating}>
+            Добавить
+          </Button>
           <TextInput
             size="xs"
             placeholder="Название или артикул"
@@ -192,7 +216,15 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
         </Text>
       )}
 
-      <Modal opened={Boolean(editTarget)} onClose={() => setEditTarget(null)} title="Изменить позицию" centered>
+      <Modal
+        opened={Boolean(editTarget) || isCreating}
+        onClose={() => { setEditTarget(null); setIsCreating(false) }}
+        title={isCreating ? "Новая позиция" : "Изменить позицию"}
+        centered
+        /* В форме несколько полей: промах мимо окна не должен стирать
+           набранное. Крестик и «Отмена» остаются. */
+        closeOnClickOutside={false}
+      >
         <Stack gap="sm">
           <TextInput label="Название" value={form.name} onChange={(event) => setForm({ ...form, name: event.currentTarget.value })} />
           <NumberInput label="Цена, ₽" min={1} value={form.price} onChange={(value) => setForm({ ...form, price: value })} thousandSeparator=" " />
@@ -211,9 +243,9 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
           )}
           {actionError && <Alert color="red" variant="light">{actionError}</Alert>}
           <Group gap="xs" justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={() => setEditTarget(null)}>Отмена</Button>
+            <Button variant="subtle" color="gray" onClick={() => { setEditTarget(null); setIsCreating(false) }}>Отмена</Button>
             <Button color="indigo" onClick={save} loading={isSaving} disabled={!String(form.name).trim() || !Number(form.price)}>
-              Сохранить
+              {isCreating ? "Добавить" : "Сохранить"}
             </Button>
           </Group>
         </Stack>

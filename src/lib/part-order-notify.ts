@@ -171,3 +171,69 @@ export async function notifyBuyerAboutOrderStatus(orderId: string, nextStatus: s
     console.warn("Buyer order notification was not delivered", error instanceof Error ? error.message : error)
   }
 }
+
+/**
+ * Сообщает магазину, что покупатель отменил заказ.
+ *
+ * Отмену покупателем добавили, а продавец о ней не узнавал: заказ
+ * просто исчезал из работы, и магазин мог собрать посылку по отменённой
+ * заявке. О новом заказе продавцу сообщают, об отмене — теперь тоже.
+ *
+ * Причина уходит вместе с сообщением: «нашёл дешевле» и «ошибся с
+ * количеством» — разные поводы, и по ним магазин понимает, стоит ли
+ * предложить что-то взамен.
+ */
+export async function notifyStoreOwnerAboutCancellation(orderId: string, statusReason?: string | null) {
+  try {
+    const order = await prisma.partOrder.findUnique({
+      where: { id: orderId },
+      select: {
+        itemName: true,
+        quantity: true,
+        store: {
+          select: {
+            name: true,
+            ownerId: true,
+            owner: { select: { telegramId: true, telegramVerifiedAt: true } },
+          },
+        },
+      },
+    })
+    if (!order?.store?.ownerId) return
+
+    const title = "Покупатель отменил заказ"
+    const text = `«${order.itemName}»${order.quantity > 1 ? ` × ${order.quantity}` : ""} — заказ отменён покупателем.`
+    const content = [text, statusReason ? `Причина: ${statusReason}` : null].filter(Boolean).join("\n")
+
+    await prisma.notification.create({
+      data: {
+        userId: order.store.ownerId,
+        title,
+        content,
+        type: "WARNING",
+        relatedType: "PART_ORDER",
+        relatedId: orderId,
+      },
+    })
+
+    const owner = order.store.owner
+    if (!owner?.telegramId || !owner.telegramVerifiedAt) return
+
+    const miniAppUrl = getTelegramMiniAppUrl()
+    await telegramApi("sendMessage", {
+      chat_id: owner.telegramId,
+      text: [
+        `<b>${escapeHtml(title)}</b>`,
+        "",
+        escapeHtml(text),
+        statusReason ? `\n<i>${escapeHtml(statusReason)}</i>` : null,
+      ].filter((line) => line !== null).join("\n"),
+      parse_mode: "HTML",
+      reply_markup: miniAppUrl
+        ? { inline_keyboard: [[{ text: "Заказы магазина", web_app: { url: miniAppUrl } }]] }
+        : undefined,
+    })
+  } catch (error) {
+    console.warn("Store cancellation notification was not delivered", error instanceof Error ? error.message : error)
+  }
+}

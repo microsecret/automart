@@ -16,6 +16,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense, useEffect } from "react"
 import { useDisclosure } from "@mantine/hooks"
 import AppAnalytics from "@/components/analytics/AppAnalytics"
+import ReferralClaim from "@/components/referral/ReferralClaim"
 /* Чат поддержки грузится по требованию: он висит кнопкой в углу на
    каждой странице, но открывают его единицы. Прямой импорт тянул в общий
    бандл два десятка компонентов Mantine ради этой кнопки.
@@ -210,7 +211,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       <Box component="main" style={{ minHeight: "100vh", background: "var(--market-background)" }}>
         {/* Счётчик читает строку запроса, а useSearchParams требует границы
             Suspense: без неё страница целиком ушла бы в клиентский рендер. */}
-        <Suspense fallback={null}><AppAnalytics /></Suspense>
+        <Suspense fallback={null}><AppAnalytics /><ReferralClaim /></Suspense>
         {children}
         {isAuthRoute && <SupportChat />}
       </Box>
@@ -230,6 +231,10 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         {/* Счётчик посещений читает строку запроса: смена фильтров каталога —
             такой же переход, как открытие нового раздела. */}
         <AppAnalytics />
+        {/* Приглашение закрепляется за человеком, пришедшим по
+            партнёрской ссылке. Читает адресную строку, поэтому живёт
+            под той же границей Suspense, что и счётчик посещений. */}
+        <ReferralClaim />
         <NavigationQuerySync onRouteChange={closeMobile} />
       </Suspense>
       {/* Ссылка «к содержимому» — первая цель табуляции.
