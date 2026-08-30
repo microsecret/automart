@@ -170,16 +170,37 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       if (next !== null) viewport.scrollTop = next
     }
 
+    /* Пересчёт идёт раз на кадр, а не на каждое событие.
+
+       Браузер шлёт до сотни событий прокрутки в секунду, и на каждом
+       здесь читались getBoundingClientRect, scrollHeight и clientHeight
+       — то есть браузер был вынужден пересчитывать раскладку страницы
+       заново. Хуже: следом шла запись scrollTop, и пересчёт случался
+       второй раз. На длинных страницах каталога это и было заметным
+       подтормаживанием прокрутки на слабых телефонах.
+
+       Кадр отменяется при следующем событии: считаем последнее
+       положение, а не очередь устаревших. */
+    let frame: number | null = null
+    const scheduleUpdate = () => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(() => {
+        frame = null
+        updateInset()
+      })
+    }
+
     updateInset()
-    window.addEventListener("scroll", updateInset, { passive: true })
-    window.addEventListener("resize", updateInset)
+    window.addEventListener("scroll", scheduleUpdate, { passive: true })
+    window.addEventListener("resize", scheduleUpdate)
     // Высота подвала меняется при подгрузке контента, а не только при скролле.
-    const observer = new ResizeObserver(updateInset)
+    const observer = new ResizeObserver(scheduleUpdate)
     observer.observe(document.body)
 
     return () => {
-      window.removeEventListener("scroll", updateInset)
-      window.removeEventListener("resize", updateInset)
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", scheduleUpdate)
+      window.removeEventListener("resize", scheduleUpdate)
       observer.disconnect()
     }
   }, [])

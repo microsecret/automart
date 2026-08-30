@@ -185,17 +185,40 @@ export default function TelegramMiniApp() {
 
   return (
     <TelegramShell title={heading.title} subtitle={heading.subtitle} activeTab={heading.href}>
-      {status === "loading" ? (
-        <Stack align="center" py={40} gap="xs">
-          <Loader size="sm" color="var(--tg-accent)" />
-          <Text size="xs" c="var(--tg-hint)">Открываем ваш аккаунт…</Text>
-        </Stack>
-      ) : tab === "auctions" ? (
+      {/* Лента показывается сразу, вход подтягивается сбоку.
+
+          Здесь стоял экран ожидания со спиннером: человек открывал
+          мини-приложение и вместо машин видел «Открываем ваш аккаунт…»
+          до тех пор, пока не отработает вход. Это ровно то, от чего
+          сказано уходить в комментарии выше, — а код делал наоборот.
+
+          Вход нужен, чтобы сохранять избранное и писать продавцам;
+          смотреть машины можно и без него. Поэтому лента рисуется
+          сразу, а состояние входа занимает одну тонкую строку и
+          исчезает, как только вход прошёл.
+
+          Переписка — исключение: без входа показывать нечего, и там
+          ожидание честнее пустого экрана. */}
+      {status === "loading" && (
+        <Box className="tg-notice" data-tone="muted" mb="sm">
+          <Loader size="xs" color="var(--tg-accent)" />
+          <Text size="xs">Открываем ваш аккаунт…</Text>
+        </Box>
+      )}
+
+      {tab === "auctions" ? (
         <TelegramAuctions />
       ) : tab === "news" ? (
         <TelegramNews />
       ) : tab === "chats" ? (
-        <TelegramMessages />
+        status === "loading" ? (
+          <Stack align="center" py={40} gap="xs">
+            <Loader size="sm" color="var(--tg-accent)" />
+            <Text size="xs" c="var(--tg-hint)">Открываем переписку…</Text>
+          </Stack>
+        ) : (
+          <TelegramMessages />
+        )
       ) : (
         <TelegramFeed />
       )}

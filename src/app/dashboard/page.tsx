@@ -133,7 +133,20 @@ function DashboardContent() {
   const [garageDeletingId, setGarageDeletingId] = useState<string | null>(null)
   const [removalConfirmation, setRemovalConfirmation] = useState<RemovalConfirmation | null>(null)
   const [isRemovalSaving, setIsRemovalSaving] = useState(false)
-  const { data, error, isLoading, mutate } = useSWR<DashboardResponse>("/api/dashboard/stats", fetchJson)
+  /* Те же условия, что у шапки и бокового меню.
+
+     Здесь запрос шёл с настройками по умолчанию: обновлялся при каждом
+     возврате на вкладку и дедуплицировался всего две секунды. Шапка и
+     меню просят тот же адрес с паузой в двадцать секунд и без
+     обновления по фокусу — из-за расхождения кабинет сбрасывал общий
+     кэш и передёргивал самый дорогой запрос сайта (объявления,
+     избранное, гараж, заказы продвижения) на каждое переключение
+     вкладки браузера. */
+  const { data, error, isLoading, mutate } = useSWR<DashboardResponse>(
+    "/api/dashboard/stats",
+    fetchJson,
+    { revalidateOnFocus: false, dedupingInterval: 20_000 },
+  )
   const { data: garageData, error: garageError, isLoading: isGarageLoading, mutate: mutateGarage } = useSWR<GarageResponse>(
     tab === "garage" ? "/api/garage" : null,
     fetchJson,

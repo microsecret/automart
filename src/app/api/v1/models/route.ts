@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getModels, ALL_BRANDS, type BrandCategory } from "@/lib/catalog"
 
+/* Справочник кэшируется надолго.
+
+   Марки и модели лежат в коде: ответ на один и тот же запрос
+   байт в байт одинаков и меняется только с выкатом новой версии.
+   Заголовка не было вовсе, поэтому каждый выпадающий список в
+   мини-приложении и на сайте шёл до сервера заново.
+
+   stale-while-revalidate отдаёт прошлый ответ мгновенно и обновляет
+   его в фоне: список появляется сразу, а свежесть не страдает. */
+const DIRECTORY_CACHE_HEADERS = {
+  "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+} as const
+
 const CATEGORY_ALIASES: Record<string, BrandCategory> = {
   CAR: "cars",
   cars: "cars",
@@ -32,8 +45,11 @@ export async function GET(request: NextRequest) {
     item.name.toLocaleLowerCase("ru") === brandId.toLocaleLowerCase("ru") && (!brandCategory || item.category === brandCategory),
   )
   if (!brand) {
-    return NextResponse.json({ brand: brandId, models: [] })
+    return NextResponse.json({ brand: brandId, models: [] }, { headers: DIRECTORY_CACHE_HEADERS })
   }
 
-  return NextResponse.json({ brand: brand.name, category: brand.category, models: getModels(brand.name, brand.category) })
+  return NextResponse.json(
+    { brand: brand.name, category: brand.category, models: getModels(brand.name, brand.category) },
+    { headers: DIRECTORY_CACHE_HEADERS },
+  )
 }

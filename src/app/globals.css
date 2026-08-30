@@ -3088,6 +3088,25 @@ select {
   font-weight: 700;
 }
 
+/* На телефоне кнопки категорий дорастают до пальца.
+
+   Тридцать пикселей — половина от того, во что человек уверенно
+   попадает на ходу, а стоят эти кнопки в ряду с горизонтальной
+   прокруткой: промах не просто не срабатывает, он утаскивает ленту
+   вбок, и выбранная категория уезжает из виду. */
+@media (max-width: 640px) {
+  .parts-category-bar .mantine-Button-root {
+    min-height: 44px;
+    padding-inline: 14px;
+  }
+
+  .parts-subcategories .mantine-Button-root,
+  .parts-condition-shortcuts .mantine-Button-root {
+    min-height: 38px;
+    padding-inline: 12px;
+  }
+}
+
 .parts-subcategories,
 .parts-condition-shortcuts {
   padding-top: 7px;

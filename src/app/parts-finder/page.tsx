@@ -95,6 +95,20 @@ function PartsContent() {
   const urlPartType = sp.get("partType")
   const urlSubcategory = sp.get("subcategory")
   const [q, setQ] = useState(sp.get("q") || "")
+  /* Запрос уходит на сервер не на каждую букву.
+
+     Поле поиска входило в ключ запроса напрямую: набирая «тормозной
+     диск», человек отправлял тринадцать запросов подряд, и на экране
+     мелькали ответы на недописанные слова. Последний из них ещё и мог
+     прийти раньше предыдущего, показав результат не по тому тексту.
+
+     Треть секунды — обычная пауза между нажатиями внутри слова; она
+     достаточно коротка, чтобы человек не заметил ожидания. */
+  const [debouncedQ, setDebouncedQ] = useState(q)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQ(q), 350)
+    return () => window.clearTimeout(timer)
+  }, [q])
   const [partType, setPartType] = useState<string | null>(sp.get("partType"))
   const [subcategory, setSubcategory] = useState<string | null>(sp.get("subcategory"))
   const [make, setMake] = useState<string | null>(sp.get("make"))
@@ -173,7 +187,7 @@ function PartsContent() {
     const u = new URLSearchParams()
     u.set("page", String(page))
     u.set("limit", "24")
-    if (q) u.set("q", q)
+    if (debouncedQ) u.set("q", debouncedQ)
     if (partType) u.set("partType", partType)
     if (subcategory) u.set("subcategory", subcategory)
     if (make) u.set("make", make)

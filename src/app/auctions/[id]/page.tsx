@@ -578,7 +578,17 @@ function AuctionDetail() {
                       <Group justify="space-between" gap="xs" wrap="nowrap" className={styles.similarPriceRow}>
                         <Box>
                           <Text fw={800} c="var(--market-primary)">{formatPriceShort(similarListing.finalPrice)}</Text>
-                          <Text size="10px" c="dimmed">предварительно под ключ</Text>
+                          {/* «Лот + комиссия», а не «под ключ».
+
+                              Здесь стоит то же поле finalPrice, что в
+                              списке аукционов и в нижней полосе, но
+                              подписано оно было щедрее: «предварительно
+                              под ключ» обещает конечную цену с пошлиной
+                              и доставкой, которых в этой сумме нет. На
+                              живых лотах разница доходила до четырёхсот
+                              тысяч рублей — человек рассчитывал бюджет
+                              по одной цифре, а платил по другой. */}
+                          <Text size="10px" c="dimmed">лот + комиссия</Text>
                         </Box>
                         <ThemeIcon variant="light" color="indigo" radius="xl" size={30}><IconArrowRight size={16} /></ThemeIcon>
                       </Group>

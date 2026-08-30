@@ -11,11 +11,16 @@ export async function GET() {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     })
+    /* Категории меняются с выкатом, а не в течение дня: держим их в
+       кэше час у человека и сутки на границе. Заголовка не было, и
+       каждый заход за списком категорий шёл до базы. */
     return NextResponse.json({
       categories: categories.map((category) => ({
         ...category,
         vehicleType: getVehicleTypeForCategoryName(category.name),
       })),
+    }, {
+      headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" },
     })
   } catch (error) {
     /* Сбой базы — не «категорий нет»: ответ 200 с пустым списком прятал

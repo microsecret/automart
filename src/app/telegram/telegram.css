@@ -315,6 +315,18 @@
   background: color-mix(in srgb, #e03131 18%, var(--tg-surface));
 }
 
+/* Приглушённая строка состояния: вход ещё идёт, но лента уже видна.
+
+   Обычный tg-notice подсвечен акцентом и читается как важное
+   сообщение. Здесь же речь о фоновой работе, которая закончится сама
+   через секунду, — она не должна перетягивать внимание с машин. */
+.tg-notice[data-tone="muted"] {
+  align-items: center;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--tg-hint) 12%, var(--tg-surface));
+  color: var(--tg-hint);
+}
+
 .tg-button {
   height: 46px;
   border: 0;

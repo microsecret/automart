@@ -107,11 +107,28 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.message.groupBy({
-        by: ['conversationId'],
-        where: participantWhere,
-      }),
+      /* Число диалогов считается запросом, а не выгрузкой.
+
+         Здесь стоял второй groupBy без ограничения: он вытягивал по
+         строке на каждый диалог, в котором человек когда-либо
+         участвовал, — и всё это ради одного числа в пагинации. У
+         активного продавца с тысячами переписок ящик открывался тем
+         медленнее, чем дольше он пользуется сервисом, а этот же
+         запрос дёргается для значка непрочитанных.
+
+         COUNT(DISTINCT) считает то же самое на стороне базы и
+         возвращает одну строку. */
+      prisma.$queryRaw<Array<{ count: number | bigint }>>`
+        SELECT COUNT(DISTINCT "conversationId") AS count
+        FROM "Message"
+        WHERE "senderId" = ${session.user.id} OR "receiverId" = ${session.user.id}
+      `,
     ])
+
+    /* COUNT возвращает число в SQLite и BigInt в PostgreSQL: BigInt
+       не сериализуется в JSON, и ответ упал бы на выдаче. Number
+       снимает разницу и не мешает переезду на другую базу. */
+    const totalConversations = Number(conversationCount[0]?.count ?? 0)
 
     // Fetch all details in batches instead of making three additional queries
     // per conversation. The compound index on (conversationId, createdAt)
@@ -213,8 +230,8 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: conversationCount.length,
-        pages: Math.ceil(conversationCount.length / limit)
+        total: totalConversations,
+        pages: Math.ceil(totalConversations / limit)
       }
     })
   } catch (error) {
