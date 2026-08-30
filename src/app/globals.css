@@ -9020,3 +9020,33 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
     display: none;
   }
 }
+
+/* Полоса возврата в мини-приложение.
+
+   Живёт здесь, а не в telegram.css: тот подключён только на странице
+   самого приложения, а полоса нужна на обычных страницах сайта —
+   форуме, запчастях, карточке машины, — куда человек уходит из ленты.
+
+   Прижата к верху и не уезжает при прокрутке: про возврат вспоминают
+   не сразу, а дочитав. */
+.tg-return-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--market-line);
+  background: var(--market-surface);
+}
+
+.tg-return-bar__link {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  color: var(--market-primary);
+  text-decoration: none;
+}
+
+.tg-return-bar__link:active {
+  opacity: 0.7;
+}

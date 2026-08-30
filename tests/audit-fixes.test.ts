@@ -344,3 +344,44 @@ test("панель вкладок не лежит под главной кноп
   const shell = readFileSync(new URL("../src/components/telegram/TelegramShell.tsx", import.meta.url), "utf8")
   assert.match(shell, /data-main-button=/)
 })
+
+test("уход на сайт из мини-приложения не билет в один конец", () => {
+  /* Ссылки из приложения ведут на обычные страницы: форум, запчасти,
+     карточку машины. Раньше вместе с ними приезжала десктопная шапка,
+     подвал и боковой каталог во вьюпорте телефона, а вернуться в ленту
+     было нечем — панели вкладок там нет. */
+  const shell = readFileSync(new URL("../src/components/layout/AppShellLayout.tsx", import.meta.url), "utf8")
+  assert.match(shell, /useTelegramSession/)
+  assert.ok(
+    shell.includes('const isStandaloneRoute = isAuthRoute || pathname?.startsWith("/telegram") || fromTelegram'),
+    "автономный режим должен включаться и для страниц из мини-приложения",
+  )
+  assert.match(shell, /<TelegramReturnBar \/>/)
+
+  const session = readFileSync(new URL("../src/lib/use-telegram-session.ts", import.meta.url), "utf8")
+  /* Признак живёт весь сеанс: параметр в адресе теряется на первом же
+     переходе вглубь сайта, а человек остаётся внутри Telegram. */
+  assert.match(session, /sessionStorage/)
+  /* Но не переезжает в обычный браузер: закрыв мессенджер, человек
+     должен увидеть полноценный сайт. Проверяем вызовы, а не упоминание
+     в пояснении — там localStorage назван как отвергнутый вариант. */
+  assert.doesNotMatch(session, /localStorage\.(get|set)Item/)
+})
+
+test("тема Telegram не перезаписывает выбор темы сайта", () => {
+  /* Приложение писало тему мессенджера в тот же ключ, что и выбор на
+     сайте: человек со светлым сайтом и тёмным Telegram, открыв
+     мини-приложение один раз, получал тёмный сайт в браузере навсегда —
+     при том что менял тему не там, где выбирал. */
+  const shell = readFileSync(new URL("../src/components/telegram/TelegramShell.tsx", import.meta.url), "utf8")
+  assert.match(shell, /sessionStorage\.setItem\("telegram-color-scheme"/)
+  assert.doesNotMatch(shell, /localStorage\.setItem\("automart-color-scheme"/)
+
+  const providers = readFileSync(new URL("../src/components/providers/AppProviders.tsx", import.meta.url), "utf8")
+  /* Собственный выбор человека главнее темы мессенджера. */
+  const order = providers.slice(providers.indexOf("const saved = localStorage.getItem"))
+  assert.ok(
+    order.indexOf("saved === \"dark\"") < order.indexOf("fromTelegram === \"dark\""),
+    "выбор человека должен проверяться раньше темы мессенджера",
+  )
+})

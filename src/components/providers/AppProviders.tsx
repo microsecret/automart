@@ -22,10 +22,28 @@ export default function AppProviders({ children }: { children: React.ReactNode }
        обычные страницы сайта. Приложение записывает выбор мессенджера в
        это же хранилище, и переход из тёмной ленты в кабинет больше не
        вспыхивает белым. */
-    const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
+    if (typeof window === "undefined") {
+      setMounted(true)
+      return
+    }
+
+    /* Порядок важен: собственный выбор человека главнее всего.
+
+       Тема мессенджера учитывается только там, где выбора нет. Раньше
+       приложение писало её в тот же ключ и перекрывало настройку сайта:
+       человек со светлым сайтом и тёмным Telegram, открыв мини-
+       приложение один раз, получал тёмный сайт в браузере навсегда.
+
+       Ключ сеанса живёт, пока открыт мессенджер, и не переезжает в
+       обычный браузер. */
+    const saved = localStorage.getItem(STORAGE_KEY)
+    const fromTelegram = sessionStorage.getItem("telegram-color-scheme")
+
     if (saved === "dark" || saved === "light") {
       setColorScheme(saved)
-    } else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    } else if (fromTelegram === "dark" || fromTelegram === "light") {
+      setColorScheme(fromTelegram)
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
       setColorScheme("dark")
     }
     setMounted(true)

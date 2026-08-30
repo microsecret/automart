@@ -17,6 +17,8 @@ import { Suspense, useEffect } from "react"
 import { useDisclosure } from "@mantine/hooks"
 import AppAnalytics from "@/components/analytics/AppAnalytics"
 import ReferralClaim from "@/components/referral/ReferralClaim"
+import TelegramReturnBar from "@/components/telegram/TelegramReturnBar"
+import { useTelegramSession } from "@/lib/use-telegram-session"
 /* Чат поддержки грузится по требованию: он висит кнопкой в углу на
    каждой странице, но открывают его единицы. Прямой импорт тянул в общий
    бандл два десятка компонентов Mantine ради этой кнопки.
@@ -113,7 +115,20 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const isAuthRoute = pathname?.startsWith("/auth/")
   // Telegram Web Apps should open as a focused, full-screen experience. Rendering
   // the desktop shell around it wastes the mobile viewport and duplicates navigation.
-  const isStandaloneRoute = isAuthRoute || pathname?.startsWith("/telegram")
+  /* Страница, открытая из мини-приложения, тоже идёт без обвязки сайта.
+
+     Ссылки из мини-приложения помечены `from=telegram` и ведут на
+     обычные страницы: форум, запчасти, избранное, карточку машины.
+     Раньше признак читали три компонента, и только чтобы дописать его к
+     ссылке входа, — а сама страница приезжала с десктопной шапкой,
+     подвалом и боковым каталогом во вьюпорте телефона. Вернуться в
+     ленту было нечем: панели вкладок там нет.
+
+     Признак запоминается на время сеанса: переходя дальше по сайту,
+     человек теряет параметр из адреса, но остаётся внутри Telegram, и
+     обвязка не должна возвращаться посреди пути. */
+  const fromTelegram = useTelegramSession()
+  const isStandaloneRoute = isAuthRoute || pathname?.startsWith("/telegram") || fromTelegram
   /* Страница объявления идёт во всю ширину.
      Каталог разделов слева занимал 236px там, где человек уже выбрал машину:
      предложение уйти в «Мото» или «Запчасти» здесь работает против сделки, а
@@ -212,6 +227,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         {/* Счётчик читает строку запроса, а useSearchParams требует границы
             Suspense: без неё страница целиком ушла бы в клиентский рендер. */}
         <Suspense fallback={null}><AppAnalytics /><ReferralClaim /></Suspense>
+        {/* Полоса возврата — только на страницах сайта: внутри самого
+            приложения внизу есть панель вкладок. */}
+        {fromTelegram && !pathname?.startsWith("/telegram") && <TelegramReturnBar />}
         {children}
         {isAuthRoute && <SupportChat />}
       </Box>
