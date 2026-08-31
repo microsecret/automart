@@ -129,6 +129,21 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
       select: { id: true },
     })
 
+    /* Марки, которых источник больше не отдаёт, удаляются.
+
+       Раньше цены только добавлялись и обновлялись, поэтому любая
+       однажды записанная марка оставалась навсегда: газ, приписанный
+       Башнефти ошибкой источника, пережил и правку скрейпера, и повторный
+       прогон. Заправка должна показывать то, что источник говорит о ней
+       сейчас, а не объединение всего, что он говорил когда-либо. */
+    const keepFuels = station.prices.map((price) => price.fuel)
+    await prisma.fuelPriceImport.deleteMany({
+      where: {
+        stationId: record.id,
+        ...(keepFuels.length ? { fuel: { notIn: keepFuels } } : {}),
+      },
+    })
+
     for (const price of station.prices) {
       await prisma.fuelPriceImport.upsert({
         where: { stationId_fuel: { stationId: record.id, fuel: price.fuel } },

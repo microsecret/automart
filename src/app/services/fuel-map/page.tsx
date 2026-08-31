@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
+import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { ActionIcon, Badge, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
 import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconX } from "@tabler/icons-react"
@@ -11,6 +12,7 @@ import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPr
 import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
 import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
 import FuelShareButton from "@/components/fuel/FuelShareButton"
+import FuelGuestGate from "@/components/fuel/FuelGuestGate"
 import { formatAge, isFresh } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { getGenericIdentity, getNetworkIdentity, getStationIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
@@ -153,7 +155,7 @@ function getStationDataSummary(station: FuelStation) {
 }
 
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
@@ -179,6 +181,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   /* Цены от водителей: на плашке видно, почём топливо, — иначе за ценой
      надо открывать карточку каждой заправки по очереди. */
   pricesByStation: Record<string, ConsensusPrice[]>
+  /* Сколько ближайших точек показать целиком, если человек не вошёл.
+     null — вошёл, показываем всё. */
+  guestVisibleCount: number | null
 }) {
   const [zoom, setZoom] = useState(11)
   /* Выбранный источник плиток живёт в браузере: человек выбрал тёмную
@@ -374,6 +379,20 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     const top = point.y - center.y + mapViewport.height / 2
     return left > -48 && left < mapViewport.width + 48 && top > -48 && top < mapViewport.height + 48 ? [{ station, left, top }] : []
   }), [center.x, center.y, mapViewport.height, mapViewport.width, stations, zoom])
+
+  /* Открытые гостю точки — ближайшие к центру карты, а не первые из
+     списка: человек смотрит туда, куда ведёт карту, и закрывать надо не
+     то, что попалось первым. */
+  const guestOpenIds = useMemo(() => {
+    if (guestVisibleCount === null) return null
+    return new Set(
+      [...stations]
+        .map((station) => ({ id: station.id, km: getDistanceInKilometers(viewportCenter, station) }))
+        .sort((left, right) => left.km - right.km)
+        .slice(0, guestVisibleCount)
+        .map((row) => row.id),
+    )
+  }, [stations, guestVisibleCount, viewportCenter])
 
   const markers = useMemo<MapMarker[]>(() => {
     /* Группировка держится до четырнадцатого масштаба, а не до
@@ -611,6 +630,13 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     if (isDraggingRef.current) return
 
     if (marker.stations.length === 1) {
+      /* Карточка закрытой точки не открывается: в ней цены, ради которых
+         и просят войти. Подсказка объясняет отказ — молчаливое нажатие
+         «в никуда» человек читает как поломку. */
+      if (guestOpenIds && !guestOpenIds.has(marker.stations[0].id)) {
+        setClusterHint("Цены этой заправки открыты вошедшим. Войдите — и увидите все заправки города с ценами и наличием.")
+        return
+      }
       setClusterHint(null)
       onSelect(marker.stations[0])
       return
@@ -832,6 +858,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 key={firstStation.id}
                 className="fuel-map-pin"
                 data-plate="true"
+                /* Закрытая гостю точка размывается целиком: видно, что она
+                   есть и где стоит, но не видно цены — ради неё и вход. */
+                data-locked={guestOpenIds && !guestOpenIds.has(firstStation.id) ? "true" : undefined}
                 style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 100%), 0)` }}
               >
                 <UnstyledButton
@@ -917,7 +946,12 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           }
 
           return (
-            <Box key={isCluster ? `cluster-${index}` : firstStation.id} className="fuel-map-pin" style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 15px), 0)` }}>
+            <Box
+              key={isCluster ? `cluster-${index}` : firstStation.id}
+              className="fuel-map-pin"
+              data-locked={!isCluster && guestOpenIds && !guestOpenIds.has(firstStation.id) ? "true" : undefined}
+              style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 15px), 0)` }}
+            >
               <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-cluster-state={clusterState || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{
                 /* Цвет сети — только там, где про наличие ничего не
                    известно.
@@ -1600,6 +1634,16 @@ function FuelMapContent() {
         .map((value) => ({ value, label: value })),
     ]
   }, [allStations])
+  /* Гость видит несколько ближайших заправок целиком, остальные закрыты.
+
+     Сервис держится на отметках водителей, поэтому регистрация здесь не
+     формальность: отметить цену может только вошедший. Но пустая заглушка
+     вместо карты читалась бы как «сервиса нет» — человек должен сперва
+     увидеть живые данные, а потом решить. */
+  const { status: sessionStatus } = useSession()
+  const isGuest = sessionStatus === "unauthenticated"
+  const GUEST_VISIBLE_STATIONS = 4
+
   const filteredStations = useMemo(() => {
     const matchingStations = allStations.filter((station) => (
       (!fuelFilter || station.fuels.includes(fuelFilter))
@@ -1858,7 +1902,17 @@ function FuelMapContent() {
           selectedStationAvailability={selectedStationAvailability}
           onPricesReported={handlePricesReported}
           onAvailabilityReported={handleAvailabilityReported}
+          guestVisibleCount={isGuest ? GUEST_VISIBLE_STATIONS : null}
         />
+        {isGuest && (
+          <FuelGuestGate
+            stationCount={allStations.length}
+            pricedCount={allStations.filter((station) => station.prices.length > 0).length}
+            reportsToday={nearbyAvailabilityData?.activity?.reportsToday}
+            cityLabel={areaLabel}
+            returnPath="/services/fuel-map"
+          />
+        )}
 
         {/* Панель управления поверх карты, а не над ней.
 

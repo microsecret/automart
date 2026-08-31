@@ -3747,7 +3747,28 @@ select {
 }
 
 .fuel-map-canvas {
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
+}
+
+/* Safari на iPhone тянет страницу за картой.
+
+   touch-action: none забирает жест у элемента, но не отменяет
+   «резинку» самой страницы: палец, ведущий карту вниз, доводил до конца
+   документ, и браузер начинал сворачивать вкладку — карта при этом
+   стояла. Отсюда ощущение, что она не слушается пальца.
+
+   Страница на этом экране не прокручивается вовсе: карта занимает
+   высоту окна, а всё управление лежит поверх неё. Значит и «резинке»
+   тянуть нечего.
+
+   position: fixed на body сюда не годится — он сбивает адресную строку
+   Safari при повороте экрана; хватает запрета перетягивания. */
+body:has(.fuel-map-canvas) {
+  overscroll-behavior: none;
+  /* Горизонтальный жест от края экрана — это «назад» в Safari, и
+     отдавать его карте нельзя: человек листает карту вбок и вылетает со
+     страницы. Запрет действует только там, где карта. */
+  overflow-x: hidden;
 }
 
 /* Карточка точки — исключение: внутри неё форма отметки, список цен и
@@ -9185,4 +9206,78 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 
 .tg-return-bar__link:active {
   opacity: 0.7;
+}
+
+/* Закрытая гостю заправка.
+
+   Размывается сама плашка, а не карта под ней: человек видит, что точка
+   есть, где стоит и какой она сети, но не читает цену. Так карта остаётся
+   доказательством работы сервиса, а не заглушкой.
+
+   pointer-events оставлены: нажатие ловится и объясняет, почему закрыто.
+   Молчаливое нажатие «в никуда» читается как поломка. */
+.fuel-map-pin[data-locked="true"] .fuel-map-plate__fuels,
+.fuel-map-pin[data-locked="true"] .fuel-map-plate__price {
+  filter: blur(4px);
+  /* Прозрачность поверх размытия: цифры не угадываются по контуру. */
+  opacity: 0.75;
+  user-select: none;
+}
+
+.fuel-map-pin[data-locked="true"] .fuel-map-marker {
+  filter: blur(1.5px);
+  opacity: 0.85;
+}
+
+/* Приглашение войти поверх карты.
+
+   Лист снизу, а не окно по центру: на телефоне большой палец лежит внизу
+   экрана, и кнопка входа должна быть там же. Карта над ним видна — она и
+   доказывает, что сервис работает. */
+.fuel-gate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  pointer-events: none;
+}
+
+.fuel-gate__card {
+  pointer-events: auto;
+  width: min(460px, 100%);
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--market-surface);
+  border: 1px solid var(--market-border);
+  /* Тень заметнее обычной карточки: панель лежит поверх пёстрой карты и
+     без неё сливается с домами и дорогами. */
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+  max-height: min(78vh, 620px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.fuel-gate__link {
+  color: var(--mantine-color-indigo-6);
+  font-weight: 600;
+}
+
+.fuel-gate__note {
+  padding-top: 10px;
+  border-top: 1px solid var(--market-border);
+  color: var(--market-ink-subtle);
+}
+
+@media (max-width: 640px) {
+  .fuel-gate {
+    padding: 8px;
+  }
+
+  .fuel-gate__card {
+    padding: 16px;
+  }
 }
