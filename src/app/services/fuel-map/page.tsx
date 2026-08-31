@@ -286,6 +286,32 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     return () => mapNode.removeEventListener("wheel", handleNativeWheel)
   }, [])
 
+  /* Жест пальца отбирается у браузера явно, а не только через CSS.
+
+     touch-action: none описывает намерение, но этого мало. React вешает
+     слушатели касаний пассивно — из такого обработчика preventDefault не
+     действует, браузер его игнорирует. Safari на iPhone поэтому продолжал
+     тянуть страницу за картой и сворачивать вкладку, а Chrome на Android
+     показывал «потянуть для обновления», стоило вести палец вниз.
+
+     Непассивный touchmove на самом полотне закрывает оба случая: жест
+     принадлежит карте, а странице и браузеру не достаётся ничего.
+
+     Одиночное касание не трогаем: без движения это нажатие на метку, и
+     отменять его нельзя — карточка заправки перестала бы открываться. */
+  useEffect(() => {
+    const mapNode = mapInteractionRef.current
+    if (!mapNode) return
+
+    const handleNativeTouchMove = (event: TouchEvent) => {
+      if (!event.cancelable) return
+      event.preventDefault()
+    }
+
+    mapNode.addEventListener("touchmove", handleNativeTouchMove, { passive: false })
+    return () => mapNode.removeEventListener("touchmove", handleNativeTouchMove)
+  }, [])
+
   /* Выбранная точка подводится под карточку.
 
      Карточка открывается в левом нижнем углу, а нажать можно по точке в

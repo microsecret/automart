@@ -980,3 +980,38 @@ test("прайс сети не приписывает станции топли�
      нет — газ вылезал на единственной точке с пустым fuel_types. */
   assert.match(scraper, /if \(!stationFuelCodes && fuel === "GAS"\) return \[\]/)
 })
+
+test("одна заправка из двух источников показывается одной точкой", () => {
+  /* ГдеБЕНЗ и ГдеЗаправка собирают одни и те же заправки, и в базе они
+     лежат отдельными записями — это правильно, у каждого источника своя
+     частота обновления и свои пробелы. Но на карту они выходили двумя
+     метками: из четырёхсот трёх точек Уфы сто шестьдесят пять оказались
+     дублями. Человек видел два «Irbis» в одном дворе, где у одного есть
+     АИ-95, а у другого нет, и не понимал, какому верить.
+
+     Склейка объединяет знание, а не выбирает победителя: марка, которую
+     знает хоть один источник, остаётся; при споре о цене побеждает более
+     свежая отметка. */
+  const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
+
+  assert.match(route, /function mergeProviderStations/)
+  assert.match(route, /mergeStations\(mergeProviderStations\(/)
+
+  /* Пустое поле одного источника не должно стирать данные другого. */
+  assert.match(route, /fuelsNow: twin\.fuelsNow\?\.length \? twin\.fuelsNow : station\.fuelsNow/)
+  assert.match(route, /status: twin\.status !== "UNKNOWN" \? twin\.status : station\.status/)
+})
+
+test("лента прогонов не съедает хранилище", () => {
+  /* Лента доросла до 80 тысяч строк и 23 МБ — против 4 МБ самих заправок
+     с ценами, ради которых всё и собирается: при сборе каждые 15 минут
+     каждый прогон пишет строку на каждую заправку. Хранилище съедала
+     отладочная информация, а не данные.
+
+     Потолок задан и в прогонах, и в строках: один прогон может оказаться
+     огромным, и счёта прогонов тогда не хватит. */
+  const store = readFileSync(new URL("../src/lib/fuel-import-store.ts", import.meta.url), "utf8")
+
+  assert.match(store, /const KEEP_LOG_ENTRIES = /)
+  assert.match(store, /const total = await prisma\.fuelImportLogEntry\.count\(\)/)
+})

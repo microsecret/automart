@@ -202,7 +202,19 @@ export async function logFuelRunEvent(
    чистки таблица растёт неограниченно, а нужна она только для последних
    прогонов: старое читать некому. Чистка привязана к созданию прогона —
    так не нужен отдельный cron, который однажды забудут поставить. */
-const KEEP_RUNS_WITH_LOG = 12
+const KEEP_RUNS_WITH_LOG = 3
+
+/* Потолок ленты в строках, а не только в прогонах.
+
+   Двенадцати прогонов казалось немного, но каждый пишет строку на каждую
+   заправку: лента доросла до 80 тысяч строк и 23 МБ — против 4 МБ самих
+   заправок с ценами, ради которых всё и собирается. Хранилище съедала
+   отладочная информация, а не данные.
+
+   Консоль нужна, чтобы видеть идущий сбор и разобрать последний сбой;
+   для этого хватает трёх прогонов и потолка в строках, который держит
+   ленту в узде, даже если один прогон окажется огромным. */
+const KEEP_LOG_ENTRIES = 12_000
 
 async function pruneOldRunLogs() {
   try {
@@ -214,6 +226,22 @@ async function pruneOldRunLogs() {
     if (!keep.length) return
     await prisma.fuelImportLogEntry.deleteMany({
       where: { runId: { notIn: keep.map((run) => run.id) } },
+    })
+
+    /* Строки сверх потолка режутся по возрасту: свежие нужнее старых,
+       потому что смотрят всегда на текущий прогон. */
+    const total = await prisma.fuelImportLogEntry.count()
+    if (total <= KEEP_LOG_ENTRIES) return
+
+    const cutoff = await prisma.fuelImportLogEntry.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: KEEP_LOG_ENTRIES,
+      take: 1,
+      select: { createdAt: true },
+    })
+    if (!cutoff.length) return
+    await prisma.fuelImportLogEntry.deleteMany({
+      where: { createdAt: { lt: cutoff[0].createdAt } },
     })
   } catch (error) {
     console.error("Fuel run log prune failed", error instanceof Error ? error.message : error)

@@ -443,6 +443,86 @@ function canMergeStations(liveStation: FuelStationPayload, directoryStation: Fue
     || directoryIdentity.includes(liveIdentity)
 }
 
+/* Приоритет источников при склейке одной заправки.
+
+   Числа значат «чьё название и адрес выигрывают», а не «чьи данные
+   лучше»: цены и наличие собираются со всех источников, а вот показать
+   заправку надо под одним именем. ГдеБЕНЗ идёт первым, потому что у него
+   живые отметки водителей с голосами; ГдеЗаправка часто зовёт точку
+   адресом («Вишнёвая улица, 1/3») вместо названия сети. */
+const PROVIDER_PRIORITY: Record<string, number> = {
+  GDEBENZ: 3,
+  TWOGIS: 2,
+  GDEZAPRAVKA: 1,
+}
+
+function providerRank(station: FuelStationPayload) {
+  return PROVIDER_PRIORITY[station.dataSource] ?? 0
+}
+
+/**
+ * Схлопывает одну и ту же заправку, приехавшую из разных источников.
+ *
+ * Источники не перезаписывают друг друга в базе — они лежат отдельными
+ * записями, и это правильно: у каждого своя частота обновления и свои
+ * пробелы. Но на карту они выходили двумя метками: из четырёхсот трёх
+ * точек Уфы сто шестьдесят пять оказались дублями. Человек видел два
+ * «Irbis» в одном дворе, где у одного есть АИ-95, а у другого нет, и не
+ * понимал, какому верить.
+ *
+ * Склейка объединяет знание, а не выбирает победителя: марка, которую
+ * знает хоть один источник, остаётся; цена берётся у того, кто её видит,
+ * а при споре — у более свежей отметки.
+ */
+function mergeProviderStations(stations: FuelStationPayload[]): FuelStationPayload[] {
+  const merged: FuelStationPayload[] = []
+
+  for (const station of [...stations].sort((left, right) => providerRank(right) - providerRank(left))) {
+    const twinIndex = merged.findIndex((candidate) => canMergeStations(candidate, station))
+    if (twinIndex < 0) {
+      merged.push(station)
+      continue
+    }
+
+    const twin = merged[twinIndex]
+    /* Цены объединяются по марке. При споре побеждает более свежая: цена
+       вчерашнего дня вернее позавчерашней независимо от источника. */
+    const priceByFuel = new Map(twin.prices.map((price) => [price.fuel, price]))
+    for (const price of station.prices) {
+      const known = priceByFuel.get(price.fuel)
+      if (!known) {
+        priceByFuel.set(price.fuel, price)
+        continue
+      }
+      const knownAt = known.updatedAt ? Date.parse(known.updatedAt) : 0
+      const freshAt = price.updatedAt ? Date.parse(price.updatedAt) : 0
+      if (freshAt > knownAt) priceByFuel.set(price.fuel, price)
+    }
+
+    merged[twinIndex] = {
+      ...twin,
+      /* Имя и адрес — у источника с большим приоритетом, но пустое место
+         заполняет любой: «АЗС» без адреса хуже чужого адреса. */
+      name: twin.name !== "АЗС" ? twin.name : station.name,
+      brand: twin.brand || station.brand,
+      operator: twin.operator || station.operator,
+      address: twin.address || station.address,
+      openingHours: twin.openingHours || station.openingHours,
+      fuels: uniqueFuels([...twin.fuels, ...station.fuels]),
+      /* Наличие: берём то, что знает хоть кто-то. Пустой список у одного
+         источника не должен стирать сведения другого. */
+      fuelsNow: twin.fuelsNow?.length ? twin.fuelsNow : station.fuelsNow,
+      prices: [...priceByFuel.values()],
+      /* Статус «есть топливо» важнее «неизвестно»: молчание одного
+         источника не отменяет наблюдения другого. */
+      status: twin.status !== "UNKNOWN" ? twin.status : station.status,
+      statusUpdatedAt: twin.statusUpdatedAt || station.statusUpdatedAt,
+    }
+  }
+
+  return merged
+}
+
 function mergeStations(liveStations: FuelStationPayload[], directoryStations: FuelStationPayload[]) {
   const unmatchedDirectoryStations = [...directoryStations]
   const mergedLiveStations = liveStations.map((liveStation) => {
@@ -952,7 +1032,7 @@ export async function GET(request: NextRequest) {
 
   const hasLiveData = liveStations.length > 0 || importedStations.length > 0
   const dataMode = hasLiveData ? "LIVE" : "DIRECTORY"
-  const stations = mergeStations([...liveStations, ...importedStations], directoryStations)
+  const stations = mergeStations(mergeProviderStations([...liveStations, ...importedStations]), directoryStations)
   const disclaimer = hasLiveData
     ? "Статусы, ассортимент и цены с отметкой времени получены от подключённых источников. Остальные точки добавлены из OpenStreetMap как справочник — их ассортимент уточняйте на АЗС."
     : hasProviderKey
