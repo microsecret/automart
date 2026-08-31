@@ -71,6 +71,9 @@ export default function FuelRunConsole({ active }: { active: boolean }) {
   useEffect(() => {
     let cancelled = false
     let timer: ReturnType<typeof setTimeout>
+    /* Частота опроса зависит от того, идёт ли сбор прямо сейчас, а не от
+       того, открыта ли вкладка: прогон запускают и уходят смотреть карту. */
+    let running = active
 
     const poll = async () => {
       try {
@@ -80,6 +83,7 @@ export default function FuelRunConsole({ active }: { active: boolean }) {
         if (cancelled) return
 
         setRun(data.run)
+        running = data.run?.status === "RUNNING"
         if (data.entries.length) {
           cursorRef.current = data.cursor
           setEntries((current) => [...current, ...data.entries].slice(-MAX_VISIBLE))
@@ -88,7 +92,11 @@ export default function FuelRunConsole({ active }: { active: boolean }) {
         /* Обрыв опроса не должен ломать страницу: следующая попытка
            через тот же интервал. */
       } finally {
-        if (!cancelled) timer = setTimeout(poll, active ? 2_000 : 15_000)
+        /* Пока прогон идёт, лента опрашивается раз в секунду: строки
+           пишутся в базу порциями по пять, и более редкий опрос
+           превращал бы живую консоль в рывки. Между прогонами частить
+           незачем — там ничего не меняется. */
+        if (!cancelled) timer = setTimeout(poll, running ? 1_000 : 10_000)
       }
     }
 

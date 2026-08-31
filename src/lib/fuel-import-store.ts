@@ -67,14 +67,36 @@ function formatPricesForLog(prices: ImportedStationPrice[]): string | null {
     .join(" · ")
 }
 
+/* Лента сбрасывается в базу маленькими порциями, а не одной пачкой в
+   конце региона.
+
+   Пачкой было дешевле по числу запросов, но консоль от этого стояла
+   мёртвой: администратор ждал минуту в тишине, а потом получал сотню
+   строк разом — по такой ленте не видно, идёт сбор или завис. Порция в
+   пять строк доезжает до экрана за секунду и остаётся дешевле, чем
+   вставка на каждую заправку. */
+const LOG_FLUSH_SIZE = 5
+
+type PendingLogEntry = {
+  runId: string; source: string; city: string; station: string; address: string | null
+  prices: string | null; status: string | null; kind: string
+}
+
+async function flushLogEntries(entries: PendingLogEntry[]) {
+  if (!entries.length) return
+  const batch = entries.splice(0, entries.length)
+  /* Лента вспомогательная: сорванная запись строки не должна ронять
+     прогон, ради которого всё и затевалось. */
+  try {
+    await prisma.fuelImportLogEntry.createMany({ data: batch })
+  } catch (error) {
+    console.error("Fuel run log write failed", error instanceof Error ? error.message : error)
+  }
+}
+
 export async function upsertImportedStations(stations: ImportedStation[], runId?: string): Promise<number> {
   let saved = 0
-  /* Строки ленты копятся и пишутся пачкой: одна вставка на заправку
-     удвоила бы число запросов к базе на прогоне в тысячи точек. */
-  const logEntries: Array<{
-    runId: string; source: string; city: string; station: string; address: string | null
-    prices: string | null; status: string | null; kind: string
-  }> = []
+  const logEntries: PendingLogEntry[] = []
 
   for (const station of stations) {
     const city = resolveStationCity(station)
@@ -136,12 +158,11 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
         status: station.status,
         kind: "STATION",
       })
+      if (logEntries.length >= LOG_FLUSH_SIZE) await flushLogEntries(logEntries)
     }
   }
 
-  if (logEntries.length) {
-    await prisma.fuelImportLogEntry.createMany({ data: logEntries })
-  }
+  await flushLogEntries(logEntries)
 
   return saved
 }

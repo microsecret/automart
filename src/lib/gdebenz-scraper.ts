@@ -153,6 +153,10 @@ export async function collectGdebenz(options: GdebenzCollectOptions = {}): Promi
     let saved = 0
     let error: string | null = null
 
+    /* Отметка в ленте до запроса: администратор видит, что скрейпер
+       дошёл до города, ещё до того, как оттуда приедут заправки. */
+    await logFuelRunEvent(run.id, { source: "GDEBENZ", kind: "REGION", city: region.city, message: `Собираем ${region.city}` })
+
     try {
       const response = await scraperGetText(buildStationsUrl(region), {
         headers: { Referer: "https://gdebenz.ru/" },

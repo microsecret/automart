@@ -171,6 +171,10 @@ export async function collectGdezapravka(options: GdezapravkaCollectOptions = {}
     let saved = 0
     let error: string | null = null
 
+    /* Отметка в ленте до запроса: администратор видит, что скрейпер
+       дошёл до города, ещё до того, как оттуда приедут заправки. */
+    await logFuelRunEvent(run.id, { source: "GDEZAPRAVKA", kind: "REGION", city: region.city, message: `Собираем ${region.city}` })
+
     try {
       const bbox = buildBbox(region)
       const stationsResponse = await scraperGetText(`${GDEZAPRAVKA_STATIONS_API}?bbox=${encodeURIComponent(bbox)}&limit=${STATIONS_LIMIT}`, {
