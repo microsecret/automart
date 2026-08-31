@@ -957,3 +957,20 @@ test("карта показывает, что сервисом пользуют�
      обратное тому, зачем эта плашка. */
   assert.match(page, /reportsToday > 0/)
 })
+
+test("прайс сети не приписывает станции топливо, которого на ней нет", () => {
+  /* На Башнефти появлялся газ по 43,97: ГдеЗаправка отдаёт средний прайс
+     сети по региону сразу на все марки, а скрейпер приписывал его каждой
+     точке целиком. Из сорока тысяч собранных цен тридцать пять тысяч
+     пришли так, без единого подтверждения, и человек ехал за топливом,
+     которого на этой колонке не бывает.
+
+     Ассортимент берётся из fuel_types (колонки станции), а не из
+     available_fuels (что подтвердили только что — обычно пусто). Спутать
+     их значит либо оставить станцию без цен, либо снова приписать чужие. */
+  const scraper = readFileSync(new URL("../src/lib/gdezapravka-scraper.ts", import.meta.url), "utf8")
+
+  assert.match(scraper, /const stationFuelCodes = Array\.isArray\(raw\.fuel_types\)/)
+  assert.doesNotMatch(scraper, /const mergedPrices = \{ \.\.\.brandPrices, \.\.\.ownPrices \}/)
+  assert.match(scraper, /if \(stationFuelCodes && !stationFuelCodes\.has\(fuelCode\)\) return \[\]/)
+})

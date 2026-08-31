@@ -53,7 +53,9 @@ type GdezapravkaStation = {
   lat?: number
   lng?: number
   status?: string | null
+  /* Колонки, которые на станции стоят: ai92, ai95, dt, gas. */
   fuel_types?: unknown
+  /* Марки, наличие которых подтверждено прямо сейчас. Обычно пусто. */
   available_fuels?: unknown
   address?: string
 }
@@ -105,11 +107,42 @@ function normalizeStation(raw: GdezapravkaStation, city: string, pricesByStation
 
   const ownPrices = pricesByStation[sourceId] ?? {}
   const brandPrices = brand ? pricesByBrand[brand] ?? {} : {}
-  const mergedPrices = { ...brandPrices, ...ownPrices }
+
+  /* Ассортимент станции — fuel_types, а не available_fuels.
+     Первое перечисляет колонки, которые на точке стоят («ai92, ai95, dt»
+     у Башнефти), второе — марки, наличие которых подтвердили только что,
+     и у большинства точек оно пустое. Спутать их значит либо оставить
+     станцию совсем без цен, либо приписать ей чужие. */
+  const stationFuelCodes = Array.isArray(raw.fuel_types) && raw.fuel_types.length
+    ? new Set(raw.fuel_types.map((value) => String(value)))
+    : null
+
+  /* Цена берётся с самой станции, а прайс сети только дополняет её — и
+     лишь по тем маркам, которые на станции есть.
+
+     Раньше прайс сети приписывался точке целиком, и на Башнефти
+     появлялся газ по 43,97: сеть отдаёт средний прайс по региону сразу
+     на все марки, включая те, которых на конкретной колонке нет. Из
+     сорока тысяч собранных цен тридцать пять тысяч пришли так — без
+     единого подтверждения, и человек ехал за топливом, которого там
+     не бывает.
+
+     Когда источник про ассортимент молчит, чужой прайс не подставляется
+     вовсе: своя цена станции честнее выдуманной. */
+  const mergedPrices: Record<string, GdezapravkaPriceEntry> = { ...ownPrices }
+  if (stationFuelCodes) {
+    for (const [fuelCode, entry] of Object.entries(brandPrices)) {
+      if (!stationFuelCodes.has(fuelCode)) continue
+      if (mergedPrices[fuelCode] === undefined) mergedPrices[fuelCode] = entry
+    }
+  }
 
   const prices = Object.entries(mergedPrices).flatMap(([fuelCode, entry]) => {
     const fuel = GDEZAPRAVKA_FUEL_MAP[fuelCode]
     if (!fuel) return []
+    /* Марка, которой на станции нет, не показывается даже со своей ценой:
+       ассортимент точки важнее любого прайса. */
+    if (stationFuelCodes && !stationFuelCodes.has(fuelCode)) return []
     const priceRub = entry?.price !== undefined ? parseReportedPrice(entry.price) : null
     if (priceRub === null) return []
     return [{
