@@ -36,13 +36,29 @@ export default function TrafficLineChart({ points }: { points: TrafficChartPoint
   const padding = { top: 14, right: 18, bottom: 34, left: 42 }
   const chartWidth = width - padding.left - padding.right
   const chartHeight = height - padding.top - padding.bottom
-  const maximum = Math.max(1, ...points.flatMap((point) => SERIES.map(({ key }) => point[key])))
+  /* Каждый ряд по своей шкале.
+
+     Раньше шкала была общая, и это делало график бесполезным: просмотров
+     сотни, регистраций единицы — три ряда из четырёх ложились прямой
+     линией у нуля, будто их вовсе нет. Владелец видел только просмотры и
+     не мог сказать, растут ли регистрации.
+
+     Теперь каждая линия занимает всю высоту по своему максимуму: видно
+     форму каждой. Абсолютные числа читаются наведением, а сравнивать
+     ряды между собой по высоте всё равно было нельзя — величины
+     несопоставимы. */
+  const maxima = Object.fromEntries(
+    SERIES.map(({ key }) => [key, Math.max(1, ...points.map((point) => point[key]))]),
+  ) as Record<(typeof SERIES)[number]["key"], number>
+
+  const maximum = maxima.pageViews
   const x = (index: number) => padding.left + (points.length > 1 ? (index / (points.length - 1)) * chartWidth : chartWidth / 2)
-  const y = (value: number) => padding.top + chartHeight - (value / maximum) * chartHeight
-  const pageViewPoints = points.map((point, index) => ({ x: x(index), y: y(point.pageViews) }))
-  const visitorPoints = points.map((point, index) => ({ x: x(index), y: y(point.uniqueVisitors) }))
-  const registrationPoints = points.map((point, index) => ({ x: x(index), y: y(point.registrations) }))
-  const listingPoints = points.map((point, index) => ({ x: x(index), y: y(point.newListings) }))
+  const y = (value: number, key: (typeof SERIES)[number]["key"] = "pageViews") =>
+    padding.top + chartHeight - (value / maxima[key]) * chartHeight
+  const pageViewPoints = points.map((point, index) => ({ x: x(index), y: y(point.pageViews, "pageViews") }))
+  const visitorPoints = points.map((point, index) => ({ x: x(index), y: y(point.uniqueVisitors, "uniqueVisitors") }))
+  const registrationPoints = points.map((point, index) => ({ x: x(index), y: y(point.registrations, "registrations") }))
+  const listingPoints = points.map((point, index) => ({ x: x(index), y: y(point.newListings, "newListings") }))
   const pageViewPath = curvedLinePath(pageViewPoints)
   const visitorPath = curvedLinePath(visitorPoints)
   const registrationPath = curvedLinePath(registrationPoints)
@@ -124,8 +140,18 @@ export default function TrafficLineChart({ points }: { points: TrafficChartPoint
           </Paper>
         )}
       </Box>
+      {/* Максимум рядом с названием.
+
+          У каждой линии своя шкала, и без этого числа график читался бы
+          неверно: регистрации и просмотры доходят до одной высоты, хотя
+          отличаются в сотни раз. Максимум говорит, о каком масштабе
+          речь, не заставляя наводить курсор. */}
       <Group gap="md" justify="center" mt={4} wrap="wrap">
-        {SERIES.map(({ key, label, badgeColor }) => <Badge key={key} variant="dot" color={badgeColor}>{label}</Badge>)}
+        {SERIES.map(({ key, label, badgeColor }) => (
+          <Badge key={key} variant="dot" color={badgeColor}>
+            {label} · до {maxima[key].toLocaleString("ru-RU")}
+          </Badge>
+        ))}
       </Group>
     </Box>
   )
