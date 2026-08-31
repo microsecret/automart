@@ -96,6 +96,10 @@ if command -v crontab >/dev/null 2>&1; then
     bash scripts/install-auction-telegram-cron.sh || echo "Warning: auction Telegram cron was not installed"
   bash scripts/install-partner-sla-cron.sh || echo "Warning: partner SLA cron was not installed"
   bash scripts/install-analytics-prune-cron.sh || echo "Warning: analytics prune cron was not installed"
+  # Сверка оплат с кассой: уведомление ЮKassa может не дойти, если адрес
+  # в кабинете не указан или сбит — тогда человек платит, а продвижение
+  # не включается.
+  bash scripts/install-promotion-reconcile-cron.sh || echo "Warning: promotion reconcile cron was not installed"
   bash scripts/install-listing-backfill-cron.sh || echo "Warning: listing backfill cron was not installed"
   bash scripts/install-fuel-invite-cron.sh || echo "Warning: fuel invite cron was not installed"
   bash scripts/install-fuel-digest-cron.sh || echo "Warning: fuel digest cron was not installed"
