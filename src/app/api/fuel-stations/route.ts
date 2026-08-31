@@ -25,7 +25,7 @@ type FuelPrice = {
 type FuelStationPayload = {
   id: string
   sourceType: OverpassElement["type"] | "provider"
-  dataSource: "OPENSTREETMAP" | "ZAPRAVKIN" | "GDEBENZ" | "MERGED"
+  dataSource: "OPENSTREETMAP" | "ZAPRAVKIN" | "GDEBENZ" | "TWOGIS" | "GDEZAPRAVKA" | "MERGED"
   name: string
   brand: string | null
   operator: string | null
@@ -661,8 +661,21 @@ const IMPORTED_STATION_FUEL_LABELS: Record<string, string> = {
   GAS: "Газ",
 }
 
+/* Строка fuelsNow хранит коды в виде «92,95,ДТ» — те же, что отдаёт
+   ГдеБЕНЗ. Для карты они превращаются в те же ярлыки, что и у OSM. */
+const IMPORTED_FUEL_NOW_LABELS: Record<string, string> = {
+  "92": "АИ‑92",
+  "95": "АИ‑95",
+  "98": "АИ‑98",
+  "100": "АИ‑100",
+  "ДТ": "ДТ",
+  "Газ": "Газ",
+  "ГАЗ": "Газ",
+}
+
 /**
- * Импортированные точки из собственной базы (сборщик ГдеБЕНЗ).
+ * Импортированные точки из собственной базы (сборщики ГдеБЕНЗ, ГдеЗаправка
+ * и другие).
  *
  * Они не подменяют справочник OpenStreetMap, а ложатся поверх него как
  * провайдерские: при совпадении по близости и имени сливаются с OSM-точкой,
@@ -687,22 +700,27 @@ async function requestImportedStations(coordinates: Coordinates, radius: number)
       if (!label) return []
       return [{ fuel: label, price: price.priceRub / 100, updatedAt: price.observedAt?.toISOString() ?? null }]
     })
+    const fuelsFromNow = (row.fuelsNow ?? "")
+      .split(",")
+      .map((code) => IMPORTED_FUEL_NOW_LABELS[code.trim()])
+      .filter((label): label is string => Boolean(label))
     const status: FuelStationPayload["status"] = row.status === "yes" || row.status === "low"
       ? "FUEL"
       : row.status === "no"
         ? "NO_FUEL"
         : "UNKNOWN"
+    const source = ["GDEBENZ", "TWOGIS", "GDEZAPRAVKA"].includes(row.source) ? row.source : "GDEBENZ"
 
     return {
-      id: `gdebenz-${row.sourceId}`,
+      id: `${source.toLocaleLowerCase("en-US")}-${row.sourceId}`,
       sourceType: "provider",
-      dataSource: "GDEBENZ",
+      dataSource: source as FuelStationPayload["dataSource"],
       name: row.name || row.brand || "АЗС",
       brand: row.brand,
       operator: null,
       address: row.address,
       openingHours: null,
-      fuels: uniqueFuels(prices.map((price) => price.fuel)),
+      fuels: uniqueFuels([...prices.map((price) => price.fuel), ...fuelsFromNow]),
       prices,
       status,
       statusUpdatedAt: row.updatedAt.toISOString(),

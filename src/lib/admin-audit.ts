@@ -23,6 +23,7 @@ export type AdminAuditAction =
   | "TELEGRAM_BROADCAST_SEND"
   | "TELEGRAM_AUCTION_HIGHLIGHT_SEND"
   | "FUEL_PRICE_REPORT_REJECT"
+  | "FUEL_SCRAPER_RUN"
   | "PART_STORE_STATUS_CHANGE"
   /* Владелец изменил юрлицо, ИНН или контакты у проверенного магазина.
      Проверка касалась именно этих данных, поэтому магазин уходит на

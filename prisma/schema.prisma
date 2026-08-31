@@ -45,19 +45,19 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  vehicles                      Vehicle[]                      @relation("UserVehicles")
-  parts                         Part[]                         @relation("UserParts")
-  listings                      Listing[]
-  favoriteListings              Listing[]                      @relation("Favorites")
-  partBids                      PartBid[]
-  reviews                       Review[]                       @relation("Reviewer")
-  forumTopics                   ForumTopic[]                   @relation("ForumTopicAuthor")
-  forumPosts                    ForumPost[]                    @relation("ForumPostAuthor")
-  forumPollVotes                ForumPollVote[]                @relation("ForumPollVoter")
-  forumReactions                ForumReaction[]                @relation("ForumReactionAuthor")
-  forumSubscriptions            ForumSubscription[]            @relation("ForumSubscriber")
-  forumReports                  ForumReport[]                  @relation("ForumReporter")
-  telegramChats                 TelegramUserChat[]             @relation("TelegramChatMember")
+  vehicles           Vehicle[]           @relation("UserVehicles")
+  parts              Part[]              @relation("UserParts")
+  listings           Listing[]
+  favoriteListings   Listing[]           @relation("Favorites")
+  partBids           PartBid[]
+  reviews            Review[]            @relation("Reviewer")
+  forumTopics        ForumTopic[]        @relation("ForumTopicAuthor")
+  forumPosts         ForumPost[]         @relation("ForumPostAuthor")
+  forumPollVotes     ForumPollVote[]     @relation("ForumPollVoter")
+  forumReactions     ForumReaction[]     @relation("ForumReactionAuthor")
+  forumSubscriptions ForumSubscription[] @relation("ForumSubscriber")
+  forumReports       ForumReport[]       @relation("ForumReporter")
+  telegramChats      TelegramUserChat[]  @relation("TelegramChatMember")
 
   /// Репутация на форуме: сумма полученных реакций и отмеченных ответов.
   ///
@@ -65,7 +65,7 @@ model User {
   /// каждым сообщением в теме, и подсчёт по всем реакциям человека на
   /// каждое из двадцати сообщений страницы — это двадцать запросов там,
   /// где нужно ноль.
-  forumReputation Int @default(0)
+  forumReputation  Int @default(0)
   /// Сколько ответов этого человека отмечены как решившие вопрос.
   /// Показывается отдельно: «помог 28 раз» говорит больше, чем общая
   /// сумма очков, в которой смешаны благодарности и решения.
@@ -121,8 +121,8 @@ model User {
   communicationModerationEvents CommunicationModerationEvent[] @relation("CommunicationModerationSender")
   reportsCreated                ListingReport[]                @relation("ListingReportReporter")
   fuelPriceReports              FuelPriceReport[]              @relation("FuelPriceReporter")
-  fuelAvailabilityReports       FuelAvailabilityReport[]      @relation("FuelAvailabilityReporter")
-  fuelSubscriptions             FuelSubscription[]            @relation("FuelSubscriber")
+  fuelAvailabilityReports       FuelAvailabilityReport[]       @relation("FuelAvailabilityReporter")
+  fuelSubscriptions             FuelSubscription[]             @relation("FuelSubscriber")
   adminAuditEvents              AdminAuditEvent[]              @relation("AdminAuditActor")
   partStores                    PartStore[]                    @relation("PartStoreOwner")
   partOrders                    PartOrder[]                    @relation("PartOrderBuyer")
@@ -429,30 +429,30 @@ model PartImportBatch {
 // магазины отвечают предложениями. Витрине не нужно быть полной, чтобы
 // раздел приносил пользу.
 model PartRequest {
-  id            String              @id @default(uuid())
+  id            String             @id @default(uuid())
   partName      String?
   oemNumber     String?
   make          String?
   model         String?
   year          Int?
   vin           String?
-  condition     String              @default("ANY") // NEW, USED, ANY
+  condition     String             @default("ANY") // NEW, USED, ANY
   comment       String?
   // Насколько заявка понятна продавцу, 0-100. Считается при записи:
   // сортировать по нему в кабинете магазина дешевле, чем пересчитывать.
-  clarity       Int                 @default(0)
+  clarity       Int                @default(0)
   name          String
   phone         String
   email         String?
   city          String?
-  contactMethod String              @default("PHONE") // PHONE, MESSENGER, EMAIL
-  status        String              @default("NEW") // NEW, IN_PROGRESS, ANSWERED, CLOSED
+  contactMethod String             @default("PHONE") // PHONE, MESSENGER, EMAIL
+  status        String             @default("NEW") // NEW, IN_PROGRESS, ANSWERED, CLOSED
   requesterId   String?
-  requester     User?               @relation("PartRequestRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  requester     User?              @relation("PartRequestRequester", fields: [requesterId], references: [id], onDelete: SetNull)
   managerNotes  String?
   closedAt      DateTime?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
   offers        PartRequestOffer[]
 
   @@index([status, createdAt])
@@ -463,20 +463,20 @@ model PartRequest {
 
 // Ответ магазина на заявку.
 model PartRequestOffer {
-  id            String      @id @default(uuid())
-  requestId     String
-  request       PartRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  storeId       String?
-  store         PartStore?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
-  sellerId      String?
-  seller        User?       @relation("PartRequestOfferSeller", fields: [sellerId], references: [id], onDelete: SetNull)
-  price         Int?
-  condition     String? // NEW, USED
-  leadTimeDays  Int?
-  comment       String?
-  status        String      @default("SENT") // SENT, ACCEPTED, DECLINED
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id           String      @id @default(uuid())
+  requestId    String
+  request      PartRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  storeId      String?
+  store        PartStore?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  sellerId     String?
+  seller       User?       @relation("PartRequestOfferSeller", fields: [sellerId], references: [id], onDelete: SetNull)
+  price        Int?
+  condition    String? // NEW, USED
+  leadTimeDays Int?
+  comment      String?
+  status       String      @default("SENT") // SENT, ACCEPTED, DECLINED
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   @@index([requestId, createdAt])
   @@index([storeId, status])
@@ -527,23 +527,23 @@ model Listing {
   messages Message[] @relation("MessageListing")
 
   // Reverse relation for reviews
-  reviews         Review[]             @relation("ListingReviews")
-  statusEvents    ListingStatusEvent[]
-  priceEvents     ListingPriceEvent[]
-  revisions       ListingRevision[]
+  reviews      Review[]             @relation("ListingReviews")
+  statusEvents ListingStatusEvent[]
+  priceEvents  ListingPriceEvent[]
+  revisions    ListingRevision[]
   /// Бесплатные публикации в чатах Telegram.
-  chatPosts       ListingChatPost[]
+  chatPosts    ListingChatPost[]
 
   /// Сколько раз напоминали продавцу о продвижении и когда последний раз.
   ///
   /// Предложение звучит один раз — в уведомлении об одобрении. Если
   /// человек тогда не купил, повода вернуться к нему больше нет:
   /// объявление висит, покупатели не идут, а он сидит и ждёт.
-  promotionNudges  Int       @default(0)
+  promotionNudges      Int                @default(0)
   lastPromotionNudgeAt DateTime?
-  reports         ListingReport[]
-  promotionOrders PromotionOrder[]
-  viewEvents      ListingViewEvent[]
+  reports              ListingReport[]
+  promotionOrders      PromotionOrder[]
+  viewEvents           ListingViewEvent[]
 
   // Timestamps
   createdAt           DateTime  @default(now())
@@ -615,7 +615,7 @@ model PromotionOrder {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  chatPosts          ChatPromotionPost[]
+  chatPosts ChatPromotionPost[]
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
@@ -969,22 +969,22 @@ model VisitEvent {
 /// Запись живёт недолго и перезаписывается при каждом обновлении точки:
 /// это не история перемещений, а короткая память «где он сейчас».
 model FuelPresence {
-  id           String   @id @default(uuid())
+  id          String    @id @default(uuid())
   /// Чат Telegram: по нему бот пишет и по нему же узнаёт человека.
-  chatId       String   @unique
+  chatId      String    @unique
   /// Точка, у которой человек стоит.
-  stationId    String
-  stationName  String
-  latitude     Float
-  longitude    Float
+  stationId   String
+  stationName String
+  latitude    Float
+  longitude   Float
   /// Когда он оказался здесь впервые в этой стоянке.
-  arrivedAt    DateTime @default(now())
+  arrivedAt   DateTime  @default(now())
   /// Последнее обновление живой геолокации.
-  seenAt       DateTime @default(now())
+  seenAt      DateTime  @default(now())
   /// Когда спросили об отметке: второй раз спрашивать нельзя.
-  promptedAt   DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  promptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([seenAt])
   @@index([stationId, seenAt])
@@ -1142,7 +1142,7 @@ model ForumChatPost {
 }
 
 model ListingChatPost {
-  id        String @id @default(uuid())
+  id        String  @id @default(uuid())
   listingId String
   listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
   chatId    String
@@ -1171,9 +1171,9 @@ model ListingChatPost {
 /// Связь записывается, когда человек пишет в группе с ботом: там видно и
 /// его, и чат сразу. При регистрации на сайте таких сведений нет вовсе.
 model TelegramUserChat {
-  id     String @id @default(uuid())
+  id     String       @id @default(uuid())
   userId String
-  user   User   @relation("TelegramChatMember", fields: [userId], references: [id], onDelete: Cascade)
+  user   User         @relation("TelegramChatMember", fields: [userId], references: [id], onDelete: Cascade)
   chatId String
   chat   TelegramChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
@@ -1650,27 +1650,27 @@ model FuelPriceReport {
 // Отдельная таблица, а не поле в FuelPriceReport: у наличия своя жизнь —
 // оно живёт часами, а не неделю, и отмечается в разы чаще цены.
 model FuelAvailabilityReport {
-  id        String   @id @default(uuid())
-  stationId String // тот же идентификатор точки, что у ценовых отметок
-  latitude  Float
-  longitude Float
-  fuel      String // AI92, AI95, AI98, AI100, DT, GAS
-  state     String // YES, NO
-  queue     String? // NONE, SMALL, BIG — уточнение к «есть»
+  id          String   @id @default(uuid())
+  stationId   String // тот же идентификатор точки, что у ценовых отметок
+  latitude    Float
+  longitude   Float
+  fuel        String // AI92, AI95, AI98, AI100, DT, GAS
+  state       String // YES, NO
+  queue       String? // NONE, SMALL, BIG — уточнение к «есть»
   // Снимок колонки и короткий комментарий: доказательство к отметке.
   // Спорная отметка — обычное дело, когда топливо кончается на глазах, и
   // фотография табло снимает спор быстрее любого счётчика подтверждений.
-  photo     String? // адрес в /uploads
-  comment   String? // до 200 знаков
+  photo       String? // адрес в /uploads
+  comment     String? // до 200 знаков
   // Название заправки на момент отметки: точки живут в OpenStreetMap, а не
   // у нас, и без этого поля сводка по городу называла бы их кодами вида
   // «osm-node-123», а уведомление подписчику — просто «АЗС».
   stationName String?
   city        String?
-  userId    String?
-  user      User?    @relation("FuelAvailabilityReporter", fields: [userId], references: [id], onDelete: SetNull)
-  ipHash    String? // антиспам без хранения адреса
-  createdAt DateTime @default(now())
+  userId      String?
+  user        User?    @relation("FuelAvailabilityReporter", fields: [userId], references: [id], onDelete: SetNull)
+  ipHash      String? // антиспам без хранения адреса
+  createdAt   DateTime @default(now())
 
   // Сводка читает свежие отметки по точке и виду топлива — этот порядок и
   // нужен индексу.
@@ -1835,16 +1835,16 @@ model TranslationCache {
 /// тема. Так делает drom.ru, и так человек ищет: одному нужен «Урал», другому
 /// «китайские», третьему «запчасти».
 model ForumSection {
-  id    String @id @default(uuid())
+  id          String  @id @default(uuid())
   /// Человекочитаемый адрес: /forum/ural, /forum/china.
-  slug  String @unique
-  title String
+  slug        String  @unique
+  title       String
   /// Короткое пояснение под названием в списке разделов.
   description String?
   /// Ось: REGION, ORIGIN или TOPIC. Определяет группу в списке разделов.
   groupKey    String
   /// Порядок внутри группы: разделы перечисляются осмысленно, а не по алфавиту.
-  position    Int    @default(0)
+  position    Int     @default(0)
 
   /// Родительский раздел.
   ///
@@ -1864,7 +1864,7 @@ model ForumSection {
 
   lastPostAt DateTime?
 
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
   topics    ForumTopic[]
 
   @@index([groupKey, position])
@@ -1873,13 +1873,13 @@ model ForumSection {
 
 /// Тема форума.
 model ForumTopic {
-  id        String @id @default(uuid())
-  slug      String @unique
+  id        String       @id @default(uuid())
+  slug      String       @unique
   title     String
   sectionId String
   section   ForumSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User @relation("ForumTopicAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  author    User         @relation("ForumTopicAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   /// Закреплённые темы идут первыми: правила раздела и важные объявления.
   isPinned Boolean @default(false)
@@ -1906,12 +1906,12 @@ model ForumTopic {
   /// Мягкое удаление: тема с обсуждением не исчезает бесследно.
   deletedAt DateTime?
 
-  posts ForumPost[]
+  posts         ForumPost[]
   subscriptions ForumSubscription[]
   chatPosts     ForumChatPost[]
   /// Опрос необязателен и всегда один: два голосования в одном
   /// обсуждении делят внимание, и оба остаются недоголосованными.
-  poll  ForumPoll?
+  poll          ForumPoll?
 
   @@index([sectionId, isPinned, lastPostAt])
   @@index([authorId])
@@ -1920,11 +1920,11 @@ model ForumTopic {
 
 /// Сообщение в теме.
 model ForumPost {
-  id       String @id @default(uuid())
+  id       String     @id @default(uuid())
   topicId  String
   topic    ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
   authorId String
-  author   User @relation("ForumPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  author   User       @relation("ForumPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   content  String
 
   createdAt DateTime  @default(now())
@@ -2076,8 +2076,8 @@ model ForumPollOption {
   poll   ForumPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
 
   text     String
-  position Int @default(0)
-  votes    Int @default(0)
+  position Int    @default(0)
+  votes    Int    @default(0)
 
   ballots ForumPollVote[]
 
@@ -2112,17 +2112,17 @@ model ForumPollVote {
 /// публикация записывается — иначе по истечении срока нечем снять
 /// закреп и удалить сообщение.
 model ChatPromotionPost {
-  id      String @id @default(uuid())
+  id      String         @id @default(uuid())
   orderId String
   order   PromotionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   /// Идентификатор чата: строка, потому что Telegram отдаёт большие числа.
-  chatId String
+  chatId    String
   /// Идентификатор сообщения в чате — по нему снимается закреп и удаление.
   messageId Int
   /// Закреплён ли пост сейчас. В группе закреп один, поэтому новый
   /// вытесняет прежний, и это поле показывает, чей закреп действует.
-  pinned Boolean @default(false)
+  pinned    Boolean @default(false)
 
   publishedAt DateTime  @default(now())
   /// Когда пост убран: по истечении срока или снятии объявления.
@@ -2131,4 +2131,71 @@ model ChatPromotionPost {
   @@index([orderId, publishedAt])
   @@index([chatId, publishedAt])
   @@index([removedAt])
+}
+
+// === ИМПОРТ АЗС И ЦЕН ИЗ ВНЕШНИХ ИСТОЧНИКОВ ===
+
+/// Точка АЗС, привезённая внешним скрейпером (ГдеБЕНЗ, 2ГИС, Дром).
+///
+/// Справочник точек на карте живёт в OpenStreetMap и приезжает живым
+/// запросом, поэтому импортированные точки хранятся отдельно: их нельзя
+/// подмешать в OSM, но они дают цены и наличие там, где своих отметок ещё
+/// нет. Ключ — внешний идентификатор точки (у ГдеБЕНЗ это OSM id), чтобы
+/// повторный прогон обновлял запись, а не плодил копии.
+model FuelStationImport {
+  id        String  @id @default(uuid())
+  source    String  @default("GDEBENZ") // GDEBENZ, GDEZAPRAVKA, TWOGIS, DROM
+  sourceId  String
+  name      String?
+  brand     String?
+  address   String?
+  city      String?
+  latitude  Float
+  longitude Float
+  /// Наличие: yes / low / no / null — как в источнике.
+  status    String?
+  /// Марки, что есть сейчас, через запятую: "92,95,ДТ".
+  fuelsNow  String?
+  /// Только дизель на этой точке (dt_only=1 у ГдеБЕНЗ).
+  dtOnly    Boolean @default(false)
+
+  prices FuelPriceImport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([source, sourceId])
+  @@index([city])
+  @@index([source])
+}
+
+/// Цена марки на импортированной точке, в копейках.
+model FuelPriceImport {
+  id            String            @id @default(uuid())
+  stationId     String
+  station       FuelStationImport @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  fuel          String // AI92, AI95, AI98, AI100, DT, GAS
+  priceRub      Int // копейки
+  confirmations Int               @default(0)
+  observedAt    DateTime?
+  createdAt     DateTime          @default(now())
+
+  @@unique([stationId, fuel])
+  @@index([fuel])
+}
+
+/// Журнал прогонов скрейсера АЗС.
+model FuelImportRun {
+  id          String    @id @default(uuid())
+  source      String    @default("GDEBENZ")
+  status      String    @default("RUNNING") // RUNNING, SUCCEEDED, PARTIAL, FAILED
+  requested   Int       @default(0)
+  fetched     Int       @default(0)
+  upserted    Int       @default(0)
+  failed      Int       @default(0)
+  error       String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([source, startedAt])
 }

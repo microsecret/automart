@@ -1,6 +1,7 @@
 import https from "node:https"
 import type { IncomingHttpHeaders } from "node:http"
 import { HttpsProxyAgent } from "https-proxy-agent"
+import { randomUserAgent } from "@/lib/user-agents"
 
 /**
  * Исходящие запросы скрейпера АЗС через пул HTTP CONNECT-прокси.
@@ -184,11 +185,13 @@ export async function scraperGetText(
 ): Promise<ScraperHttpResponse> {
   const target = new URL(url)
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  const pauseMs = options.pauseMs ?? 12_000
-  const headers = {
+  /* Провайдер просит сбрасывать TCP полным пересозданием подключения с
+     паузой 10-15 секунд. Меньше не ставим, даже если вызывающий передал
+     короче: иначе счётчик соединений не успеет обнулиться. */
+  const pauseMs = Math.max(10_000, options.pauseMs ?? 12_000)
+  const baseHeaders = {
     Accept: "application/json,text/plain,*/*",
     "Accept-Language": "ru-RU,ru;q=0.9",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
     Referer: "https://gdebenz.ru/",
     ...options.headers,
   }
@@ -199,6 +202,10 @@ export async function scraperGetText(
   for (let attempt = 0; attempt <= MAX_RETRIES_PER_REQUEST; attempt += 1) {
     const agent = agents[Math.min(attempt, agents.length - 1)]
     const state = agentStates().find((entry) => entry.agent === agent)
+    /* Каждый повтор — новый User-Agent: один и тот же адрес с разными
+       агентами выглядит как разные устройства, а не как робот с одной
+       подписью. */
+    const headers = { ...baseHeaders, "User-Agent": randomUserAgent() }
     try {
       const result = await performRequestOnce(target, agent, "GET", headers, timeoutMs)
       if (state) markSuccess(state)
