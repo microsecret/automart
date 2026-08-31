@@ -453,7 +453,17 @@ function isMeaningfulStationName(value: string | null | undefined): value is str
 }
 
 function getStationIdentity(station: FuelStationPayload) {
-  const source = [station.brand, station.operator, station.name].find(isMeaningfulStationName) ?? null
+  /* Порядок важен: вывеска, потом имя, и только потом оператор.
+
+     Оператор в OpenStreetMap — это юрлицо, а не то, что написано на
+     заправке: у «Стифкора» там «СигмаГаз», у «Irbis» — «ТранзитСити».
+     Сравнивая операторов с именами, карта не узнавала свою же точку из
+     другого источника: четыре заправки Казани стояли двумя метками в
+     нуле метров друг от друга, и у OSM-копии не было цен.
+
+     Оператор остаётся последним запасом — у безымянной точки он всё же
+     лучше пустоты. */
+  const source = [station.brand, station.name, station.operator].find(isMeaningfulStationName) ?? null
   return source
     ?.toLocaleLowerCase("ru-RU")
     .replace(/[«»'"`]/g, "")

@@ -1080,3 +1080,17 @@ test("скрейпер бережёт соединения прокси", () => 
   assert.match(http, /"Accept-Encoding": "gzip, deflate"/)
   assert.match(http, /zlib\.gunzipSync/)
 })
+
+test("оператор из OpenStreetMap не подменяет вывеску заправки", () => {
+  /* Оператор в OSM — юрлицо, а не то, что написано на заправке: у
+     «Стифкора» там «СигмаГаз», у «Irbis» — «ТранзитСити». Сравнивая
+     операторов с именами, карта не узнавала свою же точку из другого
+     источника: четыре заправки Казани стояли двумя метками в нуле метров
+     друг от друга, и у OSM-копии не было цен.
+
+     Оператор остаётся последним запасом — у безымянной точки он лучше
+     пустоты, — но идёт после вывески и имени. */
+  const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
+
+  assert.match(route, /\[station\.brand, station\.name, station\.operator\]\.find\(isMeaningfulStationName\)/)
+})
