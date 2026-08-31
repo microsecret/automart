@@ -4,7 +4,7 @@ import { useDeferredValue, useMemo, useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
 import { Badge, Box, Button, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
-import { IconMapPin, IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
+import { IconEye, IconMapPin, IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { formatMileage, formatPriceShort } from "@/lib/format-numbers"
 import { parseImages } from "@/lib/format"
@@ -37,6 +37,11 @@ type FeedListing = {
   title: string
   price: number | null
   createdAt?: string
+  /* Просмотры приходят от /api/listings, но лента их выбрасывала: на
+     сайте и в ленте новостей счётчик есть, а у машины не было — внутри
+     одного приложения похожие карточки говорили разное. Для молодой
+     площадки это ещё и единственный видимый признак жизни. */
+  views?: number
   vehicle?: FeedVehicle | null
 }
 
@@ -203,12 +208,24 @@ function TelegramFeedCard({ listing }: { listing: FeedListing }) {
         <Text className="tg-card__title" lineClamp={1}>
           {vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : listing.title}
         </Text>
-        <Group gap={6} wrap="nowrap" className="tg-card__facts">
+        {/* Строка переносится, а не сжимается.
+
+            С запретом переноса третий элемент на узком экране съедал
+            город: на 320 пикселях под строку остаётся меньше трёхсот, и
+            «Петропавловск-Камчатский» обрезался многоточием. Перенос
+            честнее — лучше вторая строка, чем половина названия. */}
+        <Group gap="4 8" wrap="wrap" className="tg-card__facts">
           {vehicle?.mileage != null && <span>{formatMileage(vehicle.mileage)}</span>}
           {vehicle?.location && (
             <span className="tg-card__place">
               <IconMapPin size={11} />
               {vehicle.location}
+            </span>
+          )}
+          {typeof listing.views === "number" && listing.views > 0 && (
+            <span className="tg-card__stat">
+              <IconEye size={11} />
+              {listing.views.toLocaleString("ru-RU")}
             </span>
           )}
         </Group>

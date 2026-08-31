@@ -27,18 +27,28 @@ import { STALE_WINDOW_MS } from "@/lib/fuel-availability"
 const CHAT_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000
 
 /**
- * Приглашение уходит текстом, без картинки.
+ * Обложка приглашения.
  *
- * Обложка бота рассказывает про авторынок, а не про заправки, и ставить
- * её сюда значило бы обещать одно, а показывать другое. Рисовать картинку
- * из ничего хуже, чем обойтись без неё: пост и так уходит одним
- * сообщением с кнопками, а первая строка текста работает лучше любой
- * заставки — человек читает её, а не разглядывает.
+ * Долго уходило текстом: обложка бота рассказывает про авторынок, а не про
+ * заправки, и ставить её сюда значило бы обещать одно, а показывать
+ * другое. Рисовать картинку из ничего хуже, чем обойтись без неё.
  *
- * Когда появится настоящий снимок карты с метками, он встанет сюда одной
- * строкой.
+ * Теперь для карты заправок есть своя: путь задаётся в server env, потому
+ * что подменить обложку должен владелец, не трогая код и не пересобирая
+ * приложение. Пустое значение возвращает прежнее поведение — пост уходит
+ * текстом с кнопками, и это по-прежнему рабочий вариант.
+ *
+ * Файл кладётся в public/images и указывается путём от корня сайта,
+ * например /images/fuel-map-invite.jpg: Telegram скачивает картинку по
+ * ссылке сам, и она должна быть доступна снаружи.
  */
-const INVITE_IMAGE: string | null = null
+function inviteImage(): string | null {
+  const configured = process.env.FUEL_INVITE_IMAGE?.trim()
+  if (!configured) return null
+  /* Полный адрес: Telegram ходит за картинкой из своей сети, и путь от
+     корня сайта ему ничего не скажет. */
+  return configured.startsWith("http") ? configured : absoluteUrl(configured)
+}
 
 export type InviteBroadcastResult = {
   chats: number
@@ -66,6 +76,7 @@ export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
   const now = new Date()
   const botUsername = getTelegramBotUsername() ?? undefined
   const siteUrl = absoluteUrl("/")
+  const image = inviteImage()
 
   /* Сколько отметок за сутки — числом можно похвастаться, когда их
      достаточно. Считаем один раз на всю рассылку: цифра общая. */
@@ -94,7 +105,7 @@ export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
 
     const messageId = await sendChatPost(
       chat.id,
-      { photos: INVITE_IMAGE ? [INVITE_IMAGE] : [], caption: post.text, buttons: post.buttons },
+      { photos: image ? [image] : [], caption: post.text, buttons: post.buttons },
       { buttonsCaption: "Открыть:" },
     )
 

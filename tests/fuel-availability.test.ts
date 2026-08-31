@@ -1192,3 +1192,29 @@ test("город в заголовке стоит в предложном пад
   assert.match(slug, /export function cityInPrepositional/)
   assert.match(slug, /includes\(" "\) \|\| trimmed\.includes\("-"\)/)
 })
+
+test("кнопка поддержки не ложится на вкладки мини-приложения", () => {
+  /* Высота главной кнопки Telegram объявлялась на .tg-shell, а кнопка чата
+     живёт рядом с оболочкой, не внутри: в её правиле переменная не
+     разрешалась и падала в ноль. Кнопка вставала на 76 пикселей, панель
+     вкладок занимала полосу с 60 до 118 — нажатие на «Бензин» открывало
+     чат поддержки вместо карты заправок. */
+  const tg = readFileSync(new URL("../src/app/telegram/telegram.css", import.meta.url), "utf8")
+
+  assert.match(tg, /body:has\(\.tg-shell\) \{/)
+  assert.match(tg, /body:has\(\.tg-shell\[data-main-button="hidden"\]\)/)
+})
+
+test("лента мини-приложения показывает просмотры", () => {
+  /* Просмотры приходили от API, но лента их выбрасывала: на сайте и в
+     ленте новостей счётчик был, а у машины нет — внутри одного приложения
+     похожие карточки говорили разное. */
+  const feed = readFileSync(new URL("../src/components/telegram/TelegramFeed.tsx", import.meta.url), "utf8")
+
+  assert.match(feed, /views\?: number/)
+  assert.match(feed, /IconEye/)
+
+  /* Строка фактов переносится: с запретом переноса третий элемент на
+     узком экране съедал название города. */
+  assert.match(feed, /wrap="wrap" className="tg-card__facts"/)
+})
