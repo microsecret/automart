@@ -835,8 +835,13 @@ async function requestImportedStations(coordinates: Coordinates, radius: number)
       id: `${source.toLocaleLowerCase("en-US")}-${row.sourceId}`,
       sourceType: "provider",
       dataSource: source as FuelStationPayload["dataSource"],
-      name: row.name || row.brand || "АЗС",
-      brand: row.brand,
+      /* Заглушка источника не идёт в название: «Независимая / Прочее» на
+         карте читается как имя сети, которой нет. Безымянная точка честнее
+         зовётся «АЗС» — по ассортименту она и так опознаётся. */
+      name: [row.name, row.brand].find(isMeaningfulStationName) || "АЗС",
+      /* Та же заглушка не должна выдавать себя за сеть в подписи и в
+         фильтре «Все сети»: там появлялся пункт «Независимая / Прочее». */
+      brand: isMeaningfulStationName(row.brand) ? row.brand : null,
       operator: null,
       address: row.address,
       openingHours: null,
