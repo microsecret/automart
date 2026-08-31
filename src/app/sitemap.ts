@@ -6,6 +6,8 @@ import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 import { publicListingWhere } from "@/lib/listing-lifecycle"
 import { listAuctionLandings } from "@/lib/auction-landing"
 import { listNewsTags } from "@/lib/news-tags"
+import { toCitySlug } from "@/lib/fuel-city-slug"
+import { CITY_COORDINATES } from "@/lib/cities"
 
 export const dynamic = "force-dynamic"
 
@@ -36,6 +38,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: path === "" ? 1 : path.startsWith("/category") ? 0.9 : 0.7,
     })),
   ]
+
+  /* Городские страницы карты АЗС.
+
+     Карта жила по одному адресу на всю страну, и запрос «цены на бензин в
+     Уфе» вести было некуда. Города с достаточным покрытием получают свою
+     страницу — с ценами прямо в разметке, а не за скриптом.
+
+     Порог тот же, что на самой странице: там, где заправок меньше
+     пятнадцати, средняя цена по городу ничего не значит, а пустая страница
+     справедливо считается мусорной. */
+  try {
+    const fuelCities = await prisma.fuelStationImport.groupBy({
+      by: ["city"],
+      _count: { _all: true },
+      having: { city: { _count: { gte: 15 } } },
+    })
+    for (const row of fuelCities) {
+      if (!row.city) continue
+      const slug = toCitySlug(row.city)
+      if (!slug || !CITY_COORDINATES[row.city]) continue
+      pages.push({
+        url: `${baseUrl}/services/fuel-map/${slug}`,
+        lastModified: now,
+        /* Цены меняются каждый день, и поисковику стоит заходить так же
+           часто: устаревшая цена в выдаче хуже её отсутствия. */
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+      })
+    }
+  } catch (error) {
+    console.error("Sitemap: города карты АЗС", error instanceof Error ? error.message : error)
+  }
 
   try {
     const auctionPolicy = buildPublicAuctionPolicy(now)

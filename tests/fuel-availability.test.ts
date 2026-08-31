@@ -1139,3 +1139,38 @@ test("отметка водителя главнее прайса источни
      робота со стороннего сайта — сведения разного веса. */
   assert.match(page, /по данным источника/)
 })
+
+
+test("у карты АЗС есть городские страницы для поиска", () => {
+  /* Карта жила по одному адресу на всю страну: заголовок обещал Россию, а
+     человек искал «цены на бензин в Уфе», и вести его было некуда — города
+     не было ни в адресе, ни в заголовке, ни в тексте.
+
+     Главное здесь не сам адрес, а то, что цены отдаются в разметке, а не
+     подгружаются скриптом: поисковик читает страницу целиком. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/[city]/page.tsx", import.meta.url), "utf8")
+
+  assert.match(page, /Цены на бензин в \$\{city\}/)
+  assert.match(page, /application\/ld\+json/)
+
+  /* Пустая страница отвечает на запрос ничем и справедливо считается
+     поисковиком мусорной. */
+  assert.match(page, /const MIN_STATIONS_FOR_PAGE = 15/)
+
+  /* Без sitemap поисковик о городских страницах не узнает. */
+  const sitemap = readFileSync(new URL("../src/app/sitemap.ts", import.meta.url), "utf8")
+  assert.match(sitemap, /services\/fuel-map\/\$\{slug\}/)
+})
+
+test("слаг города читается человеком", () => {
+  /* Латиница в адресе читается и не превращается в мешанину процентов при
+     копировании ссылки. */
+  const slug = readFileSync(new URL("../src/lib/fuel-city-slug.ts", import.meta.url), "utf8")
+
+  assert.match(slug, /export function toCitySlug/)
+  assert.match(slug, /export function cityFromSlug/)
+
+  /* Обратное соответствие строится один раз: городов несколько сотен, и
+     перебирать их на каждый запрос страницы незачем. */
+  assert.match(slug, /const CITY_BY_SLUG = new Map/)
+})
