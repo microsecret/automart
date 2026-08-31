@@ -189,6 +189,52 @@ is not indexed, preventing duplicate result pages from diluting canonical
 category pages. Fonts use the local system stack, so server rendering and
 production builds never depend on a third-party font request.
 
+## Fuel monitoring graph
+
+```mermaid
+flowchart LR
+  FuelCron["15-minute scraper cron"] --> ParserRoute["/api/parser/fuel/sync (token)"]
+  AdminPanel["/admin/fuel manual run"] --> AdminRoute["/api/admin/fuel POST (session)"]
+  ParserRoute --> RunModule["fuel-scraper-run: source list + cooldown"]
+  AdminRoute --> RunModule
+  RunModule --> Gdebenz["gdebenz-scraper"]
+  RunModule --> Gdezapravka["gdezapravka-scraper"]
+  RunModule --> Twogis["twogis-scraper (needs key)"]
+  Gdebenz --> Http["fuel-scraper-http: proxy pool, gzip, 5-min limit pause"]
+  Gdezapravka --> Http
+  Twogis --> Http
+  Gdebenz --> Store["fuel-import-store: upsert + city by coordinates"]
+  Gdezapravka --> Store
+  Twogis --> Store
+  Store --> RunLog["FuelImportLogEntry: live console, capped"]
+  Store --> Import["FuelStationImport + FuelPriceImport"]
+  Import --> MapApi["/api/fuel-stations: provider merge + OSM merge"]
+  Reports["Driver price / availability reports"] --> MapApi
+  MapApi --> Map["/services/fuel-map (client map)"]
+  Import --> CityPage["/services/fuel-map/[city] (SSR, indexable)"]
+  CityPage --> FuelSitemap["Sitemap: cities with 15+ stations"]
+```
+
+Two collectors gather the same stations, and they never overwrite each other:
+records are keyed by `(source, sourceId)`. Deduplication happens at read time
+in `/api/fuel-stations` — provider points merge with each other first, then
+with OpenStreetMap. Merging unions knowledge rather than picking a winner: a
+fuel grade known to one source survives, and a price conflict resolves to the
+fresher observation.
+
+Driver reports outrank scraped prices for six hours, then yield to the source
+when the two disagree by a rouble or more. Reports are never discarded: when
+the source is silent about a grade, the report is all the map has.
+
+| Task | Start here | Then inspect |
+|---|---|---|
+| Fuel map UI, plate colours, guest gate | `src/app/services/fuel-map/page.tsx` | `src/components/fuel/*`, `globals.css` fuel blocks |
+| Station merge and payload shape | `src/app/api/fuel-stations/route.ts` | `fuel-station-identity.ts`, `cities.ts` |
+| Scraper transport and proxy limits | `src/lib/fuel-scraper-http.ts` | `fuel-scraper-run.ts`, `.env.example` proxy keys |
+| Source parsing quirks | `src/lib/gdezapravka-scraper.ts` | `gdebenz-scraper.ts`, `fuel-import-store.ts` |
+| Admin console and manual run | `src/app/admin/fuel/page.tsx` | `src/app/api/admin/fuel/route.ts`, `FuelRunConsole.tsx` |
+| City SEO pages | `src/app/services/fuel-map/[city]/page.tsx` | `fuel-city-slug.ts`, `src/app/sitemap.ts` |
+
 ## Personal listing workflow
 
 ```mermaid
