@@ -108,11 +108,30 @@ export default function NotificationsPage() {
         ) : error ? (
           <AsyncErrorState title="Не удалось загрузить уведомления" description="Проверьте подключение и повторите запрос." onRetry={() => mutate("/api/notifications?limit=50")} />
         ) : notifications.length === 0 ? (
+          /* Пустой список объясняет, чего ждать, и даёт куда пойти.
+
+             Раньше здесь стояли значок и два слова «Нет уведомлений».
+             Колокольчик — единственная иконка кабинета, оставленная в
+             шапке на телефоне, и путь через неё заканчивался пустым
+             экраном без единого действия: человек не понимал ни когда
+             уведомления появятся, ни что делать дальше. */
           <Paper radius="md" p="xl" withBorder>
             <Center>
-              <Stack align="center" gap="sm">
+              <Stack align="center" gap="sm" maw={420}>
                 <ThemeIcon variant="light" color="gray" size={56} radius="md"><IconBell size={28} /></ThemeIcon>
-                <Text c="gray.5">Нет уведомлений</Text>
+                <Text fw={600}>Пока тихо</Text>
+                <Text size="sm" c="dimmed" ta="center">
+                  Здесь появятся ответы на ваши объявления, изменения статусов и важные
+                  события по сделкам. Разместите объявление — и первые отклики придут сюда.
+                </Text>
+                <Group gap="xs" mt="xs">
+                  <Button component={Link} href="/listings/create/vehicle" size="sm" radius="md">
+                    Разместить объявление
+                  </Button>
+                  <Button component={Link} href="/" size="sm" radius="md" variant="default">
+                    Смотреть каталог
+                  </Button>
+                </Group>
               </Stack>
             </Center>
           </Paper>
