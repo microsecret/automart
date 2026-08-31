@@ -73,15 +73,33 @@ async function loadCitySummary(city: string): Promise<CityFuelSummary | null> {
   }
 
   const prices = FUEL_ORDER.flatMap((fuel) => {
-    const values = byFuel.get(fuel)
-    if (!values?.length) return []
+    const raw = byFuel.get(fuel)
+    if (!raw?.length) return []
+
+    /* Выбросы отсекаются по медиане.
+
+       Источники приносят и опечатки, и цены за что-то другое: по Уфе
+       максимум АИ-92 доходил до 117 рублей при средней в 66. Такая строка
+       в таблице подрывает доверие ко всей странице — человек видит цифру,
+       которой на колонках не бывает, и правильно заключает, что данным
+       верить нельзя.
+
+       Медиана устойчива к единичным выбросам, а всё, что отклоняется от
+       неё больше чем на треть, в расчёт не идёт. Порог широкий нарочно:
+       между дешёвой сетью и дорогой заправкой на трассе разница
+       действительно бывает заметной. */
+    const sorted = [...raw].sort((left, right) => left - right)
+    const median = sorted[Math.floor(sorted.length / 2)]
+    const values = sorted.filter((value) => Math.abs(value - median) <= median * 0.35)
+    if (!values.length) return []
+
     const sum = values.reduce((total, value) => total + value, 0)
     return [{
       fuel,
       label: FUEL_LABELS[fuel] || fuel,
       averageRub: sum / values.length / 100,
-      minRub: Math.min(...values) / 100,
-      maxRub: Math.max(...values) / 100,
+      minRub: values[0] / 100,
+      maxRub: values[values.length - 1] / 100,
       stations: values.length,
     }]
   })
