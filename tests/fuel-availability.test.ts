@@ -973,4 +973,10 @@ test("прайс сети не приписывает станции топли�
   assert.match(scraper, /const stationFuelCodes = Array\.isArray\(raw\.fuel_types\)/)
   assert.doesNotMatch(scraper, /const mergedPrices = \{ \.\.\.brandPrices, \.\.\.ownPrices \}/)
   assert.match(scraper, /if \(stationFuelCodes && !stationFuelCodes\.has\(fuelCode\)\) return \[\]/)
+
+  /* Газ бывает на АГЗС, а не на бензиновой колонке, и ошибка тут дороже
+     прочих: водитель на газу приедет туда, где заправиться нечем. У всех
+     десяти нормальных Башнефтей Уфы ассортимент заполнен и газа в нём
+     нет — газ вылезал на единственной точке с пустым fuel_types. */
+  assert.match(scraper, /if \(!stationFuelCodes && fuel === "GAS"\) return \[\]/)
 })

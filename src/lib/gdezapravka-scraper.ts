@@ -130,6 +130,14 @@ function normalizeStation(raw: GdezapravkaStation, city: string, pricesByStation
      Когда источник про ассортимент молчит, чужой прайс не подставляется
      вовсе: своя цена станции честнее выдуманной. */
   const mergedPrices: Record<string, GdezapravkaPriceEntry> = { ...ownPrices }
+  /* Прайс сети подставляется, только когда известен ассортимент точки.
+
+     Пустой fuel_types значит «источник не знает, что здесь за колонки», и
+     тогда любая марка из прайса сети — догадка. Именно так на Башнефти с
+     Дёмского шоссе оставался газ по 43,97 даже после фильтра: у неё
+     ассортимент пуст, и раньше это читалось как «фильтровать нечем,
+     ставим всё». Молчание источника — причина не показывать чужое, а не
+     разрешение. */
   if (stationFuelCodes) {
     for (const [fuelCode, entry] of Object.entries(brandPrices)) {
       if (!stationFuelCodes.has(fuelCode)) continue
@@ -141,8 +149,17 @@ function normalizeStation(raw: GdezapravkaStation, city: string, pricesByStation
     const fuel = GDEZAPRAVKA_FUEL_MAP[fuelCode]
     if (!fuel) return []
     /* Марка, которой на станции нет, не показывается даже со своей ценой:
-       ассортимент точки важнее любого прайса. */
+       ассортимент точки важнее любого прайса.
+
+       Газ — отдельный случай. Он бывает на АГЗС, а не на бензиновой
+       колонке, и ошибка тут дороже прочих: человек с газобаллонным
+       оборудованием едет туда, где заправиться нечем. У всех десяти
+       нормальных Башнефтей Уфы ассортимент заполнен и газа в нём нет; газ
+       вылезал ровно на одной точке с пустым fuel_types — пользовательской
+       записи источника с шестизначным id. Поэтому газ без подтверждения
+       ассортимента не принимается вовсе. */
     if (stationFuelCodes && !stationFuelCodes.has(fuelCode)) return []
+    if (!stationFuelCodes && fuel === "GAS") return []
     const priceRub = entry?.price !== undefined ? parseReportedPrice(entry.price) : null
     if (priceRub === null) return []
     return [{
