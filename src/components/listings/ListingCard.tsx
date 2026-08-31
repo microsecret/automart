@@ -250,14 +250,30 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                   как требует норма для пальца: попасть в шестипиксельную
                   цель на телефоне невозможно. Зона уходит вверх от нижнего
                   края карточки и не мешает нажатию на саму карточку. */}
-              <Box pos="absolute" bottom={0} left={0} right={0} style={{ display: "flex", justifyContent: "center", gap: 2, zIndex: 2 }}>
+              {/* Полоса точек не должна перехватывать нажатие на карточку.
+
+                  Контейнер растянут на всю ширину и лежит поверх ссылки,
+                  которая покрывает карточку целиком. Сорокачетырёхпиксельная
+                  зона под пальцем нужна самим точкам, но между ними и по
+                  краям полосы нажимать не по чему — а клик туда до ссылки
+                  не доходил, и объявление не открывалось. Ловят нажатие
+                  только кнопки, контейнер его пропускает. */}
+              <Box pos="absolute" bottom={0} left={0} right={0} style={{ display: "flex", justifyContent: "center", gap: 2, zIndex: 2, pointerEvents: "none" }}>
                 {images.slice(0, 5).map((_, i) => (
                   <UnstyledButton
                     key={i}
-                    onClick={() => showImage(i)}
+                    onClick={(event) => {
+                      /* Поверх фото лежит ссылка на всю карточку — то же,
+                         что у стрелок: без этого нажатие на точку открывало
+                         бы объявление вместо смены снимка. */
+                      event.preventDefault()
+                      event.stopPropagation()
+                      showImage(i)
+                    }}
                     aria-label={`Показать фото ${i + 1} из ${images.length}`}
                     aria-current={i === activeImg ? "true" : undefined}
                     style={{
+                      pointerEvents: "auto",
                       display: "grid",
                       // Точка прижата к низу зоны: сама зона высотой 44px
                       // растёт вверх на изображение, где нажимать не по чему.
