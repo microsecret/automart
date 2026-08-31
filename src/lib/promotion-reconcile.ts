@@ -117,3 +117,53 @@ export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
 
   return result
 }
+
+/**
+ * Сверка одного заказа — по возвращении человека со страницы кассы.
+ *
+ * Уведомление приходит за секунды, но не всегда: адрес в кабинете кассы
+ * может быть не указан. Сверка по расписанию догонит за пять минут, а
+ * человек стоит на странице прямо сейчас и смотрит, включилось ли то,
+ * за что он заплатил. Пять минут ожидания перед пустым экраном — это
+ * человек, который ушёл и написал в поддержку.
+ *
+ * Поэтому спрашиваем кассу сразу, как только он вернулся.
+ */
+export async function reconcileSingleOrder(orderId: string, userId: string): Promise<"activated" | "pending" | "unknown"> {
+  const config = yookassaConfig()
+  if (!config) return "unknown"
+
+  const order = await prisma.promotionOrder.findFirst({
+    /* Только свой заказ: чужой id не должен запускать обращение к кассе. */
+    where: { id: orderId, userId, status: "PENDING", providerPaymentId: { not: null } },
+    select: { id: true, listingId: true, userId: true, tariffId: true, providerPaymentId: true },
+  })
+  if (!order?.providerPaymentId) return "unknown"
+
+  try {
+    const payment = await fetchYookassaPayment(config, order.providerPaymentId)
+    const tariff = getPromotionTariff(order.tariffId)
+    if (!tariff) return "unknown"
+
+    if (payment.status === "canceled") {
+      await markPromotionOrderFailed(order.id, "FAILED")
+      return "unknown"
+    }
+
+    if (payment.status !== "succeeded" || !payment.paid) return "pending"
+    if (!paymentMatchesAmount(payment, tariff.amountRub)) return "pending"
+
+    await activatePaidPromotion({
+      orderId: order.id,
+      listingId: order.listingId,
+      userId: order.userId,
+      tariff,
+      providerPaymentId: payment.id,
+      paymentCreatedAt: new Date(payment.created_at),
+    })
+    return "activated"
+  } catch (error) {
+    console.error(`Сверка заказа ${orderId}:`, error instanceof Error ? error.message : error)
+    return "pending"
+  }
+}

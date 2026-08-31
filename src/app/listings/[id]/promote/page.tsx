@@ -41,6 +41,9 @@ const PROMO_OPTIONS = [
 export default function PromotePage() {
   const { id } = useParams<{ id: string }>()
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null)
+  /* Что показывать после возвращения из кассы: ждём подтверждения или
+     продвижение уже включилось. */
+  const [checkState, setCheckState] = useState<"idle" | "checking" | "activated" | "pending">("idle")
   const [selected, setSelected] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -54,6 +57,50 @@ export default function PromotePage() {
   useEffect(() => {
     setPaymentStatus(new URLSearchParams(window.location.search).get("payment"))
   }, [])
+
+  /* Проверяем оплату сразу, как человек вернулся.
+
+     Уведомление ЮKassa приходит за секунды, но не всегда: адрес в
+     кабинете кассы может быть не указан. Сверка по расписанию догонит
+     за пять минут — а человек стоит здесь прямо сейчас и смотрит,
+     включилось ли то, за что он заплатил. Пять минут перед
+     неизменившимся экраном — это человек, который ушёл и написал в
+     поддержку.
+
+     Три попытки с нарастающим ожиданием: касса иногда отвечает
+     «в обработке» несколько секунд после списания. */
+  useEffect(() => {
+    if (paymentStatus !== "success" || !id) return
+
+    let cancelled = false
+    const attempt = async (index: number) => {
+      if (cancelled || index > 2) return
+      setCheckState("checking")
+      try {
+        const response = await fetch("/api/payment/check", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ listingId: id }),
+        })
+        const payload = await response.json().catch(() => null)
+        if (cancelled) return
+
+        if (payload?.status === "activated" || payload?.status === "unknown") {
+          setCheckState("activated")
+          void reloadViews()
+          return
+        }
+
+        setCheckState("pending")
+        window.setTimeout(() => void attempt(index + 1), (index + 1) * 4000)
+      } catch {
+        if (!cancelled) setCheckState("pending")
+      }
+    }
+
+    void attempt(0)
+    return () => { cancelled = true }
+  }, [paymentStatus, id, reloadViews])
 
   const handleSelect = (id: string) => {
     setSelected(id)
@@ -102,7 +149,16 @@ export default function PromotePage() {
 
         {paymentStatus === "success" && (
           <Paper radius="md" p="md" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
-            <Group gap="sm"><IconCheck size={20} color="#059669" /><Text size="sm" c="var(--market-success-text)">Платёж принят. Продвижение включится после подтверждения платёжной системой.</Text></Group>
+            <Group gap="sm">
+              <IconCheck size={20} color="#059669" />
+              <Text size="sm" c="var(--market-success-text)">
+                {checkState === "activated"
+                  ? "Оплата прошла, продвижение включено."
+                  : checkState === "checking"
+                    ? "Платёж принят, проверяем подтверждение кассы…"
+                    : "Платёж принят. Продвижение включится в течение нескольких минут — страницу можно закрыть."}
+              </Text>
+            </Group>
           </Paper>
         )}
         {paymentStatus === "canceled" && (
