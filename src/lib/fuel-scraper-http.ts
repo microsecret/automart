@@ -1,4 +1,5 @@
 import https from "node:https"
+import zlib from "node:zlib"
 import type { IncomingHttpHeaders } from "node:http"
 import { HttpsProxyAgent } from "https-proxy-agent"
 import { randomUserAgent } from "@/lib/user-agents"
@@ -28,7 +29,14 @@ export type ScraperHttpResponse = {
 }
 
 const DEFAULT_TIMEOUT_MS = 25_000
-const MAX_BYTES = 8 * 1024 * 1024
+/* Потолок ответа — 4 МБ вместо восьми.
+
+   Самая большая выдача источника весит 171 КБ распакованными (12-15 КБ по
+   проводу со сжатием), так что запас четырёхкратный даже для всего
+   региона разом. Восемь мегабайт означали бы, что источник отдал не
+   справочник, а файл — картинку или архив: такой ответ надо оборвать, а
+   не выкачивать через прокси с лимитом в пятьдесят соединений. */
+const MAX_BYTES = 4 * 1024 * 1024
 /* Провайдер ограничивает каждого клиента пятьюдесятью TCP-соединениями.
    Скрейсеру столько не нужно: два-три параллельных запроса закрывают
    любой город, а запас остаётся под смену IP при перезагрузке прокси. */
@@ -38,6 +46,34 @@ const HARD_CONNECTION_CAP = 8
    перезагружается и сменит IP, а повтор сразу же упрётся в тот же обрыв. */
 const PROXY_QUARANTINE_MS = 15_000
 const MAX_RETRIES_PER_REQUEST = 4
+
+/* Пауза при исчерпании лимита соединений.
+
+   Провайдер даёт пятьдесят TCP на клиента. Упёршись в потолок, прокси
+   перестаёт работать до тех пор, пока соединения не будут сброшены, и
+   короткие повторы по десять секунд только держат счётчик занятым:
+   скрейпер долбится, лимит не освобождается, прогон идёт вхолостую.
+
+   Пять минут дают провайдеру закрыть повисшие сокеты по своему таймауту.
+   Это дороже по времени, чем повтор, но дешевле, чем сорванный прогон и
+   адрес, ушедший в блокировку. */
+const CONNECTION_LIMIT_PAUSE_MS = 5 * 60_000
+
+/* Ошибки, означающие «соединений больше нет», а не «сеть моргнула».
+
+   ECONNRESET и EPIPE прокси отдаёт при обрыве на смене IP — это обычная
+   перезагрузка, её лечит короткая пауза. А отказ в самом установлении
+   соединения и таймаут на подключении означают, что лимит выбран. */
+function isConnectionLimitError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  const code = (error as NodeJS.ErrnoException).code || ""
+  if (code === "ECONNREFUSED" || code === "EMFILE" || code === "ENFILE") return true
+  const message = error.message.toLowerCase()
+  return message.includes("socket hang up")
+    || message.includes("too many")
+    || message.includes("429")
+    || message.includes("proxy connection ended")
+}
 
 function parseProxyEntry(rawEntry: string, index: number): ProxyEndpoint {
   const entry = rawEntry.trim()
@@ -100,6 +136,25 @@ function agentStates(): AgentState[] {
   return states
 }
 
+/**
+ * Полное пересоздание пула прокси.
+ *
+ * Провайдер сбрасывает TCP только вместе с подключением: удержанные
+ * агентом сокеты он считает занятыми, пока они не отвалятся по таймауту.
+ * Пересоздание рвёт их со своей стороны и возвращает лимит.
+ */
+export function resetProxyPool() {
+  if (!cachedPool) return
+  for (const state of cachedPool.states) {
+    try {
+      state.agent.destroy()
+    } catch {
+      /* Агент мог уже быть разрушен обрывом — это не мешает пересозданию. */
+    }
+  }
+  cachedPool = null
+}
+
 function directAgent(): https.Agent {
   return new https.Agent({ keepAlive: false })
 }
@@ -137,6 +192,18 @@ function performRequestOnce(
 ): Promise<ScraperHttpResponse> {
   return new Promise((resolve, reject) => {
     const request = https.request(url, { method, agent, headers, family: 4 }, (response) => {
+      /* Медиа обрывается на первом же байте.
+
+         Скрейпер ходит только за JSON и HTML, но источник вправе ответить
+         чем угодно — редиректом на картинку, страницей-заглушкой с
+         тяжёлым содержимым. Выкачивать это через прокси с лимитом
+         соединений незачем: соединение занято, польза нулевая. */
+      const contentType = String(response.headers["content-type"] || "").toLowerCase()
+      if (contentType && /^(image|video|audio|font)\//.test(contentType)) {
+        request.destroy(new Error(`Источник ответил медиафайлом (${contentType})`))
+        return
+      }
+
       const chunks: Buffer[] = []
       let size = 0
       response.on("data", (chunk: Buffer) => {
@@ -150,13 +217,31 @@ function performRequestOnce(
       response.once("end", () => {
         clearTimeout(deadline)
         const status = response.statusCode || 0
+        const raw = Buffer.concat(chunks)
+        /* Ответ распаковывается здесь, а не в вызывающем коде: сжатие
+           запрашивается ради скорости освобождения сокета, и знать про
+           него должен только транспорт. Битую упаковку не прячем —
+           сломанный ответ честнее молча отданного мусора. */
+        let text: string
+        try {
+          const encoding = String(response.headers["content-encoding"] || "").toLowerCase()
+          const decoded = encoding === "gzip"
+            ? zlib.gunzipSync(raw)
+            : encoding === "deflate"
+              ? zlib.inflateSync(raw)
+              : raw
+          text = decoded.toString("utf8")
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error("Не удалось распаковать ответ источника"))
+          return
+        }
         resolve({
           status,
           /* Успех — это 2xx: без этого поля вызывающий не отличал бы
              отданную страницу от ответа «доступ запрещён». */
           ok: status >= 200 && status < 300,
           headers: response.headers,
-          text: Buffer.concat(chunks).toString("utf8"),
+          text,
         })
       })
     })
@@ -190,8 +275,22 @@ export async function scraperGetText(
      короче: иначе счётчик соединений не успеет обнулиться. */
   const pauseMs = Math.max(10_000, options.pauseMs ?? 12_000)
   const baseHeaders = {
-    Accept: "application/json,text/plain,*/*",
+    /* Только текст: звёздочка в конце прежнего Accept разрешала источнику отдать что угодно,
+       вплоть до картинки. Скрейперу нужны JSON и HTML, а каждая лишняя
+       мегабайтная выдача — это занятое TCP-соединение из пятидесяти,
+       отпущенных провайдером на всего клиента. */
+    Accept: "application/json,text/plain,text/html;q=0.9",
     "Accept-Language": "ru-RU,ru;q=0.9",
+    /* Сжатие уменьшает время удержания сокета: ответ в 7 МБ едет
+       считанные секунды вместо десятков, и соединение освобождается
+       раньше. */
+    "Accept-Encoding": "gzip, deflate",
+    /* Соединение закрывается сразу после ответа.
+
+       Прокси перезагружается каждые две минуты, и удержанный сокет всё
+       равно оборвётся — но до обрыва он числится занятым у провайдера и
+       съедает лимит. Явное закрытие возвращает соединение в пул сразу. */
+    Connection: "close",
     Referer: "https://gdebenz.ru/",
     ...options.headers,
   }
@@ -213,9 +312,20 @@ export async function scraperGetText(
     } catch (error) {
       lastError = error
       if (state) markFailure(state)
-      /* Пауза перед повтором: именно её просит провайдер для сброса
-         соединений после перезагрузки прокси. */
-      if (attempt < MAX_RETRIES_PER_REQUEST) await sleep(pauseMs)
+      if (attempt < MAX_RETRIES_PER_REQUEST) {
+        /* Исчерпанный лимит лечится не повтором, а ожиданием: короткие
+           попытки держат счётчик соединений занятым, и прокси не оживает.
+           Обычный обрыв на смене IP — наоборот, проходит за секунды. */
+        const limitReached = isConnectionLimitError(error)
+        if (limitReached) {
+          console.warn("Fuel scraper: лимит соединений прокси исчерпан, пауза 5 минут")
+          /* Пул пересоздаётся: агенты держат сокеты, которые провайдер
+             уже считает мёртвыми, и повтор на том же агенте упрётся в них
+             снова. Полное пересоздание — то, что провайдер и просит. */
+          resetProxyPool()
+        }
+        await sleep(limitReached ? CONNECTION_LIMIT_PAUSE_MS : pauseMs)
+      }
     }
   }
 

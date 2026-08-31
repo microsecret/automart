@@ -1050,3 +1050,33 @@ test("заправка забирает все свои двойники из Op
 
   assert.match(route, /for \(let index = unmatchedDirectoryStations\.length - 1; index >= 0; index -= 1\)/)
 })
+
+test("скрейпер бережёт соединения прокси", () => {
+  /* Провайдер даёт пятьдесят TCP на клиента, и упёршись в потолок прокси
+     перестаёт работать, пока соединения не сброшены. Короткие повторы
+     только держат счётчик занятым: скрейпер долбится, лимит не
+     освобождается, прогон идёт вхолостую. */
+  const http = readFileSync(new URL("../src/lib/fuel-scraper-http.ts", import.meta.url), "utf8")
+
+  /* Пять минут дают провайдеру закрыть повисшие сокеты по таймауту. */
+  assert.match(http, /const CONNECTION_LIMIT_PAUSE_MS = 5 \* 60_000/)
+  assert.match(http, /function isConnectionLimitError/)
+
+  /* Пул пересоздаётся: агенты держат сокеты, которые провайдер уже считает
+     мёртвыми, и повтор на том же агенте упрётся в них снова. */
+  assert.match(http, /export function resetProxyPool/)
+  assert.match(http, /resetProxyPool\(\)/)
+
+  /* Соединение закрывается сразу после ответа, а не держится до обрыва на
+     перезагрузке прокси: до обрыва оно числится занятым у провайдера. */
+  assert.match(http, /Connection: "close"/)
+
+  /* Медиа не выкачивается: скрейперу нужны JSON и HTML, а картинка занимает
+     соединение без всякой пользы. */
+  assert.match(http, /\^\(image\|video\|audio\|font\)/)
+  assert.doesNotMatch(http, /Accept: "application\/json,text\/plain,\*/)
+
+  /* Сжатие освобождает сокет раньше: 171 КБ выдачи едут как 15 КБ. */
+  assert.match(http, /"Accept-Encoding": "gzip, deflate"/)
+  assert.match(http, /zlib\.gunzipSync/)
+})
