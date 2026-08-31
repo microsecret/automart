@@ -18,13 +18,30 @@ import { buildFuelInvitePost, cityFromChatTitle } from "@/lib/fuel-invite-post"
 import { STALE_WINDOW_MS } from "@/lib/fuel-availability"
 
 /**
- * Не чаще раза в трое суток на чат.
+ * Раз в шесть часов на чат.
  *
- * Приглашение в сервис — не новость: второй раз за день оно раздражает,
- * второй раз за неделю ещё читается. Трое суток — середина, при которой
- * пост видят и те, кто заходит в чат раз в два дня.
+ * Было трое суток — из осторожности: приглашение не новость, и слишком
+ * частый повтор раздражает. Но сервис карты заправок держится на числе
+ * людей, а за трое суток пост уходил в глубину переписки и его не видел
+ * никто, кроме тех, кто был в чате в ту минуту.
+ *
+ * Шесть часов — четыре захода в сутки: утро, день, вечер и ночь. Так пост
+ * попадается каждому, кто заглядывает в чат хотя бы раз в день, но и не
+ * идёт подряд за собственным следом.
+ *
+ * Владелец может поменять частоту, не трогая код: значение читается из
+ * server env. Это важно именно здесь — нужный темп виден только по
+ * реакции чатов, а не из кода.
  */
-const CHAT_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000
+const DEFAULT_CHAT_INTERVAL_MS = 6 * 60 * 60 * 1000
+
+function chatIntervalMs(): number {
+  const configured = Number(process.env.FUEL_INVITE_INTERVAL_HOURS)
+  if (!Number.isFinite(configured) || configured <= 0) return DEFAULT_CHAT_INTERVAL_MS
+  /* Не чаще часа: при более частом повторе бот выглядит сломанным, и
+     первым его выкинет админ чата, а не Telegram. */
+  return Math.max(1, configured) * 60 * 60 * 1000
+}
 
 /**
  * Обложка приглашения.
@@ -80,6 +97,10 @@ export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
 
   /* Сколько отметок за сутки — числом можно похвастаться, когда их
      достаточно. Считаем один раз на всю рассылку: цифра общая. */
+  /* Интервал считается один раз на прогон: значение из env не должно
+     меняться между чатами одной волны. */
+  const intervalMs = chatIntervalMs()
+
   const reportsCount = await prisma.fuelAvailabilityReport
     .count({ where: { createdAt: { gte: new Date(now.getTime() - STALE_WINDOW_MS) } } })
     .catch(() => 0)
@@ -88,7 +109,7 @@ export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
     result.chats += 1
 
     const recent = await prisma.fuelInvitePost.findFirst({
-      where: { chatId: chat.id, publishedAt: { gt: new Date(now.getTime() - CHAT_INTERVAL_MS) } },
+      where: { chatId: chat.id, publishedAt: { gt: new Date(now.getTime() - intervalMs) } },
       select: { id: true },
     })
     if (recent) {
