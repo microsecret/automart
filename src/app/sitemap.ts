@@ -7,6 +7,7 @@ import { publicListingWhere } from "@/lib/listing-lifecycle"
 import { listAuctionLandings } from "@/lib/auction-landing"
 import { listNewsTags } from "@/lib/news-tags"
 import { toCitySlug } from "@/lib/fuel-city-slug"
+import { partCategorySlug } from "@/lib/part-category-slug"
 import { CITY_COORDINATES } from "@/lib/cities"
 
 export const dynamic = "force-dynamic"
@@ -38,6 +39,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: path === "" ? 1 : path.startsWith("/category") ? 0.9 : 0.7,
     })),
   ]
+
+  /* Категории запчастей.
+
+     Категории жили только в query-параметрах, и запрос «купить двигатель
+     бу» вести было некуда. Страницы есть всегда — по ним ходят люди и
+     внутренние ссылки, — но в карту сайта попадают лишь те, где есть хоть
+     что-то в продаже.
+
+     Причина та же, что у порога в пятнадцать заправок на городских
+     страницах: четырнадцать пустых страниц, поданных поисковику как
+     содержимое, он справедливо сочтёт мусорными и понизит весь сайт. Когда
+     раздел наполнится, они появятся в карте сами. */
+  try {
+    const partCounts = await prisma.part.groupBy({
+      by: ["partType"],
+      _count: { _all: true },
+      where: { listings: { some: { status: "ACTIVE", deletedAt: null } } },
+    })
+    for (const row of partCounts) {
+      if (!row.partType || row._count._all < 1) continue
+      const slug = partCategorySlug(row.partType)
+      if (!slug) continue
+      pages.push({
+        url: `${baseUrl}/parts-finder/${slug}`,
+        lastModified: now,
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+      })
+    }
+  } catch (error) {
+    console.error("Sitemap: категории запчастей", error instanceof Error ? error.message : error)
+  }
 
   /* Городские страницы карты АЗС.
 

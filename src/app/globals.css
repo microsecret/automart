@@ -9491,3 +9491,80 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   line-height: 1.6;
   color: var(--market-ink-subtle);
 }
+
+/* Страница категории запчастей.
+
+   Как и городская страница АЗС, собрана обычными тегами: Mantine
+   клиентский, и страница с ним пришла бы поисковику пустой — ровно то,
+   ради чего страница и делается. */
+.part-category {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  color: var(--market-ink);
+}
+
+.part-category__crumbs {
+  font-size: 13px;
+  color: var(--market-ink-subtle);
+  margin-bottom: 12px;
+}
+
+.part-category__crumbs a {
+  color: var(--market-ink-subtle);
+}
+
+.part-category__title {
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+.part-category__lead {
+  color: var(--market-ink-subtle);
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+
+.part-category__cta {
+  margin: 0 0 28px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.part-category__subtitle {
+  font-size: 20px;
+  margin: 28px 0 12px;
+}
+
+/* Подкатегории в несколько колонок: их бывает по двенадцать, и в одну
+   колонку список уводит остальное содержимое за пределы экрана. */
+.part-category__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px 20px;
+  font-size: 14px;
+}
+
+.part-category__list a {
+  color: var(--market-ink);
+  text-decoration: none;
+}
+
+.part-category__list a:hover {
+  text-decoration: underline;
+}
+
+.part-category__list--plain {
+  color: var(--market-ink-subtle);
+}
+
+.part-category__note {
+  margin: 28px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--market-ink-subtle);
+}

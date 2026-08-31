@@ -46,12 +46,18 @@ export const TRANSPORT_NAVIGATION = [
   { id: "air", label: "Воздушный транспорт", href: "/category/air" },
 ] as const satisfies readonly NavigationItem[]
 
+/* Категории ведут на свои страницы, а не на фильтр поиска.
+
+   Адрес с query-параметром поисковик отдельной страницей не считает, и
+   весь раздел запчастей был представлен одной страницей поиска. Теперь у
+   категории есть свой адрес с описанием и списком того, что в ней ищут, —
+   а кнопка «открыть поиск» стоит уже на самой странице. */
 export const PART_NAVIGATION = [
-  { id: "engine", label: "Двигатель", href: "/parts-finder?partType=ENGINE" },
-  { id: "brakes", label: "Тормоза", href: "/parts-finder?partType=BRAKES" },
-  { id: "suspension", label: "Подвеска и ходовая", shortLabel: "Ходовая / Подвеска", href: "/parts-finder?partType=SUSPENSION" },
-  { id: "electrical", label: "Электрика", href: "/parts-finder?partType=ELECTRICAL" },
-  { id: "lighting", label: "Оптика", href: "/parts-finder?partType=LIGHTING" },
+  { id: "engine", label: "Двигатель", href: "/parts-finder/dvigatel" },
+  { id: "brakes", label: "Тормоза", href: "/parts-finder/tormoza" },
+  { id: "suspension", label: "Подвеска и ходовая", shortLabel: "Ходовая / Подвеска", href: "/parts-finder/podveska" },
+  { id: "electrical", label: "Электрика", href: "/parts-finder/elektrika" },
+  { id: "lighting", label: "Оптика", href: "/parts-finder/optika" },
 ] as const satisfies readonly NavigationItem[]
 
 export const AUCTION_COUNTRY_NAVIGATION = [

@@ -1218,3 +1218,36 @@ test("лента мини-приложения показывает просмо
      узком экране съедал название города. */
   assert.match(feed, /wrap="wrap" className="tg-card__facts"/)
 })
+
+test("у категорий запчастей есть свои страницы для поиска", () => {
+  /* Категории жили только в query-параметрах: /parts-finder?partType=ENGINE.
+     Поисковики такие адреса отдельными страницами не считают, поэтому
+     запрос «купить двигатель бу» вести было некуда — весь раздел
+     представляла одна страница поиска, не говорящая ни слова о том, что в
+     нём можно найти. */
+  const page = readFileSync(new URL("../src/app/parts-finder/[category]/page.tsx", import.meta.url), "utf8")
+
+  assert.match(page, /BreadcrumbList/)
+  /* Mantine здесь нельзя: библиотека клиентская, и страница с ней пришла
+     бы поисковику пустой. */
+  assert.doesNotMatch(page, /@mantine\/core/)
+
+  /* Навигация ведёт на новые адреса, иначе страницы остались бы без
+     внутренних ссылок. */
+  const nav = readFileSync(new URL("../src/lib/navigation-registry.ts", import.meta.url), "utf8")
+  assert.match(nav, /href: "\/parts-finder\/dvigatel"/)
+  assert.doesNotMatch(nav, /parts-finder\?partType=/)
+})
+
+test("пустые категории запчастей не подаются поисковику как содержимое", () => {
+  /* Причина та же, что у порога в пятнадцать заправок на городских
+     страницах: четырнадцать пустых страниц, поданных как содержимое,
+     поисковик справедливо сочтёт мусорными и понизит весь сайт.
+
+     Страницы при этом существуют — по ним ходят люди и внутренние ссылки,
+     — но в карту сайта попадают лишь те, где есть что показать. */
+  const sitemap = readFileSync(new URL("../src/app/sitemap.ts", import.meta.url), "utf8")
+
+  assert.match(sitemap, /prisma\.part\.groupBy/)
+  assert.match(sitemap, /row\._count\._all < 1\) continue/)
+})
