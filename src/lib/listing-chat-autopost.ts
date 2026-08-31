@@ -26,7 +26,7 @@ import { buildChatPost, type PromotedListing } from "@/lib/chat-promotion-post"
    форума, а держать его в двух местах значит однажды поправить одно и
    забыть про другое. */
 import { sendChatPost } from "@/lib/telegram-post-sender"
-import { pickChatTitleForCity, FALLBACK_CHAT_TITLE } from "@/lib/city-chat-routing"
+import { pickChatTitleForCity } from "@/lib/city-chat-routing"
 
 /**
  * Запоминает, что человек пишет в этом чате.
@@ -86,54 +86,35 @@ type PickedChat = { id: string; title: string | null }
  * подходящего, ни общего, объявление уйдёт туда, где продавца знают, —
  * это лучше, чем не отправить вовсе.
  */
-async function pickChatForListing(input: { userId: string; city: string | null }): Promise<PickedChat | null> {
-  const byCity = await findChatByTitle(pickChatTitleForCity(input.city))
-  if (byCity) return byCity
+/* Пауза между отправками в разные чаты.
 
-  /* Города не хватило — общий чат страны. Он мог быть выключен, тогда
-     идём дальше. */
-  const fallback = await findChatByTitle(FALLBACK_CHAT_TITLE)
-  if (fallback) return fallback
-
-  return pickChatForSeller(input.userId)
-}
+   Telegram не любит очередь сообщений подряд от одного бота: без паузы
+   часть постов возвращается ошибкой лимита, и объявление доходит не всюду.
+   Секунда с небольшим держит темп ниже порога и не растягивает рассылку
+   по дюжине чатов дольше полуминуты. */
+const CHAT_POST_PAUSE_MS = 1_200
 
 /**
- * Ищет живой чат по названию.
+ * Все чаты, куда уходит объявление.
  *
- * Названия чатов задаёт владелец в Telegram, и переименование там ничем
- * не отзывается у нас — поэтому сравнение нестрогое, по вхождению
- * ключевого слова, а не по точному равенству.
+ * Раньше выбирался один — по городу; объявление из Уфы видел только
+ * уфимский чат, а остальные одиннадцать не знали о нём вовсе. Теперь пост
+ * уходит во все живые чаты с включённой рассылкой.
+ *
+ * Городской идёт первым: там объявление ближе всего к покупателю, и если
+ * дальше упрётся в лимит Telegram, потеряются дальние чаты, а не свой.
  */
-async function findChatByTitle(title: string): Promise<PickedChat | null> {
-  const chat = await prisma.telegramChat.findFirst({
-    where: {
-      /* Только живые чаты с включённой рассылкой: в чат, где бота
-         выключили, объявление слать нельзя. */
-      active: true,
-      marketingEnabled: true,
-      title: { contains: title },
-    },
+async function collectChatsForListing(input: { userId: string; city: string | null }): Promise<PickedChat[]> {
+  const chats = await prisma.telegramChat.findMany({
+    where: { active: true, marketingEnabled: true },
     select: { id: true, title: true },
   })
-  return chat ? { id: chat.id, title: chat.title } : null
-}
+  if (!chats.length) return []
 
-/**
- * Запасной ход: чат, где продавца видели последним.
- *
- * Используется, когда по городу чат не нашёлся и общего чата тоже нет.
- */
-async function pickChatForSeller(userId: string): Promise<PickedChat | null> {
-  const membership = await prisma.telegramUserChat.findFirst({
-    where: {
-      userId,
-      chat: { active: true, marketingEnabled: true },
-    },
-    orderBy: { lastSeenAt: "desc" },
-    select: { chatId: true, chat: { select: { title: true } } },
-  })
-  return membership ? { id: membership.chatId, title: membership.chat.title } : null
+  const cityTitle = pickChatTitleForCity(input.city)
+  const isCityChat = (chat: PickedChat) => Boolean(cityTitle && chat.title?.includes(cityTitle))
+
+  return [...chats].sort((left, right) => Number(isCityChat(right)) - Number(isCityChat(left)))
 }
 
 /**
@@ -169,20 +150,23 @@ export async function autopostListingToChat(listingId: string): Promise<string |
     if (!listing || listing.deletedAt || listing.status !== "ACTIVE") return null
     if (!listing.vehicle) return null
 
-    const chat = await pickChatForListing({
+    const chats = await collectChatsForListing({
       userId: listing.userId,
       city: listing.vehicle.location,
     })
-    if (!chat) return null
+    if (!chats.length) return null
 
-    /* Уже публиковали — второй раз не шлём: объявление могли снять и
-       вернуть, а два одинаковых поста в чате раздражают больше, чем их
-       отсутствие. */
-    const already = await prisma.listingChatPost.findFirst({
-      where: { chatId: chat.id, listingId: listing.id },
-      select: { id: true },
+    /* Куда уже публиковали — туда второй раз не шлём: объявление могли
+       снять и вернуть, а два одинаковых поста в чате раздражают больше,
+       чем их отсутствие. Проверяем разом по всем чатам, а не по одному:
+       иначе на дюжину чатов вышла бы дюжина запросов к базе. */
+    const posted = await prisma.listingChatPost.findMany({
+      where: { listingId: listing.id },
+      select: { chatId: true },
     })
-    if (already) return null
+    const postedChatIds = new Set(posted.map((row) => String(row.chatId)))
+    const pending = chats.filter((chat) => !postedChatIds.has(String(chat.id)))
+    if (!pending.length) return null
 
     const post = buildChatPost(
       {
@@ -209,19 +193,41 @@ export async function autopostListingToChat(listingId: string): Promise<string |
       { botUsername: getTelegramBotUsername() ?? undefined, siteUrl: absoluteUrl("/") },
     )
 
-    const sent = await sendChatPost(chat.id, post, { buttonsCaption: "Открыть объявление:" })
-    if (!sent) return null
+    /* Рассылка идёт по одному чату с паузой, а не всем разом: параллельная
+       отправка упирается в лимит Telegram, и часть постов теряется. */
+    const delivered: string[] = []
+    for (let index = 0; index < pending.length; index += 1) {
+      const chat = pending[index]
+      /* Отказ одного чата не отменяет остальные: бота могли выкинуть из
+         одной группы, и это не повод лишать объявление всех прочих. */
+      const sent = await sendChatPost(chat.id, post, { buttonsCaption: "Открыть объявление:" }).catch((error) => {
+        console.error(`Публикация объявления в чат ${chat.title}:`, error instanceof Error ? error.message : error)
+        return null
+      })
+      if (sent) {
+        /* Запись публикации: по ней видно, что объявление уже уходило, и
+           она же нужна уборке, если объявление снимут. */
+        await prisma.listingChatPost.create({
+          data: { chatId: chat.id, listingId: listing.id, messageId: sent },
+        })
+        /* Имя чата задаёт владелец в Telegram и может быть пустым: в
+           уведомлении продавцу тогда честнее сказать «чат», чем «null». */
+        delivered.push(chat.title || "чат")
+      }
+      if (index < pending.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, CHAT_POST_PAUSE_MS))
+      }
+    }
 
-    /* Запись публикации: по ней видно, что объявление уже уходило, и она
-       же нужна уборке, если объявление снимут. */
-    await prisma.listingChatPost.create({
-      data: { chatId: chat.id, listingId: listing.id, messageId: sent },
-    })
+    if (!delivered.length) return null
 
     /* Название возвращается наверх: продавцу в уведомлении надо сказать,
-       в какой именно чат ушло объявление, — иначе бесплатная рассылка
-       остаётся для него невидимой. */
-    return chat.title
+       куда ушло объявление, — иначе бесплатная рассылка остаётся для него
+       невидимой. Чатов теперь несколько, поэтому называем первый и число
+       остальных: перечислять дюжину имён в уведомлении незачем. */
+    return delivered.length === 1
+      ? delivered[0]
+      : `${delivered[0]} и ещё ${delivered.length - 1}`
   } catch (error) {
     console.error("Публикация объявления в чат:", error)
     return null

@@ -30,22 +30,20 @@ test("чат выбирается по городу машины, а не по �
   assert.match(autopost, /city: listing\.vehicle\.location/)
 })
 
-test("город без своего чата уходит в общий чат страны", () => {
+test("город без своего чата всё равно виден всей стране", () => {
   /* Чата под Марий Эл нет, но машина продаётся: показать всей стране
-     лучше, чем не показать никому. */
-  assert.match(autopost, /FALLBACK_CHAT_TITLE/)
-})
+     лучше, чем не показать никому.
 
-test("членство в чате осталось запасным ходом", () => {
-  /* Если не нашлось ни чата области, ни общего — объявление уйдёт туда,
-     где продавца знают: это лучше, чем не отправить вовсе. */
-  assert.match(autopost, /prisma\.telegramUserChat\.findFirst/)
-  assert.match(autopost, /orderBy: \{ lastSeenAt: "desc" \}/)
+     Запасные ходы — общий чат страны и чат, где знают продавца — стали не
+     нужны: рассылка идёт во все живые чаты сразу, и оба они туда входят.
+     Проверяем само это свойство: выборка не сужается по названию. */
+  assert.match(autopost, /prisma\.telegramChat\.findMany/)
+  assert.doesNotMatch(autopost, /findChatByTitle/)
 })
 
 test("чат с выключенной рассылкой пропускается", () => {
   // В чат, где бота выключили, объявление слать нельзя.
-  assert.match(autopost, /chat: \{ active: true, marketingEnabled: true \}/)
+  assert.match(autopost, /where: \{ active: true, marketingEnabled: true \}/)
 })
 
 test("связь человека и чата пишется из вебхука", () => {
@@ -82,8 +80,31 @@ test("после публикации продавцу пишет бот", () =>
 
 test("уведомление называет чат, куда ушло объявление", () => {
   /* Без этого бесплатная рассылка остаётся для продавца невидимой, и он
-     не понимает, за что платить продвижение. */
-  assert.match(autopost, /return chat\.title/)
+     не понимает, за что платить продвижение.
+
+     Чатов теперь несколько: называем первый и число остальных —
+     перечислять дюжину имён в уведомлении незачем. */
+  assert.match(autopost, /delivered\.length === 1/)
+  assert.match(autopost, /и ещё \$\{delivered\.length - 1\}/)
+})
+
+test("объявление уходит во все чаты, а городской идёт первым", () => {
+  /* Раньше выбирался один чат по городу: объявление из Уфы видел только
+     уфимский чат, остальные одиннадцать не знали о нём вовсе.
+
+     Городской остаётся первым в очереди — там объявление ближе всего к
+     покупателю, и если рассылка упрётся в лимит Telegram, потеряются
+     дальние чаты, а не свой. */
+  assert.match(autopost, /function collectChatsForListing/)
+  assert.match(autopost, /Number\(isCityChat\(right\)\) - Number\(isCityChat\(left\)\)/)
+
+  /* Пауза между отправками: Telegram возвращает ошибку лимита на очередь
+     сообщений подряд, и часть постов терялась бы. */
+  assert.match(autopost, /const CHAT_POST_PAUSE_MS/)
+
+  /* Отказ одного чата не отменяет остальные: бота могли выкинуть из одной
+     группы, и это не повод лишать объявление всех прочих. */
+  assert.match(autopost, /sendChatPost\([\s\S]{0,120}\.catch\(/)
 })
 
 test("снятое объявление в чат не уходит", () => {
@@ -95,7 +116,10 @@ test("снятое объявление в чат не уходит", () => {
 test("одно объявление не уходит в тот же чат дважды", () => {
   /* Объявление могли снять и вернуть, а два одинаковых поста подряд
      раздражают больше, чем их отсутствие. */
-  assert.match(autopost, /prisma\.listingChatPost\.findFirst/)
+  /* Проверяем разом по всем чатам, а не по одному: иначе на дюжину чатов
+     вышла бы дюжина запросов к базе. */
+  assert.match(autopost, /prisma\.listingChatPost\.findMany/)
+  assert.match(autopost, /postedChatIds/)
   const migration = read("../prisma/migrations/20260828110000_telegram_user_chat/migration.sql")
   assert.match(migration, /CREATE UNIQUE INDEX "ListingChatPost_listingId_chatId_key"/)
 })
