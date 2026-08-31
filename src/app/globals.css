@@ -9322,3 +9322,83 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   color: var(--market-ink-subtle);
   opacity: 0.85;
 }
+
+/* Городская страница карты АЗС.
+
+   Разметка нарочно без Mantine: библиотека клиентская, и страница с ней
+   пришла бы поисковику пустой — ровно то, ради чего страница и делалась.
+   Стили здесь скромные: это текстовая страница для чтения и выдачи, а не
+   интерфейс. */
+.fuel-city {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  color: var(--market-ink);
+}
+
+.fuel-city__title {
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+.fuel-city__lead {
+  color: var(--market-ink-subtle);
+  margin: 0 0 28px;
+  line-height: 1.6;
+}
+
+.fuel-city__subtitle {
+  font-size: 20px;
+  margin: 28px 0 12px;
+}
+
+/* Таблица прокручивается внутри себя: на телефоне пять колонок цен иначе
+   растягивают страницу вбок. */
+.fuel-city__table-wrap {
+  overflow-x: auto;
+}
+
+.fuel-city__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.fuel-city__table th,
+.fuel-city__table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--market-border);
+  white-space: nowrap;
+}
+
+.fuel-city__table th {
+  font-weight: 600;
+  color: var(--market-ink-subtle);
+  font-size: 13px;
+}
+
+.fuel-city__brands {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  color: var(--market-ink-subtle);
+  font-size: 14px;
+}
+
+.fuel-city__cta {
+  margin: 28px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.fuel-city__note {
+  margin: 24px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--market-ink-subtle);
+}

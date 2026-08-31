@@ -1,10 +1,9 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Box, Container, Group, Stack, Table, Text, Title } from "@mantine/core"
 import { prisma } from "@/lib/prisma"
 import { buildSeoMetadata } from "@/lib/seo-metadata"
-import { cityFromSlug } from "@/lib/fuel-city-slug"
+import { cityFromSlug, cityInPrepositional } from "@/lib/fuel-city-slug"
 import { CITY_COORDINATES } from "@/lib/cities"
 
 /**
@@ -17,6 +16,11 @@ import { CITY_COORDINATES } from "@/lib/cities"
  * Здесь всё это есть, и главное — цены отдаются прямо в разметке, а не
  * подгружаются скриптом. Поисковик читает страницу целиком: марки, средние
  * цены, число заправок. Карта рядом, для тех, кто пришёл искать по месту.
+ *
+ * Разметка нарочно без Mantine: библиотека клиентская, и страница с ней
+ * рендерилась бы в браузере — то есть пришла бы поисковику пустой, ради
+ * чего всё и затевалось. Обычные теги со скромными стилями отдаются
+ * сервером готовыми.
  */
 
 /* Раз в час: цены на топливо меняются не чаще, а пересчитывать среднее по
@@ -101,6 +105,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
     })
   }
 
+  const where = cityInPrepositional(city)
   const summary = await loadCitySummary(city)
   const petrol = summary?.prices.find((row) => row.fuel === "AI92")
   /* Цена в описании выдачи — то, ради чего человек и кликает: «АИ-92 от
@@ -109,14 +114,14 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   const countHint = summary ? `${summary.stationCount} АЗС на карте` : "карта заправок"
 
   return buildSeoMetadata({
-    title: `Цены на бензин в ${city} — ${countHint}`,
+    title: `Цены на бензин в ${where} — ${countHint}`,
     description: `Актуальные цены на АИ-92, АИ-95, ДТ и газ на заправках ${city}.${priceHint} Наличие топлива по отметкам водителей.`,
     canonical: `/services/fuel-map/${slug}`,
     keywords: [
-      `цены на бензин ${city}`,
+      `цены на бензин в ${where}`,
       `АЗС ${city}`,
       `заправки ${city}`,
-      `где заправиться ${city}`,
+      `где заправиться в ${where}`,
       `дизельное топливо ${city}`,
     ],
   })
@@ -134,82 +139,80 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
   const summary = await loadCitySummary(city)
   if (!summary) notFound()
 
+  const where = cityInPrepositional(city)
+
   /* Разметка для поисковика: без неё цены остаются просто текстом, а с ней
      попадают в расширенный ответ выдачи. */
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Dataset",
-    name: `Цены на топливо в ${city}`,
+    name: `Цены на топливо в ${where}`,
     description: `Цены на АИ-92, АИ-95, ДТ и газ на ${summary.stationCount} заправках города ${city}.`,
     dateModified: summary.updatedAt?.toISOString(),
     creator: { "@type": "Organization", name: "LeWheel" },
   }
 
   return (
-    <Container size="lg" py="lg">
+    <main className="fuel-city">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
 
-      <Stack gap="lg">
-        <Box>
-          <Title order={1} fz={{ base: 26, sm: 32 }}>Цены на бензин в {city}</Title>
-          <Text c="dimmed" mt="xs">
-            {summary.stationCount} заправок на карте. Цены собраны из открытых источников
-            и уточняются отметками водителей — тех, кто прямо сейчас стоит у колонки.
-          </Text>
-        </Box>
+      <h1 className="fuel-city__title">Цены на бензин в {where}</h1>
+      <p className="fuel-city__lead">
+        {summary.stationCount} заправок на карте. Цены собраны из открытых источников
+        и уточняются отметками водителей — тех, кто прямо сейчас стоит у колонки.
+      </p>
 
-        {summary.prices.length > 0 && (
-          <Box>
-            <Title order={2} fz={20} mb="sm">Средние цены на топливо</Title>
-            <Table striped withTableBorder>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Топливо</Table.Th>
-                  <Table.Th>Средняя</Table.Th>
-                  <Table.Th>Минимум</Table.Th>
-                  <Table.Th>Максимум</Table.Th>
-                  <Table.Th>АЗС</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
+      {summary.prices.length > 0 && (
+        <section>
+          <h2 className="fuel-city__subtitle">Средние цены на топливо</h2>
+          <div className="fuel-city__table-wrap">
+            <table className="fuel-city__table">
+              <thead>
+                <tr>
+                  <th>Топливо</th>
+                  <th>Средняя</th>
+                  <th>Минимум</th>
+                  <th>Максимум</th>
+                  <th>АЗС</th>
+                </tr>
+              </thead>
+              <tbody>
                 {summary.prices.map((row) => (
-                  <Table.Tr key={row.fuel}>
-                    <Table.Td><Text fw={600}>{row.label}</Text></Table.Td>
-                    <Table.Td>{formatPrice(row.averageRub)} ₽</Table.Td>
-                    <Table.Td>{formatPrice(row.minRub)} ₽</Table.Td>
-                    <Table.Td>{formatPrice(row.maxRub)} ₽</Table.Td>
-                    <Table.Td>{row.stations}</Table.Td>
-                  </Table.Tr>
+                  <tr key={row.fuel}>
+                    <td><strong>{row.label}</strong></td>
+                    <td>{formatPrice(row.averageRub)} ₽</td>
+                    <td>{formatPrice(row.minRub)} ₽</td>
+                    <td>{formatPrice(row.maxRub)} ₽</td>
+                    <td>{row.stations}</td>
+                  </tr>
                 ))}
-              </Table.Tbody>
-            </Table>
-          </Box>
-        )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
-        {summary.brands.length > 0 && (
-          <Box>
-            <Title order={2} fz={20} mb="sm">Сети АЗС в городе</Title>
-            <Group gap="xs" wrap="wrap">
-              {summary.brands.map((row) => (
-                <Text key={row.brand} size="sm" c="dimmed">
-                  {row.brand} — {row.count} АЗС
-                </Text>
-              ))}
-            </Group>
-          </Box>
-        )}
+      {summary.brands.length > 0 && (
+        <section>
+          <h2 className="fuel-city__subtitle">Сети АЗС в городе</h2>
+          <ul className="fuel-city__brands">
+            {summary.brands.map((row) => (
+              <li key={row.brand}>{row.brand} — {row.count} АЗС</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        <Box>
-          <Link href={`/services/fuel-map?city=${encodeURIComponent(city)}`}>
-            Открыть карту заправок {city} →
-          </Link>
-        </Box>
+      <p className="fuel-city__cta">
+        <Link href={`/services/fuel-map?city=${encodeURIComponent(city)}`}>
+          Открыть карту заправок {city} →
+        </Link>
+      </p>
 
-        <Text size="xs" c="dimmed">
-          Цены носят справочный характер и могут отличаться от табло на заправке.
-          Точнее всего их знают водители: отметьте цену на карте, если заметили расхождение.
-        </Text>
-      </Stack>
-    </Container>
+      <p className="fuel-city__note">
+        Цены носят справочный характер и могут отличаться от табло на заправке.
+        Точнее всего их знают водители: отметьте цену на карте, если заметили расхождение.
+      </p>
+    </main>
   )
 }
