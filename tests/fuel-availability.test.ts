@@ -1251,3 +1251,27 @@ test("пустые категории запчастей не подаются �
   assert.match(sitemap, /prisma\.part\.groupBy/)
   assert.match(sitemap, /row\._count\._all < 1\) continue/)
 })
+
+test("админкой можно пользоваться с телефона", () => {
+  /* Владелец управляет сайтом с телефона, и три вещи там были попросту
+     невозможны. */
+
+  /* Таблицы АЗС на семь колонок занимают около тысячи пикселей и ниже не
+     сжимаются: без своего контейнера уезжала вправо вся страница вместе с
+     шапкой и фильтрами — докрутив до цен, человек терял из виду, где он. */
+  const fuel = readFileSync(new URL("../src/app/admin/fuel/page.tsx", import.meta.url), "utf8")
+  assert.match(fuel, /Table\.ScrollContainer minWidth=\{900\}/)
+  assert.match(fuel, /Table\.ScrollContainer minWidth=\{760\}/)
+
+  /* Панель диалога поддержки фиксировала высоту в 640 пикселей и на
+     телефоне: форма ответа лежит у нижнего края, а при фокусе в поле
+     клавиатура занимает половину экрана — кнопка «Отправить» уходила под
+     неё, и ответить клиенту было нельзя. */
+  const support = readFileSync(new URL("../src/app/admin/support/page.tsx", import.meta.url), "utf8")
+  assert.doesNotMatch(support, /h=\{\{ base: 640, lg: 720 \}\}/)
+  assert.match(support, /mih=\{\{ base: 420 \}\}/)
+
+  /* Поле ответа и кнопка делили одну строку: полю оставалось около ста
+     сорока пикселей. */
+  assert.match(support, /align="flex-end" gap="xs" wrap="wrap"/)
+})

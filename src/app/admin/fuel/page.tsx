@@ -267,6 +267,14 @@ function StationsTab({ filters, setFilters }: {
       </Paper>
 
       <Paper withBorder radius="md">
+        {/* Прокрутка живёт внутри карточки, а не у всей страницы.
+
+            Таблица на семь колонок с ценами и адресами занимает около
+            тысячи пикселей и ниже не сжимается. Без своего контейнера
+            уезжала вправо вся страница — вместе с шапкой, вкладками и
+            фильтрами: докрутив до цен, человек терял из виду и то, где
+            находится. Так же сделано в таблице пользователей. */}
+        <Table.ScrollContainer minWidth={900}>
         <Table striped highlightOnHover verticalSpacing="xs" horizontalSpacing="md">
           <Table.Thead>
             <Table.Tr>
@@ -341,6 +349,7 @@ function StationsTab({ filters, setFilters }: {
             )}
           </Table.Tbody>
         </Table>
+        </Table.ScrollContainer>
       </Paper>
 
       {pages > 1 && (
@@ -444,6 +453,10 @@ function RunsTab() {
 
   return (
     <Paper withBorder radius="md">
+      {/* Та же причина, что и в таблице заправок: семь колонок не
+          помещаются в телефон, и прокручиваться должна таблица, а не
+          страница целиком. */}
+      <Table.ScrollContainer minWidth={760}>
       <Table striped highlightOnHover verticalSpacing="xs" horizontalSpacing="md">
         <Table.Thead>
           <Table.Tr>
@@ -486,6 +499,7 @@ function RunsTab() {
           )}
         </Table.Tbody>
       </Table>
+      </Table.ScrollContainer>
     </Paper>
   )
 }

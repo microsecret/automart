@@ -26,8 +26,11 @@ export default function ModerationPage() {
   if (status === "loading") return <Center h={400}><Loader color="indigo" /></Center>
   if (!session || !allowed) return <Center h={400}><Text c="dimmed">Проверяем права доступа…</Text></Center>
 
+  /* Боковые отступы обязательны: без них карточки модерации упираются в
+     самые края экрана телефона — тот же дефект, что уже чинили на
+     страницах посещаемости и рассылки. */
   return (
-    <Container size="xl" py={{ base: "sm", md: "lg" }}>
+    <Container size="xl" px={{ base: "sm", md: "md" }} py={{ base: "sm", md: "lg" }}>
       <Stack gap="md">
         <AdminWorkspaceNavigation canManageUsers={session.user.role === "ADMIN"} />
         <Stack gap={2}>

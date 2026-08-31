@@ -38,7 +38,13 @@ export default function AdminWorkspaceNavigation({ canManageUsers = true }: Admi
           </Stack>
         </Group>
       </Group>
-      <ScrollArea type="never" scrollbarSize={0} offsetScrollbars>
+      {/* Полоса прокрутки видима на телефоне.
+
+        Десять разделов занимают около тысячи ста пикселей, на экране
+        помещаются два с половиной. Скрытая полоса не подсказывала, что
+        справа есть ещё восемь, — «Поддержка» и «Рассылка» выглядели
+        отсутствующими вовсе. */}
+      <ScrollArea type="auto" scrollbarSize={6} offsetScrollbars>
         <Group gap={6} wrap="nowrap" px="xs" pb={2}>
           {sections.map((section) => {
             const Icon = section.icon
