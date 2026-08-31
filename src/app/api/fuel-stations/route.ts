@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CITY_COORDINATES } from "@/lib/cities"
+import { prisma } from "@/lib/prisma"
 
 type OverpassElement = {
   id: number
@@ -24,7 +25,7 @@ type FuelPrice = {
 type FuelStationPayload = {
   id: string
   sourceType: OverpassElement["type"] | "provider"
-  dataSource: "OPENSTREETMAP" | "ZAPRAVKIN" | "MERGED"
+  dataSource: "OPENSTREETMAP" | "ZAPRAVKIN" | "GDEBENZ" | "MERGED"
   name: string
   brand: string | null
   operator: string | null
@@ -648,6 +649,69 @@ async function requestLiveStations(coordinates: Coordinates, radius: number, for
   return uniqueStations
 }
 
+/* Подписи марок для импортированных цен: те же строки, что у OSM и
+   провайдера, чтобы фильтры карты находили импортированные цены по тем
+   же ярлыкам, что и остальные. */
+const IMPORTED_STATION_FUEL_LABELS: Record<string, string> = {
+  AI92: "АИ‑92",
+  AI95: "АИ‑95",
+  AI98: "АИ‑98",
+  AI100: "АИ‑100",
+  DT: "ДТ",
+  GAS: "Газ",
+}
+
+/**
+ * Импортированные точки из собственной базы (сборщик ГдеБЕНЗ).
+ *
+ * Они не подменяют справочник OpenStreetMap, а ложатся поверх него как
+ * провайдерские: при совпадении по близости и имени сливаются с OSM-точкой,
+ * а новые точки — например, ещё не нанесённые в OSM — появляются сами.
+ */
+async function requestImportedStations(coordinates: Coordinates, radius: number): Promise<FuelStationPayload[]> {
+  const latitudeDelta = radius / 111_000
+  const longitudeDelta = radius / Math.max(25_000, 111_000 * Math.cos(coordinates.latitude * Math.PI / 180))
+
+  const rows = await prisma.fuelStationImport.findMany({
+    where: {
+      latitude: { gte: coordinates.latitude - latitudeDelta, lte: coordinates.latitude + latitudeDelta },
+      longitude: { gte: coordinates.longitude - longitudeDelta, lte: coordinates.longitude + longitudeDelta },
+    },
+    include: { prices: true },
+    take: 600,
+  })
+
+  return rows.map((row) => {
+    const prices = row.prices.flatMap((price) => {
+      const label = IMPORTED_STATION_FUEL_LABELS[price.fuel]
+      if (!label) return []
+      return [{ fuel: label, price: price.priceRub / 100, updatedAt: price.observedAt?.toISOString() ?? null }]
+    })
+    const status: FuelStationPayload["status"] = row.status === "yes" || row.status === "low"
+      ? "FUEL"
+      : row.status === "no"
+        ? "NO_FUEL"
+        : "UNKNOWN"
+
+    return {
+      id: `gdebenz-${row.sourceId}`,
+      sourceType: "provider",
+      dataSource: "GDEBENZ",
+      name: row.name || row.brand || "АЗС",
+      brand: row.brand,
+      operator: null,
+      address: row.address,
+      openingHours: null,
+      fuels: uniqueFuels(prices.map((price) => price.fuel)),
+      prices,
+      status,
+      statusUpdatedAt: row.updatedAt.toISOString(),
+      latitude: row.latitude,
+      longitude: row.longitude,
+    }
+  })
+}
+
 function normalizeDirectoryStations(elements: OverpassElement[]) {
   return elements.flatMap((element) => {
     const coordinates = getCoordinates(element)
@@ -676,6 +740,19 @@ function normalizeDirectoryStations(elements: OverpassElement[]) {
       operator: tags.operator || null,
       address: [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(", ") || null,
       openingHours: tags.opening_hours || null,
+      /* Удобства при заправке — из OpenStreetMap, открытая лицензия.
+         
+         «Оплата картой» — тот же вопрос, что человек ищет на чужих
+         сервисах, только здесь он берётся из открытых данных, а не из
+         чужой базы. Ночью в дороге важно и остальное: работает ли
+         туалет, есть ли кофе, можно ли позвонить и спросить. */
+      amenities: {
+        cardPayment: tags["payment:cards"] === "yes" || tags["payment:credit_cards"] === "yes",
+        phone: tags["contact:phone"] || tags.phone || null,
+        toilets: tags.toilets === "yes",
+        shop: tags.shop === "yes" || Boolean(tags.shop && tags.shop !== "no"),
+        cafe: tags.cafe === "yes" || tags.amenity === "cafe",
+      },
       fuels,
       prices: [],
       status: "UNKNOWN" as const,
@@ -824,15 +901,17 @@ export async function GET(request: NextRequest) {
           cacheDirectoryStations(directoryCacheKey, stations)
           return stations
         })
-  const [directoryResult, liveResult] = await Promise.allSettled([
+  const [directoryResult, liveResult, importedResult] = await Promise.allSettled([
     directoryPromise,
     requestLiveStations(coordinates, radius, forceRefresh),
+    requestImportedStations(coordinates, radius),
   ])
   const directoryStations = directoryResult.status === "fulfilled" ? directoryResult.value : []
   const liveStations = liveResult.status === "fulfilled" ? liveResult.value : []
+  const importedStations = importedResult.status === "fulfilled" ? importedResult.value : []
   const hasProviderKey = Boolean(process.env.ZAPRAVKIN_API_KEY?.trim())
 
-  if (!directoryStations.length && !liveStations.length && directoryResult.status === "rejected") {
+  if (!directoryStations.length && !liveStations.length && !importedStations.length && directoryResult.status === "rejected") {
     console.error("Fuel stations request failed", directoryResult.reason)
     return NextResponse.json({
       city: areaLabel,
@@ -845,10 +924,11 @@ export async function GET(request: NextRequest) {
     }, { status: 503 })
   }
 
-  const dataMode = liveStations.length ? "LIVE" : "DIRECTORY"
-  const stations = mergeStations(liveStations, directoryStations)
-  const disclaimer = dataMode === "LIVE"
-    ? "Статусы, ассортимент и цены с отметкой времени получены от подключённого поставщика. Остальные точки добавлены из OpenStreetMap как справочник — их ассортимент уточняйте на АЗС."
+  const hasLiveData = liveStations.length > 0 || importedStations.length > 0
+  const dataMode = hasLiveData ? "LIVE" : "DIRECTORY"
+  const stations = mergeStations([...liveStations, ...importedStations], directoryStations)
+  const disclaimer = hasLiveData
+    ? "Статусы, ассортимент и цены с отметкой времени получены от подключённых источников. Остальные точки добавлены из OpenStreetMap как справочник — их ассортимент уточняйте на АЗС."
     : hasProviderKey
       ? "Проверенный поставщик временно не вернул данные для этого участка. Показаны справочные точки OpenStreetMap; ассортимент и наличие уточняйте на АЗС."
       : "Показаны справочные точки OpenStreetMap. Для фактического наличия и цен нужен подключённый поставщик данных; ассортимент уточняйте на АЗС."
@@ -858,11 +938,12 @@ export async function GET(request: NextRequest) {
     areaLabel,
     coordinates,
     stations,
-    source: dataMode === "LIVE" ? "Заправкин + OpenStreetMap" : "OpenStreetMap",
+    source: hasLiveData ? "Подключённые источники + OpenStreetMap" : "OpenStreetMap",
     coverage: {
       dataMode,
       liveProviderConfigured: hasProviderKey,
       liveStationCount: liveStations.length,
+      importedStationCount: importedStations.length,
       directoryStationCount: directoryStations.length,
       providerAttributionUrl: dataMode === "LIVE" ? "https://zapravkin24.ru" : null,
       providerState: liveProviderHealth.state,

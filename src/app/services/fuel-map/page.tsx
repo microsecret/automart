@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
 import { useSearchParams } from "next/navigation"
-import { ActionIcon, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
+import { ActionIcon, Badge, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
 import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconX } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES, findNearestCity } from "@/lib/cities"
 import { fetchJson } from "@/lib/api-client"
@@ -15,6 +15,7 @@ import { formatAge, isFresh } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { getGenericIdentity, getNetworkIdentity, getStationIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
 import { TILE_SIZE, coordinatesToWorld, getDistanceInKilometers, worldToCoordinates } from "@/lib/map-geometry"
+import { describeOpeningHours } from "@/lib/opening-hours"
 import { plural } from "@/lib/format"
 import { tapFeedback } from "@/lib/telegram-webapp"
 
@@ -27,6 +28,16 @@ type FuelStation = {
   operator: string | null
   address: string | null
   openingHours: string | null
+  /* Удобства из OpenStreetMap: открытая лицензия, указание авторства уже
+     стоит на карте. «Оплата картой» — тот же вопрос, что человек ищет на
+     других сервисах, только взятый из открытых данных. */
+  amenities?: {
+    cardPayment: boolean
+    phone: string | null
+    toilets: boolean
+    shop: boolean
+    cafe: boolean
+  }
   fuels: string[]
   prices: Array<{ fuel: string; price: number | null; updatedAt: string | null }>
   status: "FUEL" | "NO_FUEL" | "UNKNOWN"
@@ -1050,6 +1061,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               <Box style={{ minWidth: 0, flex: 1 }}>
                 <Text size="sm" fw={800} lineClamp={1}>{selectedStation.name}</Text>
                 <Text size="xs" c="dimmed" lineClamp={1}>
+                  {/* Часы работы — первым делом.
+
+                      Ночью это главный вопрос: заправка на карте есть, а
+                      приедешь — закрыто. Данные приходят у двух третей
+                      точек и до сих пор нигде не показывались. */}
+                  {(() => {
+                    const hours = describeOpeningHours(selectedStation.openingHours)
+                    if (hours.kind === "always") return <Text component="span" c="teal" fw={600}>Круглосуточно · </Text>
+                    if (hours.kind === "open") return <Text component="span" c="teal" fw={600}>Открыто до {hours.until} · </Text>
+                    if (hours.kind === "closed") return <Text component="span" c="orange" fw={600}>Закрыто, откроется в {hours.opensAt} · </Text>
+                    return hours.label ? <Text component="span" c="dimmed">{hours.label} · </Text> : null
+                  })()}
                   {selectedStation.address || selectedStationAddress || "Уточняем адрес…"}
                   {/* Расстояние от центра карты: человек смотрит на
                       участок, который сам выбрал, и «1,2 км» отвечает на
@@ -1058,6 +1081,45 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                     ? ` · ${distanceKm < 1 ? `${Math.round(distanceKm * 1000)} м` : `${distanceKm.toFixed(1).replace(".", ",")} км`}`
                     : ""}
                 </Text>
+
+                {/* Часы работы и удобства — из OpenStreetMap.
+
+                    Ночью главный вопрос не «где заправка», а «открыта
+                    ли»: точка на карте есть, приедешь — закрыто.
+                    Формат OSM («Mo-Fr 08:00-20:00») человек за рулём не
+                    читает, поэтому переводим в «Открыто до 20:00».
+
+                    Оплата картой рядом: это то же, что люди ищут на
+                    других сервисах, только здесь взято из открытых
+                    данных, а не из чужой базы. */}
+                <Group gap={6} mt={4} wrap="wrap">
+                  {(() => {
+                    const hours = describeOpeningHours(selectedStation.openingHours)
+                    if (hours.kind === "always") {
+                      return <Badge size="xs" variant="light" color="teal">Круглосуточно</Badge>
+                    }
+                    if (hours.kind === "open") {
+                      return <Badge size="xs" variant="light" color="teal">Открыто{hours.until ? ` до ${hours.until}` : ""}</Badge>
+                    }
+                    if (hours.kind === "closed") {
+                      return <Badge size="xs" variant="light" color="red">Закрыто{hours.opensAt ? ` · откроется в ${hours.opensAt}` : ""}</Badge>
+                    }
+                    return hours.label ? <Badge size="xs" variant="outline" color="gray">{hours.label}</Badge> : null
+                  })()}
+
+                  {selectedStation.amenities?.cardPayment && (
+                    <Badge size="xs" variant="light" color="indigo">Оплата картой</Badge>
+                  )}
+                  {selectedStation.amenities?.toilets && (
+                    <Badge size="xs" variant="outline" color="gray">Туалет</Badge>
+                  )}
+                  {selectedStation.amenities?.cafe && (
+                    <Badge size="xs" variant="outline" color="gray">Кафе</Badge>
+                  )}
+                  {selectedStation.amenities?.shop && (
+                    <Badge size="xs" variant="outline" color="gray">Магазин</Badge>
+                  )}
+                </Group>
               </Box>
               {/* Закрыть карточку: без крестика она снимается только
                   повторным нажатием на ту же метку, а её к этому
