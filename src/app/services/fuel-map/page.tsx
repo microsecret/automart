@@ -155,6 +155,46 @@ function getStationDataSummary(station: FuelStation) {
 }
 
 
+
+/* Чья цена показывается, когда водитель и источник расходятся.
+ *
+ * Отметка водителя — самая ценная вещь в сервисе: он стоит у колонки и
+ * видит табло. Поэтому она главнее прайса источника. Но живёт отметка семь
+ * дней, а источник обновляется каждые пятнадцать минут, и через сутки
+ * получалось обратное: карта неделю держала цену, которую заправка давно
+ * сменила. Замер по проду: отметка сорокачасовой давности показывала
+ * АИ-95 за 67 рублей, источник — 71,35, и человек приезжал к другой цене.
+ *
+ * Отметка держит первенство шесть часов — смену на заправке, за которую
+ * цена почти не меняется. Дальше она уступает источнику, если тот
+ * расходится заметно: рубль на литре человек замечает, копейки — нет.
+ *
+ * Полностью отметку не отбрасываем никогда: если источник молчит, она
+ * остаётся единственным, что у карты есть.
+ */
+const REPORT_PRIORITY_MS = 6 * 60 * 60 * 1000
+const PRICE_DISAGREEMENT_KOPECKS = 100
+
+function pickDisplayPrice(
+  reported: { priceKopecks: number; updatedAt: string } | undefined,
+  sourceKopecks: number | undefined,
+  now: number,
+): number | null {
+  if (reported === undefined) return sourceKopecks ?? null
+  if (sourceKopecks === undefined) return reported.priceKopecks
+
+  const reportedAt = Date.parse(reported.updatedAt)
+  const ageMs = Number.isFinite(reportedAt) ? now - reportedAt : Number.POSITIVE_INFINITY
+  if (ageMs <= REPORT_PRIORITY_MS) return reported.priceKopecks
+
+  /* Расхождение меньше рубля — оставляем отметку: она про эту колонку, а
+     прайс источника усреднён по сети, и мелкая разница ещё не значит,
+     что водитель ошибся. */
+  return Math.abs(reported.priceKopecks - sourceKopecks) >= PRICE_DISAGREEMENT_KOPECKS
+    ? sourceKopecks
+    : reported.priceKopecks
+}
+
 function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount }: {
   city: string
   coordinates: { latitude: number; longitude: number }
@@ -419,6 +459,14 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         .map((row) => row.id),
     )
   }, [stations, guestVisibleCount, viewportCenter])
+
+  /* Отсчёт возраста отметок.
+
+     Берётся один раз на отрисовку, а не на каждую точку: иначе соседние
+     плашки сравнивались бы с чуть разным «сейчас». Пересчёт при следующем
+     обновлении данных — цены и так перезапрашиваются, а точность до
+     секунды здесь не нужна: речь о часах. */
+  const nowMs = Date.now()
 
   const markers = useMemo<MapMarker[]>(() => {
     /* Группировка держится до четырнадцатого масштаба, а не до
@@ -757,7 +805,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           /* Цены водителей по этой точке: на плашке они стоят рядом с
              маркой, и за ценой не надо открывать карточку. */
           const prices = isCluster ? [] : (pricesByStation[firstStation.id] || [])
-          const priceByFuel = new Map(prices.map((row) => [row.fuel, row.priceKopecks]))
+          /* Отметки водителей вместе с их возрастом: без даты нельзя
+             решить, не устарела ли цена относительно источника. */
+          const reportedByFuel = new Map(prices.map((row) => [row.fuel, { priceKopecks: row.priceKopecks, updatedAt: row.updatedAt }]))
           /* Цены источника с самой точки: скрейпер привозит их вместе с
              заправкой, и на плашке они стоят там же, где цены водителей.
 
@@ -774,7 +824,13 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   typeof row.price === "number" ? [[row.fuel, Math.round(row.price * 100)] as const] : [],
                 ),
           )
-          const priceFor = (fuel: string) => priceByFuel.get(fuel) ?? sourcePriceByFuel.get(fuel) ?? null
+          /* Отметка водителя главнее прайса источника первые шесть часов,
+             дальше уступает ему при заметном расхождении. */
+          const priceFor = (fuel: string) => pickDisplayPrice(
+            reportedByFuel.get(fuel),
+            sourcePriceByFuel.get(fuel),
+            nowMs,
+          )
           /* Наличие по маркам от источника — для цвета марки на плашке.
              Зелёная есть, красная кончилась; молчит источник — серая. */
           const sourceFuelsNow = isCluster ? new Set<string>() : new Set(firstStation.fuelsNow || [])
@@ -1104,6 +1160,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         const fresh = rows.filter((row) => row.updatedAt && isFresh(new Date(row.updatedAt)))
         const prices = pricesByStation[selectedStation.id] || []
         const priceByFuel = new Map(prices.map((row) => [row.fuel, row.priceKopecks]))
+        const reportedByFuel = new Map(prices.map((row) => [row.fuel, { priceKopecks: row.priceKopecks, updatedAt: row.updatedAt }]))
         /* Цены и наличие от источника: скрейпер привозит их вместе с
            заправкой. Отметка водителя всё равно главнее — она про колонку,
            а не про прайс сети, — поэтому источник заполняет только то, по
@@ -1301,7 +1358,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               {fresh.length > 0 ? (
                 <Box className="fuel-tiles">
                   {fresh.slice(0, 6).map((row) => {
-                    const kopecks = priceByFuel.get(row.fuel) ?? sourcePriceByFuel.get(row.fuel)
+                    const kopecks = pickDisplayPrice(reportedByFuel.get(row.fuel), sourcePriceByFuel.get(row.fuel), Date.now()) ?? undefined
                     return (
                       /* Плитка марки: наличие, цена и свежесть вместе.
 
@@ -1328,6 +1385,21 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                         )}
                         {row.updatedAt && (
                           <span className="fuel-tile__age">{formatAge(new Date(row.updatedAt))}</span>
+                        )}
+                        {/* Чья это цена.
+
+                            Отметка водителя и прайс источника — разного
+                            веса сведения: первую оставил человек у
+                            колонки, вторую собрал робот со стороннего
+                            сайта. Не различая их, человек не понимает, чему
+                            доверяет и почему цифра разошлась с табло.
+
+                            Подпись появляется, только когда показана цена
+                            источника поверх устаревшей отметки: в обычном
+                            случае она была бы шумом. */}
+                        {kopecks !== undefined && kopecks === sourcePriceByFuel.get(row.fuel)
+                          && reportedByFuel.get(row.fuel)?.priceKopecks !== kopecks && (
+                          <span className="fuel-tile__origin">по данным источника</span>
                         )}
                       </Box>
                     )
