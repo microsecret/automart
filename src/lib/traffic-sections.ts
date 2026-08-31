@@ -16,7 +16,7 @@ export type TrafficSection = {
   key: string
   label: string
   /** Группа для сводки: чем человек занимался, а не какую страницу открыл. */
-  group: "CATALOG" | "PARTS" | "AUCTIONS" | "SERVICES" | "COMMUNITY" | "ACCOUNT" | "OTHER"
+  group: "CATALOG" | "PARTS" | "AUCTIONS" | "FUEL" | "SERVICES" | "COMMUNITY" | "ACCOUNT" | "OTHER"
 }
 
 const SECTIONS: Array<{ test: (path: string) => boolean; section: TrafficSection }> = [
@@ -35,7 +35,16 @@ const SECTIONS: Array<{ test: (path: string) => boolean; section: TrafficSection
 
   { test: (p) => p.startsWith("/auctions"), section: { key: "auctions", label: "Аукционы", group: "AUCTIONS" } },
 
-  { test: (p) => p.startsWith("/services/fuel-map"), section: { key: "fuel-map", label: "Карта заправок", group: "SERVICES" } },
+  /* АЗС вынесены из «Сервисов» в своё направление.
+
+     В общей доле сервисов карта заправок терялась рядом с оценкой и
+     проверкой истории: по сводке нельзя было понять, растёт направление
+     или нет, хотя данных по нему собирается больше, чем по остальным
+     сервисам вместе. Отдельная строка отвечает на этот вопрос сразу.
+
+     Городские страницы попадают сюда же: это тот же сервис, только вход
+     из поиска. */
+  { test: (p) => p.startsWith("/services/fuel-map"), section: { key: "fuel-map", label: "Карта заправок", group: "FUEL" } },
   { test: (p) => p.startsWith("/services/valuation"), section: { key: "valuation", label: "Оценка стоимости", group: "SERVICES" } },
   { test: (p) => p.startsWith("/services/history-check"), section: { key: "history", label: "Проверка истории", group: "SERVICES" } },
   { test: (p) => p.startsWith("/services/smart-matching"), section: { key: "matching", label: "Умный подбор", group: "SERVICES" } },
@@ -62,6 +71,7 @@ export const SECTION_GROUP_LABELS: Record<TrafficSection["group"], string> = {
   CATALOG: "Объявления",
   PARTS: "Запчасти",
   AUCTIONS: "Аукционы",
+  FUEL: "АЗС и топливо",
   SERVICES: "Сервисы",
   COMMUNITY: "Сообщество",
   ACCOUNT: "Кабинет",

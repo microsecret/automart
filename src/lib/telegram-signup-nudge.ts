@@ -23,6 +23,20 @@ import {
 /** За раз — небольшая пачка: Telegram ограничивает частоту отправки. */
 const BATCH_SIZE = 25
 
+/* Не быстрее пяти сообщений в секунду.
+
+   Telegram отбивает частую отправку ошибкой лимита, и наказание тем
+   дольше, чем упорнее бот долбится: следующие попытки уходят в отказ
+   целыми пачками. Пять в секунду — с большим запасом ниже порога, а
+   двадцать пять сообщений волны уходят за пять секунд.
+
+   Пауза считается от начала отправки, а не после неё: сама отправка тоже
+   занимает время, и складывать их значило бы растянуть волну вдвое. */
+const MESSAGES_PER_SECOND = 5
+const SEND_INTERVAL_MS = Math.ceil(1000 / MESSAGES_PER_SECOND)
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 function nudgeKeyboard() {
   const miniAppUrl = getTelegramMiniAppUrl()
   if (!miniAppUrl) return undefined
@@ -81,6 +95,8 @@ export async function processSignupNudges(now = new Date()): Promise<SignupNudge
     const index = nudgeIndex(contact.startedAt, now)
     if (index < 0) continue
 
+    const sendStartedAt = Date.now()
+
     // Отметка до отправки: повторный запуск задачи не должен слать
     // второе сообщение.
     await prisma.telegramContact.update({
@@ -104,11 +120,18 @@ export async function processSignupNudges(now = new Date()): Promise<SignupNudge
       if (/blocked|deactivated|chat not found/i.test(text)) {
         await markTelegramContactBlocked(contact.telegramId).catch(() => undefined)
         result.blocked += 1
-        continue
+      } else {
+        result.failed += 1
+        console.error(`[signup-nudge] Не доставлено ${contact.telegramId}:`, text)
       }
-      result.failed += 1
-      console.error(`[signup-nudge] Не доставлено ${contact.telegramId}:`, text)
     }
+
+    /* Пауза выдерживается и после неудачи: отказ по блокировке всё равно
+       был обращением к Telegram и считается им в общем темпе. Раньше здесь
+       стоял continue, и цепочка блокировок пролетала без задержки —
+       именно тот случай, когда лимит и срабатывает. */
+    const elapsed = Date.now() - sendStartedAt
+    if (elapsed < SEND_INTERVAL_MS) await sleep(SEND_INTERVAL_MS - elapsed)
   }
 
   return result

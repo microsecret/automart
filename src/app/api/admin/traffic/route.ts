@@ -180,7 +180,38 @@ export async function GET(request: NextRequest) {
     const bounced = [...viewsPerVisitor.values()].filter((count) => count <= 1).length
     const bounceRate = uniqueVisitors > 0 ? Math.round((bounced / uniqueVisitors) * 100) : 0
 
+    /* Сколько людей вообще дошло до бота.
+
+       Посещаемость сайта не отвечает на этот вопрос: человек запускает
+       бота в Telegram, и если дальше он не зарегистрировался, ни одного
+       визита на сайт от него нет. Между тем это самая крупная воронка
+       сервиса — и самая тихая: незавершённая регистрация выглядит как
+       отсутствие человека, хотя он приходил и остановился на пороге. */
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+    const [botTotal, botDay, botWeek, botMonth, botRegistered, botPending, botBlocked] = await Promise.all([
+      prisma.telegramContact.count(),
+      prisma.telegramContact.count({ where: { startedAt: { gte: dayAgo } } }),
+      prisma.telegramContact.count({ where: { startedAt: { gte: weekAgo } } }),
+      prisma.telegramContact.count({ where: { startedAt: { gte: monthAgo } } }),
+      prisma.telegramContact.count({ where: { registered: true } }),
+      prisma.telegramContact.count({ where: { registered: false, blocked: false } }),
+      prisma.telegramContact.count({ where: { blocked: true } }),
+    ])
+
     return NextResponse.json({
+      bot: {
+        total: botTotal,
+        day: botDay,
+        week: botWeek,
+        month: botMonth,
+        registered: botRegistered,
+        /* Не дошедшие до конца регистрации: им и уходит напоминание. */
+        pending: botPending,
+        blocked: botBlocked,
+      },
       period,
       periodLabel: periodLabel(period, now),
       totals: {

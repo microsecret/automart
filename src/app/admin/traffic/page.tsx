@@ -6,7 +6,7 @@ import {
   Badge, Box, Card, Container, Group, Progress, SegmentedControl,
   SimpleGrid, Stack, Text, ThemeIcon, Title,
 } from "@mantine/core"
-import { IconChartBar, IconDeviceMobile, IconExternalLink, IconClock, IconSpeakerphone, IconMapPin, IconLayoutGrid, IconTrendingUp } from "@tabler/icons-react"
+import { IconChartBar, IconDeviceMobile, IconExternalLink, IconClock, IconSpeakerphone, IconMapPin, IconLayoutGrid, IconTrendingUp, IconBrandTelegram } from "@tabler/icons-react"
 import TrafficBarChart from "@/components/admin/TrafficBarChart"
 import { fetchJson } from "@/lib/api-client"
 import { AdminStatCard } from "@/components/admin/AdminStatCard"
@@ -28,6 +28,7 @@ type TrafficResponse = {
   groups: { group: string; label: string; visitors: number; views: number }[]
   topPaths: { path: string; label: string; views: number }[]
   hourly: { hour: number; visitors: number; views: number }[]
+  bot: { total: number; day: number; week: number; month: number; registered: number; pending: number; blocked: number }
 }
 
 /**
@@ -161,6 +162,57 @@ export default function TrafficPage() {
                 <AdminStatCard key={card.label} {...card} />
               ))}
             </SimpleGrid>
+
+            {/* Воронка бота.
+
+                Посещаемость сайта на этот вопрос не отвечает: человек
+                запускает бота в Telegram, и если дальше не
+                зарегистрировался, ни одного визита на сайт от него нет.
+                Между тем это самая крупная воронка сервиса и самая тихая —
+                незавершённая регистрация выглядит как отсутствие человека,
+                хотя он приходил и остановился на пороге. */}
+            {data?.bot && (
+              <Card withBorder radius="md" p="md">
+                <Group gap="xs" mb="sm">
+                  <ThemeIcon variant="light" color="indigo" size={26} radius="md">
+                    <IconBrandTelegram size={15} />
+                  </ThemeIcon>
+                  <Text fw={700} size="sm">Запустили бота</Text>
+                </Group>
+                <SimpleGrid cols={{ base: 2, sm: 3, xl: 6 }} spacing="sm">
+                  <Box>
+                    <Text fw={800} fz={24} lh={1.1}>{data.bot.total}</Text>
+                    <Text size="xs" c="dimmed">всего</Text>
+                  </Box>
+                  <Box>
+                    <Text fw={800} fz={24} lh={1.1}>{data.bot.day}</Text>
+                    <Text size="xs" c="dimmed">за сутки</Text>
+                  </Box>
+                  <Box>
+                    <Text fw={800} fz={24} lh={1.1}>{data.bot.week}</Text>
+                    <Text size="xs" c="dimmed">за неделю</Text>
+                  </Box>
+                  <Box>
+                    <Text fw={800} fz={24} lh={1.1}>{data.bot.month}</Text>
+                    <Text size="xs" c="dimmed">за месяц</Text>
+                  </Box>
+                  <Box>
+                    <Text fw={800} fz={24} lh={1.1} c="teal">{data.bot.registered}</Text>
+                    <Text size="xs" c="dimmed">завершили регистрацию</Text>
+                  </Box>
+                  <Box>
+                    {/* Не дошедшие до конца — те, кому уходит напоминание. */}
+                    <Text fw={800} fz={24} lh={1.1} c={data.bot.pending > 0 ? "orange" : undefined}>{data.bot.pending}</Text>
+                    <Text size="xs" c="dimmed">остановились на регистрации</Text>
+                  </Box>
+                </SimpleGrid>
+                {data.bot.blocked > 0 && (
+                  <Text size="xs" c="dimmed" mt="xs">
+                    Заблокировали бота: {data.bot.blocked} — им рассылка больше не уходит.
+                  </Text>
+                )}
+              </Card>
+            )}
 
             <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }} spacing="sm">
               {renderList("Источники переходов", <IconExternalLink size={15} />, data?.sources, "Пока нет данных")}
