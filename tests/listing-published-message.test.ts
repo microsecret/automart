@@ -86,3 +86,42 @@ test("кнопки одинаковы в обоих случаях", () => {
   const late = buildPublishedMessage({ ...base, alreadyPublished: true })
   assert.deepEqual(fresh.buttons, late.buttons)
 })
+
+test("продвижение предлагается кнопкой, а не строчкой в тексте", () => {
+  /* Про продвижение было сказано словами: «в кабинете, раздел
+     „Продвижение"». Человек читает и не идёт — надо запомнить, открыть
+     кабинет, найти объявление, найти раздел. Замер на production:
+     семнадцать активных объявлений и ноль заказов за всё время.
+
+     Момент публикации — тот единственный, когда продавец больше всего
+     хочет, чтобы его увидели. */
+  const message = buildPublishedMessage({ ...base, promotionId: "order-42" })
+  const promote = message.buttons.find((button) => button.text.includes("Продвинуть"))
+  assert.ok(promote, "кнопки продвижения нет")
+  assert.ok(promote.url.includes("/listings/order-42/promote"), promote.url)
+})
+
+test("адрес продвижения строится по объявлению, а не по машине", () => {
+  /* Карточка живёт по /listings/vehicle/<id машины>, а продвижение по
+     /listings/<id объявления>/promote — это разные записи, и подстановка
+     одного вместо другого вела бы в «страница не найдена». */
+  const message = buildPublishedMessage({ ...base, listingId: "veh123", promotionId: "order-42" })
+  const promote = message.buttons.find((button) => button.text.includes("Продвинуть"))
+  assert.ok(!promote.url.includes("veh123"), "в адрес продвижения попал код машины")
+
+  const card = message.buttons.find((button) => button.text.includes("Посмотреть на сайте"))
+  assert.ok(card.url.includes("/listings/vehicle/veh123"), card.url)
+})
+
+test("без идентификатора объявления кнопки продвижения нет", () => {
+  // Лучше без кнопки, чем кнопка в «страница не найдена».
+  const message = buildPublishedMessage(base)
+  assert.ok(!message.buttons.some((button) => button.text.includes("Продвинуть")))
+})
+
+test("сперва посмотреть и показать, потом платить", () => {
+  /* Предлагать платное до того, как человек увидел результат, — значит
+     продавать вслепую. Продвижение последним в ряду. */
+  const message = buildPublishedMessage({ ...base, promotionId: "order-42" })
+  assert.ok(message.buttons[message.buttons.length - 1].text.includes("Продвинуть"))
+})

@@ -24,7 +24,12 @@ export type PublishedMessage = {
 }
 
 export type PublishedInput = {
+  /* Идентификатор машины: по нему собирается адрес карточки
+     /listings/vehicle/<id>. */
   listingId: string
+  /* Идентификатор самого объявления: страница продвижения живёт по
+     /listings/<id>/promote и машину по её коду не находит. */
+  promotionId?: string
   title: string
   /** Название чата, куда объявление ушло; null — не ушло никуда. */
   chatTitle: string | null
@@ -106,6 +111,23 @@ export function buildPublishedMessage(input: PublishedInput): PublishedMessage {
     text: "📤 Отправить друзьям",
     url: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(input.title)}`,
   })
+
+  /* Продвижение — кнопкой, а не строчкой в тексте.
+
+     Про него было сказано словами: «продать быстрее поможет
+     продвижение — в кабинете, раздел „Продвижение"». Человек читает это
+     и не идёт: надо запомнить, открыть кабинет, найти объявление, найти
+     раздел. Замер на production: семнадцать активных объявлений и ноль
+     заказов продвижения за всё время.
+
+     Момент публикации — тот единственный, когда продавец больше всего
+     хочет, чтобы его увидели. Кнопка ведёт прямо к выбору тарифа.
+
+     Последней в ряду: сперва человек посмотрит, что получилось, и
+     покажет знакомым — предлагать платное до этого рано. */
+  if (input.promotionId) {
+    buttons.push({ text: "🚀 Продвинуть объявление", url: `${site}/listings/${input.promotionId}/promote` })
+  }
 
   return { text: lines.join("\n"), buttons }
 }

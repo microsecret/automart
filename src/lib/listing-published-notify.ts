@@ -51,6 +51,9 @@ export async function notifyListingPublished(
          машины, а не объявления: у объявления свой id, и по нему
          страница отвечает «не найдено». */
       listingId: listing.vehicle?.id ?? listing.id,
+      /* Продвижение адресуется идентификатором объявления, а карточка —
+         идентификатором машины: это разные записи. */
+      promotionId: listing.id,
       title: listing.title,
       chatTitle,
       siteUrl: absoluteUrl("/"),
