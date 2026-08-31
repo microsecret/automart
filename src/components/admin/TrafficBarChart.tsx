@@ -41,7 +41,23 @@ export default function TrafficBarChart({
   /* Оба ряда по одной шкале: просмотров всегда больше, и если считать
      их отдельно, столбцы посетителей вытянутся до той же высоты — на
      графике разница исчезнет, хотя она и есть главный ответ. */
-  const max = Math.max(1, ...points.map((point) => Math.max(point.value, point.secondary || 0)))
+  const rawMax = Math.max(1, ...points.map((point) => Math.max(point.value, point.secondary || 0)))
+
+  /* Одиночный выброс не должен прижимать остальное к нулю.
+
+     Замер на живых данных: рассылка в десять утра дала 243 посетителя
+     против пятнадцати-двадцати в остальные часы. По такой шкале весь
+     суточный ритм ложился в полоску высотой в пиксель, и график
+     отвечал только «был всплеск» — а владелец смотрит на него, чтобы
+     понять, когда люди заходят обычно.
+
+     Считаем по третьему сверху значению: один-два всплеска перестают
+     задавать масштаб, а если высоких значений много, шкала остаётся
+     прежней. Столбец выше шкалы просто упирается в потолок и помечается
+     подписью. */
+  const sorted = [...points.map((point) => point.value)].sort((first, second) => second - first)
+  const robustMax = sorted[2] ?? sorted[0] ?? 1
+  const max = robustMax > 0 && rawMax > robustMax * 3 ? Math.max(1, robustMax * 1.4) : rawMax
   const peak = points.reduce((best, point, index) => (point.value > points[best]?.value ? index : best), 0)
   const total = points.reduce((sum, point) => sum + point.value, 0)
 
@@ -76,8 +92,12 @@ export default function TrafficBarChart({
           /* Минимальная высота у ненулевого столбца: единственный визит в
              три часа ночи должен быть виден, иначе график врёт, будто
              активности не было вовсе. */
-          const ratio = point.value / max
+          const ratio = Math.min(1, point.value / max)
           const barHeight = point.value === 0 ? 2 : Math.max(6, Math.round(ratio * height))
+          /* Столбец, упёршийся в потолок: его настоящее значение больше
+             шкалы, и это надо сказать — иначе он читается как «столько
+             же, сколько у соседа». */
+          const clipped = point.value > max
           const isPeak = index === peak && point.value > 0
           const isActive = active === index
 
@@ -114,9 +134,11 @@ export default function TrafficBarChart({
                     borderRadius: "4px 4px 2px 2px",
                     background: point.value === 0
                       ? "var(--mantine-color-gray-3)"
-                      : isPeak || isActive
-                        ? "var(--mantine-color-indigo-6)"
-                        : "var(--mantine-color-indigo-4)",
+                      : clipped
+                        ? "var(--mantine-color-orange-5)"
+                        : isPeak || isActive
+                          ? "var(--mantine-color-indigo-6)"
+                          : "var(--mantine-color-indigo-4)",
                     transition: "background var(--ease-fast) var(--ease-out), height var(--ease-slow) var(--ease-out)",
                   }}
                 />
@@ -154,6 +176,9 @@ export default function TrafficBarChart({
         >
           <Text size="xs" fw={700}>{points[active].title || points[active].label}</Text>
           <Text size="xs" c="dimmed">{points[active].value} {valueLabel}</Text>
+          {points[active].value > max && (
+            <Text size="10px" c="orange" fw={600}>всплеск · выше шкалы</Text>
+          )}
           {points[active].secondary != null && (
             <Text size="xs" c="dimmed">{points[active].secondary} {secondaryLabel}</Text>
           )}
