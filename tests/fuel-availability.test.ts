@@ -930,3 +930,25 @@ test("захват указателя ставится только при пе�
   assert.doesNotMatch(beforePinch, /setPointerCapture/)
   assert.match(move, /setPointerCapture/)
 })
+
+test("карта показывает, что сервисом пользуются", () => {
+  /* Точки из справочника выглядят одинаково, и новичок думает, что он
+     тут первый: открыл карту, увидел серые метки, ушёл не отметив.
+     Между тем отметки есть — десятки за неделю.
+
+     Цифра отвечает на это прямо, своими данными: чужие цены с других
+     сервисов подорвали бы единственное, ради чего сюда приходят, —
+     уверенность, что здесь написана правда. */
+  const route = readFileSync(new URL("../src/app/api/fuel-availability/route.ts", import.meta.url), "utf8")
+  assert.match(route, /reportsToday/)
+  /* Считаем по всей площадке, а не по видимому участку: человек в
+     Челябинске должен видеть, что сервисом пользуются, даже если в его
+     квартале сегодня тихо. */
+  assert.match(route, /fuelAvailabilityReport\.count/)
+
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+  assert.match(page, /fuel-map-canvas__activity/)
+  /* Ноль отметок не показываем: «0 отметок за сутки» говорит ровно
+     обратное тому, зачем эта плашка. */
+  assert.match(page, /reportsToday > 0/)
+})

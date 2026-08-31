@@ -71,7 +71,33 @@ export async function GET(request: NextRequest) {
     if (summary.length) stations[stationId] = summary
   }
 
-  return NextResponse.json({ stations }, {
+  /* Живёт ли сервис — вопрос, который человек задаёт первым.
+
+     Карта показывает точки из справочника, и новичок видит одинаковые
+     метки, не понимая, отмечает тут кто-нибудь или он первый. Между тем
+     отметки есть: за неделю их десятки. Сводка отвечает на этот вопрос
+     цифрой, а не обещанием.
+
+     Считаем по всей площадке, а не по видимому участку: человек в
+     Челябинске должен видеть, что сервисом пользуются, даже если в его
+     квартале сегодня тихо. */
+  const dayAgo = new Date(Date.now() - 24 * 3_600_000)
+  const [reportsToday, lastReport] = await Promise.all([
+    prisma.fuelAvailabilityReport.count({ where: { createdAt: { gte: dayAgo } } }),
+    prisma.fuelAvailabilityReport.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true, stationName: true },
+    }),
+  ])
+
+  return NextResponse.json({
+    stations,
+    activity: {
+      reportsToday,
+      lastReportAt: lastReport?.createdAt.toISOString() || null,
+      lastStationName: lastReport?.stationName || null,
+    },
+  }, {
     /* Короче, чем у цен: наличие меняется за минуты, и минутный кэш здесь
        уже показывает вчерашний день. */
     headers: { "Cache-Control": "public, max-age=30, s-maxage=60, stale-while-revalidate=120" },

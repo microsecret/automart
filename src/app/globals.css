@@ -4316,6 +4316,50 @@ select {
   box-shadow: var(--shadow-md);
 }
 
+/* Отметки за сутки — слева внизу, рядом с числом точек.
+
+   Карта показывает точки из справочника, и они выглядят одинаково:
+   новичок думает, что он тут первый, и уходит, не отметив. Между тем
+   отметки есть — десятки за неделю. Живая точка рядом с цифрой говорит
+   «здесь сейчас происходит» лучше любого текста.
+
+   Слева, а не справа: справа уже стоит счётчик точек и атрибуция
+   OpenStreetMap, и третья плашка в том же углу читалась бы как одна
+   длинная строка. */
+.fuel-map-canvas__activity {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--market-success-line) 60%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--market-success-text);
+  background: rgb(255 255 255 / 92%);
+  backdrop-filter: blur(var(--blur-panel));
+  box-shadow: var(--shadow-sm);
+}
+
+.fuel-map-canvas__activity-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--market-success-text);
+  animation: fuel-activity-pulse 2.4s var(--ease-out) infinite;
+}
+
+/* Медленное дыхание, а не мигание: точка говорит «сервис живой», а не
+   «внимание, тревога». Тем, кто отключил анимации, останется просто
+   зелёная точка — глобальное правило гасит движение. */
+@keyframes fuel-activity-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
 .fuel-map-canvas__caption {
   position: absolute;
   right: 10px;

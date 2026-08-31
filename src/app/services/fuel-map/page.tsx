@@ -139,7 +139,7 @@ function getStationDataSummary(station: FuelStation) {
 }
 
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
@@ -159,6 +159,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
      подписывается. Без них карта показывает только то, что знает
      OpenStreetMap, — то есть ассортимент вообще, а не наличие сейчас. */
   availabilityByStation: Record<string, StationAvailability[]>
+  /* Сколько отметок оставили за сутки: ответ на вопрос «живой ли
+     сервис», который человек задаёт первым. */
+  reportsToday?: number
   /* Цены от водителей: на плашке видно, почём топливо, — иначе за ценой
      надо открывать карточку каждой заправки по очереди. */
   pricesByStation: Record<string, ConsensusPrice[]>
@@ -952,7 +955,26 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         <Tooltip label="Уменьшить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom - 1)} aria-label="Уменьшить масштаб карты"><IconMinus size={15} /></ActionIcon></Tooltip>
         <Tooltip label="Увеличить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom + 1)} aria-label="Увеличить масштаб карты"><IconPlus size={15} /></ActionIcon></Tooltip>
       </Group>
-      <Box className="fuel-map-canvas__caption"><IconMapPin size={14} /><Text size="xs">{visibleStations.length} {plural(visibleStations.length, "точка", "точки", "точек")} · {tileSource.attribution}</Text></Box>
+      {/* Активность рядом с числом точек.
+
+          Карта показывает точки из справочника, и они выглядят
+          одинаково: новичок думает, что он тут первый, и уходит, не
+          отметив. Между тем отметки есть — десятки за неделю. Цифра
+          отвечает на это прямо, не обещаниями. */}
+      <Box className="fuel-map-canvas__caption">
+        <IconMapPin size={14} />
+        <Text size="xs">
+          {visibleStations.length} {plural(visibleStations.length, "точка", "точки", "точек")} · {tileSource.attribution}
+        </Text>
+      </Box>
+      {reportsToday != null && reportsToday > 0 && (
+        <Box className="fuel-map-canvas__activity" aria-live="polite">
+          <Box className="fuel-map-canvas__activity-dot" aria-hidden="true" />
+          <Text size="xs" fw={600}>
+            {reportsToday} {plural(reportsToday, "отметка", "отметки", "отметок")} за сутки
+          </Text>
+        </Box>
+      )}
       {/* Обозначения переписаны под отметки водителей: раньше они объясняли
      качество данных OpenStreetMap — «есть live-данные», «сеть указана», —
      а человек смотрит на карту с вопросом «где есть бензин», и цвет
@@ -1531,7 +1553,13 @@ function FuelMapContent() {
     { revalidateOnFocus: false, keepPreviousData: true },
   )
 
-  const { data: nearbyAvailabilityData } = useSWR<{ stations?: Record<string, StationAvailability[]> }>(
+  const { data: nearbyAvailabilityData } = useSWR<{
+    stations?: Record<string, StationAvailability[]>
+    /* Живёт ли сервис — вопрос, который человек задаёт первым, открыв
+       карту. Точки из справочника выглядят одинаково, и новичок думает,
+       что он тут первый: между тем отметки есть, десятки за неделю. */
+    activity?: { reportsToday: number; lastReportAt: string | null; lastStationName: string | null }
+  }>(
     nearbyStationIds ? `/api/fuel-availability?stations=${encodeURIComponent(nearbyStationIds)}` : null,
     fetchJson,
     /* То же и для отметок: без этого метки на секунду теряли цвет
@@ -1693,6 +1721,7 @@ function FuelMapContent() {
           onSelect={setSelectedStation}
           onViewportChange={setViewportCoordinates}
           availabilityByStation={nearbyAvailabilityData?.stations || {}}
+          reportsToday={nearbyAvailabilityData?.activity?.reportsToday}
           pricesByStation={nearbyPricesData?.stations || {}}
           selectedStationPrices={selectedStationPrices}
           selectedStationAvailability={selectedStationAvailability}

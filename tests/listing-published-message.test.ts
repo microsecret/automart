@@ -98,7 +98,7 @@ test("продвижение предлагается кнопкой, а не с
   const message = buildPublishedMessage({ ...base, promotionId: "order-42" })
   const promote = message.buttons.find((button) => button.text.includes("Продвинуть"))
   assert.ok(promote, "кнопки продвижения нет")
-  assert.ok(promote.url.includes("/listings/order-42/promote"), promote.url)
+  assert.ok(promote?.url.includes("/listings/order-42/promote"), promote?.url)
 })
 
 test("адрес продвижения строится по объявлению, а не по машине", () => {
@@ -107,10 +107,10 @@ test("адрес продвижения строится по объявлени
      одного вместо другого вела бы в «страница не найдена». */
   const message = buildPublishedMessage({ ...base, listingId: "veh123", promotionId: "order-42" })
   const promote = message.buttons.find((button) => button.text.includes("Продвинуть"))
-  assert.ok(!promote.url.includes("veh123"), "в адрес продвижения попал код машины")
+  assert.ok(promote && !promote.url.includes("veh123"), "в адрес продвижения попал код машины")
 
   const card = message.buttons.find((button) => button.text.includes("Посмотреть на сайте"))
-  assert.ok(card.url.includes("/listings/vehicle/veh123"), card.url)
+  assert.ok(card?.url.includes("/listings/vehicle/veh123"), card?.url)
 })
 
 test("без идентификатора объявления кнопки продвижения нет", () => {
