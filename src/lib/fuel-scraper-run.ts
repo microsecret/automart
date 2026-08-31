@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma"
 import { collectGdebenz } from "@/lib/gdebenz-scraper"
 import { collectGdezapravka } from "@/lib/gdezapravka-scraper"
 import { collectTwogis } from "@/lib/twogis-scraper"
@@ -48,6 +49,45 @@ export function resolveFuelSources(input: { source?: unknown; sources?: unknown 
   return [...new Set(requested)].filter(isFuelSource)
 }
 
+
+/* Порог остывания источника.
+
+   При сборе раз в 15 минут источник, начавший отдавать отказы, получит
+   ещё 96 попыток в сутки — и запрет по адресу станет постоянным. Поэтому
+   после двух подряд неудачных прогонов источник пропускается, пока не
+   пройдёт время остывания: нагрузка падает сама, без ручного вмешательства.
+
+   Ограничение снимается автоматически — специально ничего включать назад
+   не нужно, иначе про выключенный источник просто забудут. */
+const SOURCE_FAILURE_STREAK = 2
+const SOURCE_COOLDOWN_MS = 60 * 60_000
+
+export type SkippedSource = { source: string; reason: string }
+
+/**
+ * Источники, которые сейчас лучше не трогать: два последних прогона подряд
+ * упали, и с последнего прошло меньше часа.
+ */
+export async function findCoolingSources(sources: FuelSource[]): Promise<Set<string>> {
+  const cooling = new Set<string>()
+
+  for (const source of sources) {
+    const recent = await prisma.fuelImportRun.findMany({
+      where: { source, status: { not: "RUNNING" } },
+      orderBy: { startedAt: "desc" },
+      take: SOURCE_FAILURE_STREAK,
+      select: { status: true, completedAt: true, startedAt: true },
+    })
+    if (recent.length < SOURCE_FAILURE_STREAK) continue
+    if (!recent.every((run) => run.status === "FAILED")) continue
+
+    const last = recent[0].completedAt ?? recent[0].startedAt
+    if (Date.now() - last.getTime() < SOURCE_COOLDOWN_MS) cooling.add(source)
+  }
+
+  return cooling
+}
+
 export async function runFuelSource(
   source: FuelSource,
   regionKeys: string[] | undefined,
@@ -80,10 +120,23 @@ export async function runFuelSources(
   sources: FuelSource[],
   regionKeys: string[] | undefined,
   pauseMs: number | undefined,
-): Promise<FuelCollectSummary[]> {
+  options: { respectCooldown?: boolean } = {},
+): Promise<{ results: FuelCollectSummary[]; skipped: SkippedSource[] }> {
+  /* Автоматический прогон уважает остывание источника, ручной запуск из
+     админки — нет: администратор нажимает кнопку осознанно и вправе
+     проверить, ожил ли источник. */
+  const cooling = options.respectCooldown ? await findCoolingSources(sources) : new Set<string>()
+
   const results: FuelCollectSummary[] = []
+  const skipped: SkippedSource[] = []
+
   for (const source of sources) {
+    if (cooling.has(source)) {
+      skipped.push({ source, reason: "Источник отдыхает после двух неудачных прогонов" })
+      continue
+    }
     results.push(await runFuelSource(source, regionKeys, pauseMs))
   }
-  return results
+
+  return { results, skipped }
 }

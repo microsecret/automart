@@ -1,7 +1,7 @@
 import { scraperGetText } from "@/lib/fuel-scraper-http"
 import { parseReportedPrice } from "@/lib/fuel-price-reports"
 import { resolveTargetRegions, type FuelTargetRegion } from "@/lib/fuel-target-regions"
-import { createFuelImportRun, finishFuelImportRun, upsertImportedStations, type ImportedStation } from "@/lib/fuel-import-store"
+import { createFuelImportRun, finishFuelImportRun, logFuelRunEvent, upsertImportedStations, type ImportedStation } from "@/lib/fuel-import-store"
 
 /**
  * Сбор АЗС и цен с gdebenz.ru.
@@ -167,10 +167,11 @@ export async function collectGdebenz(options: GdebenzCollectOptions = {}): Promi
       const stations = payload
         .map((raw) => normalizeStation(raw, region.city))
         .filter((station): station is ImportedStation => station !== null)
-      saved = await upsertImportedStations(stations)
+      saved = await upsertImportedStations(stations, run.id)
     } catch (caught) {
       error = caught instanceof Error ? caught.message : "Не удалось собрать регион"
       failedTotal += 1
+      await logFuelRunEvent(run.id, { source: "GDEBENZ", kind: "ERROR", city: region.city, message: error })
     }
 
     fetchedTotal += fetched

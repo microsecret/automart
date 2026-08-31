@@ -1,7 +1,7 @@
 import { scraperGetText } from "@/lib/fuel-scraper-http"
 import { parseReportedPrice } from "@/lib/fuel-price-reports"
 import { resolveTargetRegions, type FuelTargetRegion } from "@/lib/fuel-target-regions"
-import { createFuelImportRun, finishFuelImportRun, upsertImportedStations, type ImportedStation } from "@/lib/fuel-import-store"
+import { createFuelImportRun, finishFuelImportRun, logFuelRunEvent, upsertImportedStations, type ImportedStation } from "@/lib/fuel-import-store"
 
 /**
  * Сбор АЗС и цен с gdezapravka.ru.
@@ -197,10 +197,11 @@ export async function collectGdezapravka(options: GdezapravkaCollectOptions = {}
       const imported = stations
         .map((raw) => normalizeStation(raw, region.city, pricesByStation, pricesByBrand))
         .filter((station): station is ImportedStation => station !== null)
-      saved = await upsertImportedStations(imported)
+      saved = await upsertImportedStations(imported, run.id)
     } catch (caught) {
       error = caught instanceof Error ? caught.message : "Не удалось собрать регион"
       failedTotal += 1
+      await logFuelRunEvent(run.id, { source: "GDEZAPRAVKA", kind: "ERROR", city: region.city, message: error })
     }
 
     fetchedTotal += fetched

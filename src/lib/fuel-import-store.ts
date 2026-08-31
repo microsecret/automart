@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { findNearestCity } from "@/lib/cities"
 
 /**
  * Общее хранилище импортированных АЗС и цен.
@@ -30,16 +31,60 @@ export type ImportedStation = {
   prices: ImportedStationPrice[]
 }
 
-export async function upsertImportedStations(stations: ImportedStation[]): Promise<number> {
+
+/* Точка приезжает с именем региона обхода, а регион — это прямоугольник:
+   для «Республики Башкортостан» все две тысячи заправок получали одно имя
+   на всех, и ни фильтр в админке, ни выбор города на карте по ним не
+   работали. Город определяется по координатам самой точки.
+
+   Порог в 60 км отсекает случай, когда ближайший город всё же далеко:
+   заправка на трассе между городами не должна приписываться к тому, до
+   которого случайно оказалось ближе. Тогда остаётся имя региона — оно
+   грубое, но честное. */
+const CITY_MATCH_MAX_KM = 60
+
+function resolveStationCity(station: ImportedStation): string {
+  const nearest = findNearestCity({ latitude: station.latitude, longitude: station.longitude })
+  if (nearest.name && nearest.km <= CITY_MATCH_MAX_KM) return nearest.name
+  return station.city
+}
+
+/* Ярлыки марок для строки ленты: администратор читает «АИ-92 62,40», а не
+   «AI92 6240». Те же подписи, что на карте и в таблице админки. */
+const LOG_FUEL_LABELS: Record<string, string> = {
+  AI92: "АИ-92",
+  AI95: "АИ-95",
+  AI98: "АИ-98",
+  AI100: "АИ-100",
+  DT: "ДТ",
+  GAS: "Газ",
+}
+
+function formatPricesForLog(prices: ImportedStationPrice[]): string | null {
+  if (!prices.length) return null
+  return prices
+    .map((price) => `${LOG_FUEL_LABELS[price.fuel] || price.fuel} ${(price.priceRub / 100).toFixed(2).replace(".", ",")}`)
+    .join(" · ")
+}
+
+export async function upsertImportedStations(stations: ImportedStation[], runId?: string): Promise<number> {
   let saved = 0
+  /* Строки ленты копятся и пишутся пачкой: одна вставка на заправку
+     удвоила бы число запросов к базе на прогоне в тысячи точек. */
+  const logEntries: Array<{
+    runId: string; source: string; city: string; station: string; address: string | null
+    prices: string | null; status: string | null; kind: string
+  }> = []
+
   for (const station of stations) {
+    const city = resolveStationCity(station)
     const record = await prisma.fuelStationImport.upsert({
       where: { source_sourceId: { source: station.source, sourceId: station.sourceId } },
       update: {
         name: station.name,
         brand: station.brand,
         address: station.address,
-        city: station.city,
+        city,
         latitude: station.latitude,
         longitude: station.longitude,
         status: station.status,
@@ -52,7 +97,7 @@ export async function upsertImportedStations(stations: ImportedStation[]): Promi
         name: station.name,
         brand: station.brand,
         address: station.address,
-        city: station.city,
+        city,
         latitude: station.latitude,
         longitude: station.longitude,
         status: station.status,
@@ -80,15 +125,72 @@ export async function upsertImportedStations(stations: ImportedStation[]): Promi
       })
     }
     saved += 1
+    if (runId) {
+      logEntries.push({
+        runId,
+        source: station.source,
+        city,
+        station: station.name || station.brand || "АЗС",
+        address: station.address,
+        prices: formatPricesForLog(station.prices),
+        status: station.status,
+        kind: "STATION",
+      })
+    }
   }
+
+  if (logEntries.length) {
+    await prisma.fuelImportLogEntry.createMany({ data: logEntries })
+  }
+
   return saved
 }
 
+/** Событие прогона в ленте: начало региона, ошибка, итог. */
+export async function logFuelRunEvent(
+  runId: string,
+  entry: { source: string; kind: "REGION" | "ERROR" | "SUMMARY"; message: string; city?: string | null },
+) {
+  /* Лента — вспомогательная вещь: если запись строки не удалась, прогон
+     из-за этого падать не должен. */
+  try {
+    await prisma.fuelImportLogEntry.create({
+      data: { runId, source: entry.source, kind: entry.kind, message: entry.message, city: entry.city ?? null },
+    })
+  } catch (error) {
+    console.error("Fuel run log write failed", error instanceof Error ? error.message : error)
+  }
+}
+
+/* Прогоны идут каждые 15 минут и каждый пишет тысячи строк ленты. Без
+   чистки таблица растёт неограниченно, а нужна она только для последних
+   прогонов: старое читать некому. Чистка привязана к созданию прогона —
+   так не нужен отдельный cron, который однажды забудут поставить. */
+const KEEP_RUNS_WITH_LOG = 12
+
+async function pruneOldRunLogs() {
+  try {
+    const keep = await prisma.fuelImportRun.findMany({
+      orderBy: { startedAt: "desc" },
+      take: KEEP_RUNS_WITH_LOG,
+      select: { id: true },
+    })
+    if (!keep.length) return
+    await prisma.fuelImportLogEntry.deleteMany({
+      where: { runId: { notIn: keep.map((run) => run.id) } },
+    })
+  } catch (error) {
+    console.error("Fuel run log prune failed", error instanceof Error ? error.message : error)
+  }
+}
+
 export async function createFuelImportRun(source: string, requested: number) {
-  return prisma.fuelImportRun.create({
+  const run = await prisma.fuelImportRun.create({
     data: { source, status: "RUNNING", requested },
     select: { id: true },
   })
+  await pruneOldRunLogs()
+  return run
 }
 
 export async function finishFuelImportRun(

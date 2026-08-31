@@ -51,9 +51,9 @@ export async function POST(request: NextRequest) {
       ? Math.min(Math.max(body.pauseMs, 500), 30_000)
       : undefined
 
-    const results = await runFuelSources(sources, requestedRegions, pauseMs)
+    const { results, skipped } = await runFuelSources(sources, requestedRegions, pauseMs, { respectCooldown: true })
 
-    return NextResponse.json({ success: true, sources: results })
+    return NextResponse.json({ success: true, sources: results, skipped })
   } catch (error) {
     console.error("Fuel scraper sync error:", error)
     return NextResponse.json({ error: error instanceof Error ? error.message : "Failed" }, { status: 500 })

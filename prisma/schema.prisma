@@ -2185,8 +2185,39 @@ model FuelPriceImport {
 }
 
 /// Журнал прогонов скрейсера АЗС.
+/// Строка живой ленты прогона скрейпера.
+///
+/// Администратор смотрит на сбор как на консоль: видно, какую заправку
+/// сейчас обошли, что там с ценами и наличием. Сводных чисел прогона для
+/// этого мало — по ним не понять, доходит ли скрейпер до нужного города и
+/// какие данные он реально видит.
+///
+/// Строки живут в базе, а не в памяти процесса: страницу закрывают и
+/// открывают заново, приложение перезапускается при деплое, а история
+/// последнего прогона должна пережить и то, и другое.
+model FuelImportLogEntry {
+  id        String   @id @default(uuid())
+  runId     String
+  run       FuelImportRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  source    String
+  city      String?
+  station   String?
+  address   String?
+  /// Цены строкой, как их показывать: «АИ-92 62,40 · ДТ 75,85».
+  prices    String?
+  /// Наличие: yes / low / no / null — как в источнике.
+  status    String?
+  /// Строка без заправки — событие прогона: начало региона, ошибка, итог.
+  kind      String   @default("STATION") // STATION, REGION, ERROR, SUMMARY
+  message   String?
+  createdAt DateTime @default(now())
+
+  @@index([runId, createdAt])
+}
+
 model FuelImportRun {
   id          String    @id @default(uuid())
+  entries     FuelImportLogEntry[]
   source      String    @default("GDEBENZ")
   status      String    @default("RUNNING") // RUNNING, SUCCEEDED, PARTIAL, FAILED
   requested   Int       @default(0)

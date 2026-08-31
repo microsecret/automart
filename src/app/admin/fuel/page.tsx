@@ -14,6 +14,7 @@ import {
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import TrafficBarChart, { type BarPoint } from "@/components/admin/TrafficBarChart"
 import FuelScraperRunner from "@/components/admin/FuelScraperRunner"
+import FuelRunConsole from "@/components/admin/FuelRunConsole"
 import { fetchJson } from "@/lib/api-client"
 import { formatAdminDateTime, formatAdminDateTimeShort } from "@/lib/admin-datetime"
 import { SYNC_RUN_STATUS, describeStatus, toneColor } from "@/lib/admin-status-tone"
@@ -196,6 +197,8 @@ function StationsTab({ filters, setFilters }: {
       </SimpleGrid>
 
       <FuelScraperRunner onFinished={refreshAfterRun} />
+
+      <FuelRunConsole active />
 
       <Paper withBorder radius="md" p="sm">
         <Group gap="sm" wrap="wrap">

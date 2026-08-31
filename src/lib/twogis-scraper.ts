@@ -204,7 +204,7 @@ export async function collectTwogis(options: TwogisCollectOptions = {}): Promise
         const stations = items
           .map((item) => normalizeTwogisItem(item, region.city))
           .filter((station): station is ImportedStation => station !== null)
-        saved += await upsertImportedStations(stations)
+        saved += await upsertImportedStations(stations, run.id)
 
         const total = payload.result?.total ?? 0
         if (!items.length || fetched >= total) break

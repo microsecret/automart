@@ -24,6 +24,45 @@ export async function GET(request: NextRequest) {
 
   const view = request.nextUrl.searchParams.get("view") || "overview"
 
+  /* Живая лента прогона. Админка опрашивает её в цикле, пока сбор идёт,
+     поэтому отдаём только строки новее курсора: иначе каждый опрос тянул
+     бы весь прогон целиком — тысячи строк на каждые пару секунд. */
+  if (view === "log") {
+    const after = request.nextUrl.searchParams.get("after")
+    const runIdParam = request.nextUrl.searchParams.get("runId")
+
+    const run = runIdParam
+      ? await prisma.fuelImportRun.findUnique({
+          where: { id: runIdParam },
+          select: { id: true, source: true, status: true, startedAt: true, completedAt: true, fetched: true, upserted: true, failed: true },
+        })
+      : await prisma.fuelImportRun.findFirst({
+          orderBy: { startedAt: "desc" },
+          select: { id: true, source: true, status: true, startedAt: true, completedAt: true, fetched: true, upserted: true, failed: true },
+        })
+
+    if (!run) return NextResponse.json({ run: null, entries: [], cursor: null })
+
+    const entries = await prisma.fuelImportLogEntry.findMany({
+      where: {
+        runId: run.id,
+        ...(after ? { createdAt: { gt: new Date(after) } } : {}),
+      },
+      orderBy: { createdAt: "asc" },
+      take: 300,
+      select: {
+        id: true, source: true, city: true, station: true, address: true,
+        prices: true, status: true, kind: true, message: true, createdAt: true,
+      },
+    })
+
+    return NextResponse.json({
+      run,
+      entries,
+      cursor: entries.length ? entries[entries.length - 1].createdAt.toISOString() : after,
+    })
+  }
+
   if (view === "runs") {
     const runs = await prisma.fuelImportRun.findMany({
       orderBy: { startedAt: "desc" },
@@ -263,7 +302,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const results = await runFuelSources(sources, requestedRegions, pauseMs)
+    const { results } = await runFuelSources(sources, requestedRegions, pauseMs)
     const fetched = results.reduce((sum, row) => sum + row.fetched, 0)
     const saved = results.reduce((sum, row) => sum + row.saved, 0)
     const failed = results.reduce((sum, row) => sum + row.failed, 0)
