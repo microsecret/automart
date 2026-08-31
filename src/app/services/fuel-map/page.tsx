@@ -703,6 +703,23 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
              маркой, и за ценой не надо открывать карточку. */
           const prices = isCluster ? [] : (pricesByStation[firstStation.id] || [])
           const priceByFuel = new Map(prices.map((row) => [row.fuel, row.priceKopecks]))
+          /* Цены источника с самой точки: скрейпер привозит их вместе с
+             заправкой, и на плашке они стоят там же, где цены водителей.
+
+             Отметка водителя всё равно главнее — она свежее и относится к
+             колонке, а не к прайсу сети, — поэтому источник заполняет
+             только те марки, по которым отметки нет. Без этого плашка
+             показывала марку без цены при том, что цена у нас есть:
+             из четырёхсот точек Уфы цены знали триста шестьдесят три, а
+             на карте стояла одна. */
+          const sourcePriceByFuel = new Map(
+            isCluster
+              ? []
+              : (firstStation.prices || []).flatMap((row) =>
+                  typeof row.price === "number" ? [[row.fuel, Math.round(row.price * 100)] as const] : [],
+                ),
+          )
+          const priceFor = (fuel: string) => priceByFuel.get(fuel) ?? sourcePriceByFuel.get(fuel) ?? null
 
           /* Плашка вместо кружка — при близком масштабе.
 
@@ -769,13 +786,17 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   key: row.fuel,
                   label: row.label,
                   state: row.state === "YES" ? "yes" : "no",
-                  price: priceByFuel.get(row.fuel) ?? null,
+                  price: priceFor(row.fuel),
                 }))
-              : firstStation.fuels.slice(0, 3).map((fuel) => ({
+              /* Четыре марки вместо трёх: теперь рядом с маркой стоит
+                 цена, и плашка отвечает на вопрос «почём здесь», а не
+                 просто перечисляет ассортимент. Четвёртая строка — обычно
+                 ДТ, без которого карта бесполезна дизелисту. */
+              : firstStation.fuels.slice(0, 4).map((fuel) => ({
                   key: fuel,
                   label: fuel,
                   state: "unknown" as const,
-                  price: null,
+                  price: priceFor(fuel),
                 }))
 
             /* Заправка, про которую не известно ничего.
