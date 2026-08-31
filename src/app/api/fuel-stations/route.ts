@@ -471,16 +471,40 @@ function getStationIdentity(station: FuelStationPayload) {
     .replace(/[^\p{L}\p{N}]+/gu, "") || null
 }
 
+/* Расстояние, на котором две заправки быть не могут.
+
+   Источники зовут одну точку по-разному: «АЗС Газпром» у одного и
+   «Промышленная» у другого, «Газпром» и «Салават». По именам они не
+   сходятся, и в Стерлитамаке такая заправка стояла тремя метками сразу.
+
+   Пятнадцать метров — это меньше одной колонки. На таком расстоянии
+   разные АЗС не ставят, поэтому здесь координата надёжнее любого
+   названия. Дальше пятнадцати метров имя снова решает: на одной
+   территории бывают и АЗС, и отдельная газовая станция. */
+const STATION_SAME_SPOT_DISTANCE_SQUARED = (15 / 111_000) ** 2
+
 function canMergeStations(liveStation: FuelStationPayload, directoryStation: FuelStationPayload) {
-  if (getDistanceSquared(liveStation, directoryStation) > STATION_MATCH_DISTANCE_SQUARED) return false
+  const distanceSquared = getDistanceSquared(liveStation, directoryStation)
+  if (distanceSquared > STATION_MATCH_DISTANCE_SQUARED) return false
 
   const liveIdentity = getStationIdentity(liveStation)
   const directoryIdentity = getStationIdentity(directoryStation)
   if (!liveIdentity || !directoryIdentity) return true
 
-  return liveIdentity === directoryIdentity
+  if (
+    liveIdentity === directoryIdentity
     || liveIdentity.includes(directoryIdentity)
     || directoryIdentity.includes(liveIdentity)
+  ) return true
+
+  /* Разные имена в одной точке — это одна заправка под двумя названиями,
+     кроме случая, когда рядом стоят колонка и зарядка: их ассортименты не
+     пересекаются вовсе, и объединять их нельзя. */
+  if (distanceSquared > STATION_SAME_SPOT_DISTANCE_SQUARED) return false
+
+  const liveIsCharger = liveStation.fuels.length > 0 && liveStation.fuels.every((fuel) => fuel === "Зарядка EV")
+  const directoryIsCharger = directoryStation.fuels.length > 0 && directoryStation.fuels.every((fuel) => fuel === "Зарядка EV")
+  return liveIsCharger === directoryIsCharger
 }
 
 /* Приоритет источников при склейке одной заправки.
