@@ -1027,14 +1027,18 @@ test("газовая заправка узнаётся по названию, н
      приехал бы туда зря. */
   const identity = readFileSync(new URL("../src/lib/fuel-station-identity.ts", import.meta.url), "utf8")
 
-  assert.match(identity, /!\/газпром\|gazprom\//)
+  /* Ловится тип станции, а не слово «газ» в имени сети: проверка на одну
+     основу записала в газовые обычный «Газпром» без ассортимента. */
+  assert.match(identity, /агзс\|агнкс\|автогаз\|газомотор\|трансгаз\|сжиженн\|пропан\|метан/)
+  assert.doesNotMatch(identity, /\/\(газ\|gaz\|пропан\|метан\)\//)
+
   /* Правило работает только при пустом ассортименте: у Газпромнефти он
      заполнен бензином, и до проверки имени дело не доходит. */
   assert.match(identity, /const namedGasOnly = !fuels/)
 
   const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
   assert.match(route, /looksGas \? \["Газ"\] : known/)
-  assert.match(route, /газпром\|gazprom/)
+  assert.match(route, /агзс\|агнкс\|автогаз\|газомотор/)
 })
 
 test("заправка забирает все свои двойники из OpenStreetMap, а не первого", () => {

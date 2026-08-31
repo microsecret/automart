@@ -874,8 +874,10 @@ async function requestImportedStations(coordinates: Coordinates, radius: number)
         const known = uniqueFuels([...prices.map((price) => price.fuel), ...fuelsFromNow])
         if (known.length) return known
         const label = `${row.name || ""} ${row.brand || ""}`.toLocaleLowerCase("ru-RU")
-        const looksGas = /(^|\W)(агзс|агнкс|автогаз)(\W|$)/.test(label)
-          || (/(газ|gaz|пропан|метан)/.test(label) && !/газпром|gazprom/.test(label))
+        /* Только явный тип газовой станции, а не слово «газ» в имени
+           сети: обычный «Газпром» без ассортимента иначе становился
+           газовым, и водитель на ГБО приехал бы зря. */
+        const looksGas = /(агзс|агнкс|автогаз|газомотор|трансгаз|сжиженн|пропан|метан|lpg|cng)/.test(label)
         return looksGas ? ["Газ"] : known
       })(),
       fuelsNow: fuelsFromNow,
