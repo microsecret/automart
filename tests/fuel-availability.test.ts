@@ -1015,3 +1015,34 @@ test("лента прогонов не съедает хранилище", () =>
   assert.match(store, /const KEEP_LOG_ENTRIES = /)
   assert.match(store, /const total = await prisma\.fuelImportLogEntry\.count\(\)/)
 })
+
+test("газовая заправка узнаётся по названию, но Газпромнефть не путается с АГЗС", () => {
+  /* У сорока четырёх точек Уфы ассортимент в источнике пуст, а название
+     прямо говорит про газ: «ПетролГаз», «MGaz», «АГЗС». Плашка выходила
+     пустой — ни марки, ни цены, будто карта сломалась.
+
+     Слово бывает склеено с названием, поэтому проверки по отдельному
+     слову мало. Но расширять её можно только с защитой: у Газпромнефти в
+     имени тоже есть «газ», а заправка бензиновая — водитель на ГБО
+     приехал бы туда зря. */
+  const identity = readFileSync(new URL("../src/lib/fuel-station-identity.ts", import.meta.url), "utf8")
+
+  assert.match(identity, /!\/газпром\|gazprom\//)
+  /* Правило работает только при пустом ассортименте: у Газпромнефти он
+     заполнен бензином, и до проверки имени дело не доходит. */
+  assert.match(identity, /const namedGasOnly = !fuels/)
+
+  const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
+  assert.match(route, /looksGas \? \["Газ"\] : known/)
+  assert.match(route, /газпром\|gazprom/)
+})
+
+test("заправка забирает все свои двойники из OpenStreetMap, а не первого", () => {
+  /* Заправка бывает нанесена в OSM не один раз: колонки отдельной точкой,
+     здание контуром, навес ещё одним. Забрав только первого двойника,
+     карта оставляла остальных отдельными метками — в Казани рядом стояли
+     две «Татнефти», и больше половины тамошних дублей были такими. */
+  const route = readFileSync(new URL("../src/app/api/fuel-stations/route.ts", import.meta.url), "utf8")
+
+  assert.match(route, /for \(let index = unmatchedDirectoryStations\.length - 1; index >= 0; index -= 1\)/)
+})

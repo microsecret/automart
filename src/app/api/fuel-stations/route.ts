@@ -565,6 +565,21 @@ function mergeStations(liveStations: FuelStationPayload[], directoryStations: Fu
     if (directoryIndex < 0) return liveStation
 
     const directoryStation = unmatchedDirectoryStations.splice(directoryIndex, 1)[0]
+
+    /* Заправка бывает нанесена в OpenStreetMap не один раз: колонки
+       отдельной точкой, здание — контуром, навес — ещё одним. Забрав
+       только первого двойника, карта оставляла остальных отдельными
+       метками: в Казани из-за этого рядом стояли две «Татнефти», и
+       больше половины тамошних дублей были такими.
+
+       Забираем всех, кто подходит к этой же заправке, — иначе они
+       вернутся на карту пустыми точками без цен. */
+    for (let index = unmatchedDirectoryStations.length - 1; index >= 0; index -= 1) {
+      if (canMergeStations(liveStation, unmatchedDirectoryStations[index])) {
+        unmatchedDirectoryStations.splice(index, 1)
+      }
+    }
+
     return {
       ...directoryStation,
       dataSource: "MERGED" as const,
@@ -845,7 +860,24 @@ async function requestImportedStations(coordinates: Coordinates, radius: number)
       operator: null,
       address: row.address,
       openingHours: null,
-      fuels: uniqueFuels([...prices.map((price) => price.fuel), ...fuelsFromNow]),
+      /* Газовая заправка без единой марки в источнике.
+
+         У сорока четырёх точек Уфы ассортимент пуст, а название прямо
+         говорит про газ: «ПетролГаз», «MGaz», «АГЗС». Плашка выходила
+         пустой — ни марки, ни цены, будто карта сломалась, — хотя тип
+         колонки известен из имени.
+
+         Ставим только газ и только там, где источник молчит: домысливать
+         бензин по названию нельзя, а газ на АГЗС — это и есть весь её
+         ассортимент. */
+      fuels: (() => {
+        const known = uniqueFuels([...prices.map((price) => price.fuel), ...fuelsFromNow])
+        if (known.length) return known
+        const label = `${row.name || ""} ${row.brand || ""}`.toLocaleLowerCase("ru-RU")
+        const looksGas = /(^|\W)(агзс|агнкс|автогаз)(\W|$)/.test(label)
+          || (/(газ|gaz|пропан|метан)/.test(label) && !/газпром|gazprom/.test(label))
+        return looksGas ? ["Газ"] : known
+      })(),
       fuelsNow: fuelsFromNow,
       prices,
       status,
