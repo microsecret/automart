@@ -32,6 +32,10 @@ type FuelStationPayload = {
   address: string | null
   openingHours: string | null
   fuels: string[]
+  /* Марки, которые источник видит в наличии прямо сейчас: «92,95,ДТ».
+     Без этого карта знает цену марки, но не знает, залили её или она
+     кончилась, — и красит все марки одинаково. */
+  fuelsNow?: string[]
   prices: FuelPrice[]
   status: "FUEL" | "NO_FUEL" | "UNKNOWN"
   statusUpdatedAt: string | null
@@ -457,6 +461,9 @@ function mergeStations(liveStations: FuelStationPayload[], directoryStations: Fu
       address: liveStation.address || directoryStation.address,
       openingHours: liveStation.openingHours || directoryStation.openingHours,
       fuels: uniqueFuels([...liveStation.fuels, ...directoryStation.fuels]),
+      /* Наличие берётся у провайдерской точки: OSM знает, какие колонки
+         на станции стоят вообще, но не знает, что залито сегодня. */
+      fuelsNow: liveStation.fuelsNow,
       prices: liveStation.prices,
       status: liveStation.status,
       statusUpdatedAt: liveStation.statusUpdatedAt,
@@ -721,6 +728,7 @@ async function requestImportedStations(coordinates: Coordinates, radius: number)
       address: row.address,
       openingHours: null,
       fuels: uniqueFuels([...prices.map((price) => price.fuel), ...fuelsFromNow]),
+      fuelsNow: fuelsFromNow,
       prices,
       status,
       statusUpdatedAt: row.updatedAt.toISOString(),

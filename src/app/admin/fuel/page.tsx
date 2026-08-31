@@ -112,6 +112,31 @@ function shortDay(date: string) {
   return `${date.slice(8, 10)}.${date.slice(5, 7)}`
 }
 
+
+/* Наличие по маркам приезжает строкой вида «92,95,ДТ» — теми же кодами,
+   что у ГдеБЕНЗ. Марка из этого списка есть на колонке, остальные — нет.
+   Сопоставление к нашим кодам цен: у цены марка AI92, у наличия «92». */
+const FUEL_NOW_CODES: Record<string, string> = {
+  "92": "AI92",
+  "95": "AI95",
+  "98": "AI98",
+  "100": "AI100",
+  "ДТ": "DT",
+  "ДT": "DT",
+  "Газ": "GAS",
+  "ГАЗ": "GAS",
+}
+
+function parseFuelsNow(value: string | null): Set<string> {
+  if (!value) return new Set()
+  return new Set(
+    value
+      .split(",")
+      .map((code) => FUEL_NOW_CODES[code.trim()])
+      .filter((code): code is string => Boolean(code)),
+  )
+}
+
 function StatusBadge({ status }: { status: string | null }) {
   if (!status || !FUEL_STATUS_META[status]) {
     return <Badge variant="light" color="gray">—</Badge>
@@ -268,13 +293,37 @@ function StationsTab({ filters, setFilters }: {
                 <Table.Td><StatusBadge status={station.status} /></Table.Td>
                 <Table.Td>
                   {station.prices.length ? (
-                    <Group gap={6} wrap="nowrap">
-                      {station.prices.slice(0, 4).map((price) => (
-                        <Badge key={price.fuel} variant="outline" color="indigo" size="sm">
-                          {FUEL_LABELS[price.fuel] || price.fuel} {formatPrice(price.priceRub)}
-                        </Badge>
-                      ))}
-                    </Group>
+                    (() => {
+                      /* Марки переносятся на вторую строку вместо сжатия в
+                         «АИ-100…»: цена — то, ради чего в эту таблицу и
+                         смотрят, и обрезать её бессмысленно. Показываются
+                         все марки, а не первые четыре, — их максимум шесть.
+
+                         Цвет отвечает на вопрос «что здесь есть»: зелёная
+                         марка в наличии, красная кончилась. Когда источник
+                         про наличие молчит, марка остаётся серой — это
+                         честнее, чем красить наугад. */
+                      const available = parseFuelsNow(station.fuelsNow)
+                      const known = available.size > 0
+                      return (
+                        <Group gap={6} wrap="wrap">
+                          {station.prices.map((price) => {
+                            const has = available.has(price.fuel)
+                            return (
+                              <Badge
+                                key={price.fuel}
+                                variant="light"
+                                color={!known ? "gray" : has ? "teal" : "red"}
+                                size="sm"
+                                style={!known || has ? undefined : { textDecoration: "line-through" }}
+                              >
+                                {FUEL_LABELS[price.fuel] || price.fuel} {formatPrice(price.priceRub)}
+                              </Badge>
+                            )
+                          })}
+                        </Group>
+                      )
+                    })()
                   ) : (
                     <Text size="xs" c="dimmed">—</Text>
                   )}

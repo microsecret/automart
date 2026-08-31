@@ -789,7 +789,12 @@ test("ассортимент виден до того, как кто-то отм
      карточке, но показывались только тому, кто уже решил отмечать. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
   assert.match(page, /На станции есть колонки/)
-  assert.match(page, /data-state="unknown"/)
+
+  /* Состояние плитки вычисляется, а не проставляется литералом: когда
+     источник знает наличие по маркам, плитка красится зелёной или
+     красной, и только при его молчании остаётся серой. */
+  assert.match(page, /sourceKnowsAvailability \? "unknown"/)
+  assert.match(page, /sourceFuelsNow/)
 
   /* Серый цвет честно молчит про наличие: зелёный или красный здесь
      соврали бы. */

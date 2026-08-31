@@ -39,6 +39,9 @@ type FuelStation = {
     cafe: boolean
   }
   fuels: string[]
+  /* Марки, которые источник видит в наличии прямо сейчас. Отличается от
+     fuels: тот перечисляет колонки станции вообще, а этот — что залито. */
+  fuelsNow?: string[]
   prices: Array<{ fuel: string; price: number | null; updatedAt: string | null }>
   status: "FUEL" | "NO_FUEL" | "UNKNOWN"
   statusUpdatedAt: string | null
@@ -720,6 +723,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                 ),
           )
           const priceFor = (fuel: string) => priceByFuel.get(fuel) ?? sourcePriceByFuel.get(fuel) ?? null
+          /* Наличие по маркам от источника — для цвета марки на плашке.
+             Зелёная есть, красная кончилась; молчит источник — серая. */
+          const sourceFuelsNow = isCluster ? new Set<string>() : new Set(firstStation.fuelsNow || [])
+          const sourceKnowsAvailability = sourceFuelsNow.size > 0
 
           /* Плашка вместо кружка — при близком масштабе.
 
@@ -795,7 +802,14 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               : firstStation.fuels.slice(0, 4).map((fuel) => ({
                   key: fuel,
                   label: fuel,
-                  state: "unknown" as const,
+                  /* Цвет марки берётся у источника, когда отметок нет:
+                     зелёная в наличии, красная кончилась. Источник молчит —
+                     марка серая, потому что красить наугад нельзя. */
+                  state: (!sourceKnowsAvailability
+                    ? "unknown"
+                    : sourceFuelsNow.has(fuel)
+                      ? "yes"
+                      : "no") as "unknown" | "yes" | "no",
                   price: priceFor(fuel),
                 }))
 
@@ -1030,6 +1044,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
         const fresh = rows.filter((row) => row.updatedAt && isFresh(new Date(row.updatedAt)))
         const prices = pricesByStation[selectedStation.id] || []
         const priceByFuel = new Map(prices.map((row) => [row.fuel, row.priceKopecks]))
+        /* Цены и наличие от источника: скрейпер привозит их вместе с
+           заправкой. Отметка водителя всё равно главнее — она про колонку,
+           а не про прайс сети, — поэтому источник заполняет только то, по
+           чему отметки нет. Без этого карточка писала «не отмечали» под
+           маркой, цену которой мы знаем. */
+        const sourcePriceByFuel = new Map(
+          (selectedStation.prices || []).flatMap((row) =>
+            typeof row.price === "number" ? [[row.fuel, Math.round(row.price * 100)] as const] : [],
+          ),
+        )
+        const sourceFuelsNow = new Set(selectedStation.fuelsNow || [])
+        const sourceKnowsAvailability = sourceFuelsNow.size > 0
         const newest = fresh.reduce<string | null>(
           (latest, row) => (!latest || (row.updatedAt && row.updatedAt > latest) ? row.updatedAt : latest),
           null,
@@ -1215,7 +1241,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               {fresh.length > 0 ? (
                 <Box className="fuel-tiles">
                   {fresh.slice(0, 6).map((row) => {
-                    const kopecks = priceByFuel.get(row.fuel)
+                    const kopecks = priceByFuel.get(row.fuel) ?? sourcePriceByFuel.get(row.fuel)
                     return (
                       /* Плитка марки: наличие, цена и свежесть вместе.
 
@@ -1261,14 +1287,36 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                    бывает — известно, а есть ли оно сейчас — нет, и
                    цвет об этом честно молчит. */
                 <Stack gap={6}>
-                  <Text size="xs" c="dimmed">Здесь ещё не отмечали наличие. На станции есть колонки:</Text>
+                  <Text size="xs" c="dimmed">
+                    {sourceKnowsAvailability
+                      ? "Наличие и цены по данным источника. Отметьте, если на месте иначе:"
+                      : "Здесь ещё не отмечали наличие. На станции есть колонки:"}
+                  </Text>
                   <Box className="fuel-tiles">
-                    {selectedStation.fuels.slice(0, 6).map((fuel) => (
-                      <Box key={fuel} className="fuel-tile" data-state="unknown">
-                        <span className="fuel-tile__label">{fuel}</span>
-                        <span className="fuel-tile__state">не отмечали</span>
-                      </Box>
-                    ))}
+                    {selectedStation.fuels.slice(0, 6).map((fuel) => {
+                      /* Цвет плитки: зелёная — источник видит марку в
+                         наличии, красная — её нет, серая — источник про
+                         наличие молчит. Красить наугад нельзя: человек
+                         поедет за топливом, которого там не окажется. */
+                      const has = sourceFuelsNow.has(fuel)
+                      const kopecks = sourcePriceByFuel.get(fuel)
+                      const state = !sourceKnowsAvailability ? "unknown" : has ? "yes" : "no"
+                      return (
+                        <Box key={fuel} className="fuel-tile" data-state={state}>
+                          <span className="fuel-tile__label">{fuel}</span>
+                          {kopecks ? (
+                            <span className="fuel-tile__price">{formatKopecks(kopecks)} ₽</span>
+                          ) : (
+                            <span className="fuel-tile__state">
+                              {state === "unknown" ? "не отмечали" : state === "yes" ? "есть" : "нет"}
+                            </span>
+                          )}
+                          {kopecks && state !== "unknown" && (
+                            <span className="fuel-tile__age">{state === "yes" ? "есть" : "нет"}</span>
+                          )}
+                        </Box>
+                      )
+                    })}
                   </Box>
                 </Stack>
               ) : (
