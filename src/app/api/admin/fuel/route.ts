@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { recordAdminAudit } from "@/lib/admin-audit"
 import { targetRegionKeys } from "@/lib/fuel-target-regions"
 import { FUEL_SOURCES, resolveFuelSources, runFuelSources } from "@/lib/fuel-scraper-run"
+import { recomputeImportedCities } from "@/lib/fuel-import-store"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -264,11 +265,28 @@ export async function POST(request: NextRequest) {
 
   return runAdminRoute("Fuel scraper manual run", async () => {
     const body = await request.json().catch(() => null) as {
+      action?: unknown
       source?: unknown
       sources?: unknown
       regions?: unknown
       pauseMs?: unknown
     } | null
+
+    /* Разовая операция над уже собранными точками: город у них проставлен
+       по имени региона обхода, а не по координатам. Живёт рядом с прогоном,
+       потому что чинит его же данные тем же правилом. */
+    if (body?.action === "recompute-cities") {
+      const result = await recomputeImportedCities()
+      await recordAdminAudit({
+        actorId: session.user?.id || null,
+        actorEmail: session.user?.email,
+        action: "FUEL_SCRAPER_RUN",
+        entityType: "FuelStationImport",
+        summary: `Пересчёт городов у импортированных АЗС: обновлено ${result.updated} из ${result.scanned}`,
+        metadata: result,
+      })
+      return NextResponse.json({ success: true, ...result })
+    }
 
     const sources = resolveFuelSources(body ?? {})
     if (!sources.length) {

@@ -5,7 +5,7 @@ import {
   Alert, Badge, Button, Group, Modal, MultiSelect, Paper, Stack, Text, Tooltip,
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconPlayerPlay, IconAlertTriangle, IconRefresh } from "@tabler/icons-react"
+import { IconPlayerPlay, IconAlertTriangle, IconRefresh, IconMapPin } from "@tabler/icons-react"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { FUEL_TARGET_REGIONS } from "@/lib/fuel-target-regions"
 
@@ -48,6 +48,7 @@ export default function FuelScraperRunner({ onFinished }: { onFinished?: () => v
   const [regions, setRegions] = useState<string[]>([])
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [running, setRunning] = useState(false)
+  const [recomputing, setRecomputing] = useState(false)
   const [lastResult, setLastResult] = useState<RunResponse | null>(null)
 
   const regionOptions = FUEL_TARGET_REGIONS.map((region) => ({ value: region.key, label: region.city }))
@@ -83,6 +84,36 @@ export default function FuelScraperRunner({ onFinished }: { onFinished?: () => v
     }
   }
 
+  /* Точки, собранные до привязки города по координатам, лежат под именем
+     региона. Пересчёт разносит их по городам — разовая операция, но кнопка
+     остаётся: она пригодится и после правки справочника городов. */
+  const recomputeCities = async () => {
+    if (recomputing || running) return
+    setRecomputing(true)
+    try {
+      const result = await fetchJson<{ scanned: number; updated: number }>("/api/admin/fuel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "recompute-cities" }),
+      })
+      notifications.show({
+        title: "Города пересчитаны",
+        message: `Обновлено ${result.updated} заправок из ${result.scanned}.`,
+        color: "teal",
+        autoClose: 10_000,
+      })
+      onFinished?.()
+    } catch (error) {
+      notifications.show({
+        title: "Не удалось пересчитать",
+        message: getApiClientErrorMessage(error, "Попробуйте ещё раз позже."),
+        color: "red",
+      })
+    } finally {
+      setRecomputing(false)
+    }
+  }
+
   return (
     <Paper withBorder radius="md" p="md">
       <Stack gap="sm">
@@ -93,6 +124,18 @@ export default function FuelScraperRunner({ onFinished }: { onFinished?: () => v
               Обычно скрейпер работает по расписанию. Запускайте вручную, если данные устарели.
             </Text>
           </div>
+          <Group gap="xs">
+          <Tooltip label="Разнести уже собранные заправки по городам, определив город по координатам">
+            <Button
+              variant="default"
+              leftSection={<IconMapPin size={16} />}
+              onClick={recomputeCities}
+              loading={recomputing}
+              disabled={running}
+            >
+              Пересчитать города
+            </Button>
+          </Tooltip>
           <Tooltip label="Выберите хотя бы один источник" disabled={sources.length > 0}>
             <Button
               leftSection={running ? <IconRefresh size={16} /> : <IconPlayerPlay size={16} />}
@@ -103,6 +146,7 @@ export default function FuelScraperRunner({ onFinished }: { onFinished?: () => v
               {running ? "Идёт сбор…" : "Запустить сбор"}
             </Button>
           </Tooltip>
+          </Group>
         </Group>
 
         <Group gap="sm" wrap="wrap" align="flex-start">

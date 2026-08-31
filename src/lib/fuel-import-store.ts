@@ -209,3 +209,28 @@ export async function finishFuelImportRun(
     },
   })
 }
+
+/**
+ * Пересчёт города у ранее импортированных точек.
+ *
+ * До привязки по координатам город брался из имени региона обхода, и все
+ * точки большого региона получали имя «Республика ...» на всех. Новые
+ * прогоны раскладывают точки правильно, но уже собранные тысячи так и
+ * остались бы одной кучей, поэтому их разносит тем же правилом.
+ */
+export async function recomputeImportedCities(): Promise<{ scanned: number; updated: number }> {
+  const stations = await prisma.fuelStationImport.findMany({
+    select: { id: true, city: true, latitude: true, longitude: true },
+  })
+
+  let updated = 0
+  for (const station of stations) {
+    const nearest = findNearestCity({ latitude: station.latitude, longitude: station.longitude })
+    const city = nearest.name && nearest.km <= CITY_MATCH_MAX_KM ? nearest.name : station.city
+    if (!city || city === station.city) continue
+    await prisma.fuelStationImport.update({ where: { id: station.id }, data: { city } })
+    updated += 1
+  }
+
+  return { scanned: stations.length, updated }
+}
