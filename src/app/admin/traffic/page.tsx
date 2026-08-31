@@ -245,7 +245,7 @@ export default function TrafficPage() {
                   <ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconClock size={15} /></ThemeIcon>
                   <Box>
                     <Text size="sm" fw={700}>Активность по часам</Text>
-                    <Text size="xs" c="dimmed">По Москве · пик подсвечен</Text>
+                    <Text size="xs" c="dimmed">По московскому времени · всплески отмечены оранжевым</Text>
                   </Box>
                 </Group>
                 {data && (
