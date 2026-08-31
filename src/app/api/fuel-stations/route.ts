@@ -420,10 +420,40 @@ function getDistanceSquared(first: FuelStationPayload, second: FuelStationPayloa
   return latitude ** 2 + longitude ** 2
 }
 
-const STATION_MATCH_DISTANCE_SQUARED = (35 / 111_000) ** 2
+/* Порог склейки — 70 метров вместо 35.
+
+   Источники ставят одну и ту же заправку в разные точки: у ГдеБЕНЗ это
+   въезд, у ГдеЗаправки — здание кассы, и между ними бывает полсотни
+   метров. Башнефть с расхождением в 46 м оставалась двумя метками.
+
+   Дальше расширять нельзя: на крупных развязках стоят две разные
+   заправки в сотне метров друг от друга, и они должны остаться разными. */
+const STATION_MATCH_DISTANCE_SQUARED = (70 / 111_000) ** 2
+
+/* Заглушки вместо названия сети.
+
+   ГдеЗаправка ставит «Независимая / Прочее» там, где сеть неизвестна, а
+   имя точки заполняет адресом: «Вишнёвая улица, 1/3». Для сравнения это
+   не имя, а признак его отсутствия — но сравнивалось оно как настоящее, и
+   заправка не склеивалась со своим двойником из другого источника.
+
+   Адрес в поле имени опознаётся по типовым словам улицы: настоящая сеть
+   так себя не зовёт. */
+const UNKNOWN_BRAND_LABELS = new Set(["независимая / прочее", "независимая", "прочее", "азс", "агзс"])
+const ADDRESS_LIKE = /(улица|ул\.|проспект|пр-кт|пр-д|шоссе|тракт|переулок|пер\.|бульвар|набережная|проезд|км)/iu
+
+function isMeaningfulStationName(value: string | null | undefined): value is string {
+  if (!value) return false
+  const normalized = value.trim().toLocaleLowerCase("ru-RU")
+  if (!normalized || UNKNOWN_BRAND_LABELS.has(normalized)) return false
+  if (ADDRESS_LIKE.test(value)) return false
+  /* Голая нумерация вроде «АЗС №15» тоже не опознаёт сеть. */
+  if (/^азс\s*№?\s*\d+$/iu.test(normalized)) return false
+  return true
+}
 
 function getStationIdentity(station: FuelStationPayload) {
-  const source = station.brand || station.operator || (station.name !== "АЗС" ? station.name : null)
+  const source = [station.brand, station.operator, station.name].find(isMeaningfulStationName) ?? null
   return source
     ?.toLocaleLowerCase("ru-RU")
     .replace(/[«»'"`]/g, "")
@@ -503,8 +533,11 @@ function mergeProviderStations(stations: FuelStationPayload[]): FuelStationPaylo
       ...twin,
       /* Имя и адрес — у источника с большим приоритетом, но пустое место
          заполняет любой: «АЗС» без адреса хуже чужого адреса. */
-      name: twin.name !== "АЗС" ? twin.name : station.name,
-      brand: twin.brand || station.brand,
+      /* Осмысленное имя побеждает заглушку независимо от приоритета
+         источника: «Ufaoil» полезнее, чем «Вишнёвая улица, 1/3», даже
+         если адрес приехал от источника рангом выше. */
+      name: isMeaningfulStationName(twin.name) ? twin.name : (isMeaningfulStationName(station.name) ? station.name : twin.name),
+      brand: (isMeaningfulStationName(twin.brand) ? twin.brand : null) || (isMeaningfulStationName(station.brand) ? station.brand : null) || twin.brand || station.brand,
       operator: twin.operator || station.operator,
       address: twin.address || station.address,
       openingHours: twin.openingHours || station.openingHours,
