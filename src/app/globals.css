@@ -764,31 +764,43 @@ select {
    Активная помечена подчёркиванием снизу, а не заливкой: заливка спорила бы
    с оранжевой кнопкой подачи, которая должна оставаться единственным
    ярким пятном. */
+/* Вкладки шапки — переключатель, а не набор ссылок.
+
+   Раньше это был плоский ряд слов, где текущий раздел отмечался
+   двухпиксельной чертой под подписью. На светлой шапке её почти не видно:
+   человек не понимал, где находится, и по виду не догадывался, что по
+   словам вообще можно нажимать.
+
+   Теперь активная вкладка — заливка-пилюля: то же решение, что в
+   переключателях внутри страниц, поэтому ряд читается как единый
+   элемент управления. */
 .market-header-tab {
   position: relative;
+  border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--market-control-text) !important;
+  transition:
+    background var(--ease-fast) var(--ease-out),
+    color var(--ease-fast) var(--ease-out);
 }
 
 .market-header-tab:hover {
   background: color-mix(in srgb, var(--market-primary-soft) 60%, transparent) !important;
 }
 
-.market-header-tab--active {
+/* Активная вкладка держит цвет и на наведении: подсветка соседей не должна
+   спорить с тем, где человек находится. */
+.market-header-tab--active,
+.market-header-tab--active:hover {
+  background: var(--market-primary-soft) !important;
   color: var(--market-primary) !important;
   font-weight: 700;
 }
 
-.market-header-tab--active::after {
-  position: absolute;
-  right: 9px;
-  bottom: 1px;
-  left: 9px;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: var(--market-primary);
-  content: "";
+/* Значок активного раздела ярче подписи — глаз находит его первым. */
+.market-header-tab--active .mantine-Button-section {
+  color: var(--market-primary);
 }
 
 .market-app-header__links .mantine-Button-root {
@@ -1112,7 +1124,23 @@ select {
    ряд всё равно не помещался — обрезались подписи. Значок с подсказкой
    честнее обрубка: человек видит цельный элемент, а не половину слова, и
    узнаёт раздел по знаку, как в мобильных приложениях. */
-@media (max-width: 1600px) and (min-width: 1401px) {
+/* Шапка ужимается ступенями, а не рывком.
+
+   Одна точка перелома давала скачок: на 1601 пикселе ряд с подписями, на
+   1600 — голые значки. Между этими состояниями есть запас, который проще
+   отдать отступами: сперва вкладки становятся теснее, и только когда и
+   этого мало — подпись уходит, оставляя значок с подсказкой. */
+@media (max-width: 1720px) and (min-width: 1521px) {
+  .market-app-header__tabs .mantine-Button-root {
+    padding-inline: 9px;
+  }
+
+  .market-app-header__tabs .mantine-Button-section {
+    margin-inline-end: 5px;
+  }
+}
+
+@media (max-width: 1520px) and (min-width: 1401px) {
   .market-app-header__tabs .mantine-Button-label {
     display: none;
   }

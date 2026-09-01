@@ -1304,7 +1304,11 @@ test("подписи вкладок в шапке не обрезаются на
      Вместо обрезки подпись уходит целиком, оставляя значок с подсказкой. */
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
 
-  assert.match(css, /max-width: 1600px\) and \(min-width: 1401px\)/)
+  /* Ужимается ступенями: сперва теснее отступы, и только потом уходит
+     подпись — одна точка перелома давала скачок от полного ряда к голым
+     значкам. */
+  assert.match(css, /max-width: 1720px\) and \(min-width: 1521px\)/)
+  assert.match(css, /max-width: 1520px\) and \(min-width: 1401px\)/)
   assert.doesNotMatch(css, /\.market-app-header__tabs \{\s*flex: 0 1 auto;\s*min-width: 0;\s*overflow: hidden;/)
 
   const header = readFileSync(new URL("../src/components/layout/AppHeader.tsx", import.meta.url), "utf8")
@@ -1324,4 +1328,21 @@ test("выбранная марка стоит на плашке первой", 
      «сейчас её нигде нет»: в первом случае ехать бесполезно, во втором
      стоит заглянуть попозже. */
   assert.match(page, /сейчас нигде нет в наличии/)
+})
+
+test("активная вкладка шапки видна с одного взгляда", () => {
+  /* Раньше текущий раздел отмечался двухпиксельной чертой под подписью —
+     на светлой шапке её почти не видно: человек не понимал, где он, и по
+     виду не догадывался, что по словам можно нажимать.
+
+     Заливка-пилюля — то же решение, что в переключателях внутри страниц,
+     поэтому ряд читается как единый элемент управления. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+
+  assert.match(css, /\.market-header-tab--active,\s*\n\.market-header-tab--active:hover \{/)
+  assert.match(css, /background: var\(--market-primary-soft\) !important/)
+
+  /* Активная держит цвет и на наведении: подсветка соседей не должна
+     спорить с тем, где человек находится. */
+  assert.doesNotMatch(css, /\.market-header-tab--active::after/)
 })
