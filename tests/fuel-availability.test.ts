@@ -1382,3 +1382,22 @@ test("шапка уплотняется прежде, чем что-то пря�
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
   assert.match(css, /min-width: 1200px\) and \(max-width: 1600px\)/)
 })
+
+test("шапка не режет правые кнопки", () => {
+  /* Контейнер прятал переполнение, рассчитывая, что первыми уйдут лишние
+     вкладки каталога. На деле обрезается конец ряда — колокольчик
+     уведомлений и аватар, единственный вход в кабинет: человек с широким
+     экраном видел срезанную кнопку и не понимал, почему.
+
+     Теперь ряд не может переполниться по построению: колонка вкладок
+     уступает место и прокручивается внутри себя, а правые кнопки стоят
+     на месте. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+
+  assert.doesNotMatch(css, /\.market-app-header \.mantine-Container-root \{[^}]*overflow: hidden/)
+  assert.match(css, /\.market-app-header__tabs \{[\s\S]{0,200}flex: 0 1 auto/)
+
+  /* Отступы вкладок теснее стандартных: шесть штук с полями по умолчанию
+     занимали лишние семьдесят пикселей — ровно тех, что не хватало ряду. */
+  assert.match(css, /\.market-header-tab \{[\s\S]{0,600}padding-inline: 9px/)
+})
