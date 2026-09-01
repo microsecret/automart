@@ -195,7 +195,7 @@ function pickDisplayPrice(
     : reported.priceKopecks
 }
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount, activeFuel }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
@@ -224,6 +224,8 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   /* Сколько ближайших точек показать целиком, если человек не вошёл.
      null — вошёл, показываем всё. */
   guestVisibleCount: number | null
+  /* Выбранная в фильтре марка: её цена ставится на плашке первой. */
+  activeFuel: string
 }) {
   const [zoom, setZoom] = useState(11)
   /* Выбранный источник плиток живёт в браузере: человек выбрал тёмную
@@ -896,8 +898,21 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
             /* Марки: сначала отмеченные водителями, потом те, что знает
                OpenStreetMap. Отметка свежее и вернее тега, но когда её
                нет, тег лучше пустоты. */
+            /* Выбранная в фильтре марка идёт первой.
+
+               Плашка показывает четыре марки из шести, и нужная могла в
+               них не попасть: человек фильтрует карту по АИ-100, а на
+               плашке видит цены на 92-й и 95-й — то есть ответ не на свой
+               вопрос. */
+            const putActiveFirst = <T,>(rows: T[], labelOf: (row: T) => string): T[] => {
+              if (!activeFuel) return rows
+              const index = rows.findIndex((row) => labelOf(row) === activeFuel)
+              if (index <= 0) return rows
+              return [rows[index], ...rows.slice(0, index), ...rows.slice(index + 1)]
+            }
+
             const plateFuels = fresh.length
-              ? fresh.slice(0, 4).map((row) => ({
+              ? putActiveFirst(fresh, (row) => row.label).slice(0, 4).map((row) => ({
                   key: row.fuel,
                   label: row.label,
                   state: row.state === "YES" ? "yes" : "no",
@@ -907,7 +922,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                  цена, и плашка отвечает на вопрос «почём здесь», а не
                  просто перечисляет ассортимент. Четвёртая строка — обычно
                  ДТ, без которого карта бесполезна дизелисту. */
-              : firstStation.fuels.slice(0, 4).map((fuel) => ({
+              : putActiveFirst(firstStation.fuels, (fuel) => fuel).slice(0, 4).map((fuel) => ({
                   key: fuel,
                   label: fuel,
                   /* Цвет марки берётся у источника, когда отметок нет:
@@ -2031,6 +2046,7 @@ function FuelMapContent() {
           onPricesReported={handlePricesReported}
           onAvailabilityReported={handleAvailabilityReported}
           guestVisibleCount={isGuest ? GUEST_VISIBLE_STATIONS : null}
+          activeFuel={fuelFilter}
         />
         {isGuest && (
           <FuelGuestGate
@@ -2147,10 +2163,17 @@ function FuelMapContent() {
           <Paper className="fuel-map-empty-filter" radius="md" p="sm" withBorder aria-live="polite">
             <Text size="sm" fw={700}>Под эти условия ничего не нашлось</Text>
             <Text size="xs" c="dimmed" mt={2}>
+              {/* «Нет» и «кончилось» — разные ответы.
+
+                  Фильтр по марке теперь показывает, где топливо есть, а не
+                  где стоит колонка. Значит пустая выдача чаще означает не
+                  «такой марки тут не бывает», а «сейчас её нигде нет» — и
+                  человеку важно понимать разницу: в первом случае ехать
+                  бесполезно, во втором стоит заглянуть попозже. */}
               {networkFilter && fuelFilter
-                ? `У сети «${networkFilter}» здесь нет марки «${fuelFilter}».`
+                ? `У сети «${networkFilter}» здесь нет «${fuelFilter}» в наличии.`
                 : fuelFilter
-                  ? `Марки «${fuelFilter}» на этом участке нет.`
+                  ? `«${fuelFilter}» на этом участке сейчас нигде нет в наличии.`
                   : `Сети «${networkFilter}» на этом участке нет.`}
             </Text>
             <Group gap="xs" mt="sm">

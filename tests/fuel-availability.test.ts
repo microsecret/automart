@@ -1310,3 +1310,18 @@ test("подписи вкладок в шапке не обрезаются на
   const header = readFileSync(new URL("../src/components/layout/AppHeader.tsx", import.meta.url), "utf8")
   assert.match(header, /title=\{item\.label\}/)
 })
+
+test("выбранная марка стоит на плашке первой", () => {
+  /* Плашка показывает четыре марки из шести, и нужная могла в них не
+     попасть: человек фильтрует карту по АИ-100, а на плашке видит цены на
+     92-й и 95-й — то есть ответ не на свой вопрос. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+
+  assert.match(page, /const putActiveFirst =/)
+  assert.match(page, /activeFuel=\{fuelFilter\}/)
+
+  /* Пустая выдача объясняет разницу между «такой марки тут не бывает» и
+     «сейчас её нигде нет»: в первом случае ехать бесполезно, во втором
+     стоит заглянуть попозже. */
+  assert.match(page, /сейчас нигде нет в наличии/)
+})
