@@ -55,16 +55,26 @@ function chatIntervalMs(): number {
  * приложение. Пустое значение возвращает прежнее поведение — пост уходит
  * текстом с кнопками, и это по-прежнему рабочий вариант.
  *
- * Файл кладётся в public/images и указывается путём от корня сайта,
- * например /images/fuel-map-invite.jpg: Telegram скачивает картинку по
- * ссылке сам, и она должна быть доступна снаружи.
+ * Файл кладётся в public/uploads и указывается путём /uploads/имя.jpg.
+ *
+ * Именно /uploads, а не /images: отправка читает свои снимки с диска, и
+ * читает только оттуда. Ссылку на наш домен Telegram не берёт — отвечает
+ * «failed to get HTTP URL content», и пост не уходит вовсе. Путь из другой
+ * папки молча не сработал бы: картинка не прочиталась бы с диска, ушла
+ * ссылкой и не дошла.
  */
 function inviteImage(): string | null {
   const configured = process.env.FUEL_INVITE_IMAGE?.trim()
   if (!configured) return null
-  /* Полный адрес: Telegram ходит за картинкой из своей сети, и путь от
-     корня сайта ему ничего не скажет. */
-  return configured.startsWith("http") ? configured : absoluteUrl(configured)
+  /* Чужой адрес Telegram скачает сам — там ограничение не действует. */
+  if (configured.startsWith("http")) return configured
+  /* Свой файл — только из /uploads: иначе пост уйдёт со ссылкой, которую
+     Telegram отвергнет, и не дойдёт совсем. Лучше отправить текстом. */
+  if (!configured.startsWith("/uploads/")) {
+    console.warn(`FUEL_INVITE_IMAGE должен указывать в /uploads, получено «${configured}» — пост уйдёт текстом`)
+    return null
+  }
+  return configured
 }
 
 export type InviteBroadcastResult = {

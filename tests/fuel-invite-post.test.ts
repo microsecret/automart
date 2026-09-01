@@ -115,3 +115,21 @@ test("чат зовут раз в шесть часов, и частота на�
      чата, а не Telegram. */
   assert.match(broadcast, /Math\.max\(1, configured\)/)
 })
+
+test("обложка приглашения читается с диска, а не по ссылке", () => {
+  /* Отправка читает свои снимки с диска и только из /uploads: ссылку на
+     наш домен Telegram не берёт — отвечает «failed to get HTTP URL
+     content», и пост не уходит вовсе.
+
+     Путь из другой папки молча не сработал бы: картинка не прочиталась бы
+     с диска, ушла ссылкой и не дошла. Поэтому чужой путь отклоняется
+     сразу, с записью в журнал, и пост уходит текстом — это хуже картинки,
+     но лучше молчания. */
+  const broadcast = readFileSync(new URL("../src/lib/fuel-invite-broadcast.ts", import.meta.url), "utf8")
+
+  assert.match(broadcast, /configured\.startsWith\("\/uploads\/"\)/)
+  assert.match(broadcast, /пост уйдёт текстом/)
+
+  /* Чужой адрес Telegram скачает сам — там ограничение не действует. */
+  assert.match(broadcast, /configured\.startsWith\("http"\)\) return configured/)
+})
