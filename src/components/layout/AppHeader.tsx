@@ -219,6 +219,9 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                 color="indigo"
                 size="compact-sm"
                 leftSection={item.icon || <IconCar size={14} />}
+                /* На среднем экране подпись прячется и остаётся значок —
+                   подсказка при наведении объясняет, что это за раздел. */
+                title={item.label}
                 aria-current={item.active ? "page" : undefined}
                 /* Второстепенные вкладки прячутся, когда шапка перестаёт
                    вмещать всё.

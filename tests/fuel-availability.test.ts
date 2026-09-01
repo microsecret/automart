@@ -1275,3 +1275,38 @@ test("админкой можно пользоваться с телефона",
      сорока пикселей. */
   assert.match(support, /align="flex-end" gap="xs" wrap="wrap"/)
 })
+
+test("фильтр по марке показывает, где топливо есть, а не где стоит колонка", () => {
+  /* Сравнивался ассортимент станции: выбрав АИ-100, человек получал на
+     карте заправки, где эта марка зачёркнута красным — то есть кончилась.
+     Он ехал туда, где заправиться нечем, а карта считала себя правой.
+
+     Наличие берётся у источника, а не у отметок водителей: отметки точнее,
+     но приходят только по сотне ближайших к центру точек, и фильтровать по
+     ним значило бы прятать заправки в зависимости от того, куда человек
+     сдвинул карту. */
+  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
+
+  assert.match(page, /const matchesFuel = \(station: FuelStation\)/)
+  assert.match(page, /sourceKnows \? station\.fuelsNow!\.includes\(fuelFilter\) : true/)
+
+  /* «Неизвестно» — не то же самое, что «нет»: станция без данных о наличии
+     остаётся в выдаче, иначе с карты пропала бы половина точек. */
+  assert.match(page, /const sourceKnows = \(station\.fuelsNow\?\.length \?\? 0\) > 0/)
+})
+
+test("подписи вкладок в шапке не обрезаются на полуслове", () => {
+  /* «Объявлени», «Запчаст», «Где заправить» — половина слова обрывается, и
+     ряд читается как поломка. Это хуже отсутствия вкладки: пропавшую
+     человек найдёт в боковом меню, а обрубок он видит и не понимает, что
+     с ним не так.
+
+     Вместо обрезки подпись уходит целиком, оставляя значок с подсказкой. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+
+  assert.match(css, /max-width: 1600px\) and \(min-width: 1401px\)/)
+  assert.doesNotMatch(css, /\.market-app-header__tabs \{\s*flex: 0 1 auto;\s*min-width: 0;\s*overflow: hidden;/)
+
+  const header = readFileSync(new URL("../src/components/layout/AppHeader.tsx", import.meta.url), "utf8")
+  assert.match(header, /title=\{item\.label\}/)
+})

@@ -1743,8 +1743,38 @@ function FuelMapContent() {
   const GUEST_VISIBLE_STATIONS = 4
 
   const filteredStations = useMemo(() => {
+    /* Фильтр по марке отвечает на вопрос «где сейчас есть», а не «где
+       такая колонка стоит».
+
+       Раньше сравнивался ассортимент станции: выбрав АИ-100, человек
+       получал на карте заправки, где эта марка зачёркнута красным — то
+       есть кончилась. Он ехал туда, где заправиться нечем, а карта при
+       этом считала себя правой.
+
+       Наличие берётся оттуда же, откуда его берёт плашка: сперва отметки
+       водителей, потом сведения источника. Когда про наличие не знает
+       никто, станция остаётся в выдаче — «неизвестно» не то же самое, что
+       «нет», и прятать её значило бы скрывать половину карты. */
+    const matchesFuel = (station: FuelStation) => {
+      if (!fuelFilter) return true
+      if (!station.fuels.includes(fuelFilter)) return false
+
+      /* Наличие берётся у источника, а не у отметок водителей.
+
+         Отметки точнее, но приходят только по сотне ближайших к центру
+         точек — фильтр же применяется ко всей карте, и для дальних
+         станций их просто нет. Фильтровать по данным, которых половина,
+         значило бы прятать заправки в зависимости от того, куда человек
+         сдвинул карту.
+
+         Когда про наличие не знает и источник, станция остаётся в выдаче:
+         «неизвестно» — не то же самое, что «нет». */
+      const sourceKnows = (station.fuelsNow?.length ?? 0) > 0
+      return sourceKnows ? station.fuelsNow!.includes(fuelFilter) : true
+    }
+
     const matchingStations = allStations.filter((station) => (
-      (!fuelFilter || station.fuels.includes(fuelFilter))
+      matchesFuel(station)
       && (!networkFilter || getStationNetworkKey(station) === networkFilter)
     ))
 
