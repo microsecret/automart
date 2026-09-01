@@ -51,7 +51,16 @@ export default function CategoryShowcase() {
         </Box>
       </Group>
 
-      <SimpleGrid cols={{ base: 2, sm: 4, lg: 7 }} spacing="xs" className={styles.grid}>
+      {/* Семь колонок — только там, где им хватает места.
+
+          Сетка считает пороги по ширине окна, а не контейнера, и рядом с
+          боковым меню в 236 пикселей контенту достаётся заметно меньше:
+          на экране 1280 карточка выходила по 136 пикселей, подсказки под
+          названиями ложились в три строки и колонки вытягивались.
+
+          Порог перенесён на 1440 — там даже с меню остаётся простор; между
+          планшетом и этой шириной идут пять колонок. */}
+      <SimpleGrid cols={{ base: 2, sm: 4, lg: 5, xl: 7 }} spacing="xs" className={styles.grid}>
         {DIRECTIONS.map(({ slug, href, label, hint, Icon, tone }) => {
           const count = counts?.[slug]
           return (
