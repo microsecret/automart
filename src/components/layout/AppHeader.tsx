@@ -199,7 +199,15 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           партнёра и правым кнопкам нужен 1511 — кнопка «Войти» уходила за
           край. Содержимое ряда и так ограничено своими размерами. */}
       <Container fluid px={{ base: "sm", md: "md" }} style={{ height: "var(--app-header-height)" }}>
-        <Group h="100%" gap="sm" wrap="nowrap" align="center" justify="space-between">
+        {/* Зазор между группами — шесть пикселей вместо двенадцати.
+
+            Ряд собран из логотипа, вкладок, поиска, «Сервисов», кнопки
+            партнёра и правых значков: шесть промежутков по двенадцать
+            съедали семьдесят два пикселя — целую вкладку. Именно их не
+            хватало, чтобы подписи не начали ужиматься. Внутри групп
+            зазоры остались прежними: там они отделяют элементы одного
+            смысла, а между группами достаточно меньшего. */}
+        <Group h="100%" gap={6} wrap="nowrap" align="center" justify="space-between">
           {/* ЛЕВО: Лого */}
           {onNavigationToggle && <Burger hiddenFrom="md" opened={navigationOpened} onClick={onNavigationToggle} size="sm" aria-label={navigationOpened ? "Закрыть навигацию" : "Открыть навигацию"} />}
           <Link href="/" style={{ textDecoration: "none", color: "inherit", flexShrink: 0 }}>

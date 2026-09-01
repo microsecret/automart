@@ -1308,7 +1308,9 @@ test("подписи вкладок в шапке не обрезаются на
      подпись — одна точка перелома давала скачок от полного ряда к голым
      значкам. */
   assert.match(css, /max-width: 1720px\) and \(min-width: 1521px\)/)
-  assert.match(css, /max-width: 1520px\) and \(min-width: 1401px\)/)
+  /* Подписи уходят только там, где иначе никак: короткие подписи кнопок и
+     уплотнённые зазоры вернули ряду около полутора сотен пикселей. */
+  assert.match(css, /max-width: 1440px\) and \(min-width: 1401px\)/)
   assert.doesNotMatch(css, /\.market-app-header__tabs \{\s*flex: 0 1 auto;\s*min-width: 0;\s*overflow: hidden;/)
 
   const header = readFileSync(new URL("../src/components/layout/AppHeader.tsx", import.meta.url), "utf8")
@@ -1365,4 +1367,18 @@ test("сетки фильтров ужимаются ступенями, а не
      растяжения ставит предел в треть ширины и запрещает перенос — на
      телефоне это по 91 пикселю на поле. */
   assert.match(css, /\.create-listing__section \.mantine-Group-root\[data-grow\]/)
+})
+
+test("шапка уплотняется прежде, чем что-то прятать", () => {
+  /* Ряд собран из логотипа, вкладок, поиска, «Сервисов», кнопки партнёра и
+     правых значков: шесть промежутков по двенадцать пикселей съедали целую
+     вкладку. Уплотнение дешевле, чем пропажа подписи — за неё человек
+     платит вниманием каждый раз, когда ищет раздел. */
+  const header = readFileSync(new URL("../src/components/layout/AppHeader.tsx", import.meta.url), "utf8")
+  assert.match(header, /<Group h="100%" gap=\{6\} wrap="nowrap"/)
+
+  /* Короткие подписи кнопок включаются раньше: «Партнёрам» и «Подать»
+     понятны без остатка фразы, а место освобождают заметное. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /min-width: 1200px\) and \(max-width: 1600px\)/)
 })
