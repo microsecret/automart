@@ -678,11 +678,19 @@ select {
     grid-template-columns: repeat(5, 1fr);
     gap: 4px;
     padding: 8px;
-    border: 1px solid rgba(232, 232, 236, 0.95);
+    /* Панель лежит поверх ленты, и это единственное место в мобильной
+       версии, где тень-смещение уместна: она читается как предмет,
+       положенный на страницу.
+
+       Фон стал непрозрачным. Полупрозрачный с размытием просвечивал
+       карточками при прокрутке, и подписи под иконками читались поверх
+       чужих фотографий. Размытие вдобавок перерисовывалось на каждом
+       кадре прокрутки — на недорогих телефонах это и было причиной
+       рывков внизу экрана. */
+    border: var(--outline);
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(var(--blur-panel));
+    background: var(--market-surface);
+    box-shadow: var(--offset-md);
   }
 
   .mobile-bottom-nav a {
@@ -707,15 +715,18 @@ select {
     background: var(--market-primary-soft);
   }
 
+  /* Подача объявления — главное действие площадки, поэтому единственный
+     сплошной коралловый прямоугольник в панели. Градиент убран: на
+     плитке в сорок пикселей переход между двумя близкими оттенками не
+     виден, зато мешает плоскому языку остальной страницы. */
   .mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
     color: #fff;
-    background: linear-gradient(135deg, #ff4d3d, #ff5c4b);
-    box-shadow: var(--shadow-md);
+    background: var(--market-primary);
   }
 
   :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav {
-    border-color: rgba(58, 60, 73, 0.96);
-    background: rgba(27, 28, 35, 0.94);
+    border-color: var(--market-line);
+    background: var(--market-surface);
     box-shadow: var(--shadow-lg);
   }
 
@@ -798,17 +809,27 @@ select {
      Фон остаётся светлым: кнопки, иконки и текст в шапке рассчитаны на
      светлую основу. */
   background: var(--market-surface) !important;
-  border-bottom-color: var(--market-line) !important;
-  box-shadow: var(--shadow-sm) !important;
-  backdrop-filter: blur(var(--blur-panel));
+  /* Шапку от страницы отделяет линия, а не тень.
+
+     Тень под шапкой на белом фоне давала грязную полосу: размытое серое
+     пятно на чистом листе читается как дефект печати, а не как глубина.
+     Двухпиксельная линия говорит то же самое однозначно.
+
+     Размытие подложки убрано вместе с тенью: оно имело смысл, пока под
+     шапкой просвечивал цветной фон. Под белым размывать нечего, а слой
+     размытия перерисовывается на каждой прокрутке. */
+  border-bottom: var(--outline) !important;
+  box-shadow: none !important;
 }
 
 /* В тёмной теме та же идея, но в своих тонах: глубокий индиго вместо
    светлого, иначе шапка светилась бы белым пятном. */
 [data-mantine-color-scheme="dark"] .market-app-header {
   background: var(--market-surface) !important;
-  border-bottom-color: var(--market-line) !important;
-  box-shadow: var(--shadow-sm) !important;
+  /* В темноте белая линия во всю ширину слепит, поэтому здесь она
+     приглушена до различимой границы: роль та же, вес меньше. */
+  border-bottom: var(--outline-width) solid var(--market-line) !important;
+  box-shadow: none !important;
 }
 
 
@@ -1737,75 +1758,83 @@ select {
   }
 }
 
+/* Приглашение партнёрам — второе по важности действие в шапке.
+
+   Оранжевая заливка с бегущим бликом осталась от прежней палитры и
+   спорила с коралловой кнопкой рядом: два тёплых пятна в одном углу, оба
+   требуют внимания, и глаз не понимает, что здесь главное.
+
+   Лайм несёт в этой системе выгоду, а предложение партнёрам — ровно про
+   выгоду. Он холоднее коралла и не соперничает с ним, оставаясь при этом
+   заметным. Текст тёмный: на лайме белый даёт контраст 1.4. */
 .partner-header-cta {
   position: relative;
-  overflow: hidden;
   flex: 0 0 auto;
-  color: #7c2d12;
-  border: 1px solid color-mix(in srgb, #fb923c 50%, var(--market-line));
-  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
-}
-
-.partner-header-cta::after {
-  position: absolute;
-  inset: -100% auto -100% -45%;
-  width: 34%;
-  content: "";
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.88), transparent);
-  transform: rotate(16deg);
-  animation: partner-header-glint 12s ease-in-out infinite;
+  color: var(--market-accent-ink) !important;
+  border: var(--outline) !important;
+  background: var(--market-accent) !important;
+  box-shadow: var(--offset-sm);
+  transition: transform var(--ease-fast) var(--ease-out), box-shadow var(--ease-fast) var(--ease-out);
 }
 
 .partner-header-cta:hover,
 .partner-header-cta:focus-visible {
-  color: #9a3412;
-  border-color: #fb923c;
-  background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
-  box-shadow: var(--shadow-md);
-  transform: translateY(var(--lift-sm));
+  box-shadow: var(--offset-md);
+  transform: translate(-1px, -1px);
 }
 
-@keyframes partner-header-glint {
-  0%, 76% { left: -45%; }
-  100% { left: 130%; }
+.partner-header-cta:active {
+  box-shadow: none;
+  transform: translate(3px, 3px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .partner-header-cta::after,
-  .header-create-cta::after { animation: none; }
+  .partner-header-cta:hover,
+  .partner-header-cta:focus-visible,
+  .partner-header-cta:active {
+    transform: none;
+  }
 }
 
+/* Главное действие площадки — подать объявление.
+
+   Прежняя кнопка была градиентной и по ней каждые семь секунд пробегал
+   белый блик. Приём знаком по баннерам мобильных игр и по кнопкам
+   «скачать» на файлопомойках: он привлекает внимание ценой доверия.
+   Владелец, глядя на сайт рядом с рекламой автомобильных марок, назвал
+   его дешёвым — блик был одной из причин.
+
+   Осталась плоская коралловая плашка в чёрном контуре с оттиском.
+   Внимание она держит не движением, а тем, что это единственный сплошной
+   цветной прямоугольник в шапке. */
 .header-create-cta {
   position: relative;
-  overflow: hidden;
-  /* Градиент был прописан старыми светлыми оттенками и перебивал углублённую
-     тему, из-за чего главная кнопка сайта осталась блёклой. */
-  background: linear-gradient(135deg, #c22e21 0%, #e63a2b 58%, #c22e21 100%);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
+  border: var(--outline) !important;
+  background: var(--market-primary) !important;
+  color: #fff !important;
+  box-shadow: var(--offset-sm);
+  transition: box-shadow var(--ease-fast) var(--ease-out), transform var(--ease-fast) var(--ease-out);
 }
 
-.header-create-cta::after {
-  position: absolute;
-  inset: -100% auto -100% -45%;
-  width: 30%;
-  content: "";
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.74), transparent);
-  transform: rotate(16deg);
-  animation: header-create-glint 7s 1.4s ease-in-out infinite;
-}
-
+/* Нажатие: кнопка уезжает в собственную тень ровно на её смещение, и та
+   исчезает. Ощущение вдавленной клавиши, а не смены цвета. */
 .header-create-cta:hover,
 .header-create-cta:focus-visible {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(var(--lift-sm));
+  box-shadow: var(--offset-md);
+  transform: translate(-1px, -1px);
 }
 
-@keyframes header-create-glint {
-  0%, 78% { left: -45%; }
-  100% { left: 130%; }
+.header-create-cta:active {
+  box-shadow: none;
+  transform: translate(3px, 3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-create-cta:hover,
+  .header-create-cta:focus-visible,
+  .header-create-cta:active {
+    transform: none;
+  }
 }
 
 .partner-application-modal {
@@ -1829,7 +1858,7 @@ select {
   margin-inline: -22px;
   padding: 26px 24px 22px;
   color: #f8fafc;
-  background: linear-gradient(128deg, #06152f 0%, #c22e21 57%, #8f2018 100%);
+  background: linear-gradient(128deg, #8f2018 0%, #c22e21 57%, #e63a2b 100%);
 }
 
 .partner-application-hero::after {
@@ -2401,7 +2430,7 @@ select {
 
 .catalog-filter-advanced .mantine-Chip-input:checked + .mantine-Chip-label {
   border-color: #e63a2b;
-  background: linear-gradient(135deg, #e63a2b, #ff4d3d);
+  background: var(--market-primary);
   color: #fff;
   box-shadow: var(--shadow-md);
 }
@@ -3210,7 +3239,7 @@ select {
   gap: 10px;
   overflow: hidden;
   color: #ffe8e5;
-  background: linear-gradient(135deg, #182153 0%, #c22e21 51%, #0e7490 100%);
+  background: linear-gradient(135deg, #8f2018 0%, #c22e21 51%, #e63a2b 100%);
 }
 
 .news-list-card__cover::after {
@@ -3536,7 +3565,7 @@ select {
   overflow: hidden;
   border-color: rgba(199, 210, 254, 0.55);
   color: #fff;
-  background: linear-gradient(118deg, #171340 0%, #c22e21 52%, #0f5f8d 100%);
+  background: linear-gradient(118deg, #8f2018 0%, #c22e21 52%, #e63a2b 100%);
   box-shadow: var(--shadow-lg);
 }
 
@@ -7104,10 +7133,18 @@ html:has(.fuel-map-canvas) {
   margin-top: 5px;
 }
 
+/* Шапка рабочего места администратора.
+
+   Синий градиент остался от прежней палитры и тянул за собой цвет,
+   которого на сайте больше нет. Графит нейтрален: он отделяет служебный
+   экран от витрины, не притворяясь вторым фирменным тоном. Коралл здесь
+   работает узкой полосой сверху — как метка принадлежности, а не как
+   заливка. */
 .admin-workspace__hero {
   overflow: hidden;
-  border: 1px solid rgba(126, 145, 255, 0.32);
-  background: linear-gradient(135deg, #111c42 0%, #202d67 58%, #173d6a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 3px solid var(--market-primary);
+  background: linear-gradient(135deg, #14161d 0%, #1f232e 58%, #14161d 100%);
   box-shadow: var(--shadow-lg);
   --admin-hero-copy: rgba(255, 255, 255, 0.74);
   --admin-hero-action-line: rgba(255, 255, 255, 0.48);
@@ -7214,7 +7251,7 @@ html:has(.fuel-map-canvas) {
 
 .admin-workspace-navigation__item[data-active] {
   color: #ffffff !important;
-  background: linear-gradient(135deg, #ff4d3d, #e63a2b) !important;
+  background: var(--market-primary) !important;
   border-color: #ff4d3d !important;
   box-shadow: var(--shadow-md);
 }

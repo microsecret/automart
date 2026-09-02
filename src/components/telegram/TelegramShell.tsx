@@ -251,6 +251,19 @@ export default function TelegramShell({
     root.style.setProperty("--tg-accent-text", theme.button_text_color || FALLBACK.button_text_color)
     root.style.setProperty("--tg-line", theme.section_separator_color || FALLBACK.section_separator_color)
 
+    /* Фирменный акцент поверх платформенного.
+
+       `--tg-accent` приходит из темы мессенджера и у большинства
+       пользователей синий: приложение выглядит родным, но безымянным —
+       ровно как остальные тысячи мини-приложений. Марка в нём не
+       читается совсем.
+
+       Коралл занимает узкую роль: главная кнопка экрана, цена, активный
+       пункт. Всё остальное по-прежнему берёт цвета Telegram, поэтому
+       приложение не спорит с оболочкой и не мигает чужой темой. */
+    root.style.setProperty("--tg-brand", "#ff4d3d")
+    root.style.setProperty("--tg-brand-text", "#ffffff")
+
     /* Тема мессенджера сохраняется на время сеанса, а не навсегда.
 
        Кабинет, объявление и форма подачи открываются как обычные
