@@ -687,7 +687,10 @@ select {
     min-height: 44px;
     place-items: center;
     gap: 2px;
-    border-radius: var(--radius-md);
+    /* Скруглённая плитка вместо прямоугольной: во всём остальном
+       интерфейсе то, что нажимают, имеет мягкую форму, и угловатые
+       пункты панели читались как чужая деталь. */
+    border-radius: var(--radius-lg);
     color: var(--market-muted);
     font-size: 10px;
     font-weight: 600;
@@ -740,7 +743,12 @@ select {
      Полупрозрачность в покое возвращается к полной при касании. */
   .support-chat__launcher {
     right: 10px !important;
-    bottom: 92px !important;
+    /* 92 пикселя — это ровно верхний край плавающей панели, и кнопка
+       ложилась на первую строку содержимого над ней: на главной она
+       накрывала переключатель вида, на других страницах — что придётся.
+       Ещё двадцать пикселей уводят её в промежуток между панелью и
+       содержимым. */
+    bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
     opacity: 0.82;
     transition: opacity var(--ease-base) var(--ease-out);
   }
@@ -2225,6 +2233,18 @@ select {
   font-size: var(--text-caps);
   font-weight: 800;
   line-height: 1;
+}
+
+/* Быстрые сортировки видны там, где для них есть место.
+
+   Ниже 1100 пикселей строка заголовка и так тесная: заголовок раздела,
+   счётчик, список сортировки и переключатель вида. Три кнопки сверх
+   этого вытолкнули бы переключатель на вторую строку. Варианты никуда не
+   пропадают — они остаются в списке рядом. */
+@media (max-width: 68.75em) {
+  .catalog-sort-quick {
+    display: none;
+  }
 }
 
 /* Переключатель вида — капсула с двумя значками внутри.
@@ -8200,6 +8220,17 @@ h1[data-lw-hero] {
   border-color: transparent;
   background: var(--market-surface);
   box-shadow: 0 1px 2px rgb(13 27 50 / 12%), 0 8px 20px -12px rgb(13 27 50 / 40%);
+  /* Поле и кнопка «Найти» стоят вплотную и должны быть одной высоты.
+     Глобальное правило держит поля на 36 пикселях — это верно для
+     плотных форм, но здесь рядом главная кнопка первого экрана в 44, и
+     разница читается как перекос. */
+  --input-height: 44px !important;
+  min-height: 44px !important;
+  padding-inline: 18px;
+}
+
+.home-hero__search-input .mantine-Input-section[data-position="left"] {
+  padding-inline-start: 6px;
 }
 
 .home-hero__search-input .mantine-Input-input:focus-within {

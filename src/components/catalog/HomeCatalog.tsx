@@ -518,6 +518,34 @@ export default function HomePage(p: HomePageProps = {}) {
           {data && <Text size="xs" c="gray.5" aria-live="polite">{data.pagination?.total || 0} {plural(data.pagination?.total || 0, "объявление", "объявления", "объявлений")}</Text>}
         </Stack>
         <Group gap="xs" wrap="nowrap">
+          {/* Частые сортировки — кнопками, а не пунктами списка.
+
+              «Дешевле» и «Дороже» — то, чем пользуются чаще всего на любой
+              доске объявлений, и раньше до них было два действия: раскрыть
+              список, найти строку. Кнопка рядом делает это одним нажатием,
+              а заодно показывает, что список вообще можно сортировать —
+              свёрнутый список об этом молчит.
+
+              Остальные четыре варианта остаются в списке справа: выносить
+              все шесть значило бы забить строку кнопками и потерять
+              разницу между частым и редким. */}
+          <Group gap={6} wrap="nowrap" className="catalog-sort-quick">
+            {[
+              { value: "price_asc", label: "Дешевле" },
+              { value: "price_desc", label: "Дороже" },
+              { value: "newest", label: "Новые" },
+            ].map((option) => (
+              <Button
+                key={option.value}
+                size="sm"
+                variant={sort === option.value ? "filled" : "default"}
+                onClick={() => setSort(option.value)}
+                aria-pressed={sort === option.value}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </Group>
           <Select
             className="catalog-sort-control"
             aria-label="Сортировка объявлений"
