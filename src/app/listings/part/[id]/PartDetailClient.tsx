@@ -425,19 +425,19 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                     />
                   )}
                   {phone ? (
-                    <Button component="a" href={`tel:${phone}`} size="lg" radius="md" leftSection={<IconPhone size={18} />} variant="light" color="indigo">
+                    <Button component="a" href={`tel:${phone}`} size="lg" leftSection={<IconPhone size={18} />} variant="light" color="indigo">
                       {phone}
                     </Button>
                   ) : (
-                    <Button size="lg" radius="md" leftSection={<IconPhone size={18} />} color="indigo" onClick={() => void revealPhone()} loading={contactRevealing} disabled={!data.listingId}>
+                    <Button size="lg" leftSection={<IconPhone size={18} />} color="indigo" onClick={() => void revealPhone()} loading={contactRevealing} disabled={!data.listingId}>
                       Показать телефон
                     </Button>
                   )}
-                  {isSeller && data.listingId && <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>Редактировать объявление</Button>}
-                  <Button size="lg" radius="md" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={`/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}`}>
+                  {isSeller && data.listingId && <Button size="lg" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>Редактировать объявление</Button>}
+                  <Button size="lg" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={`/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}`}>
                     Написать продавцу
                   </Button>
-                  <Button size="lg" radius="md" variant={isFav ? "light" : "default"} color={isFav ? "red" : "gray"} leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />} onClick={toggleDetailFavorite} loading={data.listingId ? isPending(data.listingId) : false} disabled={!data.listingId}>
+                  <Button size="lg" variant={isFav ? "light" : "default"} color={isFav ? "red" : "gray"} leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />} onClick={toggleDetailFavorite} loading={data.listingId ? isPending(data.listingId) : false} disabled={!data.listingId}>
                     {isFav ? "В избранном" : "В избранное"}
                   </Button>
                 </Stack>

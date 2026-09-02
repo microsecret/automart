@@ -107,7 +107,6 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
                 component="a"
                 href={`https://t.me/${botUsername}`}
                 size="xs"
-                radius="md"
                 color="indigo"
                 leftSection={<IconBrandTelegram size={14} />}
               >
@@ -118,7 +117,6 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
               component={Link}
               href={`/auth/signin?callbackUrl=${encodeURIComponent(returnPath)}`}
               size="xs"
-              radius="md"
               variant={fromTelegram ? "subtle" : "filled"}
               color="indigo"
             >
@@ -178,7 +176,7 @@ export default function ReplyForm({ topicId, returnPath }: { topicId: string; re
         />
         {error && <Text size="xs" c="red.6">{error}</Text>}
         <Group>
-          <Button color="indigo" size="sm" radius="md" loading={sending} onClick={() => void submit()}>
+          <Button color="indigo" size="sm" loading={sending} onClick={() => void submit()}>
             Ответить
           </Button>
         </Group>

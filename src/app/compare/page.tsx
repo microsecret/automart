@@ -202,7 +202,7 @@ function CompareContent() {
             Сравнить можно до четырёх объявлений: цены, пробег, год и характеристики
             встанут рядом в одной таблице.
           </Text>
-          <Button component={Link} href="/" variant="light" color="indigo" size="md" radius="md" leftSection={<IconArrowLeft size={16} />}>
+          <Button component={Link} href="/" variant="light" color="indigo" size="md" leftSection={<IconArrowLeft size={16} />}>
             К объявлениям
           </Button>
         </Stack>

@@ -131,7 +131,7 @@ export default function SmartmatchingPage() {
                             <Badge size="xs" color="green" variant="light">Подходит по 4 критериям</Badge>
                           </Group>
                         </Stack>
-                        <Button component={Link} href={v ? `/listings/vehicle/${v.id}` : "/"} variant="light" color="violet" size="xs" radius="md">Открыть</Button>
+                        <Button component={Link} href={v ? `/listings/vehicle/${v.id}` : "/"} variant="light" color="violet" size="xs">Открыть</Button>
                       </Group>
                     </Paper>
                   )

@@ -131,7 +131,6 @@ export default function SignInForm() {
           href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
           fullWidth
           size="md"
-          radius="md"
           color="indigo"
           leftSection={<IconBrandTelegram size={18} />}
         >
@@ -169,7 +168,7 @@ export default function SignInForm() {
             radius="md"
             {...form.getInputProps("password")}
           />
-          <Button type="submit" loading={loading} fullWidth size="md" radius="md" color="indigo">
+          <Button type="submit" loading={loading} fullWidth size="md" color="indigo">
             Войти
           </Button>
         </Stack>

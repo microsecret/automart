@@ -55,7 +55,6 @@ export default function SignUpForm() {
           rel="noreferrer"
           color="indigo"
           size="md"
-          radius="md"
           leftSection={<IconBrandTelegram size={20} />}
           fullWidth
         >

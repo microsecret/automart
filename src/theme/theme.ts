@@ -157,31 +157,81 @@ export const theme = createTheme({
        (padding 8×16 при line-height 20), радиус из шкалы, переход 150ms по
        перечисленным свойствам. Прежние 38px выбивались из ритма полей ввода,
        а свои тени при наведении не совпадали с общей глубиной. */
+    /* Кнопка.
+
+       Раньше все кнопки сайта были одной высоты — 36 пикселей. И «Написать
+       продавцу», ради которой человек пришёл, и «Отмена» рядом с ней.
+       Иерархии не было: глаз не понимал, что здесь главное, и экран
+       читался как набор одинаковых серых прямоугольников. Это и есть
+       ощущение «кнопки какие-то не кнопки».
+
+       Теперь размер несёт смысл. sm остаётся 36 — служебные действия в
+       плотных списках и админке. md вырастает до 44: столько занимает
+       подушечка пальца, и это главные действия страницы. lg — 52, для
+       единственной кнопки, ради которой существует экран.
+
+       Шрифт весом 600 и чуть плотнее по трекингу: подпись на кнопке
+       читается одним куском, а не как обычная строка текста. */
     Button: {
-      defaultProps: { radius: "sm", fw: "600" },
+      /* Радиус «xl» — капсула, а не прямоугольник.
+
+         Кнопки со скруглением в шесть пикселей выглядят как элемент
+         служебной панели: так рисуют кнопки в бухгалтерских программах.
+         Сильное скругление читается как отдельный предмет, который взяли и
+         положили на страницу, — именно это отличает интерфейсы, которые
+         нравятся, от тех, которыми просто пользуются. */
+      defaultProps: { radius: "xl", fw: "600", size: "md" },
+      /* Размеры через vars: `sizes` в теме Mantine 8 не поддерживается,
+         а переменные компонента она подставляет на каждый экземпляр. */
+      vars: (_theme: unknown, props: { size?: string }) => {
+        const scale: Record<string, { h: string; px: string; fz: string }> = {
+          xs: { h: "30px", px: "10px", fz: "0.75rem" },
+          sm: { h: "36px", px: "14px", fz: "0.875rem" },
+          md: { h: "44px", px: "20px", fz: "0.9375rem" },
+          lg: { h: "52px", px: "28px", fz: "1rem" },
+          xl: { h: "58px", px: "32px", fz: "1.0625rem" },
+        }
+        const step = scale[props.size ?? "md"] ?? scale.md
+        return {
+          root: {
+            "--button-height": step.h,
+            "--button-padding-x": step.px,
+            "--button-fz": step.fz,
+          },
+        }
+      },
       styles: {
         root: {
-          height: "36px",
-          paddingInline: "16px",
+          letterSpacing: "-0.006em",
           // Свойства перечислены явно: `all` заставил бы браузер следить и за
           // размерами, а кнопок на странице десятки.
           transition:
             "background 150ms var(--ease-out), border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), color 150ms var(--ease-out), transform 150ms var(--ease-out)",
           fontFamily: "var(--font-display), var(--font-sans), sans-serif",
-          // Кнопка отзывается на курсор: приподнимается под указателем и
-          // вдавливается при нажатии. Без этого интерфейс ощущается статичной
-          // картинкой, даже когда всё работает.
+          // Кнопка ведёт себя как физическая клавиша.
+          //
+          // Под курсором она чуть выходит навстречу и тень под ней растёт —
+          // предмет приподнялся. При нажатии садится ниже исходного
+          // положения, а тень почти исчезает: палец её продавил. Раньше
+          // нажатие только возвращало кнопку на место, и отклика не
+          // чувствовалось — казалось, что нажатие не сработало.
+          //
+          // Масштаб чуть меньше единицы добавляет к движению вниз ощущение
+          // сжатия. Одного смещения мало: на маленькой кнопке пиксель вниз
+          // почти не виден.
           "&:hover:not(:disabled):not([data-loading])": {
             transform: "translateY(-1px)",
             boxShadow: "var(--shadow-md)",
           },
           "&:active:not(:disabled)": {
-            transform: "translateY(0)",
-            boxShadow: "var(--shadow-sm)",
+            transform: "translateY(1px) scale(0.985)",
+            boxShadow: "var(--shadow-xs)",
+            transitionDuration: "60ms",
           },
           "@media (prefers-reduced-motion: reduce)": {
             transition: "background 150ms linear, color 150ms linear",
             "&:hover:not(:disabled):not([data-loading])": { transform: "none" },
+            "&:active:not(:disabled)": { transform: "none" },
           },
         },
       },
@@ -209,8 +259,10 @@ export const theme = createTheme({
        и кнопка стоят разной формы и высоты, и строка выглядит собранной из
        чужих деталей. Подсветка при фокусе даётся тенью-кольцом, а не сменой
        толщины рамки: толщина сдвигает содержимое на пиксель. */
+    /* Поля повторяют форму кнопок: в строке поиска поле и кнопка стоят
+       вплотную, и разная форма там читается как ошибка вёрстки. */
     TextInput: {
-      defaultProps: { radius: "sm", size: "md" },
+      defaultProps: { radius: "xl", size: "md" },
       styles: {
         input: {
           /* Высота через переменную Mantine.
@@ -227,7 +279,7 @@ export const theme = createTheme({
       },
     },
     Select: {
-      defaultProps: { radius: "sm", size: "md" },
+      defaultProps: { radius: "xl", size: "md" },
       styles: {
         input: {
           "--input-height": "36px",
@@ -238,7 +290,7 @@ export const theme = createTheme({
       },
     },
     NumberInput: {
-      defaultProps: { radius: "sm", size: "md" },
+      defaultProps: { radius: "xl", size: "md" },
       styles: {
         input: {
           "--input-height": "36px",
@@ -247,12 +299,14 @@ export const theme = createTheme({
         },
       },
     },
+    /* Многострочное поле остаётся со сдержанным скруглением: капсула на
+       высоком прямоугольнике выглядит нелепо. */
     Textarea: {
-      defaultProps: { radius: "sm" },
+      defaultProps: { radius: "md" },
       styles: { input: { fontFamily: "var(--font-sans), sans-serif" } },
     },
-    MultiSelect: { defaultProps: { radius: "sm", size: "md" } },
-    Autocomplete: { defaultProps: { radius: "sm", size: "md" } },
+    MultiSelect: { defaultProps: { radius: "xl", size: "md" } },
+    Autocomplete: { defaultProps: { radius: "xl", size: "md" } },
 
     /* Бейдж.
 
@@ -345,11 +399,18 @@ export const theme = createTheme({
         },
       },
     },
-    SegmentedControl: { defaultProps: { radius: "sm" } },
-    Chip: { defaultProps: { radius: "sm" } },
-    Notification: { defaultProps: { radius: "sm" } },
-    ActionIcon: { defaultProps: { radius: "sm" } },
-    ThemeIcon: { defaultProps: { radius: "sm" } },
+    /* Всё, что нажимают, — одной формы.
+
+       Переключатель вида, чипы фильтров и кнопки стояли рядом с тремя
+       разными скруглениями: 6, 6 и 10. По отдельности незаметно, вместе
+       читается как собранное из чужих деталей. */
+    SegmentedControl: { defaultProps: { radius: "xl" } },
+    Chip: { defaultProps: { radius: "xl" } },
+    Notification: { defaultProps: { radius: "md" } },
+    // Круглая кнопка-значок: колокольчик, избранное, стрелки галереи.
+    ActionIcon: { defaultProps: { radius: "xl" } },
+    // Значок в круге — как в плитках направлений на главной.
+    ThemeIcon: { defaultProps: { radius: "xl" } },
     Paper: { defaultProps: { radius: "md" } },
     Title: {
       styles: {

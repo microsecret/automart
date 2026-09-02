@@ -74,7 +74,6 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
               component="a"
               href={telegramUrl}
               size="md"
-              radius="md"
               leftSection={<IconBrandTelegram size={20} />}
               fullWidth
             >
@@ -85,7 +84,6 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
             component={Link}
             href={`/auth/signup?callbackUrl=${callbackUrl}`}
             size="md"
-            radius="md"
             variant={telegramUrl ? "default" : "filled"}
             leftSection={<IconUserPlus size={20} />}
             fullWidth

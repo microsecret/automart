@@ -70,12 +70,12 @@ export default function CategoryShowcase() {
               href={href}
               className={styles.card}
               data-tone={tone}
-              radius="md"
+              radius="lg"
               p="sm"
               withBorder
             >
               <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
-                <ThemeIcon variant="light" color={tone} size={30} radius="md" className={styles.icon}>
+                <ThemeIcon variant="light" color={tone} size={34} radius="xl" className={styles.icon}>
                   <Icon size={17} stroke={1.9} />
                 </ThemeIcon>
                 {/* Пока счётчики грузятся, места под них не занимаем —
@@ -92,8 +92,20 @@ export default function CategoryShowcase() {
               </Group>
               <Text className={styles.label}>{label}</Text>
               <Text className={styles.hint}>{hint}</Text>
-              {typeof count === "number" && count > 0 && (
-                <Text className={styles.meta}>{count} {plural(count)}</Text>
+              {/* Нижняя строка есть всегда, пока счётчики загружены.
+
+                  Раньше у раздела без объявлений она просто отсутствовала —
+                  под названием оставался воздух, и плитка выглядела
+                  недоделанной рядом с заполненной соседкой. Разной высоты
+                  строк в одном ряду достаточно, чтобы весь ряд читался как
+                  незавершённый.
+
+                  Стиль для этого случая в модуле уже был написан
+                  (.meta[data-empty]), но его никто не применял. */}
+              {typeof count === "number" && (
+                count > 0
+                  ? <Text className={styles.meta}>{count} {plural(count)}</Text>
+                  : <Text className={styles.meta} data-empty="true">Разместить первым</Text>
               )}
             </Paper>
           )

@@ -209,7 +209,7 @@ export default function PromotePage() {
                   <Divider my={2} />
                   <Group justify="space-between" align="center">
                     <Text fw={800} fz="xl" c="var(--market-ink)" ff="var(--font-display),sans-serif">{opt.price} ₽</Text>
-                    <Button size="sm" radius="md" color={opt.id === "boost" ? "cyan" : opt.id === "premium" ? "orange" : "violet"} onClick={() => handleSelect(opt.id)}>Выбрать</Button>
+                    <Button size="sm" color={opt.id === "boost" ? "cyan" : opt.id === "premium" ? "orange" : "violet"} onClick={() => handleSelect(opt.id)}>Выбрать</Button>
                   </Group>
                 </Stack>
               </Paper>
@@ -236,7 +236,7 @@ export default function PromotePage() {
                 </Group>
                 <Divider />
                 <Group justify="space-between"><Text size="sm" c="gray.5">Стоимость</Text><Text fw={800} fz="xl" c="var(--market-ink)">{selectedOption.price} ₽</Text></Group>
-                <Button fullWidth size="md" radius="md" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} leftSection={<IconCreditCard size={18} />} loading={pending} onClick={handlePay}>
+                <Button fullWidth size="md" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} leftSection={<IconCreditCard size={18} />} loading={pending} onClick={handlePay}>
                   Оплатить {selectedOption.price} ₽
                 </Button>
                 <Text size="xs" c="gray.5" ta="center">После нажатия откроется защищённая платёжная страница. Тариф активируется только после подтверждённой оплаты.</Text>

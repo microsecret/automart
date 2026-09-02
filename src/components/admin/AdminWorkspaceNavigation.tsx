@@ -59,7 +59,6 @@ export default function AdminWorkspaceNavigation({ canManageUsers = true }: Admi
                 className="admin-workspace-navigation__item"
                 data-active={active || undefined}
                 size="xs"
-                radius="md"
                 leftSection={<Icon size={15} />}
                 aria-current={active ? "page" : undefined}
               >

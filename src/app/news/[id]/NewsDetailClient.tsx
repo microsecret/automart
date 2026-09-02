@@ -266,7 +266,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
             <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Stack gap="xs">
                 <Textarea placeholder="Ваш комментарий..." value={comment} onChange={(e) => setComment(e.currentTarget.value)} minRows={2} size="sm" radius="md" />
-                <Group justify="flex-end"><Button size="xs" color="indigo" radius="md" leftSection={<IconSend size={14} />} onClick={submitComment} loading={sending} disabled={!comment.trim()}>Отправить</Button></Group>
+                <Group justify="flex-end"><Button size="xs" color="indigo" leftSection={<IconSend size={14} />} onClick={submitComment} loading={sending} disabled={!comment.trim()}>Отправить</Button></Group>
               </Stack>
             </Card>
           ) : (

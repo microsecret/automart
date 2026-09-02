@@ -881,7 +881,7 @@ function CreateVehicleWorkspace() {
             {/* Кнопка */}
             <Paper className={styles.submitPanel} radius="md" p="sm" withBorder>
               <Stack gap={6}>
-                <Button fullWidth type="submit" size="md" radius="md" color={isGarageMode ? "teal" : "indigo"} loading={loading} disabled={(!isGarageMode && !selectedCategory) || uploadingImages} leftSection={<IconCheck size={18} />}>
+                <Button fullWidth type="submit" size="md" color={isGarageMode ? "teal" : "indigo"} loading={loading} disabled={(!isGarageMode && !selectedCategory) || uploadingImages} leftSection={<IconCheck size={18} />}>
                   {loading ? (isGarageMode ? "Сохраняем..." : "Публикация...") : (isGarageEdit ? "Сохранить изменения" : isGarageMode ? "Сохранить в личный гараж" : "Отправить на модерацию")}
                 </Button>
                 <Text size="xs" c="dimmed" ta="center">{isGarageMode ? "Карточка останется приватной. Опубликовать её можно отдельным действием из гаража." : "Сначала объявление проверит модератор. Статус появится в личном кабинете."}</Text>

@@ -85,7 +85,6 @@ export default function FuelNearbyList({
           </Text>
           <Button
             size="sm"
-            radius="md"
             color="indigo"
             variant="light"
             leftSection={<IconCurrentLocation size={16} />}
@@ -120,7 +119,6 @@ export default function FuelNearbyList({
             <Button
               key={item}
               size="compact-xs"
-              radius="md"
               variant={fuel === item ? "filled" : "default"}
               color="indigo"
               onClick={() => setFuel(item)}

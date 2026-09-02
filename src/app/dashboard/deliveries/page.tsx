@@ -269,7 +269,7 @@ function DeliveriesWorkspace() {
                           <Group gap={6}><IconMapPin size={15} color="#1c4291" /><Text size="sm" fw={700}>{offer.inquiry.city || "Город уточняется"}</Text><Text size="sm" c="dimmed">· {offer.inquiry.name}</Text></Group>
                           {offer.matchReason && <Text size="xs" c="teal.7">{offer.matchReason}</Text>}
                           {offer.inquiry.comment && <Text size="xs" c="dimmed" lineClamp={2}>{offer.inquiry.comment}</Text>}
-                          <Button color="orange" radius="md" onClick={() => acceptAuctionOffer(offer.id)} loading={acceptingOfferId === offer.id} disabled={Boolean(acceptingOfferId)} rightSection={<IconArrowRight size={16} />}>Принять в работу</Button>
+                          <Button color="orange" onClick={() => acceptAuctionOffer(offer.id)} loading={acceptingOfferId === offer.id} disabled={Boolean(acceptingOfferId)} rightSection={<IconArrowRight size={16} />}>Принять в работу</Button>
                         </Stack>
                       </Paper>
                     )
@@ -412,7 +412,7 @@ function DeliveriesWorkspace() {
                 <ThemeIcon variant="light" color="teal" radius="md"><IconShieldCheck size={18} /></ThemeIcon>
                 <Text size="xs" c="dimmed" lh={1.45}>Заявка не открывает доступ автоматически. Платёжные реквизиты здесь не запрашиваются, решение останется в кабинете.</Text>
               </Group>
-              <Button type="submit" loading={partnerSubmitting} color="indigo" radius="md" size="md" leftSection={<IconCheck size={17} />} className="partner-application-submit__button">Отправить на проверку</Button>
+              <Button type="submit" loading={partnerSubmitting} color="indigo" size="md" leftSection={<IconCheck size={17} />} className="partner-application-submit__button">Отправить на проверку</Button>
             </Group>
           </Stack>
         </form>

@@ -324,7 +324,6 @@ export default function FuelAvailabilityReporter({
           <Group gap={6} grow>
             <Button
               size="sm"
-              radius="md"
               color="teal"
               leftSection={<IconCheck size={15} />}
               loading={confirming}
@@ -334,7 +333,6 @@ export default function FuelAvailabilityReporter({
             </Button>
             <Button
               size="sm"
-              radius="md"
               variant="default"
               leftSection={<IconRefresh size={15} />}
               onClick={() => { tapFeedback("light"); setIsOpen(true) }}
@@ -349,7 +347,6 @@ export default function FuelAvailabilityReporter({
         <Button
           className="fuel-report__open"
           size="md"
-          radius="md"
           color={saved ? "teal" : undefined}
           variant={saved ? "light" : "filled"}
           leftSection={saved ? <IconCheck size={18} /> : undefined}
@@ -489,7 +486,6 @@ export default function FuelAvailabilityReporter({
                 <Group gap={6} align="center">
                   <Button
                     size="sm"
-                    radius="md"
                     variant={photo ? "light" : "default"}
                     color={photo ? "teal" : "gray"}
                     leftSection={photo ? <IconCheck size={16} /> : <IconCamera size={16} />}
@@ -500,7 +496,7 @@ export default function FuelAvailabilityReporter({
                     {photo ? "Снимок добавлен" : "Сфотографировать колонку"}
                   </Button>
                   {photo && (
-                    <Button size="sm" radius="md" variant="subtle" color="gray" onClick={() => setPhoto(null)}>
+                    <Button size="sm" variant="subtle" color="gray" onClick={() => setPhoto(null)}>
                       Убрать
                     </Button>
                   )}
@@ -564,7 +560,6 @@ export default function FuelAvailabilityReporter({
             <Button
               className="fuel-report__send"
               size="md"
-              radius="md"
               loading={sending}
               disabled={filled.length === 0}
               onClick={() => void send()}

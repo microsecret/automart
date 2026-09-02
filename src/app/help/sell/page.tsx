@@ -31,7 +31,7 @@ export default function HelpSellPage() {
               <Text size="sm" fw={600}>Готовы продать?</Text>
               <Text size="xs" c="gray.5">Размещение бесплатно</Text>
             </Stack>
-            <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm" radius="md">Разместить</Button>
+            <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm">Разместить</Button>
           </Group>
         </Card>
       </Stack>

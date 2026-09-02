@@ -127,7 +127,7 @@ function ResetPasswordWorkspace() {
                   autoComplete="new-password"
                   error={confirmPassword.length > 0 && password !== confirmPassword ? "Пароли не совпадают" : undefined}
                 />
-                <Button type="submit" size="md" color="indigo" radius="md" loading={loading} fullWidth>Сохранить новый пароль</Button>
+                <Button type="submit" size="md" color="indigo" loading={loading} fullWidth>Сохранить новый пароль</Button>
                 <Text size="xs" c="gray.5" ta="center"><Link href="/auth/signin" style={{ color: "#1c4291" }}>Вернуться ко входу</Link></Text>
               </Stack>
             </form>

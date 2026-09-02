@@ -89,7 +89,7 @@ export default function ValuationPage() {
           <Paper withBorder radius="md" p="lg">
             <Stack gap="md">
               <Select label="Ваш автомобиль" value={vehicleId} onChange={setVehicleId} data={data.vehicles.map((vehicle) => ({ value: vehicle.id, label: `${vehicle.make} ${vehicle.model}, ${vehicle.year}` }))} description={selectedVehicle ? `${selectedVehicle.mileage != null ? `${selectedVehicle.mileage.toLocaleString("ru-RU")} км` : "Пробег не указан"} · ${selectedVehicle.location || "город не указан"}` : undefined} />
-              <Button onClick={calculate} loading={submitting} disabled={!vehicleId} color="indigo" radius="md" size="md" leftSection={<IconCalculator size={18} />}>Рассчитать ориентир</Button>
+              <Button onClick={calculate} loading={submitting} disabled={!vehicleId} color="indigo" size="md" leftSection={<IconCalculator size={18} />}>Рассчитать ориентир</Button>
             </Stack>
           </Paper>
         )}

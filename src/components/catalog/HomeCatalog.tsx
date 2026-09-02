@@ -432,7 +432,6 @@ export default function HomePage(p: HomePageProps = {}) {
                     component={Link}
                     href="#catalog"
                     size="md"
-                    radius="md"
                     className="home-auctions__cta"
                     aria-label="Показать объявления"
                   >
@@ -454,8 +453,8 @@ export default function HomePage(p: HomePageProps = {}) {
                   {/* Кнопка каталога ушла в поиск выше — здесь остались
                       второстепенные пути: аукционы для тех, кто ищет
                       машину из-за границы. */}
-                  <Button component={Link} href="/auctions" variant="white" color="dark" size="md" radius="md" leftSection={<IconSparkles size={16} />}>Мировые аукционы</Button>
-                  <Button component={Link} href="#catalog" variant="subtle" color="gray.0" size="md" radius="md" rightSection={<IconArrowUpRight size={16} />}>Весь каталог</Button>
+                  <Button component={Link} href="/auctions" variant="white" color="dark" size="md" leftSection={<IconSparkles size={16} />}>Мировые аукционы</Button>
+                  <Button component={Link} href="#catalog" variant="subtle" color="gray.0" size="md" rightSection={<IconArrowUpRight size={16} />}>Весь каталог</Button>
                 </Group>
               </Box>
               <Box className="home-auctions__summary">
@@ -503,7 +502,6 @@ export default function HomePage(p: HomePageProps = {}) {
             component={Link}
             href="#catalog"
             size="md"
-            radius="md"
             color="indigo"
             aria-label="Показать объявления"
           >
@@ -531,12 +529,12 @@ export default function HomePage(p: HomePageProps = {}) {
           />
           <Group className="catalog-view-switch" gap={2} role="group" aria-label="Вид объявлений">
             <Tooltip label="Плитка" withArrow>
-              <ActionIcon variant={view === "grid" ? "light" : "subtle"} color="indigo" size="md" radius="md" onClick={() => setView("grid")} aria-label="Показать объявления плиткой" aria-pressed={view === "grid"}>
+              <ActionIcon variant={view === "grid" ? "light" : "subtle"} color="indigo" size="md" radius="xl" onClick={() => setView("grid")} aria-label="Показать объявления плиткой" aria-pressed={view === "grid"}>
                 <IconLayoutGrid size={17} stroke={1.8} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label="Список" withArrow>
-              <ActionIcon variant={view === "list" ? "light" : "subtle"} color="indigo" size="md" radius="md" onClick={() => setView("list")} aria-label="Показать объявления списком" aria-pressed={view === "list"}>
+              <ActionIcon variant={view === "list" ? "light" : "subtle"} color="indigo" size="md" radius="xl" onClick={() => setView("list")} aria-label="Показать объявления списком" aria-pressed={view === "list"}>
                 <IconList size={17} stroke={1.8} />
               </ActionIcon>
             </Tooltip>
@@ -643,7 +641,6 @@ export default function HomePage(p: HomePageProps = {}) {
               variant={showAdvanced ? "filled" : "light"}
               color="indigo"
               size="sm"
-              radius="md"
               onClick={() => { setShowAdvanced((value) => !value); setAdvancedEverOpened(true) }}
               aria-expanded={showAdvanced}
               aria-controls="catalog-advanced-filters"
@@ -834,7 +831,7 @@ export default function HomePage(p: HomePageProps = {}) {
                 <Text size="xs" c="dimmed">Фильтры применяются сразу. Выдача ниже уже обновлена.</Text>
                 <Group gap="xs">
                   {activeFilterCount > 0 && <Button variant="subtle" size="sm" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить фильтры</Button>}
-                  <Button color="indigo" size="sm" radius="md" leftSection={<IconSearch size={15}/>} onClick={() => setShowAdvanced(false)}>
+                  <Button color="indigo" size="sm" leftSection={<IconSearch size={15}/>} onClick={() => setShowAdvanced(false)}>
                     К результатам · {data?.pagination?.total ?? 0}
                   </Button>
                 </Group>

@@ -711,7 +711,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Text size="xs" c="#1c4291">Статусы и поддержка</Text>
                   </Group>
                 </Stack>
-                <Button component={Link} href="/services/safe-deal" variant="light" color="indigo" radius="md" size="md">Как это работает</Button>
+                <Button component={Link} href="/services/safe-deal" variant="light" color="indigo" size="md">Как это работает</Button>
               </Group>
             </Card>
 
@@ -741,7 +741,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     </Group>
                     <Textarea aria-label="Текст отзыва об автомобиле" placeholder="Поделитесь впечатлениями об авто..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} size="sm" minRows={2} autosize />
                     <Group justify="flex-end">
-                      <Button size="sm" color="indigo" radius="md" onClick={submitReview} loading={reviewSubmitting} disabled={!reviewText.trim()}>
+                      <Button size="sm" color="indigo" onClick={submitReview} loading={reviewSubmitting} disabled={!reviewText.trim()}>
                         Отправить отзыв
                       </Button>
                     </Group>
@@ -951,7 +951,6 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       component="a"
                       href={`tel:${phone}`}
                       size="lg"
-                      radius="md"
                       leftSection={<IconPhone size={18} />}
                       variant="light"
                       color="indigo"
@@ -961,7 +960,6 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   ) : (
                     <Button
                       size="lg"
-                      radius="md"
                       leftSection={<IconPhone size={18} />}
                       color="indigo"
                       onClick={() => void revealPhone()}
@@ -975,13 +973,12 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       админ правит чужие карточки при модерации, и раньше ему
                       приходилось искать ту же запись в админ-панели. */}
                   {(session?.user?.id === data.seller.id || isAdmin(session?.user?.role)) && data.listingId && (
-                    <Button size="lg" radius="md" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>
+                    <Button size="lg" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>
                       Редактировать объявление
                     </Button>
                   )}
                   <Button
                     size="lg"
-                    radius="md"
                     variant="outline"
                     color="indigo"
                     leftSection={<IconMessageCircle2 size={18} />}
@@ -998,7 +995,6 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Tooltip label={isFav ? "Убрать из избранного" : "В избранное"} withArrow>
                       <Button
                         size="sm"
-                        radius="md"
                         variant={isFav ? "light" : "default"}
                         color={isFav ? "red" : "gray"}
                         onClick={toggleDetailFavorite}
@@ -1015,7 +1011,6 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                         component={Link}
                         href={data.listingId ? `/compare?ids=${data.listingId}` : "/compare"}
                         size="sm"
-                        radius="md"
                         variant="default"
                         color="gray"
                         aria-label="Сравнить с другими объявлениями"
@@ -1027,7 +1022,6 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Tooltip label="Пожаловаться" withArrow>
                       <Button
                         size="sm"
-                        radius="md"
                         variant="default"
                         color="gray"
                         onClick={openReport}
@@ -1231,14 +1225,13 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
           <Text className="listing-action-bar__note">{data.make} {data.model}, {data.year}</Text>
         </Box>
         {phone ? (
-          <Button component="a" href={`tel:${phone}`} color="indigo" size="md" radius="md" leftSection={<IconPhone size={16} />}>
+          <Button component="a" href={`tel:${phone}`} color="indigo" size="md" leftSection={<IconPhone size={16} />}>
             {phone}
           </Button>
         ) : (
           <Button
             color="indigo"
             size="md"
-            radius="md"
             leftSection={<IconPhone size={16} />}
             onClick={() => void revealPhone()}
             loading={contactRevealing}
@@ -1251,7 +1244,6 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
           variant="light"
           color="indigo"
           size="md"
-          radius="md"
           component={Link}
           href={messageHref}
           aria-label="Написать продавцу"

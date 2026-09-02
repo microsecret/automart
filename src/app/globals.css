@@ -2227,11 +2227,16 @@ select {
   line-height: 1;
 }
 
+/* Переключатель вида — капсула с двумя значками внутри.
+
+   Форма повторяет кнопки и сортировку в том же ряду: раньше три соседних
+   элемента имели три разных скругления, и строка читалась как собранная
+   из чужих деталей. */
 .catalog-view-switch {
   flex-shrink: 0;
   padding: 3px;
   border: 1px solid var(--market-field-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   background: var(--market-field);
 }
 
@@ -2241,9 +2246,14 @@ select {
 
 .catalog-sort-control .mantine-Input-input,
 .catalog-sort-control .mantine-Select-input {
-  min-height: 32px;
+  /* Высота и форма — как у кнопок рядом. Прежние 32 пикселя и
+     шестипиксельное скругление выбивались из строки: сортировка стояла
+     ниже и острее переключателя вида, хотя это соседние элементы одного
+     ряда. */
+  min-height: 38px;
   border-color: var(--market-field-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
+  padding-inline: 16px;
   background: var(--market-surface);
   color: var(--market-control-text);
   font-weight: 600;

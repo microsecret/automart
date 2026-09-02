@@ -89,7 +89,6 @@ export default function FuelSubscribeButton({
             <Text size="xs" c="dimmed">Сообщим, когда тут появится любое топливо</Text>
             <Button
               variant="default"
-              radius="md"
               loading={sending === "STATION:"}
               rightSection={label("STATION", null)}
               onClick={() => void subscribe("STATION", null)}
@@ -108,7 +107,6 @@ export default function FuelSubscribeButton({
                 <Button
                   key={fuel}
                   variant="default"
-                  radius="md"
                   loading={sending === `STATION_FUEL:${fuel}`}
                   rightSection={label("STATION_FUEL", fuel)}
                   onClick={() => void subscribe("STATION_FUEL", fuel)}
@@ -131,7 +129,6 @@ export default function FuelSubscribeButton({
                 <Button
                   key={fuel}
                   variant="default"
-                  radius="md"
                   disabled={!city}
                   loading={sending === `CITY_FUEL:${fuel}`}
                   rightSection={label("CITY_FUEL", fuel)}

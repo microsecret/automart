@@ -21,7 +21,7 @@ export default function ServicesPage() {
             <Text component="h1" ff="var(--font-display),sans-serif">Решения, которые помогают принять решение увереннее.</Text>
             <Text size="sm" c="rgba(255,255,255,0.8)" maw={590}>Проверьте историю, сопоставьте цену, выберите маршрут и ведите сделку в одном понятном сценарии.</Text>
           </Stack>
-          <Button component={Link} href="/services/fuel-map" variant="white" color="dark" radius="md" size="sm" leftSection={<IconRoute size={16} />}>Открыть карту АЗС</Button>
+          <Button component={Link} href="/services/fuel-map" variant="white" color="dark" size="sm" leftSection={<IconRoute size={16} />}>Открыть карту АЗС</Button>
         </Group>
       </Paper>
 

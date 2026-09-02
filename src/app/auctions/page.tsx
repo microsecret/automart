@@ -488,7 +488,6 @@ function AuctionsPageContent() {
                     variant="default"
                     color="indigo"
                     size="md"
-                    radius="lg"
                     fullWidth
                     justify="space-between"
                     leftSection={<BrandIcon brand={auctionMakeLabel(item.make)} size={34} variant="rounded" />}

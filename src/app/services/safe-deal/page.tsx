@@ -56,8 +56,8 @@ export default function SafeDealPage() {
         </Alert>
 
         <Group grow>
-          <Button component={Link} href="/dashboard/deliveries" color="indigo" radius="md">Открыть кабинет сделок</Button>
-          <Button component={Link} href="/auctions" variant="light" color="indigo" radius="md">Посмотреть аукционы</Button>
+          <Button component={Link} href="/dashboard/deliveries" color="indigo">Открыть кабинет сделок</Button>
+          <Button component={Link} href="/auctions" variant="light" color="indigo">Посмотреть аукционы</Button>
         </Group>
       </Stack>
     </Box>

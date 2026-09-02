@@ -303,7 +303,7 @@ export default function CreatePartPage() {
 
             <Paper className={styles.submitPanel} radius="md" p="sm" withBorder>
               <Stack gap={6}>
-                <Button fullWidth type="submit" size="md" radius="md" color="indigo" loading={loading} disabled={uploadingImages} leftSection={<IconCheck size={18} />}>
+                <Button fullWidth type="submit" size="md" color="indigo" loading={loading} disabled={uploadingImages} leftSection={<IconCheck size={18} />}>
                   {loading ? "Публикация..." : "Отправить на модерацию"}
                 </Button>
                 <Text size="xs" c="dimmed" ta="center">Сначала объявление проверит модератор. Статус появится в личном кабинете.</Text>

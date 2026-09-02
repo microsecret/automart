@@ -79,6 +79,19 @@
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="teal"]   { --tone: #5eead4; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="red"]    { --tone: #fda4af; }
 
+/* Плитка отзывается заметно: она поднимается и её значок оживает.
+
+   Прежний подъём на два пикселя без изменения значка почти не читался —
+   человек вёл мышью и не был уверен, что элемент вообще нажимается. */
+.card:hover .icon {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+.card:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: 60ms;
+}
+
 .card:hover {
   transform: translateY(var(--lift-md));
   border-color: color-mix(in srgb, var(--tone) 55%, transparent);
@@ -95,6 +108,7 @@
 
 .icon {
   flex: 0 0 auto;
+  transition: transform 220ms var(--ease-out);
 }
 
 /* Число тем заметнее, чем больше в направлении объявлений: пустые ветки
@@ -142,8 +156,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card { transition: none; }
-  .card:hover { transform: none; }
+  .card, .icon { transition: none; }
+  .card:hover, .card:active { transform: none; }
+  .card:hover .icon { transform: none; }
 }
 
 /* На телефоне направления едут лентой.
@@ -181,15 +196,30 @@
     display: none;
   }
 
+  /* Плитка шире, чем была.
+
+     При 138 пикселях подсказка «Седаны, кроссоверы, хэтчбеки» ломалась на
+     три строки, поэтому её прятали — но взамен под названием не вставало
+     ничего. У разделов без объявлений исчезал ещё и счётчик, и плитка
+     выходила полупустой: заголовок, а под ним воздух. Ряд из таких плиток
+     читается как незаполненный сайт, хотя разделы работают.
+
+     168 пикселей — ширина, при которой подсказка укладывается в две
+     строки. В кадр телефона по-прежнему входит чуть больше двух плиток,
+     так что видно: ряд продолжается. */
   .card {
     flex: 0 0 auto;
-    width: 138px;
+    width: 168px;
     scroll-snap-align: start;
   }
 
-  /* Подсказка под названием в узкой карточке переносится на три строки. */
+  /* Две строки, дальше — многоточие: третья строка растянула бы плитки
+     ряда до разной высоты. */
   .hint {
-    display: none;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 }
 

@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
                 <Text fw={700} fz="lg" c="var(--market-ink)">Письмо отправлено</Text>
                 <Text size="sm" c="gray.5" ta="center">Если аккаунт с таким email существует, инструкции уже отправлены.</Text>
               </Stack>
-              <Button component={Link} href="/auth/signin" variant="light" color="indigo" radius="md" leftSection={<IconArrowLeft size={16} />}>Вернуться ко входу</Button>
+              <Button component={Link} href="/auth/signin" variant="light" color="indigo" leftSection={<IconArrowLeft size={16} />}>Вернуться ко входу</Button>
             </Stack>
           </Card>
         ) : (
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
                   <Text size="xs" c="gray.7">Мы отправим одноразовую ссылку для установки нового пароля.</Text>
                 </Alert>
                 <TextInput label="Email" placeholder="your@email.ru" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} size="md" leftSection={<IconMail size={18} />} />
-                <Button type="submit" size="md" color="indigo" radius="md" loading={loading} fullWidth>Отправить ссылку</Button>
+                <Button type="submit" size="md" color="indigo" loading={loading} fullWidth>Отправить ссылку</Button>
                 <Text size="xs" c="gray.5" ta="center">
                   Вспомнили пароль? <Link href="/auth/signin" style={{ color: "#1c4291" }}>Войти</Link>
                 </Text>

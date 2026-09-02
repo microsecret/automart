@@ -59,7 +59,7 @@ function NewMessageContent() {
               Так покупатель сразу видит предмет обсуждения, а продавец получает защищённую переписку по своему объявлению.
             </Text>
           </Stack>
-          <Button component={Link} href="/" size="md" radius="md" rightSection={<IconArrowRight size={17} />}>
+          <Button component={Link} href="/" size="md" rightSection={<IconArrowRight size={17} />}>
             Открыть объявления
           </Button>
         </Stack>

@@ -59,7 +59,7 @@ export default function HistoryCheckPage() {
         ) : !data || data.vehicles.length === 0 ? (
           <Paper withBorder radius="md" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="green"><IconCar size={25} /></ThemeIcon><Text fw={700}>Нет автомобиля для проверки</Text><Text size="sm" c="dimmed" ta="center">Добавьте легковой автомобиль в объявление или личный гараж.</Text><Button component={Link} href="/listings/create/vehicle" color="green">Разместить объявление</Button></Stack></Paper>
         ) : (
-          <Paper withBorder radius="md" p="lg"><Stack gap="md"><Select label="Ваш автомобиль" value={vehicleId} onChange={setVehicleId} data={data.vehicles.map((vehicle) => ({ value: vehicle.id, label: `${vehicle.make} ${vehicle.model}, ${vehicle.year}` }))} /><Button onClick={createRequest} loading={submitting} disabled={!vehicleId} color="green" radius="md" size="md" leftSection={<IconShieldCheck size={18} />}>Создать заявку на проверку</Button></Stack></Paper>
+          <Paper withBorder radius="md" p="lg"><Stack gap="md"><Select label="Ваш автомобиль" value={vehicleId} onChange={setVehicleId} data={data.vehicles.map((vehicle) => ({ value: vehicle.id, label: `${vehicle.make} ${vehicle.model}, ${vehicle.year}` }))} /><Button onClick={createRequest} loading={submitting} disabled={!vehicleId} color="green" size="md" leftSection={<IconShieldCheck size={18} />}>Создать заявку на проверку</Button></Stack></Paper>
         )}
 
         {requestError && <Alert color="red" radius="md">{requestError}</Alert>}

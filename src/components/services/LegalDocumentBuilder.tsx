@@ -189,7 +189,7 @@ export default function LegalDocumentBuilder() {
         </Grid>
 
         {error && <Alert color="red" icon={<IconInfoCircle size={18} />}>{error}</Alert>}
-        <Button size="md" radius="md" color="indigo" leftSection={<IconDownload size={18} />} onClick={download}>Скачать {kind === "sale" ? "договор" : "акт"} в RTF</Button>
+        <Button size="md" color="indigo" leftSection={<IconDownload size={18} />} onClick={download}>Скачать {kind === "sale" ? "договор" : "акт"} в RTF</Button>
         <Text size="xs" c="dimmed">Перед подписанием сверьте сведения с оригиналами документов. Шаблон не учитывает доверенность, долевую собственность, наследство, юридическое лицо и иные особые обстоятельства — для них нужна индивидуальная проверка.</Text>
       </Stack>
     </Paper>

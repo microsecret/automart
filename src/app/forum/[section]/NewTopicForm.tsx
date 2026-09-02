@@ -102,7 +102,6 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
                 component="a"
                 href={`https://t.me/${botUsername}`}
                 size="xs"
-                radius="md"
                 color="indigo"
                 leftSection={<IconBrandTelegram size={14} />}
               >
@@ -113,7 +112,6 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
               component={Link}
               href={`/auth/signin?callbackUrl=${encodeURIComponent(`/forum/${sectionSlug}`)}`}
               size="xs"
-              radius="md"
               variant={fromTelegram ? "subtle" : "filled"}
               color="indigo"
             >
@@ -209,7 +207,6 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
           variant="light"
           color="indigo"
           size="sm"
-          radius="md"
           leftSection={<IconPlus size={16} />}
           onClick={() => setOpened(true)}
         >
@@ -252,7 +249,7 @@ export default function NewTopicForm({ sectionSlug }: { sectionSlug: string }) {
             <PollDraftFields value={poll} onChange={setPoll} disabled={sending} />
             {error && <Text size="xs" c="red.6">{error}</Text>}
             <Group gap="xs">
-              <Button color="indigo" size="sm" radius="md" loading={sending} onClick={() => void submit()}>
+              <Button color="indigo" size="sm" loading={sending} onClick={() => void submit()}>
                 Опубликовать
               </Button>
               <Button variant="subtle" color="gray" size="sm" onClick={() => setOpened(false)} disabled={sending}>

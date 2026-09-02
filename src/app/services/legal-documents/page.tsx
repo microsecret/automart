@@ -38,7 +38,7 @@ export default function LegalDocumentsPage() {
               <Text component="h1" ff="var(--font-display),sans-serif">Подготовьте сделку спокойно и без пропущенных деталей.</Text>
               <Text size="sm" c="rgba(255,255,255,0.8)" maw={620}>Единый чек-лист для автомобиля, мототехники и передачи. Данные из объявления можно сверить перед встречей с продавцом.</Text>
             </Stack>
-            <Button component={Link} href="/services/safe-deal" variant="white" color="dark" radius="md" size="sm" rightSection={<IconArrowRight size={16} />}>Как проходит сделка</Button>
+            <Button component={Link} href="/services/safe-deal" variant="white" color="dark" size="sm" rightSection={<IconArrowRight size={16} />}>Как проходит сделка</Button>
           </Group>
         </Paper>
 

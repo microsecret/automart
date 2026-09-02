@@ -296,8 +296,8 @@ function DashboardContent() {
               </Text>
             </Stack>
             <Group gap="xs" wrap="wrap">
-              <Button component={Link} href="/listings/create/vehicle" color="indigo" radius="md" size="sm" leftSection={<IconPlus size={16} />}>Новое объявление</Button>
-              <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" radius="md" size="sm" leftSection={<IconTruckDelivery size={16} />}>Мои доставки</Button>
+              <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm" leftSection={<IconPlus size={16} />}>Новое объявление</Button>
+              <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" size="sm" leftSection={<IconTruckDelivery size={16} />}>Мои доставки</Button>
             </Group>
           </Group>
 
@@ -453,7 +453,6 @@ function DashboardContent() {
                             component={Link}
                             href={`/listings/${l.id}/promote`}
                             size="compact-sm"
-                            radius="md"
                             variant="light"
                             color="violet"
                             leftSection={<IconTrendingUp size={14} />}

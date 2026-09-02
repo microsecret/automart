@@ -143,10 +143,10 @@ export default function PartsShowcase() {
           </Stack>
 
           <Group gap="xs">
-            <Button component={Link} href="/dashboard/store" variant="light" color="indigo" radius="md">
+            <Button component={Link} href="/dashboard/store" variant="light" color="indigo">
               Открыть магазин
             </Button>
-            <Button component={Link} href="/listings/create/part" variant="subtle" color="gray" radius="md">
+            <Button component={Link} href="/listings/create/part" variant="subtle" color="gray">
               Разместить одну деталь
             </Button>
           </Group>

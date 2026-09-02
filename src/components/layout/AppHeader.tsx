@@ -265,7 +265,6 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
             component={Link}
             href="/dashboard/deliveries?partner=apply"
             size="compact-sm"
-            radius="md"
             leftSection={<IconHeartHandshake size={15} stroke={1.9} />}
             className="partner-header-cta"
           >
@@ -459,7 +458,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
             ) : (
               <>
                 <Box visibleFrom="sm"><Divider orientation="vertical" mx={2} h={26} /></Box>
-                <Button component={Link} href="/auth/signin" variant="default" color="gray" size="sm" radius="md" styles={{ root: { height: 38, fontWeight: 700 } }}>
+                <Button component={Link} href="/auth/signin" variant="default" color="gray" size="sm" styles={{ root: { height: 38, fontWeight: 700 } }}>
                   Войти
                 </Button>
                 {/* Отдельной «Регистрации» в шапке нет: на 1440px она вместе с

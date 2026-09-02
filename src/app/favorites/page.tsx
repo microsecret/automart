@@ -65,7 +65,7 @@ export default function FavoritesPage() {
                   <Text fw={600} fz="lg" c="var(--market-ink)">В избранном пусто</Text>
                   <Text size="sm" c="gray.5" ta="center">Нажимайте на ♥ в карточках объявлений, чтобы сохранить их здесь</Text>
                 </Stack>
-                <Button component={Link} href="/" variant="light" color="indigo" size="sm" radius="md">Перейти к объявлениям</Button>
+                <Button component={Link} href="/" variant="light" color="indigo" size="sm">Перейти к объявлениям</Button>
               </Stack>
             </Center>
           </Paper>

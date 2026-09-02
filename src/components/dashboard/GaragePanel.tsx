@@ -53,7 +53,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
             <Text size="sm" c="dimmed">Ваши автомобили не публикуются в каталоге и доступны только вам.</Text>
           </Stack>
         </Group>
-        <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />}>Добавить автомобиль</Button>
+        <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" size="sm" leftSection={<IconPlus size={16} />}>Добавить автомобиль</Button>
       </Group>
 
       {isLoading ? (
@@ -119,7 +119,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
                       </ActionIcon>
                     </Group>
                   </Group>
-                  <Button component={Link} href={`/listings/create/vehicle?garageId=${encodeURIComponent(vehicle.id)}`} variant="light" color="teal" size="xs" radius="md" fullWidth rightSection={<IconArrowRight size={14} />}>Продолжить объявление</Button>
+                  <Button component={Link} href={`/listings/create/vehicle?garageId=${encodeURIComponent(vehicle.id)}`} variant="light" color="teal" size="xs" fullWidth rightSection={<IconArrowRight size={14} />}>Продолжить объявление</Button>
                 </Stack>
               </Paper>
             )
@@ -131,7 +131,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
             <ThemeIcon variant="light" color="teal" size={54} radius="xl"><IconCar size={27} /></ThemeIcon>
             <Text fw={700} fz="lg">В гараже пока нет автомобилей</Text>
             <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно. Когда понадобится, создайте из неё объявление без повторного ввода.</Text>
-            <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" radius="md" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>
+            <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>
           </Stack>
         </Center>
       )}

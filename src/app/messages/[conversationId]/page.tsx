@@ -350,7 +350,6 @@ function ConversationWorkspace() {
             loading={sending}
             disabled={!text.trim() && attachments.length === 0}
             color="indigo"
-            radius="md"
             aria-label="Отправить"
           >
             <IconSend size={18} />

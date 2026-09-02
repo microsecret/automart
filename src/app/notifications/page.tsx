@@ -125,10 +125,10 @@ export default function NotificationsPage() {
                   события по сделкам. Разместите объявление — и первые отклики придут сюда.
                 </Text>
                 <Group gap="xs" mt="xs">
-                  <Button component={Link} href="/listings/create/vehicle" size="sm" radius="md">
+                  <Button component={Link} href="/listings/create/vehicle" size="sm">
                     Разместить объявление
                   </Button>
-                  <Button component={Link} href="/" size="sm" radius="md" variant="default">
+                  <Button component={Link} href="/" size="sm" variant="default">
                     Смотреть каталог
                   </Button>
                 </Group>
