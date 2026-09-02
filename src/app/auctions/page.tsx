@@ -458,7 +458,7 @@ function AuctionsPageContent() {
                 size="sm"
               />
           </Box>
-          {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
+          {hasInvalidPriceRange && <Text size="xs" c="var(--market-danger-text)">Цена «от» не может быть выше цены «до».</Text>}
           </Stack>
         </Paper>
 

@@ -333,7 +333,7 @@ export default function MarkupEditor({
           </Box>
 
           {uploadError && (
-            <Text size="xs" c="red" mt={3} role="alert">{uploadError}</Text>
+            <Text size="xs" c="var(--market-danger-text)" mt={3} role="alert">{uploadError}</Text>
           )}
 
           <Text size="xs" c="var(--market-muted)" mt={3}>

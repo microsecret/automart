@@ -188,7 +188,7 @@ export default function SupportChat() {
                 {chat.isLoading ? (
                   <Stack align="center" py="xl"><Loader size="sm" /><Text size="xs" c="dimmed">Загружаем обращение…</Text></Stack>
                 ) : chat.error ? (
-                  <Stack align="center" py="xl"><IconMessageCircle2 size={30} color="gray" /><Text size="sm" c="red" ta="center">Не удалось загрузить переписку</Text><Button size="xs" variant="light" onClick={() => void chat.mutate()}>Повторить</Button></Stack>
+                  <Stack align="center" py="xl"><IconMessageCircle2 size={30} color="gray" /><Text size="sm" c="var(--market-danger-text)" ta="center">Не удалось загрузить переписку</Text><Button size="xs" variant="light" onClick={() => void chat.mutate()}>Повторить</Button></Stack>
                 ) : messages.length === 0 ? (
                   <Paper withBorder radius="md" p="md" bg="white">
                     <Group gap="sm" align="flex-start" wrap="nowrap">
@@ -259,7 +259,7 @@ export default function SupportChat() {
             </ScrollArea>
 
             <Box p="sm">
-              {error && <Text size="xs" c="red" mb="xs">{error}</Text>}
+              {error && <Text size="xs" c="var(--market-danger-text)" mb="xs">{error}</Text>}
               {!session?.user && (
                 <>
                   <Button

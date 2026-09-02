@@ -1247,9 +1247,13 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                       точек и до сих пор нигде не показывались. */}
                   {(() => {
                     const hours = describeOpeningHours(selectedStation.openingHours)
-                    if (hours.kind === "always") return <Text component="span" c="teal" fw={600}>Круглосуточно · </Text>
-                    if (hours.kind === "open") return <Text component="span" c="teal" fw={600}>Открыто до {hours.until} · </Text>
-                    if (hours.kind === "closed") return <Text component="span" c="orange" fw={600}>Закрыто, откроется в {hours.opensAt} · </Text>
+                    /* Ступени 9, а не стандартные 6: светлые дают контраст 2.55
+                       на белой карточке при норме 4.5 для мелкого текста. Карту
+                       заправок смотрят в машине и на солнце — там разница между
+                       «открыто» и «закрыто» решает, ехать или нет. */
+                    if (hours.kind === "always") return <Text component="span" c="var(--market-success-text)" fw={600}>Круглосуточно · </Text>
+                    if (hours.kind === "open") return <Text component="span" c="var(--market-success-text)" fw={600}>Открыто до {hours.until} · </Text>
+                    if (hours.kind === "closed") return <Text component="span" c="orange.9" fw={600}>Закрыто, откроется в {hours.opensAt} · </Text>
                     return hours.label ? <Text component="span" c="dimmed">{hours.label} · </Text> : null
                   })()}
                   {selectedStation.address || selectedStationAddress || "Уточняем адрес…"}

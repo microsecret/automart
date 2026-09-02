@@ -636,7 +636,7 @@ export default function HomePage(p: HomePageProps = {}) {
             )}
           </Box>
 
-          {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
+          {hasInvalidPriceRange && <Text size="xs" c="var(--market-danger-text)">Цена «от» не может быть выше цены «до».</Text>}
 
           {!isPartSearch && <Group justify="space-between" align="center">
             <Button
@@ -923,7 +923,28 @@ export default function HomePage(p: HomePageProps = {}) {
 
       {data && data.pagination?.pages > 1 && (
         <Stack align="center" gap={6}>
-          <Pagination value={page} onChange={setPage} total={data.pagination.pages} boundaries={1} siblings={1} size="sm" color="indigo" />
+          {/* Смена страницы возвращает к началу списка.
+
+              Пагинация стоит под лентой из двадцати карточек. Дочитав до
+              низа и нажав «2», человек оставался на той же высоте — то есть
+              в конце новой страницы: ему показывали её последние карточки,
+              а первых он не видел. Сетка выглядит одинаково, поэтому со
+              стороны казалось, что нажатие просто не сработало.
+
+              На телефоне это особенно грубо: вернуться наверх — пять-шесть
+              махов пальцем. */}
+          <Pagination
+            value={page}
+            onChange={(next) => {
+              setPage(next)
+              document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }}
+            total={data.pagination.pages}
+            boundaries={1}
+            siblings={1}
+            size="sm"
+            color="indigo"
+          />
           <Text size="xs" c="dimmed">Страница {page} из {data.pagination.pages} · по {data.pagination.limit} объявлений</Text>
         </Stack>
       )}

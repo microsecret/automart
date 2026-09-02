@@ -105,7 +105,7 @@ export default function AdminForumPage() {
 
         {error && (
           <Card withBorder radius="md" p="md">
-            <Text size="sm" c="red">Не удалось загрузить очередь. Обновите страницу.</Text>
+            <Text size="sm" c="var(--market-danger-text)">Не удалось загрузить очередь. Обновите страницу.</Text>
           </Card>
         )}
 

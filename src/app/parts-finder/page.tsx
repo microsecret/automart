@@ -360,7 +360,7 @@ function PartsContent() {
             </Box>
             <Select label="Формат сделки" placeholder="Любой" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
           </Box>
-        {hasInvalidPriceRange && <Text size="xs" c="red">Цена «от» не может быть выше цены «до».</Text>}
+        {hasInvalidPriceRange && <Text size="xs" c="var(--market-danger-text)">Цена «от» не может быть выше цены «до».</Text>}
         {(partType || make || conditions.length || availability.length || saleFormat || priceFrom || priceTo) && (
           <Group gap={6} wrap="wrap">
             <Text size="xs" c="gray.5">Активные:</Text>

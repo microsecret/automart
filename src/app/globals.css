@@ -61,7 +61,19 @@
   --market-label: #475467;
   --market-control-text: #273142;
   --market-placeholder: #667085;
+  /* Подсветка поля при вводе — мягкая заливка вокруг рамки. Здесь
+     прозрачность уместна: это не единственный признак фокуса, рядом
+     меняется цвет самой рамки. */
   --market-focus: rgba(20, 48, 107, 0.2);
+  /* Кольцо фокуса при ходьбе по клавиатуре — единственный признак того,
+     где человек сейчас находится, и другого у него нет.
+
+     Прежний цвет был тем же синим при двадцати процентах непрозрачности:
+     на белом это даёт контраст 1.46 при норме 3. То есть кольцо было, но
+     разглядеть его удавалось не всем и не всегда — а на ссылках нижней
+     панели, где нет ни рамок, ни подчёркиваний, оно вообще единственная
+     подсказка. */
+  --market-focus-ring: #14306b;
   /* Мягкая подложка отличалась от фона страницы всего на 6% светлоты, поэтому
      активный пункт меню было не отличить от обычного. */
   --market-primary-soft: #dbe4f7;
@@ -166,6 +178,17 @@
      тёмной подложке. Токен переключается вместе с темой. */
   --market-success-text: #15803d;
   --market-warning-text: #92400e;
+  /* Красный текст ошибок.
+
+     В разметке он задавался мантиновским `c="red"` — это ступень 6, а она
+     даёт на белом контраст 3.28 при норме 4.5 для мелкого текста. Ровно
+     так набраны сообщения «Цена «от» не может быть выше цены «до»» и
+     ошибки загрузки фото: текст, который человек читает именно тогда,
+     когда у него что-то не получилось.
+
+     Токеном, а не ступенью: ступень одна на обе темы, и то, что читается
+     на белом, тонет на чёрном. */
+  --market-danger-text: #c92a2a;
   --market-warning-surface: #fff7ed;
   --market-warning-line: #fed7aa;
   --market-caution-surface: #fef3c7;
@@ -246,6 +269,8 @@
   --market-control-text: #f4f4f5;
   --market-placeholder: #9fa3b5;
   --market-focus: rgba(91, 130, 214, 0.32);
+  /* На тёмном фоне тёмно-синее кольцо не видно — берём светлую ступень. */
+  --market-focus-ring: #8fa9de;
   --market-primary-soft: #252846;
   /* Тёмный индиго на тёмном фоне даёт контраст 1.8 — нечитаемо. В тёмной теме
      основной тон светлеет, сохраняя оттенок. */
@@ -267,6 +292,8 @@
   --market-success-line: #22503a;
   --market-success-text: #4ade80;
   --market-warning-text: #fbbf24;
+  /* На тёмной подложке наоборот: тёмно-красный даёт 2.1, нужен светлый. */
+  --market-danger-text: #ff8787;
   --market-warning-surface: #2a1e12;
   --market-warning-line: #5c3d1f;
   --market-caution-surface: #2a2412;
@@ -444,7 +471,7 @@ h4, h5, h6 { letter-spacing: var(--track-title); }
 
 /* Один заметный, но спокойный focus-ring для клавиатурной навигации. */
 :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -598,8 +625,15 @@ select {
     padding: 14px 12px 36px;
   }
 
+  /* Запас под плавающую панель.
+
+     Сама панель поднята на высоту полосы жестов (env(safe-area-inset-bottom)),
+     а запас под неё эту полосу не учитывал — на айфонах с жестовой полосой
+     последние тридцать четыре пикселя страницы уходили под панель. Чаще
+     всего там оказывалась кнопка «Написать продавцу» или последняя строка
+     описания. */
   .app-main-content {
-    padding-bottom: 92px;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   }
 
   .market-search-grid,
@@ -763,7 +797,14 @@ select {
   background: var(--market-surface) !important;
   border-bottom-color: var(--market-line) !important;
   box-shadow: var(--shadow-sm) !important;
-  backdrop-filter: blur(var(--blur-panel));
+  /* Размытия подложки здесь нет намеренно.
+
+     Оно стояло, но фон шапки полностью непрозрачен — размывать под ним
+     нечего, эффекта не было ни на одном экране. При этом браузер на
+     каждом кадре прокрутки поднимал шапку в отдельный слой и заново
+     считал размытие всего, что под ней проезжает. Шапка видна на любой
+     странице, поэтому платили за это всегда — особенно недорогие
+     телефоны, где прокрутка каталога подёргивалась. */
 }
 
 /* В тёмной теме та же идея, но в своих тонах: глубокий индиго вместо
@@ -922,7 +963,7 @@ select {
 
 .market-app-header__link:focus-visible,
 .market-side-panel__title-link:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -1718,7 +1759,22 @@ select {
   content: "";
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.88), transparent);
   transform: rotate(16deg);
-  animation: partner-header-glint 12s ease-in-out infinite;
+  /* Раньше блик пробегал сам по себе каждые двенадцать секунд.
+
+     Вечная анимация не давала браузеру усыпить слой шапки: он
+     перерисовывался постоянно, на любой странице, даже когда человек
+     просто читает объявление. На телефоне это расход батареи ради
+     движения, которого никто не ждал и которое отвлекало от чтения.
+
+     Теперь блик — отклик на внимание: он проходит, когда кнопку
+     наводят, и говорит, что она живая. */
+  animation: partner-header-glint 1.1s var(--ease-out);
+  animation-play-state: paused;
+}
+
+.partner-header-cta:hover::after,
+.partner-header-cta:focus-visible::after {
+  animation-play-state: running;
 }
 
 .partner-header-cta:hover,
@@ -1731,8 +1787,8 @@ select {
 }
 
 @keyframes partner-header-glint {
-  0%, 76% { left: -45%; }
-  100% { left: 130%; }
+  from { left: -45%; }
+  to { left: 130%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1757,7 +1813,13 @@ select {
   content: "";
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.74), transparent);
   transform: rotate(16deg);
-  animation: header-create-glint 7s 1.4s ease-in-out infinite;
+  animation: header-create-glint 900ms var(--ease-out);
+  animation-play-state: paused;
+}
+
+.header-create-cta:hover::after,
+.header-create-cta:focus-visible::after {
+  animation-play-state: running;
 }
 
 .header-create-cta:hover,
@@ -1767,8 +1829,8 @@ select {
 }
 
 @keyframes header-create-glint {
-  0%, 78% { left: -45%; }
-  100% { left: 130%; }
+  from { left: -45%; }
+  to { left: 130%; }
 }
 
 .partner-application-modal {
@@ -2585,13 +2647,13 @@ select {
 .listing-card[data-vehicle-type="air"] { --listing-accent: #0284c7; }
 
 .listing-card:has(a:focus-visible) {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 3px;
 }
 
 .part-result-card:has(a:focus-visible),
 .auction-result-card:has(a:focus-visible) {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 3px;
 }
 
@@ -3073,7 +3135,7 @@ select {
 }
 
 .listing-card__favorite:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -3790,7 +3852,7 @@ select {
 .messages-conversation-row:focus-visible {
   position: relative;
   z-index: 1;
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: -3px;
 }
 
@@ -4980,7 +5042,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .fuel-map-fuel-chip:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -5047,7 +5109,7 @@ html:has(.fuel-map-canvas) {
   }
 
   .fuel-map-sheet__handle:focus-visible {
-    outline: 3px solid var(--market-focus);
+    outline: 3px solid var(--market-focus-ring);
     outline-offset: -3px;
   }
 }
@@ -5078,7 +5140,7 @@ html:has(.fuel-map-canvas) {
 /* Карточка управляется и с клавиатуры, поэтому фокус должен быть виден так
    же явно, как наведение мышью. */
 .fuel-station-card[data-clickable]:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
   border-color: var(--market-primary);
 }
@@ -5151,7 +5213,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .fuel-card-tab:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: -2px;
 }
 
@@ -5209,7 +5271,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .fuel-price-row:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -5430,7 +5492,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .fuel-share:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -5493,7 +5555,7 @@ html:has(.fuel-map-canvas) {
 .fuel-report__more:focus-visible,
 .fuel-report__cancel:focus-visible,
 .fuel-report__queue-option:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -6823,7 +6885,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .part-result-card__cta:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -7568,7 +7630,7 @@ html:has(.fuel-map-canvas) {
    как и пользователь мыши, иначе табом по списку невозможно ориентироваться. */
 .market-linked-card:focus-visible,
 a:focus-visible > .market-linked-card {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 3px;
 }
 
@@ -8022,8 +8084,18 @@ h1[data-lw-hero] {
      открывал соседний раздел — а это единственная навигация по сайту на
      телефоне. */
   .market-side-panel .mantine-NavLink-root,
-  .market-side-account__link {
+  .market-side-account__link,
+  /* Заголовки разделов — «Запчасти», «Мировые аукционы», «Сервисы» — это
+     обычные ссылки, а не NavLink, поэтому под правило выше они не
+     попадали. При этом ведут они в сами разделы каталога, то есть это
+     главные входы в меню, а высота у них была около тридцати пикселей. */
+  .market-side-panel__title-link {
     min-height: 44px;
+  }
+
+  .market-side-panel__title-link {
+    display: flex;
+    align-items: center;
   }
 
   /* Значок, стоящий поверх фотографии или в углу карточки, растягивать
@@ -8292,8 +8364,16 @@ h1[data-lw-hero] {
   display: none;
   align-items: center;
   gap: 10px;
-  /* Над плавающей нижней навигацией — та же арифметика, что у аукционов. */
-  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  /* Полоса стоит у самого низа экрана.
+
+     Запас в 92 пикселя — это высота плавающей навигации, но навигация
+     появляется только ниже 640, а сама полоса — до 1152. На планшете и
+     узком ноутбуке между ними ничего нет, и полоса с ценой и кнопкой
+     «Написать продавцу» висела над пустой полосой в девяносто пикселей.
+
+     У аукциона это уже исправлено тем же способом: запас переехал в
+     медиазапрос ниже. */
+  bottom: 0;
   padding: 10px 14px;
   border-top: 1px solid var(--market-line);
   background: var(--market-surface);
@@ -8306,6 +8386,14 @@ h1[data-lw-hero] {
   .listing-action-bar {
     display: flex;
     animation: listing-action-bar-in 240ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+}
+
+/* Ниже 640 под полосой появляется плавающая навигация — полоса встаёт
+   над ней, а не поверх. */
+@media (max-width: 640px) {
+  .listing-action-bar {
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -9316,7 +9404,7 @@ h1[data-lw-hero] {
 }
 
 .fuel-report__closed:focus-visible {
-  outline: 3px solid var(--market-focus);
+  outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
 
@@ -9782,5 +9870,21 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
        нужна вся ширина карточки. */
     max-width: 100%;
     width: 100%;
+  }
+}
+/* То же самое, пока человек печатает.
+
+   На Android клавиатура сжимает окно снизу, и плавающая панель садится
+   ровно над ней — поверх поля, в которое человек в этот момент вводит
+   текст, или поверх кнопки «Далее» под ним. Особенно мешает в форме
+   подачи объявления: полей там много, и панель загораживает то одно, то
+   другое на каждом шаге.
+
+   `:has` с `:focus` — единственный способ узнать про клавиатуру из CSS:
+   события её появления браузеры не дают. Пока поле в фокусе, панель не
+   нужна — человек занят вводом, а не переходом в другой раздел. */
+@media (max-width: 640px) {
+  body:has(input:focus, textarea:focus, [contenteditable="true"]:focus) .mobile-bottom-nav {
+    display: none;
   }
 }

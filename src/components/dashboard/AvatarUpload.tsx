@@ -99,7 +99,7 @@ export default function AvatarUpload({ currentImage, name, onChange, disabled }:
         </Box>
       </Group>
 
-      {error && <Text size="xs" c="red" mt={6} role="alert">{error}</Text>}
+      {error && <Text size="xs" c="var(--market-danger-text)" mt={6} role="alert">{error}</Text>}
 
       <input
         ref={fileRef}

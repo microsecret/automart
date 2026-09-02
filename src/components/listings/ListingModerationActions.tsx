@@ -168,7 +168,7 @@ export default function ListingModerationActions({
               onChange={(event) => setReason(event.currentTarget.value)}
             />
           )}
-          {error && <Text size="sm" c="red">{error}</Text>}
+          {error && <Text size="sm" c="var(--market-danger-text)">{error}</Text>}
           <Group justify="flex-end" gap="xs">
             {/* Кнопка была subtle — без фона она читалась только при наведении,
                 и выход из окна выглядел недоступным. */}

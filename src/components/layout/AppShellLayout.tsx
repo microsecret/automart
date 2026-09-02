@@ -146,6 +146,24 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
     closeMobile()
   }, [pathname, closeMobile])
 
+  /* Escape закрывает меню.
+
+     Меню открывается поверх страницы и занимает её целиком, но закрыть
+     его можно было только повторным нажатием на бургер — то есть надо
+     было найти мышью маленькую кнопку в углу. Escape закрывает любое
+     перекрытие в любой программе, и человек пробует его первым.
+
+     Слушатель вешается только пока меню открыто: постоянный обработчик
+     на весь документ перехватывал бы Escape у форм и модальных окон. */
+  useEffect(() => {
+    if (!mobileOpened) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeMobile()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [mobileOpened, closeMobile])
+
   /**
    * Меню укорачивается, когда в кадр входит подвал.
    *

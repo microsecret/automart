@@ -784,7 +784,7 @@ function CreateVehicleWorkspace() {
                       </Chip>
                     ))}
                   </Group>
-                  {fieldError("condition") && <Text size="xs" c="red">{fieldError("condition")}</Text>}
+                  {fieldError("condition") && <Text size="xs" c="var(--market-danger-text)">{fieldError("condition")}</Text>}
                 </Stack>
                 {requiredSpecFields.has("steeringWheel") && <Select id="vehicle-field-steeringWheel" label="Руль" placeholder="Выберите" required data={STEERING_WHEELS.map(t => ({ value: t.value, label: t.label }))} value={f.steeringWheel || null} onChange={(v) => set("steeringWheel", v || "")} error={fieldError("steeringWheel")} size="sm" />}
               </Stack>
@@ -815,7 +815,7 @@ function CreateVehicleWorkspace() {
                       radius="md"
                       fullWidth
                     />
-                    {fieldError("availability") && <Text size="xs" c="red">{fieldError("availability")}</Text>}
+                    {fieldError("availability") && <Text size="xs" c="var(--market-danger-text)">{fieldError("availability")}</Text>}
                   </Stack>
                   <Stack gap={6}>
                     <Text size="xs" fw={700} c="dimmed">Растаможен{requiredSpecFields.has("customsCleared") ? " *" : ""}</Text>
@@ -828,7 +828,7 @@ function CreateVehicleWorkspace() {
                       radius="md"
                       fullWidth
                     />
-                    {fieldError("customsCleared") && <Text size="xs" c="red">{fieldError("customsCleared")}</Text>}
+                    {fieldError("customsCleared") && <Text size="xs" c="var(--market-danger-text)">{fieldError("customsCleared")}</Text>}
                   </Stack>
                 </SimpleGrid>
               </Stack>

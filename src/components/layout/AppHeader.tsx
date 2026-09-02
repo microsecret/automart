@@ -279,7 +279,10 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ maxWidth: 420 }}>
                 <TextInput
                   placeholder="Марка, модель или город"
-                  leftSection={<IconSearch size={16} color="gray.4" />}
+                  leftSection={/* «gray.4» здесь не работало: значок — обычный
+                    SVG, синтаксис ступеней Mantine он не понимает и отбрасывает
+                    значение целиком, поэтому лупа наследовала цвет родителя. */
+                    <IconSearch size={16} color="var(--market-label)" />}
                   rightSection={isSuggestionsLoading ? <Loader size={14} color="indigo" /> : undefined}
                   value={query}
                   onChange={(e) => setQuery(e.currentTarget.value)}
@@ -292,7 +295,9 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                     input: {
                       background: "var(--market-surface-subtle)",
                       border: "1px solid var(--market-field-line)",
-                      height: 38,
+                      /* Высота задана глобально (.mantine-Input-input, 36px
+                         с !important) и отсюда не менялась: строка «height: 38»
+                         молча проигрывала и уводила по ложному следу. */
                       transition: "border-color 200ms ease, box-shadow 200ms ease, background 200ms ease",
                     },
                   }}

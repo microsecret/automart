@@ -197,7 +197,7 @@ export default function TrafficPage() {
                     <Text size="xs" c="dimmed">за месяц</Text>
                   </Box>
                   <Box>
-                    <Text fw={800} fz={24} lh={1.1} c="teal">{data.bot.registered}</Text>
+                    <Text fw={800} fz={24} lh={1.1} c="var(--market-success-text)">{data.bot.registered}</Text>
                     <Text size="xs" c="dimmed">завершили регистрацию</Text>
                   </Box>
                   <Box>

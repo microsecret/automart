@@ -149,7 +149,7 @@ export default function PollBlock({ poll, canVote }: Props) {
         </Stack>
       )}
 
-      {error && <Text size="xs" c="red" mt={6} role="alert">{error}</Text>}
+      {error && <Text size="xs" c="var(--market-danger-text)" mt={6} role="alert">{error}</Text>}
 
       <Group justify="space-between" mt={8} gap="xs" wrap="wrap">
         <Text size="xs" c="var(--market-muted)">
