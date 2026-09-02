@@ -396,7 +396,13 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           </Group>
 
           {/* Заголовок */}
-          <Text className="listing-card__title" fz="sm" fw={600} c="var(--market-text-secondary)" lh={1.3} mb={7}>
+          {/* Название набрано крупнее прежних четырнадцати пикселей.
+
+              Это второе, что человек читает после цены, и по нему он решает,
+              открывать ли объявление. В четырнадцати оно шло тем же кеглем,
+              что подписи и служебные строки вокруг, — карточка читалась как
+              ровное мелкое полотно, где ничто не выделено. */}
+          <Text className="listing-card__title" fz="md" fw={600} c="var(--market-text-secondary)" lh={1.35} mb={8}>
             {listing.title}
           </Text>
 
@@ -406,22 +412,22 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               ячейка. */}
           {isVehicle && (
             <Box mb={6} className="listing-card__facts">
-              <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{listing.vehicle!.year}</Text>
-              {numericUsage != null && <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{distanceValue}</Text>}
+              <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{listing.vehicle!.year}</Text>
+              {numericUsage != null && <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{distanceValue}</Text>}
               {/* Чип несёт значение без подписи: «2008», «85 000 км»,
                   «автомат» — что это, понятно по самому значению, а слова
                   «Год» и «КПП» занимали половину узкого чипа.
 
                   OTHER не показываем: «КПП Другая» означает, что данных нет,
                   и в списке это не факт. В самом объявлении оно остаётся. */}
-              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>}
-              {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>}
+              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>}
+              {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>}
               {/* Объём двигателя — первое, о чём спрашивают про машину, но
                   в каталоге он не показывался вовсе. У электротяги объёма
                   нет: там о моторе говорит мощность. */}
               {listing.vehicle!.fuelType === "ELECTRIC"
-                ? listing.vehicle!.power ? <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{listing.vehicle!.power} л.с.</Text> : null
-                : listing.vehicle!.engineVolume ? <Text className="listing-card__fact" fz="xs" fw={600} c="var(--market-ink)">{listing.vehicle!.engineVolume} л</Text> : null}
+                ? listing.vehicle!.power ? <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{listing.vehicle!.power} л.с.</Text> : null
+                : listing.vehicle!.engineVolume ? <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{listing.vehicle!.engineVolume} л</Text> : null}
             </Box>
           )}
 
