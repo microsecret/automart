@@ -180,7 +180,11 @@ export default function PromotePage() {
           </Paper>
         )}
 
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+        {/* Четыре тарифа в сетке из трёх колонок ломали ряд: четвёртый
+            падал вниз в одиночку и выглядел довеском, а не равным
+            вариантом. Две колонки на среднем экране и четыре на широком
+            держат ряд целым при любой ширине. */}
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
           {PROMO_OPTIONS.map((opt) => {
             const Icon = opt.icon
             // Выбранный тариф остаётся выделенным цветом тарифа, а наведение отдано
@@ -188,14 +192,37 @@ export default function PromotePage() {
             // с соседней карточки, и пользователь терял из виду, за что платит.
             return (
               <Paper key={opt.id} radius="md" p="md" withBorder className="market-linked-card"
-                style={{ borderColor: selected === opt.id ? opt.color : undefined, cursor: "pointer", position: "relative" }}>
-                {opt.id === "vip" && <Badge pos="absolute" top={-8} right={12} size="xs" color="violet" variant="filled">Выгодно</Badge>}
+                style={{
+                  /* Рекомендованный тариф обведён заметнее остальных даже
+                     когда ничего не выбрано: в ряду из четырёх одинаковых
+                     карточек взгляду не за что зацепиться. */
+                  borderColor: selected === opt.id ? opt.color : opt.id === "premium" ? "var(--market-primary)" : undefined,
+                  borderWidth: selected === opt.id || opt.id === "premium" ? 2 : undefined,
+                  cursor: "pointer",
+                  position: "relative",
+                }}>
+                {/* Метка стоит на «Премиум», а не на самом дорогом тарифе.
+
+                    «Выгодно» на VIP не помогало выбрать: человек и так видит,
+                    что это верх линейки, а подсказка на самом дорогом читается
+                    как попытка продать подороже. Отметка нужна на среднем
+                    варианте — она снимает вопрос «с чего начать» у того, кто
+                    впервые продвигает объявление. */}
+                {opt.id === "premium" && (
+                  <Badge pos="absolute" top={-9} left="50%" size="sm" color="indigo" variant="filled"
+                    style={{ transform: "translateX(-50%)", whiteSpace: "nowrap" }}>
+                    Выбирают чаще всего
+                  </Badge>
+                )}
                 <Stack gap="sm">
                   <Group justify="space-between" align="flex-start">
                     <Box style={{ width: 44, height: 44, borderRadius: 10, background: opt.bg, display: "flex", alignItems: "center", justifyContent: "center", color: opt.color }}>
                       <Icon size={22} />
                     </Box>
-                    <Badge variant="light" color={opt.id === "boost" ? "cyan" : opt.id === "premium" ? "orange" : "violet"} size="xs">{opt.days} дн.</Badge>
+                    {/* Срок — служебная величина, а не отличие тарифа: цвет
+                        ей ни к чему. Раньше срок раскрашивался в тот же цвет,
+                        что и кнопка, и ряд получал восемь цветных пятен. */}
+                    <Badge variant="light" color="gray" size="xs">{opt.days} дн.</Badge>
                   </Group>
                   <Stack gap={4}>
                     <Text fw={700} fz="md" c="var(--market-ink)">{opt.title}</Text>
@@ -209,7 +236,20 @@ export default function PromotePage() {
                   <Divider my={2} />
                   <Group justify="space-between" align="center">
                     <Text fw={800} fz="xl" c="var(--market-ink)" ff="var(--font-display),sans-serif">{opt.price} ₽</Text>
-                    <Button size="sm" color={opt.id === "boost" ? "cyan" : opt.id === "premium" ? "orange" : "violet"} onClick={() => handleSelect(opt.id)}>Выбрать</Button>
+                    {/* Кнопка одна на все тарифы, а не своего цвета у каждого.
+
+                        Четыре разноцветные кнопки в ряду означали четыре
+                        разных действия, хотя действие одно — выбрать тариф.
+                        Различать варианты должны значок, название и цена, а
+                        не цвет кнопки. Выделен только рекомендованный: он
+                        залит, остальные обведены. */}
+                    <Button
+                      size="sm"
+                      variant={opt.id === "premium" ? "filled" : "default"}
+                      onClick={() => handleSelect(opt.id)}
+                    >
+                      Выбрать
+                    </Button>
                   </Group>
                 </Stack>
               </Paper>
