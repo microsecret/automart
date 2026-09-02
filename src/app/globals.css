@@ -43,7 +43,25 @@
   /* Граница карточки почти сливалась с фоном страницы (контраст 1.13), из-за
      чего карточка не читалась как отдельный объект и страница выглядела
      плоской. Более глубокий тон отделяет её от подложки. */
+  /* Две линии, а не одна.
+
+     Прежде один токен служил и рамкой карточки, и разделителем строк
+     внутри неё. Пока карточку держала тень, это сходило с рук: рамка была
+     подсказкой, а не границей. Без тени светло-серая рамка на белом фоне
+     исчезает — карточка перестаёт быть предметом.
+
+     --market-line остаётся тихим разделителем: строки таблицы, границы
+     секций, всё, что делит содержимое внутри объекта.
+     --market-edge очерчивает сам объект и заметно темнее. */
   --market-line: #e9eaef;
+  --market-edge: #0f1117;
+
+  /* Mantine рисует рамку `withBorder` собственной переменной, минуя наши
+     токены. Компонентов с этим свойством на сайте десятки — карточки
+     кабинета, панели админки, блоки объявления, — и без этой строки они
+     остались бы со светло-серым краем прежней системы, тогда как соседние
+     блоки уже очерчены чернилами. */
+  --mantine-color-default-border: var(--market-edge);
   --market-surface: #ffffff;
   /* Фон был почти белым, поэтому карточки сливались с ним и страница
      читалась как одна плоскость. Чуть более глубокий тон отделяет контент
@@ -262,6 +280,8 @@
   --market-ink: #f5f5f7;
   --market-muted: #a0a3ad;
   --market-line: #2c2e36;
+  --market-edge: #4a4d59;
+  --mantine-color-default-border: var(--market-edge);
   --market-surface: #17181d;
   --market-background: #0b0c0f;
   --market-surface-subtle: #111217;
@@ -379,7 +399,7 @@ body {
   font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   transform: translateY(-200%);
   transition: transform var(--ease-base) var(--ease-out);
 }
@@ -528,7 +548,7 @@ select {
   overflow: hidden;
   color: #fff;
   background: linear-gradient(135deg, #8f2018 0%, #e63a2b 48%, #ff4d3d 100%);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .market-hero::after {
@@ -575,8 +595,8 @@ select {
 
 .market-surface {
   background: var(--market-surface);
-  border: 1px solid var(--market-line);
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--market-edge);
+  box-shadow: none;
 }
 
 .mobile-bottom-nav {
@@ -589,7 +609,7 @@ select {
 
 .admin-auction-inquiry-row:hover {
   border-color: var(--mantine-color-indigo-2);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--offset-sm);
   transform: translateY(var(--lift-sm));
 }
 
@@ -951,7 +971,7 @@ select {
   border: 1px solid var(--market-field-line);
   background: color-mix(in srgb, var(--market-surface) 92%, #fff1ef);
   color: var(--market-control-text);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .market-app-header__utility-action:hover {
@@ -974,7 +994,7 @@ select {
   }
 
   .market-app-header .mantine-Button-filled:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--offset-sm);
   }
 }
 
@@ -1391,7 +1411,7 @@ select {
   border: 1px solid color-mix(in srgb, var(--market-field-line) 86%, transparent);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--market-surface) 78%, transparent);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .auth-experience__brand-mark {
@@ -1401,7 +1421,7 @@ select {
   place-items: center;
   border-radius: var(--radius-lg);
   background: #ff4d3d;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .auth-experience__form-area {
@@ -1412,7 +1432,7 @@ select {
 .auth-experience__form-card {
   border-color: color-mix(in srgb, var(--market-field-line) 90%, transparent);
   background: color-mix(in srgb, var(--market-surface) 94%, transparent);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .auth-experience__form-card .mantine-Input-input:focus,
@@ -1457,7 +1477,7 @@ select {
 }
 
 .market-side-account__summary {
-  border-color: color-mix(in srgb, var(--market-primary) 15%, var(--market-line));
+  border-color: color-mix(in srgb, var(--market-primary) 15%, var(--market-edge));
   background: color-mix(in srgb, var(--market-surface) 74%, var(--market-primary-soft));
 }
 
@@ -1935,7 +1955,7 @@ select {
 
 .partner-application-section {
   padding: 18px;
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   border-radius: var(--radius-md);
   background: var(--market-surface);
 }
@@ -2401,7 +2421,7 @@ select {
 }
 
 .catalog-filter-panel[data-expanded] {
-  border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
+  border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-edge));
 }
 
 .catalog-filter-advanced {
@@ -2446,7 +2466,7 @@ select {
   border-color: #e63a2b;
   background: var(--market-primary);
   color: #fff;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .catalog-filter-advanced .mantine-Input-input,
@@ -2600,16 +2620,16 @@ select {
 
 .part-detail__compatibility-item {
   background: var(--market-surface-subtle);
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
 }
 
 .part-detail__price-card {
-  border-color: color-mix(in srgb, var(--market-primary) 32%, var(--market-line)) !important;
+  border-color: color-mix(in srgb, var(--market-primary) 32%, var(--market-edge)) !important;
   background: var(--market-primary-soft) !important;
 }
 
 .part-detail__bid-card {
-  border-color: color-mix(in srgb, #f97316 40%, var(--market-line)) !important;
+  border-color: color-mix(in srgb, #f97316 40%, var(--market-edge)) !important;
   background: #fff7ed !important;
 }
 .vehicle-fallback[data-compact] { min-height: 96px; padding: 8px 10px; }
@@ -2703,13 +2723,13 @@ select {
   .part-result-card:hover {
     transform: translateY(var(--lift-md));
     border-color: var(--market-field-line) !important;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--offset-sm);
   }
 
   .auction-result-card:hover {
     transform: translateY(var(--lift-md));
     border-color: #fb923c !important;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--offset-sm);
   }
 }
 
@@ -2890,7 +2910,7 @@ select {
 .listing-card__row-facts {
   gap: 0;
   overflow: hidden;
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   border-radius: var(--radius-sm);
   background: var(--market-surface-subtle);
 }
@@ -2934,11 +2954,11 @@ select {
 }
 
 .listing-card__media[data-vehicle-type="air"] .vehicle-fallback__halo {
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .listing-card__media[data-vehicle-type="water"] .vehicle-fallback__halo {
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .listing-card__media[data-vehicle-type="truck"] .vehicle-fallback__halo,
@@ -3125,7 +3145,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .listing-card:hover .market-details-cta,
   .vehicle-detail-similar-card:hover .market-details-cta {
-    border-color: color-mix(in srgb, var(--market-primary) 42%, var(--market-line));
+    border-color: color-mix(in srgb, var(--market-primary) 42%, var(--market-edge));
     background: color-mix(in srgb, var(--market-primary-soft) 76%, var(--market-surface));
   }
 
@@ -3155,7 +3175,7 @@ select {
   height: 44px;
   border: 1px solid rgba(255, 255, 255, 0.78);
   background: rgba(15, 23, 42, 0.72);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   backdrop-filter: blur(var(--blur-panel)) saturate(1.18);
   transition: transform var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
@@ -3173,7 +3193,7 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .listing-card__favorite:hover {
     transform: scale(1.08);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--offset-sm);
   }
 }
 
@@ -3186,7 +3206,7 @@ select {
   padding: clamp(20px, 3vw, 34px);
   border-radius: var(--radius-lg);
   background: var(--market-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .news-article__image {
@@ -3228,7 +3248,7 @@ select {
   min-height: 50px;
   border-color: var(--market-field-line);
   background: color-mix(in srgb, var(--market-surface) 92%, #fff1ef);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .news-list-search .mantine-TextInput-input:focus {
@@ -3247,7 +3267,7 @@ select {
 .news-list-card {
   height: 100%;
   overflow: hidden;
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
@@ -3294,7 +3314,7 @@ select {
 }
 
 .news-list-card__cover-icon {
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .news-list-card__cover-label {
@@ -3390,8 +3410,8 @@ select {
 @media (hover: hover) and (pointer: fine) {
   .news-list-card-link:hover .news-list-card,
   .news-list-card-link:focus-visible .news-list-card {
-    border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
-    box-shadow: var(--shadow-lg);
+    border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-edge));
+    box-shadow: var(--offset-sm);
     transform: translateY(var(--lift-md));
   }
 
@@ -3498,7 +3518,7 @@ select {
 .parts-filter-grid > .mantine-Box-root:hover,
 .auction-filter-grid > .mantine-InputWrapper-root:hover,
 .auction-filter-grid > .mantine-Box-root:hover {
-  border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
+  border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-edge));
   background: color-mix(in srgb, var(--market-field) 92%, #fff1ef);
 }
 
@@ -3579,8 +3599,8 @@ select {
 
 .service-card:hover {
   transform: translateY(var(--lift-md));
-  border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
-  box-shadow: var(--shadow-lg);
+  border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-edge));
+  box-shadow: var(--offset-sm);
 }
 
 .service-card:focus-visible {
@@ -3593,17 +3613,17 @@ select {
   border-color: rgba(199, 210, 254, 0.55);
   color: #fff;
   background: linear-gradient(118deg, #8f2018 0%, #c22e21 52%, #e63a2b 100%);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .service-hub-hero .mantine-ThemeIcon-root {
   color: #c22e21;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .service-hub-hero .mantine-Badge-root {
   color: #8f2018;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -3615,9 +3635,9 @@ select {
 
 .dashboard-workspace {
   overflow: hidden;
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .dashboard-workspace__eyebrow {
@@ -3632,7 +3652,7 @@ select {
 .dashboard-workspace__status {
   min-height: 68px;
   padding: 9px 10px;
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   border-radius: var(--radius-md);
   background: var(--market-surface);
   color: var(--market-ink);
@@ -3641,9 +3661,9 @@ select {
 }
 
 .dashboard-workspace__status:hover {
-  border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
+  border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-edge));
   background: var(--market-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--offset-sm);
   transform: translateY(var(--lift-sm));
 }
 
@@ -3668,15 +3688,15 @@ select {
   overflow: hidden;
   border-color: var(--market-line);
   background: linear-gradient(135deg, #ffffff 0%, #f5fffc 100%);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .dashboard-listing-card,
 .dashboard-favorite-card {
   overflow: hidden;
-  border-color: var(--market-line) !important;
+  border-color: var(--market-edge) !important;
   background: var(--market-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
@@ -3747,9 +3767,9 @@ select {
 
 .garage-vehicle-card {
   overflow: hidden;
-  border-color: var(--market-line) !important;
+  border-color: var(--market-edge) !important;
   background: var(--market-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
@@ -3786,13 +3806,13 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: var(--radius-md);
   background: var(--market-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   backdrop-filter: blur(var(--blur-panel));
 }
 
 .garage-vehicle-card__readiness {
   padding: 9px 10px;
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   border-radius: var(--radius-sm);
   color: var(--market-muted);
   background: var(--market-surface-subtle);
@@ -3822,7 +3842,7 @@ select {
 }
 
 .dashboard-document-row {
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
   transition: border-color var(--ease-fast) var(--ease-out), box-shadow var(--ease-fast) var(--ease-out);
 }
@@ -3832,7 +3852,7 @@ select {
   min-height: 540px;
   overflow: hidden;
   grid-template-columns: minmax(290px, 36%) minmax(0, 1fr);
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
 }
 
@@ -3889,8 +3909,8 @@ select {
 
 @media (hover: hover) and (pointer: fine) {
   .dashboard-document-row:hover {
-    border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
-    box-shadow: var(--shadow-md);
+    border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-edge));
+    box-shadow: var(--offset-sm);
   }
 }
 
@@ -3914,7 +3934,7 @@ select {
   .dashboard-favorite-card:hover {
     transform: translateY(var(--lift-md));
     border-color: var(--market-field-line) !important;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--offset-sm);
   }
 
   .dashboard-listing-card:hover .dashboard-listing-card__media > img,
@@ -3926,7 +3946,7 @@ select {
   .garage-vehicle-card:hover {
     transform: translateY(var(--lift-md));
     border-color: #74d7c5 !important;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--offset-sm);
   }
 
   .garage-vehicle-card:hover .garage-vehicle-card__media > img {
@@ -4608,7 +4628,7 @@ html:has(.fuel-map-canvas) {
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: var(--radius-full);
   background: var(--market-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   backdrop-filter: blur(var(--blur-panel));
 }
 
@@ -4657,7 +4677,7 @@ html:has(.fuel-map-canvas) {
   padding: 4px;
   border-radius: var(--radius-sm);
   background: rgba(255,255,255,.86);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 /* Отметки за сутки — слева внизу, рядом с числом точек.
@@ -4739,7 +4759,7 @@ html:has(.fuel-map-canvas) {
   border-radius: var(--radius-full);
   color: #334155;
   background: var(--market-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
@@ -4777,7 +4797,7 @@ html:has(.fuel-map-canvas) {
   transform: translate(-50%, -50%);
   border-color: color-mix(in srgb, var(--market-primary) 30%, var(--market-line));
   background: var(--market-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
   animation: fuel-selected-in var(--ease-slow) var(--ease-out);
 }
 
@@ -4793,7 +4813,7 @@ html:has(.fuel-map-canvas) {
   padding: 8px 10px;
   border-color: color-mix(in srgb, #ff7a6c 38%, var(--market-line));
   background: rgb(255 255 255 / 94%);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
   backdrop-filter: blur(var(--blur-panel));
 }
 
@@ -4952,7 +4972,7 @@ html:has(.fuel-map-canvas) {
   border: 1px solid var(--market-line);
   border-radius: 14px;
   background: color-mix(in srgb, var(--market-surface) 92%, transparent);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   backdrop-filter: blur(8px);
 }
 
@@ -5160,7 +5180,7 @@ html:has(.fuel-map-canvas) {
 
 .fuel-station-card {
   background: var(--market-surface);
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 
@@ -5177,8 +5197,8 @@ html:has(.fuel-map-canvas) {
 }
 
 .fuel-station-card:hover {
-  border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-line));
-  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-edge));
+  box-shadow: var(--offset-sm);
 }
 
 /* Выбранная карточка раньше заливалась жёстким белым градиентом и в тёмной
@@ -5186,7 +5206,7 @@ html:has(.fuel-map-canvas) {
 .fuel-station-card[data-selected] {
   border-color: var(--market-primary);
   background: var(--market-primary-soft);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .fuel-map-note {
@@ -5284,7 +5304,7 @@ html:has(.fuel-map-canvas) {
     "note note note";
   align-items: center;
   gap: 3px 8px;
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   border-radius: 10px;
   background: var(--market-surface);
   text-align: left;
@@ -5293,7 +5313,7 @@ html:has(.fuel-map-canvas) {
 
 @media (hover: hover) {
   .fuel-price-row:hover {
-    border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-line));
+    border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-edge));
   }
 }
 
@@ -5802,7 +5822,7 @@ html:has(.fuel-map-canvas) {
 
 .auction-detail-spec:hover {
   border-color: color-mix(in srgb, var(--market-accent) 34%, var(--market-line));
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--offset-sm);
   transform: translateY(var(--lift-sm));
 }
 
@@ -5894,7 +5914,7 @@ html:has(.fuel-map-canvas) {
   height: 100%;
   flex-direction: column;
   overflow: hidden;
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
   cursor: pointer;
 }
@@ -6048,7 +6068,7 @@ html:has(.fuel-map-canvas) {
 .part-result-card__status-badge[data-tone="neutral"] {
   color: var(--market-muted) !important;
   background: var(--market-surface-subtle) !important;
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
 }
 
 .part-result-card__metadata {
@@ -6076,7 +6096,7 @@ html:has(.fuel-map-canvas) {
 .part-result-card__compatibility-chip {
   color: var(--market-primary) !important;
   background: var(--market-primary-soft) !important;
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   font-weight: 700;
 }
 
@@ -6101,9 +6121,9 @@ html:has(.fuel-map-canvas) {
 .listing-map-panel,
 .listing-map-results {
   overflow: hidden;
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .listing-map-panel {
@@ -6133,7 +6153,7 @@ html:has(.fuel-map-canvas) {
   align-items: center;
   min-height: 78px;
   gap: 10px;
-  border-color: color-mix(in srgb, var(--market-line) 88%, transparent);
+  border-color: color-mix(in srgb, var(--market-edge) 88%, transparent);
   background: linear-gradient(145deg, #fff, color-mix(in srgb, #fff 92%, #fff1ef));
   transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
@@ -6178,8 +6198,8 @@ html:has(.fuel-map-canvas) {
 
 @media (hover: hover) and (pointer: fine) {
   .listing-map-result:hover .listing-map-result__surface {
-    border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
-    box-shadow: var(--shadow-md);
+    border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-edge));
+    box-shadow: var(--offset-sm);
     transform: translateY(var(--lift-sm));
   }
 }
@@ -6208,7 +6228,7 @@ html:has(.fuel-map-canvas) {
   .auction-result-card:hover,
   .part-result-card:hover {
     border-color: color-mix(in srgb, var(--market-primary) 28%, var(--market-field-line)) !important;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--offset-sm);
     transform: translateY(var(--lift-md));
   }
 }
@@ -6244,7 +6264,7 @@ html:has(.fuel-map-canvas) {
      теряли контраст с подложкой. */
   position: relative;
   overflow: hidden;
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
   box-shadow: var(--shadow-sm);
 }
@@ -6279,7 +6299,7 @@ html:has(.fuel-map-canvas) {
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
   border-color: color-mix(in srgb, #ff5c4b 54%, var(--market-field-line));
   background: #fff1ef;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .parts-filter-checks .mantine-Checkbox-input {
@@ -6366,7 +6386,7 @@ html:has(.fuel-map-canvas) {
   /* Тот же вид, что у панели поиска рядом: после перевода соседей на ровные
      поверхности этот блок остался единственным цветным и выбивался. */
   height: 100%;
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
   box-shadow: var(--shadow-sm);
 }
@@ -6429,7 +6449,7 @@ html:has(.fuel-map-canvas) {
 .vehicle-detail-specs,
 .vehicle-detail-statuses {
   border-color: var(--market-line);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .vehicle-detail-specs__identity {
@@ -6517,17 +6537,17 @@ html:has(.fuel-map-canvas) {
 }
 
 .vehicle-detail-feature-card {
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .vehicle-detail-feature-card--vin {
   background: linear-gradient(135deg, color-mix(in srgb, #dcfce7 62%, var(--market-surface)), var(--market-surface) 62%);
-  border-color: color-mix(in srgb, #86efac 58%, var(--market-line));
+  border-color: color-mix(in srgb, #86efac 58%, var(--market-edge));
 }
 
 .vehicle-detail-feature-card--deal {
   background: linear-gradient(135deg, color-mix(in srgb, var(--market-primary-soft) 84%, var(--market-surface)), var(--market-surface) 64%);
-  border-color: color-mix(in srgb, var(--market-primary) 26%, var(--market-line));
+  border-color: color-mix(in srgb, var(--market-primary) 26%, var(--market-edge));
 }
 
 .vehicle-detail-statuses__item::before {
@@ -6632,7 +6652,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .moderation-listing-row {
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   border-radius: var(--radius-sm);
   background: var(--market-surface-subtle);
 }
@@ -6889,7 +6909,7 @@ html:has(.fuel-map-canvas) {
   align-items: center;
   gap: 5px;
   padding: 5px 9px;
-  border: 1px solid color-mix(in srgb, var(--market-primary) 28%, var(--market-line));
+  border: 1px solid color-mix(in srgb, var(--market-primary) 28%, var(--market-edge));
   border-radius: var(--radius-sm);
   background: var(--market-primary-soft);
   color: var(--market-primary);
@@ -6991,7 +7011,7 @@ html:has(.fuel-map-canvas) {
 .create-listing__readiness[data-ready] {
   border-color: var(--market-success-line);
   background: color-mix(in srgb, var(--market-success-surface) 76%, var(--market-surface));
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .create-listing__journey {
@@ -7032,7 +7052,7 @@ html:has(.fuel-map-canvas) {
 
 .create-listing__journey-step[data-current] {
   background: color-mix(in srgb, var(--market-surface) 90%, transparent);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .create-listing__journey-step[data-complete] {
@@ -7046,7 +7066,7 @@ html:has(.fuel-map-canvas) {
 .create-listing__section,
 .create-listing__submit {
   border-color: var(--market-line);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 /* Keep fields distinct from a white card without relying on hover. */
@@ -7096,7 +7116,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .create-listing__section[data-accent="indigo"] {
-  border-color: color-mix(in srgb, var(--market-primary) 26%, var(--market-line));
+  border-color: color-mix(in srgb, var(--market-primary) 26%, var(--market-edge));
   background: linear-gradient(110deg, var(--market-surface), color-mix(in srgb, var(--market-primary-soft) 52%, var(--market-surface)));
 }
 
@@ -7172,7 +7192,7 @@ html:has(.fuel-map-canvas) {
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-top: 3px solid var(--market-primary);
   background: linear-gradient(135deg, #14161d 0%, #1f232e 58%, #14161d 100%);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
   --admin-hero-copy: rgba(255, 255, 255, 0.74);
   --admin-hero-action-line: rgba(255, 255, 255, 0.48);
 }
@@ -7264,7 +7284,7 @@ html:has(.fuel-map-canvas) {
 
 .admin-workspace__nav {
   padding: 6px;
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   border-radius: var(--radius-md);
   background: var(--market-surface);
 }
@@ -7272,7 +7292,7 @@ html:has(.fuel-map-canvas) {
 .admin-workspace-navigation__item {
   color: #334155 !important;
   background: var(--market-surface-subtle) !important;
-  border: 1px solid var(--market-line) !important;
+  border: 1px solid var(--market-edge) !important;
   font-weight: 700 !important;
 }
 
@@ -7280,7 +7300,7 @@ html:has(.fuel-map-canvas) {
   color: #ffffff !important;
   background: var(--market-primary) !important;
   border-color: #ff4d3d !important;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .admin-workspace-navigation__item:hover:not([data-active]) {
@@ -7298,7 +7318,7 @@ html:has(.fuel-map-canvas) {
 
 .admin-metric-card:hover {
   border-color: var(--market-field-line) !important;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--offset-sm);
   transform: translateY(var(--lift-md));
 }
 
@@ -7324,15 +7344,15 @@ html:has(.fuel-map-canvas) {
 }
 
 .admin-moderation-panel {
-  border-color: var(--market-line);
-  box-shadow: var(--shadow-lg);
+  border-color: var(--market-edge);
+  box-shadow: none;
 }
 
 .admin-insight-card,
 .admin-action-card {
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .admin-action-card {
@@ -7344,7 +7364,7 @@ html:has(.fuel-map-canvas) {
   .admin-insight-card:hover,
   .admin-action-card:hover {
     border-color: #c9d4ff;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--offset-sm);
     transform: translateY(var(--lift-md));
   }
 }
@@ -7373,7 +7393,7 @@ html:has(.fuel-map-canvas) {
 .admin-directory__table {
   overflow: hidden;
   border-color: var(--market-line);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .admin-directory__table .mantine-Table-table {
@@ -7485,8 +7505,8 @@ html:has(.fuel-map-canvas) {
 
 .admin-queue-card:hover {
   transform: translateY(var(--lift-md));
-  border-color: color-mix(in srgb, var(--market-primary) 38%, var(--market-line));
-  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--market-primary) 38%, var(--market-edge));
+  box-shadow: var(--offset-sm);
 }
 
 .admin-queue-card:active {
@@ -7618,7 +7638,7 @@ html:has(.fuel-map-canvas) {
   overflow: hidden;
   border: 1px solid rgba(126, 145, 255, 0.32);
   background: linear-gradient(135deg, #111c42 0%, #202d67 58%, #173d6a 100%);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 /* Подпись под полем объясняет, зачем оно нужно, поэтому не должна теряться
@@ -7651,7 +7671,7 @@ html:has(.fuel-map-canvas) {
    «залипала» на случайной карточке. Ниже — тот же эффект на CSS: он живёт
    в токенах темы и включается только там, где есть настоящий курсор. */
 .market-linked-card {
-  border-color: var(--market-line);
+  border-color: var(--market-edge);
   background: var(--market-surface);
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out);
 }
@@ -7661,7 +7681,7 @@ html:has(.fuel-map-canvas) {
     transform: translateY(var(--lift-md));
     border-color: var(--market-primary);
     background: var(--market-surface-subtle);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--offset-sm);
   }
 }
 
@@ -8059,7 +8079,7 @@ h1[data-lw-hero] {
   .news-list-card-link:hover .news-list-card {
     transform: translateY(var(--lift-md));
     border-color: var(--market-primary);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--offset-sm);
   }
 }
 
@@ -8376,7 +8396,7 @@ h1[data-lw-hero] {
 
   .parts-category-card:hover {
     transform: none;
-    box-shadow: none;
+    box-shadow: var(--offset-sm);
   }
 }
 
@@ -8678,7 +8698,7 @@ h1[data-lw-hero] {
 
 @media (hover: hover) and (pointer: fine) {
   .forum-topic-row:hover {
-    border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
+    border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-edge));
     background: color-mix(in srgb, var(--market-surface) 94%, #fff1ef);
   }
 }
@@ -9238,7 +9258,7 @@ h1[data-lw-hero] {
   display: grid;
   gap: 1px;
   padding: 7px 6px;
-  border: 1px solid var(--market-line);
+  border: 1px solid var(--market-edge);
   border-radius: 10px;
   background: var(--market-surface-subtle);
   text-align: center;
