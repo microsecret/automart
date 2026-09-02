@@ -94,6 +94,14 @@
      на белом фоне не держал вес, из-за чего интерфейс читался блёклым.
      Оттенок взят из уже существующей палитры, поэтому бренд узнаваем. */
   --market-primary: #ff4d3d;
+  /* Тот же цвет, но пригодный для текста.
+
+     Яркий коралл на белом даёт контраст 3.29: для крупной надписи на
+     кнопке этого хватает, для подписи в двенадцать пунктов — нет, а
+     именно так он и стоял в двадцати девяти местах: ссылки в карточках,
+     активные пункты, цены запчастей. Углублённый тон держит 5.67 и
+     читается как тот же цвет. */
+  --market-primary-text: #c22e21;
   --market-on-primary-muted: #fff1ef;
   --lewheel-wordmark-strong: #0f1117;
   /* Второй цвет системы. Раньше индиго отвечал и за навигацию, и за действие,
@@ -296,6 +304,8 @@
   /* Коралл светлой темы на чёрном даёт контраст 3.6 — для текста мало.
      Осветлённый оттенок держит 5.2, оставаясь тем же цветом. */
   --market-primary: #ff7a6c;
+  /* В темноте наоборот: текст должен быть светлее заливки. */
+  --market-primary-text: #ff9d92;
   --lewheel-wordmark-strong: #f5f5f7;
   /* Лайм в темноте становится ярче фона и вылезает вперёд текста, поэтому
      светлота снижена: он остаётся вторым голосом, а не первым. */
@@ -727,11 +737,11 @@ select {
   }
 
   .mobile-bottom-nav__accent {
-    color: var(--market-primary);
+    color: var(--market-primary-text);
   }
 
   .mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
-    color: var(--market-primary);
+    color: var(--market-primary-text);
     background: var(--market-primary-soft);
   }
 
@@ -903,13 +913,13 @@ select {
 .market-header-tab--active,
 .market-header-tab--active:hover {
   background: var(--market-primary-soft) !important;
-  color: var(--market-primary) !important;
+  color: var(--market-primary-text) !important;
   font-weight: 700;
 }
 
 /* Значок активного раздела ярче подписи — глаз находит его первым. */
 .market-header-tab--active .mantine-Button-section {
-  color: var(--market-primary);
+  color: var(--market-primary-text);
 }
 
 .market-app-header__links .mantine-Button-root {
@@ -1597,7 +1607,7 @@ select {
 .market-side-nav[data-active] {
   background: var(--market-primary-soft);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--market-primary) 22%, transparent);
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   font-weight: 700;
 }
 
@@ -3377,7 +3387,7 @@ select {
 }
 
 .news-list-card__read {
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   flex-shrink: 0;
 }
 
@@ -5277,7 +5287,7 @@ html:has(.fuel-map-canvas) {
   place-items: center;
   border-radius: 999px;
   background: color-mix(in srgb, var(--market-primary) 16%, transparent);
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
@@ -5532,7 +5542,7 @@ html:has(.fuel-map-canvas) {
   border: 1px solid color-mix(in srgb, var(--market-primary) 42%, transparent);
   border-radius: var(--radius-md);
   background: var(--market-primary-soft);
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   font-size: 13px;
   font-weight: 700;
   transition: background-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
@@ -5709,7 +5719,7 @@ html:has(.fuel-map-canvas) {
 .fuel-report__queue-option[data-active] {
   border-color: var(--market-primary);
   background: var(--market-primary-soft);
-  color: var(--market-primary);
+  color: var(--market-primary-text);
 }
 
 /* Отправка: последнее действие, поэтому во всю ширину и внизу — под
@@ -6094,7 +6104,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .part-result-card__compatibility-chip {
-  color: var(--market-primary) !important;
+  color: var(--market-primary-text) !important;
   background: var(--market-primary-soft) !important;
   border: 1px solid var(--market-edge);
   font-weight: 700;
@@ -6912,7 +6922,7 @@ html:has(.fuel-map-canvas) {
   border: 1px solid color-mix(in srgb, var(--market-primary) 28%, var(--market-edge));
   border-radius: var(--radius-sm);
   background: var(--market-primary-soft);
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   font-size: var(--text-xs);
   font-weight: 750;
   line-height: 1;
@@ -8581,7 +8591,7 @@ h1[data-lw-hero] {
 }
 
 .forum-row__title {
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   font-size: 0.94rem;
   font-weight: 700;
   line-height: 1.3;
@@ -8620,7 +8630,7 @@ h1[data-lw-hero] {
 }
 
 .forum-row__child:hover {
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   text-decoration: underline;
 }
 
@@ -8760,7 +8770,7 @@ h1[data-lw-hero] {
 }
 
 .forum-post-body a {
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -8900,7 +8910,7 @@ h1[data-lw-hero] {
 }
 
 .forum-post-body .forum-mention {
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   font-weight: 600;
   text-decoration: none;
 }
@@ -8971,7 +8981,7 @@ h1[data-lw-hero] {
   bottom: 6px;
   text-align: center;
   font-size: 0.75rem;
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   pointer-events: none;
 }
 
@@ -9065,7 +9075,7 @@ h1[data-lw-hero] {
 }
 
 .forum-poll__icon {
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   flex-shrink: 0;
 }
 
@@ -9599,7 +9609,7 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   align-items: center;
   gap: 8px;
   padding: 0 14px;
-  color: var(--market-primary);
+  color: var(--market-primary-text);
   text-decoration: none;
 }
 
