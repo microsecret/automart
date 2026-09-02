@@ -3201,9 +3201,14 @@ select {
      ленты и пересчитывалось при каждом кадре прокрутки. Тень даёт ту же
      отделённость и ничего не стоит. */
   border: 0;
-  background: rgba(255, 255, 255, 0.94);
+  /* Подложка непрозрачная, значок тёмный.
+
+     С полупрозрачной белой значок на светлом кузове почти пропадал:
+     сквозь неё просвечивало фото, и тёмная иконка теряла контраст.
+     Сплошной белый круг с чёткой тенью читается на любом снимке. */
+  background: #fff;
   color: var(--market-ink);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3), 0 4px 12px rgba(15, 23, 42, 0.18);
   transition: transform var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 

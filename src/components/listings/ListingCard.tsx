@@ -355,7 +355,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 onClick={handleCompare}
                 aria-label={inCompare ? "Убрать из сравнения" : "Добавить к сравнению"}
               >
-                <IconScale size={15} />
+                <IconScale size={17} stroke={2} />
               </ActionIcon>
             </Box>
           )}
@@ -377,7 +377,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
               style={{ opacity: 0.9 }}
             >
-              <IconHeart size={14} fill={isFav ? "currentColor" : "none"} />
+              <IconHeart size={17} stroke={2} fill={isFav ? "currentColor" : "none"} />
             </ActionIcon>
           </Box>
         </Box>
