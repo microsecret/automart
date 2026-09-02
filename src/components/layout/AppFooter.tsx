@@ -95,7 +95,11 @@ export default function AppFooter() {
             ))}
           </SimpleGrid>
 
-          <Divider color="#27272a" />
+          {/* Линия была #27272a — контраст 1.27 к подложке подвала, то есть
+              её физически не видно, и копирайт со ссылками читался как
+              продолжение колонок выше. Тон подвала не меняется, линия
+              просто становится различимой. */}
+          <Divider color="#3f3f46" />
 
           {/* Нижняя секция */}
           <Group justify="space-between" align="center" wrap="wrap" gap="md">

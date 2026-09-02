@@ -695,8 +695,20 @@ select {
     transition: background var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
   }
 
+  /* Подача объявления выделена всегда, а не только на своей странице.
+
+     Раньше заливку она получала лишь когда человек уже открыл форму — то
+     есть ровно тогда, когда подсказка не нужна. На остальных страницах
+     главное действие площадки было того же цвета, что и текущая вкладка,
+     и отличалось от неё только подложкой: пять одинаковых пунктов, среди
+     которых ничто не зовёт.
+
+     Янтарь, а не синий: синим окрашена активная вкладка, и второе синее
+     пятно рядом читалось бы как ещё одна «текущая страница». Текст тёмный
+     — на янтаре белый даёт контраст 2.1. */
   .mobile-bottom-nav__accent {
-    color: var(--market-primary);
+    color: var(--market-accent-ink);
+    background: var(--market-accent);
   }
 
   .mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
@@ -704,10 +716,12 @@ select {
     background: var(--market-primary-soft);
   }
 
+  /* На своей странице — та же плашка, но с рамкой: человек видит, что
+     он уже здесь, и при этом кнопка не меняет цвет под ним. */
   .mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
-    color: #fff;
-    background: linear-gradient(135deg, #1c4291, #2b56b0);
-    box-shadow: var(--shadow-md);
+    color: var(--market-accent-ink);
+    background: var(--market-accent);
+    box-shadow: inset 0 0 0 2px var(--market-primary);
   }
 
   :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav {
@@ -7653,6 +7667,24 @@ a:focus-visible > .market-linked-card {
   transition: color var(--ease-fast) var(--ease-out);
 }
 
+/* Под палец на телефоне.
+
+   Строка ссылки высотой девятнадцать пикселей при шаге двадцать пять:
+   «Двигатель», «Тормоза» и «Ходовая» стоят вплотную, и нажатие часто
+   попадает в соседнюю. Растёт высота самой ссылки, а не невидимая
+   область вокруг: наложенная область перекрыла бы соседнюю строку и
+   промахов стало бы больше, а не меньше.
+
+   На десктопе правило не работает: там курсор точный, а разреженный
+   список ссылок растянул бы подвал вдвое. */
+@media (hover: none) and (pointer: coarse) {
+  .market-app-footer__link {
+    display: flex;
+    min-height: 40px;
+    align-items: center;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .market-app-footer__link:hover {
     color: #ffffff;
@@ -8276,6 +8308,29 @@ h1[data-lw-hero] {
   padding-bottom: 2px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* Ряд останавливается на кнопке целиком, а не на половине слова.
+
+     Полоса прокрутки скрыта, поэтому после маха пальцем ряд замирал где
+     придётся — часто посередине названия категории. `proximity`, а не
+     `mandatory`: кнопки разной ширины, и жёсткий притягивающий снап
+     дёргал бы ленту при каждом касании. */
+  scroll-snap-type: x proximity;
+  /* Затухание у правого края — единственный признак, что лента
+     продолжается: полосы прокрутки на телефоне не видно, а кнопки разной
+     ширины, поэтому последняя иногда заканчивается ровно у края и ряд
+     выглядит законченным. */
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+}
+
+.parts-category-row > * {
+  scroll-snap-align: start;
+}
+
+/* Пока человек идёт по ряду с клавиатуры, затухание снимается: маска
+   обрезает кольцо фокуса на последней кнопке, и становится непонятно,
+   где ты находишься. */
+.parts-category-row:focus-within {
+  mask-image: none;
 }
 
 .parts-category-row::-webkit-scrollbar {
