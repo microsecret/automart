@@ -18,7 +18,11 @@ export default function ServicesPage() {
         <Group justify="space-between" align="flex-end" gap="lg" wrap="wrap">
           <Stack gap="xs" maw={660}>
             <Group gap="sm"><ThemeIcon size={42} radius="md" variant="white"><IconMapPin size={21} /></ThemeIcon><Badge variant="white" color="dark" radius="xl">Сервисы для выбора и сделки</Badge></Group>
-            <Text component="h1" ff="var(--font-display),sans-serif">Решения, которые помогают принять решение увереннее.</Text>
+            {/* Цвет задан явно: без него заголовок берёт тёмный --market-ink
+                из общего правила заголовков страницы и оказывается
+                тёмно-синим на тёмно-синей подложке — на живом сайте фраза
+                была почти не видна. */}
+            <Text component="h1" c="#fff" ff="var(--font-display),sans-serif">Решения, которые помогают принять решение увереннее.</Text>
             <Text size="sm" c="rgba(255,255,255,0.8)" maw={590}>Проверьте историю, сопоставьте цену, выберите маршрут и ведите сделку в одном понятном сценарии.</Text>
           </Stack>
           <Button component={Link} href="/services/fuel-map" variant="white" color="dark" size="sm" leftSection={<IconRoute size={16} />}>Открыть карту АЗС</Button>
