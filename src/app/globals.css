@@ -3124,38 +3124,46 @@ select {
   border-top: 1px solid var(--market-line);
 }
 
+/* «Подробнее» — подсказка направления, а не кнопка.
+
+   Она была нарисована как настоящая кнопка: рамка, заливка, жирный
+   шрифт. Но кнопкой не является — в объявление ведёт вся карточка
+   целиком, а эта надпись лишь часть той же ссылки. Вид обещал отдельное
+   действие, которого нет, и в ряду из двадцати карточек двадцать
+   ложных кнопок перетягивали внимание с цены и фотографии — того, ради
+   чего человек и смотрит ленту.
+
+   Теперь это строка со стрелкой: она показывает, куда ведёт карточка, и
+   оживает при наведении вместе с ней. */
 .market-details-cta {
   display: inline-flex;
-  min-height: 34px;
+  min-height: 24px;
   align-items: center;
-  justify-content: center;
   gap: 5px;
-  padding: 7px 10px;
-  border: 1px solid color-mix(in srgb, var(--market-primary) 22%, var(--market-line));
-  border-radius: var(--radius-sm);
-  background: var(--market-primary-soft);
-  color: var(--market-ink);
+  color: var(--market-primary);
   font-size: var(--text-xs);
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1;
   white-space: nowrap;
-  transition: background-color var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+  transition: gap var(--ease-fast) var(--ease-out), color var(--ease-base) var(--ease-out);
 }
 
 .market-details-cta svg {
   transition: transform var(--ease-fast) var(--ease-out);
 }
 
+/* Строка прижата влево, а не растянута во всю ширину: растянутая
+   читалась как кнопка даже без рамки. */
 .listing-card__details-cta {
-  width: 100%;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 @media (hover: hover) and (pointer: fine) {
+  /* При наведении на карточку стрелка отъезжает от текста — движение
+     показывает, что карточка ведёт дальше. */
   .listing-card:hover .market-details-cta,
   .vehicle-detail-similar-card:hover .market-details-cta {
-    border-color: color-mix(in srgb, var(--market-primary) 42%, var(--market-line));
-    background: color-mix(in srgb, var(--market-primary-soft) 76%, var(--market-surface));
+    gap: 9px;
   }
 
   .listing-card:hover .market-details-cta svg,
@@ -3182,10 +3190,20 @@ select {
      перебивали его и возвращали цель, в которую палец не попадает. */
   width: 44px;
   height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  background: rgba(15, 23, 42, 0.72);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(var(--blur-panel)) saturate(1.18);
+  /* Белая кнопка вместо тёмной.
+
+     Тёмная с белой рамкой читалась на светлом кузове и пропадала на
+     тёмном — а тёмных машин в ленте половина. Белая заметна на любом
+     снимке: фотографии редко бывают целиком белыми в том углу, где она
+     стоит, а тень отделяет её от светлого фона.
+
+     Размытие подложки убрано: оно стояло на каждой из двадцати карточек
+     ленты и пересчитывалось при каждом кадре прокрутки. Тень даёт ту же
+     отделённость и ничего не стоит. */
+  border: 0;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--market-ink);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.28);
   transition: transform var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
 

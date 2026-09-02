@@ -346,13 +346,14 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             <Box pos="absolute" bottom={8} right={56} style={{ zIndex: 2 }}>
               <ActionIcon
                 className="listing-card__favorite"
+                /* Значок тёмный: подложка кнопки белая, и светлый значок на
+                   ней пропадал бы. Активное состояние — фирменным цветом. */
                 color={inCompare ? "indigo" : "dark"}
-                variant="filled"
+                variant="subtle"
                 size={44}
                 radius="xl"
                 onClick={handleCompare}
                 aria-label={inCompare ? "Убрать из сравнения" : "Добавить к сравнению"}
-                style={{ opacity: 0.9 }}
               >
                 <IconScale size={15} />
               </ActionIcon>
@@ -364,7 +365,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             <ActionIcon
               className="listing-card__favorite"
               color={isFav ? "red" : "dark"}
-              variant="filled"
+              variant="subtle"
               /* 44px — норма зоны нажатия для пальца; при size="sm" кнопка
                  была 30px и на телефоне в неё промахивались. Размер задан
                  числом: именованные ступени Mantine до 44px не доходят
