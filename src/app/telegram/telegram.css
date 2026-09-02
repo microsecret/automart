@@ -20,16 +20,6 @@
   --tg-accent-text: #ffffff;
   --tg-line: #101921;
 
-  /* Марка внутри мессенджера.
-
-     Цвета выше приходят из темы Telegram и у большинства синие —
-     приложение выглядит родным, но неотличимым от тысячи других.
-     Фирменный тон держит узкую роль: главное действие и активный
-     пункт. Его подставляет TelegramShell; значение здесь — запас для
-     клиента, где скрипт не отработал. */
-  --tg-brand: #ff4d3d;
-  --tg-brand-text: #ffffff;
-
   /* Высота нижней навигации плюс безопасный отступ снизу: под лентой
      должно оставаться место, иначе последняя карточка уезжает под панель. */
   --tg-nav-height: 58px;
@@ -319,20 +309,20 @@ body:has(.tg-shell[data-main-button="hidden"]) {
 }
 
 .tg-nav__item[data-active] {
-  color: var(--tg-brand);
+  color: var(--tg-accent);
 }
 
 /* Подача выделена: это главное действие площадки, ради него приложение и
    существует. Значок в круге фирменного цвета — как в приложениях, где
    создание отличают от навигации. */
 .tg-nav__item[data-accent] {
-  color: var(--tg-brand-text);
+  color: var(--tg-accent-text);
 }
 
 .tg-nav__item[data-accent] svg {
   padding: 6px;
   border-radius: 50%;
-  background: var(--tg-brand);
+  background: var(--tg-accent);
   box-sizing: content-box;
 }
 
@@ -375,8 +365,8 @@ body:has(.tg-shell[data-main-button="hidden"]) {
   height: 46px;
   border: 0;
   border-radius: 12px;
-  background: var(--tg-brand);
-  color: var(--tg-brand-text);
+  background: var(--tg-accent);
+  color: var(--tg-accent-text);
   font-weight: 700;
 }
 

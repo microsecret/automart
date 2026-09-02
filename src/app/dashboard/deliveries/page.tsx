@@ -266,7 +266,7 @@ function DeliveriesWorkspace() {
                             <Text fw={800} lineClamp={2}>{listing.make} {listing.model} {listing.year}</Text>
                             <Text size="sm" c="dimmed">{countryLabel(listing.country)} · {listing.lotNumber ? "лот " + listing.lotNumber + " · " : ""}{formatPriceShort(listing.finalPrice)}</Text>
                           </Box>
-                          <Group gap={6}><IconMapPin size={15} color="var(--market-primary)" /><Text size="sm" fw={700}>{offer.inquiry.city || "Город уточняется"}</Text><Text size="sm" c="dimmed">· {offer.inquiry.name}</Text></Group>
+                          <Group gap={6}><IconMapPin size={15} color="#1c4291" /><Text size="sm" fw={700}>{offer.inquiry.city || "Город уточняется"}</Text><Text size="sm" c="dimmed">· {offer.inquiry.name}</Text></Group>
                           {offer.matchReason && <Text size="xs" c="teal.7">{offer.matchReason}</Text>}
                           {offer.inquiry.comment && <Text size="xs" c="dimmed" lineClamp={2}>{offer.inquiry.comment}</Text>}
                           <Button color="orange" radius="md" onClick={() => acceptAuctionOffer(offer.id)} loading={acceptingOfferId === offer.id} disabled={Boolean(acceptingOfferId)} rightSection={<IconArrowRight size={16} />}>Принять в работу</Button>

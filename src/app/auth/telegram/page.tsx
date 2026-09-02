@@ -17,7 +17,7 @@ export default function TelegramAuthPage() {
             Автоматический вход по Telegram ID работает внутри Mini App. Отдельная кнопка Telegram-входа на сайте больше не требуется.
           </Alert>
           <Button component={Link} href="/auth/signin" color="indigo" fullWidth>Войти по почте или телефону</Button>
-          <Text size="sm" ta="center" c="dimmed">Нет аккаунта? <Link href="/auth/signup" style={{ color: "var(--market-primary)" }}>Регистрация через Telegram-бота</Link></Text>
+          <Text size="sm" ta="center" c="dimmed">Нет аккаунта? <Link href="/auth/signup" style={{ color: "#1c4291" }}>Регистрация через Telegram-бота</Link></Text>
         </Stack>
       </Paper>
     </Box>

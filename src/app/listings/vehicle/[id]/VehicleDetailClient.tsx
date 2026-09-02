@@ -570,7 +570,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                               borderRadius: 8,
                               overflow: "hidden",
                               cursor: "pointer",
-                              border: activeImage === i ? "2px solid var(--market-primary)" : "2px solid transparent",
+                              border: activeImage === i ? "2px solid #1c4291" : "2px solid transparent",
                               transition: "border-color 150ms ease",
                             }}
                             onClick={() => selectImage(i)}
@@ -699,16 +699,16 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     Платформа не удерживает деньги: платежи оформляются по согласованным сторонами реквизитам.
                   </Text>
                   <Group gap={6} mt={4}>
-                    <IconCheck size={14} color="var(--market-primary)" />
-                    <Text size="xs" c="var(--market-primary)">Проверка данных объявления</Text>
+                    <IconCheck size={14} color="#1c4291" />
+                    <Text size="xs" c="#1c4291">Проверка данных объявления</Text>
                   </Group>
                   <Group gap={6}>
-                    <IconCheck size={14} color="var(--market-primary)" />
-                    <Text size="xs" c="var(--market-primary)">Проверка документов</Text>
+                    <IconCheck size={14} color="#1c4291" />
+                    <Text size="xs" c="#1c4291">Проверка документов</Text>
                   </Group>
                   <Group gap={6}>
-                    <IconCheck size={14} color="var(--market-primary)" />
-                    <Text size="xs" c="var(--market-primary)">Статусы и поддержка</Text>
+                    <IconCheck size={14} color="#1c4291" />
+                    <Text size="xs" c="#1c4291">Статусы и поддержка</Text>
                   </Group>
                 </Stack>
                 <Button component={Link} href="/services/safe-deal" variant="light" color="indigo" radius="md" size="md">Как это работает</Button>

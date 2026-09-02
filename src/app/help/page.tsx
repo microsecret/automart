@@ -3,10 +3,10 @@ import { Box, Text, Paper, Group, Stack, ThemeIcon, SimpleGrid, Anchor } from "@
 import { IconShieldCheck, IconHelpCircle, IconScale, IconMessage2, IconCar, IconLock, IconSearch } from "@tabler/icons-react"
 
 const SECTIONS = [
-  { icon: IconCar, title: "Как продать авто", desc: "Пошаговое руководство для продавцов", href: "/help/sell", color: "var(--market-primary)" },
+  { icon: IconCar, title: "Как продать авто", desc: "Пошаговое руководство для продавцов", href: "/help/sell", color: "#1c4291" },
   { icon: IconShieldCheck, title: "Сопровождение сделки", desc: "Проверка документов, статусы и сопровождение покупки", href: "/services/safe-deal", color: "#059669" },
   { icon: IconLock, title: "Безопасность", desc: "Как защититься от мошенников", href: "/help/safety", color: "#dc2626" },
-  { icon: IconScale, title: "Правила площадки", desc: "Условия использования, модерация", href: "/help/rules", color: "var(--market-primary)" },
+  { icon: IconScale, title: "Правила площадки", desc: "Условия использования, модерация", href: "/help/rules", color: "#1c4291" },
   /* Заявка на деталь. Справка рассказывала, как продать машину и куда
      жаловаться, но не про самый частый тупик покупателя: нужной детали
      нет ни в одном каталоге, и человек уходит, не зная, что её можно
@@ -47,7 +47,7 @@ export default function HelpPage() {
             )
           })}
         </SimpleGrid>
-        <Paper p="xl" radius="md" style={{ background: "var(--market-primary)" }}>
+        <Paper p="xl" radius="md" style={{ background: "linear-gradient(135deg,#1c4291,#1c4291)" }}>
           <Group justify="space-between" align="center" wrap="wrap">
             <Stack gap={0}>
               <Text fw={800} fz="lg" c="white">Не нашли ответ?</Text>

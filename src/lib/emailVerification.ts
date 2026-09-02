@@ -90,7 +90,7 @@ export async function sendEmailVerification(emailInput: string, name?: string | 
       from: process.env.EMAIL_FROM,
       to: [email],
       subject: "Подтвердите email в Авторынке",
-      html: `<div style="font-family:Arial,sans-serif;color:#18181b;line-height:1.55"><h2>Подтвердите email</h2><p>${greeting}!</p><p>Нажмите кнопку, чтобы завершить регистрацию в Авторынке. Ссылка действует 24 часа.</p><p><a href="${verificationUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:var(--market-primary);color:#fff;text-decoration:none;font-weight:700">Подтвердить email</a></p><p style="color:#71717a;font-size:13px">Если вы не создавали аккаунт, просто проигнорируйте это письмо.</p></div>`,
+      html: `<div style="font-family:Arial,sans-serif;color:#18181b;line-height:1.55"><h2>Подтвердите email</h2><p>${greeting}!</p><p>Нажмите кнопку, чтобы завершить регистрацию в Авторынке. Ссылка действует 24 часа.</p><p><a href="${verificationUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#14306b;color:#fff;text-decoration:none;font-weight:700">Подтвердить email</a></p><p style="color:#71717a;font-size:13px">Если вы не создавали аккаунт, просто проигнорируйте это письмо.</p></div>`,
     }),
   })
 
@@ -123,7 +123,7 @@ export async function sendPasswordResetEmail(emailInput: string, name?: string |
       from: process.env.EMAIL_FROM,
       to: [email],
       subject: "Сброс пароля в Авторынке",
-      html: `<div style="font-family:Arial,sans-serif;color:#18181b;line-height:1.55"><h2>Сброс пароля</h2><p>${greeting}!</p><p>Нажмите кнопку, чтобы установить новый пароль. Ссылка действует 24 часа и станет недействительной после использования.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:var(--market-primary);color:#fff;text-decoration:none;font-weight:700">Установить новый пароль</a></p><p style="color:#71717a;font-size:13px">Если вы не запрашивали сброс, просто проигнорируйте это письмо.</p></div>`,
+      html: `<div style="font-family:Arial,sans-serif;color:#18181b;line-height:1.55"><h2>Сброс пароля</h2><p>${greeting}!</p><p>Нажмите кнопку, чтобы установить новый пароль. Ссылка действует 24 часа и станет недействительной после использования.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#14306b;color:#fff;text-decoration:none;font-weight:700">Установить новый пароль</a></p><p style="color:#71717a;font-size:13px">Если вы не запрашивали сброс, просто проигнорируйте это письмо.</p></div>`,
     }),
   })
 

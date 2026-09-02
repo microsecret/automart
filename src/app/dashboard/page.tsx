@@ -322,12 +322,12 @@ function DashboardContent() {
         {/* Карточки статистики */}
         <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="sm">
           {[
-            { label: "Объявления", value: stats.totalListings, icon: <IconTag size={18} />, color: "var(--market-primary)", bg: "var(--market-primary-soft)" },
+            { label: "Объявления", value: stats.totalListings, icon: <IconTag size={18} />, color: "#1c4291", bg: "#eef2fb" },
             { label: "Просмотры", value: stats.totalViews, icon: <IconEye size={18} />, color: "#0891b2", bg: "#ecfeff" },
             { label: "Избранное", value: stats.favoritesCount, icon: <IconHeart size={18} />, color: "#e11d48", bg: "#fff1f2" },
             { label: "Отзывы", value: stats.reviewsCount, icon: <IconStar size={18} />, color: "#ea580c", bg: "#fff7ed" },
             { label: "Сообщения", value: stats.unreadMessages > 0 ? `+${stats.unreadMessages}` : 0, icon: <IconMessageCircle2 size={18} />, color: "#059669", bg: "#ecfdf5" },
-            { label: "Рейтинг", value: stats.avgRating || "—", icon: <IconTrendingUp size={18} />, color: "var(--market-primary)", bg: "#f5f3ff" },
+            { label: "Рейтинг", value: stats.avgRating || "—", icon: <IconTrendingUp size={18} />, color: "#1c4291", bg: "#f5f3ff" },
           ].map((s) => (
             <Paper key={s.label} radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="center">

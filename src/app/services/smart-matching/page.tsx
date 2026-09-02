@@ -106,7 +106,7 @@ export default function SmartmatchingPage() {
                   // Раньше фон задавался белым #fff, а текст внутри — тёмным: в тёмной
                   // теме карточка оставалась белым пятном, разрывающим список.
                   return (
-                    <Paper key={l.id} radius="md" p="md" withBorder style={{ borderColor: i === 0 ? "var(--market-primary)" : "var(--market-line)", background: i === 0 ? "var(--market-primary-soft)" : "var(--market-surface)" }}>
+                    <Paper key={l.id} radius="md" p="md" withBorder style={{ borderColor: i === 0 ? "#1c4291" : "var(--market-line)", background: i === 0 ? "var(--market-primary-soft)" : "var(--market-surface)" }}>
                       <Group gap="md" align="flex-start" wrap="nowrap">
                         <Box style={{ position: "relative", flexShrink: 0 }}>
                           <Box style={{ width: 120, height: 90, borderRadius: 8, overflow: "hidden", background: "var(--mantine-color-gray-1)", position: "relative" }}>

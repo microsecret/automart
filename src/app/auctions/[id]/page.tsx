@@ -555,7 +555,7 @@ function AuctionDetail() {
                     <Textarea label="Комментарий" placeholder="Вопросы, пожелания..." value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} size="sm" minRows={2} />
                     <Button type="submit" color="orange" radius="md" size="md" loading={submitting} leftSection={<IconCheck size={18} />} fullWidth>Отправить заявку</Button>
                     <Group gap={6}><IconShieldCheck size={14} color="#059669" /><Text size="xs" c="gray.5">Контакты видит только администратор. Партнёру — имя и город.</Text></Group>
-                    <Group gap={6}><IconTruckDelivery size={14} color="var(--market-primary)" /><Text size="xs" c="gray.5">Доставка во все регионы РФ</Text></Group>
+                    <Group gap={6}><IconTruckDelivery size={14} color="#1c4291" /><Text size="xs" c="gray.5">Доставка во все регионы РФ</Text></Group>
                   </Stack>
                 </form>
               )}

@@ -1234,7 +1234,7 @@ export default function AdminDashboard() {
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Stack gap="xs">
-              <Group gap="sm"><IconUsers size={16} color="var(--market-primary)" /><Text size="xs" c="gray.5">Роли</Text></Group>
+              <Group gap="sm"><IconUsers size={16} color="#1c4291" /><Text size="xs" c="gray.5">Роли</Text></Group>
               {Object.entries(data?.byRole || {}).map(([role, count]) => (
                 <Group key={role} justify="space-between">
                   <Text size="xs" c="gray.6">{role}</Text>
