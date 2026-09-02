@@ -39,9 +39,17 @@ export default function ServicesPage() {
           const Icon = service.icon
           return <Paper key={service.href} component={Link} href={service.href} withBorder radius="md" p="lg" className="service-card">
             <Stack gap="md" h="100%">
-              <Group justify="space-between" align="flex-start"><ThemeIcon size={44} radius="md" variant="light" color={service.color}><Icon size={22} /></ThemeIcon><Badge size="xs" variant="light" color={service.color} radius="xl">{service.stage}</Badge></Group>
+              {/* Цвет остался только у значка — он помогает узнать сервис
+                  боковым зрением. Метка шага стала нейтральной: раньше на
+                  каждой карточке было по три цветных элемента, и шесть
+                  карточек давали восемнадцать пятен шести разных оттенков.
+                  Взгляду не за что зацепиться, когда всё одинаково яркое. */}
+              <Group justify="space-between" align="flex-start"><ThemeIcon size={44} radius="md" variant="light" color={service.color}><Icon size={22} /></ThemeIcon><Badge size="xs" variant="default" radius="xl">{service.stage}</Badge></Group>
               <Box><Text fw={800} fz="lg">{service.title}</Text><Text size="sm" c="dimmed" mt={5} lh={1.45}>{service.description}</Text></Box>
-              <Anchor component="span" size="sm" fw={700} c={`${service.color}.6`} mt="auto">Открыть сервис <IconArrowRight size={14} style={{ verticalAlign: "-2px" }} /></Anchor>
+              {/* Призыв одного цвета на всех карточках: действие одно и то
+                  же — открыть сервис, — и красить его в шесть разных
+                  оттенков значило обещать шесть разных действий. */}
+              <Anchor component="span" size="sm" fw={700} c="var(--market-primary)" mt="auto">Открыть сервис <IconArrowRight size={14} style={{ verticalAlign: "-2px" }} /></Anchor>
             </Stack>
           </Paper>
         })}
