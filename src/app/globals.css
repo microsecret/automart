@@ -35,15 +35,15 @@
      запасным вариантом на случай, если загрузка не прошла. */
   --font-sans: var(--font-sans-next), "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-display: var(--font-display-next), "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
-  --market-ink: #0d1b32;
+  --market-ink: #0f1117;
   /* Вторичный текст был почти чистым серым (насыщенность 4%) и выглядел
      выцветшим рядом с индиго. Синий подтон связывает его с основным тоном,
      контраст при этом растёт с 4.8 до 5.5. */
-  --market-muted: #5b6b84;
+  --market-muted: #5f6470;
   /* Граница карточки почти сливалась с фоном страницы (контраст 1.13), из-за
      чего карточка не читалась как отдельный объект и страница выглядела
      плоской. Более глубокий тон отделяет её от подложки. */
-  --market-line: #ccd5e3;
+  --market-line: #e9eaef;
   --market-surface: #ffffff;
   /* Фон был почти белым, поэтому карточки сливались с ним и страница
      читалась как одна плоскость. Чуть более глубокий тон отделяет контент
@@ -51,41 +51,64 @@
   /* Фон получил индиговый подтон панели кабинета: раньше насыщенность была
      22% и страница выглядела серой рядом с фирменным цветом. Теперь 56% —
      белые карточки отделяются от подложки заметнее, а тон один на весь сайт. */
-  --market-background: #eef1f7;
-  --market-surface-subtle: #f6f8fc;
+  --market-background: #ffffff;
+  --market-surface-subtle: #f6f7fa;
   --market-field: #ffffff;
-  --market-field-hover: #eaf0fa;
+  --market-field-hover: #f6f7fa;
   /* Рамка поля давала контраст 1.35 к белой заливке — на снимках экрана поля
      фильтра читались как подписи без границ. */
-  --market-field-line: #c3cfe2;
-  --market-label: #475467;
-  --market-control-text: #273142;
-  --market-placeholder: #667085;
-  --market-focus: rgba(20, 48, 107, 0.2);
+  --market-field-line: #d6d8e0;
+  --market-label: #3d4250;
+  --market-control-text: #0f1117;
+  --market-placeholder: #6b7080;
+  --market-focus: rgba(255, 77, 61, 0.22);
   /* Мягкая подложка отличалась от фона страницы всего на 6% светлоты, поэтому
      активный пункт меню было не отличить от обычного. */
-  --market-primary-soft: #dbe4f7;
+  --market-primary-soft: #ffe8e5;
   --market-scroll-thumb: #d4d4d8;
   /* Выделение текста и каретка приходили из настроек браузера, поэтому на
      фирменных страницах вспыхивали чужой синевой. Собственные токены держат
      их в палитре проекта и в обеих темах. */
-  --market-selection: #bfd3f2;
+  --market-selection: #ffd9d4;
   --market-selection-ink: #171719;
-  --market-caret: #14306b;
+  --market-caret: #ff4d3d;
   /* Основной тон углублён с #1c4291 (светлота 59%) до #14306b: светлый индиго
      на белом фоне не держал вес, из-за чего интерфейс читался блёклым.
      Оттенок взят из уже существующей палитры, поэтому бренд узнаваем. */
-  --market-primary: #14306b;
-  --market-on-primary-muted: #eef2ff;
-  --lewheel-wordmark-strong: #0b2050;
+  --market-primary: #ff4d3d;
+  --market-on-primary-muted: #fff1ef;
+  --lewheel-wordmark-strong: #0f1117;
   /* Второй цвет системы. Раньше индиго отвечал и за навигацию, и за действие,
      поэтому взгляду не за что было зацепиться: всё одинаково важное. Янтарь
      несёт только призыв к действию и уже прижился в бейджах аукционов.
      Текст на нём тёмный — белый даёт всего 2.1 контраста. */
-  --market-accent: #ef7d00;
-  --market-accent-ink: #171719;
-  --market-accent-soft: #fff7e6;
+  --market-accent: #b5f23d;
+  --market-accent-ink: #0f1117;
+  --market-accent-soft: #f2ffd9;
   --app-header-height: 68px;
+
+  /* Контур вместо тени.
+
+     Прежний интерфейс держался на мягких индиговых тенях: карточка
+     «висела» над фоном, и на белом это читалось как размытое пятно.
+     Выбранное направление держит объект резкой линией по краю — так
+     карточка остаётся плоской и при этом отделена от фона однозначно.
+
+     Толщина одна на весь сайт. Два разных контура рядом читаются как
+     ошибка вёрстки, а не как иерархия. */
+  --outline-width: 2px;
+  --outline-ink: #0f1117;
+  --outline: var(--outline-width) solid var(--outline-ink);
+
+  /* Тень-смещение: копия фигуры, сдвинутая вниз-вправо, без размытия.
+
+     Работает как печатный оттиск, а не как свет. Живёт только на том,
+     что нажимают или что несёт главный смысл экрана: кнопка действия,
+     обложка героя. Разложенная по всем карточкам, она превращает
+     страницу в рябь. */
+  --offset-sm: 3px 3px 0 var(--outline-ink);
+  --offset-md: 5px 5px 0 var(--outline-ink);
+  --offset-lg: 8px 8px 0 var(--outline-ink);
 
   /* Шкала скруглений.
      На странице было четырнадцать разных радиусов — 8, 9, 10, 3, 16 и так
@@ -94,16 +117,16 @@
      карточки, крупные блоки. Пятая — для круглых. */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
   /* Пятая ступень: тема Mantine её знает (xl: 20px), а переменной не
      было — правила с var(--radius-xl) молча не срабатывали. */
-  --radius-xl: 20px;
+  --radius-xl: 28px;
   --radius-full: 999px;
   /* Вложенный радиус всегда на пиксель меньше внешнего — иначе скругления
      внутри карточки выглядят косо. Приём взят у Stripe (--card-radius 6px
      и --card-radius-inner 5px). */
-  --radius-inner: 5px;
+  --radius-inner: 14px;
 
   /* Шкала теней.
      Семнадцать разных теней делали интерфейс шумным: одинаковые по смыслу
@@ -112,15 +135,15 @@
 
      Тени цветные, а не серые: серая на цветном фоне выглядит грязью, а
      оттенок основного цвета читается как настоящая тень предмета. */
-  --shadow-sm: 0 1px 2px rgba(20, 48, 107, 0.06), 0 2px 6px -2px rgba(20, 48, 107, 0.08);
-  --shadow-md: 0 4px 10px -4px rgba(20, 48, 107, 0.14), 0 10px 24px -12px rgba(20, 48, 107, 0.18);
-  --shadow-lg: 0 12px 28px -12px rgba(20, 48, 107, 0.22), 0 24px 56px -24px rgba(20, 48, 107, 0.26);
+  --shadow-sm: 0 1px 2px rgba(15, 17, 23, 0.04);
+  --shadow-md: 0 4px 12px -6px rgba(15, 17, 23, 0.12);
+  --shadow-lg: 0 16px 40px -16px rgba(15, 17, 23, 0.26), 0 4px 12px -6px rgba(15, 17, 23, 0.12);
 
   /* Волосяная обводка отдельным слоем тени, а не рамкой.
      Приём Vercel: `box-shadow: 0 0 0 1px` не влияет на раскладку, поэтому
      элемент не дёргается при наведении, и обводку можно анимировать вместе
      с тенью одним переходом. */
-  --hairline: 0 0 0 1px rgba(20, 48, 107, 0.09);
+  --hairline: 0 0 0 1px rgba(15, 17, 23, 0.1);
 
   /* Шкала размеров текста — та же, что у темы Mantine.
      Собственные стили писали размеры вразнобой (0.72rem, 0.78rem, 0.82rem,
@@ -172,8 +195,11 @@
   --market-caution-line: #fde68a;
   --market-danger-surface: #fff1f2;
   --market-danger-line: #fecdd3;
-  --market-info-surface: #eef2fb;
-  --market-info-line: #b9caee;
+  /* Справка остаётся синей намеренно. Коралл в этой системе значит
+     «нажми», и подсказка в его цвете читалась бы как кнопка. Синий здесь
+     ничего не обещает — ровно то, что нужно пояснению. */
+  --market-info-surface: #eef4ff;
+  --market-info-line: #c3d7f7;
 }
 
 /* Трекинг связан с кеглем, а не выбран на глаз.
@@ -234,32 +260,43 @@
 
 :root[data-mantine-color-scheme="dark"] {
   --market-ink: #f5f5f7;
-  --market-muted: #a1a1aa;
-  --market-line: #30313a;
-  --market-surface: #1b1c23;
-  --market-background: #111217;
-  --market-surface-subtle: #171820;
-  --market-field: #20212a;
-  --market-field-hover: #27293a;
-  --market-field-line: #3a3c49;
+  --market-muted: #a0a3ad;
+  --market-line: #2c2e36;
+  --market-surface: #17181d;
+  --market-background: #0b0c0f;
+  --market-surface-subtle: #111217;
+  --market-field: #1c1d24;
+  --market-field-hover: #24252e;
+  --market-field-line: #34363f;
   --market-label: #c5c8d3;
   --market-control-text: #f4f4f5;
   --market-placeholder: #9fa3b5;
-  --market-focus: rgba(91, 130, 214, 0.32);
-  --market-primary-soft: #252846;
-  /* Тёмный индиго на тёмном фоне даёт контраст 1.8 — нечитаемо. В тёмной теме
-     основной тон светлеет, сохраняя оттенок. */
-  --market-primary: #8b85f5;
-  /* Фирменный тёмно-синий годится для белой шапки, но исчезает на ночной
-     поверхности. Сохраняем оттенок, поднимая светлоту до читаемого уровня. */
-  --lewheel-wordmark-strong: #b5c9f2;
-  --market-accent: #fbbf24;
-  --market-accent-ink: #171719;
-  --market-accent-soft: #2a1e12;
+  --market-focus: rgba(255, 122, 108, 0.34);
+  --market-primary-soft: #3a1a16;
+  /* Коралл светлой темы на чёрном даёт контраст 3.6 — для текста мало.
+     Осветлённый оттенок держит 5.2, оставаясь тем же цветом. */
+  --market-primary: #ff7a6c;
+  --lewheel-wordmark-strong: #f5f5f7;
+  /* Лайм в темноте становится ярче фона и вылезает вперёд текста, поэтому
+     светлота снижена: он остаётся вторым голосом, а не первым. */
+  --market-accent: #a8e02f;
+  --market-accent-ink: #0f1117;
+  --market-accent-soft: #1e2a0d;
   --market-scroll-thumb: #4b4d5a;
-  --market-selection: #102a59;
+  --market-selection: #4a1a14;
   --market-selection-ink: #f5f5f7;
-  --market-caret: #8fa9de;
+  --market-caret: #ff7a6c;
+
+  /* Чёрный контур в темноте невидим — линия уходит в фон, и объект теряет
+     край. Светлая обводка держит ту же роль: резкая граница вместо тени. */
+  --outline-ink: #f5f5f7;
+  --offset-sm: 3px 3px 0 rgba(245, 245, 247, 0.22);
+  --offset-md: 5px 5px 0 rgba(245, 245, 247, 0.22);
+  --offset-lg: 8px 8px 0 rgba(245, 245, 247, 0.2);
+  --hairline: 0 0 0 1px rgba(245, 245, 247, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px -6px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 40px -16px rgba(0, 0, 0, 0.7), 0 4px 12px -6px rgba(0, 0, 0, 0.5);
 
   /* В тёмной теме те же состояния читаются как приглушённая подложка: тон
      сохраняется, светлота уходит под текст светлой темы. */
@@ -490,7 +527,7 @@ select {
   position: relative;
   overflow: hidden;
   color: #fff;
-  background: linear-gradient(135deg, #0b2050 0%, #14306b 48%, #1c4291 100%);
+  background: linear-gradient(135deg, #8f2018 0%, #e63a2b 48%, #ff4d3d 100%);
   box-shadow: var(--shadow-lg);
 }
 
@@ -672,7 +709,7 @@ select {
 
   .mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
     color: #fff;
-    background: linear-gradient(135deg, #1c4291, #2b56b0);
+    background: linear-gradient(135deg, #ff4d3d, #ff5c4b);
     box-shadow: var(--shadow-md);
   }
 
@@ -876,13 +913,13 @@ select {
 .market-app-header__link:hover {
   color: var(--market-ink) !important;
   background: color-mix(in srgb, var(--market-primary-soft) 72%, white);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #5b82d6 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ff7a6c 15%, transparent);
 }
 
 .market-app-header__link--active {
   color: var(--mantine-color-indigo-7) !important;
   background: var(--market-primary-soft);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #5b82d6 28%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ff7a6c 28%, transparent);
 }
 
 /* Значки в шапке читаются на светлой подложке до наведения.
@@ -891,7 +928,7 @@ select {
    они живут в слое каскада, а это правило вне слоёв: выигрывает само. */
 .market-app-header__utility-action {
   border: 1px solid var(--market-field-line);
-  background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb);
+  background: color-mix(in srgb, var(--market-surface) 92%, #fff1ef);
   color: var(--market-control-text);
   box-shadow: var(--shadow-md);
 }
@@ -1262,7 +1299,7 @@ select {
 
 .market-header-search__suggestions {
   overflow: hidden;
-  border-color: color-mix(in srgb, var(--market-field-line) 82%, #b9caee) !important;
+  border-color: color-mix(in srgb, var(--market-field-line) 82%, #ffc9c2) !important;
   background: color-mix(in srgb, var(--market-surface) 94%, transparent) !important;
   box-shadow: 0 20px 38px -24px rgba(15, 23, 42, 0.42) !important;
   backdrop-filter: blur(var(--blur-overlay)) saturate(1.08);
@@ -1342,7 +1379,7 @@ select {
   height: 48px;
   place-items: center;
   border-radius: var(--radius-lg);
-  background: #1c4291;
+  background: #ff4d3d;
   box-shadow: var(--shadow-md);
 }
 
@@ -1463,7 +1500,7 @@ select {
   left: 0;
   width: 2.5px;
   border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, #5b82d6 0%, #14306b 100%);
+  background: linear-gradient(180deg, #ff7a6c 0%, #e63a2b 100%);
   content: "";
   transition: box-shadow var(--ease-base) var(--ease-out);
 }
@@ -1657,7 +1694,7 @@ select {
 .lewheel-brand--inverse .lewheel-brand__wordmark strong {
   /* Тот же приём, что и в шапке: сплошной цвет вместо background-clip,
      иначе хвост наклонной «l» остаётся незакрашенным. */
-  color: #8fa9de;
+  color: #ffa094;
 }
 
 /* Кнопка «Стать партнёром» видна с первого desktop-брейкпоинта. До 1700px
@@ -1745,7 +1782,7 @@ select {
   overflow: hidden;
   /* Градиент был прописан старыми светлыми оттенками и перебивал углублённую
      тему, из-за чего главная кнопка сайта осталась блёклой. */
-  background: linear-gradient(135deg, #102a59 0%, #14306b 58%, #102a59 100%);
+  background: linear-gradient(135deg, #c22e21 0%, #e63a2b 58%, #c22e21 100%);
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
@@ -1773,7 +1810,7 @@ select {
 
 .partner-application-modal {
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--market-line) 88%, #1c4291);
+  border: 1px solid color-mix(in srgb, var(--market-line) 88%, #ff4d3d);
   box-shadow: var(--shadow-lg);
 }
 
@@ -1792,7 +1829,7 @@ select {
   margin-inline: -22px;
   padding: 26px 24px 22px;
   color: #f8fafc;
-  background: linear-gradient(128deg, #06152f 0%, #102a59 57%, #0b2050 100%);
+  background: linear-gradient(128deg, #06152f 0%, #c22e21 57%, #8f2018 100%);
 }
 
 .partner-application-hero::after {
@@ -2175,7 +2212,7 @@ select {
 
 .catalog-sort-control .mantine-Input-input:focus,
 .catalog-sort-control .mantine-Select-input:focus {
-  border-color: #2b56b0;
+  border-color: #ff5c4b;
   box-shadow: 0 0 0 3px var(--market-focus);
 }
 
@@ -2240,12 +2277,12 @@ select {
 
 .catalog-filter-field:hover {
   border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
-  background: color-mix(in srgb, var(--market-field) 92%, #eef2fb);
+  background: color-mix(in srgb, var(--market-field) 92%, #fff1ef);
 }
 
 .catalog-filter-field:focus-within {
   z-index: 1;
-  border-color: #2b56b0;
+  border-color: #ff5c4b;
   box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(11, 32, 80, 0.72);
 }
 
@@ -2363,8 +2400,8 @@ select {
 }
 
 .catalog-filter-advanced .mantine-Chip-input:checked + .mantine-Chip-label {
-  border-color: #14306b;
-  background: linear-gradient(135deg, #14306b, #1c4291);
+  border-color: #e63a2b;
+  background: linear-gradient(135deg, #e63a2b, #ff4d3d);
   color: #fff;
   box-shadow: var(--shadow-md);
 }
@@ -2416,7 +2453,7 @@ select {
   padding: 16px;
   text-align: center;
   overflow: hidden;
-  background: linear-gradient(145deg, #eef2fb 0%, #f8fafc 58%, #dbe4f7 100%);
+  background: linear-gradient(145deg, #fff1ef 0%, #f8fafc 58%, #ffe8e5 100%);
 }
 
 .vehicle-fallback::before,
@@ -2465,7 +2502,7 @@ select {
   width: 44%;
   height: 44%;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--listing-accent, #2b56b0) 14%, transparent);
+  background: color-mix(in srgb, var(--listing-accent, #ff5c4b) 14%, transparent);
   filter: blur(22px);
   transform: translateY(18%);
 }
@@ -2476,7 +2513,7 @@ select {
   width: 58%;
   height: 1px;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--listing-accent, #2b56b0) 32%, transparent), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--listing-accent, #ff5c4b) 32%, transparent), transparent);
   opacity: 0.78;
   transform: rotate(-24deg);
 }
@@ -2507,7 +2544,7 @@ select {
 .vehicle-fallback--truck,
 .vehicle-fallback--special { background: linear-gradient(145deg, #fff7ed 0%, #f8fafc 58%, #fef3c7 100%); }
 .vehicle-fallback--motorcycle { background: linear-gradient(145deg, #f3e8ff 0%, #faf5ff 58%, #ede9fe 100%); }
-.vehicle-fallback--part { background: linear-gradient(145deg, #f5f3ff 0%, #fafaff 58%, #dbe4f7 100%); }
+.vehicle-fallback--part { background: linear-gradient(145deg, #f5f3ff 0%, #fafaff 58%, #ffe8e5 100%); }
 
 /* Part detail uses the same quiet, tactile surfaces as vehicle details in both themes. */
 .part-detail__gallery {
@@ -2628,7 +2665,7 @@ select {
 }
 
 .listing-card__media[data-empty-media] {
-  background: linear-gradient(145deg, #f8fafc 0%, #eef2fb 100%);
+  background: linear-gradient(145deg, #f8fafc 0%, #fff1ef 100%);
 }
 
 /* Область фото стоит НАД ссылкой-оверлеем карточки.
@@ -2823,7 +2860,7 @@ select {
 }
 
 .listing-card__media[data-empty-media][data-vehicle-type="car"] .vehicle-fallback {
-  background: linear-gradient(145deg, #f6f8fc 0%, #eef2fb 54%, #e7edff 100%);
+  background: linear-gradient(145deg, #f6f8fc 0%, #fff1ef 54%, #e7edff 100%);
 }
 
 .listing-card__media[data-empty-media][data-vehicle-type="part"] .vehicle-fallback {
@@ -3134,12 +3171,12 @@ select {
 .news-list-search .mantine-TextInput-input {
   min-height: 50px;
   border-color: var(--market-field-line);
-  background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb);
+  background: color-mix(in srgb, var(--market-surface) 92%, #fff1ef);
   box-shadow: var(--shadow-md);
 }
 
 .news-list-search .mantine-TextInput-input:focus {
-  border-color: #5b82d6;
+  border-color: #ff7a6c;
   box-shadow: 0 0 0 3px rgba(43, 86, 176, 0.13), 0 14px 28px -26px rgba(11, 32, 80, 0.72);
 }
 
@@ -3172,8 +3209,8 @@ select {
   justify-content: center;
   gap: 10px;
   overflow: hidden;
-  color: #dbe4f7;
-  background: linear-gradient(135deg, #182153 0%, #102a59 51%, #0e7490 100%);
+  color: #ffe8e5;
+  background: linear-gradient(135deg, #182153 0%, #c22e21 51%, #0e7490 100%);
 }
 
 .news-list-card__cover::after {
@@ -3303,7 +3340,7 @@ select {
   }
 
   .news-list-card-link:hover .news-list-card__read {
-    color: #102a59;
+    color: #c22e21;
   }
 }
 
@@ -3406,7 +3443,7 @@ select {
 .auction-filter-grid > .mantine-InputWrapper-root:hover,
 .auction-filter-grid > .mantine-Box-root:hover {
   border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
-  background: color-mix(in srgb, var(--market-field) 92%, #eef2fb);
+  background: color-mix(in srgb, var(--market-field) 92%, #fff1ef);
 }
 
 .parts-filter-grid > .mantine-InputWrapper-root:focus-within,
@@ -3415,7 +3452,7 @@ select {
 .auction-filter-grid > .mantine-Box-root:focus-within {
   position: relative;
   z-index: 1;
-  border-color: #2b56b0;
+  border-color: #ff5c4b;
   box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(11, 32, 80, 0.72);
 }
 
@@ -3456,8 +3493,8 @@ select {
 }
 
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
-  border-color: #5b82d6;
-  background: #eef2fb;
+  border-color: #ff7a6c;
+  background: #fff1ef;
 }
 
 .parts-filter-checks .mantine-Checkbox-label {
@@ -3499,17 +3536,17 @@ select {
   overflow: hidden;
   border-color: rgba(199, 210, 254, 0.55);
   color: #fff;
-  background: linear-gradient(118deg, #171340 0%, #102a59 52%, #0f5f8d 100%);
+  background: linear-gradient(118deg, #171340 0%, #c22e21 52%, #0f5f8d 100%);
   box-shadow: var(--shadow-lg);
 }
 
 .service-hub-hero .mantine-ThemeIcon-root {
-  color: #102a59;
+  color: #c22e21;
   box-shadow: var(--shadow-md);
 }
 
 .service-hub-hero .mantine-Badge-root {
-  color: #0b2050;
+  color: #8f2018;
   box-shadow: var(--shadow-md);
 }
 
@@ -4532,7 +4569,7 @@ html:has(.fuel-map-canvas) {
 
 .fuel-map-tile-option[data-active] {
   color: #fff;
-  background: #1c4291;
+  background: #ff4d3d;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -4542,7 +4579,7 @@ html:has(.fuel-map-canvas) {
 }
 
 .fuel-map-tile-option:focus-visible {
-  outline: 2px solid #1c4291;
+  outline: 2px solid #ff4d3d;
   outline-offset: 1px;
 }
 
@@ -4698,7 +4735,7 @@ html:has(.fuel-map-canvas) {
   gap: 8px;
   max-width: min(390px, calc(100% - 24px));
   padding: 8px 10px;
-  border-color: color-mix(in srgb, #5b82d6 38%, var(--market-line));
+  border-color: color-mix(in srgb, #ff7a6c 38%, var(--market-line));
   background: rgb(255 255 255 / 94%);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(var(--blur-panel));
@@ -5062,7 +5099,7 @@ html:has(.fuel-map-canvas) {
   display: grid;
   gap: 6px;
   padding: 2px 2px 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 72%, #5b82d6);
+  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 72%, #ff7a6c);
 }
 
 .fuel-station-card {
@@ -6041,7 +6078,7 @@ html:has(.fuel-map-canvas) {
   min-height: 78px;
   gap: 10px;
   border-color: color-mix(in srgb, var(--market-line) 88%, transparent);
-  background: linear-gradient(145deg, #fff, color-mix(in srgb, #fff 92%, #eef2fb));
+  background: linear-gradient(145deg, #fff, color-mix(in srgb, #fff 92%, #fff1ef));
   transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
@@ -6054,7 +6091,7 @@ html:has(.fuel-map-canvas) {
   overflow: hidden;
   border-radius: var(--radius-sm);
   place-items: center;
-  background: #eef2fb;
+  background: #fff1ef;
 }
 
 .listing-map-result__media .vehicle-fallback {
@@ -6184,8 +6221,8 @@ html:has(.fuel-map-canvas) {
 }
 
 .parts-filter-checks .mantine-Checkbox-root:has(input:checked) {
-  border-color: color-mix(in srgb, #2b56b0 54%, var(--market-field-line));
-  background: #eef2fb;
+  border-color: color-mix(in srgb, #ff5c4b 54%, var(--market-field-line));
+  background: #fff1ef;
   box-shadow: var(--shadow-md);
 }
 
@@ -6327,10 +6364,10 @@ html:has(.fuel-map-canvas) {
   width: 42px;
   height: 42px;
   place-items: center;
-  border: 1px solid #b9caee;
+  border: 1px solid #ffc9c2;
   border-radius: var(--radius-md);
-  background: #eef2fb;
-  color: #1c4291;
+  background: #fff1ef;
+  color: #ff4d3d;
 }
 
 .vehicle-detail-specs,
@@ -6396,8 +6433,8 @@ html:has(.fuel-map-canvas) {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xs);
-  background: #eef2fb;
-  color: #2b56b0;
+  background: #fff1ef;
+  color: #ff5c4b;
 }
 
 .vehicle-detail-specs__icon svg {
@@ -7177,14 +7214,14 @@ html:has(.fuel-map-canvas) {
 
 .admin-workspace-navigation__item[data-active] {
   color: #ffffff !important;
-  background: linear-gradient(135deg, #1c4291, #14306b) !important;
-  border-color: #1c4291 !important;
+  background: linear-gradient(135deg, #ff4d3d, #e63a2b) !important;
+  border-color: #ff4d3d !important;
   box-shadow: var(--shadow-md);
 }
 
 .admin-workspace-navigation__item:hover:not([data-active]) {
-  color: #0b2050 !important;
-  background: #eef2fb !important;
+  color: #8f2018 !important;
+  background: #fff1ef !important;
   border-color: var(--market-field-line) !important;
 }
 
@@ -8544,7 +8581,7 @@ h1[data-lw-hero] {
    оставляет ложное «наведение» до следующего тапа. */
 @media (hover: hover) and (pointer: fine) {
   .forum-row:hover {
-    background: color-mix(in srgb, var(--market-surface) 94%, #eef2fb);
+    background: color-mix(in srgb, var(--market-surface) 94%, #fff1ef);
   }
 }
 
@@ -8578,7 +8615,7 @@ h1[data-lw-hero] {
 @media (hover: hover) and (pointer: fine) {
   .forum-topic-row:hover {
     border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
-    background: color-mix(in srgb, var(--market-surface) 94%, #eef2fb);
+    background: color-mix(in srgb, var(--market-surface) 94%, #fff1ef);
   }
 }
 
@@ -8999,7 +9036,7 @@ h1[data-lw-hero] {
 @media (hover: hover) and (pointer: fine) {
   .forum-highlight:hover {
     border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
-    background: color-mix(in srgb, var(--market-surface) 92%, #eef2fb);
+    background: color-mix(in srgb, var(--market-surface) 92%, #fff1ef);
     transform: translateY(-1px);
   }
 }
