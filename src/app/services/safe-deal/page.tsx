@@ -52,7 +52,7 @@ export default function SafeDealPage() {
         </Card>
 
         <Alert color="indigo" variant="light" radius="md">
-          <Text size="xs" c="#1c4291">Сервис развивается. Банковское или платёжное сопровождение появится только после подключения лицензированного провайдера.</Text>
+          <Text size="xs" c="var(--market-primary)">Сервис развивается. Банковское или платёжное сопровождение появится только после подключения лицензированного провайдера.</Text>
         </Alert>
 
         <Group grow>

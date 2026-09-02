@@ -64,7 +64,7 @@ function ResetPasswordWorkspace() {
   return (
     <Container size={420} py={48}>
       <Stack gap="lg" align="center">
-        <Box style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, #1c4291, #1c4291)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box style={{ width: 56, height: 56, borderRadius: 16, background: "var(--market-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <IconCar size={28} color="white" />
         </Box>
         <Stack gap={4} align="center">
@@ -128,7 +128,7 @@ function ResetPasswordWorkspace() {
                   error={confirmPassword.length > 0 && password !== confirmPassword ? "Пароли не совпадают" : undefined}
                 />
                 <Button type="submit" size="md" color="indigo" radius="md" loading={loading} fullWidth>Сохранить новый пароль</Button>
-                <Text size="xs" c="gray.5" ta="center"><Link href="/auth/signin" style={{ color: "#1c4291" }}>Вернуться ко входу</Link></Text>
+                <Text size="xs" c="gray.5" ta="center"><Link href="/auth/signin" style={{ color: "var(--market-primary)" }}>Вернуться ко входу</Link></Text>
               </Stack>
             </form>
           </Card>

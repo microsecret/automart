@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
   return (
     <Container size={420} py={48}>
       <Stack gap="lg" align="center">
-        <Box style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, #1c4291, #1c4291)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box style={{ width: 56, height: 56, borderRadius: 16, background: "var(--market-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <IconCar size={28} color="white" />
         </Box>
         <Stack gap={4} align="center">
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
                 <TextInput label="Email" placeholder="your@email.ru" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} size="md" leftSection={<IconMail size={18} />} />
                 <Button type="submit" size="md" color="indigo" radius="md" loading={loading} fullWidth>Отправить ссылку</Button>
                 <Text size="xs" c="gray.5" ta="center">
-                  Вспомнили пароль? <Link href="/auth/signin" style={{ color: "#1c4291" }}>Войти</Link>
+                  Вспомнили пароль? <Link href="/auth/signin" style={{ color: "var(--market-primary)" }}>Войти</Link>
                 </Text>
                 {/* Запасной путь. Почта — единственный способ на этой
                     странице, и когда отправка недоступна, человек
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
                     Telegram-бот узнаёт его без пароля вовсе. */}
                 <Text size="xs" c="gray.5" ta="center">
                   Нет доступа к почте? Войдите{" "}
-                  <Link href="/auth/signin" style={{ color: "#1c4291" }}>по номеру телефона</Link>
+                  <Link href="/auth/signin" style={{ color: "var(--market-primary)" }}>по номеру телефона</Link>
                   {" "}или через Telegram-бота.
                 </Text>
               </Stack>

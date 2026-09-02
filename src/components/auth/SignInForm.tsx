@@ -173,7 +173,7 @@ export default function SignInForm() {
             Войти
           </Button>
         </Stack>
-      <Text size="xs" c="gray.5" ta="right"><Link href="/auth/forgot-password" style={{ color: "#1c4291" }}>Забыли пароль?</Link></Text>
+      <Text size="xs" c="gray.5" ta="right"><Link href="/auth/forgot-password" style={{ color: "var(--market-primary)" }}>Забыли пароль?</Link></Text>
     </form>
 
       {/* Прежняя ссылка внизу убрана: то же предложение теперь стоит

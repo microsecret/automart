@@ -34,7 +34,7 @@ function SearchContent() {
       </Breadcrumbs>
 
       <Group gap="sm" align="center" mb="sm">
-        <IconSearch size={20} color="#1c4291" />
+        <IconSearch size={20} color="var(--market-primary)" />
         <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">{pageTitle}</Text>
         {isPart && <Badge size="sm" color="indigo" variant="light">{partTypeLabel || "Запчасти"}</Badge>}
         {vehicleType && <Badge size="sm" color="violet" variant="light">{vehicleType}</Badge>}
