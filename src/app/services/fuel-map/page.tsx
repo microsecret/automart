@@ -1129,8 +1129,8 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
       </Group>
 
       <Group className="fuel-map-canvas__controls" gap={4}>
-        <Tooltip label="Уменьшить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom - 1)} aria-label="Уменьшить масштаб карты"><IconMinus size={15} /></ActionIcon></Tooltip>
-        <Tooltip label="Увеличить масштаб"><ActionIcon variant="white" color="dark" size="sm" radius="md" onClick={() => updateZoom(zoom + 1)} aria-label="Увеличить масштаб карты"><IconPlus size={15} /></ActionIcon></Tooltip>
+        <Tooltip label="Уменьшить масштаб"><ActionIcon variant="white" color="dark" size="sm" onClick={() => updateZoom(zoom - 1)} aria-label="Уменьшить масштаб карты"><IconMinus size={15} /></ActionIcon></Tooltip>
+        <Tooltip label="Увеличить масштаб"><ActionIcon variant="white" color="dark" size="sm" onClick={() => updateZoom(zoom + 1)} aria-label="Увеличить масштаб карты"><IconPlus size={15} /></ActionIcon></Tooltip>
       </Group>
       {/* Активность рядом с числом точек.
 

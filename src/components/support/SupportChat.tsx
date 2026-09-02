@@ -299,7 +299,7 @@ export default function SupportChat() {
                     }
                   }}
                 />
-                <ActionIcon color="indigo" variant="filled" size={36} radius="lg" onClick={() => void send()} loading={sending} disabled={!text.trim()} aria-label="Отправить"><IconSend size={16} /></ActionIcon>
+                <ActionIcon color="indigo" variant="filled" size={36} onClick={() => void send()} loading={sending} disabled={!text.trim()} aria-label="Отправить"><IconSend size={16} /></ActionIcon>
               </Group>
 
               <Group justify="space-between" mt="xs" gap="xs">

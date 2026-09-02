@@ -43,7 +43,6 @@ export default function ShareButtons({ title }: { title: string }) {
             variant="light"
             color={color}
             size="lg"
-            radius="md"
             aria-label={`Поделиться в ${label}`}
           >
             <Icon size={18} stroke={1.8} />
@@ -57,7 +56,6 @@ export default function ShareButtons({ title }: { title: string }) {
               variant="light"
               color={copied ? "teal" : "gray"}
               size="lg"
-              radius="md"
               onClick={copy}
               aria-label="Скопировать ссылку на новость"
             >

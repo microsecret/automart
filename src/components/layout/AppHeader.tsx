@@ -346,7 +346,6 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
             variant="light"
             color="indigo"
             size="md"
-            radius="md"
             aria-label="Открыть поиск"
           >
             <IconSearch size={18} stroke={1.8} />
@@ -359,7 +358,6 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               variant="subtle"
               color="gray"
               size="md"
-              radius="md"
               className="market-app-header__utility-action"
               onClick={toggleScheme}
               aria-label="Сменить тему"
@@ -368,7 +366,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               {colorScheme === "dark" ? <IconSun size={18} stroke={1.8} /> : <IconMoon size={18} stroke={1.8} />}
             </ActionIcon>
 
-            <ActionIcon component={Link} href="/listings/create/vehicle" variant="light" color="indigo" size="md" radius="md" visibleFrom="sm" hiddenFrom="md" aria-label="Разместить объявление">
+            <ActionIcon component={Link} href="/listings/create/vehicle" variant="light" color="indigo" size="md" visibleFrom="sm" hiddenFrom="md" aria-label="Разместить объявление">
               <IconPlus size={18} stroke={1.8} />
             </ActionIcon>
 
@@ -391,12 +389,12 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
             {session ? (
               <>
                 <Box visibleFrom="sm"><Indicator size={7} color="red" offset={4} disabled={favCount === 0}>
-                  <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Избранное">
+                  <ActionIcon component={Link} href="/favorites" variant="subtle" color="gray" size="lg" className="market-app-header__utility-action" aria-label="Избранное">
                     <IconHeart size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator></Box>
                 <Box visibleFrom="sm"><Indicator size={7} color="violet" offset={4} disabled={unreadMessages === 0}>
-                  <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Сообщения">
+                  <ActionIcon component={Link} href="/messages" variant="subtle" color="gray" size="lg" className="market-app-header__utility-action" aria-label="Сообщения">
                     <IconMessageCircle2 size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator></Box>
@@ -410,7 +408,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                     его: пункт в меню счётчика не показывает, а меню
                     ещё нужно открыть. */}
                 <Indicator size={7} color="red" offset={4} disabled={unreadNotifications === 0}>
-                  <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="lg" radius="md" className="market-app-header__utility-action" aria-label="Уведомления">
+                  <ActionIcon component={Link} href="/notifications" variant="subtle" color="gray" size="lg" className="market-app-header__utility-action" aria-label="Уведомления">
                     <IconBell size={18} stroke={1.8} />
                   </ActionIcon>
                 </Indicator>
@@ -465,7 +463,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                     «Войти» вытесняла иконки кабинета за край окна. Ссылка на
                     регистрацию есть на самой странице входа, поэтому путь не
                     теряется, а место в ряду освобождается. */}
-                <ActionIcon component={Link} href="/auth/signup" variant="light" color="indigo" size="md" radius="md" hiddenFrom="sm" aria-label="Регистрация">
+                <ActionIcon component={Link} href="/auth/signup" variant="light" color="indigo" size="md" hiddenFrom="sm" aria-label="Регистрация">
                   <IconUserPlus size={18} stroke={1.8} />
                 </ActionIcon>
               </>

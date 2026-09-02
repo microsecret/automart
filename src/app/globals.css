@@ -8226,11 +8226,14 @@ h1[data-lw-hero] {
      разница читается как перекос. */
   --input-height: 44px !important;
   min-height: 44px !important;
-  padding-inline: 18px;
 }
 
-.home-hero__search-input .mantine-Input-section[data-position="left"] {
-  padding-inline-start: 6px;
+/* Отступ слева задаётся через переменную Mantine, а не padding-inline:
+   собственный отступ сдвигает только текст, а значок лупы остаётся на
+   месте — буквы наезжают прямо на него. */
+.home-hero__search-input .mantine-Input-wrapper {
+  --input-padding-inline-start: 46px;
+  --input-left-section-width: 42px;
 }
 
 .home-hero__search-input .mantine-Input-input:focus-within {

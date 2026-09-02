@@ -617,7 +617,7 @@ function CreateVehicleWorkspace() {
                 <Text fw={700} fz="sm" c="var(--market-ink)">Тип транспорта</Text>
                 <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
               </Group>
-              <SegmentedControl value={f.vehicleType} onChange={setVehicleType} data={CATS} size="sm" radius="md" fullWidth />
+              <SegmentedControl value={f.vehicleType} onChange={setVehicleType} data={CATS} size="sm" fullWidth />
               {/* Что понадобится — до того, как продавец начал заполнять.
                   Иначе он упрётся в ошибку на последнем шаге и бросит форму. */}
               <Text size="xs" c="var(--market-muted)" mt="xs">{describeRequiredSpecs(f.vehicleType)}</Text>

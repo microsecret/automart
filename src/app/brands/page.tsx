@@ -26,7 +26,6 @@ export default function BrandsPage() {
           value={cat}
           onChange={setCat}
           size="sm"
-          radius="md"
           data={[
             { label: "Легковые", value: "cars" },
             { label: "Мото", value: "moto" },

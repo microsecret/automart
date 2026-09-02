@@ -177,7 +177,6 @@ export default function NewsListClient({ initialData }: { initialData: NewsRespo
           />
           <SegmentedControl
             size="md"
-            radius="lg"
             value={sort}
             onChange={(value) => { setSort(value as "recent" | "popular"); setPage(1) }}
             data={[{ value: "recent", label: "Свежие" }, { value: "popular", label: "Популярные" }]}

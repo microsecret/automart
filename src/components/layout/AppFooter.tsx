@@ -46,7 +46,6 @@ export default function AppFooter() {
                       component="a"
                       href={s.href}
                       size={36}
-                      radius="md"
                       variant="filled"
                       style={{ background: s.color + "20", border: "1px solid " + s.color + "40" }}
                       aria-label={s.label}

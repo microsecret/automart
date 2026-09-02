@@ -319,7 +319,7 @@ function ConversationWorkspace() {
         <Group gap="xs" align="flex-end">
           <FileButton onChange={selectAttachments} accept="image/jpeg,image/png,image/webp" multiple>
             {(props) => (
-              <ActionIcon {...props} variant="default" color="gray" size={42} radius="md" disabled={sending} aria-label="Прикрепить фотографии">
+              <ActionIcon {...props} variant="default" color="gray" size={42} disabled={sending} aria-label="Прикрепить фотографии">
                 <IconPaperclip size={19} />
               </ActionIcon>
             )}
