@@ -145,12 +145,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
         padding={0}
         radius="md"
         withBorder
-        style={{
-          overflow: "hidden",
-          borderColor: "var(--market-line)",
-          transition: "border-color 200ms ease, box-shadow 200ms ease",
-          cursor: "pointer",
-        }}
+        /* Рамка и переход заданы в globals.css: инлайн-стиль сильнее любого
+           селектора и молча отменял бы оформление карточки. Здесь остаётся
+           только то, чего в стилях нет. */
+        style={{ overflow: "hidden", cursor: "pointer" }}
       >
         <Link href={detailHref} aria-label={`Открыть объявление: ${listing.title}`} style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         {/* Фото область */}

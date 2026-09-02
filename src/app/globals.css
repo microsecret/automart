@@ -2120,14 +2120,18 @@ select {
      и тёмная заливка. Вместе они превращали баннер в глухой чёрный блок,
      который спорил со светлыми карточками под ним.
 
-     Остался один слой в фирменном синем: он темнеет к левому краю, где
-     стоит текст, и почти прозрачен справа, где видно сам автомобиль.
-     Заголовок читается, а фотография перестала быть фоном для заливки. */
+     Остался один слой чернил: он темнеет к левому краю, где стоит текст,
+     и почти прозрачен справа, где видно сам автомобиль. Заголовок
+     читается, а фотография перестала быть фоном для заливки.
+
+     Затемнение нейтральное намеренно. Цветное подкрашивало кузов машины
+     на снимке, и белый автомобиль на главной выходил синеватым — на
+     сайте про автомобили это первое, что замечает владелец. */
   background: linear-gradient(
     100deg,
-    rgba(11, 32, 80, 0.9) 0%,
-    rgba(16, 42, 89, 0.72) 46%,
-    rgba(20, 48, 107, 0.26) 100%
+    rgba(15, 17, 23, 0.92) 0%,
+    rgba(15, 17, 23, 0.74) 46%,
+    rgba(15, 17, 23, 0.2) 100%
   );
 }
 
@@ -2148,25 +2152,36 @@ select {
   color: #fff;
 }
 
-/* Главное действие первого экрана. Правило существовало, но класс никому не
-   был присвоен, и белый текст на оранжевом давал контраст 2.9. Теперь текст
-   тёмный (8.4), а тень тонирована самим янтарём, а не серым. */
+/* Главное действие первого экрана.
+
+   Стоит на фотографии, а не на белом листе, поэтому контур здесь белый:
+   чёрный на тёмном снимке пропадает. Лайм на затемнённом фото читается
+   лучше коралла и не сливается с красными задними фонарями, которые на
+   автомобильных снимках попадаются постоянно. */
 .home-auctions__cta {
-  background: var(--market-accent);
-  color: var(--market-accent-ink);
-  box-shadow: 0 10px 24px -12px rgba(245, 159, 10, 0.75);
+  border: var(--outline-width) solid #fff !important;
+  background: var(--market-accent) !important;
+  color: var(--market-accent-ink) !important;
+  box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.9);
   font-weight: 700;
-  transition: background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
+  transition: box-shadow var(--ease-fast) var(--ease-out), transform var(--ease-fast) var(--ease-out);
 }
 
 .home-auctions__cta:hover {
-  background: #e08f06;
-  box-shadow: 0 14px 30px -12px rgba(245, 159, 10, 0.9);
-  transform: translateY(var(--lift-sm));
+  box-shadow: 6px 6px 0 rgba(255, 255, 255, 0.95);
+  transform: translate(-1px, -1px);
 }
 
 .home-auctions__cta:active {
-  transform: translateY(0);
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-auctions__cta:hover,
+  .home-auctions__cta:active {
+    transform: none;
+  }
 }
 
 .home-auctions__summary {
@@ -2174,9 +2189,8 @@ select {
   padding: 15px 16px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-md);
-  background: linear-gradient(145deg, rgba(4, 10, 28, 0.7), rgba(27, 25, 77, 0.5));
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(var(--blur-panel)) saturate(1.15);
+  background: rgba(15, 17, 23, 0.62);
+  backdrop-filter: blur(var(--blur-panel));
 }
 
 .home-auctions__journey {
@@ -2615,11 +2629,18 @@ select {
   container: listing-card / inline-size;
   isolation: isolate;
   background: var(--market-surface);
-  /* Чёткая рамка вместо полупрозрачной: карточка держит форму на любом фоне
-     и не расплывается, как это было с rgba поверх градиента. */
-  border-color: var(--market-line) !important;
-  box-shadow: var(--shadow-sm);
-  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
+  /* Карточку держит контур, а не тень.
+
+     В ленте карточек двадцать, и двадцать мягких теней на белом фоне
+     складывались в серую рябь: ни одна карточка не выходила вперёд,
+     потому что вперёд выходили все сразу. Резкая линия по краю отделяет
+     каждую однозначно и ничего не стоит при прокрутке.
+
+     Контур здесь тоньше общего: на плитке в триста пикселей полная
+     двойка съедает воздух внутри, а карточек в ряду три. */
+  border: 1px solid var(--outline-ink) !important;
+  box-shadow: none;
+  transition: box-shadow var(--ease-fast) var(--ease-out), transform var(--ease-fast) var(--ease-out);
 }
 
 .listing-card:not(.listing-card--row) {
@@ -2662,12 +2683,11 @@ select {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  /* Наведение поднимает карточку на её собственный оттиск: тот же жест,
+     что у кнопок, поэтому лента и шапка ощущаются одним материалом. */
   .listing-card:hover {
-    transform: translateY(var(--lift-md));
-    /* Цвет и тень берутся из системы: жёсткий #1c4291 не менялся в тёмной
-       теме, а своя тень выбивалась из общей глубины. */
-    border-color: var(--market-primary) !important;
-    box-shadow: var(--shadow-md);
+    transform: translate(-2px, -2px);
+    box-shadow: var(--offset-sm);
   }
 
   .listing-card:hover::before {
@@ -2676,8 +2696,8 @@ select {
   }
 
   .listing-card--row:hover {
-    transform: translateY(var(--lift-md));
-    box-shadow: var(--shadow-md);
+    transform: translate(-2px, -2px);
+    box-shadow: var(--offset-sm);
   }
 
   .part-result-card:hover {
@@ -2976,16 +2996,23 @@ select {
   flex: 0 0 auto;
 }
 
+/* Метки на карточке.
+
+   «Выгодно» ушло в лайм — это его роль во всей системе, и на белой
+   карточке он единственная цветная плашка, поэтому читается сразу.
+   Остальные метки остались при своих значениях: проверка синяя, срочность
+   красная, новизна зелёная. Свести их к фирменным двум цветам значило бы
+   потерять разницу между «проверено» и «горит». */
 .market-tag[data-tag="new"]      { border-color: #86efac; background: #f0fdf4; color: #166534; }
 .market-tag[data-tag="checked"]  { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
-.market-tag[data-tag="featured"] { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
+.market-tag[data-tag="featured"] { border-color: var(--outline-ink); background: var(--market-accent); color: var(--market-accent-ink); }
 .market-tag[data-tag="urgent"]   { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
 
 /* На тёмном фоне светлая заливка стала бы ярким пятном: подложка делается
    прозрачной, а цвет метки — светлее фона. */
 [data-mantine-color-scheme="dark"] .market-tag[data-tag="new"]      { border-color: #16653480; background: #16653426; color: #86efac; }
 [data-mantine-color-scheme="dark"] .market-tag[data-tag="checked"]  { border-color: #1e40af80; background: #1e40af26; color: #93c5fd; }
-[data-mantine-color-scheme="dark"] .market-tag[data-tag="featured"] { border-color: #92400e80; background: #92400e26; color: #fcd34d; }
+[data-mantine-color-scheme="dark"] .market-tag[data-tag="featured"] { border-color: var(--market-accent); background: var(--market-accent-soft); color: var(--market-accent); }
 [data-mantine-color-scheme="dark"] .market-tag[data-tag="urgent"]   { border-color: #b91c1c80; background: #b91c1c26; color: #fca5a5; }
 
 .listing-card__price {
