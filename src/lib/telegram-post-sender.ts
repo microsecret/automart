@@ -19,10 +19,22 @@ import { readLocalPhotos, photoMime } from "@/lib/telegram-photo-files"
 import { buildPhotoCollage, MAX_COLLAGE_PHOTOS } from "@/lib/photo-collage"
 import { absoluteUrl } from "@/lib/site-url"
 
+type PostButton = { text: string; url: string }
+
 export type OutgoingPost = {
   photos: string[]
   caption: string
-  buttons: { text: string; url: string }[]
+  /* Плоский список — по кнопке в ряд, как было. Массив массивов задаёт
+     ряды сам: пять кнопок выбора марки в столбик занимают полэкрана, а
+     в ряд по три читаются с одного взгляда. */
+  buttons: PostButton[] | PostButton[][]
+}
+
+function toKeyboardRows(buttons: OutgoingPost["buttons"]): PostButton[][] {
+  if (buttons.length === 0) return []
+  return Array.isArray(buttons[0])
+    ? (buttons as PostButton[][]).filter((row) => row.length > 0)
+    : (buttons as PostButton[]).map((button) => [button])
 }
 
 /**
@@ -37,7 +49,7 @@ export async function sendChatPost(
   post: OutgoingPost,
   _options: { buttonsCaption?: string } = {},
 ): Promise<number | null> {
-  const keyboard = { inline_keyboard: post.buttons.map((button) => [button]) }
+  const keyboard = { inline_keyboard: toKeyboardRows(post.buttons) }
 
   if (post.photos.length === 0) {
     const sent = await telegramApi<{ message_id: number }>("sendMessage", {

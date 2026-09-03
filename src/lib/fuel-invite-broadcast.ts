@@ -15,6 +15,7 @@ import { getTelegramBotUsername } from "@/lib/telegram"
 import { absoluteUrl } from "@/lib/site-url"
 import { sendChatPost } from "@/lib/telegram-post-sender"
 import { buildFuelInvitePost, cityFromChatTitle } from "@/lib/fuel-invite-post"
+import { buildFuelSubscribePost } from "@/lib/fuel-subscribe-post"
 import { STALE_WINDOW_MS } from "@/lib/fuel-availability"
 
 /**
@@ -127,12 +128,23 @@ export async function broadcastFuelInvite(): Promise<InviteBroadcastResult> {
       continue
     }
 
-    const post = buildFuelInvitePost({
-      city: cityFromChatTitle(chat.title),
-      siteUrl,
-      botUsername,
-      reportsCount,
-    })
+    /* Два поста через раз, а не один и тот же каждые три часа.
+
+       Приглашение рассказывает про сервис целиком, пост о подписке зовёт
+       к одному действию и даёт выбрать марку кнопкой. Замер объясняет,
+       зачем второй: двести семнадцать пользователей и три подписки — про
+       главную возможность почти никто не узнал, она была одной строкой
+       среди четырёх.
+
+       Очередь считается по числу уже отправленных в этот чат: состояние
+       нигде не хранится, и два процесса в одну минуту выберут одно и то
+       же. */
+    const sentBefore = await prisma.fuelInvitePost.count({ where: { chatId: chat.id } })
+    const chatCity = cityFromChatTitle(chat.title)
+
+    const post = sentBefore % 2 === 1 && chatCity
+      ? buildFuelSubscribePost({ city: chatCity, siteUrl, botUsername })
+      : buildFuelInvitePost({ city: chatCity, siteUrl, botUsername, reportsCount })
 
     const messageId = await sendChatPost(
       chat.id,

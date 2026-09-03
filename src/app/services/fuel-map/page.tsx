@@ -1677,7 +1677,20 @@ function FuelMapContent() {
   const chosenCityRef = useRef(false)
   const [placeQuery, setPlaceQuery] = useState("")
   const [place, setPlace] = useState<string | null>(null)
-  const [fuelFilter, setFuelFilter] = useState("")
+  /* Марка топлива читается из адреса.
+
+     Сообщение в городском чате зовёт «посмотреть, где есть 95-й», и
+     ссылка должна открывать карту сразу с этим фильтром: человек
+     пришёл за одной маркой, а не за списком всех. Без этого он
+     попадал на общую карту и выставлял фильтр сам — или не
+     выставлял вовсе. */
+  const [fuelFilter, setFuelFilter] = useState(() => {
+    const requested = searchParams.get("fuel")
+    /* Значение сверяется со списком фильтра, а не подставляется как
+       есть: чужая строка в адресе иначе попала бы прямо в разметку.
+       Дефис в «АИ‑95» неразрывный — тот же символ, что в списке. */
+    return requested && FUEL_FILTERS.some((option) => option.value === requested) ? requested : ""
+  })
   const [networkFilter, setNetworkFilter] = useState("")
   const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
   const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
