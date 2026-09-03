@@ -106,6 +106,10 @@ type AccountProfileResponse = {
 }
 type RemovalConfirmation = { kind: "listing" | "garage"; id: string; title: string }
 
+/* Имя бота для ссылки привязки. Подчищается от «собаки»: в настройках
+   его пишут и так, и так, а в адресе t.me она лишняя. */
+const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") || ""
+
 const DASHBOARD_TABS = new Set(["listings", "payments", "favorites", "garage", "subscriptions", "profile"])
 
 const formatMemberSince = (value: string | null) => value
@@ -126,6 +130,12 @@ function DashboardContent() {
   const searchParams = useSearchParams()
   const createdListingId = searchParams.get("created")?.trim() || ""
   const [tab, setTab] = useState("listings")
+  /* Плитки статусов ведут в отфильтрованный список.
+
+     Раньше все четыре открывали один и тот же перечень целиком: нажав
+     «На проверке», человек получал вперемешку черновики, активные и
+     отклонённые — и сам искал среди них те, ради которых нажимал. */
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false)
   const [profileName, setProfileName] = useState("")
   const [profileSignature, setProfileSignature] = useState("")
@@ -304,12 +314,12 @@ function DashboardContent() {
 
           <SimpleGrid className="dashboard-workspace__status-grid" cols={{ base: 2, sm: 4 }} spacing="xs" mt="lg">
             {[
-              { label: "Черновики", value: workflow.drafts, icon: <IconFileDescription size={17} />, color: "gray" },
-              { label: "На проверке", value: workflow.pendingModeration, icon: <IconClipboardCheck size={17} />, color: "yellow" },
-              { label: "Активные", value: workflow.active, icon: <IconCircleCheck size={17} />, color: "teal" },
-              { label: "Нужно открыть", value: workflow.needsAttention, icon: <IconAlertCircle size={17} />, color: hasAttentionItems ? "orange" : "gray" },
+              { label: "Черновики", value: workflow.drafts, icon: <IconFileDescription size={17} />, color: "gray", status: LISTING_STATUS.DRAFT },
+              { label: "На проверке", value: workflow.pendingModeration, icon: <IconClipboardCheck size={17} />, color: "yellow", status: LISTING_STATUS.PENDING_MODERATION },
+              { label: "Активные", value: workflow.active, icon: <IconCircleCheck size={17} />, color: "teal", status: LISTING_STATUS.ACTIVE },
+              { label: "Нужно открыть", value: workflow.needsAttention, icon: <IconAlertCircle size={17} />, color: hasAttentionItems ? "orange" : "gray", status: LISTING_STATUS.REJECTED },
             ].map((item) => (
-              <Button key={item.label} variant="subtle" color={item.color} className="dashboard-workspace__status" onClick={() => selectTab("listings")} rightSection={<IconArrowRight size={14} />}>
+              <Button key={item.label} variant="subtle" color={item.color} className="dashboard-workspace__status" data-active={statusFilter === item.status ? "true" : undefined} onClick={() => { setStatusFilter((current) => (current === item.status ? null : item.status)); selectTab("listings") }} rightSection={<IconArrowRight size={14} />}>
                 <ThemeIcon size={30} radius="md" variant="light" color={item.color}>{item.icon}</ThemeIcon>
                 <Stack gap={0} align="flex-start" style={{ flex: 1 }}>
                   <Text size="xs" c="dimmed" fw={600}>{item.label}</Text>
@@ -320,28 +330,50 @@ function DashboardContent() {
           </SimpleGrid>
         </Paper>
 
-        {/* Карточки статистики */}
+        {/* Показатели кабинета.
+
+            Шесть карточек с голыми числами: у нового человека это шесть
+            нулей подряд на первом экране — сообщение «здесь ничего нет»
+            вместо «вот с чего начать». Теперь у нуля стоит подсказка, что
+            он значит и что сделать, а карточка ведёт в свой раздел.
+
+            Цвета берутся из палитры, а не из жёстких значений: прежние
+            #1c4291 и #eef2fb остались от старой темы и не менялись вместе
+            с ней, а в тёмной теме светлая подложка становилась пятном. */}
         <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="sm">
           {[
-            { label: "Объявления", value: stats.totalListings, icon: <IconTag size={18} />, color: "#1c4291", bg: "#eef2fb" },
-            { label: "Просмотры", value: stats.totalViews, icon: <IconEye size={18} />, color: "#0891b2", bg: "#ecfeff" },
-            { label: "Избранное", value: stats.favoritesCount, icon: <IconHeart size={18} />, color: "#e11d48", bg: "#fff1f2" },
-            { label: "Отзывы", value: stats.reviewsCount, icon: <IconStar size={18} />, color: "#ea580c", bg: "#fff7ed" },
-            { label: "Сообщения", value: stats.unreadMessages > 0 ? `+${stats.unreadMessages}` : 0, icon: <IconMessageCircle2 size={18} />, color: "#059669", bg: "#ecfdf5" },
-            { label: "Рейтинг", value: stats.avgRating || "—", icon: <IconTrendingUp size={18} />, color: "#1c4291", bg: "#f5f3ff" },
-          ].map((s) => (
-            <Paper key={s.label} radius="md" p="sm" withBorder style={{ borderColor: "var(--mantine-color-border)" }}>
-              <Group gap="sm" align="center">
-                <Box style={{ width: 36, height: 36, borderRadius: 8, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", color: s.color }}>
-                  {s.icon}
-                </Box>
-                <Stack gap={0}>
-                  <Text size="xl" fw={800} c="var(--market-ink)" lh={1}>{s.value}</Text>
-                  <Text size="xs" c="gray.5">{s.label}</Text>
-                </Stack>
-              </Group>
-            </Paper>
-          ))}
+            { label: "Объявления", value: stats.totalListings, icon: <IconTag size={18} />, tone: "indigo", href: "/dashboard?tab=listings", hint: "Разместите первое" },
+            { label: "Просмотры", value: stats.totalViews, icon: <IconEye size={18} />, tone: "cyan", href: "/dashboard?tab=listings", hint: "Появятся после публикации" },
+            { label: "Избранное", value: stats.favoritesCount, icon: <IconHeart size={18} />, tone: "pink", href: "/favorites", hint: "Сохраняйте, что понравилось" },
+            { label: "Отзывы", value: stats.reviewsCount, icon: <IconStar size={18} />, tone: "orange", href: "/dashboard?tab=profile", hint: "Появятся после сделок" },
+            { label: "Сообщения", value: stats.unreadMessages > 0 ? `+${stats.unreadMessages}` : 0, icon: <IconMessageCircle2 size={18} />, tone: "teal", href: "/messages", hint: "Пока тихо" },
+            { label: "Рейтинг", value: stats.avgRating || "—", icon: <IconTrendingUp size={18} />, tone: "violet", href: "/dashboard?tab=profile", hint: "После первого отзыва" },
+          ].map((card) => {
+            const isEmpty = !card.value || card.value === 0 || card.value === "—"
+            return (
+              <Paper
+                key={card.label}
+                component={Link}
+                href={card.href}
+                radius="md"
+                p="sm"
+                withBorder
+                className="dashboard-stat"
+              >
+                <Group gap="sm" align="center" wrap="nowrap">
+                  <ThemeIcon variant="light" color={card.tone} size={36} radius="md">
+                    {card.icon}
+                  </ThemeIcon>
+                  <Stack gap={0} miw={0}>
+                    <Text size="xl" fw={800} c="var(--market-ink)" lh={1}>{card.value}</Text>
+                    <Text size="xs" c="dimmed" lineClamp={1}>
+                      {isEmpty ? card.hint : card.label}
+                    </Text>
+                  </Stack>
+                </Group>
+              </Paper>
+            )
+          })}
         </SimpleGrid>
 
         {/* Контент табов */}
@@ -380,7 +412,7 @@ function DashboardContent() {
                 </Center>
               </Paper>
             ) : (
-              data.listings.map((l) => {
+              data.listings.filter((l) => !statusFilter || l.status === statusFilter).map((l) => {
                 const isVehicle = !!l.vehicle
                 const images = parseImages(isVehicle ? l.vehicle?.images : l.part?.images)
                 const image = images[0]
@@ -600,7 +632,25 @@ function DashboardContent() {
                       <Box style={{ minWidth: 0 }}>
                         <Text size="xs" c="dimmed">Telegram</Text>
                         <Text size="sm" fw={600} truncate>{accountProfile.telegramUsername ? `@${accountProfile.telegramUsername}` : "Профиль без username"}</Text>
-                        <Text size="xs" c={accountProfile.telegramVerifiedAt ? "teal.7" : "yellow.8"}>{accountProfile.telegramVerifiedAt ? "Личность подтверждена" : "Не привязан"}</Text>
+                        {/* «Не привязан» без кнопки сообщал проблему и не
+                            давал решения — тупик в самом видном месте
+                            профиля. Привязка даёт уведомления о топливе и
+                            вход без пароля, и до неё теперь одно нажатие. */}
+                        {accountProfile.telegramVerifiedAt ? (
+                          <Text size="xs" c="teal.7">Личность подтверждена</Text>
+                        ) : TELEGRAM_BOT_USERNAME ? (
+                          <Anchor
+                            href={`https://t.me/${TELEGRAM_BOT_USERNAME}?start=link`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            size="xs"
+                            fw={600}
+                          >
+                            Привязать — придут уведомления о топливе
+                          </Anchor>
+                        ) : (
+                          <Text size="xs" c="yellow.8">Не привязан</Text>
+                        )}
                       </Box>
                     </Group>
                   </Paper>

@@ -4,7 +4,7 @@ import Link from "next/link"
 import useSWR from "swr"
 import { useState } from "react"
 import { ActionIcon, Badge, Box, Button, Group, Loader, Paper, Stack, Text, Tooltip } from "@mantine/core"
-import { IconBell, IconBellOff, IconBrandTelegram, IconGasStation, IconSearch, IconTrash } from "@tabler/icons-react"
+import { IconBellOff, IconBrandTelegram, IconGasStation, IconSearch, IconTrash } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { EmptyState } from "@/components/ui/AsyncStates"
 

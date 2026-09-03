@@ -9990,6 +9990,35 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
    Карта клиентская, и всё её содержимое поисковику недоступно. Этот
    список приходит вместе с ответом сервера и связывает сотни городских
    страниц, которые до него оставались без единой ссылки. */
+/* Показатель кабинета — ссылка, а не табличка.
+
+   Шесть карточек показывали числа и никуда не вели: увидев «Просмотры 0»,
+   человек не мог узнать, что с этим делать. Теперь каждая ведёт в свой
+   раздел, и это должно быть видно до нажатия. */
+/* Выбранная плитка статуса видна: без этого человек не понимал, что
+   список отфильтрован, и решал, что часть объявлений пропала. */
+.dashboard-workspace__status[data-active] {
+  outline: 2px solid var(--market-primary);
+  outline-offset: -2px;
+}
+
+.dashboard-stat {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dashboard-stat:hover {
+    border-color: var(--market-primary) !important;
+    transform: translateY(-1px);
+  }
+}
+
+.dashboard-stat:active {
+  transform: translateY(1px);
+}
+
 .fuel-cities-index {
   max-width: 1180px;
   margin: 0 auto;
