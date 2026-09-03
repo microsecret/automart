@@ -522,7 +522,14 @@ function DashboardContent() {
                 <Center>
                   <Stack align="center" gap="sm">
                     <ThemeIcon variant="light" color="red" size={48} radius="md"><IconHeart size={24} /></ThemeIcon>
-                    <Text c="gray.5">В избранном пока пусто</Text>
+                    {/* Одна серая строка не объясняла, зачем избранное нужно: человек
+                        видел пустоту и уходил, так и не поняв, что здесь удобно
+                        следить за ценой и сравнивать варианты между собой. */}
+                    <Text fw={700} c="var(--market-ink)">В избранном пока пусто</Text>
+                    <Text size="sm" c="dimmed" ta="center" maw={340}>
+                      Сохраняйте объявления сердечком — так удобно сравнивать варианты
+                      между собой и следить, не изменилась ли цена.
+                    </Text>
                     <Button component={Link} href="/" size="sm" variant="light" color="indigo">Найти авто</Button>
                   </Stack>
                 </Center>
