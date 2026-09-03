@@ -21,6 +21,7 @@ import { countActiveCatalogFilters } from "@/lib/catalog-filter-state"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import CategoryShowcase from "./CategoryShowcase"
 import HowItWorks from "@/components/home/HowItWorks"
+import AuctionShowcase from "@/components/home/AuctionShowcase"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
@@ -381,7 +382,7 @@ export default function HomePage(p: HomePageProps = {}) {
     <Box p={{base:"sm",md:"md"}}><Stack gap="md">
       {p.showHero !== false && !p.categorySlug && !isReturning && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
-          <NextImage src="/images/home/automarket-hero.png" alt="LeWheel: транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
+          <NextImage src="/images/home/automarket-hero.webp" alt="LeWheel: транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
           <Box className="home-auctions__scrim" />
           <Box className="home-auctions__content">
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
@@ -521,6 +522,14 @@ export default function HomePage(p: HomePageProps = {}) {
           Вошедшему блок не нужен — он занимал бы экран рассказом о том,
           чем человек уже пользуется. */}
       {p.showHero !== false && !p.categorySlug && sessionStatus === "unauthenticated" && <HowItWorks />}
+
+      {/* Витрина аукционных лотов.
+
+          Замер: девять тысяч лотов против двадцати объявлений в
+          каталоге. Самое богатое, что есть у площадки, пряталось за
+          одной ссылкой в герое — человек читал «машины с мировых
+          аукционов» и видел ниже два десятка объявлений. */}
+      {p.showHero !== false && !p.categorySlug && <AuctionShowcase />}
 
       <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
         <Stack gap={0}>
