@@ -80,7 +80,17 @@ async function collectRegionSnippets(browser: Browser, center: { lon: number; la
 
   try {
     const page = await context.newPage()
-    const url = `https://yandex.ru/maps/search/${encodeURIComponent(SEARCH_QUERY)}/?ll=${center.lon.toFixed(6)}%2C${center.lat.toFixed(6)}&z=${zoom}`
+    /* Адрес вида `/maps/?text=…&ll=…` вместо `/maps/search/…`.
+
+       Второй возвращает пустую страницу без списка: Яндекс показывает
+       выдачу только когда знает город, а из одних координат в этом
+       адресе он его не выводит. Проверено на живых Картах — ноль точек
+       против девятнадцати.
+
+       Здесь же он определяет город сам и сам перенаправляет на
+       `/maps/54/yekaterinburg/search/…`, поэтому справочник кодов
+       городов нам не нужен. */
+    const url = `https://yandex.ru/maps/?text=${encodeURIComponent(SEARCH_QUERY)}&ll=${center.lon.toFixed(6)},${center.lat.toFixed(6)}&z=${zoom}`
     await page.goto(url, { waitUntil: "networkidle", timeout: PAGE_TIMEOUT_MS })
     await page.waitForTimeout(3_000)
 
