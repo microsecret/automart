@@ -18,7 +18,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Статические страницы
   const staticPages = [
-    "", "/brands", "/compare", "/news", "/about", "/help",
+    /* Сравнение убрано: страница персональная — её содержимое зависит от
+       того, что человек добавил, и в выдаче бесполезно. Она же закрыта в
+       robots, и держать её здесь значило бы просить обойти то, что
+       запрещено обходить.
+
+       Отзывы добавлены: их ищут по названию сети и по имени продавца, а
+       поисковик о странице не знал вовсе. */
+    "", "/brands", "/news", "/about", "/help", "/reviews",
     "/category/cars", "/category/moto", "/category/trucks", "/category/special",
     "/category/water", "/category/air",
     "/services", "/services/valuation", "/services/history-check", "/services/smart-matching", "/services/safe-deal", "/services/legal-documents", "/services/fuel-map",

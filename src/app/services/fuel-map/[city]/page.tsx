@@ -6,6 +6,7 @@ import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { cityFromSlug, cityInPrepositional } from "@/lib/fuel-city-slug"
 import { CITY_COORDINATES } from "@/lib/cities"
 import { listNearbyFuelCities } from "@/lib/fuel-city-links"
+import { absoluteUrl } from "@/lib/site-url"
 
 /**
  * Городская страница карты АЗС.
@@ -173,9 +174,65 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
     creator: { "@type": "Organization", name: "LeWheel" },
   }
 
+  /* Хлебные крошки в разметке: поисковик рисует по ним путь под ссылкой
+     вместо голого адреса, и по такому ответу переходят заметно чаще. */
+  const breadcrumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Главная", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Карта АЗС", item: absoluteUrl("/services/fuel-map") },
+      { "@type": "ListItem", position: 3, name: city, item: absoluteUrl(`/services/fuel-map/${slug}`) },
+    ],
+  }
+
+  /* Вопросы и ответы — ровно те, что человек набирает в поиске.
+
+     Ответы собраны из уже посчитанных чисел, а не написаны наперёд: если
+     цены в городе изменятся, изменится и ответ. Выдуманный ответ в этой
+     разметке — прямой путь к санкциям поисковика. */
+  const cheapest = summary.prices.length
+    ? [...summary.prices].sort((left, right) => left.averageRub - right.averageRub)[0]
+    : null
+
+  const faq = cheapest ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `Сколько стоит бензин в ${where}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: summary.prices
+            .map((price) => `${price.label} — ${price.averageRub.toFixed(2)} ₽`)
+            .join(", ") + ` (средние цены по ${summary.stationCount} заправкам).`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Сколько заправок в ${where}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `На карте ${summary.stationCount} заправок${summary.brands.length ? `, крупнейшие сети — ${summary.brands.slice(0, 3).map((item) => item.brand).join(", ")}` : ""}.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Откуда берутся цены на карте?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Цены собираются из открытых источников и уточняются отметками водителей — тех, кто прямо сейчас стоит у колонки. Отметить цену может любой вошедший.",
+        },
+      },
+    ],
+  } : null
+
   return (
     <main className="fuel-city">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
+      {faq && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }} />}
 
       <h1 className="fuel-city__title">Цены на бензин в {where}</h1>
       <p className="fuel-city__lead">

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
+import { absoluteUrl } from "@/lib/site-url"
 import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/lib/part-category-slug"
@@ -101,8 +102,10 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Запчасти", item: "/parts-finder" },
-      { "@type": "ListItem", position: 2, name: summary.label, item: `/parts-finder/${slug}` },
+      /* Адреса абсолютные: относительные Google в этой разметке
+         игнорирует целиком, и крошки не показываются вовсе. */
+      { "@type": "ListItem", position: 1, name: "Запчасти", item: absoluteUrl("/parts-finder") },
+      { "@type": "ListItem", position: 2, name: summary.label, item: absoluteUrl(`/parts-finder/${slug}`) },
     ],
   }
 
