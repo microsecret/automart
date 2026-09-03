@@ -3,6 +3,7 @@ import { collectGdebenz } from "@/lib/gdebenz-scraper"
 import { collectGdezapravka } from "@/lib/gdezapravka-scraper"
 import { collectTwogis } from "@/lib/twogis-scraper"
 import { collectDrom } from "@/lib/drom-scraper"
+import { collectTbank } from "@/lib/tbank-fuel-scraper"
 
 /**
  * Единый запуск источников сбора АЗС.
@@ -15,11 +16,11 @@ import { collectDrom } from "@/lib/drom-scraper"
  * маршрута отвечают только за проверку прав.
  */
 
-export const FUEL_SOURCES = ["GDEBENZ", "GDEZAPRAVKA", "TWOGIS", "DROM"] as const
+export const FUEL_SOURCES = ["GDEBENZ", "GDEZAPRAVKA", "TWOGIS", "TBANK", "DROM"] as const
 export type FuelSource = (typeof FUEL_SOURCES)[number]
 
 /** Источники, которые запускаются, если вызывающий не назвал свои. */
-export const DEFAULT_FUEL_SOURCES: FuelSource[] = ["GDEBENZ", "GDEZAPRAVKA", "TWOGIS"]
+export const DEFAULT_FUEL_SOURCES: FuelSource[] = ["GDEBENZ", "GDEZAPRAVKA", "TWOGIS", "TBANK"]
 
 export type FuelCollectSummary = {
   source: string
@@ -103,6 +104,10 @@ export async function runFuelSource(
   }
   if (source === "TWOGIS") {
     const result = await collectTwogis({ regionKeys, pauseMs })
+    return { source, status: result.status, fetched: result.fetched, saved: result.saved, failed: result.failed, message: result.message, regions: result.regions }
+  }
+  if (source === "TBANK") {
+    const result = await collectTbank({ regionKeys, pauseMs })
     return { source, status: result.status, fetched: result.fetched, saved: result.saved, failed: result.failed, message: result.message, regions: result.regions }
   }
   const result = await collectDrom()

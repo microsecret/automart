@@ -632,7 +632,19 @@ function mergeStations(liveStations: FuelStationPayload[], directoryStations: Fu
     }
   })
 
-  return [...mergedLiveStations, ...unmatchedDirectoryStations]
+  /* Справочные точки, не нашедшие пары среди наших источников, тоже
+     склеиваются между собой.
+
+     Одна заправка бывает нанесена в OpenStreetMap несколько раз: колонки
+     отдельной точкой, здание контуром, навес ещё одним. Пока у неё есть
+     двойник среди наших источников, лишние копии забирает цикл выше. Но
+     там, где сбор не дошёл, они возвращались на карту нетронутыми — по
+     Екатеринбургу так оставалась тридцать одна пара одинаковых
+     заправок, включая две «Трассы» в одиннадцати метрах друг от друга.
+
+     Человек видит два значка там, где заправка одна, и не понимает, к
+     какому из них относится цена. */
+  return [...mergedLiveStations, ...mergeProviderStations(unmatchedDirectoryStations)]
     .sort((first, second) => stationPriority(second) - stationPriority(first) || first.name.localeCompare(second.name, "ru"))
 }
 
