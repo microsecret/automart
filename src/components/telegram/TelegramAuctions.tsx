@@ -27,7 +27,7 @@ type AuctionLot = {
   imageUrl: string | null
 }
 
-type AuctionResponse = { listings: AuctionLot[] }
+type AuctionResponse = { listings: AuctionLot[]; pagination?: { total?: number } }
 
 const COUNTRY_FLAGS: Record<string, string> = {
   KR: "🇰🇷", JP: "🇯🇵", CN: "🇨🇳", US: "🇺🇸", DE: "🇩🇪",
@@ -122,6 +122,17 @@ export default function TelegramAuctions() {
   return (
     <>
       {searchField}
+      {/* Сколько всего лотов.
+
+          Вкладка показывает двадцать четыре машины и молчит о том, что за
+          ними ещё тысячи: замер на боевом сервере — пять тысяч девятьсот
+          восемьдесят один лот против двадцати двух объявлений в ленте
+          рядом. Человек листал две дюжины и уходил, решив, что это всё. */}
+      {!searching && typeof data?.pagination?.total === "number" && data.pagination.total > lots.length && (
+        <Text size="xs" c="var(--tg-hint)" mb={6}>
+          {data.pagination.total.toLocaleString("ru-RU")} лотов из Кореи, Японии и Китая
+        </Text>
+      )}
       <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed" data-updating={isValidating || undefined}>
         {lots.map((lot) => (
           <AuctionCard key={lot.id} lot={lot} />
