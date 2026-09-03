@@ -7234,13 +7234,13 @@ html:has(.fuel-map-canvas) {
   box-shadow: 0 0 0 3px rgba(28, 66, 145, 0.11);
 }
 
-.create-listing__submit {
-  position: sticky;
-  z-index: 4;
-  bottom: 12px;
-  background: color-mix(in srgb, var(--market-surface) 92%, transparent);
-  backdrop-filter: blur(var(--blur-overlay));
-}
+/* Панель отправки намеренно не прилипает к низу.
+
+   Здесь стояло правило со sticky и размытием, но класса
+   `create-listing__submit` в разметке формы нет — она пользуется классом
+   из CSS-модуля, где sticky убрали осознанно: прилипшая панель закрывала
+   поля, пока человек ещё заполняет форму. Мёртвое правило вводило в
+   заблуждение при следующей правке. */
 
 .admin-workspace {
   max-width: 1440px;

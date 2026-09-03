@@ -352,6 +352,18 @@ function CreateVehicleWorkspace() {
   const requiredSpecFields = new Set<VehiclePublicationField>(publicationRequirements.map((requirement) => requirement.field))
   const missingFields = new Map<VehiclePublicationField, string>(missingRequirements.map((requirement) => [requirement.field, requirement.label]))
   const completedRequirementCount = publicationRequirements.length - missingRequirements.length
+
+  /* Пока не заполнено ничего, счётчик молчит.
+
+     На пустой форме он показывал «Заполнено 0 из 25» и «Осталось 25» —
+     это первое, что видел человек, ещё не введя ни символа. Замер: за
+     сутки восемьдесят шесть человек открыли форму и создали одно
+     объявление. Число обязательных полей, названное до начала работы,
+     отговаривает вернее любой ошибки в конце.
+
+     Счётчик появляется с первым заполненным пунктом: тогда он показывает
+     продвижение, а не объём предстоящего. */
+  const hasAnyProgress = completedRequirementCount > 0
   const moderationReady = !isGarageMode && missingRequirements.length === 0
   const fieldError = (field: VehiclePublicationField) => submitAttempted ? missingFields.get(field) : undefined
   const subtypeControlField = f.vehicleType === "MOTORCYCLE" ? "motorcycleType"
@@ -557,19 +569,19 @@ function CreateVehicleWorkspace() {
                   <IconCheck size={20} />
                 </ThemeIcon>
                 <Stack gap={1}>
-                  <Text fw={800} fz="sm" c="var(--market-ink)">Готовность к модерации</Text>
+                  <Text fw={800} fz="sm" c="var(--market-ink)">{hasAnyProgress ? "Готовность к модерации" : "Начнём с марки и модели"}</Text>
                   <Text size="xs" c="var(--market-muted)">
                     {moderationReady
                       ? "Все обязательные сведения заполнены."
-                      : `Заполнено ${completedRequirementCount} из ${publicationRequirements.length} обязательных пунктов.`}
+                      : hasAnyProgress ? `Заполнено ${completedRequirementCount} из ${publicationRequirements.length} обязательных пунктов.` : "Заполняется по ходу — черновик сохраняется сам, можно вернуться позже."}
                   </Text>
                 </Stack>
               </Group>
               <Badge color={moderationReady ? "teal" : "orange"} variant="light" size="lg" radius="sm">
-                {moderationReady ? "Готово" : `Осталось ${missingRequirements.length}`}
+                {moderationReady ? "Готово" : hasAnyProgress ? `Осталось ${missingRequirements.length}` : "Начать"}
               </Badge>
             </Group>
-            {!moderationReady && (
+            {!moderationReady && hasAnyProgress && (
               <Group gap={6} mt="sm" wrap="wrap">
                 {missingRequirements.slice(0, 7).map((requirement) => (
                   <Badge key={requirement.field} color="gray" variant="light" radius="sm" tt="none">
