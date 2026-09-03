@@ -1145,11 +1145,28 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           {visibleStations.length} {plural(visibleStations.length, "точка", "точки", "точек")} · {tileSource.attribution}
         </Text>
       </Box>
+      {/* Плашка отметок работает и при нуле.
+
+          Условие «больше нуля» замыкало круг: пока никто не отмечал,
+          карта молчала о том, что отмечать вообще можно, — и не отмечал
+          никто. Замер: двести семнадцать пользователей, одиннадцать
+          отметок цен за всё время, ноль за сутки.
+
+          При нуле плашка зовёт стать первым. Это единственное место, где
+          вошедший вообще узнаёт про отметки: приглашение с объяснением
+          показывается только гостям и после входа исчезает. */}
       {reportsToday != null && reportsToday > 0 && (
         <Box className="fuel-map-canvas__activity" aria-live="polite">
           <Box className="fuel-map-canvas__activity-dot" aria-hidden="true" />
           <Text size="xs" fw={600}>
             {reportsToday} {plural(reportsToday, "отметка", "отметки", "отметок")} за сутки
+          </Text>
+        </Box>
+      )}
+      {reportsToday === 0 && guestVisibleCount === null && (
+        <Box className="fuel-map-canvas__activity" data-empty="true" aria-live="polite">
+          <Text size="xs" fw={600}>
+            Сегодня ещё никто не отмечал — нажмите на заправку и станьте первым
           </Text>
         </Box>
       )}

@@ -4778,6 +4778,19 @@ html:has(.fuel-map-canvas) {
   box-shadow: var(--shadow-sm);
 }
 
+/* Приглашение отметить первым — не сообщение об успехе.
+
+   Плашка та же, но зелёный цвет здесь неуместен: он означает «есть
+   свежие отметки», а тут их как раз нет. Нейтральный тон говорит
+   спокойно и не обманывает. */
+.fuel-map-canvas__activity[data-empty] {
+  border-color: var(--market-line);
+  color: var(--market-label);
+  /* Ширины хватает на всю фразу: обрезанная посередине она читалась бы
+     как поломка. */
+  max-width: calc(100% - 20px);
+}
+
 .fuel-map-canvas__activity-dot {
   width: 7px;
   height: 7px;

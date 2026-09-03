@@ -38,6 +38,13 @@ import TelegramMessages from "./TelegramMessages"
 const START_PARAM_ROUTES: Record<string, string> = {
   create: `${CREATE_VEHICLE_HREF}?source=telegram`,
   promo: "/auctions?from=telegram",
+  /* Вход ради топлива.
+
+     Приглашение на карте АЗС давно звало сюда ссылкой `?startapp=fuel`,
+     но значение в этом списке не значилось: `resolveStartRoute` возвращал
+     null, и человек, вошедший ради цен на бензин, попадал на ленту машин.
+     Он приходил за одним, получал другое — и уходил. */
+  fuel: "/services/fuel-map?from=telegram",
 }
 
 /* Объявление из поста в чате: listing_<идентификатор>.

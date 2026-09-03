@@ -418,7 +418,13 @@ async function sendPresencePrompt(chatId: string, stationId: string, stationName
       inline_keyboard: [
         /* Два пути к одному действию: в приложении и на сайте. Человек
            за рулём выбирает то, что у него уже открыто. */
-        [{ text: "⛽ Отметить прямо здесь", callback_data: `fuel:report:${stationId}` }],
+        /* Данные кнопки собираются тем же построителем, что и остальные.
+
+           Здесь строка писалась вручную как «fuel:report:…», а разбор
+           требует первым сегментом «f» — и отбрасывал её молча. Нажатие
+           не делало ничего: кнопка крутилась у человека до истечения
+           срока, и вся логика напоминания о заправке упиралась в неё. */
+        [{ text: "⛽ Отметить прямо здесь", callback_data: buildAction({ kind: "station", stationId }) }],
         miniAppUrl
           ? [{ text: "📱 Открыть в приложении", web_app: { url: absoluteUrl("/services/fuel-map?from=telegram") } }]
           : [{ text: "🗺 Открыть карту", url: absoluteUrl("/services/fuel-map") }],
