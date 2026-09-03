@@ -25,7 +25,7 @@ type FuelPrice = {
 type FuelStationPayload = {
   id: string
   sourceType: OverpassElement["type"] | "provider"
-  dataSource: "OPENSTREETMAP" | "ZAPRAVKIN" | "GDEBENZ" | "TWOGIS" | "GDEZAPRAVKA" | "MERGED"
+  dataSource: "OPENSTREETMAP" | "ZAPRAVKIN" | "GDEBENZ" | "TWOGIS" | "YANDEX" | "TBANK" | "GDEZAPRAVKA" | "MERGED"
   name: string
   brand: string | null
   operator: string | null
@@ -36,6 +36,8 @@ type FuelStationPayload = {
      Без этого карта знает цену марки, но не знает, залили её или она
      кончилась, — и красит все марки одинаково. */
   fuelsNow?: string[]
+  /** Очередь на заправке словами источника — её знает только Яндекс. */
+  queueNote?: string | null
   prices: FuelPrice[]
   status: "FUEL" | "NO_FUEL" | "UNKNOWN"
   statusUpdatedAt: string | null
@@ -515,8 +517,19 @@ function canMergeStations(liveStation: FuelStationPayload, directoryStation: Fue
    живые отметки водителей с голосами; ГдеЗаправка часто зовёт точку
    адресом («Вишнёвая улица, 1/3») вместо названия сети. */
 const PROVIDER_PRIORITY: Record<string, number> = {
-  GDEBENZ: 3,
-  TWOGIS: 2,
+  /* Числа значат «чьё название и адрес выигрывают», а не «чьи данные
+     лучше»: цены, ассортимент и наличие собираются со всех источников
+     сразу, и каждый добавляет то, что знает один он.
+
+     ГдеБЕНЗ первый — у него живые отметки водителей с голосами. Яндекс
+     следом: он зовёт заправку так же, как вывеска на въезде, потому что
+     название приходит из карточки организации. 2ГИС и Т-Банк дают
+     фирменное имя сети. ГдеЗаправка последняя — она часто подписывает
+     точку адресом («Вишнёвая улица, 1/3») вместо названия. */
+  GDEBENZ: 5,
+  YANDEX: 4,
+  TWOGIS: 3,
+  TBANK: 2,
   GDEZAPRAVKA: 1,
 }
 
@@ -579,6 +592,9 @@ function mergeProviderStations(stations: FuelStationPayload[]): FuelStationPaylo
       /* Наличие: берём то, что знает хоть кто-то. Пустой список у одного
          источника не должен стирать сведения другого. */
       fuelsNow: twin.fuelsNow?.length ? twin.fuelsNow : station.fuelsNow,
+      /* Очередь знает один источник из пяти, и молчание остальных не
+         должно её стирать: берём у того, кто видит. */
+      queueNote: twin.queueNote ?? station.queueNote ?? null,
       prices: [...priceByFuel.values()],
       /* Статус «есть топливо» важнее «неизвестно»: молчание одного
          источника не отменяет наблюдения другого. */
@@ -626,6 +642,7 @@ function mergeStations(liveStations: FuelStationPayload[], directoryStations: Fu
       /* Наличие берётся у провайдерской точки: OSM знает, какие колонки
          на станции стоят вообще, но не знает, что залито сегодня. */
       fuelsNow: liveStation.fuelsNow,
+      queueNote: liveStation.queueNote ?? null,
       prices: liveStation.prices,
       status: liveStation.status,
       statusUpdatedAt: liveStation.statusUpdatedAt,
@@ -890,7 +907,9 @@ async function requestImportedStations(coordinates: Coordinates, radius: number)
       : row.status === "no"
         ? "NO_FUEL"
         : "UNKNOWN"
-    const source = ["GDEBENZ", "TWOGIS", "GDEZAPRAVKA"].includes(row.source) ? row.source : "GDEBENZ"
+    /* Т-Банк в списке обязателен: без него его записи выдавали бы себя
+       за ГдеБЕНЗ, и в подписи точки стоял бы не тот источник. */
+    const source = ["GDEBENZ", "TWOGIS", "YANDEX", "TBANK", "GDEZAPRAVKA"].includes(row.source) ? row.source : "GDEBENZ"
 
     return {
       id: `${source.toLocaleLowerCase("en-US")}-${row.sourceId}`,
@@ -927,6 +946,7 @@ async function requestImportedStations(coordinates: Coordinates, radius: number)
         return looksGas ? ["Газ"] : known
       })(),
       fuelsNow: fuelsFromNow,
+      queueNote: row.queueNote ?? null,
       prices,
       status,
       statusUpdatedAt: row.updatedAt.toISOString(),

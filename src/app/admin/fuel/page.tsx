@@ -23,6 +23,7 @@ const SOURCE_LABELS: Record<string, string> = {
   GDEBENZ: "ГдеБЕНЗ",
   GDEZAPRAVKA: "ГдеЗаправка",
   TWOGIS: "2ГИС",
+  YANDEX: "Яндекс",
   DROM: "Дром",
 }
 

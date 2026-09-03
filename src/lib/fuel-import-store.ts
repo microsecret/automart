@@ -29,6 +29,8 @@ export type ImportedStation = {
   status: string | null
   fuelsNow: string | null
   dtOnly: boolean
+  /** Очередь словами источника — её знает только Яндекс. */
+  queueNote?: string | null
   prices: ImportedStationPrice[]
 }
 
@@ -121,6 +123,7 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
         status: station.status,
         fuelsNow: station.fuelsNow,
         dtOnly: station.dtOnly,
+        queueNote: station.queueNote ?? null,
       },
       create: {
         source: station.source,
@@ -134,6 +137,7 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
         status: station.status,
         fuelsNow: station.fuelsNow,
         dtOnly: station.dtOnly,
+        queueNote: station.queueNote ?? null,
       },
       select: { id: true },
     })

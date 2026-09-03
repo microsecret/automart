@@ -15,7 +15,7 @@ import { createFuelImportRun, finishFuelImportRun, upsertImportedStations, type 
  */
 
 const TWOGIS_CATALOG_API = "https://catalog.api.2gis.ru/3.0/items"
-const TWOGIS_RUBRIC = "fuel" // рубрика «АЗС» в каталоге
+const TWOGIS_SEARCH_QUERY = "АЗС"
 const PAGE_SIZE = 50
 const MAX_PAGES_PER_REGION = 20
 const DEFAULT_PAUSE_MS = 800
@@ -133,6 +133,34 @@ function configuredTwogisKey() {
   return process.env.TWOGIS_API_KEY?.trim() || process.env.TWOGIS_PUBLIC_KEY?.trim() || null
 }
 
+/**
+ * Достаёт публичный ключ 2ГИС из разметки страницы — тем же путём, что и
+ * браузер.
+ *
+ * Веб-версия 2ГИС подставляет ключ в скрипты карты при первой загрузке:
+ * он публичный и лежит в HTML как `key=…`. Скрейпер не просит ни логина,
+ * ни договора — только вытаскивает то, что сайт сам отдаёт браузеру.
+ */
+async function extractTwogisKeyFromPage(): Promise<string | null> {
+  try {
+    const response = await scraperGetText("https://2gis.ru/moscow/search/%D0%90%D0%97%D0%A1", {
+      headers: { Referer: "https://2gis.ru/" },
+    })
+    if (!response.ok) return null
+    /* Ключ встречается и в src скрипта (`…/api/js/v1?…&key=abc`), и в
+       JSON-состоянии страницы (`"key":"abc"`). Брать первое вхождение
+       безопасно: это и есть рабочий ключ каталога. */
+    const match = response.text.match(/key["']?\s*[:=]\s*["']?([a-z0-9]{6,40})/i)
+    return match?.[1] ?? null
+  } catch {
+    return null
+  }
+}
+
+async function resolveTwogisKey(): Promise<string | null> {
+  return configuredTwogisKey() ?? await extractTwogisKeyFromPage()
+}
+
 export type TwogisCollectOptions = {
   regionKeys?: string[]
   pauseMs?: number
@@ -149,7 +177,7 @@ export type TwogisCollectResult = {
 }
 
 export async function collectTwogis(options: TwogisCollectOptions = {}): Promise<TwogisCollectResult> {
-  const apiKey = configuredTwogisKey()
+  const apiKey = await resolveTwogisKey()
   if (!apiKey) {
     /* Отсутствие ключа записывается в историю прогонов.
 
@@ -166,7 +194,7 @@ export async function collectTwogis(options: TwogisCollectOptions = {}): Promise
       fetched: 0,
       upserted: 0,
       failed: 0,
-      error: "Не задан TWOGIS_API_KEY или TWOGIS_PUBLIC_KEY",
+      error: "Не удалось получить ключ 2ГИС: задайте TWOGIS_PUBLIC_KEY или откройте сайт через рабочий прокси",
     })
 
     return {
@@ -176,7 +204,7 @@ export async function collectTwogis(options: TwogisCollectOptions = {}): Promise
       fetched: 0,
       saved: 0,
       failed: 0,
-      message: "2ГИС требует ключ: задайте TWOGIS_API_KEY или TWOGIS_PUBLIC_KEY",
+      message: "2ГИС требует ключ: задайте TWOGIS_PUBLIC_KEY (или TWOGIS_API_KEY)",
     }
   }
 
@@ -199,12 +227,16 @@ export async function collectTwogis(options: TwogisCollectOptions = {}): Promise
       for (let page = 1; page <= MAX_PAGES_PER_REGION; page += 1) {
         const params = new URLSearchParams({
           key: apiKey,
-          type: TWOGIS_RUBRIC,
+          q: TWOGIS_SEARCH_QUERY,
+          locale: "ru_RU",
           page: String(page),
           page_size: String(PAGE_SIZE),
-          point1: `${region.lon1},${region.lat1}`,
-          point2: `${region.lon2},${region.lat2}`,
-          fields: "items.point,items.name,items.address_name,items.fuel_prices",
+          // Прямоугольник поиска: юго-западный и северо-восточный углы.
+          point1_lon: String(region.lon1),
+          point1_lat: String(region.lat1),
+          point2_lon: String(region.lon2),
+          point2_lat: String(region.lat2),
+          fields: "items.point,items.name,items.address_name,items.fuel_prices,items.schedule,items.contact_groups",
         })
         const response = await scraperGetText(`${TWOGIS_CATALOG_API}?${params.toString()}`, {
           headers: { Referer: "https://2gis.ru/" },

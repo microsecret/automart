@@ -5,7 +5,7 @@ import useSWR from "swr"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { ActionIcon, Badge, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
-import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconX } from "@tabler/icons-react"
+import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconUsers, IconX } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES, findNearestCity } from "@/lib/cities"
 import { fetchJson } from "@/lib/api-client"
 import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
@@ -44,6 +44,7 @@ type FuelStation = {
   /* Марки, которые источник видит в наличии прямо сейчас. Отличается от
      fuels: тот перечисляет колонки станции вообще, а этот — что залито. */
   fuelsNow?: string[]
+  queueNote?: string | null
   prices: Array<{ fuel: string; price: number | null; updatedAt: string | null }>
   status: "FUEL" | "NO_FUEL" | "UNKNOWN"
   statusUpdatedAt: string | null
@@ -1348,6 +1349,20 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   {weakest && (
                     <span className="fuel-status__confidence">{weakest.confidencePercent}%</span>
                   )}
+                </Box>
+              )}
+
+              {/* Очередь — второй вопрос после «есть ли топливо».
+
+                  Знает её только Яндекс: он собирает очередь с
+                  навигатора, а цены и отметки водителей о ней молчат.
+                  Для человека это половина решения — заправка с
+                  топливом и очередью на двадцать минут хуже соседней
+                  без очереди. */}
+              {selectedStation.queueNote && (
+                <Box className="fuel-queue" data-state={selectedStation.queueNote.toLowerCase().includes("нет") ? "free" : "busy"}>
+                  <IconUsers size={15} />
+                  <span>{selectedStation.queueNote}</span>
                 </Box>
               )}
 

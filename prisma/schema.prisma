@@ -2144,7 +2144,7 @@ model ChatPromotionPost {
 /// повторный прогон обновлял запись, а не плодил копии.
 model FuelStationImport {
   id        String  @id @default(uuid())
-  source    String  @default("GDEBENZ") // GDEBENZ, GDEZAPRAVKA, TWOGIS, DROM
+  source    String  @default("GDEBENZ") // GDEBENZ, GDEZAPRAVKA, TWOGIS, TBANK, YANDEX, DROM
   sourceId  String
   name      String?
   brand     String?
@@ -2158,6 +2158,10 @@ model FuelStationImport {
   fuelsNow  String?
   /// Только дизель на этой точке (dt_only=1 у ГдеБЕНЗ).
   dtOnly    Boolean @default(false)
+  /// Очередь на заправке словами источника: «Нет очереди», «Очередь».
+  /// Знает только Яндекс — он собирает её с навигатора, а цены и отметки
+  /// водителей об очереди ничего не говорят.
+  queueNote String?
 
   prices FuelPriceImport[]
 

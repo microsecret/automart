@@ -5446,6 +5446,41 @@ html:has(.fuel-map-canvas) {
   background: color-mix(in srgb, var(--market-surface) 82%, #16a34a);
 }
 
+/* Очередь на заправке.
+
+   Отдельной строкой под статусом топлива, а не бейджем среди марок:
+   это ответ на другой вопрос. «Топливо есть» говорит, доедешь ли ты
+   заправиться вообще, очередь — сколько там простоишь. */
+.fuel-queue {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-sm);
+  background: var(--market-surface-subtle);
+  color: var(--market-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* Свободная заправка отмечена зелёным — тем же цветом, что «топливо
+   есть»: оба означают «можно ехать». */
+.fuel-queue[data-state="free"] {
+  border-color: color-mix(in srgb, var(--market-success-text) 34%, var(--market-line));
+  background: var(--market-success-surface);
+  color: var(--market-success-text);
+}
+
+/* Очередь не красная: топливо там есть, иначе за ним бы не стояли.
+   Красный означал бы «не езжай», а это неправда. */
+.fuel-queue[data-state="busy"] {
+  border-color: color-mix(in srgb, var(--market-warning-text) 34%, var(--market-line));
+  background: var(--market-warning-surface);
+  color: var(--market-warning-text);
+}
+
 /* Что здесь по отметкам: читается без открытия формы. */
 .fuel-report__status {
   display: grid;
