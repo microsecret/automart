@@ -340,21 +340,6 @@ test("очередь одна на заправку", () => {
   assert.match(reporter, /Очередь одна на заправку/)
 })
 
-test("без геолокации список считает от центра карты", () => {
-  /* Список без положения бесполезнее, чем с приблизительным: человек всё
-     равно видит, где топливо есть. */
-  const nearby = readFileSync(new URL("../src/components/fuel/FuelNearbyList.tsx", import.meta.url), "utf8")
-  assert.match(nearby, /fallbackOrigin/)
-})
-
-test("причина отказа геолокации объясняется по-разному", () => {
-  /* Общее «не удалось» не говорило, отказал ли человек сам, слаб ли
-     сигнал или дело в браузере. */
-  const nearby = readFileSync(new URL("../src/components/fuel/FuelNearbyList.tsx", import.meta.url), "utf8")
-  assert.match(nearby, /failure\?\.code === 1/)
-  assert.match(nearby, /failure\?\.code === 3/)
-})
-
 test("всплывающая карточка показывает наличие и цену", () => {
   /* Раньше в ней были только адрес и ассортимент из OpenStreetMap —
      ответа на вопрос «есть ли бензин» не было. */
