@@ -20,6 +20,7 @@ import { plural } from "@/lib/format"
 import { countActiveCatalogFilters } from "@/lib/catalog-filter-state"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import CategoryShowcase from "./CategoryShowcase"
+import HowItWorks from "@/components/home/HowItWorks"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
@@ -511,6 +512,15 @@ export default function HomePage(p: HomePageProps = {}) {
       )}
 
       {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
+
+      {/* Объяснение сервиса — только гостю.
+
+          Главная показывала объявления и направления, но не говорила, чем
+          площадка отличается от соседних: про карту АЗС, уведомления и
+          проверку истории человек узнавал случайно, если вообще узнавал.
+          Вошедшему блок не нужен — он занимал бы экран рассказом о том,
+          чем человек уже пользуется. */}
+      {p.showHero !== false && !p.categorySlug && sessionStatus === "unauthenticated" && <HowItWorks />}
 
       <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
         <Stack gap={0}>
