@@ -749,8 +749,20 @@ select {
        Ещё двадцать пикселей уводят её в промежуток между панелью и
        содержимым. */
     bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
-    opacity: 0.82;
+    /* Кнопка уменьшена и приглушена в покое: она висит поверх текста
+       и на узком экране накрывала то заголовок раздела, то строку
+       описания. Полный размер возвращается при касании — тогда она
+       нужна, а до этого только мешает читать. */
+    opacity: 0.7;
+    transform: scale(0.86);
+    transform-origin: bottom right;
     transition: opacity var(--ease-base) var(--ease-out);
+  }
+
+  .support-chat__launcher:active,
+  .support-chat__launcher:focus-within {
+    opacity: 1;
+    transform: scale(1);
   }
 
   /* На странице лота кнопка чата поднимается над полосой заявки.
