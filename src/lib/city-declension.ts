@@ -59,6 +59,11 @@ export function cityInPrepositional(city: string): string {
     return /(ово|ево|ино|ыно)$/i.test(trimmed) ? trimmed : `${trimmed}е`
   }
 
+  /* Названия на -ия и -ья: «Мордовия» → «Мордовии», «Марий Эл» сюда не
+     попадает, у него пробел. Правило стояло во второй копии функции и
+     при слиянии могло потеряться. */
+  if (/(ия|ья)$/i.test(trimmed)) return `${trimmed.slice(0, -1)}и`
+
   const last = trimmed.slice(-1).toLowerCase()
   /* Женский род на -а и -я: Уфа → Уфе, Казань уже мягкая и идёт ниже. */
   if (last === "а") return `${trimmed.slice(0, -1)}е`
