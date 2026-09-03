@@ -74,7 +74,14 @@ async function findStationsNear(point: { latitude: number; longitude: number }):
 }
 
 /** Клавиатура вопроса «что здесь есть». */
-function fuelKeyboard(stationId: string) {
+/* Координаты нужны ссылке «следить»: карта открывает заправку, только
+   если та попала в выборку, а человек из бота часто в другом городе —
+   без них ссылка вела бы на карту без нужной точки. */
+function fuelKeyboard(stationId: string, point?: { latitude: number; longitude: number } | null) {
+  const watchUrl = point
+    ? absoluteUrl(`/services/fuel-map?station=${encodeURIComponent(stationId)}&lat=${point.latitude}&lng=${point.longitude}&from=telegram`)
+    : absoluteUrl(`/services/fuel-map?station=${encodeURIComponent(stationId)}&from=telegram`)
+
   return {
     inline_keyboard: [
       ...BOT_FUELS.map((fuel) => [
@@ -87,6 +94,15 @@ function fuelKeyboard(stationId: string) {
           callback_data: buildAction({ kind: "fuel", stationId, fuel, state: "NO" }),
         },
       ]),
+      /* Ссылка ведёт прямо на эту заправку, а не на общую карту.
+
+         Человек только что отметил на ней топливо — он думает про
+         конкретную точку, и общая карта заставила бы искать её заново.
+         На открытой карточке стоит кнопка подписки: бот напишет, когда
+         топливо появится. Это единственная возможность, ради которой
+         стоит заводить учётную запись, и до неё должно быть одно
+         нажатие. */
+      [{ text: "🔔 Следить за этой АЗС", url: watchUrl }],
       [{ text: "🗺 Открыть карту", url: absoluteUrl("/services/fuel-map?from=telegram") }],
     ],
   }
@@ -143,7 +159,7 @@ export async function handleFuelLocation(
       + `<i>в ${formatDistance(match.km)} от вас</i>\n\n`
       + "Что здесь сейчас есть? Отметьте — это увидят другие водители.",
     parse_mode: "HTML",
-    reply_markup: fuelKeyboard(match.station.id),
+    reply_markup: fuelKeyboard(match.station.id, { latitude: match.station.latitude, longitude: match.station.longitude }),
   }).catch(() => undefined)
 
   return true
@@ -169,6 +185,17 @@ export async function handleFuelCallback(input: {
   const answer = (text: string) =>
     telegramApi("answerCallbackQuery", { callback_query_id: input.callbackId, text }).catch(() => undefined)
 
+  /* Координаты заправки для ссылки «следить»: в нажатии приходит только
+     её идентификатор, а карта без координат может не найти точку —
+     человек из бота часто в другом городе, чем открытая у него карта.
+     Один короткий запрос дешевле, чем ссылка, ведущая не туда. */
+  const stationPoint = action.stationId
+    ? await prisma.fuelStationImport.findFirst({
+        where: { id: action.stationId },
+        select: { latitude: true, longitude: true },
+      }).catch(() => null)
+    : null
+
   if (action.kind === "station") {
     await answer("")
     await telegramApi("editMessageText", {
@@ -176,7 +203,7 @@ export async function handleFuelCallback(input: {
       message_id: input.messageId,
       text: "⛽ <b>Что здесь сейчас есть?</b>\n\nОтметьте — это увидят другие водители.",
       parse_mode: "HTML",
-      reply_markup: fuelKeyboard(action.stationId),
+      reply_markup: fuelKeyboard(action.stationId, stationPoint),
     }).catch(() => undefined)
     return true
   }
@@ -242,7 +269,7 @@ export async function handleFuelCallback(input: {
       + `Сейчас на этой заправке: ${line}\n\n`
       + "<i>Отметьте ещё марку или пришлите точку на другой заправке.</i>",
     parse_mode: "HTML",
-    reply_markup: fuelKeyboard(action.stationId),
+    reply_markup: fuelKeyboard(action.stationId, stationPoint),
   }).catch(() => undefined)
 
   /* Подписчиков будим тем же путём, что и с сайта: появление топлива не
