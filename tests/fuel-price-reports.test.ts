@@ -12,6 +12,36 @@ test("accepts prices written with a comma or a dot", () => {
   assert.equal(formatReportedPrice(5_840), "58,40")
 })
 
+test("цена разбирается из строки источника, а не только из чистого числа", () => {
+  /* Через parseReportedPrice проходит и ввод человека, и то, что отдают
+     источники сбора. Оформление у каждого своё: символ рубля, слово
+     «руб», валюта впереди, латинское RUB. Раньше любая такая строка
+     превращалась в NaN, и цена терялась молча — источник её прислал, а
+     на карте оставалась пустота. Проверка на живых форматах показала,
+     что не разбирались шесть вариантов из одиннадцати. */
+  assert.equal(parseReportedPrice("58,90 ₽"), 5_890)
+  assert.equal(parseReportedPrice("58.90 руб"), 5_890)
+  assert.equal(parseReportedPrice("₽58,90"), 5_890)
+  assert.equal(parseReportedPrice("58.90 RUB"), 5_890)
+  assert.equal(parseReportedPrice(" 58,90 "), 5_890)
+})
+
+test("марка топлива в строке не подменяет цену", () => {
+  /* Часть источников склеивает марку с ценой: «АИ-95: 58,90 ₽». Если
+     брать первое число, на карту попадёт 95 рублей вместо 58,90 — и
+     порог правдоподобия такую подмену не поймает, 95 рублей за литр
+     выглядят возможной ценой.
+
+     Настоящая цена почти всегда дробная, поэтому число с копейками
+     имеет приоритет над целым. */
+  assert.equal(parseReportedPrice("АИ-95: 58,90 ₽"), 5_890)
+  assert.equal(parseReportedPrice("92 — 55,40 руб"), 5_540)
+  assert.equal(parseReportedPrice("АИ-100: 89,90"), 8_990)
+  assert.equal(parseReportedPrice("ДТ 62,10"), 6_210)
+  /* Целое принимается, только когда дробного в строке нет вовсе. */
+  assert.equal(parseReportedPrice("58"), 5_800)
+})
+
 test("rejects prices outside the plausible retail range", () => {
   assert.equal(parseReportedPrice("5"), null)
   assert.equal(parseReportedPrice("999"), null)

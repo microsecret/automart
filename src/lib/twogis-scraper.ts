@@ -151,8 +151,26 @@ export type TwogisCollectResult = {
 export async function collectTwogis(options: TwogisCollectOptions = {}): Promise<TwogisCollectResult> {
   const apiKey = configuredTwogisKey()
   if (!apiKey) {
+    /* Отсутствие ключа записывается в историю прогонов.
+
+       Раньше источник просто возвращал отказ и уходил без следа: в
+       админке он выглядел как никогда не запускавшийся, а не как
+       выключенный. Проверка на боевом сервере показала, что 2ГИС молчал
+       неделю подряд, и заметить это было неоткуда — в списке прогонов
+       его строки не было вовсе.
+
+       Теперь неудача видна там же, где успехи остальных источников. */
+    const run = await createFuelImportRun("TWOGIS", 0)
+    await finishFuelImportRun(run.id, {
+      status: "NOT_CONFIGURED",
+      fetched: 0,
+      upserted: 0,
+      failed: 0,
+      error: "Не задан TWOGIS_API_KEY или TWOGIS_PUBLIC_KEY",
+    })
+
     return {
-      runId: null,
+      runId: run.id,
       status: "NOT_CONFIGURED",
       regions: [],
       fetched: 0,

@@ -259,7 +259,11 @@ export async function createFuelImportRun(source: string, requested: number) {
 
 export async function finishFuelImportRun(
   runId: string,
-  result: { status: "SUCCEEDED" | "PARTIAL" | "FAILED"; fetched: number; upserted: number; failed: number; error?: string | null },
+  /* NOT_CONFIGURED — источник не запускался, потому что ему не хватает
+     ключа или настройки. Это тоже исход прогона: без записи в истории
+     такой источник молчит, и в админке он выглядит просто не
+     запускавшимся. */
+  result: { status: "SUCCEEDED" | "PARTIAL" | "FAILED" | "NOT_CONFIGURED"; fetched: number; upserted: number; failed: number; error?: string | null },
 ) {
   await prisma.fuelImportRun.update({
     where: { id: runId },

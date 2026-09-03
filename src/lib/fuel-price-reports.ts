@@ -31,9 +31,50 @@ export function isFuelReportType(value: unknown): value is FuelReportType {
   return typeof value === "string" && (FUEL_REPORT_TYPES as readonly string[]).includes(value)
 }
 
-/** Переводит цену из рублей, введённых пользователем, в копейки хранилища. */
+/** Переводит цену из рублей в копейки хранилища.
+
+    Через эту функцию проходят и то, что вводит человек в мини-приложении,
+    и то, что отдают источники сбора. Раньше она понимала только чистое
+    число: строка «58,90 ₽» превращалась в NaN и цена терялась молча —
+    источник её прислал, а на карте оставалась пустота.
+
+    Проверка на живых форматах показала, что шесть вариантов из
+    одиннадцати не разбирались: с рублём, со словом «руб», с валютой
+    впереди, с «RUB», с неразрывным пробелом внутри числа. У каждого
+    источника своё оформление, и добавлять по замене на каждый случай
+    значило бы возвращаться сюда после каждого нового поставщика.
+
+    Поэтому берётся первое число в строке, а всё вокруг отбрасывается. */
 export function parseReportedPrice(value: unknown) {
-  const numeric = typeof value === "number" ? value : Number(String(value ?? "").replace(",", ".").trim())
+  if (typeof value === "number") return toKopecks(value)
+
+  const text = String(value ?? "")
+  if (!text.trim()) return null
+
+  /* Разделители разрядов убираются до поиска числа: «1 234,50» это одна
+     цена, а не «1» и «234,50». Пробел бывает обычным, неразрывным и
+     узким — источники используют все три. */
+  const cleaned = text.replace(/[\s   ](?=\d{3})/g, "")
+
+  /* Число с дробной частью ищется первым.
+
+     Строка вида «АИ-95: 58,90 ₽» встречается у источников, которые
+     склеивают марку с ценой. Первое число в ней — 95 из названия марки,
+     и без этого правила на карту попала бы цена 95 рублей вместо 58,90.
+     Порог правдоподобия такую подмену не поймает: 95 рублей за литр
+     выглядит возможной ценой.
+
+     Настоящая цена почти всегда дробная — рубли с копейками. Целое число
+     принимается только когда дробного в строке нет вовсе. */
+  const withFraction = cleaned.match(/\d+[.,]\d+/)
+  const whole = cleaned.match(/\d+/)
+  const picked = withFraction?.[0] ?? whole?.[0]
+  if (!picked) return null
+
+  return toKopecks(Number(picked.replace(",", ".")))
+}
+
+function toKopecks(numeric: number) {
   if (!Number.isFinite(numeric)) return null
   const kopecks = Math.round(numeric * 100)
   if (kopecks < MIN_PRICE_KOPECKS || kopecks > MAX_PRICE_KOPECKS) return null

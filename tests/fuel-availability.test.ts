@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs"
 import { getStationIdentity } from "../src/lib/fuel-station-identity.ts"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { formatAge, isFresh, summarizeAvailability } from "../src/lib/fuel-availability.ts"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { cityInPrepositional } from "../src/lib/city-declension.ts"
 
 const NOW = new Date("2026-08-29T12:00:00Z")
 const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60_000)
@@ -1185,12 +1187,30 @@ test("город в заголовке стоит в предложном пад
      странице меньше, а поисковик сверяет заголовок с живым запросом
      «цены на бензин в уфе».
 
-     Несклоняемые и составные названия остаются как есть — лучше не
-     склонять вовсе, чем склонить неверно. */
-  const slug = readFileSync(new URL("../src/lib/fuel-city-slug.ts", import.meta.url), "utf8")
+     Проверяется поведение, а не текст файла: прежняя версия теста искала
+     в исходнике строку с условием и продолжала проходить после любой
+     правки самой логики. */
+  assert.equal(cityInPrepositional("Уфа"), "Уфе")
+  assert.equal(cityInPrepositional("Казань"), "Казани")
+  assert.equal(cityInPrepositional("Екатеринбург"), "Екатеринбурге")
+  assert.equal(cityInPrepositional("Салават"), "Салавате")
+})
 
-  assert.match(slug, /export function cityInPrepositional/)
-  assert.match(slug, /includes\(" "\) \|\| trimmed\.includes\("-"\)/)
+test("область и республика в заголовке тоже склоняются", () => {
+  /* Областей в списке сбора четыре, и каждая давала на своей странице
+     «Цены на бензин в Московская область» — ровно ту машинную сборку,
+     от которой избавлялись для городов. */
+  assert.equal(cityInPrepositional("Московская область"), "Московской области")
+  assert.equal(cityInPrepositional("Свердловская область"), "Свердловской области")
+  assert.equal(cityInPrepositional("Республика Башкортостан"), "Республике Башкортостан")
+  assert.equal(cityInPrepositional("Республика Татарстан"), "Республике Татарстан")
+})
+
+test("составное название города остаётся как есть", () => {
+  /* «Набережные Челны» и «Нижний Тагил» правилами выше не покрываются:
+     лучше не склонять вовсе, чем склонить неверно. */
+  assert.equal(cityInPrepositional("Набережные Челны"), "Набережные Челны")
+  assert.equal(cityInPrepositional("Нижний Тагил"), "Нижний Тагил")
 })
 
 test("кнопка поддержки не ложится на вкладки мини-приложения", () => {

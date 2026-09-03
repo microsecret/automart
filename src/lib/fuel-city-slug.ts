@@ -64,37 +64,7 @@ export function fuelCitySlugs(cities: string[]): Array<{ city: string; slug: str
   return result
 }
 
-/**
- * Город в предложном падеже: «в Уфе», а не «в Уфа».
- *
- * Заголовок страницы читает человек, и «Цены на бензин в Уфа» выдаёт
- * машинную сборку текста — доверия такой странице меньше, а поисковик
- * сверяет заголовок с живым запросом «цены на бензин в уфе».
- *
- * Правило простое и покрывает подавляющее большинство русских городов.
- * Несклоняемые названия и составные вроде «Набережные Челны» остаются как
- * есть: лучше не склонять вовсе, чем склонить неверно.
- */
-const INDECLINABLE = /(ово|ево|ино|ыно|аул|бург|ск|цк|дск|рск)$/i
-
-export function cityInPrepositional(city: string): string {
-  const trimmed = city.trim()
-  if (!trimmed || trimmed.includes(" ") || trimmed.includes("-")) return trimmed
-
-  /* Города на -ск, -бург и подобные в предложном падеже не меняют основу:
-     «в Челябинске» — это уже добавленное окончание, а не замена. */
-  if (INDECLINABLE.test(trimmed)) {
-    return /(ово|ево|ино|ыно)$/i.test(trimmed) ? trimmed : `${trimmed}е`
-  }
-
-  const last = trimmed.slice(-1).toLowerCase()
-  /* Женский род на -а и -я: Уфа → Уфе, Казань уже мягкая и идёт ниже. */
-  if (last === "а") return `${trimmed.slice(0, -1)}е`
-  if (last === "я") return `${trimmed.slice(0, -1)}е`
-  /* Мягкий знак: Казань → Казани, Тверь → Твери. */
-  if (last === "ь") return `${trimmed.slice(0, -1)}и`
-  /* Мужской род на согласную: Салават → Салавате. */
-  if (/[бвгджзйклмнпрстфхцчшщ]/i.test(last)) return `${trimmed}е`
-
-  return trimmed
-}
+/* Склонение переехало в city-declension: правило не про заправки, и без
+   зависимостей его можно проверить тестом напрямую. Реэкспорт оставлен,
+   чтобы не править места, которые импортируют функцию отсюда. */
+export { cityInPrepositional } from "@/lib/city-declension"
