@@ -110,9 +110,27 @@ async function collectRegionSnippets(browser: Browser, center: { lon: number; la
         const longitude = Number(parts[0])
         const latitude = Number(parts[1])
         if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) continue
+
+        /* Подпись берётся из текста самой карточки, а не через селектор
+           по классу.
+
+           Классы у Яндекса сгенерированы и меняются, а с ними молча
+           переставал работать разбор: координаты приходили, названия и
+           очереди — нет. Проверка на живой выдаче: из девятнадцати
+           элементов селектор находил подпись у восьми.
+
+           Часть элементов — метки на самом полотне карты: у них есть
+           координаты, но нет текста вовсе. Они отсеиваются ниже, а точка
+           всё равно сохраняется: заправка на карте нужна и без подписи. */
+        const text = (element.textContent || "").replace(/\s+/g, " ").trim()
+
         result.push({
           id: element.getAttribute("data-id"),
-          title: element.querySelector("[class*=title]")?.textContent?.trim() ?? null,
+          /* Развёрнутая карточка склеивает в текст ещё и адрес с режимом
+             работы: «ГазпромнефтьФотоГазпромнефтьКруглосуточноул. Блюхера…».
+             Такую строку разбирать нельзя — берём только короткую подпись
+             из списка. */
+          title: text.length > 0 && text.length <= 80 ? text : null,
           longitude,
           latitude,
         })
