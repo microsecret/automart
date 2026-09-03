@@ -1,4 +1,6 @@
+import Link from "next/link"
 import { buildSeoMetadata } from "@/lib/seo-metadata"
+import { listFuelCities } from "@/lib/fuel-city-links"
 
 export const metadata = buildSeoMetadata({ title: "Карта АЗС России и построение маршрута", description: "Найдите открытые автозаправочные станции по городу, сравните доступные точки и постройте маршрут.", canonical: "/services/fuel-map", keywords: ["карта АЗС", "заправки рядом", "АЗС России", "маршрут до заправки"] })
 
@@ -20,4 +22,40 @@ export const metadata = buildSeoMetadata({ title: "Карта АЗС Росси�
  */
 export const dynamic = "force-dynamic"
 
-export default function Layout({ children }: { children: React.ReactNode }) { return children }
+/**
+ * Под картой — список городов со своими страницами цен.
+ *
+ * Страницы городов существовали, но на них не вело ни одной ссылки с
+ * сайта: поисковик находил их только через карту сайта, без внутреннего
+ * веса. Страница-сирота ранжируется в разы хуже связанной, и это была
+ * самая крупная потеря трафика в проекте.
+ *
+ * Список стоит в разметке страницы, а не рисуется скриптом: сама карта
+ * клиентская, и всё, что она показывает, поисковику недоступно. Здесь же
+ * ссылки приходят вместе с ответом сервера.
+ *
+ * Человеку они тоже нужны: тот, кто открыл общую карту, часто ищет свой
+ * город, а не тычет в точку на полотне.
+ */
+export default async function Layout({ children }: { children: React.ReactNode }) {
+  const cities = await listFuelCities(60)
+
+  return (
+    <>
+      {children}
+      {cities.length > 0 && (
+        <nav className="fuel-cities-index" aria-label="Цены на топливо по городам">
+          <h2>Цены на топливо по городам</h2>
+          <ul>
+            {cities.map((item) => (
+              <li key={item.slug}>
+                <Link href={`/services/fuel-map/${item.slug}`}>{item.city}</Link>
+                <span>{item.stationCount}</span>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+    </>
+  )
+}

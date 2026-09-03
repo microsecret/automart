@@ -92,6 +92,7 @@ export const DASHBOARD_NAVIGATION = [
   { id: "deliveries", label: "Мои доставки", shortLabel: "Доставки", href: "/dashboard/deliveries" },
   { id: "documents", label: "Мои документы", shortLabel: "Документы", href: "/dashboard/documents" },
   { id: "messages", label: "Сообщения", href: "/messages" },
+  { id: "subscriptions", label: "Подписки", href: "/dashboard?tab=subscriptions" },
   { id: "payments", label: "Оплаты", href: "/dashboard?tab=payments" },
   { id: "profile", label: "Профиль и настройки", shortLabel: "Профиль", href: "/dashboard?tab=profile" },
 ] as const satisfies readonly NavigationItem[]

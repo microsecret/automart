@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-metadata"
 import { authOptions } from "@/lib/auth"
 import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import PartDetailClient from "./PartDetailClient"
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     alternates: { canonical },
     openGraph: { type: "website", title, description, url: canonical, images: images.length ? [{ url: images[0], alt: title }] : undefined },
-    twitter: { card: "summary_large_image", title, description, images: images.length ? [images[0]] : undefined },
+    twitter: { card: "summary_large_image", title, description, images: [images[0] ?? DEFAULT_SOCIAL_IMAGE] },
   }
 }
 

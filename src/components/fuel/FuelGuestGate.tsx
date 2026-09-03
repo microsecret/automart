@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Box, Button, Group, Stack, Text } from "@mantine/core"
-import { IconBrandTelegram, IconUserPlus, IconGasStation, IconUsers } from "@tabler/icons-react"
+import { IconBell, IconBrandTelegram, IconGasStation, IconMapPin, IconUserPlus } from "@tabler/icons-react"
 
 /**
  * Приглашение войти поверх карты АЗС.
@@ -12,10 +12,18 @@ import { IconBrandTelegram, IconUserPlus, IconGasStation, IconUsers } from "@tab
  * там стоит. Поэтому гостю показывают несколько заправок целиком — чтобы
  * он убедился, что данные живые и свежие, — а остальные закрывают.
  *
- * Закрыто именно то, ради чего приходят: цены по всему городу. Видно при
- * этом всё, что доказывает работу сервиса: число заправок, свежесть,
- * сколько отметок оставили за сутки. Пустая заглушка вместо карты читалась
- * бы как «сервиса нет», и человек ушёл бы, не поняв, за чем регистрируется.
+ * Прежняя версия закрывала карту просьбой: «чем больше водителей отмечают,
+ * тем точнее у всех». Просьба верная, но обращена не к тому: человек
+ * пришёл узнать, где заправиться, а его звали в соавторы сервиса. Замер на
+ * боевом сервере это подтвердил — двести двенадцать регистраций и три
+ * подписки на уведомления, то есть о главной возможности почти никто не
+ * узнал.
+ *
+ * Теперь сначала идёт личная выгода, и каждое обещание проверено по коду:
+ * уведомления о появлении топлива действительно рассылаются (FuelSubscription
+ * и рассылка в scripts/run-fuel-digest.sh), вход через Telegram — один шаг
+ * без пароля (двести одиннадцать регистраций из двухсот двенадцати пришли
+ * именно так).
  */
 
 type Props = {
@@ -32,6 +40,27 @@ type Props = {
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || ""
 
+/* Что человек получает лично. Порядок не случаен: сначала то, ради чего
+   он открыл карту, потом то, о чём он не знал и что возвращает его сюда
+   завтра. */
+const BENEFITS = [
+  {
+    icon: IconMapPin,
+    title: "Все заправки города",
+    text: "Цены и наличие по каждой, а не по четырём ближайшим",
+  },
+  {
+    icon: IconBell,
+    title: "Бот напишет, когда появится топливо",
+    text: "Выбираете марку и город — сообщение приходит в Telegram",
+  },
+  {
+    icon: IconGasStation,
+    title: "Отметка в одно касание",
+    text: "Увидели цену на табло — отметили, и её увидят остальные",
+  },
+] as const
+
 export default function FuelGuestGate({ stationCount, pricedCount, reportsToday, cityLabel, returnPath }: Props) {
   const callbackUrl = encodeURIComponent(returnPath)
   const telegramUrl = BOT_USERNAME ? `https://t.me/${BOT_USERNAME}?startapp=fuel` : null
@@ -39,34 +68,38 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
   return (
     <Box className="fuel-gate">
       <Stack gap="md" className="fuel-gate__card">
-        <Group gap="xs" justify="center">
-          <IconGasStation size={22} />
-          <Text fw={800} fz={20} ta="center">Цены на топливо в {cityLabel}</Text>
-        </Group>
+        <Stack gap={4}>
+          <Group gap="xs">
+            <IconGasStation size={20} />
+            <Text fw={800} fz={19} lh={1.2}>Цены на топливо в {cityLabel}</Text>
+          </Group>
+          {/* Числа идут сразу за заголовком: они доказывают, что за
+              приглашением стоит работающий сервис, а не пустая форма. */}
+          <Text size="sm" c="dimmed">
+            {stationCount} заправок на карте, {pricedCount} с ценами и наличием
+            {typeof reportsToday === "number" && reportsToday > 0 ? `, ${reportsToday} отметок за сутки` : ""}
+          </Text>
+        </Stack>
 
-        {/* Числа идут раньше призыва: они объясняют, что именно человек
-            получит, и доказывают, что сервис живой. */}
-        <Group gap="lg" justify="center" wrap="wrap">
-          <Box ta="center">
-            <Text fw={800} fz={24} lh={1.1}>{stationCount}</Text>
-            <Text size="xs" c="dimmed">заправок на карте</Text>
-          </Box>
-          <Box ta="center">
-            <Text fw={800} fz={24} lh={1.1}>{pricedCount}</Text>
-            <Text size="xs" c="dimmed">с ценами и наличием</Text>
-          </Box>
-          {typeof reportsToday === "number" && reportsToday > 0 && (
-            <Box ta="center">
-              <Text fw={800} fz={24} lh={1.1}>{reportsToday}</Text>
-              <Text size="xs" c="dimmed">отметок за сутки</Text>
-            </Box>
-          )}
-        </Group>
+        {/* Выгода списком, а не сплошным текстом.
 
-        <Text size="sm" ta="center">
-          Это народный сервис: цены и наличие отмечают сами водители — те, кто прямо сейчас
-          стоит на колонке. Скрейпер собирает прайсы, но что залито и где очередь, видно только с места.
-        </Text>
+            Прежний абзац объяснял, как устроен сервис. Это интересно тому,
+            кто уже внутри; тому, кто решает, входить ли, важно другое —
+            что он получит. Три строки читаются за пару секунд, абзац
+            пропускают. */}
+        <Stack gap="sm" className="fuel-gate__benefits">
+          {BENEFITS.map(({ icon: Icon, title, text }) => (
+            <Group key={title} gap={10} align="flex-start" wrap="nowrap">
+              <Box className="fuel-gate__benefit-icon" aria-hidden="true">
+                <Icon size={17} stroke={1.9} />
+              </Box>
+              <Box>
+                <Text fw={700} fz="sm" lh={1.3}>{title}</Text>
+                <Text size="xs" c="dimmed" lh={1.4}>{text}</Text>
+              </Box>
+            </Group>
+          ))}
+        </Stack>
 
         <Stack gap="xs">
           {telegramUrl && (
@@ -77,18 +110,23 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
               leftSection={<IconBrandTelegram size={20} />}
               fullWidth
             >
-              Открыть в Telegram — вход в одно касание
+              Войти через Telegram
             </Button>
           )}
+          {/* Обещание проверяемое: вход через Telegram действительно не
+              просит ни пароля, ни почты, ни подтверждения. */}
+          <Text size="xs" ta="center" c="dimmed">
+            Одно касание, без пароля и почты
+          </Text>
           <Button
             component={Link}
             href={`/auth/signup?callbackUrl=${callbackUrl}`}
-            size="md"
-            variant={telegramUrl ? "default" : "filled"}
-            leftSection={<IconUserPlus size={20} />}
+            size="sm"
+            variant="subtle"
+            leftSection={<IconUserPlus size={16} />}
             fullWidth
           >
-            Зарегистрироваться на сайте
+            Или обычная регистрация
           </Button>
           <Text size="xs" ta="center" c="dimmed">
             Уже есть аккаунт?{" "}
@@ -97,16 +135,6 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
             </Link>
           </Text>
         </Stack>
-
-        {/* Просьба отмечать стоит после входа, а не до: пока человек не
-            внутри, звать его в соавторы рано. */}
-        <Group gap={8} align="flex-start" className="fuel-gate__note">
-          <IconUsers size={16} />
-          <Text size="xs" c="dimmed">
-            Чем больше водителей отмечают цены и очереди, тем точнее карта у всех.
-            Расскажите про сервис знакомым — вместе мы видим больше, чем поодиночке.
-          </Text>
-        </Group>
       </Stack>
     </Box>
   )

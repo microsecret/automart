@@ -9,7 +9,10 @@ type SeoMetadataInput = {
 }
 
 /** One canonical social/search presentation for every public landing page. */
-export function buildSeoMetadata({ title, description, canonical, keywords, image = "/images/home/automarket-hero.png" }: SeoMetadataInput): Metadata {
+/** Картинка ссылки, когда своей у страницы нет. */
+export const DEFAULT_SOCIAL_IMAGE = "/images/home/automarket-hero.png"
+
+export function buildSeoMetadata({ title, description, canonical, keywords, image = DEFAULT_SOCIAL_IMAGE }: SeoMetadataInput): Metadata {
   return {
     title,
     description,

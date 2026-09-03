@@ -236,7 +236,7 @@ function CompareContent() {
       <Stack gap="md">
         <Group justify="space-between" align="center">
           <Stack gap={0}>
-            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Сравнение</Text>
+            <Text component="h2" c="var(--market-ink)" ff="var(--font-display),sans-serif">Сравнение</Text>
             <Text size="xs" c="gray.5">{vehicles.length} автомобиля</Text>
           </Stack>
           <Group gap="xs">

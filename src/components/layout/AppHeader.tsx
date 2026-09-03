@@ -75,6 +75,7 @@ const HEADER_ACCOUNT_ICONS = {
   deliveries: <IconTruckDelivery size={15} />,
   documents: <IconFileDescription size={15} />,
   messages: <IconMessageCircle2 size={15} />,
+  subscriptions: <IconBell size={15} />,
   payments: <IconCreditCard size={15} />,
   profile: <IconSettings size={15} />,
 } satisfies Record<(typeof DASHBOARD_NAVIGATION)[number]["id"], React.ReactNode>

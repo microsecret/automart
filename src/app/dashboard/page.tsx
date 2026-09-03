@@ -16,6 +16,7 @@ import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import ShareInviteCard from "@/components/dashboard/ShareInviteCard"
 import GaragePanel, { type GarageResponse } from "@/components/dashboard/GaragePanel"
+import SubscriptionsPanel from "@/components/dashboard/SubscriptionsPanel"
 import PromotionPanel, { type PromotionOrder } from "@/components/dashboard/PromotionPanel"
 import { FORUM_SIGNATURE_MAX } from "@/lib/forum"
 import AvatarUpload from "@/components/dashboard/AvatarUpload"
@@ -105,7 +106,7 @@ type AccountProfileResponse = {
 }
 type RemovalConfirmation = { kind: "listing" | "garage"; id: string; title: string }
 
-const DASHBOARD_TABS = new Set(["listings", "payments", "favorites", "garage", "profile"])
+const DASHBOARD_TABS = new Set(["listings", "payments", "favorites", "garage", "subscriptions", "profile"])
 
 const formatMemberSince = (value: string | null) => value
   ? new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(new Date(value))
@@ -535,6 +536,12 @@ function DashboardContent() {
             onRequestDelete={(vehicle) => setRemovalConfirmation({ kind: "garage", id: vehicle.id, title: `${vehicle.make} ${vehicle.model}` })}
           />
         )}
+
+        {/* Подписки: раздела не было, хотя подписаться можно было в
+            двух местах. Замер на боевом сервере — двести двенадцать
+            пользователей и три подписки: люди не видели, на что подписаны,
+            и не рисковали подписываться дальше. */}
+        {tab === "subscriptions" && <SubscriptionsPanel />}
 
         {tab === "profile" && (
           <Paper radius="md" p="lg" withBorder>

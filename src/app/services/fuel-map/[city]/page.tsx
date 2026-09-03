@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { cityFromSlug, cityInPrepositional } from "@/lib/fuel-city-slug"
 import { CITY_COORDINATES } from "@/lib/cities"
+import { listNearbyFuelCities } from "@/lib/fuel-city-links"
 
 /**
  * Городская страница карты АЗС.
@@ -157,6 +158,8 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
   const summary = await loadCitySummary(city)
   if (!summary) notFound()
 
+  const nearby = await listNearbyFuelCities(city)
+
   const where = cityInPrepositional(city)
 
   /* Разметка для поисковика: без неё цены остаются просто текстом, а с ней
@@ -216,6 +219,32 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
           <ul className="fuel-city__brands">
             {summary.brands.map((row) => (
               <li key={row.brand}>{row.brand} — {row.count} АЗС</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {nearby.length > 0 && (
+        /* Ссылки на соседние города.
+
+           Страницы городов существовали, но на них не вело ни одной
+           ссылки с сайта — поисковик находил их только через карту сайта,
+           без внутреннего веса, и такая страница-сирота ранжируется в
+           разы хуже связанной.
+
+           Соседи полезны и человеку: тот, кто смотрит цены в
+           Первоуральске, поедет скорее через Екатеринбург, чем через
+           Казань. */
+        <section className="fuel-city__section">
+          <h2>Цены на топливо рядом</h2>
+          <ul className="fuel-city__cities">
+            {nearby.map((item) => (
+              <li key={item.slug}>
+                <Link href={`/services/fuel-map/${item.slug}`}>
+                  {item.city}
+                </Link>
+                <span className="fuel-city__cities-count">{item.stationCount} АЗС</span>
+              </li>
             ))}
           </ul>
         </section>

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Box, Group, Text, ThemeIcon, UnstyledButton } from "@mantine/core"
 import {
+  IconBell,
   IconCar,
   IconCreditCard,
   IconFileDescription,
@@ -26,6 +27,7 @@ const ITEM_ICONS = {
   deliveries: IconTruckDelivery,
   documents: IconFileDescription,
   messages: IconMessageCircle2,
+  subscriptions: IconBell,
   payments: IconCreditCard,
   profile: IconSettings,
 } satisfies Record<(typeof DASHBOARD_NAVIGATION)[number]["id"], typeof IconTag>
