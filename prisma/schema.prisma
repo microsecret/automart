@@ -1162,25 +1162,6 @@ model FuelChatPost {
   @@index([chatId, stationId, createdAt])
 }
 
-/// Сообщение в городской чат о появлении топлива.
-///
-/// Нужна ровно для одного: не слать в чат одно и то же по десять раз. В
-/// дефицит на одну колонку приходит пачка отметок от очереди, где каждый
-/// второй отмечает то же самое, — без учёта отправленного чат
-/// превратился бы в ленту повторов и его выключили бы вместе с полезным.
-model FuelChatPost {
-  id        String   @id @default(uuid())
-  chatId    String
-  stationId String
-  /// Марки, о которых сообщили: «АИ-95,ДТ». Для разбора не нужны, но по
-  /// ним видно, о чём был пост, когда разбираешься с жалобой.
-  fuels     String
-  createdAt DateTime @default(now())
-
-  /// Порог проверяется по паре «чат + заправка» и по чату целиком.
-  @@index([chatId, stationId, createdAt])
-  @@index([chatId, createdAt])
-}
 
 model ListingChatPost {
   id        String  @id @default(uuid())
