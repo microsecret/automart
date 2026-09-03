@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { notifyFuelSubscribers } from "@/lib/fuel-subscription-notify"
+import { broadcastFuelAppeared } from "@/lib/fuel-appeared-broadcast"
 import { parseReportedPrice } from "@/lib/fuel-price-reports"
 import {
   AVAILABILITY_FUEL_LABELS,
@@ -236,6 +237,13 @@ export async function POST(request: NextRequest) {
 
   /* Цены пишутся отдельно: у цены голос один и уточняется, тогда как у
      наличия накопление подтверждений и есть суть. */
+  /* Марки, которых на заправке не было и которые появились.
+
+     В чат уходит одно сообщение на все сразу: «появились АИ-95 и ДТ»
+     читается как новость, а три поста подряд про одну колонку
+     читаются как спам. */
+  const appearedLabels: string[] = []
+
   for (const entry of entries) {
     if (entry.price === null) continue
 
@@ -289,6 +297,22 @@ export async function POST(request: NextRequest) {
       city,
       fuel: entry.fuel,
       fuelLabel: AVAILABILITY_FUEL_LABELS[entry.fuel] || entry.fuel,
+    })
+
+    appearedLabels.push(AVAILABILITY_FUEL_LABELS[entry.fuel] || entry.fuel)
+  }
+
+  /* Сообщение в городской чат — там, где топлива не было и оно
+     появилось. Подписчикам уходит личное, чату общее: человек, не
+     заводивший подписку, узнаёт о заправке из чата своего города. */
+  if (appearedLabels.length > 0 && city) {
+    void broadcastFuelAppeared({
+      stationId,
+      stationName,
+      city,
+      fuelLabels: appearedLabels,
+      latitude,
+      longitude,
     })
   }
 

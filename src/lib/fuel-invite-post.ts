@@ -147,8 +147,12 @@ export function buildFuelShareText(input: { siteUrl: string; city?: string | nul
 export function cityFromChatTitle(title: string | null): string | null {
   if (!title) return null
 
+  /* «Бензин» наравне с «Авторынком»: у площадки два семейства чатов —
+     под объявления и под топливо, и город достаётся из названия любого.
+     Без этого чаты «Бензин Уфа», «Бензин Казань» и остальные считались
+     безымянными и пропускались рассылкой целиком. */
   const cleaned = title
-    .replace(/авторынок/gi, "")
+    .replace(/авторынок|бензин/gi, "")
     .replace(/\/.*$/, "")
     .trim()
 
