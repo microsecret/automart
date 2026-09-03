@@ -86,6 +86,30 @@ const nextConfig = {
       { protocol: "https", hostname: "resizer.mail.ru" },
       { protocol: "https", hostname: "img-renderer.rambler.ru" },
       { protocol: "https", hostname: "kolesa-uploads.ru" },
+      /* Фото аукционных лотов.
+
+         Разрешены были только корейские encar и kcar — это две тысячи
+         лотов из девяти. У остальных четырёх с лишним тысяч картинка не
+         показывалась вовсе: на витрине главной и в списке аукционов
+         стояли пустые прямоугольники с подписью, хотя ссылка на фото в
+         базе была.
+
+         Домены перечислены поимённо, как и источники новостей: открытый
+         шаблон превратил бы обработчик картинок в чужой прокси. Порядок
+         по числу лотов. */
+      { protocol: "https", hostname: "ccsrpcma.carsensor.net" },
+      { protocol: "https", hostname: "img.youxinpai.cn" },
+      { protocol: "https", hostname: "image-cdn.beforward.jp" },
+      { protocol: "https", hostname: "qimg6.iautos.cn" },
+      { protocol: "https", hostname: "qimg.iautos.cn" },
+      { protocol: "https", hostname: "s1.iautos.cn" },
+      { protocol: "https", hostname: "s2.iautos.cn" },
+      { protocol: "https", hostname: "s3.iautos.cn" },
+      { protocol: "https", hostname: "file2.bobaedream.co.kr" },
+      { protocol: "https", hostname: "file4.bobaedream.co.kr" },
+      { protocol: "https", hostname: "storage.alpha-analytics.cz" },
+      { protocol: "https", hostname: "picture1.goo-net.com" },
+      { protocol: "https", hostname: "autosale.ee" },
     ],
   },
   serverExternalPackages: ['prisma', '@prisma/client'],
