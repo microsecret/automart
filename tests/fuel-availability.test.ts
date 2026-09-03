@@ -7,6 +7,8 @@ import { getStationIdentity } from "../src/lib/fuel-station-identity.ts"
 import { formatAge, isFresh, summarizeAvailability } from "../src/lib/fuel-availability.ts"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { cityInPrepositional } from "../src/lib/city-declension.ts"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { FREQUENT_REGION_KEYS, ROTATING_REGION_KEYS, regionsForScheduledRun, targetRegionKeys } from "../src/lib/fuel-target-regions.ts"
 
 const NOW = new Date("2026-08-29T12:00:00Z")
 const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60_000)
@@ -1435,4 +1437,40 @@ test("шапка не режет правые кнопки", () => {
   /* Отступы вкладок теснее стандартных: шесть штук с полями по умолчанию
      занимали лишние семьдесят пикселей — ровно тех, что не хватало ряду. */
   assert.match(css, /\.market-header-tab \{[\s\S]{0,600}padding-inline: 9px/)
+})
+
+test("плановый прогон обходит страну по кругу, оставаясь коротким", () => {
+  /* Частые города собираются при каждом запуске: там больше всего
+     пользователей, и вчерашняя цена там заметна.
+
+     Крупные прямоугольники — вся остальная Россия — берутся по одному за
+     запуск. Взять их разом нельзя: обход всей страны занимает около
+     сорока девяти минут на источник, а запуск идёт каждые пятнадцать, и
+     следующий начинался бы поверх незавершённого. */
+  const first = regionsForScheduledRun(new Date("2026-09-03T00:00:00Z"))
+  const second = regionsForScheduledRun(new Date("2026-09-03T00:15:00Z"))
+
+  for (const key of FREQUENT_REGION_KEYS) {
+    assert.ok(first.includes(key), `частый регион ${key} должен собираться каждый раз`)
+    assert.ok(second.includes(key), `частый регион ${key} должен собираться каждый раз`)
+  }
+
+  assert.equal(first.length, FREQUENT_REGION_KEYS.length + 1, "за раз добавляется ровно один крупный регион")
+  assert.notDeepEqual(first, second, "следующий запуск берёт следующий регион по кругу")
+})
+
+test("за полный круг обходятся все регионы страны", () => {
+  /* Если очередь однажды перестанет доходить до какого-то региона, его
+     заправки замрут со старыми ценами и никто этого не заметит: в
+     админке прогон будет выглядеть успешным. */
+  const seen = new Set<string>()
+  const start = Date.parse("2026-09-03T00:00:00Z")
+
+  for (let step = 0; step < ROTATING_REGION_KEYS.length; step += 1) {
+    for (const key of regionsForScheduledRun(new Date(start + step * 15 * 60_000))) seen.add(key)
+  }
+
+  for (const key of targetRegionKeys()) {
+    assert.ok(seen.has(key), `регион ${key} не собирается ни на одном шаге круга`)
+  }
 })

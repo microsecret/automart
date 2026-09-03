@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { targetRegionKeys } from "@/lib/fuel-target-regions"
+import { regionsForScheduledRun, targetRegionKeys } from "@/lib/fuel-target-regions"
 import { FUEL_SOURCES, resolveFuelSources, runFuelSources } from "@/lib/fuel-scraper-run"
 
 export const dynamic = "force-dynamic"
@@ -38,9 +38,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Поддерживаемые источники: ${FUEL_SOURCES.join(", ")}` }, { status: 400 })
     }
 
+    /* Регионы не названы — значит это плановый прогон.
+
+       Раньше он брал весь список. Пока в нём стояли только города, обход
+       занимал две минуты. С прямоугольниками на всю страну он вырос бы до
+       сорока девяти минут на источник, и следующий запуск начинался бы
+       поверх незавершённого.
+
+       Скользящий обход берёт частые города всегда, а из крупных
+       прямоугольников — один, следующий по кругу. Прогон остаётся
+       коротким, а страна обходится целиком за три часа. */
     const requestedRegions = Array.isArray(body?.regions)
       ? body.regions.filter((value): value is string => typeof value === "string")
-      : undefined
+      : regionsForScheduledRun()
     const knownKeys = new Set(targetRegionKeys())
     const unknown = requestedRegions?.filter((key) => !knownKeys.has(key))
     if (unknown?.length) {
