@@ -13,6 +13,11 @@ export type FuelTargetRegion = {
   lon1: number
   lat2: number
   lon2: number
+  /* Прямоугольник охватывает много городов, и его имя — служебное. Для
+     заправки, до которой от любого города больше шестидесяти километров,
+     оно попадало в подпись: на карте появлялся «город Урал» с тремя
+     сотнями точек. Здесь задаётся честная подпись для таких случаев. */
+  fallbackLabel?: string
 }
 
 export const FUEL_TARGET_REGIONS: ReadonlyArray<FuelTargetRegion> = [
@@ -48,18 +53,18 @@ export const FUEL_TARGET_REGIONS: ReadonlyArray<FuelTargetRegion> = [
      обновляется раз в час. Складывать всё в один прогон нельзя — сорок
      девять минут на источник не укладываются в пятнадцатиминутный цикл,
      и следующий запуск начинался бы поверх незавершённого. */
-  { key: "ru-center", city: "Центральная Россия", lat1: 52.00, lon1: 31.00, lat2: 58.50, lon2: 47.00 },
-  { key: "ru-northwest", city: "Северо-Запад", lat1: 55.00, lon1: 27.00, lat2: 62.00, lon2: 45.00 },
-  { key: "ru-south", city: "Юг России", lat1: 43.00, lon1: 36.00, lat2: 50.50, lon2: 48.50 },
-  { key: "ru-caucasus", city: "Северный Кавказ", lat1: 41.00, lon1: 41.50, lat2: 45.50, lon2: 48.50 },
-  { key: "ru-volga-west", city: "Поволжье", lat1: 50.50, lon1: 43.00, lat2: 57.00, lon2: 52.00 },
-  { key: "ru-volga-east", city: "Предуралье", lat1: 50.50, lon1: 52.00, lat2: 58.50, lon2: 60.00 },
-  { key: "ru-ural", city: "Урал", lat1: 54.00, lon1: 57.00, lat2: 62.00, lon2: 70.00 },
-  { key: "ru-siberia-west", city: "Западная Сибирь", lat1: 50.00, lon1: 70.00, lat2: 58.00, lon2: 88.00 },
-  { key: "ru-siberia-east", city: "Восточная Сибирь", lat1: 50.00, lon1: 88.00, lat2: 58.50, lon2: 108.00 },
-  { key: "ru-baikal", city: "Прибайкалье и Забайкалье", lat1: 49.50, lon1: 108.00, lat2: 57.00, lon2: 122.00 },
-  { key: "ru-far-east", city: "Дальний Восток", lat1: 42.50, lon1: 126.00, lat2: 56.00, lon2: 143.00 },
-  { key: "ru-north", city: "Север Сибири", lat1: 58.00, lon1: 60.00, lat2: 67.00, lon2: 95.00 },
+  { key: "ru-center", city: "Центральная Россия", lat1: 52.00, lon1: 31.00, lat2: 58.50, lon2: 47.00 , fallbackLabel: "Трасса, Центральная Россия" },
+  { key: "ru-northwest", city: "Северо-Запад", lat1: 55.00, lon1: 27.00, lat2: 62.00, lon2: 45.00 , fallbackLabel: "Трасса, Северо-Запад" },
+  { key: "ru-south", city: "Юг России", lat1: 43.00, lon1: 36.00, lat2: 50.50, lon2: 48.50 , fallbackLabel: "Трасса, Юг России" },
+  { key: "ru-caucasus", city: "Северный Кавказ", lat1: 41.00, lon1: 41.50, lat2: 45.50, lon2: 48.50 , fallbackLabel: "Трасса, Северный Кавказ" },
+  { key: "ru-volga-west", city: "Поволжье", lat1: 50.50, lon1: 43.00, lat2: 57.00, lon2: 52.00 , fallbackLabel: "Трасса, Поволжье" },
+  { key: "ru-volga-east", city: "Предуралье", lat1: 50.50, lon1: 52.00, lat2: 58.50, lon2: 60.00 , fallbackLabel: "Трасса, Предуралье" },
+  { key: "ru-ural", city: "Урал", lat1: 54.00, lon1: 57.00, lat2: 62.00, lon2: 70.00 , fallbackLabel: "Трасса, Урал" },
+  { key: "ru-siberia-west", city: "Западная Сибирь", lat1: 50.00, lon1: 70.00, lat2: 58.00, lon2: 88.00 , fallbackLabel: "Трасса, Западная Сибирь" },
+  { key: "ru-siberia-east", city: "Восточная Сибирь", lat1: 50.00, lon1: 88.00, lat2: 58.50, lon2: 108.00 , fallbackLabel: "Трасса, Восточная Сибирь" },
+  { key: "ru-baikal", city: "Прибайкалье и Забайкалье", lat1: 49.50, lon1: 108.00, lat2: 57.00, lon2: 122.00 , fallbackLabel: "Трасса, Забайкалье" },
+  { key: "ru-far-east", city: "Дальний Восток", lat1: 42.50, lon1: 126.00, lat2: 56.00, lon2: 143.00 , fallbackLabel: "Трасса, Дальний Восток" },
+  { key: "ru-north", city: "Север Сибири", lat1: 58.00, lon1: 60.00, lat2: 67.00, lon2: 95.00 , fallbackLabel: "Трасса, Север Сибири" },
 ]
 
 /* Города, где сбор идёт при каждом запуске: там больше всего

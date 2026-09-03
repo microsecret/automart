@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { FUEL_TARGET_REGIONS } from "@/lib/fuel-target-regions"
 import { findNearestCity } from "@/lib/cities"
 
 /**
@@ -46,7 +47,15 @@ const CITY_MATCH_MAX_KM = 60
 function resolveStationCity(station: ImportedStation): string {
   const nearest = findNearestCity({ latitude: station.latitude, longitude: station.longitude })
   if (nearest.name && nearest.km <= CITY_MATCH_MAX_KM) return nearest.name
-  return station.city
+
+  /* Города рядом нет — значит заправка стоит на трассе между городами.
+
+     Имя региона обхода в этом месте служебное: у прямоугольника «Урал»
+     так набралось триста семьдесят четыре точки, и в списке городов
+     появился «город Урал». Регион может задать честную подпись, и тогда
+     берётся она. */
+  const region = FUEL_TARGET_REGIONS.find((candidate) => candidate.city === station.city)
+  return region?.fallbackLabel ?? station.city
 }
 
 /* Ярлыки марок для строки ленты: администратор читает «АИ-92 62,40», а не
