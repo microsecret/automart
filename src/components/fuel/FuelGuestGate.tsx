@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Box, Button, Group, Stack, Text } from "@mantine/core"
 import { IconBell, IconBrandTelegram, IconGasStation, IconMapPin, IconUserPlus } from "@tabler/icons-react"
+import { cityInPrepositional } from "@/lib/city-declension"
 
 /**
  * Приглашение войти поверх карты АЗС.
@@ -71,7 +72,7 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
         <Stack gap={4}>
           <Group gap="xs">
             <IconGasStation size={20} />
-            <Text fw={800} fz={19} lh={1.2}>Цены на топливо в {cityLabel}</Text>
+            <Text fw={800} fz={19} lh={1.2}>Цены на топливо в {cityInPrepositional(cityLabel)}</Text>
           </Group>
           {/* Числа идут сразу за заголовком: они доказывают, что за
               приглашением стоит работающий сервис, а не пустая форма. */}

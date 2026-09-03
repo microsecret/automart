@@ -711,7 +711,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
          и просят войти. Подсказка объясняет отказ — молчаливое нажатие
          «в никуда» человек читает как поломку. */
       if (guestOpenIds && !guestOpenIds.has(marker.stations[0].id)) {
-        setClusterHint("Цены этой заправки открыты вошедшим. Войдите — и увидите все заправки города с ценами и наличием.")
+        setClusterHint("Цены этой заправки открыты вошедшим. Войдите — увидите все заправки города, а бот напишет, когда появится нужное топливо.")
         return
       }
       setClusterHint(null)
