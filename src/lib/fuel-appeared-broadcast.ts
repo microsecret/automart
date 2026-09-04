@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma"
-import { telegramApi, getTelegramBotUsername } from "@/lib/telegram"
+import { getTelegramBotUsername } from "@/lib/telegram"
 import { absoluteUrl } from "@/lib/site-url"
 import { cityFromChatTitle } from "@/lib/fuel-invite-post"
 import { buildFuelAppearedPost } from "@/lib/fuel-appeared-post"
+import { sendChatPost } from "@/lib/telegram-post-sender"
 
 /**
  * Сообщение в городской чат, когда на заправке появилось топливо.
@@ -32,6 +33,27 @@ const CHAT_COOLDOWN_MS = 60 * 60_000
    в час пик заправки отчитываются пачками, и чат должен оставаться
    читаемым. */
 const CHAT_GLOBAL_COOLDOWN_MS = 10 * 60_000
+
+/**
+ * Картинка сообщения.
+ *
+ * Пост с фотографией виден в ленте чата, текстовый теряется между
+ * разговорами: на скриншотах соседних сервисов сообщение о топливе —
+ * всегда карточка с картинкой.
+ *
+ * Правила те же, что у приглашений: свой файл читается с диска и только
+ * из /uploads, чужой адрес Telegram скачивает сам. Ссылку на наш домен
+ * он не берёт — отвечает «failed to get HTTP URL content», и пост не
+ * уходит вовсе. Поэтому при неверной настройке лучше отправить текстом,
+ * чем не отправить ничего.
+ */
+function appearedImage(): string | null {
+  const configured = (process.env.FUEL_APPEARED_IMAGE || process.env.FUEL_INVITE_IMAGE)?.trim()
+  if (!configured) return null
+  if (configured.startsWith("http")) return configured
+  if (!configured.startsWith("/uploads/")) return null
+  return configured
+}
 
 export type AppearedBroadcastInput = {
   stationId: string
@@ -71,6 +93,7 @@ export async function broadcastFuelAppeared(input: AppearedBroadcastInput): Prom
     })
     if (!target) return false
 
+    const image = appearedImage()
     const now = Date.now()
 
     /* Порог по заправке: одна и та же колонка не должна попадать в чат
@@ -106,13 +129,14 @@ export async function broadcastFuelAppeared(input: AppearedBroadcastInput): Prom
       botUsername: getTelegramBotUsername(),
     })
 
-    await telegramApi("sendMessage", {
-      chat_id: target.id,
-      text: post.text,
-      parse_mode: "HTML",
-      disable_web_page_preview: true,
-      reply_markup: { inline_keyboard: post.buttons },
-    })
+    /* Отправка через общий отправитель: он умеет фотографию и ряды
+       кнопок, и он же знает, что делать, когда картинка не читается —
+       уходит текстом, а не теряется совсем. */
+    const messageId = await sendChatPost(
+      target.id,
+      { photos: image ? [image] : [], caption: post.text, buttons: post.buttons },
+    )
+    if (!messageId) return false
 
     await prisma.fuelChatPost.create({
       data: { chatId: target.id, stationId: input.stationId, fuels: input.fuelLabels.join(",") },
