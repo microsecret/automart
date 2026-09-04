@@ -1677,20 +1677,7 @@ function FuelMapContent() {
   const chosenCityRef = useRef(false)
   const [placeQuery, setPlaceQuery] = useState("")
   const [place, setPlace] = useState<string | null>(null)
-  /* Марка топлива читается из адреса.
-
-     Сообщение в городском чате зовёт «посмотреть, где есть 95-й», и
-     ссылка должна открывать карту сразу с этим фильтром: человек
-     пришёл за одной маркой, а не за списком всех. Без этого он
-     попадал на общую карту и выставлял фильтр сам — или не
-     выставлял вовсе. */
-  const [fuelFilter, setFuelFilter] = useState(() => {
-    const requested = searchParams.get("fuel")
-    /* Значение сверяется со списком фильтра, а не подставляется как
-       есть: чужая строка в адресе иначе попала бы прямо в разметку.
-       Дефис в «АИ‑95» неразрывный — тот же символ, что в списке. */
-    return requested && FUEL_FILTERS.some((option) => option.value === requested) ? requested : ""
-  })
+  const [fuelFilter, setFuelFilter] = useState("")
   const [networkFilter, setNetworkFilter] = useState("")
   const [selectedStation, setSelectedStation] = useState<FuelStation | null>(null)
   const [viewportCoordinates, setViewportCoordinates] = useState(CITY_COORDINATES[city])
@@ -1750,6 +1737,31 @@ function FuelMapContent() {
     return () => window.clearTimeout(timer)
   }, [coordinates, viewportCoordinates])
   const searchParams = useSearchParams()
+
+  /* Марка топлива из адреса.
+
+     Сообщение в городском чате зовёт «посмотреть, где есть 95-й», и
+     ссылка должна открывать карту сразу с этим фильтром: человек
+     пришёл за одной маркой, а не за списком всех.
+
+     Выставляется после объявления searchParams, а не в начальном
+     значении состояния: в собранном коде обращение к нему выше по
+     файлу падало «Cannot access before initialization», и карта не
+     открывалась вовсе — ни на телефоне, ни на компьютере.
+
+     Срабатывает один раз: дальше фильтр за человеком. */
+  const appliedFuelParamRef = useRef(false)
+  useEffect(() => {
+    if (appliedFuelParamRef.current) return
+    const requested = searchParams.get("fuel")
+    if (!requested) return
+    /* Значение сверяется со списком фильтра, а не подставляется как
+       есть: чужая строка в адресе иначе попала бы прямо в разметку.
+       Дефис в «АИ‑95» неразрывный — тот же символ, что в списке. */
+    if (!FUEL_FILTERS.some((option) => option.value === requested)) return
+    appliedFuelParamRef.current = true
+    setFuelFilter(requested)
+  }, [searchParams])
   const allStations = data?.stations ?? EMPTY_STATIONS
 
   /* Заправка из ссылки: ?station=osm-node-123.
