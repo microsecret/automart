@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { readFileSync } from "node:fs"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { buildFuelInvitePost, buildFuelShareText, cityFromChatTitle } from "../src/lib/fuel-invite-post.ts"
+import { buildFuelInvitePost, buildFuelShareText, cityFromChatTitle, isFuelChatTitle } from "../src/lib/fuel-invite-post.ts"
 
 const base = { siteUrl: "https://lewheel.ru/", botUsername: "lewheelbot" }
 
@@ -132,4 +132,21 @@ test("обложка приглашения читается с диска, а �
 
   /* Чужой адрес Telegram скачает сам — там ограничение не действует. */
   assert.match(broadcast, /configured\.startsWith\("http"\)\) return configured/)
+})
+
+test("топливные новости отличают чат бензина от чата объявлений", () => {
+  /* Боевой прогон отправил сообщение «появился АИ-95» в «Авторынок Сочи»:
+     бензинового чата у города нет, и по названию подошёл автомобильный.
+     В чате про машины это читается как посторонняя рассылка. */
+  assert.equal(isFuelChatTitle("Бензин Уфа"), true)
+  assert.equal(isFuelChatTitle("Бензин Москва"), true)
+  assert.equal(isFuelChatTitle("Авторынок Сочи"), false)
+  assert.equal(isFuelChatTitle("АВТОРЫНОК УФА/Башкортостан"), false)
+  assert.equal(isFuelChatTitle("Авторынок России"), false)
+  assert.equal(isFuelChatTitle(null), false)
+})
+
+test("город достаётся из названия чата обоих семейств", () => {
+  assert.equal(cityFromChatTitle("Бензин Казань"), "Казань")
+  assert.equal(cityFromChatTitle("Авторынок Казань"), "Казань")
 })

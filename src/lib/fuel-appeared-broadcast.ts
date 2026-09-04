@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { getTelegramBotUsername } from "@/lib/telegram"
 import { absoluteUrl } from "@/lib/site-url"
-import { cityFromChatTitle } from "@/lib/fuel-invite-post"
+import { cityFromChatTitle, isFuelChatTitle } from "@/lib/fuel-invite-post"
 import { buildFuelAppearedPost } from "@/lib/fuel-appeared-post"
 import { sendChatPost } from "@/lib/telegram-post-sender"
 import { enqueueAppearances, delayUntilNextPost, type QueuedAppearance } from "@/lib/fuel-appeared-queue"
@@ -208,7 +208,16 @@ async function activeChats(): Promise<Array<{ id: string; title: string | null }
 async function resolveTarget(input: AppearedBroadcastInput): Promise<Ready | null> {
   const chats = await activeChats()
 
+  /* Только бензиновый чат.
+     
+     Боевой прогон показал, зачем: новости о топливе ушли в «Авторынок
+     Сочи» и «Авторынок Оренбург» — там бензинового чата нет, и по
+     названию города подошёл автомобильный. В чате объявлений о машинах
+     сообщение «появился АИ-95» читается как посторонняя рассылка, а
+     города без своего топливного чата лучше промолчат: подписка в боте
+     работает и без него. */
   const target = chats.find((chat) => {
+    if (!isFuelChatTitle(chat.title)) return false
     const chatCity = cityFromChatTitle(chat.title)
     return chatCity ? matchesCity(chatCity, input.city) : false
   })
