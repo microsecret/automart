@@ -97,10 +97,10 @@ const MENU_ICONS: Record<string, typeof IconCar | null> = {
 
 const TAB_ICONS = {
   vehicles: IconCar,
-  auctions: IconGavel,
-  chats: IconMessageCircle2,
-  news: IconNews,
   fuel: IconGasStation,
+  auctions: IconGavel,
+  news: IconNews,
+  chats: IconMessageCircle2,
 } satisfies Record<(typeof TELEGRAM_TAB_NAVIGATION)[number]["id"], typeof IconCar>
 
 const MENU_SECTIONS = TELEGRAM_MENU_NAVIGATION.map((section) => ({
