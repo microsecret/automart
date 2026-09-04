@@ -1,13 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { resolveStartRoute } from "@/lib/telegram-start-route"
 import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { Box, Button, Loader, Stack, Text } from "@mantine/core"
 import { IconAlertTriangle, IconBrandTelegram } from "@tabler/icons-react"
 import { tapFeedback, waitForTelegramWebApp } from "@/lib/telegram-webapp"
-import { CREATE_VEHICLE_HREF } from "@/lib/navigation-registry"
 import TelegramShell from "./TelegramShell"
 import TelegramFeed from "./TelegramFeed"
 import TelegramAuctions from "./TelegramAuctions"
@@ -26,65 +26,6 @@ import TelegramMessages from "./TelegramMessages"
  * мобильном приложении. Вход по подписи Telegram остаётся прежним и
  * проходит незаметно: он не должен стоять между человеком и товаром.
  */
-
-/* Куда вести, если человек пришёл по кнопке из бота.
-
-   Кнопки передают цель через startapp: «разместить объявление» — create.
-   Без разбора все попадали на главную приложения, то есть жали
-   «разместить», а оказывались не там.
-
-   Только известные значения: чужой параметр стал бы открытым
-   перенаправлением внутри приложения. */
-const START_PARAM_ROUTES: Record<string, string> = {
-  create: `${CREATE_VEHICLE_HREF}?source=telegram`,
-  promo: "/auctions?from=telegram",
-  /* Вход ради топлива.
-
-     Приглашение на карте АЗС давно звало сюда ссылкой `?startapp=fuel`,
-     но значение в этом списке не значилось: `resolveStartRoute` возвращал
-     null, и человек, вошедший ради цен на бензин, попадал на ленту машин.
-     Он приходил за одним, получал другое — и уходил. */
-  fuel: "/services/fuel-map?from=telegram",
-}
-
-/* Объявление из поста в чате: listing_<идентификатор>.
-
-   Идентификатор проверяется по набору символов, а не подставляется как
-   есть: без проверки чужая строка в параметре увела бы человека на
-   произвольный адрес внутри приложения. */
-const LISTING_PARAM = /^listing_([0-9a-f-]{16,40})$/i
-
-/* Тема форума: forum_<раздел>__<тема>.
-
-   Раздел и тема вместе, потому что адрес темы содержит раздел и без него
-   страница отвечает «не найдено». Разделитель двойной: в самих адресах
-   встречаются дефисы, но не подчёркивания, и одинарное могло бы попасться
-   внутри. Набор символов проверяется — иначе чужая строка в параметре
-   увела бы человека на произвольный адрес внутри приложения. */
-const FORUM_PARAM = /^forum_([a-z0-9-]{1,80})__([a-z0-9-]{1,120})$/i
-
-function resolveStartRoute(initData: string): string | null {
-  try {
-    const startParam = (
-      new URLSearchParams(initData).get("start_param")
-      || new URLSearchParams(window.location.search).get("start")
-    )?.trim()
-    if (!startParam) return null
-
-    const known = START_PARAM_ROUTES[startParam]
-    if (known) return known
-
-    const listing = startParam.match(LISTING_PARAM)
-    if (listing) return `/listings/vehicle/${listing[1]}?from=telegram`
-
-    const forum = startParam.match(FORUM_PARAM)
-    if (forum) return `/forum/${forum[1]}/${forum[2]}?from=telegram`
-
-    return null
-  } catch {
-    return null
-  }
-}
 
 /* Состояния входа.
 

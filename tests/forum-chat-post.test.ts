@@ -1,5 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { resolveStartRoute } from "../src/lib/telegram-start-route.ts"
 import { readFileSync } from "node:fs"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { MAX_TOPIC_PHOTOS, buildForumChatPost } from "../src/lib/forum-chat-post.ts"
@@ -122,22 +124,21 @@ test("одна тема не уходит в тот же чат дважды", (
 })
 
 test("приложение понимает адрес темы", () => {
-  const miniApp = read("../src/components/telegram/TelegramMiniApp.tsx")
-  assert.match(miniApp, /FORUM_PARAM/)
-  assert.match(miniApp, /\/forum\/\$\{forum\[1\]\}\/\$\{forum\[2\]\}/)
+  /* Разбор переехал из компонента в telegram-start-route: раньше проверка
+     читала исходник и сверяла регулярку глазами, теперь вызывает саму
+     функцию — то, что действительно работает у человека. */
+  const route = resolveStartRoute("start_param=forum_haval__stuk-a1b2c3")
+
+  assert.ok(route)
+  assert.ok(route.includes("/forum/haval/stuk-a1b2c3"))
 })
 
 test("чужая строка в адресе темы никуда не уводит", () => {
-  const miniApp = read("../src/components/telegram/TelegramMiniApp.tsx")
-  const pattern = miniApp.match(/const FORUM_PARAM = (\/[^\n]+\/i)/)?.[1]
-  assert.ok(pattern, "проверки параметра нет")
-
-  const rule = new RegExp(pattern.slice(1, -2), "i")
-  assert.ok(rule.test("forum_haval__stuk-a1b2c3"), "настоящий адрес отклонён")
   for (const bad of ["forum_../../admin__x", "forum_haval__<script>", "forum_haval__../etc"]) {
-    assert.ok(!rule.test(bad), `пропущено: ${bad}`)
+    assert.equal(resolveStartRoute(`start_param=${bad}`), null, `пропущено: ${bad}`)
   }
 })
+
 
 test("отправка идёт через общий модуль", () => {
   /* Тот же порядок, что у объявлений: держать его в двух местах значит

@@ -37,6 +37,14 @@ type Props = {
   /* Куда возвращать после входа: человек продолжает с той же карты, а не
      с главной страницы. */
   returnPath: string
+  /* Пришли по кнопке «Сообщать мне о таком» из чата.
+
+     Такому человеку нужно сказать не «посмотрите карту», а «войдите, и
+     подпишем»: он уже знает, чего хочет, и общее приглашение читается
+     как препятствие между ним и его целью. */
+  wantsSubscribe?: boolean
+  /* Заправка из ссылки: по ней Telegram-вход вернёт человека сюда же. */
+  subscribeStationId?: string | null
 }
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || ""
@@ -62,9 +70,22 @@ const BENEFITS = [
   },
 ] as const
 
-export default function FuelGuestGate({ stationCount, pricedCount, reportsToday, cityLabel, returnPath }: Props) {
+export default function FuelGuestGate({ stationCount, pricedCount, reportsToday, cityLabel, returnPath, wantsSubscribe = false, subscribeStationId = null }: Props) {
   const callbackUrl = encodeURIComponent(returnPath)
-  const telegramUrl = BOT_USERNAME ? `https://t.me/${BOT_USERNAME}?startapp=fuel` : null
+  /* Возврат к той же карточке.
+
+     Раньше вход всегда вёл на общий экран заправок: человек нажимал в
+     чате «сообщать мне о таком», входил — и попадал на карту города, где
+     ни заправки из ссылки, ни марки, ни намерения подписаться уже не
+     было. Он проделывал весь путь до входа ради того, чтобы начать
+     заново.
+
+     Дефисы в startapp Telegram не пропускает, поэтому в параметре они
+     заменяются подчёркиванием; мини-приложение возвращает их обратно. */
+  const startParam = wantsSubscribe && subscribeStationId
+    ? `fuelsub_${subscribeStationId.replace("-", "_")}`
+    : "fuel"
+  const telegramUrl = BOT_USERNAME ? `https://t.me/${BOT_USERNAME}?startapp=${startParam}` : null
 
   return (
     <Box className="fuel-gate">
@@ -80,6 +101,17 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
             {stationCount} заправок на карте, {pricedCount} с ценами и наличием
             {typeof reportsToday === "number" && reportsToday > 0 ? `, ${reportsToday} отметок за сутки` : ""}
           </Text>
+
+          {/* Пришли за подпиской — говорим про подписку.
+
+              Иначе человек нажимает в чате «сообщать мне о 95-м», а
+              видит общее приглашение посмотреть карту и не понимает, куда
+              делось то, за чем он шёл. */}
+          {wantsSubscribe && (
+            <Text size="sm" fw={600} c="teal.7">
+              Войдите — и бот напишет, как только топливо появится
+            </Text>
+          )}
         </Stack>
 
         {/* Выгода списком, а не сплошным текстом.

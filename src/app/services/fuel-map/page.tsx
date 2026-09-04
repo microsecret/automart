@@ -2145,7 +2145,15 @@ function FuelMapContent() {
             pricedCount={allStations.filter((station) => station.prices.length > 0).length}
             reportsToday={nearbyAvailabilityData?.activity?.reportsToday}
             cityLabel={areaLabel}
-            returnPath="/services/fuel-map"
+            /* Возвращаем ровно туда, откуда пришли.
+
+               Адрес был прописан жёстко, и гость из чата после входа
+               терял всё: заправку из ссылки, выбранную марку и само
+               намерение подписаться. Он нажал «сообщать мне о 95-м», а
+               попадал на общую карту города и искал заново. */
+            returnPath={`/services/fuel-map${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
+            wantsSubscribe={wantsSubscribe}
+            subscribeStationId={sharedStationId}
           />
         )}
 

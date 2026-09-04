@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { readFileSync } from "node:fs"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { resolveStartRoute } from "../src/lib/telegram-start-route.ts"
 
 /* Модуль читается как текст: он тянет Prisma через псевдоним «@/»,
    которого запускатель тестов не разбирает. */
@@ -224,20 +226,20 @@ test("связь с продавцом не раскрывает его акка
 // === Приложение открывает объявление ===
 
 test("приложение понимает listing_<id>", () => {
-  assert.match(miniApp, /LISTING_PARAM/)
-  assert.match(miniApp, /\/listings\/vehicle\/\$\{listing\[1\]\}/)
+  /* Разбор переехал из компонента в telegram-start-route: раньше проверка
+     читала исходник и сверяла регулярку глазами, теперь вызывает саму
+     функцию — то, что действительно работает у человека. */
+  const route = resolveStartRoute("start_param=listing_0d8e7de5-719d-422d-99a5-a6eb1a6ae13b")
+
+  assert.ok(route)
+  assert.ok(route.includes("/listings/vehicle/0d8e7de5-719d-422d-99a5-a6eb1a6ae13b"))
 })
 
 test("чужая строка в параметре никуда не уводит", () => {
   /* Без проверки набора символов параметр стал бы открытым
      перенаправлением внутри приложения. */
-  const pattern = miniApp.match(/const LISTING_PARAM = (\/[^\n]+\/i)/)
-  assert.ok(pattern, "проверки параметра нет")
-
-  const rule = new RegExp(pattern[1].slice(1, -2), "i")
-  assert.ok(rule.test("listing_0d8e7de5-719d-422d-99a5-a6eb1a6ae13b"), "настоящий идентификатор отклонён")
   for (const bad of ["listing_../../admin", "listing_<script>", "listing_https://evil.example"]) {
-    assert.ok(!rule.test(bad), `пропущено: ${bad}`)
+    assert.equal(resolveStartRoute(`start_param=${bad}`), null, `пропущено: ${bad}`)
   }
 })
 
