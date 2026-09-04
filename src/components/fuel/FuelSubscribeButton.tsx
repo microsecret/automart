@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button, Divider, Group, Modal, Stack, Text } from "@mantine/core"
 import { IconBell, IconCheck } from "@tabler/icons-react"
 import { AVAILABILITY_FUEL_LABELS, type AvailabilityFuel } from "@/lib/fuel-availability"
@@ -20,12 +20,28 @@ export default function FuelSubscribeButton({
   stationId,
   stationName,
   city,
+  autoOpen = false,
 }: {
   stationId: string
   stationName: string
   city: string
+  /* Пришли по кнопке «Сообщать мне о таком» из чата.
+
+     Человек нажал именно на подписку, а попадал на карточку заправки, где
+     подписка — одна кнопка среди прочих: приходилось искать глазами то,
+     ради чего он и перешёл. Окно раскрывается само. */
+  autoOpen?: boolean
 }) {
   const [opened, setOpened] = useState(false)
+
+  /* Один раз: закрыв окно, человек не должен получать его снова при
+     каждой перерисовке карты. */
+  const autoOpenedRef = useRef(false)
+  useEffect(() => {
+    if (!autoOpen || autoOpenedRef.current) return
+    autoOpenedRef.current = true
+    setOpened(true)
+  }, [autoOpen])
   const [sending, setSending] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)

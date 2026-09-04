@@ -23,6 +23,13 @@ export type AppearedInput = {
   priceKopecks?: number | null
   /** Сколько человек подтвердили: одна отметка и три — разный вес. */
   confirmations?: number
+  /* Откуда новость.
+  
+     «driver» — водитель отметил на карте, «source» — заметил сбор с
+     внешних сервисов. Врать здесь нельзя: сообщения идут в чат на две
+     тысячи человек, и подпись «по отметке водителя» под данными
+     ГдеБЕНЗа люди заметят и перестанут верить остальному. */
+  origin?: "driver" | "source"
   stationId: string
   latitude?: number | null
   longitude?: number | null
@@ -49,9 +56,30 @@ function escapeHtml(value: string): string {
  * чат по диагонали, и если ответ не в первой строке, сообщение
  * пролистают.
  */
+/* Метка марки → значение фильтра карты.
+ 
+   Метки короткие («95», «ДТ»), а фильтр на карте хранит «АИ‑95» — с
+   неразрывным дефисом, чтобы подпись не переносилась посреди марки.
+   Ссылка с «95» карту не настроит: она сверяет значение со своим списком
+   и молча отбрасывает чужое. Человек нажимает «сообщать мне о 95-м» и
+   попадает на карту со всеми марками подряд. */
+const FILTER_BY_LABEL: Record<string, string> = {
+  "92": "АИ‑92",
+  "95": "АИ‑95",
+  "98": "АИ‑98",
+  "100": "АИ‑100",
+  "ДТ": "ДТ",
+  "Газ": "Газ",
+}
+
 export function buildFuelAppearedPost(input: AppearedInput): AppearedPost {
   const site = input.siteUrl.replace(/\/$/, "")
-  const fuels = input.fuelLabels.join(", ")
+
+  /* «Появился 95» звучит обрубленно — в разговоре говорят «девяносто
+     пятый», на колонке написано «АИ-95». Метки хранятся короткими, потому
+     что в таблице карты длинные не помещаются; в тексте сообщения место
+     есть. Марки без числа («ДТ», «Газ») остаются как есть. */
+  const fuels = input.fuelLabels.map((label) => (/^\d+$/.test(label) ? `АИ-${label}` : label)).join(", ")
   const lines: string[] = []
 
   lines.push(`⛽ <b>Появился ${escapeHtml(fuels)}</b>`)
@@ -73,8 +101,11 @@ export function buildFuelAppearedPost(input: AppearedInput): AppearedPost {
   lines.push("")
 
   /* Число подтверждений вместо голого «отметил водитель»: одна отметка и
-     три — разный повод срываться с места. */
-  if (input.confirmations && input.confirmations > 1) {
+     три — разный повод срываться с места. Данные сбора подписываются
+     честно: они точные, но никто их не видел глазами. */
+  if (input.origin === "source") {
+    lines.push("<i>По данным сервисов заправок. Пока едете, могут разобрать.</i>")
+  } else if (input.confirmations && input.confirmations > 1) {
     lines.push(`<i>Подтвердили ${input.confirmations} водителя. Пока едете, могут разобрать.</i>`)
   } else {
     lines.push("<i>По отметке водителя. Пока едете, могут разобрать.</i>")
@@ -94,9 +125,16 @@ export function buildFuelAppearedPost(input: AppearedInput): AppearedPost {
   ]
 
   /* Подписка — главное, ради чего эти сообщения и шлются: увидев одно,
-     человек хочет узнавать о следующих. Кнопка ведёт на ту же заправку,
-     где подписка заводится одним нажатием. */
-  buttons.push([{ text: "🔔 Сообщать мне о таком", url: stationUrl }])
+     человек хочет узнавать о следующих.
+  
+     Ведёт на карту с уже выбранной маркой, а не на ту же карточку, что и
+     первая кнопка: две кнопки по одному адресу обманывают ожидание — вы
+     нажимаете «сообщать мне» и попадаете туда же, откуда пришли. */
+  const subscribeFuel = FILTER_BY_LABEL[input.fuelLabels[0]]
+  const subscribeUrl = subscribeFuel
+    ? `${site}/services/fuel-map?fuel=${encodeURIComponent(subscribeFuel)}&subscribe=1&from=chat`
+    : `${site}/services/fuel-map?subscribe=1&from=chat`
+  buttons.push([{ text: "🔔 Сообщать мне о таком", url: subscribeUrl }])
 
   if (input.botUsername) {
     buttons.push([{ text: "⛽ Отметить свою заправку", url: `https://t.me/${input.botUsername}` }])

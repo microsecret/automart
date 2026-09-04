@@ -178,6 +178,8 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
         fuelLabels: change.appeared.map((fuel) => AVAILABILITY_FUEL_LABELS[fuel as keyof typeof AVAILABILITY_FUEL_LABELS] || fuel),
         latitude: station.latitude,
         longitude: station.longitude,
+        /* Честно: это заметил сбор, а не человек у колонки. */
+        origin: "source",
       })
     }
 

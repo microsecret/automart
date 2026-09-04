@@ -82,3 +82,61 @@ test("чаты «Бензин» узнаются наравне с «Автор�
      не нужна. */
   assert.equal(cityFromChatTitle("Авторынок России"), null)
 })
+
+test("данные сбора не выдаются за отметку водителя", () => {
+  /* Сообщения идут в чат на две тысячи человек. Подпись «по отметке
+     водителя» под данными ГдеБЕНЗа люди заметят — и перестанут верить
+     остальному. */
+  const post = buildFuelAppearedPost({
+    stationName: "Башнефть",
+    address: null,
+    city: "Уфа",
+    fuelLabels: ["95"],
+    origin: "source",
+    stationId: "gdebenz-1",
+    siteUrl: "https://lewheel.ru/",
+  })
+
+  assert.ok(post.text.includes("По данным сервисов заправок"))
+  assert.ok(!post.text.includes("отметке водителя"))
+})
+
+test("марка в заголовке пишется как на колонке", () => {
+  /* «Появился 95» звучит обрубленно: в разговоре говорят «девяносто
+     пятый», на колонке написано «АИ-95». */
+  const post = buildFuelAppearedPost({
+    stationName: "Лукойл",
+    address: null,
+    city: "Казань",
+    fuelLabels: ["95", "ДТ"],
+    stationId: "x",
+    siteUrl: "https://lewheel.ru/",
+  })
+
+  assert.ok(post.text.startsWith("⛽ <b>Появился АИ-95, ДТ</b>"))
+})
+
+test("кнопка подписки ведёт на карту с выбранной маркой", () => {
+  /* Фильтр карты хранит «АИ‑95» с неразрывным дефисом и молча отбрасывает
+     чужое значение: ссылка с «95» открыла бы карту со всеми марками
+     подряд, хотя человек нажал «сообщать мне о 95-м».
+
+     И вести туда же, куда первая кнопка, нельзя: две кнопки по одному
+     адресу обманывают ожидание. */
+  const post = buildFuelAppearedPost({
+    stationName: "Башнефть",
+    address: null,
+    city: "Уфа",
+    fuelLabels: ["95"],
+    stationId: "gdebenz-1",
+    siteUrl: "https://lewheel.ru/",
+  })
+
+  const subscribe = post.buttons.flat().find((button) => button.text.includes("Сообщать"))
+  const station = post.buttons.flat().find((button) => button.text.includes("на карте"))
+
+  assert.ok(subscribe)
+  assert.ok(subscribe.url.includes(encodeURIComponent("АИ‑95")))
+  assert.notEqual(subscribe.url, station?.url)
+})
+

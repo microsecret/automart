@@ -48,7 +48,14 @@ const CHAT_COOLDOWN_MS = 20 * 60_000
  * чем не отправить ничего.
  */
 function appearedImage(): string | null {
-  const configured = (process.env.FUEL_APPEARED_IMAGE || process.env.FUEL_INVITE_IMAGE)?.trim()
+  /* Только своя картинка, без запасного баннера приглашения.
+     
+     Раньше сюда подставлялся FUEL_INVITE_IMAGE — большой рекламный плакат
+     сервиса. Для приглашения раз в несколько дней он уместен, но новости о
+     топливе идут по одной в минуту, и один и тот же плакат подряд читается
+     как спам, а сама новость — какая заправка, какая марка — тонет под
+     ним. Без картинки сообщение короткое и по делу; это лучше. */
+  const configured = process.env.FUEL_APPEARED_IMAGE?.trim()
   if (!configured) return null
   if (configured.startsWith("http")) return configured
   if (!configured.startsWith("/uploads/")) return null
@@ -65,6 +72,8 @@ export type AppearedBroadcastInput = {
   confirmations?: number
   latitude?: number | null
   longitude?: number | null
+  /** Кто заметил: водитель на карте или сбор с внешних сервисов. */
+  origin?: "driver" | "source"
 }
 
 /** Города, где чат уже есть: по ним и рассылаем. */
@@ -101,6 +110,7 @@ async function sendOne(chatId: string, input: AppearedBroadcastInput): Promise<b
     fuelLabels: input.fuelLabels,
     priceKopecks: input.priceKopecks ?? null,
     confirmations: input.confirmations,
+    origin: input.origin,
     stationId: input.stationId,
     latitude: input.latitude ?? null,
     longitude: input.longitude ?? null,

@@ -196,7 +196,7 @@ function pickDisplayPrice(
     : reported.priceKopecks
 }
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount, activeFuel }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount, activeFuel, autoOpenSubscribeFor }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
@@ -227,6 +227,11 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   guestVisibleCount: number | null
   /* Выбранная в фильтре марка: её цена ставится на плашке первой. */
   activeFuel: string
+  /* Заправка, для которой надо сразу раскрыть подписку.
+
+     Человек пришёл по кнопке «Сообщать мне о таком» из чата: он нажал
+     именно на подписку, и искать её глазами в карточке не должен. */
+  autoOpenSubscribeFor: string | null
 }) {
   const [zoom, setZoom] = useState(11)
   /* Выбранный источник плиток живёт в браузере: человек выбрал тёмную
@@ -1617,6 +1622,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   stationId={selectedStation.id}
                   stationName={selectedStation.name}
                   city={city}
+                  autoOpen={autoOpenSubscribeFor === selectedStation.id}
                 />
                 {/* Поделиться: выбор сетей виден сразу.
 
@@ -1769,6 +1775,11 @@ function FuelMapContent() {
      должна открыться сразу на нужной точке, а не на городе вообще.
      Срабатывает один раз: дальше выбор за человеком. */
   const sharedStationId = searchParams.get("station")
+
+  /* Пришли по кнопке подписки из чата: ?subscribe=1.
+     Человек нажал «сообщать мне о таком» — окно подписки должно
+     открыться само, а не прятаться кнопкой в карточке заправки. */
+  const wantsSubscribe = searchParams.get("subscribe") === "1"
   const openedSharedRef = useRef(false)
   /* Координаты в ссылке нужны, чтобы станция вообще попала в выборку:
      без них карта откроется на запомненном городе, а заправка может
@@ -2108,6 +2119,7 @@ function FuelMapContent() {
           onAvailabilityReported={handleAvailabilityReported}
           guestVisibleCount={isGuest ? GUEST_VISIBLE_STATIONS : null}
           activeFuel={fuelFilter}
+          autoOpenSubscribeFor={wantsSubscribe ? sharedStationId : null}
         />
         {isGuest && (
           <FuelGuestGate
