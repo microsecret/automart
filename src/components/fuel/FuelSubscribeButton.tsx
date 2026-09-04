@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Button, Divider, Group, Modal, Stack, Text } from "@mantine/core"
+import { Button, Divider, Modal, SimpleGrid, Stack, Text } from "@mantine/core"
 import { IconBell, IconCheck } from "@tabler/icons-react"
-import { AVAILABILITY_FUEL_LABELS, type AvailabilityFuel } from "@/lib/fuel-availability"
+import { AVAILABILITY_FUEL_LABELS, AVAILABILITY_FUELS, type AvailabilityFuel } from "@/lib/fuel-availability"
 
 /**
  * Подписка на появление топлива.
@@ -18,11 +18,23 @@ import { AVAILABILITY_FUEL_LABELS, type AvailabilityFuel } from "@/lib/fuel-avai
  */
 /* Марки, на которые можно подписаться.
 
-   Было три — 92, 95 и ДТ. Но в чат уходят новости и про АИ-100, и про
-   газ: человек нажимал «сообщать мне о таком», открывал окно и не
-   находил своей марки. Порядок по распространённости — на 95-м ездит
-   большинство, сотый и газ нужны меньшинству. */
-const SUBSCRIBABLE_FUELS: AvailabilityFuel[] = ["AI92", "AI95", "DT", "AI100", "GAS"]
+   Список был свой, руками: сначала три — 92, 95 и ДТ, потом к ним
+   дописали сотый и газ. И каждый раз он отставал от того, о чём в чат
+   приходят новости: человек нажимал «сообщать мне о таком», открывал
+   окно и своей марки не находил. Последним так потерялся АИ-98.
+
+   Поэтому список общий — тот же, по которому размечается наличие и
+   принимает подписку API. Разойтись он больше не может.
+
+   Порядок свой: по распространённости, а не по коду. На 95-м ездит
+   большинство, сотый и газ нужны меньшинству и стоят последними. */
+/* Порядок объявлен раньше, чем используется: `const` не поднимается, и
+   обратный порядок падает в собранном коде — «Cannot access before
+   initialization», ровно как это уже случилось с фильтром на карте. */
+const SUBSCRIBE_ORDER: AvailabilityFuel[] = ["AI92", "AI95", "DT", "AI98", "AI100", "GAS"]
+
+const SUBSCRIBABLE_FUELS: AvailabilityFuel[] = [...AVAILABILITY_FUELS]
+  .sort((a, b) => SUBSCRIBE_ORDER.indexOf(a) - SUBSCRIBE_ORDER.indexOf(b))
 
 export default function FuelSubscribeButton({
   stationId,
@@ -130,7 +142,12 @@ export default function FuelSubscribeButton({
           <Stack gap={4}>
             <Text size="sm" fw={600}>Конкретная марка здесь</Text>
             <Text size="xs" c="dimmed">Когда на этом адресе появится выбранная марка</Text>
-            <Group grow gap={6}>
+            {/* Три в ряд, а не все подряд.
+
+                Марок стало шесть, и `Group grow` растягивал их в одну
+                строку: на телефоне подписи сжимались до нечитаемых. Три —
+                та же сетка, что у кнопок марок в посте для чата. */}
+            <SimpleGrid cols={3} spacing={6}>
               {SUBSCRIBABLE_FUELS.map((fuel) => (
                 <Button
                   key={fuel}
@@ -144,7 +161,7 @@ export default function FuelSubscribeButton({
                   {AVAILABILITY_FUEL_LABELS[fuel]}
                 </Button>
               ))}
-            </Group>
+            </SimpleGrid>
           </Stack>
 
           <Divider />
@@ -154,7 +171,12 @@ export default function FuelSubscribeButton({
             <Text size="xs" c="dimmed">
               {city ? `Когда выбранная марка появится в любой АЗС города ${city}` : "Город не определён"}
             </Text>
-            <Group grow gap={6}>
+            {/* Три в ряд, а не все подряд.
+
+                Марок стало шесть, и `Group grow` растягивал их в одну
+                строку: на телефоне подписи сжимались до нечитаемых. Три —
+                та же сетка, что у кнопок марок в посте для чата. */}
+            <SimpleGrid cols={3} spacing={6}>
               {SUBSCRIBABLE_FUELS.map((fuel) => (
                 <Button
                   key={fuel}
@@ -167,7 +189,7 @@ export default function FuelSubscribeButton({
                   {AVAILABILITY_FUEL_LABELS[fuel]}
                 </Button>
               ))}
-            </Group>
+            </SimpleGrid>
           </Stack>
 
           {error && <Text size="xs" c="red.6">{error}</Text>}
