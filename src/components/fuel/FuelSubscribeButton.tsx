@@ -16,15 +16,27 @@ import { AVAILABILITY_FUEL_LABELS, type AvailabilityFuel } from "@/lib/fuel-avai
  * вниз и останавливается на первом подходящем: сначала «вся заправка»,
  * потом «эта марка здесь», потом «марка по городу».
  */
+/* Марки, на которые можно подписаться.
+
+   Было три — 92, 95 и ДТ. Но в чат уходят новости и про АИ-100, и про
+   газ: человек нажимал «сообщать мне о таком», открывал окно и не
+   находил своей марки. Порядок по распространённости — на 95-м ездит
+   большинство, сотый и газ нужны меньшинству. */
+const SUBSCRIBABLE_FUELS: AvailabilityFuel[] = ["AI92", "AI95", "DT", "AI100", "GAS"]
+
 export default function FuelSubscribeButton({
   stationId,
   stationName,
   city,
+  highlightFuel = null,
   autoOpen = false,
 }: {
   stationId: string
   stationName: string
   city: string
+  /* Марка, ради которой человек пришёл: он нажал «сообщать мне о 95-м»,
+     и 95 в окне должен быть виден сразу, а не теряться среди прочих. */
+  highlightFuel?: AvailabilityFuel | null
   /* Пришли по кнопке «Сообщать мне о таком» из чата.
 
      Человек нажал именно на подписку, а попадал на карточку заправки, где
@@ -119,10 +131,12 @@ export default function FuelSubscribeButton({
             <Text size="sm" fw={600}>Конкретная марка здесь</Text>
             <Text size="xs" c="dimmed">Когда на этом адресе появится выбранная марка</Text>
             <Group grow gap={6}>
-              {(["AI92", "AI95", "DT"] as AvailabilityFuel[]).map((fuel) => (
+              {SUBSCRIBABLE_FUELS.map((fuel) => (
                 <Button
                   key={fuel}
-                  variant="default"
+                  /* Марка из ссылки залита цветом: человек пришёл именно
+                     за ней и должен увидеть её с одного взгляда. */
+                  variant={fuel === highlightFuel ? "filled" : "default"}
                   loading={sending === `STATION_FUEL:${fuel}`}
                   rightSection={label("STATION_FUEL", fuel)}
                   onClick={() => void subscribe("STATION_FUEL", fuel)}
@@ -141,10 +155,10 @@ export default function FuelSubscribeButton({
               {city ? `Когда выбранная марка появится в любой АЗС города ${city}` : "Город не определён"}
             </Text>
             <Group grow gap={6}>
-              {(["AI92", "AI95", "DT"] as AvailabilityFuel[]).map((fuel) => (
+              {SUBSCRIBABLE_FUELS.map((fuel) => (
                 <Button
                   key={fuel}
-                  variant="default"
+                  variant={fuel === highlightFuel ? "filled" : "default"}
                   disabled={!city}
                   loading={sending === `CITY_FUEL:${fuel}`}
                   rightSection={label("CITY_FUEL", fuel)}

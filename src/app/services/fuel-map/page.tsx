@@ -13,7 +13,7 @@ import FuelAvailabilityReporter, { type StationAvailability } from "@/components
 import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
 import FuelShareButton from "@/components/fuel/FuelShareButton"
 import FuelGuestGate from "@/components/fuel/FuelGuestGate"
-import { formatAge, isFresh } from "@/lib/fuel-availability"
+import { formatAge, isFresh, type AvailabilityFuel } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { getGenericIdentity, getNetworkIdentity, getStationIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
 import { TILE_SIZE, coordinatesToWorld, getDistanceInKilometers, worldToCoordinates } from "@/lib/map-geometry"
@@ -196,7 +196,7 @@ function pickDisplayPrice(
     : reported.priceKopecks
 }
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount, activeFuel, autoOpenSubscribeFor }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount, activeFuel, autoOpenSubscribeFor, subscribeFuel }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
@@ -232,6 +232,8 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
      Человек пришёл по кнопке «Сообщать мне о таком» из чата: он нажал
      именно на подписку, и искать её глазами в карточке не должен. */
   autoOpenSubscribeFor: string | null
+  /** Марка из ссылки: её и подсвечиваем в окне подписки. */
+  subscribeFuel: AvailabilityFuel | null
 }) {
   const [zoom, setZoom] = useState(11)
   /* Выбранный источник плиток живёт в браузере: человек выбрал тёмную
@@ -1623,6 +1625,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   stationName={selectedStation.name}
                   city={city}
                   autoOpen={autoOpenSubscribeFor === selectedStation.id}
+                  highlightFuel={subscribeFuel}
                 />
                 {/* Поделиться: выбор сетей виден сразу.
 
@@ -1780,6 +1783,20 @@ function FuelMapContent() {
      Человек нажал «сообщать мне о таком» — окно подписки должно
      открыться само, а не прятаться кнопкой в карточке заправки. */
   const wantsSubscribe = searchParams.get("subscribe") === "1"
+
+  /* Марка из ссылки в коде подписки: адрес несёт подпись фильтра
+     («АИ‑95»), а подписка хранит код («AI95»). Без перевода окно
+     открывалось без выделенной марки — человек нажал «сообщать мне о
+     95-м» и снова выбирал её руками. */
+  const subscribeFuel = useMemo(() => {
+    const requested = searchParams.get("fuel")
+    if (!requested) return null
+    const digits = requested.replace(/\D/g, "")
+    if (digits) return `AI${digits}` as AvailabilityFuel
+    if (requested === "ДТ") return "DT" as AvailabilityFuel
+    if (requested === "Газ") return "GAS" as AvailabilityFuel
+    return null
+  }, [searchParams])
   const openedSharedRef = useRef(false)
   /* Координаты в ссылке нужны, чтобы станция вообще попала в выборку:
      без них карта откроется на запомненном городе, а заправка может
@@ -2120,6 +2137,7 @@ function FuelMapContent() {
           guestVisibleCount={isGuest ? GUEST_VISIBLE_STATIONS : null}
           activeFuel={fuelFilter}
           autoOpenSubscribeFor={wantsSubscribe ? sharedStationId : null}
+          subscribeFuel={subscribeFuel}
         />
         {isGuest && (
           <FuelGuestGate
