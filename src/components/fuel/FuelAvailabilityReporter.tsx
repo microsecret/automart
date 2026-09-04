@@ -10,6 +10,7 @@ import {
   type AvailabilityFuel,
   type QueueLevel,
 } from "@/lib/fuel-availability"
+import { nextFuelMark, keepsPrice } from "@/lib/fuel-mark-cycle"
 import { tapFeedback } from "@/lib/telegram-webapp"
 
 export type StationAvailability = {
@@ -201,11 +202,22 @@ export default function FuelAvailabilityReporter({
      показывает своё состояние, а не притворяется обычной. */
   const isNothingAtAll = filled.length === visibleFuels.length && !hasAnyYes
 
-  /** Одно касание по марке: было пусто — стало «есть», было «есть» — сброс. */
+  /* Касание по марке идёт по кругу: пусто → есть → нет → пусто.
+
+     Отметить можно было только наличие. А на колонке обычная картина
+     другая: 92-й есть, 95-го нет. Сказать про это было нечем — «нет
+     вообще» гасит все марки разом и врёт, а промолчать про 95-й значит
+     оставить следующего водителя в неведении ровно о том, за чем он
+     едет.
+
+     Третье состояние стоит того же одного касания: человек и так стоит у
+     колонки с телефоном в одной руке. */
   const toggleFuel = (fuel: AvailabilityFuel) => {
     tapFeedback("light")
-    const current = entryOf(fuel).state
-    setEntry(fuel, current === "YES" ? { state: null, price: "" } : { state: "YES" })
+    const next = nextFuelMark(entryOf(fuel).state)
+    /* Цена держится только у того, что есть: цена отсутствующего осталась
+       бы от прошлого нажатия и ушла бы на сервер вместе с «нет». */
+    setEntry(fuel, keepsPrice(next) ? { state: next } : { state: next, price: "" })
   }
 
   /* Отмечена ли заправка как закрытая: по этому признаку кнопка
@@ -359,6 +371,11 @@ export default function FuelAvailabilityReporter({
         <Paper withBorder radius="md" p="sm" className="fuel-report">
           <Stack gap={10}>
             <Text size="sm" fw={700}>Какое топливо есть сейчас</Text>
+            {/* Правило круга сказано словами: без подписи третье
+                состояние находят случайно, дважды промахнувшись. */}
+            <Text size="xs" c="dimmed" mt={-6}>
+              Нажмите марку: есть → нет → снять
+            </Text>
 
             {/* Марки крупными кнопками: человек смотрит на колонку и
                 отмечает то, что видит, одним касанием на каждую. Прошлая
@@ -374,8 +391,12 @@ export default function FuelAvailabilityReporter({
                     data-active={entry.state === "YES" || undefined}
                     data-off={entry.state === "NO" || undefined}
                     onClick={() => toggleFuel(fuel)}
-                    aria-pressed={entry.state === "YES"}
-                    aria-label={`${AVAILABILITY_FUEL_LABELS[fuel]} есть`}
+                    /* Состояний три, а aria-pressed знает два. Поэтому
+                       ответ называется словами: незрячий человек слышит
+                       «95: нет», а не «кнопка не нажата». */
+                    aria-label={`${AVAILABILITY_FUEL_LABELS[fuel]}: ${
+                      entry.state === "YES" ? "есть" : entry.state === "NO" ? "нет" : "не отмечено"
+                    }`}
                   >
                     {AVAILABILITY_FUEL_LABELS[fuel]}
                   </UnstyledButton>
