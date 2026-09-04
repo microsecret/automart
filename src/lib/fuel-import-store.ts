@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import { FUEL_TARGET_REGIONS } from "@/lib/fuel-target-regions"
 import { findNearestCity } from "@/lib/cities"
+import { diffFuelAvailability } from "@/lib/fuel-appeared-diff"
+import { broadcastFuelAppeared } from "@/lib/fuel-appeared-broadcast"
+import { AVAILABILITY_FUEL_LABELS } from "@/lib/fuel-availability"
 
 /**
  * Общее хранилище импортированных АЗС и цен.
@@ -111,6 +114,19 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
 
   for (const station of stations) {
     const city = resolveStationCity(station)
+
+    /* Что было на этой заправке до нынешнего прогона.
+
+       Статус перезаписывался поверх прежнего, и переход «топлива не
+       было → появилось» проходил незамеченным. А это и есть главное
+       событие сервиса: за сутки водители оставляют одну-две отметки,
+       а источники приносят изменения по четырнадцати тысячам
+       заправок — именно там видно, где топливо появилось. */
+    const previous = await prisma.fuelStationImport.findUnique({
+      where: { source_sourceId: { source: station.source, sourceId: station.sourceId } },
+      select: { status: true, fuelsNow: true },
+    })
+
     const record = await prisma.fuelStationImport.upsert({
       where: { source_sourceId: { source: station.source, sourceId: station.sourceId } },
       update: {
@@ -141,6 +157,24 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
       },
       select: { id: true },
     })
+
+    /* Топливо появилось там, где его не было — новость города.
+
+       Сообщение уходит в фоне и молча: сбор не должен падать
+       из-за того, что Telegram не ответил, а пороги внутри самой
+       рассылки не дадут чату превратиться в ленту повторов. */
+    const change = diffFuelAvailability(previous, { status: station.status, fuelsNow: station.fuelsNow })
+    if (change.appeared.length > 0) {
+      void broadcastFuelAppeared({
+        stationId: `${station.source.toLowerCase()}-${station.sourceId}`,
+        stationName: station.name || station.brand || "АЗС",
+        address: station.address,
+        city,
+        fuelLabels: change.appeared.map((fuel) => AVAILABILITY_FUEL_LABELS[fuel as keyof typeof AVAILABILITY_FUEL_LABELS] || fuel),
+        latitude: station.latitude,
+        longitude: station.longitude,
+      })
+    }
 
     /* Марки, которых источник больше не отдаёт, удаляются.
 
