@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma"
 import { getTelegramBotUsername } from "@/lib/telegram"
 import { absoluteUrl } from "@/lib/site-url"
 import { cityFromChatTitle, isFuelChatTitle } from "@/lib/fuel-invite-post"
-import { buildFuelAppearedPost } from "@/lib/fuel-appeared-post"
+import { buildFuelAppearedPost, fuelTitle } from "@/lib/fuel-appeared-post"
+import { buildFuelCardSvg } from "@/lib/fuel-appeared-card"
 import { sendChatPost } from "@/lib/telegram-post-sender"
 import { enqueueAppearances, delayUntilNextPost, type QueuedAppearance } from "@/lib/fuel-appeared-queue"
 
@@ -100,8 +101,39 @@ const draining = new Set<string>()
 /** Кому и что шлём: чат уже выбран, порог по заправке уже пройден. */
 type Ready = { chatId: string; input: AppearedBroadcastInput }
 
+/**
+ * Рисует карточку новости.
+ *
+ * Отрисовка идёт в том же процессе, что и сайт, и на неё уходит около
+ * десятой доли секунды. Сорваться она может — sharp собран под систему, и
+ * на другой машине его может не оказаться, — поэтому ошибка гасится:
+ * сообщение уйдёт текстом, а не пропадёт вовсе. Человек ждёт новость,
+ * чтобы решить, ехать ли на заправку; оформление тут вторично.
+ */
+async function renderCard(input: AppearedBroadcastInput): Promise<Buffer | null> {
+  try {
+    const sharp = (await import("sharp")).default
+    const svg = buildFuelCardSvg({
+      fuels: input.fuelLabels.map(fuelTitle),
+      stationName: input.stationName,
+      address: input.address ?? null,
+      city: input.city,
+      priceKopecks: input.priceKopecks ?? null,
+    })
+    return await sharp(Buffer.from(svg)).png().toBuffer()
+  } catch (error) {
+    console.error("Fuel card render failed", error instanceof Error ? error.message : error)
+    return null
+  }
+}
+
 async function sendOne(chatId: string, input: AppearedBroadcastInput): Promise<boolean> {
-  const image = appearedImage()
+  /* Карточка с данными новости вместо рекламного баннера: новости идут по
+     одной в минуту, и один и тот же плакат подряд читается как спам, а
+     сама новость под ним тонет. Настроенная картинка остаётся запасным
+     вариантом на случай, если отрисовка сорвётся. */
+  const card = await renderCard(input)
+  const image = card ? null : appearedImage()
 
   const post = buildFuelAppearedPost({
     stationName: input.stationName,
@@ -123,7 +155,12 @@ async function sendOne(chatId: string, input: AppearedBroadcastInput): Promise<b
      текстом, а не теряется совсем. */
   const messageId = await sendChatPost(
     chatId,
-    { photos: image ? [image] : [], caption: post.text, buttons: post.buttons },
+    {
+      photos: image ? [image] : [],
+      image: card ? { data: card, filename: "fuel.png", contentType: "image/png" } : null,
+      caption: post.text,
+      buttons: post.buttons,
+    },
   )
   if (!messageId) return false
 

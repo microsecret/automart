@@ -23,6 +23,12 @@ type PostButton = { text: string; url: string }
 
 export type OutgoingPost = {
   photos: string[]
+  /* Готовая картинка вместо файла на диске.
+
+     Карточка новости о топливе рисуется из данных самой новости и нигде
+     не хранится: складывать её в /uploads значило бы копить по файлу на
+     каждое сообщение в чат — по одному в минуту, круглые сутки. */
+  image?: { data: Buffer; filename: string; contentType: string } | null
   caption: string
   /* Плоский список — по кнопке в ряд, как было. Массив массивов задаёт
      ряды сам: пять кнопок выбора марки в столбик занимают полэкрана, а
@@ -50,6 +56,41 @@ export async function sendChatPost(
   _options: { buttonsCaption?: string } = {},
 ): Promise<number | null> {
   const keyboard = { inline_keyboard: toKeyboardRows(post.buttons) }
+
+
+  /* Готовая картинка уходит как есть: читать с диска нечего. */
+  if (post.image) {
+    const sent = await telegramPhotoApi<{ message_id: number }>(
+      {
+        chat_id: chatId,
+        caption: post.caption,
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      },
+      {
+        uploads: [{
+          field: "photo",
+          filename: post.image.filename,
+          contentType: post.image.contentType,
+          data: post.image.data,
+        }],
+      },
+    ).catch(() => null)
+
+    if (sent?.message_id) return sent.message_id
+
+    /* Картинка не ушла — отправляем текстом. Сообщение о появившемся
+       топливе важнее оформления: человек ждёт его, чтобы решить, ехать
+       ли на заправку. */
+    const fallback = await telegramApi<{ message_id: number }>("sendMessage", {
+      chat_id: chatId,
+      text: post.caption,
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+      disable_web_page_preview: true,
+    }).catch(() => null)
+    return fallback?.message_id ?? null
+  }
 
   if (post.photos.length === 0) {
     const sent = await telegramApi<{ message_id: number }>("sendMessage", {

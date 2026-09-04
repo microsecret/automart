@@ -72,14 +72,22 @@ const FILTER_BY_LABEL: Record<string, string> = {
   "Газ": "Газ",
 }
 
+/**
+ * Метка марки так, как её пишут на колонке.
+ *
+ * «Появился 95» звучит обрубленно — в разговоре говорят «девяносто
+ * пятый», на колонке написано «АИ-95». Метки хранятся короткими, потому
+ * что в таблице карты длинные не помещаются; в тексте сообщения и на
+ * карточке место есть. Марки без числа («ДТ», «Газ») остаются как есть.
+ */
+export function fuelTitle(label: string): string {
+  return /^\d+$/.test(label) ? `АИ-${label}` : label
+}
+
 export function buildFuelAppearedPost(input: AppearedInput): AppearedPost {
   const site = input.siteUrl.replace(/\/$/, "")
 
-  /* «Появился 95» звучит обрубленно — в разговоре говорят «девяносто
-     пятый», на колонке написано «АИ-95». Метки хранятся короткими, потому
-     что в таблице карты длинные не помещаются; в тексте сообщения место
-     есть. Марки без числа («ДТ», «Газ») остаются как есть. */
-  const fuels = input.fuelLabels.map((label) => (/^\d+$/.test(label) ? `АИ-${label}` : label)).join(", ")
+  const fuels = input.fuelLabels.map(fuelTitle).join(", ")
   const lines: string[] = []
 
   lines.push(`⛽ <b>Появился ${escapeHtml(fuels)}</b>`)
