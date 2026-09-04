@@ -160,12 +160,17 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
 
     /* Топливо появилось там, где его не было — новость города.
 
-       Сообщение уходит в фоне и молча: сбор не должен падать
-       из-за того, что Telegram не ответил, а пороги внутри самой
-       рассылки не дадут чату превратиться в ленту повторов. */
+       Отправка ожидается, а не отпускается в фон. При `void` все
+       появления одного прогона уходили разом: каждая проверяла порог
+       раньше, чем предыдущая успевала записаться, и в чат прилетали
+       четыре сообщения в одну секунду. Ожидание делает порог по чату
+       настоящим — сообщения идут по одному.
+
+       Ошибку рассылка глотает сама: сбор не должен падать из-за того,
+       что Telegram не ответил. */
     const change = diffFuelAvailability(previous, { status: station.status, fuelsNow: station.fuelsNow })
     if (change.appeared.length > 0) {
-      void broadcastFuelAppeared({
+      await broadcastFuelAppeared({
         stationId: `${station.source.toLowerCase()}-${station.sourceId}`,
         stationName: station.name || station.brand || "АЗС",
         address: station.address,
