@@ -65,7 +65,14 @@ const FAST_MODEL = process.env.NVIDIA_FAST_MODEL?.trim() || "meta/llama-3.1-8b-i
 const FAST_MODEL_MAX_CHARS = 24
 
 function pickModel(text: string) {
-  return text.length <= FAST_MODEL_MAX_CHARS ? FAST_MODEL : NVIDIA_MODEL
+  const preferred = text.length <= FAST_MODEL_MAX_CHARS ? FAST_MODEL : NVIDIA_MODEL
+  if (!retiredModels.has(preferred)) return preferred
+
+  /* Предпочтительная модель снята — пробуем вторую из пары. Короткие поля
+     переживут крупную модель, а описание на быстрой выйдет грубее, но
+     перевод всё же будет: пустая карточка на корейском хуже. */
+  const fallback = preferred === FAST_MODEL ? NVIDIA_MODEL : FAST_MODEL
+  return retiredModels.has(fallback) ? null : fallback
 }
 const AUTH_FAILURE_COOLDOWN_MS = 5 * 60 * 1000
 const RATE_LIMIT_BACKOFF_MS = 1_200
@@ -74,6 +81,19 @@ const TRANSLATION_TOTAL_BUDGET_MS = 45_000
 // отозванный ключ сам не восстановится, а повторные попытки создают лишний
 // трафик и шум в логах на каждом импортируемом лоте.
 const revokedKeys = new Set<string>()
+
+/* Модели, снятые провайдером с обслуживания.
+ *
+ * На ответ 410 провайдер пишет прямо: модель дожила до конца срока и
+ * больше недоступна. Она не воскреснет, а код продолжал звать её на
+ * каждом лоте — в логах шла стена одинаковых ошибок каждые несколько
+ * секунд, за которой не видно настоящих поломок. Так и вышло: перевод
+ * стоял с двадцать шестого августа, а заметили это случайно, разбирая
+ * другой отчёт.
+ *
+ * Набор живёт до конца жизни процесса: перезапуск сам проверит заново,
+ * если провайдер вернёт модель. */
+const retiredModels = new Set<string>()
 let currentKeyIdx = 0
 let authUnavailableUntil = 0
 
@@ -261,9 +281,15 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
       break
     }
 
+    const model = pickModel(text)
+    if (!model) {
+      lastError = new Error("Все настроенные модели сняты провайдером с обслуживания")
+      break
+    }
+
     try {
       const res = await requestCompletion(apiKey, JSON.stringify({
-          model: pickModel(text),
+          model,
           messages: [
             {
               role: "system",
@@ -303,6 +329,17 @@ export async function translateToRussian(text: string, systemPrompt?: string): P
           authUnavailableUntil = Date.now() + AUTH_FAILURE_COOLDOWN_MS
           break
         }
+        continue
+      }
+
+      if (res.status === 410) {
+        /* Модель снята с обслуживания навсегда — запоминаем и больше не
+           зовём. Без этого каждый лот повторял тот же запрос, и настоящие
+           поломки тонули в стене одинаковых строк. */
+        const errText = await res.text().catch(() => "unknown")
+        retiredModels.add(model)
+        lastError = new Error(`NVIDIA API 410: модель ${model} снята с обслуживания`)
+        console.error("Translation model retired:", model, errText.slice(0, 200))
         continue
       }
 
