@@ -108,8 +108,12 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
               видит общее приглашение посмотреть карту и не понимает, куда
               делось то, за чем он шёл. */}
           {wantsSubscribe && (
-            <Text size="sm" fw={600} c="teal.7">
-              Войдите — и бот напишет, как только топливо появится
+            /* Цвет кнопки, а не свой: два акцента рядом спорят, и взгляд
+               не понимает, что здесь главное. Размер как у заголовка
+               списка — это и есть причина, по которой человек пришёл. */
+            <Text size="sm" fw={700} lh={1.35} mt={2}>
+              Войдите — и бот напишет, как только топливо появится на этой
+              заправке
             </Text>
           )}
         </Stack>
@@ -120,8 +124,10 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
             кто уже внутри; тому, кто решает, входить ли, важно другое —
             что он получит. Три строки читаются за пару секунд, абзац
             пропускают. */}
+        {/* Пункт про уведомления убирается, когда он уже сказан строкой
+            выше: человек читал одно и то же дважды и оба раза мелко. */}
         <Stack gap="sm" className="fuel-gate__benefits">
-          {BENEFITS.map(({ icon: Icon, title, text }) => (
+          {BENEFITS.filter(({ icon: Icon }) => !(wantsSubscribe && Icon === IconBell)).map(({ icon: Icon, title, text }) => (
             <Group key={title} gap={10} align="flex-start" wrap="nowrap">
               <Box className="fuel-gate__benefit-icon" aria-hidden="true">
                 <Icon size={17} stroke={1.9} />
