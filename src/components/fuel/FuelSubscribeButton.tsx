@@ -147,7 +147,7 @@ export default function FuelSubscribeButton({
                 Марок стало шесть, и `Group grow` растягивал их в одну
                 строку: на телефоне подписи сжимались до нечитаемых. Три —
                 та же сетка, что у кнопок марок в посте для чата. */}
-            <SimpleGrid cols={3} spacing={6}>
+            <SimpleGrid cols={{ base: 2, xs: 3 }} spacing={6}>
               {SUBSCRIBABLE_FUELS.map((fuel) => (
                 <Button
                   key={fuel}
@@ -176,7 +176,7 @@ export default function FuelSubscribeButton({
                 Марок стало шесть, и `Group grow` растягивал их в одну
                 строку: на телефоне подписи сжимались до нечитаемых. Три —
                 та же сетка, что у кнопок марок в посте для чата. */}
-            <SimpleGrid cols={3} spacing={6}>
+            <SimpleGrid cols={{ base: 2, xs: 3 }} spacing={6}>
               {SUBSCRIBABLE_FUELS.map((fuel) => (
                 <Button
                   key={fuel}

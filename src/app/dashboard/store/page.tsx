@@ -537,39 +537,43 @@ export default function StoreWorkspacePage() {
 
                 {preview.preview.length > 0 && (
                   <Box style={{ overflowX: "auto" }}>
-                    <Table striped highlightOnHover withTableBorder>
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>Название</Table.Th>
-                          <Table.Th>Артикул</Table.Th>
-                          <Table.Th>Категория</Table.Th>
-                          <Table.Th>Наличие</Table.Th>
-                          <Table.Th ta="right">Цена</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {preview.preview.map((row) => (
-                          <Table.Tr key={row.line}>
-                            <Table.Td>{row.name}</Table.Td>
-                            <Table.Td>
-                              {row.oemNumber || "—"}
-                              {row.crossNumbers.length > 0 && (
-                                <Text size="10px" c="dimmed">+{row.crossNumbers.length} аналог{row.crossNumbers.length === 1 ? "" : row.crossNumbers.length < 5 ? "а" : "ов"}</Text>
-                              )}
-                            </Table.Td>
-                            <Table.Td>{PART_TYPE_LABELS[row.partType] || row.partType}</Table.Td>
-                            <Table.Td>
-                              {row.supplyMode === "STOCK"
-                                ? <Badge size="xs" variant="light" color="teal">В наличии</Badge>
-                                : <Badge size="xs" variant="light" color="orange">
-                                    {row.leadTimeDaysMin ? `Под заказ ${row.leadTimeDaysMin}–${row.leadTimeDaysMax || row.leadTimeDaysMin} дн` : "Под заказ"}
-                                  </Badge>}
-                            </Table.Td>
-                            <Table.Td ta="right">{row.price.toLocaleString("ru-RU")} ₽</Table.Td>
+                    {/* Прокрутка вбок: пять колонок не помещались на телефоне, и продавец
+                       не видел цену собственного товара. */}
+                    <Table.ScrollContainer minWidth={720}>
+                      <Table striped highlightOnHover withTableBorder>
+                        <Table.Thead>
+                          <Table.Tr>
+                            <Table.Th>Название</Table.Th>
+                            <Table.Th>Артикул</Table.Th>
+                            <Table.Th>Категория</Table.Th>
+                            <Table.Th>Наличие</Table.Th>
+                            <Table.Th ta="right">Цена</Table.Th>
                           </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {preview.preview.map((row) => (
+                            <Table.Tr key={row.line}>
+                              <Table.Td>{row.name}</Table.Td>
+                              <Table.Td>
+                                {row.oemNumber || "—"}
+                                {row.crossNumbers.length > 0 && (
+                                  <Text size="10px" c="dimmed">+{row.crossNumbers.length} аналог{row.crossNumbers.length === 1 ? "" : row.crossNumbers.length < 5 ? "а" : "ов"}</Text>
+                                )}
+                              </Table.Td>
+                              <Table.Td>{PART_TYPE_LABELS[row.partType] || row.partType}</Table.Td>
+                              <Table.Td>
+                                {row.supplyMode === "STOCK"
+                                  ? <Badge size="xs" variant="light" color="teal">В наличии</Badge>
+                                  : <Badge size="xs" variant="light" color="orange">
+                                      {row.leadTimeDaysMin ? `Под заказ ${row.leadTimeDaysMin}–${row.leadTimeDaysMax || row.leadTimeDaysMin} дн` : "Под заказ"}
+                                    </Badge>}
+                              </Table.Td>
+                              <Table.Td ta="right">{row.price.toLocaleString("ru-RU")} ₽</Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </Table.ScrollContainer>
                     {preview.readyRows > preview.preview.length && (
                       <Text size="xs" c="dimmed" mt={6}>
                         Показаны первые {preview.preview.length} позиций из {preview.readyRows}.

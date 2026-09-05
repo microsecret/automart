@@ -178,31 +178,35 @@ export default function ReferralPage() {
           {tab === "rewards" && (
             data.rewards.length ? (
               <Box style={{ overflowX: "auto" }}>
-                <Table striped withTableBorder>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Дата</Table.Th>
-                      <Table.Th>Платёж</Table.Th>
-                      <Table.Th>Ставка</Table.Th>
-                      <Table.Th ta="right">Начислено</Table.Th>
-                      <Table.Th>Статус</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {data.rewards.map((reward) => {
-                      const meta = REWARD_STATUS[reward.status] || REWARD_STATUS.ACCRUED
-                      return (
-                        <Table.Tr key={reward.id}>
-                          <Table.Td><Text size="xs">{new Date(reward.createdAt).toLocaleDateString("ru-RU")}</Text></Table.Td>
-                          <Table.Td><Text size="xs">{reward.orderAmountRub.toLocaleString("ru-RU")} ₽</Text></Table.Td>
-                          <Table.Td><Text size="xs">{reward.percent}%</Text></Table.Td>
-                          <Table.Td ta="right"><Text size="sm" fw={700}>{reward.amountRub.toLocaleString("ru-RU")} ₽</Text></Table.Td>
-                          <Table.Td><Badge size="xs" variant="light" color={meta.color}>{meta.label}</Badge></Table.Td>
-                        </Table.Tr>
-                      )
-                    })}
-                  </Table.Tbody>
-                </Table>
+                {/* Прокрутка вбок: пять колонок на телефоне обрезались по правому краю,
+                   и «Начислено» — ради чего таблицу и открывают — уезжало за экран. */}
+                <Table.ScrollContainer minWidth={620}>
+                  <Table striped withTableBorder>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Дата</Table.Th>
+                        <Table.Th>Платёж</Table.Th>
+                        <Table.Th>Ставка</Table.Th>
+                        <Table.Th ta="right">Начислено</Table.Th>
+                        <Table.Th>Статус</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {data.rewards.map((reward) => {
+                        const meta = REWARD_STATUS[reward.status] || REWARD_STATUS.ACCRUED
+                        return (
+                          <Table.Tr key={reward.id}>
+                            <Table.Td><Text size="xs">{new Date(reward.createdAt).toLocaleDateString("ru-RU")}</Text></Table.Td>
+                            <Table.Td><Text size="xs">{reward.orderAmountRub.toLocaleString("ru-RU")} ₽</Text></Table.Td>
+                            <Table.Td><Text size="xs">{reward.percent}%</Text></Table.Td>
+                            <Table.Td ta="right"><Text size="sm" fw={700}>{reward.amountRub.toLocaleString("ru-RU")} ₽</Text></Table.Td>
+                            <Table.Td><Badge size="xs" variant="light" color={meta.color}>{meta.label}</Badge></Table.Td>
+                          </Table.Tr>
+                        )
+                      })}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
               </Box>
             ) : (
               <Text size="sm" c="dimmed">Начислений пока нет. Они появляются, когда приглашённый оплачивает платный тариф.</Text>

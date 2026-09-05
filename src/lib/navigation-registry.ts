@@ -192,6 +192,23 @@ export const TELEGRAM_MENU_NAVIGATION = [
       .filter((item) => item.id !== "US")
       .map((item) => ({ ...item, href: `${item.href}&from=telegram` })),
   },
+  {
+    /* Помощь и правила — в приложении их не было вовсе.
+
+       Ни поддержки, ни правил площадки, ни условий с политикой: подвал в
+       приложении не рисуется, а других путей к этим страницам нет. Человек
+       упирался в тупик при первой же трудности — и это как раз новичок из
+       мессенджера, которому объяснения нужнее всего.
+
+       Условия и политика — ещё и требование закона о персональных данных:
+       они должны быть достижимы отовсюду, где собираются сведения о людях. */
+    title: "Помощь и правила",
+    items: [
+      ...HELP_NAVIGATION.map((item) => ({ ...item, href: `${item.href}?from=telegram` })),
+      { id: "terms", label: "Условия использования", href: "/legal/terms?from=telegram" },
+      { id: "privacy", label: "Политика конфиденциальности", href: "/legal/privacy?from=telegram" },
+    ],
+  },
 ] as const satisfies readonly NavigationSection[]
 
 /**

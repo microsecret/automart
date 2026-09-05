@@ -459,6 +459,66 @@ body:has(.tg-shell[data-main-button="hidden"]) {
   outline: none;
 }
 
+/* Лента типов техники под поиском.
+
+   Прокручивается вбок: семь кнопок в строку не помещаются даже на
+   широком телефоне, а в столбик заняли бы пол-экрана. Частые «Все» и
+   «Легковые» видны сразу, редкие уезжают за край — растворение у правого
+   края показывает, что список продолжается. */
+.tg-types {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
+}
+
+.tg-types::-webkit-scrollbar {
+  display: none;
+}
+
+.tg-types__chip {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 13px;
+  border: 1px solid color-mix(in srgb, var(--tg-hint) 26%, transparent);
+  border-radius: 999px;
+  background: var(--tg-surface);
+  color: var(--tg-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 30px;
+  white-space: nowrap;
+  /* Перечислены свойства, а не all: анимировать заодно размеры и границы
+     значит гонять пересчёт вёрстки на каждое касание. */
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+/* Выбранный тип заливается акцентом темы: на солнце рамка не читается,
+   а заливка видна и боковым зрением. */
+.tg-types__chip[data-active] {
+  border-color: var(--tg-accent);
+  background: var(--tg-accent);
+  color: var(--tg-accent-text);
+}
+
+.tg-types__chip:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-types__chip {
+    transition: none;
+  }
+
+  .tg-types__chip:active {
+    transform: none;
+  }
+}
+
 /* Значок поиска и кнопка очистки берут приглушённый цвет темы. */
 .tg-search__input .mantine-Input-section {
   color: var(--tg-hint);

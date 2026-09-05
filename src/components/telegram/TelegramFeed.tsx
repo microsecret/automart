@@ -50,15 +50,38 @@ type FeedResponse = { listings: FeedListing[]; pagination?: { total: number } }
 /** Сколько машин показывать: экран телефона вмещает три-четыре карточки. */
 const FEED_LIMIT = 24
 
+/* Типы техники лентой кнопок.
+
+   Проп vehicleType в этом компоненте был написан и обрабатывался, но
+   никто его не передавал: фильтр существовал только в коде. В ленте
+   вперемешку шли легковые, мотоциклы и грузовики, а отделить их было
+   нечем — на сайте для этого есть отдельные страницы категорий, в
+   мини-приложении не было ничего.
+
+   Порядок по спросу: легковые ищут чаще всего, воздушный транспорт —
+   единицы, и он уезжает за край прокручиваемой ленты. */
+const FEED_TYPES = [
+  { value: "", label: "Все" },
+  { value: "cars", label: "Легковые" },
+  { value: "moto", label: "Мото" },
+  { value: "trucks", label: "Грузовики" },
+  { value: "special", label: "Спецтехника" },
+  { value: "water", label: "Водный" },
+  { value: "air", label: "Воздушный" },
+] as const
+
 export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) {
   const [search, setSearch] = useState("")
+  /* Выбор человека важнее того, что пришло пропом: проп задаёт начальный
+     раздел, дальше лента слушается кнопок. */
+  const [pickedType, setPickedType] = useState(vehicleType || "")
   /* Запрос уходит с задержкой относительно набора: иначе каждая буква
      отправляла бы запрос, а на телефоне это ещё и заметная задержка
      отрисовки при медленной сети. */
   const deferredSearch = useDeferredValue(search.trim())
 
   const query = new URLSearchParams({ type: "vehicle", limit: String(FEED_LIMIT), sort: "newest" })
-  if (vehicleType) query.set("vehicleType", vehicleType)
+  if (pickedType) query.set("vehicleType", pickedType)
   if (deferredSearch.length > 1) query.set("q", deferredSearch)
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<FeedResponse>(`/api/listings?${query}`, fetchJson, {
@@ -89,6 +112,24 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
         onChange={(event) => setSearch(event.currentTarget.value)}
         size="md"
       />
+
+      {/* Лента прокручивается вбок: семь кнопок в строку не помещаются,
+          а в столбик заняли бы пол-экрана. Частые «Все» и «Легковые»
+          видны сразу, редкие уезжают за край. */}
+      <Box className="tg-types" role="group" aria-label="Тип техники">
+        {FEED_TYPES.map((item) => (
+          <button
+            key={item.value || "all"}
+            type="button"
+            className="tg-types__chip"
+            data-active={pickedType === item.value || undefined}
+            aria-pressed={pickedType === item.value}
+            onClick={() => setPickedType(item.value)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </Box>
     </Box>
   )
 

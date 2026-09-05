@@ -664,7 +664,7 @@ function DashboardContent() {
                 </SimpleGrid>
               )}
               <Divider />
-              <SimpleGrid cols={2} spacing="sm">
+              <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
                 <Box><Text size="xs" c="gray.4">На сайте с</Text><Text size="sm" fw={600} c="var(--market-ink)">{formatMemberSince(accountProfile?.createdAt || stats.memberSince)}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Всего объявлений</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.totalListings}</Text></Box>
                 <Box><Text size="xs" c="gray.4">Просмотров всего</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.totalViews}</Text></Box>

@@ -8,7 +8,7 @@ import useSWR from "swr"
 import {
   IconBell, IconBrain, IconCar, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation,
   IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMessages, IconMotorbike,
-  IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
+  IconLifebuoy, IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
   IconBuildingStore, IconClipboardList, IconGift, IconTractor, IconTruck, IconTruckDelivery,
 } from "@tabler/icons-react"
 import Link from "next/link"
@@ -31,6 +31,7 @@ import {
   getDashboardNavigationItem,
   PART_NAVIGATION,
   SERVICE_NAVIGATION,
+  HELP_NAVIGATION,
   SITE_MOBILE_NAVIGATION,
   TRANSPORT_NAVIGATION,
 } from "@/lib/navigation-registry"
@@ -358,10 +359,31 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </SidebarPanel>
 
-              {/* «Новости» и «Помощь» есть в шапке, а здесь они упирались в
-                  нижний край прокручиваемой области и обрезались. Дубль убран,
-                  вместо него — отступ, чтобы последний блок меню не липнул к
-                  краю. */}
+              {/* Новости и помощь — на телефоне только здесь.
+
+                  Прежний комментарий обещал, что они «есть в шапке», и на
+                  этом основании их отсюда убрали. Но в шапке и вкладки
+                  каталога, и меню «Сервисы» стоят под visibleFrom="md" —
+                  ниже 768 точек их нет. Получилось, что на телефоне правила
+                  площадки, безопасность сделки и поддержку было не открыть
+                  нигде, кроме подвала; а именно там их и ищут, когда что-то
+                  пошло не так.
+
+                  Отступ снизу оставлен: без него последний пункт липнет к
+                  краю прокручиваемой области. */}
+              <SidebarPanel title="Помощь" href="/help" icon={<IconLifebuoy size={15} />}>
+                {HELP_NAVIGATION.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    component={Link}
+                    href={item.href}
+                    label={item.label}
+                    active={pathname === item.href}
+                    className="market-side-nav market-side-nav--service"
+                  />
+                ))}
+              </SidebarPanel>
+
               <Box h={8} />
           </Stack>
         </AppShell.Section>

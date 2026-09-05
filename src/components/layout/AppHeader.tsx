@@ -376,7 +376,13 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               className="market-app-header__utility-action"
               onClick={toggleScheme}
               aria-label="Сменить тему"
-              visibleFrom="sm"
+              /* Видна и на телефоне.
+
+                 Была под visibleFrom="sm", и другого переключателя в
+                 проекте нет: ниже 576 точек тему было не сменить нигде.
+                 Ночью за рулём это не мелочь — светлая карта заправок
+                 бьёт по глазам, а выбор системной темы устраивает не
+                 всех. Значок узкий и в ряду соседних не теснит. */
             >
               {colorScheme === "dark" ? <IconSun size={18} stroke={1.8} /> : <IconMoon size={18} stroke={1.8} />}
             </ActionIcon>
