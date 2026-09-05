@@ -115,11 +115,11 @@ export default function PartOrderButton({ partId, itemName, priceRub, supplyMode
               </Text>
             </Group>
 
-            <TextInput required label="Ваше имя" placeholder="Иван" value={form.contactName} onChange={(event) => setForm({ ...form, contactName: event.currentTarget.value })} />
-            <TextInput required label="Телефон" placeholder="+7 900 000-00-00" description="По нему магазин подтвердит заказ" value={form.contactPhone} onChange={(event) => setForm({ ...form, contactPhone: event.currentTarget.value })} />
+            <TextInput required label="Ваше имя" autoComplete="name" placeholder="Иван" value={form.contactName} onChange={(event) => setForm({ ...form, contactName: event.currentTarget.value })} />
+            <TextInput required label="Телефон" type="tel" inputMode="tel" autoComplete="tel" placeholder="+7 900 000-00-00" description="По нему магазин подтвердит заказ" value={form.contactPhone} onChange={(event) => setForm({ ...form, contactPhone: event.currentTarget.value })} />
             <Group gap="sm" grow>
-              <TextInput label="Email" placeholder="ivan@example.ru" value={form.contactEmail} onChange={(event) => setForm({ ...form, contactEmail: event.currentTarget.value })} />
-              <TextInput label="Город доставки" placeholder="Москва" value={form.city} onChange={(event) => setForm({ ...form, city: event.currentTarget.value })} />
+              <TextInput label="Email" type="email" inputMode="email" autoComplete="email" spellCheck={false} placeholder="ivan@example.ru" value={form.contactEmail} onChange={(event) => setForm({ ...form, contactEmail: event.currentTarget.value })} />
+              <TextInput label="Город доставки" autoComplete="address-level2" placeholder="Москва" value={form.city} onChange={(event) => setForm({ ...form, city: event.currentTarget.value })} />
             </Group>
             <Textarea label="Комментарий" placeholder="VIN автомобиля, уточнения по детали" autosize minRows={2} value={form.comment} onChange={(event) => setForm({ ...form, comment: event.currentTarget.value })} />
 

@@ -799,15 +799,15 @@ export default function HomePage(p: HomePageProps = {}) {
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconEngine size={14}/> Объём двигателя, л</Text>
                   <Group gap="xs" align="flex-end">
-                    <TextInput placeholder="от" value={engineVolumeFrom} onChange={(e) => setEngineVolumeFrom(e.target.value)} size="sm" w={80} type="number" step="0.1"/>
-                    <TextInput placeholder="до" value={engineVolumeTo} onChange={(e) => setEngineVolumeTo(e.target.value)} size="sm" w={80} type="number" step="0.1"/>
+                    <TextInput aria-label="Объём двигателя от, литров" placeholder="от" value={engineVolumeFrom} onChange={(e) => setEngineVolumeFrom(e.target.value)} size="sm" w={80} type="number" step="0.1"/>
+                    <TextInput aria-label="Объём двигателя до, литров" placeholder="до" value={engineVolumeTo} onChange={(e) => setEngineVolumeTo(e.target.value)} size="sm" w={80} type="number" step="0.1"/>
                   </Group>
                 </Box>
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconBolt size={14}/> Мощность, л.с.</Text>
                   <Group gap="xs" align="flex-end">
-                    <TextInput placeholder="от" value={powerFrom} onChange={(e) => setPowerFrom(e.target.value)} size="sm" w={80} type="number"/>
-                    <TextInput placeholder="до" value={powerTo} onChange={(e) => setPowerTo(e.target.value)} size="sm" w={80} type="number"/>
+                    <TextInput aria-label="Мощность от, лошадиных сил" placeholder="от" value={powerFrom} onChange={(e) => setPowerFrom(e.target.value)} size="sm" w={80} type="number"/>
+                    <TextInput aria-label="Мощность до, лошадиных сил" placeholder="до" value={powerTo} onChange={(e) => setPowerTo(e.target.value)} size="sm" w={80} type="number"/>
                   </Group>
                 </Box>
               </Group>
@@ -815,7 +815,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Group gap="lg" wrap="wrap" align="flex-start">
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6} style={{display:"flex",alignItems:"center",gap:6}}><IconPalette size={14}/> Цвет</Text>
-                  <Select placeholder="Любой" data={CAR_COLORS.map((c) => ({value:c,label:c}))} clearable searchable value={color} onChange={setColor} size="sm" w={160}/>
+                  <Select aria-label="Цвет кузова" placeholder="Любой" data={CAR_COLORS.map((c) => ({value:c,label:c}))} clearable searchable value={color} onChange={setColor} size="sm" w={160}/>
                 </Box>
                 <Box>
                   <Text size="xs" fw={600} c="gray.6" mb={6}>Состояние</Text>

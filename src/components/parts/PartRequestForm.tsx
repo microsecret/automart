@@ -197,7 +197,7 @@ export default function PartRequestForm({ presetCategory = null, onSuccess }: Pr
 
       <Group grow gap="sm">
         <TextInput
-          label="Как к вам обращаться"
+          label="Как к вам обращаться" autoComplete="name"
           placeholder="Иван"
           value={name}
           onChange={(event) => setName(event.currentTarget.value)}
@@ -206,7 +206,7 @@ export default function PartRequestForm({ presetCategory = null, onSuccess }: Pr
           size="sm"
         />
         <TextInput
-          label="Телефон"
+          label="Телефон" type="tel" inputMode="tel" autoComplete="tel"
           description="По нему ответят продавцы"
           placeholder="+7 900 000-00-00"
           value={phone}

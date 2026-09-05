@@ -5160,6 +5160,17 @@ html:has(.fuel-map-canvas) {
   .fuel-map-topbar:not([data-open]) .fuel-map-fuel-chips {
     flex: 1 1 auto;
     min-width: 0;
+    /* Затухание у правого края.
+
+       Лента прокручивается вбок, но обрезанная посередине кнопка «98»
+       читается как поломка вёрстки, а не как приглашение прокрутить.
+       Растворение говорит, что там продолжение, — так же ведут себя
+       ленты на карточках маркетплейсов.
+
+       Маска только у правого края: лента всегда начинается с «Все», и
+       слева обрезать нечего. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
   }
 
   .fuel-map-topbar:not([data-open]) .fuel-map-topbar__city {

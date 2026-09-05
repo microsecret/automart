@@ -362,7 +362,19 @@ function InquiryRow({ inquiry, onOpen }: { inquiry: AuctionInquiry; onOpen: () =
           <VehicleFallback type="CAR" compact />
           {image && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt={vehicleTitle(inquiry)} onError={(event) => { event.currentTarget.style.display = "none" }} />
+            <img
+              src={image}
+              alt={vehicleTitle(inquiry)}
+              width={96}
+              height={72}
+              loading="lazy"
+              decoding="async"
+              /* Скрываем через hidden, а не правкой стиля: прямая мутация
+                 идёт в обход React, и при следующей перерисовке картинка
+                 возвращается пустой рамкой. Размеры заданы, чтобы строка
+                 не подпрыгивала, пока файл грузится. */
+              onError={(event) => { event.currentTarget.hidden = true }}
+            />
           )}
         </Box>
         <Stack gap={6} style={{ flex: "1 1 380px", minWidth: 0 }}>

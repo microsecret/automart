@@ -242,7 +242,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                       </Stack>
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={images[activeImage]} alt={`${data.name} — фото ${activeImage + 1}`} onError={() => setImageFailed(true)} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                      <img src={images[activeImage]} alt={`${data.name} — фото ${activeImage + 1}`} width={640} height={480} decoding="async" onError={() => setImageFailed(true)} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                     )}
                     {data.condition && (
                       <Badge pos="absolute" top={14} left={14} color="indigo" variant="filled" size="sm" style={{ backdropFilter: "blur(4px)" }}>

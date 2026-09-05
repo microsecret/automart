@@ -206,6 +206,15 @@ export default function DeliveryOrderPage() {
   }
 
   const confirmPayment = async (paymentId: string) => {
+    /* Подтверждение деньгами не отменяется.
+
+       Кнопка стояла в ряду обычных и срабатывала сразу: одно случайное
+       касание на телефоне — и платёж считается принятым, а вернуть статус
+       через интерфейс нельзя. Для необратимого шага вопрос стоит той
+       секунды, которую отнимает. */
+    const agreed = window.confirm("Подтвердить получение платежа? Отменить подтверждение через сайт будет нельзя.")
+    if (!agreed) return
+
     try {
       await fetchJson(`/api/delivery-orders/${order.id}/payments/${paymentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "CONFIRMED" }) })
       notifications.show({ title: "Квитанция подтверждена", message: "Статус платежа обновлён в сделке.", color: "teal" })

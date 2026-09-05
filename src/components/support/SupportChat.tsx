@@ -275,8 +275,8 @@ export default function SupportChat() {
                   </Button>
                   <Collapse in={contactOpen}>
                     <Stack gap="xs" mb="sm">
-                      <Group gap="xs" grow><TextInput size="xs" label="Имя" value={name} onChange={(event) => setName(event.currentTarget.value)} /><TextInput size="xs" label="Телефон" value={phone} onChange={(event) => setPhone(event.currentTarget.value)} /></Group>
-                      <TextInput size="xs" label="Email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
+                      <Group gap="xs" grow><TextInput size="xs" label="Имя" autoComplete="name" value={name} onChange={(event) => setName(event.currentTarget.value)} /><TextInput size="xs" label="Телефон" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.currentTarget.value)} /></Group>
+                      <TextInput size="xs" label="Email" type="email" inputMode="email" autoComplete="email" spellCheck={false} value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
                       <Button size="xs" variant="light" loading={sending} onClick={() => void saveContact()}>Сохранить контакт</Button>
                     </Stack>
                   </Collapse>

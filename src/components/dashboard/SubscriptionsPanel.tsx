@@ -80,6 +80,12 @@ export default function SubscriptionsPanel() {
   const isEmpty = !isLoading && fuelList.length === 0 && searchList.length === 0
 
   async function removeFuel(id: string) {
+    /* Красный значок без подписи стоит в ряду карточек, и промах пальцем
+       на телефоне отписывал молча. Заново подписка заводится только через
+       карточку заправки на карте — то есть человек сначала не понимает,
+       почему перестали приходить сообщения, а потом ищет, где включить. */
+    if (!window.confirm("Отписаться от уведомлений? Включить снова можно будет через карточку заправки на карте.")) return
+
     setRemovingId(id)
     try {
       await fetchJson(`/api/fuel-subscriptions?id=${encodeURIComponent(id)}`, { method: "DELETE" })
@@ -90,6 +96,11 @@ export default function SubscriptionsPanel() {
   }
 
   async function removeSearch(id: string) {
+    /* Сохранённый поиск — это набор фильтров, собранный руками: марка,
+       год, цена, пробег, город. Восстановить его после удаления нельзя,
+       и одно касание не должно стоить этой работы. */
+    if (!window.confirm("Удалить сохранённый поиск? Его фильтры не восстановить.")) return
+
     setRemovingId(id)
     try {
       await fetchJson(`/api/saved-searches?id=${encodeURIComponent(id)}`, { method: "DELETE" })

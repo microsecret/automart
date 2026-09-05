@@ -548,10 +548,10 @@ function AuctionDetail() {
                   <Stack gap="sm">
                     <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="var(--market-ink)">Заказать авто</Text></Group>
                     <Text size="xs" c="gray.5">{publicIdentity.title} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
-                    <TextInput label="Ваше имя" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="sm" />
-                    <TextInput label="Телефон" required placeholder="+7 (___) ___-__-__" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} size="sm" />
-                    <TextInput label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} size="sm" />
-                    <TextInput label="Город доставки" required placeholder="Москва" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} size="sm" />
+                    <TextInput label="Ваше имя" autoComplete="name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="sm" />
+                    <TextInput label="Телефон" type="tel" inputMode="tel" autoComplete="tel" required placeholder="+7 (___) ___-__-__" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} size="sm" />
+                    <TextInput label="Email" type="email" inputMode="email" autoComplete="email" spellCheck={false} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} size="sm" />
+                    <TextInput label="Город доставки" autoComplete="address-level2" required placeholder="Москва" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} size="sm" />
                     <Textarea label="Комментарий" placeholder="Вопросы, пожелания..." value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} size="sm" minRows={2} />
                     <Button type="submit" color="orange" size="md" loading={submitting} leftSection={<IconCheck size={18} />} fullWidth>Отправить заявку</Button>
                     <Group gap={6}><IconShieldCheck size={14} color="#059669" /><Text size="xs" c="gray.5">Контакты видит только администратор. Партнёру — имя и город.</Text></Group>

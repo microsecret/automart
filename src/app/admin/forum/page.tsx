@@ -52,6 +52,11 @@ export default function AdminForumPage() {
   )
 
   const act = async (reportId: string, action: string, successText: string) => {
+    /* Удаление сообщения спрашивают отдельно: остальные действия по
+       жалобе обратимы, а это — нет. Кнопки стоят в ряд, и промах стоил бы
+       чужого текста без возможности вернуть. */
+    if (action === "delete-post" && !window.confirm("Удалить сообщение? Восстановить его будет нельзя.")) return
+
     setBusy(reportId)
     try {
       await fetchJson("/api/admin/forum-reports", {

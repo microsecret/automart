@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
                 <Alert icon={<IconMail size={16} />} color="indigo" variant="light" radius="md">
                   <Text size="xs" c="gray.7">Мы отправим одноразовую ссылку для установки нового пароля.</Text>
                 </Alert>
-                <TextInput label="Email" placeholder="your@email.ru" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} size="md" leftSection={<IconMail size={18} />} />
+                <TextInput label="Email" type="email" inputMode="email" autoComplete="email" spellCheck={false} placeholder="your@email.ru" required value={email} onChange={(e) => setEmail(e.target.value)} size="md" leftSection={<IconMail size={18} />} />
                 <Button type="submit" size="md" color="indigo" loading={loading} fullWidth>Отправить ссылку</Button>
                 <Text size="xs" c="gray.5" ta="center">
                   Вспомнили пароль? <Link href="/auth/signin" style={{ color: "#1c4291" }}>Войти</Link>

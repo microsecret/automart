@@ -261,7 +261,7 @@ function CompareContent() {
                   <VehicleFallback type={v.vehicleType} compact />
                   {image && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={image} alt={`${v.make} ${v.model}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={image} alt={`${v.make} ${v.model}`} width={320} height={240} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   )}
                 </Box>
                 <Group gap={4} mb={4} wrap="nowrap" align="flex-start" justify="space-between">

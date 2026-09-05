@@ -113,7 +113,7 @@ export default function SmartmatchingPage() {
                             <VehicleFallback type={v?.vehicleType || "CAR"} bodyType={v?.bodyType} compact />
                             {image && (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={image} alt={l.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={(event) => { event.currentTarget.style.display = "none" }} />
+                              <img src={image} alt={l.title} width={320} height={240} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={(event) => { event.currentTarget.hidden = true }} />
                             )}
                           </Box>
                           {i === 0 && <Badge pos="absolute" top={-8} left={-8} color="violet" variant="filled" size="xs" circle><IconSparkles size={10} /></Badge>}

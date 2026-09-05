@@ -278,6 +278,17 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
             <Popover.Target>
               <Box component="form" onSubmit={handleSearch} className="market-header-search" style={{ maxWidth: 420 }}>
                 <TextInput
+                  /* Имя, тип и орфография.
+
+                     Поле объявлялось скринридеру безымянным: в соседних
+                     полях каталога и форума имя есть, здесь пропустили.
+                     Без type="search" браузер не даёт крестик очистки, а
+                     без spellCheck подчёркивает «Хендай» и «Стерлитамак»
+                     как ошибки — в поле, где иначе и не пишут. */
+                  aria-label="Поиск по объявлениям"
+                  type="search"
+                  autoComplete="off"
+                  spellCheck={false}
                   placeholder="Марка, модель или город"
                   leftSection={/* «gray.4» здесь не работало: значок — обычный
                     SVG, синтаксис ступеней Mantine он не понимает и отбрасывает
@@ -304,7 +315,10 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                 />
               </Box>
             </Popover.Target>
-            <Popover.Dropdown className="market-header-search__suggestions" p={6}>
+            {/* Подсказки объявляются вслух: они появляются и меняются сами,
+                и без aria-live человек, читающий экран, не узнаёт, что под
+                полем что-то возникло. */}
+            <Popover.Dropdown className="market-header-search__suggestions" p={6} aria-live="polite">
               {isSuggestionsLoading && suggestions.length === 0 ? (
                 <Group gap="xs" px="sm" py={8}><Loader size="xs" color="indigo" /><Text size="xs" c="dimmed">Ищем объявления…</Text></Group>
               ) : searchError ? (
