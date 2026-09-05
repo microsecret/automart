@@ -147,7 +147,16 @@ export const FOOTER_NAVIGATION: readonly NavigationSection[] = [
     ],
   },
   { title: "Сервисы", items: SERVICE_NAVIGATION },
-  { title: "Помощь", items: HELP_NAVIGATION },
+  {
+    /* Отзывы стояли в карте сайта, но ни в одном меню: страница была
+       написана, наполнялась отзывами и оставалась недостижимой для людей.
+       Ради доверия к площадке её и делали — а увидеть не мог никто. */
+    title: "Помощь",
+    items: [
+      ...HELP_NAVIGATION,
+      { id: "reviews", label: "Отзывы о площадке", href: "/reviews" },
+    ],
+  },
 ]
 
 export const TELEGRAM_MENU_NAVIGATION = [
@@ -168,6 +177,10 @@ export const TELEGRAM_MENU_NAVIGATION = [
     title: "Личный кабинет",
     items: [
       { id: "favorites", label: "Избранное", href: "/favorites?from=telegram" },
+      /* Уведомления: в приложении их не было, хотя счётчик непрочитанных
+         там уже считается. Человек не узнавал, что объявление прошло
+         проверку или что ответили по заявке. */
+      { id: "notifications", label: "Уведомления", href: "/notifications?from=telegram" },
       { id: "messages", label: "Сообщения", href: "/telegram?tab=chats" },
       { id: "listings", label: "Мои объявления", href: "/dashboard?from=telegram" },
       { id: "garage", label: "Личный гараж", href: "/dashboard?tab=garage&from=telegram" },
