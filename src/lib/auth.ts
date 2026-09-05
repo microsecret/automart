@@ -106,10 +106,38 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = normalizeUserRole(user.role)
         token.accountStatus = user.accountStatus
+        token.checkedAt = Date.now()
       }
       if (trigger === "update" && typeof session?.name === "string") {
         token.name = session.name
       }
+
+      /* Роль и состояние в токене освежаются раз в пять минут.
+
+         Заслон в middleware читает их прямо из токена — базы у него нет.
+         Записанные один раз при входе, они жили до месяца: снятый с
+         должности администратор всё это время проходил в админку, а
+         заблокированный человек — в личный кабинет. Данных это не
+         открывало (каждый маршрут перечитывает роль из базы), но заслон
+         был показным.
+
+         Пять минут — не каждый запрос: обращение к базе на каждой
+         странице стоило бы дороже, чем даёт. Ровно тот же порядок, что у
+         снятия доступа в других системах. */
+      const CHECK_INTERVAL_MS = 5 * 60_000
+      const checkedAt = typeof token.checkedAt === "number" ? token.checkedAt : 0
+      if (token.id && Date.now() - checkedAt > CHECK_INTERVAL_MS) {
+        const fresh = await prisma.user.findUnique({
+          where: { id: String(token.id) },
+          select: { role: true, accountStatus: true },
+        })
+        if (fresh) {
+          token.role = normalizeUserRole(fresh.role)
+          token.accountStatus = fresh.accountStatus
+        }
+        token.checkedAt = Date.now()
+      }
+
       return token
     },
   },

@@ -87,6 +87,15 @@ function createDailyListingViews(events: Array<{ createdAt: Date; ipHash: string
   return points.map(({ viewerKeys, ...point }) => ({ ...point, uniqueViewers: viewerKeys.size }))
 }
 
+/* Пределы выборок для сводки админки.
+
+   Числа выбраны с запасом к нынешним объёмам: объявлений около десяти
+   тысяч, событий просмотра за две недели — десятки тысяч. Упор в потолок
+   пишется в журнал: это знак, что сводку пора считать запросом к базе, а
+   не перебором в памяти. */
+const LISTING_STATS_LIMIT = 50_000
+const VIEW_EVENT_STATS_LIMIT = 200_000
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -257,12 +266,28 @@ export async function GET() {
         take: 100,
         select: { source: true, status: true, startedAt: true },
       }),
+      /* Потолок с запасом, а не выборка целиком.
+
+         Сводка считается по всем объявлениям сразу, и запрос шёл без
+         ограничения: открытие админки читало таблицу целиком вместе с
+         подсчётом избранного по каждой строке. Пока объявлений десять
+         тысяч, это терпимо; на сотне тысяч страница перестанет
+         открываться, и заметят это в худший момент.
+
+         Свежие первыми: если потолок однажды упрётся, из сводки выпадут
+         самые старые, а не случайные. */
       prisma.listing.findMany({
         where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: LISTING_STATS_LIMIT,
         select: { id: true, title: true, status: true, views: true, vehicleId: true, partId: true, createdAt: true, publishedAt: true, _count: { select: { favoritedBy: true } } },
       }),
+      /* События просмотра — самая быстрорастущая таблица площадки.
+         Соседний запрос по визитам потолок уже ставит, здесь его не было. */
       prisma.listingViewEvent.findMany({
         where: { createdAt: { gte: previousListingPerformanceStart } },
+        orderBy: { createdAt: "desc" },
+        take: VIEW_EVENT_STATS_LIMIT,
         select: { listingId: true, ipHash: true, createdAt: true },
       }),
       prisma.message.count({ where: { listingId: { not: null }, createdAt: { gte: dailyTrafficStart } } }),
@@ -323,6 +348,17 @@ export async function GET() {
        потеря данных. */
     const listingViewsWeek = listingViewEventsWindow.filter((event) => event.createdAt >= dailyTrafficStart)
     const previousListingViewsWeek = listingViewEventsWindow.filter((event) => event.createdAt >= previousListingPerformanceStart && event.createdAt < dailyTrafficStart)
+    /* Упор в потолок — знак, что сводку пора считать запросом к базе.
+
+       Без записи в журнал числа просто начали бы врать: сводка считалась
+       бы по части объявлений и выглядела бы правдоподобно. */
+    if (listingInventory.length >= LISTING_STATS_LIMIT) {
+      console.warn(`Admin stats: выборка объявлений упёрлась в потолок ${LISTING_STATS_LIMIT} — числа сводки занижены`)
+    }
+    if (listingViewEventsWindow.length >= VIEW_EVENT_STATS_LIMIT) {
+      console.warn(`Admin stats: выборка просмотров упёрлась в потолок ${VIEW_EVENT_STATS_LIMIT} — числа сводки занижены`)
+    }
+
     const listingStatusCounts = listingInventory.reduce<Record<string, number>>((counts, listing) => {
       counts[listing.status] = (counts[listing.status] || 0) + 1
       return counts

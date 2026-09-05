@@ -44,6 +44,19 @@ export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
   if (!token) return signInRedirect(request)
 
+  /* Заблокированный человек дальше не идёт.
+
+     Проверялась только роль, и человек с состоянием BANNED спокойно
+     открывал личный кабинет: его останавливали лишь запросы к данным,
+     каждый со своей ошибкой. Выглядело это как поломка сайта, а не как
+     блокировка, — и в поддержку шли жалобы вместо понимания.
+
+     Состояние в токене освежается раз в пять минут (см. jwt-колбэк в
+     lib/auth.ts), поэтому блокировка срабатывает почти сразу. */
+  if (token.accountStatus === "BANNED" || token.accountStatus === "RESTRICTED") {
+    return withSecurityHeaders(NextResponse.redirect(new URL("/?access=blocked", publicOrigin(request))), request)
+  }
+
   if (request.nextUrl.pathname.startsWith(ADMIN_PREFIX) && !can(token.role, "admin:access")) {
     return withSecurityHeaders(NextResponse.redirect(new URL("/?access=denied", publicOrigin(request))), request)
   }
