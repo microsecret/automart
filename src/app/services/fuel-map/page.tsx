@@ -5,7 +5,7 @@ import useSWR from "swr"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { ActionIcon, Badge, Box, Button, Group, Image, Loader, Paper, Select, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core"
-import { IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconUsers, IconX } from "@tabler/icons-react"
+import { IconAdjustmentsHorizontal, IconGasStation, IconMapPin, IconMinus, IconPlus, IconRefresh, IconSearch, IconUsers, IconX } from "@tabler/icons-react"
 import { CITY_COORDINATES, FUEL_MAP_CITIES, findNearestCity } from "@/lib/cities"
 import { fetchJson } from "@/lib/api-client"
 import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPriceReporter"
@@ -1784,6 +1784,16 @@ function FuelMapContent() {
      открыться само, а не прятаться кнопкой в карточке заправки. */
   const wantsSubscribe = searchParams.get("subscribe") === "1"
 
+  /* Панель фильтров на телефоне свёрнута до одной строки.
+
+     Развёрнутая занимала три строки — почти половину экрана на iPhone SE
+     и заметную часть даже на Pro Max. Карту, ради которой человек и
+     пришёл, было видно узкой полосой между панелью сверху и карточкой
+     снизу. Поиск по адресу и выбор сети нужны меньшинству и убраны под
+     кнопку; марки топлива и город остаются на виду — по ним фильтруют
+     чаще всего. */
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
   /* Марка из ссылки в коде подписки: адрес несёт подпись фильтра
      («АИ‑95»), а подписка хранит код («AI95»). Без перевода окно
      открывалось без выделенной марки — человек нажал «сообщать мне о
@@ -2163,7 +2173,7 @@ function FuelMapContent() {
             собственный рост. Поверх — не отнимает ничего: карта под ней
             продолжается, а сама панель занимает верхний край, куда
             всё равно не смотрят. */}
-        <Box className="fuel-map-topbar">
+        <Box className="fuel-map-topbar" data-open={filtersOpen || undefined}>
           <Box component="form" onSubmit={handlePlaceSearch} className="fuel-map-topbar__search">
             <TextInput
               aria-label="Введите населённый пункт или трассу"
@@ -2246,10 +2256,25 @@ function FuelMapContent() {
               onClick={handleRefresh}
               loading={isLoading || isValidating}
               aria-label="Обновить данные о заправках"
+              className="fuel-map-topbar__refresh"
             >
               <IconRefresh size={16} />
             </ActionIcon>
           </Tooltip>
+
+          {/* Кнопка видна только на телефоне: на широком экране всё и так
+              помещается в строку, и прятать там нечего. */}
+          <ActionIcon
+            variant="default"
+            size="lg"
+            radius="xl"
+            className="fuel-map-topbar__toggle"
+            onClick={() => { tapFeedback("light"); setFiltersOpen((open) => !open) }}
+            aria-label={filtersOpen ? "Свернуть фильтры" : "Поиск по адресу и сети"}
+            aria-expanded={filtersOpen}
+          >
+            {filtersOpen ? <IconX size={16} /> : <IconAdjustmentsHorizontal size={16} />}
+          </ActionIcon>
         </Box>
 
         {/* Почему карта опустела.

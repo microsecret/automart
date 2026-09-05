@@ -34,17 +34,16 @@ const display = Manrope({
   display: "swap",
 })
 
-/* Второе объявление того же шрифта — ради второй CSS-переменной.
-   `--font-sans-next` читают сотни правил в стилях, и переименование
-   означало бы правку каждого ради строки, которую видит только
-   разработчик. Файл шрифта при этом один: next/font узнаёт ту же
-   гарнитуру с тем же набором начертаний и не грузит её дважды. */
-const body = Manrope({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-sans-next",
-  display: "swap",
-})
+/* Вторая переменная задаётся в стилях, а не вторым вызовом шрифта.
+
+   Раньше здесь было второе объявление того же Manrope ради имени
+   `--font-sans-next`, которое читают сотни правил. Но на одинаковые
+   вызовы next/font выдаёт один и тот же класс, и в разметке он оказывался
+   дважды: `class="__variable_de5441 __variable_de5441"`. Сервер и браузер
+   собирали эту строку по-разному, React ругался ошибкой 418 на каждой
+   загрузке главной, и настоящие расхождения в этом шуме было не найти.
+
+   Псевдоним в globals.css делает то же самое и ничего не дублирует. */
 
 const verification: NonNullable<Metadata["verification"]> = {}
 const otherVerification: Record<string, string> = {}
@@ -95,7 +94,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
+    <html lang="ru" className={display.variable} suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultColorScheme="light" />
         {/* Auction cards use Encar's public CDN directly, so start DNS/TLS

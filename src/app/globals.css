@@ -33,6 +33,14 @@
 :root {
   /* Шрифты грузит next/font и кладёт в --font-*-next; системные остаются
      запасным вариантом на случай, если загрузка не прошла. */
+  /* Псевдоним для второго имени той же гарнитуры.
+
+     Раньше `--font-sans-next` приходила вторым объявлением Manrope в
+     layout. На одинаковые вызовы next/font выдаёт один и тот же класс, и
+     в разметке он оказывался дважды — сервер и браузер собирали строку
+     по-разному, а React ругался ошибкой 418 при каждой загрузке главной.
+     Псевдоним делает то же и ничего не дублирует. */
+  --font-sans-next: var(--font-display-next);
   --font-sans: var(--font-sans-next), "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-display: var(--font-display-next), "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
   --market-ink: #0d1b32;
@@ -5129,8 +5137,53 @@ html:has(.fuel-map-canvas) {
     flex: 1 1 40%;
   }
 
+  /* Свёрнутая панель — одна строка вместо трёх.
+
+     Развёрнутая занимала около трёхсот точек: на экране в 667 это почти
+     половина, и карту было видно узкой полосой между панелью сверху и
+     карточкой заправки снизу. Ради карты человек и открывает страницу.
+
+     На виду остаётся то, чем пользуются: марки топлива и город. Поиск по
+     адресу и выбор сети нужны меньшинству — они за кнопкой. */
+  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__search,
+  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__network,
+  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__refresh {
+    display: none;
+  }
+
+  .fuel-map-topbar:not([data-open]) {
+    flex-wrap: nowrap;
+  }
+
+  /* Лента марок забирает остаток строки и прокручивается вбок: частые 92,
+     95 и ДТ видны сразу, редкие уезжают за край. */
+  .fuel-map-topbar:not([data-open]) .fuel-map-fuel-chips {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__city {
+    flex: 0 0 108px;
+    width: 108px;
+  }
+
   .fuel-map-toast {
     bottom: 72px;
+  }
+}
+
+/* Кнопка раскрытия — только на телефоне.
+
+   На широком экране панель помещается в строку целиком, и прятать там
+   нечего: кнопка была бы лишним действием без причины. */
+.fuel-map-topbar__toggle {
+  display: none;
+}
+
+@media (max-width: 62em) {
+  .fuel-map-topbar__toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
   }
 }
 
@@ -9902,7 +9955,38 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   }
 
   .fuel-gate__card {
-    padding: 16px;
+    padding: 14px;
+    /* Не больше половины экрана.
+
+       Было до 78% высоты: вместе с панелью фильтров сверху карта
+       оставалась узкой полосой, а на iPhone SE её не было видно вовсе.
+       Ради карты человек и открывает страницу — приглашение войти не
+       должно её закрывать. */
+    max-height: 52vh;
+  }
+
+  /* Список выгод — только на просторных экранах.
+
+     Три пункта по две строки съедали ту самую половину. Заголовок с
+     числом заправок и кнопка входа говорят достаточно: человек видит,
+     что сервис живой, и как войти. */
+  .fuel-gate__card .fuel-gate__benefits {
+    display: none;
+  }
+}
+
+/* На совсем маленьких экранах карточка ужимается ещё раз.
+
+   Триста семьдесят пять точек в ширину и шестьсот шестьдесят семь в
+   высоту — iPhone SE, и он до сих пор в ходу. Там дорога каждая строка. */
+@media (max-height: 700px) {
+  .fuel-gate__card {
+    max-height: 46vh;
+    padding: 12px;
+  }
+
+  .fuel-gate__note {
+    display: none;
   }
 }
 
