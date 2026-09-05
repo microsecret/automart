@@ -25,6 +25,13 @@ const TELEGRAM_SESSION_KEY = "lewheel:from-telegram"
  * браузере, человек должен увидеть обычный сайт, а не обрезанную
  * версию без меню.
  *
+ * Рядом с памятью сеанса — cookie того же срока жизни. В приватном окне
+ * и при запрете на хранилище sessionStorage бросает исключение, и признак
+ * доживал ровно до следующего перехода: на третьем шаге человек получал
+ * десктопную шапку с подвалом во весь экран телефона и без кнопки
+ * возврата. Cookie в тех же условиях обычно работает, а сеансовая (без
+ * даты окончания) исчезает при закрытии браузера — то же поведение.
+ *
  * Проверка идёт после первой отрисовки: на сервере ни адреса, ни
  * платформы нет, и решение, принятое там, разошлось бы с клиентским.
  */
@@ -38,12 +45,12 @@ export function useTelegramSession() {
       if (window.Telegram?.WebApp?.initData) return true
       if (new URLSearchParams(window.location.search).get("from") === "telegram") return true
       try {
-        return window.sessionStorage.getItem(TELEGRAM_SESSION_KEY) === "1"
+        if (window.sessionStorage.getItem(TELEGRAM_SESSION_KEY) === "1") return true
       } catch {
-        /* Приватное окно или запрет на хранилище: остаётся то, что
-           видно в адресе. */
-        return false
+        /* Приватное окно или запрет на хранилище — пробуем cookie. */
       }
+
+      return document.cookie.split("; ").some((entry) => entry === `${TELEGRAM_SESSION_KEY}=1`)
     }
 
     const inside = detect()
@@ -53,9 +60,13 @@ export function useTelegramSession() {
     try {
       window.sessionStorage.setItem(TELEGRAM_SESSION_KEY, "1")
     } catch {
-      /* Хранилище закрыто — признак доживёт до следующего перехода в
-         адресе, дальше страница вернётся к обычному виду. */
+      /* Хранилище закрыто — остаётся cookie ниже. */
     }
+
+    /* SameSite=Lax: переходы внутри сайта cookie сохраняют, а чужая
+       страница её не увидит. Без срока жизни — исчезает с закрытием
+       браузера, как и память сеанса. */
+    document.cookie = `${TELEGRAM_SESSION_KEY}=1; path=/; SameSite=Lax`
   }, [])
 
   return fromTelegram
