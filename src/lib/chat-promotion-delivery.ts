@@ -183,6 +183,20 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
   let pinned = 0
   let skipped = 0
 
+  /* Свежие посты читаются разом, а не по паре «заказ × чат».
+
+     Запрос стоял внутри вложенного цикла: пять заказов на шестнадцать
+     чатов давали восемьдесят обращений к базе ради одного и того же
+     сведения. Здесь один запрос и набор в памяти. */
+  const recentPosts = await prisma.chatPromotionPost.findMany({
+    where: {
+      orderId: { in: orders.map((order) => order.id) },
+      publishedAt: { gt: new Date(now.getTime() - REPOST_INTERVAL_MS) },
+    },
+    select: { orderId: true, chatId: true },
+  })
+  const postedRecently = new Set(recentPosts.map((post) => `${post.orderId}:${post.chatId}`))
+
   for (const order of orders) {
     /* Снятое или скрытое объявление в чатах не публикуется: продавец мог
        уже продать машину, и звонки по чужому объявлению никому не нужны. */
@@ -212,11 +226,7 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
 
     for (const chat of chats) {
       /* Тот же заказ в тот же чат — не чаще раза в двое суток. */
-      const recent = await prisma.chatPromotionPost.findFirst({
-        where: { orderId: order.id, chatId: chat.id, publishedAt: { gt: new Date(now.getTime() - REPOST_INTERVAL_MS) } },
-        select: { id: true },
-      })
-      if (recent) continue
+      if (postedRecently.has(`${order.id}:${chat.id}`)) continue
 
       const result = await publishToChat(chat.id, post)
       if (!result.messageId) {

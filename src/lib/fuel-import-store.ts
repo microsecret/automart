@@ -345,13 +345,34 @@ export async function recomputeImportedCities(): Promise<{ scanned: number; upda
     select: { id: true, city: true, latitude: true, longitude: true },
   })
 
-  let updated = 0
+  /* Заправки группируются по новому городу и обновляются пачками.
+
+     Раньше на каждую точку уходил свой запрос: четырнадцать тысяч
+     обращений к базе подряд, а вызывают пересчёт руками из админки —
+     человек ждёт ответа. Городов же полсотни, и обновлений выходит
+     столько же вместо тысяч. */
+  const byCity = new Map<string, string[]>()
   for (const station of stations) {
     const nearest = findNearestCity({ latitude: station.latitude, longitude: station.longitude })
     const city = nearest.name && nearest.km <= CITY_MATCH_MAX_KM ? nearest.name : station.city
     if (!city || city === station.city) continue
-    await prisma.fuelStationImport.update({ where: { id: station.id }, data: { city } })
-    updated += 1
+    const ids = byCity.get(city)
+    if (ids) ids.push(station.id)
+    else byCity.set(city, [station.id])
+  }
+
+  let updated = 0
+  for (const [city, ids] of byCity) {
+    /* Пачками по пятьсот: SQLite ограничивает число значений в одном
+       условии, и список из тысяч идентификаторов запрос не примет. */
+    for (let offset = 0; offset < ids.length; offset += 500) {
+      const chunk = ids.slice(offset, offset + 500)
+      const result = await prisma.fuelStationImport.updateMany({
+        where: { id: { in: chunk } },
+        data: { city },
+      })
+      updated += result.count
+    }
   }
 
   return { scanned: stations.length, updated }
