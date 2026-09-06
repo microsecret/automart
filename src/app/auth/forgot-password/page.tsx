@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Container size={420} py={48}>
+    <Container className="auth-experience" size={420} py={48}>
       <Stack gap="lg" align="center">
         <Box style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, #1c4291, #1c4291)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <IconCar size={28} color="white" />
