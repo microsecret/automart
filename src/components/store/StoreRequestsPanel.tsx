@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { notifications } from "@mantine/notifications"
 import useSWR from "swr"
 import {
   Alert, Badge, Box, Button, Card, Group, Loader, Modal, NumberInput, Select, Stack, Text, Textarea, ThemeIcon,
@@ -68,6 +69,37 @@ export default function StoreRequestsPanel({ storeId }: { storeId: string }) {
   const [form, setForm] = useState({ price: "" as string | number, condition: "", leadTimeDays: "" as string | number, comment: "" })
   const [sending, setSending] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  /* Какое предложение сейчас снимается: кнопка показывает загрузку только
+     на своей строке, а не на всех сразу. */
+  const [withdrawing, setWithdrawing] = useState<string | null>(null)
+
+  const withdrawOffer = async (requestId: string) => {
+    if (!window.confirm("Снять своё предложение? Покупатель перестанет его видеть.")) return
+
+    setWithdrawing(requestId)
+    try {
+      const response = await fetch(`/api/parts/requests/${requestId}/offers`, { method: "DELETE" })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        notifications.show({
+          title: "Не удалось снять предложение",
+          message: typeof payload?.error === "string" ? payload.error : "Повторите попытку.",
+          color: "red",
+        })
+        return
+      }
+      await mutate()
+      notifications.show({ title: "Предложение снято", message: "Покупатель его больше не видит.", color: "teal" })
+    } catch (error) {
+      notifications.show({
+        title: "Связь прервалась",
+        message: error instanceof Error ? error.message : "Проверьте, снялось ли предложение, прежде чем повторять.",
+        color: "red",
+      })
+    } finally {
+      setWithdrawing(null)
+    }
+  }
 
   const requests = data?.requests || []
 
@@ -161,24 +193,44 @@ export default function StoreRequestsPanel({ storeId }: { storeId: string }) {
                   </Box>
                   {/* Свой прежний ответ подставляется в форму: магазин
                       правит цену, а не вспоминает её заново. */}
-                  <Button
-                    size="compact-sm"
-                    color={mine ? "gray" : "indigo"}
-                    variant={mine ? "light" : "filled"}
-                    leftSection={<IconSend size={14} />}
-                    onClick={() => {
-                      setTarget(request)
-                      setFormError(null)
-                      setForm({
-                        price: mine?.price ?? "",
-                        condition: "",
-                        leadTimeDays: mine?.leadTimeDays ?? "",
-                        comment: "",
-                      })
-                    }}
-                  >
-                    {mine ? "Изменить" : "Ответить"}
-                  </Button>
+                  <Group gap={6} wrap="nowrap">
+                    <Button
+                      size="compact-sm"
+                      color={mine ? "gray" : "indigo"}
+                      variant={mine ? "light" : "filled"}
+                      leftSection={<IconSend size={14} />}
+                      onClick={() => {
+                        setTarget(request)
+                        setFormError(null)
+                        setForm({
+                          price: mine?.price ?? "",
+                          condition: "",
+                          leadTimeDays: mine?.leadTimeDays ?? "",
+                          comment: "",
+                        })
+                      }}
+                    >
+                      {mine ? "Изменить" : "Ответить"}
+                    </Button>
+
+                    {/* Отзыв предложения.
+
+                        Изменить цену было можно, а убрать ответ совсем —
+                        нечем. Цена набирается с телефона между делом, и
+                        лишний ноль превращает деталь за три тысячи в деталь
+                        за тридцать: покупатель звонил именно по ней. */}
+                    {mine && (
+                      <Button
+                        size="compact-sm"
+                        variant="subtle"
+                        color="red"
+                        loading={withdrawing === request.id}
+                        onClick={() => void withdrawOffer(request.id)}
+                      >
+                        Снять
+                      </Button>
+                    )}
+                  </Group>
                 </Group>
               </Card>
             )

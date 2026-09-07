@@ -108,3 +108,43 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   return NextResponse.json({ offer }, { status: existing ? 200 : 201 })
 }
+
+/**
+ * Отзыв предложения.
+ *
+ * Ошибиться легко: цена набирается с телефона между делом, и лишний ноль
+ * превращает деталь за три тысячи в деталь за тридцать. Изменить
+ * предложение было можно — повторный ответ обновляет прежнее, — а убрать
+ * совсем нечем: покупатель продолжал видеть цену, по которой магазин
+ * продавать не готов, и звонил именно по ней.
+ */
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return NextResponse.json({ error: "Требуется вход" }, { status: 401 })
+
+  const url = new URL(request.url)
+  const requestedStoreId = url.searchParams.get("storeId")
+
+  /* Своё предложение и только своё: магазин определяется по владельцу,
+     а не берётся из запроса — иначе чужой ответ можно было бы снять,
+     подставив идентификатор. */
+  const store = await prisma.partStore.findFirst({
+    where: {
+      ownerId: session.user.id,
+      ...(requestedStoreId ? { id: requestedStoreId } : {}),
+    },
+    select: { id: true },
+  })
+  if (!store) return NextResponse.json({ error: "Магазин не найден" }, { status: 403 })
+
+  const removed = await prisma.partRequestOffer.deleteMany({
+    where: { requestId: id, storeId: store.id, sellerId: session.user.id },
+  })
+
+  if (removed.count === 0) {
+    return NextResponse.json({ error: "Предложение уже снято или его не было" }, { status: 404 })
+  }
+
+  return NextResponse.json({ removed: removed.count })
+}

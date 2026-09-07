@@ -124,6 +124,8 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const [phone, setPhone] = useState<string | null>(null)
   const [contactRevealing, setContactRevealing] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
+  /* Начало свайпа по фотографии: сравнивается с точкой отрыва пальца. */
+  const touchStartX = useRef<number | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
   const [bidAmount, setBidAmount] = useState("")
   const [bidLoading, setBidLoading] = useState(false)
@@ -234,7 +236,28 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             <Card p={0} radius="md" withBorder style={{ overflow: "hidden" }}>
               {hasImages ? (
                 <>
-                  <Box className="part-detail__gallery" style={{ position: "relative", aspectRatio: "4/3", maxHeight: 520 }}>
+                  <Box
+                    className="part-detail__gallery"
+                    style={{ position: "relative", aspectRatio: "4/3", maxHeight: 520 }}
+                    /* Свайп по фотографии.
+
+                       Листать можно было только стрелками в тридцать четыре
+                       точки — а покупатель б/у детали смотрит именно фото:
+                       по ним он судит о состоянии, ради этого и открыл
+                       страницу. В карточке машины свайп есть давно, здесь
+                       его не было. */
+                    onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null }}
+                    onTouchEnd={(event) => {
+                      /* Порог в сорок точек отличает свайп от касания:
+                         меньший сдвиг — это тап, и листать по нему нельзя. */
+                      const startX = touchStartX.current
+                      touchStartX.current = null
+                      if (startX === null || images.length < 2) return
+                      const delta = (event.changedTouches[0]?.clientX ?? startX) - startX
+                      if (Math.abs(delta) < 40) return
+                      moveImage(delta < 0 ? 1 : -1)
+                    }}
+                  >
                     {imageFailed ? (
                       <Stack align="center" justify="center" gap="xs" h="100%" c="dimmed">
                         <ThemeIcon variant="light" color="gray" size={52} radius="xl"><IconPhoto size={25} /></ThemeIcon>
