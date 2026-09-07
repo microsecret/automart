@@ -1,6 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { useEffect, useMemo, useState } from "react"
+import { CREATE_VEHICLE_HREF } from "@/lib/navigation-registry"
 import useSWR from "swr"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
@@ -955,8 +956,13 @@ export default function HomePage(p: HomePageProps = {}) {
           description={activeFilterCount > 0
             ? "Попробуйте изменить условия поиска или сбросить часть фильтров."
             : "Раздел наполняется продавцами. Разместите объявление, и оно появится в каталоге после проверки модератором."}
-          actionLabel={activeFilterCount > 0 ? "Сбросить фильтры" : undefined}
+          /* Пустой раздел зовёт разместить объявление — и даёт кнопку.
+             Текст говорил «Разместите объявление», а действия рядом не было:
+             человек читал призыв и оставался на пустой странице. При
+             включённых фильтрах смысл другой — там нужен сброс. */
+          actionLabel={activeFilterCount > 0 ? "Сбросить фильтры" : "Разместить объявление"}
           onAction={activeFilterCount > 0 ? resetFilters : undefined}
+          actionHref={activeFilterCount > 0 ? undefined : CREATE_VEHICLE_HREF}
         />
       ) : view === "grid" ? (
         <SimpleGrid cols={{base:1,sm:2,lg:3}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
