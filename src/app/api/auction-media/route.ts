@@ -191,7 +191,18 @@ export async function GET(request: NextRequest) {
   }
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+
+  /* Отсчёт идёт от последней полученной порции, а не от начала запроса.
+
+     Общий таймер рвал передачу на середине: пока файл отдаётся браузеру
+     порциями, двадцать секунд от начала истекали, соединение обрывалось —
+     и картинка не доходила, хотя источник исправно её отдавал. Теперь срок
+     ловит именно зависание: пока данные идут, отсчёт начинается заново. */
+  let timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+  const renewTimeout = () => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+  }
   try {
     const upstream = await fetch(permitted.url, {
       cache: "no-store",
@@ -274,6 +285,7 @@ export async function GET(request: NextRequest) {
             streamController.close()
             return
           }
+          renewTimeout()
           size += value.byteLength
           if (size > MAX_IMAGE_BYTES) {
             clearTimeout(timeout)
