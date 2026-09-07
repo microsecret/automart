@@ -43,7 +43,7 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
             действительно есть, но он на странице лота, а в списке стоит
             цена лота: разница доходит до миллиона рублей. Человек читал
             заголовок как «эти цифры итоговые» и обманывался. */}
-        <p className={styles.lead}>
+        <p className={`${styles.lead} auctions-intro__lead`}>
           Корея, Китай, Япония, Европа и США — в одном каталоге. В списке — цена лота
           с комиссией в рублях; доставка, пошлина и утильсбор считаются в карточке
           машины по курсу ЦБ.
@@ -52,7 +52,7 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
             в сплошной строке глазу не за что зацепиться, и человек не видит,
             чем этот каталог отличается от чужой витрины. Разметка остаётся
             серверной — она нужна поисковику вместе с заголовком. */}
-        <ul className={styles.facts}>
+        <ul className={`${styles.facts} auctions-intro__facts`}>
           <li data-tone="price">
             <span className={styles.icon} aria-hidden="true">
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">

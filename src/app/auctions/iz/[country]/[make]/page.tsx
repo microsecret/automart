@@ -55,7 +55,9 @@ export default async function AuctionLandingPage({ params }: PageProps) {
     .slice(0, 8)
 
   return (
-    <Container size="lg" py={{ base: "md", md: "xl" }}>
+    /* Признак посадочной страницы: по нему общая шапка раздела на телефоне
+       ужимается — иначе два заголовка подряд съедают экран до машин. */
+    <Container size="lg" py={{ base: "md", md: "xl" }} data-auction-landing>
       <Stack gap="lg">
         <Box>
           <Group gap={6} mb="xs">

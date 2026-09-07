@@ -105,6 +105,14 @@
     scroll-snap-type: inline mandatory;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    /* Растворение у правого края.
+
+       Лента прокручивается вбок, но карточка, обрезанная посередине,
+       читается как поломка вёрстки, а не как приглашение прокрутить.
+       Растворение говорит, что там продолжение, — так же ведут себя ленты
+       марок топлива на карте и типов техники в приложении. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
   }
 
   .facts::-webkit-scrollbar {
