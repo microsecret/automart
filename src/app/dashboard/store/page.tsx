@@ -100,6 +100,8 @@ export default function StoreWorkspacePage() {
   const [isSaving, setIsSaving] = useState(false)
 
   const [file, setFile] = useState<File | null>(null)
+  /* Прайс, вставленный текстом: на телефоне файла взять неоткуда. */
+  const [pastedRows, setPastedRows] = useState("")
   const [preview, setPreview] = useState<ImportPreview | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const [importState, setImportState] = useState<"idle" | "parsing" | "applying">("idle")
@@ -181,14 +183,28 @@ export default function StoreWorkspacePage() {
     }
   }
 
+  /* Прайс можно не только приложить файлом, но и вставить текстом.
+
+     На телефоне файла с прайсом взять неоткуда: iOS отдаёт .csv не всякому
+     приложению, а таблица чаще всего приходит продавцу в переписке или
+     лежит в заметках. Раздел на телефоне был мёртв, и наполнить каталог
+     новый продавец мог только по одной позиции.
+
+     Текст собирается в файл прямо здесь — сервер разбирает его тем же
+     кодом, что и приложенный: два разных разбора однажды разошлись бы. */
   const parseFile = async () => {
-    if (!store || !file) return
+    if (!store) return
+
+    const source = file || (pastedRows.trim()
+      ? new File([pastedRows], "price.csv", { type: "text/csv" })
+      : null)
+    if (!source) return
     setImportState("parsing")
     setImportError(null)
     setPreview(null)
     try {
       const body = new FormData()
-      body.append("file", file)
+      body.append("file", source)
       const response = await fetch(`/api/stores/${store.id}/import`, { method: "POST", body })
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
@@ -572,10 +588,38 @@ export default function StoreWorkspacePage() {
                   clearable
                   style={{ flex: 1, minWidth: 240 }}
                 />
-                <Button color="indigo" leftSection={<IconUpload size={16} />} onClick={parseFile} disabled={!file} loading={importState === "parsing"}>
-                  Проверить файл
+                <Button
+                  color="indigo"
+                  leftSection={<IconUpload size={16} />}
+                  onClick={parseFile}
+                  disabled={!file && !pastedRows.trim()}
+                  loading={importState === "parsing"}
+                >
+                  Проверить
                 </Button>
               </Group>
+
+              {/* Прайс текстом — для телефона.
+
+                  Файла с прайсом на телефоне взять неоткуда: iOS отдаёт .csv
+                  не всякому приложению, а таблица чаще приходит продавцу в
+                  переписке или лежит в заметках. Раздел на телефоне был
+                  мёртв, и наполнить каталог новый продавец мог только по
+                  одной позиции. */}
+              <Divider my="sm" label="или вставьте строки прайса" labelPosition="center" />
+
+              <Textarea
+                label="Строки прайса"
+                description="По строке на позицию, значения через точку с запятой или табуляцию. Первая строка — названия столбцов."
+                placeholder={`Артикул;Название;Цена;Кол-во
+1234567;Фильтр масляный;450;12`}
+                value={pastedRows}
+                onChange={(event) => setPastedRows(event.currentTarget.value)}
+                autosize
+                minRows={3}
+                maxRows={10}
+                spellCheck={false}
+              />
 
               <Text size="xs" c="dimmed" mt={8}>
                 Файл сначала разбирается и показывается здесь. В каталог ничего не попадёт, пока вы не подтвердите публикацию.
