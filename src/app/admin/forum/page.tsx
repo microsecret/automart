@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { Pagination,
@@ -57,6 +57,20 @@ export default function AdminForumPage() {
     `/api/admin/forum-reports?resolved=${tab === "resolved"}&page=${page}`,
     fetchJson,
   )
+
+  /* Сколько открытых жалоб приходится на каждого автора: по этому числу
+     показывается разбор пачкой. Спам-волна от одного человека даёт десятки
+     жалоб с одним решением. */
+  const openByAuthor = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const report of data?.reports || []) {
+      if (report.resolvedAt) continue
+      const authorId = report.post?.author?.id
+      if (!authorId) continue
+      counts.set(authorId, (counts.get(authorId) || 0) + 1)
+    }
+    return counts
+  }, [data?.reports])
 
   const act = async (reportId: string, action: string, successText: string) => {
     /* Удаление сообщения спрашивают отдельно: остальные действия по
@@ -204,6 +218,7 @@ export default function AdminForumPage() {
                 )}
 
                 {!report.resolvedAt ? (
+                  <>
                   <Button
                     size="compact-sm"
                     variant="subtle"
@@ -213,6 +228,26 @@ export default function AdminForumPage() {
                   >
                     Всё в порядке
                   </Button>
+
+                  {/* Разбор всей пачки: появляется, только когда жалоб на
+                      этого автора больше одной. Иначе кнопка предлагала бы
+                      «закрыть все» там, где она всего одна. */}
+                  {(openByAuthor.get(report.post?.author?.id || "") || 0) > 1 && (
+                    <Button
+                      size="compact-sm"
+                      variant="subtle"
+                      color="indigo"
+                      loading={busy === report.id}
+                      onClick={() => {
+                        const count = openByAuthor.get(report.post?.author?.id || "") || 0
+                        if (!window.confirm(`Разобрать все жалобы на этого автора (${count})? Решение применится ко всей пачке.`)) return
+                        void act(report.id, "resolve-author", "Жалобы на автора разобраны")
+                      }}
+                    >
+                      Разобрать все ({openByAuthor.get(report.post?.author?.id || "") || 0})
+                    </Button>
+                  )}
+                  </>
                 ) : (
                   <Button
                     size="compact-sm"

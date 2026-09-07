@@ -84,6 +84,26 @@ export async function PATCH(request: NextRequest) {
     })
     if (!report) return NextResponse.json({ error: "Жалоба не найдена" }, { status: 404 })
 
+    /* Разбор всех жалоб на одного автора разом.
+
+       Спам-волна от одного человека даёт десятки жалоб, и решение по ним
+       одно: модератор нажимал пятьдесят раз подряд, каждый раз ожидая
+       перезагрузки списка. Здесь то же решение применяется ко всей пачке.
+
+       Автор берётся из самой жалобы, а не из запроса: иначе можно было бы
+       закрыть чужие жалобы, подставив идентификатор. */
+    if (action === "resolve-author") {
+      const authorId = report.post?.authorId
+      if (!authorId) return NextResponse.json({ error: "Автор сообщения не найден" }, { status: 404 })
+
+      const resolved = await prisma.forumReport.updateMany({
+        where: { resolvedAt: null, post: { authorId } },
+        data: { resolvedAt: new Date() },
+      })
+
+      return NextResponse.json({ ok: true, resolved: resolved.count })
+    }
+
     if (action === "resolve") {
       await prisma.forumReport.update({ where: { id: report.id }, data: { resolvedAt: new Date() } })
       return NextResponse.json({ ok: true })
