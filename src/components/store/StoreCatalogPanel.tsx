@@ -163,7 +163,10 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
       ) : isLoading ? (
         <Group justify="center" py="lg"><Loader size="sm" /></Group>
       ) : parts.length ? (
-        <Box style={{ overflowX: "auto" }}>
+        /* Прокрутка с наименьшей шириной: без неё шесть колонок сжимались
+           вместо прокрутки, и цена — то, ради чего каталог и открывают —
+           превращалась в нечитаемую щель. */
+        <Table.ScrollContainer minWidth={760}>
           <Table striped highlightOnHover withTableBorder>
             <Table.Thead>
               <Table.Tr>
@@ -193,12 +196,19 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
                   </Table.Td>
                   <Table.Td ta="right"><Text size="sm" fw={700}>{part.price.toLocaleString("ru-RU")} ₽</Text></Table.Td>
                   <Table.Td>
-                    <Group gap={4} wrap="nowrap" justify="flex-end">
-                      <ActionIcon variant="light" color="indigo" size="sm" aria-label={`Изменить ${part.name}`} onClick={() => openEditor(part)}>
-                        <IconEdit size={14} />
+                    {/* Кнопки крупнее и с просветом.
+
+                        Были по двадцать шесть точек вплотную друг к другу —
+                        вдвое меньше нормы для пальца, и промах по «Изменить»
+                        попадал в «Удалить». Продавец правит каталог с
+                        телефона между делом, и цена ошибки здесь — потерянная
+                        позиция. */}
+                    <Group gap={8} wrap="nowrap" justify="flex-end">
+                      <ActionIcon variant="light" color="indigo" size="lg" aria-label={`Изменить ${part.name}`} onClick={() => openEditor(part)}>
+                        <IconEdit size={16} />
                       </ActionIcon>
-                      <ActionIcon variant="light" color="red" size="sm" aria-label={`Удалить ${part.name}`} onClick={() => { setDeleteTarget(part); setActionError(null) }}>
-                        <IconTrash size={14} />
+                      <ActionIcon variant="light" color="red" size="lg" aria-label={`Удалить ${part.name}`} onClick={() => { setDeleteTarget(part); setActionError(null) }}>
+                        <IconTrash size={16} />
                       </ActionIcon>
                     </Group>
                   </Table.Td>
@@ -209,10 +219,12 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
           {parts.length === 50 && (
             <Text size="xs" c="dimmed" mt={6}>Показаны последние 50 позиций. Уточните поиск, чтобы найти нужную.</Text>
           )}
-        </Box>
+        </Table.ScrollContainer>
       ) : (
         <Text size="sm" c="dimmed">
-          {appliedQuery ? "По запросу ничего не найдено." : "Каталог пуст. Загрузите прайс-лист ниже."}
+          {/* Текст гнал к прайс-листу, хотя кнопка «Добавить позицию» стоит
+              рядом, а на телефоне файла с прайсом взять неоткуда. */}
+          {appliedQuery ? "По запросу ничего не найдено." : "Каталог пуст. Добавьте первую позицию кнопкой выше — или загрузите прайс-листом, если позиций много."}
         </Text>
       )}
 

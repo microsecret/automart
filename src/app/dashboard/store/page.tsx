@@ -1,6 +1,7 @@
 "use client"
 
 import { PART_TYPES } from "@/lib/constants"
+import { notifications } from "@mantine/notifications"
 import { useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
@@ -8,7 +9,7 @@ import {
   Alert, Badge, Box, Button, Card, Container, Divider, FileInput, Group, Loader, Modal,
   Select, SimpleGrid, Stack, Table, Text, TextInput, Textarea, ThemeIcon, Title,
 } from "@mantine/core"
-import {
+import { IconPencil,
   IconAlertTriangle, IconBuildingStore, IconCheck, IconExternalLink, IconFileSpreadsheet,
   IconHeartHandshake, IconPlus, IconSend, IconShieldCheck, IconTrash, IconUpload,
 } from "@tabler/icons-react"
@@ -124,18 +125,32 @@ export default function StoreWorkspacePage() {
     setIsSaving(true)
     setSaveError(null)
     try {
-      const response = await fetch("/api/stores", {
-        method: "POST",
+      /* Одна форма на создание и на правку.
+
+         Карточку магазина нельзя было изменить после создания: опечатался
+         в ИНН или сменил телефон — исправить негде, хотя сервер это давно
+         умеет. А именно по этим реквизитам магазин проходит проверку, и
+         именно этот телефон видит покупатель на витрине. */
+      const editing = Boolean(store)
+      const response = await fetch(editing ? `/api/stores/${store!.id}` : "/api/stores", {
+        method: editing ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(form),
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
-        setSaveError(typeof payload?.error === "string" ? payload.error : "Не удалось создать магазин")
+        setSaveError(typeof payload?.error === "string" ? payload.error : editing ? "Не удалось сохранить изменения" : "Не удалось создать магазин")
         return
       }
       setIsCreating(false)
       await mutate()
+      if (editing) {
+        notifications.show({
+          title: "Изменения сохранены",
+          message: "Если менялись реквизиты, магазин снова пройдёт проверку.",
+          color: "teal",
+        })
+      }
     } catch (requestError) {
       setSaveError(getApiClientErrorMessage(requestError, "Нет связи с сервером. Попробуйте ещё раз."))
     } finally {
@@ -298,7 +313,10 @@ export default function StoreWorkspacePage() {
               )}
             </Stack>
           </Card>
-        ) : !store ? (
+        /* Форма показывается, когда магазина ещё нет или когда его правят:
+           одна и та же — иначе поля пришлось бы описывать дважды и
+           однажды поправить только в одном месте. */
+        ) : (!store || isCreating) ? (
           <Card withBorder radius="md" p="lg">
             {!isCreating ? (
               <Stack align="center" gap="sm" py="lg" ta="center" maw={520} mx="auto">
@@ -315,7 +333,7 @@ export default function StoreWorkspacePage() {
             ) : (
               <Stack gap="lg">
                 <Box>
-                  <Text fw={800} size="lg">Новый магазин</Text>
+                  <Text fw={800} size="lg">{store ? "Карточка магазина" : "Новый магазин"}</Text>
                   <Text size="sm" c="dimmed">Заполните обязательное поле — остальное можно добавить позже.</Text>
                 </Box>
 
@@ -381,9 +399,22 @@ export default function StoreWorkspacePage() {
                 {saveError && <Alert color="red" variant="light" icon={<IconAlertTriangle size={16} />}>{saveError}</Alert>}
 
                 <Group gap="xs" justify="flex-end">
-                  <Button variant="subtle" color="gray" onClick={() => { setIsCreating(false); setSaveError(null) }}>Отмена</Button>
+                  <Button
+                    variant="subtle"
+                    color="gray"
+                    /* Отмена стирала девять заполненных полей одним нажатием
+                       и без вопроса — включая ИНН и юрлицо, которые набирают
+                       с документа. */
+                    onClick={() => {
+                      if (form.name.trim() && !window.confirm("Закрыть форму? Несохранённое будет потеряно.")) return
+                      setIsCreating(false)
+                      setSaveError(null)
+                    }}
+                  >
+                    Отмена
+                  </Button>
                   <Button color="indigo" size="md" onClick={createStore} loading={isSaving} leftSection={<IconCheck size={16} />}>
-                    Создать магазин
+                    {store ? "Сохранить изменения" : "Создать магазин"}
                   </Button>
                 </Group>
               </Stack>
@@ -442,10 +473,48 @@ export default function StoreWorkspacePage() {
                       </Button>
                     )}
                     {store.status === "ACTIVE" && (
-                      <Button variant="light" color="gray" size="sm" onClick={() => changeStatus("DRAFT")} loading={statusState === "saving"}>
+                      <Button
+                        variant="light"
+                        color="gray"
+                        size="sm"
+                        /* Снятие с публикации спрашивается: витрина уходит из
+                           поиска и перестаёт принимать заказы. Это разрушительнее,
+                           чем удаление одной позиции, которое подтверждения как
+                           раз требует. */
+                        onClick={() => {
+                          if (window.confirm("Снять магазин с публикации? Витрина исчезнет из поиска и перестанет принимать заказы.")) changeStatus("DRAFT")
+                        }}
+                        loading={statusState === "saving"}
+                      >
                         Снять с публикации
                       </Button>
                     )}
+
+                    {/* Правка карточки: реквизиты, телефон, условия поставки.
+                        Раньше форма существовала только при создании, и
+                        опечатку в ИНН исправить было негде. */}
+                    <Button
+                      variant="subtle"
+                      color="indigo"
+                      size="sm"
+                      leftSection={<IconPencil size={15} />}
+                      onClick={() => {
+                        setForm({
+                          name: store.name,
+                          city: store.city || "",
+                          description: store.description || "",
+                          legalName: store.legalName || "",
+                          inn: store.inn || "",
+                          contactPhone: store.contactPhone || "",
+                          contactEmail: store.contactEmail || "",
+                          defaultOriginCountry: store.defaultOriginCountry || "",
+                        })
+                        setSaveError(null)
+                        setIsCreating(true)
+                      }}
+                    >
+                      Изменить карточку
+                    </Button>
                     {store._count.parts === 0 && store.status === "DRAFT" && (
                       <Text size="xs" c="dimmed">Сначала загрузите хотя бы одну позицию.</Text>
                     )}
@@ -472,7 +541,14 @@ export default function StoreWorkspacePage() {
                 человека, и черновику его показывать нельзя. */}
             {store.status === "ACTIVE" && <StoreRequestsPanel storeId={store.id} />}
 
-            {store._count.parts > 0 && <StoreCatalogPanel storeId={store.id} />}
+            {/* Панель каталога видна всегда, даже у пустого магазина.
+
+                Она пряталась при нуле позиций — а в ней единственная кнопка
+                «Добавить позицию». Получался тупик первого дня: позиций нет
+                → панели нет → добавить вручную нечем → остаётся прайс-лист,
+                которого на телефоне неоткуда взять → кнопка «Отправить на
+                проверку» заблокирована. */}
+            <StoreCatalogPanel storeId={store.id} />
 
             <Card withBorder radius="md" p="md">
               <Group gap="sm" mb="sm">
