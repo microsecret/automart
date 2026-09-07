@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import Link from "next/link"
+import { auctionSourceLabel } from "@/lib/auction-source-labels"
 import { useState } from "react"
 import useSWR from "swr"
 import {
@@ -378,7 +379,7 @@ function InquiryRow({ inquiry, onOpen }: { inquiry: AuctionInquiry; onOpen: () =
           )}
         </Box>
         <Stack gap={6} style={{ flex: "1 1 380px", minWidth: 0 }}>
-          <Group gap="xs" wrap="wrap"><Text fw={800} lineClamp={1}>{vehicleTitle(inquiry)}</Text><Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>{listing && <Badge size="xs" variant="light" color="orange">{listing.source}</Badge>}</Group>
+          <Group gap="xs" wrap="wrap"><Text fw={800} lineClamp={1}>{vehicleTitle(inquiry)}</Text><Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>{listing && <Badge size="xs" variant="light" color="orange">{auctionSourceLabel(listing.source)}</Badge>}</Group>
           <Group gap="md" wrap="wrap"><Group gap={5}><IconUserCheck size={14} color="#64748b" /><Text size="sm" fw={700}>{inquiry.name}</Text></Group>{inquiry.city && <Group gap={5}><IconMapPin size={14} color="#64748b" /><Text size="sm" c="dimmed">{inquiry.city}</Text></Group>}<Badge size="xs" variant="light" color={inquiry.requesterId ? "teal" : "orange"}>{inquiry.requesterId ? "Аккаунт подтверждён" : "Гостевая заявка"}</Badge></Group>
           {inquiry.comment && <Text size="sm" c="dimmed" lineClamp={2} style={{ overflowWrap: "anywhere" }}>{inquiry.comment}</Text>}
           <Group gap="xs" wrap="wrap">{(() => {

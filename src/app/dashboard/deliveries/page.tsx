@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, Suspense, useEffect, useState } from "react"
+import { auctionSourceLabel } from "@/lib/auction-source-labels"
 import useSWR from "swr"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -259,7 +260,7 @@ function DeliveriesWorkspace() {
                       <Paper key={offer.id} withBorder radius="md" p="md">
                         <Stack gap="sm">
                           <Group justify="space-between" gap="xs" wrap="nowrap">
-                            <Badge color="orange" variant="light">{listing.source}</Badge>
+                            <Badge color="orange" variant="light">{auctionSourceLabel(listing.source)}</Badge>
                             <Text size="xs" c="dimmed">до {new Date(offer.expiresAt).toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</Text>
                           </Group>
                           <Box>

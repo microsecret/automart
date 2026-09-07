@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"
 
 
 import useSWR from "swr"
+import { auctionSourceLabel } from "@/lib/auction-source-labels"
 import { ActionIcon, Alert, Box, Stack, Text, Center, Loader, SimpleGrid, Card, Paper, ThemeIcon, Title, Group, Badge, Progress, Button, Tooltip, Timeline, Tabs, SegmentedControl } from "@mantine/core"
 import type { MantineColor } from "@mantine/core"
 import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld, IconRefresh, IconDatabase, IconGavel, IconAlertTriangle, IconBuildingWarehouse, IconCheck, IconClock, IconListCheck, IconShieldCheck, IconCreditCard, IconCoins, IconReceipt, IconLockCheck, IconHeadset, IconBrandTelegram } from "@tabler/icons-react"
@@ -679,7 +680,7 @@ export default function AdminDashboard() {
                 const meta = SYNC_STATUS_META[run.status] || { label: run.status, color: "gray" as MantineColor, icon: <IconClock size={15} /> }
                 const processed = run.imported || run.created || run.updated
                 return (
-                  <Timeline.Item key={run.id} bullet={<ThemeIcon size={24} radius="xl" color={meta.color} variant="light">{meta.icon}</ThemeIcon>} title={`${run.source} · ${run.syncKind}`}>
+                  <Timeline.Item key={run.id} bullet={<ThemeIcon size={24} radius="xl" color={meta.color} variant="light">{meta.icon}</ThemeIcon>} title={`${auctionSourceLabel(run.source)} · ${run.syncKind}`}>
                     <Group gap="xs" mt={3} wrap="wrap"><Badge size="xs" variant="light" color={meta.color}>{meta.label}</Badge><Text size="xs" c="dimmed">{new Date(run.startedAt).toLocaleString("ru-RU")}</Text><Text size="xs" c="dimmed">Обработано: {processed}</Text>{run.failed > 0 && <Badge size="xs" color="red" variant="light">Ошибок: {run.failed}</Badge>}{run.excludedByPolicy + run.skippedByPolicy > 0 && <Badge size="xs" color="gray" variant="light">Исключено правилом: {run.excludedByPolicy + run.skippedByPolicy}</Badge>}</Group>
                     {run.error && <Text size="xs" c="red.7" mt={3} lineClamp={2}>{run.error}</Text>}
                   </Timeline.Item>

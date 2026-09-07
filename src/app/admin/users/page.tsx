@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import { useDeferredValue, useState } from "react"
+import { LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import useSWR from "swr"
 import { notifications } from "@mantine/notifications"
 import { Alert, Avatar, Badge, Box, Button, Divider, Group, Modal, Pagination, Paper, ScrollArea, Select, SimpleGrid, Skeleton, Stack, Table, Text, Textarea, TextInput, ThemeIcon, Title, Tooltip } from "@mantine/core"
@@ -269,7 +270,7 @@ export default function AdminUsersPage() {
           <Group justify="flex-end"><Button variant="light" color="indigo" leftSection={<IconSend size={16} />} loading={isNotificationSending} disabled={notificationTitle.trim().length < 3 || notificationContent.trim().length < 3} onClick={() => void sendNotification()}>Отправить уведомление</Button></Group>
 
           <Divider label="Последние объявления" labelPosition="left" />
-          {isDetailLoading ? <Skeleton h={90} radius="md" /> : userDetail?.listings.length ? <Stack gap="xs">{userDetail.listings.map((listing) => <Paper key={listing.id} withBorder radius="md" p="sm"><Group justify="space-between" wrap="nowrap"><Box miw={0}><Text size="sm" fw={700} lineClamp={1}>{listing.title}</Text><Text size="xs" c="dimmed">{listing.price.toLocaleString("ru-RU")} ₽ · {listing.status}</Text></Box><Button component="a" href="/moderation" target="_blank" variant="light" color="indigo" size="compact-xs" leftSection={<IconExternalLink size={13} />}>Статус и снятие</Button></Group></Paper>)}</Stack> : <Text size="sm" c="dimmed">У пользователя пока нет объявлений.</Text>}
+          {isDetailLoading ? <Skeleton h={90} radius="md" /> : userDetail?.listings.length ? <Stack gap="xs">{userDetail.listings.map((listing) => <Paper key={listing.id} withBorder radius="md" p="sm"><Group justify="space-between" wrap="nowrap"><Box miw={0}><Text size="sm" fw={700} lineClamp={1}>{listing.title}</Text><Text size="xs" c="dimmed">{listing.price.toLocaleString("ru-RU")} ₽ · {LISTING_STATUS_META[listing.status as keyof typeof LISTING_STATUS_META]?.label || listing.status}</Text></Box><Button component="a" href="/moderation" target="_blank" variant="light" color="indigo" size="compact-xs" leftSection={<IconExternalLink size={13} />}>Статус и снятие</Button></Group></Paper>)}</Stack> : <Text size="sm" c="dimmed">У пользователя пока нет объявлений.</Text>}
           {roleError && <Alert color="red" title="Роль не изменена">{roleError}</Alert>}
         </Stack>
       </Modal>
