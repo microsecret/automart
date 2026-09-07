@@ -89,6 +89,17 @@ export const DASHBOARD_NAVIGATION = [
   { id: "favorites", label: "Избранное", href: "/favorites" },
   { id: "garage", label: "Личный гараж", shortLabel: "Гараж", href: "/dashboard?tab=garage" },
   { id: "part-requests", label: "Заявки на запчасти", shortLabel: "Запчасти", href: "/dashboard/part-requests" },
+  /* Магазин запчастей и заказы — в полосе разделов кабинета.
+
+     Их там не было: попасть в собственный магазин можно было только через
+     боковое меню, а оно на телефоне свёрнуто в бургер. Продавец запчастей,
+     работающий с телефона, до своей витрины практически не добирался — и
+     это, по замечанию владельца, главная беда кабинета предпринимателя.
+
+     Полоса разделов видна на всех страницах кабинета и прокручивается
+     вбок, так что двум новым пунктам есть место. */
+  { id: "store", label: "Магазин запчастей", shortLabel: "Магазин", href: "/dashboard/store" },
+  { id: "orders", label: "Мои заказы", shortLabel: "Заказы", href: "/dashboard/orders" },
   { id: "deliveries", label: "Мои доставки", shortLabel: "Доставки", href: "/dashboard/deliveries" },
   { id: "documents", label: "Мои документы", shortLabel: "Документы", href: "/dashboard/documents" },
   { id: "messages", label: "Сообщения", href: "/messages" },

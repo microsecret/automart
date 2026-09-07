@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { notifications } from "@mantine/notifications"
 import useSWR from "swr"
 import { Alert, Badge, Box, Button, Card, Group, Loader, Modal, SegmentedControl, Stack, Text, Textarea, ThemeIcon } from "@mantine/core"
 import { IconBuildingStore, IconCheck, IconExternalLink, IconX } from "@tabler/icons-react"
@@ -44,6 +45,14 @@ export default function PartStoreModerationPanel() {
   const [actionError, setActionError] = useState<string | null>(null)
 
   const changeStatus = async (store: AdminStore, nextStatus: string, statusReason?: string) => {
+    /* Публикация спрашивается наравне с приостановкой.
+
+       Приостановка требовала модалку с обязательной причиной, а публикация
+       срабатывала мгновенно: витрина становилась видна всем посетителям
+       по одному нажатию. Разрешительное действие было защищено слабее
+       запретительного, хотя ошибка в нём заметнее. */
+    if (nextStatus === "ACTIVE" && !window.confirm(`Опубликовать магазин «${store.name}»? Витрина станет видна всем посетителям.`)) return
+
     setIsSaving(true)
     setActionError(null)
     try {
@@ -60,6 +69,17 @@ export default function PartStoreModerationPanel() {
       setSuspendTarget(null)
       setReason("")
       await mutate()
+      /* Подтверждение вслух: окно просто закрывалось, и модератор не знал,
+         прошло ли действие — публикация витрины видна всем посетителям. */
+      notifications.show({
+        title: nextStatus === "ACTIVE" ? "Магазин опубликован" : "Магазин приостановлен",
+        message: store.name,
+        color: nextStatus === "ACTIVE" ? "teal" : "orange",
+      })
+    } catch (error) {
+      /* Обрыв связи гасился молча: промис отклонялся, сообщение об ошибке
+         не выставлялось, и кнопка выглядела так, будто её не нажимали. */
+      setActionError(error instanceof Error ? error.message : "Связь прервалась. Обновите список и проверьте статус магазина.")
     } finally {
       setIsSaving(false)
     }

@@ -1,7 +1,7 @@
 "use client"
 
 import { Box, Burger, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
-import { IconSearch, IconBell, IconMessageCircle2,
+import { IconBuildingStore, IconPackage, IconSearch, IconBell, IconMessageCircle2,
   IconMessages, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake, IconTruckDelivery } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
@@ -72,6 +72,8 @@ const HEADER_ACCOUNT_ICONS = {
   favorites: <IconHeart size={15} />,
   garage: <IconCar size={15} />,
   "part-requests": <IconSearch size={15} />,
+  store: <IconBuildingStore size={15} />,
+  orders: <IconPackage size={15} />,
   deliveries: <IconTruckDelivery size={15} />,
   documents: <IconFileDescription size={15} />,
   messages: <IconMessageCircle2 size={15} />,

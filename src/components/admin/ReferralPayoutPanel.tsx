@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { notifications } from "@mantine/notifications"
 import useSWR from "swr"
 import {
   Alert, Badge, Box, Button, Card, Group, Loader, Modal, NumberInput, Stack, Table, Text, TextInput, ThemeIcon,
@@ -44,6 +45,19 @@ export default function ReferralPayoutPanel() {
 
   const save = async () => {
     if (!target) return
+
+    /* Денежная проводка не отменяется.
+
+       Сумма подставлена целиком, поле «основание» необязательно, а
+       записанную выплату из интерфейса удалить нельзя: баланс партнёра
+       уменьшается навсегда, и повторное нажатие создаёт вторую проводку.
+       Вопрос со суммой стоит той секунды, которую отнимает. */
+    const amount = Number(form.amount)
+    const confirmed = window.confirm(
+      `Записать выплату ${amount.toLocaleString("ru-RU")} ₽ партнёру ${target.name}? Отменить запись через сайт будет нельзя.`,
+    )
+    if (!confirmed) return
+
     setIsSaving(true)
     setActionError(null)
     try {
@@ -65,6 +79,17 @@ export default function ReferralPayoutPanel() {
       }
       setTarget(null)
       await mutate()
+      /* Подтверждение вслух: окно просто закрывалось, и модератор не
+         понимал, прошло ли, — а потому нажимал второй раз. */
+      notifications.show({
+        title: "Выплата записана",
+        message: `${amount.toLocaleString("ru-RU")} ₽ — ${target.name}. Баланс партнёра обновлён.`,
+        color: "teal",
+      })
+    } catch (error) {
+      /* Обрыв связи гасился молча: промис отклонялся, сообщение об ошибке
+         не выставлялось, и кнопка выглядела так, будто ничего не нажимали. */
+      setActionError(error instanceof Error ? error.message : "Связь прервалась. Проверьте, не записалась ли выплата, прежде чем повторять.")
     } finally {
       setIsSaving(false)
     }

@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic"
 import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import {
+import { Pagination,
   Anchor, Badge, Box, Button, Card, Center, Container, Group, Loader,
   SegmentedControl, Stack, Text, Title,
 } from "@mantine/core"
@@ -45,9 +45,16 @@ type Response = { reports: Report[]; total: number; pending: number; pages: numb
 export default function AdminForumPage() {
   const [tab, setTab] = useState("pending")
   const [busy, setBusy] = useState<string | null>(null)
+  /* Страница жалоб.
+
+     Сервер отдаёт по тридцать жалоб за раз и сообщает общее число страниц,
+     но интерфейс это число не читал: модератор видел только первую
+     страницу, а остальная очередь была физически недостижима. При
+     спам-волне это значит, что часть жалоб никто никогда не разберёт. */
+  const [page, setPage] = useState(1)
 
   const { data, error, isLoading, mutate } = useSWR<Response>(
-    `/api/admin/forum-reports?resolved=${tab === "resolved"}`,
+    `/api/admin/forum-reports?resolved=${tab === "resolved"}&page=${page}`,
     fetchJson,
   )
 
@@ -99,7 +106,9 @@ export default function AdminForumPage() {
 
         <SegmentedControl
           value={tab}
-          onChange={setTab}
+          /* Со сменой вкладки возвращаемся к началу: иначе на «Разобранных»
+             открывалась пятая страница, которой там может не быть. */
+          onChange={(value) => { setTab(value); setPage(1) }}
           data={[
             { value: "pending", label: "Без разбора" },
             { value: "resolved", label: "Разобранные" },
@@ -219,6 +228,20 @@ export default function AdminForumPage() {
             </Stack>
           </Card>
         ))}
+
+        {/* Навигация появляется, только когда страниц больше одной: при
+            десятке жалоб пустая полоса внизу читалась бы как недогруженное. */}
+        {(data?.pages ?? 1) > 1 && (
+          <Group justify="center" mt="sm">
+            <Pagination
+              total={data?.pages ?? 1}
+              value={page}
+              onChange={setPage}
+              size="sm"
+              radius="md"
+            />
+          </Group>
+        )}
       </Stack>
     </Container>
   )

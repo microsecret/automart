@@ -4,7 +4,7 @@ import { Suspense } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Box, Group, Text, ThemeIcon, UnstyledButton } from "@mantine/core"
-import {
+import { IconBuildingStore, IconPackage,
   IconBell,
   IconCar,
   IconCreditCard,
@@ -24,6 +24,8 @@ const ITEM_ICONS = {
   favorites: IconHeart,
   garage: IconCar,
   "part-requests": IconSearch,
+  store: IconBuildingStore,
+  orders: IconPackage,
   deliveries: IconTruckDelivery,
   documents: IconFileDescription,
   messages: IconMessageCircle2,
