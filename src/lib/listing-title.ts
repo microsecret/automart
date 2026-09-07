@@ -63,9 +63,22 @@ export function tidyListingTitle(raw: string): string {
      слова, ниже. Поднимать каждое слово нельзя — «ПРОДАМ СРОЧНО ТОРГ»
      превратилось бы в «Продам Срочно Торг», что по-русски читается как
      ошибка, а не как исправление. */
-  const words = collapsed.split(" ").map((word) => (
-    isShouting(word) ? word.toLocaleLowerCase("ru-RU") : word
-  ))
+  const words = collapsed.split(" ").map((word) => {
+    if (isShouting(word)) return word.toLocaleLowerCase("ru-RU")
+
+    /* Сокращение, написанное строчными, поднимаем до принятого вида.
+
+       «ваз 2105» — это марка, а не слово: подняв только первую букву, мы
+       получали «Ваз», что выглядит так же неопрятно, как исходное. Список
+       тот же, что защищает сокращения от гашения крика, — одно правило на
+       оба случая. */
+    const letters = word.replace(/[^A-Za-zА-Яа-яЁё]/g, "")
+    if (letters.length >= 3 && KEEP_UPPERCASE.has(letters.toUpperCase())) {
+      return word.replace(letters, letters.toUpperCase())
+    }
+
+    return word
+  })
 
   const joined = words.join(" ")
   return capitalize(joined)
