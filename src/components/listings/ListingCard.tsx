@@ -410,22 +410,28 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               ячейка. */}
           {isVehicle && (
             <Box mb={6} className="listing-card__facts">
-              <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{listing.vehicle!.year}</Text>
-              {numericUsage != null && <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{distanceValue}</Text>}
+              {/* Год и пробег весомее прочего.
+
+                  Раньше пять фактов шли одним весом и цветом: год, пробег,
+                  коробка, топливо, объём читались как равные. Но покупку
+                  решают первые два, а остальное уточняет — и глаз, не находя
+                  главного, скользил по всей строке подряд. */}
+              <Text className="listing-card__fact" data-key fz={13} fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text>
+              {numericUsage != null && <Text className="listing-card__fact" data-key fz={13} fw={700} c="var(--market-ink)">{distanceValue}</Text>}
               {/* Чип несёт значение без подписи: «2008», «85 000 км»,
                   «автомат» — что это, понятно по самому значению, а слова
                   «Год» и «КПП» занимали половину узкого чипа.
 
                   OTHER не показываем: «КПП Другая» означает, что данных нет,
                   и в списке это не факт. В самом объявлении оно остаётся. */}
-              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>}
-              {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>}
+              {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && <Text className="listing-card__fact" fz={12} fw={500} c="var(--market-muted)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text>}
+              {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && <Text className="listing-card__fact" fz={12} fw={500} c="var(--market-muted)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text>}
               {/* Объём двигателя — первое, о чём спрашивают про машину, но
                   в каталоге он не показывался вовсе. У электротяги объёма
                   нет: там о моторе говорит мощность. */}
               {listing.vehicle!.fuelType === "ELECTRIC"
-                ? listing.vehicle!.power ? <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{listing.vehicle!.power} л.с.</Text> : null
-                : listing.vehicle!.engineVolume ? <Text className="listing-card__fact" fz={13} fw={600} c="var(--market-ink)">{listing.vehicle!.engineVolume} л</Text> : null}
+                ? listing.vehicle!.power ? <Text className="listing-card__fact" fz={12} fw={500} c="var(--market-muted)">{listing.vehicle!.power} л.с.</Text> : null
+                : listing.vehicle!.engineVolume ? <Text className="listing-card__fact" fz={12} fw={500} c="var(--market-muted)">{listing.vehicle!.engineVolume} л</Text> : null}
             </Box>
           )}
 

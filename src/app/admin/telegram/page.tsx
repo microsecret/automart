@@ -245,7 +245,7 @@ export default function TelegramBroadcastPage() {
                   <IconPhotoCheck size={20} />
                 </ThemeIcon>
                 <Box>
-                  <Text fw={750}>Выгодный лот в Telegram-чаты</Text>
+                  <Text fw={700}>Выгодный лот в Telegram-чаты</Text>
                   <Text size="sm" c="dimmed">
                     Сначала проверьте фото, цену, повреждения и полноту данных. Отправка начнётся только после подтверждения.
                   </Text>
@@ -308,7 +308,7 @@ export default function TelegramBroadcastPage() {
                     </Group>
                     <Box>
                       <Group justify="space-between" gap="xs" mb={5}>
-                        <Text size="sm" fw={650}>Полнота карточки</Text>
+                        <Text size="sm" fw={600}>Полнота карточки</Text>
                         <Text size="sm" c="dimmed">
                           {highlightPreview.readiness.filled}/{highlightPreview.readiness.total}
                         </Text>

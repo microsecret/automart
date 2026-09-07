@@ -129,7 +129,7 @@ export default function AdminAuditLog() {
         <Group gap="sm" align="flex-start" className={classes.heading}>
           <ThemeIcon variant="light" color="indigo" size={40} radius="md"><IconHistory size={20} /></ThemeIcon>
           <Stack gap={2} className={classes.headingCopy}>
-            <Text size="sm" fw={750}>Журнал действий администраторов</Text>
+            <Text size="sm" fw={700}>Журнал действий администраторов</Text>
             <Text size="xs" c="dimmed">
               Неизменяемая история решений: инициатор, раздел и результат. Время указано по Екатеринбургу.
             </Text>
@@ -186,7 +186,7 @@ export default function AdminAuditLog() {
                   </Group>
                   <Text size="xs" c="dimmed">{formatAdminDateTime(event.createdAt)}</Text>
                 </Group>
-                <Text size="sm" fw={550}>{event.summary}</Text>
+                <Text size="sm" fw={500}>{event.summary}</Text>
                 <Group mt={6} gap="xs" justify="space-between" wrap="wrap">
                   <Text size="xs" c="dimmed">Инициатор: {actor}</Text>
                   {event.entityId && <Text size="xs" c="dimmed" className={classes.entityId}>ID: {event.entityId}</Text>}
@@ -210,7 +210,7 @@ export default function AdminAuditLog() {
         </Stack>
       ) : (
         <Paper withBorder radius="md" p="lg" className={classes.empty}>
-          <Text size="sm" fw={650}>По заданным условиям действий нет</Text>
+          <Text size="sm" fw={600}>По заданным условиям действий нет</Text>
           <Text size="xs" c="dimmed" mt={3}>Измените поиск или фильтры. Новые административные решения появляются здесь автоматически.</Text>
         </Paper>
       )}

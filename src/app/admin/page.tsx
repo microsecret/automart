@@ -624,7 +624,7 @@ export default function AdminDashboard() {
                       <Box className="admin-source-health__identity">
                         <Group gap={7} wrap="nowrap">
                           <Box className="admin-source-health__signal" data-color={healthColor} aria-hidden="true" />
-                          <Text size="sm" fw={750}>{source.label}</Text>
+                          <Text size="sm" fw={700}>{source.label}</Text>
                           <Badge size="xs" variant="light" color="gray">{source.country || "—"}</Badge>
                         </Group>
                         <Text size="10px" c="dimmed" mt={3}>
