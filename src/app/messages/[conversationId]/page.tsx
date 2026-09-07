@@ -36,6 +36,12 @@ interface Message {
   senderId: string
   createdAt: string
   attachments: Array<{ id: string; fileName: string; mimeType: string; size: number; downloadUrl: string }>
+  /* Сообщение показано, но сервер его ещё не подтвердил.
+
+     Раньше до ответа сервера поле просто пустело и на экране не появлялось
+     ничего: на медленной сети это читалось как «сообщение пропало», и
+     человек отправлял второе — продавец получал дубли. */
+  pending?: boolean
 }
 
 type ConversationResponse = {
@@ -100,6 +106,8 @@ function ConversationWorkspace() {
   const [attachments, setAttachments] = useState<File[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  /* Сообщения, ушедшие на сервер и ещё не вернувшиеся в общем списке. */
+  const [pendingMessages, setPendingMessages] = useState<Message[]>([])
   const hasScrolledToLatest = useRef(false)
 
   const scrollToBottom = () => {
@@ -116,8 +124,14 @@ function ConversationWorkspace() {
   )
 
   const latestPage = messagePages?.[0]
-  const messages = (messagePages ? [...messagePages].reverse().flatMap((page) => page.messages) : [])
-    .filter((message, index, allMessages) => allMessages.findIndex((candidate) => candidate.id === message.id) === index)
+  const messages = [
+    ...(messagePages ? [...messagePages].reverse().flatMap((page) => page.messages) : [])
+      .filter((message, index, allMessages) => allMessages.findIndex((candidate) => candidate.id === message.id) === index),
+    /* Отправляемые идут в конце ленты: человек видит своё сообщение сразу,
+       ещё до ответа сервера. Как только оно приходит в общем списке,
+       временный пузырь убирается. */
+    ...pendingMessages,
+  ]
   const hasOlderMessages = Boolean(latestPage && size < latestPage.pagination.pages)
   const loadingOlderMessages = Boolean(messagePages && isValidating && size > messagePages.length)
 
@@ -138,6 +152,22 @@ function ConversationWorkspace() {
     if ((!text.trim() && attachments.length === 0) || !session) return
     setSending(true)
     const content = text.trim()
+
+    /* Сообщение появляется на экране сразу.
+
+       Раньше поле пустело, а пузырь возникал только после ответа сервера:
+       на медленной сети это читалось как «сообщение пропало», и человек
+       отправлял второе — продавец получал дубли. */
+    const pendingId = `pending-${Date.now()}`
+    setPendingMessages((current) => [...current, {
+      id: pendingId,
+      content,
+      senderId: String(session.user?.id || ""),
+      createdAt: new Date().toISOString(),
+      attachments: [],
+      pending: true,
+    }])
+
     try {
       const receiverId = recipientId || latestPage?.otherUser?.id
       if (!receiverId) throw new Error("Не удалось определить собеседника")
@@ -160,6 +190,8 @@ function ConversationWorkspace() {
       })
       setText("")
       setAttachments([])
+      /* Настоящее сообщение уже в ленте — временное убираем. */
+      setPendingMessages((current) => current.filter((message) => message.id !== pendingId))
       /* Черновик больше не нужен: сообщение ушло. */
       try { window.localStorage.removeItem(draftKey) } catch { /* см. выше */ }
       if (isNewConversation && payload.conversationId) {
@@ -169,6 +201,9 @@ function ConversationWorkspace() {
         scrollToBottom()
       }
     } catch (requestError) {
+      /* Не ушло — временный пузырь убираем, а набранное остаётся в поле:
+         человеку не придётся писать всё заново. */
+      setPendingMessages((current) => current.filter((message) => message.id !== pendingId))
       notifications.show({
         title: "Сообщение не отправлено",
         message: getApiClientErrorMessage(requestError, "Повторите попытку."),
@@ -302,6 +337,7 @@ function ConversationWorkspace() {
                       radius="md"
                       className="message-bubble"
                       data-own={isOwn || undefined}
+                      data-pending={msg.pending || undefined}
                     >
                       <Stack gap={2}>
                         {msg.attachments?.length > 0 && (
@@ -322,7 +358,14 @@ function ConversationWorkspace() {
                           </SimpleGrid>
                         )}
                         {msg.content && <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>{msg.content}</Text>}
-                        <Text size="10px" c={isOwn ? "var(--market-on-primary-muted)" : "var(--market-muted)"}>{formatRelativeDate(msg.createdAt)}</Text>
+                        {/* Пока сервер не подтвердил — так и написано.
+
+                            Без этого человек не понимал, дошло ли: у
+                            сообщений стояло одно время, и на медленной сети
+                            оно ничем не отличалось от отправленного. */}
+                        <Text size="10px" c={isOwn ? "var(--market-on-primary-muted)" : "var(--market-muted)"}>
+                          {msg.pending ? "Отправляется…" : formatRelativeDate(msg.createdAt)}
+                        </Text>
                       </Stack>
                     </Paper>
                   </Group>
