@@ -23,6 +23,40 @@ const REDIRECTING_IMAGE_HOSTS = new Set(["storage.alpha-analytics.cz"])
 // приходит за доли секунды, поэтому такие хосты качаются в обход.
 const THROTTLED_IMAGE_HOSTS = new Set(["ccsrpcma.carsensor.net"])
 const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
+
+/* Типы, которыми источник признаётся, что сам не знает, что отдаёт.
+
+   beforward.jp помечает снимки как binary/octet-stream: файл настоящий и
+   открывается, но оптимизатор картинок Next такой тип не принимает и
+   отвечает пятисотой ошибкой. Шестьсот восемьдесят четыре живых лота из
+   Японии показывались без фотографий — а по фотографии машину и выбирают.
+
+   Такие ответы не отвергаются сразу: тип определяется по первым байтам
+   самого файла, как это делает браузер. */
+const UNTYPED_CONTENT_TYPES = new Set(["", "binary/octet-stream", "application/octet-stream"])
+
+/**
+ * Определяет тип картинки по её началу.
+ *
+ * Подпись формата стоит в первых байтах файла и подделать её мимоходом
+ * нельзя: если содержимое не картинка, ни одна подпись не совпадёт, и
+ * пересылка честно откажет.
+ */
+function sniffImageType(head: Uint8Array): string | null {
+  if (head.length < 12) return null
+
+  /* JPEG: FF D8 FF */
+  if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return "image/jpeg"
+
+  /* PNG: 89 50 4E 47 0D 0A 1A 0A */
+  if (head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47) return "image/png"
+
+  /* WebP: RIFF....WEBP */
+  const ascii = (from: number, to: number) => String.fromCharCode(...head.slice(from, to))
+  if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "image/webp"
+
+  return null
+}
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 const FETCH_TIMEOUT_MS = 20_000
 
@@ -81,6 +115,17 @@ function permittedImageUrl(value: string | null): PermittedImage | null {
       // подтверждается уже по content-type ответа.
       if (!/^\/get\/[a-f0-9-]{16,64}$/i.test(url.pathname)) return null
       return { url, followRedirects: true }
+    }
+
+    /* beforward: путь вида /large/202607/16056224/CE174713_205c37a2.jpg.
+
+       Набор символов проверяется, как и у остальных источников: без этого
+       через пересылку можно было бы дотянуться до чего угодно на чужом
+       узле. Сам тип файла источник называет неверно, поэтому он
+       определяется по содержимому уже при чтении ответа. */
+    if (url.hostname === "image-cdn.beforward.jp") {
+      if (!/^\/[a-z0-9_-]+\/\d{6}\/\d+\/[A-Za-z0-9_-]+\.(?:jpe?g|png|webp)$/i.test(url.pathname)) return null
+      return { url, followRedirects: false }
     }
 
     return null
@@ -163,10 +208,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Auction image unavailable" }, { status: 502 })
     }
 
-    const contentType = upstream.headers.get("content-type")?.split(";", 1)[0].trim().toLocaleLowerCase("en-US") || ""
+    const declaredType = upstream.headers.get("content-type")?.split(";", 1)[0].trim().toLocaleLowerCase("en-US") || ""
     const contentLengthHeader = upstream.headers.get("content-length")
     const contentLength = contentLengthHeader === null ? null : Number(contentLengthHeader)
-    if (!ALLOWED_CONTENT_TYPES.has(contentType) || (contentLength !== null && Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES)) {
+
+    if (contentLength !== null && Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
       clearTimeout(timeout)
       await upstream.body.cancel()
       rememberFailure(target)
@@ -174,10 +220,54 @@ export async function GET(request: NextRequest) {
     }
 
     const reader = upstream.body.getReader()
+
+    /* Тип определяется по содержимому, когда источник его не назвал.
+
+       Первая порция читается заранее и отдаётся дальше в потоке: она нужна
+       и для подписи формата, и как начало самого файла. */
+    let firstChunk: Uint8Array | null = null
+    let contentType = declaredType
+
+    if (!ALLOWED_CONTENT_TYPES.has(declaredType)) {
+      if (!UNTYPED_CONTENT_TYPES.has(declaredType)) {
+        clearTimeout(timeout)
+        await reader.cancel("Unsupported content type")
+        rememberFailure(target)
+        return NextResponse.json({ error: "Invalid auction image" }, { status: 502 })
+      }
+
+      const first = await reader.read()
+      if (first.done || !first.value) {
+        clearTimeout(timeout)
+        rememberFailure(target)
+        return NextResponse.json({ error: "Auction image unavailable" }, { status: 502 })
+      }
+
+      const sniffed = sniffImageType(first.value)
+      if (!sniffed) {
+        clearTimeout(timeout)
+        await reader.cancel("Body is not an image")
+        rememberFailure(target)
+        return NextResponse.json({ error: "Invalid auction image" }, { status: 502 })
+      }
+
+      firstChunk = first.value
+      contentType = sniffed
+    }
+
     let size = 0
     const body = new ReadableStream<Uint8Array>({
       async pull(streamController) {
         try {
+          /* Порция, прочитанная ради подписи формата, отдаётся первой. */
+          if (firstChunk) {
+            const head = firstChunk
+            firstChunk = null
+            size += head.byteLength
+            streamController.enqueue(head)
+            return
+          }
+
           const { done, value } = await reader.read()
           if (done) {
             clearTimeout(timeout)
