@@ -294,7 +294,26 @@ function AuctionDetail() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name || !form.phone) return
+    /* Незаполненное поле называется вслух.
+
+       Раньше проверка молча выходила, причём «Город доставки» в неё не
+       входил вовсе, хотя помечен обязательным: человек нажимал «Отправить
+       заявку», ничего не происходило, ни одно поле не подсвечивалось — и
+       кнопка выглядела сломанной. */
+    const missing = [
+      !form.name.trim() && "имя",
+      !form.phone.trim() && "телефон",
+      !form.city.trim() && "город доставки",
+    ].filter(Boolean)
+
+    if (missing.length > 0) {
+      notifications.show({
+        title: "Заполните поля",
+        message: `Не хватает: ${missing.join(", ")}.`,
+        color: "orange",
+      })
+      return
+    }
     setSubmitting(true)
     try {
       await fetchJson<AuctionInquiryResponse>(`/api/auctions/${id}/inquiry`, {
@@ -548,6 +567,19 @@ function AuctionDetail() {
                   <Stack gap="sm">
                     <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="var(--market-ink)">Заказать авто</Text></Group>
                     <Text size="xs" c="gray.5">{publicIdentity.title} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
+                    {/* Кто делает ставку.
+
+                        Раздел называется «аукционы», везде слова «лот» и
+                        «торги», но поля ставки на сайте нет — и новичок,
+                        пришедший с моделью «делаю ставку — выигрываю»,
+                        ищет кнопку и не находит. Сказать об этом надо там,
+                        где он её ищет. */}
+                    <Alert color="orange" variant="light" p="xs">
+                      <Text size="xs">
+                        Ставку на торгах делает наш партнёр по вашей заявке — сами вы в аукционе
+                        не участвуете. Мы согласуем предельную цену до начала торгов.
+                      </Text>
+                    </Alert>
                     <TextInput label="Ваше имя" autoComplete="name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="sm" />
                     <TextInput label="Телефон" type="tel" inputMode="tel" autoComplete="tel" required placeholder="+7 (___) ___-__-__" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} size="sm" />
                     <TextInput label="Email" type="email" inputMode="email" autoComplete="email" spellCheck={false} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} size="sm" />
