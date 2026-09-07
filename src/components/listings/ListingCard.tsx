@@ -65,7 +65,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const touchStartX = useRef<number | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
-  const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
+  const { favoriteIds, isPending, toggleFavorite } = useFavorites()
   useEffect(() => {
     setActiveImg(0)
     setImageFailed(false)
@@ -125,15 +125,12 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!isAuthenticated) {
-      /* Гостя ведём на вход с возвратом сюда же: тост без пути ко входу
-         обрывал действие — в строчном виде каталога та же кнопка давно
-         ведёт на вход, и плитка должна вести себя так же. */
-      const here = `${window.location.pathname}${window.location.search}`
-      window.location.assign(`/auth/signin?callbackUrl=${encodeURIComponent(here)}`)
-      return
-    }
+    /* Гостя больше никуда не уводим: отметка запоминается в браузере и
+       переезжает к нему при первом входе.
 
+       Раньше нажатие перезагружало страницу входом, и человек терял
+       прокрученную ленту, набранные фильтры и место в выдаче. А войдя,
+       обнаруживал избранное пустым — отмеченного там не было. */
     void toggleFavorite(listing.id)
   }
 

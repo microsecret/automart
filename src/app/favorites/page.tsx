@@ -20,7 +20,15 @@ type FavoritesResponse = {
 export default function FavoritesPage() {
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
-  const { data, error, isLoading } = useSWR<FavoritesResponse>(`/api/favorites?page=${page}&limit=18`, fetchJson)
+  const { data, error, isLoading, mutate } = useSWR<FavoritesResponse>(`/api/favorites?page=${page}&limit=18`, fetchJson)
+
+  /* Отсутствие входа и сбой связи — разные вещи.
+
+     Раньше любая ошибка рисовала «Войдите, чтобы видеть избранное». Вошедший
+     человек при обрыве сети видел, будто вход слетел и все сохранённые машины
+     пропали, — и не мог даже повторить попытку. */
+  const status = (error as { status?: number } | null)?.status
+  const needsSignIn = status === 401 || status === 403
 
   const favorites = data?.favorites || []
 
@@ -49,10 +57,20 @@ export default function FavoritesPage() {
           <Paper radius="md" p="xl" withBorder>
             <Center>
               <Stack align="center" gap="sm" ta="center" maw={400}>
-                <ThemeIcon variant="light" color="indigo" size={56} radius="md"><IconHeart size={28} /></ThemeIcon>
-                <Text fw={700}>Войдите, чтобы видеть избранное</Text>
-                <Text size="sm" c="dimmed">Сохранённые объявления привязаны к аккаунту и синхронизируются с Telegram.</Text>
-                <Button component={Link} href="/auth/signin?callbackUrl=%2Ffavorites" color="indigo" size="sm">Войти</Button>
+                <ThemeIcon variant="light" color={needsSignIn ? "indigo" : "red"} size={56} radius="md"><IconHeart size={28} /></ThemeIcon>
+                {needsSignIn ? (
+                  <>
+                    <Text fw={700}>Войдите, чтобы видеть избранное</Text>
+                    <Text size="sm" c="dimmed">Сохранённые объявления привязаны к аккаунту и синхронизируются с Telegram.</Text>
+                    <Button component={Link} href="/auth/signin?callbackUrl=%2Ffavorites" color="indigo" size="sm">Войти</Button>
+                  </>
+                ) : (
+                  <>
+                    <Text fw={700}>Не удалось загрузить избранное</Text>
+                    <Text size="sm" c="dimmed">Сохранённые объявления на месте — не открылась только эта страница. Проверьте связь и попробуйте снова.</Text>
+                    <Button onClick={() => void mutate()} color="indigo" size="sm">Повторить</Button>
+                  </>
+                )}
               </Stack>
             </Center>
           </Paper>

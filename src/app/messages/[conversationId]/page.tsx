@@ -69,6 +69,34 @@ function ConversationWorkspace() {
   const router = useRouter()
   const [text, setText] = useState("")
   const [sending, setSending] = useState(false)
+
+  /* Черновик переживает уход со страницы.
+
+     Набранное жило только в памяти: человек уходил посмотреть объявление,
+     сворачивал браузер, случайно нажимал «назад» — и длинный вопрос про
+     пробег и документы приходилось писать заново. На телефоне это самый
+     дорогой шаг: именно здесь покупатель решается написать продавцу.
+
+     Черновик у каждой переписки свой и стирается сразу после отправки. */
+  const draftKey = `lewheel:draft:${conversationId}`
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(draftKey)
+      if (saved) setText(saved)
+    } catch {
+      /* Приватное окно: черновика просто не будет. */
+    }
+  }, [draftKey])
+
+  useEffect(() => {
+    try {
+      if (text.trim()) window.localStorage.setItem(draftKey, text)
+      else window.localStorage.removeItem(draftKey)
+    } catch {
+      /* см. выше */
+    }
+  }, [draftKey, text])
   const [attachments, setAttachments] = useState<File[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -132,6 +160,8 @@ function ConversationWorkspace() {
       })
       setText("")
       setAttachments([])
+      /* Черновик больше не нужен: сообщение ушло. */
+      try { window.localStorage.removeItem(draftKey) } catch { /* см. выше */ }
       if (isNewConversation && payload.conversationId) {
         router.replace(`/messages/${payload.conversationId}`)
       } else {
@@ -147,7 +177,7 @@ function ConversationWorkspace() {
     } finally {
       setSending(false)
     }
-  }, [text, attachments, session, recipientId, latestPage?.otherUser?.id, requestedListingId, latestPage?.listingId, isNewConversation, mutate, router])
+  }, [text, attachments, session, recipientId, latestPage?.otherUser?.id, requestedListingId, latestPage?.listingId, isNewConversation, mutate, router, draftKey])
 
   const selectAttachments = (files: File[]) => {
     if (files.length > 4) {
