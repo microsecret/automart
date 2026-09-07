@@ -68,6 +68,9 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null)
   const [reason, setReason] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+  /* Какой заказ сейчас снабжают заметкой и что в ней набрано. */
+  const [noteTarget, setNoteTarget] = useState<string | null>(null)
+  const [noteText, setNoteText] = useState("")
   const [actionError, setActionError] = useState<string | null>(null)
 
   // Пустой массив по умолчанию создаётся один раз: иначе `orders` менялся бы
@@ -80,6 +83,29 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
     if (filter === "DONE") return orders.filter((order) => order.status === "DONE")
     return orders.filter((order) => order.status === "CANCELLED")
   }, [orders, filter])
+
+  const saveNote = async (order: Order) => {
+    setIsSaving(true)
+    setActionError(null)
+    try {
+      const response = await fetch(`/api/part-orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sellerNotes: noteText }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        setActionError(typeof payload?.error === "string" ? payload.error : "Не удалось сохранить заметку")
+        return
+      }
+      setNoteTarget(null)
+      await mutate()
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Связь прервалась. Заметка не сохранена.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const changeStatus = async (order: Order, status: string, statusReason?: string) => {
     setIsSaving(true)
@@ -176,6 +202,49 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
                     </Group>
 
                     {order.comment && <Text size="xs" c="dimmed" mt={6}>Комментарий: {order.comment}</Text>}
+
+                    {/* Заметка продавца о заказе.
+
+                        Поле было в базе и в API, сохранялось отдельной веткой
+                        запроса — и нигде не показывалось. Продавцу негде было
+                        записать «звонил, перезвонить в четверг», и при сотне
+                        заказов он вёл учёт в блокноте рядом с телефоном. */}
+                    {noteTarget === order.id ? (
+                      <Group gap={6} mt={8} align="flex-end" wrap="nowrap">
+                        <Textarea
+                          aria-label="Заметка о заказе"
+                          placeholder="Звонил, перезвонить в четверг…"
+                          value={noteText}
+                          onChange={(event) => setNoteText(event.currentTarget.value)}
+                          autosize
+                          minRows={1}
+                          maxRows={4}
+                          size="xs"
+                          style={{ flex: 1 }}
+                        />
+                        <Button size="compact-sm" color="indigo" loading={isSaving} onClick={() => void saveNote(order)}>
+                          Сохранить
+                        </Button>
+                        <Button size="compact-sm" variant="subtle" color="gray" onClick={() => setNoteTarget(null)}>
+                          Отмена
+                        </Button>
+                      </Group>
+                    ) : (
+                      <Group gap={6} mt={6} align="center" wrap="nowrap">
+                        {order.sellerNotes
+                          ? <Text size="xs" style={{ flex: 1 }}>📝 {order.sellerNotes}</Text>
+                          : <Text size="xs" c="dimmed" style={{ flex: 1 }}>Заметки нет</Text>}
+                        <Button
+                          size="compact-xs"
+                          variant="subtle"
+                          color="gray"
+                          onClick={() => { setNoteTarget(order.id); setNoteText(order.sellerNotes || "") }}
+                        >
+                          {order.sellerNotes ? "Изменить" : "Добавить заметку"}
+                        </Button>
+                      </Group>
+                    )}
+
                     <Text size="10px" c="dimmed" mt={6}>{new Date(order.createdAt).toLocaleString("ru-RU")}</Text>
                   </Box>
 
