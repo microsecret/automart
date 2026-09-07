@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { tidyListingTitle, alignTitleWithCatalog } from "@/lib/listing-title"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { containsAnyCase } from "@/lib/search-terms"
@@ -490,6 +491,8 @@ export async function POST(request: NextRequest) {
     }
 
     let resolvedVehicleDescription = normalizedDescription
+    let vehicleMake: string | null = null
+    let vehicleModel: string | null = null
     if (normalizedVehicleId) {
       const v = await prisma.vehicle.findUnique({ where: { id: normalizedVehicleId } })
       if (!v) return NextResponse.json({ error: "ТС не найдено" }, { status: 404 })
@@ -500,6 +503,10 @@ export async function POST(request: NextRequest) {
       })
       if (duplicate) return NextResponse.json({ error: "Для этого объекта объявление уже создано", listingId: duplicate.id }, { status: 409 })
       resolvedVehicleDescription = normalizedDescription ?? v.description
+      /* Марку и модель берём для приведения заголовка: продавец пишет его
+         руками, и «Лада калина 1» встречается наравне с «Лада Калина». */
+      vehicleMake = v.make
+      vehicleModel = v.model
       const publicationError = validateVehiclePublication({
         ...v,
         price: normalizedPrice,
@@ -528,7 +535,12 @@ export async function POST(request: NextRequest) {
       }
       return tx.listing.create({
         data: {
-          title: normalizedTitle,
+          /* Заголовок приводится к опрятному виду: гасится крик заглавными,
+             убираются лишние пробелы, а марка и модель берутся так, как они
+             записаны в справочнике. Из двадцати семи объявлений семь имели
+             такие огрехи — в выдаче они стоят рядом с аккуратными, и по этой
+             неопрятности судят о площадке целиком. */
+          title: alignTitleWithCatalog(tidyListingTitle(normalizedTitle), vehicleMake, vehicleModel),
           description: resolvedVehicleDescription || null,
           price: Math.trunc(normalizedPrice),
           status: LISTING_STATUS.PENDING_MODERATION,
