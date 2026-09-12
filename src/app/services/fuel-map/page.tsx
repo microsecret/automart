@@ -1093,9 +1093,14 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               key={isCluster ? `cluster-${index}` : firstStation.id}
               className="fuel-map-pin"
               data-locked={!isCluster && guestOpenIds && !guestOpenIds.has(firstStation.id) ? "true" : undefined}
-              /* Остриё капли стоит на самой точке: сдвиг на всю высоту метки,
-                 а не на половину, как было у круглой. */
-              style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 38px), 0)` }}
+              /* Сдвиг прежний: половина высоты кружка.
+
+                 Сдвинуть обёртку на всю высоту нельзя — в ней не только
+                 метка, но и подпись с ценой под ней. При сдвиге на 38
+                 пикселей подпись уезжала вверх и повисала в стороне от
+                 своей метки, поверх соседних. Остриё капли компенсируется
+                 внутри самой кнопки, а обёртка остаётся на месте. */
+              style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 15px), 0)` }}
             >
               <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-cluster-state={clusterState || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{
                 /* Цвет сети — только там, где про наличие ничего не
