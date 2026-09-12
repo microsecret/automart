@@ -82,7 +82,7 @@ export default function HowItWorks() {
   return (
     <Box className="how-it-works" component="section" aria-label="Что можно сделать на площадке">
       <Stack gap={2} className="how-it-works__head">
-        <Text component="h2" fw={800} fz={{ base: 20, md: 24 }} c="var(--market-ink)">
+        <Text component="h2" fw={800} fz="var(--text-2xl)" c="var(--market-ink)">
           Что здесь можно сделать
         </Text>
         <Text size="sm" c="dimmed">

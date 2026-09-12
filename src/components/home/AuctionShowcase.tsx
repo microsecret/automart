@@ -70,7 +70,7 @@ export default function AuctionShowcase() {
     <Box className="auction-showcase" component="section" aria-label="Свежие лоты мировых аукционов">
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm" mb="md">
         <Box>
-          <Text component="h2" fw={800} fz={{ base: 20, md: 24 }} c="var(--market-ink)">
+          <Text component="h2" fw={800} fz="var(--text-2xl)" c="var(--market-ink)">
             С мировых аукционов
           </Text>
           <Text size="sm" c="dimmed">
