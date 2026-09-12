@@ -924,7 +924,16 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
              Марка берётся выбранная в фильтре, иначе 95-й как самый
              ходовой, иначе первая известная. */
           const markerPrice = (() => {
-            if (isCluster || showPlate) return null
+            /* Подпись только там, где точки уже не сгруппированы.
+
+               На общем плане города группы стоят вплотную, и одинокая
+               цена соседней негруппированной точки повисала между ними
+               без видимой связи со своей меткой — на снимке карты Москвы
+               это читалось как мусор поверх карты.
+
+               С четырнадцатого масштаба группировка распадается, метки
+               стоят по одной и подпись явно принадлежит своей. */
+            if (isCluster || showPlate || zoom <= 13) return null
             const order = [activeFuel, "АИ‑95", "АИ‑92", "ДТ"].filter(Boolean) as string[]
             for (const label of order) {
               const row = fresh.find((item) => item.label === label)
