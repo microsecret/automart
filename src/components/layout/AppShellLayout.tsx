@@ -181,11 +181,15 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
     if (typeof window === "undefined") return
 
     const updateInset = () => {
-      const footer = document.querySelector(".market-app-footer")
-      const overlap = footer
-        ? Math.max(0, window.innerHeight - footer.getBoundingClientRect().top)
-        : 0
-      document.documentElement.style.setProperty("--app-navbar-bottom-inset", `${Math.round(overlap)}px`)
+      /* Подрезка меню под подвал больше не нужна.
+
+         Подвал перестал растягиваться под меню — он начинается там, где
+         меню кончается, и наезжать ему не на что. А замер сюда стоил
+         чтения раскладки на каждом кадре прокрутки: на слабых телефонах
+         это и подтормаживало каталог.
+
+         Сама функция осталась: ниже она доматывает внутреннюю прокрутку
+         меню вместе со страницей, и это по-прежнему нужно. */
 
       // Меню закреплено (fixed) и потому само по себе не двигается: человек
       // прокручивал страницу вниз, а список стоял, будто завис. Здесь мы
