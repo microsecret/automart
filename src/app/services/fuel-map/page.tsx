@@ -1093,7 +1093,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               key={isCluster ? `cluster-${index}` : firstStation.id}
               className="fuel-map-pin"
               data-locked={!isCluster && guestOpenIds && !guestOpenIds.has(firstStation.id) ? "true" : undefined}
-              style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 15px), 0)` }}
+              /* Остриё капли стоит на самой точке: сдвиг на всю высоту метки,
+                 а не на половину, как было у круглой. */
+              style={{ transform: `translate3d(calc(${marker.left}px - 50%), calc(${marker.top}px - 38px), 0)` }}
             >
               <UnstyledButton className="fuel-map-marker" data-cluster={isCluster || undefined} data-cluster-state={clusterState || undefined} data-quality={isCluster ? "cluster" : dataQuality} data-reported={!isCluster && fresh.length ? (anyYes ? "yes" : anyNo ? "no" : undefined) : undefined} data-selected={isSelected || undefined} style={{
                 /* Цвет сети — только там, где про наличие ничего не
@@ -1108,7 +1110,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                    красный нет. Сеть при этом никуда не делась — её
                    буквы стоят внутри кружка, а на плашке рядом
                    фирменный знак с названием. */
-                ...(networkIdentity && !isCluster && fresh.length === 0
+                /* Цвет сети держится всегда, а не только когда про наличие
+                   ничего не известно.
+
+                   Раньше отметка водителя закрашивала каплю целиком: как
+                   только появлялось «есть 92», Лукойл, Башнефть и Роснефть
+                   становились одинаково зелёными. Человек ищет на карте
+                   свою сеть — по карте лояльности, по привычке, по цене, —
+                   и терял её ровно там, где данных больше всего.
+
+                   Наличие никуда не делось: оно ушло в ободок капли, а
+                   заливка осталась фирменной. Оба ответа видны разом. */
+                ...(networkIdentity && !isCluster
                   ? { backgroundColor: networkIdentity.color, color: networkIdentity.textColor }
                   : {}),
                 /* Группа окрашивается в цвет преобладающей сети, когда

@@ -219,16 +219,32 @@ test("цвета обозначений совпадают с цветами м�
   }
 })
 
-test("наличие красит метку, сеть остаётся там, где наличие неизвестно", () => {
-  /* Кольцо в три пикселя вокруг фирменного цвета терялось на карте с
-     домами и дорогами: человек, ищущий бензин, видел мешанину цветов
-     сетей вместо ответа. Теперь наличие красит кружок целиком, а
-     фирменный цвет остаётся там, где отметок нет. */
+test("сеть видна всегда, наличие показывает ободок", () => {
+  /* Раньше отметка водителя закрашивала метку целиком, и все сети
+     становились одинаково зелёными: человек, ищущий свою заправку по
+     цвету, терял её ровно там, где данных больше всего.
+
+     Теперь заливка держит фирменный цвет, а наличие ушло в ободок —
+     оба ответа видны разом. Ободок толстый и в цвет: тонкое кольцо
+     терялось на карте с домами и дорогами. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /networkIdentity && !isCluster && fresh\.length === 0/)
+  assert.match(page, /networkIdentity && !isCluster\s*$/m)
+
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
-  assert.match(css, /\.fuel-map-marker\[data-reported="yes"\] \{\s*background: #16a34a/)
-  assert.match(css, /\.fuel-map-marker\[data-reported="no"\] \{\s*background: #dc2626/)
+  assert.match(css, /\.fuel-map-marker\[data-reported="yes"\] \{\s*border-color: #16a34a/)
+  assert.match(css, /\.fuel-map-marker\[data-reported="no"\] \{\s*border-color: #dc2626/)
+})
+
+test("метка указывает на заправку каплей", () => {
+  /* Круглая метка стояла над точкой и не говорила, к какому месту
+     относится: на плотной городской карте между соседними АЗС полсотни
+     метров. У плашки для этого был хвостик, у метки не было ничего.
+
+     Группа остаётся круглой: она собирает заправки из разных мест, и
+     остриё показывало бы на пустоту между ними. */
+  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  assert.match(css, /border-radius: 50% 50% 50% 4px/)
+  assert.match(css, /\.fuel-map-marker\[data-cluster\] \{\s*border-radius: 50%/)
 })
 
 test("снимок берётся из самой свежей отметки", () => {
