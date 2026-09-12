@@ -898,7 +898,45 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               })()
             : null
 
-          const showPlate = !isCluster && zoom >= 12
+          /* Плашка с ценами — только вблизи, с шестнадцатого масштаба.
+
+             На двенадцатом в кадре центра Уфы помещается под две сотни
+             точек, и каждая рисовала плашку шириной до 290 пикселей.
+             Ячейка разведения при этом 72 пикселя — вчетверо уже плашки,
+             поэтому они налезали друг на друга сплошным ковром: карты
+             под ними не видно, а цены соседних заправок сливались в одну
+             кашу. Ровно то, на что жалуется владелец.
+
+             С шестнадцатого в кадре пара кварталов и несколько точек —
+             там плашка помещается и читается. До этого рисуется метка
+             сорока пикселей: цвет сети, значок колонки и цена главной
+             марки. Всё остальное человек видит по нажатию — карточка
+             заправки открывается и так. */
+          const showPlate = !isCluster && zoom >= 16
+
+          /* Цена под меткой — вместо целой плашки.
+
+             Плашки уехали на шестнадцатый масштаб, и без подписи карта
+             обеднела бы: раньше человек видел цены, не нажимая. Одна
+             цифра под кружком отвечает на главный вопрос «почём здесь»,
+             занимая place в двадцать раз меньше плашки.
+
+             Марка берётся выбранная в фильтре, иначе 95-й как самый
+             ходовой, иначе первая известная. */
+          const markerPrice = (() => {
+            if (isCluster || showPlate) return null
+            const order = [activeFuel, "АИ‑95", "АИ‑92", "ДТ"].filter(Boolean) as string[]
+            for (const label of order) {
+              const row = fresh.find((item) => item.label === label)
+              const value = priceFor(row?.fuel ?? label)
+              if (value) return { label, value }
+            }
+            for (const row of fresh) {
+              const value = priceFor(row.fuel)
+              if (value) return { label: row.label, value }
+            }
+            return null
+          })()
 
           const label = isCluster ? `${marker.stations.length} АЗС — приблизить карту` : `Показать ${firstStation.name}: ${getStationDataSummary(firstStation)}`
 
@@ -1105,6 +1143,18 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                    цвете кружка и в подписи на плашке рядом. */
                 <IconGasStation size={17} stroke={2.2} />
               )}</UnstyledButton>
+              {/* Цена под меткой: одна цифра вместо целой плашки.
+
+                  Плашки уехали на шестнадцатый масштаб, и без подписи карта
+                  обеднела бы — раньше человек видел цены, не нажимая. Здесь
+                  главная марка и её цена: ответ на вопрос «почём здесь» в
+                  двадцать раз меньшем месте. Остальное открывает карточка. */}
+              {markerPrice && (
+                <span className="fuel-map-price" aria-hidden="true">
+                  <b>{formatKopecks(markerPrice.value)}</b>
+                  <i>{markerPrice.label.replace("АИ‑", "")}</i>
+                </span>
+              )}
             </Box>
           )
         })}

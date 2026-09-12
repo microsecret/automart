@@ -16,7 +16,9 @@
   border: 1px solid var(--market-field-line);
   background: var(--market-surface);
   color: var(--market-ink);
-  box-shadow: var(--market-shadow-soft);
+  /* --market-shadow-soft не определён — карточка марки стояла вовсе без
+     тени и сливалась с подложкой. */
+  box-shadow: var(--shadow-sm);
   transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
@@ -106,10 +108,14 @@
   flex-shrink: 0;
 }
 
+/* --market-brand и --market-brand-strong в проекте не определены: подсветка
+   выбранной марки не работала ни при наведении, ни в выбранном состоянии —
+   человек не видел, какую марку он открыл. Фирменный цвет здесь и
+   задумывался. */
 .brandShortcut:hover {
-  border-color: color-mix(in srgb, var(--market-brand) 44%, var(--market-field-line));
-  background: color-mix(in srgb, var(--market-brand) 6%, var(--market-surface));
-  box-shadow: 0 9px 22px color-mix(in srgb, var(--market-brand) 13%, transparent);
+  border-color: color-mix(in srgb, var(--market-primary) 44%, var(--market-field-line));
+  background: color-mix(in srgb, var(--market-primary) 6%, var(--market-surface));
+  box-shadow: 0 9px 22px color-mix(in srgb, var(--market-primary) 13%, transparent);
   transform: translateY(-2px);
 }
 
@@ -119,10 +125,10 @@
 }
 
 .brandShortcut[data-active] {
-  border-color: var(--market-brand);
-  background: color-mix(in srgb, var(--market-brand) 10%, var(--market-surface));
-  color: var(--market-brand-strong);
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--market-brand) 18%, transparent);
+  border-color: var(--market-primary);
+  background: color-mix(in srgb, var(--market-primary) 10%, var(--market-surface));
+  color: var(--market-primary);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--market-primary) 18%, transparent);
 }
 
 .insights {

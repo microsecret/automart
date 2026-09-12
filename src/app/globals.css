@@ -6077,7 +6077,10 @@ html:has(.fuel-map-canvas) {
 }
 
 .auction-detail-spec__label {
-  color: var(--market-text-secondary);
+  /* Токена --market-text-secondary в проекте нет: правило не применялось
+     вовсе, и подпись брала цвет от родителя. Вторичный текст — это
+     --market-muted, он и задумывался. */
+  color: var(--market-muted);
   font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: var(--track-caps);
@@ -6086,7 +6089,9 @@ html:has(.fuel-map-canvas) {
 
 .auction-detail-spec__value {
   overflow: hidden;
-  color: var(--market-text-primary);
+  /* --market-text-primary нигде не определён: значение характеристики
+     брало цвет от родителя, а не заданный. */
+  color: var(--market-ink);
   font-size: var(--text-sm);
   font-weight: 700;
   line-height: 1.25;
@@ -7360,7 +7365,9 @@ html:has(.fuel-map-canvas) {
 }
 
 .create-listing__catalog-autocomplete .mantine-Input-clearButton:hover {
-  color: var(--market-primary-strong);
+  /* --market-primary-strong не определён: цвет при наведении не
+     применялся вовсе. */
+  color: var(--market-primary);
   border-color: color-mix(in srgb, var(--market-primary) 52%, var(--market-field-line));
   background: color-mix(in srgb, var(--market-primary-soft) 72%, var(--market-surface));
 }
@@ -10239,7 +10246,9 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--market-primary-text);
+  /* --market-primary-text нигде не определён: ссылка наследовала чёрный
+     вместо фирменного. */
+  color: var(--market-primary);
   font-size: var(--text-sm);
   font-weight: 700;
   text-decoration: none;
@@ -10258,7 +10267,10 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 
 .auction-showcase__card {
   overflow: hidden;
-  border: 1px solid var(--market-edge);
+  /* --market-edge не определён, и `1px solid` без цвета берёт currentColor —
+     тёмный текст. Восемь карточек витрины аукционов стояли в жирных чёрных
+     рамках: это и делало главную дешёвой на вид. */
+  border: 1px solid var(--market-line);
   border-radius: var(--radius-md);
   background: var(--market-surface);
   color: inherit;
@@ -10269,7 +10281,9 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 @media (hover: hover) and (pointer: fine) {
   .auction-showcase__card:hover {
     transform: translate(-2px, -2px);
-    box-shadow: var(--offset-sm);
+    /* --offset-sm не определён: свойство было недопустимым, и карточка при
+       наведении сдвигалась без тени — будто отклеилась от страницы. */
+    box-shadow: var(--shadow-md);
   }
 }
 
@@ -10826,4 +10840,41 @@ button:disabled,
   body:has([data-auction-landing]) .auctions-intro__facts {
     display: none;
   }
+}
+
+/* Цена под меткой заправки.
+
+   Плашка с полным составом марок показывается только с шестнадцатого
+   масштаба: раньше она рисовалась с двенадцатого, а там в кадре центра
+   города под две сотни точек. Плашка шириной до 290 пикселей при ячейке
+   разведения в 72 — вчетверо шире своего места, поэтому они налезали
+   сплошным ковром, карты под ними видно не было, а цены соседних заправок
+   сливались в кашу.
+
+   Подпись занимает то же место, что и сам кружок, и отвечает на главный
+   вопрос — почём здесь. Состав марок человек видит по нажатию. */
+.fuel-map-price {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-top: 2px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgb(17 17 20 / 0.86);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 4px rgb(15 23 42 / 0.3);
+  pointer-events: none;
+}
+
+/* Марка мельче цены и приглушена: цена — ответ, марка — уточнение. */
+.fuel-map-price i {
+  font-size: 9px;
+  font-weight: 700;
+  font-style: normal;
+  opacity: 0.72;
 }

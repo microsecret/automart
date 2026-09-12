@@ -400,7 +400,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               открывать ли объявление. В четырнадцати оно шло тем же кеглем,
               что подписи и служебные строки вокруг, — карточка читалась как
               ровное мелкое полотно, где ничто не выделено. */}
-          <Text className="listing-card__title" fz="md" fw={600} c="var(--market-text-secondary)" lh={1.35} mb={8}>
+          <Text className="listing-card__title" fz="md" fw={600} c="var(--market-ink)" lh={1.35} mb={8}>
             {listing.title}
           </Text>
 
