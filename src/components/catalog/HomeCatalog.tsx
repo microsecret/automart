@@ -380,7 +380,7 @@ export default function HomePage(p: HomePageProps = {}) {
   const isReturning = sessionStatus === "authenticated"
 
   return (
-    <Box p={{base:"sm",md:"md"}}><Stack gap="md">
+    <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)">
       {p.showHero !== false && !p.categorySlug && !isReturning && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
           <NextImage src="/images/home/automarket-hero.webp" alt="LeWheel: транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
