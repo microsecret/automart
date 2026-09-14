@@ -308,15 +308,30 @@ export async function notifyExpiringChatPromotions() {
     },
   })
 
+  /* Уже отправленные предупреждения читаются разом, а не по заказу.
+
+     Запрос стоял внутри цикла: на каждый истекающий заказ — своё
+     обращение к базе ради одного и того же сведения. Пока оплат десяток,
+     это незаметно, но растёт оно вместе с продажами — а проверка идёт по
+     расписанию и молча.
+
+     Здесь один запрос и набор в памяти: тот же приём, что уже применён
+     выше для свежих постов. */
+  const alreadyNotified = new Set(
+    (await prisma.notification.findMany({
+      where: {
+        relatedType: "CHAT_PROMOTION_EXPIRY",
+        relatedId: { in: orders.map((order) => order.id) },
+      },
+      select: { relatedId: true },
+    })).map((row) => row.relatedId),
+  )
+
   let notified = 0
   for (const order of orders) {
     /* Повторно не предупреждаем: уведомление привязано к заказу, и
        проверка по нему надёжнее отдельного поля-флага. */
-    const already = await prisma.notification.findFirst({
-      where: { userId: order.userId, relatedId: order.id, relatedType: "CHAT_PROMOTION_EXPIRY" },
-      select: { id: true },
-    })
-    if (already) continue
+    if (alreadyNotified.has(order.id)) continue
 
     const until = order.promoUntil ? order.promoUntil.toLocaleDateString("ru-RU") : "скоро"
 
