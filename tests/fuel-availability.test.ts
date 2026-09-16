@@ -6,6 +6,8 @@ import { getStationIdentity } from "../src/lib/fuel-station-identity.ts"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { formatAge, isFresh, summarizeAvailability } from "../src/lib/fuel-availability.ts"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { formatFuelKopecks } from "../src/lib/fuel-price-format.ts"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { cityInPrepositional } from "../src/lib/city-declension.ts"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { FREQUENT_REGION_KEYS, ROTATING_REGION_KEYS, regionsForScheduledRun, targetRegionKeys } from "../src/lib/fuel-target-regions.ts"
@@ -589,15 +591,19 @@ test("форма не спрашивает про топливо, которог
 test("цена показывается с копейками", () => {
   /* Округление до рубля стирало ровно то, ради чего цену смотрят:
      разница в семьдесят копеек на литр — сорок рублей на бак, и по ней
-     человек выбирает между двумя заправками на перекрёстке. */
-  const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /function formatKopecks/)
-  assert.match(page, /maximumFractionDigits: 2/)
+     человек выбирает между двумя заправками на перекрёстке.
+
+     Проверка идёт по самой функции, а не по тексту страницы. Прежняя
+     искала в файле карты строку «function formatKopecks» и упала, когда
+     функция переехала в общий модуль ради витрины на главной, — хотя
+     поведение не изменилось ни на копейку. Тест, привязанный к месту
+     жительства кода, ловит переезды вместо ошибок. */
+  assert.equal(formatFuelKopecks(6_705), "67,05")
   /* Ровные рубли остаются без хвоста: «64 ₽», а не «64,00 ₽». */
-  assert.match(page, /Number\.isInteger\(roubles\) \? 0 : 2/)
+  assert.equal(formatFuelKopecks(6_400), "64")
   /* Старое округление до рубля не должно вернуться. */
-  assert.doesNotMatch(page, /Math\.round\(kopecks \/ 100\)/)
-  assert.doesNotMatch(page, /\(item\.price \/ 100\)\.toFixed\(0\)/)
+  assert.equal(formatFuelKopecks(6_470), "64,7")
+  assert.notEqual(formatFuelKopecks(6_470), "65")
 })
 
 test("чужую отметку можно подтвердить одним нажатием", () => {
