@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import { readFileSync } from "node:fs"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { buildPriceVerdict, describePriceVerdict } from "../src/lib/listing-price-verdict.ts"
 
@@ -66,4 +67,19 @@ test("нулевые и отрицательные цены отбрасываю
 test("размер выборки возвращается — это мера доверия", () => {
   const verdict = buildPriceVerdict(500_000, samples([480_000, 490_000, 500_000, 510_000, 520_000, 530_000, 540_000]))
   assert.equal(verdict?.sampleSize, 7)
+})
+
+test("выборка страницы объявления берётся по модели, а не по марке", () => {
+  /* Проверка на живых данных: сначала выборка бралась по одной марке, и
+     на ВАЗ 2114 за 92 000 ₽ появился бейдж «на 50% ниже похожих», где
+     похожими оказались Приоры за 255 000. Внутри марки цены расходятся
+     в разы, и сравнивать надо модель с моделью.
+
+     Тест читает сам запрос: вычислить эту ошибку из результата функции
+     нельзя — она получает уже собранную выборку и честно считает по
+     тому, что ей дали. */
+  const page = readFileSync(new URL("../src/app/listings/vehicle/[id]/page.tsx", import.meta.url), "utf8")
+  const query = page.slice(page.indexOf("const priceSamples"), page.indexOf("buildPriceVerdict(vehicle.price"))
+  assert.match(query, /make: vehicle\.make/)
+  assert.match(query, /model: vehicle\.model/)
 })

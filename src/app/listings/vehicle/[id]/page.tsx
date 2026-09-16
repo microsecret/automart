@@ -148,6 +148,18 @@ export default async function VehicleDetailPage({ params }: PageProps) {
       id: { not: vehicle.id },
       vehicleType: vehicle.vehicleType,
       make: vehicle.make,
+      /* Модель обязательна, и это стоило проверки на живых данных.
+
+         Сначала выборка бралась по одной марке — и на ВАЗ 2114 за
+         92 000 ₽ появился бейдж «на 50% ниже похожих», где «похожими»
+         оказались Приоры за 255 000. Внутри марки цены расходятся в
+         разы: Гранта и Нива — не одно и то же.
+
+         С моделью выборка сегодня не набирается ни у одного из 39
+         объявлений, и бейдж не показывается вовсе. Это правильный
+         исход: врущая оценка хуже её отсутствия, а заработает блок сам
+         собой, когда каталог вырастет. */
+      model: vehicle.model,
       year: { gte: vehicle.year - YEAR_SPREAD, lte: vehicle.year + YEAR_SPREAD },
       listings: { some: publicListingWhere },
     },
