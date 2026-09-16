@@ -20,6 +20,9 @@ export interface ListingCardData {
   price: number | null
   isFeatured?: boolean
   createdAt?: string | Date
+  /* Дата публикации: проставляется, когда модератор одобрил объявление.
+     По ней и только по ней ставится метка «Проверено». */
+  publishedAt?: string | Date | null
   location?: string | null
   views?: number
   vehicle?: {
@@ -92,9 +95,19 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const isFresh = Boolean(
     listing.createdAt && Date.now() - new Date(listing.createdAt).getTime() < 86_400_000,
   )
+  /* Объявление прошло проверку модератором.
+
+     Метка честная: publishedAt проставляется в тот момент, когда человек
+     в админке одобрил объявление. Это не «мы за него ручаемся», а «его
+     посмотрел живой модератор» — ровно то, что метка и обещает.
+
+     В макете она стоит на каждой карточке, но рисовать её всем подряд
+     нельзя: метка, которая есть у всех, ничего не значит. */
+  const isChecked = Boolean(listing.publishedAt)
+
   // Сдвиг для счётчика фото и подписи: каждая метка занимает свою ширину,
   // иначе при двух метках счётчик оказывался бы поверх них.
-  const tagsOffset = 8 + (listing.isFeatured ? 76 : 0) + (isFresh ? 78 : 0)
+  const tagsOffset = 8 + (listing.isFeatured ? 76 : 0) + (isFresh ? 78 : 0) + (isChecked ? 88 : 0)
 
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
   const usageMeta = getUsageMeta(vehicleType)
@@ -308,11 +321,16 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           {/* Метки состояния — слева сверху.
 
               Показываем только то, что действительно известно про объявление:
-              выделенное продавцом и свежее (меньше суток). Придумывать
-              «проверено» или «срочно» там, где таких данных нет, нельзя —
-              метка перестанет что-либо значить. */}
-          {(listing.isFeatured || isFresh) && (
+              выделенное продавцом, свежее (меньше суток) и прошедшее
+              проверку модератором.
+
+              Каждая метка стоит на факте из данных. Придумывать «срочно»
+              или «выгодно» там, где таких данных нет, нельзя — метка,
+              которая есть у всех или ни на чём не основана, перестаёт
+              что-либо значить. */}
+          {(listing.isFeatured || isFresh || isChecked) && (
             <Box pos="absolute" top={8} left={8} style={{ zIndex: 2, display: "flex", gap: 4 }}>
+              {isChecked && <span className="market-tag" data-tag="checked">✓ Проверено</span>}
               {listing.isFeatured && <span className="market-tag" data-tag="featured">Премиум</span>}
               {isFresh && <span className="market-tag" data-tag="new">Сегодня</span>}
             </Box>
