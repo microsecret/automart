@@ -63,6 +63,14 @@ const MIN_STATIONS_PER_NETWORK = 5
  */
 const GENERIC_LABELS = new Set(["Газовая АЗС"])
 
+/*
+ * Во сколько раз цена сети может превышать медиану города.
+ *
+ * См. разбор у места применения: значение стоит в разрыве между
+ * рыночными ценами и вымыслом источников.
+ */
+const MAX_CITY_MEDIAN_RATIO = 1.15
+
 function median(values: number[]): number {
   const sorted = [...values].sort((first, second) => first - second)
   const middle = Math.floor(sorted.length / 2)
@@ -115,11 +123,17 @@ export function buildNetworkPrices(samples: NetworkPriceSample[]): NetworkPriceR
          московской медиане 71,94 ₽. Порча пришла из обоих источников
          разом, то есть это их общая беда, а не опечатка.
 
-         Полуторный запас оставляет место настоящей дороговизне: сеть на
-         вылете из города или премиальная заправка вправе стоить дороже
-         соседей, но не в полтора раза. */
+         Порог взят из самих данных, а не назначен на глаз. Замер по
+         Москве, Казани и Екатеринбургу: настоящие сети кучкуются в
+         диапазоне от 0,90 до 1,09 медианы города — они торгуют по
+         рынку, иначе к ним не поедут. Дальше идёт разрыв, и всё, что
+         лежит за ним, оказалось вымыслом: Эверон 1,22, Irbis 1,20,
+         GGroup 1,34, Нефтьмагистраль 1,40.
+
+         1,15 стоит в этом разрыве: с запасом над честным хвостом и
+         ниже начала вымысла. */
       if (!cityMedian) return true
-      return median(group.prices) <= cityMedian * 1.5
+      return median(group.prices) <= cityMedian * MAX_CITY_MEDIAN_RATIO
     })
     .map((group) => ({
       label: group.identity.label,
