@@ -97,8 +97,30 @@ export function buildNetworkPrices(samples: NetworkPriceSample[]): NetworkPriceR
     else groups.set(identity.label, { identity, prices: [sample.priceRub] })
   }
 
+  /* Цена города — мера, с которой сверяются сети.
+     Считается по всем пробам сразу, до группировки: одна порченая сеть
+     не сдвинет медиану полутора тысяч цен. */
+  const cityMedian = samples.length ? median(samples.map((sample) => sample.priceRub)) : 0
+
   return [...groups.values()]
     .filter((group) => group.prices.length >= MIN_STATIONS_PER_NETWORK)
+    .filter((group) => {
+      /* Системный сдвиг источника: цена сети не лезет ни в какие ворота
+         рядом с соседями по городу.
+
+         Поштучные правила его не видят — внутри записи всё согласовано.
+         У «Нефтьмагистрали» в Москве на восьмидесяти восьми точках
+         стоит 93 ₽ за АИ-92 и 104 ₽ за АИ-95: девяносто второй дешевле
+         девяносто пятого, коридор пройден, а цена всё равно вымысел при
+         московской медиане 71,94 ₽. Порча пришла из обоих источников
+         разом, то есть это их общая беда, а не опечатка.
+
+         Полуторный запас оставляет место настоящей дороговизне: сеть на
+         вылете из города или премиальная заправка вправе стоить дороже
+         соседей, но не в полтора раза. */
+      if (!cityMedian) return true
+      return median(group.prices) <= cityMedian * 1.5
+    })
     .map((group) => ({
       label: group.identity.label,
       shortLabel: group.identity.shortLabel,
