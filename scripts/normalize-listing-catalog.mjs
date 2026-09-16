@@ -1,5 +1,5 @@
 /**
- * Разовое приведение городов уже поданных объявлений к справочнику.
+ * Разовое приведение городов и марок уже поданных объявлений к справочникам.
  *
  * Нормализация в маршруте подачи защищает только новые объявления, а в
  * базе к моменту её появления лежали записи вроде «уфа» строчными и
@@ -11,12 +11,13 @@
  * `--experimental-strip-types`, иначе он не прочтёт TypeScript.
  *
  * Запуск с сервера:
- *   node22 --experimental-strip-types scripts/normalize-listing-cities.mjs --dry-run
- *   node22 --experimental-strip-types scripts/normalize-listing-cities.mjs
+ *   node22 --experimental-strip-types scripts/normalize-listing-catalog.mjs --dry-run
+ *   node22 --experimental-strip-types scripts/normalize-listing-catalog.mjs
  */
 
 import { PrismaClient } from "@prisma/client"
 import { normalizeListingCity } from "../src/lib/listing-city.ts"
+import { normalizeListingMake } from "../src/lib/listing-make.ts"
 
 const prisma = new PrismaClient()
 const dryRun = process.argv.includes("--dry-run")
@@ -46,8 +47,25 @@ const parts = await normalizeTable(
   (id, location) => prisma.part.update({ where: { id }, data: { location } }),
 )
 
-console.log(dryRun ? "— ПРОБНЫЙ ПРОГОН, ничего не записано —" : "— города приведены —")
-console.log(`машин просмотрено:     ${vehicles.scanned}, изменено ${vehicles.changed}`)
-console.log(`запчастей просмотрено: ${parts.scanned}, изменено ${parts.changed}`)
+/* Марки — только у транспорта: у запчасти поле `make` означает не её
+   производителя, а машину, к которой она подходит, и приводить его к
+   справочнику брендов здесь не требуется. */
+const makes = await (async () => {
+  const rows = await prisma.vehicle.findMany({ select: { id: true, make: true } })
+  let changed = 0
+  for (const row of rows) {
+    const next = normalizeListingMake(row.make)
+    if (!next || next === row.make) continue
+    console.log(`  марка: ${JSON.stringify(row.make)} → ${JSON.stringify(next)}`)
+    changed += 1
+    if (!dryRun) await prisma.vehicle.update({ where: { id: row.id }, data: { make: next } })
+  }
+  return { scanned: rows.length, changed }
+})()
+
+console.log(dryRun ? "— ПРОБНЫЙ ПРОГОН, ничего не записано —" : "— справочники применены —")
+console.log(`города, машин:      ${vehicles.scanned}, изменено ${vehicles.changed}`)
+console.log(`города, запчастей:  ${parts.scanned}, изменено ${parts.changed}`)
+console.log(`марки, машин:       ${makes.scanned}, изменено ${makes.changed}`)
 
 await prisma.$disconnect()

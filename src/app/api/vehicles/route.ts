@@ -11,6 +11,7 @@ import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { normalizeVehicleIdentity, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
 import { normalizeListingCity } from "@/lib/listing-city"
+import { normalizeListingMake } from "@/lib/listing-make"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -148,7 +149,11 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validation
-    const normalizedMake = normalizeOptionalText(make, 80)
+    /* Марка приводится к справочнику: «ваз», «Лада» и «OPEL VIVARO» —
+       это Lada (ВАЗ) и Opel, а не три новые марки. Иначе фильтр по
+       марке и страница бренда показывают часть своих машин.
+       Незнакомая марка сохраняется как есть. */
+    const normalizedMake = normalizeListingMake(normalizeOptionalText(make, 80))
     const normalizedModel = normalizeOptionalText(model, 100)
     if (!normalizedMake) {
       return NextResponse.json(
