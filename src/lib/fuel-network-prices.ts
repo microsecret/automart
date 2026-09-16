@@ -16,7 +16,8 @@
  * запись перевешивала две честные. Медиана к такому равнодушна.
  */
 
-import { getNetworkIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { getNetworkIdentity, type NetworkIdentity } from "./fuel-station-identity.ts"
 
 export type NetworkPriceSample = {
   name: string
