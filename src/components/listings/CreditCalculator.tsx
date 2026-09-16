@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Card, Stack, Group, Text, Slider, Select, Box, Divider } from "@mantine/core"
+import { Card, Stack, Group, Text, Slider, NumberInput, Box, Divider } from "@mantine/core"
 import { IconCalculator } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
 
@@ -75,16 +75,26 @@ export default function CreditCalculator({ price }: { price: number }) {
         </Box>
 
         {/* Ставка */}
-        <Select
-          label="Ставка"
-          data={[
-            { value: "9.9", label: "9.9% — спецпредложение" },
-            { value: "12.9", label: "12.9% — стандартная" },
-            { value: "14.9", label: "14.9% — базовая" },
-            { value: "19.9", label: "19.9% — б/у авто" },
-          ]}
-          value={String(rate)}
-          onChange={(v) => setRate(Number(v) || 14.9)}
+        {/* Ставку человек вводит сам, а не выбирает из наших вариантов.
+
+            Здесь стоял список: «9.9% — спецпредложение», «12.9% —
+            стандартная», «14.9% — базовая». Ни за одной из этих ставок
+            не стоит банк: площадка не выдаёт кредитов и не имеет
+            партнёров-кредиторов. Слова «спецпредложение» и «базовая»
+            читались как предложение площадки — то же обещание кредита,
+            за которое из карточки убрали строку «в кредит от N ₽/мес».
+
+            Поле ввода честнее списка: человек берёт ставку из своего
+            банковского предложения и смотрит, что выходит по платежу. */}
+        <NumberInput
+          label="Ставка банка, % годовых"
+          description="Возьмите из предложения своего банка"
+          value={rate}
+          onChange={(value) => setRate(typeof value === "number" && value > 0 ? value : 0)}
+          min={0.1}
+          max={60}
+          step={0.5}
+          decimalScale={1}
           size="xs"
           radius="md"
         />
@@ -104,7 +114,12 @@ export default function CreditCalculator({ price }: { price: number }) {
           </Stack>
         </Group>
 
-        <Text size="10px" c="gray.4">Расчёт предварительный. Точные условия определяет банк.</Text>
+        {/* Прямо сказано, чей это расчёт. «Точные условия определяет
+            банк» звучало так, будто банк уже есть и осталось уточнить
+            детали. */}
+        <Text size="10px" c="gray.4">
+          Площадка не выдаёт кредитов. Это ваш собственный расчёт по введённой ставке — сравните его с предложением банка.
+        </Text>
       </Stack>
     </Card>
   )
