@@ -10,6 +10,7 @@ import { parseMarketplaceImages } from "@/lib/media-url"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { normalizeVehicleIdentity, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
+import { normalizeListingCity } from "@/lib/listing-city"
 
 const TYPE_DETAIL_KEYS: Record<string, Set<string>> = {
   MOTORCYCLE: new Set(["motorcycleType", "finalDrive", "strokeCycle"]),
@@ -224,7 +225,16 @@ export async function POST(request: NextRequest) {
     if (normalizedGarageVehicleId && !garageVehicle) {
       return NextResponse.json({ error: "Автомобиль не найден в личном гараже или уже превращён в объявление" }, { status: 409 })
     }
-    const normalizedLocation = normalizeOptionalText(location, 120)
+    /* Город приводится к справочнику ещё при записи.
+
+       Поле принимает свободный текст, и в базе от этого завелись «уфа»
+       строчными и «йошкар ола» без дефиса. Фильтр каталога ищет через
+       `contains`, а он в SQLite считается с регистром: два уфимских
+       объявления не находились по своему же городу.
+
+       Нераспознанное сохраняется как есть — за «Гафурийским районом»
+       стоит живая машина, и стирать эту строку нельзя. */
+    const normalizedLocation = normalizeListingCity(normalizeOptionalText(location, 120))
     if (!normalizedLocation) return NextResponse.json({ error: "Укажите город размещения" }, { status: 400 })
 
     // Geocode location if provided
