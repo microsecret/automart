@@ -344,10 +344,16 @@
 :root[data-mantine-color-scheme="dark"] {
   --market-ink: #f5f5f7;
   --market-muted: #a1a1aa;
-  --market-line: #30313a;
-  --market-surface: #1b1c23;
-  --market-background: #111217;
-  --market-surface-subtle: #171820;
+  /* Ночная подложка из макета: почти чёрная, без синевы.
+
+     Прежние тона уходили в синий (#111217 и #1b1c23) — рядом с лаймовым
+     акцентом это давало холодный оттенок, которого в макете нет. Там
+     подложка нейтрально-чёрная, и на ней лайм читается как единственный
+     цвет на экране. */
+  --market-line: #262a33;
+  --market-surface: #14181f;
+  --market-background: #0b0f14;
+  --market-surface-subtle: #10141a;
   --market-field: #20212a;
   --market-field-hover: #27293a;
   --market-field-line: #3a3c49;
@@ -370,6 +376,9 @@
   /* Подложка акцента зеленеет вслед за лаймом: тёплый коричневый остался
      от оранжевого и спорил бы с новым цветом. */
   --market-accent-soft: #1b2a10;
+  /* На тёмном акцент читается текстом сам по себе: 11.18 на своей
+     подложке. Затемнять его, как в светлой теме, здесь не нужно. */
+  --market-accent-text: #a7f320;
   --market-scroll-thumb: #4b4d5a;
   --market-selection: #102a59;
   --market-selection-ink: #f5f5f7;
@@ -1900,9 +1909,14 @@ select {
   position: relative;
   overflow: hidden;
   flex: 0 0 auto;
-  color: #7c2d12;
-  border: 1px solid color-mix(in srgb, #fb923c 50%, var(--market-line));
-  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  /* Кнопка в системе, а не своим оранжевым.
+
+     Цвета были прописаны числами мимо токенов и остались единственным
+     оранжевым пятном после перехода на лайм: она читалась как чужая
+     кнопка, случайно попавшая в шапку. */
+  color: var(--market-accent-text);
+  border: 1px solid color-mix(in srgb, var(--market-accent) 46%, var(--market-line));
+  background: var(--market-accent-soft);
   box-shadow: var(--shadow-sm);
   transition: transform var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
 }
@@ -11083,5 +11097,27 @@ button:disabled,
     :root:not([data-theme="light"]) {
       --market-accent: color(display-p3 0.984 0.749 0.141);
     }
+  }
+}
+
+/* Главное действие шапки — лаймовое, как в макете.
+
+   Кнопка «Подать объявление» была индиговой, то есть того же цвета, что и
+   ссылки вокруг: она не читалась как главное действие, ради которого
+   площадка и существует. В макете такие кнопки залиты акцентом, и это
+   единственное цветное пятно в шапке — глаз находит его сразу.
+
+   Цвет задаётся здесь, а не пропом color: у Mantine он приходит из палитры
+   темы, а наш акцент живёт в токенах. Тёмный текст на лайме даёт 12.69 —
+   замер сделан до правки. */
+.header-create-cta.mantine-Button-root {
+  background: var(--market-accent);
+  color: var(--market-accent-ink);
+  border-color: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .header-create-cta.mantine-Button-root:hover {
+    background: color-mix(in srgb, var(--market-accent) 88%, #000);
   }
 }
