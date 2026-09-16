@@ -65,10 +65,13 @@ import {
   IconMotorbike,
   IconTractor,
   IconEdit,
+  IconEqual,
   IconTrendingDown,
+  IconTrendingUp,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate } from "@/lib/format"
+import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate, plural } from "@/lib/format"
+import { describePriceVerdict, type PriceVerdict } from "@/lib/listing-price-verdict"
 import CreditCalculator from "@/components/listings/CreditCalculator"
 import { getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
 import { useFavorites } from "@/hooks/useFavorites"
@@ -85,6 +88,7 @@ interface VehicleData {
   id: string
   /** Последнее снижение цены, если оно было в течение месяца. */
   priceDrop?: { amount: number; at: string } | null
+  priceVerdict?: PriceVerdict | null
   priceHistory?: Array<{ oldPrice: number; newPrice: number; at: string }>
   make: string
   model: string
@@ -874,11 +878,38 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                 >
                   {formatPrice(data.price)}
                 </Text>
-                {/* Здесь стоял бейдж «Справедливая цена» — на каждом
-                    объявлении, без какого-либо расчёта. Фальшивый сигнал
-                    доверия хуже его отсутствия: он обесценивает и
-                    настоящие бейджи, и создаёт претензии покупателей.
-                    Вернуть можно только вместе с честной оценкой рынка. */}
+                {/* Оценка цены. Раньше здесь висел бейдж «Справедливая
+                    цена» — на каждом объявлении и без какого-либо
+                    расчёта; его убрали с условием вернуть только вместе
+                    с честной оценкой рынка. Она посчитана: медиана по
+                    машинам той же марки и возраста, минимум пять штук.
+
+                    Где выборки не набралось, бейджа нет вовсе. Это
+                    треть с лишним объявлений, и молчание там честнее
+                    оценки, выведенной из двух соседей. */}
+                {data.priceVerdict && (
+                  <Tooltip
+                    label={`Медиана похожих: ${formatPrice(data.priceVerdict.marketPrice)} · ${data.priceVerdict.sampleSize} ${plural(data.priceVerdict.sampleSize, "объявление", "объявления", "объявлений")}`}
+                    withArrow
+                    multiline
+                    w={240}
+                  >
+                    <Badge
+                      variant="light"
+                      color={data.priceVerdict.tone === "cheap" ? "teal" : data.priceVerdict.tone === "pricey" ? "orange" : "gray"}
+                      size="sm"
+                      radius="sm"
+                      mb="xs"
+                      leftSection={data.priceVerdict.tone === "cheap"
+                        ? <IconTrendingDown size={12} />
+                        : data.priceVerdict.tone === "pricey"
+                          ? <IconTrendingUp size={12} />
+                          : <IconEqual size={12} />}
+                    >
+                      {describePriceVerdict(data.priceVerdict)}
+                    </Badge>
+                  </Tooltip>
+                )}
                 {/* Снижение цены — сильный довод написать продавцу: оно
                     говорит о готовности торговаться. Показывается только
                     падение и только свежее, за последний месяц. */}

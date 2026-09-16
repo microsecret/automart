@@ -10,6 +10,7 @@ import { findLabel, BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUME
 import { cityInPrepositional } from "@/lib/geo"
 import { parseImages } from "@/lib/format"
 import { rankSimilarVehicles } from "@/lib/listing-similarity"
+import { YEAR_SPREAD, buildPriceVerdict } from "@/lib/listing-price-verdict"
 
 export const dynamic = "force-dynamic"
 
@@ -130,6 +131,31 @@ export default async function VehicleDetailPage({ params }: PageProps) {
   })
   const similar = rankSimilarVehicles(vehicle, similarCandidates, 4)
 
+  /* Оценка цены: дорого ли просят.
+
+     Выборка своя, а не та, что выше. «Похожие» ограничены ценой в
+     пределах 55–165% от нашей — на таком круге любая цена окажется «в
+     рынке», потому что круг вокруг неё и построен. Здесь фильтра по
+     цене нет вовсе: сравнивать надо с тем, что есть на рынке, а не с
+     тем, что мы заранее сочли похожим по цене.
+
+     Аукционные лоты в расчёт не берутся. Замер показал, что пересечения
+     почти нет: там корейские и японские машины, здесь Лады и старые
+     Шевроле. Смешивать рынки значило бы сравнивать цену Приоры с ценой
+     Соляриса из Пусана. */
+  const priceSamples = await prisma.vehicle.findMany({
+    where: {
+      id: { not: vehicle.id },
+      vehicleType: vehicle.vehicleType,
+      make: vehicle.make,
+      year: { gte: vehicle.year - YEAR_SPREAD, lte: vehicle.year + YEAR_SPREAD },
+      listings: { some: publicListingWhere },
+    },
+    select: { price: true, year: true },
+    take: 200,
+  })
+  const priceVerdict = buildPriceVerdict(vehicle.price, priceSamples)
+
   // Преобразуем для клиента
   /* Снижение цены — сильный довод написать продавцу.
 
@@ -207,6 +233,7 @@ export default async function VehicleDetailPage({ params }: PageProps) {
       otherVehicles: vehicle.user.vehicles.filter((v) => v.id !== vehicle.id),
     },
     reviews: listing?.reviews || [],
+    priceVerdict,
     similar: similar.map((v) => {
       const similarUsageMeta = getUsageMeta(v.vehicleType)
       const similarUsage = similarUsageMeta.field === "flightHours" ? v.flightHours
