@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useTelegramClosingGuard } from "@/lib/use-telegram-closing-guard"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl } from "@mantine/core"
+import { Autocomplete, Stack, Text, Paper, TextInput, Textarea, Select, NumberInput, Button, Group, Container, Loader, Center, ThemeIcon, Divider, Badge, FileInput, ActionIcon, SimpleGrid, SegmentedControl } from "@mantine/core"
 import { IconPlus, IconCheck, IconCar, IconTrash, IconPhoto } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import { PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, SELLER_TYPES, PART_AVAILABILITY_TYPES } from "@/lib/constants"
@@ -13,6 +13,7 @@ import { useMarketplaceImageUpload } from "@/hooks/useMarketplaceImageUpload"
 import ListingPhotoGrid from "@/components/uploads/ListingPhotoGrid"
 import { fetchJson } from "@/lib/api-client"
 import styles from "../listing-create-form.module.css"
+import { CITY_COORDINATES } from "@/lib/cities"
 
 type CreatedPartResponse = { id: string }
 
@@ -23,6 +24,10 @@ type CreatedPartResponse = { id: string }
    человек собирает по одной машине. Случайный «назад» или обрыв связи
    стирали работу целиком, притом что фотографии уже лежали на сервере
    — терялись даже их адреса. */
+/* Тот же справочник, что в форме машины и в фильтре каталога: город,
+   написанный от руки, выпадал из выдачи по своему же городу. */
+const CITY_NAMES = Object.keys(CITY_COORDINATES).sort((a, b) => a.localeCompare(b, "ru"))
+
 const PART_DRAFT_STORAGE_KEY = "part-listing-draft-v1"
 
 export default function CreatePartPage() {
@@ -244,7 +249,7 @@ export default function CreatePartPage() {
                   </Group>
                 )}
                 <Textarea label="Описание" placeholder="Состояние, комплектация, гарантия..." value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={3} />
-                <TextInput label="Город" value={f.location} onChange={(e) => set("location", e.target.value)} size="sm" />
+                <Autocomplete label="Город" required data={CITY_NAMES} limit={8} value={f.location} onChange={(value) => set("location", value)} size="sm" />
               </Stack>
             </Paper>
 

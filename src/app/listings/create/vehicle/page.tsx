@@ -18,6 +18,11 @@ import { fetchJson } from "@/lib/api-client"
 import { parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "../listing-create-form.module.css"
+import { CITY_COORDINATES } from "@/lib/cities"
+
+/* Справочник городов для подсказки: тот же, по которому работает фильтр
+   каталога. Сортировка по алфавиту — человек ищет свой город глазами. */
+const CITY_NAMES = Object.keys(CITY_COORDINATES).sort((a, b) => a.localeCompare(b, "ru"))
 
 const CATS = [
   { value: "CAR", label: "Легковые" },
@@ -698,7 +703,19 @@ function CreateVehicleWorkspace() {
                   <NumberInput id={`vehicle-field-${usageMeta.field}`} label={`${usageMeta.label}, ${usageMeta.unit}`} required={requiredSpecFields.has(usageMeta.field)} placeholder={usageMeta.field === "mileage" ? "120 000" : "2 500"} value={usageMeta.field === "flightHours" ? (f.flightHours ? Number(f.flightHours) : undefined) : usageMeta.field === "operatingHours" ? (f.operatingHours ? Number(f.operatingHours) : undefined) : (f.mileage ? Number(f.mileage) : undefined)} onChange={(v) => set(usageMeta.field, numericString(v))} error={fieldError(usageMeta.field)} size="sm" min={0} />
                 </SimpleGrid>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                  <TextInput id="vehicle-field-location" label="Город" placeholder="Москва" required={!isGarageMode} value={f.location} onChange={(e) => set("location", e.target.value)} error={fieldError("location")} size="sm" />
+                  {/* Подсказка из справочника, а не свободная строка.
+
+                      Замер базы: из двадцати написанных от руки городов
+                      шесть не совпадали со справочником — «уфа»
+                      строчными, «йошкар ола» без дефиса. Фильтр каталога
+                      их не находил, и объявление пропадало из выдачи по
+                      своему же городу.
+
+                      Autocomplete, а не Select: машина может стоять в
+                      селе, которого в справочнике нет, и запрещать это
+                      нельзя. Свой текст остаётся как есть — его приведёт
+                      к виду normalizeListingCity, если узнает. */}
+                  <Autocomplete id="vehicle-field-location" label="Город" placeholder="Москва" required={!isGarageMode} data={CITY_NAMES} limit={8} value={f.location} onChange={(value) => set("location", value)} error={fieldError("location")} size="sm" />
                   <TextInput id={`vehicle-field-${identityMeta.field}`} label={identityMeta.label} placeholder={identityMeta.placeholder} value={identityMeta.field === "vin" ? f.vin : identityMeta.field === "serialNumber" ? f.serialNumber : f.registrationNumber} onChange={(e) => set(identityMeta.field, e.target.value.toUpperCase())} error={fieldError(identityMeta.field)} size="sm" maxLength={identityMeta.maxLength} required={!isGarageMode} description={isGarageMode ? "Необязательно. VIN поможет быстро создать объявление позже." : identityMeta.description} />
                 </SimpleGrid>
               </Stack>

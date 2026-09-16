@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client"
 import { PART_AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPES, SELLER_TYPES } from "@/lib/constants"
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { normalizeListingCity } from "@/lib/listing-city"
 
 export const dynamic = "force-dynamic"
 
@@ -232,7 +233,17 @@ export async function POST(request: NextRequest) {
     const normalizedSubcategory = normalizeOptionalText(subcategory, 100)
     const normalizedMake = normalizeOptionalText(make, 80) || "Universal"
     const normalizedModel = normalizeOptionalText(model, 100) || "Universal"
-    const normalizedLocation = normalizeOptionalText(location, 160) || "Москва"
+    /* Город запчасти: приводится к справочнику и спрашивается всерьёз.
+
+       Раньше пустое поле молча становилось «Москвой» — запчасть из Уфы
+       оказывалась московской, и покупатель ехал за ней через полстраны
+       или не находил её у себя под боком. Выдумывать город хуже, чем
+       попросить его указать.
+
+       Приведение к справочнику — та же беда, что у машин: «уфа»
+       строчными не находилась фильтром каталога. */
+    const normalizedLocation = normalizeListingCity(normalizeOptionalText(location, 160))
+    if (!normalizedLocation) return NextResponse.json({ error: "Укажите город, где находится запчасть" }, { status: 400 })
     const normalizedOemNumber = normalizeOptionalText(oemNumber, 80)
     if (normalizedName.length < 2 || normalizedName.length > 200) return NextResponse.json({ error: "Название запчасти должно содержать от 2 до 200 символов" }, { status: 400 })
     const normalizedPrice = Math.trunc(Number(price))
