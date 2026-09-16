@@ -53,7 +53,7 @@ export const theme = createTheme({
     "ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, monospace",
 
   headings: {
-    /* Заголовки — Manrope.
+    /* Заголовки — фирменная гарнитура (Montserrat, см. layout.tsx).
 
        Отрицательный трекинг обязателен: без него крупный кегль расползается
        и заголовок читается рыхло. Числа взяты из макета, по которому

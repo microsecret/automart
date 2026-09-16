@@ -1,6 +1,6 @@
 import "./globals.css"
 import type { Metadata, Viewport } from "next"
-import { Manrope } from "next/font/google"
+import { Montserrat } from "next/font/google"
 import { ColorSchemeScript } from "@mantine/core"
 import AppProviders from "@/components/providers/AppProviders"
 import AppShellLayout from "@/components/layout/AppShellLayout"
@@ -18,16 +18,18 @@ import { absoluteUrl, getSiteUrl } from "@/lib/site-url"
  * одним шрифтом, а характеристики под ним — другим, на расстоянии в
  * несколько пикселей.
  *
- * Владелец назвал ориентиром интерфейс СберБизнеса. Его гарнитура
- * (SB Sans) лицензирована только для продуктов банка, ставить её нельзя.
- * Но её характер — геометрический гротеск с высоким ростом строчных и
- * открытыми формами — ровно то, что даёт Manrope, и он у нас уже
- * загружался.
+ * Гарнитура — Montserrat: её задаёт макет площадки, присланный владельцем.
+ *
+ * До этого стоял Manrope как замена SB Sans из СберБизнеса, который
+ * лицензирован только для продуктов банка. Montserrat той же природы —
+ * геометрический гротеск с высоким ростом строчных, — но шире по рисунку
+ * и даёт крупным заголовкам больше веса. Именно так они и набраны в
+ * макете.
  *
  * Один шрифт вместо двух заодно убирает второй файл из загрузки страницы:
  * иерархию держат кегль и насыщенность, а не смена гарнитуры.
  */
-const display = Manrope({
+const display = Montserrat({
   subsets: ["latin", "cyrillic"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-display-next",
