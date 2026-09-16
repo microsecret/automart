@@ -11123,3 +11123,192 @@ button:disabled,
     background: color-mix(in srgb, var(--market-accent) 88%, #000);
   }
 }
+
+/* ============================================================
+   Витрина «Где заправиться» на главной
+
+   Цены по сетям АЗС в городе человека: фирменный цвет сети, название,
+   число точек и медианная цена. Читается ради первой строки — самой
+   дешёвой сети, поэтому список идёт по возрастанию цены, а не по
+   алфавиту или размеру сети.
+   ============================================================ */
+
+.fuel-showcase {
+  /* Ритм задаёт --section-gap, как у соседних блоков главной. */
+  margin-block: 0;
+}
+
+/* Переключатель марки топлива: сегменты в одной обойме. */
+.fuel-showcase__fuels {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--market-line);
+  border-radius: 999px;
+  background: var(--market-surface-subtle);
+}
+
+.fuel-showcase__fuel {
+  min-width: 40px;
+  /* Сорок четыре пикселя по высоте — минимальная цель для пальца.
+     Кнопка в 28px выглядела аккуратнее и промахивалась на телефоне. */
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color var(--ease-fast) var(--ease-out),
+    color var(--ease-fast) var(--ease-out);
+}
+
+.fuel-showcase__fuel[data-active] {
+  background: var(--market-accent);
+  color: var(--market-accent-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fuel-showcase__fuel:not([data-active]):hover {
+    background: var(--market-surface);
+    color: var(--market-ink);
+  }
+}
+
+.fuel-showcase__all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--market-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+  transition: gap var(--ease-fast) var(--ease-out);
+}
+
+.fuel-showcase__all:hover {
+  gap: 10px;
+}
+
+.fuel-showcase__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fuel-showcase__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface);
+  /* Появление со ступенькой: строки приезжают одним ответом и иначе
+     вспыхнули бы разом. Сорок миллисекунд на строку — шесть строк
+     укладываются в четверть секунды и читаются как одно движение, а не
+     как очередь. */
+  animation: fuel-showcase-in var(--ease-slow) var(--ease-out) both;
+  animation-delay: calc(var(--row-index, 0) * 40ms);
+}
+
+@keyframes fuel-showcase-in {
+  from {
+    opacity: 0;
+    /* Восемь пикселей, а не двадцать: строка занимает своё место, а не
+       прилетает издалека. */
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Значок сети: фирменный цвет приходит из данных, потому что цвет сети —
+   это её цвет, а не палитра площадки. Лукойл красный в любой теме. */
+.fuel-showcase__brand {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.fuel-showcase__body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.fuel-showcase__network {
+  overflow: hidden;
+  color: var(--market-ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fuel-showcase__stations {
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+}
+
+.fuel-showcase__price {
+  flex: 0 0 auto;
+  color: var(--market-ink);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  /* Моноширинные цифры: цены стоят столбцом и должны сравниваться
+     глазом, а не вычитанием. */
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fuel-showcase__currency {
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.fuel-showcase__note {
+  margin-top: 10px;
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 62em) {
+  .fuel-showcase__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40em) {
+  .fuel-showcase__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Объявление снаружи медиа-запроса: вложенные @keyframes формально
+   допустимы, но разные движки смотрят на них по-разному, и правило
+   рискует не найтись именно там, где оно нужно. */
+@keyframes fuel-showcase-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Смысл появления — не дать строкам вспыхнуть разом; проявление
+     сохраняем, движение убираем. */
+  .fuel-showcase__card {
+    animation-name: fuel-showcase-fade;
+  }
+}

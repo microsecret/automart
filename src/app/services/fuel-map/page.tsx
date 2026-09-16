@@ -18,7 +18,7 @@ import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { getGenericIdentity, getNetworkIdentity, getStationIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
 import { TILE_SIZE, coordinatesToWorld, getDistanceInKilometers, worldToCoordinates } from "@/lib/map-geometry"
 import { describeOpeningHours } from "@/lib/opening-hours"
-import { plural } from "@/lib/format"
+import { formatFuelKopecks, plural } from "@/lib/format"
 import { tapFeedback } from "@/lib/telegram-webapp"
 
 type FuelStation = {
@@ -119,13 +119,8 @@ function getStationNetworkKey(station: FuelStation) {
   return getNetworkIdentity(station)?.label || getStationNetwork(station) || null
 }
 
-function formatKopecks(kopecks: number) {
-  const roubles = kopecks / 100
-  return new Intl.NumberFormat("ru-RU", {
-    minimumFractionDigits: Number.isInteger(roubles) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(roubles)
-}
+/* Общий формат цены топлива: он же на главной, в витрине заправок. */
+const formatKopecks = formatFuelKopecks
 
 /**
  * Вид заправки, когда сеть не распознана.

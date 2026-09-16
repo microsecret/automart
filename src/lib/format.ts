@@ -93,3 +93,20 @@ export function firstImage(images: string | null | undefined, fallback = "/place
   const arr = parseImages(images)
   return arr[0] || fallback
 }
+
+/**
+ * Цена топлива из копеек в рубли: «67,05» или «70».
+ *
+ * Дробная часть показывается, только когда она есть: «70,00 ₽» на
+ * колонке не пишут, а лишние нули в ряду цен мешают сравнивать глазами.
+ *
+ * Жила внутри страницы карты, пока цену не понадобилось показать ещё и
+ * на главной. Вторая копия разошлась бы с первой при первой же правке.
+ */
+export function formatFuelKopecks(kopecks: number): string {
+  const roubles = kopecks / 100
+  return new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: Number.isInteger(roubles) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(roubles)
+}

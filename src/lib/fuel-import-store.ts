@@ -4,6 +4,7 @@ import { findNearestCity } from "@/lib/cities"
 import { diffFuelAvailability } from "@/lib/fuel-appeared-diff"
 import { broadcastFuelAppeared } from "@/lib/fuel-appeared-broadcast"
 import { AVAILABILITY_FUEL_LABELS } from "@/lib/fuel-availability"
+import { sanitizeStationPrices } from "@/lib/fuel-price-sanity"
 
 /**
  * Общее хранилище импортированных АЗС и цен.
@@ -112,7 +113,14 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
   let saved = 0
   const logEntries: PendingLogEntry[] = []
 
-  for (const station of stations) {
+  for (const rawStation of stations) {
+    /* Источник врёт заметно чаще, чем кажется: пятая часть цен АИ-95 в
+       базе выходила за любые разумные пределы, вплоть до 195 ₽ за литр.
+       Отсев стоит здесь, на входе, а не у каждого читателя: карта, бот,
+       витрина на главной и сводка в админке берут цены из этой таблицы
+       и одинаково не должны видеть мусор. */
+    const prices = sanitizeStationPrices(rawStation.prices)
+    const station: ImportedStation = { ...rawStation, prices }
     const city = resolveStationCity(station)
 
     /* Что было на этой заправке до нынешнего прогона.

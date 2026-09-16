@@ -23,6 +23,7 @@ import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/u
 import CategoryShowcase from "./CategoryShowcase"
 import HowItWorks from "@/components/home/HowItWorks"
 import AuctionShowcase from "@/components/home/AuctionShowcase"
+import FuelShowcase from "@/components/home/FuelShowcase"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
@@ -514,6 +515,19 @@ export default function HomePage(p: HomePageProps = {}) {
       )}
 
       {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
+
+      {/* Цены на топливо по сетям.
+
+          Карта АЗС — самая живая часть площадки: четырнадцать тысяч
+          точек и семьдесят шесть тысяч цен против двадцати объявлений в
+          каталоге. Но попадал туда только тот, кто знал про неё и лез в
+          меню. Витрина отвечает на вопрос, который водитель задаёт себе
+          каждую неделю, — «где сегодня дешевле», — и ведёт на карту.
+
+          Стоит выше рассказа о сервисе и ниже направлений: гостю она
+          объясняет площадку лучше любого текста, вошедшему просто
+          полезна. Рассказ ниже видит только гость. */}
+      {p.showHero !== false && !p.categorySlug && <FuelShowcase />}
 
       {/* Объяснение сервиса — только гостю.
 
