@@ -488,7 +488,7 @@ function AuctionsPageContent() {
 
         {/* Подписка на аукционы: лоты обновляются каждый день, и следить
             за ними вручную бессмысленно. */}
-        <Group justify="flex-end" mb={-4}>
+        <Group justify="flex-end" mb={-4} className="auction-subscribe-row">
           <SaveSearchButton scope="AUCTIONS" />
         </Group>
 

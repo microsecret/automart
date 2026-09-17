@@ -11363,3 +11363,26 @@ button:disabled,
     animation: none;
   }
 }
+
+/* Подписка на аукционы: на телефоне во всю ширину.
+
+   Прижатая к правому краю кнопка висела в углу оторванным пятном, а
+   палец попадал в неё хуже, чем в полноширинную. Предложение «следить
+   за поиском» должно читаться как предложение, а не как служебная
+   ссылка. */
+@media (max-width: 48em) {
+  .auction-subscribe-row {
+    justify-content: stretch;
+  }
+
+  .auction-subscribe-row > * {
+    flex: 1 1 auto;
+  }
+
+  .auction-subscribe-row a,
+  .auction-subscribe-row button {
+    width: 100%;
+    /* Сорок четыре пикселя — минимальная цель для пальца. */
+    min-height: 44px;
+  }
+}
