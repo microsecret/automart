@@ -194,6 +194,17 @@ function AuctionsPageContent() {
   const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
   // Разбор выдачи закрыт по умолчанию — на первом экране нужны лоты, а не графики.
+  /* Фильтры на телефоне свёрнуты.
+
+     Замер: до первого лота на телефоне 2,2 экрана прокрутки — верх
+     занимали заголовок, описание, плашки и панель из восьми полей. Лоты
+     есть, их девять тысяч, но человек их не видел и уходил.
+
+     На широком экране фильтры остаются раскрытыми: там они сбоку и
+     ничего не заслоняют. Раскрытые по умолчанию при активном фильтре —
+     иначе человек, пришедший по ссылке с фильтром, не поймёт, почему
+     выдача короткая. */
+  const [filtersOpened, setFiltersOpened] = useState(false)
   const [insightsOpened, setInsightsOpened] = useState(false)
   /* Содержимое сводок не строится, пока их не раскрыли.
 
@@ -383,7 +394,20 @@ function AuctionsPageContent() {
               <Badge color="teal" variant="light">Импорт-фильтр: не старше {importPolicy?.maxAgeYears ?? 5} лет</Badge>
               <Text size="xs" c="dimmed">Год выпуска сверяется с карточкой; итоговую таможенную категорию подтвердим по документам.</Text>
             </Group>
-          <Box className="auction-filter-grid">
+            {/* Кнопка только на телефоне: на широком экране фильтры и так
+                открыты, и вторая кнопка там была бы лишней. */}
+            <Button
+              className="auction-filter-toggle"
+              variant="default"
+              size="sm"
+              fullWidth
+              onClick={() => setFiltersOpened((current) => !current)}
+              rightSection={<IconChevronDown size={15} style={{ transform: filtersOpened ? "rotate(180deg)" : undefined, transition: "transform var(--ease-base) var(--ease-out)" }} />}
+              aria-expanded={filtersOpened}
+            >
+              {filtersOpened ? "Скрыть фильтры" : hasActiveFilters ? "Фильтры активны" : "Подобрать по параметрам"}
+            </Button>
+          <Box className="auction-filter-grid" data-open={filtersOpened || hasActiveFilters || undefined}>
             <Select label="Страна" data={COUNTRIES} value={country} onChange={(value) => { setCountry(value || ""); setSource(""); setPage(1) }} size="sm" />
             <Select
               label="Площадка"
@@ -476,7 +500,10 @@ function AuctionsPageContent() {
                   <Text fw={800} size="sm">Быстрый выбор марки</Text>
                   <Text size="xs" c="dimmed">Марки и показатели рассчитаны по текущей выдаче, а не по рекламному каталогу.</Text>
                 </Box>
-                {sourceSummary && <Text className={styles.sourceSummary}>Источники: {sourceSummary}</Text>}
+                {/* Перечень источников уже стоит строкой над фильтрами.
+                    Второй раз тем же текстом он занимал на телефоне
+                    пять строк и отодвигал лоты ещё ниже — а до первого
+                    лота там и без того 2,2 экрана прокрутки. */}
               </Group>
 
               <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, lg: 5 }} spacing="sm" aria-label="Быстрый выбор марки">

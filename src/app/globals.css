@@ -11312,3 +11312,54 @@ button:disabled,
     animation-name: fuel-showcase-fade;
   }
 }
+
+/* ============================================================
+   Фильтры аукционов: свёрнуты на телефоне
+
+   Замер 17 сентября 2026: до первого лота на телефоне 2,2 экрана
+   прокрутки против 1,2 на десктопе. Верх страницы занимали заголовок,
+   описание, две плашки и панель из восьми полей — девять тысяч лотов
+   человек просто не видел.
+
+   На широком экране ничего не меняется: там фильтры не заслоняют
+   выдачу, и прятать их незачем.
+   ============================================================ */
+
+.auction-filter-toggle {
+  display: none;
+}
+
+@media (max-width: 48em) {
+  .auction-filter-toggle {
+    display: flex;
+  }
+
+  /* Сетка скрыта, пока её не раскрыли. `display: none`, а не нулевая
+     высота: свёрнутые поля не должны попадать в обход по Tab и в
+     озвучку скринридера — иначе человек «проваливается» в невидимое. */
+  .auction-filter-grid:not([data-open]) {
+    display: none;
+  }
+
+  .auction-filter-grid[data-open] {
+    animation: auction-filters-in var(--ease-slow) var(--ease-out) both;
+  }
+}
+
+@keyframes auction-filters-in {
+  from {
+    opacity: 0;
+    /* Шесть пикселей: панель разворачивается на месте, а не влетает. */
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auction-filter-grid[data-open] {
+    animation: none;
+  }
+}
