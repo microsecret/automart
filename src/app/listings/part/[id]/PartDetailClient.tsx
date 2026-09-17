@@ -131,6 +131,14 @@ export default function PartDetailClient({ data }: { data: PartData }) {
   const [bidLoading, setBidLoading] = useState(false)
   const [bidMessage, setBidMessage] = useState<string | null>(null)
   const router = useRouter()
+
+  /* Гостю — вход с намерением, вошедшему — сразу форма. Прямая ссылка
+     вернула бы гостя на форму без объявления в адресе: он написал бы в
+     пустоту. Та же правка, что в карточке машины. */
+  const messageHref = `/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}`
+  const contactHref = session
+    ? messageHref
+    : `/auth/signin?callbackUrl=${encodeURIComponent(returnUrlWithIntent(`/listings/part/${data.id}`, "message"))}`
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
   const isSeller = session?.user?.id === data.seller.id
   const isFav = Boolean(data.listingId && favoriteIds.has(data.listingId))
@@ -169,8 +177,9 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
     if (intent === "phone") void revealPhone()
     if (intent === "favorite") void toggleFavorite(data.listingId)
+    if (intent === "message") router.push(messageHref)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, data.listingId])
+  }, [session, data.listingId, messageHref])
 
   const revealPhone = async () => {
     if (!data.listingId || phone || contactRevealing) return
@@ -457,7 +466,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                     </Button>
                   )}
                   {isSeller && data.listingId && <Button size="lg" variant="light" color="indigo" leftSection={<IconEdit size={18} />} component={Link} href={`/listings/${data.listingId}/edit`}>Редактировать объявление</Button>}
-                  <Button size="lg" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={`/messages/new?listingId=${data.listingId || data.id}&recipientId=${data.seller.id}`}>
+                  <Button size="lg" variant="outline" color="indigo" leftSection={<IconMessageCircle2 size={18} />} component={Link} href={contactHref}>
                     Написать продавцу
                   </Button>
                   <Button size="lg" variant={isFav ? "light" : "default"} color={isFav ? "red" : "gray"} leftSection={<IconHeart size={18} fill={isFav ? "currentColor" : "none"} />} onClick={toggleDetailFavorite} loading={data.listingId ? isPending(data.listingId) : false} disabled={!data.listingId}>
