@@ -107,7 +107,6 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
 
   // Сдвиг для счётчика фото и подписи: каждая метка занимает свою ширину,
   // иначе при двух метках счётчик оказывался бы поверх них.
-  const tagsOffset = 8 + (listing.isFeatured ? 76 : 0) + (isFresh ? 78 : 0) + (isChecked ? 88 : 0)
 
   const vehicleType = listing.vehicle?.vehicleType || "CAR"
   const usageMeta = getUsageMeta(vehicleType)
@@ -311,10 +310,6 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                   </UnstyledButton>
                 ))}
               </Box>
-              {/* Счётчик фото */}
-              <Box pos="absolute" top={8} left={tagsOffset} style={{ background: "rgba(0,0,0,0.6)", borderRadius: 4, padding: "2px 6px", zIndex: 2 }}>
-                <Text fz={10} c="white" fw={500}>{activeImg + 1}/{images.length}</Text>
-              </Box>
             </>
           )}
 
@@ -328,16 +323,30 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               или «выгодно» там, где таких данных нет, нельзя — метка,
               которая есть у всех или ни на чём не основана, перестаёт
               что-либо значить. */}
-          {(listing.isFeatured || isFresh || isChecked) && (
-            <Box pos="absolute" top={8} left={8} style={{ zIndex: 2, display: "flex", gap: 4 }}>
+          {/* Метки и счётчик фото — один ряд, а не два слоя.
+
+              Счётчик стоял отдельно, с отступом слева, вычисленным
+              арифметикой: 8 + 76 за «Премиум» + 78 за «Сегодня» + 88 за
+              «Проверено». Это догадка о ширине, а не измерение — стоило
+              смениться шрифту или кеглю, и слои налезали друг на друга.
+              Так и вышло после правки типографики: на карточках было
+              видно обрезанные цифры под меткой.
+
+              В одном ряду браузер разводит элементы сам, и ширина
+              подписи больше ни на что не влияет. */}
+          {(listing.isFeatured || isFresh || isChecked || images.length > 1) && (
+            <Box pos="absolute" top={8} left={8} style={{ zIndex: 2, display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", maxWidth: "calc(100% - 52px)" }}>
               {isChecked && <span className="market-tag" data-tag="checked">✓ Проверено</span>}
               {listing.isFeatured && <span className="market-tag" data-tag="featured">Премиум</span>}
               {isFresh && <span className="market-tag" data-tag="new">Сегодня</span>}
+              {images.length > 1 && (
+                <span className="listing-card__photo-count">{activeImg + 1}/{images.length}</span>
+              )}
             </Box>
           )}
 
           {!hasDisplayImage && (
-            <Box pos="absolute" top={8} left={tagsOffset} style={{ zIndex: 2 }}>
+            <Box pos="absolute" top={8} left={8} style={{ zIndex: 2 }}>
               <Badge className="listing-card__media-label" color="gray" variant="white" size="xs" radius="sm">{missingMediaLabel}</Badge>
             </Box>
           )}
