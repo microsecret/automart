@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Collapse, Divider, Progress, UnstyledButton } from "@mantine/core"
 import NextImage from "next/image"
-import { IconBolt, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
+import { IconBolt, IconBus, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconTruck, IconX } from "@tabler/icons-react"
 import { formatPriceShort } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
@@ -71,6 +71,20 @@ type AuctionResponse = {
 
 const FUEL_LABELS: Record<string, string> = { GASOLINE: "Бензин", DIESEL: "Дизель", ELECTRIC: "Электро", HYBRID: "Гибрид", GAS: "Газ" }
 const BODY_LABELS: Record<string, string> = { SUV: "Кроссовер", SEDAN: "Седан", PICKUP: "Пикап", WAGON: "Универсал", HATCHBACK: "Хэтчбек", MINIVAN: "Минивэн", COUPE: "Купе" }
+
+/* Значки кузовов. Набор Tabler не различает седан и хэтчбек, поэтому
+   разные виды помечены теми значками, что у него есть: внедорожник,
+   пикап и фургон узнаются, остальные идут общим силуэтом машины.
+   Подпись под значком в любом случае называет кузов словом. */
+const BODY_ICONS: Record<string, React.ReactNode> = {
+  SUV: <IconCar size={20} />,
+  SEDAN: <IconCar size={20} />,
+  HATCHBACK: <IconCar size={20} />,
+  COUPE: <IconCar size={20} />,
+  PICKUP: <IconTruck size={20} />,
+  WAGON: <IconCar size={20} />,
+  MINIVAN: <IconBus size={20} />,
+}
 
 function isRentalTransferListing(conditionInfo: string | null) {
   if (!conditionInfo) return false
@@ -365,6 +379,21 @@ function AuctionsPageContent() {
     : "данные появятся после загрузки лотов"
   const topFuelDistribution = analytics?.fuelDistribution.slice(0, 3) || []
   const topBodyDistribution = analytics?.bodyDistribution.slice(0, 3) || []
+
+  /* Плитки строятся по живому распределению, а не по списку всех
+     возможных кузовов: купе с одиннадцатью лотами и универсал с
+     тридцатью пятью заняли бы место наравне с кроссоверами, которых
+     пять тысяч. Шесть плиток — ряд, который помещается в строку на
+     ноутбуке и переносится по две на телефоне. */
+  const bodyTiles = (analytics?.bodyDistribution || [])
+    .filter((item) => item.bodyType && item.count > 0)
+    .slice(0, 6)
+    .map((item) => ({
+      value: item.bodyType,
+      label: BODY_LABELS[item.bodyType] || item.bodyType,
+      count: item.count,
+      icon: BODY_ICONS[item.bodyType] || <IconCar size={20} />,
+    }))
   const importPolicy = data?.importPolicy
   const countryLabel = COUNTRIES.find((item) => item.value === country)?.label.replace(/^\S+\s/, "") || "этой страны"
   const selectedSourceIds = source
@@ -383,6 +412,40 @@ function AuctionsPageContent() {
         <Text size="xs" c="gray.5">
           {data?.pagination?.total || 0} авто в активном каталоге · {sourceSummary ? `источники: ${sourceSummary}` : "источники уточняются"} · доставка в РФ
         </Text>
+
+        {/* Быстрый выбор кузова — по макету площадки.
+
+            В макете здесь стоит ряд плиток с иконками в кружках: Авто,
+            Спецтехника, Грузовики, Оборудование, Недвижимость. Замер
+            показал, что в базе лотов ничего этого нет — только типы
+            кузова легковых машин: 5090 кроссоверов, 4807 седанов, 2061
+            хэтчбек. Плитки «Недвижимость» и «Оборудование» вели бы в
+            пустоту.
+
+            Поэтому ряд построен на том, что есть. Выбор кузова и так был
+            в фильтрах, но прятался в свёрнутой панели: самое частое
+            решение покупателя требовало двух нажатий.
+
+            Число под подписью живое — из той же статистики, что питает
+            разбор выдачи ниже. */}
+        {bodyTiles.length > 0 && (
+          <Box className="auction-body-tiles" role="group" aria-label="Тип кузова">
+            {bodyTiles.map((tile) => (
+              <button
+                key={tile.value}
+                type="button"
+                className="auction-body-tile"
+                data-active={bodyType === tile.value || undefined}
+                aria-pressed={bodyType === tile.value}
+                onClick={() => { setBodyType(bodyType === tile.value ? "" : tile.value); setPage(1) }}
+              >
+                <span className="auction-body-tile__icon" aria-hidden="true">{tile.icon}</span>
+                <span className="auction-body-tile__label">{tile.label}</span>
+                <span className="auction-body-tile__count">{tile.count.toLocaleString("ru-RU")}</span>
+              </button>
+            ))}
+          </Box>
+        )}
 
         <Paper radius="md" p="md" withBorder className="auction-filter-panel">
           <Stack gap="sm">

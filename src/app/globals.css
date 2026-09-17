@@ -11879,3 +11879,118 @@ h4,
    разделители в белый — он писался под тёмно-зелёную шапку, которой я
    ошибочно заменил белую. Шапка вернулась к белой из макета, и блок
    стал вредным: белые буквы на белом фоне. */
+
+/* ============================================================
+   Быстрый выбор кузова на аукционах — по макету площадки
+
+   В макете здесь ряд плиток с иконками в кружках. Замер базы показал,
+   что категорий из макета (спецтехника, оборудование, недвижимость) в
+   лотах нет — только типы кузова легковых машин. Ряд построен на том,
+   что есть, и числа под подписями живые.
+
+   Светло-зелёный кружок с зелёной иконкой — тот же мотив, что в ряду
+   действий на главной: один приём на весь сайт читается как система.
+   ============================================================ */
+
+.auction-body-tiles {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.auction-body-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px 11px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface);
+  color: var(--market-ink);
+  cursor: pointer;
+  transition:
+    border-color var(--ease-base) var(--ease-out),
+    background-color var(--ease-base) var(--ease-out),
+    transform var(--ease-fast) var(--ease-out);
+}
+
+.auction-body-tile__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--market-accent-soft);
+  color: var(--market-accent-text);
+  transition: background-color var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out);
+}
+
+.auction-body-tile__label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: var(--leading-snug);
+  white-space: nowrap;
+}
+
+.auction-body-tile__count {
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Выбранный кузов: зелёная рамка и заливка кружка.
+
+   Отличие держится цветом рамки и кружка, а не заливкой всей плитки:
+   шесть залитых плиток в ряду читались бы как шесть кнопок действия, а
+   это выбор одного из шести. */
+.auction-body-tile[data-active] {
+  border-color: var(--market-accent-text);
+  background: var(--market-accent-soft);
+}
+
+.auction-body-tile[data-active] .auction-body-tile__icon {
+  background: var(--market-accent-text);
+  color: #fff;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .auction-body-tile:hover {
+    border-color: color-mix(in srgb, var(--market-accent-text) 45%, var(--market-line));
+    /* Два пикселя вверх: ряд из шести плиток, заметное движение читалось
+       бы как рябь. */
+    transform: translateY(-2px);
+  }
+}
+
+.auction-body-tile:active {
+  transform: translateY(0) scale(0.985);
+}
+
+@media (max-width: 75em) {
+  .auction-body-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48em) {
+  .auction-body-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auction-body-tile {
+    padding: 10px 6px 9px;
+  }
+
+  .auction-body-tile__icon {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auction-body-tile:hover,
+  .auction-body-tile:active {
+    transform: none;
+  }
+}
