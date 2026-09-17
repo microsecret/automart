@@ -653,6 +653,17 @@ export default function HomePage(p: HomePageProps = {}) {
         </Group>
       </Group>
 
+      {/* Каталог в две колонки — по макету площадки.
+
+          Фильтры стояли горизонтальной полосой над выдачей: пять полей
+          в строку, а остальные два десятка — под кнопкой «Фильтры».
+          Человек, пришедший подобрать машину, не видел, по чему вообще
+          можно фильтровать.
+
+          Место под колонку нашлось там, откуда ушло боковое меню: на
+          витрине его больше нет, и 236 пикселей освободились ровно под
+          фильтры. */}
+      <Box className="catalog-layout">
       <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="md" p="md" withBorder>
         <Stack gap="sm">
           {activeFilterCount > 0 && (
@@ -1028,10 +1039,14 @@ export default function HomePage(p: HomePageProps = {}) {
           actionHref={activeFilterCount > 0 ? undefined : CREATE_VEHICLE_HREF}
         />
       ) : view === "grid" ? (
-        <SimpleGrid cols={{base:1,sm:2,lg:3}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
+        {/* Две карточки в ряд, а не три: рядом стоит колонка фильтров,
+            и на третью не остаётся ширины — карточки сжимались бы до
+            состояния, в котором не читается ни цена, ни пробег. */}
+        <SimpleGrid cols={{base:1,sm:2}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
         <Stack gap="xs" className="catalog-appear">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}
+      </Box>
       </Box>
 
       {data && data.pagination?.pages > 1 && (
