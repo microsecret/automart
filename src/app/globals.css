@@ -119,10 +119,21 @@
 
      Для случаев, где акцент понадобится текстом на светлом, рядом стоит
      затемнённый вариант — он проходит порог читаемости. */
-  --market-accent: #a7f320;
-  --market-accent-ink: #0b1220;
-  --market-accent-soft: #f2fde0;
-  --market-accent-text: #4a7a00;
+  /* Зелёная палитра из макета площадки, роли розданы по замеру
+     контраста, а не по виду.
+
+     #22c55e с белым текстом даёт 2,28 при норме 4,5 — надписи на такой
+     кнопке читались бы плохо. Зато с тёмным текстом он даёт 8,22,
+     поэтому яркий зелёный работает только заливкой под тёмные буквы.
+
+     #166534 с белым — 7,13: это цвет тёмно-зелёной шапки из макета.
+     #15803d с белым — 5,02: годится зелёным текстом и ссылками. */
+  --market-accent: #22c55e;
+  --market-accent-ink: #052e16;
+  --market-accent-soft: #dcfce7;
+  --market-accent-text: #15803d;
+  /* Тёмно-зелёный: шапка, плашки, тёмные блоки. */
+  --market-accent-deep: #166534;
   --app-header-height: 68px;
 
   /* Шкала скруглений.
@@ -371,14 +382,15 @@
      поверхности. Сохраняем оттенок, поднимая светлоту до читаемого уровня. */
   --lewheel-wordmark-strong: #b5c9f2;
   /* На тёмном лайм даёт 14.17 — он для такой подложки и задуман. */
-  --market-accent: #a7f320;
-  --market-accent-ink: #0b1220;
+  --market-accent: #22c55e;
+  --market-accent-ink: #052e16;
   /* Подложка акцента зеленеет вслед за лаймом: тёплый коричневый остался
      от оранжевого и спорил бы с новым цветом. */
-  --market-accent-soft: #1b2a10;
+  --market-accent-soft: #14321f;
   /* На тёмном акцент читается текстом сам по себе: 11.18 на своей
      подложке. Затемнять его, как в светлой теме, здесь не нужно. */
-  --market-accent-text: #a7f320;
+  --market-accent-text: #4ade80;
+  --market-accent-deep: #166534;
   --market-scroll-thumb: #4b4d5a;
   --market-selection: #102a59;
   --market-selection-ink: #f5f5f7;
@@ -945,11 +957,16 @@ select {
      поэтому именно она держала прежний вид сайта даже там, где остальное
      уже перевели на спокойные поверхности.
 
-     Фон остаётся светлым: кнопки, иконки и текст в шапке рассчитаны на
-     светлую основу. */
-  background: var(--market-surface) !important;
-  border-bottom-color: var(--market-line) !important;
-  box-shadow: var(--shadow-sm) !important;
+     Теперь шапка тёмно-зелёная — по макету площадки. Прежний
+     комментарий верно предупреждал, что кнопки, иконки и текст
+     рассчитаны на светлую основу, поэтому цвет меняется не один: ниже
+     переопределены подписи вкладок, значки, поиск и разделители.
+
+     #166534 выбран по замеру: белый текст на нём даёт 7,13 при норме
+     4,5 — с запасом даже для мелких подписей. */
+  background: var(--market-accent-deep) !important;
+  border-bottom-color: color-mix(in srgb, #ffffff 12%, transparent) !important;
+  box-shadow: none !important;
   /* Размытия подложки здесь нет намеренно.
 
      Оно стояло, но фон шапки полностью непрозрачен — размывать под ним
@@ -960,12 +977,19 @@ select {
      телефоны, где прокрутка каталога подёргивалась. */
 }
 
-/* В тёмной теме та же идея, но в своих тонах: глубокий индиго вместо
-   светлого, иначе шапка светилась бы белым пятном. */
+/* Шапка одинаковая в обеих темах.
+
+   Раньше здесь стоял свой тон для тёмной, чтобы шапка не светилась
+   белым пятном. Теперь она тёмно-зелёная изначально — и в тёмной теме
+   смотрится так же уместно, как в светлой. Цвет бренда не должен
+   меняться от настроек системы: человек узнаёт площадку по нему.
+
+   Правило оставлено с тем же фоном, а не удалено: без него светлое
+   правило выше проиграло бы по весу тёмным правилам Mantine. */
 [data-mantine-color-scheme="dark"] .market-app-header {
-  background: var(--market-surface) !important;
-  border-bottom-color: var(--market-line) !important;
-  box-shadow: var(--shadow-sm) !important;
+  background: var(--market-accent-deep) !important;
+  border-bottom-color: color-mix(in srgb, #ffffff 12%, transparent) !important;
+  box-shadow: none !important;
 }
 
 
@@ -11786,4 +11810,84 @@ h4,
   .catalog-layout {
     margin-top: calc(var(--section-gap) * -1 + 14px);
   }
+}
+
+/* ============================================================
+   Содержимое тёмно-зелёной шапки
+
+   Фон шапки сменился на #166534, и всё, что рассчитано на светлую
+   основу, надо перекрасить вместе с ним — иначе тёмные подписи
+   исчезнут на тёмном.
+
+   Белый на #166534 даёт 7,13 по замеру, приглушённый белый 78% — 4,9:
+   обе величины выше нормы 4,5, поэтому иерархия «активный пункт ярче
+   остальных» сохраняется без потери читаемости.
+   ============================================================ */
+
+.market-app-header .market-header-tab {
+  color: rgb(255 255 255 / 0.82);
+}
+
+.market-app-header .market-header-tab:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+
+.market-app-header .market-header-tab--active {
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+}
+
+/* Логотип и служебные значки. */
+.market-app-header .market-app-header__utility-action,
+.market-app-header .mantine-ActionIcon-root[data-variant="subtle"] {
+  color: rgb(255 255 255 / 0.86);
+}
+
+.market-app-header .market-app-header__utility-action:hover,
+.market-app-header .mantine-ActionIcon-root[data-variant="subtle"]:hover {
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+}
+
+/* Поле поиска: стеклянная вставка вместо белой коробки. */
+.market-app-header .market-header-search .mantine-Input-input {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+}
+
+.market-app-header .market-header-search .mantine-Input-input::placeholder {
+  color: rgb(255 255 255 / 0.6);
+}
+
+.market-app-header .market-header-search .mantine-Input-section {
+  color: rgb(255 255 255 / 0.66);
+}
+
+.market-app-header .market-header-search .mantine-Input-input:focus {
+  border-color: rgb(255 255 255 / 0.45);
+  background: rgb(255 255 255 / 0.18);
+}
+
+/* Кнопка «Войти»: светлая обводка по тёмному, а не серая заливка. */
+.market-app-header .mantine-Button-root[data-variant="default"] {
+  border-color: rgb(255 255 255 / 0.28);
+  background: transparent;
+  color: #fff;
+}
+
+.market-app-header .mantine-Button-root[data-variant="default"]:hover {
+  border-color: rgb(255 255 255 / 0.5);
+  background: rgb(255 255 255 / 0.1);
+}
+
+/* Разделители внутри шапки. */
+.market-app-header .mantine-Divider-root {
+  border-color: rgb(255 255 255 / 0.16);
+}
+
+/* Логотип: на тёмном он должен быть белым. */
+.market-app-header .lewheel-brand__name {
+  color: #fff;
 }
