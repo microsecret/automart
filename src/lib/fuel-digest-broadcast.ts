@@ -20,6 +20,10 @@ import { sendChatPost } from "@/lib/telegram-post-sender"
 import { buildFuelDigest, MAX_DIGEST_STATIONS, type DigestStation } from "@/lib/fuel-digest-post"
 import { cityFromChatTitle } from "@/lib/fuel-invite-post"
 import { AVAILABILITY_FUEL_LABELS, isFresh, type AvailabilityFuel } from "@/lib/fuel-availability"
+import { CITY_COORDINATES } from "@/lib/cities"
+import { buildNetworkPrices } from "@/lib/fuel-network-prices"
+import { buildFuelPriceDigestPost } from "@/lib/fuel-price-digest-post"
+import { toCitySlug } from "@/lib/fuel-city-slug"
 
 /**
  * Не чаще раза в сутки на чат.
@@ -76,12 +80,17 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
     select: { stationId: true, stationName: true, city: true, fuel: true, createdAt: true },
   })
 
-  if (reports.length === 0) {
-    /* Отметок нет вовсе — рассылать нечего. Сводка «сегодня никто не
-       отмечал» в одиннадцать чатов подряд выглядит как признание, что
-       сервисом не пользуются. */
-    return result
-  }
+  /* Раньше здесь стоял выход: нет отметок — нечего рассылать. Замер
+     17 сентября 2026 показал, чем это обернулось: отметок семьдесят две
+     за всё время и ноль за последние полсуток, а задача запускается
+     каждое утро и каждый раз пишет в журнал {"chats":0,"sent":0}.
+     Сводка молчала месяцами при ста пятнадцати тысячах подписчиков.
+
+     Отметки остаются главным содержимым — они отвечают на вопрос «где
+     сейчас налито», которого не знает ни один источник. Но когда их
+     нет, вместо молчания уходит сводка цен: шестьдесят девять тысяч
+     цен из источников обновляются каждые пятнадцать минут и отвечают
+     на второй вопрос водителя — «где дешевле». */
 
   const prices = await prisma.fuelPriceReport.findMany({
     where: { status: "ACTIVE" },
@@ -149,8 +158,27 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
       .sort((left, right) => left.minutesAgo - right.minutesAgo)
       .slice(0, MAX_DIGEST_STATIONS)
 
+    /* Отметок по городу нет — уходит сводка цен. Она не заменяет
+       отметки: те говорят, где налито прямо сейчас, а цены — где
+       дешевле. Но молчание не говорит ничего. */
     if (stations.length === 0) {
-      result.skipped += 1
+      const priceText = await buildCityPriceDigest(city)
+      if (!priceText) {
+        result.skipped += 1
+        continue
+      }
+
+      const priceMessageId = await sendChatPost(
+        chat.id,
+        { photos: [], caption: priceText, buttons: [] },
+      )
+      if (!priceMessageId) {
+        result.failed += 1
+        continue
+      }
+
+      await prisma.fuelDigestPost.create({ data: { chatId: chat.id, messageId: priceMessageId } })
+      result.sent += 1
       continue
     }
 
@@ -178,4 +206,59 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
   }
 
   return result
+}
+
+/*
+ * Радиус выборки вокруг центра города — тот же, что у витрины на
+ * главной: поле `city` в базе источников содержит и «Трасса, Западная
+ * Сибирь», по нему город не найти.
+ */
+const CITY_RADIUS_KM = 30
+
+/** Марка, о которой сводка: самая ходовая. */
+const DIGEST_FUEL = "AI95"
+const DIGEST_FUEL_LABEL = "АИ-95"
+
+/**
+ * Сводка цен по сетям города или `null`, если сравнивать не с чем.
+ *
+ * Считается тем же кодом, что и витрина «Где заправиться» на главной:
+ * иначе чат и сайт показывали бы разные числа об одном городе.
+ */
+async function buildCityPriceDigest(city: string): Promise<string | null> {
+  const center = CITY_COORDINATES[city]
+  if (!center) return null
+
+  const latitudeDelta = CITY_RADIUS_KM / 111
+  const longitudeDelta = CITY_RADIUS_KM / (111 * Math.cos(center.latitude * Math.PI / 180))
+
+  const rows = await prisma.fuelStationImport.findMany({
+    where: {
+      latitude: { gte: center.latitude - latitudeDelta, lte: center.latitude + latitudeDelta },
+      longitude: { gte: center.longitude - longitudeDelta, lte: center.longitude + longitudeDelta },
+      prices: { some: { fuel: DIGEST_FUEL } },
+    },
+    select: {
+      name: true,
+      brand: true,
+      prices: { where: { fuel: DIGEST_FUEL }, select: { fuel: true, priceRub: true } },
+    },
+    take: 4000,
+  })
+
+  const networks = buildNetworkPrices(rows.flatMap((row) =>
+    row.prices.map((price) => ({
+      name: row.name || row.brand || "",
+      brand: row.brand,
+      fuel: price.fuel,
+      priceRub: price.priceRub,
+    })),
+  ))
+
+  return buildFuelPriceDigestPost({
+    city,
+    fuelLabel: DIGEST_FUEL_LABEL,
+    networks,
+    mapUrl: absoluteUrl(`/services/fuel-map/${toCitySlug(city)}`),
+  })
 }
