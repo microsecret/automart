@@ -32,6 +32,20 @@ export default async function ForumHighlights() {
      главной выглядит как признак заброшенной площадки. */
   if (topics.length < 3) return null
 
+  /* Отвечал ли кто-нибудь вообще.
+
+     Замер базы на 17 сентября 2026: 22 темы и ровно 22 сообщения, то
+     есть в каждой лежит один пост — сам вопрос, и ни одного ответа.
+     Блок честно печатал «0 ответов» шесть раз подряд, и главная
+     сообщала посетителю ровно одно: здесь никто никому не отвечает.
+
+     Число правдиво, поэтому подменять его нельзя. Но показывать
+     счётчик, когда он у всех нулевой, — значит выпячивать пустоту:
+     шесть одинаковых нулей читаются не как «пока тихо», а как
+     «площадка заброшена». Там, где ответы появятся, счётчик вернётся
+     сам — здесь ничего не придумывается и не прячется выборочно. */
+  const hasAnyReplies = topics.some((topic) => topic.replyCount > 0)
+
   return (
     <Box component="section" mt="lg" aria-label="Обсуждения на форуме">
       <Group justify="space-between" align="flex-end" mb="xs" gap="sm" wrap="wrap">
@@ -39,8 +53,13 @@ export default async function ForumHighlights() {
           <Text fw={800} fz="lg" c="var(--market-ink)" ff="var(--font-display),sans-serif">
             Спрашивают на форуме
           </Text>
+          {/* Подзаголовок обещал то, чего пока нет: «владельцы отвечают»
+              под шестью темами с нулём ответов — обещание, которое тут же
+              опровергается. Пока ответов нет, блок говорит о темах. */}
           <Text size="xs" c="var(--market-muted)">
-            Владельцы отвечают на вопросы о выборе, ремонте и растаможке
+            {hasAnyReplies
+              ? "Владельцы отвечают на вопросы о выборе, ремонте и растаможке"
+              : "Вопросы о выборе, ремонте и растаможке — от владельцев"}
           </Text>
         </Box>
         <Anchor component={Link} href="/forum" size="sm" fw={600}>
@@ -63,12 +82,16 @@ export default async function ForumHighlights() {
             <Text fw={600} fz="sm" c="var(--market-ink)" lh={1.35} lineClamp={2}>
               {topic.title}
             </Text>
-            <Group gap={4} mt={6}>
-              <IconMessages size={12} color="var(--market-muted)" />
-              <Text fz="xs" c="var(--market-muted)">
-                {topic.replyCount} {pluralReplies(topic.replyCount)}
-              </Text>
-            </Group>
+            {/* Счётчик только там, где есть что считать. Ноль ответов —
+                это не сведения о теме, а сообщение о пустоте форума. */}
+            {hasAnyReplies && topic.replyCount > 0 && (
+              <Group gap={4} mt={6}>
+                <IconMessages size={12} color="var(--market-muted)" />
+                <Text fz="xs" c="var(--market-muted)">
+                  {topic.replyCount} {pluralReplies(topic.replyCount)}
+                </Text>
+              </Group>
+            )}
           </Card>
         ))}
       </SimpleGrid>
