@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { parseProxyList, proxyGetBuffer } from "@/lib/proxy-fetch"
+import { readCachedMedia, writeCachedMedia } from "@/lib/auction-media-cache"
 
 export const dynamic = "force-dynamic"
 
@@ -158,6 +159,10 @@ async function fetchThrottledImage(url: URL) {
     const contentType = response.contentType?.split(";", 1)[0].trim().toLocaleLowerCase("en-US") || ""
     if (!response.ok || !ALLOWED_CONTENT_TYPES.has(contentType) || !response.body.length) return null
 
+    /* Файл уже целиком в памяти — кладём его в кэш, чтобы следующий
+       посетитель не ждал вовсе. */
+    void writeCachedMedia(url.toString(), { body: Buffer.from(response.body), contentType })
+
     return new NextResponse(new Uint8Array(response.body), {
       status: 200,
       headers: {
@@ -176,6 +181,29 @@ async function fetchThrottledImage(url: URL) {
 export async function GET(request: NextRequest) {
   const permitted = permittedImageUrl(request.nextUrl.searchParams.get("url"))
   if (!permitted) return NextResponse.json({ error: "Unsupported auction image" }, { status: 400 })
+
+  /* Кэш на диске — первым делом.
+
+     В коде ниже написано, что через релей «файл скачивается один раз, а
+     дальше приходит из кэша». Кэша не было: замер показал ровно сорок
+     секунд и на первый запрос, и на второй. Карточка ждёт восемь секунд,
+     поэтому 2571 японский лот стоял без фотографий.
+
+     Заголовки Cache-Control помогают только тому, кто уже дождался
+     ответа. Здесь кэш общий: первый посетитель платит ожиданием за
+     всех остальных. */
+  const cached = await readCachedMedia(permitted.url.toString())
+  if (cached) {
+    return new NextResponse(new Uint8Array(cached.body), {
+      status: 200,
+      headers: {
+        "Content-Type": cached.contentType,
+        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Length": String(cached.body.byteLength),
+      },
+    })
+  }
 
   // Хосты, режущие скорость по адресу сервера, качаются через прокси целиком:
   // потоковая отдача здесь ничего не даёт, файл всё равно небольшой, зато
@@ -267,14 +295,22 @@ export async function GET(request: NextRequest) {
     }
 
     let size = 0
+    /* Копия для кэша: порции складываются по ходу отдачи браузеру,
+       чтобы не качать файл второй раз ради сохранения. */
+    const chunks: Buffer[] = []
     const body = new ReadableStream<Uint8Array>({
       async pull(streamController) {
         try {
-          /* Порция, прочитанная ради подписи формата, отдаётся первой. */
+          /* Порция, прочитанная ради подписи формата, отдаётся первой.
+
+             В кэш она тоже идёт: без неё сохранился бы файл без первых
+             байтов — то есть битая картинка, которую потом отдавали бы
+             всем вместо настоящей. */
           if (firstChunk) {
             const head = firstChunk
             firstChunk = null
             size += head.byteLength
+            chunks.push(Buffer.from(head))
             streamController.enqueue(head)
             return
           }
@@ -282,6 +318,11 @@ export async function GET(request: NextRequest) {
           const { done, value } = await reader.read()
           if (done) {
             clearTimeout(timeout)
+            /* Файл дошёл целиком — кладём копию в кэш. Следующему
+               посетителю те же сорок секунд ждать не придётся. */
+            if (chunks.length) {
+              void writeCachedMedia(target, { body: Buffer.concat(chunks), contentType })
+            }
             streamController.close()
             return
           }
@@ -289,10 +330,14 @@ export async function GET(request: NextRequest) {
           size += value.byteLength
           if (size > MAX_IMAGE_BYTES) {
             clearTimeout(timeout)
+            /* Слишком большой файл в кэш не кладём: отдача всё равно
+               обрывается, а на диске остался бы обрезок. */
+            chunks.length = 0
             await reader.cancel("Auction image is too large")
             streamController.error(new Error("Auction image is too large"))
             return
           }
+          chunks.push(Buffer.from(value))
           streamController.enqueue(value)
         } catch (error) {
           clearTimeout(timeout)
