@@ -114,6 +114,11 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const { data: session } = useSession()
   const [mobileOpened, { close: closeMobile, toggle: toggleMobile }] = useDisclosure(false)
   const isAuthRoute = pathname?.startsWith("/auth/")
+  /* Главная — единственная страница, где колонка контента не ограничена
+     по ширине: её первый экран занимает фотография во всю ширину окна.
+     Точное сравнение, а не startsWith: иначе под условие попал бы весь
+     сайт, ведь любой путь начинается с косой черты. */
+  const isHome = pathname === "/"
   // Telegram Web Apps should open as a focused, full-screen experience. Rendering
   // the desktop shell around it wastes the mobile viewport and duplicates navigation.
   /* Страница, открытая из мини-приложения, тоже идёт без обвязки сайта.
@@ -413,7 +418,30 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
           сдвигает Main вправо на ширину сайдбара, и подвал обрывался, не
           доходя до левого края экрана. */}
       <AppShell.Main style={{ minHeight: "calc(100dvh - var(--app-header-height))", display: "flex", flexDirection: "column" }}>
-        <Box id="main-content" maw={1280} mx="auto" w="100%" className="app-main-content" style={{ flex: 1 }}>{children}</Box>
+        {/* Ограничитель ширины снимается на главной.
+
+            Колонка контента держится в 1280 пикселях, и это правильно для
+            страниц с текстом: строка шире примерно девяноста знаков
+            читается тяжело, глаз теряет начало следующей.
+
+            Но на главной первый экран — фотография во всю ширину окна.
+            Замер при экране 1440 показывал герой ровно 1280: он упирался
+            в этот maw, и по краям оставалось по 80 пикселей белого поля.
+            Изнутри героя это не обойти — отрицательные поля вычитают
+            отступы, но ограничитель ширины родителя им не преодолеть.
+
+            Ширину содержимого внутри держит сама главная: каталог,
+            разделы и аукционы лежат в своих сетках, а не растягиваются
+            по экрану вслед за колонкой. */}
+        <Box
+          id="main-content"
+          maw={isHome ? undefined : 1280}
+          mx="auto"
+          w="100%"
+          className="app-main-content"
+          data-lw-home={isHome ? "true" : undefined}
+          style={{ flex: 1 }}
+        >{children}</Box>
         <div className="app-footer-bleed">
           <AppFooter />
         </div>

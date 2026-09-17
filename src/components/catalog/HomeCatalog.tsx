@@ -407,7 +407,10 @@ export default function HomePage(p: HomePageProps = {}) {
   const { status: sessionStatus } = useSession()
 
   return (
-    <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)">
+    {/* Класс на стопке — опора для правила ширины в globals.css: на главной
+        ограничитель снят с колонки контента ради героя во всю ширину, и
+        ширину держат вместо него прямые дети этой стопки. */}
+    <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)" className="home-page-stack">
       {p.showHero !== false && !p.categorySlug && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
           <NextImage src="/images/home/automarket-hero.webp" alt="LeWheel: транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
