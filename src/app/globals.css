@@ -957,16 +957,15 @@ select {
      поэтому именно она держала прежний вид сайта даже там, где остальное
      уже перевели на спокойные поверхности.
 
-     Теперь шапка тёмно-зелёная — по макету площадки. Прежний
-     комментарий верно предупреждал, что кнопки, иконки и текст
-     рассчитаны на светлую основу, поэтому цвет меняется не один: ниже
-     переопределены подписи вкладок, значки, поиск и разделители.
+     Шапка белая — так она и выглядит в макете площадки: тёмно-зелёный
+     там только у значка логотипа и у отдельных плашек вроде
+     «Премиум-аккаунт», а не у всей полосы.
 
-     #166534 выбран по замеру: белый текст на нём даёт 7,13 при норме
-     4,5 — с запасом даже для мелких подписей. */
-  background: var(--market-accent-deep) !important;
-  border-bottom-color: color-mix(in srgb, #ffffff 12%, transparent) !important;
-  box-shadow: none !important;
+     Я сперва перекрасил её целиком и ошибся: на снимке это сразу
+     читалось как чужая шапка поверх светлой страницы. */
+  background: var(--market-surface) !important;
+  border-bottom-color: var(--market-line) !important;
+  box-shadow: var(--shadow-sm) !important;
   /* Размытия подложки здесь нет намеренно.
 
      Оно стояло, но фон шапки полностью непрозрачен — размывать под ним
@@ -987,9 +986,9 @@ select {
    Правило оставлено с тем же фоном, а не удалено: без него светлое
    правило выше проиграло бы по весу тёмным правилам Mantine. */
 [data-mantine-color-scheme="dark"] .market-app-header {
-  background: var(--market-accent-deep) !important;
-  border-bottom-color: color-mix(in srgb, #ffffff 12%, transparent) !important;
-  box-shadow: none !important;
+  background: var(--market-surface) !important;
+  border-bottom-color: var(--market-line) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 
@@ -2021,27 +2020,29 @@ select {
 .header-create-cta {
   position: relative;
   overflow: hidden;
-  /* Зелёная заливка с тёмным текстом — по макету площадки.
+  /* Зелёная кнопка с белым текстом — как в макете площадки.
 
-     Здесь стоял тёмно-синий градиент #102a59 → #14306b. На светлой
-     шапке он работал главной кнопкой сайта, но шапка стала
-     тёмно-зелёной, и синяя кнопка на ней потерялась.
+     Здесь стоял тёмно-синий градиент #102a59 → #14306b, оставшийся от
+     прежней темы.
 
-     Текст тёмный, а не белый, и это по замеру: белый на #22c55e даёт
-     2,28 при норме 4,5, тёмный #052e16 — 8,22. */
-  background: var(--market-accent) !important;
-  color: var(--market-accent-ink) !important;
+     Оттенок взят по замеру, а не на глаз: белый текст на ярком #22c55e
+     даёт 2,28 при норме 4,5 — надпись читалась бы плохо. На #15803d
+     тот же белый даёт 5,02, поэтому кнопки с белым текстом используют
+     именно его. Яркий зелёный остаётся для заливок под тёмный текст и
+     для кружков с иконками. */
+  background: var(--market-accent-text) !important;
+  color: #ffffff !important;
   box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--market-accent) 70%, transparent);
   transition: background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .header-create-cta:hover {
-  background: color-mix(in srgb, var(--market-accent) 88%, #ffffff) !important;
+  background: color-mix(in srgb, var(--market-accent-text) 88%, #000000) !important;
 }
 
-/* Значок плюса того же тёмного тона, что и подпись. */
+/* Значок плюса белый, как и подпись. */
 .header-create-cta .mantine-Button-section {
-  color: var(--market-accent-ink) !important;
+  color: #ffffff !important;
 }
 
 .header-create-cta::after {
@@ -11533,8 +11534,13 @@ button:disabled,
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: var(--market-accent);
-  color: var(--market-accent-ink);
+  /* Светло-зелёный кружок с зелёной иконкой — повторяющийся мотив
+     макета: он же в разделах главной, в кабинете и в мобильном
+     приложении. Сплошная яркая заливка, которая стояла здесь раньше,
+     спорила с зелёной кнопкой «Найти» рядом — два ярких пятна в одном
+     блоке, и глаз не понимал, куда смотреть. */
+  background: var(--market-accent-soft);
+  color: var(--market-accent-text);
 }
 
 .home-hero__action-label {
@@ -11838,99 +11844,9 @@ h4,
   }
 }
 
-/* ============================================================
-   Содержимое тёмно-зелёной шапки
+/* Содержимое шапки правил не переопределяет.
 
-   Фон шапки сменился на #166534, и всё, что рассчитано на светлую
-   основу, надо перекрасить вместе с ним — иначе тёмные подписи
-   исчезнут на тёмном.
-
-   Белый на #166534 даёт 7,13 по замеру, приглушённый белый 78% — 4,9:
-   обе величины выше нормы 4,5, поэтому иерархия «активный пункт ярче
-   остальных» сохраняется без потери читаемости.
-   ============================================================ */
-
-/* !important здесь обязателен, и это не небрежность.
-
-   Правила активной вкладки выше уже стоят с !important — они писались
-   под светлую шапку и задают тёмно-синий цвет. Без такой же пометки
-   мои правила проигрывают по весу: замер показал, что вкладки остались
-   тёмно-синими rgb(20, 48, 107) на тёмно-зелёном фоне, то есть почти
-   невидимыми.
-
-   0,92, а не 0,82: разницу между активным пунктом и остальными держит
-   заливка, а не блёклость букв. */
-.market-app-header .market-header-tab {
-  color: rgb(255 255 255 / 0.92) !important;
-}
-
-.market-app-header .market-header-tab .mantine-Button-section {
-  color: rgb(255 255 255 / 0.8) !important;
-}
-
-.market-app-header .market-header-tab:hover {
-  background: rgb(255 255 255 / 0.12) !important;
-  color: #fff !important;
-}
-
-.market-app-header .market-header-tab--active,
-.market-app-header .market-header-tab--active:hover {
-  background: rgb(255 255 255 / 0.18) !important;
-  color: #fff !important;
-}
-
-.market-app-header .market-header-tab--active .mantine-Button-section {
-  color: var(--market-accent) !important;
-}
-
-/* Логотип и служебные значки. */
-.market-app-header .market-app-header__utility-action,
-.market-app-header .mantine-ActionIcon-root[data-variant="subtle"] {
-  color: rgb(255 255 255 / 0.86);
-}
-
-.market-app-header .market-app-header__utility-action:hover,
-.market-app-header .mantine-ActionIcon-root[data-variant="subtle"]:hover {
-  background: rgb(255 255 255 / 0.12);
-  color: #fff;
-}
-
-/* Поле поиска: стеклянная вставка вместо белой коробки. */
-.market-app-header .market-header-search .mantine-Input-input {
-  border-color: rgb(255 255 255 / 0.2);
-  background: rgb(255 255 255 / 0.12);
-  color: #fff;
-}
-
-.market-app-header .market-header-search .mantine-Input-input::placeholder {
-  color: rgb(255 255 255 / 0.6);
-}
-
-.market-app-header .market-header-search .mantine-Input-section {
-  color: rgb(255 255 255 / 0.66);
-}
-
-.market-app-header .market-header-search .mantine-Input-input:focus {
-  border-color: rgb(255 255 255 / 0.45);
-  background: rgb(255 255 255 / 0.18);
-}
-
-/* Кнопка «Войти»: светлая обводка по тёмному, а не серая заливка. */
-.market-app-header .mantine-Button-root[data-variant="default"] {
-  border-color: rgb(255 255 255 / 0.28);
-  background: transparent;
-  color: #fff;
-}
-
-.market-app-header .mantine-Button-root[data-variant="default"]:hover {
-  border-color: rgb(255 255 255 / 0.5);
-  background: rgb(255 255 255 / 0.1);
-}
-
-/* Разделители внутри шапки. */
-.market-app-header .mantine-Divider-root {
-  border-color: rgb(255 255 255 / 0.16);
-}
-
-/* Логотип берёт светлый вариант из своего компонента (tone="inverse"),
-   отдельное правило здесь не нужно и спорило бы с ним. */
+   Здесь стоял блок, красивший вкладки, поиск, кнопку входа и
+   разделители в белый — он писался под тёмно-зелёную шапку, которой я
+   ошибочно заменил белую. Шапка вернулась к белой из макета, и блок
+   стал вредным: белые буквы на белом фоне. */

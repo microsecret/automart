@@ -214,9 +214,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
           {/* ЛЕВО: Лого */}
           {onNavigationToggle && <Burger hiddenFrom="md" opened={navigationOpened} onClick={onNavigationToggle} size="sm" aria-label={navigationOpened ? "Закрыть навигацию" : "Открыть навигацию"} />}
           <Link href="/" style={{ textDecoration: "none", color: "inherit", flexShrink: 0 }}>
-            {/* Светлый логотип: шапка теперь тёмно-зелёная, и тёмный
-                знак на ней почти не читался. */}
-            <LeWheelBrand size={38} tone="inverse" priority />
+            <LeWheelBrand size={38} priority />
           </Link>
 
           {/* Разделы каталога — плоские вкладки, а не выпадающая плашка.
