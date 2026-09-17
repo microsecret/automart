@@ -25,6 +25,7 @@ import PopularVehicles from "@/components/home/PopularVehicles"
 import HowItWorks from "@/components/home/HowItWorks"
 import AuctionShowcase from "@/components/home/AuctionShowcase"
 import FuelShowcase from "@/components/home/FuelShowcase"
+import HeroFuelCard from "@/components/home/HeroFuelCard"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
@@ -501,24 +502,17 @@ export default function HomePage(p: HomePageProps = {}) {
                   ))}
                 </Group>
               </Box>
-              <Box className="home-auctions__summary">
-                <Text size="xs" c="rgba(255,255,255,0.68)" tt="uppercase" fw={700}>Маршрут сделки</Text>
-                <Stack gap={0} mt="sm" className="home-auctions__journey">
-                  {[
-                    ["Выбираете лот", "Фото, VIN и аукционный лист"],
-                    ["Фиксируем цену", "Договор до оплаты, без скрытых сборов"],
-                    ["Доставляем", "От аукциона до вашего города"],
-                  ].map(([title, description], index) => (
-                    <Group key={title} gap="sm" wrap="nowrap" align="flex-start" className="home-auctions__journey-step">
-                      <Box className="home-auctions__journey-mark">{index + 1}</Box>
-                      <Box>
-                        <Text size="sm" c="white" fw={700} lh={1.25}>{title}</Text>
-                        <Text size="xs" c="rgba(255,255,255,0.7)" mt={2} lh={1.3}>{description}</Text>
-                      </Box>
-                    </Group>
-                  ))}
-                </Stack>
-              </Box>
+              {/* Справа в герое — живые цены на топливо, как в макете.
+
+                  Здесь стоял «Маршрут сделки»: три строки о том, как
+                  устроена покупка с аукциона. Текст о процессе занимал
+                  место, на котором в макете стоят цифры, и на первом
+                  экране площадка рассказывала о себе вместо того, чтобы
+                  приносить пользу.
+
+                  Цены обновляются каждые пятнадцать минут и считаются
+                  тем же кодом, что витрина ниже и сводка для чатов. */}
+              <HeroFuelCard />
             </Group>
           </Box>
         </Paper>
