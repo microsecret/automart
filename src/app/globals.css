@@ -8282,7 +8282,7 @@ a:focus-visible > .market-linked-card {
    тапа не приходит, поэтому случайная ссылка оставалась белой и выглядела
    выбранной. CSS снимает подсветку сам и включает её только под курсором. */
 .market-app-footer__link {
-  color: var(--market-text-secondary);
+  color: var(--market-muted);
   font-size: var(--text-sm);
   line-height: 1.4;
   text-decoration: none;
@@ -12377,13 +12377,13 @@ h1[data-lw-hero] + p {
 .market-app-footer__tagline {
   font-size: var(--text-sm);
   line-height: 1.6;
-  color: var(--market-text-secondary);
+  color: var(--market-muted);
 }
 
 .market-app-footer__social {
   border: 1px solid var(--market-line);
   background: var(--market-background);
-  color: var(--market-text-secondary);
+  color: var(--market-muted);
   border-radius: 999px;
   transition: color var(--ease-fast) var(--ease-out), border-color var(--ease-fast) var(--ease-out);
 }
@@ -12418,12 +12418,12 @@ h1[data-lw-hero] + p {
 
 .market-app-footer__copy {
   font-size: var(--text-xs);
-  color: var(--market-text-secondary);
+  color: var(--market-muted);
 }
 
 .market-app-footer__legal {
   font-size: var(--text-xs);
-  color: var(--market-text-secondary);
+  color: var(--market-muted);
   text-decoration: none;
   transition: color var(--ease-fast) var(--ease-out);
 }
