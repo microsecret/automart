@@ -312,6 +312,14 @@ export async function GET(request: NextRequest) {
             size += head.byteLength
             chunks.push(Buffer.from(head))
             streamController.enqueue(head)
+            /* Мелкий снимок может уместиться в одну порцию — тогда
+               закрываем сразу, не заглядывая в следующий read(). */
+            if (contentLength !== null && Number.isFinite(contentLength) && contentLength > 0 && size >= contentLength) {
+              clearTimeout(timeout)
+              void writeCachedMedia(target, { body: Buffer.concat(chunks), contentType })
+              await reader.cancel("Auction image is complete")
+              streamController.close()
+            }
             return
           }
 
@@ -339,6 +347,22 @@ export async function GET(request: NextRequest) {
           }
           chunks.push(Buffer.from(value))
           streamController.enqueue(value)
+
+          /* Файл набран до заявленной длины — закрываем сами.
+
+             CarSensor присылает Content-Length, но не закрывает
+             соединение: следующий read() висит до таймаута, ветка `done`
+             не достигается, и запрос тянется ровно двадцать секунд после
+             последнего байта. Из-за этого кэш не заполнялся, а картинка
+             приходила за сорок секунд вместо доли секунды.
+
+             Ждать нечего: всё, что обещал источник, уже получено. */
+          if (contentLength !== null && Number.isFinite(contentLength) && contentLength > 0 && size >= contentLength) {
+            clearTimeout(timeout)
+            void writeCachedMedia(target, { body: Buffer.concat(chunks), contentType })
+            await reader.cancel("Auction image is complete")
+            streamController.close()
+          }
         } catch (error) {
           clearTimeout(timeout)
           streamController.error(error)
