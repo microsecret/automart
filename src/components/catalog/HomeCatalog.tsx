@@ -67,7 +67,14 @@ const HERO_ACTIONS = [
   { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", icon: <IconTag size={21} /> },
   { href: "/auctions", label: "Аукционы", note: "Япония, Корея, Китай", icon: <IconGavel size={21} /> },
   { href: "/parts-finder", label: "Запчасти", note: "Оригинал и аналоги", icon: <IconSettings size={21} /> },
-  { href: "/services/fuel-map", label: "Где заправиться", note: "Цены на карте", icon: <IconGasStation size={21} /> },
+  /* «Заправки», а не «Где заправиться»: замер показал, что полная
+     подпись требует 131 пиксель при ширине плитки 124 и вылезает за
+     края. Уменьшать кегль дальше нельзя — четырнадцать пикселей и так
+     нижняя граница читаемости.
+
+     Короткое имя не выдумано: оно уже стоит в навигации проекта как
+     shortLabel для этого же раздела. */
+  { href: "/services/fuel-map", label: "Заправки", note: "Цены на карте", icon: <IconGasStation size={21} /> },
 ] as const
 
 export default function HomePage(p: HomePageProps = {}) {
