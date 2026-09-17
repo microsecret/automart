@@ -21,7 +21,6 @@ import { plural } from "@/lib/format"
 import { countActiveCatalogFilters } from "@/lib/catalog-filter-state"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import CategoryShowcase from "./CategoryShowcase"
-import PopularVehicles from "@/components/home/PopularVehicles"
 import HowItWorks from "@/components/home/HowItWorks"
 import AuctionShowcase from "@/components/home/AuctionShowcase"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
@@ -523,16 +522,19 @@ export default function HomePage(p: HomePageProps = {}) {
           Первый экран теперь показывается всем, и поиск стоит внутри
           него вместе с пятью действиями. Второе поле было бы дублем. */}
 
-      {/* Сначала машины, потом разделы.
+      {/* Витрина «Свежие объявления» убрана — она дублировала каталог.
 
-          Здесь стояла витрина направлений: семь плиток, из них четыре
-          с надписью «Разместить первым». Человек, пришедший смотреть
-          машины, на первом экране после героя видел список пустых
-          категорий — по макету на этом месте сами автомобили.
+          Я добавил её, чтобы на первом экране после героя стояли машины,
+          а не пустые категории. Но не заметил, что ниже на той же
+          странице уже идёт полный каталог с той же сортировкой по
+          свежести: замер показал четыре карточки витрины и те же самые
+          четыре среди двадцати каталожных. Человек видел одни и те же
+          машины дважды, а на телефоне это добавляло к странице лишние
+          полторы тысячи пикселей.
 
-          Направления остались ниже: там человек уже посмотрел товар и
-          выбирает, куда идти дальше. */}
-      {p.showHero !== false && !p.categorySlug && <PopularVehicles />}
+          Задача, ради которой витрина появилась, решена: пустые
+          категории ушли ниже, и сразу после героя теперь каталог со
+          своим заголовком и счётчиком объявлений. */}
 
       {/* Витрина цен на топливо убрана с главной по решению владельца.
 
