@@ -780,8 +780,8 @@ function AuctionsPageContent() {
                       {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconCar size={12} />}>Кузов: {BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
                       <Badge className={styles.resultSpec} size="xs" variant="light" color={l.power ? "violet" : "gray"} leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
-                      {rentalTransfer && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue">Переоформление аренды</Badge>}
-                      {imageCount > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="blue" leftSection={<IconPhoto size={12} />}>Фото: {imageCount}</Badge>}
+                      {rentalTransfer && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo">Переоформление аренды</Badge>}
+                      {imageCount > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconPhoto size={12} />}>Фото: {imageCount}</Badge>}
                       {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">

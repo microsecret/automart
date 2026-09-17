@@ -239,7 +239,7 @@ function DeliveriesWorkspace() {
         </SimpleGrid>
 
         {isVerifiedPartner && (
-          <Paper withBorder radius="xl" p={{ base: "md", md: "lg" }} style={{ background: "linear-gradient(135deg, rgba(249,115,22,.07), rgba(79,70,229,.055))" }}>
+          <Paper withBorder radius="xl" p={{ base: "md", md: "lg" }} style={{ background: "linear-gradient(135deg, rgba(249,115,22,.07), rgba(21,128,61,.055))" }}>
             <Stack gap="md">
               <Group justify="space-between" gap="sm" wrap="wrap">
                 <Group gap="sm" wrap="nowrap">
@@ -307,7 +307,7 @@ function DeliveriesWorkspace() {
           </SimpleGrid>
         )}
 
-        <Paper withBorder radius="xl" p={{ base: "md", md: "lg" }} style={{ background: "linear-gradient(135deg, rgba(79,70,229,.055), rgba(20,184,166,.045))" }}>
+        <Paper withBorder radius="xl" p={{ base: "md", md: "lg" }} style={{ background: "linear-gradient(135deg, rgba(21,128,61,.055), rgba(20,184,166,.045))" }}>
           <Group justify="space-between" align="center" gap="lg" wrap="wrap">
             <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 280 }}>
               <ThemeIcon size={48} radius="lg" variant="gradient" gradient={{ from: "indigo", to: "violet", deg: 135 }}><IconBuildingWarehouse size={24} /></ThemeIcon>

@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Транспорт, запчасти и проверенные предложения зарубежных автомобильных площадок.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f8fafc",
-    theme_color: "#14306b",
+    background_color: "#f7f5f2",
+    theme_color: "#15803d",
     lang: "ru",
     categories: ["automotive", "shopping"],
   }

@@ -158,7 +158,7 @@ export default function SupportChat() {
               radius="xl"
               onClick={() => setOpen(true)}
               aria-label="Открыть поддержку"
-              style={{ boxShadow: "0 12px 30px -12px rgba(79,70,229,0.72)" }}
+              style={{ boxShadow: "0 12px 30px -12px rgba(21,128,61,0.72)" }}
             >
               <IconHeadset size={25} />
             </ActionIcon>

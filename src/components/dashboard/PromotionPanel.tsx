@@ -160,7 +160,7 @@ export default function PromotionPanel({ spentRub, activePromotions, paidCount, 
                       {(order._count?.chatPosts ?? 0) > 0 && (
                         <Group gap={4}>
                           <IconBrandTelegram size={12} color="var(--mantine-color-blue-6)" />
-                          <Text size="xs" c="blue.7">
+                          <Text size="xs" c="indigo.7">
                             Опубликовано в {order._count!.chatPosts} {pluralChats(order._count!.chatPosts)}
                           </Text>
                         </Group>

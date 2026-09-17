@@ -279,7 +279,7 @@ export default function CreatePartPage() {
                 {compat.length > 0 && (
                   <Group gap="xs" wrap="wrap">
                     {compat.map((c, i) => (
-                      <Badge key={i} size="md" variant="light" color="blue" rightSection={<ActionIcon type="button" aria-label={`Убрать ${c.make} ${c.model}`} onClick={() => setCompat(compat.filter((_, idx) => idx !== i))} size="xs" variant="transparent" color="blue"><IconTrash size={11} /></ActionIcon>}>
+                      <Badge key={i} size="md" variant="light" color="indigo" rightSection={<ActionIcon type="button" aria-label={`Убрать ${c.make} ${c.model}`} onClick={() => setCompat(compat.filter((_, idx) => idx !== i))} size="xs" variant="transparent" color="indigo"><IconTrash size={11} /></ActionIcon>}>
                         {c.make} {c.model} {c.generation ? `· ${c.generation}` : ""} {c.yearFrom ? `${c.yearFrom}-${c.yearTo || ""}` : ""}
                       </Badge>
                     ))}

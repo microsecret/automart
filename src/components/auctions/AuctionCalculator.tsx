@@ -278,14 +278,14 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
       <Paper radius="md" p="md" withBorder style={{ background: "linear-gradient(135deg, #eff6ff 0%, #fff 58%)", borderColor: "#bfdbfe" }}>
         <Stack gap="sm">
           <Group gap="sm" align="center">
-            <ThemeIcon variant="light" color="blue" size={36} radius="md"><IconCalculator size={20} /></ThemeIcon>
+            <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconCalculator size={20} /></ThemeIcon>
             <Stack gap={0}>
               <Text fw={800} fz="md" c="var(--market-ink)">Расчёт регулярных платежей по аренде</Text>
               <Text size="xs" c="gray.5">{make} {model} · {year} · {countryLabel}</Text>
             </Stack>
           </Group>
 
-          <Alert color="blue" variant="light" icon={<IconInfoCircle size={17} />}>
+          <Alert color="indigo" variant="light" icon={<IconInfoCircle size={17} />}>
             <Text size="xs"><b>Это не цена продажи автомобиля.</b> Источник предлагает переоформление действующего договора аренды. Ниже показан расчётный остаток платежей с учётом опубликованной компенсации.</Text>
           </Alert>
 

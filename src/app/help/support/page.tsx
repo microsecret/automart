@@ -33,7 +33,7 @@ export default function HelpSupportPage() {
             <Stack gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconUserCheck size={18} /></ThemeIcon><Text fw={700}>Затем — оператор</Text><Text size="sm" c="dimmed">Если ответа недостаточно, нажмите «Позвать оператора». Сотрудник увидит историю и продолжит диалог в том же окне.</Text></Stack>
           </Card>
           <Card withBorder radius="md" p="lg">
-            <Stack gap="sm"><ThemeIcon variant="light" color="blue" radius="md"><IconLock size={18} /></ThemeIcon><Text fw={700}>Контакт — по желанию</Text><Text size="sm" c="dimmed">Гость может оставить имя, телефон или email. Пароли, коды входа и платёжные данные поддержка не запрашивает.</Text></Stack>
+            <Stack gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconLock size={18} /></ThemeIcon><Text fw={700}>Контакт — по желанию</Text><Text size="sm" c="dimmed">Гость может оставить имя, телефон или email. Пароли, коды входа и платёжные данные поддержка не запрашивает.</Text></Stack>
           </Card>
         </SimpleGrid>
 

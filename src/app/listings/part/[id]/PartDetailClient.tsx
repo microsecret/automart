@@ -352,7 +352,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                       <Group key={c.id} gap="sm" align="center"
                         className="part-detail__compatibility-item"
                         style={{ borderRadius: 10, padding: "10px 12px" }}>
-                        <ThemeIcon variant="light" color="blue" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
+                        <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
                         <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
                           <Text size="sm" fw={600} c="var(--market-ink)">{c.make} {c.model}</Text>
                           <Text size="xs" c="var(--market-muted)">
