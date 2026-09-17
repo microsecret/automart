@@ -11477,12 +11477,30 @@ button:disabled,
   font-size: var(--text-sm);
   font-weight: 700;
   line-height: var(--leading-snug);
+  /* Подпись в одну строку.
+
+     «Продать авто» и «Где заправиться» переносились на две, и плитки
+     получали разную высоту — ряд выглядел сломанным. Перенос по словам
+     запрещён, а размер шрифта чуть ужимается на узких колонках. */
+  white-space: nowrap;
+}
+
+/* Ряд держит одинаковую высоту независимо от длины пояснения. */
+.home-hero__action-note {
+  min-height: 2.6em;
+}
+
+@media (max-width: 75em) {
+  .home-hero__action-label {
+    font-size: var(--text-xs);
+  }
 }
 
 .home-hero__action-note {
   color: rgb(255 255 255 / 0.72);
   font-size: var(--text-xs);
   line-height: var(--leading-snug);
+  text-wrap: balance;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -11532,5 +11550,46 @@ button:disabled,
   .home-hero__action:hover,
   .home-hero__action:active {
     transform: none;
+  }
+}
+
+/* Свежие объявления на главной — сетка карточек.
+
+   Та же ширина колонок, что у витрины аукционов ниже: два блока подряд
+   с разной сеткой читались бы как две разные страницы. */
+.popular-vehicles {
+  margin-block: 0;
+}
+
+.popular-vehicles__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.popular-vehicles__all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--market-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+  transition: gap var(--ease-fast) var(--ease-out);
+}
+
+.popular-vehicles__all:hover {
+  gap: 10px;
+}
+
+@media (max-width: 62em) {
+  .popular-vehicles__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 36em) {
+  .popular-vehicles__grid {
+    grid-template-columns: 1fr;
   }
 }

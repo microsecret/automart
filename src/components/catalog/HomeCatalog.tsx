@@ -21,6 +21,7 @@ import { plural } from "@/lib/format"
 import { countActiveCatalogFilters } from "@/lib/catalog-filter-state"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import CategoryShowcase from "./CategoryShowcase"
+import PopularVehicles from "@/components/home/PopularVehicles"
 import HowItWorks from "@/components/home/HowItWorks"
 import AuctionShowcase from "@/components/home/AuctionShowcase"
 import FuelShowcase from "@/components/home/FuelShowcase"
@@ -544,7 +545,16 @@ export default function HomePage(p: HomePageProps = {}) {
         </Group>
       )}
 
-      {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
+      {/* Сначала машины, потом разделы.
+
+          Здесь стояла витрина направлений: семь плиток, из них четыре
+          с надписью «Разместить первым». Человек, пришедший смотреть
+          машины, на первом экране после героя видел список пустых
+          категорий — по макету на этом месте сами автомобили.
+
+          Направления остались ниже: там человек уже посмотрел товар и
+          выбирает, куда идти дальше. */}
+      {p.showHero !== false && !p.categorySlug && <PopularVehicles />}
 
       {/* Цены на топливо по сетям.
 
@@ -558,6 +568,8 @@ export default function HomePage(p: HomePageProps = {}) {
           объясняет площадку лучше любого текста, вошедшему просто
           полезна. Рассказ ниже видит только гость. */}
       {p.showHero !== false && !p.categorySlug && <FuelShowcase />}
+
+      {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
 
       {/* Объяснение сервиса — только гостю.
 
