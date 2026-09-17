@@ -130,15 +130,31 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
      обвязка не должна возвращаться посреди пути. */
   const fromTelegram = useTelegramSession()
   const isStandaloneRoute = isAuthRoute || pathname?.startsWith("/telegram") || fromTelegram
-  /* Страница объявления идёт во всю ширину.
+  /* Страницы во всю ширину: карточки товара и витрины.
      Каталог разделов слева занимал 236px там, где человек уже выбрал машину:
      предложение уйти в «Мото» или «Запчасти» здесь работает против сделки, а
      фотографии и характеристикам ширины не хватало. Шапка и подвал остаются —
      уходит только боковое меню, как на auto.ru и Carvana. */
-  const isDetailRoute = Boolean(
+  const isFullWidthRoute = Boolean(
     pathname?.startsWith("/listings/vehicle/") ||
     pathname?.startsWith("/listings/part/") ||
-    pathname?.startsWith("/auctions/"),
+    pathname?.startsWith("/auctions/") ||
+    /* Витрины идут во всю ширину — по макету площадки.
+
+       Боковое меню занимало 236 пикселей на главной и в каталоге, то
+       есть там, где человек смотрит товар. Разделы из него никуда не
+       делись: те же шесть пунктов стоят горизонтально в шапке, как на
+       auto.ru, Carvana и в макете. Дублировать их колонкой слева
+       незачем — она только отодвигала карточки машин.
+
+       Список страниц, а не «всё кроме»: на служебных разделах
+       (кабинет, админка, помощь) боковое меню остаётся — там оно и
+       есть навигация. */
+    pathname === "/" ||
+    pathname === "/search" ||
+    pathname?.startsWith("/category/") ||
+    pathname === "/auctions" ||
+    pathname === "/parts-finder",
   )
   const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
   const isMobileNavActive = (href: string) => href === "/" ? pathname === "/" : pathname?.startsWith(href)
@@ -270,7 +286,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       // Значение совпадает с --app-header-height: боковое меню и подвал
       // считают от него свои отступы.
       header={{ height: 68 }}
-      navbar={{ width: 236, breakpoint: "md", collapsed: { mobile: !mobileOpened, desktop: isDetailRoute } }}
+      navbar={{ width: 236, breakpoint: "md", collapsed: { mobile: !mobileOpened, desktop: isFullWidthRoute } }}
       padding={0}
       style={{ minHeight: "100vh", background: "var(--market-background)" }}
     >
