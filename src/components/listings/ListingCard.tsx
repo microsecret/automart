@@ -403,7 +403,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           <Group justify="space-between" align="baseline" mb={4}>
             {/* Цена — главное в карточке: раньше она была 16px против 14px
                 у названия, и разницу в два пикселя глаз не различал. */}
-            <Text className="listing-card__price" fw={800} fz={24} lh={1.05} c="var(--market-ink)" ff="var(--font-display),sans-serif" style={{ letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
+            <Text className="listing-card__price">
               {formatPriceShort(listing.price)}
             </Text>
             {/* Строка «от N ₽/мес» убрана: она считалась по выдуманной
@@ -418,7 +418,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               открывать ли объявление. В четырнадцати оно шло тем же кеглем,
               что подписи и служебные строки вокруг, — карточка читалась как
               ровное мелкое полотно, где ничто не выделено. */}
-          <Text className="listing-card__title" fz="md" fw={600} c="var(--market-ink)" lh={1.35} mb={8}>
+          {/* Кегль, вес и цвет задаёт класс, а не разметка: встроенный стиль
+              сильнее CSS, и правка типографики карточки без этого не
+              действовала. */}
+          <Text className="listing-card__title" mb={6}>
             {listing.title}
           </Text>
 

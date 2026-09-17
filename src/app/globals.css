@@ -3308,6 +3308,13 @@ select {
   display: inline-flex;
   align-items: baseline;
   min-height: 24px;
+  /* Кегль и вес переехали сюда из разметки: там они стояли встроенным
+     стилем и перебивали любую правку типографики карточки. */
+  color: var(--market-ink);
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.05;
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--track-title);
 }
