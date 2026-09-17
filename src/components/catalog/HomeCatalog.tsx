@@ -1039,9 +1039,9 @@ export default function HomePage(p: HomePageProps = {}) {
           actionHref={activeFilterCount > 0 ? undefined : CREATE_VEHICLE_HREF}
         />
       ) : view === "grid" ? (
-        {/* Две карточки в ряд, а не три: рядом стоит колонка фильтров,
-            и на третью не остаётся ширины — карточки сжимались бы до
-            состояния, в котором не читается ни цена, ни пробег. */}
+        /* Две карточки в ряд, а не три: рядом стоит колонка фильтров, и
+           на третью не остаётся ширины — карточки сжимались бы до
+           состояния, в котором не читается ни цена, ни пробег. */
         <SimpleGrid cols={{base:1,sm:2}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
         <Stack gap="xs" className="catalog-appear">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
