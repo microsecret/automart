@@ -1674,15 +1674,18 @@ select {
    а не тот же индиго, что и пункты меню вокруг неё. */
 .market-side-account__cta {
   border: 0;
-  background: linear-gradient(135deg, var(--market-accent) 0%, #f0870a 100%);
+  /* Градиент и тень собраны из акцента, а не из жёстких оранжевых
+     значений прежней темы: заливка сменилась дважды, а эти строки
+     остались от первой и красили кнопку рыжим поверх зелёного. */
+  background: linear-gradient(135deg, var(--market-accent) 0%, color-mix(in srgb, var(--market-accent) 70%, #000000) 100%);
   color: var(--market-accent-ink);
-  box-shadow: 0 8px 18px -10px rgba(245, 159, 10, 0.85);
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--market-accent) 80%, transparent);
   font-weight: 700;
 }
 
 .market-side-account__cta:hover {
-  background: linear-gradient(135deg, #f0870a 0%, #dd7a05 100%);
-  box-shadow: 0 12px 24px -10px rgba(245, 159, 10, 0.95);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--market-accent) 86%, #000000) 0%, color-mix(in srgb, var(--market-accent) 62%, #000000) 100%);
+  box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--market-accent) 90%, transparent);
 }
 
 /* Подпись группы в меню кабинета. Одиннадцать пунктов подряд читались одним
@@ -2369,14 +2372,21 @@ select {
 .home-auctions__cta {
   background: var(--market-accent);
   color: var(--market-accent-ink);
-  box-shadow: 0 10px 24px -12px rgba(245, 159, 10, 0.75);
+  /* Тень цвета самой кнопки, а не оранжевая.
+
+     Здесь остались значения от прежней оранжевой темы: заливка давно
+     сменилась дважды — на лайм, потом на зелёный, — а тень под ней всё
+     это время светилась rgba(245, 159, 10). На снимке зелёная кнопка
+     стояла в рыжем ореоле. */
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--market-accent) 70%, transparent);
   font-weight: 700;
   transition: background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
 }
 
 .home-auctions__cta:hover {
-  background: #e08f06;
-  box-shadow: 0 14px 30px -12px rgba(245, 159, 10, 0.9);
+  /* Наведение темнее заливки на один шаг, а не оранжевое #e08f06. */
+  background: color-mix(in srgb, var(--market-accent) 86%, #000000);
+  box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--market-accent) 85%, transparent);
   transform: translateY(var(--lift-sm));
 }
 
@@ -11825,7 +11835,10 @@ h4,
    ============================================================ */
 
 .market-app-header .market-header-tab {
-  color: rgb(255 255 255 / 0.82);
+  /* 0,92, а не 0,82: на снимке подписи «Запчасти» и «Аукционы» читались
+     блёкло — глаз находил только активный пункт. Разницу между активным
+     и остальными держит заливка, а не блёклость букв. */
+  color: rgb(255 255 255 / 0.92);
 }
 
 .market-app-header .market-header-tab:hover {
@@ -11887,7 +11900,5 @@ h4,
   border-color: rgb(255 255 255 / 0.16);
 }
 
-/* Логотип: на тёмном он должен быть белым. */
-.market-app-header .lewheel-brand__name {
-  color: #fff;
-}
+/* Логотип берёт светлый вариант из своего компонента (tone="inverse"),
+   отдельное правило здесь не нужно и спорило бы с ним. */
