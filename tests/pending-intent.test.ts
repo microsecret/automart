@@ -107,7 +107,14 @@ test("гостя ведут на вход, а не прямо на форму с
     ["../src/app/listings/part/[id]/PartDetailClient.tsx", "part"],
   ] as const) {
     const source = read(file)
-    assert.match(source, new RegExp(`returnUrlWithIntent\(\`/listings/${kind}/\$\{data\.id\}\`, "message"\)`))
+    /* Поиск подстрокой, а не регулярным выражением: в исходнике здесь
+       вложенный шаблонный литерал с ${...}, и экранировать его в
+       RegExp — верный способ написать проверку, которая падает на
+       правильном коде. Первая версия этого теста так и падала. */
+    assert.ok(
+      source.includes(`returnUrlWithIntent(\`/listings/${kind}/\${data.id}\`, "message")`),
+      `${kind}: кнопка связи должна вести гостя на вход с намерением`,
+    )
     assert.doesNotMatch(source, /href=\{messageHref\}/, "кнопка должна вести через contactHref")
   }
 })
