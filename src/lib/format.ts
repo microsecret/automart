@@ -64,9 +64,11 @@ export function formatDate(date: Date | string | null | undefined): string {
 
 /** Русская плюрализация */
 /* Склонение живёт в отдельном модуле без зависимостей: оно нужно и
-   серверным рассылкам, которые `format` тянуть не могут. Здесь —
-   реэкспорт, чтобы старые импорты продолжали работать. */
-export { plural } from "@/lib/plural"
+   серверным рассылкам, которые `format` тянуть не могут. Здесь импорт с
+   реэкспортом, а не просто реэкспорт: имя используется и внутри этого
+   файла, а `export ... from` его в модуль не вводит. */
+import { plural } from "@/lib/plural"
+export { plural }
 
 /** Склонение "объявление" */
 export function listingsWord(n: number): string {

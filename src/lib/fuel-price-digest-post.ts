@@ -17,7 +17,9 @@
  * повод для сообщения.
  */
 
-// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+/* Импорт только типа: расширение нужно тест-раннеру, а директива
+   подавления здесь лишняя — типовой импорт компилятор не проверяет как
+   значение. */
 import type { NetworkPriceRow } from "./fuel-network-prices.ts"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { plural } from "./plural.ts"
