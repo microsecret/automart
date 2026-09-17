@@ -23,6 +23,7 @@ import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/u
 import CategoryShowcase from "./CategoryShowcase"
 import HowItWorks from "@/components/home/HowItWorks"
 import AuctionShowcase from "@/components/home/AuctionShowcase"
+import PromoSlot from "@/components/home/PromoSlot"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
@@ -1003,11 +1004,20 @@ export default function HomePage(p: HomePageProps = {}) {
           actionHref={activeFilterCount > 0 ? undefined : CREATE_VEHICLE_HREF}
         />
       ) : view === "grid" ? (
-        /* Четыре карточки в ряд: колонки фильтров рядом больше нет, и
-           ширины хватает. В двух колонках карточки выходили слишком
-           крупными — машин на экране помещалось вдвое меньше, и
-           страница тянулась вниз. */
-        <SimpleGrid cols={{base:1,sm:2,lg:3,xl:4}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
+        /* Пять карточек в ряд на широком экране.
+
+           Было четыре. Колонки фильтров рядом нет, ширина контейнера
+           1320 пикселей: при четырёх колонках карточка выходила 310
+           пикселей — крупнее, чем нужно, чтобы понять «что за машина и
+           почём», и ряд занимал лишнюю высоту. При пяти карточка около
+           246 пикселей, снимок в пропорции 16:10 — 154 пикселя высотой:
+           машина на нём по-прежнему узнаётся, а в первый экран попадает
+           на четверть больше объявлений.
+
+           Ниже xl сетка не уплотняется: на 1200 пять колонок дали бы по
+           220 пикселей, и в карточку перестало бы помещаться название
+           модели в одну строку. */
+        <SimpleGrid cols={{base:1,sm:2,lg:3,xl:5}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
         <Stack gap="xs" className="catalog-appear">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}
@@ -1040,6 +1050,15 @@ export default function HomePage(p: HomePageProps = {}) {
           <Text size="xs" c="dimmed">Страница {page} из {data.pagination.pages} · по {data.pagination.limit} объявлений</Text>
         </Stack>
       )}
+
+      {/* Рекламное место — между каталогом и разделами.
+
+          Здесь, а не выше каталога: до объявлений человек пришёл за
+          машинами, и полоса перед ними отодвинула бы их вниз. Дочитав
+          страницу выдачи, он уже сделал, зачем пришёл, и врезка не
+          мешает. Ставится только на главной: в категории и в поиске
+          человек внутри задачи, там реклама читается помехой. */}
+      {p.showHero !== false && !p.categorySlug && <PromoSlot />}
 
       {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
 

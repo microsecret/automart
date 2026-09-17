@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Text, Group, Stack, Container, Divider, Anchor, ActionIcon, SimpleGrid } from "@mantine/core"
+import { Box, Text, Group, Stack, Container, Anchor, ActionIcon, SimpleGrid } from "@mantine/core"
 import Link from "next/link"
 import { IconBrandTelegram } from "@tabler/icons-react"
 import LeWheelBrand from "@/components/brand/LeWheelBrand"
@@ -15,102 +15,97 @@ const SOCIALS = telegramBotUsername
 
 export default function AppFooter() {
   return (
-    // Ровная тёмная поверхность с тонкой линией сверху.
-    //
-    // Раньше подвал заливал градиент в чистый чёрный, поверх шла синяя рамка
-    // и внутреннее свечение — три приёма ради одной задачи «отделить». Тёмный
-    // тон и так отделяет подвал от светлой страницы, а свечение читалось как
-    // засветка на стыке.
-    //
-    // Цвет — не чистый #000: замеры премиальных сайтов показывают, что чёрный
-    // используют только как фон тёмной темы, но не как поверхность.
-    <Box component="footer" className="market-app-footer" style={{
-      background: "#0f1117",
-      borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-      marginTop: 60,
-    }}>
-      <Container size="xl" py="xl">
-        <Stack gap="lg">
-          <SimpleGrid cols={{ base: 2, xs: 3, md: 4, lg: 5 }} spacing={{ base: "lg", md: "md" }} verticalSpacing="md" className="market-app-footer__grid">
-            <Stack gap="sm" miw={0}>
-              <LeWheelBrand size={42} tone="inverse" />
-              <Text size="sm" c="#a1a1aa" lh={1.6}>
-                Маркетплейс транспорта и запчастей с инструментами проверки, подбора и сопровождения.
+    /* Подвал в тоне страницы, а не чёрная плита под ней.
+     *
+     * Он был залит #0f1117 — почти чёрным. На светлой странице это читалось
+     * как обрыв: белый лист заканчивался, начинался другой сайт. Тон
+     * подвала теперь родня фону страницы, на полтона глубже, и отделяет
+     * его линия, а не смена освещения.
+     *
+     * Заодно это чинит ссылки: на чёрном они шли серым #a1a1aa, и каждый
+     * оттенок приходилось подбирать отдельно от остального сайта. Теперь
+     * подвал берёт те же переменные текста, что и страницы над ним. */
+    <Box component="footer" className="market-app-footer">
+      <Container size="xl">
+        <Stack gap={0}>
+          {/* Верхняя часть: бренд отдельной колонкой, разделы — сеткой.
+              Бренд шире прочих колонок: под ним описание площадки, и в
+              узкой колонке оно ломалось на пять строк по два слова. */}
+          <Box className="market-app-footer__top">
+            <Stack gap={14} className="market-app-footer__brand">
+              <LeWheelBrand size={40} />
+              <Text className="market-app-footer__tagline">
+                Маркетплейс транспорта и запчастей: объявления по России, лоты мировых аукционов,
+                проверка истории и цены на заправках.
               </Text>
-              {SOCIALS.length > 0 && <Group gap={8}>
-                {SOCIALS.map((s) => {
-                  const Icon = s.icon
-                  return (
-                    <ActionIcon
-                      key={s.label}
-                      component="a"
-                      href={s.href}
-                      size={36}
-                      variant="filled"
-                      style={{ background: s.color + "20", border: "1px solid " + s.color + "40" }}
-                      aria-label={s.label}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <Icon size={18} color={s.color} />
-                    </ActionIcon>
-                  )
-                })}
-              </Group>}
+              {SOCIALS.length > 0 && (
+                <Group gap={8}>
+                  {SOCIALS.map((s) => {
+                    const Icon = s.icon
+                    return (
+                      <ActionIcon
+                        key={s.label}
+                        component="a"
+                        href={s.href}
+                        size={38}
+                        variant="default"
+                        className="market-app-footer__social"
+                        aria-label={s.label}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <Icon size={19} />
+                      </ActionIcon>
+                    )
+                  })}
+                </Group>
+              )}
             </Stack>
 
-            {FOOTER_SECTIONS.map((section) => (
-              <Stack key={section.title} gap={6} miw={0}>
-                  <Text size="xs" fw={800} c="#d4d4d8" tt="uppercase" style={{ letterSpacing: "var(--track-caps)" }}>
+            <SimpleGrid cols={{ base: 2, sm: 2, md: 4 }} spacing={{ base: "lg", md: "xl" }} verticalSpacing="lg" className="market-app-footer__grid">
+              {FOOTER_SECTIONS.map((section) => (
+                <Stack key={section.title} gap={10} miw={0}>
+                  <Text component="h3" className="market-app-footer__heading">
                     {section.title}
                   </Text>
-                  {section.links.map((link) => (
-                    <Anchor
-                      key={link.href}
-                      component={Link}
-                      href={link.href}
-                      /* Код раздела не загружается заранее.
+                  <Stack gap={8}>
+                    {section.links.map((link) => (
+                      <Anchor
+                        key={link.href}
+                        component={Link}
+                        href={link.href}
+                        /* Код раздела не загружается заранее.
 
-                         Подвал стоит на каждой странице и ведёт в три десятка
-                         разделов. Next по умолчанию подтягивает код каждого,
-                         поэтому на любой странице оказывались карта АЗС (47 КБ)
-                         и документы сделки (29 КБ) — замер показал полтора
-                         мегабайта скриптов, включая чужие разделы.
+                           Подвал стоит на каждой странице и ведёт в три десятка
+                           разделов. Next по умолчанию подтягивает код каждого,
+                           поэтому на любой странице оказывались карта АЗС (47 КБ)
+                           и документы сделки (29 КБ) — замер показал полтора
+                           мегабайта скриптов, включая чужие разделы.
 
-                         Ссылки подвала нажимают редко: экономия на загрузке
-                         важнее мгновенного перехода. */
-                      prefetch={false}
-                      size="sm"
-                      c="#a1a1aa"
-                      display="block"
-                      className="market-app-footer__link"
-                      style={{ lineHeight: 1.45 }}
-                      styles={{ root: { overflowWrap: "anywhere" } }}
-                    >
-                      {link.label}
-                    </Anchor>
-                  ))}
-              </Stack>
-            ))}
-          </SimpleGrid>
+                           Ссылки подвала нажимают редко: экономия на загрузке
+                           важнее мгновенного перехода. */
+                        prefetch={false}
+                        className="market-app-footer__link"
+                      >
+                        {link.label}
+                      </Anchor>
+                    ))}
+                  </Stack>
+                </Stack>
+              ))}
+            </SimpleGrid>
+          </Box>
 
-          {/* Линия была #27272a — контраст 1.27 к подложке подвала, то есть
-              её физически не видно, и копирайт со ссылками читался как
-              продолжение колонок выше. Тон подвала не меняется, линия
-              просто становится различимой. */}
-          <Divider color="#3f3f46" />
-
-          {/* Нижняя секция */}
-          <Group justify="space-between" align="center" wrap="wrap" gap="md">
-            {/* Копирайт и нижние ссылки были #52525b и #71717a — контраст 2.6
-                и 4.1 на чёрной подложке, ниже нормы WCAG AA. Ссылки к тому же
-                шли тремя разными оттенками, хотя это один уровень навигации. */}
-            <Text size="xs" c="#8a8a94">© {new Date().getFullYear()} LeWheel</Text>
-            <Group gap="lg" wrap="wrap">
-              <Anchor component={Link} href="/about" prefetch={false} size="xs" c="#a1a1aa">О проекте</Anchor>
-              <Anchor component={Link} href="/news" prefetch={false} size="xs" c="#a1a1aa">Новости</Anchor>
-              <Anchor component={Link} href="/legal/privacy" prefetch={false} size="xs" c="#a1a1aa">Конфиденциальность</Anchor>
-              <Anchor component={Link} href="/legal/terms" prefetch={false} size="xs" c="#a1a1aa">Условия</Anchor>
+          {/* Нижняя строка: копирайт и правовые ссылки.
+              Отделена линией, а не пустотой — иначе она висит в воздухе
+              и читается как ещё одна колонка навигации. */}
+          <Group justify="space-between" align="center" wrap="wrap" gap="md" className="market-app-footer__bottom">
+            <Text className="market-app-footer__copy">© {new Date().getFullYear()} LeWheel</Text>
+            <Group gap={20} wrap="wrap">
+              <Anchor component={Link} href="/about" prefetch={false} className="market-app-footer__legal">О проекте</Anchor>
+              <Anchor component={Link} href="/news" prefetch={false} className="market-app-footer__legal">Новости</Anchor>
+              <Anchor component={Link} href="/legal/privacy" prefetch={false} className="market-app-footer__legal">Конфиденциальность</Anchor>
+              <Anchor component={Link} href="/legal/terms" prefetch={false} className="market-app-footer__legal">Условия</Anchor>
             </Group>
           </Group>
         </Stack>
