@@ -195,7 +195,20 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             aria-hidden="true"
             tabIndex={-1}
           />
-          <AspectRatio ratio={5 / 4}>
+          {/* Пропорция снимка — 16:10 вместо 5:4.
+
+              Замер: фотография занимала 241 пиксель из 477 — половину
+              карточки, и лента машин тянулась вниз. При ширине карточки
+              около 310 пикселей 5:4 даёт 248 высоты, 16:10 — 194.
+
+              Задаётся здесь, а не в CSS: пропорцию держит компонент
+              Mantine, и правило `aspect-ratio` снаружи вступало с ним в
+              спор — прошлая попытка растянула карточку до 1254 пикселей
+              вместо того, чтобы сжать.
+
+              Кадр обрезается по центру (`object-fit: cover` у самого
+              изображения), машина остаётся узнаваемой. */}
+          <AspectRatio ratio={16 / 10}>
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
               {displayImage && (
