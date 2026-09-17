@@ -406,10 +406,10 @@ export default function HomePage(p: HomePageProps = {}) {
      именно для тех, кто ходит на него постоянно. */
   const { status: sessionStatus } = useSession()
 
+  /* Класс home-page-stack — опора для правила ширины в globals.css: на
+     главной ограничитель снят с колонки контента ради героя во всю
+     ширину, и ширину держат вместо него прямые дети этой стопки. */
   return (
-    {/* Класс на стопке — опора для правила ширины в globals.css: на главной
-        ограничитель снят с колонки контента ради героя во всю ширину, и
-        ширину держат вместо него прямые дети этой стопки. */}
     <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)" className="home-page-stack">
       {p.showHero !== false && !p.categorySlug && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
