@@ -85,17 +85,22 @@ export function buildFuelPriceDigestPost(input: PriceDigestInput): string | null
      город. */
   const spread = networks[networks.length - 1].priceRub - cheapest.priceRub
   const spreadLine = spread >= 100
-    ? `\nРазница по городу — до ${formatRoubles(spread)} ₽ на литре.`
+    ? `Разница по городу — до ${formatRoubles(spread)} ₽ на литре.`
     : ""
 
-  return [
+  /* Собираются блоки, а не строки. Прежний `filter(Boolean)` по строкам
+     выбрасывал и пустые разделители: заголовок слипался со списком, а в
+     московской сводке, где разброс копеечный и строки о нём нет, ссылка
+     прилипала к последней сети. Здесь отсеивается только необязательный
+     блок, а пустые строки между блоками ставит `join`. */
+  const blocks = [
     `⛽ <b>${escapeHtml(input.fuelLabel)} в городе ${escapeHtml(input.city)}</b>`,
-    "",
     lines.join("\n"),
     spreadLine,
-    "",
     `<a href="${input.mapUrl}">Все заправки на карте</a>`,
-  ].filter(Boolean).join("\n")
+  ].filter((block) => block.length > 0)
+
+  return blocks.join("\n\n")
 }
 
 /* Разметка чужая — названия сетей приходят из источников, и «AMP&CO»

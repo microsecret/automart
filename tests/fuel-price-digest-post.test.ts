@@ -92,3 +92,32 @@ test("ровные рубли пишутся без копеек", () => {
   assert.match(post!, /— 67 ₽/)
   assert.match(post!, /— 70 ₽/)
 })
+
+test("блоки разделены пустой строкой", () => {
+  /* Увидел на предпросмотре живого текста: `filter(Boolean)` выбрасывал
+     пустые строки-разделители вместе с необязательным блоком, и
+     заголовок слипался со списком. Тесты на содержимое этого не
+     замечали — проверять надо и промежутки. */
+  const post = buildFuelPriceDigestPost({
+    ...base,
+    networks: [network("Башнефть", 6_705), network("Татнефть", 6_900), network("Лукойл", 7_400)],
+  })!
+  const blocks = post.split("\n\n")
+  assert.equal(blocks.length, 4, "заголовок, список, разброс и ссылка")
+  assert.match(blocks[0], /в городе Уфа/)
+  assert.match(blocks[1], /^1\./)
+  assert.match(blocks[2], /Разница по городу/)
+  assert.match(blocks[3], /Все заправки на карте/)
+})
+
+test("без строки о разбросе ссылка не прилипает к списку", () => {
+  // Московский случай: разброс 31 копейка, строки о нём нет.
+  const post = buildFuelPriceDigestPost({
+    ...base,
+    city: "Москва",
+    networks: [network("Роснефть", 7_135), network("Татнефть", 7_159), network("Teboil", 7_166)],
+  })!
+  const blocks = post.split("\n\n")
+  assert.equal(blocks.length, 3, "заголовок, список и ссылка")
+  assert.match(blocks[2], /Все заправки на карте/)
+})
