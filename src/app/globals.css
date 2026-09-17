@@ -11398,3 +11398,105 @@ button:disabled,
     min-height: 44px;
   }
 }
+
+/* ============================================================
+   Пять действий в герое главной — по макету площадки.
+
+   Здесь стояли две кнопки, и человек на первом экране видел два пути
+   из пяти. Продать машину, найти запчасть или проверить цены на
+   топливо он мог, только открыв боковое меню, — а его на витрине
+   больше нет.
+
+   Значок над подписью: ряд из пяти подписей в строку не помещается
+   даже на широком экране, а столбиком каждый пункт читается сразу.
+   ============================================================ */
+
+.home-hero__actions {
+  gap: 10px;
+}
+
+.home-hero__action {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 128px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 12px 13px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: var(--radius-lg);
+  /* Стекло по тёмной фотографии: сплошная заливка спорила бы с
+     машиной на снимке, а прозрачность без подложки не давала бы
+     подписям контраста. */
+  background: rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color var(--ease-base) var(--ease-out),
+    border-color var(--ease-base) var(--ease-out),
+    transform var(--ease-fast) var(--ease-out);
+}
+
+.home-hero__action-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--market-accent);
+  color: var(--market-accent-ink);
+}
+
+.home-hero__action-label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: var(--leading-snug);
+}
+
+.home-hero__action-note {
+  color: rgb(255 255 255 / 0.72);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-hero__action:hover {
+    border-color: rgb(255 255 255 / 0.34);
+    background: rgb(255 255 255 / 0.18);
+    /* Два пикселя вверх: плитка отзывается на курсор, но не прыгает —
+       пять штук в ряду, и заметное движение читалось бы как рябь. */
+    transform: translateY(-2px);
+  }
+}
+
+.home-hero__action:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* На телефоне — две в ряд, пятая во всю ширину: пять колонок на
+   трёхсот девяноста пикселях дали бы значки без подписей. */
+@media (max-width: 48em) {
+  .home-hero__action {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 0;
+    padding: 12px 8px 11px;
+  }
+
+  .home-hero__action-icon {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero__action {
+    transition: background-color var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out);
+  }
+
+  .home-hero__action:hover,
+  .home-hero__action:active {
+    transform: none;
+  }
+}

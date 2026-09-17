@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import NextImage from "next/image"
 import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Divider, Chip, Loader, SegmentedControl, Tooltip , ThemeIcon} from "@mantine/core"
-import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles , IconBell} from "@tabler/icons-react"
+import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles, IconBell, IconTag, IconGavel, IconSettings } from "@tabler/icons-react"
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { COUNTRY_FLAGS, getBrandsByCategory } from "@/lib/catalog"
@@ -51,6 +51,23 @@ const BRAND_CATEGORY_BY_VEHICLE_TYPE: Record<string, "cars" | "moto" | "trucks" 
 }
 
 const ALL_CITY_NAMES = Object.keys(CITY_COORDINATES).sort((a, b) => a.localeCompare(b, "ru"))
+
+/* Пять действий в герое — по макету площадки.
+
+   Подпись говорит о задаче человека («Купить авто»), а не о разделе
+   сайта («Каталог»): на первом экране он решает, зачем пришёл, а не
+   изучает устройство меню.
+
+   Вторая строка — живой довод, а не украшение: число объявлений,
+   стран на аукционах, заправок. Где числа нет, стоит короткое
+   пояснение, что там произойдёт. */
+const HERO_ACTIONS = [
+  { href: "#catalog", label: "Купить авто", note: "Весь каталог", icon: <IconCar size={21} /> },
+  { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", icon: <IconTag size={21} /> },
+  { href: "/auctions", label: "Аукционы", note: "Япония, Корея, Китай", icon: <IconGavel size={21} /> },
+  { href: "/parts-finder", label: "Запчасти", note: "Оригинал и аналоги", icon: <IconSettings size={21} /> },
+  { href: "/services/fuel-map", label: "Где заправиться", note: "Цены на карте", icon: <IconGasStation size={21} /> },
+] as const
 
 export default function HomePage(p: HomePageProps = {}) {
   const [query, setQuery] = useState(p.initialQuery || "")
@@ -453,12 +470,25 @@ export default function HomePage(p: HomePageProps = {}) {
                   </Text>
                 )}
 
-                <Group gap="sm" mt={16} wrap="wrap">
-                  {/* Кнопка каталога ушла в поиск выше — здесь остались
-                      второстепенные пути: аукционы для тех, кто ищет
-                      машину из-за границы. */}
-                  <Button component={Link} href="/auctions" variant="white" color="dark" size="md" leftSection={<IconSparkles size={16} />}>Мировые аукционы</Button>
-                  <Button component={Link} href="#catalog" variant="subtle" color="gray.0" size="md" rightSection={<IconArrowUpRight size={16} />}>Весь каталог</Button>
+                {/* Пять действий кружками — как в макете площадки.
+
+                    Здесь стояли две кнопки, «Мировые аукционы» и «Весь
+                    каталог», и человек на первом экране видел только два
+                    пути из пяти возможных. Продать машину, найти запчасть
+                    или проверить VIN он мог, лишь догадавшись открыть
+                    боковое меню.
+
+                    Значок над подписью, а не сбоку: ряд из пяти подписей
+                    в строку не помещается даже на широком экране, а
+                    столбиком каждый пункт читается с одного взгляда. */}
+                <Group gap="sm" mt={22} wrap="wrap" className="home-hero__actions">
+                  {HERO_ACTIONS.map((action) => (
+                    <Link key={action.href} href={action.href} className="home-hero__action">
+                      <span className="home-hero__action-icon" aria-hidden="true">{action.icon}</span>
+                      <span className="home-hero__action-label">{action.label}</span>
+                      <span className="home-hero__action-note">{action.note}</span>
+                    </Link>
+                  ))}
                 </Group>
               </Box>
               <Box className="home-auctions__summary">
