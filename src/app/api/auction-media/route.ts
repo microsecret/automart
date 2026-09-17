@@ -4,9 +4,11 @@ import { readCachedMedia, writeCachedMedia } from "@/lib/auction-media-cache"
 
 export const dynamic = "force-dynamic"
 
-// Хосты, отдающие файл напрямую: путь заканчивается расширением, поэтому тип
-// проверяется до запроса. Carsensor отвечает по тридцать секунд, и релей нужен
-// ему ради кэша — файл скачивается один раз, дальше приходит из него.
+/* Хосты, отдающие файл напрямую: путь заканчивается расширением, поэтому
+   тип проверяется до запроса. Carsensor отвечает по сорок секунд, и релей
+   нужен ему ради кэша — файл скачивается один раз, дальше приходит из
+   него. Сам кэш живёт в lib/auction-media-cache: до 17 сентября 2026 эта
+   строка обещала кэш, которого не существовало. */
 const IAUTOS_IMAGE_HOSTS = new Set([
   "qimg.iautos.cn",
   "s1.iautos.cn",
@@ -19,9 +21,17 @@ const IAUTOS_IMAGE_HOSTS = new Set([
 // регулярно получает уже просроченную подпись и карточка остаётся без фото.
 // Сервер проходит редирект в момент запроса и всегда получает свежую подпись.
 const REDIRECTING_IMAGE_HOSTS = new Set(["storage.alpha-analytics.cz"])
-// Carsensor ограничивает скорость по адресу сервера: снимок идёт со скоростью
-// 178 байт в секунду и обрывается на середине. Через прокси тот же файл
-// приходит за доли секунды, поэтому такие хосты качаются в обход.
+/* Carsensor ограничивает скорость по адресу сервера: снимок идёт со
+   скоростью около четырёхсот байт в секунду и обрывается на середине.
+   Через прокси тот же файл приходит за доли секунды, поэтому такие хосты
+   качаются в обход.
+
+   Замер 17 сентября 2026: все прокси в обоих пулах (AUCTION_PROXY_POOL и
+   NVIDIA_PROXIES) не отвечают — услуга внешняя, кодом не чинится. Пока
+   их не восстановят, снимки CarSensor недоступны: источник отдаёт 16 КБ
+   из заявленных 91 КБ, и это обрезанный JPEG без маркера конца.
+   Карточка показывает честную заглушку «Фото ожидается» — это лучше
+   картинки, у которой нижняя половина серая. */
 const THROTTLED_IMAGE_HOSTS = new Set(["ccsrpcma.carsensor.net"])
 const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
 
@@ -58,6 +68,23 @@ function sniffImageType(head: Uint8Array): string | null {
 
   return null
 }
+/**
+ * Файл получен целиком: пришло столько байт, сколько обещал источник.
+ *
+ * Без Content-Length судить не о чем — тогда полагаемся на закрытие
+ * потока источником.
+ *
+ * Проверка появилась после разбора CarSensor: он присылает
+ * Content-Length 91 240, отдаёт 16 021 байт и соединение не закрывает.
+ * Дошедший кусок открывается как JPEG 640×480, но обрывается без
+ * маркера конца — браузер покажет верх картинки и серый низ. Класть
+ * такое в кэш нельзя: один медленный ответ испортил бы карточку для
+ * всех последующих посетителей.
+ */
+function isComplete(size: number, contentLength: number | null): boolean {
+  return contentLength !== null && Number.isFinite(contentLength) && contentLength > 0 && size >= contentLength
+}
+
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 const FETCH_TIMEOUT_MS = 20_000
 
@@ -314,7 +341,7 @@ export async function GET(request: NextRequest) {
             streamController.enqueue(head)
             /* Мелкий снимок может уместиться в одну порцию — тогда
                закрываем сразу, не заглядывая в следующий read(). */
-            if (contentLength !== null && Number.isFinite(contentLength) && contentLength > 0 && size >= contentLength) {
+            if (isComplete(size, contentLength)) {
               clearTimeout(timeout)
               void writeCachedMedia(target, { body: Buffer.concat(chunks), contentType })
               await reader.cancel("Auction image is complete")
@@ -350,14 +377,13 @@ export async function GET(request: NextRequest) {
 
           /* Файл набран до заявленной длины — закрываем сами.
 
-             CarSensor присылает Content-Length, но не закрывает
-             соединение: следующий read() висит до таймаута, ветка `done`
-             не достигается, и запрос тянется ровно двадцать секунд после
-             последнего байта. Из-за этого кэш не заполнялся, а картинка
-             приходила за сорок секунд вместо доли секунды.
+             Источник присылает Content-Length, но соединение не
+             закрывает: следующий read() висит до таймаута, ветка `done`
+             не достигается, и запрос тянется двадцать секунд после
+             последнего байта. Из-за этого кэш не заполнялся.
 
              Ждать нечего: всё, что обещал источник, уже получено. */
-          if (contentLength !== null && Number.isFinite(contentLength) && contentLength > 0 && size >= contentLength) {
+          if (isComplete(size, contentLength)) {
             clearTimeout(timeout)
             void writeCachedMedia(target, { body: Buffer.concat(chunks), contentType })
             await reader.cancel("Auction image is complete")
