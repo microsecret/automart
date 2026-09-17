@@ -92,7 +92,7 @@ export default function FuelShowcase() {
     <Box className="fuel-showcase" component="section" aria-label="Цены на топливо по сетям">
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm" mb="md">
         <Box>
-          <Text component="h2" fw={800} fz="var(--text-2xl)" c="var(--market-ink)">
+          <Text component="h2">
             Где заправиться
           </Text>
           <Text size="sm" c="dimmed">

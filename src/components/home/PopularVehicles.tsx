@@ -59,7 +59,7 @@ export default function PopularVehicles() {
     <Box component="section" className="popular-vehicles" aria-label="Популярные автомобили">
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm" mb="md">
         <Box>
-          <Text component="h2" fw={800} fz="var(--text-2xl)" c="var(--market-ink)">
+          <Text component="h2">
             Свежие объявления
           </Text>
           <Text size="sm" c="dimmed">
