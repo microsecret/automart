@@ -332,7 +332,7 @@ function AuctionDetail() {
     } finally { setSubmitting(false) }
   }
 
-  if (isLoading) return <Container py={80}><Center><Loader size="sm" color="orange" /></Center></Container>
+  if (isLoading) return <Container py={80}><Center><Loader size="sm" /></Center></Container>
   if (error) return <Container py={80}><AsyncErrorState title="Лот недоступен" description="Возможно, он уже завершён или снят с публикации." onRetry={() => void mutate()} /></Container>
   if (!listing) return <Container py={80}><Center><Text c="gray.5">Лот не найден</Text></Center></Container>
 
@@ -585,7 +585,7 @@ function AuctionDetail() {
                     <TextInput label="Email" type="email" inputMode="email" autoComplete="email" spellCheck={false} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} size="sm" />
                     <TextInput label="Город доставки" autoComplete="address-level2" required placeholder="Москва" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} size="sm" />
                     <Textarea label="Комментарий" placeholder="Вопросы, пожелания..." value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} size="sm" minRows={2} />
-                    <Button type="submit" color="orange" size="md" loading={submitting} leftSection={<IconCheck size={18} />} fullWidth>Отправить заявку</Button>
+                    <Button type="submit" size="md" loading={submitting} leftSection={<IconCheck size={18} />} fullWidth>Отправить заявку</Button>
                     <Group gap={6}><IconShieldCheck size={14} color="#059669" /><Text size="xs" c="gray.5">Контакты видит только администратор. Партнёру — имя и город.</Text></Group>
                     <Group gap={6}><IconTruckDelivery size={14} color="#1c4291" /><Text size="xs" c="gray.5">Доставка во все регионы РФ</Text></Group>
                   </Stack>
@@ -680,8 +680,13 @@ function AuctionDetail() {
               лот + комиссия · расчёт под ключ
             </Anchor>
           </Box>
+          {/* Цвет не задан — берётся из темы.
+
+              Здесь стоял color="orange" от прежней палитры: в зелёном
+              интерфейсе оранжевая кнопка читалась как предупреждение, а
+              это главное действие страницы. Оранжевый на сайте остался
+              там, где он значит тревогу: жалобы, очередь модерации. */}
           <Button
-            color="orange"
             size="md"
             onClick={() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "center" })}
           >

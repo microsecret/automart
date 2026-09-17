@@ -192,11 +192,11 @@ function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; 
         />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
-          <ThemeIcon variant="light" color="orange" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
+          <ThemeIcon variant="light" color="gray" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
           <Badge size="xs" variant="white" color="gray">Фото ожидается</Badge>
         </Stack>
       )}
-      <Badge pos="absolute" top={8} left={8} color="orange" variant="filled" size="sm">{auctionSourceLabel(listing.source)}</Badge>
+      <Badge pos="absolute" top={8} left={8} variant="filled" size="sm">{auctionSourceLabel(listing.source)}</Badge>
       <Badge pos="absolute" top={8} right={8} color="dark" variant="filled" size="sm">
         {listing.country === "JP" ? "🇯🇵" : listing.country === "KR" ? "🇰🇷" : listing.country === "US" ? "🇺🇸" : listing.country === "DE" ? "🇪🇺" : listing.country === "CN" ? "🇨🇳" : listing.country}
       </Badge>
@@ -673,7 +673,7 @@ function AuctionsPageContent() {
                         <Stack gap={7}>
                           {topFuelDistribution.map((item) => {
                             const share = analytics.total ? Math.round((item.count / analytics.total) * 100) : 0
-                            return <Box key={item.fuelType} className={styles.mixRow}><Group justify="space-between" gap="xs"><Text size="sm" fw={700}>{FUEL_LABELS[item.fuelType] || item.fuelType}</Text><Text size="xs" c="dimmed">{item.count} · {share}%</Text></Group><Progress value={share} color="orange" size="sm" radius="xl" mt={4} /></Box>
+                            return <Box key={item.fuelType} className={styles.mixRow}><Group justify="space-between" gap="xs"><Text size="sm" fw={700}>{FUEL_LABELS[item.fuelType] || item.fuelType}</Text><Text size="xs" c="dimmed">{item.count} · {share}%</Text></Group><Progress value={share} size="sm" radius="xl" mt={4} /></Box>
                           })}
                         </Stack>
                       </Box>
@@ -726,11 +726,11 @@ function AuctionsPageContent() {
               </Text>
               <Group justify="center" gap="xs">
                 {countryAwaitingConnection ? (
-                  <Button component={Link} href={`/services/smart-matching${country ? `?country=${country}` : ""}`} color="orange" size="sm" leftSection={<IconGavel size={15} />}>Оставить заявку на подбор</Button>
+                  <Button component={Link} href={`/services/smart-matching${country ? `?country=${country}` : ""}`} size="sm" leftSection={<IconGavel size={15} />}>Оставить заявку на подбор</Button>
                 ) : hasActiveFilters ? (
                   <Button variant="light" color="orange" size="sm" leftSection={<IconX size={15} />} onClick={resetFilters}>Сбросить фильтры</Button>
                 ) : (
-                  <Button component={Link} href="/services/smart-matching" color="orange" size="sm" leftSection={<IconGavel size={15} />}>Оставить заявку на подбор</Button>
+                  <Button component={Link} href="/services/smart-matching" size="sm" leftSection={<IconGavel size={15} />}>Оставить заявку на подбор</Button>
                 )}
                 <Button variant="subtle" color="gray" size="sm" leftSection={<IconRefresh size={15} />} onClick={() => window.location.reload()}>Обновить</Button>
               </Group>
@@ -828,7 +828,7 @@ function AuctionsPageContent() {
 
         {data && data.pagination.pages > 1 && (
           <Stack align="center" gap={6}>
-            <Pagination value={page} onChange={setPage} total={data.pagination.pages} boundaries={1} siblings={1} size="sm" color="orange" />
+            <Pagination value={page} onChange={setPage} total={data.pagination.pages} boundaries={1} siblings={1} size="sm" />
             <Text size="xs" c="dimmed">Страница {page} из {data.pagination.pages} · по {data.pagination.limit} лота</Text>
           </Stack>
         )}

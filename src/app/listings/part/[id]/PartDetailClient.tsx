@@ -430,7 +430,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   ) : (
                     <>
                       <TextInput aria-label="Сумма ставки в рублях" placeholder="Сумма ставки, ₽" type="number" value={bidAmount} onChange={(event) => setBidAmount(event.currentTarget.value)} mb="sm" />
-                      <Button fullWidth color="orange" loading={bidLoading} disabled={data.auctionStatus !== "ACTIVE" || !bidAmount} onClick={submitBid}>Подтвердить ставку</Button>
+                      <Button fullWidth loading={bidLoading} disabled={data.auctionStatus !== "ACTIVE" || !bidAmount} onClick={submitBid}>Подтвердить ставку</Button>
                     </>
                   )}
                   {bidMessage && <Text size="xs" c={bidMessage.includes("принята") ? "green" : "red"} mt="sm">{bidMessage}</Text>}
