@@ -80,3 +80,34 @@ test("на странице запчасти намерение тоже не т
   assert.match(part, /returnUrlWithIntent\(`\/listings\/part\/\$\{data\.id\}`, "favorite"\)/)
   assert.match(part, /intentDone\.current = true/)
 })
+
+test("каждое объявленное намерение где-то выполняется", () => {
+  /* Намерение «message» было объявлено в списке с самого начала, а
+     обрабатывались только «phone» и «favorite». Гость нажимал «Написать
+     продавцу», проходил вход и возвращался к ненажатой кнопке — ровно
+     та потеря, ради которой модуль и заведён.
+
+     Тест смотрит на список намерений, а не на жёсткий перечень: новое
+     намерение, добавленное без обработчика, упадёт здесь же. */
+  const rules = read("../src/lib/pending-intent.ts")
+  const declared = [...rules.matchAll(/"(phone|favorite|message)"/g)].map((match) => match[1])
+  const vehicle = read("../src/app/listings/vehicle/[id]/VehicleDetailClient.tsx")
+  const part = read("../src/app/listings/part/[id]/PartDetailClient.tsx")
+  for (const intent of new Set(declared)) {
+    assert.match(vehicle, new RegExp(`intent === "${intent}"`), `карточка машины не выполняет «${intent}»`)
+    assert.match(part, new RegExp(`intent === "${intent}"`), `карточка запчасти не выполняет «${intent}»`)
+  }
+})
+
+test("гостя ведут на вход, а не прямо на форму сообщения", () => {
+  /* Прямая ссылка на /messages/new возвращала гостя туда после входа
+     уже без объявления в адресе: он писал в пустоту. */
+  for (const [file, kind] of [
+    ["../src/app/listings/vehicle/[id]/VehicleDetailClient.tsx", "vehicle"],
+    ["../src/app/listings/part/[id]/PartDetailClient.tsx", "part"],
+  ] as const) {
+    const source = read(file)
+    assert.match(source, new RegExp(`returnUrlWithIntent\(\`/listings/${kind}/\$\{data\.id\}\`, "message"\)`))
+    assert.doesNotMatch(source, /href=\{messageHref\}/, "кнопка должна вести через contactHref")
+  }
+})
