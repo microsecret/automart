@@ -1,6 +1,6 @@
 import "./globals.css"
 import type { Metadata, Viewport } from "next"
-import { Montserrat } from "next/font/google"
+import { Montserrat, Playfair_Display } from "next/font/google"
 import { ColorSchemeScript } from "@mantine/core"
 import AppProviders from "@/components/providers/AppProviders"
 import AppShellLayout from "@/components/layout/AppShellLayout"
@@ -33,6 +33,25 @@ const display = Montserrat({
   subsets: ["latin", "cyrillic"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-display-next",
+  display: "swap",
+})
+
+/* Антиква для заголовков — вторая гарнитура.
+
+   Одним гротеском набранная страница читается плоско: разница между
+   заголовком и текстом держится только кеглем и весом, и на глаз это
+   воспринимается как «просто крупнее», а не как другой уровень.
+   Витрины, которые выглядят дорого, почти всегда строятся на паре
+   «антиква в заголовках плюс гротеск в тексте».
+
+   Playfair Display: у неё есть кириллица, высокий контраст штрихов и
+   узнаваемый рисунок — то самое, что даёт странице характер. Только
+   два начертания, чтобы не тянуть лишние файлы: обычное для крупных
+   заголовков и полужирное для акцентов. */
+const headings = Playfair_Display({
+  subsets: ["latin", "cyrillic"],
+  weight: ["500", "700"],
+  variable: "--font-headings-next",
   display: "swap",
 })
 
@@ -96,7 +115,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={display.variable} suppressHydrationWarning>
+    <html lang="ru" className={`${display.variable} ${headings.variable}`} suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultColorScheme="light" />
         {/* Auction cards use Encar's public CDN directly, so start DNS/TLS
