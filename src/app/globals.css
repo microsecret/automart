@@ -2021,11 +2021,27 @@ select {
 .header-create-cta {
   position: relative;
   overflow: hidden;
-  /* Градиент был прописан старыми светлыми оттенками и перебивал углублённую
-     тему, из-за чего главная кнопка сайта осталась блёклой. */
-  background: linear-gradient(135deg, #102a59 0%, #14306b 58%, #102a59 100%);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
+  /* Зелёная заливка с тёмным текстом — по макету площадки.
+
+     Здесь стоял тёмно-синий градиент #102a59 → #14306b. На светлой
+     шапке он работал главной кнопкой сайта, но шапка стала
+     тёмно-зелёной, и синяя кнопка на ней потерялась.
+
+     Текст тёмный, а не белый, и это по замеру: белый на #22c55e даёт
+     2,28 при норме 4,5, тёмный #052e16 — 8,22. */
+  background: var(--market-accent) !important;
+  color: var(--market-accent-ink) !important;
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--market-accent) 70%, transparent);
+  transition: background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
+}
+
+.header-create-cta:hover {
+  background: color-mix(in srgb, var(--market-accent) 88%, #ffffff) !important;
+}
+
+/* Значок плюса того же тёмного тона, что и подпись. */
+.header-create-cta .mantine-Button-section {
+  color: var(--market-accent-ink) !important;
 }
 
 .header-create-cta::after {
@@ -11834,21 +11850,37 @@ h4,
    остальных» сохраняется без потери читаемости.
    ============================================================ */
 
+/* !important здесь обязателен, и это не небрежность.
+
+   Правила активной вкладки выше уже стоят с !important — они писались
+   под светлую шапку и задают тёмно-синий цвет. Без такой же пометки
+   мои правила проигрывают по весу: замер показал, что вкладки остались
+   тёмно-синими rgb(20, 48, 107) на тёмно-зелёном фоне, то есть почти
+   невидимыми.
+
+   0,92, а не 0,82: разницу между активным пунктом и остальными держит
+   заливка, а не блёклость букв. */
 .market-app-header .market-header-tab {
-  /* 0,92, а не 0,82: на снимке подписи «Запчасти» и «Аукционы» читались
-     блёкло — глаз находил только активный пункт. Разницу между активным
-     и остальными держит заливка, а не блёклость букв. */
-  color: rgb(255 255 255 / 0.92);
+  color: rgb(255 255 255 / 0.92) !important;
+}
+
+.market-app-header .market-header-tab .mantine-Button-section {
+  color: rgb(255 255 255 / 0.8) !important;
 }
 
 .market-app-header .market-header-tab:hover {
-  background: rgb(255 255 255 / 0.1);
-  color: #fff;
+  background: rgb(255 255 255 / 0.12) !important;
+  color: #fff !important;
 }
 
-.market-app-header .market-header-tab--active {
-  background: rgb(255 255 255 / 0.16);
-  color: #fff;
+.market-app-header .market-header-tab--active,
+.market-app-header .market-header-tab--active:hover {
+  background: rgb(255 255 255 / 0.18) !important;
+  color: #fff !important;
+}
+
+.market-app-header .market-header-tab--active .mantine-Button-section {
+  color: var(--market-accent) !important;
 }
 
 /* Логотип и служебные значки. */
