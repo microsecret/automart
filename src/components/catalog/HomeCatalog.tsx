@@ -24,8 +24,6 @@ import CategoryShowcase from "./CategoryShowcase"
 import PopularVehicles from "@/components/home/PopularVehicles"
 import HowItWorks from "@/components/home/HowItWorks"
 import AuctionShowcase from "@/components/home/AuctionShowcase"
-import FuelShowcase from "@/components/home/FuelShowcase"
-import HeroFuelCard from "@/components/home/HeroFuelCard"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
@@ -502,17 +500,12 @@ export default function HomePage(p: HomePageProps = {}) {
                   ))}
                 </Group>
               </Box>
-              {/* Справа в герое — живые цены на топливо, как в макете.
+              {/* Правая колонка героя пуста намеренно.
 
-                  Здесь стоял «Маршрут сделки»: три строки о том, как
-                  устроена покупка с аукциона. Текст о процессе занимал
-                  место, на котором в макете стоят цифры, и на первом
-                  экране площадка рассказывала о себе вместо того, чтобы
-                  приносить пользу.
-
-                  Цены обновляются каждые пятнадцать минут и считаются
-                  тем же кодом, что витрина ниже и сводка для чатов. */}
-              <HeroFuelCard />
+                  Здесь стоял «Маршрут сделки», потом цены на топливо.
+                  Владелец попросил убрать и то, и другое: на первом
+                  экране должна быть машина и поиск, а не врезка сбоку.
+                  Фотография занимает освободившееся место целиком. */}
             </Group>
           </Box>
         </Paper>
@@ -541,18 +534,13 @@ export default function HomePage(p: HomePageProps = {}) {
           выбирает, куда идти дальше. */}
       {p.showHero !== false && !p.categorySlug && <PopularVehicles />}
 
-      {/* Цены на топливо по сетям.
+      {/* Витрина цен на топливо убрана с главной по решению владельца.
 
-          Карта АЗС — самая живая часть площадки: четырнадцать тысяч
-          точек и семьдесят шесть тысяч цен против двадцати объявлений в
-          каталоге. Но попадал туда только тот, кто знал про неё и лез в
-          меню. Витрина отвечает на вопрос, который водитель задаёт себе
-          каждую неделю, — «где сегодня дешевле», — и ведёт на карту.
-
-          Стоит выше рассказа о сервисе и ниже направлений: гостю она
-          объясняет площадку лучше любого текста, вошедшему просто
-          полезна. Рассказ ниже видит только гость. */}
-      {p.showHero !== false && !p.categorySlug && <FuelShowcase />}
+          Она отвечала на полезный вопрос «где сегодня дешевле», но
+          главная — про машины: блок стоял между объявлениями и
+          аукционами и уводил внимание в сторону. Сам раздел никуда не
+          делся: он в меню и в ряду действий первого экрана, а сводка
+          цен каждое утро уходит в городские чаты. */}
 
       {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
 
@@ -631,17 +619,11 @@ export default function HomePage(p: HomePageProps = {}) {
         </Group>
       </Group>
 
-      {/* Каталог в две колонки — по макету площадки.
+      {/* Фильтры полосой над выдачей.
 
-          Фильтры стояли горизонтальной полосой над выдачей: пять полей
-          в строку, а остальные два десятка — под кнопкой «Фильтры».
-          Человек, пришедший подобрать машину, не видел, по чему вообще
-          можно фильтровать.
-
-          Место под колонку нашлось там, откуда ушло боковое меню: на
-          витрине его больше нет, и 236 пикселей освободились ровно под
-          фильтры. */}
-      <Box className="catalog-layout">
+          Двухколоночная раскладка убрана: карточки в двух колонках
+          выходили слишком крупными, машин на экране помещалось вдвое
+          меньше, и страница тянулась вниз. */}
       <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="md" p="md" withBorder>
         <Stack gap="sm">
           {activeFilterCount > 0 && (
@@ -1017,14 +999,14 @@ export default function HomePage(p: HomePageProps = {}) {
           actionHref={activeFilterCount > 0 ? undefined : CREATE_VEHICLE_HREF}
         />
       ) : view === "grid" ? (
-        /* Две карточки в ряд, а не три: рядом стоит колонка фильтров, и
-           на третью не остаётся ширины — карточки сжимались бы до
-           состояния, в котором не читается ни цена, ни пробег. */
-        <SimpleGrid cols={{base:1,sm:2}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
+        /* Четыре карточки в ряд: колонки фильтров рядом больше нет, и
+           ширины хватает. В двух колонках карточки выходили слишком
+           крупными — машин на экране помещалось вдвое меньше, и
+           страница тянулась вниз. */
+        <SimpleGrid cols={{base:1,sm:2,lg:3,xl:4}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
         <Stack gap="xs" className="catalog-appear">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}
-      </Box>
       </Box>
 
       {data && data.pagination?.pages > 1 && (
