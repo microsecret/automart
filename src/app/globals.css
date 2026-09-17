@@ -11593,3 +11593,87 @@ button:disabled,
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   Шкала заголовков H2–H4: вес и интервал, а не только кегль
+
+   Замер живой главной 17 сентября 2026 вскрыл две ошибки разом.
+
+   Первая: H2 набирался с межстрочным 44,8 пикселя при кегле 28 — то
+   есть с интервалом 1,6, рассчитанным на длинные абзацы. Заголовок
+   раздела в две строки расползался, между строками зияла пустота, и
+   блок читался как несвязанный набор слов. Своего правила у H2 не было
+   вовсе — он наследовал общий текстовый интервал.
+
+   Вторая: H1 и H2 оба шли весом 800. Иерархии между «заголовком
+   страницы» и «заголовком раздела» не возникало — оба кричали одинаково
+   громко, и глазу не за что было зацепиться.
+
+   В макете площадки шкала разведена: H1 Bold, H2 Semibold, H3 Medium.
+   Здесь то же самое, только в весах Montserrat: 800 / 700 / 600.
+   Насыщенность убывает вместе с кеглем — так иерархия читается даже
+   там, где два заголовка стоят рядом.
+   ============================================================ */
+
+h2,
+.mantine-Title-root[data-order="2"] {
+  font-family: var(--font-display), sans-serif;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  /* 1,15 — заголовок в две строки держится единым блоком. */
+  line-height: var(--leading-tight);
+  letter-spacing: var(--track-display);
+  color: var(--market-ink);
+}
+
+h2:not(:last-child),
+.mantine-Title-root[data-order="2"]:not(:last-child) {
+  margin-bottom: 6px;
+}
+
+h3,
+.mantine-Title-root[data-order="3"] {
+  font-family: var(--font-display), sans-serif;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  /* 1,3 — подзаголовок короче, и ему нужен чуть больший воздух, чем
+     заголовку раздела: иначе он слипается с текстом под собой. */
+  line-height: var(--leading-snug);
+  letter-spacing: var(--track-title);
+  color: var(--market-ink);
+}
+
+h3:not(:last-child),
+.mantine-Title-root[data-order="3"]:not(:last-child) {
+  margin-bottom: 4px;
+}
+
+h4,
+.mantine-Title-root[data-order="4"] {
+  font-family: var(--font-display), sans-serif;
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--track-title);
+  color: var(--market-ink);
+}
+
+/* ============================================================
+   Надписи на кнопках
+
+   Замер: кнопки шли весом 400 — тем же, что обычный текст. Призыв к
+   действию не отличался от абзаца рядом, и глаз не находил, куда
+   нажимать. Шестьсот — вес, на котором подпись держит форму и не
+   выглядит грузной.
+   ============================================================ */
+
+.mantine-Button-label {
+  font-weight: 600;
+  letter-spacing: var(--track-body);
+}
+
+/* Крупная кнопка — главное действие экрана, ей вес выше. */
+.mantine-Button-root[data-size="lg"] .mantine-Button-label,
+.mantine-Button-root[data-size="md"] .mantine-Button-label {
+  font-weight: 700;
+}
