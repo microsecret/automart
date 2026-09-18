@@ -39,6 +39,7 @@ import { navbarScrollTop } from "@/lib/navbar-scroll-sync"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
 import AppAside from "@/components/sidebar/AppAside"
+import NavCount from "@/components/sidebar/NavCount"
 
 const TRANSPORT_ICONS = {
   cars: <IconCar size={16} stroke={1.8} />,
@@ -423,6 +424,10 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                     leftSection={item.icon}
                     active={activeCategory === item.slug}
                     color="indigo"
+                    /* Число объявлений в разделе — справа от подписи.
+                       Показывается только там, где есть что считать:
+                       компонент сам решает и молчит при нуле. */
+                    rightSection={<NavCount category={item.slug} />}
                     className="market-side-nav market-side-nav--toned"
                     /* Цвет направления передаётся переменной, а не набором
                        классов: из одного значения стили берут и цвет
