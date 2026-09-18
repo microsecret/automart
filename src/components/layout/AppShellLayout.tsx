@@ -38,6 +38,7 @@ import {
 import { navbarScrollTop } from "@/lib/navbar-scroll-sync"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
+import AppAside from "@/components/sidebar/AppAside"
 
 const TRANSPORT_ICONS = {
   cars: <IconCar size={16} stroke={1.8} />,
@@ -161,6 +162,30 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
     pathname === "/auctions" ||
     pathname === "/parts-finder",
   )
+  /* Правая колонка со сводкой площадки.
+   *
+   * Ставится ровно на те страницы, где боковое меню убрано: главная,
+   * каталог, аукционы, поиск. Там человек смотрит ленту товаров, поля по
+   * краям экрана пустуют, и колонка занимает их живыми данными — ценами
+   * на заправках, свежими лотами, курсами ЦБ.
+   *
+   * Где её нет и почему:
+   *   — карточка машины и запчасти: там нужна вся ширина под фотографии
+   *     и характеристики, а увести человека в сторону от сделки — прямой
+   *     убыток;
+   *   — кабинет, админка, помощь: слева уже стоит меню, третья колонка
+   *     сожмёт рабочую область до щели;
+   *   — карта АЗС: она сама занимает экран целиком.
+   */
+  const showAside = Boolean(
+    pathname === "/" ||
+    pathname === "/search" ||
+    pathname?.startsWith("/category/") ||
+    pathname === "/auctions" ||
+    pathname === "/news" ||
+    pathname === "/forum",
+  )
+
   const activeCategory = pathname?.startsWith("/category/") ? pathname.split("/")[2] : null
   const isMobileNavActive = (href: string) => href === "/" ? pathname === "/" : pathname?.startsWith(href)
 
@@ -292,6 +317,18 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       // считают от него свои отступы.
       header={{ height: 68 }}
       navbar={{ width: 236, breakpoint: "md", collapsed: { mobile: !mobileOpened, desktop: isFullWidthRoute } }}
+      /* Правая колонка — 300 пикселей, как у RawMart: на такой ширине
+         строка «Газпромнефть 71,68 ₽» помещается без переноса, а более
+         узкая колонка начала бы резать названия сетей.
+
+         Порог lg (1200): ниже него колонка прячется первой, раньше
+         левого меню. Слева навигация, без которой по сайту не пройти,
+         справа сводка — полезная, но не обязательная. */
+      aside={{
+        width: 300,
+        breakpoint: "lg",
+        collapsed: { mobile: true, desktop: !showAside },
+      }}
       padding={0}
       style={{ minHeight: "100vh", background: "var(--market-background)" }}
     >
@@ -413,6 +450,18 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
           </Stack>
         </AppShell.Section>
       </AppShell.Navbar>
+
+      {/* Правая колонка рисуется только там, где нужна: иначе Mantine
+          держал бы в разметке пустой контейнер на 300 пикселей, а
+          виджеты запрашивали бы данные на страницах, где их никто не
+          увидит — пять лишних запросов на каждой карточке машины. */}
+      {showAside && (
+        <AppShell.Aside className="market-app-aside" p={0} withBorder={false}>
+          <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={5}>
+            <AppAside />
+          </AppShell.Section>
+        </AppShell.Aside>
+      )}
 
       {/* Подвал вынесен из потока Main и растянут на всю ширину окна: Mantine
           сдвигает Main вправо на ширину сайдбара, и подвал обрывался, не
