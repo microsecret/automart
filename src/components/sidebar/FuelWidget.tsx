@@ -93,7 +93,12 @@ export default function FuelWidget() {
       {/* Сколько станций стоит за этими ценами: без числа «71,35» —
           это чья-то одна колонка, с числом — сводка по 425 точкам. */}
       {totalStations > 0 && (
-        <Text className="side-widget__source">По данным {totalStations.toLocaleString("ru-RU")} станций</Text>
+        {/* «Цены с N станций», а не «по данным N станций»: число считает
+            только показанные четыре сети, и формулировка «по данным»
+            читалась бы как охват всей базы. */}
+        <Text className="side-widget__source">
+          Цены с {totalStations.toLocaleString("ru-RU")} станций этих сетей
+        </Text>
       )}
     </Box>
   )

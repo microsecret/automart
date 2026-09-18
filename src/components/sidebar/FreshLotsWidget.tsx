@@ -29,7 +29,7 @@ type AuctionsResponse = { listings?: Lot[] }
 const VISIBLE = 5
 
 /* Запрашиваем вчетверо больше, чем показываем: ниже лента разбавляется
-   по странам, и из двадцати лотов надо набрать пять разных. */
+   по модели, и из двадцати лотов надо набрать пять разных машин. */
 const FETCH_LIMIT = 20
 
 const COUNTRY_LABELS: Record<string, string> = {
@@ -41,29 +41,35 @@ const COUNTRY_LABELS: Record<string, string> = {
 }
 
 /**
- * Разбавление ленты по странам.
+ * Разбавление ленты по марке и модели.
  *
- * Приём подсмотрен у площадки RawMart и решает настоящую беду: сбор
- * приносит лоты пачками, и из 16 007 машин 4970 корейских. Пять свежих
- * подряд — это почти наверняка пять корейских седанов, и колонка
- * выглядит так, будто на площадке торгуют чем-то одним.
+ * Сбор приносит лоты пачками: замер выдачи показал три «Daihatsu
+ * haizettokago» и две «Hyundai Palisade» подряд в первых пяти. Колонка
+ * выглядела так, будто на площадке торгуют одной машиной в пяти
+ * экземплярах.
  *
- * Берём не больше одного лота на страну, потом добиваем остатком по
- * порядку. Разнообразие видно с первого взгляда, и при этом ничего не
- * выдумано: показаны настоящие свежие лоты, просто в другом порядке.
+ * Сначала пробовал разбавлять по стране — не помогло: в свежей двадцатке
+ * всего две страны (Япония 13, Корея 7), и после двух строк правило
+ * переставало работать. Марка с моделью различает лоты по-настоящему.
+ *
+ * Берём не больше одного лота на модель, потом добиваем остатком по
+ * порядку. Ничего не выдумано: показаны настоящие свежие лоты, просто в
+ * другом порядке.
  */
-function diverseByCountry(lots: Lot[], limit: number): Lot[] {
+function diverseByModel(lots: Lot[], limit: number): Lot[] {
   const picked: Lot[] = []
-  const seenCountries = new Set<string>()
+  const seen = new Set<string>()
 
   for (const lot of lots) {
-    const country = lot.country ?? "—"
-    if (seenCountries.has(country)) continue
-    seenCountries.add(country)
+    const key = `${lot.make ?? ""} ${lot.model ?? ""}`.trim().toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
     picked.push(lot)
     if (picked.length === limit) return picked
   }
 
+  /* Если разных моделей меньше, чем нужно строк, добираем повторами:
+     короткий список хуже, чем список с двумя одинаковыми марками. */
   for (const lot of lots) {
     if (picked.length === limit) break
     if (!picked.includes(lot)) picked.push(lot)
@@ -78,7 +84,7 @@ export default function FreshLotsWidget() {
   })
 
   const all = (data?.listings ?? []).filter((lot) => lot.make || lot.model)
-  const lots = diverseByCountry(all, VISIBLE)
+  const lots = diverseByModel(all, VISIBLE)
 
   if (lots.length < 3) return null
 
