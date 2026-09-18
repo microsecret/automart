@@ -193,6 +193,40 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
     closeMobile()
   }, [pathname, closeMobile])
 
+  /* Шапка сама сообщает свою высоту.
+   *
+   * Число 68 было записано дважды: в разметке AppShell и в переменной
+   * --app-header-height, которую читают одиннадцать правил — липкое
+   * боковое меню, отступ основной колонки, высота выпадающих панелей.
+   * Стоило шапке измениться — например, появись в ней вторая строка на
+   * узком экране, — и меню начало бы липнуть не к её нижнему краю, а к
+   * воображаемой линии на 68 пикселях.
+   *
+   * ResizeObserver пишет в переменную настоящую высоту при каждом её
+   * изменении: при повороте экрана, при переносе пунктов на две
+   * строки, при появлении полосы уведомлений. Константа в CSS остаётся
+   * значением по умолчанию — она работает до гидрации и на первом
+   * кадре, поэтому страница не дёргается при загрузке.
+   */
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>(".mantine-AppShell-header")
+    if (!header || typeof ResizeObserver === "undefined") return
+
+    const apply = () => {
+      /* Округление вверх: дробная высота даёт полупиксельный зазор
+         между шапкой и прилипшим меню, и в нём просвечивает страница. */
+      const height = Math.ceil(header.getBoundingClientRect().height)
+      if (height > 0) {
+        document.documentElement.style.setProperty("--app-header-height", `${height}px`)
+      }
+    }
+
+    apply()
+    const observer = new ResizeObserver(apply)
+    observer.observe(header)
+    return () => observer.disconnect()
+  }, [])
+
   /* Escape закрывает меню.
 
      Меню открывается поверх страницы и занимает её целиком, но закрыть
