@@ -514,7 +514,31 @@ function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts }: { servic
 
   return (
     <Box visibleFrom="md">
-      <Menu shadow="md" width={244} position="bottom-start" radius="md" offset={6} withinPortal>
+      {/* Меню открывается наведением, а не только щелчком.
+       *
+       * «Сервисы» — это указатель, а не действие: человек ведёт мышь,
+       * чтобы посмотреть, что внутри, и лишний щелчок здесь работает
+       * барьером. Щелчок при этом продолжает открывать меню, и с
+       * клавиатуры оно доступно как прежде.
+       *
+       * Задержка на закрытие в 140 мс держит меню открытым, пока
+       * курсор идёт от кнопки к первому пункту. Без неё меню
+       * захлопывалось на полпути — курсор пересекал зазор между
+       * кнопкой и выпадающим списком, и наведение обрывалось.
+       *
+       * Открытие без задержки: ожидание перед показом воспринимается
+       * как подтормаживание интерфейса. */}
+      <Menu
+        shadow="md"
+        width={244}
+        position="bottom-start"
+        radius="md"
+        offset={6}
+        withinPortal
+        trigger="click-hover"
+        openDelay={0}
+        closeDelay={140}
+      >
         <Menu.Target>
           <Button
             variant={serviceIsActive ? "light" : "subtle"}

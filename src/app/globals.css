@@ -13027,3 +13027,50 @@ h1[data-lw-hero] + p {
   background: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 22%, transparent);
   border-left-color: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 60%, #ffffff);
 }
+
+/* ============================================================
+   Появление выпадающих меню
+
+   Меню возникало мгновенно — резкая подмена содержимого экрана,
+   после которой глаз секунду ищет, что изменилось.
+
+   Проявление за 150 миллисекунд читается как «оно уже было»:
+   достаточно, чтобы заметить движение, и слишком коротко, чтобы
+   ждать. Из всех свойств меняется только прозрачность — без
+   сдвига и без масштаба. Меню из десяти пунктов, которое въезжает
+   и раздувается, воспринимается дёшево, а читать его начинают
+   позже, чем оно доехало.
+   ============================================================ */
+
+.mantine-Menu-dropdown,
+.mantine-Popover-dropdown {
+  animation: lw-dropdown-in 150ms var(--ease-out);
+}
+
+@keyframes lw-dropdown-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mantine-Menu-dropdown,
+  .mantine-Popover-dropdown {
+    animation: none;
+  }
+}
+
+/* Пункт меню отзывается полосой слева — тем же приёмом, что боковое
+   меню и вкладки шапки. Один язык на весь сайт: где бы человек ни
+   стоял, «здесь я нахожусь» выглядит одинаково. */
+.mantine-Menu-item {
+  border-left: 2px solid transparent;
+  transition:
+    background-color var(--ease-fast) var(--ease-out),
+    border-color var(--ease-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mantine-Menu-item:hover {
+    border-left-color: color-mix(in srgb, var(--market-accent-button) 45%, transparent);
+  }
+}
