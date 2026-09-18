@@ -20,7 +20,12 @@ type Listing = {
   title: string | null
   price: number | null
   city: string | null
-  vehicle?: { make?: string | null; model?: string | null; year?: number | null } | null
+  /* id машины нужен для ссылки: страница объявления живёт по адресу
+     /listings/vehicle/{id машины}, а не /listings/{id объявления}.
+     Первая версия виджета ссылалась на второй — замер живой страницы
+     показал четыре ответа 404 на каждую загрузку главной. */
+  vehicle?: { id?: string; make?: string | null; model?: string | null; year?: number | null } | null
+  part?: { id?: string } | null
 }
 
 type ListingsResponse = { listings?: Listing[] }
@@ -45,7 +50,14 @@ export default function FreshListingsWidget() {
      восклицательный знак, то есть просить компилятор поверить на слово
      там, где можно проверить. */
   const listings = (data?.listings ?? [])
-    .filter((item): item is Listing & { price: number } => typeof item.price === "number" && item.price > 0)
+    .filter(
+      (item): item is Listing & { price: number } =>
+        typeof item.price === "number" &&
+        item.price > 0 &&
+        /* Без id машины или запчасти ссылку не построить, и строка вела
+           бы на страницу «не найдено». */
+        Boolean(item.vehicle?.id || item.part?.id),
+    )
     .slice(0, VISIBLE)
 
   if (listings.length < 3) return null
@@ -61,8 +73,14 @@ export default function FreshListingsWidget() {
         {listings.map((item) => {
           const name =
             [item.vehicle?.make, item.vehicle?.model].filter(Boolean).join(" ") || item.title || "Объявление"
+          /* Машина и запчасть лежат по разным адресам. Объявление без
+             того и другого пропускается фильтром выше — ссылки в
+             никуда быть не должно. */
+          const href = item.vehicle?.id
+            ? `/listings/vehicle/${item.vehicle.id}`
+            : `/listings/part/${item.part?.id}`
           return (
-            <Link key={item.id} href={`/listings/${item.id}`} className="lot-row">
+            <Link key={item.id} href={href} className="lot-row">
               <span className="lot-row__name">
                 {name}
                 {item.vehicle?.year ? <span className="lot-row__year"> {item.vehicle.year}</span> : null}
