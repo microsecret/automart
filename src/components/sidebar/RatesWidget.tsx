@@ -54,8 +54,13 @@ export default function RatesWidget() {
     refreshInterval: 30 * 60 * 1000,
   })
 
+  /* Тип code берётся из самого ORDER, а не пишется как string: список
+     валют объявлен через `as const`, и предикат с широким string не
+     сходится с узким литеральным типом элементов. */
+  type CurrencyCode = (typeof ORDER)[number]
+
   const rows = ORDER.map((code) => ({ code, rate: data?.rates?.[code] })).filter(
-    (row): row is { code: string; rate: Rate } => Boolean(row.rate),
+    (row): row is { code: CurrencyCode; rate: Rate } => Boolean(row.rate),
   )
 
   /* Меньше двух курсов — это не сводка, а одинокое число: блока нет.

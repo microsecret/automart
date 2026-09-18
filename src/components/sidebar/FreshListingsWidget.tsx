@@ -39,8 +39,14 @@ export default function FreshListingsWidget() {
   )
 
   /* Объявление без цены в узкой колонке бесполезно: название и город
-     не дают того, ради чего сюда смотрят. */
-  const listings = (data?.listings ?? []).filter((item) => item.price).slice(0, VISIBLE)
+     не дают того, ради чего сюда смотрят.
+
+     Предикат сужает тип price до числа — иначе ниже пришлось бы ставить
+     восклицательный знак, то есть просить компилятор поверить на слово
+     там, где можно проверить. */
+  const listings = (data?.listings ?? [])
+    .filter((item): item is Listing & { price: number } => typeof item.price === "number" && item.price > 0)
+    .slice(0, VISIBLE)
 
   if (listings.length < 3) return null
 
@@ -62,7 +68,7 @@ export default function FreshListingsWidget() {
                 {item.vehicle?.year ? <span className="lot-row__year"> {item.vehicle.year}</span> : null}
               </span>
               <span className="lot-row__meta">
-                <span className="lot-row__price">{formatPriceShort(item.price!)}</span>
+                <span className="lot-row__price">{formatPriceShort(item.price)}</span>
                 {item.city ? <span className="lot-row__country">{item.city}</span> : null}
               </span>
             </Link>
