@@ -389,7 +389,13 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                     leftSection={item.icon}
                     active={activeCategory === item.slug}
                     color="indigo"
-                    className="market-side-nav"
+                    className="market-side-nav market-side-nav--toned"
+                    /* Цвет направления передаётся переменной, а не набором
+                       классов: из одного значения стили берут и цвет
+                       значка, и полосу активного пункта, и его подложку
+                       через прозрачность. Иначе на каждое из шести
+                       направлений понадобилось бы по три правила. */
+                    style={{ "--nav-tone": item.tone } as React.CSSProperties}
                   />
                 ))}
               </SidebarPanel>

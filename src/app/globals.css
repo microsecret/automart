@@ -12976,3 +12976,54 @@ h1[data-lw-hero] + p {
     transition: none;
   }
 }
+
+/* ============================================================
+   Направления транспорта в боковом меню — со своим цветом
+
+   Шесть направлений шли одинаково серыми: чтобы найти «Мото», надо
+   было прочитать все шесть подряд. Цвет даёт узнавание боковым
+   зрением, как в витрине направлений на главной.
+
+   Один хекс из реестра навигации порождает три значения: значок
+   берёт его целиком, полоса активного пункта — тоже, подложка —
+   через прозрачность. Отдельных светлых ступеней на каждое
+   направление не нужно.
+   ============================================================ */
+
+/* Значок окрашен всегда, даже у неактивного пункта: именно он и
+   работает меткой направления. Подпись остаётся общего цвета — шесть
+   разноцветных строк читались бы как предупреждения, а не как список. */
+.market-side-nav--toned .mantine-NavLink-section {
+  color: var(--nav-tone, var(--market-muted));
+}
+
+.market-side-nav--toned:hover {
+  background: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 8%, transparent);
+  border-left-color: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 45%, transparent);
+}
+
+/* Активное направление красится своим цветом, а не общим синим:
+   иначе «Мото» и «Спецтехника» в активном состоянии выглядели бы
+   одинаково, и цвет переставал бы что-либо значить. */
+.market-side-nav--toned[data-active] {
+  background: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 12%, transparent);
+  border-left-color: var(--nav-tone, var(--market-accent-button));
+  color: var(--nav-tone, var(--market-primary));
+}
+
+.market-side-nav--toned[data-active] .mantine-NavLink-section {
+  color: var(--nav-tone, var(--market-primary));
+}
+
+/* На тёмной подложке те же цвета тонут: замер показал у графитового
+   #475569 контраст 1.9 при норме 4,5. Подмешиваем белый — оттенок
+   узнаётся, а строка остаётся читаемой. */
+[data-mantine-color-scheme="dark"] .market-side-nav--toned .mantine-NavLink-section,
+[data-mantine-color-scheme="dark"] .market-side-nav--toned[data-active] {
+  color: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 55%, #ffffff);
+}
+
+[data-mantine-color-scheme="dark"] .market-side-nav--toned[data-active] {
+  background: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 22%, transparent);
+  border-left-color: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 60%, #ffffff);
+}

@@ -4,6 +4,10 @@ export type NavigationItem<Id extends string = string> = Readonly<{
   shortLabel?: string
   href: string
   activePrefixes?: readonly string[]
+  /* Фирменный цвет направления. Есть не у всех пунктов: цветом
+     различаются направления транспорта, а служебные разделы —
+     положением в списке. */
+  tone?: string
 }>
 
 export type NavigationSection = Readonly<{
@@ -37,13 +41,31 @@ export const PLATFORM_NAVIGATION = [
   { id: "services", label: "Сервисы", href: "/services" },
 ] as const satisfies readonly NavigationItem[]
 
+/* Цвет направления живёт здесь, рядом с самим направлением.
+ *
+ * Раньше цвета лежали только в стилях витрины направлений
+ * (category-showcase.module.css), поэтому в боковом меню те же шесть
+ * разделов шли одинаково серыми — узнать «Мото» можно было, только
+ * прочитав подпись.
+ *
+ * Один хекс на направление даёт три согласованных значения: цвет
+ * значка, цвет полосы у активного пункта и его подложку — через
+ * прозрачность, а не через отдельную светлую ступень. Приём взят у
+ * площадки RawMart: там из константы категории получают и иконку, и
+ * полоску, и фон, и это избавляет от набора переменных вида
+ * «цвет-50 / цвет-100 / цвет-600» на каждое направление.
+ *
+ * Цвета различают направления между собой — значит, соседние не должны
+ * совпадать. «Легковые» берут фирменный синий как самый частый раздел,
+ * «Грузовики» ушли в графит: второй синий рядом с фирменным не читался
+ * бы как другое направление. */
 export const TRANSPORT_NAVIGATION = [
-  { id: "cars", label: "Легковые", href: "/category/cars" },
-  { id: "moto", label: "Мото", href: "/category/moto" },
-  { id: "trucks", label: "Грузовики", href: "/category/trucks" },
-  { id: "special", label: "Спецтехника", href: "/category/special" },
-  { id: "water", label: "Водный транспорт", href: "/category/water" },
-  { id: "air", label: "Воздушный транспорт", href: "/category/air" },
+  { id: "cars", label: "Легковые", href: "/category/cars", tone: "#1d4ed8" },
+  { id: "moto", label: "Мото", href: "/category/moto", tone: "#7e22ce" },
+  { id: "trucks", label: "Грузовики", href: "/category/trucks", tone: "#475569" },
+  { id: "special", label: "Спецтехника", href: "/category/special", tone: "#ef7d00" },
+  { id: "water", label: "Водный транспорт", href: "/category/water", tone: "#0e7490" },
+  { id: "air", label: "Воздушный транспорт", href: "/category/air", tone: "#0f766e" },
 ] as const satisfies readonly NavigationItem[]
 
 /* Категории ведут на свои страницы, а не на фильтр поиска.
