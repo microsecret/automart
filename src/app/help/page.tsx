@@ -11,7 +11,7 @@ const SECTIONS = [
      жаловаться, но не про самый частый тупик покупателя: нужной детали
      нет ни в одном каталоге, и человек уходит, не зная, что её можно
      заказать через заявку. */
-  { icon: IconSearch, title: "Не нашли запчасть", desc: "Оставьте заявку — магазины ответят ценой и сроком", href: "/parts-finder", color: "#15803d" },
+  { icon: IconSearch, title: "Не нашли запчасть", desc: "Оставьте заявку — магазины ответят ценой и сроком", href: "/parts-finder", color: "#1d4ed8" },
   { icon: IconMessage2, title: "Поддержка", desc: "Связаться с командой поддержки", href: "/help/support", color: "#ea580c" },
   { icon: IconHelpCircle, title: "Частые вопросы", desc: "Ответы на популярные вопросы", href: "/help/support", color: "#0891b2" },
 ]

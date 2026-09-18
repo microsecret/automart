@@ -65,16 +65,10 @@
 }
 
 
-/* Имена тонов — это ключи направлений, а не названия цветов.
-   «blue» достался легковым, «indigo» грузовикам ещё при индиговой
-   палитре. Сами цвета перекрашены: легковые — самая частая категория,
-   она берёт фирменный зелёный; грузовики ушли в графит, потому что
-   второй синий рядом с зелёным сайтом спорил с ним. Ключи оставлены
-   как есть: они названы в CategoryShowcase.tsx, и переименование
-   тронуло бы оба файла ради косметики. */
-.card[data-tone="blue"]   { --tone: #15803d; }
+/* Легковые — самая частая категория, она берёт фирменный синий. */
+.card[data-tone="blue"]   { --tone: #1d4ed8; }
 .card[data-tone="grape"]  { --tone: #7e22ce; }
-.card[data-tone="indigo"] { --tone: #3f4a52; }
+.card[data-tone="indigo"] { --tone: #475569; }
 .card[data-tone="orange"] { --tone: #ef7d00; }
 .card[data-tone="cyan"]   { --tone: #0e7490; }
 .card[data-tone="teal"]   { --tone: #0f766e; }
@@ -85,9 +79,9 @@
    давал контраст 1.35 — число и подпись тонули в подложке. Здесь взяты
    светлые ступени тех же оттенков: направление узнаётся по цвету, но текст
    остаётся читаемым. */
-:global([data-mantine-color-scheme="dark"]) .card[data-tone="blue"]   { --tone: #86efac; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="blue"]   { --tone: #93c5fd; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="grape"]  { --tone: #d8b4fe; }
-:global([data-mantine-color-scheme="dark"]) .card[data-tone="indigo"] { --tone: #b6c2cc; }
+:global([data-mantine-color-scheme="dark"]) .card[data-tone="indigo"] { --tone: #cbd5e1; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="orange"] { --tone: #fdba74; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="cyan"]   { --tone: #67e8f9; }
 :global([data-mantine-color-scheme="dark"]) .card[data-tone="teal"]   { --tone: #5eead4; }
