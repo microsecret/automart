@@ -13130,3 +13130,18 @@ h1[data-lw-hero] + p {
 .market-side-nav--toned[data-active] .nav-count {
   color: color-mix(in srgb, var(--nav-tone, var(--market-primary)) 70%, var(--market-muted));
 }
+
+/* Кнопка подачи в боковом меню.
+
+   Класс header-create-cta на ней стоит ради блика при наведении —
+   правило уже написано для кнопки в шапке, и второй копии не нужно.
+   Здесь добавляется только то, чем боковая кнопка отличается: она во
+   всю ширину колонки и чуть выше, потому что стоит одна, без соседей
+   в ряду. */
+.sidebar-create-cta {
+  width: 100%;
+  height: 34px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  letter-spacing: -0.005em;
+}

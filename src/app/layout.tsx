@@ -33,17 +33,6 @@ import { absoluteUrl, getSiteUrl } from "@/lib/site-url"
  * читают сотни правил, менять их поимённо не нужно.
  */
 
-/* Вторая переменная задаётся в стилях, а не вторым вызовом шрифта.
-
-   Раньше здесь было второе объявление того же Manrope ради имени
-   `--font-sans-next`, которое читают сотни правил. Но на одинаковые
-   вызовы next/font выдаёт один и тот же класс, и в разметке он оказывался
-   дважды: `class="__variable_de5441 __variable_de5441"`. Сервер и браузер
-   собирали эту строку по-разному, React ругался ошибкой 418 на каждой
-   загрузке главной, и настоящие расхождения в этом шуме было не найти.
-
-   Псевдоним в globals.css делает то же самое и ничего не дублирует. */
-
 const verification: NonNullable<Metadata["verification"]> = {}
 const otherVerification: Record<string, string> = {}
 if (process.env.GOOGLE_SITE_VERIFICATION) verification.google = process.env.GOOGLE_SITE_VERIFICATION
