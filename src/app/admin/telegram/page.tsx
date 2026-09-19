@@ -214,7 +214,7 @@ export default function TelegramBroadcastPage() {
                 <Group gap="xs" wrap="nowrap" mb={6}>
                   <ThemeIcon variant="light" color={card.color} size={30} radius="md">{card.icon}</ThemeIcon>
                 </Group>
-                <Text fz={26} fw={800} ff="var(--font-display),sans-serif" lh={1}>
+                <Text fz="26px" fw={800} ff="var(--font-display),sans-serif" lh={1}>
                   {isLoading ? "—" : card.value.toLocaleString("ru")}
                 </Text>
                 <Text size="sm" fw={600} mt={4}>{card.label}</Text>

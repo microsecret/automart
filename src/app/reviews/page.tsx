@@ -87,7 +87,7 @@ export default function ReviewsPage() {
             {/* Сводка рейтинга */}
             <Paper radius="md" p="lg" withBorder>
               <Stack gap="sm" align="center">
-                <Text fw={800} fz={48} c="var(--market-ink)" lh={1}>{avg}</Text>
+                <Text fw={800} fz="48px" c="var(--market-ink)" lh={1}>{avg}</Text>
                 <Rating value={Number(avg) || 0} readOnly size="lg" />
                 <Text size="xs" c="var(--market-muted)">из {reviewCount} отзывов</Text>
               </Stack>

@@ -36,7 +36,7 @@ function SignInContent() {
             <Box className="auth-experience__brand-mark">
               <IconCar size={24} color="white" />
             </Box>
-            <Text fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
+            <Text fw={800} fz="24px" c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
           </Group>
           <Text size="sm" c="var(--market-muted)" lh={1.6}>Маркетплейс транспорта и запчастей с проверкой истории и безопасными сделками.</Text>
           <Stack gap="sm">

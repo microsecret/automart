@@ -305,7 +305,7 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                       машины и от постороннего. Мельче текста и отделена
                       чертой — она справка, а не часть разговора. */}
                   {!post.deletedAt && post.author.forumSignature && (
-                    <Text fz={11} c="var(--market-muted)" mt={6} className="forum-signature">
+                    <Text fz="11px" c="var(--market-muted)" mt={6} className="forum-signature">
                       {post.author.forumSignature}
                     </Text>
                   )}

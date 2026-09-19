@@ -21,7 +21,7 @@ export default function SignUpPage() {
             <Box className="auth-experience__brand-mark">
               <IconCar size={24} color="white" />
             </Box>
-            <Text fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
+            <Text fw={800} fz="24px" c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
           </Group>
           <Text size="sm" c="var(--market-muted)" lh={1.6}>Создайте защищённый аккаунт через Telegram-бота за минуту.</Text>
           <Stack gap="sm">

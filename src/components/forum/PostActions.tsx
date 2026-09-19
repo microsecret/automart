@@ -231,7 +231,7 @@ export default function PostActions({
       {/* Метка правки: читатель должен видеть, что текст менялся после
           того, как ему ответили. */}
       {editedAt && (
-        <Text fz={11} c="var(--market-muted)" title={`Изменено ${editedAt}`}>изменено</Text>
+        <Text fz="11px" c="var(--market-muted)" title={`Изменено ${editedAt}`}>изменено</Text>
       )}
 
       {best && (

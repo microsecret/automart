@@ -180,7 +180,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 </Group>
                 <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
                   {/* Цена крупнее названия — то же правило, что в плитке. */}
-                  <Text className="listing-card__price" fw={800} fz={20} c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
+                  <Text className="listing-card__price" fw={800} fz="20px" c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
                     {formatPriceShort(listing.price)}
                   </Text>
                   {/* Кредитная строка убрана: считалась по выдуманной ставке. */}

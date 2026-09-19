@@ -190,21 +190,21 @@ function StationsTab({ filters, setFilters }: {
             <IconGasStation size={18} />
             <Text size="xs" fw={700} tt="uppercase">Заправок в базе</Text>
           </Group>
-          <Text fw={800} fz={26} mt={4}>{data.summary.total.toLocaleString("ru-RU")}</Text>
+          <Text fw={800} fz="26px" mt={4}>{data.summary.total.toLocaleString("ru-RU")}</Text>
         </Card>
         <Card withBorder radius="md" p="md">
           <Group gap="xs" c="dimmed">
             <IconDatabase size={18} />
             <Text size="xs" fw={700} tt="uppercase">С ценами</Text>
           </Group>
-          <Text fw={800} fz={26} mt={4}>{data.summary.withPrices.toLocaleString("ru-RU")}</Text>
+          <Text fw={800} fz="26px" mt={4}>{data.summary.withPrices.toLocaleString("ru-RU")}</Text>
         </Card>
         <Card withBorder radius="md" p="md">
           <Group gap="xs" c="dimmed">
             <IconCheck size={18} />
             <Text size="xs" fw={700} tt="uppercase">С наличием</Text>
           </Group>
-          <Text fw={800} fz={26} mt={4}>{data.summary.withAvailability.toLocaleString("ru-RU")}</Text>
+          <Text fw={800} fz="26px" mt={4}>{data.summary.withAvailability.toLocaleString("ru-RU")}</Text>
         </Card>
         <Card withBorder radius="md" p="md">
           <Group gap="xs" c="dimmed">
@@ -213,11 +213,11 @@ function StationsTab({ filters, setFilters }: {
           </Group>
           {data.summary.lastRun ? (
             <>
-              <Text fw={800} fz={20} mt={4}>{sourceLabel(data.summary.lastRun.source)}</Text>
+              <Text fw={800} fz="20px" mt={4}>{sourceLabel(data.summary.lastRun.source)}</Text>
               <Text size="xs" c="dimmed">{formatAdminDateTimeShort(data.summary.lastRun.startedAt)}</Text>
             </>
           ) : (
-            <Text fw={800} fz={20} mt={4} c="dimmed">Пока не было</Text>
+            <Text fw={800} fz="20px" mt={4} c="dimmed">Пока не было</Text>
           )}
         </Card>
       </SimpleGrid>
@@ -393,23 +393,23 @@ function AnalyticsTab() {
       <SimpleGrid cols={{ base: 2, sm: 3, lg: 5 }}>
         <Card withBorder radius="md" p="md">
           <Group gap="xs" c="dimmed"><IconChartLine size={18} /><Text size="xs" fw={700} tt="uppercase">Просмотры за 30 дн</Text></Group>
-          <Text fw={800} fz={26} mt={4}>{a.visits30d.toLocaleString("ru-RU")}</Text>
+          <Text fw={800} fz="26px" mt={4}>{a.visits30d.toLocaleString("ru-RU")}</Text>
         </Card>
         <Card withBorder radius="md" p="md">
           <Group gap="xs" c="dimmed"><IconUsers size={18} /><Text size="xs" fw={700} tt="uppercase">Уникальные за 30 дн</Text></Group>
-          <Text fw={800} fz={26} mt={4}>{a.uniqueVisitors30d.toLocaleString("ru-RU")}</Text>
+          <Text fw={800} fz="26px" mt={4}>{a.uniqueVisitors30d.toLocaleString("ru-RU")}</Text>
         </Card>
         <Card withBorder radius="md" p="md">
           <Group gap="xs" c="dimmed"><IconPencilPlus size={18} /><Text size="xs" fw={700} tt="uppercase">Активные водители</Text></Group>
-          <Text fw={800} fz={26} mt={4}>{a.activeReporters.toLocaleString("ru-RU")}</Text>
+          <Text fw={800} fz="26px" mt={4}>{a.activeReporters.toLocaleString("ru-RU")}</Text>
         </Card>
         <Card withBorder radius="md" p="md">
           <Group gap="xs" c="dimmed"><IconCheck size={18} /><Text size="xs" fw={700} tt="uppercase">Отметок цен / наличия</Text></Group>
-          <Text fw={800} fz={26} mt={4}>{a.priceReports30d} / {a.availabilityReports30d}</Text>
+          <Text fw={800} fz="26px" mt={4}>{a.priceReports30d} / {a.availabilityReports30d}</Text>
         </Card>
         <Card withBorder radius="md" p="md">
           <Group gap="xs" c="dimmed"><IconClock size={18} /><Text size="xs" fw={700} tt="uppercase">Новые за 7 дн</Text></Group>
-          <Text fw={800} fz={26} mt={4}>{a.newVisitors7d.toLocaleString("ru-RU")}</Text>
+          <Text fw={800} fz="26px" mt={4}>{a.newVisitors7d.toLocaleString("ru-RU")}</Text>
         </Card>
       </SimpleGrid>
 

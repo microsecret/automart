@@ -115,7 +115,7 @@ export default async function ForumMembersPage({ searchParams }: Props) {
 
                     <Box style={{ flexShrink: 0, textAlign: "right" }}>
                       <Text fz="sm" fw={600} c="var(--market-ink)">{member.forumPostCount}</Text>
-                      <Text fz={11} c="var(--market-muted)">сообщений</Text>
+                      <Text fz="11px" c="var(--market-muted)">сообщений</Text>
                     </Box>
                   </Group>
                 </Card>
