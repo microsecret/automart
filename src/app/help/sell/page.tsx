@@ -19,7 +19,7 @@ export default function HelpSellPage() {
             <Card key={i} withBorder radius="md" p="md" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start">
                 <ThemeIcon variant="light" color="indigo" size={36} radius="md">{s.icon}</ThemeIcon>
-                <Stack gap={2}><Text size="xs" c="gray.4">Шаг {i + 1}</Text><Text size="sm" fw={600} c="var(--market-ink)">{s.title}</Text><Text size="xs" c="gray.5">{s.desc}</Text></Stack>
+                <Stack gap={2}><Text size="xs" c="var(--market-muted)">Шаг {i + 1}</Text><Text size="sm" fw={600} c="var(--market-ink)">{s.title}</Text><Text size="xs" c="var(--market-muted)">{s.desc}</Text></Stack>
               </Group>
             </Card>
           ))}
@@ -29,7 +29,7 @@ export default function HelpSellPage() {
             <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconShieldCheck size={18} /></ThemeIcon>
             <Stack gap={0} style={{ flex: 1 }}>
               <Text size="sm" fw={600}>Готовы продать?</Text>
-              <Text size="xs" c="gray.5">Размещение бесплатно</Text>
+              <Text size="xs" c="var(--market-muted)">Размещение бесплатно</Text>
             </Stack>
             <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm">Разместить</Button>
           </Group>

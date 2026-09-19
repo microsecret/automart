@@ -21,12 +21,12 @@ export default function PrivacyPage() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconShieldLock size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Политика конфиденциальности</Text>
-            <Text size="xs" c="gray.5">Последнее обновление: 16 августа 2026</Text>
+            <Text size="xs" c="var(--market-muted)">Последнее обновление: 16 августа 2026</Text>
           </Stack>
         </Group>
 
         <Paper radius="md" p="md" withBorder>
-          <Text size="sm" c="gray.6" lh={1.6}>
+          <Text size="sm" c="var(--market-ink-soft)" lh={1.6}>
             Настоящий документ описывает, какие данные собираются, как они используются и защищаются. Пожалуйста, внимательно прочитайте все разделы.
           </Text>
         </Paper>
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           {SECTIONS.map((s) => (
             <Paper key={s.title} radius="md" p="md" withBorder>
               <Text fw={700} fz="sm" c="var(--market-ink)" mb={6}>{s.title}</Text>
-              <Text size="sm" c="gray.6" lh={1.6}>{s.text}</Text>
+              <Text size="sm" c="var(--market-ink-soft)" lh={1.6}>{s.text}</Text>
             </Paper>
           ))}
         </Stack>

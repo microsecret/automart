@@ -18,14 +18,14 @@ export default function RulesPage() {
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconScale size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Правила площадки</Text>
-            <Text size="xs" c="gray.5">Обновлены: 8 августа 2026</Text>
+            <Text size="xs" c="var(--market-muted)">Обновлены: 8 августа 2026</Text>
           </Stack>
         </Group>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
           <Paper radius="md" p="lg" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>
             <Group gap="sm" mb="sm"><ThemeIcon variant="light" color="green" size={32} radius="md"><IconCheck size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Разрешено</Text></Group>
-            <List size="sm" c="gray.6" spacing={6}>
+            <List size="sm" c="var(--market-ink-soft)" spacing={6}>
               <List.Item>Продажа личного транспорта и запчастей</List.Item>
               <List.Item>Объявления от дилеров (с указанием)</List.Item>
               <List.Item>Контрактные запчасти (с пометкой)</List.Item>
@@ -35,7 +35,7 @@ export default function RulesPage() {
           </Paper>
           <Paper radius="md" p="lg" withBorder style={{ background: "var(--market-danger-surface)", borderColor: "var(--market-danger-line)" }}>
             <Group gap="sm" mb="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconX size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Запрещено</Text></Group>
-            <List size="sm" c="gray.6" spacing={6}>
+            <List size="sm" c="var(--market-ink-soft)" spacing={6}>
               <List.Item>Краденое имущество, документы</List.Item>
               <List.Item>Товары без выкупа</List.Item>
               <List.Item>Повторные объявления (дубли)</List.Item>
@@ -60,7 +60,7 @@ export default function RulesPage() {
                 <ThemeIcon variant="light" color="indigo" size={28} radius="md"><IconInfoCircle size={16} /></ThemeIcon>
                 <Stack gap={2} style={{ flex: 1 }}>
                   <Text fw={700} fz="sm" c="var(--market-ink)">{s.title}</Text>
-                  <Text size="sm" c="gray.6" lh={1.5}>{s.text}</Text>
+                  <Text size="sm" c="var(--market-ink-soft)" lh={1.5}>{s.text}</Text>
                 </Stack>
               </Group>
             </Paper>

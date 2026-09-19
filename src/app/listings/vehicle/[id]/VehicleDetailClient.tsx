@@ -786,7 +786,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Text size="sm" c="var(--market-muted)">
                       {data.reviews.length ? "Чтобы оставить отзыв," : "Отзывов пока нет —"}
                     </Text>
-                    <Anchor component={Link} href="/auth/signin" size="sm" c="indigo" fw={600}>
+                    <Anchor component={Link} href="/auth/signin" size="sm" c="indigo" fw={600} className="inline-touch-link">
                       {data.reviews.length ? "войдите" : "войдите и будьте первым"}
                     </Anchor>
                   </Group>

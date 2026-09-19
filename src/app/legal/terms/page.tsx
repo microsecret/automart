@@ -23,7 +23,7 @@ export default function TermsPage() {
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Условия использования</Text>
             <Group gap={6}>
-              <Text size="xs" c="gray.5">Последнее обновление: 16 августа 2026</Text>
+              <Text size="xs" c="var(--market-muted)">Последнее обновление: 16 августа 2026</Text>
               <Badge size="xs" variant="light" color="indigo">Версия 2.0</Badge>
             </Group>
           </Stack>
@@ -39,7 +39,7 @@ export default function TermsPage() {
           {SECTIONS.map((s) => (
             <Paper key={s.title} radius="md" p="md" withBorder>
               <Text fw={700} fz="sm" c="var(--market-ink)" mb={6}>{s.title}</Text>
-              <Text size="sm" c="gray.6" lh={1.6}>{s.text}</Text>
+              <Text size="sm" c="var(--market-ink-soft)" lh={1.6}>{s.text}</Text>
             </Paper>
           ))}
         </Stack>

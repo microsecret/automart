@@ -69,7 +69,7 @@ export default function SignUpForm() {
       </Text>
 
       <Group justify="center">
-        <Text size="sm" c="gray.5">
+        <Text size="sm" c="var(--market-muted)">
           Уже есть аккаунт?{" "}
           <Anchor component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} size="sm" c="indigo" fw={500}>
             Войти

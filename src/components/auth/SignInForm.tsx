@@ -136,7 +136,7 @@ export default function SignInForm() {
         >
           Войти через Telegram
         </Button>
-        <Text size="xs" c="gray.5" ta="center">
+        <Text size="xs" c="var(--market-muted)" ta="center">
           {fromTelegram
             /* Он пришёл из группы по кнопке: у него уже есть Telegram, и
                сказать надо не «зарегистрируйтесь», а «вам сюда». */
@@ -172,7 +172,7 @@ export default function SignInForm() {
             Войти
           </Button>
         </Stack>
-      <Text size="xs" c="gray.5" ta="right"><Link href="/auth/forgot-password" style={{ color: "#1c4291" }}>Забыли пароль?</Link></Text>
+      <Text size="xs" c="var(--market-muted)" ta="right"><Link href="/auth/forgot-password" style={{ color: "#1c4291" }}>Забыли пароль?</Link></Text>
     </form>
 
       {/* Прежняя ссылка внизу убрана: то же предложение теперь стоит

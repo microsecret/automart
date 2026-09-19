@@ -106,14 +106,14 @@ export default function ListingReportModerationPanel() {
                 <Card key={report.id} withBorder radius="md" p="sm" className="moderation-listing-row">
                   <Stack gap="xs">
                     <Group justify="space-between" gap="sm" wrap="wrap">
-                      <Group gap={6} wrap="wrap"><Badge size="xs" color={meta.color} variant="light">{meta.label}</Badge><Text size="xs" c="gray.5">{REASON_LABELS[report.reason] || report.reason}</Text></Group>
-                      <Text size="xs" c="gray.5">{new Date(report.createdAt).toLocaleString("ru-RU")}</Text>
+                      <Group gap={6} wrap="wrap"><Badge size="xs" color={meta.color} variant="light">{meta.label}</Badge><Text size="xs" c="var(--market-muted)">{REASON_LABELS[report.reason] || report.reason}</Text></Group>
+                      <Text size="xs" c="var(--market-muted)">{new Date(report.createdAt).toLocaleString("ru-RU")}</Text>
                     </Group>
                     <Group justify="space-between" gap="sm" align="flex-start" wrap="wrap">
                       <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                         <Text size="sm" fw={600} c="var(--market-ink)" className="line-clamp-1">{report.listingTitle}</Text>
-                        <Text size="xs" c="gray.5">Заявитель: {report.reporterName || report.reporterEmail || "пользователь"}</Text>
-                        {report.comment && <Text size="sm" c="gray.7">{report.comment}</Text>}
+                        <Text size="xs" c="var(--market-muted)">Заявитель: {report.reporterName || report.reporterEmail || "пользователь"}</Text>
+                        {report.comment && <Text size="sm" c="var(--market-ink-soft)">{report.comment}</Text>}
                       </Stack>
                       <Group gap="xs" wrap="wrap" justify="flex-end">
                         {detailHref && <Button component={Link} href={detailHref} target="_blank" size="xs" variant="light" color="indigo">Открыть карточку</Button>}

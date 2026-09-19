@@ -35,7 +35,7 @@ export default function CreditCalculator({ price }: { price: number }) {
 
         {/* Сумма кредита */}
         <Box>
-          <Text size="xs" c="gray.5" mb={4}>Первоначальный взнос</Text>
+          <Text size="xs" c="var(--market-muted)" mb={4}>Первоначальный взнос</Text>
           <Text size="md" fw={700} c="var(--market-ink)" mb={6}>{formatPrice(downPayment)}</Text>
           <Slider
             value={downPayment}
@@ -51,7 +51,7 @@ export default function CreditCalculator({ price }: { price: number }) {
 
         {/* Срок */}
         <Box>
-          <Text size="xs" c="gray.5" mb={4}>Срок кредита</Text>
+          <Text size="xs" c="var(--market-muted)" mb={4}>Срок кредита</Text>
           <Text size="md" fw={700} c="var(--market-ink)" mb={6}>{term} мес ({Math.round(term / 12 * 10) / 10} лет)</Text>
           <Slider
             value={term}
@@ -104,20 +104,20 @@ export default function CreditCalculator({ price }: { price: number }) {
         {/* Результат */}
         <Group justify="space-between" align="center">
           <Stack gap={0}>
-            <Text size="xs" c="gray.5">Ежемесячный платёж</Text>
+            <Text size="xs" c="var(--market-muted)">Ежемесячный платёж</Text>
             <Text size="xl" fw={800} c="#1c4291" ff="var(--font-display),sans-serif">{formatPrice(monthlyPayment)}</Text>
           </Stack>
           <Stack gap={0} align="flex-end">
-            <Text size="xs" c="gray.5">Сумма кредита</Text>
+            <Text size="xs" c="var(--market-muted)">Сумма кредита</Text>
             <Text size="sm" fw={600} c="var(--market-ink)">{formatPrice(totalLoan)}</Text>
-            <Text size="xs" c="gray.5">Всего с первым взносом: {formatPrice(totalCost)}</Text>
+            <Text size="xs" c="var(--market-muted)">Всего с первым взносом: {formatPrice(totalCost)}</Text>
           </Stack>
         </Group>
 
         {/* Прямо сказано, чей это расчёт. «Точные условия определяет
             банк» звучало так, будто банк уже есть и осталось уточнить
             детали. */}
-        <Text size="var(--text-caps)" c="gray.4">
+        <Text size="var(--text-caps)" c="var(--market-muted)">
           Площадка не выдаёт кредитов. Это ваш собственный расчёт по введённой ставке — сравните его с предложением банка.
         </Text>
       </Stack>

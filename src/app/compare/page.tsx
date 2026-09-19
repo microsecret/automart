@@ -197,7 +197,7 @@ function CompareContent() {
             <IconGitCompare size={28} />
           </ThemeIcon>
           <Title order={1} ff="var(--font-display),sans-serif" ta="center">Сравнение объявлений</Title>
-          <Text size="sm" c="gray.5" ta="center" maw={440}>
+          <Text size="sm" c="var(--market-muted)" ta="center" maw={440}>
             Нажмите значок весов на карточке машины в каталоге — она попадёт сюда.
             Сравнить можно до четырёх объявлений: цены, пробег, год и характеристики
             встанут рядом в одной таблице.
@@ -223,7 +223,7 @@ function CompareContent() {
       <Container size="md" py="xl">
         <Center>
           <Stack align="center" gap="md">
-            <Text c="gray.5" fz="lg">Объявления не найдены</Text>
+            <Text c="var(--market-muted)" fz="lg">Объявления не найдены</Text>
             <Button component={Link} href="/" variant="subtle" color="indigo">На главную</Button>
           </Stack>
         </Center>
@@ -237,7 +237,7 @@ function CompareContent() {
         <Group justify="space-between" align="center">
           <Stack gap={0}>
             <Text component="h2" c="var(--market-ink)" ff="var(--font-display),sans-serif">Сравнение</Text>
-            <Text size="xs" c="gray.5">{vehicles.length} автомобиля</Text>
+            <Text size="xs" c="var(--market-muted)">{vehicles.length} автомобиля</Text>
           </Stack>
           <Group gap="xs">
             <Button component={Link} href="/" variant="subtle" color="gray" size="sm" leftSection={<IconArrowLeft size={14} />}>Назад</Button>
@@ -250,7 +250,7 @@ function CompareContent() {
           <Group gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180 }}>
             {/* Колонка с названиями полей */}
             <Box className="compare-sticky-col" style={{ width: 160, flexShrink: 0 }}>
-              <Text size="xs" fw={700} c="gray.4" tt="uppercase" mt={60}>Характеристика</Text>
+              <Text size="xs" fw={700} c="var(--market-muted)" tt="uppercase" mt={60}>Характеристика</Text>
             </Box>
             {/* Колонки автомобилей */}
             {vehicles.map((v) => {
@@ -270,7 +270,7 @@ function CompareContent() {
                       <BrandIcon brand={v.make} size={32} />
                       <Stack gap={0}>
                         <Text fw={700} fz="sm" c="var(--market-ink)">{v.make} {v.model}</Text>
-                        <Text fz="xs" c="gray.5">{v.year}</Text>
+                        <Text fz="xs" c="var(--market-muted)">{v.year}</Text>
                       </Stack>
                     </Group>
                   </Link>
@@ -299,7 +299,7 @@ function CompareContent() {
           {compareFields.map((field, idx) => (
             <Group key={field.key} gap="md" align="flex-start" wrap="nowrap" style={{ minWidth: vehicles.length * 220 + 180, background: idx % 2 === 0 ? "transparent" : "var(--market-surface-subtle)", padding: "6px 0", borderRadius: 4 }}>
               <Box className="compare-sticky-col" style={{ width: 160, flexShrink: 0 }}>
-                <Text size="xs" fw={600} c="gray.6" pl="xs">{field.label}</Text>
+                <Text size="xs" fw={600} c="var(--market-ink-soft)" pl="xs">{field.label}</Text>
               </Box>
               {vehicles.map((v) => {
                 const raw = field.value(v)

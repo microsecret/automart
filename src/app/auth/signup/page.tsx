@@ -23,12 +23,12 @@ export default function SignUpPage() {
             </Box>
             <Text fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
           </Group>
-          <Text size="sm" c="gray.5" lh={1.6}>Создайте защищённый аккаунт через Telegram-бота за минуту.</Text>
+          <Text size="sm" c="var(--market-muted)" lh={1.6}>Создайте защищённый аккаунт через Telegram-бота за минуту.</Text>
           <Stack gap="sm">
             {BENEFITS.map((b) => (
               <Group key={b} gap="sm">
                 <ThemeIcon variant="light" color="green" size={28} radius="md"><IconCheck size={16} /></ThemeIcon>
-                <Text size="sm" c="gray.6">{b}</Text>
+                <Text size="sm" c="var(--market-ink-soft)">{b}</Text>
               </Group>
             ))}
           </Stack>
@@ -38,7 +38,7 @@ export default function SignUpPage() {
         <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0 }}>
           <Stack gap={4} align="center">
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Регистрация</Text>
-            <Text size="sm" c="gray.5">Три шага в Telegram-боте</Text>
+            <Text size="sm" c="var(--market-muted)">Три шага в Telegram-боте</Text>
           </Stack>
 
           <Card className="auth-experience__form-card" withBorder radius="md" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">

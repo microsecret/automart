@@ -19,7 +19,7 @@ export default function BrandsPage() {
           <Text component="h1" ff="var(--font-display),sans-serif" c="var(--market-ink)">
             Все марки
           </Text>
-          <Text size="xs" c="gray.5" mt={2}>{filteredBrands.length} брендов в категории</Text>
+          <Text size="xs" c="var(--market-muted)" mt={2}>{filteredBrands.length} брендов в категории</Text>
         </Stack>
 
         <SegmentedControl
@@ -59,7 +59,7 @@ export default function BrandsPage() {
                     <Text size="sm" fw={600} c="var(--market-ink)" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {brand.name}
                     </Text>
-                    <Text size="xs" c="gray.4">{brand.models.length} моделей {COUNTRY_FLAGS[brand.country]}</Text>
+                    <Text size="xs" c="var(--market-muted)">{brand.models.length} моделей {COUNTRY_FLAGS[brand.country]}</Text>
                   </Stack>
                 </Group>
               </Paper>

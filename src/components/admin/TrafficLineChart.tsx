@@ -125,14 +125,14 @@ export default function TrafficLineChart({ points }: { points: TrafficChartPoint
         </svg>
         {activePoint && (
           <Paper className="admin-traffic-tooltip" withBorder shadow="lg" radius="md" p="sm" style={tooltipPosition}>
-            <Text className="admin-traffic-tooltip__date" size="xs" fw={800} c="gray.6">
+            <Text className="admin-traffic-tooltip__date" size="xs" fw={800} c="var(--market-ink-soft)">
               📅 {new Intl.DateTimeFormat("ru-RU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${activePoint.date}T00:00:00Z`))}
             </Text>
             {SERIES.map(({ key, label, color }) => (
               <Group key={key} justify="space-between" gap="lg" wrap="nowrap" className="admin-traffic-tooltip__row">
                 <Group gap={6} wrap="nowrap">
                   <Box w={8} h={8} bg={color} style={{ borderRadius: "50%", flex: "0 0 auto" }} />
-                  <Text size="xs" c="gray.6" style={{ whiteSpace: "nowrap" }}>{label}</Text>
+                  <Text size="xs" c="var(--market-ink-soft)" style={{ whiteSpace: "nowrap" }}>{label}</Text>
                 </Group>
                 <Text size="sm" fw={800} style={{ color, fontVariantNumeric: "tabular-nums" }}>{activePoint[key].toLocaleString("ru-RU")}</Text>
               </Group>

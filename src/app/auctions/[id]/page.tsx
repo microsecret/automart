@@ -334,7 +334,7 @@ function AuctionDetail() {
 
   if (isLoading) return <Container py={80}><Center><Loader size="sm" /></Center></Container>
   if (error) return <Container py={80}><AsyncErrorState title="Лот недоступен" description="Возможно, он уже завершён или снят с публикации." onRetry={() => void mutate()} /></Container>
-  if (!listing) return <Container py={80}><Center><Text c="gray.5">Лот не найден</Text></Center></Container>
+  if (!listing) return <Container py={80}><Center><Text c="var(--market-muted)">Лот не найден</Text></Center></Container>
 
   const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇪🇺 Европа", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
   const publicIdentity = identity || auctionVehicleIdentity(listing.make, listing.model)
@@ -517,7 +517,7 @@ function AuctionDetail() {
                 <Paper radius="md" p="md" withBorder>
                   <Stack gap="xs">
                     <Group gap="sm"><IconCheck size={18} color="#059669" /><Text fw={700} c="var(--market-ink)">Описание объявления</Text></Group>
-                    <Text size="sm" c="gray.6" lh={1.6}>{publicDescription}</Text>
+                    <Text size="sm" c="var(--market-ink-soft)" lh={1.6}>{publicDescription}</Text>
                   </Stack>
                 </Paper>
               )}
@@ -551,7 +551,7 @@ function AuctionDetail() {
                   <ThemeIcon size={56} radius="xl" color="green" variant="light"><IconCheck size={28} /></ThemeIcon>
                   <Stack gap={0} align="center">
                     <Text fw={700} fz="lg" c="var(--market-ink)">Заявка отправлена!</Text>
-                    <Text size="sm" c="gray.5" ta="center">После проверки лота и назначения партнёра<br />сделка появится в личном кабинете.</Text>
+                    <Text size="sm" c="var(--market-muted)" ta="center">После проверки лота и назначения партнёра<br />сделка появится в личном кабинете.</Text>
                     <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" fullWidth>Перейти к сделкам</Button>
                   </Stack>
                 </Stack>
@@ -566,7 +566,7 @@ function AuctionDetail() {
                 ) : <form onSubmit={handleSubmit}>
                   <Stack gap="sm">
                     <Group gap="sm"><IconGavel size={20} color="#ea580c" /><Text fw={800} fz="lg" c="var(--market-ink)">Заказать авто</Text></Group>
-                    <Text size="xs" c="gray.5">{publicIdentity.title} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
+                    <Text size="xs" c="var(--market-muted)">{publicIdentity.title} · {listing.year} · {COUNTRY_LABELS[listing.country]}</Text>
                     {/* Кто делает ставку.
 
                         Раздел называется «аукционы», везде слова «лот» и
@@ -586,8 +586,8 @@ function AuctionDetail() {
                     <TextInput label="Город доставки" autoComplete="address-level2" required placeholder="Москва" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} size="sm" />
                     <Textarea label="Комментарий" placeholder="Вопросы, пожелания..." value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} size="sm" minRows={2} />
                     <Button type="submit" size="md" loading={submitting} leftSection={<IconCheck size={18} />} fullWidth>Отправить заявку</Button>
-                    <Group gap={6}><IconShieldCheck size={14} color="#059669" /><Text size="xs" c="gray.5">Контакты видит только администратор. Партнёру — имя и город.</Text></Group>
-                    <Group gap={6}><IconTruckDelivery size={14} color="#1c4291" /><Text size="xs" c="gray.5">Доставка во все регионы РФ</Text></Group>
+                    <Group gap={6}><IconShieldCheck size={14} color="#059669" /><Text size="xs" c="var(--market-muted)">Контакты видит только администратор. Партнёру — имя и город.</Text></Group>
+                    <Group gap={6}><IconTruckDelivery size={14} color="#1c4291" /><Text size="xs" c="var(--market-muted)">Доставка во все регионы РФ</Text></Group>
                   </Stack>
                 </form>
               )}

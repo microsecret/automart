@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
         </Box>
         <Stack gap={4} align="center">
           <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Восстановление пароля</Text>
-          <Text size="sm" c="gray.5">Введите email для сброса</Text>
+          <Text size="sm" c="var(--market-muted)">Введите email для сброса</Text>
         </Stack>
 
         {sent ? (
@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
               <ThemeIcon variant="light" color="green" size={56} radius="xl"><IconCheck size={28} /></ThemeIcon>
               <Stack gap={0} align="center">
                 <Text fw={700} fz="lg" c="var(--market-ink)">Письмо отправлено</Text>
-                <Text size="sm" c="gray.5" ta="center">Если аккаунт с таким email существует, инструкции уже отправлены.</Text>
+                <Text size="sm" c="var(--market-muted)" ta="center">Если аккаунт с таким email существует, инструкции уже отправлены.</Text>
               </Stack>
               <Button component={Link} href="/auth/signin" variant="light" color="indigo" leftSection={<IconArrowLeft size={16} />}>Вернуться ко входу</Button>
             </Stack>
@@ -60,18 +60,18 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSubmit}>
               <Stack gap="md">
                 <Alert icon={<IconMail size={16} />} color="indigo" variant="light" radius="md">
-                  <Text size="xs" c="gray.7">Мы отправим одноразовую ссылку для установки нового пароля.</Text>
+                  <Text size="xs" c="var(--market-ink-soft)">Мы отправим одноразовую ссылку для установки нового пароля.</Text>
                 </Alert>
                 <TextInput label="Email" type="email" inputMode="email" autoComplete="email" spellCheck={false} placeholder="your@email.ru" required value={email} onChange={(e) => setEmail(e.target.value)} size="md" leftSection={<IconMail size={18} />} />
                 <Button type="submit" size="md" color="indigo" loading={loading} fullWidth>Отправить ссылку</Button>
-                <Text size="xs" c="gray.5" ta="center">
+                <Text size="xs" c="var(--market-muted)" ta="center">
                   Вспомнили пароль? <Link href="/auth/signin" style={{ color: "#1c4291" }}>Войти</Link>
                 </Text>
                 {/* Запасной путь. Почта — единственный способ на этой
                     странице, и когда отправка недоступна, человек
                     упирается в тупик, хотя вход по телефону работает и
                     Telegram-бот узнаёт его без пароля вовсе. */}
-                <Text size="xs" c="gray.5" ta="center">
+                <Text size="xs" c="var(--market-muted)" ta="center">
                   Нет доступа к почте? Войдите{" "}
                   <Link href="/auth/signin" style={{ color: "#1c4291" }}>по номеру телефона</Link>
                   {" "}или через Telegram-бота.

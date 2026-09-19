@@ -123,7 +123,7 @@ export default function ListingModerationPanel() {
                     <IconTag size={16} color="#71717a" />
                     <Stack gap={0} style={{ minWidth: 0 }}>
                       <Text size="sm" fw={600} c="var(--market-ink)" className="line-clamp-1">{listing.title}</Text>
-                      <Group gap={6} wrap="wrap"><Text size="xs" c="gray.5">{listing.user?.name || listing.user?.email} · {listing.vehicle ? `${listing.vehicle.make} ${listing.vehicle.model}` : listing.part?.name}</Text><Badge size="xs" color={statusMeta.color} variant="light">{statusMeta.label}</Badge></Group>
+                      <Group gap={6} wrap="wrap"><Text size="xs" c="var(--market-muted)">{listing.user?.name || listing.user?.email} · {listing.vehicle ? `${listing.vehicle.make} ${listing.vehicle.model}` : listing.part?.name}</Text><Badge size="xs" color={statusMeta.color} variant="light">{statusMeta.label}</Badge></Group>
                     </Stack>
                   </Group>
                   <Group gap="xs" wrap="wrap" justify="flex-end">

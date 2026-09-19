@@ -57,7 +57,7 @@ function MapListingResult({ listing, city }: { listing: MapListing; city: string
             <Text className="listing-map-result__title" size="sm" fw={700} c="var(--market-ink)">{vehicle.make} {vehicle.model}</Text>
           </Group>
           <Text className="listing-map-result__price" size="sm" fw={800} c="var(--market-ink)">{formatPriceShort(listing.price)}</Text>
-          <Text className="listing-map-result__meta" size="xs" c="gray.5">{vehicle.year} г. · {listing.location || vehicle.location || city}</Text>
+          <Text className="listing-map-result__meta" size="xs" c="var(--market-muted)">{vehicle.year} г. · {listing.location || vehicle.location || city}</Text>
         </Stack>
       </Paper>
     </Link>
@@ -102,7 +102,7 @@ export default function MapPage() {
         <Group gap="sm" align="center">
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Карта объявлений</Text>
-            <Text size="xs" c="gray.5">{listings.length} объявлений в городе {activeCity}</Text>
+            <Text size="xs" c="var(--market-muted)">{listings.length} объявлений в городе {activeCity}</Text>
           </Stack>
         </Group>
 

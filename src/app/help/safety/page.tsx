@@ -25,7 +25,7 @@ export default function SafetyPage() {
           <ThemeIcon variant="light" color="red" size={44} radius="md"><IconShieldCheck size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Безопасность</Text>
-            <Text size="xs" c="gray.5">Как не стать жертвой мошенников</Text>
+            <Text size="xs" c="var(--market-muted)">Как не стать жертвой мошенников</Text>
           </Stack>
         </Group>
 
@@ -42,7 +42,7 @@ export default function SafetyPage() {
                   <ThemeIcon variant="light" color="green" size={36} radius="md"><Icon size={20} /></ThemeIcon>
                   <Stack gap={4} style={{ flex: 1 }}>
                     <Text fw={700} fz="sm" c="var(--market-ink)">{r.title}</Text>
-                    <Text size="xs" c="gray.6" lh={1.5}>{r.text}</Text>
+                    <Text size="xs" c="var(--market-ink-soft)" lh={1.5}>{r.text}</Text>
                   </Stack>
                 </Group>
               </Paper>
@@ -59,7 +59,7 @@ export default function SafetyPage() {
             {SCAM_SIGNS.map((s) => (
               <Group key={s} gap={8}>
                 <IconChecks size={16} color="#d97706" />
-                <Text size="sm" c="gray.7">{s}</Text>
+                <Text size="sm" c="var(--market-ink-soft)">{s}</Text>
               </Group>
             ))}
           </Stack>
@@ -70,7 +70,7 @@ export default function SafetyPage() {
             <ThemeIcon variant="light" color="green" size={36} radius="md"><IconShieldCheck size={20} /></ThemeIcon>
             <Stack gap={0} style={{ flex: 1 }}>
               <Text fw={700} fz="sm" c="var(--market-ink)">Сопровождаемая сделка помогает контролировать процесс</Text>
-              <Text size="xs" c="gray.6">Проверка продавца, документы, статусы и поддержка. Площадка не удерживает деньги до подключения лицензированного платёжного провайдера.</Text>
+              <Text size="xs" c="var(--market-ink-soft)">Проверка продавца, документы, статусы и поддержка. Площадка не удерживает деньги до подключения лицензированного платёжного провайдера.</Text>
             </Stack>
           </Group>
         </Paper>

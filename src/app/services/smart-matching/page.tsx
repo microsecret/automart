@@ -55,7 +55,7 @@ export default function SmartmatchingPage() {
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconTarget size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
-            <Text size="xs" c="gray.5">Подберём лучшие варианты под ваш бюджет и критерии</Text>
+            <Text size="xs" c="var(--market-muted)">Подберём лучшие варианты под ваш бюджет и критерии</Text>
           </Stack>
         </Group>
 
@@ -92,7 +92,7 @@ export default function SmartmatchingPage() {
                 <Center>
                   <Stack align="center" gap="sm">
                     <IconCar size={40} color="gray.4" />
-                    <Text c="gray.5">Ничего не найдено. Попробуйте увеличить бюджет или изменить критерии.</Text>
+                    <Text c="var(--market-muted)">Ничего не найдено. Попробуйте увеличить бюджет или изменить критерии.</Text>
                   </Stack>
                 </Center>
               </Paper>
@@ -125,7 +125,7 @@ export default function SmartmatchingPage() {
                               <Text fw={700} fz="sm" c="var(--market-ink)">{l.title}</Text>
                             </Link>
                           </Group>
-                          <Text fz="xs" c="gray.5">{v ? `${v.year} г. · ${formatMileage(v.mileage)} · ${v.location || "—"}` : ""}</Text>
+                          <Text fz="xs" c="var(--market-muted)">{v ? `${v.year} г. · ${formatMileage(v.mileage)} · ${v.location || "—"}` : ""}</Text>
                           <Group gap="sm" mt={2}>
                             <Text fw={800} fz="lg" c="var(--market-ink)" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
                             <Badge size="xs" color="green" variant="light">Подходит по 4 критериям</Badge>

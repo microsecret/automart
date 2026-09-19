@@ -29,7 +29,7 @@ export default function AboutPage() {
           <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="var(--market-ink)" style={{ letterSpacing: "var(--track-title)" }}>
             LeWheel — маркетплейс транспорта
           </Title>
-          <Text size="sm" c="gray.5" maw={500} lh={1.6}>
+          <Text size="sm" c="var(--market-muted)" maw={500} lh={1.6}>
             Полноценная экосистема для покупки и продажи автомобилей, мото, спецтехники,
             водного и воздушного транспорта в странах ЕАЭС. С проверкой истории, безопасной сделкой
             и умным подбором.
@@ -42,7 +42,7 @@ export default function AboutPage() {
             <Card key={s.label} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Stack gap={0} align="center" ta="center">
                 <Text size="xl" fw={800} c="#1c4291" ff="var(--font-display),sans-serif">{s.value}</Text>
-                <Text size="xs" c="gray.5">{s.label}</Text>
+                <Text size="xs" c="var(--market-muted)">{s.label}</Text>
               </Stack>
             </Card>
           ))}
@@ -60,7 +60,7 @@ export default function AboutPage() {
                   <ThemeIcon variant="light" color="indigo" size={36} radius="md">{f.icon}</ThemeIcon>
                   <Stack gap={2}>
                     <Text size="sm" fw={600} c="var(--market-ink)">{f.title}</Text>
-                    <Text size="xs" c="gray.5" lh={1.4}>{f.desc}</Text>
+                    <Text size="xs" c="var(--market-muted)" lh={1.4}>{f.desc}</Text>
                   </Stack>
                 </Group>
               </Card>
@@ -80,7 +80,7 @@ export default function AboutPage() {
                   <Text size="xl">{c.flag}</Text>
                   <Stack gap={0}>
                     <Text size="sm" fw={600} c="var(--market-ink)">{c.name}</Text>
-                    <Text size="xs" c="gray.4">{c.cities.length} городов</Text>
+                    <Text size="xs" c="var(--market-muted)">{c.cities.length} городов</Text>
                   </Stack>
                 </Group>
               </Card>

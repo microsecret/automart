@@ -173,7 +173,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
                     {isVehicle && <Text className="listing-card__row-eyebrow" fz="10px" fw={700}>{vehicleTypeLabel(vehicleType, listing.vehicle!.bodyType)}</Text>}
                     <Text className="listing-card__row-title" fw={700} fz="sm" c="var(--market-ink)" style={TRUNCATE}>{listing.title}</Text>
-                    <Text fz="xs" c="gray.5" style={TRUNCATE}>
+                    <Text fz="xs" c="var(--market-muted)" style={TRUNCATE}>
                       {isVehicle ? `${listing.vehicle!.make} ${listing.vehicle!.model}` : listing.part?.name}
                     </Text>
                   </Stack>
@@ -189,22 +189,22 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
 
               {isVehicle && (
                 <Group className="listing-card__row-facts" gap={0} wrap="wrap" mt={2}>
-                  <Text fz="xs" c="gray.6">Год <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text></Text>
-                  {distanceValue && <Text fz="xs" c="gray.6">{usageMeta.label} <Text component="span" inherit fw={700} c="var(--market-ink)">{distanceValue}</Text></Text>}
+                  <Text fz="xs" c="var(--market-ink-soft)">Год <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.year}</Text></Text>
+                  {distanceValue && <Text fz="xs" c="var(--market-ink-soft)">{usageMeta.label} <Text component="span" inherit fw={700} c="var(--market-ink)">{distanceValue}</Text></Text>}
                   {/* OTHER означает «не указано» — в списке это не факт. */}
                   {supportsTransmission(vehicleType) && listing.vehicle!.transmission && listing.vehicle!.transmission !== "OTHER" && (
-                    <Text fz="xs" c="gray.6">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
+                    <Text fz="xs" c="var(--market-ink-soft)">КПП <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getTransmissionOptions(vehicleType), listing.vehicle!.transmission)}</Text></Text>
                   )}
                   {listing.vehicle!.fuelType && listing.vehicle!.fuelType !== "OTHER" && (
-                    <Text fz="xs" c="gray.6">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
+                    <Text fz="xs" c="var(--market-ink-soft)">Топливо <Text component="span" inherit fw={700} c="var(--market-ink)">{findLabel(getFuelOptions(vehicleType), listing.vehicle!.fuelType)}</Text></Text>
                   )}
                   {/* У электротяги объёма нет — там о моторе говорит мощность. */}
                   {listing.vehicle!.fuelType === "ELECTRIC"
                     ? listing.vehicle!.power ? (
-                        <Text fz="xs" c="gray.6">Мощность <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.power} л.с.</Text></Text>
+                        <Text fz="xs" c="var(--market-ink-soft)">Мощность <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.power} л.с.</Text></Text>
                       ) : null
                     : listing.vehicle!.engineVolume ? (
-                        <Text fz="xs" c="gray.6">Объём <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.engineVolume} л</Text></Text>
+                        <Text fz="xs" c="var(--market-ink-soft)">Объём <Text component="span" inherit fw={700} c="var(--market-ink)">{listing.vehicle!.engineVolume} л</Text></Text>
                       ) : null}
                 </Group>
               )}
@@ -214,11 +214,11 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
               {listing.location ? (
                 <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
                   <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
-                  <Text fz="xs" c="gray.4" style={TRUNCATE}>{listing.location}</Text>
+                  <Text fz="xs" c="var(--market-muted)" style={TRUNCATE}>{listing.location}</Text>
                 </Group>
               ) : <span />}
               <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
-                {listing.createdAt && <Text fz="xs" c="gray.4">{formatRelativeDate(listing.createdAt)}</Text>}
+                {listing.createdAt && <Text fz="xs" c="var(--market-muted)">{formatRelativeDate(listing.createdAt)}</Text>}
                 {isVehicle && (
                   <ActionIcon
                     className="listing-card__favorite listing-card__favorite--inline"

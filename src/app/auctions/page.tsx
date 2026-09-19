@@ -411,7 +411,7 @@ function AuctionsPageContent() {
             в пустоте отдельным пятном. Строке статистики она не нужна. */}
         {/* Мера строки ограничена классом: без неё сводка шла в 190
             знаков на всю ширину колонки — вдвое больше нормы чтения. */}
-        <Text size="xs" c="gray.5" className="section-summary">
+        <Text size="xs" c="var(--market-muted)" className="section-summary">
           {data?.pagination?.total || 0} авто в активном каталоге · {sourceSummary ? `источники: ${sourceSummary}` : "источники уточняются"} · доставка в РФ
         </Text>
 
@@ -668,7 +668,7 @@ function AuctionsPageContent() {
                     <Divider color="gray.2" />
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" className={styles.marketMix} aria-label="Структура текущей выдачи">
                       <Box>
-                        <Text size="xs" fw={800} tt="uppercase" c="gray.6" mb={7}>Топливо в выдаче</Text>
+                        <Text size="xs" fw={800} tt="uppercase" c="var(--market-ink-soft)" mb={7}>Топливо в выдаче</Text>
                         {topFuelDistribution.length === 0 && (
                           <Text size="xs" c="dimmed">Площадка не публикует тип топлива для этих лотов.</Text>
                         )}
@@ -680,7 +680,7 @@ function AuctionsPageContent() {
                         </Stack>
                       </Box>
                       <Box>
-                        <Text size="xs" fw={800} tt="uppercase" c="gray.6" mb={7}>Тип кузова в выдаче</Text>
+                        <Text size="xs" fw={800} tt="uppercase" c="var(--market-ink-soft)" mb={7}>Тип кузова в выдаче</Text>
                         {/* Источник не всегда передаёт тип кузова: пустая
                             колонка с одним заголовком выглядит как сбой, а не
                             как отсутствие данных. */}
@@ -814,11 +814,11 @@ function AuctionsPageContent() {
                         <Text size="xs" fw={700} c={new Date(l.auctionDate) > new Date() ? "teal.7" : "gray.5"}>
                           {new Date(l.auctionDate) > new Date() ? "Торги: " : "Торги были: "}
                         </Text>
-                        <Text size="xs" c="gray.5">
+                        <Text size="xs" c="var(--market-muted)">
                           {new Date(l.auctionDate).toLocaleDateString("ru", { day: "numeric", month: "short" })}
                         </Text>
-                        {l.lotNumber && <Text size="xs" c="gray.4" lineClamp={1}>· #{l.lotNumber}</Text>}
-                      </Group> : <Text size="xs" c="gray.5">Дата торгов уточняется{l.lotNumber ? ` · #${l.lotNumber}` : ""}</Text>}
+                        {l.lotNumber && <Text size="xs" c="var(--market-muted)" lineClamp={1}>· #{l.lotNumber}</Text>}
+                      </Group> : <Text size="xs" c="var(--market-muted)">Дата торгов уточняется{l.lotNumber ? ` · #${l.lotNumber}` : ""}</Text>}
                     </Box>
                   </Box>
                 </Paper>

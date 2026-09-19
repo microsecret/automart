@@ -282,7 +282,7 @@ function DashboardContent() {
             <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconLayoutDashboard size={22} /></ThemeIcon>
             <Stack gap={0}>
               <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный кабинет</Text>
-              <Text size="xs" c="gray.5">{session?.user?.name || session?.user?.email}</Text>
+              <Text size="xs" c="var(--market-muted)">{session?.user?.name || session?.user?.email}</Text>
             </Stack>
           </Group>
           <Button component={Link} href="/listings/create/vehicle" leftSection={<IconPlus size={16} />} color="indigo" radius="md" size="sm">Разместить</Button>
@@ -494,7 +494,7 @@ function DashboardContent() {
                           <Badge size="xs" color={statusMeta.color} variant="light">{statusMeta.label}</Badge>
                           {l.isFeatured && <Badge size="xs" color="violet" variant="light">Премиум</Badge>}
                         </Group>
-                        <Text fz="xs" c="gray.5">{isVehicle && l.vehicle ? `${formatMileage(l.vehicle.mileage)} · ${l.vehicle.location || "—"}` : l.part?.name}</Text>
+                        <Text fz="xs" c="var(--market-muted)">{isVehicle && l.vehicle ? `${formatMileage(l.vehicle.mileage)} · ${l.vehicle.location || "—"}` : l.part?.name}</Text>
                         {l.statusReason && l.status === LISTING_STATUS.REJECTED && (
                           <Alert
                             color="red"
@@ -516,11 +516,11 @@ function DashboardContent() {
                           <Text fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
                           <Group gap={4}>
                             <IconEye size={13} color="gray.4" />
-                            <Text fz="xs" c="gray.4">{l.views} просмотров</Text>
+                            <Text fz="xs" c="var(--market-muted)">{l.views} просмотров</Text>
                           </Group>
                           <Group gap={4}>
                             <IconClock size={13} color="gray.4" />
-                            <Text fz="xs" c="gray.4">{formatRelativeDate(l.createdAt)}</Text>
+                            <Text fz="xs" c="var(--market-muted)">{formatRelativeDate(l.createdAt)}</Text>
                           </Group>
                         </Group>
                       </Stack>
@@ -604,8 +604,8 @@ function DashboardContent() {
                       </Link>
                       <Box p="sm">
                         <Text fw={800} fz="md" c="var(--market-ink)">{formatPriceShort(fav.price)}</Text>
-                        <Text fz="xs" c="gray.6">{v.make} {v.model}, {v.year}</Text>
-                        <Text fz="xs" c="gray.4">{formatMileage(v.mileage)}</Text>
+                        <Text fz="xs" c="var(--market-ink-soft)">{v.make} {v.model}, {v.year}</Text>
+                        <Text fz="xs" c="var(--market-muted)">{formatMileage(v.mileage)}</Text>
                       </Box>
                     </Paper>
                   )
@@ -650,11 +650,11 @@ function DashboardContent() {
                       ? <Badge color="teal" variant="light" leftSection={<IconShieldCheck size={12} />}>Аккаунт подтверждён</Badge>
                       : <Badge color="yellow" variant="light">Профиль заполнен на {accountCompletion}%</Badge>}
                   </Group>
-                  <Text size="sm" c="gray.5" truncate>{accountProfile?.email || session?.user?.email || "Почта не указана"}</Text>
+                  <Text size="sm" c="var(--market-muted)" truncate>{accountProfile?.email || session?.user?.email || "Почта не указана"}</Text>
                   {stats.avgRating > 0 && (
                     <Group gap={4}>
                       <IconStar size={14} color="#f59e0b" fill="#f59e0b" />
-                      <Text size="xs" c="gray.5">{stats.avgRating} рейтинг</Text>
+                      <Text size="xs" c="var(--market-muted)">{stats.avgRating} рейтинг</Text>
                     </Group>
                   )}
                 </Stack>
@@ -715,10 +715,10 @@ function DashboardContent() {
               )}
               <Divider />
               <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
-                <Box><Text size="xs" c="gray.4">На сайте с</Text><Text size="sm" fw={600} c="var(--market-ink)">{formatMemberSince(accountProfile?.createdAt || stats.memberSince)}</Text></Box>
-                <Box><Text size="xs" c="gray.4">Всего объявлений</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.totalListings}</Text></Box>
-                <Box><Text size="xs" c="gray.4">Просмотров всего</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.totalViews}</Text></Box>
-                <Box><Text size="xs" c="gray.4">Отзывов</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.reviewsCount}</Text></Box>
+                <Box><Text size="xs" c="var(--market-muted)">На сайте с</Text><Text size="sm" fw={600} c="var(--market-ink)">{formatMemberSince(accountProfile?.createdAt || stats.memberSince)}</Text></Box>
+                <Box><Text size="xs" c="var(--market-muted)">Всего объявлений</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.totalListings}</Text></Box>
+                <Box><Text size="xs" c="var(--market-muted)">Просмотров всего</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.totalViews}</Text></Box>
+                <Box><Text size="xs" c="var(--market-muted)">Отзывов</Text><Text size="sm" fw={600} c="var(--market-ink)">{stats.reviewsCount}</Text></Box>
               </SimpleGrid>
               {!isProfileEditorOpen ? (
                 <Button variant="light" color="indigo" size="sm" leftSection={<IconSettings size={16} />} radius="md" onClick={() => setIsProfileEditorOpen(true)}>Редактировать профиль</Button>

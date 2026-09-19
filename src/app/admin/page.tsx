@@ -1030,7 +1030,7 @@ export default function AdminDashboard() {
               <Group gap="sm" align="flex-start" justify="space-between">
                 <Stack gap={0}>
                   <Text size="xl" fw={800} c="var(--market-ink)" ff="var(--font-display),sans-serif" lh={1}>{s.value}</Text>
-                  <Text size="xs" c="gray.5" mt={2}>{s.label}</Text>
+                  <Text size="xs" c="var(--market-muted)" mt={2}>{s.label}</Text>
                   {s.new != null && s.new > 0 && (
                     <Group gap={3} mt={4}>
                       <IconTrendingUp size={11} color="#16a34a" />
@@ -1130,10 +1130,10 @@ export default function AdminDashboard() {
             <Card key={card.label} className="admin-insight-card" withBorder radius="md" p="md">
               <Group gap="sm">
                 <ThemeIcon variant="light" color={card.color} size={34} radius="md">{card.icon}</ThemeIcon>
-                <Text size="xs" c="gray.5">{card.label}</Text>
+                <Text size="xs" c="var(--market-muted)">{card.label}</Text>
               </Group>
               <Text size="xl" fw={800} mt="xs" c="var(--market-ink)">{card.value}</Text>
-              {card.hint && <Text size="var(--text-caps)" c="gray.5" mt={2}>{card.hint}</Text>}
+              {card.hint && <Text size="var(--text-caps)" c="var(--market-muted)" mt={2}>{card.hint}</Text>}
             </Card>
           ))}
         </SimpleGrid>
@@ -1169,7 +1169,7 @@ export default function AdminDashboard() {
               <Paper key={String(label)} withBorder radius="md" p="sm">
                 <Text size="lg" fw={800}>{value}</Text>
                 <Text size="var(--text-caps)" c="dimmed">{label}</Text>
-                <Text size="var(--text-2xs)" c="gray.5" mt={2}>{detail}</Text>
+                <Text size="var(--text-2xs)" c="var(--market-muted)" mt={2}>{detail}</Text>
               </Paper>
             ))}
           </SimpleGrid>
@@ -1269,9 +1269,9 @@ export default function AdminDashboard() {
             <Text size="sm" fw={600} c="var(--market-ink)" mb="sm">Последние вошедшие</Text>
             <Stack gap="xs">
               {data.traffic.recentVisitors.slice(0, 6).map((visit) => (
-                <Group key={visit.id} justify="space-between"><Text size="xs" c="gray.6">{visit.user?.name || "Без имени"}</Text><Text size="xs" c="gray.5">{formatAdminDateTime(visit.createdAt)}</Text></Group>
+                <Group key={visit.id} justify="space-between"><Text size="xs" c="var(--market-ink-soft)">{visit.user?.name || "Без имени"}</Text><Text size="xs" c="var(--market-muted)">{formatAdminDateTime(visit.createdAt)}</Text></Group>
               ))}
-              {!data.traffic.recentVisitors.length && <Text size="xs" c="gray.4">Пока нет авторизованных визитов</Text>}
+              {!data.traffic.recentVisitors.length && <Text size="xs" c="var(--market-muted)">Пока нет авторизованных визитов</Text>}
             </Stack>
           </Card>
         </SimpleGrid>
@@ -1287,9 +1287,9 @@ export default function AdminDashboard() {
               const pct = Math.round(((count as number) / (c.vehicles || 1)) * 100)
               return (
                 <Group gap="sm" key={type}>
-                  <Text size="xs" c="gray.6" style={{ width: 90, flexShrink: 0 }}>{VEHICLE_TYPE_LABELS[type] || type}</Text>
+                  <Text size="xs" c="var(--market-ink-soft)" style={{ width: 90, flexShrink: 0 }}>{VEHICLE_TYPE_LABELS[type] || type}</Text>
                   <Progress value={pct} size="sm" radius="sm" style={{ flex: 1 }} color="indigo" />
-                  <Text size="xs" c="gray.5" style={{ width: 40, flexShrink: 0, textAlign: "right" }}>{count as number}</Text>
+                  <Text size="xs" c="var(--market-muted)" style={{ width: 40, flexShrink: 0, textAlign: "right" }}>{count as number}</Text>
                 </Group>
               )
             })}
@@ -1300,24 +1300,24 @@ export default function AdminDashboard() {
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
           <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Stack gap="xs">
-              <Group gap="sm"><IconFlame size={16} color="#f97316" /><Text size="xs" c="gray.5">Премиум-объявления</Text></Group>
+              <Group gap="sm"><IconFlame size={16} color="#f97316" /><Text size="xs" c="var(--market-muted)">Премиум-объявления</Text></Group>
               <Text size="xl" fw={700} c="var(--market-ink)">{data?.featured ?? 0}</Text>
-              <Text size="xs" c="gray.4">{Math.round(((data?.featured ?? 0) / total) * 100)}% от всех</Text>
+              <Text size="xs" c="var(--market-muted)">{Math.round(((data?.featured ?? 0) / total) * 100)}% от всех</Text>
             </Stack>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Stack gap="xs">
-              <Group gap="sm"><IconTrendingUp size={16} color="#16a34a" /><Text size="xs" c="gray.5">Средняя цена</Text></Group>
+              <Group gap="sm"><IconTrendingUp size={16} color="#16a34a" /><Text size="xs" c="var(--market-muted)">Средняя цена</Text></Group>
               <Text size="xl" fw={700} c="var(--market-ink)">{data?.avgPrice?.toLocaleString("ru-RU") ?? 0} ₽</Text>
-              <Text size="xs" c="gray.4">по всем объявлениям</Text>
+              <Text size="xs" c="var(--market-muted)">по всем объявлениям</Text>
             </Stack>
           </Card>
           <Card className="admin-insight-card" withBorder radius="md" p="md">
             <Stack gap="xs">
-              <Group gap="sm"><IconUsers size={16} color="#1c4291" /><Text size="xs" c="gray.5">Роли</Text></Group>
+              <Group gap="sm"><IconUsers size={16} color="#1c4291" /><Text size="xs" c="var(--market-muted)">Роли</Text></Group>
               {Object.entries(data?.byRole || {}).map(([role, count]) => (
                 <Group key={role} justify="space-between">
-                  <Text size="xs" c="gray.6">{role}</Text>
+                  <Text size="xs" c="var(--market-ink-soft)">{role}</Text>
                   <Text size="xs" fw={600} c="var(--market-ink)">{count as number}</Text>
                 </Group>
               ))}

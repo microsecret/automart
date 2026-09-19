@@ -109,7 +109,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
                     )}
                   </Box>
                   <Group justify="space-between" align="center" mt={2}>
-                    <Text size="xs" c="gray.5" truncate>{vehicle.location || "Город не указан"}</Text>
+                    <Text size="xs" c="var(--market-muted)" truncate>{vehicle.location || "Город не указан"}</Text>
                     <Group gap={2} wrap="nowrap">
                       <ActionIcon component={Link} href={`/listings/create/vehicle?mode=garage&garageId=${encodeURIComponent(vehicle.id)}`} color="indigo" variant="subtle" size="sm" aria-label={`Редактировать ${vehicle.make} ${vehicle.model}`}>
                         <IconEdit size={16} />

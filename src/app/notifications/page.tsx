@@ -171,7 +171,7 @@ export default function NotificationsPage() {
                           Перейти
                         </Button>
                       )}
-                      <Text fz="xs" c="gray.5" mt={2}>{formatNotificationTime(n.createdAt)}</Text>
+                      <Text fz="xs" c="var(--market-muted)" mt={2}>{formatNotificationTime(n.createdAt)}</Text>
                     </Stack>
                     {!n.isRead && (
                       <Tooltip label="Отметить прочитанным" withArrow>

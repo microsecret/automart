@@ -318,7 +318,7 @@ function PartsContent() {
           <ThemeIcon variant="light" color="violet" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
           <Stack gap={0}>
             <Text fw={800} fz="sm" c="var(--market-ink)" ff="var(--font-display),sans-serif">Подбор по авто</Text>
-            <Text size="xs" c="gray.5">Найдём запчасти на ваш авто</Text>
+            <Text size="xs" c="var(--market-muted)">Найдём запчасти на ваш авто</Text>
           </Stack>
         </Group>
         <Select label="Марка" placeholder="Выберите марку" data={partBrandOptions} searchable clearable value={make} onChange={(v) => { setMake(v); setModel(null) }} size="xs" />
@@ -363,7 +363,7 @@ function PartsContent() {
         {hasInvalidPriceRange && <Text size="xs" c="var(--market-danger-text)">Цена «от» не может быть выше цены «до».</Text>}
         {(partType || make || conditions.length || availability.length || saleFormat || priceFrom || priceTo) && (
           <Group gap={6} wrap="wrap">
-            <Text size="xs" c="gray.5">Активные:</Text>
+            <Text size="xs" c="var(--market-muted)">Активные:</Text>
             {partType && <Badge size="xs" variant="light" color="indigo">{PART_TYPES.find((t) => t.value === partType)?.label}</Badge>}
             {subcategory && <Badge size="xs" variant="light" color="violet">{subcategory}</Badge>}
             {conditions.map((item) => <Badge key={item} size="xs" variant="light" color="green">{findLabel(PART_CONDITIONS, item)}</Badge>)}
@@ -393,7 +393,7 @@ function PartsContent() {
               {/* «0 запчастей» первой строкой сообщает, что смотреть нечего,
                   и человек уходит, не дочитав. Пока каталог пуст, подпись
                   говорит о том, что здесь можно сделать. */}
-              <Text size="xs" c="gray.5">
+              <Text size="xs" c="var(--market-muted)">
                 {data?.pagination?.total
                   ? `${formatPartsCount(data.pagination.total)} · кросс-совместимость по авто`
                   : "Заявка на деталь · подбор по авто · бесплатно"}
@@ -526,7 +526,7 @@ function PartsContent() {
                                     <Badge key={i} className="part-result-card__compatibility-chip" size="xs" variant="light" color="indigo" radius="sm">{c.make} {c.model}</Badge>
                                   ))}
                                   {p.compatibility.length > 4 && (
-                                    <Text size="xs" c="gray.5">+{p.compatibility.length - 4} ещё</Text>
+                                    <Text size="xs" c="var(--market-muted)">+{p.compatibility.length - 4} ещё</Text>
                                   )}
                                 </Group>
                               )}

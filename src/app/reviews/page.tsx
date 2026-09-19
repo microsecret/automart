@@ -65,7 +65,7 @@ export default function ReviewsPage() {
         <Group gap="sm" align="center">
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Отзывы</Text>
-            <Text size="xs" c="gray.5">{reviewCount} отзывов</Text>
+            <Text size="xs" c="var(--market-muted)">{reviewCount} отзывов</Text>
           </Stack>
         </Group>
 
@@ -78,7 +78,7 @@ export default function ReviewsPage() {
             <Center>
               <Stack align="center" gap="sm">
                 <ThemeIcon variant="light" color="gray" size={56} radius="md"><IconMessage2 size={28} /></ThemeIcon>
-                <Text c="gray.5">Пока нет отзывов</Text>
+                <Text c="var(--market-muted)">Пока нет отзывов</Text>
               </Stack>
             </Center>
           </Paper>
@@ -89,17 +89,17 @@ export default function ReviewsPage() {
               <Stack gap="sm" align="center">
                 <Text fw={800} fz={48} c="var(--market-ink)" lh={1}>{avg}</Text>
                 <Rating value={Number(avg) || 0} readOnly size="lg" />
-                <Text size="xs" c="gray.5">из {reviewCount} отзывов</Text>
+                <Text size="xs" c="var(--market-muted)">из {reviewCount} отзывов</Text>
               </Stack>
               <Divider my="sm" />
               <Stack gap={4}>
                 {dist.map((d) => (
                   <Group key={d.star} gap="xs" align="center">
-                    <Text fz="xs" c="gray.5" style={{ width: 20 }}>{d.star}★</Text>
+                    <Text fz="xs" c="var(--market-muted)" style={{ width: 20 }}>{d.star}★</Text>
                     <Box style={{ flex: 1, height: 6, background: "var(--mantine-color-gray-1)", borderRadius: 3, overflow: "hidden" }}>
                       <Box style={{ width: `${d.pct}%`, height: "100%", background: "#f59e0b", borderRadius: 3 }} />
                     </Box>
-                    <Text fz="xs" c="gray.4" style={{ width: 30, textAlign: "right" }}>{d.count}</Text>
+                    <Text fz="xs" c="var(--market-muted)" style={{ width: 30, textAlign: "right" }}>{d.count}</Text>
                   </Group>
                 ))}
               </Stack>
@@ -115,7 +115,7 @@ export default function ReviewsPage() {
                       <Stack gap={4} style={{ flex: 1 }}>
                         <Group gap="sm" align="center" justify="space-between">
                           <Text fw={600} fz="sm" c="var(--market-ink)">{review.user.name || "Аноним"}</Text>
-                          <Text fz="xs" c="gray.4">{formatRelativeDate(review.createdAt)}</Text>
+                          <Text fz="xs" c="var(--market-muted)">{formatRelativeDate(review.createdAt)}</Text>
                         </Group>
                         <Rating value={review.rating} readOnly size="sm" />
                         {review.comment && <Text fz="sm" c="var(--market-ink)" mt={4}>{review.comment}</Text>}

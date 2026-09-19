@@ -17,12 +17,12 @@ export default function SafeDealPage() {
           <ThemeIcon variant="light" color="green" size={44} radius="md"><IconShieldCheck size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Title order={1} size="h3" ff="var(--font-display),sans-serif">Сопровождаемая сделка</Title>
-            <Text size="xs" c="gray.5">Проверка, документы и прозрачные этапы без лишних рисков</Text>
+            <Text size="xs" c="var(--market-muted)">Проверка, документы и прозрачные этапы без лишних рисков</Text>
           </Stack>
         </Group>
 
         <Card withBorder radius="md" p="lg" style={{ borderColor: "var(--mantine-color-border)", background: "var(--market-success-surface)" }}>
-          <Text size="sm" c="gray.6" lh={1.6}>
+          <Text size="sm" c="var(--market-ink-soft)" lh={1.6}>
             Сопровождаемая сделка помогает проверить продавца, собрать документы и контролировать путь покупки. Площадка пока не принимает и не удерживает деньги: платежи выполняются напрямую по согласованным реквизитам.
           </Text>
         </Card>
@@ -33,9 +33,9 @@ export default function SafeDealPage() {
               <Group gap="sm" align="flex-start">
                 <ThemeIcon variant="light" color="green" size={36} radius="md">{step.icon}</ThemeIcon>
                 <Stack gap={2} style={{ flex: 1 }}>
-                  <Text size="xs" c="gray.4">Шаг {i + 1}</Text>
+                  <Text size="xs" c="var(--market-muted)">Шаг {i + 1}</Text>
                   <Text size="sm" fw={600} c="var(--market-ink)">{step.title}</Text>
-                  <Text size="xs" c="gray.5" lh={1.4}>{step.desc}</Text>
+                  <Text size="xs" c="var(--market-muted)" lh={1.4}>{step.desc}</Text>
                 </Stack>
               </Group>
             </Card>
@@ -46,7 +46,7 @@ export default function SafeDealPage() {
           <Stack gap="xs">
             <Text size="sm" fw={600} c="var(--market-ink)">Что входит:</Text>
             {["Проверка сведений об объявлении и продавце", "Статусы, документы и чат по сделке", "Подготовка заявок и квитанций", "Поддержка на ключевых этапах", "Понятный следующий шаг для покупателя"].map((item) => (
-              <Group key={item} gap={6}><IconCheck size={14} color="#16a34a" /><Text size="xs" c="gray.6">{item}</Text></Group>
+              <Group key={item} gap={6}><IconCheck size={14} color="#16a34a" /><Text size="xs" c="var(--market-ink-soft)">{item}</Text></Group>
             ))}
           </Stack>
         </Card>

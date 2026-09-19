@@ -69,7 +69,7 @@ function ResetPasswordWorkspace() {
         </Box>
         <Stack gap={4} align="center">
           <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Новый пароль</Text>
-          <Text size="sm" c="gray.5">Ссылка действует 24 часа и используется один раз.</Text>
+          <Text size="sm" c="var(--market-muted)">Ссылка действует 24 часа и используется один раз.</Text>
         </Stack>
 
         {!token ? (
@@ -77,7 +77,7 @@ function ResetPasswordWorkspace() {
             <Stack gap="md" align="center">
               <ThemeIcon variant="light" color="orange" size={56} radius="xl"><IconMailOff size={28} /></ThemeIcon>
               <Text fw={700} c="var(--market-ink)">Ссылка неполная</Text>
-              <Text size="sm" c="gray.5" ta="center">Запросите новое письмо для восстановления пароля.</Text>
+              <Text size="sm" c="var(--market-muted)" ta="center">Запросите новое письмо для восстановления пароля.</Text>
               <Button component={Link} href="/auth/forgot-password" variant="light" color="indigo">Запросить ссылку</Button>
             </Stack>
           </Card>
@@ -86,7 +86,7 @@ function ResetPasswordWorkspace() {
             <Stack gap="md" align="center">
               <ThemeIcon variant="light" color="green" size={56} radius="xl"><IconCheck size={28} /></ThemeIcon>
               <Text fw={700} c="var(--market-ink)">Пароль обновлён</Text>
-              <Text size="sm" c="gray.5" ta="center">Перенаправляем на страницу входа.</Text>
+              <Text size="sm" c="var(--market-muted)" ta="center">Перенаправляем на страницу входа.</Text>
             </Stack>
           </Card>
         ) : (
@@ -128,7 +128,7 @@ function ResetPasswordWorkspace() {
                   error={confirmPassword.length > 0 && password !== confirmPassword ? "Пароли не совпадают" : undefined}
                 />
                 <Button type="submit" size="md" color="indigo" loading={loading} fullWidth>Сохранить новый пароль</Button>
-                <Text size="xs" c="gray.5" ta="center"><Link href="/auth/signin" style={{ color: "#1c4291" }}>Вернуться ко входу</Link></Text>
+                <Text size="xs" c="var(--market-muted)" ta="center"><Link href="/auth/signin" style={{ color: "#1c4291" }}>Вернуться ко входу</Link></Text>
               </Stack>
             </form>
           </Card>

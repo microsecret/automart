@@ -29,8 +29,8 @@ function SearchContent() {
   return (
     <Container size="xl" p={{ base: "sm", md: 0 }}>
       <Breadcrumbs mb="sm" separator="›">
-        <Anchor component={Link} href="/" size="xs" c="gray.5">Главная</Anchor>
-        <Text size="xs" c="gray.6">{pageTitle}</Text>
+        <Anchor component={Link} href="/" size="xs" c="var(--market-muted)">Главная</Anchor>
+        <Text size="xs" c="var(--market-ink-soft)">{pageTitle}</Text>
       </Breadcrumbs>
 
       <Group gap="sm" align="center" mb="sm">

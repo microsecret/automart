@@ -184,7 +184,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
 
   if (isLoading && !article) return <Center py={60}><Loader color="indigo" /></Center>
   if (articleError) return <Box p={{ base: "sm", md: "xl" }} maw={840} mx="auto"><AsyncErrorState title="Не удалось открыть новость" description="Материал временно недоступен. Повторите попытку." onRetry={() => void mutate()} backHref="/news" /></Box>
-  if (!article) return <Center py={60}><Text c="gray.5">Новость не найдена</Text></Center>
+  if (!article) return <Center py={60}><Text c="var(--market-muted)">Новость не найдена</Text></Center>
   const metadata = readNewsContentMetadata(article.tags)
   const tags = extractNewsHashtags(article.content, metadata.tags)
   const telegramActions = articleTelegramActions(article, metadata.telegramActions)
@@ -194,8 +194,8 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
     <Box p={{ base: "sm", md: "xl" }} style={{ maxWidth: 840, margin: "0 auto" }}>
       <Stack gap="md">
         <Breadcrumbs separator="›">
-          <Anchor component={Link} href="/" size="xs" c="gray.5">Главная</Anchor>
-          <Anchor component={Link} href="/news" size="xs" c="gray.5">Новости</Anchor>
+          <Anchor component={Link} href="/" size="xs" c="var(--market-muted)">Главная</Anchor>
+          <Anchor component={Link} href="/news" size="xs" c="var(--market-muted)">Новости</Anchor>
         </Breadcrumbs>
 
         <Stack gap="xs">
@@ -204,9 +204,9 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
             {article.title}
           </Text>
           <Group gap="md">
-            <Group gap={3}><IconClock size={13} color="gray.4" /><Text size="xs" c="gray.5">{formatDate(article.publishedAt)}</Text></Group>
-            <Group gap={3}><IconEye size={13} color="gray.4" /><Text size="xs" c="gray.5">{article.views} просмотров</Text></Group>
-            <Group gap={3}><IconMessageCircle2 size={13} color="gray.4" /><Text size="xs" c="gray.5">{article.comments?.length || 0} комментариев</Text></Group>
+            <Group gap={3}><IconClock size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{formatDate(article.publishedAt)}</Text></Group>
+            <Group gap={3}><IconEye size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{article.views} просмотров</Text></Group>
+            <Group gap={3}><IconMessageCircle2 size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{article.comments?.length || 0} комментариев</Text></Group>
           </Group>
         </Stack>
 
@@ -271,7 +271,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
             </Card>
           ) : (
             <Card withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
-              <Text size="xs" c="gray.5" ta="center"><Anchor component={Link} href="/auth/signin" size="xs" c="indigo">Войдите</Anchor> чтобы оставить комментарий</Text>
+              <Text size="xs" c="var(--market-muted)" ta="center"><Anchor component={Link} href="/auth/signin" size="xs" c="indigo">Войдите</Anchor> чтобы оставить комментарий</Text>
             </Card>
           )}
 
@@ -280,8 +280,8 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
               <Group gap="sm" align="flex-start">
                 <Avatar src={commentItem.user?.image} size="sm" radius="xl" color="indigo">{commentItem.user?.name?.[0]?.toUpperCase()}</Avatar>
                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                  <Group gap="xs"><Text size="xs" fw={600} c="var(--market-ink)">{commentItem.user?.name || "Аноним"}</Text><Text size="var(--text-caps)" c="gray.4">{formatRelativeDate(commentItem.createdAt)}</Text></Group>
-                  <Text size="xs" c="gray.6" lh={1.5}>{commentItem.content}</Text>
+                  <Group gap="xs"><Text size="xs" fw={600} c="var(--market-ink)">{commentItem.user?.name || "Аноним"}</Text><Text size="var(--text-caps)" c="var(--market-muted)">{formatRelativeDate(commentItem.createdAt)}</Text></Group>
+                  <Text size="xs" c="var(--market-ink-soft)" lh={1.5}>{commentItem.content}</Text>
                 </Stack>
               </Group>
             </Card>
@@ -299,7 +299,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
                       <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconNews size={18} /></ThemeIcon>
                       <Stack gap={2} style={{ flex: 1 }}>
                         <Text size="sm" fw={600} c="var(--market-ink)" style={{ overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{news.title}</Text>
-                        <Group gap={4}><IconClock size={11} color="gray.4" /><Text size="var(--text-caps)" c="gray.4">{formatRelativeDate(news.publishedAt)}</Text></Group>
+                        <Group gap={4}><IconClock size={11} color="gray.4" /><Text size="var(--text-caps)" c="var(--market-muted)">{formatRelativeDate(news.publishedAt)}</Text></Group>
                       </Stack>
                     </Group>
                   </Card>

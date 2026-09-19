@@ -143,7 +143,7 @@ export default function PromotePage() {
           <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconChartBar size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Продвижение объявления</Text>
-            <Text size="xs" c="gray.5">Поднимите активное объявление выше в каталоге</Text>
+            <Text size="xs" c="var(--market-muted)">Поднимите активное объявление выше в каталоге</Text>
           </Stack>
         </Group>
 
@@ -175,7 +175,7 @@ export default function PromotePage() {
         {listing?.views !== undefined && (
           <Paper radius="md" p="sm" withBorder style={{ background: "var(--mantine-color-gray-0)" }}>
             <Group gap="md" justify="center">
-              <Stack gap={0} align="center"><Text fw={700} fz="xl" c="var(--market-ink)">{listing.views || 0}</Text><Text size="xs" c="gray.5">просмотров сейчас</Text></Stack>
+              <Stack gap={0} align="center"><Text fw={700} fz="xl" c="var(--market-ink)">{listing.views || 0}</Text><Text size="xs" c="var(--market-muted)">просмотров сейчас</Text></Stack>
             </Group>
           </Paper>
         )}
@@ -226,11 +226,11 @@ export default function PromotePage() {
                   </Group>
                   <Stack gap={4}>
                     <Text fw={700} fz="md" c="var(--market-ink)">{opt.title}</Text>
-                    <Text size="xs" c="gray.5" lh={1.4}>{opt.desc}</Text>
+                    <Text size="xs" c="var(--market-muted)" lh={1.4}>{opt.desc}</Text>
                   </Stack>
                   <Stack gap={4}>
                     {opt.features.map((f) => (
-                      <Group key={f} gap={6}><IconCheck size={13} color={opt.color} /><Text size="xs" c="gray.6">{f}</Text></Group>
+                      <Group key={f} gap={6}><IconCheck size={13} color={opt.color} /><Text size="xs" c="var(--market-ink-soft)">{f}</Text></Group>
                     ))}
                   </Stack>
                   <Divider my={2} />
@@ -271,15 +271,15 @@ export default function PromotePage() {
             {selectedOption && (
               <>
                 <Group justify="space-between" align="center">
-                  <Stack gap={2}><Text size="xs" c="gray.5">Тариф</Text><Text fw={600} c="var(--market-ink)">{selectedOption.title}</Text></Stack>
+                  <Stack gap={2}><Text size="xs" c="var(--market-muted)">Тариф</Text><Text fw={600} c="var(--market-ink)">{selectedOption.title}</Text></Stack>
                   <Badge size="lg" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} variant="light">{selectedOption.days} дней</Badge>
                 </Group>
                 <Divider />
-                <Group justify="space-between"><Text size="sm" c="gray.5">Стоимость</Text><Text fw={800} fz="xl" c="var(--market-ink)">{selectedOption.price} ₽</Text></Group>
+                <Group justify="space-between"><Text size="sm" c="var(--market-muted)">Стоимость</Text><Text fw={800} fz="xl" c="var(--market-ink)">{selectedOption.price} ₽</Text></Group>
                 <Button fullWidth size="md" color={selected === "boost" ? "cyan" : selected === "premium" ? "orange" : "violet"} leftSection={<IconCreditCard size={18} />} loading={pending} onClick={handlePay}>
                   Оплатить {selectedOption.price} ₽
                 </Button>
-                <Text size="xs" c="gray.5" ta="center">После нажатия откроется защищённая платёжная страница. Тариф активируется только после подтверждённой оплаты.</Text>
+                <Text size="xs" c="var(--market-muted)" ta="center">После нажатия откроется защищённая платёжная страница. Тариф активируется только после подтверждённой оплаты.</Text>
               </>
             )}
           </Stack>

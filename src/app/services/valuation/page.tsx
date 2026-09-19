@@ -73,7 +73,7 @@ export default function ValuationPage() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconCalculator size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Предварительная оценка</Text>
-            <Text size="xs" c="gray.5">Прозрачный ориентир по данным вашего объявления — без ложных обещаний рыночной экспертизы</Text>
+            <Text size="xs" c="var(--market-muted)">Прозрачный ориентир по данным вашего объявления — без ложных обещаний рыночной экспертизы</Text>
           </Stack>
         </Group>
 
@@ -100,11 +100,11 @@ export default function ValuationPage() {
           <Stack gap="md">
             <Paper radius="md" p="xl" withBorder style={{ background: "linear-gradient(135deg, #eef2fb 0%, #fff 100%)", borderColor: "#b9caee" }}>
               <Stack gap="sm" align="center">
-                <Text size="xs" c="gray.5" tt="uppercase" fw={700}>Предварительный ориентир</Text>
+                <Text size="xs" c="var(--market-muted)" tt="uppercase" fw={700}>Предварительный ориентир</Text>
                 <Text fz="2.2rem" fw={800} c="#1c4291" ff="var(--font-display),sans-serif" lh={1}>{formatPrice(result.estimatedValue)}</Text>
                 <Group gap="xl">
-                  <Stack gap={0} align="center"><Group gap={4}><IconTrendingDown size={14} color="#e11d48" /><Text size="xs" c="gray.5">Нижняя граница</Text></Group><Text fw={700} fz="md" c="#e11d48">{formatPrice(result.min)}</Text></Stack>
-                  <Stack gap={0} align="center"><Group gap={4}><IconTrendingUp size={14} color="#059669" /><Text size="xs" c="gray.5">Верхняя граница</Text></Group><Text fw={700} fz="md" c="#059669">{formatPrice(result.max)}</Text></Stack>
+                  <Stack gap={0} align="center"><Group gap={4}><IconTrendingDown size={14} color="#e11d48" /><Text size="xs" c="var(--market-muted)">Нижняя граница</Text></Group><Text fw={700} fz="md" c="#e11d48">{formatPrice(result.min)}</Text></Stack>
+                  <Stack gap={0} align="center"><Group gap={4}><IconTrendingUp size={14} color="#059669" /><Text size="xs" c="var(--market-muted)">Верхняя граница</Text></Group><Text fw={700} fz="md" c="#059669">{formatPrice(result.max)}</Text></Stack>
                 </Group>
               </Stack>
             </Paper>
@@ -118,5 +118,5 @@ export default function ValuationPage() {
 }
 
 function Factor({ label, value }: { label: string; value: string }) {
-  return <Stack gap={2}><Text size="xs" c="gray.5">{label}</Text><Text fw={700} c="var(--market-ink)">{value}</Text></Stack>
+  return <Stack gap={2}><Text size="xs" c="var(--market-muted)">{label}</Text><Text fw={700} c="var(--market-ink)">{value}</Text></Stack>
 }

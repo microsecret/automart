@@ -38,14 +38,14 @@ function SignInContent() {
             </Box>
             <Text fw={800} fz={24} c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
           </Group>
-          <Text size="sm" c="gray.5" lh={1.6}>Маркетплейс транспорта и запчастей с проверкой истории и безопасными сделками.</Text>
+          <Text size="sm" c="var(--market-muted)" lh={1.6}>Маркетплейс транспорта и запчастей с проверкой истории и безопасными сделками.</Text>
           <Stack gap="sm">
             {FEATURES.map((f) => {
               const Icon = f.icon
               return (
                 <Group key={f.text} gap="sm">
                   <ThemeIcon variant="light" color="indigo" size={32} radius="md"><Icon size={18} /></ThemeIcon>
-                  <Text size="sm" c="gray.6">{f.text}</Text>
+                  <Text size="sm" c="var(--market-ink-soft)">{f.text}</Text>
                 </Group>
               )
             })}
@@ -56,7 +56,7 @@ function SignInContent() {
         <Stack className="auth-experience__form-area" gap="lg" align="center" w="100%" maw={420} style={{ minWidth: 0, flexShrink: 0 }}>
           <Stack gap={4} align="center">
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif" ta="center">{reason.title}</Text>
-            <Text size="sm" c="gray.5" ta="center" maw={380}>{reason.hint}</Text>
+            <Text size="sm" c="var(--market-muted)" ta="center" maw={380}>{reason.hint}</Text>
           </Stack>
 
           <Card className="auth-experience__form-card" withBorder radius="md" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
