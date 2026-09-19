@@ -60,7 +60,7 @@ export default function AuctionShowcase() {
      пустое место. Запас в половину покрывает эту убыль: безфотографийных
      в базе 84 из 15 726, то есть один процент, и двенадцати заведомо
      хватает, чтобы набрать восемь. */
-  const { data } = useSWR<AuctionsResponse>(`/api/auctions?limit=${VISIBLE_LOTS + 4}`, fetchJson, {
+  const { data } = useSWR<AuctionsResponse>(`/api/auctions?limit=${VISIBLE_LOTS + 4}&view=brief`, fetchJson, {
     /* Лоты обновляются раз в несколько часов сбором, а не ежеминутно:
        перезапрашивать их при каждом возврате на вкладку незачем. */
     revalidateOnFocus: false,

@@ -89,6 +89,19 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(50, Math.max(1, Number.parseInt(sp.get("limit") || "20", 10) || 20))
     const skip = (page - 1) * limit
 
+    /* Короткий ответ для витрин и сводок.
+     *
+     * Замер боевого ответа на двадцать лотов: 110 КБ, из них 109 — поле
+     * images со списком всех снимков каждой машины, по 5,5 КБ на лот.
+     * Странице аукционов этот список нужен для галереи, витрине на
+     * главной и колонке сводки — нет: там показывают один снимок из
+     * imageUrl, название и цену.
+     *
+     * Полный ответ остаётся ответом по умолчанию: параметр включает
+     * урезанный, а не наоборот. Иначе страница, о которой забыли,
+     * молча лишилась бы половины полей. */
+    const brief = sp.get("view") === "brief"
+
     const publicPolicy = buildPublicAuctionPolicy()
     const where: Prisma.AuctionListingWhereInput = { ...publicPolicy.where }
     const country = normalizeCountry(sp.get("country"))
@@ -149,7 +162,19 @@ export async function GET(request: NextRequest) {
     const analyticsKey = JSON.stringify(where)
     const cachedAnalytics = readAnalyticsCache(analyticsKey)
 
-    const [listings, total, aggregates, popularMakes, sourceDistribution, fuelDistribution, bodyDistribution, powerKnown, mileageKnown] = await prisma.$transaction([
+    /* Считать ли сводки в этом запросе.
+     *
+     * Семь из девяти запросов к базе здесь — аналитика: средние,
+     * медиана, распределения по маркам, источникам, топливу и кузову.
+     * Они выполнялись всегда, даже когда результат лежал в кэше или
+     * когда спрашивала витрина, которой сводки не нужны вовсе.
+     *
+     * Замер боевого ответа: 1,2 секунды на двадцать лотов. Основная
+     * доля — эти семь проходов по таблице в 16 тысяч строк. */
+    const needAnalytics = !cachedAnalytics && !brief
+
+    /* Лоты и счётчик нужны всегда — это и есть ответ. */
+    const [listings, total] = await prisma.$transaction([
       prisma.auctionListing.findMany({
         where, skip, take: limit,
         /* Поля перечислены поимённо.
@@ -162,7 +187,15 @@ export async function GET(request: NextRequest) {
            Второй ключ сортировки — идентификатор. Без него порядок между
            лотами с одинаковой датой не определён, и при вставке новых
            лотов парсером записи повторялись на границе страниц. */
-        select: {
+        select: brief
+          ? {
+              /* Ровно то, что рисуют витрина и сводка: имя, цена,
+                 страна, один снимок. */
+              id: true, make: true, model: true, year: true, mileage: true,
+              finalPrice: true, priceRub: true, country: true,
+              imageUrl: true, createdAt: true,
+            }
+          : {
           id: true, make: true, model: true, year: true, mileage: true,
           finalPrice: true, priceRub: true, country: true, source: true,
           imageUrl: true, images: true, bodyType: true, fuelType: true,
@@ -173,6 +206,12 @@ export async function GET(request: NextRequest) {
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       }),
       prisma.auctionListing.count({ where }),
+    ])
+
+    /* Сводки — отдельной транзакцией и только по надобности.
+       Пустой массив вместо результатов, когда считать не нужно. */
+    const [aggregates, popularMakes, sourceDistribution, fuelDistribution, bodyDistribution, powerKnown, mileageKnown] = needAnalytics
+      ? await prisma.$transaction([
       prisma.auctionListing.aggregate({
         where,
         _avg: { finalPrice: true, year: true, mileage: true },
@@ -206,14 +245,15 @@ export async function GET(request: NextRequest) {
       }),
       prisma.auctionListing.count({ where: { ...where, power: { not: null } } }),
       prisma.auctionListing.count({ where: { ...where, mileage: { not: null } } }),
-    ])
+        ])
+      : [null, [], [], [], [], 0, 0] as const
 
     // Average price is sensitive to premium lots. The median is an additional
     // factual reference for the active filters, calculated without guessing a
     // market price or using listings outside the current result set.
     const middleOffset = Math.floor(Math.max(0, total - 1) / 2)
     // При попадании в кэш медиану считать незачем: она уже в сводках.
-    const medianRows = !cachedAnalytics && total > 0
+    const medianRows = needAnalytics && total > 0
       ? await prisma.auctionListing.findMany({
           where,
           orderBy: { finalPrice: "asc" },
@@ -226,14 +266,16 @@ export async function GET(request: NextRequest) {
       ? Math.round(medianRows.reduce((sum, row) => sum + row.finalPrice, 0) / medianRows.length)
       : null
 
-    const analytics: AnalyticsPayload = cachedAnalytics || {
+    /* В кратком режиме сводок нет вовсе: витрина их не читает, а
+       считать было нечем — аналитические запросы пропущены. */
+    const analytics: AnalyticsPayload | null = brief ? null : cachedAnalytics || {
       total,
-      averageFinalPrice: aggregates._avg.finalPrice ? Math.round(aggregates._avg.finalPrice) : null,
+      averageFinalPrice: aggregates && aggregates._avg.finalPrice ? Math.round(aggregates._avg.finalPrice) : null,
       medianFinalPrice,
-      minFinalPrice: aggregates._min.finalPrice,
-      maxFinalPrice: aggregates._max.finalPrice,
-      averageYear: aggregates._avg.year ? Math.round(aggregates._avg.year) : null,
-      averageMileage: aggregates._avg.mileage ? Math.round(aggregates._avg.mileage) : null,
+      minFinalPrice: aggregates?._min.finalPrice ?? null,
+      maxFinalPrice: aggregates?._max.finalPrice ?? null,
+      averageYear: aggregates && aggregates._avg.year ? Math.round(aggregates._avg.year) : null,
+      averageMileage: aggregates && aggregates._avg.mileage ? Math.round(aggregates._avg.mileage) : null,
       powerKnown,
       mileageKnown,
       popularMakes: popularMakes.map((item) => ({ make: item.make, count: Number(item._count) })),
@@ -241,7 +283,7 @@ export async function GET(request: NextRequest) {
       fuelDistribution: fuelDistribution.flatMap((item) => item.fuelType ? [{ fuelType: item.fuelType, count: Number(item._count) }] : []),
       bodyDistribution: bodyDistribution.flatMap((item) => item.bodyType ? [{ bodyType: item.bodyType, count: Number(item._count) }] : []),
     }
-    if (!cachedAnalytics) writeAnalyticsCache(analyticsKey, analytics)
+    if (!cachedAnalytics && analytics) writeAnalyticsCache(analyticsKey, analytics)
 
     return NextResponse.json({
       listings,

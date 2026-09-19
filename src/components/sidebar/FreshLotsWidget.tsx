@@ -79,7 +79,7 @@ function diverseByModel(lots: Lot[], limit: number): Lot[] {
 }
 
 export default function FreshLotsWidget() {
-  const { data } = useSWR<AuctionsResponse>(`/api/auctions?limit=${FETCH_LIMIT}`, fetchJson, {
+  const { data } = useSWR<AuctionsResponse>(`/api/auctions?limit=${FETCH_LIMIT}&view=brief`, fetchJson, {
     revalidateOnFocus: false,
   })
 
