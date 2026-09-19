@@ -7,7 +7,7 @@ import { Box, Group, Text } from "@mantine/core"
 import { IconArrowRight } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { formatPriceShort } from "@/lib/format"
-import { isShowcaseReady } from "@/lib/auction-model-quality"
+import { cleanModelLabel, isShowcaseReady } from "@/lib/auction-model-quality"
 
 /**
  * Свежие лоты мировых аукционов на главной.
@@ -135,7 +135,7 @@ export default function AuctionShowcase() {
                   {price ? formatPriceShort(price) : "Цена по запросу"}
                 </Text>
                 <Text className="auction-showcase__title" lineClamp={1}>
-                  {[lot.make, lot.model].filter(Boolean).join(" ")}
+                  {[lot.make, cleanModelLabel(lot.model)].filter(Boolean).join(" ")}
                 </Text>
                 <Text className="auction-showcase__meta">
                   {[

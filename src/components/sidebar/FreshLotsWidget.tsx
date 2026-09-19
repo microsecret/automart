@@ -5,7 +5,7 @@ import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
 import { formatPriceShort } from "@/lib/format"
-import { isShowcaseReady } from "@/lib/auction-model-quality"
+import { cleanModelLabel, isShowcaseReady } from "@/lib/auction-model-quality"
 
 /**
  * Свежие лоты мировых аукционов в правой колонке.
@@ -105,7 +105,9 @@ export default function FreshLotsWidget() {
           return (
             <Link key={lot.id} href={`/auctions/${lot.id}`} className="lot-row">
               <span className="lot-row__name">
-                {[lot.make, lot.model].filter(Boolean).join(" ")}
+                {/* Название без мусорного хвоста: внешний перевод
+                    оставляет склейки вроде «125KMlidarFlagship». */}
+                {[lot.make, cleanModelLabel(lot.model)].filter(Boolean).join(" ")}
                 {lot.year ? <span className="lot-row__year"> {lot.year}</span> : null}
               </span>
               <span className="lot-row__meta">
