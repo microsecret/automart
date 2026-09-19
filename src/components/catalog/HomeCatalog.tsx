@@ -1038,7 +1038,7 @@ export default function HomePage(p: HomePageProps = {}) {
            Ниже xl сетка не уплотняется: на 1200 пять колонок дали бы по
            220 пикселей, и в карточку перестало бы помещаться название
            модели в одну строку. */
-        <SimpleGrid cols={{base:1,sm:2,lg:3,xl:5}} spacing="sm" className="catalog-appear">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
+        <SimpleGrid cols={{base:1,sm:2,lg:3,xl:4}} spacing="sm" className="catalog-appear catalog-appear--wide">{data.listings.map((listing) => <ListingCard key={listing.id} listing={listing}/>)}</SimpleGrid>
       ) : (
         <Stack gap="xs" className="catalog-appear">{data.listings.map((listing) => <ListingRow key={listing.id} listing={listing}/>)}</Stack>
       )}
