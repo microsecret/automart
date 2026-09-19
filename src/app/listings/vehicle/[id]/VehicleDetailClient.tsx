@@ -81,6 +81,7 @@ import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 import { filterMeaningfulSpecs } from "@/lib/spec-visibility"
 import NextImage from "next/image"
 import VehicleFallback from "@/components/listings/VehicleFallback"
+import DeliveryEstimate from "@/components/listings/DeliveryEstimate"
 import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-intent"
 import { isUploadedImage } from "@/lib/uploaded-image"
 
@@ -1148,6 +1149,18 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </Box>
                 )}
               </Card>
+
+              {/* Расчёт доставки — последним блоком колонки.
+
+                  Замер карточки: левая колонка 2856 пикселей, правая
+                  1024 — ниже неё треть ширины экрана пустовала до самого
+                  подвала. Место отдано вопросу, который возникает сразу
+                  после цены: «сколько ещё за доставку».
+
+                  Не выше цены и не выше кнопки связи: сначала человек
+                  решает, нужна ли ему эта машина, и только потом считает
+                  полную сумму. */}
+              <DeliveryEstimate sellerCity={data.location} />
             </Stack>
           </Box>
         </Box>

@@ -13145,3 +13145,76 @@ h1[data-lw-hero] + p {
   font-weight: 800;
   letter-spacing: -0.005em;
 }
+
+/* ============================================================
+   Расчёт доставки в карточке объявления
+
+   Стоит последним блоком правой колонки — там, где раньше до
+   самого подвала пустовала треть ширины экрана.
+   ============================================================ */
+
+.delivery-estimate {
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface);
+  padding: 12px 14px 13px;
+}
+
+.delivery-estimate__title {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--market-muted);
+}
+
+.delivery-estimate__city {
+  margin-bottom: 9px;
+}
+
+.delivery-estimate__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.delivery-estimate__route {
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--market-ink);
+  /* Длинные пары вроде «Петропавловск-Камчатский → Калининград» режутся
+     одной строкой: перенос удвоил бы высоту блока ради строки, которую
+     и так читают по цене справа. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delivery-estimate__price {
+  flex: 0 0 auto;
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--market-ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+.delivery-estimate__note,
+.delivery-estimate__same {
+  margin-top: 4px;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--market-muted);
+}
+
+.delivery-estimate__link {
+  display: inline-block;
+  margin-top: 9px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--market-accent-text);
+  text-decoration: none;
+}
