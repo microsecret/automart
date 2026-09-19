@@ -2017,7 +2017,7 @@ select {
   font-family: var(--font-display), sans-serif;
   /* Крупнее и с наклоном, как на фирменном баннере: прежний кегль терялся
      рядом с усиленным знаком. */
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   font-weight: 800;
   /* Прямое начертание без курсива и теней — как в макете площадки.
 
@@ -2046,7 +2046,7 @@ select {
    бы кнопки. Уменьшаем и то и другое, сохраняя пропорции. */
 @media (max-width: 480px) {
   .lewheel-brand__wordmark {
-    font-size: 1.2rem;
+    font-size: var(--text-lg);
   }
 
   .lewheel-brand {
@@ -3459,7 +3459,7 @@ select {
      стилем и перебивали любую правку типографики карточки. */
   color: var(--market-ink);
   font-family: var(--font-display), sans-serif;
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
   font-weight: 800;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
@@ -8690,7 +8690,7 @@ h1[data-lw-hero] {
 
 .auction-action-bar__amount {
   font-family: var(--font-display), sans-serif;
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: var(--track-title);
@@ -8702,7 +8702,7 @@ h1[data-lw-hero] {
    стоит «2,0 млн», а под ключ выходит около трёх — и эта цифра лежала на
    5.6 экрана ниже, куда человек не доходил. */
 .auction-action-bar__note {
-  font-size: 0.7rem;
+  font-size: var(--text-caps);
   line-height: 1.25;
   color: var(--market-muted);
   text-decoration: underline;
@@ -9235,7 +9235,7 @@ h1[data-lw-hero] {
 
 .listing-action-bar__amount {
   font-family: var(--font-display), sans-serif;
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: var(--track-title);
@@ -9245,7 +9245,7 @@ h1[data-lw-hero] {
 
 .listing-action-bar__note {
   overflow: hidden;
-  font-size: 0.7rem;
+  font-size: var(--text-caps);
   line-height: 1.25;
   color: var(--market-muted);
   white-space: nowrap;
@@ -9347,7 +9347,7 @@ h1[data-lw-hero] {
 .forum-row__stats-head,
 .forum-row__last-head {
   color: var(--market-muted);
-  font-size: 0.68rem;
+  font-size: var(--text-caps);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -9377,7 +9377,7 @@ h1[data-lw-hero] {
 
 .forum-row__title {
   color: var(--market-primary);
-  font-size: 0.94rem;
+  font-size: var(--text-md);
   font-weight: 700;
   line-height: 1.3;
   text-decoration: none;
@@ -9390,13 +9390,13 @@ h1[data-lw-hero] {
 .forum-row__description {
   margin-top: 1px;
   color: var(--market-muted);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   line-height: 1.4;
 }
 
 .forum-row__children {
   margin-top: 3px;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   line-height: 1.45;
 }
 
@@ -9404,13 +9404,13 @@ h1[data-lw-hero] {
   /* Мелкая подпись, а не второй заголовок: жирным она перебивала
      название раздела и ряд читался снизу вверх. */
   color: var(--market-muted);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 600;
 }
 
 .forum-row__child {
   color: var(--market-muted);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   text-decoration: none;
 }
 
@@ -9430,7 +9430,7 @@ h1[data-lw-hero] {
 
 .forum-row__stat {
   color: var(--market-ink);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -9449,7 +9449,7 @@ h1[data-lw-hero] {
 
 .forum-row__last-date {
   color: var(--market-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
 }
 
 .forum-row__last-date--empty {
@@ -9510,7 +9510,7 @@ h1[data-lw-hero] {
 
 .forum-post-body {
   color: var(--mantine-color-text);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   line-height: 1.55;
   word-break: break-word;
 }
@@ -9575,8 +9575,8 @@ h1[data-lw-hero] {
   line-height: 1.3;
 }
 
-.forum-post-body h2 { font-size: 1.05rem; }
-.forum-post-body h3 { font-size: 0.95rem; }
+.forum-post-body h2 { font-size: var(--text-md); }
+.forum-post-body h3 { font-size: var(--text-md); }
 
 .forum-post-body h2:first-child,
 .forum-post-body h3:first-child {
@@ -9633,7 +9633,7 @@ h1[data-lw-hero] {
   border: 1px solid var(--market-line);
   background: var(--market-surface-subtle);
   overflow-x: auto;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 
@@ -9656,7 +9656,7 @@ h1[data-lw-hero] {
 .forum-post-body .forum-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.83rem;
+  font-size: var(--text-sm);
 }
 
 .forum-post-body .forum-table th,
@@ -9765,7 +9765,7 @@ h1[data-lw-hero] {
   inset-inline: 0;
   bottom: 6px;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--market-primary);
   pointer-events: none;
 }
@@ -10779,7 +10779,7 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 .auction-showcase__price {
   color: var(--market-ink);
   font-family: var(--font-display), sans-serif;
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   font-weight: 800;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
