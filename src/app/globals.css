@@ -13743,3 +13743,57 @@ main a:not([class]),
     color: var(--market-accent-text);
   }
 }
+
+/* ============================================================
+   Заглушка виджета на время загрузки
+
+   Замер на медленной сети: карточки машин в центре отрисованы, а
+   правая треть экрана — белое пятно. Виджеты возвращают null, пока
+   данные в пути, и человек видит незаконченную страницу.
+
+   Заглушка занимает то же место, что будущий виджет, поэтому при
+   появлении данных страница не дёргается.
+   ============================================================ */
+
+.side-widget--skeleton {
+  /* Рамка и фон те же, что у настоящего виджета: заглушка должна быть
+     похожа на него, а не выглядеть чужой деталью. */
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface);
+  overflow: hidden;
+}
+
+/* Заголовок шапки — полоса вместо текста. Цвет шапки настоящий: он
+   приходит из data-tone, и колонка сразу читается как знакомая. */
+.side-widget__title-ghost {
+  display: block;
+  width: 96px;
+  height: 9px;
+  border-radius: var(--radius-xs);
+  background: rgb(255 255 255 / 0.3);
+}
+
+.side-widget__row-ghost {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 10px;
+}
+
+.side-widget__row-ghost + .side-widget__row-ghost {
+  border-top: 1px solid color-mix(in srgb, var(--market-line) 45%, transparent);
+}
+
+.side-widget__line {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--market-line) 70%, transparent);
+}
+
+.side-widget__line--short {
+  width: 42%;
+  height: 7px;
+  opacity: 0.7;
+}

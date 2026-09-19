@@ -4,6 +4,7 @@ import Link from "next/link"
 import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
+import WidgetSkeleton from "./WidgetSkeleton"
 import { formatPriceShort } from "@/lib/format"
 import { cleanModelLabel, isShowcaseReady } from "@/lib/auction-model-quality"
 
@@ -95,6 +96,7 @@ export default function FreshLotsWidget() {
   const all = (data?.listings ?? []).filter(isShowcaseReady)
   const lots = diverseByModel(all, VISIBLE)
 
+  if (!data) return <WidgetSkeleton tone="lots" />
   if (lots.length < 3) return null
 
   return (

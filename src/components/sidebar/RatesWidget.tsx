@@ -3,6 +3,7 @@
 import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
+import WidgetSkeleton from "./WidgetSkeleton"
 
 /**
  * Курсы валют ЦБ в правой колонке.
@@ -65,6 +66,7 @@ export default function RatesWidget() {
 
   /* Меньше двух курсов — это не сводка, а одинокое число: блока нет.
      Так же поступает витрина АЗС, и по той же причине. */
+  if (!data) return <WidgetSkeleton tone="rates" rows={5} />
   if (rows.length < 2) return null
 
   return (

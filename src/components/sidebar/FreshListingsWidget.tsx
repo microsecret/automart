@@ -4,6 +4,7 @@ import Link from "next/link"
 import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
+import WidgetSkeleton from "./WidgetSkeleton"
 import { formatPriceShort } from "@/lib/format"
 
 /**
@@ -60,6 +61,7 @@ export default function FreshListingsWidget() {
     )
     .slice(0, VISIBLE)
 
+  if (!data) return <WidgetSkeleton tone="listings" />
   if (listings.length < 3) return null
 
   return (

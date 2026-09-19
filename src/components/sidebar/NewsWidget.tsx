@@ -4,6 +4,7 @@ import Link from "next/link"
 import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
+import WidgetSkeleton from "./WidgetSkeleton"
 
 /**
  * Новости рынка в правой колонке.
@@ -51,6 +52,10 @@ export default function NewsWidget() {
 
   const news = (data?.news ?? []).slice(0, VISIBLE)
 
+  /* Пока данные в пути — заглушка вместо пустоты. Разделяем «ещё не
+     пришло» и «пришло, но пусто»: во втором случае блока не будет
+     вовсе, а в первом место занято и страница не дёрнется. */
+  if (!data) return <WidgetSkeleton tone="news" />
   if (news.length < 3) return null
 
   return (
