@@ -2778,7 +2778,10 @@ select {
     minmax(210px, 1.65fr)
     minmax(154px, 1.2fr);
   gap: 10px;
-  align-items: end;
+  /* Было `end` — поля равнялись по нижнему краю, и «Цена» с её двумя
+     полями ввода оказывалась на восемь пикселей ниже соседей. Теперь
+     все растягиваются на высоту ряда: верхние и нижние края совпадают. */
+  align-items: stretch;
 }
 
 .catalog-filter-field--search,
@@ -2793,6 +2796,19 @@ select {
 .catalog-filter-field {
   min-width: 0;
   min-height: 56px;
+  /* Поля ряда одной высоты.
+
+     Замер: четыре поля по 73 пикселя, а «Цена» — 65. Внутри у неё два
+     поля ввода вместо одного, и они складываются иначе. Восемь
+     пикселей разницы в ряду из пяти читаются как просевшая плашка,
+     хотя ни одно поле не сломано.
+
+     Растяжка по высоте ряда, а не жёсткая величина: ряд сам решает,
+     сколько ему нужно, а поля берут это одинаково. */
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 5px 10px 6px;
   border: 1px solid color-mix(in srgb, var(--market-field-line) 88%, transparent);
   border-radius: var(--radius-md);
