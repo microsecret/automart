@@ -216,7 +216,7 @@ export default function BuyerOrdersPage() {
                       это случилось или месяц назад: шкала шагов
                       показывает, где заказ, но не когда он туда попал —
                       а именно это решает, звонить сейчас или подождать. */}
-                  <Text size="10px" c="dimmed" mt="sm">
+                  <Text size="var(--text-caps)" c="dimmed" mt="sm">
                     Оформлен {new Date(order.createdAt).toLocaleString("ru-RU")}
                     {order.updatedAt !== order.createdAt && (
                       <> · {meta.label.toLowerCase()} {new Date(order.updatedAt).toLocaleString("ru-RU")}</>

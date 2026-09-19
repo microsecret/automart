@@ -371,7 +371,7 @@ export default function TrafficPage() {
                     <Box style={{ minWidth: 0 }}>
                       <Text size="sm" lineClamp={1}>{item.label}</Text>
                       {item.label !== item.path && (
-                        <Text size="10px" c="dimmed" lineClamp={1}>{item.path}</Text>
+                        <Text size="var(--text-caps)" c="dimmed" lineClamp={1}>{item.path}</Text>
                       )}
                     </Box>
                     <Badge variant="light" color="indigo" size="sm">{item.views}</Badge>

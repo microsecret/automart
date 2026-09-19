@@ -261,7 +261,7 @@ export default function DeliveryOrderPage() {
           </Paper>
 
           <Paper withBorder radius="md" p="md"><Group justify="space-between" mb="md"><Group gap="xs"><ThemeIcon color="cyan" variant="light" radius="md"><IconFileDescription size={17} /></ThemeIcon><Text fw={800}>Документы</Text></Group>{permissions.canManage && <Button size="compact-xs" variant="light" color="indigo" leftSection={<IconUpload size={13} />} onClick={() => setUploadTarget({ category: "OTHER", label: "Документ сделки" })}>Загрузить</Button>}</Group>
-            {order.documents.length === 0 ? <EmptyText text="Подтверждения, договоры и квитанции появятся здесь. Доступ ограничен участниками этой сделки." /> : <Stack gap={4}>{order.documents.map((document) => <Group key={document.id} justify="space-between" gap="xs" wrap="nowrap"><Group gap="xs" style={{ minWidth: 0 }}><ThemeIcon size="sm" variant="light" color="cyan"><IconNotes size={13} /></ThemeIcon><Stack gap={0} style={{ minWidth: 0 }}><Text size="xs" fw={600} lineClamp={1}>{document.title}</Text><Text size="10px" c="dimmed">{DELIVERY_DOCUMENT_META[document.category] || document.category} · {formatBytes(document.size)}</Text></Stack></Group><Button component="a" href={document.downloadUrl} size="compact-xs" variant="subtle" color="indigo">Открыть</Button></Group>)}</Stack>}
+            {order.documents.length === 0 ? <EmptyText text="Подтверждения, договоры и квитанции появятся здесь. Доступ ограничен участниками этой сделки." /> : <Stack gap={4}>{order.documents.map((document) => <Group key={document.id} justify="space-between" gap="xs" wrap="nowrap"><Group gap="xs" style={{ minWidth: 0 }}><ThemeIcon size="sm" variant="light" color="cyan"><IconNotes size={13} /></ThemeIcon><Stack gap={0} style={{ minWidth: 0 }}><Text size="xs" fw={600} lineClamp={1}>{document.title}</Text><Text size="var(--text-caps)" c="dimmed">{DELIVERY_DOCUMENT_META[document.category] || document.category} · {formatBytes(document.size)}</Text></Stack></Group><Button component="a" href={document.downloadUrl} size="compact-xs" variant="subtle" color="indigo">Открыть</Button></Group>)}</Stack>}
           </Paper>
 
           <Paper withBorder radius="md" p="md"><Group gap="xs" mb="sm"><ThemeIcon color="teal" variant="light" radius="md"><IconCircleCheck size={17} /></ThemeIcon><Text fw={800}>Участники</Text></Group><Stack gap="xs"><Participant label="Покупатель" user={order.buyer} /><Participant label="Проверенный партнёр" user={order.partner} empty="Назначается менеджером" /><Participant label="Менеджер LeWheel" user={order.manager} empty="Назначается после проверки" /></Stack></Paper>
@@ -279,17 +279,17 @@ export default function DeliveryOrderPage() {
 }
 
 function RoutePill({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return <Group gap={6} p="xs" style={{ borderRadius: 9, background: "rgba(255,255,255,.11)" }}><Box c="rgba(255,255,255,.75)">{icon}</Box><Stack gap={0}><Text size="10px" c="rgba(255,255,255,.56)">{label}</Text><Text size="xs" fw={600}>{value}</Text></Stack></Group>
+  return <Group gap={6} p="xs" style={{ borderRadius: 9, background: "rgba(255,255,255,.11)" }}><Box c="rgba(255,255,255,.75)">{icon}</Box><Stack gap={0}><Text size="var(--text-caps)" c="rgba(255,255,255,.56)">{label}</Text><Text size="xs" fw={600}>{value}</Text></Stack></Group>
 }
 
 function MessageBubble({ item, isOwn }: { item: DeliveryMessage; isOwn: boolean }) {
   if (item.isSystem) return <Text size="xs" c="dimmed" ta="center" py={4}>{item.content}</Text>
-  return <Group align="flex-start" gap="xs" justify={isOwn ? "flex-end" : "flex-start"}><Avatar size="sm" radius="xl" src={item.sender?.image}>{item.sender?.name?.[0]?.toUpperCase()}</Avatar><Box maw="78%" p="sm" style={{ borderRadius: 12, background: isOwn ? "var(--mantine-color-indigo-6)" : "var(--mantine-color-gray-1)", color: isOwn ? "white" : "inherit" }}><Text size="xs" fw={700}>{item.sender?.name || "Участник сделки"}</Text><Text size="sm">{item.content}</Text><Text size="10px" c={isOwn ? "rgba(255,255,255,.62)" : "dimmed"} mt={2}>{formatDateTime(item.createdAt)}</Text></Box></Group>
+  return <Group align="flex-start" gap="xs" justify={isOwn ? "flex-end" : "flex-start"}><Avatar size="sm" radius="xl" src={item.sender?.image}>{item.sender?.name?.[0]?.toUpperCase()}</Avatar><Box maw="78%" p="sm" style={{ borderRadius: 12, background: isOwn ? "var(--mantine-color-indigo-6)" : "var(--mantine-color-gray-1)", color: isOwn ? "white" : "inherit" }}><Text size="xs" fw={700}>{item.sender?.name || "Участник сделки"}</Text><Text size="sm">{item.content}</Text><Text size="var(--text-caps)" c={isOwn ? "rgba(255,255,255,.62)" : "dimmed"} mt={2}>{formatDateTime(item.createdAt)}</Text></Box></Group>
 }
 
 function Participant({ label, user, empty }: { label: string; user?: DeliveryUser | null; empty?: string }) {
   const organization = user?.deliveryOrganizations?.[0]
-  return <Group gap="xs"><Avatar size="sm" radius="xl" src={user?.image}>{user?.name?.[0]?.toUpperCase()}</Avatar><Stack gap={0}><Text size="10px" c="dimmed">{label}</Text><Group gap={5}><Text size="xs" fw={600}>{organization?.legalName || user?.name || empty || "Не указан"}</Text>{organization && <IconShieldCheck size={13} color="#059669" aria-label="Организация проверена" />}</Group></Stack></Group>
+  return <Group gap="xs"><Avatar size="sm" radius="xl" src={user?.image}>{user?.name?.[0]?.toUpperCase()}</Avatar><Stack gap={0}><Text size="var(--text-caps)" c="dimmed">{label}</Text><Group gap={5}><Text size="xs" fw={600}>{organization?.legalName || user?.name || empty || "Не указан"}</Text>{organization && <IconShieldCheck size={13} color="#059669" aria-label="Организация проверена" />}</Group></Stack></Group>
 }
 
 function PaymentTerm({ label, amount, status }: { label: string; amount: number; status: string }) {

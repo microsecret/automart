@@ -103,7 +103,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
                       </Badge>
                     </Group>
                     {!readiness.ready && (
-                      <Text size="11px" c="var(--market-muted)" mt={4} lineClamp={2}>
+                      <Text size="var(--text-xs)" c="var(--market-muted)" mt={4} lineClamp={2}>
                         Добавьте: {missingLabels.slice(0, 3).join(", ")}{missingLabels.length > 3 ? ` и ещё ${missingLabels.length - 3}` : ""}
                       </Text>
                     )}

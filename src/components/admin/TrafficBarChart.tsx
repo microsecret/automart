@@ -79,11 +79,11 @@ export default function TrafficBarChart({
         <Group gap="md" mb="xs">
           <Group gap={5} wrap="nowrap">
             <Box style={{ width: 9, height: 9, borderRadius: 2, background: "var(--mantine-color-indigo-5)" }} />
-            <Text size="10px" c="dimmed">{valueLabel}</Text>
+            <Text size="var(--text-caps)" c="dimmed">{valueLabel}</Text>
           </Group>
           <Group gap={5} wrap="nowrap">
             <Box style={{ width: 9, height: 9, borderRadius: 2, background: "var(--mantine-color-indigo-1)" }} />
-            <Text size="10px" c="dimmed">{secondaryLabel}</Text>
+            <Text size="var(--text-caps)" c="dimmed">{secondaryLabel}</Text>
           </Group>
         </Group>
       )}
@@ -153,7 +153,7 @@ export default function TrafficBarChart({
       <Group gap={3} wrap="nowrap" mt={6}>
         {points.map((point, index) => (
           <Box key={`label-${point.label}-${index}`} style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
-            <Text size="10px" c={index === peak ? "indigo" : "dimmed"} fw={index === peak ? 700 : 400}>
+            <Text size="var(--text-caps)" c={index === peak ? "indigo" : "dimmed"} fw={index === peak ? 700 : 400}>
               {points.length > 16 && index % 3 !== 0 && index !== peak ? "" : point.label}
             </Text>
           </Box>
@@ -177,7 +177,7 @@ export default function TrafficBarChart({
           <Text size="xs" fw={700}>{points[active].title || points[active].label}</Text>
           <Text size="xs" c="dimmed">{points[active].value} {valueLabel}</Text>
           {points[active].value > max && (
-            <Text size="10px" c="orange" fw={600}>всплеск · выше шкалы</Text>
+            <Text size="var(--text-caps)" c="orange" fw={600}>всплеск · выше шкалы</Text>
           )}
           {points[active].secondary != null && (
             <Text size="xs" c="dimmed">{points[active].secondary} {secondaryLabel}</Text>

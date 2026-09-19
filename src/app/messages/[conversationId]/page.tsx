@@ -363,7 +363,7 @@ function ConversationWorkspace() {
                             Без этого человек не понимал, дошло ли: у
                             сообщений стояло одно время, и на медленной сети
                             оно ничем не отличалось от отправленного. */}
-                        <Text size="10px" c={isOwn ? "var(--market-on-primary-muted)" : "var(--market-muted)"}>
+                        <Text size="var(--text-caps)" c={isOwn ? "var(--market-on-primary-muted)" : "var(--market-muted)"}>
                           {msg.pending ? "Отправляется…" : formatRelativeDate(msg.createdAt)}
                         </Text>
                       </Stack>

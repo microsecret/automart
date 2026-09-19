@@ -309,7 +309,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
 
           <Group gap={6}>
             <IconInfoCircle size={14} color="#94a3b8" />
-            <Text size="10px" c="gray.5">{sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}${exchangeRateData?.asOf ? `, обновлён ${new Date(exchangeRateData.asOf).toLocaleString("ru-RU")}` : ""}.` : "Использован рублёвый снимок лота; курс требует проверки."}</Text>
+            <Text size="var(--text-caps)" c="gray.5">{sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}${exchangeRateData?.asOf ? `, обновлён ${new Date(exchangeRateData.asOf).toLocaleString("ru-RU")}` : ""}.` : "Использован рублёвый снимок лота; курс требует проверки."}</Text>
           </Group>
         </Stack>
       </Paper>
@@ -467,7 +467,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
 
         <Group gap={6}>
           <IconInfoCircle size={14} color="#a1a1aa" />
-          <Text size="10px" c="gray.4">Плановый расчёт, не оферта и не платёжное требование. {sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}${exchangeRateData?.asOf ? `, обновлён ${new Date(exchangeRateData.asOf).toLocaleString("ru-RU")}` : ""}. ` : "Использован курс из снимка лота. "}Таможенная стоимость, утильсбор, тарифы перевозчика, брокера и СВХ подтверждаются перед сделкой.</Text>
+          <Text size="var(--text-caps)" c="gray.4">Плановый расчёт, не оферта и не платёжное требование. {sourceRate ? `Курс ЦБ: ${sourceRate.toFixed(4)} ₽ за ${sourceCurrency}${exchangeRateData?.asOf ? `, обновлён ${new Date(exchangeRateData.asOf).toLocaleString("ru-RU")}` : ""}. ` : "Использован курс из снимка лота. "}Таможенная стоимость, утильсбор, тарифы перевозчика, брокера и СВХ подтверждаются перед сделкой.</Text>
         </Group>
       </Stack>
     </Paper>

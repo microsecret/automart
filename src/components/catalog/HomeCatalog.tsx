@@ -714,7 +714,7 @@ export default function HomePage(p: HomePageProps = {}) {
               size="sm"
             />
             <Box className="catalog-filter-field catalog-filter-field--price catalog-price-range">
-              <Text size="10px" c="dimmed" fw={800} tt="uppercase">Цена, ₽</Text>
+              <Text size="var(--text-caps)" c="dimmed" fw={800} tt="uppercase">Цена, ₽</Text>
               <Group gap={4} wrap="nowrap">
                 <TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} />
                 <Text className="catalog-price-range__dash" aria-hidden="true">—</Text>
@@ -932,7 +932,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Box>
                 <Text size="xs" fw={600} c="gray.6" mb={6}>Ключевые слова</Text>
                 <TextInput placeholder='Например: "один хозяин", RAID, ксенон...' value={keywords} onChange={(e) => setKeywords(e.target.value)} size="sm" w="100%" maw={400} leftSection={<IconSearch size={14}/>}/>
-                <Text size="10px" c="gray.4" mt={4}>Для точного совпадения используйте кавычки</Text>
+                <Text size="var(--text-caps)" c="gray.4" mt={4}>Для точного совпадения используйте кавычки</Text>
               </Box>
 
               <Group className="catalog-filter-advanced__actions" justify="space-between" gap="sm">

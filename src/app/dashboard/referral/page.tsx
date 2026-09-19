@@ -74,7 +74,7 @@ export default function ReferralPage() {
             </Group>
             <Card withBorder={false} radius="md" p="sm" bg="rgba(255,255,255,.12)">
               <Text size="xs" c="rgba(255,255,255,.7)">Ваша ставка</Text>
-              <Text fw={800} size="28px" c="white" lh={1.1}>{data.tier.percent}%</Text>
+              <Text fw={800} size="var(--text-2xl)" c="white" lh={1.1}>{data.tier.percent}%</Text>
               <Text size="xs" c="rgba(255,255,255,.7)">{data.tier.label}</Text>
             </Card>
           </Group>

@@ -619,7 +619,7 @@ function CreateVehicleWorkspace() {
                 <Text className="create-listing__journey-number">{step.number}</Text>
                 <Stack gap={1}>
                   <Text size="xs" fw={800} c="var(--market-ink)">{step.label}</Text>
-                  <Text size="11px" c="dimmed">{step.description}</Text>
+                  <Text size="var(--text-xs)" c="dimmed">{step.description}</Text>
                 </Stack>
               </Group>
             ))}

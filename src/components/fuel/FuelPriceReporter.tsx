@@ -189,7 +189,7 @@ export default function FuelPriceReporter({ stationId, latitude, longitude, pric
           </Group>
           {error && <Text size="xs" c="red.7">{error}</Text>}
           <Box>
-            <Text size="10px" c="dimmed">
+            <Text size="var(--text-caps)" c="dimmed">
               Отметка публикуется как мнение водителя: карта показывает согласованную цену по нескольким отметкам, а не оферту АЗС.
             </Text>
           </Box>

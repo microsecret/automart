@@ -245,7 +245,7 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
                       </Group>
                     )}
 
-                    <Text size="10px" c="dimmed" mt={6}>{new Date(order.createdAt).toLocaleString("ru-RU")}</Text>
+                    <Text size="var(--text-caps)" c="dimmed" mt={6}>{new Date(order.createdAt).toLocaleString("ru-RU")}</Text>
                   </Box>
 
                   <Group gap="xs" wrap="wrap">

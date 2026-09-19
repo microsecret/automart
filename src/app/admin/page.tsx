@@ -565,7 +565,7 @@ export default function AdminDashboard() {
                   <Box style={{ minWidth: 0 }}>
                     <Group gap={6} align="baseline">
                       <Text size="xl" fw={800} lh={1} c={item.value ? undefined : "dimmed"}>{item.value}</Text>
-                      {item.value === 0 && <Text size="10px" c="dimmed">разобрано</Text>}
+                      {item.value === 0 && <Text size="var(--text-caps)" c="dimmed">разобрано</Text>}
                     </Group>
                     <Text size="xs" fw={700} mt={2}>{item.label}</Text>
                     {/* Возраст самой старой задачи: подсветка растёт со
@@ -585,7 +585,7 @@ export default function AdminDashboard() {
                         ждёт {formatQueueAge(item.oldestHours)}
                       </Badge>
                     )}
-                    <Text size="10px" c="dimmed" lineClamp={2} mt={2}>{item.description}</Text>
+                    <Text size="var(--text-caps)" c="dimmed" lineClamp={2} mt={2}>{item.description}</Text>
                   </Box>
                 </Group>
               </Paper>
@@ -649,20 +649,20 @@ export default function AdminDashboard() {
                           <Text size="sm" fw={700}>{source.label}</Text>
                           <Badge size="xs" variant="light" color="gray">{source.country || "—"}</Badge>
                         </Group>
-                        <Text size="10px" c="dimmed" mt={3}>
+                        <Text size="var(--text-caps)" c="dimmed" mt={3}>
                           Норматив: до {source.expectedRefreshHours} ч
                           {lastActivity ? ` · активность ${new Date(lastActivity).toLocaleString("ru-RU")}` : " · запусков ещё нет"}
                           {runDuration ? ` · последний запуск ${runDuration}` : ""}
                         </Text>
                         {source.latestRunError && (
-                          <Text size="10px" c="red.7" mt={3} lineClamp={1} title={source.latestRunError}>
+                          <Text size="var(--text-caps)" c="red.7" mt={3} lineClamp={1} title={source.latestRunError}>
                             {source.latestRunError}
                           </Text>
                         )}
                       </Box>
                       <Box className="admin-source-health__freshness">
                         <Group justify="space-between" gap="xs" wrap="nowrap">
-                          <Text size="10px" c="dimmed">Свежие лоты</Text>
+                          <Text size="var(--text-caps)" c="dimmed">Свежие лоты</Text>
                           <Text size="xs" fw={800} style={{ fontVariantNumeric: "tabular-nums" }}>
                             {source.fresh.toLocaleString("ru-RU")} / {source.active.toLocaleString("ru-RU")}
                           </Text>
@@ -748,7 +748,7 @@ export default function AdminDashboard() {
                   </Group>
                   {row.total > 0 && row.fields.some((field) => field.percent !== null && field.percent < 40) && (
                     <Group gap={5} mb="xs" wrap="wrap">
-                      <Text size="10px" c="dimmed">Требуют проверки:</Text>
+                      <Text size="var(--text-caps)" c="dimmed">Требуют проверки:</Text>
                       {row.fields.filter((field) => field.percent !== null && field.percent < 40).map((field) => (
                         <Badge key={field.key} size="xs" variant="outline" color="red">
                           {field.label}: {field.percent}%
@@ -822,7 +822,7 @@ export default function AdminDashboard() {
                   <Group gap={5} mt="xs" wrap="wrap">
                     <Badge size="xs" variant="dot" color={isCollector ? "teal" : "gray"}>{isCollector ? "Источник подключён" : "Нужен доступ / feed"}</Badge>
                     {statusMeta && <Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>}
-                    {source.lastSyncAt && <Text size="10px" c="dimmed">{new Date(source.lastSyncAt).toLocaleDateString("ru-RU")}</Text>}
+                    {source.lastSyncAt && <Text size="var(--text-caps)" c="dimmed">{new Date(source.lastSyncAt).toLocaleDateString("ru-RU")}</Text>}
                   </Group>
                   {/* Единичная ошибка нормальна для публичного каталога, а
                       устойчивая доля падений означает, что площадка сменила
@@ -830,8 +830,8 @@ export default function AdminDashboard() {
                   {source.successRate24h !== null && (
                     <Box mt={8}>
                       <Group justify="space-between" gap={4} wrap="nowrap">
-                        <Text size="10px" c="dimmed">Успешных прогонов за сутки</Text>
-                        <Text size="10px" fw={700}>{source.successRate24h}%</Text>
+                        <Text size="var(--text-caps)" c="dimmed">Успешных прогонов за сутки</Text>
+                        <Text size="var(--text-caps)" fw={700}>{source.successRate24h}%</Text>
                       </Group>
                       <Progress
                         mt={3}
@@ -840,7 +840,7 @@ export default function AdminDashboard() {
                         value={source.successRate24h}
                         color={source.successRate24h >= 80 ? "teal" : source.successRate24h >= 50 ? "yellow" : "red"}
                       />
-                      <Text size="10px" c="dimmed" mt={3}>
+                      <Text size="var(--text-caps)" c="dimmed" mt={3}>
                         {source.runs24h} прогонов
                         {source.failed24h > 0 ? ` · ошибок ${source.failed24h}` : ""}
                         {source.partial24h > 0 ? ` · частично ${source.partial24h}` : ""}
@@ -925,7 +925,7 @@ export default function AdminDashboard() {
                           <Group justify="space-between" gap="xs" wrap="nowrap">
                             <Stack gap={1} style={{ minWidth: 0 }}>
                               <Text size="sm" fw={700} truncate>{order.listing.title}</Text>
-                              <Text size="10px" c="dimmed" truncate>{order.user.name || order.user.email || "Пользователь"} · {new Date(order.createdAt).toLocaleString("ru-RU")}</Text>
+                              <Text size="var(--text-caps)" c="dimmed" truncate>{order.user.name || order.user.email || "Пользователь"} · {new Date(order.createdAt).toLocaleString("ru-RU")}</Text>
                             </Stack>
                             <Stack gap={2} align="flex-end">
                               <Text size="sm" fw={800}>{order.amountRub.toLocaleString("ru-RU")} ₽</Text>
@@ -1034,7 +1034,7 @@ export default function AdminDashboard() {
                   {s.new != null && s.new > 0 && (
                     <Group gap={3} mt={4}>
                       <IconTrendingUp size={11} color="#16a34a" />
-                      <Text size="10px" c="var(--market-success-text)" fw={600}>+{s.new} за неделю</Text>
+                      <Text size="var(--text-caps)" c="var(--market-success-text)" fw={600}>+{s.new} за неделю</Text>
                     </Group>
                   )}
                 </Stack>
@@ -1133,7 +1133,7 @@ export default function AdminDashboard() {
                 <Text size="xs" c="gray.5">{card.label}</Text>
               </Group>
               <Text size="xl" fw={800} mt="xs" c="var(--market-ink)">{card.value}</Text>
-              {card.hint && <Text size="10px" c="gray.5" mt={2}>{card.hint}</Text>}
+              {card.hint && <Text size="var(--text-caps)" c="gray.5" mt={2}>{card.hint}</Text>}
             </Card>
           ))}
         </SimpleGrid>
@@ -1168,8 +1168,8 @@ export default function AdminDashboard() {
             ].map(({ label, value, detail }) => (
               <Paper key={String(label)} withBorder radius="md" p="sm">
                 <Text size="lg" fw={800}>{value}</Text>
-                <Text size="10px" c="dimmed">{label}</Text>
-                <Text size="9px" c="gray.5" mt={2}>{detail}</Text>
+                <Text size="var(--text-caps)" c="dimmed">{label}</Text>
+                <Text size="var(--text-2xs)" c="gray.5" mt={2}>{detail}</Text>
               </Paper>
             ))}
           </SimpleGrid>
@@ -1256,11 +1256,11 @@ export default function AdminDashboard() {
             <Group gap="lg" mt="md">
               <Box>
                 <Text size="xl" fw={800} lh={1}>{data.traffic.uniqueVisitorsWeek}</Text>
-                <Text size="10px" c="dimmed">уникальных за неделю</Text>
+                <Text size="var(--text-caps)" c="dimmed">уникальных за неделю</Text>
               </Box>
               <Box>
                 <Text size="xl" fw={800} lh={1}>{data.traffic.pageViewsWeek}</Text>
-                <Text size="10px" c="dimmed">просмотров</Text>
+                <Text size="var(--text-caps)" c="dimmed">просмотров</Text>
               </Box>
             </Group>
           </Card>

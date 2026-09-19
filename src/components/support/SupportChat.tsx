@@ -176,7 +176,7 @@ export default function SupportChat() {
                   <Text size="sm" fw={800} c="white">Поддержка LeWheel</Text>
                   <Group gap={5}>
                     <Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>
-                    {ticket?.operatorName && <Text size="10px" c="indigo.1">{ticket.operatorName}</Text>}
+                    {ticket?.operatorName && <Text size="var(--text-caps)" c="indigo.1">{ticket.operatorName}</Text>}
                   </Group>
                 </Stack>
               </Group>
@@ -222,7 +222,7 @@ export default function SupportChat() {
                           c={visitor ? "white" : undefined}
                         >
                           {!system && (
-                            <Text size="10px" fw={700} c={visitor ? "indigo.0" : message.authorType === "OPERATOR" ? "teal" : "indigo"} mb={3}>
+                            <Text size="var(--text-caps)" fw={700} c={visitor ? "indigo.0" : message.authorType === "OPERATOR" ? "teal" : "indigo"} mb={3}>
                               {visitor ? "Вы" : message.authorType === "OPERATOR" ? "Оператор" : "Помощник LeWheel"}
                             </Text>
                           )}
@@ -310,7 +310,7 @@ export default function SupportChat() {
                   <Button size="compact-xs" variant="subtle" color="gray" leftSection={<IconCheck size={13} />} disabled={sending} onClick={() => void post({ action: "CLOSE" })}>Закрыть</Button>
                 )}
               </Group>
-              <Text size="10px" c="dimmed" ta="center" mt={4}>Помощник отвечает по базе знаний. Срок живого ответа зависит от загрузки операторов.</Text>
+              <Text size="var(--text-caps)" c="dimmed" ta="center" mt={4}>Помощник отвечает по базе знаний. Срок живого ответа зависит от загрузки операторов.</Text>
             </Box>
           </Paper>
         </Box>

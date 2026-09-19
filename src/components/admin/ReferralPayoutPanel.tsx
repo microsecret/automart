@@ -136,7 +136,7 @@ export default function ReferralPayoutPanel() {
                 <Table.Tr key={partner.partnerId}>
                   <Table.Td>
                     <Text size="sm" fw={600}>{partner.name || partner.email || partner.partnerId}</Text>
-                    <Text size="10px" c="dimmed">
+                    <Text size="var(--text-caps)" c="dimmed">
                       {partner.telegramUsername ? `@${partner.telegramUsername} · ` : ""}
                       {partner.paidInvitees} с оплатой
                     </Text>

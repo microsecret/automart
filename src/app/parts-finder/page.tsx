@@ -351,9 +351,9 @@ function PartsContent() {
       <Stack gap="sm">
           <Box className="parts-filter-grid">
             <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
-            <Box className="parts-price-range"><Text size="10px" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
+            <Box className="parts-price-range"><Text size="var(--text-caps)" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
             <Box className="parts-filter-field parts-filter-checks">
-              <Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text>
+              <Text size="var(--text-caps)" c="dimmed" fw={700} tt="uppercase" mb={5}>Наличие</Text>
               <Group gap={8} wrap="wrap">
                 {PART_AVAILABILITY_TYPES.map((item) => <Checkbox key={item.value} size="xs" label={item.label} checked={availability.includes(item.value)} onChange={() => toggleMultiFilter(item.value, availability, setAvailability)} />)}
               </Group>

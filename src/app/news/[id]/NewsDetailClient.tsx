@@ -280,7 +280,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
               <Group gap="sm" align="flex-start">
                 <Avatar src={commentItem.user?.image} size="sm" radius="xl" color="indigo">{commentItem.user?.name?.[0]?.toUpperCase()}</Avatar>
                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                  <Group gap="xs"><Text size="xs" fw={600} c="var(--market-ink)">{commentItem.user?.name || "Аноним"}</Text><Text size="10px" c="gray.4">{formatRelativeDate(commentItem.createdAt)}</Text></Group>
+                  <Group gap="xs"><Text size="xs" fw={600} c="var(--market-ink)">{commentItem.user?.name || "Аноним"}</Text><Text size="var(--text-caps)" c="gray.4">{formatRelativeDate(commentItem.createdAt)}</Text></Group>
                   <Text size="xs" c="gray.6" lh={1.5}>{commentItem.content}</Text>
                 </Stack>
               </Group>
@@ -299,7 +299,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
                       <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconNews size={18} /></ThemeIcon>
                       <Stack gap={2} style={{ flex: 1 }}>
                         <Text size="sm" fw={600} c="var(--market-ink)" style={{ overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{news.title}</Text>
-                        <Group gap={4}><IconClock size={11} color="gray.4" /><Text size="10px" c="gray.4">{formatRelativeDate(news.publishedAt)}</Text></Group>
+                        <Group gap={4}><IconClock size={11} color="gray.4" /><Text size="var(--text-caps)" c="gray.4">{formatRelativeDate(news.publishedAt)}</Text></Group>
                       </Stack>
                     </Group>
                   </Card>

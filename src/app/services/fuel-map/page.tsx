@@ -1475,7 +1475,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                   <span className="fuel-status__meter" data-level={weakest.confidenceLabel} aria-hidden="true">
                     <span style={{ width: `${Math.max(6, weakest.confidencePercent)}%` }} />
                   </span>
-                  <Text size="10px" c="dimmed" mt={4}>
+                  <Text size="var(--text-caps)" c="dimmed" mt={4}>
                     Уверенность {weakest.confidenceLabel} · {weakest.confidenceNote}
                   </Text>
                 </Box>
@@ -1671,7 +1671,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                     {stationNotes.map((note) => (
                       <Paper key={`${note.fuel}-${note.updatedAt}`} withBorder radius="md" p={8} bg="var(--market-surface-subtle)">
                         <Text size="xs" c="var(--market-ink)">{note.comment}</Text>
-                        <Text size="10px" c="dimmed" mt={3}>
+                        <Text size="var(--text-caps)" c="dimmed" mt={3}>
                           {note.label} · {note.updatedAt ? formatAge(new Date(note.updatedAt)) : ""}
                         </Text>
                       </Paper>

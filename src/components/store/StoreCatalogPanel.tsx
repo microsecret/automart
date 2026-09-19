@@ -183,7 +183,7 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
                 <Table.Tr key={part.id}>
                   <Table.Td>
                     <Text size="sm" fw={600} lineClamp={1}>{part.name}</Text>
-                    <Text size="10px" c="dimmed">{part.make} {part.model}</Text>
+                    <Text size="var(--text-caps)" c="dimmed">{part.make} {part.model}</Text>
                   </Table.Td>
                   <Table.Td><Text size="xs">{part.oemNumber || "—"}</Text></Table.Td>
                   <Table.Td><Text size="xs">{PART_TYPE_LABELS[part.partType] || part.partType}</Text></Table.Td>

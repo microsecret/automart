@@ -677,7 +677,7 @@ export default function StoreWorkspacePage() {
                               <Table.Td>
                                 {row.oemNumber || "—"}
                                 {row.crossNumbers.length > 0 && (
-                                  <Text size="10px" c="dimmed">+{row.crossNumbers.length} аналог{row.crossNumbers.length === 1 ? "" : row.crossNumbers.length < 5 ? "а" : "ов"}</Text>
+                                  <Text size="var(--text-caps)" c="dimmed">+{row.crossNumbers.length} аналог{row.crossNumbers.length === 1 ? "" : row.crossNumbers.length < 5 ? "а" : "ов"}</Text>
                                 )}
                               </Table.Td>
                               <Table.Td>{PART_TYPE_LABELS[row.partType] || row.partType}</Table.Td>

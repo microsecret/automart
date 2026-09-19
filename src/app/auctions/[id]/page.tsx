@@ -640,7 +640,7 @@ function AuctionDetail() {
                               живых лотах разница доходила до четырёхсот
                               тысяч рублей — человек рассчитывал бюджет
                               по одной цифре, а платил по другой. */}
-                          <Text size="10px" c="dimmed">лот + комиссия</Text>
+                          <Text size="var(--text-caps)" c="dimmed">лот + комиссия</Text>
                         </Box>
                         <ThemeIcon variant="light" color="indigo" radius="xl" size={30}><IconArrowRight size={16} /></ThemeIcon>
                       </Group>

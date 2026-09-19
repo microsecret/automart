@@ -167,7 +167,7 @@ export default async function StorefrontPage({ params }: PageProps) {
                   )}
                 </Group>
                 {part.crossReferences.length > 0 && (
-                  <Text size="10px" c="dimmed" mt={6}>
+                  <Text size="var(--text-caps)" c="dimmed" mt={6}>
                     Заменяет: {part.crossReferences.map((cross) => cross.number).join(", ")}
                   </Text>
                 )}

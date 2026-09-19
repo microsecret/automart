@@ -182,7 +182,7 @@ export default function StoreRequestsPanel({ storeId }: { storeId: string }) {
                     </Group>
                     {vehicle && <Text size="xs" c="dimmed">{vehicle}</Text>}
                     {request.comment && <Text size="xs" c="var(--market-ink)" mt={4} lineClamp={2}>{request.comment}</Text>}
-                    <Text size="10px" c="dimmed" mt={4}>
+                    <Text size="var(--text-caps)" c="dimmed" mt={4}>
                       {[
                         request.city,
                         age,
