@@ -13218,3 +13218,44 @@ h1[data-lw-hero] + p {
   color: var(--market-accent-text);
   text-decoration: none;
 }
+
+/* ============================================================
+   Полоса «что горит» в админке
+
+   Первый блок обзора. Девять метрик одного веса открывали панель:
+   «Пользователи» и «AI-запросы» выглядели так же, как очередь на
+   модерацию. Оператор заходит разобрать накопившееся, и это
+   должно быть первым, что он видит.
+   ============================================================ */
+
+.admin-focus {
+  border: 1px solid transparent;
+  /* Тёплая заливка тревоги: не красная — паники нет, очередь это
+     обычная работа, — но заметно отличная от белых карточек ниже. */
+  background: linear-gradient(100deg,
+    color-mix(in srgb, var(--mantine-color-orange-light) 70%, var(--market-surface)),
+    var(--market-surface) 72%);
+  border-color: color-mix(in srgb, var(--mantine-color-orange-6) 32%, var(--market-line));
+}
+
+/* Очереди разобраны — полоса гаснет до обычной карточки.
+   Оставлять тревожный тон, когда тревожиться не о чем, значит
+   приучить оператора не замечать его вовсе. */
+.admin-focus[data-idle="true"] {
+  background: var(--market-surface);
+  border-color: var(--market-line);
+}
+
+.admin-focus__value {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--market-ink);
+}
+
+.admin-focus__note {
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: var(--market-muted);
+}

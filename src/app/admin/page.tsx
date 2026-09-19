@@ -4,9 +4,10 @@ export const dynamic = "force-dynamic"
 
 import useSWR from "swr"
 import { auctionSourceLabel } from "@/lib/auction-source-labels"
+import { plural } from "@/lib/plural"
 import { ActionIcon, Alert, Box, Stack, Text, Center, Loader, SimpleGrid, Card, Paper, ThemeIcon, Title, Group, Badge, Progress, Button, Tooltip, Timeline, Tabs, SegmentedControl } from "@mantine/core"
 import type { MantineColor } from "@mantine/core"
-import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld, IconRefresh, IconDatabase, IconGavel, IconAlertTriangle, IconBuildingWarehouse, IconCheck, IconClock, IconListCheck, IconShieldCheck, IconCreditCard, IconCoins, IconReceipt, IconLockCheck, IconHeadset, IconBrandTelegram } from "@tabler/icons-react"
+import { IconUsers, IconCar, IconTag, IconMessageCircle2, IconStar, IconBell, IconEye, IconFlame, IconTrendingUp, IconRobot, IconActivity, IconWorld, IconRefresh, IconDatabase, IconGavel, IconAlertTriangle, IconBuildingWarehouse, IconCheck, IconClock, IconListCheck, IconShieldCheck, IconCreditCard, IconCoins, IconReceipt, IconLockCheck, IconHeadset, IconBrandTelegram, IconCircleCheck, IconArrowRight } from "@tabler/icons-react"
 import Link from "next/link"
 import { useEffect, useState, type ReactNode } from "react"
 import ListingModerationPanel from "@/components/moderation/ListingModerationPanel"
@@ -403,6 +404,26 @@ export default function AdminDashboard() {
     { label: "Оплачено, но не продвигается", value: data.operations.stuckPayments ?? 0, oldestHours: oldest?.stuckPayments ?? null, href: "/admin/users", icon: <IconCreditCard size={17} />, color: "red" as MantineColor, description: "Деньги получены, услуга не оказана" },
   ]
   const actionsTotal = operationItems.reduce((sum, item) => sum + item.value, 0)
+  /* Возраст самой старой задачи по всем очередям сразу.
+   *
+   * Каждая очередь знает свой возраст, но оператору нужен один ответ:
+   * насколько всё запущено. Берём максимум — и только у непустых
+   * очередей, иначе пустая очередь с давним признаком перебивала бы
+   * настоящую.
+   *
+   * Часы переводятся в дни после суток: «73 часа» человек всё равно
+   * делит в уме на три дня. */
+  const oldestOverallLabel = (() => {
+    const ages = operationItems
+      .filter((item) => item.value > 0 && typeof item.oldestHours === "number")
+      .map((item) => item.oldestHours as number)
+    if (!ages.length) return null
+    const hours = Math.max(...ages)
+    if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} мин`
+    if (hours < 24) return `${Math.round(hours)} ч`
+    const days = Math.round(hours / 24)
+    return `${days} ${plural(days, "день", "дня", "дней")}`
+  })()
   // Свежесть импорта — первое, что нужно знать при разборе очереди: устаревший
   // каталог объясняет и падение трафика, и жалобы на исчезнувшие лоты.
   const lastSyncLabel = (() => {
@@ -942,6 +963,64 @@ export default function AdminDashboard() {
             Это чистое состояние после удаления демо-объявлений. Импортный каталог работает отдельно; новые объявления пользователей появятся после модерации.
           </Alert>
         )}
+
+        {/* Что горит сейчас — первым блоком обзора.
+
+            Девять метрик одного веса открывали панель: «Пользователи»,
+            «Отзывы», «AI-запросы» выглядели так же, как очередь на
+            модерацию. Оператор заходит в админку не смотреть статистику,
+            а разобрать то, что накопилось, — и это должно быть первым,
+            что он видит.
+
+            Возраст самой старой задачи важнее их числа: три задачи по
+            двадцать минут и три, лежащие пятый день, при одном счётчике
+            выглядят одинаково. */}
+        <Card
+          className="admin-focus"
+          radius="md"
+          p="md"
+          data-idle={actionsTotal === 0 ? "true" : undefined}
+        >
+          <Group justify="space-between" align="center" gap="md" wrap="wrap">
+            <Group gap="md" wrap="nowrap" align="center">
+              <ThemeIcon
+                variant="filled"
+                color={actionsTotal ? "orange" : "teal"}
+                size={44}
+                radius="md"
+              >
+                {actionsTotal ? <IconAlertTriangle size={22} /> : <IconCircleCheck size={22} />}
+              </ThemeIcon>
+              <Stack gap={2}>
+                <Text className="admin-focus__value">
+                  {actionsTotal
+                    ? `${actionsTotal} ${plural(actionsTotal, "задача", "задачи", "задач")} в очередях`
+                    : "Очереди разобраны"}
+                </Text>
+                <Text className="admin-focus__note">
+                  {oldestOverallLabel
+                    ? `Самая старая ждёт ${oldestOverallLabel}`
+                    : actionsTotal
+                      ? "Все задачи поступили только что"
+                      : "Ничего не ждёт оператора"}
+                  {lastSyncLabel ? ` · сбор лотов ${lastSyncLabel}` : ""}
+                </Text>
+              </Stack>
+            </Group>
+            {actionsTotal > 0 && (
+              <Button
+                /* changeTab, а не setTab: он дописывает вкладку в адрес,
+                   и ссылкой на очереди можно поделиться с напарником. */
+                onClick={() => changeTab("operations")}
+                color="orange"
+                size="sm"
+                rightSection={<IconArrowRight size={15} />}
+              >
+                Разобрать очереди
+              </Button>
+            )}
+          </Group>
+        </Card>
 
         {/* Основные метрики */}
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
