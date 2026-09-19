@@ -13496,3 +13496,45 @@ h1[data-lw-hero] + p {
   background: rgb(22 163 74 / 0.3);
   color: #86efac;
 }
+
+/* Счётчики в кабинете: два смысла — два вида.
+
+   Красный кружок значит «требует внимания»: непрочитанные сообщения,
+   уведомления, доставка в пути. Приглушённое число значит просто
+   «столько есть»: объявлений, машин в гараже, записей в избранном.
+
+   Раньше все были цветными кружками — розовым, бирюзовым, оранжевым.
+   Шесть ярких пятен в колонке спорили друг с другом, и настоящее
+   «прочти меня» у сообщений терялось. У площадки-образца красный
+   кружок стоит только у сообщений и уведомлений. */
+
+.account-counter {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--market-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.account-counter--urgent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  /* Белый на #dc2626 даёт 4,83 — выше нормы 4,5 для мелкого текста. */
+}
+
+/* Внутри активного пункта обычный счётчик берёт его цвет, иначе серая
+   цифра на синей подложке выглядит чужой. Красный остаётся красным:
+   он значит одно и то же везде. */
+.market-side-account__link[data-active] .account-counter:not(.account-counter--urgent) {
+  color: var(--market-primary);
+}

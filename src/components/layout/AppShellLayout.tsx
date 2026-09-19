@@ -697,9 +697,29 @@ function GuestAccountPanel() {
   )
 }
 
-function AccountCounter({ value, color = "gray" }: { value: number; color?: string }) {
+/**
+ * Счётчик рядом с пунктом кабинета.
+ *
+ * Два разных смысла — два вида. Красный кружок значит «требует
+ * внимания»: непрочитанные сообщения и уведомления, то, ради чего
+ * человек сюда зайдёт. Приглушённое число значит просто «столько
+ * есть»: сколько объявлений, сколько в избранном.
+ *
+ * Раньше все счётчики были цветными кружками — розовым у избранного,
+ * бирюзовым у гаража, оранжевым у доставок. Шесть ярких пятен в
+ * колонке спорили друг с другом, и настоящее «прочти меня» у
+ * сообщений терялось среди них.
+ *
+ * Так же устроено у площадки-образца: там красный кружок есть только
+ * у сообщений и уведомлений, у остальных пунктов чисел нет вовсе.
+ */
+function AccountCounter({ value, urgent = false }: { value: number; urgent?: boolean }) {
   if (value <= 0) return null
-  return <Badge size="xs" radius="xl" variant="filled" color={color}>{value > 99 ? "99+" : value}</Badge>
+  const text = value > 99 ? "99+" : String(value)
+  if (urgent) {
+    return <span className="account-counter account-counter--urgent">{text}</span>
+  }
+  return <span className="account-counter">{text}</span>
 }
 
 function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel, roleColor, isAdmin, isModerator }: {
@@ -758,11 +778,11 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
       </Paper>
 
       <Stack gap={1} mt="xs">
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.listings.href} label={ACCOUNT_NAVIGATION.listings.label} leftSection={<IconLayoutDashboard size={16} />} rightSection={<AccountCounter value={summary?.totalListings || 0} color="indigo" />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="light" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.favorites.href} label={ACCOUNT_NAVIGATION.favorites.label} leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} color="pink" />} active={pathname.startsWith("/favorites")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.garage.href} label={ACCOUNT_NAVIGATION.garage.label} leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} color="teal" />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.listings.href} label={ACCOUNT_NAVIGATION.listings.label} leftSection={<IconLayoutDashboard size={16} />} rightSection={<AccountCounter value={summary?.totalListings || 0} />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="light" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.favorites.href} label={ACCOUNT_NAVIGATION.favorites.label} leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} />} active={pathname.startsWith("/favorites")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.garage.href} label={ACCOUNT_NAVIGATION.garage.label} leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard/orders" prefetch={false} label="Мои заказы" leftSection={<IconClipboardList size={16} />} active={pathname.startsWith("/dashboard/orders")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.deliveries.href} prefetch={false} label={ACCOUNT_NAVIGATION.deliveries.label} leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} color="orange" />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.deliveries.href} prefetch={false} label={ACCOUNT_NAVIGATION.deliveries.label} leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} urgent />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.documents.href} prefetch={false} label={ACCOUNT_NAVIGATION.documents.label} leftSection={<IconFileDescription size={16} />} active={pathname.startsWith("/dashboard/documents")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.payments.href} label={ACCOUNT_NAVIGATION.payments.label} leftSection={<IconCreditCard size={16} />} active={pathname === "/dashboard" && dashboardTab === "payments"} color="indigo" variant="subtle" className="market-side-account__link" />
 
@@ -780,8 +800,8 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
             раздел для проверенных компаний, поэтому и название другое. */}
         <NavLink component={Link} href="/dashboard/referral" prefetch={false} label="Пригласить друзей" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
         <Divider my={2} />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.messages.href} label={ACCOUNT_NAVIGATION.messages.label} leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} color="red" />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/notifications" prefetch={false} label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} color="red" />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.messages.href} label={ACCOUNT_NAVIGATION.messages.label} leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} urgent />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/notifications" prefetch={false} label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} urgent />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.profile.href} label={ACCOUNT_NAVIGATION.profile.label} leftSection={<IconSettings size={16} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
         {isAdmin && <NavLink component={Link} href="/admin" prefetch={false} label="Админ-панель" leftSection={<IconSettings size={16} />} active={pathname.startsWith("/admin")} color="grape" variant="light" className="market-side-account__link" />}
         {isModerator && <NavLink component={Link} href="/moderation" prefetch={false} label="Модерация" leftSection={<IconGavel size={16} />} active={pathname.startsWith("/moderation")} color="orange" variant="light" className="market-side-account__link" />}
