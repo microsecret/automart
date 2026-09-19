@@ -7,6 +7,7 @@ import { Box, Group, Text } from "@mantine/core"
 import { IconArrowRight } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { formatPriceShort } from "@/lib/format"
+import { isShowcaseReady } from "@/lib/auction-model-quality"
 
 /**
  * Свежие лоты мировых аукционов на главной.
@@ -78,7 +79,7 @@ export default function AuctionShowcase() {
      Причина пустых снимков внешняя и кодом не лечится: прокси для
      съёмки CarSensor не работают, часть лотов приезжает без картинок. */
   const lots = (data?.listings ?? [])
-    .filter((lot) => (lot.make || lot.model) && lot.imageUrl)
+    .filter((lot) => isShowcaseReady(lot) && lot.imageUrl)
     .slice(0, VISIBLE_LOTS)
   const total = data?.pagination?.total ?? 0
 

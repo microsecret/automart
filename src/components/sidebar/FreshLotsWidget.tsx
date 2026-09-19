@@ -5,6 +5,7 @@ import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
 import { formatPriceShort } from "@/lib/format"
+import { isShowcaseReady } from "@/lib/auction-model-quality"
 
 /**
  * Свежие лоты мировых аукционов в правой колонке.
@@ -83,7 +84,10 @@ export default function FreshLotsWidget() {
     revalidateOnFocus: false,
   })
 
-  const all = (data?.listings ?? []).filter((lot) => lot.make || lot.model)
+  /* Отсев негодных названий: внешняя служба перевода иногда склеивает
+     языки внутри слова — «Hyundai беNew», «Casper 1.0 инсыпоRayсён». В
+     колонке из пяти строк одна такая занимает пятую часть блока. */
+  const all = (data?.listings ?? []).filter(isShowcaseReady)
   const lots = diverseByModel(all, VISIBLE)
 
   if (lots.length < 3) return null

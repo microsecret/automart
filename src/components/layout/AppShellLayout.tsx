@@ -41,6 +41,7 @@ import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
 import AppAside from "@/components/sidebar/AppAside"
 import NavCount from "@/components/sidebar/NavCount"
+import CountryCount from "@/components/sidebar/CountryCount"
 
 const TRANSPORT_ICONS = {
   cars: <IconCar size={16} stroke={1.8} />,
@@ -598,7 +599,10 @@ function AuctionCountryLinks({ pathname }: { pathname: string }) {
 
   return AUCTIONS.map((item) => {
     const country = item.href.split("country=")[1]
-    return <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} active={selectedCountry === country} color="orange" className="market-side-nav market-side-nav--nested" />
+    /* Число лотов страны — справа от названия. Пять стран шли без единой
+       цифры: узнать, что в Корее пять тысяч машин, а в США ни одной,
+       можно было только зайдя в каждую. */
+    return <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} active={selectedCountry === country} color="orange" rightSection={<CountryCount code={country} />} className="market-side-nav market-side-nav--nested" />
   })
 }
 
