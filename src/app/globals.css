@@ -8589,7 +8589,7 @@ p,
 h1,
 .mantine-Title-root[data-order="1"] {
   font-family: var(--font-display), sans-serif;
-  font-size: clamp(1.625rem, 1.35rem + 1.1vw, 2.125rem);
+  font-size: clamp(24px, 20px + 1.1vw, 32px);
   font-weight: 800;
   line-height: 1.12;
   letter-spacing: var(--track-display);
@@ -8617,7 +8617,7 @@ h1:not(:last-child),
    подложке, 42 пикселя против общих 34. Помечен атрибутом, чтобы
    отличаться от заголовка, которому размер поставили по недосмотру. */
 h1[data-lw-hero] {
-  font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.625rem);
+  font-size: clamp(26px, 20px + 1.9vw, 39px);
   /* Трекинг самого крупного текста на сайте.
 
      Здесь стоял --track-title, рассчитанный на заголовки разделов в
@@ -8636,7 +8636,7 @@ h1[data-lw-hero] {
    трогает — иначе на широком экране название машины разъехалось бы на
    треть карточки. */
 .vehicle-detail-layout__aside h1 {
-  font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.6rem);
+  font-size: clamp(19px, 17px + 0.6vw, 24px);
   letter-spacing: var(--track-title);
   line-height: 1.15;
   /* Отступ задан в разметке: заголовок стоит вплотную к цене, а не над
@@ -11735,7 +11735,7 @@ button:disabled,
      вылезающие за края плитки: «Где заправиться» требует 104 пикселя,
      а внутренняя ширина колонки — 90. Теперь кегль сжимается вместе с
      колонкой и остаётся читаемым: нижняя граница 11,5 пикселя. */
-  font-size: clamp(0.72rem, 0.52rem + 0.42vw, 0.875rem);
+  font-size: clamp(11px, 8px + 0.42vw, 13px);
   font-weight: 700;
   line-height: var(--leading-snug);
   white-space: nowrap;

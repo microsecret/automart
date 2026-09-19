@@ -25,7 +25,7 @@
   margin: 0;
   color: var(--market-ink);
   font-family: var(--font-display), sans-serif;
-  font-size: clamp(1.15rem, 1rem + 0.7vw, 1.5rem);
+  font-size: clamp(17px, 15px + 0.7vw, 22px);
   font-weight: 800;
   letter-spacing: -0.025em;
   line-height: 1.15;
