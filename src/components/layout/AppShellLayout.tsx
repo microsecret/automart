@@ -716,19 +716,34 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
   const isPartner = Boolean(data?.partnerAccess?.allowed)
 
   return (
-    <Paper className="market-side-account market-side-account--user" radius="md" p="sm" withBorder shadow="xs" aria-label="Личный кабинет">
-      <Group wrap="nowrap" gap="sm" align="center">
-        <Avatar src={session.user.image} color={roleColor} radius="xl" size={44}>{session.user.name?.[0]?.toUpperCase()}</Avatar>
-        <Box style={{ minWidth: 0, flex: 1 }}>
-          <Group gap={5} wrap="nowrap" justify="space-between">
-            <Badge variant="light" color={roleColor} size="xs">{roleLabel}</Badge>
-            {hasAttention && <Badge variant="dot" color="orange" size="xs">Есть действия</Badge>}
-          </Group>
-          <Text size="sm" fw={800} lineClamp={1} mt={3}>{session.user.name || session.user.email}</Text>
-        </Box>
-      </Group>
+    <Paper className="market-side-account market-side-account--user" radius="md" p={0} withBorder shadow="xs" aria-label="Личный кабинет">
+      {/* Шапка кабинета — тёмная полоса с градиентом.
+       *
+       * Приём площадки-образца: блок профиля отделён от остального меню
+       * не рамкой, а тоном. Белая карточка среди белых панелей терялась,
+       * и «кто я» приходилось искать глазами; тёмная полоса отвечает на
+       * это мгновенно, а аватар на ней читается как в приложении.
+       *
+       * Имя и роль вынесены на градиент, всё остальное — сводка, пункты
+       * кабинета — остаётся на светлом: читать их придётся подолгу. */}
+      <Box className="market-side-account__head">
+        <Group wrap="nowrap" gap={10} align="center">
+          <Avatar src={session.user.image} radius="xl" size={38} className="market-side-account__avatar">
+            {session.user.name?.[0]?.toUpperCase()}
+          </Avatar>
+          <Box style={{ minWidth: 0, flex: 1 }}>
+            <Text className="market-side-account__name" lineClamp={1}>
+              {session.user.name || session.user.email}
+            </Text>
+            <Group gap={5} wrap="nowrap" mt={2}>
+              <span className="market-side-account__role">{roleLabel}</span>
+              {hasAttention && <span className="market-side-account__alert">Есть действия</span>}
+            </Group>
+          </Box>
+        </Group>
+      </Box>
 
-      <Paper className="market-side-account__summary" radius="md" p="xs" mt="sm" withBorder>
+      <Paper className="market-side-account__summary" radius="md" p="xs" withBorder>
         <Group justify="space-between" gap="xs" wrap="nowrap">
           {/* Подпись и значение различаются цветом, а не весом: раньше 650
               против 700 на одном кегле читалось как неровность набора. */}

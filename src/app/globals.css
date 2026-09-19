@@ -13366,3 +13366,75 @@ h1[data-lw-hero] + p {
     color: var(--market-accent-text);
   }
 }
+
+/* ============================================================
+   Шапка кабинета в боковом меню — тёмная полоса
+
+   Приём площадки-образца: блок профиля отделён от остального меню
+   тоном, а не рамкой. Белая карточка среди белых панелей терялась,
+   и «кто я» приходилось искать глазами.
+   ============================================================ */
+
+.market-side-account--user {
+  overflow: hidden;
+}
+
+.market-side-account__head {
+  padding: 9px 11px;
+  background: linear-gradient(135deg, #0f172a, #1e3a5f);
+}
+
+/* Остальное содержимое панели получает поля здесь: у самой панели их
+   больше нет, чтобы шапка легла до краёв. */
+.market-side-account--user > *:not(.market-side-account__head) {
+  margin-inline: 10px;
+}
+
+.market-side-account--user > *:not(.market-side-account__head):first-of-type {
+  margin-top: 10px;
+}
+
+.market-side-account--user > *:last-child {
+  margin-bottom: 10px;
+}
+
+.market-side-account__avatar {
+  /* Кольцо отделяет аватар от тёмного фона: без него тёмная фотография
+     сливалась с подложкой в пятно. */
+  border: 2px solid rgb(255 255 255 / 0.16);
+}
+
+.market-side-account__name {
+  font-size: var(--text-sm);
+  font-weight: 800;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+/* Роль и предупреждение — мелкими плашками на полупрозрачной заливке.
+
+   Полупрозрачность вместо сплошного цвета: она работает и на светлом
+   конце градиента, и на тёмном, без пары значений под каждую тему. */
+.market-side-account__role,
+.market-side-account__alert {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.market-side-account__role {
+  background: rgb(255 255 255 / 0.14);
+  color: rgb(255 255 255 / 0.9);
+}
+
+/* Предупреждение оранжевое: это единственное место в шапке, где цвет
+   значит «нужно действие», и он не должен спорить с ролью. */
+.market-side-account__alert {
+  background: rgb(251 146 60 / 0.22);
+  color: #fdba74;
+}
