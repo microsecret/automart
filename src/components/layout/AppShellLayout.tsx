@@ -469,19 +469,19 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                 ))}
               </SidebarPanel>
 
-              <SidebarPanel title="Запчасти" href="/parts-finder" icon={<IconTools size={15} />}>
+              <SidebarPanel title="Запчасти" href="/parts-finder" icon={<IconTools size={15} />} footer="Все запчасти →" footerHref="/parts-finder">
                 <Suspense fallback={PARTS.map((item) => <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} color="indigo" className="market-side-nav market-side-nav--nested" />)}>
                   <PartCategoryLinks pathname={pathname || ""} />
                 </Suspense>
               </SidebarPanel>
 
-              <SidebarPanel title="Мировые аукционы" href="/auctions" icon={<IconGavel size={15} />}>
+              <SidebarPanel title="Мировые аукционы" href="/auctions" icon={<IconGavel size={15} />} footer="Все лоты →" footerHref="/auctions">
                 <Suspense fallback={AUCTIONS.map((item) => <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} color="orange" className="market-side-nav market-side-nav--nested" />)}>
                   <AuctionCountryLinks pathname={pathname || ""} />
                 </Suspense>
               </SidebarPanel>
 
-              <SidebarPanel title="Сервисы" href="/services" icon={<IconShieldCheck size={15} />}>
+              <SidebarPanel title="Сервисы" href="/services" icon={<IconShieldCheck size={15} />} footer="Все сервисы →" footerHref="/services">
                 {SERVICES.map((item) => (
                   <NavLink
                     key={item.href}
@@ -491,6 +491,11 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
                     leftSection={item.icon}
                     active={pathname === item.href}
                     color={item.color}
+                    /* Метка живого раздела у карты АЗС: цены собираются
+                       каждые пятнадцать минут, и человек должен видеть,
+                       что это не справочник. Остальные сервисы работают
+                       по запросу, там метка была бы неправдой. */
+                    rightSection={item.id === "fuel-map" ? <span className="nav-live">ОНЛАЙН</span> : undefined}
                     className="market-side-nav market-side-nav--service"
                   />
                 ))}
@@ -805,7 +810,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
  * цветной кружок рядом с подписью в десять пикселей перетягивал
  * внимание на себя, хотя называет раздел именно подпись.
  */
-function SidebarPanel({ title, href, icon, children }: { title: string; href?: string; icon: React.ReactNode; children: React.ReactNode }) {
+function SidebarPanel({ title, href, icon, children, footer, footerHref }: { title: string; href?: string; icon: React.ReactNode; children: React.ReactNode; footer?: string; footerHref?: string }) {
   const head = (
     <Group gap={7} className="market-side-panel__head">
       <span className="market-side-panel__icon">{icon}</span>
@@ -818,6 +823,17 @@ function SidebarPanel({ title, href, icon, children }: { title: string; href?: s
         <Link href={href} className="market-side-panel__title-link">{head}</Link>
       ) : head}
       <Stack gap={0} className="market-side-panel__body">{children}</Stack>
+      {/* Подвал секции — ссылка «показать всё» на подложке.
+       *
+       * Приём площадки-образца: секция закрыта с двух сторон подложкой,
+       * заголовок сверху и выход снизу. Без него список обрывался на
+       * последнем пункте, и человек не понимал, все ли разделы видит:
+       * в «Запчастях» показано пять категорий из пятнадцати. */}
+      {footer && footerHref && (
+        <Link href={footerHref} prefetch={false} className="market-side-panel__footer">
+          {footer}
+        </Link>
+      )}
     </Paper>
   )
 }
