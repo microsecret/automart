@@ -8541,7 +8541,7 @@ p,
    избранное, должен видеть то же самое, что и в каталоге. */
 @container listing-card (max-width: 320px) {
   .listing-card__price {
-    font-size: 1.15rem !important;
+    font-size: var(--text-lg) !important;
     letter-spacing: var(--track-title);
   }
 
@@ -8562,7 +8562,7 @@ p,
 /* Совсем узкая колонка — телефон в две карточки в ряд. */
 @container listing-card (max-width: 220px) {
   .listing-card__price {
-    font-size: 1.05rem !important;
+    font-size: var(--text-md) !important;
   }
 
   .listing-card__fact:nth-child(n + 3) {
