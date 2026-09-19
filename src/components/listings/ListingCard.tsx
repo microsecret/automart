@@ -522,7 +522,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 фотографии ведёт туда же, а курсор над ней и так меняется
                 на указатель.
 
-                Освободившееся место отдано снимку. */
+                Освободившееся место отдано снимку. */}
           </Box>
         </Box>
       </Card>
