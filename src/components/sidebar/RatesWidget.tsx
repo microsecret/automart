@@ -68,7 +68,7 @@ export default function RatesWidget() {
   if (rows.length < 2) return null
 
   return (
-    <Box component="section" className="side-widget" aria-label="Курсы валют">
+    <Box component="section" className="side-widget" data-tone="rates" aria-label="Курсы валют">
       <Box className="side-widget__head">
         <Text component="h2" className="side-widget__title">Курсы ЦБ</Text>
       </Box>

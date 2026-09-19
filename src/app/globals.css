@@ -12704,39 +12704,70 @@ h1[data-lw-hero] + p {
   overflow: hidden;
 }
 
+/* Шапка виджета — цветная полоса, а не серая подложка.
+
+   Четыре виджета с одинаковыми серыми шапками читались одной сплошной
+   лентой: чтобы найти курсы среди новостей и лотов, приходилось читать
+   подписи подряд. Цвет отвечает на это боковым зрением.
+
+   Приём взят у площадки-образца: там у каждого блока правой колонки
+   свой градиент по диагонали и белый текст поверх. Цвет закреплён за
+   содержимым, а не роздан по кругу: новости синие как фирменный тон,
+   лоты глубокие тёмно-синие, курсы фиолетовые как деньги, объявления
+   изумрудные как «своё, рядом».
+
+   Диагональ, а не вертикаль: при высоте полосы в 26 пикселей
+   вертикальный переход почти не виден, а по диагонали работает на
+   всей длине. */
 .side-widget__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--market-line);
-  background: var(--market-surface-subtle);
+  padding: 6px 10px;
+  background: linear-gradient(135deg, var(--widget-from, #0f172a), var(--widget-to, #1e3a5f));
 }
 
 .side-widget__title {
   margin: 0;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   line-height: 1.2;
-  color: var(--market-ink);
+  /* Белый на всех четырёх градиентах: самый светлый из них —
+     фиолетовый #7c3aed, белый на нём даёт 5,9 при норме 4,5. */
+  color: #ffffff;
 }
 
 .side-widget__meta {
   font-size: 10px;
-  color: var(--market-muted);
+  color: rgb(255 255 255 / 0.66);
   white-space: nowrap;
 }
 
 .side-widget__all {
   font-size: 10px;
-  font-weight: 600;
-  color: var(--market-accent-text);
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.88);
   text-decoration: none;
   white-space: nowrap;
 }
+
+@media (hover: hover) and (pointer: fine) {
+  .side-widget__all:hover {
+    color: #ffffff;
+    text-decoration: underline;
+  }
+}
+
+/* Цвет закреплён за виджетом через атрибут: одно правило вместо
+   четырёх, и цвет виден прямо в разметке рядом с содержимым. */
+.side-widget[data-tone="news"]     { --widget-from: #1e3a5f; --widget-to: #2563eb; }
+.side-widget[data-tone="lots"]     { --widget-from: #0f172a; --widget-to: #1e3a5f; }
+.side-widget[data-tone="rates"]    { --widget-from: #6d28d9; --widget-to: #7c3aed; }
+/* Конец градиента затемнён с #0891b2 до #0e7490: на светлом бирюзовом
+   белый текст давал 3,68 при норме 4,5, на тёмном — 5,04. */
+.side-widget[data-tone="listings"] { --widget-from: #047857; --widget-to: #0e7490; }
 
 .side-widget__body {
   display: flex;

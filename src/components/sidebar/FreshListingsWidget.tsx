@@ -63,7 +63,7 @@ export default function FreshListingsWidget() {
   if (listings.length < 3) return null
 
   return (
-    <Box component="section" className="side-widget" aria-label="Свежие объявления">
+    <Box component="section" className="side-widget" data-tone="listings" aria-label="Свежие объявления">
       <Box className="side-widget__head">
         <Text component="h2" className="side-widget__title">Свежие объявления</Text>
         <Link href="/" className="side-widget__all">Все</Link>

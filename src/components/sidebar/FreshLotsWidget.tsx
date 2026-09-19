@@ -98,7 +98,7 @@ export default function FreshLotsWidget() {
   if (lots.length < 3) return null
 
   return (
-    <Box component="section" className="side-widget" aria-label="Свежие лоты аукционов">
+    <Box component="section" className="side-widget" data-tone="lots" aria-label="Свежие лоты аукционов">
       <Box className="side-widget__head">
         <Text component="h2" className="side-widget__title">Свежие лоты</Text>
         <Link href="/auctions" className="side-widget__all">Все</Link>

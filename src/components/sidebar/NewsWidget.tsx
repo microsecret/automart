@@ -54,7 +54,7 @@ export default function NewsWidget() {
   if (news.length < 3) return null
 
   return (
-    <Box component="section" className="side-widget" aria-label="Новости рынка">
+    <Box component="section" className="side-widget" data-tone="news" aria-label="Новости рынка">
       <Box className="side-widget__head">
         <Text component="h2" className="side-widget__title">Новости рынка</Text>
         <Link href="/news" className="side-widget__all">Все</Link>
