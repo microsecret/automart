@@ -62,7 +62,12 @@ function diverseByModel(lots: Lot[], limit: number): Lot[] {
   const seen = new Set<string>()
 
   for (const lot of lots) {
-    const key = `${lot.make ?? ""} ${lot.model ?? ""}`.trim().toLowerCase()
+    /* Ключ считается по очищенному названию — тому, что человек увидит
+       на экране. Раньше брали сырое: два лота «Citroen C3eakurosuSUV» и
+       «Citroen C5eakurosuSUV» различались, а после чистки оба
+       превращались в «Citroen», и в колонке вставали две одинаковые
+       строки подряд. */
+    const key = `${lot.make ?? ""} ${cleanModelLabel(lot.model)}`.trim().toLowerCase()
     if (seen.has(key)) continue
     seen.add(key)
     picked.push(lot)
