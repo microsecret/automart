@@ -1949,9 +1949,15 @@ select {
   background: var(--market-primary-soft);
 }
 
+/* Отступы строки: 3 по вертикали против 9 по горизонтали.
+
+   Асимметрия — тот же приём, что у площадки-образца: строка прижата
+   сверху и снизу, но дышит по бокам, и список читается как таблица, а
+   не как набор карточек. При базовом кегле 15 пикселей это даёт высоту
+   строки около 26 — в колонку помещаются все двадцать шесть пунктов
+   без прокрутки. */
 .market-side-panel .mantine-NavLink-root {
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding: 3px 9px;
 }
 
 .market-side-panel .mantine-NavLink-section {
@@ -13264,4 +13270,68 @@ h1[data-lw-hero] + p {
   font-size: var(--text-sm);
   line-height: 1.4;
   color: var(--market-muted);
+}
+
+/* ============================================================
+   Секции бокового меню — по образцу площадки RawMart
+
+   Заголовок лежит на подложке с линией снизу. Раньше он висел
+   строкой в воздухе, и пять секций подряд читались одним сплошным
+   списком: граница между «Транспортом» и «Запчастями» была видна
+   только по пустому месту.
+   ============================================================ */
+
+.market-side-panel__head {
+  padding: 5px 9px;
+  background: var(--market-background);
+  border-bottom: 1px solid var(--market-line);
+  flex-wrap: nowrap;
+}
+
+/* Значок без собственной заливки: цветной кружок рядом с подписью в
+   десять пикселей перетягивал внимание, хотя раздел называет подпись. */
+.market-side-panel__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--market-muted);
+}
+
+.market-side-panel__icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.market-side-panel__title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--market-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Список идёт до краёв панели: внутренние поля убраны, и заголовок с
+   подложкой становится естественной границей блока. */
+.market-side-panel__body {
+  padding: 3px 0;
+}
+
+/* Шапка-ссылка ведёт в раздел целиком и отзывается всей полосой. */
+.market-side-panel__title-link {
+  display: block;
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .market-side-panel__title-link:hover .market-side-panel__head {
+    background: var(--market-primary-soft);
+  }
+
+  .market-side-panel__title-link:hover .market-side-panel__title,
+  .market-side-panel__title-link:hover .market-side-panel__icon {
+    color: var(--market-accent-text);
+  }
 }

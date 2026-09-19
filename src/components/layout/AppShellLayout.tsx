@@ -773,17 +773,36 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
   )
 }
 
+/**
+ * Секция бокового меню.
+ *
+ * Заголовок лежит на подложке с линией снизу — приём площадки RawMart,
+ * взятой за образец. Раньше он висел строкой в воздухе, и пять секций
+ * подряд читались одним сплошным списком: глазу не за что зацепиться,
+ * граница между «Транспортом» и «Запчастями» была видна только по
+ * пустому месту.
+ *
+ * Подложка отделяет шапку от пунктов без лишней линии, а внутренние
+ * поля панели убраны: список идёт до краёв, как в таблице, и заголовок
+ * с подложкой становится его естественной границей.
+ *
+ * Значок уменьшен с 22 до 18 пикселей и лишился собственной заливки:
+ * цветной кружок рядом с подписью в десять пикселей перетягивал
+ * внимание на себя, хотя называет раздел именно подпись.
+ */
 function SidebarPanel({ title, href, icon, children }: { title: string; href?: string; icon: React.ReactNode; children: React.ReactNode }) {
+  const head = (
+    <Group gap={7} className="market-side-panel__head">
+      <span className="market-side-panel__icon">{icon}</span>
+      <Text className="market-side-panel__title">{title}</Text>
+    </Group>
+  )
   return (
-    <Paper className="market-side-panel" radius="md" p={6} withBorder>
+    <Paper className="market-side-panel" radius="md" p={0} withBorder>
       {href ? (
-        <Link href={href} className="market-side-panel__title-link">
-          <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={700} tt="uppercase" c="dimmed">{title}</Text></Group>
-        </Link>
-      ) : (
-        <Group gap={6} px={6} py={4}><ThemeIcon variant="light" color="indigo" size={22} radius="md">{icon}</ThemeIcon><Text size="10px" fw={700} tt="uppercase" c="dimmed">{title}</Text></Group>
-      )}
-      <Stack gap={1} mt={2}>{children}</Stack>
+        <Link href={href} className="market-side-panel__title-link">{head}</Link>
+      ) : head}
+      <Stack gap={0} className="market-side-panel__body">{children}</Stack>
     </Paper>
   )
 }
