@@ -462,6 +462,20 @@ export default function HomePage(p: HomePageProps = {}) {
                     className="home-hero__search-input"
                     placeholder="Марка, модель или ключевое слово"
                     aria-label="Поиск по объявлениям"
+                    /* type="search" вместо обычного текста: на телефоне
+                       клавиатура получает кнопку «Найти» вместо «Ввод», а
+                       в поле появляется крестик очистки.
+
+                       autocomplete="off": браузер иначе предлагает сюда
+                       сохранённые имя и адрес — в поиск по маркам машин
+                       они не годятся. Историю запросов самого поля это не
+                       отключает.
+
+                       spellCheck={false}: «Хендай» и «Тойота» подчёркивались
+                       красным как ошибки. */
+                    type="search"
+                    autoComplete="off"
+                    spellCheck={false}
                     leftSection={<IconSearch size={16} />}
                     value={query}
                     onChange={(event) => setQuery(event.currentTarget.value)}
@@ -640,7 +654,11 @@ export default function HomePage(p: HomePageProps = {}) {
             </Group>
           )}
           <Box className="catalog-filter-grid">
-            <TextInput className="catalog-filter-field catalog-filter-field--search" label="Что ищете" placeholder={isPartSearch ? "Название, OEM или ключевое слово" : "Марка, модель, ключевое слово"} leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" />
+            {/* type="search", autoComplete="off" и spellCheck={false} — по
+                тем же причинам, что у поля в герое: клавиатура телефона
+                получает кнопку «Найти», браузер не лезет с сохранённым
+                адресом, а названия марок не подчёркиваются как ошибки. */}
+            <TextInput className="catalog-filter-field catalog-filter-field--search" label="Что ищете" placeholder={isPartSearch ? "Название, OEM или ключевое слово" : "Марка, модель, ключевое слово"} leftSection={<IconSearch size={14}/>} value={query} onChange={(e) => setQuery(e.target.value)} size="sm" type="search" autoComplete="off" spellCheck={false} />
             <Select
               className="catalog-filter-field catalog-filter-field--make"
               label={isPartSearch ? "Марка автомобиля" : "Марка"}
