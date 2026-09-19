@@ -216,7 +216,7 @@ export default function AdminAuditLog() {
       ) : (
         <Paper withBorder radius="md" p="lg" className={classes.empty}>
           <Text size="sm" fw={600}>По заданным условиям действий нет</Text>
-          <Text size="xs" c="dimmed" mt={3}>Измените поиск или фильтры. Новые административные решения появляются здесь автоматически.</Text>
+          <Text size="xs" c="dimmed" mt={4}>Измените поиск или фильтры. Новые административные решения появляются здесь автоматически.</Text>
         </Paper>
       )}
     </Card>

@@ -668,11 +668,11 @@ function AuctionsPageContent() {
                     <Divider color="gray.2" />
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" className={styles.marketMix} aria-label="Структура текущей выдачи">
                       <Box>
-                        <Text size="xs" fw={800} tt="uppercase" c="var(--market-ink-soft)" mb={7}>Топливо в выдаче</Text>
+                        <Text size="xs" fw={800} tt="uppercase" c="var(--market-ink-soft)" mb={8}>Топливо в выдаче</Text>
                         {topFuelDistribution.length === 0 && (
                           <Text size="xs" c="dimmed">Площадка не публикует тип топлива для этих лотов.</Text>
                         )}
-                        <Stack gap={7}>
+                        <Stack gap={8}>
                           {topFuelDistribution.map((item) => {
                             const share = analytics.total ? Math.round((item.count / analytics.total) * 100) : 0
                             return <Box key={item.fuelType} className={styles.mixRow}><Group justify="space-between" gap="xs"><Text size="sm" fw={700}>{FUEL_LABELS[item.fuelType] || item.fuelType}</Text><Text size="xs" c="dimmed">{item.count} · {share}%</Text></Group><Progress value={share} size="sm" radius="xl" mt={4} /></Box>
@@ -680,14 +680,14 @@ function AuctionsPageContent() {
                         </Stack>
                       </Box>
                       <Box>
-                        <Text size="xs" fw={800} tt="uppercase" c="var(--market-ink-soft)" mb={7}>Тип кузова в выдаче</Text>
+                        <Text size="xs" fw={800} tt="uppercase" c="var(--market-ink-soft)" mb={8}>Тип кузова в выдаче</Text>
                         {/* Источник не всегда передаёт тип кузова: пустая
                             колонка с одним заголовком выглядит как сбой, а не
                             как отсутствие данных. */}
                         {topBodyDistribution.length === 0 && (
                           <Text size="xs" c="dimmed">Площадка не публикует тип кузова для этих лотов.</Text>
                         )}
-                        <Stack gap={7}>
+                        <Stack gap={8}>
                           {topBodyDistribution.map((item) => {
                             const share = analytics.total ? Math.round((item.count / analytics.total) * 100) : 0
                             return <Box key={item.bodyType} className={styles.mixRow}><Group justify="space-between" gap="xs"><Text size="sm" fw={700}>{BODY_LABELS[item.bodyType] || item.bodyType}</Text><Text size="xs" c="dimmed">{item.count} · {share}%</Text></Group><Progress value={share} color="indigo" size="sm" radius="xl" mt={4} /></Box>

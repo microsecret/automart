@@ -213,11 +213,11 @@ function StationsTab({ filters, setFilters }: {
           </Group>
           {data.summary.lastRun ? (
             <>
-              <Text fw={800} fz="20px" mt={4}>{sourceLabel(data.summary.lastRun.source)}</Text>
+              <Text fw={800} fz="22px" mt={4}>{sourceLabel(data.summary.lastRun.source)}</Text>
               <Text size="xs" c="dimmed">{formatAdminDateTimeShort(data.summary.lastRun.startedAt)}</Text>
             </>
           ) : (
-            <Text fw={800} fz="20px" mt={4} c="dimmed">Пока не было</Text>
+            <Text fw={800} fz="22px" mt={4} c="dimmed">Пока не было</Text>
           )}
         </Card>
       </SimpleGrid>

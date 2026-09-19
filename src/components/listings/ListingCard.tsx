@@ -490,14 +490,14 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             {/* Низ — город и дата */}
             <Group justify="space-between" gap={4} mt={6} pt={6} className="listing-card__footer">
               {listing.location ? (
-                <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
+                <Group gap={4} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
                   <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
                   <Text fz="xs" c="var(--market-muted)" style={TRUNCATE_STYLE}>{listing.location}</Text>
                 </Group>
               ) : <span />}
-              <Group gap={7} wrap="nowrap" style={{ flexShrink: 0 }}>
+              <Group gap={8} wrap="nowrap" style={{ flexShrink: 0 }}>
                 {typeof listing.views === "number" && listing.views > 0 && (
-                  <Group gap={3} wrap="nowrap" className="listing-card__views">
+                  <Group gap={4} wrap="nowrap" className="listing-card__views">
                     <IconEye size={11} stroke={1.8} aria-hidden="true" />
                     <Text fz="xs">{new Intl.NumberFormat("ru-RU", { notation: "compact", maximumFractionDigits: 1 }).format(listing.views)}</Text>
                   </Group>

@@ -126,17 +126,17 @@ export default async function ForumSearchPage({ searchParams }: Props) {
                           {/* Раздел в строке результата: один и тот же вопрос
                               в разделе «Toyota» и в разделе «Растаможка» —
                               это разные разговоры. */}
-                          <Text size="xs" c="var(--market-muted)" mt={3}>
+                          <Text size="xs" c="var(--market-muted)" mt={4}>
                             {topic.sectionTitle} · {topic.authorName || "Участник"} · {formatAdminDateTimeShort(topic.lastPostAt)}
                           </Text>
                         </Box>
 
                         <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
-                          <Group gap={3}>
+                          <Group gap={4}>
                             <IconMessages size={13} color="var(--market-muted)" />
                             <Text fz="xs" c="var(--market-muted)">{topic.replyCount}</Text>
                           </Group>
-                          <Group gap={3}>
+                          <Group gap={4}>
                             <IconEye size={13} color="var(--market-muted)" />
                             <Text fz="xs" c="var(--market-muted)">{topic.views}</Text>
                           </Group>

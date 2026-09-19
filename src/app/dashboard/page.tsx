@@ -294,7 +294,7 @@ function DashboardContent() {
 
         <Paper className="dashboard-workspace" radius="md" p={{ base: "md", md: "lg" }} withBorder>
           <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
-            <Stack gap={5} maw={560}>
+            <Stack gap={6} maw={560}>
               <Badge className="dashboard-workspace__eyebrow" variant="light" color={hasAttentionItems ? "orange" : "indigo"} radius="xl">
                 {hasAttentionItems ? "Требуется внимание" : "Рабочее пространство"}
               </Badge>
@@ -643,7 +643,7 @@ function DashboardContent() {
               )}
               <Group gap="md" align="center">
                 <Avatar src={accountProfile?.image || session?.user?.image} size={64} radius="xl" color="indigo">{(accountProfile?.name || session?.user?.name)?.[0]?.toUpperCase()}</Avatar>
-                <Stack gap={3} style={{ minWidth: 0, flex: 1 }}>
+                <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
                   <Group gap="xs" wrap="wrap">
                     <Text fw={700} fz="lg" c="var(--market-ink)">{accountProfile?.name || session?.user?.name || "Без имени"}</Text>
                     {accountCompletion === 100

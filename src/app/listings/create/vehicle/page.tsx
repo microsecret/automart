@@ -526,7 +526,7 @@ function CreateVehicleWorkspace() {
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconPlus size={22} /></ThemeIcon>
           <Stack gap={0}>
-            <Group gap={7} align="center">
+            <Group gap={8} align="center">
               <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">{isGarageEdit ? "Редактировать автомобиль" : isGarageMode ? "Добавить автомобиль в гараж" : "Новое объявление"}</Text>
               {isTelegramMiniApp && <Badge leftSection={<IconBrandTelegram size={12} />} color="indigo" variant="light" radius="xl">Mini App</Badge>}
             </Group>

@@ -78,7 +78,7 @@ export default async function ForumHighlights() {
             p="sm"
             className="forum-highlight"
           >
-            <Text fz="xs" c="var(--market-muted)" mb={3}>{topic.section.title}</Text>
+            <Text fz="xs" c="var(--market-muted)" mb={4}>{topic.section.title}</Text>
             <Text fw={600} fz="sm" c="var(--market-ink)" lh={1.35} lineClamp={2}>
               {topic.title}
             </Text>

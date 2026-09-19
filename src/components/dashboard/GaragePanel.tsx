@@ -84,7 +84,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
                     </Stack>
                     <Badge color="teal" variant="light" radius="xl" size="sm">Личный</Badge>
                   </Group>
-                  <Group gap={5} wrap="wrap">
+                  <Group gap={6} wrap="wrap">
                     {vehicle.bodyType && <Badge color="gray" variant="light" size="xs">{findLabel(BODY_TYPES, vehicle.bodyType)}</Badge>}
                     <Badge color="indigo" variant="light" size="xs">{findLabel(FUEL_TYPES, vehicle.fuelType)}</Badge>
                     <Badge color="violet" variant="light" size="xs">{findLabel(TRANSMISSIONS, vehicle.transmission)}</Badge>

@@ -413,7 +413,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   <Text size="sm" c="var(--market-muted)">·</Text>
                   <Text size="sm" c="var(--market-muted)">{formatRelativeDate(data.createdAt)}</Text>
                   <Text size="sm" c="var(--market-muted)">·</Text>
-                  <Group gap={3}><IconEye size={13} color="var(--market-muted)" /><Text size="sm" c="var(--market-muted)">{viewCount} просмотров</Text></Group>
+                  <Group gap={4}><IconEye size={13} color="var(--market-muted)" /><Text size="sm" c="var(--market-muted)">{viewCount} просмотров</Text></Group>
                 </Group>
                 {data.saleFormat === "AUCTION" && (
                   <Badge mt="sm" color="orange" variant="light" leftSection={<IconGavel size={13} />}>Аукцион · {data.auctionStatus === "ACTIVE" ? "идёт" : "завершён"}</Badge>

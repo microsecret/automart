@@ -355,7 +355,7 @@ function AuctionDetail() {
           </Button>
           <Button component={Link} href="/" variant="default" radius="xl" size="compact-sm" leftSection={<IconHome size={14} />}>Главная</Button>
           <Button component={Link} href="/auctions" variant="light" color="indigo" radius="xl" size="compact-sm" leftSection={<IconGavel size={14} />}>Все аукционы</Button>
-          <Paper px="sm" py={5} radius="xl" withBorder className={styles.identityPill}>
+          <Paper px="sm" py={6} radius="xl" withBorder className={styles.identityPill}>
             <Text size="xs" fw={700} c="var(--market-ink)" lineClamp={1}>{publicIdentity.title}</Text>
           </Paper>
         </Group>
@@ -481,7 +481,7 @@ function AuctionDetail() {
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                       {equipment.items.map((item) => (
                         <Group key={item.label} gap="sm" justify="space-between" wrap="nowrap" p="xs" style={{ border: `1px solid ${item.available ? "var(--market-success-line)" : "var(--market-line)"}`, borderRadius: 10, background: item.available ? "var(--market-success-surface)" : "var(--market-surface-subtle)" }}>
-                          <Group gap={7} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color={item.available ? "teal" : "gray"} variant="light">{item.available ? <IconCheck size={13} /> : <IconX size={13} />}</ThemeIcon><Text size="sm" fw={600}>{item.label}</Text></Group>
+                          <Group gap={8} wrap="nowrap"><ThemeIcon size="sm" radius="xl" color={item.available ? "teal" : "gray"} variant="light">{item.available ? <IconCheck size={13} /> : <IconX size={13} />}</ThemeIcon><Text size="sm" fw={600}>{item.label}</Text></Group>
                           <Badge size="xs" color={item.available ? "teal" : "gray"} variant="light">{item.available ? "Есть" : "Нет"}</Badge>
                         </Group>
                       ))}
@@ -501,7 +501,7 @@ function AuctionDetail() {
                       <Badge variant="light" color={isRentalTransfer ? "blue" : "teal"}>{isRentalTransfer ? "Не является ценой продажи" : "Проверяйте перед сделкой"}</Badge>
                     </Group>
                     <SimpleGrid cols={{ base: 1, sm: conditionInfo.newCarPriceRatioPct !== null ? 3 : 2 }} spacing="xs">
-                      {conditionInfo.newCarPriceRatioPct !== null && <Paper p="xs" radius="md" withBorder className={styles.conditionMetric}><Text size="xs" c="dimmed">Цена относительно нового авто</Text><Group justify="space-between" mt={3}><Text fw={800} c="var(--market-success-text)">{conditionInfo.newCarPriceRatioPct}%</Text><Text size="xs" c="dimmed">сравнение {auctionSourceLabel(listing.source)}</Text></Group><Progress value={conditionInfo.newCarPriceRatioPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
+                      {conditionInfo.newCarPriceRatioPct !== null && <Paper p="xs" radius="md" withBorder className={styles.conditionMetric}><Text size="xs" c="dimmed">Цена относительно нового авто</Text><Group justify="space-between" mt={4}><Text fw={800} c="var(--market-success-text)">{conditionInfo.newCarPriceRatioPct}%</Text><Text size="xs" c="dimmed">сравнение {auctionSourceLabel(listing.source)}</Text></Group><Progress value={conditionInfo.newCarPriceRatioPct} color="teal" size="sm" radius="xl" mt={6} /></Paper>}
                       {conditionInfo.inspectionSummary && <Paper p="xs" radius="md" withBorder className={styles.conditionMetric}><Text size="xs" c="dimmed">Техосмотр</Text><Text fw={700} size="sm" mt={4}>{conditionInfo.inspectionSummary}</Text></Paper>}
                       {conditionInfo.insuranceRecordCount !== null && <Paper p="xs" radius="md" withBorder className={styles.conditionMetric}><Text size="xs" c="dimmed">Страховые записи</Text><Text fw={800} size="lg" c="var(--market-success-text)" mt={1}>{conditionInfo.insuranceRecordCount}</Text></Paper>}
                     </SimpleGrid>
@@ -621,7 +621,7 @@ function AuctionDetail() {
                     </Box>
                     <Stack gap={8} p="md" className={styles.similarContent}>
                       <Group gap="xs" wrap="nowrap"><BrandIcon brand={similarIdentity.make} size={30} /><Text fw={800} c="var(--market-ink)" lineClamp={2} className={styles.similarTitle}>{similarIdentity.title}</Text></Group>
-                      <Group gap={5} wrap="wrap" className={styles.similarFacts}>
+                      <Group gap={6} wrap="wrap" className={styles.similarFacts}>
                         {similarListing.mileage != null && <Badge size="xs" variant="light" color="gray">{similarListing.mileage.toLocaleString("ru")} км</Badge>}
                         {similarListing.fuelType && <Badge size="xs" variant="light" color="orange">{similarListing.fuelType === "GASOLINE" ? "Бензин" : similarListing.fuelType === "DIESEL" ? "Дизель" : similarListing.fuelType === "HYBRID" ? "Гибрид" : similarListing.fuelType === "ELECTRIC" ? "Электро" : similarListing.fuelType}</Badge>}
                         {similarListing.bodyType && <Badge size="xs" variant="light" color="indigo">{similarListing.bodyType === "SUV" ? "Кроссовер" : similarListing.bodyType === "SEDAN" ? "Седан" : similarListing.bodyType}</Badge>}

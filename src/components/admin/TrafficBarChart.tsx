@@ -77,17 +77,17 @@ export default function TrafficBarChart({
           второго нет, и подпись про просмотры сбивала бы с толку. */}
       {hasSecondary && (
         <Group gap="md" mb="xs">
-          <Group gap={5} wrap="nowrap">
+          <Group gap={6} wrap="nowrap">
             <Box style={{ width: 9, height: 9, borderRadius: 2, background: "var(--mantine-color-indigo-5)" }} />
             <Text size="var(--text-caps)" c="dimmed">{valueLabel}</Text>
           </Group>
-          <Group gap={5} wrap="nowrap">
+          <Group gap={6} wrap="nowrap">
             <Box style={{ width: 9, height: 9, borderRadius: 2, background: "var(--mantine-color-indigo-1)" }} />
             <Text size="var(--text-caps)" c="dimmed">{secondaryLabel}</Text>
           </Group>
         </Group>
       )}
-      <Group gap={3} align="flex-end" wrap="nowrap" style={{ height, overflow: "hidden" }}>
+      <Group gap={4} align="flex-end" wrap="nowrap" style={{ height, overflow: "hidden" }}>
         {points.map((point, index) => {
           /* Минимальная высота у ненулевого столбца: единственный визит в
              три часа ночи должен быть виден, иначе график врёт, будто
@@ -150,7 +150,7 @@ export default function TrafficBarChart({
 
       {/* Подписи под столбцами: каждая третья, иначе они наезжают друг на
           друга и превращаются в серую полосу. */}
-      <Group gap={3} wrap="nowrap" mt={6}>
+      <Group gap={4} wrap="nowrap" mt={6}>
         {points.map((point, index) => (
           <Box key={`label-${point.label}-${index}`} style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
             <Text size="var(--text-caps)" c={index === peak ? "indigo" : "dimmed"} fw={index === peak ? 700 : 400}>

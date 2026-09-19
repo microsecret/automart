@@ -768,7 +768,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
             <Text className="market-side-account__name" lineClamp={1}>
               {session.user.name || session.user.email}
             </Text>
-            <Group gap={5} wrap="nowrap" mt={2}>
+            <Group gap={6} wrap="nowrap" mt={2}>
               <span className="market-side-account__role">{roleLabel}</span>
               {hasAttention && <span className="market-side-account__alert">Есть действия</span>}
             </Group>
@@ -840,7 +840,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
  */
 function SidebarPanel({ title, href, icon, children, footer, footerHref }: { title: string; href?: string; icon: React.ReactNode; children: React.ReactNode; footer?: string; footerHref?: string }) {
   const head = (
-    <Group gap={7} className="market-side-panel__head">
+    <Group gap={8} className="market-side-panel__head">
       <span className="market-side-panel__icon">{icon}</span>
       <Text className="market-side-panel__title">{title}</Text>
     </Group>

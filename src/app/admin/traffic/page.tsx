@@ -66,7 +66,7 @@ export default function TrafficPage() {
           <Stack gap={8}>
             {rows.map((row) => (
               <Box key={row.name}>
-                <Group justify="space-between" gap="xs" wrap="nowrap" mb={3}>
+                <Group justify="space-between" gap="xs" wrap="nowrap" mb={4}>
                   <Text size="sm" lineClamp={1}>{row.name}</Text>
                   <Text size="sm" fw={700} style={{ fontVariantNumeric: "tabular-nums" }}>{row.visitors}</Text>
                 </Group>
@@ -181,28 +181,28 @@ export default function TrafficPage() {
                 </Group>
                 <SimpleGrid cols={{ base: 2, sm: 3, xl: 6 }} spacing="sm">
                   <Box>
-                    <Text fw={800} fz="24px" lh={1.1}>{data.bot.total}</Text>
+                    <Text fw={800} fz="26px" lh={1.1}>{data.bot.total}</Text>
                     <Text size="xs" c="dimmed">всего</Text>
                   </Box>
                   <Box>
-                    <Text fw={800} fz="24px" lh={1.1}>{data.bot.day}</Text>
+                    <Text fw={800} fz="26px" lh={1.1}>{data.bot.day}</Text>
                     <Text size="xs" c="dimmed">за сутки</Text>
                   </Box>
                   <Box>
-                    <Text fw={800} fz="24px" lh={1.1}>{data.bot.week}</Text>
+                    <Text fw={800} fz="26px" lh={1.1}>{data.bot.week}</Text>
                     <Text size="xs" c="dimmed">за неделю</Text>
                   </Box>
                   <Box>
-                    <Text fw={800} fz="24px" lh={1.1}>{data.bot.month}</Text>
+                    <Text fw={800} fz="26px" lh={1.1}>{data.bot.month}</Text>
                     <Text size="xs" c="dimmed">за месяц</Text>
                   </Box>
                   <Box>
-                    <Text fw={800} fz="24px" lh={1.1} c="var(--market-success-text)">{data.bot.registered}</Text>
+                    <Text fw={800} fz="26px" lh={1.1} c="var(--market-success-text)">{data.bot.registered}</Text>
                     <Text size="xs" c="dimmed">завершили регистрацию</Text>
                   </Box>
                   <Box>
                     {/* Не дошедшие до конца — те, кому уходит напоминание. */}
-                    <Text fw={800} fz="24px" lh={1.1} c={data.bot.pending > 0 ? "orange" : undefined}>{data.bot.pending}</Text>
+                    <Text fw={800} fz="26px" lh={1.1} c={data.bot.pending > 0 ? "orange" : undefined}>{data.bot.pending}</Text>
                     <Text size="xs" c="dimmed">остановились на регистрации</Text>
                   </Box>
                 </SimpleGrid>
@@ -332,7 +332,7 @@ export default function TrafficPage() {
                       const share = Math.round((item.visitors / Math.max(1, data.totals.uniqueVisitors)) * 100)
                       return (
                         <Box key={item.key}>
-                          <Group justify="space-between" gap="xs" wrap="nowrap" mb={3}>
+                          <Group justify="space-between" gap="xs" wrap="nowrap" mb={4}>
                             <Text size="sm" lineClamp={1}>{item.label}</Text>
                             <Group gap={6} wrap="nowrap">
                               {/* Рост важнее самого числа: раздел, потерявший

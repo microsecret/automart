@@ -174,7 +174,7 @@ export default function SupportChat() {
                 <ThemeIcon variant="white" color="indigo" size={38} radius="xl"><IconHeadset size={20} /></ThemeIcon>
                 <Stack gap={2}>
                   <Text size="sm" fw={800} c="white">Поддержка LeWheel</Text>
-                  <Group gap={5}>
+                  <Group gap={6}>
                     <Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>
                     {ticket?.operatorName && <Text size="var(--text-caps)" c="indigo.1">{ticket.operatorName}</Text>}
                   </Group>
@@ -193,7 +193,7 @@ export default function SupportChat() {
                   <Paper withBorder radius="md" p="md" bg="white">
                     <Group gap="sm" align="flex-start" wrap="nowrap">
                       <ThemeIcon variant="light" color="indigo" radius="xl"><IconRobot size={17} /></ThemeIcon>
-                      <Stack gap={5}>
+                      <Stack gap={6}>
                         {/* Приветствие называет платформу, а не
                             спрашивает о ней: если мы ошиблись, человек
                             поправит одним словом, а если угадали —
@@ -222,7 +222,7 @@ export default function SupportChat() {
                           c={visitor ? "white" : undefined}
                         >
                           {!system && (
-                            <Text size="var(--text-caps)" fw={700} c={visitor ? "indigo.0" : message.authorType === "OPERATOR" ? "teal" : "indigo"} mb={3}>
+                            <Text size="var(--text-caps)" fw={700} c={visitor ? "indigo.0" : message.authorType === "OPERATOR" ? "teal" : "indigo"} mb={4}>
                               {visitor ? "Вы" : message.authorType === "OPERATOR" ? "Оператор" : "Помощник LeWheel"}
                             </Text>
                           )}
@@ -249,7 +249,7 @@ export default function SupportChat() {
                 )}
 
                 {quickReplies.length > 0 && ticket?.mode !== "OPERATOR" && ticket?.status !== "CLOSED" && (
-                  <Group gap={5}>
+                  <Group gap={6}>
                     {quickReplies.map((reply) => (
                       <Button key={reply} size="compact-xs" variant="white" color="indigo" radius="xl" onClick={() => void send(reply)} disabled={sending}>{reply}</Button>
                     ))}

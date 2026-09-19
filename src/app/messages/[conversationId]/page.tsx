@@ -379,7 +379,7 @@ function ConversationWorkspace() {
         {attachments.length > 0 && (
           <Group gap={6} mb="xs" wrap="wrap" aria-live="polite">
             {attachments.map((file, index) => (
-              <Paper key={`${file.name}-${file.lastModified}`} withBorder radius="md" px="xs" py={5} className="message-composer__attachment">
+              <Paper key={`${file.name}-${file.lastModified}`} withBorder radius="md" px="xs" py={6} className="message-composer__attachment">
                 <IconPhoto size={15} />
                 <Text size="xs" lineClamp={1}>{file.name}</Text>
                 <ActionIcon size="xs" variant="subtle" color="gray" aria-label={`Убрать ${file.name}`} onClick={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>

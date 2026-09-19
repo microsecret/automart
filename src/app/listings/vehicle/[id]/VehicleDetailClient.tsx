@@ -644,7 +644,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               <Box className="vehicle-detail-specs__grid">
                 {specs.map((spec, i) => (
                   <Box key={`${spec.label}-${i}`} className="vehicle-detail-specs__item">
-                    <Group gap={5} wrap="nowrap" className="vehicle-detail-specs__label">
+                    <Group gap={6} wrap="nowrap" className="vehicle-detail-specs__label">
                       <Box className="vehicle-detail-specs__icon">{spec.icon}</Box>
                       <Text size="xs">{spec.label}</Text>
                     </Group>
@@ -1005,7 +1005,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   <IconMapPin size={13} color="var(--market-muted)" />
                   <Text size="xs" c="var(--market-muted)">{data.location}</Text>
                   <Text size="xs" c="var(--market-muted)">·</Text>
-                  <Group gap={3}><IconEye size={12} color="var(--market-muted)" /><Text size="xs" c="var(--market-muted)">{viewCount} просмотров</Text></Group>
+                  <Group gap={4}><IconEye size={12} color="var(--market-muted)" /><Text size="xs" c="var(--market-muted)">{viewCount} просмотров</Text></Group>
                 </Group>
               </Card>
 

@@ -441,7 +441,7 @@ export default function AdminDashboard() {
       <Stack gap="md">
         <Card className="admin-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" gap="md" wrap="wrap">
-            <Stack gap={5}>
+            <Stack gap={6}>
               <Group gap={6}>
                 <Badge variant="white" color="indigo" size="sm">ПАНЕЛЬ УПРАВЛЕНИЯ</Badge>
                 {/* Статус отражает состояние очереди, а не факт того, что
@@ -575,7 +575,7 @@ export default function AdminDashboard() {
                       <Badge
                         size="xs"
                         variant="light"
-                        mt={3}
+                        mt={4}
                         color={
                           queueUrgency(item.oldestHours) === "critical" ? "red"
                             : queueUrgency(item.oldestHours) === "warning" ? "orange"
@@ -620,7 +620,7 @@ export default function AdminDashboard() {
             ) : null}
           </Group>
           {auctionStats?.sourceHealth.length ? (
-            <Stack gap={7}>
+            <Stack gap={8}>
               {auctionStats.sourceHealth.map((source) => {
                 const healthColor: MantineColor = source.active === 0
                   ? "gray"
@@ -644,18 +644,18 @@ export default function AdminDashboard() {
                   >
                     <Group justify="space-between" align="center" gap="sm" wrap="wrap">
                       <Box className="admin-source-health__identity">
-                        <Group gap={7} wrap="nowrap">
+                        <Group gap={8} wrap="nowrap">
                           <Box className="admin-source-health__signal" data-color={healthColor} aria-hidden="true" />
                           <Text size="sm" fw={700}>{source.label}</Text>
                           <Badge size="xs" variant="light" color="gray">{source.country || "—"}</Badge>
                         </Group>
-                        <Text size="var(--text-caps)" c="dimmed" mt={3}>
+                        <Text size="var(--text-caps)" c="dimmed" mt={4}>
                           Норматив: до {source.expectedRefreshHours} ч
                           {lastActivity ? ` · активность ${new Date(lastActivity).toLocaleString("ru-RU")}` : " · запусков ещё нет"}
                           {runDuration ? ` · последний запуск ${runDuration}` : ""}
                         </Text>
                         {source.latestRunError && (
-                          <Text size="var(--text-caps)" c="red.7" mt={3} lineClamp={1} title={source.latestRunError}>
+                          <Text size="var(--text-caps)" c="red.7" mt={4} lineClamp={1} title={source.latestRunError}>
                             {source.latestRunError}
                           </Text>
                         )}
@@ -669,7 +669,7 @@ export default function AdminDashboard() {
                         </Group>
                         <Progress mt={4} size="sm" radius="xl" value={source.freshPercent ?? 0} color={healthColor} />
                       </Box>
-                      <Group gap={5} wrap="wrap" className="admin-source-health__flags">
+                      <Group gap={6} wrap="wrap" className="admin-source-health__flags">
                         <Badge size="xs" variant="light" color={runMeta.color}>
                           {AUCTION_OPERATIONAL_STATUS_LABELS[source.operationalStatus]}
                         </Badge>
@@ -702,8 +702,8 @@ export default function AdminDashboard() {
                 const processed = run.imported || run.created || run.updated
                 return (
                   <Timeline.Item key={run.id} bullet={<ThemeIcon size={24} radius="xl" color={meta.color} variant="light">{meta.icon}</ThemeIcon>} title={`${auctionSourceLabel(run.source)} · ${run.syncKind}`}>
-                    <Group gap="xs" mt={3} wrap="wrap"><Badge size="xs" variant="light" color={meta.color}>{meta.label}</Badge><Text size="xs" c="dimmed">{new Date(run.startedAt).toLocaleString("ru-RU")}</Text><Text size="xs" c="dimmed">Обработано: {processed}</Text>{run.failed > 0 && <Badge size="xs" color="red" variant="light">Ошибок: {run.failed}</Badge>}{run.excludedByPolicy + run.skippedByPolicy > 0 && <Badge size="xs" color="gray" variant="light">Исключено правилом: {run.excludedByPolicy + run.skippedByPolicy}</Badge>}</Group>
-                    {run.error && <Text size="xs" c="red.7" mt={3} lineClamp={2}>{run.error}</Text>}
+                    <Group gap="xs" mt={4} wrap="wrap"><Badge size="xs" variant="light" color={meta.color}>{meta.label}</Badge><Text size="xs" c="dimmed">{new Date(run.startedAt).toLocaleString("ru-RU")}</Text><Text size="xs" c="dimmed">Обработано: {processed}</Text>{run.failed > 0 && <Badge size="xs" color="red" variant="light">Ошибок: {run.failed}</Badge>}{run.excludedByPolicy + run.skippedByPolicy > 0 && <Badge size="xs" color="gray" variant="light">Исключено правилом: {run.excludedByPolicy + run.skippedByPolicy}</Badge>}</Group>
+                    {run.error && <Text size="xs" c="red.7" mt={4} lineClamp={2}>{run.error}</Text>}
                   </Timeline.Item>
                 )
               })}
@@ -747,7 +747,7 @@ export default function AdminDashboard() {
                     {row.quarantined > 0 && <Badge size="xs" variant="light" color="orange">Скрыто: {row.quarantined}</Badge>}
                   </Group>
                   {row.total > 0 && row.fields.some((field) => field.percent !== null && field.percent < 40) && (
-                    <Group gap={5} mb="xs" wrap="wrap">
+                    <Group gap={6} mb="xs" wrap="wrap">
                       <Text size="var(--text-caps)" c="dimmed">Требуют проверки:</Text>
                       {row.fields.filter((field) => field.percent !== null && field.percent < 40).map((field) => (
                         <Badge key={field.key} size="xs" variant="outline" color="red">
@@ -766,7 +766,7 @@ export default function AdminDashboard() {
                           </Text>
                         </Group>
                         <Progress
-                          mt={3}
+                          mt={4}
                           size="sm"
                           radius="xl"
                           value={field.percent ?? 0}
@@ -819,7 +819,7 @@ export default function AdminDashboard() {
                     <Badge size="xs" variant="light" color={isCollector ? "teal" : "gray"}>{source.country || "—"}</Badge>
                   </Group>
                   <Text size="xs" c="dimmed" mt={4}>{source.pipelineLabel}</Text>
-                  <Group gap={5} mt="xs" wrap="wrap">
+                  <Group gap={6} mt="xs" wrap="wrap">
                     <Badge size="xs" variant="dot" color={isCollector ? "teal" : "gray"}>{isCollector ? "Источник подключён" : "Нужен доступ / feed"}</Badge>
                     {statusMeta && <Badge size="xs" variant="light" color={statusMeta.color}>{statusMeta.label}</Badge>}
                     {source.lastSyncAt && <Text size="var(--text-caps)" c="dimmed">{new Date(source.lastSyncAt).toLocaleDateString("ru-RU")}</Text>}
@@ -834,13 +834,13 @@ export default function AdminDashboard() {
                         <Text size="var(--text-caps)" fw={700}>{source.successRate24h}%</Text>
                       </Group>
                       <Progress
-                        mt={3}
+                        mt={4}
                         size="xs"
                         radius="xl"
                         value={source.successRate24h}
                         color={source.successRate24h >= 80 ? "teal" : source.successRate24h >= 50 ? "yellow" : "red"}
                       />
-                      <Text size="var(--text-caps)" c="dimmed" mt={3}>
+                      <Text size="var(--text-caps)" c="dimmed" mt={4}>
                         {source.runs24h} прогонов
                         {source.failed24h > 0 ? ` · ошибок ${source.failed24h}` : ""}
                         {source.partial24h > 0 ? ` · частично ${source.partial24h}` : ""}
@@ -1041,7 +1041,7 @@ export default function AdminDashboard() {
                   <Text size="xl" fw={800} c="var(--market-ink)" ff="var(--font-display),sans-serif" lh={1}>{s.value}</Text>
                   <Text size="xs" c="var(--market-muted)" mt={2}>{s.label}</Text>
                   {s.new != null && s.new > 0 && (
-                    <Group gap={3} mt={4}>
+                    <Group gap={4} mt={4}>
                       <IconTrendingUp size={11} color="#16a34a" />
                       <Text size="var(--text-caps)" c="var(--market-success-text)" fw={600}>+{s.new} за неделю</Text>
                     </Group>

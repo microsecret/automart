@@ -358,7 +358,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
               ) : (
                 <Box px="sm" py={8}><Text size="xs" c="dimmed">По запросу «{searchValue}» пока ничего нет.</Text></Box>
               )}
-              <Button component={Link} href={`/search?q=${encodeURIComponent(searchValue)}`} onClick={() => setIsSearchFocused(false)} variant="light" color="indigo" fullWidth size="xs" mt={5}>
+              <Button component={Link} href={`/search?q=${encodeURIComponent(searchValue)}`} onClick={() => setIsSearchFocused(false)} variant="light" color="indigo" fullWidth size="xs" mt={6}>
                 Смотреть все результаты
               </Button>
             </Popover.Dropdown>

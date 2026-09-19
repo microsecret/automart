@@ -45,7 +45,7 @@ export default function DashboardDocumentsPage() {
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" gap="md">
-          <Stack gap={3}>
+          <Stack gap={4}>
             <Title order={1} size="h3">Мои документы</Title>
             <Text c="dimmed">Счета, договоры, квитанции и файлы по вашим доставкам в одном месте.</Text>
           </Stack>

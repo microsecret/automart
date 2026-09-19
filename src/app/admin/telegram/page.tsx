@@ -307,14 +307,14 @@ export default function TelegramBroadcastPage() {
                       )}
                     </Group>
                     <Box>
-                      <Group justify="space-between" gap="xs" mb={5}>
+                      <Group justify="space-between" gap="xs" mb={6}>
                         <Text size="sm" fw={600}>Полнота карточки</Text>
                         <Text size="sm" c="dimmed">
                           {highlightPreview.readiness.filled}/{highlightPreview.readiness.total}
                         </Text>
                       </Group>
                       <Progress value={highlightPreview.readiness.percent} color="teal" radius="xl" />
-                      <Text size="xs" c="dimmed" mt={5}>
+                      <Text size="xs" c="dimmed" mt={6}>
                         Для публикации нужно не менее {highlightPreview.readiness.required} полей.
                       </Text>
                     </Box>

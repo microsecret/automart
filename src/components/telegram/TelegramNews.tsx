@@ -103,7 +103,7 @@ function NewsCard({ item }: { item: NewsItem }) {
       )}
 
       <Box className="tg-card__body">
-        <Text className="tg-card__news-title" lineClamp={3}>{item.title}</Text>
+        <Text className="tg-card__news-title" lineClamp={4}>{item.title}</Text>
         {item.excerpt && <Text className="tg-card__news-summary" lineClamp={2}>{item.excerpt}</Text>}
         <Box className="tg-card__news-meta">
           <span>{[published, item.sourceChannel].filter(Boolean).join(" · ")}</span>

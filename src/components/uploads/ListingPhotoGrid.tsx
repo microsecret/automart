@@ -46,7 +46,7 @@ export default function ListingPhotoGrid({ images, uploading, onRemove }: {
                 color="dark"
                 variant="filled"
                 pos="absolute"
-                top={5}
+                top={6}
                 right={5}
                 onClick={() => onRemove(index)}
               >

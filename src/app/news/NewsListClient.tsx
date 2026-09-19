@@ -88,7 +88,7 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
           {article.excerpt && <Text className="news-list-card__excerpt" size="sm" c="dimmed" lh={1.5}>{article.excerpt}</Text>}
 
           {article.tags.length > 0 && (
-            <Group gap={5} wrap="wrap">
+            <Group gap={6} wrap="wrap">
               {article.tags.map((tag) => <Badge key={tag.toLocaleLowerCase("ru")} size="xs" variant="light" color="gray">#{tag}</Badge>)}
             </Group>
           )}

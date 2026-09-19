@@ -174,7 +174,7 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
           <Title order={1} fz={{ base: 20, md: 26 }} ff="var(--font-display),sans-serif" c="var(--market-ink)" lh={1.25}>
             {topic.title}
           </Title>
-          <Group gap={6} mt={5}>
+          <Group gap={6} mt={6}>
             <Text size="xs" c="var(--market-muted)">
               {topic.author.name || "Участник"} · {formatAdminDateTimeShort(topic.createdAt)} · {topic.replyCount} {pluralReplies(topic.replyCount)}
             </Text>

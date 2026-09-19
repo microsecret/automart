@@ -204,9 +204,9 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
             {article.title}
           </Text>
           <Group gap="md">
-            <Group gap={3}><IconClock size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{formatDate(article.publishedAt)}</Text></Group>
-            <Group gap={3}><IconEye size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{article.views} просмотров</Text></Group>
-            <Group gap={3}><IconMessageCircle2 size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{article.comments?.length || 0} комментариев</Text></Group>
+            <Group gap={4}><IconClock size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{formatDate(article.publishedAt)}</Text></Group>
+            <Group gap={4}><IconEye size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{article.views} просмотров</Text></Group>
+            <Group gap={4}><IconMessageCircle2 size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{article.comments?.length || 0} комментариев</Text></Group>
           </Group>
         </Stack>
 

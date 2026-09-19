@@ -138,21 +138,21 @@ export default async function ForumMemberPage({ params }: Props) {
               )}
 
               <Group gap="lg" mt={12} wrap="wrap">
-                <Group gap={5}>
+                <Group gap={6}>
                   <IconMessageCircle2 size={15} color="var(--market-muted)" />
                   <Text size="sm" c="var(--market-ink)" fw={600}>{member.forumPostCount}</Text>
                   <Text size="xs" c="var(--market-muted)">сообщений</Text>
                 </Group>
 
                 {member.forumBestAnswers > 0 && (
-                  <Group gap={5}>
+                  <Group gap={6}>
                     <IconTrophy size={15} color="var(--mantine-color-teal-6)" />
                     <Text size="sm" c="var(--market-ink)" fw={600}>помог {pluralTimes(member.forumBestAnswers)}</Text>
                   </Group>
                 )}
 
                 {member.forumReputation > 0 && (
-                  <Group gap={5}>
+                  <Group gap={6}>
                     <IconStar size={15} color="var(--market-muted)" />
                     <Text size="sm" c="var(--market-ink)" fw={600}>{member.forumReputation}</Text>
                     <Text size="xs" c="var(--market-muted)">репутация</Text>

@@ -1187,7 +1187,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
           Схема OpenStreetMap выглядит как чертёж из двухтысячных рядом с
           картой, которую человек видит каждый день в навигаторе. Выбор
           запоминается в браузере: сменил один раз — осталось навсегда. */}
-      <Group className="fuel-map-canvas__tiles-switch" gap={3}>
+      <Group className="fuel-map-canvas__tiles-switch" gap={4}>
         {TILE_SOURCES.map((source) => (
           <UnstyledButton
             key={source.id}
@@ -1671,7 +1671,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
                     {stationNotes.map((note) => (
                       <Paper key={`${note.fuel}-${note.updatedAt}`} withBorder radius="md" p={8} bg="var(--market-surface-subtle)">
                         <Text size="xs" c="var(--market-ink)">{note.comment}</Text>
-                        <Text size="var(--text-caps)" c="dimmed" mt={3}>
+                        <Text size="var(--text-caps)" c="dimmed" mt={4}>
                           {note.label} · {note.updatedAt ? formatAge(new Date(note.updatedAt)) : ""}
                         </Text>
                       </Paper>

@@ -333,10 +333,10 @@ export default function MarkupEditor({
           </Box>
 
           {uploadError && (
-            <Text size="xs" c="var(--market-danger-text)" mt={3} role="alert">{uploadError}</Text>
+            <Text size="xs" c="var(--market-danger-text)" mt={4} role="alert">{uploadError}</Text>
           )}
 
-          <Text size="xs" c="var(--market-muted)" mt={3}>
+          <Text size="xs" c="var(--market-muted)" mt={4}>
             Пометки: <code>**жирный**</code>, <code>*курсив*</code>, <code>## заголовок</code>,
             {" "}<code>&gt; цитата</code>, <code>||спойлер||</code>. Картинку можно перетащить в поле или вставить из буфера.
           </Text>

@@ -127,8 +127,8 @@ export default function AdminPartnersPage() {
           <Group justify="space-between" align="center" gap="md" wrap="wrap">
             <Group gap="sm" wrap="nowrap">
               <ThemeIcon variant="white" color="dark" size={46} radius="md"><IconBuildingWarehouse size={23} /></ThemeIcon>
-              <Stack gap={3}>
-                <Group gap={7}>
+              <Stack gap={4}>
+                <Group gap={8}>
                   <Badge variant="white" color="indigo" size="sm">РЕЕСТР ПАРТНЁРОВ</Badge>
                   <Badge variant="dot" color="teal" size="sm">Реальные записи</Badge>
                 </Group>
@@ -200,7 +200,7 @@ export default function AdminPartnersPage() {
                           const hasHistory = organization.slaAcceptedOffers + organization.slaMissedOffers > 0 || organization.slaClosedDeals > 0
                           const level = describePartnerRating(organization.slaRating, hasHistory)
                           return (
-                            <Group gap={5} wrap="wrap" mt={2}>
+                            <Group gap={6} wrap="wrap" mt={2}>
                               <Badge size="xs" variant="light" color={level.color}>{level.label}</Badge>
                               {hasHistory && <Badge size="xs" variant="outline" color="gray">Рейтинг {organization.slaRating}/100</Badge>}
                               {organization.slaResponseMinutes !== null && (
@@ -216,8 +216,8 @@ export default function AdminPartnersPage() {
                       </Stack>
                     </Group>
                     <Stack gap={4} miw={{ base: 0, sm: 240 }}>
-                      <Group gap={5}><IconMail size={14} /><Text size="xs">{organization.owner.email || "Email владельца не указан"}</Text></Group>
-                      {organization.owner.telegramUsername && <Group gap={5}><IconMessageCircle size={14} /><Text size="xs">@{organization.owner.telegramUsername}</Text></Group>}
+                      <Group gap={6}><IconMail size={14} /><Text size="xs">{organization.owner.email || "Email владельца не указан"}</Text></Group>
+                      {organization.owner.telegramUsername && <Group gap={6}><IconMessageCircle size={14} /><Text size="xs">@{organization.owner.telegramUsername}</Text></Group>}
                       <Text size="xs" c="dimmed">Источник: {sourceLabel(organization.verificationSource)}{organization.fnsCheckedAt ? ` · ФНС: ${new Date(organization.fnsCheckedAt).toLocaleDateString("ru-RU")}` : ""}</Text>
                     </Stack>
                     <Button size="sm" color="indigo" variant={organization.verificationStatus === "PENDING" ? "filled" : "light"} leftSection={<IconCheck size={15} />} onClick={() => openEditor(organization)}>Проверить</Button>

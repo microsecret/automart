@@ -84,7 +84,7 @@ export default function MessagesPage() {
     <Container size="lg" py="xl">
       <Stack gap="lg">
         <Group justify="space-between" align="flex-end" gap="md">
-          <Stack gap={3}>
+          <Stack gap={4}>
             <Text size="xs" fw={800} tt="uppercase" c="indigo" style={{ letterSpacing: "var(--track-caps)" }}>Личный кабинет</Text>
             <Title order={1} size="h2">Сообщения</Title>
             <Text c="dimmed">Диалоги по объявлениям и договорённостям с продавцами.</Text>
@@ -164,7 +164,7 @@ export default function MessagesPage() {
                   <Text size="sm" c="dimmed">{conversations.length ? "Откройте переписку слева, чтобы продолжить разговор." : "Откройте объявление и нажмите «Написать продавцу». Новый диалог сразу появится в этом списке."}</Text>
                 </Stack>
                 {!conversations.length && <Button component={Link} href="/" color="indigo" leftSection={<IconArrowRight size={17} />}>Найти автомобиль</Button>}
-                <Group gap={5} wrap="nowrap"><IconShieldCheck size={15} color="var(--mantine-color-teal-6)" /><Text size="xs" c="dimmed">Не переводите общение и оплату за пределы площадки.</Text></Group>
+                <Group gap={6} wrap="nowrap"><IconShieldCheck size={15} color="var(--mantine-color-teal-6)" /><Text size="xs" c="dimmed">Не переводите общение и оплату за пределы площадки.</Text></Group>
               </Stack>
             </Center>
           </Paper>

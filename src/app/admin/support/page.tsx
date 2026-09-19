@@ -270,7 +270,7 @@ export default function AdminSupportPage() {
                             </Group>
                             <Text size="sm" fw={600} lineClamp={1}>{item.subject}</Text>
                             <Text size="xs" c="dimmed" lineClamp={2}>{item.lastMessage?.content || "Диалог ещё не начат"}</Text>
-                            <Group gap={5}>
+                            <Group gap={6}>
                               <Badge size="xs" color={statusMeta.color}>{statusMeta.label}</Badge>
                               <Badge size="xs" variant="light" color={priorityMeta.color}>{priorityMeta.label}</Badge>
                               {/* Откуда пишут: один и тот же вопрос

@@ -183,7 +183,7 @@ export default function PostActions({
               variant={active ? "light" : "subtle"}
               color={active ? "indigo" : "gray"}
               size="compact-xs"
-              px={7}
+              px={8}
               className="forum-reaction"
               data-active={active ? "true" : undefined}
               onClick={() => void react(kind)}
@@ -203,7 +203,7 @@ export default function PostActions({
           variant="subtle"
           color="gray"
           size="compact-xs"
-          px={7}
+          px={8}
           className="forum-reaction"
           leftSection={<IconQuote size={13} />}
           onClick={() => requestQuote({ author: authorName, text: plainContent })}
@@ -218,7 +218,7 @@ export default function PostActions({
           variant="subtle"
           color="gray"
           size="compact-xs"
-          px={7}
+          px={8}
           className="forum-reaction"
           leftSection={<IconPencil size={13} />}
           onClick={() => setEditing(true)}
@@ -249,7 +249,7 @@ export default function PostActions({
             variant="subtle"
             color="gray"
             size="compact-xs"
-            px={7}
+            px={8}
             className="forum-reaction"
             leftSection={<IconFlag size={13} />}
             onClick={() => setReporting(true)}

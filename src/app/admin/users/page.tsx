@@ -208,7 +208,7 @@ export default function AdminUsersPage() {
                         </Group>
                       </Table.Td>
                       <Table.Td>
-                        <Group gap={5} wrap="wrap">
+                        <Group gap={6} wrap="wrap">
                           {user.registrationChannel === "WEB" && <Tooltip label={user.emailVerified ? "Email подтверждён" : "Email не подтверждён"} withArrow>
                             <Badge size="sm" color={user.emailVerified ? "teal" : "gray"} variant="light" leftSection={<IconMail size={11} />}>Email</Badge>
                           </Tooltip>}

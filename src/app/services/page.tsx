@@ -45,7 +45,7 @@ export default function ServicesPage() {
                   карточек давали восемнадцать пятен шести разных оттенков.
                   Взгляду не за что зацепиться, когда всё одинаково яркое. */}
               <Group justify="space-between" align="flex-start"><ThemeIcon size={44} radius="md" variant="light" color={service.color}><Icon size={22} /></ThemeIcon><Badge size="xs" variant="default" radius="xl">{service.stage}</Badge></Group>
-              <Box><Text fw={800} fz="lg">{service.title}</Text><Text size="sm" c="dimmed" mt={5} lh={1.45}>{service.description}</Text></Box>
+              <Box><Text fw={800} fz="lg">{service.title}</Text><Text size="sm" c="dimmed" mt={6} lh={1.45}>{service.description}</Text></Box>
               {/* Призыв одного цвета на всех карточках: действие одно и то
                   же — открыть сервис, — и красить его в шесть разных
                   оттенков значило обещать шесть разных действий. */}

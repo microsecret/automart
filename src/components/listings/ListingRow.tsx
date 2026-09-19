@@ -180,7 +180,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 </Group>
                 <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
                   {/* Цена крупнее названия — то же правило, что в плитке. */}
-                  <Text className="listing-card__price" fw={800} fz="20px" c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
+                  <Text className="listing-card__price" fw={800} fz="22px" c="var(--market-ink)" ff="var(--font-display), sans-serif" style={{ whiteSpace: "nowrap", letterSpacing: "var(--track-title)", fontVariantNumeric: "tabular-nums" }}>
                     {formatPriceShort(listing.price)}
                   </Text>
                   {/* Кредитная строка убрана: считалась по выдуманной ставке. */}
@@ -212,7 +212,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
 
             <Group justify="space-between" gap={4} mt={4}>
               {listing.location ? (
-                <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
+                <Group gap={4} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
                   <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
                   <Text fz="xs" c="var(--market-muted)" style={TRUNCATE}>{listing.location}</Text>
                 </Group>

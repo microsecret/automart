@@ -173,7 +173,7 @@ export default function BuyerOrdersPage() {
                           <Text size="sm" fw={700}>{order.store.name}</Text>
                         </Group>
                         {order.store.contactEmail && (
-                          <Group gap={5} mt={2}><IconMail size={13} /><Text size="xs" c="dimmed">{order.store.contactEmail}</Text></Group>
+                          <Group gap={6} mt={2}><IconMail size={13} /><Text size="xs" c="dimmed">{order.store.contactEmail}</Text></Group>
                         )}
                         {/* Звонок — то, ради чего человек сюда смотрит:
                             заказ едет, и вопрос «где он» решается голосом.

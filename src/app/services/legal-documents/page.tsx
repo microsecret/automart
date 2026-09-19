@@ -53,9 +53,9 @@ export default function LegalDocumentsPage() {
             return <Paper key={document.title} withBorder radius="md" p="lg" className="service-card">
               <Stack gap="md" h="100%">
                 <ThemeIcon size={44} radius="md" variant="light" color={document.color}><Icon size={22} /></ThemeIcon>
-                <Box><Text fw={800} fz="lg">{document.title}</Text><Text size="sm" c="dimmed" mt={5} lh={1.45}>{document.description}</Text></Box>
-                <Stack gap={7}>
-                  {document.fields.map((field) => <Group key={field} gap={7} align="flex-start" wrap="nowrap">
+                <Box><Text fw={800} fz="lg">{document.title}</Text><Text size="sm" c="dimmed" mt={6} lh={1.45}>{document.description}</Text></Box>
+                <Stack gap={8}>
+                  {document.fields.map((field) => <Group key={field} gap={8} align="flex-start" wrap="nowrap">
                     <ThemeIcon color={document.color} size={17} radius="xl" variant="light" mt={2}><IconChecklist size={11} /></ThemeIcon>
                     <Text size="sm">{field}</Text>
                   </Group>)}

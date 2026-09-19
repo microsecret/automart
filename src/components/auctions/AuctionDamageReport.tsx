@@ -142,7 +142,7 @@ export default function AuctionDamageReport({ report }: { report: AuctionDamageR
           <Box className={styles.detailPane} aria-live="polite">
             <Box className={styles.detailCopy}>
               <Text fw={800} c="var(--market-ink)">{activeItem.part}</Text>
-              <Text size="sm" c="dimmed" mt={3}>{activeItem.note}</Text>
+              <Text size="sm" c="dimmed" mt={4}>{activeItem.note}</Text>
               <Group gap={6} mt="sm" wrap="wrap">
                 {activeItem.kinds.map((kind) => <Badge key={kind} variant="light" color={kind === "SERIOUS" ? "red" : kind === "COMMON" ? "orange" : "indigo"}>{DAMAGE_KIND_META[kind].label}</Badge>)}
               </Group>

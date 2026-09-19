@@ -110,17 +110,17 @@ export default async function ForumSubscriptionsPage() {
                         </Anchor>
                         {topic.isClosed && <Badge size="xs" variant="light" color="gray">закрыта</Badge>}
                       </Group>
-                      <Text size="xs" c="var(--market-muted)" mt={3}>
+                      <Text size="xs" c="var(--market-muted)" mt={4}>
                         {topic.section.title} · {formatAdminDateTimeShort(topic.lastPostAt)}
                       </Text>
                     </Box>
 
                     <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
-                      <Group gap={3} visibleFrom="sm">
+                      <Group gap={4} visibleFrom="sm">
                         <IconMessages size={13} color="var(--market-muted)" />
                         <Text fz="xs" c="var(--market-muted)">{topic.replyCount}</Text>
                       </Group>
-                      <Group gap={3} visibleFrom="sm">
+                      <Group gap={4} visibleFrom="sm">
                         <IconEye size={13} color="var(--market-muted)" />
                         <Text fz="xs" c="var(--market-muted)">{topic.views}</Text>
                       </Group>

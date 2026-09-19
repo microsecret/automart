@@ -219,19 +219,19 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
                         <Box className="forum-topic-new" title="Есть новые сообщения" />
                       )}
                     </Group>
-                    <Text size="xs" c="var(--market-muted)" mt={3}>
+                    <Text size="xs" c="var(--market-muted)" mt={4}>
                       {topic.author.name || "Участник"} · {formatAdminDateTimeShort(topic.lastPostAt)}
                     </Text>
                   </Box>
 
                   <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
-                    <Group gap={3}>
+                    <Group gap={4}>
                       <IconMessages size={12} color="var(--market-muted)" />
                       <Text size="xs" c="var(--market-muted)" style={{ fontVariantNumeric: "tabular-nums" }}>
                         {topic.replyCount}
                       </Text>
                     </Group>
-                    <Group gap={3}>
+                    <Group gap={4}>
                       <IconEye size={12} color="var(--market-muted)" />
                       <Text size="xs" c="var(--market-muted)" style={{ fontVariantNumeric: "tabular-nums" }}>
                         {topic.views}

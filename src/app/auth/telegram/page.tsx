@@ -10,7 +10,7 @@ export default function TelegramAuthPage() {
       <Paper withBorder radius="md" p={{ base: "lg", md: "xl" }}>
         <Stack gap="lg">
           <div>
-            <Title order={1} fz="28px">Вход в аккаунт</Title>
+            <Title order={1} fz="26px">Вход в аккаунт</Title>
             <Text c="dimmed" mt="xs">На сайте вход выполняется по почте или телефону и паролю.</Text>
           </div>
           <Alert color="indigo" variant="light">
