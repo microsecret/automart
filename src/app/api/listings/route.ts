@@ -422,14 +422,24 @@ export async function GET(request: NextRequest) {
               color: true, condition: true, steeringWheel: true,
               documentsStatus: true, damageInfo: true, customsCleared: true,
               ownersCount: true, sellerType: true, availability: true,
-              location: true, images: true, description: true,
+              /* Описание здесь не выбирается: оно уже приходит полем
+                 самого объявления строкой выше, и вторая копия того же
+                 текста удваивала вес ответа. Замер: 949 байт на
+                 объявление, 19 КБ лишних на страницу каталога из
+                 двадцати карточек.
+
+                 Карточке в списке описание и не нужно — она показывает
+                 цену, название и характеристики. Страница объявления
+                 берёт его своим запросом. */
+              location: true, images: true,
               categoryId: true, createdAt: true,
             },
           },
           part: {
             select: {
               id: true, name: true, price: true, condition: true,
-              partType: true, images: true, description: true,
+              /* То же и у запчасти: описание приходит полем объявления. */
+              partType: true, images: true,
               brandName: true, oemNumber: true, availability: true,
               make: true, yearFrom: true, yearTo: true, vehicleType: true,
               saleFormat: true, auctionStatus: true, auctionEndsAt: true,
