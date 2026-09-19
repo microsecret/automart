@@ -269,6 +269,10 @@ function DashboardContent() {
     Boolean(accountProfile.telegramVerifiedAt),
   ].filter(Boolean).length / 4 * 100) : 0
   const hasAttentionItems = workflow.needsAttention > 0
+  /* Есть ли у человека объявления вообще.
+     Замер базы: 358 зарегистрированных, объявления есть у 44. Для
+     остальных кабинет показывал десять нулей на первом экране. */
+  const hasAnyListings = workflow.drafts + workflow.pendingModeration + workflow.active + workflow.needsAttention > 0
 
   return (
     <Box p={{ base: "sm", md: "md" }}>
@@ -312,6 +316,19 @@ function DashboardContent() {
             </Group>
           </Group>
 
+          {/* Плашки статусов — только тем, у кого есть объявления.
+
+              Замер базы: 358 зарегистрированных, объявления есть у 44.
+              Остальные 314 человек — почти девять из десяти — открывали
+              кабинет и видели четыре нуля подряд, а сразу под ними ещё
+              шесть. Десять нулей на первом экране сообщают ровно одно:
+              «здесь пусто», хотя человек только что зарегистрировался и
+              ждёт подсказки, с чего начать.
+
+              Признак считается по сумме статусов, а не по totalListings:
+              у того, кто удалил единственное объявление, счётчик мог
+              остаться ненулевым, а плашки всё равно показали бы нули. */}
+          {hasAnyListings && (
           <SimpleGrid className="dashboard-workspace__status-grid" cols={{ base: 2, sm: 4 }} spacing="xs" mt="lg">
             {[
               { label: "Черновики", value: workflow.drafts, icon: <IconFileDescription size={17} />, color: "gray", status: LISTING_STATUS.DRAFT },
@@ -328,6 +345,7 @@ function DashboardContent() {
               </Button>
             ))}
           </SimpleGrid>
+          )}
         </Paper>
 
         {/* Показатели кабинета.
@@ -340,6 +358,13 @@ function DashboardContent() {
             Цвета берутся из палитры, а не из жёстких значений: прежние
             #1c4291 и #eef2fb остались от старой темы и не менялись вместе
             с ней, а в тёмной теме светлая подложка становилась пятном. */}
+        {/* Шесть показателей — тоже только при наличии объявлений.
+
+            Подсказки у нулей («Разместите первое», «Появятся после
+            публикации») написаны верно, но шесть подсказок подряд — это
+            уже не помощь, а перечень того, чего у человека нет. Вместо
+            них ниже стоит один блок с первым шагом. */}
+        {hasAnyListings ? (
         <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="sm">
           {[
             { label: "Объявления", value: stats.totalListings, icon: <IconTag size={18} />, tone: "indigo", href: "/dashboard?tab=listings", hint: "Разместите первое" },
@@ -375,6 +400,31 @@ function DashboardContent() {
             )
           })}
         </SimpleGrid>
+        ) : (
+          /* Первый шаг вместо пустой статистики.
+           *
+           * Человек зарегистрировался и попал в кабинет, где показывать
+           * нечего. Вместо шести нулей — три действия, с которых площадка
+           * начинается: продать своё, посмотреть чужое, найти запчасть.
+           * Каждое ведёт в рабочий раздел, а не в обучение. */
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+            {[
+              { title: "Продать машину", note: "Объявление за пару минут, размещение бесплатное", href: "/listings/create/vehicle", icon: <IconPlus size={18} />, tone: "indigo" },
+              { title: "Посмотреть машины", note: "Объявления по России и лоты мировых аукционов", href: "/", icon: <IconTag size={18} />, tone: "cyan" },
+              { title: "Найти запчасть", note: "Подбор по марке и модели, оригинал и аналоги", href: "/parts-finder", icon: <IconTools size={18} />, tone: "teal" },
+            ].map((step) => (
+              <Paper key={step.title} component={Link} href={step.href} radius="md" p="md" withBorder className="dashboard-stat">
+                <Group gap="sm" align="flex-start" wrap="nowrap">
+                  <ThemeIcon variant="light" color={step.tone} size={36} radius="md">{step.icon}</ThemeIcon>
+                  <Stack gap={2} miw={0}>
+                    <Text size="sm" fw={700} c="var(--market-ink)" lh={1.2}>{step.title}</Text>
+                    <Text size="xs" c="dimmed" lh={1.35}>{step.note}</Text>
+                  </Stack>
+                </Group>
+              </Paper>
+            ))}
+          </SimpleGrid>
+        )}
 
         {/* Контент табов */}
         {tab === "listings" && (
