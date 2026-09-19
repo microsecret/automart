@@ -1022,8 +1022,17 @@ export default function AdminDashboard() {
           </Group>
         </Card>
 
-        {/* Основные метрики */}
-        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        {/* Основные метрики.
+
+            Колонок три, а не четыре: плиток девять, и при четырёх
+            колонках последняя, «Поддержка», оставалась одна в третьем
+            ряду — ряд из одной плитки рядом с двумя полными читается
+            как недогруженная страница. Три колонки дают ровные 3+3+3.
+
+            На среднем экране две колонки: девять делится на 2+2+2+2+1,
+            но при такой ширине плитки крупнее, и одинокая внизу не
+            бросается в глаза так, как в широком ряду из четырёх. */}
+        <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
           {stats.map((s) => {
             const metricCard = (
               <Card className="admin-metric-card" withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
