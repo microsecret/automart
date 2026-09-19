@@ -449,6 +449,38 @@ function PartsContent() {
                       </Stack>
                     </Center>
                   </Paper>
+                ) : catalogEmpty ? (
+                  /* Каталог пуст — говорим об этом прямо.
+                   *
+                   * Раньше здесь показывалась витрина категорий с
+                   * подписью «Выберите вид детали, чтобы уточнить». Но
+                   * выбирать нечего: замер базы на 19 сентября 2026 дал
+                   * ноль запчастей и ноль объявлений о них. Человек
+                   * щёлкал «Двигатель» и упирался в пустую выдачу.
+                   *
+                   * Честная строка вместо приглашения к действию,
+                   * которое ни к чему не приведёт. Ссылка ведёт туда,
+                   * где товар есть, а не в никуда. */
+                  <Paper radius="md" p="xl" withBorder>
+                    <Center>
+                      <Stack align="center" gap="xs" maw={460} ta="center">
+                        <IconTools size={40} color="#a1a1aa" />
+                        <Text fw={600}>Запчасти пока не размещены</Text>
+                        <Text size="sm" c="dimmed">
+                          Раздел открыт для продавцов: разместите деталь — она появится здесь
+                          и в поиске по марке автомобиля.
+                        </Text>
+                        <Group gap="xs" mt={6}>
+                          <Button component={Link} href="/listings/create/part" size="xs" color="indigo">
+                            Разместить запчасть
+                          </Button>
+                          <Button component={Link} href="/" size="xs" variant="light" color="indigo">
+                            Смотреть машины
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </Center>
+                  </Paper>
                 ) : (
                   <PartsShowcase />
                 )
