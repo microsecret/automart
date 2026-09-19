@@ -768,10 +768,27 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </Stack>
                 </Paper>
               ) : (
-                <Paper radius="md" p="md" withBorder mb="md" style={{ background: "var(--market-surface-subtle)" }}>
+                /* Гостю при пустом списке — одна строка вместо двух блоков.
+                 *
+                 * Раньше здесь стояли рамка с приглашением войти и под ней
+                 * отдельная надпись «Пока нет отзывов. Будьте первым!».
+                 * Две плашки подряд занимали треть экрана, чтобы дважды
+                 * сообщить одно и то же: отзывов нет. Когда отзывы есть,
+                 * приглашение остаётся рамкой — там ему есть что открывать. */
+                <Paper
+                  radius="md"
+                  p={data.reviews.length ? "md" : "xs"}
+                  withBorder={data.reviews.length > 0}
+                  mb={data.reviews.length ? "md" : 0}
+                  style={{ background: data.reviews.length ? "var(--market-surface-subtle)" : "transparent" }}
+                >
                   <Group gap="sm" justify="center">
-                    <Text size="sm" c="var(--market-muted)">Чтобы оставить отзыв,</Text>
-                    <Anchor component={Link} href="/auth/signin" size="sm" c="indigo" fw={600}>войдите</Anchor>
+                    <Text size="sm" c="var(--market-muted)">
+                      {data.reviews.length ? "Чтобы оставить отзыв," : "Отзывов пока нет —"}
+                    </Text>
+                    <Anchor component={Link} href="/auth/signin" size="sm" c="indigo" fw={600}>
+                      {data.reviews.length ? "войдите" : "войдите и будьте первым"}
+                    </Anchor>
                   </Group>
                 </Paper>
               )}
@@ -796,9 +813,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     </Box>
                   ))}
                 </Stack>
-              ) : (
-                <Text size="sm" c="var(--market-muted)" ta="center" py="md">Пока нет отзывов. Будьте первым!</Text>
-              )}
+              ) : session ? (
+                /* Надпись только вошедшему: гость об этом уже прочитал в
+                   строке выше, и повторять ему дважды незачем. */
+                <Text size="sm" c="var(--market-muted)" ta="center" py="xs">Отзывов пока нет — будьте первым.</Text>
+              ) : null}
             </Card>
 
             {/* Похожие */}
