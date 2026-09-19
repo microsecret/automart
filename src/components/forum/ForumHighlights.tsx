@@ -62,7 +62,7 @@ export default async function ForumHighlights() {
               : "Вопросы о выборе, ремонте и растаможке — от владельцев"}
           </Text>
         </Box>
-        <Anchor component={Link} href="/forum" size="sm" fw={600}>
+        <Anchor component={Link} href="/forum" size="sm" fw={600} className="forum-section-link">
           Весь форум
         </Anchor>
       </Group>

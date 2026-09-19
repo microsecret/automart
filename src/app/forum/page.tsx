@@ -94,13 +94,13 @@ export default async function ForumPage() {
         {/* Ссылка на участников: без неё страницу не найти, а она
             показывает, что на форуме есть кому отвечать. */}
         <Group gap="md">
-          <Anchor component={Link} href="/forum/users" size="sm" c="var(--market-muted)">
+          <Anchor component={Link} href="/forum/users" size="sm" c="var(--market-muted)" className="forum-section-link">
             Участники форума
           </Anchor>
           {/* Ссылка видна всем: гость, нажав её, попадёт на вход — это
               честнее, чем прятать раздел, о существовании которого он не
               узнает. */}
-          <Anchor component={Link} href="/forum/subscriptions" size="sm" c="var(--market-muted)">
+          <Anchor component={Link} href="/forum/subscriptions" size="sm" c="var(--market-muted)" className="forum-section-link">
             Мои темы
           </Anchor>
         </Group>
