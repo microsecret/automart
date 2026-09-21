@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import "./auctions-page.css"
 import styles from "./auction-intro.module.css"
 
 /* Обновление задаётся здесь, а не в самой странице.

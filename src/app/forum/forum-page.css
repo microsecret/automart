@@ -1,0 +1,380 @@
+/* Стили раздела, вынесенные из globals.css.
+
+   Замер покрытия главной показал: из двухсот килобайт общего файла
+   применялось сорок один. Стили отдельных разделов грузились каждому
+   посетителю, хотя нужны на своих страницах.
+
+   Блоки, которые используются на главной (.auction-showcase, .forum-highlight, .forum-section-link),
+   остались в общем файле. */
+
+/* === Форум: таблица разделов ===
+   Плотные строки вместо карточек: сотня разделов карточками занимает
+   пять экранов и не даёт сравнить, где жизнь. Столбцы «Тем/Сообщений» и
+   «Последнее сообщение» — то, ради чего люди открывают список форумов. */
+
+.forum-group {
+  overflow: hidden;
+}
+.forum-group__head {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--market-line);
+  background: var(--market-surface-subtle);
+}
+.forum-row__stats-head,
+.forum-row__last-head {
+  color: var(--market-muted);
+  font-size: var(--text-caps);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.forum-row__stats-head { width: 150px; }
+.forum-row__last-head { width: 160px; }
+.forum-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  /* Плотнее: при 11 пикселях восемь округов занимали весь экран, и
+     сравнить активность разделов было нельзя без прокрутки. */
+  padding: 8px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 60%, transparent);
+}
+.forum-row:last-child {
+  border-bottom: none;
+}
+.forum-row__main {
+  min-width: 0;
+  flex: 1;
+}
+.forum-row__title {
+  color: var(--market-primary);
+  font-size: var(--text-md);
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: none;
+  /* Область нажатия шире самих букв.
+
+     Замер при окне 390 показал у названия раздела высоту восемнадцать
+     пикселей — ровно строка текста. Сама строка ряда выше: у неё поля
+     по восемь пикселей сверху и снизу, но они принадлежат ряду, а не
+     ссылке, и палец, попавший чуть выше буквы, не попадал никуда.
+
+     Поле ссылки съедено отрицательным полем: расстояния на экране не
+     меняются, меняется только то, что засчитывается за нажатие. */
+  display: inline-block;
+  padding: 7px 0;
+  margin: -7px 0;
+}
+.forum-row__title:hover {
+  text-decoration: underline;
+}
+.forum-row__description {
+  margin-top: 1px;
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+.forum-row__children {
+  margin-top: 3px;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+.forum-row__children-label {
+  /* Мелкая подпись, а не второй заголовок: жирным она перебивала
+     название раздела и ряд читался снизу вверх. */
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.forum-row__child {
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+  text-decoration: none;
+}
+.forum-row__child:hover {
+  color: var(--market-primary);
+  text-decoration: underline;
+}
+.forum-row__child-sep {
+  color: var(--market-muted);
+}
+.forum-row__stats {
+  width: 150px;
+  flex-shrink: 0;
+}
+.forum-row__stat {
+  color: var(--market-ink);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.forum-row__stat--muted {
+  color: var(--market-muted);
+}
+.forum-row__stat-label {
+  color: var(--market-muted);
+}
+.forum-row__last {
+  width: 160px;
+  flex-shrink: 0;
+}
+.forum-row__last-date {
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+}
+.forum-row__last-date--empty {
+  opacity: 0.55;
+}
+.forum-topic-row {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+/* === Форум: тело сообщения и панель форматирования ===
+   Теги приходят из своего разбора Markdown, поэтому набор известен
+   заранее — оформляем ровно семь конструкций и ничего сверх. */
+
+.forum-post-body {
+  color: var(--mantine-color-text);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  word-break: break-word;
+}
+.forum-post-body p {
+  margin: 0 0 8px;
+}
+.forum-post-body p:last-child {
+  margin-bottom: 0;
+}
+.forum-post-body strong {
+  font-weight: 700;
+}
+.forum-post-body ul,
+.forum-post-body ol {
+  margin: 0 0 8px;
+  padding-left: 22px;
+}
+.forum-post-body li {
+  margin-bottom: 2px;
+}
+/* Цитата — вертикальной чертой, а не курсивом: курсивом набирают целые
+   абзацы чужого текста, и читать их тяжело. */
+.forum-post-body blockquote {
+  margin: 0 0 8px;
+  padding: 4px 0 4px 12px;
+  border-left: 3px solid color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
+  color: var(--market-muted);
+}
+.forum-post-body code {
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  background: var(--market-surface-subtle);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.83em;
+}
+.forum-post-body a {
+  color: var(--market-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.forum-post-body del {
+  color: var(--market-muted);
+}
+/* Заголовки внутри сообщения мельче заголовка темы: название темы — h1
+   страницы, и разбор поломки не должен спорить с ним по громкости. */
+.forum-post-body h2,
+.forum-post-body h3 {
+  margin: 14px 0 6px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.forum-post-body h2 { font-size: var(--text-md); }
+.forum-post-body h3 { font-size: var(--text-md); }
+.forum-post-body h2:first-child,
+.forum-post-body h3:first-child {
+  margin-top: 0;
+}
+.forum-post-body hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--market-line);
+}
+/* Картинка ограничена по высоте: фотография с телефона в полный рост
+   занимает три экрана, и ответов под ней не найти. */
+.forum-post-body .forum-image {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  width: auto;
+  margin: 8px 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--market-line);
+  object-fit: contain;
+  background: var(--market-surface-subtle);
+}
+/* Соотношение сторон задано заранее: без него страница дёргается, когда
+   рамка проигрывателя догружается и раздвигает текст. */
+.forum-post-body .forum-video {
+  position: relative;
+  margin: 10px 0;
+  aspect-ratio: 16 / 9;
+  max-width: 640px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--market-line);
+  background: #000;
+}
+.forum-post-body .forum-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+/* Блок кода: моноширинный, с прокруткой вбок. Перенос строк здесь вреден
+   — номер ошибки, разорванный посередине, не найдётся поиском. */
+.forum-post-body .forum-code {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--market-line);
+  background: var(--market-surface-subtle);
+  overflow-x: auto;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.forum-post-body .forum-code code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+  white-space: pre;
+}
+/* Таблица прокручивается внутри своей обёртки: пять столбцов не влезают
+   в экран телефона, а без обёртки вбок листалась бы вся страница. */
+.forum-post-body .forum-table-wrap {
+  margin: 10px 0;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--market-line);
+}
+.forum-post-body .forum-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.forum-post-body .forum-table th,
+.forum-post-body .forum-table td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--market-line);
+  white-space: nowrap;
+}
+.forum-post-body .forum-table tr:last-child td {
+  border-bottom: 0;
+}
+.forum-post-body .forum-table th {
+  background: var(--market-surface-subtle);
+  font-weight: 600;
+}
+/* Спойлер закрашен до нажатия. Цвет текста тот же, что фон: выделить и
+   скопировать содержимое можно, но случайно прочитать — нет. */
+.forum-post-body .forum-spoiler {
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  background: var(--market-control-line, var(--market-line));
+  color: transparent;
+  cursor: pointer;
+  transition: color 120ms var(--ease-out), background 120ms var(--ease-out);
+}
+.forum-post-body .forum-spoiler:hover,
+.forum-post-body .forum-spoiler:focus-visible,
+.forum-post-body .forum-spoiler[data-open="true"] {
+  background: var(--market-surface-subtle);
+  color: var(--mantine-color-text);
+}
+.forum-post-body .forum-mention {
+  color: var(--market-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.forum-post-body .forum-mention:hover {
+  text-decoration: underline;
+}
+/* Подпись автора отделена чертой: она справка о человеке, а не часть
+   разговора, и без черты читается как продолжение его ответа. */
+.forum-signature {
+  padding-top: 5px;
+  border-top: 1px solid var(--market-line);
+}
+/* Точка «есть новое» в списке тем.
+
+   Точка, а не слово: она читается краем глаза при беге по списку, а
+   подпись пришлось бы прочитать у каждой из двадцати пяти строк.
+   Без движения — это признак состояния, а не событие. */
+.forum-topic-new {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--market-primary);
+}
+/* Лучший ответ виден до чтения: рамка и подложка слева. Человек,
+   пришедший из поиска с тем же вопросом, должен найти решение, не
+   пролистав сорок сообщений. */
+.forum-post-card--best {
+  border-color: var(--mantine-color-teal-5) !important;
+  box-shadow: inset 3px 0 0 var(--mantine-color-teal-5);
+}
+/* Реакцию нажимают часто — движение почти незаметное: только вдавливание
+   под пальцем, без всплытия и подсветки. */
+.forum-reaction {
+  transition: background 120ms var(--ease-out), color 120ms var(--ease-out);
+}
+.forum-reaction:active:not(:disabled) {
+  transform: scale(0.96);
+}
+/* Отключённая реакция гостю показывается цифрой, а не серым пятном:
+   она сообщает, сколько людей отметило ответ, и это полезно и без
+   возможности нажать. */
+.forum-reaction:disabled {
+  opacity: 0.75;
+  cursor: default;
+}
+/* === Опрос в теме === */
+
+.forum-poll {
+  margin: 10px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface-subtle);
+}
+.forum-poll__icon {
+  color: var(--market-primary);
+  flex-shrink: 0;
+}
+.forum-poll__track {
+  height: 6px;
+  border-radius: var(--radius-xs);
+  background: var(--market-line);
+  overflow: hidden;
+}
+/* Полоса растёт от нуля при первом показе результата: рост показывает,
+   что цифра относится к целому, а не просто нарисована. Дальше она
+   стоит — результат читают часто, и повторять движение при каждом
+   заходе значит мешать. */
+.forum-poll__bar {
+  height: 100%;
+  border-radius: var(--radius-xs);
+  background: var(--market-primary);
+  transform-origin: left;
+  animation: forum-poll-grow 250ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+/* Свой голос выделен рамкой слева: среди пяти полос собственный выбор
+   иначе теряется, а именно его человек ищет глазами первым. */
+.forum-poll__result[data-mine="true"] {
+  padding-left: 8px;
+  border-left: 2px solid var(--market-primary);
+}
+.forum-post__body p,

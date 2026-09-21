@@ -3109,37 +3109,13 @@ select {
 
 .catalog-price-range,
 .parts-price-range,
-.auction-price-range {
-  display: grid;
-  /* Тот же отступ под подписью, что у соседних полей: у них его задаёт
-     правило для .mantine-InputWrapper-label, а это поле собрано из Box
-     и Text — Mantine его не оформляет. Было 4 против 5, и подпись
-     «Ориентир цены лота» стояла на пиксель выше остальных. */
-  gap: 5px;
-}
 
-/* Подпись поля цены — как у соседей по ряду.
-
-   Остальные поля фильтра получают оформление подписи от Mantine, а это
-   собрано вручную: цвет был dimmed вместо --market-label, трекинга не
-   было вовсе. В ряду из шести полей одна подпись выглядела чужой. */
-.auction-price-range > .mantine-Text-root:first-child {
-  color: var(--market-label);
-  letter-spacing: var(--track-caps);
-}
 
 .catalog-price-range .mantine-TextInput-root,
 .parts-price-range .mantine-TextInput-root,
-.auction-price-range .mantine-TextInput-root {
-  min-width: 0;
-  flex: 1;
-}
 
 .catalog-price-range .mantine-TextInput-input,
 .parts-price-range .mantine-TextInput-input,
-.auction-price-range .mantine-TextInput-input {
-  min-width: 0;
-}
 
 .vehicle-fallback {
   position: relative;
@@ -3333,10 +3309,6 @@ select {
 }
 
 .part-result-card:has(a:focus-visible),
-.auction-result-card:has(a:focus-visible) {
-  outline: 3px solid var(--market-focus-ring);
-  outline-offset: 3px;
-}
 
 @media (hover: hover) and (pointer: fine) {
   .listing-card:hover {
@@ -4221,50 +4193,15 @@ select {
 
 .parts-filter-grid > .mantine-InputWrapper-root,
 .parts-filter-grid > .mantine-Box-root,
-.auction-filter-grid > .mantine-InputWrapper-root,
-.auction-filter-grid > .mantine-Box-root {
-  min-width: 0;
-  min-height: 58px;
-  padding: 6px 10px 7px;
-  border: 1px solid color-mix(in srgb, var(--market-field-line) 88%, transparent);
-  border-radius: var(--radius-md);
-  background: var(--market-field);
-  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.025), 0 8px 18px -20px rgba(15, 23, 42, 0.46);
-}
 
 .parts-filter-grid > .mantine-InputWrapper-root:hover,
 .parts-filter-grid > .mantine-Box-root:hover,
-.auction-filter-grid > .mantine-InputWrapper-root:hover,
-.auction-filter-grid > .mantine-Box-root:hover {
-  border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
-  background: color-mix(in srgb, var(--market-field) 92%, #eef2fb);
-}
 
 .parts-filter-grid > .mantine-InputWrapper-root:focus-within,
 .parts-filter-grid > .mantine-Box-root:focus-within,
-.auction-filter-grid > .mantine-InputWrapper-root:focus-within,
-.auction-filter-grid > .mantine-Box-root:focus-within {
-  position: relative;
-  z-index: 1;
-  border-color: #2b56b0;
-  box-shadow: 0 0 0 3px var(--market-focus), 0 10px 20px -20px rgba(11, 32, 80, 0.72);
-}
 
 .parts-filter-grid .mantine-Input-input,
 .parts-filter-grid .mantine-Select-input,
-.auction-filter-grid .mantine-Input-input,
-.auction-filter-grid .mantine-Select-input {
-  min-height: 30px;
-  padding-left: 8px;
-  padding-right: 30px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
 
 .parts-filter-grid__search .mantine-Input-input {
   padding-left: 32px !important;
@@ -5289,30 +5226,8 @@ select {
   font-weight: 700;
 }
 
-.auction-filter-panel {
-  border-color: var(--market-field-line);
-  background: var(--market-surface);
-}
 
-.auction-filter-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
-  /* Растяжка, а не выравнивание по низу.
 
-     Замер страницы аукционов: пять полей по 78 пикселей, а «Ориентир
-     цены» — 52. Внутри у неё два поля ввода вместо одного, и при
-     выравнивании по нижнему краю она просаживалась на двадцать шесть
-     пикселей. Та же беда была на главной и чинится так же. */
-  align-items: stretch;
-}
-
-.auction-filter-grid > .mantine-InputWrapper-root,
-.auction-filter-grid > .mantine-Box-root {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
 
 /* На планшете шесть колонок ужимаются до трёх.
 
@@ -5330,188 +5245,31 @@ select {
   }
 }
 
-.auction-detail-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 16px;
-  align-items: start;
-}
 
-.auction-detail-layout__main,
-.auction-detail-layout__aside {
-  min-width: 0;
-}
 
-.auction-detail-layout__aside > .mantine-Paper-root {
-  position: sticky;
-  top: 80px;
-}
 
-.auction-detail-spec {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-  min-height: 84px;
-  padding: 12px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
-  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
-}
 
-.auction-detail-spec:hover {
-  border-color: color-mix(in srgb, var(--market-accent) 34%, var(--market-line));
-  box-shadow: var(--shadow-md);
-  transform: translateY(var(--lift-sm));
-}
 
-.auction-detail-spec__label {
-  /* Токена --market-text-secondary в проекте нет: правило не применялось
-     вовсе, и подпись брала цвет от родителя. Вторичный текст — это
-     --market-muted, он и задумывался. */
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-}
 
-.auction-detail-spec__value {
-  overflow: hidden;
-  /* --market-text-primary нигде не определён: значение характеристики
-     брало цвет от родителя, а не заданный. */
-  color: var(--market-ink);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-.auction-price-range {
-  display: grid;
-  gap: 4px;
-}
 
-.auction-price-range .mantine-TextInput-root {
-  min-width: 0;
-  flex: 1;
-}
 
-.auction-card__media {
-  position: relative;
-  display: grid;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  background: var(--market-surface-subtle);
-}
 
-.auction-card__media[data-loading]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(110deg, transparent 22%, rgba(255, 255, 255, 0.78) 43%, transparent 64%),
-    linear-gradient(145deg, #eef1f7, #f8f9fc 54%, #e8ecf5);
-  background-size: 240% 100%, 100% 100%;
-  animation: auction-media-loading 1.35s ease-in-out infinite;
-}
 
 @keyframes auction-media-loading {
   from { background-position: 140% 0, 0 0; }
   to { background-position: -100% 0, 0 0; }
 }
 
-.auction-card__media[data-empty-media] {
-  aspect-ratio: 16 / 7;
-  background: var(--market-surface-subtle);
-}
 
-.auction-card__media > img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--ease-slow) var(--ease-out), filter var(--ease-slow) var(--ease-out);
-}
 
-.auction-card__image-pending {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  justify-content: center;
-  pointer-events: none;
-}
 
-.auction-result-card__content {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0;
-}
 
-.auction-result-card {
-  display: flex;
-  min-width: 0;
-  width: 100%;
-  height: 100%;
-  flex-direction: column;
-  overflow: hidden;
-  border-color: var(--market-line);
-  background: var(--market-surface);
-  cursor: pointer;
-}
 
-.auction-result-card__summary {
-  margin-top: 3px;
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
 
-.auction-result-card__price-row {
-  display: grid;
-  gap: 2px;
-  /* Высота больше не резервируется под двухстрочную подпись: она сократилась
-     до двух слов, и пустой запас растягивал каждую карточку. */
-  min-height: 0;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid color-mix(in srgb, var(--market-line) 70%, transparent);
-}
 
-/* Цена — главный элемент карточки, и это должно читаться с одного взгляда:
-   прежние 18px спорили по весу с бейджем оценки рядом, и глаз метался между
-   ними, вместо того чтобы сразу считать сумму. */
-.auction-result-card__price {
-  min-width: 0;
-  color: color-mix(in srgb, #ea580c 88%, var(--market-ink));
-  font-size: 22px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: var(--track-title);
-  line-height: 1.05;
-  white-space: nowrap;
-}
 
-/* Подпись отступает на второй план: она поясняет цену, а не соревнуется
-   с ней за внимание. */
-.auction-result-card__price-note {
-  overflow: hidden;
-  color: var(--market-muted);
-  font-size: var(--text-caps);
-  font-weight: 600;
-  letter-spacing: var(--track-caps);
-  line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-.auction-result-card__date {
-  min-width: 0;
-  font-variant-numeric: tabular-nums;
-}
 
 .part-result-card {
   min-width: 0;
@@ -5801,17 +5559,6 @@ select {
    используются каталогом транспорта, запчастей и аукционов. */
 .catalog-filter-panel,
 .parts-filter-panel,
-.auction-filter-panel {
-  /* Панель поиска — ровная поверхность с рамкой, как карточка.
-     Раньше её заливал градиент из трёх точек плюс своя тень: на фоне
-     соседних белых блоков она выглядела чужеродной, а поля ввода внутри
-     теряли контраст с подложкой. */
-  position: relative;
-  overflow: hidden;
-  border-color: var(--market-line);
-  background: var(--market-surface);
-  box-shadow: var(--shadow-sm);
-}
 
 .catalog-filter-panel__intro {
   min-height: 34px;
@@ -5859,42 +5606,17 @@ select {
   line-height: 1.1;
 }
 
-.auction-filter-grid .mantine-InputWrapper-label {
-  margin-bottom: 5px;
-  color: var(--market-label);
-  font-size: var(--text-caps);
-  font-weight: 800;
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-}
 
 .catalog-price-range .mantine-Group-root,
 .parts-price-range .mantine-Group-root,
-.auction-price-range .mantine-Group-root {
-  gap: 0;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--market-field-line) 78%, transparent);
-  border-radius: var(--radius-sm);
-}
 
 .parts-price-range .mantine-TextInput-root,
-.auction-price-range .mantine-TextInput-root {
-  flex: 1;
-  min-width: 0;
-}
 
 .catalog-price-range .mantine-TextInput-root + .mantine-TextInput-root,
 .parts-price-range .mantine-TextInput-root + .mantine-TextInput-root,
-.auction-price-range .mantine-TextInput-root + .mantine-TextInput-root {
-  border-left: 1px solid color-mix(in srgb, var(--market-field-line) 78%, transparent);
-}
 
 .catalog-price-range .mantine-TextInput-input,
 .parts-price-range .mantine-TextInput-input,
-.auction-price-range .mantine-TextInput-input {
-  min-width: 0;
-  padding-inline: 9px;
-}
 
 .catalog-filter-advanced > .mantine-Box-root,
 .catalog-filter-advanced > .mantine-Group-root:not(.catalog-filter-advanced__actions) {
@@ -7083,14 +6805,8 @@ select {
 /* Карточка объявления и лота: изображение слегка приближается, подтверждая,
    что весь блок кликабелен. */
 .listing-card:hover .listing-card__media img,
-.auction-card:hover .auction-card__media img {
-  transform: scale(1.03);
-}
 
 .listing-card__media img,
-.auction-card__media img {
-  transition: transform 420ms var(--market-ease-out);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .mantine-Button-root:hover,
@@ -7540,71 +7256,9 @@ h1[data-lw-hero] {
   margin-bottom: 0;
 }
 
-/* Полоса действия на странице лота — только на телефоне.
 
-   Кнопка «Войти и оставить заявку» лежала на 5227 пикселях при экране
-   844: шесть экранов прокрутки до единственного действия страницы. На
-   десктопе блок заявки прилипает и виден с первого экрана, на телефоне
-   не прилипал вовсе.
 
-   Саму форму прилепить нельзя — она высокая и закроет собой лот. */
-.auction-action-bar {
-  position: fixed;
-  /* Ниже панели навигации (250) — она главнее и всегда сверху. */
-  z-index: 200;
-  right: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  /* Нижняя панель навигации плавает внизу: отступ 12px, внутренние
-     отступы 8×2, пункт 44px — итого 72 пикселя высоты, верхний край на
-     84 от низа. Встаём над ней с зазором в восемь пикселей. Вырез экрана
-     панель учитывает сама, здесь его прибавлять не нужно. */
-  /* У самого низа по умолчанию.
 
-     Здесь стояло 92 пикселя — высота нижнего меню приложения. Но меню
-     показывается только до 640, а сама полоса рисуется до 992: на
-     планшетах и узких ноутбуках она висела над пустотой, а под ней
-     зияла полоса в девяносто два пикселя.
-
-     Смещение над меню перенесено туда, где меню действительно есть. */
-  bottom: 0;
-  padding: 10px 14px;
-  border-top: 1px solid var(--market-line);
-  background: var(--market-surface);
-  box-shadow: 0 -1px 2px rgb(13 27 50 / 6%), 0 -8px 24px -12px rgb(13 27 50 / 18%);
-}
-
-.auction-action-bar__price {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.auction-action-bar__amount {
-  font-family: var(--font-display), sans-serif;
-  font-size: var(--text-lg);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: var(--track-title);
-  color: var(--market-ink);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Природа цены названа прямо здесь и ведёт к расчёту: вверху страницы
-   стоит «2,0 млн», а под ключ выходит около трёх — и эта цифра лежала на
-   5.6 экрана ниже, куда человек не доходил. */
-.auction-action-bar__note {
-  font-size: var(--text-caps);
-  line-height: 1.25;
-  color: var(--market-muted);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--market-muted) 40%, transparent);
-  text-underline-offset: 2px;
-}
 
 /* Появление снизу — прибытие полосы, а не украшение: она возникает один
    раз при загрузке, не по нажатию. */
@@ -8241,111 +7895,20 @@ h1[data-lw-hero] {
 }
 
 
-/* === Форум: таблица разделов ===
-   Плотные строки вместо карточек: сотня разделов карточками занимает
-   пять экранов и не даёт сравнить, где жизнь. Столбцы «Тем/Сообщений» и
-   «Последнее сообщение» — то, ради чего люди открывают список форумов. */
 
-.forum-group {
-  overflow: hidden;
-}
 
-.forum-group__head {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--market-line);
-  background: var(--market-surface-subtle);
-}
 
-.forum-row__stats-head,
-.forum-row__last-head {
-  color: var(--market-muted);
-  font-size: var(--text-caps);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
 
-.forum-row__stats-head { width: 150px; }
-.forum-row__last-head { width: 160px; }
 
-.forum-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  /* Плотнее: при 11 пикселях восемь округов занимали весь экран, и
-     сравнить активность разделов было нельзя без прокрутки. */
-  padding: 8px 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 60%, transparent);
-}
 
-.forum-row:last-child {
-  border-bottom: none;
-}
 
-.forum-row__main {
-  min-width: 0;
-  flex: 1;
-}
 
-.forum-row__title {
-  color: var(--market-primary);
-  font-size: var(--text-md);
-  font-weight: 700;
-  line-height: 1.3;
-  text-decoration: none;
-  /* Область нажатия шире самих букв.
 
-     Замер при окне 390 показал у названия раздела высоту восемнадцать
-     пикселей — ровно строка текста. Сама строка ряда выше: у неё поля
-     по восемь пикселей сверху и снизу, но они принадлежат ряду, а не
-     ссылке, и палец, попавший чуть выше буквы, не попадал никуда.
 
-     Поле ссылки съедено отрицательным полем: расстояния на экране не
-     меняются, меняется только то, что засчитывается за нажатие. */
-  display: inline-block;
-  padding: 7px 0;
-  margin: -7px 0;
-}
 
-.forum-row__title:hover {
-  text-decoration: underline;
-}
 
-.forum-row__description {
-  margin-top: 1px;
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-  line-height: 1.4;
-}
 
-.forum-row__children {
-  margin-top: 3px;
-  font-size: var(--text-xs);
-  line-height: 1.45;
-}
 
-.forum-row__children-label {
-  /* Мелкая подпись, а не второй заголовок: жирным она перебивала
-     название раздела и ряд читался снизу вверх. */
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-  font-weight: 600;
-}
-
-.forum-row__child {
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-  text-decoration: none;
-}
-
-.forum-row__child:hover {
-  color: var(--market-primary);
-  text-decoration: underline;
-}
-
-.forum-row__child-sep {
-  color: var(--market-muted);
-}
 
 /* На телефоне подразделы становятся настоящими целями касания.
 
@@ -8397,38 +7960,12 @@ h1[data-lw-hero] {
   }
 }
 
-.forum-row__stats {
-  width: 150px;
-  flex-shrink: 0;
-}
 
-.forum-row__stat {
-  color: var(--market-ink);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
 
-.forum-row__stat--muted {
-  color: var(--market-muted);
-}
 
-.forum-row__stat-label {
-  color: var(--market-muted);
-}
 
-.forum-row__last {
-  width: 160px;
-  flex-shrink: 0;
-}
 
-.forum-row__last-date {
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-}
 
-.forum-row__last-date--empty {
-  opacity: 0.55;
-}
 
 /* Наведение только там, где есть настоящий курсор: на телефоне касание
    оставляет ложное «наведение» до следующего тапа. */
@@ -8457,13 +7994,6 @@ h1[data-lw-hero] {
   }
 }
 
-.forum-topic-row {
-  color: inherit;
-  text-decoration: none;
-  transition:
-    border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
-    background-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
-}
 
 @media (hover: hover) and (pointer: fine) {
   .forum-topic-row:hover {
@@ -8478,205 +8008,35 @@ h1[data-lw-hero] {
   }
 }
 
-/* === Форум: тело сообщения и панель форматирования ===
-   Теги приходят из своего разбора Markdown, поэтому набор известен
-   заранее — оформляем ровно семь конструкций и ничего сверх. */
 
-.forum-post-body {
-  color: var(--mantine-color-text);
-  font-size: var(--text-sm);
-  line-height: 1.55;
-  word-break: break-word;
-}
 
-.forum-post-body p {
-  margin: 0 0 8px;
-}
 
-.forum-post-body p:last-child {
-  margin-bottom: 0;
-}
 
-.forum-post-body strong {
-  font-weight: 700;
-}
 
-.forum-post-body ul,
-.forum-post-body ol {
-  margin: 0 0 8px;
-  padding-left: 22px;
-}
 
-.forum-post-body li {
-  margin-bottom: 2px;
-}
 
-/* Цитата — вертикальной чертой, а не курсивом: курсивом набирают целые
-   абзацы чужого текста, и читать их тяжело. */
-.forum-post-body blockquote {
-  margin: 0 0 8px;
-  padding: 4px 0 4px 12px;
-  border-left: 3px solid color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
-  color: var(--market-muted);
-}
 
-.forum-post-body code {
-  padding: 1px 5px;
-  border-radius: var(--radius-xs);
-  background: var(--market-surface-subtle);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.83em;
-}
 
-.forum-post-body a {
-  color: var(--market-primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.forum-post-body del {
-  color: var(--market-muted);
-}
 
 /* === Возможности сообщений форума === */
 
-/* Заголовки внутри сообщения мельче заголовка темы: название темы — h1
-   страницы, и разбор поломки не должен спорить с ним по громкости. */
-.forum-post-body h2,
-.forum-post-body h3 {
-  margin: 14px 0 6px;
-  font-weight: 700;
-  line-height: 1.3;
-}
 
-.forum-post-body h2 { font-size: var(--text-md); }
-.forum-post-body h3 { font-size: var(--text-md); }
 
-.forum-post-body h2:first-child,
-.forum-post-body h3:first-child {
-  margin-top: 0;
-}
 
-.forum-post-body hr {
-  margin: 14px 0;
-  border: 0;
-  border-top: 1px solid var(--market-line);
-}
 
-/* Картинка ограничена по высоте: фотография с телефона в полный рост
-   занимает три экрана, и ответов под ней не найти. */
-.forum-post-body .forum-image {
-  display: block;
-  max-width: 100%;
-  max-height: 420px;
-  width: auto;
-  margin: 8px 0;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--market-line);
-  object-fit: contain;
-  background: var(--market-surface-subtle);
-}
 
-/* Соотношение сторон задано заранее: без него страница дёргается, когда
-   рамка проигрывателя догружается и раздвигает текст. */
-.forum-post-body .forum-video {
-  position: relative;
-  margin: 10px 0;
-  aspect-ratio: 16 / 9;
-  max-width: 640px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--market-line);
-  background: #000;
-}
 
-.forum-post-body .forum-video iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
 
-/* Блок кода: моноширинный, с прокруткой вбок. Перенос строк здесь вреден
-   — номер ошибки, разорванный посередине, не найдётся поиском. */
-.forum-post-body .forum-code {
-  margin: 8px 0;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--market-line);
-  background: var(--market-surface-subtle);
-  overflow-x: auto;
-  font-size: var(--text-sm);
-  line-height: 1.5;
-}
 
-.forum-post-body .forum-code code {
-  padding: 0;
-  background: none;
-  font-size: inherit;
-  white-space: pre;
-}
 
-/* Таблица прокручивается внутри своей обёртки: пять столбцов не влезают
-   в экран телефона, а без обёртки вбок листалась бы вся страница. */
-.forum-post-body .forum-table-wrap {
-  margin: 10px 0;
-  overflow-x: auto;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--market-line);
-}
 
-.forum-post-body .forum-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-sm);
-}
 
-.forum-post-body .forum-table th,
-.forum-post-body .forum-table td {
-  padding: 7px 10px;
-  text-align: left;
-  border-bottom: 1px solid var(--market-line);
-  white-space: nowrap;
-}
 
-.forum-post-body .forum-table tr:last-child td {
-  border-bottom: 0;
-}
 
-.forum-post-body .forum-table th {
-  background: var(--market-surface-subtle);
-  font-weight: 600;
-}
 
-/* Спойлер закрашен до нажатия. Цвет текста тот же, что фон: выделить и
-   скопировать содержимое можно, но случайно прочитать — нет. */
-.forum-post-body .forum-spoiler {
-  padding: 1px 5px;
-  border-radius: var(--radius-xs);
-  background: var(--market-control-line, var(--market-line));
-  color: transparent;
-  cursor: pointer;
-  transition: color 120ms var(--ease-out), background 120ms var(--ease-out);
-}
 
-.forum-post-body .forum-spoiler:hover,
-.forum-post-body .forum-spoiler:focus-visible,
-.forum-post-body .forum-spoiler[data-open="true"] {
-  background: var(--market-surface-subtle);
-  color: var(--mantine-color-text);
-}
 
-.forum-post-body .forum-mention {
-  color: var(--market-primary);
-  font-weight: 600;
-  text-decoration: none;
-}
 
-.forum-post-body .forum-mention:hover {
-  text-decoration: underline;
-}
 
 /* Панель: кнопки в одну линию, разделители между смысловыми группами. */
 .markup-toolbar {
@@ -8765,53 +8125,13 @@ h1[data-lw-hero] {
   background: var(--market-field);
 }
 
-/* Подпись автора отделена чертой: она справка о человеке, а не часть
-   разговора, и без черты читается как продолжение его ответа. */
-.forum-signature {
-  padding-top: 5px;
-  border-top: 1px solid var(--market-line);
-}
 
-/* Точка «есть новое» в списке тем.
-
-   Точка, а не слово: она читается краем глаза при беге по списку, а
-   подпись пришлось бы прочитать у каждой из двадцати пяти строк.
-   Без движения — это признак состояния, а не событие. */
-.forum-topic-new {
-  width: 7px;
-  height: 7px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--market-primary);
-}
 
 /* === Реакции и лучший ответ === */
 
-/* Лучший ответ виден до чтения: рамка и подложка слева. Человек,
-   пришедший из поиска с тем же вопросом, должен найти решение, не
-   пролистав сорок сообщений. */
-.forum-post-card--best {
-  border-color: var(--mantine-color-teal-5) !important;
-  box-shadow: inset 3px 0 0 var(--mantine-color-teal-5);
-}
 
-/* Реакцию нажимают часто — движение почти незаметное: только вдавливание
-   под пальцем, без всплытия и подсветки. */
-.forum-reaction {
-  transition: background 120ms var(--ease-out), color 120ms var(--ease-out);
-}
 
-.forum-reaction:active:not(:disabled) {
-  transform: scale(0.96);
-}
 
-/* Отключённая реакция гостю показывается цифрой, а не серым пятном:
-   она сообщает, сколько людей отметило ответ, и это полезно и без
-   возможности нажать. */
-.forum-reaction:disabled {
-  opacity: 0.75;
-  cursor: default;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .forum-reaction {
@@ -8823,51 +8143,15 @@ h1[data-lw-hero] {
   }
 }
 
-/* === Опрос в теме === */
 
-.forum-poll {
-  margin: 10px 0 4px;
-  padding: 12px 14px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface-subtle);
-}
 
-.forum-poll__icon {
-  color: var(--market-primary);
-  flex-shrink: 0;
-}
 
-.forum-poll__track {
-  height: 6px;
-  border-radius: var(--radius-xs);
-  background: var(--market-line);
-  overflow: hidden;
-}
-
-/* Полоса растёт от нуля при первом показе результата: рост показывает,
-   что цифра относится к целому, а не просто нарисована. Дальше она
-   стоит — результат читают часто, и повторять движение при каждом
-   заходе значит мешать. */
-.forum-poll__bar {
-  height: 100%;
-  border-radius: var(--radius-xs);
-  background: var(--market-primary);
-  transform-origin: left;
-  animation: forum-poll-grow 250ms cubic-bezier(0.23, 1, 0.32, 1);
-}
 
 @keyframes forum-poll-grow {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
 
-/* Свой голос выделен рамкой слева: среди пяти полос собственный выбор
-   иначе теряется, а именно его человек ищет глазами первым. */
-.forum-poll__result[data-mine="true"] {
-  padding-left: 8px;
-  border-left: 2px solid var(--market-primary);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .forum-poll__bar {
@@ -9704,7 +8988,6 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 .listing-description p,
 .news-article p,
 .help-article p,
-.forum-post__body p,
 .legal-page p {
   max-width: var(--measure);
   line-height: var(--leading-relaxed);
@@ -9889,21 +9172,6 @@ button:disabled,
   }
 }
 
-/* ============================================================
-   Фильтры аукционов: свёрнуты на телефоне
-
-   Замер 17 сентября 2026: до первого лота на телефоне 2,2 экрана
-   прокрутки против 1,2 на десктопе. Верх страницы занимали заголовок,
-   описание, две плашки и панель из восьми полей — девять тысяч лотов
-   человек просто не видел.
-
-   На широком экране ничего не меняется: там фильтры не заслоняют
-   выдачу, и прятать их незачем.
-   ============================================================ */
-
-.auction-filter-toggle {
-  display: none;
-}
 
 @media (max-width: 48em) {
   .auction-filter-toggle {
@@ -10274,79 +9542,12 @@ h4,
    ошибочно заменил белую. Шапка вернулась к белой из макета, и блок
    стал вредным: белые буквы на белом фоне. */
 
-/* ============================================================
-   Быстрый выбор кузова на аукционах — по макету площадки
 
-   В макете здесь ряд плиток с иконками в кружках. Замер базы показал,
-   что категорий из макета (спецтехника, оборудование, недвижимость) в
-   лотах нет — только типы кузова легковых машин. Ряд построен на том,
-   что есть, и числа под подписями живые.
 
-   Светло-зелёный кружок с зелёной иконкой — тот же мотив, что в ряду
-   действий на главной: один приём на весь сайт читается как система.
-   ============================================================ */
 
-.auction-body-tiles {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
-}
 
-.auction-body-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 8px 11px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  color: var(--market-ink);
-  cursor: pointer;
-  transition:
-    border-color var(--ease-base) var(--ease-out),
-    background-color var(--ease-base) var(--ease-out),
-    transform var(--ease-fast) var(--ease-out);
-}
 
-.auction-body-tile__icon {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: var(--market-accent-soft);
-  color: var(--market-accent-text);
-  transition: background-color var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out);
-}
 
-.auction-body-tile__label {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  line-height: var(--leading-snug);
-  white-space: nowrap;
-}
-
-.auction-body-tile__count {
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Выбранный кузов: зелёная рамка и заливка кружка.
-
-   Отличие держится цветом рамки и кружка, а не заливкой всей плитки:
-   шесть залитых плиток в ряду читались бы как шесть кнопок действия, а
-   это выбор одного из шести. */
-.auction-body-tile[data-active] {
-  border-color: var(--market-accent-text);
-  background: var(--market-accent-soft);
-}
-
-.auction-body-tile[data-active] .auction-body-tile__icon {
-  background: var(--market-accent-text);
-  color: #fff;
-}
 
 @media (hover: hover) and (pointer: fine) {
   .auction-body-tile:hover {
@@ -10357,9 +9558,6 @@ h4,
   }
 }
 
-.auction-body-tile:active {
-  transform: translateY(0) scale(0.985);
-}
 
 @media (max-width: 75em) {
   .auction-body-tiles {
