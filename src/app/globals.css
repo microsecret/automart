@@ -4571,17 +4571,6 @@ select {
 
 
 
-@media (max-width: 62em) {
-  .fuel-map-canvas {
-    /* Список ушёл в нижний лист и больше не занимает поток, поэтому
-       карте достаётся почти весь экран: вычитаем шапку сайта, полосу
-       управления и свёрнутый лист.
-
-       Брейкпоинт тот же, что у листа: разойдись они, на планшете
-       осталась бы карта в треть экрана и список рядом. */
-    min-height: max(320px, calc(100dvh - 158px));
-  }
-}
 
 
 
@@ -4618,12 +4607,6 @@ select {
 
 
 
-@media (hover: hover) and (pointer: fine) {
-  .fuel-map-plate:hover {
-    border-color: #fff;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.5);
-  }
-}
 
 
 
@@ -4684,32 +4667,15 @@ select {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-map-marker[data-selected]::after {
-    animation: none;
-  }
-}
 
 
 
 
 
-@media (hover: hover) and (pointer: fine) {
-  .fuel-map-tile-option:not([data-active]):hover {
-    background: var(--market-surface-subtle);
-  }
-}
 
 
 /* На узком экране подписи источников не помещаются рядом с масштабом:
    переключатель уходит вниз, к подписи карты, где места больше. */
-@media (max-width: 640px) {
-  .fuel-map-canvas__tiles-switch {
-    top: auto;
-    right: 8px;
-    bottom: 44px;
-  }
-}
 
 
 
@@ -4772,20 +4738,6 @@ select {
 
 /* На телефоне карточка становится нижним листом во всю ширину: место
    под большим пальцем, и карта над ней остаётся видимой. */
-@media (max-width: 62em) {
-  .fuel-map-selected {
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: auto;
-    max-height: 80%;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 16px 16px 0 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-}
 
 
 /* ── Карта на весь экран ──────────────────────────────────────────────
@@ -4810,94 +4762,8 @@ select {
 
 /* На телефоне панель переносится в две строки: поля поиска и города
    рядом не помещаются, а сжимать их до нечитаемого нельзя. */
-@media (max-width: 62em) {
-  .fuel-map-shell {
-    /* Ниже — нижнее меню приложения. */
-    height: calc(100dvh - 60px);
-  }
-
-  .fuel-map-topbar {
-    top: 8px;
-    right: 8px;
-    left: 8px;
-    flex-wrap: wrap;
-    padding: 6px;
-    gap: 6px;
-  }
-
-  .fuel-map-topbar__search {
-    flex: 1 1 100%;
-    order: -1;
-  }
-
-  .fuel-map-topbar__city,
-  .fuel-map-topbar__network {
-    width: auto;
-    flex: 1 1 40%;
-  }
-
-  /* Свёрнутая панель — одна строка вместо трёх.
-
-     Развёрнутая занимала около трёхсот точек: на экране в 667 это почти
-     половина, и карту было видно узкой полосой между панелью сверху и
-     карточкой заправки снизу. Ради карты человек и открывает страницу.
-
-     На виду остаётся то, чем пользуются: марки топлива и город. Поиск по
-     адресу и выбор сети нужны меньшинству — они за кнопкой. */
-  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__search,
-  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__network,
-  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__refresh {
-    display: none;
-  }
-
-  .fuel-map-topbar:not([data-open]) {
-    flex-wrap: nowrap;
-  }
-
-  /* Лента марок забирает остаток строки и прокручивается вбок: частые 92,
-     95 и ДТ видны сразу, редкие уезжают за край. */
-  .fuel-map-topbar:not([data-open]) .fuel-map-fuel-chips {
-    flex: 1 1 auto;
-    min-width: 0;
-    /* Затухание у правого края.
-
-       Лента прокручивается вбок, но обрезанная посередине кнопка «98»
-       читается как поломка вёрстки, а не как приглашение прокрутить.
-       Растворение говорит, что там продолжение, — так же ведут себя
-       ленты на карточках маркетплейсов.
-
-       Маска только у правого края: лента всегда начинается с «Все», и
-       слева обрезать нечего. */
-    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
-  }
-
-  /* Город ужимается первым, лента марок — следом.
-
-     Город стоял жёсткой колонкой в 108 точек, и лента дожималась ровно до
-     него: последняя видимая кнопка резалась по границе выбора города, а не
-     растворялась у края. Выглядело поломкой вёрстки.
-
-     Теперь город тоже сжимаемый, но не уже 84 точек — там ещё читается
-     «Москва» со стрелкой. */
-  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__city {
-    flex: 0 1 108px;
-    min-width: 84px;
-    width: auto;
-  }
-
-  .fuel-map-toast {
-    bottom: 72px;
-  }
-}
 
 
-@media (max-width: 62em) {
-  .fuel-map-topbar__toggle {
-    display: inline-flex;
-    flex: 0 0 auto;
-  }
-}
 
 
 
@@ -4914,69 +4780,6 @@ select {
    листом. Свёрнутый показывает ручку и первую строку — этого хватает,
    чтобы понять, что список там есть; развёрнутый занимает три четверти
    экрана, оставляя карту видимой сверху. */
-@media (max-width: 62em) {
-  .fuel-map-layout {
-    position: relative;
-  }
-
-  .fuel-map-list[data-sheet] {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 240;
-    max-height: 62px;
-    padding-top: 0;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -8px 28px rgb(15 23 42 / .18);
-    /* Нижнее меню приложения стоит на 12 пикселях от края и высотой
-       около 58 — лист заканчивается над ним, а не под ним. */
-    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-    transition: max-height var(--ease-slow) var(--ease-out);
-  }
-
-  .fuel-map-list[data-sheet][data-expanded] {
-    max-height: 76dvh;
-    overflow: auto;
-  }
-
-  /* Ручка листа: и подпись, и кнопка. По ней человек читает, что
-     сейчас в списке, и ею же тянет лист. */
-  .fuel-map-sheet__handle {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    display: grid;
-    width: 100%;
-    min-height: 52px;
-    padding: 6px 4px 8px;
-    justify-items: center;
-    gap: 6px;
-    background: var(--market-surface);
-  }
-
-  .fuel-map-sheet__grip {
-    display: block;
-    width: 38px;
-    height: 4px;
-    border-radius: var(--radius-full);
-    background: var(--market-line);
-  }
-
-  .fuel-map-sheet__handle:focus-visible {
-    outline: 3px solid var(--market-focus-ring);
-    outline-offset: -3px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fuel-map-list[data-sheet] {
-    transition: none;
-  }
-}
 
 
 
@@ -4991,18 +4794,6 @@ select {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-card-tab {
-    transition: none;
-  }
-}
-
-
-@media (hover: hover) {
-  .fuel-price-row:hover {
-    border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-line));
-  }
-}
 
 
 
@@ -5012,16 +4803,9 @@ select {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-price-row,
-  .fuel-price-row__meter > span {
-    transition: none;
-  }
 
-  .fuel-price-row:active {
-    transform: none;
-  }
-}
+
+
 
 
 
@@ -5042,11 +4826,6 @@ select {
 /* Кнопка открытия формы: главное действие страницы, поэтому во всю
    ширину и в цвете акцента, а не служебной серой строкой. */
 
-@media (hover: hover) {
-  .fuel-report__open:not([data-loading]):hover {
-    background: #15803d;
-  }
-}
 
 
 
@@ -5061,11 +4840,6 @@ select {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-report__open:active::after {
-    animation: none;
-  }
-}
 
 
 
@@ -5092,13 +4866,6 @@ select {
 /* Развернуть подробности: служебное действие, поэтому текстом, а не
    ещё одной крупной кнопкой рядом с главными. */
 
-@media (hover: hover) {
-  .fuel-report__more:hover,
-  .fuel-report__cancel:hover {
-    border-color: color-mix(in srgb, var(--market-ink) 32%, var(--market-line));
-    background: var(--market-surface-subtle);
-  }
-}
 
 
 
@@ -5109,26 +4876,8 @@ select {
 /* Отправка: последнее действие, поэтому во всю ширину и внизу — под
    большим пальцем. */
 
-@media (hover: hover) {
-  .fuel-report__send:not([data-loading]):not(:disabled):hover {
-    background: #15803d;
-  }
-}
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-report__fuel,
-  .fuel-report__nothing,
-  .fuel-report__queue-option {
-    transition: none;
-  }
-
-  .fuel-report__fuel:active,
-  .fuel-report__nothing:active,
-  .fuel-report__queue-option:active {
-    transform: none;
-  }
-}
 
 
 
@@ -5411,11 +5160,6 @@ select {
 
 
 
-@media (hover: hover) and (pointer: fine) {
-  .vehicle-detail-similar-card:hover .vehicle-detail-similar-card__image {
-    transform: scale(1.025);
-  }
-}
 
 .moderation-listing-row {
   border: 1px solid var(--market-line);
@@ -5878,11 +5622,6 @@ select {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .create-listing__readiness {
-    transition-duration: 0ms;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .admin-source-health__row {
@@ -7505,11 +7244,6 @@ h1[data-lw-hero] {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-status__meter > span {
-    transition: none;
-  }
-}
 
 
 
@@ -7518,15 +7252,6 @@ h1[data-lw-hero] {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-report__closed {
-    transition: none;
-  }
-
-  .fuel-report__closed:active {
-    transform: none;
-  }
-}
 
 /* ── Модальное окно на телефоне ───────────────────────────────────────
 
@@ -7659,46 +7384,11 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 
 
 
-@media (max-width: 640px) {
-  .fuel-gate {
-    padding: 8px;
-  }
-
-  .fuel-gate__card {
-    padding: 14px;
-    /* Не больше половины экрана.
-
-       Было до 78% высоты: вместе с панелью фильтров сверху карта
-       оставалась узкой полосой, а на iPhone SE её не было видно вовсе.
-       Ради карты человек и открывает страницу — приглашение войти не
-       должно её закрывать. */
-    max-height: 52vh;
-  }
-
-  /* Список выгод — только на просторных экранах.
-
-     Три пункта по две строки съедали ту самую половину. Заголовок с
-     числом заправок и кнопка входа говорят достаточно: человек видит,
-     что сервис живой, и как войти. */
-  .fuel-gate__card .fuel-gate__benefits {
-    display: none;
-  }
-}
 
 /* На совсем маленьких экранах карточка ужимается ещё раз.
 
    Триста семьдесят пять точек в ширину и шестьсот шестьдесят семь в
    высоту — iPhone SE, и он до сих пор в ходу. Там дорога каждая строка. */
-@media (max-height: 700px) {
-  .fuel-gate__card {
-    max-height: 46vh;
-    padding: 12px;
-  }
-
-  .fuel-gate__note {
-    display: none;
-  }
-}
 
 
 
@@ -8133,19 +7823,6 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 
    Рядом в этой же форме стоят сетки с одной колонкой на телефоне — они
    ведут себя правильно, и ряды приводятся к тому же виду. */
-@media (max-width: 640px) {
-  .create-listing__section .mantine-Group-root[data-grow] {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .create-listing__section .mantine-Group-root[data-grow] > * {
-    /* Предел в треть ширины снимается вместе со строкой: в столбике полю
-       нужна вся ширина карточки. */
-    max-width: 100%;
-    width: 100%;
-  }
-}
 /* То же самое, пока человек печатает.
 
    На Android клавиатура сжимает окно снизу, и плавающая панель садится
