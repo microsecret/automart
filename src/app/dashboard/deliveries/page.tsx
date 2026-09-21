@@ -360,7 +360,7 @@ function DeliveriesWorkspace() {
                 <Group gap="md" wrap="nowrap" align="flex-start" maw={590}>
                   <ThemeIcon size={52} radius="lg" className="partner-application-hero__icon"><IconBuildingWarehouse size={27} /></ThemeIcon>
                   <Stack gap={6}>
-                    <Title order={2} fz={{ base: 24, sm: 30 }} lh={1.08}>Получайте заявки в своей географии</Title>
+                    <Title order={2} fz={{ base: "22px", sm: "26px" }} lh={1.08}>Получайте заявки в своей географии</Title>
                     <Text size="sm" c="rgba(255,255,255,.76)" lh={1.5}>Выкуп, логистика и таможенное сопровождение — только после проверки компании. Контакты клиента остаются внутри защищённой сделки.</Text>
                   </Stack>
                 </Group>

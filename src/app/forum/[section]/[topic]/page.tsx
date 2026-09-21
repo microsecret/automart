@@ -171,7 +171,7 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
         </Breadcrumbs>
 
         <Box>
-          <Title order={1} fz={{ base: 20, md: 26 }} ff="var(--font-display),sans-serif" c="var(--market-ink)" lh={1.25}>
+          <Title order={1} fz={{ base: "18px", md: "26px" }} ff="var(--font-display),sans-serif" c="var(--market-ink)" lh={1.25}>
             {topic.title}
           </Title>
           <Group gap={6} mt={6}>

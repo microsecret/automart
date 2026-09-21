@@ -59,7 +59,7 @@ export default function PartsShowcase() {
       <Paper radius="lg" p="lg" className="parts-hero" withBorder>
         <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
           <Stack gap={6} style={{ flex: 1, minWidth: 260 }}>
-            <Text component="h2" fz={{ base: 22, sm: 26 }} fw={800} c="var(--market-ink)" ff="var(--font-display),sans-serif" lh={1.15}>
+            <Text component="h2" fz={{ base: "22px", sm: "26px" }} fw={800} c="var(--market-ink)" ff="var(--font-display),sans-serif" lh={1.15}>
               Опишите деталь. Магазины ответят предложениями
             </Text>
             <Text size="sm" c="dimmed" maw={520}>

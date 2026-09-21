@@ -76,7 +76,7 @@ export default async function ForumPage() {
     <Container size="xl" py={{ base: "md", md: "xl" }}>
       <Stack gap="lg">
         <Box>
-          <Title order={1} fz={{ base: 24, md: 32 }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
+          <Title order={1} fz={{ base: "22px", md: "34px" }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
             Форум автолюбителей
           </Title>
           <Text size="sm" c="var(--market-muted)" mt={6} maw={680}>

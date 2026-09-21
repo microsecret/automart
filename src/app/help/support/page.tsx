@@ -20,7 +20,7 @@ export default function HelpSupportPage() {
       <Stack gap="xl">
         <Stack gap="xs" ta="center" align="center">
           <ThemeIcon size={58} radius="xl" variant="gradient" gradient={{ from: "indigo", to: "violet" }}><IconHeadset size={28} /></ThemeIcon>
-          <Title order={1} fz={{ base: 30, sm: 40 }} lh={1.1}>Поддержка LeWheel</Title>
+          <Title order={1} fz={{ base: "26px", sm: "44px" }} lh={1.1}>Поддержка LeWheel</Title>
           <Text c="dimmed" maw={650}>Задайте вопрос без регистрации. Переписка сохранится в этом браузере, а после входа может быть привязана к вашему кабинету.</Text>
           <Button size="md" leftSection={<IconMessageCircle2 size={18} />} onClick={openSupport}>Открыть чат</Button>
         </Stack>

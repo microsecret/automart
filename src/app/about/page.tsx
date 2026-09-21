@@ -24,9 +24,12 @@ export default function AboutPage() {
   return (
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 800, margin: "0 auto" }}>
       <Stack gap="md">
-        <Stack gap="xs" align="center" ta="center" py="md">
+        {/* Отступ снизу задаёт общий gap стека: py="md" добавлял к нему
+            ещё по шестнадцать пикселей, и первый зазор на странице выходил
+            33 вместо 16 — ритм ломался на самом видном месте. */}
+        <Stack gap="xs" align="center" ta="center" pt="md">
           <Badge variant="light" color="indigo" size="md">О проекте</Badge>
-          <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: 26, md: 32 }} c="var(--market-ink)" style={{ letterSpacing: "var(--track-title)" }}>
+          <Title order={1} ff="var(--font-display),sans-serif" fw={800} fz={{ base: "26px", md: "34px" }} c="var(--market-ink)" style={{ letterSpacing: "var(--track-title)" }}>
             LeWheel — маркетплейс транспорта
           </Title>
           <Text size="sm" c="var(--market-muted)" maw={500} lh={1.6}>

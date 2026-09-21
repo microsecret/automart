@@ -65,7 +65,7 @@ export default async function ForumMembersPage({ searchParams }: Props) {
         </Breadcrumbs>
 
         <Box>
-          <Title order={1} fz={{ base: 22, md: 28 }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
+          <Title order={1} fz={{ base: "22px", md: "26px" }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
             Участники форума
           </Title>
           <Text size="sm" c="var(--market-muted)" mt={4}>

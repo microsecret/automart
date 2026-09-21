@@ -16,7 +16,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           <Paper maw={520} w="100%" p={{ base: "xl", sm: 32 }} radius="xl" withBorder shadow="lg" ta="center">
             <Stack gap="sm" align="center">
               <Text size="sm" fw={800} c="indigo" lts={0.8}>АВТОРЫНОК</Text>
-              <Title order={1} fz={{ base: 24, sm: 28 }} lh={1.15}>Временная ошибка приложения</Title>
+              <Title order={1} fz={{ base: "22px", sm: "26px" }} lh={1.15}>Временная ошибка приложения</Title>
               <Text c="dimmed" lh={1.55}>Обновите страницу или вернитесь к каталогу. Мы не показываем технические детали ошибки посетителям.</Text>
               <Box mt="md" style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
                 <Button type="button" onClick={reset} color="indigo">Повторить</Button>

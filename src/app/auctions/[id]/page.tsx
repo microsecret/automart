@@ -599,7 +599,7 @@ function AuctionDetail() {
           <Stack gap="sm" mt="md">
             <Group justify="space-between" align="flex-end" gap="sm">
               <Box>
-                <Text component="h2" fz={{ base: 21, sm: 25 }} fw={800} c="var(--market-ink)">Похожие автомобили</Text>
+                <Text component="h2" fz={{ base: "22px", sm: "26px" }} fw={800} c="var(--market-ink)">Похожие автомобили</Text>
                 <Text size="sm" c="dimmed">Близкие по марке, году и бюджету предложения из той же страны</Text>
               </Box>
               <Button component={Link} href={`/auctions?make=${encodeURIComponent(publicIdentity.make)}&country=${listing.country}`} variant="subtle" color="indigo" radius="xl" rightSection={<IconArrowRight size={16} />}>Смотреть все</Button>

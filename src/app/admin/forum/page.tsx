@@ -103,7 +103,7 @@ export default function AdminForumPage() {
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
           <Box>
-            <Title order={1} fz={{ base: 20, md: 26 }} c="var(--market-ink)">Жалобы на форуме</Title>
+            <Title order={1} fz={{ base: "18px", md: "26px" }} c="var(--market-ink)">Жалобы на форуме</Title>
             <Text size="sm" c="var(--market-muted)" mt={2}>
               Спам и грубость убирают отсюда. Удаление мягкое: на месте сообщения остаётся пометка.
             </Text>

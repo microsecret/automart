@@ -54,7 +54,7 @@ function NewMessageContent() {
             <IconShieldCheck size={29} />
           </ThemeIcon>
           <Stack gap={4}>
-            <Title order={1} fz={{ base: 26, sm: 32 }}>Безопасный диалог начинается с объявления</Title>
+            <Title order={1} fz={{ base: "26px", sm: "34px" }}>Безопасный диалог начинается с объявления</Title>
             <Text c="dimmed" maw={470}>
               Так покупатель сразу видит предмет обсуждения, а продавец получает защищённую переписку по своему объявлению.
             </Text>

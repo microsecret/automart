@@ -210,7 +210,7 @@ export default function AdminAuctionsPage() {
           <Group gap="sm" align="center" wrap="nowrap">
             <ThemeIcon variant="light" color="orange" size={48} radius="lg"><IconGavel size={24} /></ThemeIcon>
             <Stack gap={1}>
-              <Title order={1} fz={{ base: 24, md: 30 }} ff="var(--font-display),sans-serif">Заявки с аукционов</Title>
+              <Title order={1} fz={{ base: "22px", md: "26px" }} ff="var(--font-display),sans-serif">Заявки с аукционов</Title>
               <Text size="sm" c="dimmed">Назначение партнёра, защищённая сделка и контроль оплаты</Text>
             </Stack>
           </Group>

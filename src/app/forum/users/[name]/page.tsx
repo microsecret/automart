@@ -104,7 +104,7 @@ export default async function ForumMemberPage({ params }: Props) {
 
             <Box style={{ minWidth: 0, flex: 1 }}>
               <Group gap={8} wrap="wrap" align="center">
-                <Title order={1} fz={{ base: 18, md: 22 }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
+                <Title order={1} fz={{ base: "18px", md: "22px" }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
                   {member.name || "Участник"}
                 </Title>
                 {rank && <Badge size="sm" variant="light" color="indigo">{rank}</Badge>}

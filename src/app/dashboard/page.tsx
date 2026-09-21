@@ -301,7 +301,7 @@ function DashboardContent() {
               {/* Кегль уменьшен, приветствие в одну строку: прежние 28px в две
                   строки плюс абзац описания занимали треть первого экрана,
                   а карточки со статусами уходили под сгиб. */}
-              <Text fw={800} fz={{ base: 19, md: 22 }} lh={1.15} ff="var(--font-display),sans-serif">
+              <Text fw={800} fz={{ base: "18px", md: "22px" }} lh={1.15} ff="var(--font-display),sans-serif">
                 {hasAttentionItems ? "Есть объявления, которым нужно ваше действие" : `Здравствуйте${greetingName ? `, ${greetingName}` : ""}`}
               </Text>
               <Text size="sm" c="dimmed" maw={520}>
