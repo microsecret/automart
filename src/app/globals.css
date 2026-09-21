@@ -2154,7 +2154,8 @@ select {
    Значки есть не у всех секций намеренно: у транспорта и сервисов они
    различают виды, у запчастей и стран — нет. Место под значок
    резервируется всё равно, и колонка остаётся одним столбцом. */
-.market-side-panel .mantine-NavLink-root.market-side-nav--nested {
+.market-side-panel .mantine-NavLink-root.market-side-nav--nested,
+.market-side-panel .mantine-NavLink-root.market-side-nav--service {
   /* !important здесь не от лени: Mantine задаёт отступ пункта своей
      переменной внутри собственного слоя стилей, и обычное правило до
      него не достаёт — замер живой страницы показывал 10 пикселей при
