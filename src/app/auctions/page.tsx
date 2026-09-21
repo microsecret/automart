@@ -457,7 +457,7 @@ function AuctionsPageContent() {
             </Group>
             <Group gap="xs" align="center" wrap="wrap">
               <Badge color="teal" variant="light">Импорт-фильтр: не старше {importPolicy?.maxAgeYears ?? 5} лет</Badge>
-              <Text size="xs" c="dimmed">Год выпуска сверяется с карточкой; итоговую таможенную категорию подтвердим по документам.</Text>
+              <Text size="xs" c="dimmed" className="auction-import-note">Год выпуска сверяется с карточкой; итоговую таможенную категорию подтвердим по документам.</Text>
             </Group>
             {/* Кнопка только на телефоне: на широком экране фильтры и так
                 открыты, и вторая кнопка там была бы лишней. */}

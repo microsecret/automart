@@ -10679,6 +10679,7 @@ main > * > p:not([class]) {
    Правило стоит в конце файла намеренно — оно должно перебивать
    умолчания Mantine, у которых max-width не задан вовсе. */
 .how-it-works__detail .mantine-Text-root,
-.promo-slot__lead {
+.promo-slot__lede,
+.auction-import-note {
   max-width: var(--measure);
 }
