@@ -21,7 +21,10 @@ export default function HelpPage() {
     <Box p={{ base: "sm", md: "lg" }}>
       <Stack gap="lg" maw={1000} mx="auto">
         <Box>
-          <Text component="h1" ff="var(--font-display),sans-serif" c="var(--market-ink)" mb={4}>Помощь и поддержка</Text>
+          {/* Отступ снизу задаёт общее правило для h1 — восемь пикселей на
+              весь сайт. Ручные mb={4} возвращают разнобой: замер восьми
+              страниц нашёл шесть разных отступов под заголовком. */}
+          <Text component="h1" ff="var(--font-display),sans-serif" c="var(--market-ink)">Помощь и поддержка</Text>
           <Text size="md" c="#64748b">Помощь по объявлениям, безопасности и сделкам на LeWheel</Text>
         </Box>
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">

@@ -1343,6 +1343,25 @@ select {
   width: 100%;
 }
 
+/* Верхний отступ страницы — один на весь сайт.
+
+   Замер восьми разделов: заголовок начинался на 84, 88, 96, 120, 126 и
+   192 пикселях от верха окна. Каждая страница задавала свой отступ в
+   разметке — `py="md"`, `py="xl"`, `py={80}`, `py={48}` — и переход
+   между разделами выглядел как переход на другой сайт: содержимое
+   каждый раз стояло на новой высоте.
+
+   Правило бьёт по прямому контейнеру страницы, а не по каждому вызову
+   в разметке: так оно действует и на страницы, где отступ не задан
+   вовсе. Нижний отступ страницы не трогаем — его задаёт подвал.
+
+   Отступ снимается у главной: там первый экран открывает фотография
+   героя, доходящая до шапки. */
+.app-main-content:not([data-lw-home]) > .mantine-Container-root,
+.app-main-content:not([data-lw-home]) > * > .mantine-Container-root {
+  padding-top: 24px !important;
+}
+
 /* The desktop navigation stays attached to the viewport and scrolls inside
    its own rail. The footer belongs to the content column and must not cover
    the account/navigation rail when the document reaches its end. */
