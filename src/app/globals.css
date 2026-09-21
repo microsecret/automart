@@ -3289,7 +3289,20 @@ select {
   outline-offset: 3px;
 }
 
-.part-result-card:has(a:focus-visible),
+/* Кольцо фокуса у карточки запчасти — такое же, как у объявления.
+
+   Селектор остался без правила при выносе стилей запчастей в отдельный
+   файл: его пара уехала, а он — нет. Запятая без продолжения съедала
+   следующий за ним медиазапрос целиком, и браузер отбрасывал весь блок
+   наведения на карточки.
+
+   Замер это и показал: наведение на карточку объявления не давало
+   никакого отклика — ни подъёма, ни тени, ни смены рамки. Правило
+   существовало в файле, но до браузера не доходило. */
+.part-result-card:has(a:focus-visible) {
+  outline: 3px solid var(--market-focus-ring);
+  outline-offset: 3px;
+}
 
 @media (hover: hover) and (pointer: fine) {
   .listing-card:hover {
@@ -5894,10 +5907,19 @@ select {
 }
 
 /* Карточка объявления и лота: изображение слегка приближается, подтверждая,
-   что весь блок кликабелен. */
-.listing-card:hover .listing-card__media img,
+   что весь блок кликабелен.
 
-.listing-card__media img,
+   Оба селектора остались без правил при выносе стилей аукционов: их пара
+   (.auction-result-card ...) уехала в файл раздела, а эти — нет. Запятая
+   без продолжения съедала следующий медиазапрос целиком, и браузер
+   отбрасывал блок отмены анимации. */
+.listing-card:hover .listing-card__media img {
+  transform: scale(1.04);
+}
+
+.listing-card__media img {
+  transition: transform var(--ease-slow) var(--ease-out);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .mantine-Button-root:hover,
