@@ -1914,18 +1914,63 @@ select {
 /* Подпись группы в меню кабинета. Одиннадцать пунктов подряд читались одним
    полотном, поэтому партнёрские разделы отделены заголовком, а не ещё одной
    линией: линия делит, но не объясняет, что именно ниже. */
+/* Подпись группы в кабинете — с линией, а не строкой в воздухе.
+
+   Замер меню у вошедшего: двенадцать пунктов шли сплошняком, и подпись
+   «Партнёрские разделы» приглушённым серым тонула среди них — она
+   называла границу, но сама границей не выглядела.
+
+   Линия снизу делает подпись видимой границей, а не просто текстом.
+   Тот же приём, что у заголовков секций ниже по колонке: одна колонка —
+   один способ отделять части. */
 .market-side-account__group {
-  margin: 10px 0 2px;
-  padding-inline: 10px;
-  color: var(--market-muted);
+  margin: 12px 0 4px;
+  padding: 0 10px 5px;
+  border-bottom: 1px solid color-mix(in srgb, var(--market-primary) 14%, transparent);
+  color: var(--market-label);
   font-size: var(--text-caps);
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 
+/* Первая подпись идёт сразу под сводкой — ей верхний отступ не нужен. */
+.market-side-account__group:first-of-type {
+  margin-top: 6px;
+}
+
 .market-side-account__link:hover {
   background: color-mix(in srgb, var(--market-primary-soft) 82%, transparent);
+}
+
+/* Текущий раздел кабинета — заливкой и меткой слева.
+
+   Отдельного правила не было вовсе: активный пункт отличался от соседей
+   только тем, что Mantine подмешивала ему свой вариант "light". На фоне
+   бледно-синей панели разница почти не читалась, и человек не понимал,
+   где находится, — приходилось искать взглядом по заголовку страницы.
+
+   Метка слева повторяет приём пункта «Профиль» ниже: один способ
+   показывать «вы здесь» на всю колонку. */
+.market-side-account__link[data-active] {
+  position: relative;
+  background: color-mix(in srgb, var(--market-primary) 12%, transparent);
+  color: var(--market-accent-text);
+}
+
+.market-side-account__link[data-active]::before {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--market-primary);
+  content: "";
+}
+
+.market-side-account__link[data-active] .mantine-NavLink-label {
+  font-weight: 700;
 }
 
 /* Профиль и настройки — вход в собственный аккаунт, а не ещё один раздел

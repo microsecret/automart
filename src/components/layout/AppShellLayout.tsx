@@ -785,7 +785,17 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         </Group>
       </Paper>
 
+      {/* Пункты кабинета разбиты на три группы с подписями.
+
+          Замер живого меню у вошедшего пользователя: двенадцать пунктов
+          шли сплошным списком без единой границы — личные разделы,
+          партнёрские и системные вперемешку. Глазу не за что зацепиться,
+          и «Уведомления» приходилось искать перебором сверху вниз.
+
+          Подписи те же, что у секций ниже по колонке («Транспорт»,
+          «Запчасти»): один приём на всю колонку вместо двух разных. */}
       <Stack gap={1} mt="xs">
+        <Text className="market-side-account__group" component="p">Мой кабинет</Text>
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.listings.href} label={ACCOUNT_NAVIGATION.listings.label} leftSection={<IconLayoutDashboard size={16} />} rightSection={<AccountCounter value={summary?.totalListings || 0} />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="light" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.favorites.href} label={ACCOUNT_NAVIGATION.favorites.label} leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} />} active={pathname.startsWith("/favorites")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.garage.href} label={ACCOUNT_NAVIGATION.garage.label} leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
@@ -807,16 +817,23 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         {/* Приглашать друзей может любой пользователь — это не партнёрский
             раздел для проверенных компаний, поэтому и название другое. */}
         <NavLink component={Link} href="/dashboard/referral" prefetch={false} label="Пригласить друзей" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <Divider my={2} />
+        {/* Связь и настройки — своя группа: сообщения и уведомления
+            смотрят по нескольку раз в день, а профиль и админка — раз в
+            месяц. Голая линия между ними ничего не называла. */}
+        <Text className="market-side-account__group" component="p">Связь и настройки</Text>
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.messages.href} label={ACCOUNT_NAVIGATION.messages.label} leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} urgent />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/notifications" prefetch={false} label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} urgent />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.profile.href} label={ACCOUNT_NAVIGATION.profile.label} leftSection={<IconSettings size={16} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
         {isAdmin && <NavLink component={Link} href="/admin" prefetch={false} label="Админ-панель" leftSection={<IconSettings size={16} />} active={pathname.startsWith("/admin")} color="grape" variant="light" className="market-side-account__link" />}
         {isModerator && <NavLink component={Link} href="/moderation" prefetch={false} label="Модерация" leftSection={<IconGavel size={16} />} active={pathname.startsWith("/moderation")} color="orange" variant="light" className="market-side-account__link" />}
       </Stack>
-      {/* Главное действие продавца выделено акцентом: среди индиговых пунктов
-          меню одноцветная кнопка терялась. */}
-      <Button component={Link} href="/listings/create/vehicle" size="sm" fullWidth mt="sm" className="market-side-account__cta" leftSection={<IconPlus size={15} />}>Подать объявление</Button>
+      {/* Кнопки «Подать объявление» здесь больше нет.
+
+          Замер колонки у вошедшего: две кнопки одного действия в одном
+          столбце — «Подать за 2 клика» вверху и «Подать объявление»
+          внизу кабинета, обе на /listings/create/vehicle. Верхняя видна
+          сразу, нижняя — после двенадцати пунктов меню, и человек
+          дважды встречает одно и то же предложение. */}
     </Paper>
   )
 }
