@@ -235,7 +235,10 @@
 .priceSignal {
   flex: none;
   padding-inline: 7px;
-  font-size: 9.5px;
+  /* Ступень шкалы: 9.5 — единственный дробный кегль, оставшийся во всех
+     стилях проекта. Половина пикселя ставит край буквы между точками
+     экрана, и подпись выходит мягче соседних. */
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;

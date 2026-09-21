@@ -327,7 +327,11 @@ body:has(.tg-shell[data-main-button="hidden"]) {
 }
 
 .tg-nav__label {
-  font-size: 0.62rem;
+  /* Ступень шкалы вместо дробного rem: 0.62rem при базе страницы 15
+     пикселей даёт 9.3 — край буквы попадает между пикселями экрана, и
+     подпись отрисовывается мягче, чем должна. Мини-приложение читают с
+     телефона, где это заметнее всего. */
+  font-size: var(--text-2xs);
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.01em;
@@ -398,7 +402,7 @@ body:has(.tg-shell[data-main-button="hidden"]) {
    доставки. Без подписи человек сравнивал бы несравнимое. */
 .tg-card__note {
   margin-top: -1px;
-  font-size: 0.66rem;
+  font-size: var(--text-caps);
   line-height: 1.2;
   color: var(--tg-hint);
 }
@@ -826,7 +830,7 @@ body:has(.tg-shell[data-main-button="hidden"]) {
 }
 
 .tg-chat__preview {
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   color: var(--tg-hint);
 }
 
