@@ -2997,7 +2997,21 @@ select {
 .parts-price-range,
 .auction-price-range {
   display: grid;
-  gap: 4px;
+  /* Тот же отступ под подписью, что у соседних полей: у них его задаёт
+     правило для .mantine-InputWrapper-label, а это поле собрано из Box
+     и Text — Mantine его не оформляет. Было 4 против 5, и подпись
+     «Ориентир цены лота» стояла на пиксель выше остальных. */
+  gap: 5px;
+}
+
+/* Подпись поля цены — как у соседей по ряду.
+
+   Остальные поля фильтра получают оформление подписи от Mantine, а это
+   собрано вручную: цвет был dimmed вместо --market-label, трекинга не
+   было вовсе. В ряду из шести полей одна подпись выглядела чужой. */
+.auction-price-range > .mantine-Text-root:first-child {
+  color: var(--market-label);
+  letter-spacing: var(--track-caps);
 }
 
 .catalog-price-range .mantine-TextInput-root,
@@ -3859,8 +3873,26 @@ select {
   gap: 10px;
   overflow: hidden;
   color: #dbe4f7;
-  background: linear-gradient(135deg, #182153 0%, #102a59 51%, #0e7490 100%);
+  background: linear-gradient(135deg, var(--cover-from, #182153) 0%, var(--cover-mid, #102a59) 51%, var(--cover-to, #0e7490) 100%);
 }
+
+/* Шесть тонов обложки-заглушки.
+
+   Тридцать процентов новостей приходят без фото — замер базы, — и в
+   свежей дюжине таких половина. Одна заливка на всех превращала ленту в
+   ряд повторяющихся пятен: глаз читает повтор как сбой загрузки, а не
+   как оформление.
+
+   Тон выбирается по заголовку (см. coverTone в NewsListClient.tsx), так
+   что у новости он постоянный, а у соседей в ленте почти всегда разный.
+   Все шесть держат один уровень светлоты: ряд остаётся спокойным, но
+   перестаёт выглядеть сломанным. */
+.news-list-card__cover[data-tone="0"] { --cover-from: #182153; --cover-mid: #102a59; --cover-to: #0e7490; }
+.news-list-card__cover[data-tone="1"] { --cover-from: #14322e; --cover-mid: #0f3f37; --cover-to: #0f766e; }
+.news-list-card__cover[data-tone="2"] { --cover-from: #2a1740; --cover-mid: #3b1d5c; --cover-to: #6d28d9; }
+.news-list-card__cover[data-tone="3"] { --cover-from: #2d1a14; --cover-mid: #46220f; --cover-to: #b45309; }
+.news-list-card__cover[data-tone="4"] { --cover-from: #101c30; --cover-mid: #16304f; --cover-to: #1d4ed8; }
+.news-list-card__cover[data-tone="5"] { --cover-from: #2b1220; --cover-mid: #4a1533; --cover-to: #9d174d; }
 
 .news-list-card__cover::after {
   position: absolute;

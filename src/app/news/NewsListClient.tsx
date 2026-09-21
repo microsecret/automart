@@ -29,6 +29,24 @@ type NewsResponse = {
   pagination: { page: number; limit: number; total: number; pages: number }
 }
 
+/**
+ * Номер тона обложки-заглушки по заголовку новости.
+ *
+ * Сумма кодов символов по модулю шести: у одной и той же новости номер
+ * всегда один и тот же — при перезагрузке страницы обложка не меняется,
+ * — а у соседних заголовков почти всегда разный, потому что достаточно
+ * одной непохожей буквы.
+ *
+ * Шесть тонов, а не больше: в кадр помещается три-четыре карточки, и
+ * шести хватает, чтобы соседние не совпали. Больше оттенков превратили
+ * бы ленту в пёструю мозаику.
+ */
+function coverTone(title: string): number {
+  let sum = 0
+  for (let i = 0; i < title.length; i += 1) sum += title.charCodeAt(i)
+  return sum % 6
+}
+
 function NewsCard({ article, featured }: { article: NewsArticle; featured: boolean }) {
   const source = article.sourceChannel ? `@${article.sourceChannel}` : "Новости рынка"
   // Картинки ведут на сайты источников, и часть из них закрыта от чужих
@@ -68,7 +86,17 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
             />
           </Box>
         ) : (
-          <Box className="news-list-card__cover" data-featured={featured || undefined} aria-hidden="true">
+          {/* Тон заглушки выводится из заголовка, а не одинаков у всех.
+
+              Замер базы: тридцать процентов новостей приходят без фото, и
+              в свежей дюжине таких половина. Одинаковый синий градиент
+              превращал ленту в ряд повторяющихся пятен — хуже, чем
+              отсутствие картинки: глаз читает повтор как сбой загрузки.
+
+              Номер тона считается по сумме кодов букв заголовка: у одной
+              и той же новости он всегда один и тот же, а соседние в ленте
+              почти всегда разные. */}
+          <Box className="news-list-card__cover" data-featured={featured || undefined} data-tone={String(coverTone(article.title))} aria-hidden="true">
             <ThemeIcon className="news-list-card__cover-icon" color="indigo" variant="white" radius="xl" size={featured ? 54 : 42}>
               {featured ? <IconSparkles size={featured ? 27 : 21} /> : <IconNews size={21} />}
             </ThemeIcon>
