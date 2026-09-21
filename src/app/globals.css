@@ -1889,7 +1889,7 @@ select {
 
 .market-side-account__link {
   /* Та же высота, что у пунктов меню ниже: одна колонка — один ритм. */
-  min-height: 26px;
+  min-height: 24px;
   margin-inline: 1px;
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
@@ -2044,7 +2044,7 @@ select {
      Двадцать шесть — высота, при которой строка остаётся целью для
      пальца на десктопе (курсор точный) и держит ритм таблицы. Пункты
      кабинета ужаты тем же значением ниже. */
-  min-height: 26px;
+  min-height: 24px;
   margin-inline: 1px;
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
@@ -2094,7 +2094,7 @@ select {
      вложенность читается отступом и весом, а разница в высоте добавляет
      к ней ритм. Ужато вместе со всей колонкой — на строку уходило
      лишних шесть пикселей. */
-  min-height: 22px;
+  min-height: 20px;
   padding-left: 19px;
   font-size: var(--text-sm);
   font-weight: 500;
@@ -2145,7 +2145,7 @@ select {
    строки около 26 — в колонку помещаются все двадцать шесть пунктов
    без прокрутки. */
 .market-side-panel .mantine-NavLink-root {
-  padding: 3px 9px;
+  padding: 2px 9px;
 }
 
 /* Пункт без значка слева получает отступ под него.
@@ -10770,5 +10770,29 @@ main > * > p:not([class]) {
   .lot-row.lot-row:active,
   .market-linked-card.market-linked-card:active {
     transform: none;
+  }
+}
+
+/* На телефоне пункты меню возвращаются к высоте под палец.
+
+   Колонка ужата до двадцати четырёх пикселей ради плотности: на
+   десктопе курсор точный, и строка в двадцать четыре — привычный ритм
+   таблицы. На телефоне меню открывается ящиком, и тем же пальцем по
+   нему выбирают раздел: двадцать четыре пикселя дают промах через раз.
+
+   Сорок — то же значение, что у ссылок подвала, где правило под палец
+   стоит давно. */
+@media (hover: none) and (pointer: coarse) {
+  .market-side-nav,
+  .market-side-account__link {
+    min-height: 40px;
+  }
+
+  .market-side-nav--nested {
+    min-height: 36px;
+  }
+
+  .market-side-panel .mantine-NavLink-root {
+    padding: 6px 9px;
   }
 }
