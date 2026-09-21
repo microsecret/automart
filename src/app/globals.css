@@ -1358,7 +1358,11 @@ select {
    Отступ снимается у главной: там первый экран открывает фотография
    героя, доходящая до шапки. */
 .app-main-content:not([data-lw-home]) > .mantine-Container-root,
-.app-main-content:not([data-lw-home]) > * > .mantine-Container-root {
+.app-main-content:not([data-lw-home]) > * > .mantine-Container-root,
+/* Часть страниц обходится без Container и ставит отступ своим классом:
+   замер нашёл 16 у списка новостей, 20 у шапки аукционов. Правило бьёт
+   и по ним — по первому уровню внутри колонки контента. */
+.app-main-content:not([data-lw-home]) > *:first-child {
   padding-top: 24px !important;
 }
 
@@ -8728,6 +8732,18 @@ h1,
 h1:not(:last-child),
 .mantine-Title-root[data-order="1"]:not(:last-child) {
   margin-bottom: 8px;
+}
+
+/* Когда заголовок лежит во flex-стеке, расстояние под ним задаёт gap
+   стека, а не margin: замер восьми разделов нашёл 9, 10 и 14 пикселей
+   вместо общих восьми. Обнуляем margin и задаём отступ самому стеку —
+   так значение одно независимо от того, как собрана страница. */
+:is(.mantine-Stack-root, .mantine-Group-root) > :is(h1, .mantine-Title-root[data-order="1"]) {
+  margin-bottom: 0;
+}
+
+:is(.mantine-Stack-root, .mantine-Group-root):has(> :is(h1, .mantine-Title-root[data-order="1"])) {
+  row-gap: 8px;
 }
 
 /* Заголовок первого экрана главной — единственное исключение из шкалы.
