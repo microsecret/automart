@@ -96,7 +96,11 @@ export default function BrandIcon({ brand, size = 36, variant = "rounded" }: Bra
       <Text
         fw={800}
         fz={fontSize}
-        c={markColor}
+        /* Цвет марки, подмешанный к чёрному: сам по себе он часто
+           слишком светлый для подложки. Замер: красный «Москвич»
+           #e63946 на светлой плашке давал 3.62 при норме 4.5.
+           Подмешивание сохраняет оттенок, но поднимает контраст. */
+        c={`color-mix(in srgb, ${markColor} 82%, #000000)`}
         lh={1}
         style={{
           fontFamily: "var(--font-display), sans-serif",
