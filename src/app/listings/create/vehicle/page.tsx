@@ -1,3 +1,4 @@
+import "../create-listing.css"
 "use client"
 export const dynamic = "force-dynamic"
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"

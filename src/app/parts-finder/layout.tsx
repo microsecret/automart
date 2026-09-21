@@ -1,3 +1,4 @@
+import "./parts-page.css"
 import { buildSeoMetadata } from "@/lib/seo-metadata"
 
 export const metadata = buildSeoMetadata({

@@ -1,0 +1,126 @@
+/* Стили формы подачи объявления, вынесенные из globals.css.
+
+   Замер покрытия главной: из общего файла применялось двадцать
+   процентов — стили отдельных разделов грузились каждому посетителю,
+   хотя нужны на своих страницах.
+
+   Правила, делящие селектор с другими разделами, остались в общем
+   файле: вынести их значило бы разорвать селектор пополам — на этом
+   однажды упала сборка. */
+
+/* Listing workflow and administration workspace */
+.create-listing-page {
+  max-width: 860px;
+}
+.create-listing__readiness {
+  border-color: var(--market-warning-line);
+  background: color-mix(in srgb, var(--market-warning-surface) 76%, var(--market-surface));
+  transition:
+    border-color var(--ease-base) var(--ease-out),
+    background-color var(--ease-base) var(--ease-out),
+    box-shadow var(--ease-base) var(--ease-out);
+}
+.create-listing__readiness[data-ready] {
+  border-color: var(--market-success-line);
+  background: color-mix(in srgb, var(--market-success-surface) 76%, var(--market-surface));
+  box-shadow: var(--shadow-md);
+}
+.create-listing__journey {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--market-primary) 20%, var(--market-line));
+  background: var(--market-surface);
+}
+.create-listing__journey-step {
+  min-width: 0;
+  min-height: 52px;
+  padding: 4px 14px;
+  position: relative;
+  border-radius: var(--radius-md);
+  transition: background-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
+}
+.create-listing__journey-step + .create-listing__journey-step::before {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 1px;
+  background: var(--market-line);
+  content: "";
+}
+.create-listing__journey-number {
+  color: var(--market-muted);
+  font-size: var(--text-caps);
+  font-weight: 800;
+  letter-spacing: var(--track-caps);
+}
+.create-listing__journey-step[data-current] .create-listing__journey-number {
+  color: var(--mantine-color-indigo-6);
+}
+.create-listing__journey-step[data-current] {
+  background: color-mix(in srgb, var(--market-surface) 90%, transparent);
+  box-shadow: var(--shadow-md);
+}
+.create-listing__journey-step[data-complete] {
+  background: color-mix(in srgb, #dcfce7 42%, var(--market-surface));
+}
+.create-listing__journey-step[data-complete] .create-listing__journey-number {
+  color: var(--mantine-color-teal-6);
+}
+.create-listing__section,
+.create-listing__submit {
+  border-color: var(--market-line);
+  box-shadow: var(--shadow-md);
+}
+/* Keep fields distinct from a white card without relying on hover. */
+.create-listing__section .mantine-Input-input,
+.create-listing__section .mantine-Select-input,
+.create-listing__section .mantine-NumberInput-input,
+.create-listing__section .mantine-Textarea-input {
+  border-color: var(--market-field-line);
+  background: color-mix(in srgb, var(--market-surface) 94%, #f8faff);
+  color: var(--market-control-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+.create-listing__section .mantine-Input-input::placeholder,
+.create-listing__section .mantine-Select-input::placeholder,
+.create-listing__section .mantine-NumberInput-input::placeholder,
+.create-listing__section .mantine-Textarea-input::placeholder {
+  color: var(--market-placeholder);
+  opacity: 1;
+}
+.create-listing__section .mantine-Autocomplete-dropdown,
+.create-listing__section .mantine-Combobox-dropdown {
+  border-color: var(--market-field-line);
+  box-shadow: var(--shadow-lg);
+}
+/* A selected catalog value must be reversible without relying on a hover-only icon. */
+.create-listing__catalog-autocomplete .mantine-Input-section[data-position="right"] {
+  pointer-events: auto;
+}
+.create-listing__catalog-autocomplete .mantine-Input-clearButton {
+  width: 22px;
+  height: 22px;
+  border: 1px solid color-mix(in srgb, var(--market-primary) 26%, var(--market-field-line));
+  border-radius: var(--radius-xs);
+  color: var(--market-muted);
+  background: var(--market-primary-soft);
+  opacity: 1;
+}
+.create-listing__catalog-autocomplete .mantine-Input-clearButton:hover {
+  /* --market-primary-strong не определён: цвет при наведении не
+     применялся вовсе. */
+  color: var(--market-primary);
+  border-color: color-mix(in srgb, var(--market-primary) 52%, var(--market-field-line));
+  background: color-mix(in srgb, var(--market-primary-soft) 72%, var(--market-surface));
+}
+.create-listing__section[data-accent="indigo"] {
+  border-color: color-mix(in srgb, var(--market-primary) 26%, var(--market-line));
+  background: linear-gradient(110deg, var(--market-surface), color-mix(in srgb, var(--market-primary-soft) 52%, var(--market-surface)));
+}
+.create-listing__section .mantine-Input-input:focus,
+.create-listing__section .mantine-Select-input:focus,
+.create-listing__section .mantine-NumberInput-input:focus,
+.create-listing__section .mantine-Textarea-input:focus {
+  border-color: var(--mantine-color-indigo-5);
+  box-shadow: 0 0 0 3px rgba(28, 66, 145, 0.11);
+}

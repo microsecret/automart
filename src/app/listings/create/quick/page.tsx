@@ -1,3 +1,4 @@
+import "../create-listing.css"
 import { redirect } from "next/navigation"
 
 /**
