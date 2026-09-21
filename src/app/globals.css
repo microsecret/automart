@@ -11747,3 +11747,16 @@ main > * > p:not([class]) {
 .fuel-showcase__stations {
   letter-spacing: var(--track-caption);
 }
+
+/* Мера строки в текстах форума и правовых страниц.
+
+   Блок делит селектор между двумя разделами, поэтому остаётся в общем
+   файле: вынести его в стили форума значило бы разорвать правило
+   пополам. */
+.forum-post__body p,
+.legal-page p {
+  max-width: var(--measure);
+  line-height: var(--leading-relaxed);
+  /* Переносы без висячих предлогов и коротких хвостов в последней строке. */
+  text-wrap: pretty;
+}
