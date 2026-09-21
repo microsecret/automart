@@ -14314,3 +14314,82 @@ main > * > p:not([class]) {
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 }
+
+/* ============================================================
+   Печать
+
+   Объявление о машине печатают: чтобы показать родным, взять с собой на
+   осмотр, приложить к договору. До сих пор правил печати не было вовсе —
+   на бумагу уходили меню в 244 пикселя, правая колонка виджетов, шапка с
+   поиском и подвал на четыре колонки ссылок. Полезного на листе
+   оставалось меньше половины.
+
+   Здесь не «красивая печать», а честная: убрать то, что на бумаге не
+   работает (нажимать нечего), и оставить то, ради чего печатают.
+   ============================================================ */
+@media print {
+  /* Служебные части интерфейса: на бумаге они не нажимаются и только
+     занимают место. */
+  .market-app-navbar,
+  .mantine-AppShell-aside,
+  .mantine-AppShell-header,
+  .app-footer-bleed,
+  .mobile-bottom-nav,
+  .market-header-search,
+  .skip-to-content,
+  .support-chat-launcher,
+  .promo-slot,
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Колонка контента занимает лист целиком: отступы под боковые панели
+     на бумаге не нужны. */
+  .mantine-AppShell-main,
+  .app-main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Чёрным по белому: цветные подложки съедают краску, а на монохромном
+     принтере превращаются в серые пятна поверх текста. */
+  body,
+  .mantine-AppShell-root {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Карточки остаются рамкой, но без тени и заливки — тень на бумаге
+     печатается грязью. */
+  .listing-card,
+  .mantine-Card-root,
+  .mantine-Paper-root {
+    box-shadow: none !important;
+    background: #ffffff !important;
+    border: 1px solid #cccccc !important;
+    break-inside: avoid;
+  }
+
+  /* Ссылка на бумаге бесполезна как ссылка, но её адрес может
+     пригодиться: печатаем его после текста мелким шрифтом. Только для
+     внешних и на самой карточке — иначе лист зарастёт адресами. */
+  .vehicle-detail-layout a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 10px;
+    color: #555555;
+  }
+
+  /* Разрывы страниц: заголовок не должен оставаться внизу листа один. */
+  h1, h2, h3 {
+    break-after: avoid;
+  }
+
+  /* Фотографии не растягиваются на весь лист: половина высоты хватает,
+     чтобы машину было видно, а описание влезло на ту же страницу. */
+  img {
+    max-height: 9cm;
+    object-fit: contain;
+  }
+}
