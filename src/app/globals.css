@@ -10697,21 +10697,26 @@ main > * > p:not([class]) {
 
    Отменяется вместе с прочей анимацией, когда человек просил её
    убрать. */
-.listing-card:active,
-.auction-result-card:active,
-.news-list-card-link:active,
-.lot-row:active,
-.market-linked-card:active {
+/* Селектор удвоен намеренно: правило :hover выше по файлу даёт подъём
+   карточки, и при нажатии курсор остаётся на ней — оба состояния
+   активны разом. При равной специфичности выигрывает то, что ниже, но
+   :hover лежит внутри медиазапроса и идёт последним. Удвоение класса
+   поднимает вес правила нажатия, не прибегая к !important. */
+.listing-card.listing-card:active,
+.auction-result-card.auction-result-card:active,
+.news-list-card-link.news-list-card-link:active,
+.lot-row.lot-row:active,
+.market-linked-card.market-linked-card:active {
   transform: translateY(0) scale(0.995);
   transition-duration: 60ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .listing-card:active,
-  .auction-result-card:active,
-  .news-list-card-link:active,
-  .lot-row:active,
-  .market-linked-card:active {
+  .listing-card.listing-card:active,
+  .auction-result-card.auction-result-card:active,
+  .news-list-card-link.news-list-card-link:active,
+  .lot-row.lot-row:active,
+  .market-linked-card.market-linked-card:active {
     transform: none;
   }
 }
