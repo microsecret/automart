@@ -73,7 +73,8 @@ export default function ValuationPage() {
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconCalculator size={22} /></ThemeIcon>
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Предварительная оценка</Text>
-            <Text size="xs" c="var(--market-muted)">Прозрачный ориентир по данным вашего объявления — без ложных обещаний рыночной экспертизы</Text>
+            {/* Мера строки: замер дал 99 знаков при норме чтения 60–75. */}
+            <Text size="xs" c="var(--market-muted)" maw="var(--measure)">Прозрачный ориентир по данным вашего объявления — без ложных обещаний рыночной экспертизы</Text>
           </Stack>
         </Group>
 
