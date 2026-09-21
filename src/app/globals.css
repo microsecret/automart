@@ -2157,7 +2157,7 @@ select {
    Селектор смотрит на первого ребёнка, а не на наличие секции вообще:
    у пунктов со счётчиком («Япония 3 523») секция есть, но справа — и
    правило по `:has(.section)` их пропускало. */
-.market-side-nav:not(:has(> .mantine-NavLink-section:first-child)) {
+.market-side-panel .market-side-nav:not(:has(> .mantine-NavLink-section:first-child)) {
   padding-left: 33px;
 }
 
