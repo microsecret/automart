@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Box, Text, Paper, Group, Stack, ThemeIcon, SimpleGrid, Anchor } from "@mantine/core"
-import { IconShieldCheck, IconHelpCircle, IconScale, IconMessage2, IconCar, IconLock, IconSearch } from "@tabler/icons-react"
+import { IconShieldCheck, IconScale, IconMessage2, IconCar, IconLock, IconSearch } from "@tabler/icons-react"
 
 const SECTIONS = [
   { icon: IconCar, title: "Как продать авто", desc: "Пошаговое руководство для продавцов", href: "/help/sell", color: "#1c4291" },
@@ -12,8 +12,11 @@ const SECTIONS = [
      нет ни в одном каталоге, и человек уходит, не зная, что её можно
      заказать через заявку. */
   { icon: IconSearch, title: "Не нашли запчасть", desc: "Оставьте заявку — магазины ответят ценой и сроком", href: "/parts-finder", color: "#1d4ed8" },
-  { icon: IconMessage2, title: "Поддержка", desc: "Связаться с командой поддержки", href: "/help/support", color: "#ea580c" },
-  { icon: IconHelpCircle, title: "Частые вопросы", desc: "Ответы на популярные вопросы", href: "/help/support", color: "#0891b2" },
+  /* Одна карточка вместо двух: «Поддержка» и «Частые вопросы» вели на
+     один и тот же адрес /help/support — человек нажимал разное, а
+     попадал в одно место. Семь карточек при трёх колонках давали ряд
+     3+3+1 с сиротой внизу; шесть встают ровно. */
+  { icon: IconMessage2, title: "Поддержка и вопросы", desc: "Ответы на частые вопросы и связь с командой", href: "/help/support", color: "#ea580c" },
 ]
 
 export default function HelpPage() {
