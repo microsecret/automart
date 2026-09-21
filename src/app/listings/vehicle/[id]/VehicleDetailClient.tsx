@@ -739,7 +739,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
             {data.description && (
               <Card withBorder radius="md" p="lg">
                 <Title order={3} size="h4" mb="sm">Описание</Title>
-                <Text size="sm" c="var(--market-muted)" lh={1.6} style={{ whiteSpace: "pre-wrap" }}>
+                {/* Мера строки: описание пишет продавец, и замер при окне 1920
+                    дал 120 знаков в строке при норме чтения 60–75. Это
+                    самый длинный текст на странице — его читают целиком,
+                    решая, звонить или нет. */}
+                <Text size="sm" c="var(--market-muted)" lh={1.6} maw="var(--measure)" style={{ whiteSpace: "pre-wrap" }}>
                   {data.description}
                 </Text>
               </Card>

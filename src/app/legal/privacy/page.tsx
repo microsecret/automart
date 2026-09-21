@@ -16,7 +16,10 @@ const SECTIONS = [
 export default function PrivacyPage() {
   return (
     <Box p={{ base: "sm", md: "md" }}>
-      <Stack gap="md" maw={800} mx="auto">
+      {/* Мера строки вместо жёстких 800 пикселей: при кегле 15 они дают
+          118 знаков в строке при норме чтения 60–75. Правовые страницы
+          читают внимательно, и длинная строка здесь дороже всего. */}
+      <Stack gap="md" maw="var(--measure)" mx="auto">
         <Group gap="sm" align="center">
           <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconShieldLock size={22} /></ThemeIcon>
           <Stack gap={0}>
