@@ -334,7 +334,16 @@ function AuctionDetail() {
 
   if (isLoading) return <Container py={80}><Center><Loader size="sm" /></Center></Container>
   if (error) return <Container py={80}><AsyncErrorState title="Лот недоступен" description="Возможно, он уже завершён или снят с публикации." onRetry={() => void mutate()} /></Container>
-  if (!listing) return <Container py={80}><Center><Text c="var(--market-muted)">Лот не найден</Text></Center></Container>
+  /* Лота нет — то же состояние, что и при ошибке загрузки выше.
+
+     Раньше здесь была строка «Лот не найден» без единого выхода: человек
+     открыл ссылку на снятый лот и остался на пустой странице. Замер
+     показал, что страница при этом отдаёт HTTP 200 и рисует шапку
+     каталога — то есть выглядит как обычная страница, просто без лота.
+  
+     AsyncErrorState даёт заголовок, объяснение и кнопку возврата — те
+     самые пять выходов, что есть у страницы 404. */
+  if (!listing) return <Container py={80}><AsyncErrorState title="Лот не найден" description="Возможно, он уже продан или снят с площадки. Посмотрите другие лоты — каталог обновляется каждый час." backHref="/auctions" backLabel="Вернуться к лотам" /></Container>
 
   const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇪🇺 Европа", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
   const publicIdentity = identity || auctionVehicleIdentity(listing.make, listing.model)
