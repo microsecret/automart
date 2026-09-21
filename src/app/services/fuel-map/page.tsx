@@ -1,5 +1,6 @@
 "use client"
 
+import "./fuel-map.css"
 import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import useSWR from "swr"
 import { useSession } from "next-auth/react"

@@ -4718,37 +4718,7 @@ select {
   }
 }
 
-/* Полоса управления над картой.
 
-   Заменила синюю шапку с заголовком и описанием: та занимала пол-экрана,
-   а под ней шли ещё два ряда служебного — до карты человек добирался
-   прокруткой, на телефоне двумя.
-
-   Здесь всё то же управление в одну строку: поиск, город, топливо, сеть.
-   На узком экране поля переносятся, но остаются мелкими. */
-.fuel-map-controls {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  background: var(--market-surface);
-}
-
-/* Карта занимает то, что осталось от экрана.
-
-   Было 460 пикселей — на телефоне треть высоты, и человек видел скорее
-   рамку карты, чем карту. Теперь она тянется до низа окна за вычетом
-   шапки сайта и полосы управления.
-
-   Нижняя граница в 320 пикселей нужна на совсем коротких экранах: карта
-   меньше этого бесполезна, лучше пусть страница прокрутится. */
-.fuel-map-canvas {
-  position: relative;
-  /* Карта во всю доступную высоту: на широком экране это почти окно
-     целиком, потому что смотрят на неё, а не на список рядом. */
-  min-height: min(78vh, 760px);
-  overflow: hidden;
-  background: var(--market-surface-subtle);
-}
 
 @media (max-width: 62em) {
   .fuel-map-canvas {
@@ -4762,380 +4732,40 @@ select {
   }
 }
 
-/* Жесты внутри карты принадлежат карте.
-
-   touch-action стоял только на слое плиток, а метки, плашки и кнопки
-   лежат поверх отдельными элементами. Палец, попавший на плашку — а их
-   на экране десятки, — карту не двигал: браузер считал это обычным
-   касанием страницы и уводил её вниз, будто человек сворачивает окно.
-   Перетащить карту получалось, только попав в просвет между метками.
-
-   Правило распространяется на всё содержимое карты: где бы палец ни
-   лёг, страница остаётся на месте.
-
-   overscroll-behavior добавлен туда же: дотянув карту до края, человек
-   иначе начинал тянуть страницу за ней. */
-.fuel-map-canvas,
-.fuel-map-canvas *,
-.fuel-map-canvas__tiles {
-  touch-action: none;
-}
-
-/* Мышью карту тоже нужно тянуть с любого места.
-
-   touch-action решает только жесты пальцем. На десктопе, начав тянуть с
-   плашки заправки, человек попадал не в панораму, а в выделение текста:
-   браузер подсвечивал «Башнефть ДТ АИ-92», карта стояла на месте, и со
-   стороны это выглядело как зависание. Перетаскивание картинок отменяем
-   там же — иначе плитка уезжает призраком вслед за курсором. */
-.fuel-map-canvas,
-.fuel-map-canvas * {
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-user-drag: none;
-}
-
-/* Карточка точки — исключение: в ней адрес и цены, которые копируют. */
-.fuel-map-selected,
-.fuel-map-selected * {
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-.fuel-map-canvas {
-  overscroll-behavior: none;
-}
-
-/* Safari на iPhone тянет страницу за картой.
-
-   touch-action: none забирает жест у элемента, но не отменяет
-   «резинку» самой страницы: палец, ведущий карту вниз, доводил до конца
-   документ, и браузер начинал сворачивать вкладку — карта при этом
-   стояла. Отсюда ощущение, что она не слушается пальца.
-
-   Страница на этом экране не прокручивается вовсе: карта занимает
-   высоту окна, а всё управление лежит поверх неё. Значит и «резинке»
-   тянуть нечего.
-
-   position: fixed на body сюда не годится — он сбивает адресную строку
-   Safari при повороте экрана; хватает запрета перетягивания. */
-body:has(.fuel-map-canvas),
-html:has(.fuel-map-canvas) {
-  overscroll-behavior: none;
-  /* Горизонтальный жест от края экрана — это «назад» в Safari, и
-     отдавать его карте нельзя: человек листает карту вбок и вылетает со
-     страницы. Запрет действует только там, где карта. */
-  overflow-x: hidden;
-}
-
-/* Chrome на Android тянет страницу вниз ради обновления.
-
-   Жест начинается у верхнего края, ровно там, где человек ведёт карту к
-   себе. overscroll-behavior на body до этого жеста не доходит: браузер
-   смотрит на корень документа. */
-html:has(.fuel-map-canvas) {
-  overscroll-behavior-y: contain;
-}
-
-/* Долгое нажатие на карте не должно вызывать меню.
-
-   На Android удержание пальца на плашке открывало «копировать/поделиться»
-   поверх карты, на iOS — предпросмотр ссылки. И то и другое прерывало
-   перетаскивание на полуслове: человек вёл карту, а получал системное
-   окно. */
-.fuel-map-canvas,
-.fuel-map-canvas * {
-  -webkit-touch-callout: none;
-  /* Подсветка нажатия синим прямоугольником на Android: карта под пальцем
-     мигала на каждое касание. */
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Карточка точки — исключение: внутри неё форма отметки, список цен и
-   комментарии, и их надо прокручивать пальцем. */
-.fuel-map-selected,
-.fuel-map-selected * {
-  touch-action: auto;
-}
-
-.fuel-map-selected__body {
-  touch-action: pan-y;
-  overscroll-behavior: contain;
-}
-
-.fuel-map-canvas__tiles {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: #dce9df;
-  cursor: grab;
-}
-
-.fuel-map-canvas__tiles:focus-visible {
-  outline: 3px solid rgba(28, 66, 145, 0.48);
-  outline-offset: -3px;
-}
-
-.fuel-map-canvas__tiles.is-dragging {
-  cursor: grabbing;
-}
-
-.fuel-map-canvas__tile-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-/* Плитки двигаются трансформацией, а не смещением.
-
-   Раньше положение задавалось left/top: браузер на каждом кадре
-   пересчитывал раскладку для всех плиток разом, и карта дёргалась при
-   перетаскивании. Трансформация идёт мимо раскладки и рисуется
-   видеокартой — та же работа обходится в разы дешевле.
-
-   will-change предупреждает браузер, что слой будет двигаться: без него
-   он поднимает плитки на отдельный слой уже в движении, и первый рывок
-   всё равно виден. */
-.fuel-map-canvas__tile-layer > img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 256px;
-  height: 256px;
-  max-width: none;
-  max-height: none;
-  user-select: none;
-  pointer-events: none;
-  will-change: transform;
-}
-
-/* Точка на карте: кружок и подпись под ним.
-
-   Раньше кружок позиционировался сам и сдвигался на половину своего
-   размера. Теперь его держит обёртка — иначе подпись с марками топлива
-   пришлось бы двигать вторым набором вычислений, и они разъезжались бы
-   при смене масштаба. */
-.fuel-map-pin {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  display: grid;
-  justify-items: center;
-  pointer-events: none;
-  /* Положение задаётся трансформацией из разметки — меток на карте
-     десятки, и пересчёт раскладки для каждой на каждом кадре был второй
-     причиной рывков после плиток.
-
-     Центровка тоже там: кружок должен стоять на своей точке, а не рядом.
-     По горизонтали сдвиг на половину ширины обёртки, по вертикали — на
-     половину высоты кружка, чтобы подпись под ним не тянула метку вверх. */
-  will-change: transform;
-}
 
 
-.fuel-map-pin > * {
-  pointer-events: auto;
-}
 
-/* Плашка заправки: бренд, марки топлива и цена — без нажатия.
 
-   Кружок отвечал только «здесь заправка»: чтобы узнать сеть, наличие и
-   цену, надо было нажать и прочитать карточку. Человек за рулём так не
-   делает — ему нужно выбрать глазами за секунду.
 
-   Размер держится маленьким намеренно: плашек на экране два десятка, и
-   каждый лишний пиксель множится. Отсюда мелкий кегль, узкие отступы и
-   не больше четырёх марок. */
-.fuel-map-plate {
-  display: flex;
-  align-items: stretch;
-  overflow: hidden;
-  /* Плашки были мелкими: 168 пикселей и кегль 10 — на телефоне под
-     солнцем такое не читается, а именно там на карту и смотрят. Ширина и
-     шрифт подняты до того размера, при котором марка топлива и цена
-     разбираются на ходу. */
-  max-width: 290px;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: var(--radius-md);
-  background: rgba(17, 17, 20, 0.88);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
-  cursor: pointer;
-  backdrop-filter: blur(3px);
-  transition: box-shadow var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out);
-}
 
-/* Плашка узнаваемой сети красится её фирменным цветом.
 
-   Раньше все плашки были одинаково тёмными, а фирменный цвет жил
-   только в квадратике с буквами — по нему сеть приходилось выискивать.
-   В навигаторе человек находит свою заправку по цвету, не читая
-   подписей, и здесь работает та же привычка: синяя Башнефть, красный
-   Лукойл, жёлтая Роснефть видны боковым зрением.
 
-   Цвет фирменный, но логотипы не ставятся: чужие товарные знаки на
-   карте означали бы согласованное присутствие сети, которого нет. */
-.fuel-map-plate[data-branded] {
-  border-color: color-mix(in srgb, var(--plate-brand) 60%, #fff);
-  background: color-mix(in srgb, var(--plate-brand) 88%, #11111400);
-}
 
-/* Название сети на фирменном фоне: цвет текста берётся из самой сети,
-   иначе тёмные буквы теряются на тёмно-синем, а белые — на жёлтом. */
-.fuel-map-plate[data-branded] .fuel-map-plate__title {
-  color: var(--plate-brand-ink);
-}
 
-/* Знак сети — белый кружок с фирменными буквами.
 
-   Подложка из цвета текста с прозрачностью давала на синей Башнефти
-   почти невидимый белый на синем: буквы пропадали, плашка выглядела
-   безымянной. Белый кружок читается на любом фирменном цвете —
-   тёмно-синем, красном, жёлтом. */
-.fuel-map-plate[data-branded] .fuel-map-plate__logo {
-  margin: 3px 0 3px 3px;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
-  border-radius: 50%;
-  background: #fff !important;
-  color: var(--plate-brand) !important;
-  font-size: var(--text-caps);
-  font-weight: 800;
-  box-shadow: 0 1px 3px rgb(15 23 42 / .25);
-}
 
-/* Марки на светлых фирменных цветах (жёлтая Роснефть) теряли контраст:
-   белый по жёлтому не читается. Тёмная подложка возвращает его, не
-   трогая фирменный фон вокруг. */
-.fuel-map-plate[data-branded] .fuel-map-plate__fuels {
-  padding: 2px;
-  border-radius: var(--radius-sm);
-  background: rgb(17 17 20 / .48);
-}
 
-/* Знак сети: фирменный цвет и две буквы.
 
-   Цветной полоски было мало — человек видел «красную» заправку, но не
-   понимал, Лукойл это или Опти. Настоящие логотипы ставить нельзя: чужие
-   товарные знаки на карте означали бы согласованное присутствие сети,
-   которого нет. Буквы на фирменном цвете читаются так же быстро и
-   ничего не присваивают. */
-.fuel-map-plate__logo {
-  display: grid;
-  width: 30px;
-  flex: 0 0 30px;
-  place-items: center;
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  line-height: 1;
-}
 
-/* Сеть не распознана: серый знак заправки вместо букв — иначе плашка
-   выглядит сломанной. */
-.fuel-map-plate__logo[data-unknown] {
-  color: rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.12);
-}
 
-.fuel-map-plate__body {
-  display: grid;
-  gap: 2px;
-  padding: 5px 9px 6px;
-  min-width: 0;
-}
 
-/* Название сети крупнее марок: сначала человек узнаёт заправку, потом
-   читает, что на ней есть. */
-.fuel-map-plate__title {
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.95);
-  font-size: var(--text-sm);
-  font-weight: 800;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-.fuel-map-plate__fuels {
-  display: flex;
-  gap: 7px;
-  /* Марка и цена стоят столбиком, а не в строку.
 
-     Строкой «92 63,20 95 98» человек читал как один длинный номер и
-     не понимал, где кончается марка и начинается цена — особенно с
-     копейками. Цена под своей маркой снимает вопрос без разделителей. */
-  align-items: flex-start;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-}
 
-/* Марка топлива — обведённая пилюля, а не голый текст.
 
-   Подряд идущие «92 95 98 ДТ» сливались в строку, и человек читал их
-   как один номер, особенно когда под маркой стояла цена. Рамка вокруг
-   каждой отделяет одну от другой: видно, что это отдельные позиции, а
-   не части числа. */
-.fuel-map-plate__fuel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  padding: 2px 6px;
-  border: 1px solid rgb(255 255 255 / .28);
-  border-radius: var(--radius-sm);
-  background: rgb(255 255 255 / .1);
-}
 
-/* Марка, которой нет, обводится красным: зачёркивания мало на
-   маленькой плашке под солнцем. */
-.fuel-map-plate__fuel[data-state="no"] {
-  border-color: rgb(248 113 113 / .5);
-  background: rgb(248 113 113 / .12);
-}
 
-.fuel-map-plate__fuel[data-state="yes"] {
-  border-color: rgb(74 222 128 / .5);
-  background: rgb(74 222 128 / .14);
-}
 
-/* Цвет несёт состояние, но не один: зачёркнутая марка читается и при
-   дальтонизме, и на выцветшем под солнцем экране. */
-.fuel-map-plate__fuel[data-state="yes"] { color: #4ade80; }
 
-.fuel-map-plate__fuel[data-state="no"] {
-  color: #f87171;
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
-}
 
-/* Марка из тегов OpenStreetMap: она говорит про ассортимент вообще, а не
-   про наличие сейчас, и поэтому приглушена — чтобы не путали с отметкой. */
-.fuel-map-plate__fuel[data-state="unknown"] { color: rgba(255, 255, 255, 0.5); }
 
-/* Цена стоит под своей маркой и чуть мельче её: марка отвечает «что
-   есть», цена — «почём», и первый вопрос главнее. */
-.fuel-map-plate__price {
-  display: block;
-  font-size: var(--text-caps);
-  font-weight: 800;
-  opacity: 0.95;
-  white-space: nowrap;
-}
 
-/* Хвостик книзу указывает на саму точку: без него плашка висит в воздухе
-   рядом с заправкой, и непонятно, к какой из соседних она относится. */
-.fuel-map-plate__tail {
-  width: 0;
-  height: 0;
-  border-top: 5px solid rgba(17, 17, 20, 0.88);
-  border-right: 4px solid transparent;
-  border-left: 4px solid transparent;
-}
+
+
+
+
+
+
 
 @media (hover: hover) and (pointer: fine) {
   .fuel-map-plate:hover {
@@ -5144,84 +4774,14 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-.fuel-map-plate:focus-visible,
-.fuel-map-plate[data-selected] {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.6);
-  outline: none;
-}
 
-/* Выбранная плашка поднимается над соседями целиком, вместе с хвостиком. */
-.fuel-map-pin[data-plate]:hover,
-.fuel-map-pin[data-plate]:focus-within {
-  z-index: 4;
-}
 
-/* Метка размером с палец.
 
-   Было 30 пикселей — вдвое меньше нормы для касания (44). На телефоне в
-   плотной застройке человек попадал в соседнюю заправку или вовсе мимо,
-   и карта переставала слушаться. */
-.fuel-map-marker {
-  position: relative;
-  display: grid;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  place-items: center;
-  border: 2px solid #fff;
-  /* Капля вместо кружка: остриё внизу указывает на саму заправку.
-
-     Круглая метка стояла над точкой и не говорила, к какому месту
-     относится — на плотной городской карте между двумя соседними АЗС
-     полсотни метров, и попасть глазами в нужную было нельзя. У плашки для
-     этого был отдельный хвостик, а у метки не было ничего.
-
-     Форма привычна по любому навигатору, поэтому читается без
-     объяснений. Три угла скруглены полностью, нижний правый оставлен
-     острым и повёрнут вниз — так капля и получается. */
-  border-radius: 50%;
-  color: #fff;
-  background: #ea580c;
-  box-shadow: var(--shadow-md);
-  cursor: pointer;
-  transition: transform var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
-}
-
-/* Остриё — отдельным треугольником под кружком.
-
-   Поворачивать саму кнопку нельзя: она стоит в потоке обёртки вместе с
-   подписью цены, и поворот сдвигал её относительно подписи — цена
-   повисала в стороне от своей метки. Псевдоэлемент рисуется поверх, не
-   трогая раскладку.
-
-   Цвет наследуется от заливки кнопки, поэтому остриё всегда одного тона
-   с каплей — и у фирменной сети, и у зелёной с отметкой. */
-.fuel-map-marker::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  margin-top: -3px;
-  border-top: 9px solid currentColor;
-  border-right: 6px solid transparent;
-  border-left: 6px solid transparent;
-  transform: translateX(-50%);
-  color: inherit;
-  filter: drop-shadow(0 1px 1px rgb(15 23 42 / 0.25));
-}
 
 /* Группа остаётся круглой.
 
    Капля указывает на одну точку, а группа собирает несколько заправок из
    разных мест: остриё показывало бы на пустоту между ними. */
-/* У группы острия нет: она собирает заправки из разных мест, и остриё
-   показывало бы на пустоту между ними. */
-.fuel-map-marker[data-cluster]::after {
-  display: none;
-}
 
 /* Отметки водителей важнее тегов OpenStreetMap: те говорят про
    ассортимент вообще, а эти — про наличие сейчас. Поэтому цвет по
@@ -5232,44 +4792,9 @@ html:has(.fuel-map-canvas) {
    человек переставал отличать Лукойл от Роснефти. Кольцо оставляет
    фирменный цвет внутри и добавляет ответ на второй вопрос — есть ли
    топливо. Оба сведения видны разом. */
-/* Наличие — ободком, заливка остаётся фирменной.
-
-   Раньше отметка закрашивала каплю целиком, и все сети становились
-   одинаково зелёными: человек, ищущий свою заправку по цвету, терял её
-   там, где данных больше всего. Ободок отвечает на второй вопрос, не
-   затирая первый.
-
-   Ободок толстый и в цвет, а не тонкое кольцо: на карте с домами и
-   дорогами трёхпиксельная обводка теряется. */
-.fuel-map-marker[data-reported="yes"] {
-  border-color: #16a34a;
-  box-shadow: 0 0 0 1px #fff, var(--shadow-md);
-}
-
-.fuel-map-marker[data-reported="no"] {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 1px #fff, var(--shadow-md);
-}
 
 
-/* Группа крупнее одиночной метки: в неё чаще целятся, и по размеру
-   человек сразу понимает, что там несколько заправок. */
-.fuel-map-marker[data-cluster] {
-  width: 46px;
-  height: 46px;
-  border-color: rgba(255,255,255,.96);
-  /* Серый по умолчанию, а не тёмно-синий.
 
-     Синий кружок читался как «фирменный цвет сервиса» и ничего не
-     говорил о заправках внутри. Человек смотрит на карту с одним
-     вопросом — есть ли бензин, — и цвет должен отвечать на него или
-     честно молчать. Серое молчит: «здесь не отмечали». */
-  background: #64748b;
-  font-size: var(--text-caps);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  transition: box-shadow var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out);
-}
 
 /* Кольцо кластера по наличию топлива внутри.
 
@@ -5280,100 +4805,18 @@ html:has(.fuel-map-canvas) {
    Цвет по доле заправок с топливом: зелёное — почти везде есть,
    оранжевое — где-то есть, красное — нигде. Серое без кольца означает,
    что там просто никто не отмечал, и это честнее, чем красное. */
-/* Заливкой, а не кольцом.
 
-   Кольцо в три пикселя вокруг тёмно-синего кружка на карте с домами и
-   дорогами не читается: цвет теряется в общем шуме, и человек всё
-   равно приближает, чтобы понять. Заливка видна боковым зрением с
-   любого масштаба — ровно то, что нужно за рулём. */
-.fuel-map-marker[data-cluster-state="yes"] {
-  background: #16a34a;
-}
 
-.fuel-map-marker[data-cluster-state="some"] {
-  background: #f59e0b;
-}
 
-.fuel-map-marker[data-cluster-state="no"] {
-  background: #dc2626;
-}
 
-.fuel-map-marker__network {
-  font-size: var(--text-2xs);
-  font-weight: 800;
-  letter-spacing: var(--track-display);
-  line-height: 1;
-}
 
-/* Точка без отметок водителей — серая.
-
-   Раньше цвет здесь означал качество данных OpenStreetMap: бирюзовый —
-   «теги топлива есть», оранжевый — «указана сеть». Человек за рулём
-   читал это как светофор наличия и ехал на бирюзовую, где топлива
-   могло не быть месяц.
-
-   Серый честен: про эту заправку сейчас ничего не известно. Зелёный и
-   красный оставлены отметкам, которые действительно про наличие. */
-.fuel-map-marker[data-quality="fuel"],
-.fuel-map-marker[data-quality="live"],
-.fuel-map-marker[data-quality="network"] {
-  background: #64748b;
-  box-shadow: var(--shadow-md);
-}
-
-.fuel-map-marker[data-quality="basic"] {
-  width: 26px;
-  height: 26px;
-  background: #94a3b8;
-  box-shadow: var(--shadow-sm);
-}
 
 /* Сдвиг на половину размера ушёл на обёртку, поэтому здесь остаётся
    только увеличение: с прежним translate кружок отъезжал бы вверх-влево
    ещё раз и терял связь со своей точкой. */
-/* Наведение и выбор поднимают метку, но не перекрашивают её.
 
-   Раньше здесь стоял тёмно-синий фон: наведя курсор на зелёную
-   заправку, человек видел синюю и терял ответ на свой вопрос ровно в
-   тот момент, когда к ней тянулся. Цвет несёт наличие и меняться от
-   наведения не должен — достаточно белого ободка и увеличения. */
-.fuel-map-marker:hover,
-.fuel-map-marker:focus-visible,
-.fuel-map-marker[data-selected] {
-  box-shadow: 0 0 0 4px rgba(255,255,255,0.82), 0 7px 16px rgba(15,23,42,.34);
-  outline: none;
-  transform: scale(1.12);
-}
 
-/* Выбранная метка пульсирует расходящимся кольцом.
 
-   Карточка открывается снизу и закрывает собой часть карты: человек
-   терял из виду, какую именно точку он нажал, и нажимал соседнюю.
-   Кольцо расходится от метки и возвращает взгляд к ней.
-
-   Кольцо повторяет цвет наличия: зелёная метка пульсирует зелёным,
-   красная красным, серая — нейтральным. Так подсветка не спорит с
-   ответом, который метка уже даёт. */
-.fuel-map-marker[data-selected]::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border: 2px solid #64748b;
-  border-radius: 50%;
-  opacity: 0;
-  animation: fuel-marker-pulse 1.8s var(--ease-out) infinite;
-  pointer-events: none;
-}
-
-.fuel-map-marker[data-selected][data-reported="yes"]::after,
-.fuel-map-marker[data-selected][data-cluster-state="yes"]::after {
-  border-color: #16a34a;
-}
-
-.fuel-map-marker[data-selected][data-reported="no"]::after,
-.fuel-map-marker[data-selected][data-cluster-state="no"]::after {
-  border-color: #dc2626;
-}
 
 @keyframes fuel-marker-pulse {
   0% {
@@ -5396,47 +4839,9 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Поднимать надо всю точку с подписью: поднятый кружок оставлял бы свою
-   подпись под соседними метками. */
-.fuel-map-pin:hover,
-.fuel-map-pin:focus-within {
-  z-index: 4;
-}
 
-/* Переключатель вида карты.
 
-   Стоит в правом верхнем углу, под кнопками масштаба: это настройка, а
-   не действие — человек трогает её раз и забывает. Ставить её в ряд с
-   «плюс/минус» значило бы предлагать переключать вид так же часто, как
-   приближать карту. */
-.fuel-map-canvas__tiles-switch {
-  position: absolute;
-  z-index: 5;
-  top: 12px;
-  right: 12px;
-  padding: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: var(--radius-full);
-  background: var(--market-surface);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(var(--blur-panel));
-}
 
-.fuel-map-tile-option {
-  padding: 4px 9px;
-  border-radius: var(--radius-full);
-  color: #475569;
-  font-size: var(--text-caps);
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-  transition: color var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out);
-}
-
-.fuel-map-tile-option[data-active] {
-  color: #fff;
-  background: #1c4291;
-}
 
 @media (hover: hover) and (pointer: fine) {
   .fuel-map-tile-option:not([data-active]):hover {
@@ -5444,10 +4849,6 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-.fuel-map-tile-option:focus-visible {
-  outline: 2px solid #1c4291;
-  outline-offset: 1px;
-}
 
 /* На узком экране подписи источников не помещаются рядом с масштабом:
    переключатель уходит вниз, к подписи карты, где места больше. */
@@ -5459,65 +4860,9 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-.fuel-map-canvas__controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 5;
-  padding: 4px;
-  border-radius: var(--radius-sm);
-  background: rgba(255,255,255,.86);
-  box-shadow: var(--shadow-md);
-}
 
-/* Отметки за сутки — слева внизу, рядом с числом точек.
 
-   Карта показывает точки из справочника, и они выглядят одинаково:
-   новичок думает, что он тут первый, и уходит, не отметив. Между тем
-   отметки есть — десятки за неделю. Живая точка рядом с цифрой говорит
-   «здесь сейчас происходит» лучше любого текста.
 
-   Слева, а не справа: справа уже стоит счётчик точек и атрибуция
-   OpenStreetMap, и третья плашка в том же углу читалась бы как одна
-   длинная строка. */
-.fuel-map-canvas__activity {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border: 1px solid color-mix(in srgb, var(--market-success-line) 60%, transparent);
-  border-radius: var(--radius-sm);
-  color: var(--market-success-text);
-  background: rgb(255 255 255 / 92%);
-  backdrop-filter: blur(var(--blur-panel));
-  box-shadow: var(--shadow-sm);
-}
-
-/* Приглашение отметить первым — не сообщение об успехе.
-
-   Плашка та же, но зелёный цвет здесь неуместен: он означает «есть
-   свежие отметки», а тут их как раз нет. Нейтральный тон говорит
-   спокойно и не обманывает. */
-.fuel-map-canvas__activity[data-empty] {
-  border-color: var(--market-line);
-  color: var(--market-label);
-  /* Ширины хватает на всю фразу: обрезанная посередине она читалась бы
-     как поломка. */
-  max-width: calc(100% - 20px);
-}
-
-.fuel-map-canvas__activity-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 7px;
-  border-radius: 50%;
-  background: var(--market-success-text);
-  animation: fuel-activity-pulse 2.4s var(--ease-out) infinite;
-}
 
 /* Медленное дыхание, а не мигание: точка говорит «сервис живой», а не
    «внимание, тревога». Тем, кто отключил анимации, останется просто
@@ -5527,98 +4872,12 @@ html:has(.fuel-map-canvas) {
   50% { opacity: 0.45; transform: scale(0.82); }
 }
 
-.fuel-map-canvas__caption {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 8px;
-  border: 1px solid rgba(255,255,255,0.7);
-  border-radius: var(--radius-sm);
-  color: #3f3f46;
-  background: rgba(255,255,255,0.88);
-  backdrop-filter: blur(var(--blur-panel));
-}
 
-.fuel-map-canvas__legend {
-  position: absolute;
-  z-index: 5;
-  top: 12px;
-  left: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  max-width: calc(100% - 118px);
-}
 
-.fuel-map-canvas__legend > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: var(--radius-full);
-  color: #334155;
-  background: var(--market-surface);
-  box-shadow: var(--shadow-md);
-  font-size: var(--text-caps);
-  font-weight: 700;
-  line-height: 1;
-  backdrop-filter: blur(var(--blur-panel));
-}
 
-.fuel-map-canvas__legend > span::before {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #64748b;
-  content: "";
-}
 
-/* Цвета обозначений совпадают с цветами меток: разойдись они хоть на
-   тон, и подпись перестала бы объяснять карту. */
-.fuel-map-canvas__legend > span[data-reported="yes"]::before { background: #16a34a; }
-.fuel-map-canvas__legend > span[data-reported="no"]::before { background: #dc2626; }
-.fuel-map-canvas__legend > span[data-quality="fuel"]::before { background: #ea580c; }
-.fuel-map-canvas__legend > span[data-quality="live"]::before { background: #16a34a; }
-.fuel-map-canvas__legend > span[data-quality="network"]::before { background: #ea580c; }
 
-/* Объяснение пустой карты.
 
-   Фильтры складываются, и сочетание «Башнефть + Газ» даёт ноль точек.
-   Карточка стоит по центру, а не в углу: это не подсказка на полях, а
-   ответ на вопрос «куда всё делось». */
-.fuel-map-empty-filter {
-  position: absolute;
-  z-index: 7;
-  top: 50%;
-  left: 50%;
-  max-width: min(340px, calc(100% - 32px));
-  padding: 12px 14px;
-  transform: translate(-50%, -50%);
-  border-color: color-mix(in srgb, var(--market-primary) 30%, var(--market-line));
-  background: var(--market-surface);
-  box-shadow: var(--shadow-lg);
-  animation: fuel-selected-in var(--ease-slow) var(--ease-out);
-}
-
-.fuel-map-cluster-hint {
-  position: absolute;
-  z-index: 6;
-  top: 92px;
-  left: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: min(390px, calc(100% - 24px));
-  padding: 8px 10px;
-  border-color: color-mix(in srgb, #5b82d6 38%, var(--market-line));
-  background: rgb(255 255 255 / 94%);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(var(--blur-panel));
-}
 
 /* Всплывающая карточка выбранной заправки.
 
@@ -5655,57 +4914,10 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-.fuel-map-selected {
-  position: absolute;
-  z-index: 8;
-  left: 12px;
-  bottom: 12px;
-  animation: fuel-selected-in var(--ease-slow) var(--ease-out);
-  display: flex;
-  width: min(360px, calc(100% - 24px));
-  max-height: calc(100% - 96px);
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--market-surface);
-  box-shadow: var(--shadow-lg);
-}
 
-/* Шапка карточки не уезжает при прокрутке: название заправки нужно
-   видеть, пока заполняешь отметку. */
-.fuel-map-selected__head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 10px 8px;
-  border-bottom: 1px solid var(--market-line);
-  background: var(--market-surface);
-}
 
-.fuel-map-selected__logo {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: 800;
-}
 
-.fuel-map-selected__close {
-  flex: 0 0 auto;
-}
 
-.fuel-map-selected__body {
-  display: grid;
-  gap: 10px;
-  padding: 10px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
 
 /* На телефоне карточка становится нижним листом во всю ширину: место
    под большим пальцем, и карта над ней остаётся видимой. */
@@ -5724,11 +4936,6 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-.fuel-map-list {
-  max-height: 500px;
-  overflow: auto;
-  background: var(--market-surface);
-}
 
 /* ── Карта на весь экран ──────────────────────────────────────────────
 
@@ -5743,82 +4950,12 @@ html:has(.fuel-map-canvas) {
   padding: 0;
 }
 
-.fuel-map-shell {
-  position: relative;
-  /* Шапка сайта — единственное, что остаётся над картой. */
-  height: calc(100dvh - 72px);
-  min-height: 420px;
-}
 
-.fuel-map-shell .fuel-map-canvas {
-  height: 100%;
-  min-height: 0;
-  border: 0;
-  border-radius: 0;
-}
 
-/* Панель управления поверх карты, а не над ней.
 
-   Отдельной строкой она отнимала у карты полосу высотой с собственный
-   рост. Поверх — не отнимает ничего: карта под ней продолжается. */
-.fuel-map-topbar {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  left: 10px;
-  z-index: 7;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--market-surface) 92%, transparent);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(8px);
-}
 
-/* Панель переносится на две строки, когда всё не помещается.
 
-   В одну строку не влезали поиск, семь марок топлива, два списка и
-   кнопка обновления: «Зарядка EV» обрезалась на середине, а на узком
-   ноутбуке уезжал и выбор сети. Перенос честнее сжатия — читаются все
-   элементы, а не половина.
 
-   Поиск идёт первой строкой целиком: он самый широкий и в остатке
-   строки всё равно оказывался огрызком. */
-.fuel-map-topbar__search {
-  flex: 1 1 100%;
-  min-width: 0;
-  order: -1;
-}
-
-.fuel-map-topbar__city {
-  width: 150px;
-  flex: 0 0 auto;
-}
-
-.fuel-map-topbar__network {
-  width: 150px;
-  flex: 0 0 auto;
-}
-
-/* Короткие сообщения поверх карты вместо панелей в потоке.
-
-   «Ищем заправки», «точки не найдены», сбой поставщика — всё это
-   раньше занимало по строке над картой и сдвигало её вниз. Плашка
-   поверх ничего не сдвигает и уходит сама. */
-.fuel-map-toast {
-  position: absolute;
-  bottom: 84px;
-  left: 50%;
-  z-index: 7;
-  max-width: min(90vw, 420px);
-  transform: translateX(-50%);
-  background: var(--market-surface);
-  box-shadow: var(--shadow-lg);
-}
 
 /* На телефоне панель переносится в две строки: поля поиска и города
    рядом не помещаются, а сжимать их до нечитаемого нельзя. */
@@ -5903,13 +5040,6 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Кнопка раскрытия — только на телефоне.
-
-   На широком экране панель помещается в строку целиком, и прятать там
-   нечего: кнопка была бы лишним действием без причины. */
-.fuel-map-topbar__toggle {
-  display: none;
-}
 
 @media (max-width: 62em) {
   .fuel-map-topbar__toggle {
@@ -5918,52 +5048,10 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Топливо лентой кнопок вместо выпадающего списка.
 
-   Список стоил трёх действий — нажать, дождаться раскрытия, выбрать
-   строку — ради выбора между четырьмя вариантами, которые помещаются в
-   одну строку. Здесь марка нажимается сразу.
 
-   Лента прокручивается вбок: редкие варианты уезжают за край, частые
-   остаются на виду. Полосу прокрутки прячем — она тут только шумит. */
-.fuel-map-fuel-chips {
-  display: flex;
-  flex: 1 1 200px;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
 
-.fuel-map-fuel-chips::-webkit-scrollbar {
-  display: none;
-}
 
-.fuel-map-fuel-chip {
-  flex: 0 0 auto;
-  min-height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-full);
-  background: var(--market-surface);
-  color: var(--market-ink);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  line-height: 34px;
-  white-space: nowrap;
-  transition: background-color var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out);
-}
-
-.fuel-map-fuel-chip[data-active] {
-  border-color: var(--market-accent);
-  background: var(--market-accent);
-  color: var(--market-accent-ink);
-}
-
-.fuel-map-fuel-chip:focus-visible {
-  outline: 3px solid var(--market-focus-ring);
-  outline-offset: 2px;
-}
 
 /* ── Нижний лист на телефоне ──────────────────────────────────────────
 
@@ -6039,116 +5127,18 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-.fuel-map-list__selection {
-  display: grid;
-  gap: 6px;
-  padding: 2px 2px 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--market-line) 72%, #5b82d6);
-}
 
-.fuel-station-card {
-  background: var(--market-surface);
-  border-color: var(--market-line);
-  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
-}
 
-.fuel-station-card[data-clickable] {
-  cursor: pointer;
-}
 
-/* Карточка управляется и с клавиатуры, поэтому фокус должен быть виден так
-   же явно, как наведение мышью. */
-.fuel-station-card[data-clickable]:focus-visible {
-  outline: 3px solid var(--market-focus-ring);
-  outline-offset: 2px;
-  border-color: var(--market-primary);
-}
 
-.fuel-station-card:hover {
-  border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-line));
-  box-shadow: var(--shadow-md);
-}
 
-/* Выбранная карточка раньше заливалась жёстким белым градиентом и в тёмной
-   теме превращалась в светлое пятно с нечитаемым текстом. */
-.fuel-station-card[data-selected] {
-  border-color: var(--market-primary);
-  background: var(--market-primary-soft);
-  box-shadow: var(--shadow-md);
-}
 
-.fuel-map-note {
-  background: color-mix(in srgb, var(--market-surface) 80%, #ecfeff);
-  border-color: #bae6fd;
-}
 
-/* ── Форма отметки наличия ────────────────────────────────────────────
 
-   Человек заполняет её стоя у колонки, одной рукой, часто на солнце.
-   Прошлая раскладка держала марку, «есть», «нет» и цену в одной строке:
-   четыре цели шириной с палец каждая, и промахи были обычным делом.
 
-   Здесь каждая марка — отдельная кнопка в 52 пикселя высотой. Это выше
-   рекомендованных сорока четырёх: сорок четыре хватает сидя за столом,
-   а не на ходу. */
 
-.fuel-report {
-  background: var(--market-surface-subtle);
-}
 
-/* Вкладки карточки: отметка, цены, комментарии.
 
-   Карточка выкладывала всё одной лентой, и на телефоне до цен надо
-   было прокрутить полтора экрана — их просто не находили. Три вкладки
-   отвечают трём разным вопросам. */
-.fuel-card-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 3px;
-  border-radius: var(--radius-md);
-  background: var(--market-surface-subtle);
-}
-
-.fuel-card-tab {
-  display: flex;
-  min-height: 36px;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  border-radius: var(--radius-md);
-  color: var(--market-label);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  transition: background-color var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out);
-}
-
-/* Открытая вкладка поднимается на белое: подчёркивание снизу на
-   телефоне съедается краем экрана и читается хуже заливки. */
-.fuel-card-tab[data-active] {
-  background: var(--market-surface);
-  color: var(--market-ink);
-  box-shadow: var(--shadow-sm);
-}
-
-.fuel-card-tab:focus-visible {
-  outline: 3px solid var(--market-focus-ring);
-  outline-offset: -2px;
-}
-
-/* Число рядом с названием: видно, есть ли там что-то, не открывая. */
-.fuel-card-tab__count {
-  display: inline-grid;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  place-items: center;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--market-primary) 16%, transparent);
-  color: var(--market-primary);
-  font-size: var(--text-caps);
-  font-variant-numeric: tabular-nums;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .fuel-card-tab {
@@ -6156,28 +5146,6 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Цена со шкалой уверенности.
-
-   Бейдж «АИ-92 · 63,70 ₽ · 1» показывал цену как факт: за ней могла
-   стоять одна отметка пятичасовой давности, а число подтверждений
-   рядом читалось как порядковый номер. Полоса отвечает прямо: чем
-   крепче сведения, тем она длиннее и зеленее. */
-.fuel-price-row {
-  display: grid;
-  width: 100%;
-  padding: 7px 8px;
-  grid-template-columns: 54px auto 1fr;
-  grid-template-areas:
-    "fuel value meter"
-    "note note note";
-  align-items: center;
-  gap: 3px 8px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  text-align: left;
-  transition: border-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
-}
 
 @media (hover: hover) {
   .fuel-price-row:hover {
@@ -6185,59 +5153,13 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-.fuel-price-row:active {
-  transform: scale(0.99);
-}
 
-.fuel-price-row:focus-visible {
-  outline: 3px solid var(--market-focus-ring);
-  outline-offset: 2px;
-}
 
-.fuel-price-row__fuel {
-  grid-area: fuel;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  color: var(--market-label);
-}
 
-/* Цена — самое крупное в строке: за ней сюда и смотрят. Табличные
-   цифры держат разряды на месте, когда строк несколько. */
-.fuel-price-row__value {
-  grid-area: value;
-  font-size: 15px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--market-ink);
-}
 
-.fuel-price-row__meter {
-  grid-area: meter;
-  display: block;
-  height: 6px;
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--market-line) 70%, transparent);
-}
 
-.fuel-price-row__meter > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: #16a34a;
-  transition: width var(--ease-slow) var(--ease-out);
-}
 
-/* Цвет несёт то же, что и длина: слабую цену видно, даже не сравнивая
-   полосы между собой. */
-.fuel-price-row__meter[data-level="средняя"] > span { background: #f59e0b; }
-.fuel-price-row__meter[data-level="низкая"] > span { background: #dc2626; }
 
-.fuel-price-row__note {
-  grid-area: note;
-  font-size: var(--text-caps);
-  color: var(--market-label);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .fuel-price-row,
@@ -6250,129 +5172,24 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Подтверждение чужой отметки.
 
-   Зелёная подложка отделяет вопрос «это ещё актуально?» от формы: это
-   не ввод данных, а согласие с тем, что уже написано, и оно стоит
-   одного нажатия. */
-.fuel-report__confirm {
-  border-color: color-mix(in srgb, #16a34a 34%, var(--market-line));
-  background: color-mix(in srgb, var(--market-surface) 88%, #16a34a);
-}
 
-:root[data-mantine-color-scheme="dark"] .fuel-report__confirm {
-  background: color-mix(in srgb, var(--market-surface) 82%, #16a34a);
-}
 
-/* Очередь на заправке.
 
-   Отдельной строкой под статусом топлива, а не бейджем среди марок:
-   это ответ на другой вопрос. «Топливо есть» говорит, доедешь ли ты
-   заправиться вообще, очередь — сколько там простоишь. */
-.fuel-queue {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 8px;
-  padding: 7px 10px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-sm);
-  background: var(--market-surface-subtle);
-  color: var(--market-label);
-  font-size: var(--text-xs);
-  font-weight: 600;
-}
 
-/* Свободная заправка отмечена зелёным — тем же цветом, что «топливо
-   есть»: оба означают «можно ехать». */
-.fuel-queue[data-state="free"] {
-  border-color: color-mix(in srgb, var(--market-success-text) 34%, var(--market-line));
-  background: var(--market-success-surface);
-  color: var(--market-success-text);
-}
 
-/* Очередь не красная: топливо там есть, иначе за ним бы не стояли.
-   Красный означал бы «не езжай», а это неправда. */
-.fuel-queue[data-state="busy"] {
-  border-color: color-mix(in srgb, var(--market-warning-text) 34%, var(--market-line));
-  background: var(--market-warning-surface);
-  color: var(--market-warning-text);
-}
 
-/* Что здесь по отметкам: читается без открытия формы. */
-.fuel-report__status {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
 
-.fuel-report__status-cell {
-  padding: 8px 6px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface-subtle);
-  text-align: center;
-}
 
-/* Состояние несёт не только цвет: подпись «есть»/«нет» стоит рядом,
-   иначе плитка нечитаема при дальтонизме. */
-.fuel-report__status-cell[data-state="yes"] {
-  border-color: var(--mantine-color-teal-4);
-  background: var(--mantine-color-teal-0);
-}
 
-.fuel-report__status-cell[data-state="no"] {
-  border-color: var(--mantine-color-red-4);
-  background: var(--mantine-color-red-0);
-}
 
-.fuel-report__status-word {
-  color: var(--market-label);
-}
 
-.fuel-report__status-cell[data-state="yes"] .fuel-report__status-word {
-  color: var(--mantine-color-teal-7);
-}
 
-.fuel-report__status-cell[data-state="no"] .fuel-report__status-word {
-  color: var(--mantine-color-red-7);
-}
 
-/* Тёмная тема: заливки Mantine рассчитаны на белый фон и в темноте
-   светятся пятном, на котором не виден текст. */
-:root[data-mantine-color-scheme="dark"] .fuel-report__status-cell[data-state="yes"] {
-  background: color-mix(in srgb, var(--market-surface) 76%, #16a34a);
-}
 
-:root[data-mantine-color-scheme="dark"] .fuel-report__status-cell[data-state="no"] {
-  background: color-mix(in srgb, var(--market-surface) 76%, #dc2626);
-}
-
-:root[data-mantine-color-scheme="dark"] .fuel-report__status-cell[data-state="yes"] .fuel-report__status-word {
-  color: var(--mantine-color-teal-3);
-}
-
-:root[data-mantine-color-scheme="dark"] .fuel-report__status-cell[data-state="no"] .fuel-report__status-word {
-  color: var(--mantine-color-red-3);
-}
 
 /* Кнопка открытия формы: главное действие страницы, поэтому во всю
    ширину и в цвете акцента, а не служебной серой строкой. */
-/* Зелёная, а не оранжевая.
-
-   Оранжевый на этой карте занят: им красятся кластеры, где топливо
-   есть не везде. Кнопка того же цвета читалась как ещё один статус, а
-   не как действие. Зелёный здесь не спорит с метками — на них он
-   означает «есть топливо», и на кнопке продолжает ту же мысль:
-   расскажи, что здесь есть. */
-.fuel-report__open {
-  position: relative;
-  min-height: 48px;
-  overflow: hidden;
-  background: #16a34a;
-  color: #fff;
-  font-weight: 800;
-}
 
 @media (hover: hover) {
   .fuel-report__open:not([data-loading]):hover {
@@ -6380,28 +5197,7 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Волна от места нажатия.
 
-   Кнопка отвечала только сменой цвета, и на телефоне палец эту смену
-   закрывает собой: человек не понимал, засчиталось ли нажатие, и жал
-   второй раз. Волна расходится из-под пальца и видна по краям. */
-.fuel-report__open::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgb(255 255 255 / .55);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(1);
-  pointer-events: none;
-}
-
-.fuel-report__open:active::after {
-  animation: fuel-ripple 520ms var(--ease-out);
-}
 
 @keyframes fuel-ripple {
   from {
@@ -6420,35 +5216,8 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Поделиться: цветная кнопка вместо серой служебной.
 
-   Пересылка — второе по частоте действие после отметки: человек нашёл
-   бензин и говорит об этом в чат. Серой кнопкой это выглядело как
-   настройка, которую можно не трогать. */
-.fuel-share {
-  display: flex;
-  min-height: 36px;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--market-primary) 42%, transparent);
-  border-radius: var(--radius-md);
-  background: var(--market-primary-soft);
-  color: var(--market-primary);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  transition: background-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
-}
 
-.fuel-share:active {
-  transform: scale(0.97);
-}
-
-.fuel-share:focus-visible {
-  outline: 3px solid var(--market-focus-ring);
-  outline-offset: 2px;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .fuel-share {
@@ -6460,118 +5229,17 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Марки: три в ряд на телефоне, шесть штук — два ряда. */
-.fuel-report__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
 
-.fuel-report__fuel {
-  display: grid;
-  min-height: 52px;
-  place-items: center;
-  border: 2px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  color: var(--market-ink);
-  font-size: 17px;
-  font-weight: 800;
-  transition: transform var(--ease-fast) var(--ease-out), background-color var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out);
-}
 
-/* Отмеченная марка заливается акцентом целиком: на солнце рамка не
-   читается, а заливка видна и боковым зрением. */
-.fuel-report__fuel[data-active] {
-  border-color: var(--market-accent);
-  background: var(--market-accent);
-  color: var(--market-accent-ink);
-}
 
-/* «Нет» — такой же ответ, как «есть», и выглядит ответом.
 
-   Раньше это состояние ставилось только кнопкой «нет вообще» и потому
-   рисовалось погашенным: серая заливка, зачёркнутая подпись. Теперь
-   человек говорит так про отдельную марку — «92-й есть, 95-го нет», — и
-   бледная кнопка читалась бы как неотвеченная. Красная рамка на светлом
-   поле отличима и от отмеченной марки, и от нетронутой; заливка не
-   сплошная, чтобы «нет» не спорило по весу с «есть». */
-.fuel-report__fuel[data-off] {
-  /* Рамка цветом текста, а не мягкой линией плашек: та даёт на белом
-     контраст 1.28 и попросту не видна, а граница элемента управления
-     должна читаться (нужно 3.0, здесь 4.97 на светлой теме и 7.36 на
-     тёмной). Семейство токенов «-line» остаётся мягким — оно рисует
-     плашки, а не кнопки. */
-  border-color: var(--market-danger-text);
-  background: var(--market-danger-surface);
-  color: var(--market-danger-text);
-  text-decoration: line-through;
-}
 
-/* Отклик на нажатие: палец должен чувствовать, что попал. */
-.fuel-report__fuel:active,
-.fuel-report__nothing:active,
-.fuel-report__queue-option:active {
-  transform: scale(0.97);
-}
 
-.fuel-report__fuel:focus-visible,
-.fuel-report__nothing:focus-visible,
-.fuel-report__more:focus-visible,
-.fuel-report__cancel:focus-visible,
-.fuel-report__queue-option:focus-visible {
-  outline: 3px solid var(--market-focus-ring);
-  outline-offset: 2px;
-}
 
-/* «Топлива нет вообще»: одна кнопка вместо шести нажатий «нет». Пустая
-   заправка — самый ценный отчёт в дефицит, и он не должен стоить
-   дороже, чем отметить наличие. */
-.fuel-report__nothing {
-  display: grid;
-  min-height: 48px;
-  place-items: center;
-  border: 2px solid var(--mantine-color-red-4);
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  color: var(--mantine-color-red-7);
-  font-size: 15px;
-  font-weight: 700;
-  transition: transform var(--ease-fast) var(--ease-out), background-color var(--ease-base) var(--ease-out);
-}
 
-.fuel-report__nothing[data-active] {
-  background: var(--mantine-color-red-6);
-  border-color: var(--mantine-color-red-6);
-  color: #fff;
-}
-
-:root[data-mantine-color-scheme="dark"] .fuel-report__nothing {
-  color: var(--mantine-color-red-3);
-}
 
 /* Развернуть подробности: служебное действие, поэтому текстом, а не
    ещё одной крупной кнопкой рядом с главными. */
-/* «Добавить цены» и «Отмена»: видимые кнопки, а не серые надписи.
-
-   Оба были простым текстом без рамки: на телефоне человек не понимал,
-   что по ним можно нажать, и искал, где закрыть форму. Рамка отвечает
-   на этот вопрос, а приглушённый цвет оставляет их второстепенными
-   рядом с зелёной «Отправить». */
-.fuel-report__more,
-.fuel-report__cancel {
-  display: grid;
-  min-height: 44px;
-  place-items: center;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  color: var(--market-label);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  text-align: center;
-  transition: border-color var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out);
-}
 
 @media (hover: hover) {
   .fuel-report__more:hover,
@@ -6581,64 +5249,14 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* «Добавить цены» ведёт вперёд по форме, поэтому намекает зелёным —
-   тем же, что и главное действие, но краем. */
-.fuel-report__more {
-  border-color: color-mix(in srgb, #16a34a 34%, var(--market-line));
-  color: #15803d;
-}
 
-:root[data-mantine-color-scheme="dark"] .fuel-report__more {
-  color: #4ade80;
-}
 
-.fuel-report__prices {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
-  gap: 8px;
-}
 
-.fuel-report__queue {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
 
-.fuel-report__queue-option {
-  display: grid;
-  min-height: 44px;
-  padding: 4px 6px;
-  place-items: center;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  color: var(--market-ink);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  line-height: 1.2;
-  text-align: center;
-  transition: transform var(--ease-fast) var(--ease-out), background-color var(--ease-base) var(--ease-out);
-}
 
-.fuel-report__queue-option[data-active] {
-  border-color: var(--market-primary);
-  background: var(--market-primary-soft);
-  color: var(--market-primary);
-}
 
 /* Отправка: последнее действие, поэтому во всю ширину и внизу — под
    большим пальцем. */
-/* Отправка — того же зелёного, что и «Внести данные».
-
-   Кнопка была синей по умолчанию Mantine: на одном экране оказывались
-   зелёная «внести», жёлтые марки и синяя «отправить» — три разных
-   обещания там, где действие одно. */
-.fuel-report__send {
-  min-height: 48px;
-  background: #16a34a;
-  color: #fff;
-  font-weight: 800;
-}
 
 @media (hover: hover) {
   .fuel-report__send:not([data-loading]):not(:disabled):hover {
@@ -6646,12 +5264,6 @@ html:has(.fuel-map-canvas) {
   }
 }
 
-/* Неактивная кнопка не должна выглядеть зелёной: пока не отмечена ни
-   одна марка, отправлять нечего, и цвет обещал бы обратное. */
-.fuel-report__send:disabled {
-  background: var(--market-surface-subtle);
-  color: var(--market-label);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .fuel-report__fuel,
@@ -10319,215 +8931,36 @@ h1[data-lw-hero] {
   }
 }
 
-/* Статус заправки строкой: ответ до подробностей.
 
-   Марки бейджами отвечали «что есть», но не отвечали «ехать или нет»:
-   человек читал шесть значков и сам сводил их в вывод. Строка делает
-   это за него, а бейджи ниже уточняют, какое именно топливо. */
-.fuel-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface-subtle);
-}
 
-.fuel-status__icon {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  place-items: center;
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  color: var(--market-label);
-}
 
-.fuel-status__body {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  flex: 1;
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1.2;
-}
 
-.fuel-status__note {
-  color: var(--market-label);
-  font-size: var(--text-xs);
-  font-weight: 500;
-}
 
-/* Процент рядом со статусом, а не строкой ниже: он говорит, насколько
-   верить именно этому ответу, и в отрыве от него бесполезен. */
-.fuel-status__confidence {
-  flex: 0 0 auto;
-  color: var(--mantine-color-orange-7);
-  font-size: var(--text-sm);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
 
-.fuel-status[data-state="yes"] {
-  border-color: color-mix(in srgb, #16a34a 38%, var(--market-line));
-  background: color-mix(in srgb, var(--market-surface) 88%, #16a34a);
-}
 
-.fuel-status[data-state="yes"] .fuel-status__icon {
-  background: #16a34a;
-  color: #fff;
-}
 
-.fuel-status[data-state="no"] {
-  border-color: color-mix(in srgb, #dc2626 38%, var(--market-line));
-  background: color-mix(in srgb, var(--market-surface) 88%, #dc2626);
-}
 
-.fuel-status[data-state="no"] .fuel-status__icon {
-  background: #dc2626;
-  color: #fff;
-}
 
-:root[data-mantine-color-scheme="dark"] .fuel-status[data-state="yes"] {
-  background: color-mix(in srgb, var(--market-surface) 82%, #16a34a);
-}
 
-:root[data-mantine-color-scheme="dark"] .fuel-status[data-state="no"] {
-  background: color-mix(in srgb, var(--market-surface) 82%, #dc2626);
-}
 
-/* Плитки марок: наличие, цена и свежесть вместе.
 
-   Бейдж «92 · 63,20 ₽» отвечал на два вопроса из трёх: видно, что
-   есть и почём, но не видно, когда это отметили. Возраст стоял одной
-   строкой на всю карточку, хотя у каждой марки он свой — 92-й могли
-   отметить час назад, а 95-й пять минут. */
-.fuel-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
 
-.fuel-tile {
-  display: grid;
-  gap: 1px;
-  padding: 7px 6px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface-subtle);
-  text-align: center;
-}
 
-.fuel-tile__label {
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1.15;
-  color: var(--market-ink);
-}
 
-/* Цена крупнее подписи «есть»: когда она известна, это и есть ответ. */
-.fuel-tile__price {
-  font-size: var(--text-sm);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
 
-.fuel-tile__state {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  line-height: 1.2;
-}
 
-.fuel-tile__age {
-  font-size: var(--text-2xs);
-  line-height: 1.2;
-  color: var(--market-label);
-}
 
-.fuel-tile[data-state="yes"] {
-  border-color: var(--mantine-color-teal-4);
-  background: var(--mantine-color-teal-0);
-}
 
-.fuel-tile[data-state="yes"] .fuel-tile__price,
-.fuel-tile[data-state="yes"] .fuel-tile__state {
-  color: var(--mantine-color-teal-7);
-}
 
-/* Марка известна, наличие — нет.
 
-   Ассортимент приходит из OpenStreetMap: какие колонки на станции
-   стоят, известно, а есть ли в них топливо сейчас — нет. Серый цвет
-   об этом честно молчит, тогда как зелёный или красный соврали бы. */
-.fuel-tile[data-state="unknown"] {
-  border-style: dashed;
-}
 
-.fuel-tile[data-state="unknown"] .fuel-tile__state {
-  color: var(--market-label);
-}
 
-.fuel-tile[data-state="no"] {
-  border-color: var(--mantine-color-red-4);
-  background: var(--mantine-color-red-0);
-}
 
-.fuel-tile[data-state="no"] .fuel-tile__label {
-  text-decoration: line-through;
-  opacity: .75;
-}
 
-.fuel-tile[data-state="no"] .fuel-tile__state {
-  color: var(--mantine-color-red-7);
-}
 
-/* Тёмная тема: заливки Mantine рассчитаны на белый фон и в темноте
-   светятся пятном, на котором не виден текст. */
-:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="yes"] {
-  background: color-mix(in srgb, var(--market-surface) 76%, #16a34a);
-}
 
-:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="no"] {
-  background: color-mix(in srgb, var(--market-surface) 76%, #dc2626);
-}
 
-:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="yes"] .fuel-tile__price,
-:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="yes"] .fuel-tile__state {
-  color: var(--mantine-color-teal-3);
-}
 
-:root[data-mantine-color-scheme="dark"] .fuel-tile[data-state="no"] .fuel-tile__state {
-  color: var(--mantine-color-red-3);
-}
-
-/* Шкала уверенности под статусом.
-
-   Процент числом человек читает, но не чувствует: «44%» и «68%»
-   выглядят одинаково, пока не сравнишь. Полоса показывает, много это
-   или мало, с одного взгляда — и цветом повторяет то же. */
-.fuel-status__meter {
-  display: block;
-  height: 5px;
-  margin-top: 6px;
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--market-line) 70%, transparent);
-}
-
-.fuel-status__meter > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: #16a34a;
-  transition: width var(--ease-slow) var(--ease-out);
-}
-
-.fuel-status__meter[data-level="средняя"] > span { background: #f59e0b; }
-.fuel-status__meter[data-level="низкая"] > span { background: #dc2626; }
 
 @media (prefers-reduced-motion: reduce) {
   .fuel-status__meter > span {
@@ -10535,68 +8968,12 @@ h1[data-lw-hero] {
   }
 }
 
-/* Приглашение отметить на плашке без данных.
 
-   Из ста пятидесяти шести точек города у сорока одной в OpenStreetMap
-   не указаны марки топлива: это небольшие частные АЗС, которые никто
-   не размечал. Их плашка выходила пустой — название и ничего больше,
-   будто карта сломалась. Прямой вопрос честнее молчания и объясняет,
-   откуда данные вообще берутся. */
-.fuel-map-plate__ask {
-  display: block;
-  font-size: var(--text-caps);
-  font-weight: 600;
-  line-height: 1.3;
-  color: rgb(255 255 255 / .72);
-}
 
-.fuel-map-plate[data-branded] .fuel-map-plate__ask {
-  color: color-mix(in srgb, var(--plate-brand-ink) 78%, transparent);
-}
 
-/* Два ответа рядом: пусто и закрыто.
 
-   Для человека за рулём это разное: у пустых колонок можно дождаться
-   подвоза, к запертым воротам ехать бессмысленно вовсе. */
-.fuel-report__nothing-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
 
-.fuel-report__closed {
-  display: grid;
-  min-height: 48px;
-  padding: 0 8px;
-  place-items: center;
-  border: 2px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  color: var(--market-label);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: center;
-  transition: transform var(--ease-fast) var(--ease-out), background-color var(--ease-base) var(--ease-out);
-}
 
-/* Отмеченная «не работает» заливается тёмным, а не красным: красный
-   уже занят отсутствием топлива, и два красных состояния рядом
-   перестали бы различаться. */
-.fuel-report__closed[data-active] {
-  border-color: var(--market-ink);
-  background: var(--market-ink);
-  color: var(--market-surface);
-}
-
-.fuel-report__closed:active {
-  transform: scale(0.97);
-}
-
-.fuel-report__closed:focus-visible {
-  outline: 3px solid var(--market-focus-ring);
-  outline-offset: 2px;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .fuel-report__closed {
@@ -10681,42 +9058,9 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   }
 }
 
-/* Кольцо состава группы: доли сетей вокруг числа.
 
-   Один цвет говорил только про преобладающую сеть, а в группе из
-   восьми заправок их обычно три-четыре. Кольцо показывает состав
-   целиком — по нему видно, есть ли среди них своя, ещё до приближения
-   карты.
 
-   Само число при этом остаётся на сплошной подложке: градиент под
-   цифрой сделал бы её нечитаемой. Подложка — псевдоэлемент внутри
-   кольца, а цифра лежит поверх. */
-.fuel-map-marker[data-cluster]::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  z-index: 0;
-  border-radius: 50%;
-  background: var(--market-ink);
-}
 
-.fuel-map-marker[data-cluster] > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Цифра лежит поверх подложки. */
-.fuel-map-marker__count {
-  position: relative;
-  z-index: 1;
-}
-
-.fuel-map-marker[data-cluster] {
-  position: relative;
-  isolation: isolate;
-  color: #fff;
-  text-shadow: 0 1px 2px rgb(15 23 42 / .45);
-}
 
 /* Переписка занимает экран целиком, без чужих отступов.
 
@@ -10764,91 +9108,13 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   opacity: 0.7;
 }
 
-/* Закрытая гостю заправка.
 
-   Размывается сама плашка, а не карта под ней: человек видит, что точка
-   есть, где стоит и какой она сети, но не читает цену. Так карта остаётся
-   доказательством работы сервиса, а не заглушкой.
 
-   pointer-events оставлены: нажатие ловится и объясняет, почему закрыто.
-   Молчаливое нажатие «в никуда» читается как поломка. */
-.fuel-map-pin[data-locked="true"] .fuel-map-plate__fuels,
-.fuel-map-pin[data-locked="true"] .fuel-map-plate__price {
-  filter: blur(4px);
-  /* Прозрачность поверх размытия: цифры не угадываются по контуру. */
-  opacity: 0.75;
-  user-select: none;
-}
 
-.fuel-map-pin[data-locked="true"] .fuel-map-marker {
-  filter: blur(1.5px);
-  opacity: 0.85;
-}
 
-/* Приглашение войти поверх карты.
 
-   Лист снизу, а не окно по центру: на телефоне большой палец лежит внизу
-   экрана, и кнопка входа должна быть там же. Карта над ним видна — она и
-   доказывает, что сервис работает. */
-.fuel-gate {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 6;
-  display: flex;
-  justify-content: center;
-  padding: 12px;
-  pointer-events: none;
-}
 
-.fuel-gate__card {
-  pointer-events: auto;
-  width: min(460px, 100%);
-  padding: 18px;
-  border-radius: var(--radius-xl);
-  background: var(--market-surface);
-  border: 1px solid var(--market-line);
-  /* Тень заметнее обычной карточки: панель лежит поверх пёстрой карты и
-     без неё сливается с домами и дорогами. */
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
-  max-height: min(78vh, 620px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
 
-/* Список выгод внутри приглашения.
-
-   Подложка отделяет его от заголовка и кнопок: это середина карточки,
-   и без неё три строки читались как продолжение описания сервиса. */
-.fuel-gate__benefits {
-  padding: 12px;
-  border-radius: var(--radius-md);
-  background: var(--market-surface-subtle);
-}
-
-/* Значок в круге — та же форма, что у значков направлений на главной. */
-.fuel-gate__benefit-icon {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--market-primary-soft);
-  color: var(--market-primary);
-}
-
-.fuel-gate__link {
-  color: var(--mantine-color-indigo-6);
-  font-weight: 600;
-}
-
-.fuel-gate__note {
-  padding-top: 10px;
-  border-top: 1px solid var(--market-line);
-  color: var(--market-muted);
-}
 
 @media (max-width: 640px) {
   .fuel-gate {
@@ -10891,131 +9157,20 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   }
 }
 
-/* Происхождение цены в плитке марки.
 
-   Отметка водителя и прайс источника — сведения разного веса: первую
-   оставил человек у колонки, вторую собрал робот со стороннего сайта. Не
-   различая их, человек не понимает, чему доверяет и почему цифра
-   разошлась с табло на заправке.
 
-   Подпись мельче возраста и приглушена: она уточняет, а не спорит с
-   ценой, ради которой карточку и открыли. */
-.fuel-tile__origin {
-  display: block;
-  font-size: var(--text-2xs);
-  line-height: 1.3;
-  color: var(--market-muted);
-  opacity: 0.85;
-}
 
-/* Городская страница карты АЗС.
 
-   Разметка нарочно без Mantine: библиотека клиентская, и страница с ней
-   пришла бы поисковику пустой — ровно то, ради чего страница и делалась.
-   Стили здесь скромные: это текстовая страница для чтения и выдачи, а не
-   интерфейс. */
-.fuel-city {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px 16px 48px;
-  color: var(--market-ink);
-}
 
-.fuel-city__title {
-  /* Ступень шкалы вместо плавного роста: clamp с vw давал дробный
-     кегль при большинстве ширин окна. */
-  font-size: var(--text-2xl);
-  line-height: 1.2;
-  margin: 0 0 12px;
-}
 
-.fuel-city__lead {
-  color: var(--market-muted);
-  margin: 0 0 28px;
-  line-height: 1.6;
-}
 
-.fuel-city__subtitle {
-  font-size: 20px;
-  margin: 28px 0 12px;
-}
 
-/* Таблица прокручивается внутри себя: на телефоне пять колонок цен иначе
-   растягивают страницу вбок. */
-.fuel-city__table-wrap {
-  overflow-x: auto;
-}
 
-.fuel-city__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
 
-.fuel-city__table th,
-.fuel-city__table td {
-  padding: 10px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--market-line);
-  white-space: nowrap;
-}
 
-.fuel-city__table th {
-  font-weight: 600;
-  color: var(--market-muted);
-  font-size: var(--text-sm);
-}
 
-.fuel-city__brands {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  color: var(--market-muted);
-  font-size: 14px;
-}
 
-/* Ссылки на соседние города под ценами.
 
-   Плитками, а не строчным списком: названия городов разной длины, и
-   в строку они складывались рваной лентой. */
-.fuel-city__cities {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.fuel-city__cities li {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 9px 12px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-sm);
-  background: var(--market-surface);
-}
-
-.fuel-city__cities a {
-  color: var(--market-ink);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.fuel-city__cities a:hover {
-  color: var(--market-primary);
-}
-
-.fuel-city__cities-count {
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-  white-space: nowrap;
-}
 
 /* Указатель городов под общей картой.
 
@@ -11377,70 +9532,14 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
   transform: translateY(1px);
 }
 
-.fuel-cities-index {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 28px 16px 40px;
-}
 
-.fuel-cities-index h2 {
-  margin: 0 0 14px;
-  color: var(--market-ink);
-  font-family: var(--font-display), sans-serif;
-  font-size: var(--text-xl);
-  font-weight: 800;
-  letter-spacing: var(--track-title);
-}
 
-.fuel-cities-index ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 7px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
 
-.fuel-cities-index li {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-sm);
-  background: var(--market-surface);
-  font-size: var(--text-sm);
-}
 
-.fuel-cities-index a {
-  color: var(--market-ink);
-  font-weight: 600;
-  text-decoration: none;
-}
 
-.fuel-cities-index a:hover {
-  color: var(--market-primary);
-}
 
-.fuel-cities-index li span {
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
 
-.fuel-city__cta {
-  margin: 28px 0 0;
-  font-size: 16px;
-  font-weight: 600;
-}
 
-.fuel-city__note {
-  margin: 24px 0 0;
-  font-size: var(--text-xs);
-  line-height: 1.6;
-  color: var(--market-muted);
-}
 
 /* Страница категории запчастей.
 
@@ -11669,42 +9768,7 @@ button:disabled,
   }
 }
 
-/* Цена под меткой заправки.
 
-   Плашка с полным составом марок показывается только с шестнадцатого
-   масштаба: раньше она рисовалась с двенадцатого, а там в кадре центра
-   города под две сотни точек. Плашка шириной до 290 пикселей при ячейке
-   разведения в 72 — вчетверо шире своего места, поэтому они налезали
-   сплошным ковром, карты под ними видно не было, а цены соседних заправок
-   сливались в кашу.
-
-   Подпись занимает то же место, что и сам кружок, и отвечает на главный
-   вопрос — почём здесь. Состав марок человек видит по нажатию. */
-.fuel-map-price {
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-  margin-top: 2px;
-  padding: 1px 5px;
-  border-radius: var(--radius-sm);
-  background: rgb(17 17 20 / 0.86);
-  color: #fff;
-  font-size: var(--text-xs);
-  font-weight: 800;
-  line-height: 1.35;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  box-shadow: 0 1px 4px rgb(15 23 42 / 0.3);
-  pointer-events: none;
-}
-
-/* Марка мельче цены и приглушена: цена — ответ, марка — уточнение. */
-.fuel-map-price i {
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  font-style: normal;
-  opacity: 0.72;
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    Широкий цветовой охват для современных экранов
@@ -11762,53 +9826,9 @@ button:disabled,
   }
 }
 
-/* ============================================================
-   Витрина «Где заправиться» на главной
 
-   Цены по сетям АЗС в городе человека: фирменный цвет сети, название,
-   число точек и медианная цена. Читается ради первой строки — самой
-   дешёвой сети, поэтому список идёт по возрастанию цены, а не по
-   алфавиту или размеру сети.
-   ============================================================ */
 
-.fuel-showcase {
-  /* Ритм задаёт --section-gap, как у соседних блоков главной. */
-  margin-block: 0;
-}
 
-/* Переключатель марки топлива: сегменты в одной обойме. */
-.fuel-showcase__fuels {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--market-line);
-  border-radius: 999px;
-  background: var(--market-surface-subtle);
-}
-
-.fuel-showcase__fuel {
-  min-width: 40px;
-  /* Сорок четыре пикселя по высоте — минимальная цель для пальца.
-     Кнопка в 28px выглядела аккуратнее и промахивалась на телефоне. */
-  min-height: 34px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--market-muted);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-  transition:
-    background-color var(--ease-fast) var(--ease-out),
-    color var(--ease-fast) var(--ease-out);
-}
-
-.fuel-showcase__fuel[data-active] {
-  background: var(--market-accent);
-  color: var(--market-accent-ink);
-}
 
 @media (hover: hover) and (pointer: fine) {
   .fuel-showcase__fuel:not([data-active]):hover {
@@ -11817,42 +9837,9 @@ button:disabled,
   }
 }
 
-.fuel-showcase__all {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--market-primary);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  text-decoration: none;
-  transition: gap var(--ease-fast) var(--ease-out);
-}
 
-.fuel-showcase__all:hover {
-  gap: 10px;
-}
 
-.fuel-showcase__grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
 
-.fuel-showcase__card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--market-line);
-  border-radius: var(--radius-md);
-  background: var(--market-surface);
-  /* Появление со ступенькой: строки приезжают одним ответом и иначе
-     вспыхнули бы разом. Сорок миллисекунд на строку — шесть строк
-     укладываются в четверть секунды и читаются как одно движение, а не
-     как очередь. */
-  animation: fuel-showcase-in var(--ease-slow) var(--ease-out) both;
-  animation-delay: calc(var(--row-index, 0) * 40ms);
-}
 
 @keyframes fuel-showcase-in {
   from {
@@ -11867,61 +9854,12 @@ button:disabled,
   }
 }
 
-/* Значок сети: фирменный цвет приходит из данных, потому что цвет сети —
-   это её цвет, а не палитра площадки. Лукойл красный в любой теме. */
-.fuel-showcase__brand {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
 
-.fuel-showcase__body {
-  min-width: 0;
-  flex: 1 1 auto;
-}
 
-.fuel-showcase__network {
-  overflow: hidden;
-  color: var(--market-ink);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-.fuel-showcase__stations {
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-}
 
-.fuel-showcase__price {
-  flex: 0 0 auto;
-  color: var(--market-ink);
-  font-size: var(--text-lg);
-  font-weight: 800;
-  /* Моноширинные цифры: цены стоят столбцом и должны сравниваться
-     глазом, а не вычитанием. */
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
 
-.fuel-showcase__currency {
-  color: var(--market-muted);
-  font-size: var(--text-sm);
-  font-weight: 700;
-}
 
-.fuel-showcase__note {
-  margin-top: 10px;
-  color: var(--market-muted);
-  font-size: var(--text-xs);
-}
 
 @media (max-width: 62em) {
   .fuel-showcase__grid {
@@ -12657,9 +10595,6 @@ h4,
 /* Мелкие подписи набираются свободнее — так их легче читать. */
 .home-hero__action-note,
 .listing-card__specs,
-.fuel-showcase__stations {
-  letter-spacing: var(--track-caption);
-}
 
 /* Оптический размер там, где гарнитура его поддерживает.
 
@@ -13291,48 +11226,10 @@ h1[data-lw-hero] + p {
   font-variant-numeric: tabular-nums;
 }
 
-/* --- Строка цены на заправке --- */
 
-.fuel-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 10px;
-  font-size: var(--text-xs);
-}
 
-.fuel-row + .fuel-row {
-  border-top: 1px solid color-mix(in srgb, var(--market-line) 45%, transparent);
-}
 
-.fuel-row__mark {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 16px;
-  border-radius: var(--radius-xs);
-  font-size: var(--text-2xs);
-  font-weight: 800;
-  letter-spacing: 0.01em;
-}
 
-.fuel-row__name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--market-ink);
-}
-
-.fuel-row__price {
-  flex: 0 0 auto;
-  font-weight: 700;
-  color: var(--market-ink);
-  font-variant-numeric: tabular-nums;
-}
 
 /* --- Строка лота и объявления --- */
 
@@ -14516,4 +12413,139 @@ main > * > p:not([class]) {
     max-height: 9cm;
     object-fit: contain;
   }
+}
+
+
+/* Витрина цен на топливо на главной.
+
+   Осталась в общем файле: блок стоит на главной странице, а не на
+   карте АЗС, и его стили нужны всем посетителям. */
+/* ============================================================
+   Витрина «Где заправиться» на главной
+
+   Цены по сетям АЗС в городе человека: фирменный цвет сети, название,
+   число точек и медианная цена. Читается ради первой строки — самой
+   дешёвой сети, поэтому список идёт по возрастанию цены, а не по
+   алфавиту или размеру сети.
+   ============================================================ */
+
+.fuel-showcase {
+  /* Ритм задаёт --section-gap, как у соседних блоков главной. */
+  margin-block: 0;
+}
+/* Переключатель марки топлива: сегменты в одной обойме. */
+.fuel-showcase__fuels {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--market-line);
+  border-radius: 999px;
+  background: var(--market-surface-subtle);
+}
+.fuel-showcase__fuel {
+  min-width: 40px;
+  /* Сорок четыре пикселя по высоте — минимальная цель для пальца.
+     Кнопка в 28px выглядела аккуратнее и промахивалась на телефоне. */
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color var(--ease-fast) var(--ease-out),
+    color var(--ease-fast) var(--ease-out);
+}
+.fuel-showcase__fuel[data-active] {
+  background: var(--market-accent);
+  color: var(--market-accent-ink);
+}
+.fuel-showcase__all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--market-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+  transition: gap var(--ease-fast) var(--ease-out);
+}
+.fuel-showcase__all:hover {
+  gap: 10px;
+}
+.fuel-showcase__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.fuel-showcase__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface);
+  /* Появление со ступенькой: строки приезжают одним ответом и иначе
+     вспыхнули бы разом. Сорок миллисекунд на строку — шесть строк
+     укладываются в четверть секунды и читаются как одно движение, а не
+     как очередь. */
+  animation: fuel-showcase-in var(--ease-slow) var(--ease-out) both;
+  animation-delay: calc(var(--row-index, 0) * 40ms);
+}
+/* Значок сети: фирменный цвет приходит из данных, потому что цвет сети —
+   это её цвет, а не палитра площадки. Лукойл красный в любой теме. */
+.fuel-showcase__brand {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.fuel-showcase__body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.fuel-showcase__network {
+  overflow: hidden;
+  color: var(--market-ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fuel-showcase__stations {
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+}
+.fuel-showcase__price {
+  flex: 0 0 auto;
+  color: var(--market-ink);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  /* Моноширинные цифры: цены стоят столбцом и должны сравниваться
+     глазом, а не вычитанием. */
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fuel-showcase__currency {
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.fuel-showcase__note {
+  margin-top: 10px;
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+}
+.fuel-showcase__stations {
+  letter-spacing: var(--track-caption);
 }
