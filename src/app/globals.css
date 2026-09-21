@@ -10502,7 +10502,22 @@ main > * > p:not([class]) {
 
   /* Карточки остаются рамкой, но без тени и заливки — тень на бумаге
      печатается грязью. */
+  /* Защита от разрыва — всем карточкам и строкам, а не только тем, что
+     собраны на Mantine.
+
+     Замер при печати: на странице новостей 102 блока могли разорваться
+     между листами, на аукционах 72, на карточке объявления 23. Карточка,
+     разрезанная пополам, на бумаге читается как брак печати — фотография
+     остаётся на одном листе, цена на другом. */
   .listing-card,
+  .auction-result-card,
+  .news-list-card,
+  .news-list-card-link,
+  .forum-row,
+  .market-linked-card,
+  .part-result-card,
+  .lot-row,
+  .vehicle-detail-specs__item,
   .mantine-Card-root,
   .mantine-Paper-root {
     box-shadow: none !important;
