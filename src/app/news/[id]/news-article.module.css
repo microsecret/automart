@@ -11,7 +11,14 @@
 .lead,
 .list {
   margin: 0;
-  font-size: clamp(1rem, 0.98rem + 0.12vw, 1.08rem);
+  /* Кегль ступенью шкалы вместо плавного clamp.
+
+     Было `clamp(1rem, 0.98rem + 0.12vw, 1.08rem)`: при базе страницы 15
+     пикселей это 15–16.2, то есть дробная величина почти при любой
+     ширине окна. Дробный кегль ставит край буквы между пикселями
+     экрана, и текст статьи — то, ради чего страницу открывают, —
+     отрисовывается мягче, чем должен. */
+  font-size: var(--text-md);
   line-height: 1.78;
   letter-spacing: 0.002em;
   text-wrap: pretty;
@@ -19,7 +26,8 @@
 
 .lead {
   color: #172033;
-  font-size: clamp(1.07rem, 1.02rem + 0.2vw, 1.16rem);
+  /* Лид на ступень крупнее текста: 18 против 15. */
+  font-size: var(--text-lg);
   font-weight: 600;
   line-height: 1.65;
 }
@@ -40,7 +48,7 @@
   border-radius: var(--radius-md);
   background: var(--market-primary-soft);
   box-shadow: var(--hairline);
-  font-size: clamp(1rem, 0.98rem + 0.12vw, 1.08rem);
+  font-size: var(--text-md);
   line-height: 1.72;
 }
 
