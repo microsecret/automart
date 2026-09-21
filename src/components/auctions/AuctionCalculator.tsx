@@ -461,7 +461,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
               <Text size="xs" c="rgba(255,255,255,0.85)">{calc.totalMin === null ? `Известная часть расходов в ${city}` : `Ориентировочная цена под ключ в ${city}`}</Text>
               <Text size="xs" c="rgba(255,255,255,0.7)">{calc.totalMin === null ? "для полного итога нужны пошлина и утильсбор по документам" : "цена авто + логистика + таможенный сценарий + РФ"}</Text>
             </Stack>
-            <Text fw={800} fz="1.1rem" c="white" ff="var(--font-display),sans-serif" lh={1}>{calc.totalMin === null || calc.totalMax === null ? formatPrice(calc.totalWithoutDuty) : calc.totalMin === calc.totalMax ? formatPrice(calc.totalMin) : `${formatPrice(calc.totalMin)} — ${formatPrice(calc.totalMax)}`}</Text>
+            <Text fw={800} fz="18px" c="white" ff="var(--font-display),sans-serif" lh={1}>{calc.totalMin === null || calc.totalMax === null ? formatPrice(calc.totalWithoutDuty) : calc.totalMin === calc.totalMax ? formatPrice(calc.totalMin) : `${formatPrice(calc.totalMin)} — ${formatPrice(calc.totalMax)}`}</Text>
           </Group>
         </Paper>
 

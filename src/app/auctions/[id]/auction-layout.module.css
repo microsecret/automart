@@ -17,7 +17,12 @@
 .title {
   margin: 0;
   color: var(--market-ink);
-  font: 850 clamp(1.5rem, 3vw, 2rem) / 1.08 var(--font-display), sans-serif;
+  /* Ступень шкалы вместо clamp: и rem, и vw дают дробную величину при
+     большинстве ширин — замер страницы лота показал 30 пикселей, то
+     есть значение вне шкалы 9/11/13/15/18/22/26/34. Сокращённая запись
+     `font:` пряталась от поиска по `font-size`, поэтому осталась
+     последней. */
+  font: 850 var(--text-2xl) / 1.08 var(--font-display), sans-serif;
   letter-spacing: -0.025em;
 }
 
@@ -40,7 +45,7 @@
 .price {
   flex-shrink: 0;
   color: var(--market-primary);
-  font: 850 clamp(1.4rem, 3vw, 1.75rem) / 1 var(--font-display), sans-serif;
+  font: 850 var(--text-2xl) / 1 var(--font-display), sans-serif;
 }
 
 .priceNote {
