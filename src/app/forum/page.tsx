@@ -79,7 +79,11 @@ export default async function ForumPage() {
           <Title order={1} fz={{ base: "22px", md: "34px" }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
             Форум автолюбителей
           </Title>
-          <Text size="sm" c="var(--market-muted)" mt={6} maw={680}>
+          {/* Мера строки, а не жёсткие пиксели: 680 при кегле 13 дают 105
+              знаков в строке при норме чтения 60–75. Переменная --measure
+              считает ширину от самого кегля и не разъезжается, если он
+              изменится. */}
+          <Text size="sm" c="var(--market-muted)" mt={6} maw="var(--measure)">
             {allTopics > 0
               ? `${allTopics} ${pluralTopics(allTopics)} по маркам, регионам России и темам: ремонт, запчасти, растаможка, выбор машины. Отвечают владельцы.`
               : "Форумы по маркам, регионам России и темам: ремонт, запчасти, растаможка, выбор машины. Спросите тех, кто уже ездит."}
