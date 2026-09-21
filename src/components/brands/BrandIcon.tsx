@@ -77,7 +77,14 @@ export default function BrandIcon({ brand, size = 36, variant = "rounded" }: Bra
         paddingInline: Math.round(size * 0.14),
         borderRadius: radius,
         border: `1px solid ${markColor}22`,
-        background: `${markColor}0f`,
+        /* Подложка светлая в обеих темах — как у знаков с логотипом
+           строкой выше, и по той же причине: фирменные цвета марок
+           рассчитаны на светлый фон, у многих они почти чёрные (Kia
+           #05141F, Mazda #101010). На ночной подложке буквы этих марок
+           исчезали: замер страницы марок дал контраст 1.18 у «Jeep» и
+           2.35 у двадцати восьми других — то есть половина каталога не
+           читалась вовсе. */
+        background: `color-mix(in srgb, ${markColor} 6%, #f7f8fb)`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

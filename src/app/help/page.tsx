@@ -25,7 +25,7 @@ export default function HelpPage() {
               весь сайт. Ручные mb={4} возвращают разнобой: замер восьми
               страниц нашёл шесть разных отступов под заголовком. */}
           <Text component="h1" ff="var(--font-display),sans-serif" c="var(--market-ink)">Помощь и поддержка</Text>
-          <Text size="md" c="#64748b">Помощь по объявлениям, безопасности и сделкам на LeWheel</Text>
+          <Text size="md" c="var(--market-muted)">Помощь по объявлениям, безопасности и сделкам на LeWheel</Text>
         </Box>
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
           {SECTIONS.map((s) => {
@@ -42,7 +42,7 @@ export default function HelpPage() {
                     </ThemeIcon>
                     <Stack gap={4} style={{ flex: 1 }}>
                       <Text fw={700} fz="md" c="var(--market-ink)">{s.title}</Text>
-                      <Text size="sm" c="#64748b">{s.desc}</Text>
+                      <Text size="sm" c="var(--market-muted)">{s.desc}</Text>
                     </Stack>
                   </Group>
                 </Paper>

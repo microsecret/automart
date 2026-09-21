@@ -720,15 +720,15 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   </Text>
                   <Group gap={6} mt={4}>
                     <IconCheck size={14} color="#1c4291" />
-                    <Text size="xs" c="#1c4291">Проверка данных объявления</Text>
+                    <Text size="xs" c="var(--market-accent-text)">Проверка данных объявления</Text>
                   </Group>
                   <Group gap={6}>
                     <IconCheck size={14} color="#1c4291" />
-                    <Text size="xs" c="#1c4291">Проверка документов</Text>
+                    <Text size="xs" c="var(--market-accent-text)">Проверка документов</Text>
                   </Group>
                   <Group gap={6}>
                     <IconCheck size={14} color="#1c4291" />
-                    <Text size="xs" c="#1c4291">Статусы и поддержка</Text>
+                    <Text size="xs" c="var(--market-accent-text)">Статусы и поддержка</Text>
                   </Group>
                 </Stack>
                 <Button component={Link} href="/services/safe-deal" variant="light" color="indigo" size="md">Как это работает</Button>

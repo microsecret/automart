@@ -105,7 +105,7 @@ export default function CreditCalculator({ price }: { price: number }) {
         <Group justify="space-between" align="center">
           <Stack gap={0}>
             <Text size="xs" c="var(--market-muted)">Ежемесячный платёж</Text>
-            <Text size="xl" fw={800} c="#1c4291" ff="var(--font-display),sans-serif">{formatPrice(monthlyPayment)}</Text>
+            <Text size="xl" fw={800} c="var(--market-accent-text)" ff="var(--font-display),sans-serif">{formatPrice(monthlyPayment)}</Text>
           </Stack>
           <Stack gap={0} align="flex-end">
             <Text size="xs" c="var(--market-muted)">Сумма кредита</Text>
