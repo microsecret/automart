@@ -163,6 +163,10 @@
 .forum-post-body ol {
   margin: 0 0 8px;
   padding-left: 22px;
+  /* Та же мера, что у абзацев: замер нашёл пункты списка по 129 знаков.
+     Ограничение на самом списке, а не на пункте — иначе маркер и текст
+     разъезжаются по разной ширине. */
+  max-width: var(--measure);
 }
 .forum-post-body li {
   margin-bottom: 2px;
