@@ -239,7 +239,11 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
                     rel="noopener noreferrer"
                     key={`${action.kind}-${action.url}`}
                     variant={action.kind === "channel" ? "filled" : "light"}
-                    color={action.kind === "channel" ? "blue" : "indigo"}
+                    /* Фирменный тон вместо палитрового blue: замер тёмной
+                       темы дал белому тексту на нём контраст 3.56 при норме
+                       4.5. Тон indigo подчиняется primaryShade, который для
+                       ночной темы уже подобран под белые буквы. */
+                    color="indigo"
                     leftSection={action.kind === "vehicle-check" ? <IconShieldCheck size={18} /> : <IconBrandTelegram size={18} />}
                     radius="md"
                   >

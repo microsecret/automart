@@ -71,7 +71,10 @@ export default function LegalDocumentsPage() {
         <Paper withBorder radius="md" p={{ base: "md", md: "lg" }}>
           <Group gap="sm" align="flex-start" wrap="nowrap">
             <ThemeIcon color="teal" variant="light" size={38} radius="md"><IconShieldCheck size={20} /></ThemeIcon>
-            <Stack gap={4}><Text fw={800}>Перед подписанием</Text><Text size="sm" c="dimmed">Сверьте VIN или номер рамы с документами, проверьте полномочия продавца, внесите реальную цену и оформите акт приёма-передачи одновременно с расчётом.</Text></Stack>
+            {/* Мера строки: замер при окне 1920 дал 160 знаков в строке при
+                норме чтения 60–75. Текст объясняет, что проверить перед
+                подписанием договора — его читают целиком. */}
+            <Stack gap={4} maw="var(--measure)"><Text fw={800}>Перед подписанием</Text><Text size="sm" c="dimmed">Сверьте VIN или номер рамы с документами, проверьте полномочия продавца, внесите реальную цену и оформите акт приёма-передачи одновременно с расчётом.</Text></Stack>
           </Group>
         </Paper>
 
