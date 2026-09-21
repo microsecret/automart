@@ -2153,8 +2153,8 @@ select {
    Значки есть не у всех секций намеренно: у транспорта и сервисов они
    различают виды, у запчастей и стран — нет. Но отступ под значок
    резервируется всегда, и колонка остаётся одним столбцом. */
-.market-side-panel .mantine-NavLink-root:not(:has(.mantine-NavLink-section)) .mantine-NavLink-label {
-  padding-left: 24px;
+.market-side-nav:not(:has(.mantine-NavLink-section)) {
+  padding-left: 33px;
 }
 
 .lewheel-brand {
