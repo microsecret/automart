@@ -19,7 +19,7 @@
   padding: 8px 14px;
   border: 1px solid #e2e8f0;
   border-radius: var(--radius-full);
-  color: #475569;
+  color: var(--market-ink-soft);
   background: #ffffff;
   font-size: var(--text-sm);
   font-weight: 700;
@@ -28,7 +28,7 @@
 
 .sectionTab:hover {
   border-color: #8fa9de;
-  color: #14306b;
+  color: var(--market-accent-text);
 }
 
 .sectionTab:focus-visible,
@@ -70,7 +70,7 @@
 
 .diagramEmpty {
   min-height: 390px;
-  color: #64748b;
+  color: var(--market-muted);
 }
 
 .marker {

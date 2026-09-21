@@ -7,7 +7,7 @@
   min-height: 42px;
   border: 1px solid #b8c4d6 !important;
   background: #ffffff !important;
-  color: #172033 !important;
+  color: var(--market-ink) !important;
   box-shadow: var(--shadow-sm);
 }
 
@@ -17,7 +17,7 @@
 
 .listingCreateForm :global(.mantine-Input-input::placeholder),
 .listingCreateForm :global(.mantine-Textarea-input::placeholder) {
-  color: #64748b !important;
+  color: var(--market-muted) !important;
   opacity: 1;
 }
 
@@ -38,7 +38,7 @@
 }
 
 .listingCreateForm :global(.mantine-NumberInput-control) {
-  color: #14306b;
+  color: var(--market-accent-text);
 }
 
 /* The form action belongs after its last field. A sticky panel hides inputs
