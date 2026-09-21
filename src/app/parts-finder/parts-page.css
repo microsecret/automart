@@ -477,3 +477,113 @@
   line-height: 1.6;
   color: var(--market-muted);
 }
+
+
+/* Медиазапросы раздела, перенесённые из globals.css.
+
+   Базовые правила уехали в этот файл, а медиазапросы остались в общем
+   — и грузились раньше. Каскад ломался: на телефоне карточка
+   объявления оставалась двухколоночной, и галерее доставалось
+   пятьдесят пикселей из трёхсот пятидесяти восьми. */
+@media (hover: hover) and (pointer: fine) {
+
+  .part-result-card:hover {
+    transform: translateY(var(--lift-md));
+    border-color: var(--market-field-line) !important;
+    box-shadow: var(--shadow-md);
+  }
+}
+@media (max-width: 640px) {
+  .parts-category-bar .mantine-Button-root {
+    min-height: 44px;
+    padding-inline: 14px;
+  }
+
+  .parts-subcategories .mantine-Button-root,
+  .parts-condition-shortcuts .mantine-Button-root {
+    min-height: 38px;
+    padding-inline: 12px;
+  }
+}
+@media (max-width: 62em) {
+  .parts-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .parts-filter-grid__search {
+    grid-column: span 2;
+  }
+}
+@media (max-width: 36em) {
+  .parts-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .parts-filter-grid__search {
+    grid-column: auto;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .part-result-card:hover .part-result-card__media > img {
+    transform: scale(1.025);
+    filter: saturate(1.04) contrast(1.01);
+  }
+  .part-result-card:hover {
+    border-color: color-mix(in srgb, var(--market-primary) 28%, var(--market-field-line)) !important;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(var(--lift-md));
+  }
+}
+@media (max-width: 72em) {
+  .part-detail__sticky-aside {
+    position: static;
+  }
+}
+@media (max-width: 48em) {
+  .parts-filter-grid,
+  .parts-filter-grid__search {
+    grid-column: 1 / -1;
+  }
+
+  .parts-vehicle-inline {
+    width: 100%;
+  }
+
+  .parts-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 36em) {
+  .parts-filter-grid,
+  .parts-filter-grid__search {
+    grid-column: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .part-result-card__cta,
+  .part-result-card__cta svg {
+    transition: none;
+  }
+
+  .part-result-card__cta:hover,
+  .part-result-card__cta:hover svg {
+    transform: none;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .parts-category-card:hover {
+    border-color: var(--mantine-color-indigo-4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .parts-category-card {
+    transition: border-color 160ms ease;
+  }
+
+  .parts-category-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}

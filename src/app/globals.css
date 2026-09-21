@@ -663,7 +663,6 @@ body {
     min-width: 40px;
     height: 40px;
   }
-
   /* Чекбокс ловит касание вместе со своей подписью: сам квадратик остаётся
      16px, но кликабельная область растёт до строки целиком. */
   .mantine-Checkbox-root,
@@ -882,8 +881,6 @@ select {
     padding: 14px 12px 36px;
   }
 
-  /* Запас под плавающую панель.
-
      Сама панель поднята на высоту полосы жестов (env(safe-area-inset-bottom)),
      а запас под неё эту полосу не учитывал — на айфонах с жестовой полосой
      последние тридцать четыре пикселя страницы уходили под панель. Чаще
@@ -955,8 +952,6 @@ select {
     transition: background var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
   }
 
-  /* Подача объявления выделена всегда, а не только на своей странице.
-
      Раньше заливку она получала лишь когда человек уже открыл форму — то
      есть ровно тогда, когда подсказка не нужна. На остальных страницах
      главное действие площадки было того же цвета, что и текущая вкладка,
@@ -975,7 +970,6 @@ select {
     color: var(--market-primary);
     background: var(--market-primary-soft);
   }
-
   /* На своей странице — та же плашка, но с рамкой: человек видит, что
      он уже здесь, и при этом кнопка не меняет цвет под ним. */
   .mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
@@ -993,7 +987,6 @@ select {
   :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
     background: var(--market-primary-soft);
   }
-
   /* Кнопка поддержки висит поверх страницы и на узком экране закрывала
      строку поиска — главное поле на главной. Она стала компактнее и ушла
      ближе к краю: остаётся под рукой, но перестаёт перекрывать ввод.
@@ -1022,26 +1015,20 @@ select {
     transform: scale(1);
   }
 
-  /* На странице лота кнопка чата поднимается над полосой заявки.
-
      Замер на телефоне: круглая кнопка ложилась поверх правой части
      кнопки «Заказать» — пересечение 40 на 34 пикселя. Нажатие в этой
      зоне открывало чат вместо заявки, и площадка теряла обращение.
 
      Полоса стоит на 92 пикселях и высотой около шестидесяти: 168
      поднимает кнопку над ней с запасом. */
-  /* Полоса действия есть и на странице лота, и на странице объявления.
 
      Защита была написана только для аукциона, а на объявлении кнопка
      поддержки ложилась ровно на «Написать продавцу» — самую правую
      кнопку полосы. Слой у неё выше, поэтому нажатие открывало чат
      поддержки вместо письма продавцу, и площадка теряла обращение. */
-  body:has(.auction-action-bar) .support-chat__launcher,
   body:has(.listing-action-bar) .support-chat__launcher {
     bottom: calc(168px + env(safe-area-inset-bottom, 0px)) !important;
   }
-
-  /* На страницах входа кнопка поддержки прячется.
 
      Она ложилась на ссылку «Забыли пароль?» — и человек, забывший
      пароль, попадал в чат поддержки вместо восстановления. Дальше он
@@ -1053,16 +1040,9 @@ select {
     display: none;
   }
 
-  /* Пока открыто приглашение войти, кнопка поддержки прячется.
-
      Она ложилась прямо на кнопку «Войти через Telegram» — главное
      действие всей страницы, ради которого приглашение и показано.
      Нажатие открывало чат поддержки вместо входа. */
-  body:has(.fuel-gate) .support-chat__launcher {
-    display: none;
-  }
-
-  /* В мини-приложении кнопка поднимается над панелью вкладок.
 
      Панель стоит внизу и высотой 58 пикселей, а под ней ещё бывает
      главная кнопка Telegram. Кнопка поддержки на 92 пикселях ложилась на
@@ -1467,7 +1447,6 @@ select {
     height: calc(100dvh - var(--app-header-height));
     max-height: calc(100dvh - var(--app-header-height));
   }
-
   /* Колесо мыши над списком крутит сам список, а не страницу под ним —
      иначе, дойдя до конца меню, курсор «проваливался» в страницу. */
   .market-app-navbar .mantine-ScrollArea-viewport {
@@ -3309,18 +3288,6 @@ select {
     transform: translateY(var(--lift-md));
     box-shadow: var(--shadow-md);
   }
-
-  .part-result-card:hover {
-    transform: translateY(var(--lift-md));
-    border-color: var(--market-field-line) !important;
-    box-shadow: var(--shadow-md);
-  }
-
-  .auction-result-card:hover {
-    transform: translateY(var(--lift-md));
-    border-color: #fb923c !important;
-    box-shadow: var(--shadow-lg);
-  }
 }
 
 .listing-card__media[data-empty-media] {
@@ -3766,14 +3733,8 @@ select {
   /* При наведении на карточку стрелка отъезжает от текста — движение
      показывает, что карточка ведёт дальше. */
   .listing-card:hover .market-details-cta,
-  .vehicle-detail-similar-card:hover .market-details-cta {
-    gap: 9px;
-  }
 
   .listing-card:hover .market-details-cta svg,
-  .vehicle-detail-similar-card:hover .market-details-cta svg {
-    transform: translateX(2px);
-  }
 }
 
 .listing-card:active .market-details-cta,
@@ -4097,18 +4058,6 @@ select {
    попадает на ходу, а стоят эти кнопки в ряду с горизонтальной
    прокруткой: промах не просто не срабатывает, он утаскивает ленту
    вбок, и выбранная категория уезжает из виду. */
-@media (max-width: 640px) {
-  .parts-category-bar .mantine-Button-root {
-    min-height: 44px;
-    padding-inline: 14px;
-  }
-
-  .parts-subcategories .mantine-Button-root,
-  .parts-condition-shortcuts .mantine-Button-root {
-    min-height: 38px;
-    padding-inline: 12px;
-  }
-}
 
 
 
@@ -4117,24 +4066,8 @@ select {
 @media (max-width: 62em) {
   /* На среднем экране четыре колонки сжимают поиск до нечитаемого — делим
      пополам, ряды остаются полными. */
-  .parts-filter-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .parts-filter-grid__search {
-    grid-column: span 2;
-  }
 }
 
-@media (max-width: 36em) {
-  .parts-filter-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .parts-filter-grid__search {
-    grid-column: auto;
-  }
-}
 
 .parts-filter-grid > .mantine-InputWrapper-root,
 .parts-filter-grid > .mantine-Box-root,
@@ -4571,17 +4504,6 @@ select {
 
 
 
-@media (max-width: 62em) {
-  .fuel-map-canvas {
-    /* Список ушёл в нижний лист и больше не занимает поток, поэтому
-       карте достаётся почти весь экран: вычитаем шапку сайта, полосу
-       управления и свёрнутый лист.
-
-       Брейкпоинт тот же, что у листа: разойдись они, на планшете
-       осталась бы карта в треть экрана и список рядом. */
-    min-height: max(320px, calc(100dvh - 158px));
-  }
-}
 
 
 
@@ -4618,12 +4540,6 @@ select {
 
 
 
-@media (hover: hover) and (pointer: fine) {
-  .fuel-map-plate:hover {
-    border-color: #fff;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.5);
-  }
-}
 
 
 
@@ -4684,32 +4600,15 @@ select {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-map-marker[data-selected]::after {
-    animation: none;
-  }
-}
 
 
 
 
 
-@media (hover: hover) and (pointer: fine) {
-  .fuel-map-tile-option:not([data-active]):hover {
-    background: var(--market-surface-subtle);
-  }
-}
 
 
 /* На узком экране подписи источников не помещаются рядом с масштабом:
    переключатель уходит вниз, к подписи карты, где места больше. */
-@media (max-width: 640px) {
-  .fuel-map-canvas__tiles-switch {
-    top: auto;
-    right: 8px;
-    bottom: 44px;
-  }
-}
 
 
 
@@ -4772,20 +4671,6 @@ select {
 
 /* На телефоне карточка становится нижним листом во всю ширину: место
    под большим пальцем, и карта над ней остаётся видимой. */
-@media (max-width: 62em) {
-  .fuel-map-selected {
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: auto;
-    max-height: 80%;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 16px 16px 0 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-}
 
 
 /* ── Карта на весь экран ──────────────────────────────────────────────
@@ -4811,32 +4696,6 @@ select {
 /* На телефоне панель переносится в две строки: поля поиска и города
    рядом не помещаются, а сжимать их до нечитаемого нельзя. */
 @media (max-width: 62em) {
-  .fuel-map-shell {
-    /* Ниже — нижнее меню приложения. */
-    height: calc(100dvh - 60px);
-  }
-
-  .fuel-map-topbar {
-    top: 8px;
-    right: 8px;
-    left: 8px;
-    flex-wrap: wrap;
-    padding: 6px;
-    gap: 6px;
-  }
-
-  .fuel-map-topbar__search {
-    flex: 1 1 100%;
-    order: -1;
-  }
-
-  .fuel-map-topbar__city,
-  .fuel-map-topbar__network {
-    width: auto;
-    flex: 1 1 40%;
-  }
-
-  /* Свёрнутая панель — одна строка вместо трёх.
 
      Развёрнутая занимала около трёхсот точек: на экране в 667 это почти
      половина, и карту было видно узкой полосой между панелью сверху и
@@ -4844,35 +4703,8 @@ select {
 
      На виду остаётся то, чем пользуются: марки топлива и город. Поиск по
      адресу и выбор сети нужны меньшинству — они за кнопкой. */
-  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__search,
-  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__network,
-  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__refresh {
-    display: none;
-  }
-
-  .fuel-map-topbar:not([data-open]) {
-    flex-wrap: nowrap;
-  }
-
   /* Лента марок забирает остаток строки и прокручивается вбок: частые 92,
      95 и ДТ видны сразу, редкие уезжают за край. */
-  .fuel-map-topbar:not([data-open]) .fuel-map-fuel-chips {
-    flex: 1 1 auto;
-    min-width: 0;
-    /* Затухание у правого края.
-
-       Лента прокручивается вбок, но обрезанная посередине кнопка «98»
-       читается как поломка вёрстки, а не как приглашение прокрутить.
-       Растворение говорит, что там продолжение, — так же ведут себя
-       ленты на карточках маркетплейсов.
-
-       Маска только у правого края: лента всегда начинается с «Все», и
-       слева обрезать нечего. */
-    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
-  }
-
-  /* Город ужимается первым, лента марок — следом.
 
      Город стоял жёсткой колонкой в 108 точек, и лента дожималась ровно до
      него: последняя видимая кнопка резалась по границе выбора города, а не
@@ -4880,24 +4712,9 @@ select {
 
      Теперь город тоже сжимаемый, но не уже 84 точек — там ещё читается
      «Москва» со стрелкой. */
-  .fuel-map-topbar:not([data-open]) .fuel-map-topbar__city {
-    flex: 0 1 108px;
-    min-width: 84px;
-    width: auto;
-  }
-
-  .fuel-map-toast {
-    bottom: 72px;
-  }
 }
 
 
-@media (max-width: 62em) {
-  .fuel-map-topbar__toggle {
-    display: inline-flex;
-    flex: 0 0 auto;
-  }
-}
 
 
 
@@ -4915,67 +4732,8 @@ select {
    чтобы понять, что список там есть; развёрнутый занимает три четверти
    экрана, оставляя карту видимой сверху. */
 @media (max-width: 62em) {
-  .fuel-map-layout {
-    position: relative;
-  }
-
-  .fuel-map-list[data-sheet] {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 240;
-    max-height: 62px;
-    padding-top: 0;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -8px 28px rgb(15 23 42 / .18);
-    /* Нижнее меню приложения стоит на 12 пикселях от края и высотой
-       около 58 — лист заканчивается над ним, а не под ним. */
-    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-    transition: max-height var(--ease-slow) var(--ease-out);
-  }
-
-  .fuel-map-list[data-sheet][data-expanded] {
-    max-height: 76dvh;
-    overflow: auto;
-  }
-
   /* Ручка листа: и подпись, и кнопка. По ней человек читает, что
      сейчас в списке, и ею же тянет лист. */
-  .fuel-map-sheet__handle {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    display: grid;
-    width: 100%;
-    min-height: 52px;
-    padding: 6px 4px 8px;
-    justify-items: center;
-    gap: 6px;
-    background: var(--market-surface);
-  }
-
-  .fuel-map-sheet__grip {
-    display: block;
-    width: 38px;
-    height: 4px;
-    border-radius: var(--radius-full);
-    background: var(--market-line);
-  }
-
-  .fuel-map-sheet__handle:focus-visible {
-    outline: 3px solid var(--market-focus-ring);
-    outline-offset: -3px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fuel-map-list[data-sheet] {
-    transition: none;
-  }
 }
 
 
@@ -4991,18 +4749,6 @@ select {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-card-tab {
-    transition: none;
-  }
-}
-
-
-@media (hover: hover) {
-  .fuel-price-row:hover {
-    border-color: color-mix(in srgb, var(--market-primary) 46%, var(--market-line));
-  }
-}
 
 
 
@@ -5012,16 +4758,9 @@ select {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-price-row,
-  .fuel-price-row__meter > span {
-    transition: none;
-  }
 
-  .fuel-price-row:active {
-    transform: none;
-  }
-}
+
+
 
 
 
@@ -5042,11 +4781,6 @@ select {
 /* Кнопка открытия формы: главное действие страницы, поэтому во всю
    ширину и в цвете акцента, а не служебной серой строкой. */
 
-@media (hover: hover) {
-  .fuel-report__open:not([data-loading]):hover {
-    background: #15803d;
-  }
-}
 
 
 
@@ -5061,11 +4795,6 @@ select {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-report__open:active::after {
-    animation: none;
-  }
-}
 
 
 
@@ -5092,13 +4821,6 @@ select {
 /* Развернуть подробности: служебное действие, поэтому текстом, а не
    ещё одной крупной кнопкой рядом с главными. */
 
-@media (hover: hover) {
-  .fuel-report__more:hover,
-  .fuel-report__cancel:hover {
-    border-color: color-mix(in srgb, var(--market-ink) 32%, var(--market-line));
-    background: var(--market-surface-subtle);
-  }
-}
 
 
 
@@ -5109,26 +4831,8 @@ select {
 /* Отправка: последнее действие, поэтому во всю ширину и внизу — под
    большим пальцем. */
 
-@media (hover: hover) {
-  .fuel-report__send:not([data-loading]):not(:disabled):hover {
-    background: #15803d;
-  }
-}
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-report__fuel,
-  .fuel-report__nothing,
-  .fuel-report__queue-option {
-    transition: none;
-  }
-
-  .fuel-report__fuel:active,
-  .fuel-report__nothing:active,
-  .fuel-report__queue-option:active {
-    transform: none;
-  }
-}
 
 
 
@@ -5145,11 +4849,6 @@ select {
 
    Ровно эта задача уже решена в каталоге, где цене отдали двойную
    колонку; здесь тот же ответ, только через число колонок. */
-@media (min-width: 48.0625em) and (max-width: 62em) {
-  .auction-filter-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 
 
 
@@ -5303,20 +5002,6 @@ select {
 }
 
 
-@media (hover: hover) and (pointer: fine) {
-  .auction-result-card:hover .auction-card__media > img,
-  .part-result-card:hover .part-result-card__media > img {
-    transform: scale(1.025);
-    filter: saturate(1.04) contrast(1.01);
-  }
-
-  .auction-result-card:hover,
-  .part-result-card:hover {
-    border-color: color-mix(in srgb, var(--market-primary) 28%, var(--market-field-line)) !important;
-    box-shadow: var(--shadow-lg);
-    transform: translateY(var(--lift-md));
-  }
-}
 
 
 
@@ -5411,11 +5096,6 @@ select {
 
 
 
-@media (hover: hover) and (pointer: fine) {
-  .vehicle-detail-similar-card:hover .vehicle-detail-similar-card__image {
-    transform: scale(1.025);
-  }
-}
 
 .moderation-listing-row {
   border: 1px solid var(--market-line);
@@ -5423,28 +5103,6 @@ select {
   background: var(--market-surface-subtle);
 }
 
-@media (max-width: 72em) {
-  .vehicle-detail-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .vehicle-detail-layout__sticky-aside,
-  .part-detail__sticky-aside {
-    position: static;
-  }
-
-  .vehicle-detail-specs__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .vehicle-detail-statuses__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .vehicle-detail-similar-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 
 @media (max-width: 48em) {
   .listing-card__row-layout {
@@ -5470,27 +5128,6 @@ select {
     flex: 1 1 46%;
   }
 
-  .vehicle-detail-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .vehicle-detail-gallery__empty-state {
-    min-height: 220px;
-  }
-
-  .vehicle-detail-specs__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .vehicle-detail-statuses__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .vehicle-detail-vin-grid,
-  .vehicle-detail-similar-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .home-auctions {
     /* Баннер занимал 547px — больше половины экрана телефона до того, как
        появится первое объявление. Здесь он остаётся узнаваемым, но уступает
@@ -5498,7 +5135,6 @@ select {
     min-height: 232px;
     padding: 18px !important;
   }
-
   /* «Маршрут сделки» объясняет процесс — это чтение для того, кто уже
      заинтересовался, а не для первого экрана. Ниже по странице объяснение
      остаётся. */
@@ -5509,7 +5145,6 @@ select {
   .home-auctions__content h1 {
     font-size: 25px !important;
   }
-
   /* Подзаголовок пересказывает заголовок другими словами. */
   .home-auctions__content h1 + .mantine-Text-root {
     display: none;
@@ -5533,15 +5168,8 @@ select {
   }
 
   .catalog-filter-grid,
-  .parts-filter-grid,
-  .auction-filter-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 
   .catalog-filter-field--search,
-  .parts-filter-grid__search {
-    grid-column: 1 / -1;
-  }
 
   .catalog-filter-field--make,
   .catalog-filter-field--model,
@@ -5551,24 +5179,12 @@ select {
   .catalog-filter-field--city,
   .catalog-filter-field--mileage { grid-column: auto; }
 
-  .parts-vehicle-inline {
-    width: 100%;
-  }
-
-  .parts-workspace {
-    grid-template-columns: 1fr;
-  }
-
   .moderation-listing-row {
     align-items: flex-start;
   }
 }
 
 @media (max-width: 36em) {
-  .vehicle-detail-vin-grid,
-  .vehicle-detail-similar-grid {
-    grid-template-columns: 1fr;
-  }
 
   .market-directory__signals,
   .home-auctions__summary {
@@ -5576,15 +5192,8 @@ select {
   }
 
   .catalog-filter-grid,
-  .parts-filter-grid,
-  .auction-filter-grid {
-    grid-template-columns: 1fr;
-  }
 
   .catalog-filter-field--search,
-  .parts-filter-grid__search {
-    grid-column: auto;
-  }
 
   .catalog-heading {
     align-items: flex-start;
@@ -5607,7 +5216,6 @@ select {
   .catalog-filter-panel__intro {
     align-items: flex-start;
   }
-
   /* Первый экран телефона принадлежит объявлениям.
      Замер главной: до первой карточки было 2021px — почти два с половиной
      экрана баннера, витрины и фильтров. Человек приходит смотреть технику,
@@ -5615,7 +5223,6 @@ select {
 
      Ниже — не удаление блоков, а расстановка приоритетов для узкого экрана:
      тяжёлое сжимается, объявления поднимаются, всё остаётся доступным. */
-
   /* Пояснение над фильтрами повторяет то, что видно по самим полям.
      Селектор идёт по второму абзацу напрямую: Mantine рисует эти подписи
      как <p>, а не как .mantine-Text-root, поэтому прежнее правило ни во что
@@ -5623,13 +5230,11 @@ select {
   .catalog-filter-panel__intro p:nth-of-type(2) {
     display: none;
   }
-
   /* Метка набрана капсом и стоит вплотную к полю — читалась как отдельный
      заголовок, а не как подпись к строке ввода. */
   .catalog-filter-panel .mantine-InputWrapper-label {
     margin-bottom: 5px;
   }
-
   /* Панель упиралась в нижнее меню: последняя строка оказывалась под ним. */
   .catalog-filter-panel {
     margin-bottom: 8px;
@@ -5638,7 +5243,6 @@ select {
   .catalog-filter-panel {
     padding: 10px !important;
   }
-
   /* Свёрнутая панель показывает строку поиска и кнопку «Фильтры»:
      остальные поля открываются по нажатию — механизм уже был, здесь он
      распространён на базовую сетку. */
@@ -5654,15 +5258,6 @@ select {
   }
 }
 
-@media (max-width: 62em) {
-  .auction-detail-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .auction-detail-layout__aside > .mantine-Paper-root {
-    position: static;
-  }
-}
 
 
 
@@ -5670,17 +5265,6 @@ select {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .part-result-card__cta,
-  .part-result-card__cta svg {
-    transition: none;
-  }
-
-  .part-result-card__cta:hover,
-  .part-result-card__cta:hover svg {
-    transform: none;
-  }
-}
 
 .message-bubble {
   max-width: min(78%, 560px);
@@ -5878,11 +5462,6 @@ select {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .create-listing__readiness {
-    transition-duration: 0ms;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .admin-source-health__row {
@@ -6031,18 +5610,6 @@ select {
 }
 
 @media (max-width: 48em) {
-  .create-listing__journey-step + .create-listing__journey-step::before {
-    top: 0;
-    right: 14px;
-    bottom: auto;
-    left: 14px;
-    width: auto;
-    height: 1px;
-  }
-
-  .create-listing__submit {
-    bottom: 8px;
-  }
 
   .admin-directory__search {
     width: 100%;
@@ -6169,16 +5736,9 @@ select {
   }
 
   .listing-card:hover .listing-card__media img,
-  .auction-card:hover .auction-card__media img {
-    transform: none;
-  }
 
   .market-details-cta,
   .market-details-cta svg,
-  .vehicle-detail-similar-card__image {
-    transition: none;
-    transform: none !important;
-  }
 }
 
 /* === Границы полей ввода ===================================================
@@ -6600,11 +6160,6 @@ h1[data-lw-hero] {
 
 /* Появление снизу — прибытие полосы, а не украшение: она возникает один
    раз при загрузке, не по нажатию. */
-@media (prefers-reduced-motion: no-preference) {
-  .auction-action-bar {
-    animation: auction-action-bar-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
-  }
-}
 
 @keyframes auction-action-bar-in {
   from {
@@ -6622,11 +6177,6 @@ h1[data-lw-hero] {
 
    Здесь полоса лежит у самого низа, поэтому и запас меньше, чем на
    телефоне. */
-@media (min-width: 641px) and (max-width: 61.99em) {
-  body:has(.auction-action-bar) .support-chat__launcher {
-    bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-}
 
 /* Полоса перекрывает низ страницы — освобождаем ей место, иначе она
    закроет последний блок содержимого.
@@ -6635,11 +6185,6 @@ h1[data-lw-hero] {
    поднята над нижним меню, на планшете лежит у самого низа. Прежние
    сто шестьдесят пикселей на планшете оставляли под страницей пустоту
    в половину экрана, и последний блок выглядел оборванным. */
-@media (max-width: 61.99em) {
-  body:has(.auction-action-bar) {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
-  }
-}
 
 /* Полоса объявления тоже перекрывает низ страницы.
 
@@ -6654,15 +6199,6 @@ h1[data-lw-hero] {
 
 /* Ниже 640 появляется нижнее меню приложения: полоса встаёт над ним, и
    странице нужно больше запаса. */
-@media (max-width: 640px) {
-  .auction-action-bar {
-    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-  }
-
-  body:has(.auction-action-bar) {
-    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
-  }
-}
 
 /* Карточки новостей и лотов отвечают на курсор.
 
@@ -6714,16 +6250,12 @@ h1[data-lw-hero] {
     min-height: 44px;
   }
 
-  /* Круглая кнопка должна быть круглой и под пальцем.
-
      Правило задавало только высоту, и значки в шапке и в строках списков
      становились 44 на 34: попасть по ним с ходу труднее, чем кажется по
      виду, а сами они выглядели вытянутыми вместо круглых. */
   .mantine-ActionIcon-root:not([data-lw-compact]) {
     min-width: 44px;
   }
-
-  /* Кнопки админки — тоже цель для пальца.
 
      Разделы рабочего пространства и кнопки модерации объявлены size="xs"
      ради компактности на широком экране: тридцать пикселей вместо сорока
@@ -6733,8 +6265,6 @@ h1[data-lw-hero] {
   .admin-moderation-panel .mantine-Button-root {
     min-height: 44px;
   }
-
-  /* Пункты навигации — тоже цель для пальца.
 
      Правило перечисляло кнопки и значки, а всё боковое меню построено на
      NavLink: разделы каталога выходили по 26-30 пикселей, пункты кабинета
@@ -6755,7 +6285,6 @@ h1[data-lw-hero] {
     display: flex;
     align-items: center;
   }
-
   /* Значок, стоящий поверх фотографии или в углу карточки, растягивать
      нельзя — он закроет собой изображение. Такие помечены явно. */
   .mantine-ActionIcon-root[data-lw-compact] {
@@ -6842,7 +6371,6 @@ h1[data-lw-hero] {
   .home-hero__search {
     max-width: none;
   }
-
   /* На узком экране кнопка «Найти» сжимается до подписи, чтобы полю
      осталось место для марки и модели. */
   .home-hero__search .mantine-Button-root {
@@ -6980,29 +6508,12 @@ h1[data-lw-hero] {
 
 
 
-@media (hover: hover) and (pointer: fine) {
-  .parts-category-card:hover {
-    border-color: var(--mantine-color-indigo-4);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
-  }
-}
 
 
 
 
 /* Движение помогает понять, что карточка нажимается. Тем, кто просил
    меньше движения, оно не нужно: подсказку даёт рамка. */
-@media (prefers-reduced-motion: reduce) {
-  .parts-category-card {
-    transition: border-color 160ms ease;
-  }
-
-  .parts-category-card:hover {
-    transform: none;
-    box-shadow: none;
-  }
-}
 
 /* === Полоса связи на карточке объявления ===
    Правая колонка с ценой и кнопками на телефоне уезжает в самый низ
@@ -7186,37 +6697,8 @@ h1[data-lw-hero] {
    вспомогательная ссылка под названием раздела, и сорок четыре
    превратили бы ряд подразделов в отдельный экран. */
 @media (max-width: 48em) {
-  .forum-row__children {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin-top: 6px;
-  }
-
-  .forum-row__child {
-    display: inline-flex;
-    align-items: center;
-    min-height: 34px;
-    padding: 0 10px;
-    border: 1px solid var(--market-line);
-    border-radius: var(--radius-full);
-    background: var(--market-surface-subtle);
-    color: var(--market-ink);
-  }
-
-  .forum-row__child:hover,
-  .forum-row__child:active {
-    border-color: var(--market-primary);
-    color: var(--market-primary);
-    text-decoration: none;
-  }
-
   /* Запятые между подразделами больше не нужны: их работу делает
      промежуток между рамками. */
-  .forum-row__child-sep {
-    display: none;
-  }
 }
 
 
@@ -7228,44 +6710,12 @@ h1[data-lw-hero] {
 
 /* Наведение только там, где есть настоящий курсор: на телефоне касание
    оставляет ложное «наведение» до следующего тапа. */
-@media (hover: hover) and (pointer: fine) {
-  .forum-row:hover {
-    background: color-mix(in srgb, var(--market-surface) 94%, #eef2fb);
-  }
-}
 
 /* На телефоне строка разворачивается вертикально: три столбца в 390
    пикселях сжали бы название до двух букв. */
-@media (max-width: 48em) {
-  .forum-row {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .forum-row__stats,
-  .forum-row__last {
-    width: auto;
-  }
-
-  .forum-row__stats {
-    display: flex;
-    gap: 12px;
-  }
-}
 
 
-@media (hover: hover) and (pointer: fine) {
-  .forum-topic-row:hover {
-    border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line));
-    background: color-mix(in srgb, var(--market-surface) 94%, #eef2fb);
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .forum-topic-row {
-    transition: none;
-  }
-}
 
 
 
@@ -7392,15 +6842,6 @@ h1[data-lw-hero] {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .forum-reaction {
-    transition: none;
-  }
-
-  .forum-reaction:active:not(:disabled) {
-    transform: none;
-  }
-}
 
 
 
@@ -7412,11 +6853,6 @@ h1[data-lw-hero] {
 }
 
 
-@media (prefers-reduced-motion: reduce) {
-  .forum-poll__bar {
-    animation: none;
-  }
-}
 
 /* Карточка обсуждения на главной: тот же отклик, что у карточек
    направлений — рамка и лёгкий подъём, без тяжёлой тени. */
@@ -7464,7 +6900,6 @@ h1[data-lw-hero] {
   .market-app-header__tabs {
     gap: 0;
   }
-
   /* !important здесь обязателен: тема задаёт кнопкам paddingInline
      встроенным стилем, а его обычное правило не перебивает. Без этого
      замер показывал 16px вместо восьми, и ряд на 1280 не помещался —
@@ -7505,11 +6940,6 @@ h1[data-lw-hero] {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-status__meter > span {
-    transition: none;
-  }
-}
 
 
 
@@ -7518,15 +6948,6 @@ h1[data-lw-hero] {
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .fuel-report__closed {
-    transition: none;
-  }
-
-  .fuel-report__closed:active {
-    transform: none;
-  }
-}
 
 /* ── Модальное окно на телефоне ───────────────────────────────────────
 
@@ -7573,7 +6994,6 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     animation: app-modal-sheet-in var(--ease-slow) var(--ease-out);
   }
-
   /* Шапка окна не уезжает при прокрутке: заголовок отвечает, о чём
      речь, а крестик остаётся под рукой. */
   .app-modal__content .mantine-Modal-header,
@@ -7660,45 +7080,16 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 
 
 @media (max-width: 640px) {
-  .fuel-gate {
-    padding: 8px;
-  }
-
-  .fuel-gate__card {
-    padding: 14px;
-    /* Не больше половины экрана.
-
-       Было до 78% высоты: вместе с панелью фильтров сверху карта
-       оставалась узкой полосой, а на iPhone SE её не было видно вовсе.
-       Ради карты человек и открывает страницу — приглашение войти не
-       должно её закрывать. */
-    max-height: 52vh;
-  }
-
-  /* Список выгод — только на просторных экранах.
 
      Три пункта по две строки съедали ту самую половину. Заголовок с
      числом заправок и кнопка входа говорят достаточно: человек видит,
      что сервис живой, и как войти. */
-  .fuel-gate__card .fuel-gate__benefits {
-    display: none;
-  }
 }
 
 /* На совсем маленьких экранах карточка ужимается ещё раз.
 
    Триста семьдесят пять точек в ширину и шестьсот шестьдесят семь в
    высоту — iPhone SE, и он до сих пор в ходу. Там дорога каждая строка. */
-@media (max-height: 700px) {
-  .fuel-gate__card {
-    max-height: 46vh;
-    padding: 12px;
-  }
-
-  .fuel-gate__note {
-    display: none;
-  }
-}
 
 
 
@@ -8038,7 +7429,6 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
     scroll-snap-align: start;
     white-space: nowrap;
   }
-
   /* На узкой ленте помещается значок и короткая подпись; полное название
      шага стоит рядом в подробности. */
   .how-it-works__step-title {
@@ -8133,19 +7523,6 @@ body:has(.app-modal__inner) .mobile-bottom-nav {
 
    Рядом в этой же форме стоят сетки с одной колонкой на телефоне — они
    ведут себя правильно, и ряды приводятся к тому же виду. */
-@media (max-width: 640px) {
-  .create-listing__section .mantine-Group-root[data-grow] {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .create-listing__section .mantine-Group-root[data-grow] > * {
-    /* Предел в треть ширины снимается вместе со строкой: в столбике полю
-       нужна вся ширина карточки. */
-    max-width: 100%;
-    width: 100%;
-  }
-}
 /* То же самое, пока человек печатает.
 
    На Android клавиатура сжимает окно снизу, и плавающая панель садится
@@ -8272,7 +7649,7 @@ button:disabled,
     :root:not([data-theme="light"]) {
       --market-accent: color(display-p3 0.29 0.871 0.502);
     }
-  }
+}
 }
 
 /* Главное действие шапки — лаймовое, как в макете.
@@ -8366,20 +7743,9 @@ button:disabled,
 
 
 @media (max-width: 48em) {
-  .auction-filter-toggle {
-    display: flex;
-  }
-
   /* Сетка скрыта, пока её не раскрыли. `display: none`, а не нулевая
      высота: свёрнутые поля не должны попадать в обход по Tab и в
      озвучку скринридера — иначе человек «проваливается» в невидимое. */
-  .auction-filter-grid:not([data-open]) {
-    display: none;
-  }
-
-  .auction-filter-grid[data-open] {
-    animation: auction-filters-in var(--ease-slow) var(--ease-out) both;
-  }
 }
 
 @keyframes auction-filters-in {
@@ -8394,11 +7760,6 @@ button:disabled,
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .auction-filter-grid[data-open] {
-    animation: none;
-  }
-}
 
 /* Подписка на аукционы: на телефоне во всю ширину.
 
@@ -8406,22 +7767,6 @@ button:disabled,
    палец попадал в неё хуже, чем в полноширинную. Предложение «следить
    за поиском» должно читаться как предложение, а не как служебная
    ссылка. */
-@media (max-width: 48em) {
-  .auction-subscribe-row {
-    justify-content: stretch;
-  }
-
-  .auction-subscribe-row > * {
-    flex: 1 1 auto;
-  }
-
-  .auction-subscribe-row a,
-  .auction-subscribe-row button {
-    width: 100%;
-    /* Сорок четыре пикселя — минимальная цель для пальца. */
-    min-height: 44px;
-  }
-}
 
 /* ============================================================
    Пять действий в герое главной — по макету площадки.
@@ -8545,8 +7890,6 @@ button:disabled,
   .home-hero__action {
     padding: 12px 8px 11px;
   }
-
-  /* Пятая плитка занимает всю строку и разворачивается в строку.
 
      Растяжка на две колонки была и раньше, но внутри всё оставалось
      столбиком — значок сверху, подписи под ним, — и широкая плитка с
@@ -8741,43 +8084,10 @@ h4,
 
 
 
-@media (hover: hover) and (pointer: fine) {
-  .auction-body-tile:hover {
-    border-color: color-mix(in srgb, var(--market-accent-text) 45%, var(--market-line));
-    /* Два пикселя вверх: ряд из шести плиток, заметное движение читалось
-       бы как рябь. */
-    transform: translateY(-2px);
-  }
-}
 
 
-@media (max-width: 75em) {
-  .auction-body-tiles {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 
-@media (max-width: 48em) {
-  .auction-body-tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 
-  .auction-body-tile {
-    padding: 10px 6px 9px;
-  }
-
-  .auction-body-tile__icon {
-    width: 34px;
-    height: 34px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auction-body-tile:hover,
-  .auction-body-tile:active {
-    transform: none;
-  }
-}
 
 /* ============================================================
    Спокойная шапка — по макету площадки
@@ -10023,7 +9333,6 @@ h1[data-lw-hero] + p {
     padding: 0 2px;
     margin: -9px 0;
   }
-
   /* Ссылки «ко всему разделу» — «Все лоты», «Весь форум», «Участники
      форума». Каждая стоит в углу заголовка секции и набрана строкой
      текста: двадцать-двадцать один пиксель высоты. */
@@ -10037,7 +9346,6 @@ h1[data-lw-hero] + p {
     padding: 0 2px;
     margin: -6px -2px;
   }
-
   /* Кнопки счётчика: стрелки вверх-вниз у поля с числом. Тринадцать
      пикселей на каждую — это половина строки ввода, поделённая надвое.
      Полем их не растянуть, оно сдвинуло бы стрелки друг на друга;
@@ -10692,7 +10000,6 @@ main > * > p:not([class]) {
       minmax(0, 1.2fr)
       minmax(0, 1.2fr);
   }
-
   /* Цена и город уходят на вторую строку и делят её пополам: в первой
      остаются поиск, марка и модель — то, с чего начинают выбор. */
   .catalog-filter-field--price {
@@ -10753,7 +10060,6 @@ main > * > p:not([class]) {
   [data-print-hide] {
     display: none !important;
   }
-
   /* Колонка контента занимает лист целиком: отступы под боковые панели
      на бумаге не нужны. */
   .mantine-AppShell-main,
@@ -10763,7 +10069,6 @@ main > * > p:not([class]) {
     width: 100% !important;
     max-width: 100% !important;
   }
-
   /* Чёрным по белому: цветные подложки съедают краску, а на монохромном
      принтере превращаются в серые пятна поверх текста. */
   body,
@@ -10771,7 +10076,6 @@ main > * > p:not([class]) {
     background: #ffffff !important;
     color: #000000 !important;
   }
-
   /* Карточки остаются рамкой, но без тени и заливки — тень на бумаге
      печатается грязью. */
   .listing-card,
@@ -10782,21 +10086,13 @@ main > * > p:not([class]) {
     border: 1px solid #cccccc !important;
     break-inside: avoid;
   }
-
   /* Ссылка на бумаге бесполезна как ссылка, но её адрес может
      пригодиться: печатаем его после текста мелким шрифтом. Только для
      внешних и на самой карточке — иначе лист зарастёт адресами. */
-  .vehicle-detail-layout a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 10px;
-    color: #555555;
-  }
-
   /* Разрывы страниц: заголовок не должен оставаться внизу листа один. */
   h1, h2, h3 {
     break-after: avoid;
   }
-
   /* Фотографии не растягиваются на весь лист: половина высоты хватает,
      чтобы машину было видно, а описание влезло на ту же страницу. */
   img {

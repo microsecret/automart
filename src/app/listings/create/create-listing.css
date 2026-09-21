@@ -124,3 +124,43 @@
   border-color: var(--mantine-color-indigo-5);
   box-shadow: 0 0 0 3px rgba(28, 66, 145, 0.11);
 }
+
+
+/* Медиазапросы раздела, перенесённые из globals.css.
+
+   Базовые правила уехали в этот файл, а медиазапросы остались в общем
+   — и грузились раньше. Каскад ломался: на телефоне карточка
+   объявления оставалась двухколоночной, и галерее доставалось
+   пятьдесят пикселей из трёхсот пятидесяти восьми. */
+@media (prefers-reduced-motion: reduce) {
+  .create-listing__readiness {
+    transition-duration: 0ms;
+  }
+}
+@media (max-width: 48em) {
+  .create-listing__journey-step + .create-listing__journey-step::before {
+    top: 0;
+    right: 14px;
+    bottom: auto;
+    left: 14px;
+    width: auto;
+    height: 1px;
+  }
+
+  .create-listing__submit {
+    bottom: 8px;
+  }
+}
+@media (max-width: 640px) {
+  .create-listing__section .mantine-Group-root[data-grow] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .create-listing__section .mantine-Group-root[data-grow] > * {
+    /* Предел в треть ширины снимается вместе со строкой: в столбике полю
+       нужна вся ширина карточки. */
+    max-width: 100%;
+    width: 100%;
+  }
+}
