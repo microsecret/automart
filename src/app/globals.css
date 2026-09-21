@@ -10683,3 +10683,35 @@ main > * > p:not([class]) {
 .auction-import-note {
   max-width: var(--measure);
 }
+
+/* Отклик на нажатие у карточек и строк.
+
+   Замер: карточка объявления поднимается при наведении, но при нажатии
+   не меняется совсем — палец или курсор нажал, а подтверждения нет.
+   На медленной сети между нажатием и переходом проходит полсекунды, и
+   всё это время человек не знает, сработало ли.
+
+   Приём тот же, что у плиток направлений: лёгкое вдавливание за
+   шестьдесят миллисекунд. Быстрее перехода при наведении — нажатие
+   должно отзываться мгновенно, иначе ощущается как задержка.
+
+   Отменяется вместе с прочей анимацией, когда человек просил её
+   убрать. */
+.listing-card:active,
+.auction-result-card:active,
+.news-list-card-link:active,
+.lot-row:active,
+.market-linked-card:active {
+  transform: translateY(0) scale(0.995);
+  transition-duration: 60ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listing-card:active,
+  .auction-result-card:active,
+  .news-list-card-link:active,
+  .lot-row:active,
+  .market-linked-card:active {
+    transform: none;
+  }
+}
