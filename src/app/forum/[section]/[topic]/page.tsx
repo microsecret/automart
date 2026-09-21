@@ -244,6 +244,10 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                         fz="xs"
                         c="var(--market-ink)"
                         underline="hover"
+                        /* Имя автора — ссылка на его страницу, и на телефоне
+                           она была восемнадцать пикселей высотой: палец в
+                           строку текста не попадает. */
+                        className="inline-touch-link"
                       >
                         {post.author.name}
                       </Anchor>
