@@ -27,10 +27,19 @@ interface BrandIconProps {
  * потому что фирменные цвета рассчитаны на светлый фон и на тёмной теме
  * сливаются с ней.
  */
+/** Марки со светлым логотипом — им нужна тёмная плашка. */
+const LIGHT_LOGO_BRANDS = new Set(["opel", "renault"])
+
 export default function BrandIcon({ brand, size = 36, variant = "rounded" }: BrandIconProps) {
   const markColor = getBrandColor(brand)
   const radius = variant === "circle" ? "50%" : variant === "square" ? "6px" : "10px"
   const hasSvg = hasBrandLogo(brand)
+  /* Марки, чей логотип нарисован светлым и пропадает на светлой плашке.
+     Замер страницы марок: жёлтая молния Opel даёт контраст 1.03, жёлтый
+     ромб Renault — 1.42 при норме 3 для графики. Остальные светлые
+     элементы (белые сегменты BMW, белая часть знака Nissan) лежат
+     поверх цветной основы и читаются. */
+  const darkPlate = LIGHT_LOGO_BRANDS.has(brand.trim().toLowerCase())
 
   if (hasSvg) {
     return (
@@ -39,12 +48,18 @@ export default function BrandIcon({ brand, size = 36, variant = "rounded" }: Bra
           width: size,
           height: size,
           borderRadius: radius,
-          border: "1px solid rgba(20, 48, 107, 0.1)",
+          border: darkPlate ? "1px solid rgba(255, 255, 255, 0.14)" : "1px solid rgba(20, 48, 107, 0.1)",
           /* Подложка светлая в обеих темах: фирменные цвета марок
              рассчитаны на светлый фон и у многих почти чёрные — Kia
              #05141F, Mazda #101010, Lexus #1B1B1B. На тёмной поверхности
-             они сливаются с ней. */
-          background: "#f7f8fb",
+             они сливаются с ней.
+
+             Исключение — марки со светлым логотипом: у Opel это жёлтая
+             молния #f7ff14, у Renault жёлтый ромб #ffcc33. Замер дал им
+             контраст 1.03 и 1.42 на светлой плашке — логотип пропадал
+             целиком, а не терял оттенок. Таким нужна тёмная плашка, как
+             в их собственном фирменном стиле. */
+          background: darkPlate ? "#1b1f2a" : "#f7f8fb",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
