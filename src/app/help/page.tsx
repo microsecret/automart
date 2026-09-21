@@ -56,7 +56,7 @@ export default function HelpPage() {
               <Text fw={800} fz="lg" c="white">Не нашли ответ?</Text>
               <Text size="sm" c="rgba(255,255,255,0.85)">Создайте обращение — ответ появится в личном кабинете</Text>
             </Stack>
-            <Anchor href="/help/support" c="white" fw={700} style={{ textDecoration: "underline" }}>Написать в поддержку →</Anchor>
+            <Anchor href="/help/support" c="white" fw={700} className="inline-touch-link" style={{ textDecoration: "underline" }}>Написать в поддержку →</Anchor>
           </Group>
         </Paper>
       </Stack>
