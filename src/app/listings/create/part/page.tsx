@@ -1,5 +1,5 @@
-import "../create-listing.css"
 "use client"
+import "../create-listing.css"
 export const dynamic = "force-dynamic"
 import { useState, useEffect, useRef } from "react"
 import { useTelegramClosingGuard } from "@/lib/use-telegram-closing-guard"
