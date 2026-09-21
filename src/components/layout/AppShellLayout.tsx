@@ -407,7 +407,13 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
 
       <AppShell.Navbar className="market-app-navbar" p={0} style={{ background: "var(--market-surface-subtle)", borderRight: "1px solid var(--market-line)" }}>
         <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={5}>
-          <Stack gap="xs" p="xs">
+          {/* Зазор между блоками колонки — четыре пикселя вместо шести.
+
+              Замер живого меню: на строку уходило 36 пикселей при тексте
+              в 13, и колонка из двадцати шести пунктов читалась разреженным
+              перечнем. Шесть пикселей между панелями складывались с их
+              собственными полями и с высотой пункта. */}
+          <Stack gap={4} p="xs">
               {/* Главное действие площадки — первым блоком меню.
                *
                * В шапке кнопка «Подать» есть, но она там одна из семи
