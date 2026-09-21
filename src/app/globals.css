@@ -770,7 +770,9 @@ select {
   display: grid;
   grid-template-columns: minmax(240px, 1.8fr) repeat(2, minmax(145px, 0.8fr)) minmax(145px, 0.8fr) auto;
   gap: 10px;
-  align-items: end;
+  /* Растяжка вместо выравнивания по низу: поле с двумя вводами внутри
+     («от — до») иначе просаживается относительно соседей. */
+  align-items: stretch;
 }
 
 /* Между планшетом и широким экраном сетка встаёт в три колонки.
@@ -6510,7 +6512,20 @@ html:has(.fuel-map-canvas) {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
-  align-items: end;
+  /* Растяжка, а не выравнивание по низу.
+
+     Замер страницы аукционов: пять полей по 78 пикселей, а «Ориентир
+     цены» — 52. Внутри у неё два поля ввода вместо одного, и при
+     выравнивании по нижнему краю она просаживалась на двадцать шесть
+     пикселей. Та же беда была на главной и чинится так же. */
+  align-items: stretch;
+}
+
+.auction-filter-grid > .mantine-InputWrapper-root,
+.auction-filter-grid > .mantine-Box-root {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* На планшете шесть колонок ужимаются до трёх.
