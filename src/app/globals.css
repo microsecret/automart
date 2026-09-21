@@ -760,6 +760,7 @@ h4, h5, h6 { letter-spacing: var(--track-title); }
   :where(.mantine-Button-root, .mantine-ActionIcon-root):not([data-disabled]):hover {
     transform: translateY(var(--lift-sm));
   }
+
 }
 
 
@@ -3333,6 +3334,24 @@ select {
     transform: translateY(var(--lift-md));
     border-color: #fb923c !important;
     box-shadow: var(--shadow-lg);
+  }
+
+  /* Нажатие перебивает наведение.
+
+     Правило стоит здесь, а не в конце файла: :hover лежит в этом
+     медиазапросе и при равной специфичности побеждал бы любое правило
+     снаружи. Замер снимками это и показал — наведение меняло вид
+     карточки, нажатие нет.
+
+     Вдавливание за шестьдесят миллисекунд: быстрее перехода при
+     наведении, иначе нажатие ощущается как задержка. */
+  .listing-card:active,
+  .auction-result-card:active,
+  .news-list-card-link:active,
+  .lot-row:active,
+  .market-linked-card:active {
+    transform: translateY(0) scale(0.995);
+    transition-duration: 60ms;
   }
 }
 
@@ -10719,19 +10738,7 @@ main > * > p:not([class]) {
 
    Отменяется вместе с прочей анимацией, когда человек просил её
    убрать. */
-/* Селектор удвоен намеренно: правило :hover выше по файлу даёт подъём
-   карточки, и при нажатии курсор остаётся на ней — оба состояния
-   активны разом. При равной специфичности выигрывает то, что ниже, но
-   :hover лежит внутри медиазапроса и идёт последним. Удвоение класса
-   поднимает вес правила нажатия, не прибегая к !important. */
-.listing-card.listing-card:active,
-.auction-result-card.auction-result-card:active,
-.news-list-card-link.news-list-card-link:active,
-.lot-row.lot-row:active,
-.market-linked-card.market-linked-card:active {
-  transform: translateY(0) scale(0.995);
-  transition-duration: 60ms;
-}
+
 
 @media (prefers-reduced-motion: reduce) {
   .listing-card.listing-card:active,
