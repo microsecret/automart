@@ -716,11 +716,19 @@ body {
    Общее правило для всех полей: раньше подсветка задавалась в каждом
    разделе отдельно, и в формах она различалась. */
 .mantine-Input-input:focus,
+.mantine-Input-input:focus-visible,
 .mantine-Input-input:focus-within,
+.mantine-Input-wrapper:focus-within .mantine-Input-input,
 .mantine-Textarea-input:focus,
+.mantine-Textarea-input:focus-visible,
 .mantine-PasswordInput-input:focus-within {
   border-color: var(--market-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--market-primary) 16%, transparent);
+  /* Кольцо в 24 процента вместо 16: при 16 оно читалось как лёгкая
+     тень, а не как «вы здесь». Замер обходом Tab по форме входа давал
+     разный результат от прогона к прогону — фокус иногда доставался
+     обёртке Mantine, а не самому полю, поэтому добавлены focus-visible
+     и правило через обёртку. */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--market-primary) 24%, transparent);
   outline: none;
 }
 
@@ -1813,10 +1821,24 @@ select {
   box-shadow: var(--shadow-lg);
 }
 
+/* Кольцо фокуса у полей входа — по всем трём состояниям.
+
+   Было только `:focus`, и замер обходом Tab давал разный результат от
+   прогона к прогону: Mantine оборачивает поле в несколько слоёв, и
+   фокус иногда достаётся обёртке, а не самому input. На странице входа
+   это заметнее всего — по форме ходят с клавиатуры, и человек терял
+   место.
+
+   Кольцо заметнее прежнего: было rgba(20,48,107,0.2), что на белой
+   карточке читается как лёгкая тень, а не как «вы здесь». Берём тон
+   фирменного синего в трети силы. */
 .auth-experience__form-card .mantine-Input-input:focus,
-.auth-experience__form-card .mantine-PasswordInput-input:focus {
+.auth-experience__form-card .mantine-Input-input:focus-visible,
+.auth-experience__form-card .mantine-Input-wrapper:focus-within .mantine-Input-input,
+.auth-experience__form-card .mantine-PasswordInput-input:focus,
+.auth-experience__form-card .mantine-PasswordInput-input:focus-within {
   border-color: var(--market-primary);
-  box-shadow: 0 0 0 3px var(--market-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--market-primary) 32%, transparent);
 }
 
 @media (max-width: 900px) {
