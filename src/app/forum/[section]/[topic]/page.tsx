@@ -284,6 +284,9 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
                       c="var(--market-muted)"
                       underline="hover"
                       title="Ссылка на это сообщение"
+                      /* На телефоне номер был восемнадцать пикселей высотой:
+                         палец в цифру из двух знаков не попадает. */
+                      className="inline-touch-link"
                     >
                       #{firstPostNumber + index}
                     </Anchor>
