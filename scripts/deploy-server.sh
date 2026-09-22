@@ -42,8 +42,39 @@ cd /root/AutoMart
 # Ветка master, а не main: main — пустой Initial commit, весь проект в master.
 # Из-за git pull origin main пять коммитов подряд не доезжали до сайта,
 # а pull бодро отвечал "Already up to date".
+BEFORE=$(git rev-parse HEAD)
 git pull origin master
+PULL=$?
+AFTER=$(git rev-parse HEAD)
 git log --oneline -1
+
+# Сборка не идёт, если код не обновился.
+#
+# `git pull` прерывается и возвращает ошибку, когда в рабочей копии лежит
+# неотслеживаемый файл, который приходит с новым коммитом (так бывает после
+# ручного scp на сервер для проверки). Скрипт этого не замечал: он собирал
+# прежний код, докладывал "DONE build=0", сайт отвечал 200 — и выглядело
+# так, будто правки не работают. На поиск ушёл целый цикл сборки.
+#
+# Вышестоящая ветка сверяется отдельно от кода возврата: pull может
+# завершиться успешно и всё равно оставить HEAD позади, если слияние не
+# состоялось.
+REMOTE=$(git rev-parse origin/master 2>/dev/null)
+if [ "$PULL" -ne 0 ]; then
+  echo "ОСТАНОВКА: git pull не прошёл (код $PULL). Код не обновлён, сборка отменена."
+  echo "Чаще всего мешает неотслеживаемый файл — посмотрите git status."
+  echo "DONE build=skipped-pull-failed"
+  exit 1
+fi
+if [ -n "$REMOTE" ] && [ "$AFTER" != "$REMOTE" ]; then
+  echo "ОСТАНОВКА: HEAD ($AFTER) отстаёт от origin/master ($REMOTE). Сборка отменена."
+  echo "DONE build=skipped-head-behind"
+  exit 1
+fi
+if [ "$BEFORE" = "$AFTER" ]; then
+  echo "Новых коммитов нет — пересборка на прежнем коде."
+fi
+
 free -m | head -2
 
 NODE_OPTIONS='--max-old-space-size=3500' npx next build
