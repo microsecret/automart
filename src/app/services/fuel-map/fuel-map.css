@@ -697,7 +697,12 @@ html:has(.fuel-map-canvas) {
   padding: 5px 7px;
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: var(--radius-full);
-  color: #334155;
+  /* Цвет текста переменной, а не жёстким #334155.
+     Фон плашки берётся из --market-surface, а она в ночной теме темнеет:
+     тёмно-серые буквы на тёмной плашке дали контраст 1.72 при норме 4.5, и
+     легенда карты — та, что объясняет цвета значков, — не читалась вовсе.
+     Переменная темнеет и светлеет вместе с подложкой. */
+  color: var(--market-ink);
   background: var(--market-surface);
   box-shadow: var(--shadow-md);
   font-size: var(--text-caps);
