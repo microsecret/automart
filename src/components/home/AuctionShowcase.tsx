@@ -121,6 +121,20 @@ export default function AuctionShowcase() {
                     fill
                     sizes="(max-width: 640px) 60vw, (max-width: 1024px) 33vw, 25vw"
                     className="auction-showcase__image"
+                    /* Фото лота отдаётся напрямую, без оптимизатора.
+                     *
+                     * Он отводит на загрузку исходника семь секунд — это
+                     * зашито в Next (`image-optimizer.js`), настройкой не
+                     * меняется. Замер с сервера: CarSensor отдаёт снимок за
+                     * 25 секунд, youxinpai не укладывается тоже, и в логе
+                     * идёт «upstream image response timed out». На витрине
+                     * главной из-за этого не показывались четыре лота из
+                     * восьми — вместо машин пустые прямоугольники.
+                     *
+                     * Прямая отдача тяжелее, но лот виден. Снимки площадок
+                     * и так отдаются уменьшенными: это их превью для
+                     * каталога, а не оригиналы с камеры. */
+                    unoptimized
                   />
                 ) : (
                   <Box className="auction-showcase__media-empty" aria-hidden="true" />

@@ -195,6 +195,11 @@ function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; 
           sizes="(max-width: 48em) 100vw, (max-width: 62em) 50vw, (max-width: 75em) 33vw, 25vw"
           referrerPolicy="no-referrer"
           priority={priority}
+          /* Напрямую, без оптимизатора: он отводит на загрузку исходника
+             семь секунд, а площадки отвечают дольше — CarSensor за 25
+             секунд по замеру с сервера. Лот с пустым прямоугольником
+             вместо машины хуже тяжёлой картинки. */
+          unoptimized
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
           style={{ objectFit: "cover" }}
