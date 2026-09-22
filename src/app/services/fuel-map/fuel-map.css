@@ -595,7 +595,11 @@ html:has(.fuel-map-canvas) {
 .fuel-map-tile-option {
   padding: 4px 9px;
   border-radius: var(--radius-full);
-  color: #475569;
+  /* Переменной, а не жёстким #475569: фон панели берётся из
+     --market-surface и в ночной теме темнеет, а серые буквы за ним не идут.
+     Замер дал 2.35 при норме 4.5 — подписи слоёв карты («Подробная»,
+     «Спутник») читались с трудом. Та же пара сломала легенду рядом. */
+  color: var(--market-ink-soft);
   font-size: var(--text-caps);
   font-weight: 700;
   line-height: 1;
