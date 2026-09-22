@@ -9884,9 +9884,12 @@ h1[data-lw-hero] + p {
   .mantine-Breadcrumbs-breadcrumb {
     display: inline-flex;
     align-items: center;
-    min-height: 32px;
+    /* Сорок четыре, а не тридцать два: замер на iPhone 13 нашёл крошку
+       «Главная» высотой 32 пикселя. Крошками возвращаются назад, и промах
+       здесь уводит не туда, откуда пришли. */
+    min-height: 44px;
     padding: 0 2px;
-    margin: -9px 0;
+    margin: -15px 0;
   }
 
   /* Ссылки «ко всему разделу» — «Все лоты», «Весь форум», «Участники
