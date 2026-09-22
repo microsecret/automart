@@ -41,7 +41,7 @@ export default function SignUpPage() {
             <Text size="sm" c="var(--market-muted)">Три шага в Telegram-боте</Text>
           </Stack>
 
-          <Card className="auth-experience__form-card" withBorder radius="md" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
+          <Card className="auth-experience__form-card" withBorder radius="md" p={{ base: "md", xs: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
             <SignUpForm />
           </Card>
 

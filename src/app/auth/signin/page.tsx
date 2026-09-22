@@ -59,7 +59,12 @@ function SignInContent() {
             <Text size="sm" c="var(--market-muted)" ta="center" maw={380}>{reason.hint}</Text>
           </Stack>
 
-          <Card className="auth-experience__form-card" withBorder radius="md" p={{ base: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
+          {/* Поля карточки на телефоне меньше.
+              Замер на экране 320: 16 пикселей у контейнера плюс 28 у
+              карточки съедали 44 с каждой стороны, форме оставалось 230 из
+              320 — больше четверти ширины. Поля ввода выходили короткими,
+              и длинная почта не помещалась целиком. */}
+          <Card className="auth-experience__form-card" withBorder radius="md" p={{ base: "md", xs: "lg", sm: "xl" }} w="100%" maw={420} shadow="sm">
             <SignInForm />
           </Card>
         </Stack>
