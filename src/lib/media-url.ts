@@ -84,14 +84,46 @@ function encarImageUrl(value: string, rendition: EncarRendition): string {
   }
 }
 
+/**
+ * Китайская площадка принимает ширину прямо в адресе.
+ *
+ * В базе её снимки лежат с `w=2000` — так их сохранил сборщик. Замер с
+ * сервера: тот же кадр при `w=2000` весит 65 КБ, при `w=800` — 38 КБ, при
+ * `w=400` — 13 КБ. На странице аукционов это давало 1350 КБ картинок, и
+ * столько же уходило на телефон, где карточка занимает полэкрана.
+ *
+ * Оптимизатор Next до этих снимков не дотягивается: он отводит на загрузку
+ * исходника семь секунд, а площадки отвечают дольше. Значит уменьшать надо
+ * запросом к самой площадке.
+ */
+function youxinpaiImageUrl(value: string, width: number): string {
+  if (!isSafeMediaUrl(value)) return value
+
+  try {
+    const url = new URL(value)
+    if (!url.hostname.endsWith("youxinpai.cn")) return value
+
+    url.searchParams.set("w", String(width))
+    url.searchParams.set("format", "webp")
+    return url.toString()
+  } catch {
+    return value
+  }
+}
+
+/** Адрес снимка площадки под ширину слота, если площадка это умеет. */
+function sizedAuctionImageUrl(value: string, rendition: EncarRendition, width: number): string {
+  return youxinpaiImageUrl(encarImageUrl(value, rendition), width)
+}
+
 /** A compact rendition for the thumbnail rail; never request full gallery files there. */
 export function auctionThumbnailImageUrl(value: string): string {
-  return browserReachableAuctionImageUrl(encarImageUrl(value, { rh: 320, cw: 480, ch: 320 }))
+  return browserReachableAuctionImageUrl(sizedAuctionImageUrl(value, { rh: 320, cw: 480, ch: 320 }, 480))
 }
 
 /** A balanced image for auction-result cards. */
 export function auctionCardImageUrl(value: string): string {
-  return browserReachableAuctionImageUrl(encarImageUrl(value, { rh: 720, cw: 1120, ch: 720 }))
+  return browserReachableAuctionImageUrl(sizedAuctionImageUrl(value, { rh: 720, cw: 1120, ch: 720 }, 800))
 }
 
 /**
@@ -99,7 +131,7 @@ export function auctionCardImageUrl(value: string): string {
  * fetching the former 2560px variant again after a 1600px source preview.
  */
 export function highQualityAuctionImageUrl(value: string): string {
-  return browserReachableAuctionImageUrl(encarImageUrl(value, { rh: 1024, cw: 1600, ch: 1024 }))
+  return browserReachableAuctionImageUrl(sizedAuctionImageUrl(value, { rh: 1024, cw: 1600, ch: 1024 }, 1600))
 }
 
 /**

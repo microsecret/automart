@@ -8,6 +8,7 @@ import { IconArrowRight } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { formatPriceShort } from "@/lib/format"
 import { cleanModelLabel, isShowcaseReady } from "@/lib/auction-model-quality"
+import { auctionCardImageUrl } from "@/lib/media-url"
 
 /**
  * Свежие лоты мировых аукционов на главной.
@@ -116,7 +117,7 @@ export default function AuctionShowcase() {
               <Box className="auction-showcase__media">
                 {lot.imageUrl ? (
                   <NextImage
-                    src={lot.imageUrl}
+                    src={auctionCardImageUrl(lot.imageUrl)}
                     alt={`${lot.make ?? ""} ${lot.model ?? ""}`.trim()}
                     fill
                     sizes="(max-width: 640px) 60vw, (max-width: 1024px) 33vw, 25vw"
