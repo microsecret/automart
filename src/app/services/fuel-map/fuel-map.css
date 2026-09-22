@@ -1746,7 +1746,10 @@ html:has(.fuel-map-canvas) {
   color: var(--market-primary);
 }
 .fuel-gate__link {
-  color: var(--mantine-color-indigo-6);
+  /* Переменная проекта, а не ступень палитры: ступень с темой не меняется,
+     и на тёмном фоне indigo-6 давал контраст 3.44 при норме 4.5.
+     --market-accent-text светлеет в ночной теме вместе с подложкой. */
+  color: var(--market-accent-text);
   font-weight: 600;
 }
 .fuel-gate__note {
