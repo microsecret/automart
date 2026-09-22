@@ -83,7 +83,7 @@ import NextImage from "next/image"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import DeliveryEstimate from "@/components/listings/DeliveryEstimate"
 import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-intent"
-import { isUploadedImage } from "@/lib/uploaded-image"
+import { shouldBypassOptimizer } from "@/lib/uploaded-image"
 
 interface VehicleData {
   id: string
@@ -539,16 +539,16 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                            это около сорока килобайт. */
                         priority
                         sizes="(max-width: 62em) 100vw, 620px"
-                        /* Загруженные людьми снимки идут мимо оптимизатора:
-                           Next составляет список файлов public при сборке, и
-                           всё, что легло туда позже, для него не существует —
-                           оптимизатор отвечает «не является изображением», а
-                           страница показывает пустоту. Сжимать их и не нужно:
-                           загрузка уже уменьшает кадр до 1920 и жмёт с
-                           качеством 82. */
-                        unoptimized={
-                          !images[activeImage].startsWith("/") || isUploadedImage(images[activeImage])
-                        }
+                        /* Мимо оптимизатора идут только чужие адреса: фото
+                           лотов лежат на CDN зарубежных площадок.
+
+                           Загруженные людьми снимки раньше тоже шли мимо —
+                           Next не видел файлы, появившиеся после сборки. На
+                           боевом сервере это больше не воспроизводится:
+                           проверка показала 16.6 КБ через оптимизатор против
+                           338 КБ оригинала, и так же ведут себя свежие
+                           загрузки. */
+                        unoptimized={shouldBypassOptimizer(images[activeImage])}
                         onError={() => setImageFailed(true)}
                         style={{ objectFit: "cover" }}
                       />
@@ -608,7 +608,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                               height={80}
                               sizes="110px"
                               loading={i < 3 ? "eager" : "lazy"}
-                              unoptimized={!img.startsWith("/") || isUploadedImage(img)}
+                              unoptimized={shouldBypassOptimizer(img)}
                               onError={(event) => { (event.currentTarget as HTMLImageElement).style.opacity = "0" }}
                               style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             />
@@ -848,7 +848,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                             fill
                             sizes="(max-width: 576px) 100vw, (max-width: 1152px) 50vw, 320px"
                             className="vehicle-detail-similar-card__image"
-                unoptimized={isUploadedImage(item.image)}
+                unoptimized={shouldBypassOptimizer(item.image)}
               />
                         )}
                       </Box>

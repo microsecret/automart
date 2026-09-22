@@ -12,7 +12,7 @@ import VehicleFallback from "./VehicleFallback"
 import NextImage from "next/image"
 import { useCompare } from "@/hooks/useCompare"
 import { useFavorites } from "@/hooks/useFavorites"
-import { isUploadedImage } from "@/lib/uploaded-image"
+import { shouldBypassOptimizer } from "@/lib/uploaded-image"
 
 export interface ListingCardData {
   id: string
@@ -240,7 +240,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 onLoad={() => setImageLoaded(true)}
                 onError={() => { setImageFailed(true); setImageLoaded(false) }}
                 loading="lazy"
-                unoptimized={isUploadedImage(displayImage)}
+                unoptimized={shouldBypassOptimizer(displayImage)}
               />
               )}
             </>
