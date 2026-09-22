@@ -951,6 +951,23 @@ html:has(.fuel-map-canvas) {
   outline: 3px solid var(--market-focus-ring);
   outline-offset: 2px;
 }
+
+/* Марки топлива под палец.
+ *
+ * Лента «Все / 92 / 95 / 98 / 100 / ДТ / Газ» — главный фильтр карты: ею
+ * пользуются в первую очередь, и на телефоне только пальцем. Замер на
+ * iPhone 13 дал каждой марке 36 пикселей при норме 44, а стоят они
+ * вплотную в ряд — промах открывает соседнюю марку, и человек видит цены
+ * не того топлива, не поняв, что ошибся.
+ *
+ * Высота задаётся и через line-height: он тут центрует подпись вместо
+ * flex, и одного min-height мало. */
+@media (hover: none) and (pointer: coarse) {
+  .fuel-map-fuel-chip {
+    min-height: 44px;
+    line-height: 44px;
+  }
+}
 .fuel-map-list__selection {
   display: grid;
   gap: 6px;
