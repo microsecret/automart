@@ -100,12 +100,24 @@ function isRentalTransferListing(conditionInfo: string | null) {
   }
 }
 
+/* Оценка цены лота относительно медианы.
+ *
+ * Ступень цвета указана явно (green.8, teal.8, orange.9), а не просто
+ * "green": бейдж рисуется вариантом light, где цвет уходит в текст, а
+ * подложка остаётся бледной. На стандартной шестой ступени замер в светлой
+ * теме дал контраст 2.48 у «Отличной цены» и 2.71 у «Выше медианы» при
+ * норме 4.5 — вдвое ниже нормы у главного ориентира покупателя на витрине.
+ * В тёмной теме те же бейджи давали 11.3, то есть проблема была только на
+ * светлом фоне.
+ *
+ * Оранжевый взят на ступень глубже зелёного: он светлее при одном номере и
+ * на восьмой ступени до нормы не дотягивал. */
 function auctionPriceSignal(price: number, median: number | null | undefined) {
   if (!median || median <= 0 || price <= 0) return null
   const ratio = price / median
-  if (ratio <= 0.88) return { label: "Отличная цена", color: "green" }
-  if (ratio <= 1.08) return { label: "Рыночная цена", color: "teal" }
-  return { label: "Выше медианы", color: "orange" }
+  if (ratio <= 0.88) return { label: "Отличная цена", color: "green.8" }
+  if (ratio <= 1.08) return { label: "Рыночная цена", color: "teal.8" }
+  return { label: "Выше медианы", color: "orange.9" }
 }
 // Remote auction photos remain on the source CDN. A short user intent
 // (hover, focus or touch) is enough to warm the first full-size image in the
