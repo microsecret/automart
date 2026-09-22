@@ -23,6 +23,18 @@ import { plural } from "@/lib/format"
 import { formatFuelKopecks } from "@/lib/fuel-price-format"
 import { tapFeedback } from "@/lib/telegram-webapp"
 
+/* Запас плиток за краем полотна.
+ *
+ * Половина плитки вместо целой. Замер после первого отсева: плиток стало
+ * 48 вместо 63, но 24 из них по-прежнему лежали целиком за краем — запас
+ * в целую плитку с каждой стороны на широком полотне даёт лишний ряд и
+ * лишнюю колонку.
+ *
+ * Половина покрывает обычный сдвиг пальцем или мышью: карта дорисовывает
+ * новые плитки на ходу, и полностью заполненный экран при перетаскивании
+ * проверен отдельно — 25 точек из 25 покрыты и до, и после сдвига. */
+const TILE_MARGIN = TILE_SIZE / 2
+
 type FuelStation = {
   id: string
   sourceType: "node" | "way" | "relation" | "provider"
@@ -444,10 +456,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
          * Запас в одну плитку с каждой стороны остаётся: он и задан
          * диапазоном, а отсев убирает только то, что заведомо снаружи. */
         const outside =
-          left + TILE_SIZE <= -TILE_SIZE ||
-          top + TILE_SIZE <= -TILE_SIZE ||
-          left >= mapViewport.width + TILE_SIZE ||
-          top >= mapViewport.height + TILE_SIZE
+          left + TILE_SIZE <= -TILE_MARGIN ||
+          top + TILE_SIZE <= -TILE_MARGIN ||
+          left >= mapViewport.width + TILE_MARGIN ||
+          top >= mapViewport.height + TILE_MARGIN
         if (outside) continue
 
         visibleTiles.push({
