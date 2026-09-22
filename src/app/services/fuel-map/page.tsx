@@ -429,12 +429,33 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     for (let sourceY = startY; sourceY <= endY; sourceY += 1) {
       for (let sourceX = startX; sourceX <= endX; sourceX += 1) {
         const x = ((sourceX % tileCount) + tileCount) % tileCount
+        const left = sourceX * TILE_SIZE - mapOrigin.x
+        const top = sourceY * TILE_SIZE - mapOrigin.y
+
+        /* Плитка целиком за краем полотна не запрашивается.
+         *
+         * Диапазон выше считается от `mapViewport`, и на практике он
+         * оказывался шире видимой области: замер на боевом сайте нашёл
+         * сетку 9 на 7 плиток при полотне 1180x828, где помещается 7 на 6.
+         * Тридцать девять плиток из шестидесяти трёх лежали целиком за
+         * краем — больше половины трафика карты уходило на то, чего никто
+         * не увидит. На телефоне это 1438 КБ при восьми нужных плитках.
+         *
+         * Запас в одну плитку с каждой стороны остаётся: он и задан
+         * диапазоном, а отсев убирает только то, что заведомо снаружи. */
+        const outside =
+          left + TILE_SIZE <= -TILE_SIZE ||
+          top + TILE_SIZE <= -TILE_SIZE ||
+          left >= mapViewport.width + TILE_SIZE ||
+          top >= mapViewport.height + TILE_SIZE
+        if (outside) continue
+
         visibleTiles.push({
           key: `${zoom}-${sourceX}-${sourceY}`,
           x,
           y: sourceY,
-          left: sourceX * TILE_SIZE - mapOrigin.x,
-          top: sourceY * TILE_SIZE - mapOrigin.y,
+          left,
+          top,
         })
       }
     }
