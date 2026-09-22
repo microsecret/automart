@@ -102,22 +102,19 @@ function isRentalTransferListing(conditionInfo: string | null) {
 
 /* Оценка цены лота относительно медианы.
  *
- * Ступень цвета указана явно (green.8, teal.8, orange.9), а не просто
- * "green": бейдж рисуется вариантом light, где цвет уходит в текст, а
- * подложка остаётся бледной. На стандартной шестой ступени замер в светлой
- * теме дал контраст 2.48 у «Отличной цены» и 2.71 у «Выше медианы» при
- * норме 4.5 — вдвое ниже нормы у главного ориентира покупателя на витрине.
- * В тёмной теме те же бейджи давали 11.3, то есть проблема была только на
- * светлом фоне.
+ * Цвет текста задаёт CSS-класс `.priceSignal` через `--badge-color`, а здесь
+ * остаётся имя палитры — оно определяет подложку.
  *
- * Оранжевый взят на ступень глубже зелёного: он светлее при одном номере и
- * на восьмой ступени до нормы не дотягивал. */
+ * Ступень в названии цвета («green.8») задачу не решает: Mantine берёт её
+ * для подложки, а цвет текста в варианте light ставит своей логикой. Замер
+ * после такой правки показал ухудшение с 2.48 до 2.10 — текст остался
+ * светлым, а подложка стала темнее. */
 function auctionPriceSignal(price: number, median: number | null | undefined) {
   if (!median || median <= 0 || price <= 0) return null
   const ratio = price / median
-  if (ratio <= 0.88) return { label: "Отличная цена", color: "green.8" }
-  if (ratio <= 1.08) return { label: "Рыночная цена", color: "teal.8" }
-  return { label: "Выше медианы", color: "orange.9" }
+  if (ratio <= 0.88) return { label: "Отличная цена", color: "green", tone: "good" }
+  if (ratio <= 1.08) return { label: "Рыночная цена", color: "teal", tone: "fair" }
+  return { label: "Выше медианы", color: "orange", tone: "high" }
 }
 // Remote auction photos remain on the source CDN. A short user intent
 // (hover, focus or touch) is enough to warm the first full-size image in the
@@ -801,7 +798,7 @@ function AuctionsPageContent() {
                     <Box className="auction-result-card__price-row">
                       <Group justify="space-between" align="center" gap="xs" wrap="nowrap" className={styles.priceLine}>
                         <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(displayedPrice)}</Text>
-                        {priceSignal && <Badge className={styles.priceSignal} size="xs" variant="light" color={priceSignal.color}>{priceSignal.label}</Badge>}
+                        {priceSignal && <Badge className={styles.priceSignal} data-tone={priceSignal.tone} size="xs" variant="light" color={priceSignal.color}>{priceSignal.label}</Badge>}
                       </Group>
                       {/* Восемь слов подписи повторяли то, что уже сказано в шапке страницы,
                           и оттягивали внимание от самой цены. */}
