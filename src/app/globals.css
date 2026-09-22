@@ -1027,19 +1027,26 @@ select {
      Янтарь, а не синий: синим окрашена активная вкладка, и второе синее
      пятно рядом читалось бы как ещё одна «текущая страница». Текст тёмный
      — на янтаре белый даёт контраст 2.1. */
-  .mobile-bottom-nav__accent {
+  /* Селектор с тегом, иначе цвет не применяется.
+   *
+   * Правило `.mobile-bottom-nav a` выше специфичнее одного класса и ставило
+   * подписи `--market-muted`. Замер на телефоне: серый текст на синей
+   * плашке давал контраст 1.01 в ночной теме и около 1.9 в дневной —
+   * подпись «Подать» не читалась в обеих. Кнопка самая заметная в нижнем
+   * меню, ради неё эта плашка и сделана. */
+  .mobile-bottom-nav a.mobile-bottom-nav__accent {
     color: var(--market-accent-ink);
     background: var(--market-accent);
   }
 
-  .mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
+  .mobile-bottom-nav a.mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
     color: var(--market-primary);
     background: var(--market-primary-soft);
   }
 
   /* На своей странице — та же плашка, но с рамкой: человек видит, что
      он уже здесь, и при этом кнопка не меняет цвет под ним. */
-  .mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
+  .mobile-bottom-nav a.mobile-bottom-nav__accent.mobile-bottom-nav__item--active {
     color: var(--market-accent-ink);
     background: var(--market-accent);
     box-shadow: inset 0 0 0 2px var(--market-primary);
@@ -1051,7 +1058,7 @@ select {
     box-shadow: var(--shadow-lg);
   }
 
-  :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
+  :root[data-mantine-color-scheme="dark"] .mobile-bottom-nav a.mobile-bottom-nav__item--active:not(.mobile-bottom-nav__accent) {
     background: var(--market-primary-soft);
   }
 

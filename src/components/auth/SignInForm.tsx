@@ -175,7 +175,10 @@ export default function SignInForm() {
       {/* Ссылка получает поле под палец: замер на iPhone 13 дал ей 14
           пикселей высоты. Нажимает её тот, кто не может войти, — промах
           здесь стоит дороже обычного. */}
-      <Text size="xs" c="var(--market-muted)" ta="right"><Link href="/auth/forgot-password" className="inline-touch-link" style={{ color: "#1c4291" }}>Забыли пароль?</Link></Text>
+      {/* Цвет переменной, а не жёстким #1c4291: тёмно-синий не светлеет в
+          ночной теме, и замер на телефоне дал контраст 2.05 при норме 4.5.
+          --market-accent-text идёт за подложкой. */}
+      <Text size="xs" c="var(--market-muted)" ta="right"><Link href="/auth/forgot-password" className="inline-touch-link" style={{ color: "var(--market-accent-text)" }}>Забыли пароль?</Link></Text>
     </form>
 
       {/* Прежняя ссылка внизу убрана: то же предложение теперь стоит
