@@ -1926,10 +1926,14 @@ html:has(.fuel-map-canvas) {
   list-style: none;
 }
 .fuel-cities-index li {
+  /* Относительное положение нужно ссылке внутри: она растянута на всю
+     плитку, чтобы нажималась любая её точка, а не только буквы. */
+  position: relative;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  min-height: 44px;
   padding: 8px 12px;
   border: 1px solid var(--market-line);
   border-radius: var(--radius-sm);
@@ -1940,6 +1944,23 @@ html:has(.fuel-map-canvas) {
   color: var(--market-ink);
   font-weight: 600;
   text-decoration: none;
+}
+
+/* Нажимается вся плитка города.
+ *
+ * Замер на iPhone 13 дал ссылкам «Москва», «Казань», «Екатеринбург»
+ * высоту 21 пиксель — это высота самих букв. В указателе до шестидесяти
+ * городов, идут они плотной сеткой, и попасть пальцем точно в слово
+ * трудно: промах между плитками не делает ничего, промах по соседней
+ * уводит в чужой город.
+ *
+ * Слой растянут на карточку и лежит под текстом счётчика, поэтому число
+ * станций остаётся читаемым, а нажатие работает по всей площади. */
+.fuel-cities-index a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 .fuel-cities-index a:hover {
   color: var(--market-primary);
