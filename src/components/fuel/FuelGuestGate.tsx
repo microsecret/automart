@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Box, Button, Group, Stack, Text } from "@mantine/core"
 import { IconBell, IconBrandTelegram, IconGasStation, IconMapPin, IconUserPlus } from "@tabler/icons-react"
 import { cityInPrepositional } from "@/lib/city-declension"
+import { plural } from "@/lib/plural"
 
 /**
  * Приглашение войти поверх карты АЗС.
@@ -97,9 +98,14 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
           </Group>
           {/* Числа идут сразу за заголовком: они доказывают, что за
               приглашением стоит работающий сервис, а не пустая форма. */}
+          {/* Числа склоняются: при одной отметке выходило «1 отметок за
+              сутки». Замер снимком поймал это на живой карте Москвы —
+              ошибка в первой же строке, которую читает новый человек. */}
           <Text size="sm" c="dimmed">
-            {stationCount} заправок на карте, {pricedCount} с ценами и наличием
-            {typeof reportsToday === "number" && reportsToday > 0 ? `, ${reportsToday} отметок за сутки` : ""}
+            {stationCount} {plural(stationCount, "заправка", "заправки", "заправок")} на карте, {pricedCount} с ценами и наличием
+            {typeof reportsToday === "number" && reportsToday > 0
+              ? `, ${reportsToday} ${plural(reportsToday, "отметка", "отметки", "отметок")} за сутки`
+              : ""}
           </Text>
 
           {/* Пришли за подпиской — говорим про подписку.

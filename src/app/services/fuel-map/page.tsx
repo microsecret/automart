@@ -251,7 +251,24 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   const [tileSourceId, setTileSourceId] = useState(() => {
     if (typeof window === "undefined") return TILE_SOURCES[0].id
     try {
-      return window.localStorage.getItem("lewheel:map-tiles") || TILE_SOURCES[0].id
+      const saved = window.localStorage.getItem("lewheel:map-tiles")
+      if (saved) return saved
+
+      /* В ночной теме карта тоже тёмная.
+       *
+       * Слой не был связан с темой: страница уходила в тёмную, а карта
+       * оставалась дневной — белое полотно во весь экран посреди тёмного
+       * интерфейса. Ночью в машине это слепит, а ради неё карту и
+       * открывают.
+       *
+       * Меняется только значение по умолчанию: свой выбор человека
+       * хранилище помнит и он остаётся за ним. */
+      const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      if (prefersDark) {
+        const dark = TILE_SOURCES.find((source) => source.dark && source.id === "dark")
+        if (dark) return dark.id
+      }
+      return TILE_SOURCES[0].id
     } catch {
       /* Приватное окно или запрет на хранилище — не повод падать. */
       return TILE_SOURCES[0].id
