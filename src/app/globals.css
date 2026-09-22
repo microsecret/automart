@@ -7097,7 +7097,12 @@ h1[data-lw-hero] {
   .forum-row__child {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     min-height: 34px;
+    /* Короткое название марки давало узкую цель: замер нашёл «Kia»
+       шириной 37 пикселей при норме 44. Высоту правило под палец уже
+       подняло, оставалась ширина. */
+    min-width: 44px;
     padding: 0 10px;
     border: 1px solid var(--market-line);
     border-radius: var(--radius-full);

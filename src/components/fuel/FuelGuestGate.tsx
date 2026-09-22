@@ -169,7 +169,10 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
           </Button>
           <Text size="xs" ta="center" c="dimmed">
             Уже есть аккаунт?{" "}
-            <Link href={`/auth/signin?callbackUrl=${callbackUrl}`} className="fuel-gate__link">
+            {/* Поле под палец: замер дал ссылке 32 на 14 пикселей. Она
+                стоит внутри предложения, поэтому растёт только вверх и
+                вниз — см. `.inline-touch-link`. */}
+            <Link href={`/auth/signin?callbackUrl=${callbackUrl}`} className="fuel-gate__link inline-touch-link">
               Войти
             </Link>
           </Text>
