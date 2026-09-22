@@ -825,7 +825,13 @@ function AuctionsPageContent() {
                     </Box>
                     <Box className={styles.auctionMeta}>
                       {l.auctionDate ? <Group gap={4} className="auction-result-card__date" wrap="nowrap">
-                        <Text size="xs" fw={700} c={new Date(l.auctionDate) > new Date() ? "teal.7" : "gray.5"}>
+                        {/* Цвет переменными, а не ступенями палитры: ступень
+                            с темой не меняется, и замер на телефоне дал
+                            «Торги:» контраст 3.09 при норме 4.5 — зелёный
+                            teal на белой карточке. Переменные идут за
+                            подложкой и сохраняют смысл: зелёное — торги
+                            впереди, приглушённое — уже прошли. */}
+                        <Text size="xs" fw={700} c={new Date(l.auctionDate) > new Date() ? "var(--market-success-text)" : "var(--market-muted)"}>
                           {new Date(l.auctionDate) > new Date() ? "Торги: " : "Торги были: "}
                         </Text>
                         <Text size="xs" c="var(--market-muted)">

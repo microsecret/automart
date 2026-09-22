@@ -665,7 +665,12 @@ html:has(.fuel-map-canvas) {
   border: 1px solid color-mix(in srgb, var(--market-success-line) 60%, transparent);
   border-radius: var(--radius-sm);
   color: var(--market-success-text);
-  background: rgb(255 255 255 / 92%);
+  /* Фон переменной, а не жёстким белым.
+     Цвет текста берётся из темы и в ночной светлеет, а плашка оставалась
+     белой: замер на телефоне дал контраст 1.48 при норме 4.5 — светло-
+     зелёные буквы на белом. Прозрачность сохранена, чтобы карта под
+     плашкой просвечивала. */
+  background: color-mix(in srgb, var(--market-surface) 92%, transparent);
   backdrop-filter: blur(var(--blur-panel));
   box-shadow: var(--shadow-sm);
 }
