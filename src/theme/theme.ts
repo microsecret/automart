@@ -363,9 +363,16 @@ export const theme = createTheme({
              size="md" даёт 38px, и в строке поиска поле стояло на два
              пикселя выше кнопки рядом. Задавать height в styles бесполезно:
              Mantine считает высоту из --input-height и перебивает значение
-             своей специфичностью — проверка на живом сайте это показала. */
-          "--input-height": "36px",
-          minHeight: "36px",
+             своей специфичностью — проверка на живом сайте это показала.
+
+             Само число вынесено в переменную проекта `--lw-field-height`:
+             эти стили Mantine ставит инлайном на сам элемент, и обойти их
+             селектором нельзя. Замер на iPhone 13 нашёл все поля по 36
+             пикселей при норме 44 — в поле надо попасть, чтобы начать
+             набирать, это такая же цель, как кнопка. Переменная объявлена
+             в globals.css: 36 на мыши, 44 под пальцем. */
+          "--input-height": "var(--lw-field-height, 36px)",
+          minHeight: "var(--lw-field-height, 36px)",
           transition: "border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out)",
           fontFamily: "var(--font-sans), sans-serif",
         },
@@ -375,8 +382,8 @@ export const theme = createTheme({
       defaultProps: { radius: "xl", size: "md" },
       styles: {
         input: {
-          "--input-height": "36px",
-          minHeight: "36px",
+          "--input-height": "var(--lw-field-height, 36px)",
+          minHeight: "var(--lw-field-height, 36px)",
           transition: "border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out)",
           fontFamily: "var(--font-sans), sans-serif",
         },
@@ -386,8 +393,8 @@ export const theme = createTheme({
       defaultProps: { radius: "xl", size: "md" },
       styles: {
         input: {
-          "--input-height": "36px",
-          minHeight: "36px",
+          "--input-height": "var(--lw-field-height, 36px)",
+          minHeight: "var(--lw-field-height, 36px)",
           fontFamily: "var(--font-sans), sans-serif",
         },
       },

@@ -444,6 +444,12 @@
 :root {
   --blur-panel: 10px;
   --blur-overlay: 18px;
+
+  /* Высота поля ввода. Читается темой (theme.ts), потому что Mantine
+     ставит высоту инлайновым стилем на сам элемент и селектором её не
+     перебить. 36 — под мышь, где поле стоит вплотную к кнопке той же
+     высоты; 44 включается ниже, в блоке под палец. */
+  --lw-field-height: 36px;
 }
 
 /* ------------------------------------------------------------------
@@ -10954,41 +10960,19 @@ main > * > p:not([class]) {
     min-height: 44px;
   }
 
-  /* Поля ввода. Правило выше поднимает им кегль до 16 пикселей, чтобы iOS
-     не увеличивал страницу при наборе, но высоту не трогает: замер нашёл
+  /* Поля ввода под палец — см. `--lw-field-height` в начале файла.
+
+     Правило выше поднимает полям кегль до 16 пикселей, чтобы iOS не
+     увеличивал страницу при наборе, но высоту не трогает: замер нашёл
      поиск и фильтры по 36. В поле надо попасть, чтобы начать набирать, —
      это такая же цель, как кнопка.
 
-     Высота задаётся переменной `--input-height`, а не `min-height`: тема
-     ставит ей 36 пикселей, и Mantine считает высоту поля именно из неё,
-     перебивая `min-height` своей специфичностью. Это уже отмечено в
-     theme.ts при подборе высоты под кнопку рядом; первая попытка написать
-     здесь `min-height: 44px` ничего не дала — замер показал прежние 36. */
-  .mantine-Input-input,
-  .mantine-Select-input,
-  .mantine-Autocomplete-input,
-  .mantine-MultiSelect-input,
-  .mantine-TextInput-input,
-  .mantine-NumberInput-input,
-  .mantine-PasswordInput-input,
-  /* Переменную Mantine ставит на обёртку поля, а не на сам input:
-     объявляем в обоих местах, чтобы не гадать, где она читается. */
-  .mantine-InputWrapper-root,
-  .mantine-TextInput-root,
-  .mantine-Select-root,
-  .mantine-NumberInput-root,
-  .mantine-Autocomplete-root,
-  .mantine-MultiSelect-root {
-    --input-height: 44px;
-  }
-
-  .mantine-Input-input,
-  .mantine-Select-input,
-  .mantine-Autocomplete-input,
-  .mantine-MultiSelect-input,
-  .mantine-TextInput-input,
-  .mantine-NumberInput-input,
-  .mantine-PasswordInput-input {
-    min-height: 44px;
+     Само значение здесь не пишется: Mantine ставит высоту инлайновым
+     стилем на сам элемент, и селектором его не перебить. Две попытки
+     написать тут `min-height: 44px` и `--input-height: 44px` ничего не
+     дали — замер показывал прежние 36. Поэтому тема читает переменную
+     проекта, а переключается она ниже. */
+  :root {
+    --lw-field-height: 44px;
   }
 }
