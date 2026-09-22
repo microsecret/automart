@@ -1064,6 +1064,21 @@ select {
     transition: opacity var(--ease-base) var(--ease-out);
   }
 
+  /* Область нажатия шире, чем сама кнопка.
+   *
+   * Масштаб 0.86 сжимает не только вид, но и цель: замер на iPhone 13 дал
+   * кнопке 38 пикселей вместо 44 (44 × 0.86 = 37.8). Уменьшение здесь
+   * осознанное — кнопка висит поверх текста и в полный размер мешает
+   * читать, — поэтому растёт не она, а невидимое поле вокруг неё.
+   *
+   * Псевдоэлемент добавляет по четыре пикселя с каждой стороны: вид
+   * прежний, палец попадает по площади 46 на 46. */
+  .support-chat__launcher .mantine-ActionIcon-root::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+
   .support-chat__launcher:active,
   .support-chat__launcher:focus-within {
     opacity: 1;
@@ -6613,6 +6628,31 @@ h1[data-lw-hero] {
   .market-side-panel__title-link {
     display: flex;
     align-items: center;
+  }
+
+  /* Ссылки-«хвосты» под списками: «Все лоты →», «Весь форум», «Мои темы».
+     Замер на iPhone 13 дал им 32-34 пикселя. Это выходы из блока в
+     полноценный раздел — по ним нажимают чаще, чем кажется, а стоят они
+     у нижнего края карточки, где палец уже сходит с элемента. */
+  .market-side-panel__footer,
+  .auction-showcase__all,
+  .forum-section-link,
+  .forum-row__title,
+  .forum-row__child {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* Поля ввода. Правило ниже по файлу поднимает им кегль до 16 пикселей,
+     чтобы iOS не увеличивал страницу при наборе, но высоту не трогает:
+     замер нашёл поиск и фильтры по 36 пикселей. В поле надо попасть, чтобы
+     начать набирать, — это такая же цель, как кнопка. */
+  .mantine-Input-input,
+  .mantine-Select-input,
+  .mantine-Autocomplete-input,
+  .mantine-MultiSelect-input {
+    min-height: 44px;
   }
 
   /* Значок, стоящий поверх фотографии или в углу карточки, растягивать
