@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
-import { Container } from "@mantine/core"
 import HomeCatalog from "@/components/catalog/HomeCatalog"
 import ForumHighlights from "@/components/forum/ForumHighlights"
 import { getCatalogFirstPage } from "@/lib/catalog-first-page"
@@ -42,12 +41,25 @@ export default async function RootPage() {
       {/* Блок форума идёт после каталога: человек пришёл за машинами, и
           обсуждения — это то, что удерживает его, когда подходящего лота
           не нашлось. Suspense не даёт запросу к форуму задержать первый
-          экран. */}
-      <Container size="xl" pb="xl">
+          экран.
+
+          Створ тот же, что у остальной главной, — 1280.
+
+          Раньше здесь стоял `<Container size="xl">` на 1320 пикселей, а все
+          секции каталога выше живут в колонке 1280. Замер показал разницу
+          прямо: секции главной начинались на 276, форум — на 261, и его
+          поле на телефоне было 16 против 10 у соседей. На экране это
+          читалось как сбитая вниз страницы вертикаль — та самая неровная
+          линия, которую видно, даже когда не понимаешь, что именно не так.
+
+          Класс, а не Container: ограничение задаёт то же правило
+          `[data-lw-home]`, что и для прочих секций, и створ останется
+          общим, если однажды поменяется. */}
+      <div className="home-forum-slot">
         <Suspense fallback={null}>
           <ForumHighlights />
         </Suspense>
-      </Container>
+      </div>
     </>
   )
 }

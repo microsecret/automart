@@ -336,7 +336,7 @@ export default function AdminSupportPage() {
                         value={ticket.priority}
                         onChange={(value) => value && void runAction("SET_PRIORITY", { priority: value })}
                       />
-                      <Tooltip label="Обновить"><ActionIcon variant="light" size="lg" onClick={() => void detail.mutate()}><IconRefresh size={17} /></ActionIcon></Tooltip>
+                      <Tooltip label="Обновить"><ActionIcon variant="light" size="lg" aria-label="Обновить переписку по обращению" onClick={() => void detail.mutate()}><IconRefresh size={17} /></ActionIcon></Tooltip>
                     </Group>
                   </Group>
 
