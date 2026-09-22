@@ -71,7 +71,9 @@ export default function SignUpForm() {
       <Group justify="center">
         <Text size="sm" c="var(--market-muted)">
           Уже есть аккаунт?{" "}
-          <Anchor component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} size="sm" c="indigo" fw={500}>
+          {/* Поле под палец: замер дал ссылке 37 на 17 пикселей. Она стоит
+              внутри предложения, поэтому растёт только по вертикали. */}
+          <Anchor component={Link} href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="inline-touch-link" size="sm" c="indigo" fw={500}>
             Войти
           </Anchor>
         </Text>

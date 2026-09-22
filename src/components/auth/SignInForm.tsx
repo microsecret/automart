@@ -172,7 +172,10 @@ export default function SignInForm() {
             Войти
           </Button>
         </Stack>
-      <Text size="xs" c="var(--market-muted)" ta="right"><Link href="/auth/forgot-password" style={{ color: "#1c4291" }}>Забыли пароль?</Link></Text>
+      {/* Ссылка получает поле под палец: замер на iPhone 13 дал ей 14
+          пикселей высоты. Нажимает её тот, кто не может войти, — промах
+          здесь стоит дороже обычного. */}
+      <Text size="xs" c="var(--market-muted)" ta="right"><Link href="/auth/forgot-password" className="inline-touch-link" style={{ color: "#1c4291" }}>Забыли пароль?</Link></Text>
     </form>
 
       {/* Прежняя ссылка внизу убрана: то же предложение теперь стоит
