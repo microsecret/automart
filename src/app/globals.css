@@ -9916,7 +9916,12 @@ h1[data-lw-hero] + p {
   .inline-touch-link {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     min-height: 44px;
+    /* Короткое слово давало узкую цель: «Войти» выходило 36 пикселей
+       шириной при норме 44. Высоту правило уже подняло, оставалась
+       ширина. Поле отрицательное, поэтому строка не раздвигается. */
+    min-width: 44px;
     padding: 0 2px;
     margin: -12px -2px;
   }
