@@ -1559,3 +1559,13 @@
   font-weight: 500 !important;
   line-height: 1.4;
 }
+
+/* Чипы на тёмном герое: светлая рамка и светлый текст. Цветные «light»
+   на тёмно-синем давали контраст около 1,5 — надписи было не прочесть. */
+.hero-chips .mantine-Badge-root {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-transform: none;
+  font-weight: 600;
+}

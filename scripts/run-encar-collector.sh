@@ -49,10 +49,18 @@ run_stage_every() {
   run_stage "$@"
 }
 
+DEPLOY_PENDING_FLAG=/tmp/automart-deploy-pending
+
 run_stage() {
   local label="$1"
   local endpoint="$2"
   local payload="$3"
+  # Деплой ждёт замок — уступаем, не начиная следующий этап. Флажок
+  # старше двух часов считается забытым (деплой упал, не сняв его).
+  if [[ -f "$DEPLOY_PENDING_FLAG" ]] && [[ -n "$(find "$DEPLOY_PENDING_FLAG" -mmin -120 2>/dev/null)" ]]; then
+    echo "[$(date -Is)] ${label} — пропуск: ждёт деплой"
+    return 0
+  fi
   echo "[$(date -Is)] ${label}"
   if ! "${CURL[@]}" -X POST "${BASE_URL}${endpoint}" --data "${payload}"; then
     echo

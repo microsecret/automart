@@ -22,6 +22,16 @@ if [ -z "${AUTOMART_DEPLOY_RELOADED:-}" ]; then
   exec bash "$0" "$@"
 fi
 
+# Флажок «ждёт деплой»: сборщик аукционов проверяет его перед каждым
+# этапом и уступает замок, не доводя проход до конца. Проход идёт 20+ минут
+# при интервале запуска 20, поэтому деплой почти всегда вставал в очередь
+# на всю его длину (замер 24.09.2026 — 20 минут ожидания дважды за день).
+# Теперь ждать приходится один текущий этап, пропущенные пройдут в
+# следующем цикле. Флажок снимается при любом выходе из скрипта.
+DEPLOY_PENDING_FLAG=/tmp/automart-deploy-pending
+touch "$DEPLOY_PENDING_FLAG"
+trap 'rm -f "$DEPLOY_PENDING_FLAG"' EXIT
+
 if command -v flock >/dev/null 2>&1; then
   exec 9>/tmp/automart-encar-collector.lock
   # A complete serialized source pass can legitimately take about half an hour
