@@ -357,7 +357,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               подписи больше ни на что не влияет. */}
           {(listing.isFeatured || isFresh || isChecked || images.length > 1) && (
             <Box pos="absolute" top={8} left={8} style={{ zIndex: 2, display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", maxWidth: "calc(100% - 52px)" }}>
-              {isChecked && <span className="market-tag" data-tag="checked">✓ Проверено</span>}
+              {isChecked && <span className="market-tag" data-tag="checked">Проверено</span>}
               {listing.isFeatured && <span className="market-tag" data-tag="featured">Премиум</span>}
               {isFresh && <span className="market-tag" data-tag="new">Сегодня</span>}
               {images.length > 1 && (
@@ -379,50 +379,45 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             </Box>
           )}
 
-          {/* Сравнение — рядом с избранным.
+          {/* Сравнение и избранное — парой в правом нижнем углу фото.
 
-              Страница сравнения на сайте была, но попасть в неё можно было
-              только вручную через адрес: в карточке кнопки не было. Человек,
-              который выбирает между тремя машинами, держал их в закладках.
+              Кнопки были по 44 пикселя: два белых круга закрывали четверть
+              снимка, и владелец назвал это уродством. Видимый круг теперь
+              32 пикселя, а зона нажатия остаётся 44 — её держит невидимое
+              поле вокруг (::after в стилях), палец не промахивается.
 
-              Только для транспорта: сравнивать запчасти по характеристикам
-              нечего. */}
-          {isVehicle && (
-            <Box pos="absolute" bottom={8} right={56} style={{ zIndex: 2 }}>
+              На десктопе пара проявляется при наведении на карточку; уже
+              отмеченные — видны всегда, чтобы выбор не прятался.
+
+              Сравнение — только для транспорта: запчасти по характеристикам
+              не сравнивают. */}
+          <Box className="listing-card__tools" data-marked={inCompare || isFav ? "true" : undefined}>
+            {isVehicle && (
               <ActionIcon
                 className="listing-card__favorite"
-                /* Значок тёмный: подложка кнопки белая, и светлый значок на
-                   ней пропадал бы. Активное состояние — фирменным цветом. */
                 color={inCompare ? "indigo" : "dark"}
                 variant="subtle"
-                size={44}
+                size={32}
                 radius="xl"
                 onClick={handleCompare}
+                data-on={inCompare || undefined}
                 aria-label={inCompare ? "Убрать из сравнения" : "Добавить к сравнению"}
               >
-                <IconScale size={17} stroke={2} />
+                <IconScale size={16} stroke={1.9} />
               </ActionIcon>
-            </Box>
-          )}
-
-          {/* Сердечко — справа снизу */}
-          <Box pos="absolute" bottom={8} right={8} style={{ zIndex: 2 }}>
+            )}
             <ActionIcon
               className="listing-card__favorite"
               color={isFav ? "red" : "dark"}
               variant="subtle"
-              /* 44px — норма зоны нажатия для пальца; при size="sm" кнопка
-                 была 30px и на телефоне в неё промахивались. Размер задан
-                 числом: именованные ступени Mantine до 44px не доходят
-                 (lg — это 34px). Само сердечко осталось прежним. */
-              size={44}
+              size={32}
               radius="xl"
               onClick={toggleFav}
               loading={isPending(listing.id)}
+              data-on={isFav || undefined}
               aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
-              style={{ opacity: 0.9 }}
             >
-              <IconHeart size={17} stroke={2} fill={isFav ? "currentColor" : "none"} />
+              <IconHeart size={16} stroke={1.9} fill={isFav ? "currentColor" : "none"} />
             </ActionIcon>
           </Box>
         </Box>

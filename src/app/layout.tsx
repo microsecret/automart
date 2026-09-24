@@ -1,4 +1,5 @@
 import "./globals.css"
+import "./refresh.css"
 import type { Metadata, Viewport } from "next"
 import { ColorSchemeScript } from "@mantine/core"
 import AppProviders from "@/components/providers/AppProviders"

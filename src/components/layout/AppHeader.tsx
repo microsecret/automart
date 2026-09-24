@@ -2,7 +2,7 @@
 
 import { Box, Burger, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
 import { IconBuildingStore, IconPackage, IconSearch, IconBell, IconMessageCircle2,
-  IconMessages, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake, IconTruckDelivery } from "@tabler/icons-react"
+  IconMessages, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake, IconTruckDelivery, IconChevronDown } from "@tabler/icons-react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -254,6 +254,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                    меню «Сервисы» и в боковой навигации, а объявления,
                    запчасти и заправки — то, ради чего сюда приходят, —
                    видны всегда. */
+                leftSection={<span className="market-header-tab__icon" aria-hidden="true">{item.icon}</span>}
                 className={`market-header-tab${item.active ? " market-header-tab--active" : ""}${
                   SECONDARY_HEADER_TABS.has(item.href) && !item.active ? " market-header-tab--secondary" : ""
                 }`}
@@ -261,9 +262,15 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                 {item.label}
               </Button>
             ))}
+            <ServiceNavigationMenu serviceNavigation={serviceNavigation} serviceShortcuts={serviceShortcuts} />
           </Group>
 
-          <ServiceNavigationMenu serviceNavigation={serviceNavigation} serviceShortcuts={serviceShortcuts} />
+          {/* Распорка: вкладки и «Сервисы» держатся левой группой рядом с
+              логотипом, всё остальное — плотным блоком у правого края.
+              Раньше justify="space-between" раздавал пустоту поровну между
+              девятью предметами, и «Сервисы» с «Партнёрам» висели посреди
+              шапки отдельными островами. */}
+          <Box className="market-app-header__spacer" />
 
           {/* Ряд «Новости/Помощь» убран: он дублировал выпадающее меню
               сервисов и вместе с вкладками каталога вытеснял из шапки иконки
@@ -513,7 +520,7 @@ function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts }: { servic
     || serviceShortcuts.some((item) => item.active)
 
   return (
-    <Box visibleFrom="md">
+    <Box visibleFrom="md" component="span" className="market-header-services-wrap">
       {/* Меню открывается наведением, а не только щелчком.
        *
        * «Сервисы» — это указатель, а не действие: человек ведёт мышь,
@@ -541,11 +548,13 @@ function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts }: { servic
       >
         <Menu.Target>
           <Button
-            variant={serviceIsActive ? "light" : "subtle"}
+            variant="subtle"
             color="indigo"
             size="compact-sm"
-            leftSection={<IconShieldCheck size={15} />}
+            leftSection={<span className="market-header-tab__icon" aria-hidden="true"><IconShieldCheck size={14} /></span>}
+            rightSection={<IconChevronDown size={13} stroke={2} className="market-header-tab__chevron" />}
             aria-label="Открыть сервисы площадки"
+            className={`market-header-tab market-header-services${serviceIsActive ? " market-header-tab--active" : ""}`}
           >
             Сервисы
           </Button>

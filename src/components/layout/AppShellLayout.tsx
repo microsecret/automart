@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 
-import { AppShell, Avatar, Badge, Box, Button, Divider, Group, NavLink, Paper, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core"
+import { AppShell, Avatar, Box, Button, Group, NavLink, Paper, ScrollArea, Stack, Text } from "@mantine/core"
 import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import {
@@ -117,6 +117,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const pathname = usePathname()
   const { data: session } = useSession()
   const [mobileOpened, { close: closeMobile, toggle: toggleMobile }] = useDisclosure(false)
+  useFooterRailSync(pathname)
   const isAuthRoute = pathname?.startsWith("/auth/")
   /* Главная — единственная страница, где колонка контента не ограничена
      по ширине: её первый экран занимает фотография во всю ширину окна.
@@ -612,6 +613,59 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   )
 }
 
+/**
+ * Боковые колонки обрываются над подвалом, а не уходят под него.
+
+ * Меню и сводка закреплены на экране (fixed), а подвал — тёмная плита на
+ * всю ширину окна. Пока подвала не видно, колонки занимают весь экран под
+ * шапкой; когда он въезжает снизу, их высота уменьшается ровно на ту часть,
+ * которую он занял, — и нижние пункты меню остаются достижимыми.
+
+ * Слушатель прокрутки включается только пока подвал в кадре: на остальной
+ * странице он не стоит ничего. Значение пишется в одну CSS-переменную на
+ * корне, стили берут его из calc().
+ */
+function useFooterRailSync(pathname: string | null) {
+  useEffect(() => {
+    const footer = document.querySelector<HTMLElement>(".app-footer-bleed")
+    if (!footer || typeof IntersectionObserver === "undefined") return
+    const root = document.documentElement
+    let frame = 0
+    let listening = false
+
+    const update = () => {
+      frame = 0
+      const overlap = Math.max(0, Math.round(window.innerHeight - footer.getBoundingClientRect().top))
+      root.style.setProperty("--lw-footer-overlap", `${overlap}px`)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    const listen = (on: boolean) => {
+      if (on === listening) return
+      listening = on
+      const method = on ? "addEventListener" : "removeEventListener"
+      window[method]("scroll", schedule, { passive: true } as AddEventListenerOptions)
+      window[method]("resize", schedule)
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      listen(entry.isIntersecting)
+      update()
+    })
+    observer.observe(footer)
+
+    return () => {
+      observer.disconnect()
+      listen(false)
+      if (frame) cancelAnimationFrame(frame)
+      root.style.removeProperty("--lw-footer-overlap")
+    }
+    /* Путь в зависимостях: мини-апп рисует страницу без подвала, и при
+       переходе из него на сайт подвал появляется позже первого запуска. */
+  }, [pathname])
+}
+
 function AuctionCountryLinks({ pathname }: { pathname: string }) {
   const searchParams = useSearchParams()
   const selectedCountry = pathname === "/auctions" ? searchParams.get("country") : null
@@ -767,7 +821,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
        * кабинета — остаётся на светлом: читать их придётся подолгу. */}
       <Box className="market-side-account__head">
         <Group wrap="nowrap" gap={10} align="center">
-          <Avatar src={session.user.image} radius="xl" size={38} className="market-side-account__avatar">
+          <Avatar src={session.user.image} radius="xl" size={32} className="market-side-account__avatar">
             {session.user.name?.[0]?.toUpperCase()}
           </Avatar>
           <Box style={{ minWidth: 0, flex: 1 }}>
@@ -782,14 +836,11 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         </Group>
       </Box>
 
-      <Paper className="market-side-account__summary" radius="md" p="xs" withBorder>
-        <Group justify="space-between" gap="xs" wrap="nowrap">
-          {/* Подпись и значение различаются цветом, а не весом: раньше 650
-              против 700 на одном кегле читалось как неровность набора. */}
-          <Stack gap={0}><Text size="xs" c="dimmed" fw={500}>Ваш кабинет</Text><Text size="xs" fw={700}>{hasAttention ? "Проверьте новые события" : "Всё под контролем"}</Text></Stack>
-          <ThemeIcon variant="light" color={hasAttention ? "orange" : "teal"} size={30} radius="md"><IconLayoutDashboard size={16} /></ThemeIcon>
-        </Group>
-      </Paper>
+      {/* Карточка-сводка «Ваш кабинет · Всё под контролем» убрана.
+
+          Она занимала 56 пикселей ради одной фразы, которая почти всегда
+          говорила «ничего не случилось», — а когда случалось, то же самое
+          уже показывала метка «Есть действия» в шапке кабинета рядом. */}
 
       {/* Пункты кабинета разбиты на три группы с подписями.
 
@@ -800,15 +851,15 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
 
           Подписи те же, что у секций ниже по колонке («Транспорт»,
           «Запчасти»): один приём на всю колонку вместо двух разных. */}
-      <Stack gap={1} mt="xs">
+      <Stack gap={0} className="market-side-account__body">
         <Text className="market-side-account__group" component="p">Мой кабинет</Text>
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.listings.href} label={ACCOUNT_NAVIGATION.listings.label} leftSection={<IconLayoutDashboard size={16} />} rightSection={<AccountCounter value={summary?.totalListings || 0} />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="light" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.favorites.href} label={ACCOUNT_NAVIGATION.favorites.label} leftSection={<IconHeart size={16} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} />} active={pathname.startsWith("/favorites")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.garage.href} label={ACCOUNT_NAVIGATION.garage.label} leftSection={<IconCar size={16} />} rightSection={<AccountCounter value={summary?.garageCount || 0} />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/dashboard/orders" prefetch={false} label="Мои заказы" leftSection={<IconClipboardList size={16} />} active={pathname.startsWith("/dashboard/orders")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.deliveries.href} prefetch={false} label={ACCOUNT_NAVIGATION.deliveries.label} leftSection={<IconTruckDelivery size={16} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} urgent />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.documents.href} prefetch={false} label={ACCOUNT_NAVIGATION.documents.label} leftSection={<IconFileDescription size={16} />} active={pathname.startsWith("/dashboard/documents")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.payments.href} label={ACCOUNT_NAVIGATION.payments.label} leftSection={<IconCreditCard size={16} />} active={pathname === "/dashboard" && dashboardTab === "payments"} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.listings.href} label={ACCOUNT_NAVIGATION.listings.label} leftSection={<IconLayoutDashboard size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.totalListings || 0} />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.favorites.href} label={ACCOUNT_NAVIGATION.favorites.label} leftSection={<IconHeart size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} />} active={pathname.startsWith("/favorites")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.garage.href} label={ACCOUNT_NAVIGATION.garage.label} leftSection={<IconCar size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.garageCount || 0} />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/dashboard/orders" prefetch={false} label="Мои заказы" leftSection={<IconClipboardList size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/orders")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.deliveries.href} prefetch={false} label={ACCOUNT_NAVIGATION.deliveries.label} leftSection={<IconTruckDelivery size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} urgent />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.documents.href} prefetch={false} label={ACCOUNT_NAVIGATION.documents.label} leftSection={<IconFileDescription size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/documents")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.payments.href} label={ACCOUNT_NAVIGATION.payments.label} leftSection={<IconCreditCard size={15} stroke={1.7} />} active={pathname === "/dashboard" && dashboardTab === "payments"} color="indigo" variant="subtle" className="market-side-account__link" />
 
         {/* Партнёрский блок отделён подписью: до проверки компании этих
             разделов в меню нет вовсе, поэтому список у обычного продавца
@@ -816,22 +867,22 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         {isPartner && (
           <>
             <Text className="market-side-account__group" component="p">Партнёрские разделы</Text>
-            <NavLink component={Link} href="/dashboard/store" prefetch={false} label="Магазин запчастей" leftSection={<IconBuildingStore size={16} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
+            <NavLink component={Link} href="/dashboard/store" prefetch={false} label="Магазин запчастей" leftSection={<IconBuildingStore size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
           </>
         )}
 
         {/* Приглашать друзей может любой пользователь — это не партнёрский
             раздел для проверенных компаний, поэтому и название другое. */}
-        <NavLink component={Link} href="/dashboard/referral" prefetch={false} label="Пригласить друзей" leftSection={<IconGift size={16} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/dashboard/referral" prefetch={false} label="Пригласить друзей" leftSection={<IconGift size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/referral")} color="indigo" variant="subtle" className="market-side-account__link" />
         {/* Связь и настройки — своя группа: сообщения и уведомления
             смотрят по нескольку раз в день, а профиль и админка — раз в
             месяц. Голая линия между ними ничего не называла. */}
         <Text className="market-side-account__group" component="p">Связь и настройки</Text>
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.messages.href} label={ACCOUNT_NAVIGATION.messages.label} leftSection={<IconMessageCircle2 size={16} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} urgent />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href="/notifications" prefetch={false} label="Уведомления" leftSection={<IconBell size={16} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} urgent />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
-        <NavLink component={Link} href={ACCOUNT_NAVIGATION.profile.href} label={ACCOUNT_NAVIGATION.profile.label} leftSection={<IconSettings size={16} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
-        {isAdmin && <NavLink component={Link} href="/admin" prefetch={false} label="Админ-панель" leftSection={<IconSettings size={16} />} active={pathname.startsWith("/admin")} color="grape" variant="light" className="market-side-account__link" />}
-        {isModerator && <NavLink component={Link} href="/moderation" prefetch={false} label="Модерация" leftSection={<IconGavel size={16} />} active={pathname.startsWith("/moderation")} color="orange" variant="light" className="market-side-account__link" />}
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.messages.href} label={ACCOUNT_NAVIGATION.messages.label} leftSection={<IconMessageCircle2 size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.unreadMessages || 0} urgent />} active={pathname.startsWith("/messages")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/notifications" prefetch={false} label="Уведомления" leftSection={<IconBell size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.unreadNotifications || 0} urgent />} active={pathname.startsWith("/notifications")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href={ACCOUNT_NAVIGATION.profile.href} label={ACCOUNT_NAVIGATION.profile.label} leftSection={<IconSettings size={15} stroke={1.7} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
+        {isAdmin && <NavLink component={Link} href="/admin" prefetch={false} label="Админ-панель" leftSection={<IconSettings size={15} stroke={1.7} />} active={pathname.startsWith("/admin")} color="indigo" variant="subtle" className="market-side-account__link" />}
+        {isModerator && <NavLink component={Link} href="/moderation" prefetch={false} label="Модерация" leftSection={<IconGavel size={15} stroke={1.7} />} active={pathname.startsWith("/moderation")} color="indigo" variant="subtle" className="market-side-account__link" />}
       </Stack>
       {/* Кнопки «Подать объявление» здесь больше нет.
 

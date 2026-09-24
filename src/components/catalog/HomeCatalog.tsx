@@ -61,11 +61,19 @@ const ALL_CITY_NAMES = Object.keys(CITY_COORDINATES).sort((a, b) => a.localeComp
    Вторая строка — живой довод, а не украшение: число объявлений,
    стран на аукционах, заправок. Где числа нет, стоит короткое
    пояснение, что там произойдёт. */
+const QUICK_SORT_VALUES = new Set(["newest", "price_asc", "price_desc"])
+const QUICK_SORTS = [
+  { value: "newest", label: "Новые" },
+  { value: "price_asc", label: "Дешевле" },
+  { value: "price_desc", label: "Дороже" },
+]
+const MORE_SORTS = SORT_OPTIONS.filter((o) => !QUICK_SORT_VALUES.has(o.value)).map((o) => ({ value: o.value, label: o.label }))
+
 const HERO_ACTIONS = [
-  { href: "#catalog", label: "Купить авто", note: "Весь каталог", icon: <IconCar size={21} /> },
-  { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", icon: <IconTag size={21} /> },
-  { href: "/auctions", label: "Аукционы", note: "Япония, Корея, Китай", icon: <IconGavel size={21} /> },
-  { href: "/parts-finder", label: "Запчасти", note: "Оригинал и аналоги", icon: <IconSettings size={21} /> },
+  { href: "#catalog", label: "Купить авто", note: "Весь каталог", tone: "blue", icon: <IconCar size={19} stroke={1.8} /> },
+  { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", tone: "green", icon: <IconTag size={19} stroke={1.8} /> },
+  { href: "/auctions", label: "Аукционы", note: "Япония, Корея, Китай", tone: "orange", icon: <IconGavel size={19} stroke={1.8} /> },
+  { href: "/parts-finder", label: "Запчасти", note: "Оригинал и аналоги", tone: "violet", icon: <IconSettings size={19} stroke={1.8} /> },
   /* «Заправки», а не «Где заправиться»: замер показал, что полная
      подпись требует 131 пиксель при ширине плитки 124 и вылезает за
      края. Уменьшать кегль дальше нельзя — четырнадцать пикселей и так
@@ -73,7 +81,7 @@ const HERO_ACTIONS = [
 
      Короткое имя не выдумано: оно уже стоит в навигации проекта как
      shortLabel для этого же раздела. */
-  { href: "/services/fuel-map", label: "Заправки", note: "Цены на карте", icon: <IconGasStation size={21} /> },
+  { href: "/services/fuel-map", label: "Заправки", note: "Цены на карте", tone: "teal", icon: <IconGasStation size={19} stroke={1.8} /> },
 ] as const
 
 export default function HomePage(p: HomePageProps = {}) {
@@ -517,26 +525,6 @@ export default function HomePage(p: HomePageProps = {}) {
                   </Text>
                 )}
 
-                {/* Пять действий кружками — как в макете площадки.
-
-                    Здесь стояли две кнопки, «Мировые аукционы» и «Весь
-                    каталог», и человек на первом экране видел только два
-                    пути из пяти возможных. Продать машину, найти запчасть
-                    или проверить VIN он мог, лишь догадавшись открыть
-                    боковое меню.
-
-                    Значок над подписью, а не сбоку: ряд из пяти подписей
-                    в строку не помещается даже на широком экране, а
-                    столбиком каждый пункт читается с одного взгляда. */}
-                <Group gap="sm" mt={22} wrap="wrap" className="home-hero__actions">
-                  {HERO_ACTIONS.map((action) => (
-                    <Link key={action.href} href={action.href} className="home-hero__action">
-                      <span className="home-hero__action-icon" aria-hidden="true">{action.icon}</span>
-                      <span className="home-hero__action-label">{action.label}</span>
-                      <span className="home-hero__action-note">{action.note}</span>
-                    </Link>
-                  ))}
-                </Group>
               </Box>
               {/* Правая колонка героя пуста намеренно.
 
@@ -547,6 +535,27 @@ export default function HomePage(p: HomePageProps = {}) {
             </Group>
           </Box>
         </Paper>
+      )}
+
+      {/* Пять действий — рядом виджетов под героем, а не плитками внутри него.
+
+          Владелец: плитки на фотографии спорили с заголовком и поиском, а
+          полупрозрачные прямоугольники поверх машины читались «детским
+          садом». Под героем они стоят на своей подложке, как ряд
+          инструментов у площадки-образца, и герой стал на треть ниже. */}
+      {p.showHero !== false && !p.categorySlug && (
+        <nav className="home-quick" aria-label="Быстрые действия">
+          {HERO_ACTIONS.map((action) => (
+            <Link key={action.href} href={action.href} className="home-quick__item" data-tone={action.tone}>
+              <span className="home-quick__icon" aria-hidden="true">{action.icon}</span>
+              <span className="home-quick__text">
+                <span className="home-quick__label">{action.label}</span>
+                <span className="home-quick__note">{action.note}</span>
+              </span>
+              <IconArrowUpRight className="home-quick__arrow" size={16} stroke={1.8} aria-hidden="true" />
+            </Link>
+          ))}
+        </nav>
       )}
 
       {/* Витрина направлений — только на главной: внутри категории человек
@@ -623,31 +632,34 @@ export default function HomePage(p: HomePageProps = {}) {
               Остальные четыре варианта остаются в списке справа: выносить
               все шесть значило бы забить строку кнопками и потерять
               разницу между частым и редким. */}
-          <Group gap={6} wrap="nowrap" className="catalog-sort-quick">
-            {[
-              { value: "price_asc", label: "Дешевле" },
-              { value: "price_desc", label: "Дороже" },
-              { value: "newest", label: "Новые" },
-            ].map((option) => (
-              <Button
-                key={option.value}
-                size="sm"
-                variant={sort === option.value ? "filled" : "default"}
-                onClick={() => setSort(option.value)}
-                aria-pressed={sort === option.value}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </Group>
+          {/* Три частые сортировки — одним сегментированным переключателем,
+              редкие — в соседнем списке «Ещё».
+
+              Раньше рядом стояли три кнопки-пилюли и список со всеми шестью
+              вариантами: «Новые» и «Сначала новые» показывали одно и то же
+              дважды, а крупные пилюли владелец назвал детским садом.
+              Переключатель — один предмет с подвижной подложкой: видно и что
+              выбрано, и из чего. */}
+          <SegmentedControl
+            className="catalog-sort-quick"
+            aria-label="Сортировка объявлений"
+            size="xs"
+            radius="md"
+            value={QUICK_SORTS.some((o) => o.value === sort) ? sort : ""}
+            onChange={(v) => v && setSort(v)}
+            data={QUICK_SORTS}
+          />
           <Select
             className="catalog-sort-control"
-            aria-label="Сортировка объявлений"
-            data={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-            value={sort}
+            aria-label="Другие варианты сортировки"
+            placeholder="Ещё"
+            data={MORE_SORTS}
+            value={MORE_SORTS.some((o) => o.value === sort) ? sort : null}
             onChange={(v) => setSort(v || "newest")}
             size="xs"
-            w={160}
+            radius="md"
+            w={150}
+            comboboxProps={{ width: 180, position: "bottom-end" }}
           />
           <Group className="catalog-view-switch" gap={2} role="group" aria-label="Вид объявлений">
             <Tooltip label="Плитка" withArrow>
@@ -769,9 +781,11 @@ export default function HomePage(p: HomePageProps = {}) {
 
           {!isPartSearch && <Group justify="space-between" align="center">
             <Button
-              variant={showAdvanced ? "filled" : "light"}
+              variant={showAdvanced ? "filled" : "default"}
               color="indigo"
               size="sm"
+              radius="md"
+              className="catalog-filter-toggle"
               onClick={() => { setShowAdvanced((value) => !value); setAdvancedEverOpened(true) }}
               aria-expanded={showAdvanced}
               aria-controls="catalog-advanced-filters"
@@ -1094,16 +1108,6 @@ export default function HomePage(p: HomePageProps = {}) {
           <Text size="xs" c="dimmed">Страница {page} из {data.pagination.pages} · по {data.pagination.limit} объявлений</Text>
         </Stack>
       )}
-
-      {/* Рекламное место — между каталогом и разделами.
-
-          Здесь, а не выше каталога: до объявлений человек пришёл за
-          машинами, и полоса перед ними отодвинула бы их вниз. Дочитав
-          страницу выдачи, он уже сделал, зачем пришёл, и врезка не
-          мешает. Ставится только на главной: в категории и в поиске
-          человек внутри задачи, там реклама читается помехой. */}
-      {p.showHero !== false && !p.categorySlug && <PromoSlot />}
-
       {p.showHero !== false && !p.categorySlug && <CategoryShowcase />}
 
       {/* Объяснение сервиса — только гостю.
@@ -1122,6 +1126,14 @@ export default function HomePage(p: HomePageProps = {}) {
           одной ссылкой в герое — человек читал «машины с мировых
           аукционов» и видел ниже два десятка объявлений. */}
       {p.showHero !== false && !p.categorySlug && <AuctionShowcase />}
+
+      {/* Рекламные места — после аукционов, отдельным рядом билбордов.
+
+          Раньше единственная синяя плита стояла между каталогом и
+          направлениями и по цвету сливалась с героем: владелец принял её
+          за часть витрины. Теперь это подписанные «Реклама» места с рамкой,
+          и они замыкают витрину, а не разрывают её. */}
+      {p.showHero !== false && !p.categorySlug && <PromoSlot />}
     </Stack></Box>
   )
 }

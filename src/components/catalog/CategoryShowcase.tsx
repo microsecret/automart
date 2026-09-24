@@ -3,7 +3,7 @@
 import { plural as sharedPlural } from "@/lib/format"
 import Link from "next/link"
 import useSWR from "swr"
-import { Box, Group, Paper, SimpleGrid, Text, ThemeIcon } from "@mantine/core"
+import { Box, Text } from "@mantine/core"
 import {
   IconCar, IconMotorbike, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconTools,
 } from "@tabler/icons-react"
@@ -42,72 +42,45 @@ export default function CategoryShowcase() {
   })
   const counts = data?.counts
 
-  return (
-    <Box component="section" className={styles.showcase} aria-label="Направления каталога">
-      <Group justify="space-between" align="flex-end" wrap="wrap" gap="xs" mb="sm">
-        <Box>
-          <Text component="h2" className={styles.title}>Выберите направление</Text>
-          <Text className={styles.subtitle}>Транспорт и запчасти в одном каталоге. Проверка, доставка и сопровождение сделки.</Text>
-        </Box>
-      </Group>
+  /* Панель по образцу площадки-образца: тёмная шапка с подписью и выходом
+     в каталог, под ней плитки направлений на цветной подложке.
 
-      {/* Число колонок задаётся в CSS через auto-fit, а не ступенями
-          здесь: при `lg: 5` и семи направлениях окно 1280 давало ряд
-          5+2 — вторая строка на две трети пустая, — а при `xl: 7` окно
-          1440 сжимало плитку до 122 пикселей, и подсказка «Седаны,
-          кроссоверы, хэтчбеки» ломалась на три строки вместо двух.
-          Ступени здесь остаются запасным вариантом для телефона. */}
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs" className={styles.grid}>
+     Прежние белые карточки с кружком-значком стояли среди таких же белых
+     карточек объявлений и терялись; владелец не понял, к чему относится
+     «Выберите направление». Панель читается одним предметом — навигацией
+     по каталогу, а не ещё одной лентой товаров.
+
+     Сетка 4×2 ровная: «Легковые» — единственное наполненное направление —
+     занимает две клетки по высоте, и семь плиток закрывают восемь клеток
+     без дыры в последнем ряду. */
+  return (
+    <Box component="section" className={styles.showcase} aria-labelledby="directions-title">
+      <div className={styles.head}>
+        <Text component="h2" id="directions-title" className={styles.title}>Направления каталога</Text>
+        <Link href="/search" prefetch={false} className={styles.all}>Весь каталог →</Link>
+      </div>
+
+      <div className={styles.grid}>
         {DIRECTIONS.map(({ slug, href, label, hint, Icon, tone }) => {
           const count = counts?.[slug]
           return (
-            <Paper
-              key={slug}
-              component={Link}
-              href={href}
-              className={styles.card}
-              data-tone={tone}
-              radius="lg"
-              p="sm"
-              withBorder
-            >
-              <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
-                <ThemeIcon variant="light" color={tone} size={34} radius="xl" className={styles.icon}>
-                  <Icon size={17} stroke={1.9} />
-                </ThemeIcon>
-                {/* Пока счётчики грузятся, места под них не занимаем —
-                    иначе карточки дёргаются при появлении чисел.
-
-                    Пустая категория показывает не «0», а точку: цифра ноль
-                    читается как «здесь ничего нет и не будет», хотя раздел
-                    работает и ждёт первое объявление. Пять нулей из семи
-                    плиток на главном экране отпугивали покупателя раньше,
-                    чем он успевал посмотреть каталог. */}
-                {typeof count === "number" && count > 0 && (
-                  <Text className={styles.count}>{count}</Text>
-                )}
-              </Group>
-              <Text className={styles.label}>{label}</Text>
-              <Text className={styles.hint}>{hint}</Text>
-              {/* Нижняя строка есть всегда, пока счётчики загружены.
-
-                  Раньше у раздела без объявлений она просто отсутствовала —
-                  под названием оставался воздух, и плитка выглядела
-                  недоделанной рядом с заполненной соседкой. Разной высоты
-                  строк в одном ряду достаточно, чтобы весь ряд читался как
-                  незавершённый.
-
-                  Стиль для этого случая в модуле уже был написан
-                  (.meta[data-empty]), но его никто не применял. */}
+            <Link key={slug} href={href} prefetch={false} className={styles.card} data-tone={tone}>
+              <Icon className={styles.watermark} size={96} stroke={1} aria-hidden="true" />
+              <span className={styles.icon} aria-hidden="true"><Icon size={18} stroke={1.8} /></span>
+              <span className={styles.label}>{label}</span>
+              <span className={styles.hint}>{hint}</span>
+              {/* Пустое направление показывает не «0», а приглашение: ноль
+                  читается как «здесь ничего не будет». Пока счётчики
+                  грузятся, строки нет — чтобы плитки не дёргались. */}
               {typeof count === "number" && (
-                count > 0
-                  ? <Text className={styles.meta}>{count} {plural(count)}</Text>
-                  : <Text className={styles.meta} data-empty="true">Разместить первым</Text>
+                <span className={styles.meta} data-empty={count > 0 ? undefined : "true"}>
+                  {count > 0 ? `${count} ${plural(count)}` : "Разместить первым"}
+                </span>
               )}
-            </Paper>
+            </Link>
           )
         })}
-      </SimpleGrid>
+      </div>
     </Box>
   )
 }

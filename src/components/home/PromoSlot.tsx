@@ -1,55 +1,66 @@
 import Link from "next/link"
-import { Box, Text } from "@mantine/core"
-import { IconArrowRight } from "@tabler/icons-react"
+import { IconArrowRight, IconBuildingStore, IconShieldCheck, IconTool } from "@tabler/icons-react"
 
 /**
- * Рекламное место на главной.
+ * Рекламные места на главной — ряд из трёх билбордов.
  *
  * Пока рекламодателей нет, показывать пустой прямоугольник с надписью
  * «здесь могла быть ваша реклама» — значит признаваться посетителю, что
- * площадку никто не покупает. Поэтому место занято предложением
- * разместиться: это честное содержание, оно работает на площадку и
+ * площадку никто не покупает. Поэтому каждое место занято предложением
+ * разместиться под конкретную аудиторию: это честное содержание, и оно
  * заменяется на настоящий баннер без перевёрстки.
  *
- * Когда появится первый рекламодатель, сюда придёт его материал: размеры
- * блока рассчитаны под обычную широкую полосу (соотношение около 6:1 на
- * десктопе), а разметка ниже станет запасным вариантом для случая, когда
- * показывать нечего.
+ * Одна широкая синяя плита сливалась с героем по цвету — владелец принял
+ * её за часть витрины. Билборды подписаны «Реклама», стоят на светлой
+ * подложке со своей рамкой и читаются отдельным слоем страницы.
  *
  * Серверный компонент: ни состояния, ни обработчиков — значит, и
  * скрипта в браузере он не добавляет.
  */
+const BOARDS = [
+  {
+    tone: "blue",
+    Icon: IconBuildingStore,
+    title: "Автосалонам и дилерам",
+    lede: "Витрина салона рядом с каталогом — перед теми, кто выбирает машину сегодня.",
+  },
+  {
+    tone: "orange",
+    Icon: IconTool,
+    title: "Сервисам и шиномонтажу",
+    lede: "Запись на ремонт и ТО для владельцев машин из вашего города.",
+  },
+  {
+    tone: "teal",
+    Icon: IconShieldCheck,
+    title: "Страховым и банкам",
+    lede: "ОСАГО, КАСКО и автокредит в момент, когда покупатель уже решился.",
+  },
+] as const
 
 export default function PromoSlot() {
   return (
-    <Box
-      component="section"
-      className="promo-slot"
-      aria-label="Реклама на площадке"
-    >
-      <Box className="promo-slot__body">
-        <Text component="span" className="promo-slot__label">
-          Рекламное место
-        </Text>
-        <Text component="h2" className="promo-slot__title">
-          Ваш автосалон, сервис или страховая — на главной LeWheel
-        </Text>
-        <Text className="promo-slot__lede">
-          Площадку открывают те, кто прямо сейчас выбирает машину, ищет запчасть или
-          заправку. Место на главной — их первый экран.
-        </Text>
-      </Box>
-
-      {/* Ведём в поддержку, а не на страницу «/partners»: такой страницы в
-          проекте нет, и ссылка на неё была бы обещанием пустоты. Кнопка
-          «Стать партнёром» в шапке ведёт в заявку на доставку — это про
-          перевозчиков, не про рекламу, поэтому она здесь не подходит.
-          Когда появится страница с условиями размещения, адрес меняется
-          в одной строке. */}
-      <Link href="/help/support" className="promo-slot__action">
-        Условия размещения
-        <IconArrowRight size={17} />
-      </Link>
-    </Box>
+    <section className="promo-boards" aria-label="Рекламные места">
+      <div className="promo-boards__head">
+        <span className="promo-boards__label">Реклама</span>
+        <span className="promo-boards__hint">Места на главной свободны</span>
+      </div>
+      <div className="promo-boards__grid">
+        {BOARDS.map(({ tone, Icon, title, lede }) => (
+          /* Ведём в поддержку: страницы с условиями размещения пока нет, и
+             ссылка на неё была бы обещанием пустоты. Когда она появится,
+             адрес меняется в одной строке. */
+          <Link key={title} href="/help/support" prefetch={false} className="promo-board" data-tone={tone}>
+            <span className="promo-board__icon" aria-hidden="true"><Icon size={20} stroke={1.8} /></span>
+            <span className="promo-board__title">{title}</span>
+            <span className="promo-board__lede">{lede}</span>
+            <span className="promo-board__action">
+              Условия размещения
+              <IconArrowRight size={15} stroke={2} />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
   )
 }

@@ -1,0 +1,1066 @@
+/* =====================================================================
+   Редизайн каркаса LeWheel — сентябрь 2026.
+
+   Файл подключается после globals.css и держит правила нового каркаса в
+   одном месте: шапка, боковое меню с кабинетом, ряд действий под героем,
+   сортировка и фильтры каталога, кнопки карточки, рекламные места,
+   сводка справа и подвал.
+
+   Образец — площадка RawMart: плотный деловой набор, один тёмно-синий
+   тон для всех «шапок» (кабинет, виджеты, панель направлений, подвал),
+   ровные линии в один пиксель и никаких пилюль там, где хватает строки.
+
+   Почему отдельный файл, а не правка на местах: в globals.css одни и те
+   же классы переопределяются по три-четыре раза на расстоянии тысяч
+   строк, и правка в одном месте молча проигрывала правилу ниже. Здесь
+   правила стоят последними и читаются подряд.
+   ===================================================================== */
+
+:root {
+  /* Фирменный тёмно-синий — общий для всех тёмных плашек каркаса.
+     Раньше у каждого виджета был свой градиент (синий, фиолетовый,
+     бирюзовый), и правая колонка пестрела четырьмя цветами. */
+  --lw-navy: #0b1426;
+  --lw-navy-2: #13233f;
+  --lw-navy-line: rgba(255, 255, 255, 0.08);
+  --lw-navy-text: #e6ecf5;
+  --lw-navy-muted: #8e9fb8;
+  --lw-rail-row: 26px;
+  --lw-control-h: 36px;
+}
+
+/* ---------------------------------------------------------------------
+   1. Шапка
+   --------------------------------------------------------------------- */
+
+.market-app-header__spacer {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+.market-app-header__tabs {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: 18px;
+}
+
+/* Вкладки — одной высоты, со значком. Подчёркивание уходит к нижнему краю
+   шапки: вкладка и линия под шапкой читаются одной конструкцией. */
+.market-header-tab {
+  height: var(--lw-control-h) !important;
+  padding-inline: 10px !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.005em;
+}
+
+.market-header-tab__icon {
+  display: inline-flex;
+  color: var(--market-muted);
+  transition: color var(--ease-fast) var(--ease-out);
+}
+
+.market-header-tab:hover .market-header-tab__icon,
+.market-header-tab--active .market-header-tab__icon {
+  color: var(--market-accent-text);
+}
+
+.market-header-tab__chevron {
+  color: var(--market-muted);
+  transition: transform var(--ease-base) var(--ease-out);
+}
+
+.market-header-services[aria-expanded="true"] .market-header-tab__chevron {
+  transform: rotate(180deg);
+}
+
+.market-header-services-wrap {
+  display: inline-flex;
+}
+
+/* Значки у вкладок — только там, где ряду хватает места. На ноутбуке
+   ряд из семи подписей со значками выталкивал поиск. */
+@media (max-width: 1499px) {
+  .market-header-tab .mantine-Button-section[data-position="left"] {
+    display: none;
+  }
+}
+
+/* «Стать партнёром» — тихая кнопка с рамкой, а не светящийся пузырь.
+   Заливка, тень и пробегающий блик делали её громче «Подать объявление»,
+   хотя главное действие площадки — подача. */
+.partner-header-cta {
+  height: var(--lw-control-h) !important;
+  padding-inline: 12px !important;
+  border: 1px solid var(--market-line) !important;
+  border-radius: var(--radius-md) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--market-ink-soft) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 600 !important;
+}
+
+.partner-header-cta::after {
+  display: none;
+}
+
+.partner-header-cta .mantine-Button-section {
+  color: #d9480f;
+}
+
+.partner-header-cta:hover,
+.partner-header-cta:focus-visible {
+  border-color: color-mix(in srgb, #d9480f 45%, var(--market-line)) !important;
+  background: color-mix(in srgb, #fff4e6 70%, transparent) !important;
+  color: #9a3412 !important;
+  transform: none !important;
+}
+
+[data-mantine-color-scheme="dark"] .partner-header-cta:hover,
+[data-mantine-color-scheme="dark"] .partner-header-cta:focus-visible {
+  background: rgba(217, 72, 15, 0.12) !important;
+  color: #ffc9a6 !important;
+}
+
+.header-create-cta {
+  height: var(--lw-control-h) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* Значки справа — квадраты одной высоты с тонкой рамкой, как у образца:
+   ряд читается набором инструментов, а не россыпью кружков. */
+.market-app-header__utility-action:not(.market-app-header__utility-action--avatar) {
+  width: var(--lw-control-h) !important;
+  min-width: var(--lw-control-h) !important;
+  height: var(--lw-control-h) !important;
+  min-height: var(--lw-control-h) !important;
+  border: 1px solid var(--market-line) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--market-surface) !important;
+  color: var(--market-ink-soft) !important;
+}
+
+.market-app-header__utility-action:not(.market-app-header__utility-action--avatar):hover {
+  border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line)) !important;
+  color: var(--market-accent-text) !important;
+}
+
+.market-header-search .mantine-Input-input {
+  height: var(--lw-control-h) !important;
+  min-height: var(--lw-control-h) !important;
+}
+
+/* ---------------------------------------------------------------------
+   2. Боковое меню и кабинет
+   --------------------------------------------------------------------- */
+
+/* Кабинет — часть общего полотна меню, а не голубая карточка поверх него.
+   Владелец: блок кабинета выделялся цветом и разреженными строками, будто
+   принадлежал другому сайту. Теперь у него тот же фон, те же строки и те
+   же подписи групп, что у «Транспорта» и «Запчастей» ниже. */
+.market-side-account,
+.market-side-account--user {
+  border: 0 !important;
+  border-radius: var(--radius-md) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.market-side-account--user > *:not(.market-side-account__head) {
+  margin-inline: 0 !important;
+}
+
+.market-side-account--user > *:last-child {
+  margin-bottom: 2px !important;
+}
+
+/* Шапка кабинета — тем же тёмно-синим, что подвал и виджеты справа. */
+.market-side-account__head {
+  padding: 8px 10px !important;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--lw-navy) 0%, var(--lw-navy-2) 100%) !important;
+}
+
+.market-side-account__name {
+  font-size: var(--text-sm) !important;
+  font-weight: 700 !important;
+}
+
+.market-side-account__body {
+  padding-top: 2px;
+}
+
+/* Подписи групп — точь-в-точь заголовки секций меню. */
+.market-side-account__group {
+  margin: 8px 0 2px !important;
+  padding: 5px 9px 6px !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--market-primary) 14%, transparent) !important;
+  color: var(--market-label) !important;
+  font-size: var(--text-caps) !important;
+  font-weight: 800 !important;
+  letter-spacing: var(--track-caps) !important;
+}
+
+.market-side-account__group:first-of-type {
+  margin-top: 4px !important;
+}
+
+/* Одна высота строки на всю колонку.
+
+   Пункты кабинета были выше пунктов каталога почти вдвое: Mantine ставит
+   NavLink поля 8×12 и кегль 15, а правило высоты в globals.css не
+   достаёт до полей — они заданы переменной внутри слоя Mantine. */
+.market-side-account__link,
+.market-side-panel .mantine-NavLink-root {
+  min-height: var(--lw-rail-row) !important;
+  padding-block: 3px !important;
+  padding-inline-end: 9px !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.market-side-account__link {
+  padding-inline-start: 9px !important;
+  border-left: 3px solid transparent;
+  background: transparent !important;
+  color: var(--market-ink);
+  transition:
+    background-color var(--ease-base) var(--ease-out),
+    border-color var(--ease-base) var(--ease-out),
+    color var(--ease-base) var(--ease-out);
+}
+
+.market-side-account__link .mantine-NavLink-label,
+.market-side-nav .mantine-NavLink-label {
+  font-size: var(--text-sm) !important;
+  line-height: 1.25;
+}
+
+.market-side-account__link .mantine-NavLink-label {
+  font-weight: 600;
+}
+
+.market-side-account__link .mantine-NavLink-section[data-position="left"] {
+  margin-inline-end: 8px !important;
+  color: var(--market-muted);
+}
+
+.market-side-account__link:hover {
+  border-left-color: color-mix(in srgb, var(--market-primary) 45%, transparent);
+  background: color-mix(in srgb, var(--market-primary-soft) 55%, transparent) !important;
+}
+
+/* «Вы здесь» — полосой слева и мягкой подложкой, как у пунктов каталога. */
+.market-side-account__link[data-active] {
+  border-left-color: var(--market-accent-button);
+  background: var(--market-primary-soft) !important;
+  color: var(--market-primary) !important;
+}
+
+.market-side-account__link[data-active]::before {
+  display: none;
+}
+
+.market-side-account__link[data-active] .mantine-NavLink-section[data-position="left"] {
+  color: var(--market-primary);
+}
+
+/* «Профиль» больше не отмечен отдельной подложкой и градиентной чертой:
+   в однородном списке особый пункт выглядел ошибкой вёрстки. */
+.market-side-account__link--profile:not([data-active]) {
+  background: transparent !important;
+}
+
+.market-side-account__link--profile::before {
+  display: none;
+}
+
+[data-mantine-color-scheme="dark"] .market-side-account__link {
+  color: var(--market-ink);
+}
+
+/* Кнопка «Подать за 2 клика» — высотой с остальные элементы управления. */
+.sidebar-create-cta {
+  height: var(--lw-control-h) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* ---------------------------------------------------------------------
+   3. Ряд действий под героем
+   --------------------------------------------------------------------- */
+
+/* Зазор стопки главной задан в globals.css ступенями 20/24/28; здесь он
+   повторён переменной, чтобы нахлёст ряда на героя считался точно. */
+.home-page-stack {
+  --lw-stack-gap: 20px;
+}
+
+@media (min-width: 1200px) {
+  .home-page-stack {
+    --lw-stack-gap: 24px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .home-page-stack {
+    --lw-stack-gap: 28px;
+  }
+}
+
+.home-quick {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 62em) {
+  /* Ряд наплывает на нижний край героя — как док у приложения. Герою
+     добавлено поле снизу ровно под этот нахлёст. */
+  .home-auctions.home-auctions--market {
+    padding-bottom: 64px !important;
+  }
+
+  [data-lw-home="true"] .home-page-stack > .home-quick {
+    margin-top: calc(-1 * var(--lw-stack-gap) - 38px);
+    padding-inline: 20px;
+  }
+}
+
+.home-quick__item {
+  --tone: #2563eb;
+  --tone-soft: #e8efff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 68px;
+  padding: 12px 14px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-lg);
+  background: var(--market-surface);
+  box-shadow: 0 1px 2px rgba(11, 20, 38, 0.06), 0 10px 24px -16px rgba(11, 20, 38, 0.28);
+  color: var(--market-ink);
+  text-decoration: none;
+  transition:
+    transform var(--ease-base) var(--ease-out),
+    box-shadow var(--ease-base) var(--ease-out),
+    border-color var(--ease-base) var(--ease-out);
+  animation: lw-rise 520ms var(--ease-out) both;
+}
+
+.home-quick__item:nth-child(2) { animation-delay: 50ms; }
+.home-quick__item:nth-child(3) { animation-delay: 100ms; }
+.home-quick__item:nth-child(4) { animation-delay: 150ms; }
+.home-quick__item:nth-child(5) { animation-delay: 200ms; }
+
+.home-quick__item[data-tone="green"]  { --tone: #0f9f5a; --tone-soft: #e3f7ec; }
+.home-quick__item[data-tone="orange"] { --tone: #e8590c; --tone-soft: #fff0e6; }
+.home-quick__item[data-tone="violet"] { --tone: #7048e8; --tone-soft: #efeaff; }
+.home-quick__item[data-tone="teal"]   { --tone: #0c8599; --tone-soft: #e3f6f9; }
+
+[data-mantine-color-scheme="dark"] .home-quick__item {
+  --tone-soft: color-mix(in srgb, var(--tone) 18%, transparent);
+  box-shadow: 0 10px 24px -16px rgba(0, 0, 0, 0.6);
+}
+
+.home-quick__icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--tone-soft);
+  color: var(--tone);
+  transition: transform var(--ease-base) var(--ease-out);
+}
+
+.home-quick__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.home-quick__label {
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.home-quick__note {
+  overflow: hidden;
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-quick__arrow {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: var(--market-muted);
+  opacity: 0;
+  transform: translate(-3px, 3px);
+  transition: opacity var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-quick__item:hover {
+    border-color: color-mix(in srgb, var(--tone) 45%, var(--market-line));
+    box-shadow: 0 2px 4px rgba(11, 20, 38, 0.06), 0 18px 32px -18px color-mix(in srgb, var(--tone) 55%, transparent);
+    transform: translateY(-3px);
+  }
+
+  .home-quick__item:hover .home-quick__icon {
+    transform: scale(1.06) rotate(-4deg);
+  }
+
+  .home-quick__item:hover .home-quick__arrow {
+    color: var(--tone);
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.home-quick__item:active {
+  transform: scale(0.98);
+}
+
+.home-quick__item:focus-visible {
+  outline: 2px solid var(--market-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Средняя ширина: пять плиток в ряд сжимаются до обрезанных подписей,
+   поэтому подпись под названием уходит, а плитка остаётся ровной. */
+@media (min-width: 62em) and (max-width: 1360px) {
+  .home-quick__note {
+    display: none;
+  }
+
+  .home-quick__item {
+    padding: 10px 12px;
+  }
+
+  .home-quick__icon {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* Телефон: лента с прокруткой пальцем и доводкой к плитке. */
+@media (max-width: 61.99em) {
+  .home-quick,
+  [data-lw-home="true"] .home-page-stack > .home-quick {
+    width: auto;
+    grid-template-columns: none;
+    grid-auto-columns: minmax(172px, 46%);
+    grid-auto-flow: column;
+    margin-top: calc(-1 * var(--lw-stack-gap) + 12px);
+    margin-inline: -12px;
+    padding: 2px 12px 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: 12px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .home-quick::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-quick__item {
+    min-height: 60px;
+    scroll-snap-align: start;
+  }
+}
+
+@keyframes lw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   4. Сортировка и фильтры каталога
+   --------------------------------------------------------------------- */
+
+.catalog-sort-quick.mantine-SegmentedControl-root {
+  padding: 3px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface-subtle);
+}
+
+.catalog-sort-quick .mantine-SegmentedControl-indicator {
+  border-radius: calc(var(--radius-md) - 3px);
+  background: var(--market-surface);
+  box-shadow: 0 1px 2px rgba(11, 20, 38, 0.1), 0 0 0 1px rgba(11, 20, 38, 0.04);
+}
+
+[data-mantine-color-scheme="dark"] .catalog-sort-quick .mantine-SegmentedControl-indicator {
+  background: var(--market-field-hover);
+}
+
+.catalog-sort-quick .mantine-SegmentedControl-label {
+  padding: 4px 12px;
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.catalog-sort-quick .mantine-SegmentedControl-label[data-active] {
+  color: var(--market-ink);
+}
+
+.catalog-sort-control .mantine-Input-input {
+  height: 32px !important;
+  min-height: 32px !important;
+  border: 1px solid var(--market-line) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--market-surface) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 600 !important;
+}
+
+.catalog-sort-control .mantine-Input-input::placeholder {
+  color: var(--market-muted);
+  opacity: 1;
+}
+
+.catalog-view-switch {
+  padding: 2px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface-subtle);
+}
+
+.catalog-view-switch .mantine-ActionIcon-root {
+  border-radius: calc(var(--radius-md) - 2px) !important;
+}
+
+.catalog-view-switch .mantine-ActionIcon-root[aria-pressed="true"] {
+  background: var(--market-surface) !important;
+  box-shadow: 0 1px 2px rgba(11, 20, 38, 0.1);
+  color: var(--market-ink) !important;
+}
+
+@media (max-width: 36em) {
+  .catalog-heading > .mantine-Group-root:last-child {
+    flex-wrap: wrap;
+  }
+
+  .catalog-sort-quick.mantine-SegmentedControl-root {
+    flex: 1 1 100%;
+  }
+}
+
+/* Панель фильтров — поля с подписью над ними, без «карточки в карточке».
+
+   Каждое поле было отдельной плашкой с рамкой, тенью и подписью внутри, а
+   цена — ещё и на градиенте. Пять плашек в одной рамке читались мозаикой.
+   Теперь рамка одна — у самого поля ввода, и ряд собран по одной линии. */
+.catalog-filter-panel {
+  border-color: var(--market-line) !important;
+  border-radius: var(--radius-lg) !important;
+  background: var(--market-surface) !important;
+  box-shadow: 0 1px 2px rgba(11, 20, 38, 0.04) !important;
+}
+
+.catalog-filter-panel .catalog-filter-grid {
+  align-items: end;
+  gap: 10px !important;
+}
+
+.catalog-filter-panel .catalog-filter-field {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  justify-content: flex-end;
+}
+
+.catalog-filter-panel .catalog-filter-field:hover {
+  background: transparent !important;
+}
+
+.catalog-filter-panel .catalog-filter-field:focus-within {
+  box-shadow: none !important;
+}
+
+.catalog-filter-panel .catalog-filter-field .mantine-InputWrapper-label,
+.catalog-filter-panel .catalog-price-range > .mantine-Text-root {
+  margin: 0 0 5px 2px !important;
+  color: var(--market-label) !important;
+  font-size: var(--text-caps) !important;
+  font-weight: 700 !important;
+  letter-spacing: var(--track-caps) !important;
+  line-height: 12px !important;
+  text-align: left !important;
+  text-transform: uppercase;
+}
+
+.catalog-filter-panel .catalog-filter-field .mantine-Input-input,
+.catalog-filter-panel .catalog-filter-field .mantine-Select-input {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding-left: 12px !important;
+  border: 1px solid var(--market-field-line) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--market-field) !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+  line-height: 36px !important;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out);
+}
+
+.catalog-filter-panel .catalog-filter-field--search .mantine-Input-input,
+.catalog-filter-panel .catalog-filter-field--make .mantine-Select-input {
+  padding-left: 34px !important;
+}
+
+.catalog-filter-panel .catalog-filter-field .mantine-Input-input:hover,
+.catalog-filter-panel .catalog-filter-field .mantine-Select-input:hover {
+  border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-field-line)) !important;
+}
+
+.catalog-filter-panel .catalog-filter-field .mantine-Input-input:focus,
+.catalog-filter-panel .catalog-filter-field .mantine-Select-input:focus {
+  border-color: var(--market-focus-ring) !important;
+  box-shadow: 0 0 0 3px var(--market-focus) !important;
+}
+
+.catalog-filter-panel .catalog-filter-field .mantine-Input-section {
+  height: 38px !important;
+}
+
+.catalog-filter-panel .catalog-filter-field .mantine-Input-input::placeholder {
+  font-weight: 500 !important;
+}
+
+.catalog-filter-panel .catalog-price-range {
+  background-image: none !important;
+}
+
+.catalog-filter-panel .catalog-price-range .mantine-Group-root {
+  gap: 6px !important;
+}
+
+.catalog-filter-toggle {
+  height: 34px !important;
+  font-weight: 600 !important;
+}
+
+/* ---------------------------------------------------------------------
+   5. Карточка объявления: сравнение и избранное
+   --------------------------------------------------------------------- */
+
+.listing-card__tools {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  transition: opacity var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
+}
+
+.listing-card__tools .listing-card__favorite {
+  position: relative;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 1px 2px rgba(11, 20, 38, 0.25), 0 4px 10px -4px rgba(11, 20, 38, 0.35) !important;
+  opacity: 1 !important;
+}
+
+/* Зона нажатия остаётся 44 пикселя: круг меньше, поле вокруг — нет. */
+.listing-card__tools .listing-card__favorite::after {
+  position: absolute;
+  inset: -6px;
+  content: "";
+}
+
+.listing-card__tools .listing-card__favorite[data-on] {
+  background: #ffffff !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .listing-card__tools:not([data-marked]) {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  .listing-card:hover .listing-card__tools,
+  .listing-card:focus-within .listing-card__tools {
+    opacity: 1;
+    transform: none;
+  }
+
+  .listing-card__tools .listing-card__favorite:hover {
+    transform: scale(1.08);
+  }
+}
+
+.listing-card__tools .listing-card__favorite:active {
+  transform: scale(0.92);
+}
+
+/* ---------------------------------------------------------------------
+   6. Рекламные места
+   --------------------------------------------------------------------- */
+
+.promo-boards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.promo-boards__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.promo-boards__label {
+  padding: 2px 7px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-xs);
+  color: var(--market-muted);
+  font-size: var(--text-caps);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.promo-boards__hint {
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+}
+
+.promo-boards__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.promo-board {
+  --tone: #2563eb;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-lg);
+  /* Косая штриховка едва заметна: она говорит «это место, а не товар»,
+     не превращая блок в рекламу-плакат. */
+  background:
+    repeating-linear-gradient(135deg, transparent 0 14px, color-mix(in srgb, var(--tone) 4%, transparent) 14px 15px),
+    var(--market-surface);
+  color: var(--market-ink);
+  text-decoration: none;
+  transition: border-color var(--ease-base) var(--ease-out), box-shadow var(--ease-base) var(--ease-out), transform var(--ease-base) var(--ease-out);
+}
+
+.promo-board::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--tone);
+  content: "";
+}
+
+.promo-board[data-tone="orange"] { --tone: #e8590c; }
+.promo-board[data-tone="teal"]   { --tone: #0c8599; }
+
+.promo-board__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--tone) 12%, transparent);
+  color: var(--tone);
+}
+
+.promo-board__title {
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.promo-board__lede {
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.promo-board__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--tone);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.promo-board__action svg {
+  transition: transform var(--ease-base) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .promo-board:hover {
+    border-color: color-mix(in srgb, var(--tone) 45%, var(--market-line));
+    box-shadow: 0 16px 30px -22px color-mix(in srgb, var(--tone) 70%, transparent);
+    transform: translateY(-2px);
+  }
+
+  .promo-board:hover .promo-board__action svg {
+    transform: translateX(4px);
+  }
+}
+
+.promo-board:focus-visible {
+  outline: 2px solid var(--market-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 62em) {
+  .promo-boards__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   7. Сводка справа: одна шапка на все виджеты
+   --------------------------------------------------------------------- */
+
+.side-widget[data-tone] {
+  --widget-from: var(--lw-navy);
+  --widget-to: var(--lw-navy-2);
+}
+
+.side-widget__head {
+  min-height: 34px !important;
+  padding: 8px 12px !important;
+}
+
+.side-widget__title {
+  font-size: var(--text-caps) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------
+   8. Подвал во всю ширину окна
+   --------------------------------------------------------------------- */
+
+/* Подвал выходит из колонки контента к обоим краям окна: колонка сдвинута
+   Mantine на ширину меню и сводки, и отрицательные поля на те же величины
+   возвращают его к краям. Меню и сводка над ним укорачиваются — см.
+   useFooterRailSync в AppShellLayout. */
+.app-footer-bleed {
+  width: auto !important;
+  margin-inline-start: calc(-1 * var(--app-shell-navbar-offset, 0px));
+  margin-inline-end: calc(-1 * var(--app-shell-aside-offset, 0px));
+}
+
+@media (min-width: 62em) {
+  .market-app-navbar {
+    height: calc(100dvh - var(--app-header-height) - var(--lw-footer-overlap, 0px)) !important;
+    max-height: calc(100dvh - var(--app-header-height) - var(--lw-footer-overlap, 0px)) !important;
+  }
+}
+
+@media (min-width: 75em) {
+  .market-app-aside {
+    bottom: auto !important;
+    height: calc(100dvh - var(--app-header-height) - var(--lw-footer-overlap, 0px)) !important;
+  }
+}
+
+.market-app-footer {
+  margin-top: var(--section-gap);
+  border-top: 0 !important;
+  background: var(--lw-navy) !important;
+  color: var(--lw-navy-text);
+}
+
+.market-app-footer::before {
+  display: none !important;
+}
+
+[data-mantine-color-scheme="dark"] .market-app-footer {
+  background: #0a1120 !important;
+  border-top: 1px solid var(--market-line) !important;
+}
+
+.market-app-footer__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--lw-navy-line);
+}
+
+.market-app-footer__cta-title {
+  color: #ffffff;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.market-app-footer__cta-text {
+  max-width: 560px;
+  margin-top: 4px;
+  color: var(--lw-navy-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.market-app-footer__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md);
+  color: #ffffff !important;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: background-color var(--ease-base) var(--ease-out), border-color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+.market-app-footer__btn:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.market-app-footer__btn--primary {
+  border-color: transparent;
+  background: var(--market-accent-button);
+}
+
+.market-app-footer__btn--primary:hover {
+  border-color: transparent;
+  background: #1d4ed8;
+}
+
+.market-app-footer__btn:active {
+  transform: scale(0.97);
+}
+
+.market-app-footer__top {
+  padding: 36px 0 32px !important;
+}
+
+.market-app-footer__tagline {
+  color: var(--lw-navy-muted) !important;
+}
+
+.market-app-footer__heading {
+  color: var(--lw-navy-text) !important;
+  font-size: var(--text-xs) !important;
+  letter-spacing: 0.08em !important;
+}
+
+.market-app-footer__link {
+  color: #a7b5ca !important;
+  font-size: var(--text-sm) !important;
+  text-decoration: none !important;
+  transition: color var(--ease-fast) var(--ease-out);
+}
+
+.market-app-footer__link:hover {
+  color: #ffffff !important;
+}
+
+.market-app-footer__bottom {
+  border-top: 1px solid var(--lw-navy-line) !important;
+}
+
+.market-app-footer__copy,
+.market-app-footer__legal {
+  color: #7d8ea8 !important;
+}
+
+.market-app-footer__legal:hover {
+  color: #ffffff !important;
+}
+
+.market-app-footer a:focus-visible {
+  outline: 2px solid #8fb3ff;
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------
+   9. Появление разделов главной при прокрутке
+   --------------------------------------------------------------------- */
+
+/* Разделы ниже первого экрана проявляются, въезжая в кадр. Прогресс
+   привязан к прокрутке, а не к таймеру: браузер без поддержки просто
+   показывает всё сразу, ничего не ломается и не мигает. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .home-page-stack > section,
+    .home-page-stack > .promo-boards,
+    .home-forum-slot > * {
+      animation: lw-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
+}
+
+@keyframes lw-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-quick__item,
+  .home-quick__icon,
+  .home-quick__arrow,
+  .listing-card__tools,
+  .promo-board,
+  .promo-board__action svg {
+    animation: none !important;
+    transition: none !important;
+  }
+}
