@@ -495,7 +495,7 @@ export default function AdminDashboard() {
 
             Класс переключает поведение по ширине экрана: на телефоне ряд
             прокручивается вбок, на широком остаётся как было. */}
-        <Tabs.List mb="md" grow aria-label="Разделы панели администратора" className="admin-tabs-list">
+        <Tabs.List mb="md" aria-label="Разделы панели администратора" className="admin-tabs-list">
             <Tabs.Tab value="overview" leftSection={<IconTrendingUp size={16} />}>Обзор</Tabs.Tab>
             <Tabs.Tab value="operations" leftSection={<IconListCheck size={16} />}>Задачи <Badge size="xs" variant="filled" color={actionsTotal ? "orange" : "teal"}>{actionsTotal}</Badge></Tabs.Tab>
             <Tabs.Tab value="sources" leftSection={<IconDatabase size={16} />}>Импорт</Tabs.Tab>

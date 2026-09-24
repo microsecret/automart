@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 import { useSession } from "next-auth/react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Container, Text, Center, Loader } from "@mantine/core"
+import { Box, Container, Text, Center, Loader } from "@mantine/core"
 import AdminWorkspaceNavigation from "@/components/admin/AdminWorkspaceNavigation"
 
 export default function AdminLayout({
@@ -46,7 +46,12 @@ export default function AdminLayout({
 
   return (
     <>
-      <AdminWorkspaceNavigation />
+      {/* Поля те же, что у рабочей области под навигацией: без них полоса
+          разделов стояла на шестнадцать пикселей левее карточек ниже, и
+          левый край админки шёл ступенькой. */}
+      <Box px={{ base: "sm", md: "md" }} pt={{ base: "sm", md: "md" }} mb={{ base: -8, md: -12 }}>
+        <AdminWorkspaceNavigation />
+      </Box>
       {children}
     </>
   )

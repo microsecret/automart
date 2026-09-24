@@ -1108,3 +1108,58 @@
 [data-mantine-color-scheme="dark"] .listing-card__media .market-tag {
   background: rgba(10, 17, 32, 0.86) !important;
 }
+
+/* ---------------------------------------------------------------------
+   11. Вкладки панели администратора
+   --------------------------------------------------------------------- */
+
+/* Пять разделов админки — переключателем, а не растянутыми вкладками.
+   С grow каждая вкладка занимала пятую часть ширины: значок уезжал к
+   левому краю, подпись — в центр, и между ними оставалось по сотне
+   пикселей пустоты. Теперь вкладка по ширине подписи, ряд — в рамке. */
+.admin-tabs-list {
+  display: inline-flex !important;
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface-subtle);
+}
+
+.admin-tabs-list::before {
+  display: none !important;
+}
+
+.admin-tabs-list .mantine-Tabs-tab {
+  height: 32px;
+  padding: 0 14px;
+  border: 0 !important;
+  border-radius: calc(var(--radius-md) - 3px) !important;
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.admin-tabs-list .mantine-Tabs-tabSection[data-position="left"] {
+  margin-inline-end: 7px;
+}
+
+.admin-tabs-list .mantine-Tabs-tab:hover {
+  background: color-mix(in srgb, var(--market-primary-soft) 60%, transparent);
+  color: var(--market-ink);
+}
+
+.admin-tabs-list .mantine-Tabs-tab[data-active] {
+  background: var(--market-surface) !important;
+  box-shadow: 0 1px 2px rgba(11, 20, 38, 0.1), 0 0 0 1px rgba(11, 20, 38, 0.04);
+  color: var(--market-ink) !important;
+}
+
+@media (max-width: 640px) {
+  .admin-tabs-list {
+    display: flex !important;
+    width: 100%;
+  }
+}

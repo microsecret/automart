@@ -254,14 +254,15 @@ export const theme = createTheme({
        Шрифт весом 600 и чуть плотнее по трекингу: подпись на кнопке
        читается одним куском, а не как обычная строка текста. */
     Button: {
-      /* Радиус «xl» — капсула, а не прямоугольник.
+      /* Радиус «md» — прямоугольник со скруглением в десять пикселей.
 
-         Кнопки со скруглением в шесть пикселей выглядят как элемент
-         служебной панели: так рисуют кнопки в бухгалтерских программах.
-         Сильное скругление читается как отдельный предмет, который взяли и
-         положили на страницу, — именно это отличает интерфейсы, которые
-         нравятся, от тех, которыми просто пользуются. */
-      defaultProps: { radius: "xl", fw: "600", size: "md" },
+         Раньше стояла капсула «xl»: считалось, что сильное скругление
+         делает кнопку «предметом». Но рядом с ровными панелями, таблицами и
+         полями фильтров капсулы читались игрушечными — владелец назвал
+         кнопки сортировки «детским садом» и попросил деловой вид, как у
+         площадки-образца. Одна форма у кнопок, полей и панелей собирает
+         страницу в один набор. */
+      defaultProps: { radius: "md", fw: "600", size: "md" },
       /* Размеры через vars: `sizes` в теме Mantine 8 не поддерживается,
          а переменные компонента она подставляет на каждый экземпляр. */
       vars: (_theme: unknown, props: { size?: string }) => {
@@ -355,7 +356,7 @@ export const theme = createTheme({
     /* Поля повторяют форму кнопок: в строке поиска поле и кнопка стоят
        вплотную, и разная форма там читается как ошибка вёрстки. */
     TextInput: {
-      defaultProps: { radius: "xl", size: "md" },
+      defaultProps: { radius: "md", size: "md" },
       styles: {
         input: {
           /* Высота через переменную Mantine.
@@ -379,7 +380,7 @@ export const theme = createTheme({
       },
     },
     Select: {
-      defaultProps: { radius: "xl", size: "md" },
+      defaultProps: { radius: "md", size: "md" },
       styles: {
         input: {
           "--input-height": "var(--lw-field-height, 36px)",
@@ -390,7 +391,7 @@ export const theme = createTheme({
       },
     },
     NumberInput: {
-      defaultProps: { radius: "xl", size: "md" },
+      defaultProps: { radius: "md", size: "md" },
       styles: {
         input: {
           "--input-height": "var(--lw-field-height, 36px)",
@@ -405,8 +406,8 @@ export const theme = createTheme({
       defaultProps: { radius: "md" },
       styles: { input: { fontFamily: "var(--font-sans), sans-serif" } },
     },
-    MultiSelect: { defaultProps: { radius: "xl", size: "md" } },
-    Autocomplete: { defaultProps: { radius: "xl", size: "md" } },
+    MultiSelect: { defaultProps: { radius: "md", size: "md" } },
+    Autocomplete: { defaultProps: { radius: "md", size: "md" } },
 
     /* Бейдж.
 
@@ -521,8 +522,8 @@ export const theme = createTheme({
        Переключатель вида, чипы фильтров и кнопки стояли рядом с тремя
        разными скруглениями: 6, 6 и 10. По отдельности незаметно, вместе
        читается как собранное из чужих деталей. */
-    SegmentedControl: { defaultProps: { radius: "xl" } },
-    Chip: { defaultProps: { radius: "xl" } },
+    SegmentedControl: { defaultProps: { radius: "md" } },
+    Chip: { defaultProps: { radius: "md" } },
     Notification: { defaultProps: { radius: "md" } },
     // Круглая кнопка-значок: колокольчик, избранное, стрелки галереи.
     ActionIcon: { defaultProps: { radius: "xl" } },
