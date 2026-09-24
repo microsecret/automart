@@ -9,7 +9,7 @@ import {
   IconBell, IconBrain, IconCar, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation,
   IconGavel, IconHeart, IconHeartHandshake, IconHome2, IconLayoutDashboard, IconMessageCircle2, IconMessages, IconMotorbike,
   IconLifebuoy, IconPlane, IconPlus, IconSettings, IconShieldCheck, IconSpeedboat, IconTools,
-  IconBuildingStore, IconClipboardList, IconGift, IconTractor, IconTruck, IconTruckDelivery,
+  IconBuildingStore, IconClipboardList, IconGift, IconTractor, IconTruck, IconTruckDelivery, IconSearch, IconBookmark,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
@@ -561,7 +561,11 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
       {/* Подвал вынесен из потока Main и растянут на всю ширину окна: Mantine
           сдвигает Main вправо на ширину сайдбара, и подвал обрывался, не
           доходя до левого края экрана. */}
-      <AppShell.Main style={{ minHeight: "calc(100dvh - var(--app-header-height))", display: "flex", flexDirection: "column" }}>
+      {/* Высота — полный экран, а не экран без шапки: Main сам отступает
+          сверху на высоту шапки внутри своей высоты, и вычитание делалось
+          дважды. На коротких страницах под подвалом оставалась полоса фона
+          ровно в 68 пикселей. */}
+      <AppShell.Main style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
         {/* Ограничитель ширины снимается на главной.
 
             Колонка контента держится в 1280 пикселях, и это правильно для
@@ -657,9 +661,15 @@ function useFooterRailSync(pathname: string | null) {
       update()
     })
     observer.observe(footer)
+    /* Содержимое догружается без прокрутки — выдача, кабинет, запчасти, —
+       и подвал съезжает, не вызывая ни scroll, ни resize окна. Без этого
+       колонки оставались укороченными по старому положению подвала. */
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule)
+    resizeObserver?.observe(document.body)
 
     return () => {
       observer.disconnect()
+      resizeObserver?.disconnect()
       listen(false)
       if (frame) cancelAnimationFrame(frame)
       root.style.removeProperty("--lw-footer-overlap")
@@ -859,9 +869,14 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.listings.href} label={ACCOUNT_NAVIGATION.listings.label} leftSection={<IconLayoutDashboard size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.totalListings || 0} />} active={pathname === "/dashboard" && dashboardTab === "listings"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.favorites.href} label={ACCOUNT_NAVIGATION.favorites.label} leftSection={<IconHeart size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.favoritesCount || 0} />} active={pathname.startsWith("/favorites")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.garage.href} label={ACCOUNT_NAVIGATION.garage.label} leftSection={<IconCar size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.garageCount || 0} />} active={pathname === "/dashboard" && dashboardTab === "garage"} color="indigo" variant="subtle" className="market-side-account__link" />
+        {/* Заявки на запчасти и подписки были только в горизонтальном меню
+            страницы кабинета. На десктопе это меню теперь скрыто — боковое
+            его полностью повторяет, — поэтому оба пункта перенесены сюда. */}
+        <NavLink component={Link} href="/dashboard/part-requests" prefetch={false} label="Заявки на запчасти" leftSection={<IconSearch size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/part-requests")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href="/dashboard/orders" prefetch={false} label="Мои заказы" leftSection={<IconClipboardList size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/orders")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.deliveries.href} prefetch={false} label={ACCOUNT_NAVIGATION.deliveries.label} leftSection={<IconTruckDelivery size={15} stroke={1.7} />} rightSection={<AccountCounter value={summary?.activeDeliveries || 0} urgent />} active={pathname.startsWith("/dashboard/deliveries")} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.documents.href} prefetch={false} label={ACCOUNT_NAVIGATION.documents.label} leftSection={<IconFileDescription size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/documents")} color="indigo" variant="subtle" className="market-side-account__link" />
+        <NavLink component={Link} href="/dashboard?tab=subscriptions" label="Подписки на поиск" leftSection={<IconBookmark size={15} stroke={1.7} />} active={pathname === "/dashboard" && dashboardTab === "subscriptions"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.payments.href} label={ACCOUNT_NAVIGATION.payments.label} leftSection={<IconCreditCard size={15} stroke={1.7} />} active={pathname === "/dashboard" && dashboardTab === "payments"} color="indigo" variant="subtle" className="market-side-account__link" />
 
         {/* Партнёрский блок отделён подписью: до проверки компании этих
