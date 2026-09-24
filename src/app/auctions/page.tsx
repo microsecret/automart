@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Collapse, Divider, Progress, UnstyledButton } from "@mantine/core"
 import NextImage from "next/image"
 import { IconBolt, IconBus, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconTruck, IconX } from "@tabler/icons-react"
-import { formatPriceShort } from "@/lib/format"
+import { formatPriceShort, plural } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import { fetchJson } from "@/lib/api-client"
@@ -425,8 +425,13 @@ function AuctionsPageContent() {
             в пустоте отдельным пятном. Строке статистики она не нужна. */}
         {/* Мера строки ограничена классом: без неё сводка шла в 190
             знаков на всю ширину колонки — вдвое больше нормы чтения. */}
-        <Text size="xs" c="var(--market-muted)" className="section-summary">
-          {data?.pagination?.total || 0} авто в активном каталоге · {sourceSummary ? `источники: ${sourceSummary}` : "источники уточняются"} · доставка в РФ
+        {/* Сводка — одной короткой строкой. Разбивка по двенадцати
+            площадкам («Encar: 3722 · CarSensor: 2241 · … · AutoSale: 1»)
+            шла прямо в текст и на телефоне занимала три строки служебных
+            цифр; теперь она в подсказке для тех, кому интересно. */}
+        <Text size="xs" c="var(--market-muted)" className="section-summary" title={sourceSummary ? `Источники: ${sourceSummary}` : undefined}>
+          {(data?.pagination?.total || 0).toLocaleString("ru-RU")} авто в каталоге
+          {analytics?.sources?.length ? ` · ${analytics.sources.length} ${plural(analytics.sources.length, "площадка", "площадки", "площадок")}` : ""} · доставка в РФ
         </Text>
 
         {/* Быстрый выбор кузова — по макету площадки.

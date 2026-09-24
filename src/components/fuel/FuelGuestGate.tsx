@@ -101,8 +101,11 @@ export default function FuelGuestGate({ stationCount, pricedCount, reportsToday,
           {/* Числа склоняются: при одной отметке выходило «1 отметок за
               сутки». Замер снимком поймал это на живой карте Москвы —
               ошибка в первой же строке, которую читает новый человек. */}
+          {/* Пока заправки грузятся, числа не показываются: «0 заправок на
+              карте, 0 с ценами» в первые секунды читалось как «сервис
+              пуст» — ровно то, чего эта строка должна опровергать. */}
           <Text size="sm" c="dimmed">
-            {stationCount} {plural(stationCount, "заправка", "заправки", "заправок")} на карте, {pricedCount} с ценами и наличием
+            {stationCount === 0 ? "Загружаем заправки города…" : <>{stationCount} {plural(stationCount, "заправка", "заправки", "заправок")} на карте, {pricedCount} с ценами и наличием</>}
             {typeof reportsToday === "number" && reportsToday > 0
               ? `, ${reportsToday} ${plural(reportsToday, "отметка", "отметки", "отметок")} за сутки`
               : ""}
