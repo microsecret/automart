@@ -158,8 +158,20 @@ export async function GET(request: NextRequest) {
     if (bodyType && !VALID_BODY_TYPES.has(bodyType)) return NextResponse.json({ error: "Некорректный тип кузова" }, { status: 400 })
     if (bodyType) where.bodyType = bodyType
 
-    // Ключ кэша — набор фильтров: у каждой комбинации свои сводки.
-    const analyticsKey = JSON.stringify(where)
+    /* Ключ кэша — набор фильтров: у каждой комбинации свои сводки.
+
+       Время в ключе округляется до десяти минут. Правила показа лотов
+       содержат границу свежести «сейчас минус 36 часов» с точностью до
+       миллисекунды, и JSON.stringify(where) давал новый ключ на каждый
+       запрос: кэш сводок не срабатывал ни разу, а семь проходов по
+       таблице лотов шли на каждый заход (замер 24.09.2026 — 415 мс на
+       страницу каталога против 5–20 мс у остальных API). Для средних
+       цен и распределений по маркам сдвиг границы на минуты ничего не
+       меняет. */
+    const analyticsKey = JSON.stringify(where).replace(
+      /"(\d{4}-\d{2}-\d{2}T\d{2}:\d)\d:\d{2}\.\d{3}Z"/g,
+      (_match, prefix: string) => `"${prefix}0"`,
+    )
     const cachedAnalytics = readAnalyticsCache(analyticsKey)
 
     /* Считать ли сводки в этом запросе.
