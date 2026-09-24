@@ -795,9 +795,9 @@ function AuctionsPageContent() {
                       {l.fuelType && <Badge className={styles.resultSpec} size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "gray"} leftSection={<IconGasStation size={12} />}>{FUEL_LABELS[l.fuelType] || l.fuelType}</Badge>}
                       {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconCar size={12} />}>{BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
-                      <Badge className={styles.resultSpec} size="xs" variant="light" color={l.power ? "violet" : "gray"} leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
-                      {rentalTransfer && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo">Переоформление аренды</Badge>}
-                      {imageCount > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconPhoto size={12} />}>Фото: {imageCount}</Badge>}
+                      <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
+                      {rentalTransfer && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray">Переоформление аренды</Badge>}
+                      {imageCount > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconPhoto size={12} />}>Фото: {imageCount}</Badge>}
                       {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">
