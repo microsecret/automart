@@ -22,7 +22,7 @@ import { formatQueueAge, hoursSince, queueUrgency } from "@/lib/queue-age"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import { isSafeMediaUrl } from "@/lib/media-url"
+import { auctionThumbnailImageUrl, isSafeMediaUrl } from "@/lib/media-url"
 import AuctionLotAdministration from "@/components/admin/AuctionLotAdministration"
 import type { AuctionOperationalStatus } from "@/lib/auction-source-health"
 
@@ -353,7 +353,9 @@ export default function AdminAuctionsPage() {
 
 function InquiryRow({ inquiry, onOpen }: { inquiry: AuctionInquiry; onOpen: () => void }) {
   const listing = inquiry.auctionListing
-  const image = isSafeMediaUrl(listing?.imageUrl) ? listing?.imageUrl : ""
+  /* Через кэш фото, как в каталоге: прямые ссылки площадок закрыты для
+     вставки на чужих сайтах. */
+  const image = listing?.imageUrl && isSafeMediaUrl(listing.imageUrl) ? auctionThumbnailImageUrl(listing.imageUrl) : ""
   const statusMeta = STATUSES.find((item) => item.value === inquiry.status) || STATUSES[0]
 
   return (
