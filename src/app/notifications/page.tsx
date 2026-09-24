@@ -87,7 +87,7 @@ export default function NotificationsPage() {
   const unread = notifications.filter((notification) => !notification.isRead).length
 
   return (
-    <Box p={{ base: "sm", md: "md" }} maw={980} mx="auto">
+    <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
         <Paper withBorder radius="md" p={{ base: "md", sm: "lg" }}>
           <Group justify="space-between" align="center" wrap="wrap" gap="md">

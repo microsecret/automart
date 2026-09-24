@@ -216,7 +216,7 @@ function DeliveriesWorkspace() {
   const summary = data?.summary || { total: 0, active: 0, pendingPayments: 0, needsAttention: 0 }
 
   return (
-    <Box p={{ base: "sm", md: "lg" }}>
+    <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
         <Paper radius="xl" p={{ base: "lg", md: 36 }} style={{ color: "white", overflow: "hidden", position: "relative", isolation: "isolate", background: "radial-gradient(circle at 88% 14%, rgba(59,130,246,.35), transparent 32%), linear-gradient(126deg, #0b1426 0%, #13233f 60%, #1b3a7a 100%)", boxShadow: "0 24px 60px rgba(25, 48, 103, .22)" }}>
           <Box aria-hidden style={{ position: "absolute", width: 260, height: 260, borderRadius: "50%", border: "1px solid rgba(255,255,255,.14)", right: -70, bottom: -150, zIndex: -1 }} />
