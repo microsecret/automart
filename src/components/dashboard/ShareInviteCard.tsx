@@ -40,7 +40,7 @@ export default function ShareInviteCard() {
               target="_blank"
               rel="noopener noreferrer"
               size="compact-sm"
-              color="teal"
+              color="indigo"
               leftSection={<IconBrandTelegram size={15} />}
             >
               Отправить в Telegram
@@ -49,7 +49,7 @@ export default function ShareInviteCard() {
               {({ copied, copy }) => (
                 <Button
                   size="compact-sm"
-                  variant="light"
+                  variant={copied ? "light" : "default"}
                   color={copied ? "teal" : "gray"}
                   onClick={copy}
                   leftSection={copied ? <IconCheck size={15} /> : <IconCopy size={15} />}

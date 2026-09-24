@@ -228,7 +228,7 @@ export default function AdminUsersPage() {
                       </Table.Td>
                       <Table.Td><Text size="xs" c="dimmed" miw={132}>{formatAdminDateTime(user.createdAt)}</Text></Table.Td>
                       <Table.Td>
-                        <Button variant="light" color="indigo" size="compact-xs" leftSection={<IconShieldCheck size={14} />} onClick={() => openRoleEditor(user)}>Управлять</Button>
+                        <Button variant="default" size="compact-xs" className="admin-row-action" leftSection={<IconShieldCheck size={14} />} onClick={() => openRoleEditor(user)}>Управлять</Button>
                       </Table.Td>
                     </Table.Tr>
                   ))}

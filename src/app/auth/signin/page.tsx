@@ -3,7 +3,9 @@ export const dynamic = "force-dynamic"
 import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Container, Card, Stack, Text, Box, Group, ThemeIcon } from "@mantine/core"
-import { IconCar, IconShieldCheck, IconChartBar, IconBell } from "@tabler/icons-react"
+import { IconShieldCheck, IconChartBar, IconBell } from "@tabler/icons-react"
+import Link from "next/link"
+import LeWheelBrand from "@/components/brand/LeWheelBrand"
 import SignInForm from "@/components/auth/SignInForm"
 import { signInReason } from "@/lib/signin-reason"
 
@@ -32,20 +34,19 @@ function SignInContent() {
       <Group className="auth-experience__layout" gap={48} align="center" wrap="nowrap" justify="center">
         {/* Левая колонка — преимущества (десктоп) */}
         <Stack className="auth-experience__context" gap="lg" visibleFrom="md" maw={300}>
-          <Group gap="sm">
-            <Box className="auth-experience__brand-mark">
-              <IconCar size={24} color="white" />
-            </Box>
-            <Text fw={800} fz="26px" c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
-          </Group>
+          {/* Фирменный знак вместо значка-машинки, и он ведёт на главную:
+              шапки на странице входа нет, и другого пути назад не было. */}
+          <Link href="/" aria-label="LeWheel — на главную" className="auth-experience__brand-link">
+            <LeWheelBrand size={36} idSuffix="-auth" />
+          </Link>
           <Text size="sm" c="var(--market-muted)" lh={1.6}>Маркетплейс транспорта и запчастей с проверкой истории и безопасными сделками.</Text>
           <Stack gap="sm">
             {FEATURES.map((f) => {
               const Icon = f.icon
               return (
-                <Group key={f.text} gap="sm">
+                <Group key={f.text} gap="sm" wrap="nowrap" align="center">
                   <ThemeIcon variant="light" color="indigo" size={32} radius="md"><Icon size={18} /></ThemeIcon>
-                  <Text size="sm" c="var(--market-ink-soft)">{f.text}</Text>
+                  <Text size="sm" c="var(--market-ink-soft)" style={{ flex: 1, minWidth: 0 }}>{f.text}</Text>
                 </Group>
               )
             })}

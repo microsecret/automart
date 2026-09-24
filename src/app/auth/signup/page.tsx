@@ -1,7 +1,9 @@
 "use client"
 export const dynamic = "force-dynamic"
 import { Container, Card, Stack, Text, Box, Group, ThemeIcon } from "@mantine/core"
-import { IconCar, IconCheck } from "@tabler/icons-react"
+import { IconCheck } from "@tabler/icons-react"
+import Link from "next/link"
+import LeWheelBrand from "@/components/brand/LeWheelBrand"
 import SignUpForm from "@/components/auth/SignUpForm"
 
 const BENEFITS = [
@@ -17,12 +19,11 @@ export default function SignUpPage() {
       <Group className="auth-experience__layout" gap={48} align="center" wrap="nowrap" justify="center">
         {/* Преимущества */}
         <Stack className="auth-experience__context" gap="lg" visibleFrom="md" maw={300}>
-          <Group gap="sm">
-            <Box className="auth-experience__brand-mark">
-              <IconCar size={24} color="white" />
-            </Box>
-            <Text fw={800} fz="26px" c="var(--market-ink)" ff="var(--font-display),sans-serif">LeWheel</Text>
-          </Group>
+          {/* Фирменный знак вместо значка-машинки, и он ведёт на главную:
+              шапки на странице входа нет, и другого пути назад не было. */}
+          <Link href="/" aria-label="LeWheel — на главную" className="auth-experience__brand-link">
+            <LeWheelBrand size={36} idSuffix="-auth" />
+          </Link>
           <Text size="sm" c="var(--market-muted)" lh={1.6}>Создайте защищённый аккаунт через Telegram-бота за минуту.</Text>
           <Stack gap="sm">
             {BENEFITS.map((b) => (
