@@ -1,5 +1,6 @@
 "use client"
 
+import { initialOf } from "@/lib/format"
 import dynamic from "next/dynamic"
 
 import { AppShell, Avatar, Box, Button, Group, NavLink, Paper, ScrollArea, Stack, Text } from "@mantine/core"
@@ -835,7 +836,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
       <Box className="market-side-account__head">
         <Group wrap="nowrap" gap={10} align="center">
           <Avatar src={session.user.image} radius="xl" size={32} className="market-side-account__avatar">
-            {session.user.name?.[0]?.toUpperCase()}
+            {initialOf(session.user.name)}
           </Avatar>
           <Box style={{ minWidth: 0, flex: 1 }}>
             <Text className="market-side-account__name" lineClamp={1}>

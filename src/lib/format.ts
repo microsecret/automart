@@ -92,3 +92,23 @@ export function firstImage(images: string | null | undefined, fallback = "/place
   const arr = parseImages(images)
   return arr[0] || fallback
 }
+
+/**
+ * Первая буква имени для аватара — целым видимым символом.
+ *
+ * `name[0]` берёт одну кодовую единицу UTF-16. У имён, которые начинаются
+ * с эмодзи (у продавца на площадке — флаг 🇬🇪), это половина суррогатной
+ * пары: сервер отдавал «�», браузер — одиночный суррогат, и React падал с
+ * ошибкой гидратации #418, перерисовывая карточку объявления целиком.
+ */
+export function initialOf(value?: string | null): string {
+  const text = (value || "").trim()
+  if (!text) return ""
+  try {
+    const segmenter = new Intl.Segmenter("ru", { granularity: "grapheme" })
+    const first = segmenter.segment(text)[Symbol.iterator]().next().value?.segment ?? ""
+    return first.toUpperCase()
+  } catch {
+    return (Array.from(text)[0] || "").toUpperCase()
+  }
+}

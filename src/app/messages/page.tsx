@@ -24,7 +24,7 @@ import {
 } from "@mantine/core"
 import { IconArrowRight, IconMessageCircle2, IconMessageCircleOff, IconSearch, IconShieldCheck } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatRelativeDate } from "@/lib/format"
+import { formatRelativeDate, initialOf } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -126,7 +126,7 @@ export default function MessagesPage() {
               >
                 <Group gap="sm" align="flex-start">
                   <Avatar src={conv.otherUser.image} radius="xl" color="indigo">
-                    {conv.otherUser.name?.[0]?.toUpperCase()}
+                    {initialOf(conv.otherUser.name)}
                   </Avatar>
                   <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                     <Group justify="space-between" gap="sm">

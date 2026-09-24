@@ -1,5 +1,6 @@
 "use client"
 
+import { initialOf } from "@/lib/format"
 import { FormEvent, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
@@ -284,12 +285,12 @@ function RoutePill({ icon, label, value }: { icon: React.ReactNode; label: strin
 
 function MessageBubble({ item, isOwn }: { item: DeliveryMessage; isOwn: boolean }) {
   if (item.isSystem) return <Text size="xs" c="dimmed" ta="center" py={4}>{item.content}</Text>
-  return <Group align="flex-start" gap="xs" justify={isOwn ? "flex-end" : "flex-start"}><Avatar size="sm" radius="xl" src={item.sender?.image}>{item.sender?.name?.[0]?.toUpperCase()}</Avatar><Box maw="78%" p="sm" style={{ borderRadius: 12, background: isOwn ? "var(--mantine-color-indigo-6)" : "var(--mantine-color-gray-1)", color: isOwn ? "white" : "inherit" }}><Text size="xs" fw={700}>{item.sender?.name || "Участник сделки"}</Text><Text size="sm">{item.content}</Text><Text size="var(--text-caps)" c={isOwn ? "rgba(255,255,255,.62)" : "dimmed"} mt={2}>{formatDateTime(item.createdAt)}</Text></Box></Group>
+  return <Group align="flex-start" gap="xs" justify={isOwn ? "flex-end" : "flex-start"}><Avatar size="sm" radius="xl" src={item.sender?.image}>{initialOf(item.sender?.name)}</Avatar><Box maw="78%" p="sm" style={{ borderRadius: 12, background: isOwn ? "var(--mantine-color-indigo-6)" : "var(--mantine-color-gray-1)", color: isOwn ? "white" : "inherit" }}><Text size="xs" fw={700}>{item.sender?.name || "Участник сделки"}</Text><Text size="sm">{item.content}</Text><Text size="var(--text-caps)" c={isOwn ? "rgba(255,255,255,.62)" : "dimmed"} mt={2}>{formatDateTime(item.createdAt)}</Text></Box></Group>
 }
 
 function Participant({ label, user, empty }: { label: string; user?: DeliveryUser | null; empty?: string }) {
   const organization = user?.deliveryOrganizations?.[0]
-  return <Group gap="xs"><Avatar size="sm" radius="xl" src={user?.image}>{user?.name?.[0]?.toUpperCase()}</Avatar><Stack gap={0}><Text size="var(--text-caps)" c="dimmed">{label}</Text><Group gap={6}><Text size="xs" fw={600}>{organization?.legalName || user?.name || empty || "Не указан"}</Text>{organization && <IconShieldCheck size={13} color="#059669" aria-label="Организация проверена" />}</Group></Stack></Group>
+  return <Group gap="xs"><Avatar size="sm" radius="xl" src={user?.image}>{initialOf(user?.name)}</Avatar><Stack gap={0}><Text size="var(--text-caps)" c="dimmed">{label}</Text><Group gap={6}><Text size="xs" fw={600}>{organization?.legalName || user?.name || empty || "Не указан"}</Text>{organization && <IconShieldCheck size={13} color="#059669" aria-label="Организация проверена" />}</Group></Stack></Group>
 }
 
 function PaymentTerm({ label, amount, status }: { label: string; amount: number; status: string }) {

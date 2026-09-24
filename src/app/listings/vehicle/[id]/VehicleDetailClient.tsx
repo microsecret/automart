@@ -70,7 +70,7 @@ import {
   IconTrendingUp,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate, plural } from "@/lib/format"
+import { formatDate, formatPrice, formatMileage, formatPriceShort, parseImages, formatRelativeDate, plural, initialOf } from "@/lib/format"
 import { describePriceVerdict, type PriceVerdict } from "@/lib/listing-price-verdict"
 import CreditCalculator from "@/components/listings/CreditCalculator"
 import { getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
@@ -803,7 +803,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     <Box key={review.id}>
                       <Group gap="sm" mb={6}>
                         <Avatar src={review.user.image} radius="xl" size="sm" color="indigo">
-                          {review.user.name?.[0]?.toUpperCase()}
+                          {initialOf(review.user.name)}
                         </Avatar>
                         <Stack gap={2}>
                           <Text size="sm" fw={500}>{review.user.name || "Аноним"}</Text>
@@ -1123,7 +1123,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               <Card withBorder radius="md" p="lg">
                 <Group gap="sm" mb="sm">
                   <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">
-                    {data.seller.name?.[0]?.toUpperCase()}
+                    {initialOf(data.seller.name)}
                   </Avatar>
                   <Stack gap={2}>
                     <Text fw={600}>{data.seller.name || "Продавец"}</Text>

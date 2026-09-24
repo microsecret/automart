@@ -26,7 +26,7 @@ import {
 } from "@mantine/core"
 import { IconArrowLeft, IconLock, IconMessageCircle2, IconPaperclip, IconPhoto, IconSend, IconX } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatRelativeDate } from "@/lib/format"
+import { formatRelativeDate, initialOf } from "@/lib/format"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 
@@ -254,7 +254,7 @@ function ConversationWorkspace() {
             <IconArrowLeft size={20} />
           </Button>
           <Avatar src={latestPage?.otherUser?.image} radius="xl" color="indigo" size="md">
-            {latestPage?.otherUser?.name?.[0]?.toUpperCase()}
+            {initialOf(latestPage?.otherUser?.name)}
           </Avatar>
           <Stack gap={0}>
             <Text size="sm" fw={700}>{latestPage?.otherUser?.name || (isNewConversation ? "Новый диалог" : "Диалог")}</Text>

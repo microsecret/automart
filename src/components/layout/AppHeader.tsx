@@ -1,5 +1,6 @@
 "use client"
 
+import { initialOf } from "@/lib/format"
 import { Box, Burger, Group, Text, TextInput, ActionIcon, Indicator, Menu, Avatar, Button, Divider, Container, Loader, Popover, Stack } from "@mantine/core"
 import { IconBuildingStore, IconPackage, IconSearch, IconBell, IconMessageCircle2,
   IconMessages, IconHeart, IconPlus, IconLogout, IconSettings, IconLayoutDashboard, IconCar, IconUserPlus, IconGavel, IconTools, IconShieldCheck, IconHelpCircle, IconNews, IconBrain, IconChartBar, IconCreditCard, IconFileDescription, IconFileSearch, IconGasStation, IconHeartHandshake, IconTruckDelivery, IconChevronDown } from "@tabler/icons-react"
@@ -455,7 +456,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                   <Menu.Target>
                     <ActionIcon variant="subtle" radius="xl" size={32} aria-label="Открыть меню профиля" className="market-app-header__utility-action market-app-header__utility-action--avatar">
                       <Avatar src={session.user?.image} size={28} radius="xl" color="indigo">
-                        {session.user?.name?.[0]?.toUpperCase()}
+                        {initialOf(session.user?.name)}
                       </Avatar>
                     </ActionIcon>
                   </Menu.Target>

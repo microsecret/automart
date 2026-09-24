@@ -5,7 +5,7 @@ import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, Paper, Center, Loader, ThemeIcon, Avatar, SimpleGrid, Rating, Divider, Pagination } from "@mantine/core"
 import { IconMessage2 } from "@tabler/icons-react"
-import { formatRelativeDate } from "@/lib/format"
+import { formatRelativeDate, initialOf } from "@/lib/format"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
@@ -111,7 +111,7 @@ export default function ReviewsPage() {
                 {reviews.map((review) => (
                   <Paper key={review.id} radius="md" p="md" withBorder>
                     <Group gap="sm" align="flex-start" wrap="nowrap">
-                      <Avatar src={review.user.image} size={40} radius="xl" color="orange">{review.user.name?.[0]?.toUpperCase()}</Avatar>
+                      <Avatar src={review.user.image} size={40} radius="xl" color="orange">{initialOf(review.user.name)}</Avatar>
                       <Stack gap={4} style={{ flex: 1 }}>
                         <Group gap="sm" align="center" justify="space-between">
                           <Text fw={600} fz="sm" c="var(--market-ink)">{review.user.name || "Аноним"}</Text>

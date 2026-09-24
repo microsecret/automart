@@ -1626,7 +1626,10 @@
   .vehicle-detail-layout {
     display: flex !important;
     flex-direction: column;
+    align-items: stretch;
     gap: var(--mantine-spacing-md);
+    min-width: 0;
+    max-width: 100%;
   }
 
   .vehicle-detail-layout__main,
@@ -1637,9 +1640,17 @@
     display: contents !important;
   }
 
+  /* Полная ширина и min-width: 0 у каждой карточки. Без этого элемент
+     столбца flex растягивается по содержимому: ряд миниатюр распирал
+     галерею за край экрана (а с ней и шапку — пропали кнопки справа), а
+     карточка с названием, наоборот, сжималась до ширины текста. */
   .vehicle-detail-layout__main > .mantine-Stack-root > *,
   .vehicle-detail-layout__sticky-aside > .mantine-Stack-root > * {
     order: 3;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    align-self: stretch;
   }
 
   .vehicle-detail-layout__main > .mantine-Stack-root > .vehicle-detail-gallery {

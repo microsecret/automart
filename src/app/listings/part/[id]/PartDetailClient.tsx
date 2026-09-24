@@ -47,7 +47,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
-import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate } from "@/lib/format"
+import { formatPrice, formatPriceShort, formatDate, parseImages, formatRelativeDate, initialOf } from "@/lib/format"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { useFavorites } from "@/hooks/useFavorites"
 import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-intent"
@@ -384,7 +384,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   {data.reviews.map((review) => (
                     <Box key={review.id}>
                       <Group gap="sm" mb={6}>
-                        <Avatar src={review.user.image} radius="xl" size="sm" color="indigo">{review.user.name?.[0]?.toUpperCase()}</Avatar>
+                        <Avatar src={review.user.image} radius="xl" size="sm" color="indigo">{initialOf(review.user.name)}</Avatar>
                         <Stack gap={2}>
                           <Text size="sm" fw={500}>{review.user.name || "Аноним"}</Text>
                           <Rating value={review.rating} size="xs" readOnly />
@@ -477,7 +477,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
               <Card withBorder radius="md" p="lg">
                 <Group gap="sm" mb="sm">
-                  <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">{data.seller.name?.[0]?.toUpperCase()}</Avatar>
+                  <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">{initialOf(data.seller.name)}</Avatar>
                   <Stack gap={2}>
                     <Text fw={600}>{data.seller.name || "Продавец"}</Text>
                     <Text size="xs" c="var(--market-muted)">На Авторынке с {formatDate(data.seller.memberSince)}</Text>

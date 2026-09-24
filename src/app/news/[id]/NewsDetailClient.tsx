@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react"
 import { Box, Stack, Text, Group, Center, Loader, Card, ThemeIcon, Avatar, Textarea, Button, Anchor, Breadcrumbs, Image, Badge, Blockquote } from "@mantine/core"
 import { IconNews, IconClock, IconMessageCircle2, IconEye, IconSend, IconBrandTelegram, IconQuote, IconShieldCheck } from "@tabler/icons-react"
 import Link from "next/link"
-import { formatRelativeDate, formatDate } from "@/lib/format"
+import { formatRelativeDate, formatDate, initialOf } from "@/lib/format"
 import { newsHref } from "@/lib/news"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
@@ -282,7 +282,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
           {article.comments.map((commentItem) => (
             <Card key={commentItem.id} withBorder radius="md" p="sm" style={{ borderColor: "var(--mantine-color-border)" }}>
               <Group gap="sm" align="flex-start">
-                <Avatar src={commentItem.user?.image} size="sm" radius="xl" color="indigo">{commentItem.user?.name?.[0]?.toUpperCase()}</Avatar>
+                <Avatar src={commentItem.user?.image} size="sm" radius="xl" color="indigo">{initialOf(commentItem.user?.name)}</Avatar>
                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                   <Group gap="xs"><Text size="xs" fw={600} c="var(--market-ink)">{commentItem.user?.name || "Аноним"}</Text><Text size="var(--text-caps)" c="var(--market-muted)">{formatRelativeDate(commentItem.createdAt)}</Text></Group>
                   <Text size="xs" c="var(--market-ink-soft)" lh={1.5}>{commentItem.content}</Text>

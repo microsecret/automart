@@ -2,6 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
+import { initialOf } from "@/lib/format"
 import { useDeferredValue, useState } from "react"
 import { LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import useSWR from "swr"
@@ -199,7 +200,7 @@ export default function AdminUsersPage() {
                     <Table.Tr key={user.id}>
                       <Table.Td>
                         <Group gap="sm" wrap="nowrap">
-                          <Avatar src={user.image} size="md" radius="xl" color="indigo">{user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "T"}</Avatar>
+                          <Avatar src={user.image} size="md" radius="xl" color="indigo">{initialOf(user.name) || initialOf(user.email) || "T"}</Avatar>
                           <Stack gap={1} miw={180}>
                             <Text size="sm" fw={700} lineClamp={1}>{user.name || "Без имени"}</Text>
                             <Text size="xs" c="dimmed" lineClamp={1}>{user.email || "Регистрация через Telegram"}</Text>

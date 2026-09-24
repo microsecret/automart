@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Anchor, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal } from "@mantine/core"
 import { IconLayoutDashboard, IconMessageCircle2, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
-import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
+import { formatPriceShort, formatMileage, formatRelativeDate, parseImages, initialOf } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
@@ -642,7 +642,7 @@ function DashboardContent() {
                 </Alert>
               )}
               <Group gap="md" align="center">
-                <Avatar src={accountProfile?.image || session?.user?.image} size={64} radius="xl" color="indigo">{(accountProfile?.name || session?.user?.name)?.[0]?.toUpperCase()}</Avatar>
+                <Avatar src={accountProfile?.image || session?.user?.image} size={64} radius="xl" color="indigo">{initialOf(accountProfile?.name || session?.user?.name)}</Avatar>
                 <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
                   <Group gap="xs" wrap="wrap">
                     <Text fw={700} fz="lg" c="var(--market-ink)">{accountProfile?.name || session?.user?.name || "Без имени"}</Text>
