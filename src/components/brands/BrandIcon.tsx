@@ -2,6 +2,7 @@
 import { Box, Text } from "@mantine/core"
 import BrandLogo, { hasBrandLogo } from "./BrandLogo"
 import { getBrandColor } from "@/lib/brand-colors"
+import { brandLogoImage } from "@/lib/brand-logo-images"
 
 interface BrandIconProps {
   brand: string
@@ -34,6 +35,50 @@ export default function BrandIcon({ brand, size = 36, variant = "rounded" }: Bra
   const markColor = getBrandColor(brand)
   const radius = variant === "circle" ? "50%" : variant === "square" ? "6px" : "10px"
   const hasSvg = hasBrandLogo(brand)
+  const photoLogo = brandLogoImage(brand)
+
+  /* Настоящий логотип марки — первым выбором.
+
+     Рисованные знаки (ладья Lada, буквы в круге) владелец назвал
+     ненастоящими: рядом с фотографиями машин они читались иконками-
+     заглушками. Картинка лежит на белой плашке в обеих темах — фирменные
+     логотипы рассчитаны на светлый фон, а у многих (Kia, Mazda, Lexus)
+     они почти чёрные. Рисованный знак остаётся запасным вариантом для
+     марок, которых нет в наборе. */
+  if (photoLogo) {
+    return (
+      <Box
+        style={{
+          width: size,
+          height: size,
+          borderRadius: radius,
+          border: "1px solid rgba(20, 48, 107, 0.1)",
+          background: "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          overflow: "hidden",
+          padding: Math.max(2, Math.round(size * 0.1)),
+        }}
+        role="img"
+        aria-label={`Марка ${brand}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- статичный
+            значок в десятки пикселей: оптимизатор изображений здесь только
+            добавил бы запрос. */}
+        <img
+          src={photoLogo}
+          alt=""
+          width={size}
+          height={size}
+          loading="lazy"
+          decoding="async"
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+        />
+      </Box>
+    )
+  }
   /* Марки, чей логотип нарисован светлым и пропадает на светлой плашке.
      Замер страницы марок: жёлтая молния Opel даёт контраст 1.03, жёлтый
      ромб Renault — 1.42 при норме 3 для графики. Остальные светлые

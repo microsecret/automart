@@ -315,18 +315,9 @@
   gap: 10px;
 }
 
-@media (min-width: 62em) {
-  /* Ряд наплывает на нижний край героя — как док у приложения. Герою
-     добавлено поле снизу ровно под этот нахлёст. */
-  .home-auctions.home-auctions--market {
-    padding-bottom: 64px !important;
-  }
-
-  [data-lw-home="true"] .home-page-stack > .home-quick {
-    margin-top: calc(-1 * var(--lw-stack-gap) - 38px);
-    padding-inline: 20px;
-  }
-}
+/* Ряд действий стоит под героем с обычным отступом, а не наплывает на
+   фото. Владелец попросил опустить виджеты: нахлёст закрывал низ
+   фотографии и читался частью героя, а не отдельным рядом. */
 
 .home-quick__item {
   --tone: #2563eb;
@@ -1678,4 +1669,94 @@
   .vehicle-detail-statuses__item {
     padding: 11px 12px !important;
   }
+}
+
+/* ---------------------------------------------------------------------
+   20. Боковые колонки — отдельными карточками, как у образца
+   --------------------------------------------------------------------- */
+
+/* Колонки отделены от страницы не линией, а воздухом: меню и сводка
+   лежат на фоне страницы, каждый раздел — белая карточка с рамкой.
+
+   Владелец прислал RawMart как образец: там левая колонка — стопка
+   карточек («Навигация», «Категории») с отступом от края окна, а не
+   сплошное голубое полотно, приклеенное к краю. Сплошное полотно
+   сливало разделы меню друг с другом и с кабинетом. */
+.market-app-navbar {
+  border-right: 0 !important;
+  background: var(--market-background) !important;
+}
+
+.market-app-aside {
+  border-left: 0 !important;
+}
+
+.app-aside {
+  gap: 10px !important;
+}
+
+.market-app-navbar .mantine-ScrollArea-viewport > div > .mantine-Stack-root {
+  gap: 10px !important;
+  padding: 10px !important;
+}
+
+.market-side-panel,
+.market-side-account--user {
+  overflow: hidden;
+  border: 1px solid var(--market-line) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--market-surface) !important;
+  box-shadow: 0 1px 2px rgba(11, 20, 38, 0.04) !important;
+}
+
+/* Разделительная линия между соседними панелями больше не нужна:
+   между карточками теперь зазор. */
+.market-side-panel + .market-side-panel,
+.market-side-panel + .market-side-service,
+.market-side-service + .market-side-panel {
+  padding-top: 0 !important;
+  border-top: 1px solid var(--market-line) !important;
+}
+
+/* Шапка карточки — серая полоса с линией снизу, как «НАВИГАЦИЯ» у
+   образца: раздел начинается заголовком, а не строкой меню. */
+.market-side-panel__head {
+  padding: 8px 12px !important;
+  border-bottom: 1px solid var(--market-line) !important;
+  background: var(--market-surface-subtle) !important;
+}
+
+.market-side-panel__body {
+  padding: 4px !important;
+}
+
+.market-side-panel__footer {
+  border-top: 1px solid var(--market-line);
+  background: var(--market-surface-subtle);
+}
+
+/* Кабинет: тёмная шапка сверху карточки, пункты — на белом, с полями. */
+.market-side-account--user .market-side-account__head {
+  border-radius: 0 !important;
+}
+
+.market-side-account--user .market-side-account__body {
+  padding: 2px 4px 6px;
+}
+
+.market-side-account--user .market-side-account__group {
+  margin-inline: -4px !important;
+  padding-inline: 13px !important;
+  background: var(--market-surface-subtle);
+  border-top: 1px solid var(--market-line);
+}
+
+.market-side-account--user .market-side-account__group:first-of-type {
+  border-top: 0;
+  margin-top: 0 !important;
+}
+
+[data-mantine-color-scheme="dark"] .market-side-panel,
+[data-mantine-color-scheme="dark"] .market-side-account--user {
+  box-shadow: none !important;
 }
