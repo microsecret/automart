@@ -125,6 +125,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
      Точное сравнение, а не startsWith: иначе под условие попал бы весь
      сайт, ведь любой путь начинается с косой черты. */
   const isHome = pathname === "/"
+  const isCabinetRoute = Boolean(pathname && (/^\/(dashboard|favorites|messages|notifications)(\/|$)/.test(pathname)))
   // Telegram Web Apps should open as a focused, full-screen experience. Rendering
   // the desktop shell around it wastes the mobile viewport and duplicates navigation.
   /* Страница, открытая из мини-приложения, тоже идёт без обвязки сайта.
@@ -589,6 +590,12 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
           w="100%"
           className="app-main-content"
           data-lw-home={isHome ? "true" : undefined}
+          /* Разделы кабинета — одна колонка одной ширины и с одним левым
+             краем. Каждая страница была завёрнута в свой Container (md, lg
+             или без него), и при переходе между пунктами меню контент
+             прыгал: левый край стоял то на 191, то на 235, то на 291
+             пикселе. */
+          data-lw-cabinet={isCabinetRoute ? "true" : undefined}
           style={{ flex: 1 }}
         >{children}</Box>
         <div className="app-footer-bleed">

@@ -1790,3 +1790,35 @@
     flex: 1 1 0;
   }
 }
+
+/* Длинная и короткая подписи одной кнопки: на телефоне «Разместить
+   объявление» обрезалось до «Разместить объявлени». */
+.lw-label-short {
+  display: none;
+}
+
+@media (max-width: 36em) {
+  .lw-label-full {
+    display: none;
+  }
+
+  .lw-label-short {
+    display: inline;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   22. Разделы кабинета — общий створ
+   --------------------------------------------------------------------- */
+
+[data-lw-cabinet="true"] .mantine-Container-root {
+  max-width: none !important;
+  margin-inline: 0 !important;
+  padding-inline: var(--mantine-spacing-md) !important;
+}
+
+@media (max-width: 48em) {
+  [data-lw-cabinet="true"] .mantine-Container-root {
+    padding-inline: var(--mantine-spacing-sm) !important;
+  }
+}

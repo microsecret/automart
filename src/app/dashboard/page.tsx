@@ -306,7 +306,7 @@ function DashboardContent() {
           </Group>
           <Group gap="xs" wrap="nowrap" className="dashboard-head__actions">
             <Button component={Link} href="/dashboard/deliveries" variant="default" size="sm" leftSection={<IconTruckDelivery size={16} />}>Мои доставки</Button>
-            <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm" leftSection={<IconPlus size={16} />}>Разместить объявление</Button>
+            <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm" leftSection={<IconPlus size={16} />}><span className="lw-label-full">Разместить объявление</span><span className="lw-label-short">Разместить</span></Button>
           </Group>
         </Group>
 
