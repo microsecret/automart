@@ -79,7 +79,7 @@ export default function MyPartRequestsPage() {
       <Group gap="sm" mb="xs">
         <ThemeIcon variant="light" color="indigo" size={38} radius="md"><IconSearch size={19} /></ThemeIcon>
         <Box>
-          <Title order={2} size="h3">Мои заявки на запчасти</Title>
+          <Title order={1} size="h3">Мои заявки на запчасти</Title>
           <Text size="sm" c="dimmed">Что вы искали и что ответили магазины</Text>
         </Box>
       </Group>

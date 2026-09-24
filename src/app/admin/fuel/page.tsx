@@ -519,7 +519,7 @@ export default function FuelAdminPage() {
           <IconGasStation size={22} />
         </ThemeIcon>
         <Box>
-          <Title order={2}>АЗС и топливо</Title>
+          <Title order={1} size="h2">АЗС и топливо</Title>
           <Text size="sm" c="dimmed">Скрейбер собирает заправки, цены и наличие из ГдеБЕНЗ, ГдеЗаправки и 2ГИС</Text>
         </Box>
       </Group>
