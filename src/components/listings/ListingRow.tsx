@@ -221,11 +221,11 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 {listing.createdAt && <Text fz="xs" c="var(--market-muted)">{formatRelativeDate(listing.createdAt)}</Text>}
                 {isVehicle && (
                   <ActionIcon
-                    className="listing-card__favorite listing-card__favorite--inline"
+                    className="listing-row__tool"
                     color={inCompare ? "indigo" : "gray"}
                     variant={inCompare ? "filled" : "subtle"}
-                    size={44}
-                    radius="xl"
+                    size={32}
+                    radius="md"
                     onClick={handleCompare}
                     aria-label={inCompare ? "Убрать из сравнения" : "Добавить к сравнению"}
                     style={{ position: "relative", zIndex: 2 }}
@@ -234,14 +234,13 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   </ActionIcon>
                 )}
                 <ActionIcon
-                  className="listing-card__favorite listing-card__favorite--inline"
+                  className="listing-row__tool"
                   color={isFav ? "red" : "gray"}
                   variant={isFav ? "filled" : "subtle"}
-                  /* 44 пикселя — норма зоны нажатия для пальца. При size="sm"
-                     кнопка была 30px, и на телефоне в неё промахивались; в
-                     карточке каталога это уже исправлено. */
-                  size={44}
-                  radius="xl"
+                  /* Видимый квадрат 32 пикселя, зона нажатия 44 — её держит невидимое
+                     поле вокруг (.listing-row__tool::after). */
+                  size={32}
+                  radius="md"
                   onClick={toggleFav}
                   loading={isPending(listing.id)}
                   aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}

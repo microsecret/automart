@@ -225,7 +225,10 @@
    ними, вместо того чтобы сразу считать сумму. */
 .auction-result-card__price {
   min-width: 0;
-  color: color-mix(in srgb, #ea580c 88%, var(--market-ink));
+  /* Цена — цветом текста, как у объявлений. Оранжевая сумма рядом с
+     оранжевыми метками оценки («Выше медианы») делала карточку пёстрой и
+     спорила с ними; смысл цвета остался у метки. */
+  color: var(--market-ink);
   font-size: 22px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;

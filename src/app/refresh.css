@@ -1822,3 +1822,25 @@
     padding-inline: var(--mantine-spacing-sm) !important;
   }
 }
+
+/* Сравнение и избранное в строке списка — квадраты с рамкой, как значки
+   шапки; зона нажатия 44 пикселя держится полем вокруг. */
+.listing-row__tool {
+  position: relative;
+  border: 1px solid var(--market-line) !important;
+  color: var(--market-ink-soft);
+}
+
+.listing-row__tool[data-variant="subtle"] {
+  background: var(--market-surface) !important;
+}
+
+.listing-row__tool::after {
+  position: absolute;
+  inset: -6px;
+  content: "";
+}
+
+.listing-row__tool:hover {
+  border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line)) !important;
+}
