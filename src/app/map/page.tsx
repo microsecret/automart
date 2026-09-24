@@ -93,7 +93,11 @@ export default function MapPage() {
   const listings = data?.listings || []
 
   const coords = CITY_COORDINATES[activeCity] || CITY_COORDINATES["Москва"]
-  const bbox = `${coords.latitude - 0.3},${coords.longitude - 0.5},${coords.latitude + 0.3},${coords.longitude + 0.5}`
+  /* Порядок рамки у OpenStreetMap — долгота, широта: minLon,minLat,maxLon,maxLat.
+     Здесь стояли широта и долгота наоборот, и карта любого города открывалась
+     не там: для Сургута (61° с. ш., 73° в. д.) — в Карском море на 73-й
+     параллели. Метка marker= принимает, наоборот, широту первой — она верна. */
+  const bbox = `${coords.longitude - 0.5},${coords.latitude - 0.3},${coords.longitude + 0.5},${coords.latitude + 0.3}`
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.latitude},${coords.longitude}`
 
   return (
