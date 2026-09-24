@@ -116,6 +116,15 @@ const formatMemberSince = (value: string | null) => value
   ? new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(new Date(value))
   : "—"
 
+const DASHBOARD_TAB_LABELS: Record<string, string> = {
+  listings: "Мои объявления",
+  favorites: "Избранное",
+  garage: "Личный гараж",
+  payments: "Оплаты",
+  subscriptions: "Подписки на поиск",
+  profile: "Профиль и настройки",
+}
+
 export default function DashboardPage() {
   return (
     <Suspense fallback={<Box p={{ base: "sm", md: "md" }}><ResultsGridSkeleton count={6} mediaHeight={44} /></Box>}>
@@ -277,59 +286,43 @@ function DashboardContent() {
   return (
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
-        <Group gap="sm" align="center" justify="space-between" wrap="nowrap">
-          <Group gap="sm" align="center">
+        {/* Шапка кабинета — одна строка: приветствие и раздел слева, два
+            действия справа.
+
+            Раньше здесь шли подряд заголовок «Личный кабинет» с кнопкой
+            «Разместить», карточка «Расскажите о нас» и карточка «Рабочее
+            пространство» с «Новым объявлением» — на одном экране шесть
+            кнопок подачи вместе с меню и шапкой сайта. Владелец назвал это
+            разнобоем: одно действие — одна кнопка. */}
+        <Group gap="md" align="center" justify="space-between" wrap="wrap" className="dashboard-head">
+          <Group gap="sm" align="center" wrap="nowrap" miw={0}>
             <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconLayoutDashboard size={22} /></ThemeIcon>
-            <Stack gap={0}>
-              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный кабинет</Text>
-              <Text size="xs" c="var(--market-muted)">{session?.user?.name || session?.user?.email}</Text>
+            <Stack gap={0} miw={0}>
+              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif" className="dashboard-head__title">
+                {`Здравствуйте${greetingName ? `, ${greetingName}` : ""}`}
+              </Text>
+              <Text size="xs" c="var(--market-muted)">Личный кабинет · {DASHBOARD_TAB_LABELS[tab] || "Мои объявления"}</Text>
             </Stack>
           </Group>
-          <Button component={Link} href="/listings/create/vehicle" leftSection={<IconPlus size={16} />} color="indigo" radius="md" size="sm">Разместить</Button>
+          <Group gap="xs" wrap="nowrap" className="dashboard-head__actions">
+            <Button component={Link} href="/dashboard/deliveries" variant="default" size="sm" leftSection={<IconTruckDelivery size={16} />}>Мои доставки</Button>
+            <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm" leftSection={<IconPlus size={16} />}>Разместить объявление</Button>
+          </Group>
         </Group>
 
-        {/* Момент сразу после регистрации — лучший, чтобы человек позвал
-            знакомых: он как раз занят покупкой и разговаривает об этом. */}
-        <ShareInviteCard />
-
-        <Paper className="dashboard-workspace" radius="md" p={{ base: "md", md: "lg" }} withBorder>
-          <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
-            <Stack gap={6} maw={560}>
-              <Badge className="dashboard-workspace__eyebrow" variant="light" color={hasAttentionItems ? "orange" : "indigo"} radius="xl">
-                {hasAttentionItems ? "Требуется внимание" : "Рабочее пространство"}
-              </Badge>
-              {/* Кегль уменьшен, приветствие в одну строку: прежние 28px в две
-                  строки плюс абзац описания занимали треть первого экрана,
-                  а карточки со статусами уходили под сгиб. */}
-              <Text fw={800} fz={{ base: "18px", md: "22px" }} lh={1.15} ff="var(--font-display),sans-serif">
-                {hasAttentionItems ? "Есть объявления, которым нужно ваше действие" : `Здравствуйте${greetingName ? `, ${greetingName}` : ""}`}
-              </Text>
-              <Text size="sm" c="dimmed" maw={520}>
-                {hasAttentionItems
-                  ? "Откройте список объявлений: там есть карточки с причиной и следующим шагом."
-                  : "Публикации, отклики и инструменты — в одном месте."}
-              </Text>
-            </Stack>
-            <Group gap="xs" wrap="wrap">
-              <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm" leftSection={<IconPlus size={16} />}>Новое объявление</Button>
-              <Button component={Link} href="/dashboard/deliveries" variant="light" color="indigo" size="sm" leftSection={<IconTruckDelivery size={16} />}>Мои доставки</Button>
+        {hasAttentionItems && (
+          <Alert color="orange" variant="light" icon={<IconAlertCircle size={18} />} className="dashboard-attention">
+            <Group justify="space-between" gap="sm" wrap="wrap">
+              <Text size="sm">Есть объявления, которым нужно ваше действие: в карточке указаны причина и следующий шаг.</Text>
+              <Button size="compact-sm" variant="white" color="orange" onClick={() => { setStatusFilter(LISTING_STATUS.REJECTED); selectTab("listings") }}>Открыть</Button>
             </Group>
-          </Group>
+          </Alert>
+        )}
 
-          {/* Плашки статусов — только тем, у кого есть объявления.
-
-              Замер базы: 358 зарегистрированных, объявления есть у 44.
-              Остальные 314 человек — почти девять из десяти — открывали
-              кабинет и видели четыре нуля подряд, а сразу под ними ещё
-              шесть. Десять нулей на первом экране сообщают ровно одно:
-              «здесь пусто», хотя человек только что зарегистрировался и
-              ждёт подсказки, с чего начать.
-
-              Признак считается по сумме статусов, а не по totalListings:
-              у того, кто удалил единственное объявление, счётчик мог
-              остаться ненулевым, а плашки всё равно показали бы нули. */}
+        {/* Статусы объявлений — отдельной полосой и только у тех, у кого
+            объявления есть. */}
           {hasAnyListings && (
-          <SimpleGrid className="dashboard-workspace__status-grid" cols={{ base: 2, sm: 4 }} spacing="xs" mt="lg">
+          <SimpleGrid className="dashboard-workspace__status-grid" cols={{ base: 2, sm: 4 }} spacing="xs" >
             {[
               { label: "Черновики", value: workflow.drafts, icon: <IconFileDescription size={17} />, color: "gray", status: LISTING_STATUS.DRAFT },
               { label: "На проверке", value: workflow.pendingModeration, icon: <IconClipboardCheck size={17} />, color: "yellow", status: LISTING_STATUS.PENDING_MODERATION },
@@ -346,7 +339,6 @@ function DashboardContent() {
             ))}
           </SimpleGrid>
           )}
-        </Paper>
 
         {/* Показатели кабинета.
 
@@ -409,7 +401,7 @@ function DashboardContent() {
            * Каждое ведёт в рабочий раздел, а не в обучение. */
           <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
             {[
-              { title: "Продать машину", note: "Объявление за пару минут, размещение бесплатное", href: "/listings/create/vehicle", icon: <IconPlus size={18} />, tone: "indigo" },
+              { title: "Доставка из-за рубежа", note: "Маршрут, растаможка и статусы по машине с аукциона", href: "/dashboard/deliveries", icon: <IconTruckDelivery size={18} />, tone: "indigo" },
               { title: "Посмотреть машины", note: "Объявления по России и лоты мировых аукционов", href: "/", icon: <IconTag size={18} />, tone: "cyan" },
               { title: "Найти запчасть", note: "Подбор по марке и модели, оригинал и аналоги", href: "/parts-finder", icon: <IconTools size={18} />, tone: "teal" },
             ].map((step) => (
@@ -631,6 +623,11 @@ function DashboardContent() {
             пользователей и три подписки: люди не видели, на что подписаны,
             и не рисковали подписываться дальше. */}
         {tab === "subscriptions" && <SubscriptionsPanel />}
+
+        {/* Приглашение друзей — внизу и только на вкладке объявлений.
+            Первым блоком кабинета оно стояло над всем остальным на каждой
+            вкладке, включая профиль и оплаты, и отодвигало рабочие разделы. */}
+        {tab === "listings" && <ShareInviteCard />}
 
         {tab === "profile" && (
           <Paper radius="md" p="lg" withBorder>

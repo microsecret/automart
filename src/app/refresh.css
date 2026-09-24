@@ -1760,3 +1760,33 @@
 [data-mantine-color-scheme="dark"] .market-side-account--user {
   box-shadow: none !important;
 }
+
+/* ---------------------------------------------------------------------
+   21. Шапка личного кабинета
+   --------------------------------------------------------------------- */
+
+.dashboard-head__title {
+  margin: 0;
+  font-size: clamp(20px, 1.2vw + 14px, 26px) !important;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.dashboard-head__actions .mantine-Button-root {
+  height: var(--lw-control-h) !important;
+}
+
+.dashboard-attention .mantine-Alert-body {
+  justify-content: center;
+}
+
+@media (max-width: 36em) {
+  .dashboard-head__actions {
+    width: 100%;
+  }
+
+  .dashboard-head__actions .mantine-Button-root {
+    flex: 1 1 0;
+  }
+}
