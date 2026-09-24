@@ -106,8 +106,12 @@ if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-message-attachment-prune-cron.sh || echo "Warning: message attachment prune cron was not installed"
 fi
 npm run type-check
-npm run build
+# Сборка в отдельную папку с подменой: работающий сайт не теряет чанки,
+# пока идёт сборка (см. scripts/build-atomic.sh).
+bash scripts/build-atomic.sh
 bash scripts/install-production-network.sh
+# Главная отвечает и стили скачиваются — иначе откат на прежнюю сборку.
+bash scripts/verify-or-rollback.sh
 # The strict form/API gate protects new submissions. This post-start step uses
 # the exact same compiled validator to return older incomplete public cards to
 # their owners for correction without deleting their data.

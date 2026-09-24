@@ -77,7 +77,7 @@ fi
 
 free -m | head -2
 
-NODE_OPTIONS='--max-old-space-size=3500' npx next build
+bash scripts/build-atomic.sh
 BUILD=$?
 
 # Служба перезапускается только на удачной сборке.
@@ -89,6 +89,7 @@ BUILD=$?
 if [ "$BUILD" -eq 0 ]; then
   systemctl restart automart.service
   sleep 8
+  bash scripts/verify-or-rollback.sh || BUILD=97
   curl -s -o /dev/null -w "site:%{http_code}\n" http://127.0.0.1:4001/
 else
   echo "СБОРКА УПАЛА (код $BUILD) — служба не тронута, сайт работает на прежней сборке"

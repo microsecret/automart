@@ -53,6 +53,10 @@ const telegramEmbedHeaders = securityHeaders
   ))
 
 const nextConfig = {
+  /* Папка сборки задаётся снаружи: деплой собирает в .next-build и
+     подменяет ею .next только после удачной сборки (scripts/build-atomic.sh).
+     Работающий сервер запускается без переменной и читает .next. */
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   reactStrictMode: false,
   poweredByHeader: false,
   /* Оптимизация изображений.
