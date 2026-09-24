@@ -813,7 +813,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
   isAdmin: boolean
   isModerator: boolean
 }) {
-  const { data } = useSWR<AccountSummary>("/api/dashboard/stats", fetchJson, { revalidateOnFocus: false, dedupingInterval: 20_000 })
+  const { data } = useSWR<AccountSummary>("/api/dashboard/stats?scope=summary", fetchJson, { revalidateOnFocus: false, dedupingInterval: 20_000 })
   const summary = data?.stats
   const workflow = data?.workflow
   const hasAttention = Boolean((workflow?.needsAttention || 0) + (workflow?.pendingModeration || 0) + (summary?.activeDeliveries || 0))

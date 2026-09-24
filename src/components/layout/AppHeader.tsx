@@ -103,7 +103,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
      точки горели всегда: ложный сигнал приучает не смотреть на настоящий.
      Ключ совпадает с запросом бокового меню — SWR дедуплицирует. */
   const { data: headerStats } = useSWR<{ stats?: { unreadMessages?: number; unreadNotifications?: number } }>(
-    session ? "/api/dashboard/stats" : null,
+    session ? "/api/dashboard/stats?scope=summary" : null,
     fetchJson,
     { revalidateOnFocus: false, dedupingInterval: 20_000 },
   )

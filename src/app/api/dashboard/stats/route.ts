@@ -7,13 +7,21 @@ import { checkPartnerAccess } from "@/lib/partner-access"
 
 export const dynamic = "force-dynamic"
 
-/** GET /api/dashboard/stats — статистика личного кабинета */
-export async function GET() {
+/** GET /api/dashboard/stats — статистика личного кабинета.
+ *
+ * `?scope=summary` — только счётчики. Боковое меню и шапка сайта вызывают
+ * этот адрес на каждой странице у каждого вошедшего, а брали из ответа лишь
+ * числа: непрочитанные, статусы объявлений, доступ партнёра. Полный ответ
+ * при этом тянул десять объявлений с картинками, десять избранных с
+ * машинами и список заказов продвижения — три тяжёлых запроса впустую.
+ */
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const userId = session.user.id
+    const summaryOnly = new URL(request.url).searchParams.get("scope") === "summary"
 
     const deliveryAccess = {
       OR: [
@@ -46,13 +54,13 @@ export async function GET() {
           part: { select: { id: true, name: true, price: true, images: true } },
         },
         orderBy: { createdAt: "desc" },
-        take: 10,
+        take: summaryOnly ? 0 : 10,
       }),
       prisma.user.findUnique({
         where: { id: userId },
         select: {
           createdAt: true,
-          favoriteListings: { take: 10, orderBy: { createdAt: "desc" }, include: { vehicle: { select: { id: true, make: true, model: true, year: true, price: true, images: true, mileage: true, vehicleType: true, bodyType: true } } } },
+          favoriteListings: { take: summaryOnly ? 0 : 10, orderBy: { createdAt: "desc" }, include: { vehicle: { select: { id: true, make: true, model: true, year: true, price: true, images: true, mileage: true, vehicleType: true, bodyType: true } } } },
         },
       }),
       prisma.review.aggregate({
@@ -92,7 +100,7 @@ export async function GET() {
           _count: { select: { chatPosts: { where: { removedAt: null } } } },
         },
         orderBy: { createdAt: "desc" },
-        take: 20,
+        take: summaryOnly ? 0 : 20,
       }),
       /* Сводки считает база, а не перебор всех объявлений в памяти.
 
