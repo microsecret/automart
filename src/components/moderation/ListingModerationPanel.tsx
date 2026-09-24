@@ -90,7 +90,7 @@ export default function ListingModerationPanel() {
     <Card className="admin-moderation-panel" withBorder radius="md" p="md">
       <Stack gap="sm">
         <Group justify="space-between" align="center">
-          <Group gap="sm"><ThemeIcon variant="light" color="red" size={32} radius="md"><IconFlame size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Модерация объявлений</Text></Group>
+          <Group gap="sm"><ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconFlame size={18} /></ThemeIcon><Text fw={700} c="var(--market-ink)">Очередь проверки</Text></Group>
           <Badge size="sm" variant="light" color={pendingListings.length > 0 ? "orange" : "green"}>{pendingListings.length} на проверке</Badge>
         </Group>
         <SegmentedControl

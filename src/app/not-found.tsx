@@ -28,7 +28,7 @@ export default function NotFoundPage() {
       <Stack gap="xl">
         <AsyncErrorState
           title="Такой страницы нет"
-          description="Возможно, объявление снято с публикации или ссылка устарела."
+          description="Адрес набран с ошибкой, страница переехала или объявление уже снято с публикации."
           backHref="/"
         />
 

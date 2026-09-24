@@ -390,3 +390,30 @@
   padding-left: 8px;
   border-left: 2px solid var(--market-primary);
 }
+
+/* Шапка группы — тёмно-синяя, как шапки виджетов справа и панели
+   направлений на главной. Светло-голубая полоса была единственной шапкой
+   такого цвета на сайте и читалась чужой деталью. */
+.forum-group__head {
+  border-bottom-color: transparent !important;
+  background: linear-gradient(135deg, var(--lw-navy, #0b1426) 0%, var(--lw-navy-2, #13233f) 100%) !important;
+}
+
+.forum-group__head .mantine-Text-root {
+  color: #ffffff !important;
+}
+
+.forum-group__head .mantine-Text-root + .mantine-Text-root,
+.forum-group__head .forum-row__stats-head,
+.forum-group__head .forum-row__last-head {
+  color: var(--lw-navy-muted, #8e9fb8) !important;
+}
+
+.forum-group__head .mantine-ThemeIcon-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #8fb3ff !important;
+}
+
+.forum-group__head a {
+  color: #ffffff;
+}

@@ -1541,3 +1541,21 @@
   width: min(calc(100% - 32px), 1320px);
   margin: 18px auto -10px;
 }
+
+/* Тур в тёмной теме: тёмно-синяя карточка сливалась с тёмной страницей —
+   рамка и тень посветлее отделяют её. */
+[data-mantine-color-scheme="dark"] .lw-tour {
+  border-color: rgba(143, 179, 255, 0.28);
+  background: #13233f;
+  box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.8);
+}
+
+/* Подпись к группе переключателей в форме подачи — тем же кеглем и цветом,
+   что подписи полей Mantine рядом. Мелкая серая капитель выглядела
+   подсказкой, а не названием поля, и ряд подписей шёл вразнобой. */
+.form-field-label {
+  color: var(--market-ink) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 500 !important;
+  line-height: 1.4;
+}

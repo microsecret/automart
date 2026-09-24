@@ -797,7 +797,7 @@ function CreateVehicleWorkspace() {
                   <TextInput id="vehicle-field-color" label="Цвет" required={requiredSpecFields.has("color")} placeholder="Белый" value={f.color} onChange={(e) => set("color", e.target.value)} error={fieldError("color")} size="sm" />
                 </Group>
                 <Stack gap={6}>
-                  <Text size="xs" fw={700} c="dimmed">Состояние{requiredSpecFields.has("condition") ? " *" : ""}</Text>
+                  <Text className="form-field-label">Состояние{requiredSpecFields.has("condition") ? " *" : ""}</Text>
                   <Group gap={6}>
                     {CONDITIONS.map((item) => (
                       <Chip
@@ -835,7 +835,7 @@ function CreateVehicleWorkspace() {
                 </Group>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="dimmed">Наличие{requiredSpecFields.has("availability") ? " *" : ""}</Text>
+                    <Text className="form-field-label">Наличие{requiredSpecFields.has("availability") ? " *" : ""}</Text>
                     <SegmentedControl
                       id="vehicle-field-availability"
                       value={f.availability}
@@ -848,7 +848,7 @@ function CreateVehicleWorkspace() {
                     {fieldError("availability") && <Text size="xs" c="var(--market-danger-text)">{fieldError("availability")}</Text>}
                   </Stack>
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="dimmed">Растаможен{requiredSpecFields.has("customsCleared") ? " *" : ""}</Text>
+                    <Text className="form-field-label">Растаможен{requiredSpecFields.has("customsCleared") ? " *" : ""}</Text>
                     <SegmentedControl
                       id="vehicle-field-customsCleared"
                       value={f.customsCleared}

@@ -262,7 +262,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                 {item.label}
               </Button>
             ))}
-            <ServiceNavigationMenu serviceNavigation={serviceNavigation} serviceShortcuts={serviceShortcuts} />
+            <ServiceNavigationMenu serviceNavigation={serviceNavigation} serviceShortcuts={serviceShortcuts} primaryActive={catalogueNavigation.some((item) => item.active)} />
           </Group>
 
           {/* Распорка: вкладки и «Сервисы» держатся левой группой рядом с
@@ -513,11 +513,15 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
   )
 }
 
-function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts }: { serviceNavigation: NavigationItem[]; serviceShortcuts: NavigationItem[] }) {
+function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts, primaryActive = false }: { serviceNavigation: NavigationItem[]; serviceShortcuts: NavigationItem[]; primaryActive?: boolean }) {
   // Ищем по адресу, а не по позиции: пункт «Сервисы» переставлялся в ряду,
   // и жёсткий индекс подсвечивал не тот раздел.
-  const serviceIsActive = serviceNavigation.some((item) => item.href === "/services" && item.active)
-    || serviceShortcuts.some((item) => item.active)
+  /* Карта АЗС есть и среди вкладок («Где заправиться»), и в меню сервисов.
+     Раньше на ней подчёркивались обе вкладки сразу, и было непонятно, где
+     человек находится. Меню подсвечивается, только если ни одна основная
+     вкладка не активна. */
+  const serviceIsActive = !primaryActive && (serviceNavigation.some((item) => item.href === "/services" && item.active)
+    || serviceShortcuts.some((item) => item.active))
 
   return (
     <Box visibleFrom="md" component="span" className="market-header-services-wrap">
