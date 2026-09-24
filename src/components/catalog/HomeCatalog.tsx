@@ -24,6 +24,7 @@ import CategoryShowcase from "./CategoryShowcase"
 import HowItWorks from "@/components/home/HowItWorks"
 import AuctionShowcase from "@/components/home/AuctionShowcase"
 import PromoSlot from "@/components/home/PromoSlot"
+import QuickTour from "@/components/home/QuickTour"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 
 type HomePageProps = {
@@ -681,6 +682,37 @@ export default function HomePage(p: HomePageProps = {}) {
           Двухколоночная раскладка убрана: карточки в двух колонках
           выходили слишком крупными, машин на экране помещалось вдвое
           меньше, и страница тянулась вниз. */}
+      {/* Готовые подборки — частые запросы одним нажатием.
+
+          Человек, который пришёл «посмотреть что-нибудь до миллиона на
+          автомате», раньше открывал панель фильтров и заполнял три поля.
+          Подборка ставит те же значения в те же поля: видно, что выбрано,
+          и снять можно и здесь, и в самом фильтре. Только для транспорта —
+          у запчастей другие поля. */}
+      {!isPartSearch && (
+        <div className="catalog-presets" role="group" aria-label="Быстрые подборки">
+          <span className="catalog-presets__label">Подборки</span>
+          {[
+            { key: "p300", label: "До 300 тыс. ₽", on: priceTo === "300000", toggle: () => setPriceTo(priceTo === "300000" ? "" : "300000") },
+            { key: "p1m", label: "До 1 млн ₽", on: priceTo === "1000000", toggle: () => setPriceTo(priceTo === "1000000" ? "" : "1000000") },
+            { key: "auto", label: "Автомат", on: transmission === "AUTOMATIC", toggle: () => setTransmission(transmission === "AUTOMATIC" ? null : "AUTOMATIC") },
+            { key: "km", label: "Пробег до 100 тыс. км", on: mileageTo === "100000", toggle: () => setMileageTo(mileageTo === "100000" ? "" : "100000") },
+            { key: "y2015", label: "Не старше 2015", on: yearFrom === "2015", toggle: () => setYearFrom(yearFrom === "2015" ? null : "2015") },
+          ].map((preset) => (
+            <button
+              key={preset.key}
+              type="button"
+              className="catalog-presets__item"
+              aria-pressed={preset.on}
+              onClick={() => { preset.toggle(); setPage(1) }}
+            >
+              {preset.on && <IconX size={12} stroke={2.4} aria-hidden="true" />}
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <Paper className="catalog-filter-panel" data-expanded={showAdvanced || undefined} radius="md" p="md" withBorder>
         <Stack gap="sm">
           {activeFilterCount > 0 && (
@@ -1134,6 +1166,9 @@ export default function HomePage(p: HomePageProps = {}) {
           за часть витрины. Теперь это подписанные «Реклама» места с рамкой,
           и они замыкают витрину, а не разрывают её. */}
       {p.showHero !== false && !p.categorySlug && <PromoSlot />}
+
+      {/* Тур для первого визита — только на главной и только один раз. */}
+      {p.showHero !== false && !p.categorySlug && <QuickTour />}
     </Stack></Box>
   )
 }

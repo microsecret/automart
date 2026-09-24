@@ -1,5 +1,6 @@
 "use client"
 
+import { stripCodeFences } from "@/lib/news"
 import { useDeferredValue, useState } from "react"
 import useSWR from "swr"
 import { Badge, Box, Card, Group, Pagination, SegmentedControl, SimpleGrid, Stack, Text, TextInput, ThemeIcon } from "@mantine/core"
@@ -108,7 +109,7 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
             {article.title}
           </Text>
 
-          {article.excerpt && <Text className="news-list-card__excerpt" size="sm" c="dimmed" lh={1.5}>{article.excerpt}</Text>}
+          {article.excerpt && <Text className="news-list-card__excerpt" size="sm" c="dimmed" lh={1.5}>{stripCodeFences(article.excerpt).trim()}</Text>}
 
           {article.tags.length > 0 && (
             <Group gap={6} wrap="wrap">

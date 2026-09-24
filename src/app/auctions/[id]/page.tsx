@@ -357,23 +357,27 @@ function AuctionDetail() {
   return (
     <Container size="xl" py="lg">
       <Stack gap="md">
-        <Group gap="xs" align="center" wrap="wrap">
-          <Button
-            variant="filled"
-            color="indigo"
-            radius="xl"
-            size="compact-sm"
-            leftSection={<IconArrowLeft size={15} />}
+        {/* Навигация над лотом — строкой крошек, а не четырьмя кнопками.
+
+            Здесь стояли синяя «Вернуться назад», белая «Главная», голубая
+            «Все аукционы» и плашка с названием — четыре разные формы в одном
+            ряду, и каждая спорила за внимание с фото ниже. Крошки ведут туда
+            же и читаются как адрес, а не как призыв. */}
+        <nav className="lot-crumbs" aria-label="Навигация">
+          <UnstyledButton
+            className="lot-crumbs__back"
             onClick={() => window.history.length > 1 ? router.back() : router.push("/auctions")}
           >
-            Вернуться назад
-          </Button>
-          <Button component={Link} href="/" variant="default" radius="xl" size="compact-sm" leftSection={<IconHome size={14} />}>Главная</Button>
-          <Button component={Link} href="/auctions" variant="light" color="indigo" radius="xl" size="compact-sm" leftSection={<IconGavel size={14} />}>Все аукционы</Button>
-          <Paper px="sm" py={6} radius="xl" withBorder className={styles.identityPill}>
-            <Text size="xs" fw={700} c="var(--market-ink)" lineClamp={1}>{publicIdentity.title}</Text>
-          </Paper>
-        </Group>
+            <IconArrowLeft size={14} stroke={2} />
+            Назад
+          </UnstyledButton>
+          <span className="lot-crumbs__sep" aria-hidden="true" />
+          <Link href="/" className="lot-crumbs__link"><IconHome size={13} stroke={1.9} />Главная</Link>
+          <IconChevronRight size={13} className="lot-crumbs__chevron" aria-hidden="true" />
+          <Link href="/auctions" className="lot-crumbs__link"><IconGavel size={13} stroke={1.9} />Аукционы</Link>
+          <IconChevronRight size={13} className="lot-crumbs__chevron" aria-hidden="true" />
+          <span className="lot-crumbs__current" aria-current="page">{publicIdentity.title}</span>
+        </nav>
 
         <Box className="auction-detail-layout" style={hasWideAuctionLayout ? undefined : { gridTemplateColumns: "minmax(0, 1fr)" }}>
           {/* Левая — фото + характеристики */}

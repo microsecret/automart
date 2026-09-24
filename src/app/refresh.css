@@ -1163,3 +1163,360 @@
     width: 100%;
   }
 }
+
+/* ---------------------------------------------------------------------
+   12. Подборки над каталогом
+   --------------------------------------------------------------------- */
+
+.catalog-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: -6px;
+}
+
+.catalog-presets__label {
+  margin-right: 4px;
+  color: var(--market-label);
+  font-size: var(--text-caps);
+  font-weight: 700;
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+}
+
+.catalog-presets__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface);
+  color: var(--market-ink-soft);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+.catalog-presets__item:hover {
+  border-color: color-mix(in srgb, var(--market-primary) 45%, var(--market-line));
+  color: var(--market-ink);
+}
+
+.catalog-presets__item[aria-pressed="true"] {
+  border-color: var(--lw-navy);
+  background: var(--lw-navy);
+  color: #ffffff;
+}
+
+[data-mantine-color-scheme="dark"] .catalog-presets__item[aria-pressed="true"] {
+  border-color: var(--market-accent-button);
+  background: var(--market-accent-button);
+}
+
+.catalog-presets__item:active {
+  transform: scale(0.96);
+}
+
+.catalog-presets__item:focus-visible {
+  outline: 2px solid var(--market-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48em) {
+  .catalog-presets {
+    flex-wrap: nowrap;
+    margin-inline: -12px;
+    padding: 0 12px 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .catalog-presets::-webkit-scrollbar {
+    display: none;
+  }
+
+  .catalog-presets__item {
+    flex: 0 0 auto;
+    height: 34px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   13. Тур первого визита
+   --------------------------------------------------------------------- */
+
+.lw-tour {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 400;
+  width: min(340px, calc(100vw - 32px)) !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 16px 16px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  background: var(--lw-navy);
+  box-shadow: 0 24px 60px -20px rgba(11, 20, 38, 0.65);
+  color: var(--lw-navy-text);
+  animation: lw-tour-in 360ms var(--ease-out) both;
+}
+
+.lw-tour__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--lw-navy-muted);
+  cursor: pointer;
+}
+
+.lw-tour__close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.lw-tour__count {
+  color: #8fb3ff;
+  font-size: var(--text-caps);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.lw-tour__title {
+  margin: 4px 0;
+  color: #ffffff;
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+.lw-tour__text {
+  margin: 0;
+  color: var(--lw-navy-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.lw-tour__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.lw-tour__dots {
+  display: flex;
+  gap: 5px;
+  margin-right: auto;
+}
+
+.lw-tour__dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: width var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out);
+}
+
+.lw-tour__dots span[data-on] {
+  width: 18px;
+  background: #8fb3ff;
+}
+
+.lw-tour__skip,
+.lw-tour__next {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lw-tour__skip {
+  background: transparent;
+  color: var(--lw-navy-muted);
+}
+
+.lw-tour__skip:hover {
+  color: #ffffff;
+}
+
+.lw-tour__next {
+  background: var(--market-accent-button);
+  color: #ffffff;
+}
+
+.lw-tour__next:hover {
+  background: #1d4ed8;
+}
+
+.lw-tour button:focus-visible {
+  outline: 2px solid #8fb3ff;
+  outline-offset: 2px;
+}
+
+/* Подсвеченное место: кольцо с мягкой пульсацией. */
+.lw-tour-target {
+  position: relative;
+  z-index: 5;
+  border-radius: var(--radius-lg);
+  animation: lw-tour-pulse 1.6s var(--ease-out) infinite;
+}
+
+@keyframes lw-tour-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lw-tour-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--market-accent-button), 0 0 0 6px color-mix(in srgb, var(--market-accent-button) 26%, transparent); }
+  50% { box-shadow: 0 0 0 3px var(--market-accent-button), 0 0 0 12px color-mix(in srgb, var(--market-accent-button) 8%, transparent); }
+}
+
+@media (max-width: 61.99em) {
+  .lw-tour {
+    left: 16px;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lw-tour {
+    animation: none;
+  }
+
+  .lw-tour-target {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--market-accent-button);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   14. Крошки над лотом аукциона
+   --------------------------------------------------------------------- */
+
+.lot-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+}
+
+.lot-crumbs__back,
+.lot-crumbs__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  color: var(--market-ink-soft);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lot-crumbs__back:hover,
+.lot-crumbs__link:hover {
+  color: var(--market-accent-text);
+}
+
+.lot-crumbs__sep {
+  width: 1px;
+  height: 14px;
+  margin-inline: 4px;
+  background: var(--market-line);
+}
+
+.lot-crumbs__chevron {
+  color: var(--market-muted);
+}
+
+.lot-crumbs__current {
+  overflow: hidden;
+  min-width: 0;
+  max-width: 420px;
+  color: var(--market-ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------
+   15. Карточка машины
+   --------------------------------------------------------------------- */
+
+/* Рамки правой колонки были почти чёрными: карточкам инлайном задан
+   --mantine-color-border, а он темнее линий остального сайта. */
+.vehicle-detail-layout__aside .mantine-Card-root {
+  border-color: var(--market-line) !important;
+}
+
+.vehicle-detail-layout__aside h1 {
+  font-weight: 700 !important;
+}
+
+/* Характеристики на ровной подложке: последняя клетка дотягивается до
+   конца ряда, и в сетке нет пустого голубого «хвоста». */
+.vehicle-detail-specs__grid,
+.vehicle-detail-statuses__grid {
+  background: var(--market-surface) !important;
+}
+
+.vehicle-detail-specs__item:last-child,
+.vehicle-detail-statuses__item:last-child {
+  grid-column-end: -1;
+}
+
+.detail-secondary-actions .mantine-Button-root,
+.detail-secondary-actions .mantine-ActionIcon-root {
+  height: 38px !important;
+  border-color: var(--market-line) !important;
+}
+
+/* ---------------------------------------------------------------------
+   16. Мобильная шапка: одна форма у всех кнопок
+   --------------------------------------------------------------------- */
+
+@media (max-width: 61.99em) {
+  .market-header-search-trigger,
+  .market-app-header__utility a[href="/auth/signup"] {
+    width: var(--lw-control-h) !important;
+    min-width: var(--lw-control-h) !important;
+    height: var(--lw-control-h) !important;
+    border: 1px solid var(--market-line) !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--market-surface) !important;
+    color: var(--market-ink-soft) !important;
+  }
+
+  .market-app-header__utility a[href="/auth/signin"] {
+    height: var(--lw-control-h) !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .catalog-view-switch {
+    flex: 0 0 auto !important;
+  }
+
+  .catalog-sort-control {
+    flex: 1 1 auto;
+  }
+}

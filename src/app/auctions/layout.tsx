@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./auctions-page.css"
 import styles from "./auction-intro.module.css"
+import AuctionsIntroGate from "./AuctionsIntroGate"
 
 /* Обновление задаётся здесь, а не в самой странице.
 
@@ -48,6 +49,7 @@ export const metadata: Metadata = {
 export default function AuctionsLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <AuctionsIntroGate>
       <div className={styles.intro}>
         <h1 className={styles.title}>Автомобильные аукционы мира</h1>
         {/* Обещание совпадает с тем, что человек видит ниже.
@@ -101,6 +103,7 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
           </li>
         </ul>
       </div>
+      </AuctionsIntroGate>
       {children}
     </>
   )

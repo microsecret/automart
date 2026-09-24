@@ -21,8 +21,16 @@ function decodeBasicHtml(value: string) {
  * The Telegram editor publishes HTML. The marketplace deliberately stores a
  * text-only representation, so an imported post can never execute markup.
  */
+/* Источники присылают часть заметок, завёрнутых в markdown-ограждение:
+   анонс начинался с «```html», и эти символы уходили в ленту новостей
+   как есть (замер ленты 24.09.2026). Ограждения снимаются, текст внутри
+   остаётся. */
+export function stripCodeFences(value: string) {
+  return value.replace(/```[a-zA-Z0-9_-]*[ 	]*/g, "")
+}
+
 export function normalizeNewsText(value: string) {
-  return decodeBasicHtml(value || "")
+  return stripCodeFences(decodeBasicHtml(value || ""))
     .replace(/<\/(?:p|div|li|h[1-6]|blockquote)>/gi, "\n")
     .replace(/<br\s*\/?\s*>/gi, "\n")
     .replace(/<[^>]*>/g, "")

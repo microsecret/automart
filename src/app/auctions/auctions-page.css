@@ -438,3 +438,64 @@
 .auction-body-tile:active {
   transform: translateY(0) scale(0.985);
 }
+
+/* Поля фильтра — как в каталоге объявлений: подпись над полем, рамка у
+   самого поля, без плашки вокруг каждого.
+
+   Каталог на главной переведён на этот вид 24.09.2026, а аукционы
+   остались с прежними плашками: два фильтра одной площадки выглядели
+   собранными из разных наборов. */
+.auction-filter-grid {
+  align-items: end;
+  gap: 10px !important;
+}
+
+.auction-filter-grid > .mantine-InputWrapper-root,
+.auction-filter-grid > .mantine-Box-root {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.auction-filter-grid .mantine-InputWrapper-label,
+.auction-price-range > .mantine-Text-root:first-child {
+  margin: 0 0 5px 2px !important;
+  color: var(--market-label) !important;
+  font-size: var(--text-caps) !important;
+  font-weight: 700 !important;
+  letter-spacing: var(--track-caps) !important;
+  line-height: 12px !important;
+  text-align: left !important;
+  text-transform: uppercase;
+}
+
+.auction-filter-grid .mantine-Input-input,
+.auction-filter-grid .mantine-Select-input,
+.auction-price-range .mantine-TextInput-input {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding-left: 12px !important;
+  border: 1px solid var(--market-field-line) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--market-field) !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+}
+
+.auction-filter-grid .mantine-Input-input:focus,
+.auction-filter-grid .mantine-Select-input:focus,
+.auction-price-range .mantine-TextInput-input:focus {
+  border-color: var(--market-focus-ring) !important;
+  box-shadow: 0 0 0 3px var(--market-focus) !important;
+}
+
+.auction-price-range,
+.auction-price-range .mantine-TextInput-root {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
