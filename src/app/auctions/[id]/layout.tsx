@@ -1,4 +1,6 @@
 import type { Metadata } from "next"
+import { IconChevronRight } from "@tabler/icons-react"
+import Link from "next/link"
 import { cache } from "react"
 import { prisma } from "@/lib/prisma"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
@@ -161,6 +163,15 @@ export default async function AuctionDetailLayout({ children, params }: LayoutPr
           },
         ],
       }} />
+      {/* Крошки — над названием лота: адрес читается раньше заголовка, как
+          на карточке объявления. */}
+      <nav className="lot-crumbs lot-crumbs--top" aria-label="Навигация">
+        <Link href="/" className="lot-crumbs__link">Главная</Link>
+        <IconChevronRight size={13} className="lot-crumbs__chevron" aria-hidden="true" />
+        <Link href="/auctions" className="lot-crumbs__link">Аукционы</Link>
+        <IconChevronRight size={13} className="lot-crumbs__chevron" aria-hidden="true" />
+        <span className="lot-crumbs__current" aria-current="page">{identity.title}</span>
+      </nav>
       <header className={styles.heading}>
         <div className={styles.identity}>
           <BrandIcon brand={identity.make} size={46} />
