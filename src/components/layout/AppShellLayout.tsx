@@ -627,7 +627,10 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
  */
 function useFooterRailSync(pathname: string | null) {
   useEffect(() => {
-    const footer = document.querySelector<HTMLElement>(".app-footer-bleed")
+    /* Меряем саму плиту подвала, а не обёртку: у плиты есть верхнее
+       поле, и по обёртке колонки обрывались на сорок пикселей раньше —
+       между ними и подвалом оставалась полоса фона. */
+    const footer = document.querySelector<HTMLElement>(".app-footer-bleed .market-app-footer")
     if (!footer || typeof IntersectionObserver === "undefined") return
     const root = document.documentElement
     let frame = 0

@@ -72,8 +72,8 @@ const MORE_SORTS = SORT_OPTIONS.filter((o) => !QUICK_SORT_VALUES.has(o.value)).m
 const HERO_ACTIONS = [
   { href: "#catalog", label: "Купить авто", note: "Весь каталог", tone: "blue", icon: <IconCar size={19} stroke={1.8} /> },
   { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", tone: "green", icon: <IconTag size={19} stroke={1.8} /> },
-  { href: "/auctions", label: "Аукционы", note: "Япония, Корея, Китай", tone: "orange", icon: <IconGavel size={19} stroke={1.8} /> },
-  { href: "/parts-finder", label: "Запчасти", note: "Оригинал и аналоги", tone: "violet", icon: <IconSettings size={19} stroke={1.8} /> },
+  { href: "/auctions", label: "Аукционы", note: "Азия и Европа", tone: "orange", icon: <IconGavel size={19} stroke={1.8} /> },
+  { href: "/parts-finder", label: "Запчасти", note: "Подбор по VIN", tone: "violet", icon: <IconSettings size={19} stroke={1.8} /> },
   /* «Заправки», а не «Где заправиться»: замер показал, что полная
      подпись требует 131 пиксель при ширине плитки 124 и вылезает за
      края. Уменьшать кегль дальше нельзя — четырнадцать пикселей и так

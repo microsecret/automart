@@ -3264,16 +3264,6 @@ select {
   padding: 4px 2px 0;
 }
 
-.catalog-price-range,
-.parts-price-range,
-
-
-.catalog-price-range .mantine-TextInput-root,
-.parts-price-range .mantine-TextInput-root,
-
-.catalog-price-range .mantine-TextInput-input,
-.parts-price-range .mantine-TextInput-input,
-
 .vehicle-fallback {
   position: relative;
   isolation: isolate;
@@ -3980,8 +3970,6 @@ select {
   }
 }
 
-.listing-card:active .market-details-cta,
-
 .listing-card[data-vehicle-type="part"] .listing-card__monthly-payment {
   display: none;
 }
@@ -4339,24 +4327,6 @@ select {
     grid-column: auto;
   }
 }
-
-.parts-filter-grid > .mantine-InputWrapper-root,
-.parts-filter-grid > .mantine-Box-root,
-
-.parts-filter-grid > .mantine-InputWrapper-root:hover,
-.parts-filter-grid > .mantine-Box-root:hover,
-
-.parts-filter-grid > .mantine-InputWrapper-root:focus-within,
-.parts-filter-grid > .mantine-Box-root:focus-within,
-
-.parts-filter-grid .mantine-Input-input,
-.parts-filter-grid .mantine-Select-input,
-
-
-
-
-
-
 
 .service-page {
   max-width: 1240px;
@@ -5276,9 +5246,6 @@ select {
 
 /* Единая поверхность поиска: контрастная, но спокойная. Эти правила
    используются каталогом транспорта, запчастей и аукционов. */
-.catalog-filter-panel,
-.parts-filter-panel,
-
 .catalog-filter-panel__intro {
   min-height: 34px;
 }
@@ -5293,17 +5260,6 @@ select {
 
 
 
-
-.catalog-price-range .mantine-Group-root,
-.parts-price-range .mantine-Group-root,
-
-.parts-price-range .mantine-TextInput-root,
-
-.catalog-price-range .mantine-TextInput-root + .mantine-TextInput-root,
-.parts-price-range .mantine-TextInput-root + .mantine-TextInput-root,
-
-.catalog-price-range .mantine-TextInput-input,
-.parts-price-range .mantine-TextInput-input,
 
 .catalog-filter-advanced > .mantine-Box-root,
 .catalog-filter-advanced > .mantine-Group-root:not(.catalog-filter-advanced__actions) {
@@ -5320,43 +5276,6 @@ select {
   padding: 3px 9px;
   font-size: var(--text-xs);
 }
-
-
-
-
-
-
-
-
-.vehicle-detail-layout__sticky-aside,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

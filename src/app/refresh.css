@@ -439,15 +439,37 @@
   outline-offset: 2px;
 }
 
-/* Средняя ширина: пять плиток в ряд сжимаются до обрезанных подписей,
-   поэтому подпись под названием уходит, а плитка остаётся ровной. */
-@media (min-width: 62em) and (max-width: 1360px) {
-  .home-quick__note {
-    display: none;
+/* Узкая колонка: плитка встаёт столбиком — значок над подписью.
+
+   Ширина считается от колонки контента, а не от окна: при окне 1280 и
+   двух открытых боковых колонках центру остаётся 690 пикселей, и пять
+   плиток в строку обрезали «Купить авто» до «Купить а». Запрос к
+   контейнеру ловит именно это, какие бы колонки ни были открыты. */
+.home-page-stack {
+  container: lw-home / inline-size;
+}
+
+@container lw-home (max-width: 1000px) {
+  .home-quick__item {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-height: 84px;
+    padding: 10px 6px;
+    text-align: center;
   }
 
-  .home-quick__item {
-    padding: 10px 12px;
+  .home-quick__text {
+    align-items: center;
+  }
+
+  .home-quick__label {
+    font-size: var(--text-sm);
+  }
+
+  .home-quick__note,
+  .home-quick__arrow {
+    display: none;
   }
 
   .home-quick__icon {
@@ -559,13 +581,24 @@
   color: var(--market-ink) !important;
 }
 
+/* На узких экранах переключатель тоже виден — раньше globals.css прятал
+   быстрые сортировки ниже 1200 пикселей, и на телефоне оставался только
+   список. Переключатель занимает свою строку, «Ещё» и вид — вторую. */
+.catalog-sort-quick.mantine-SegmentedControl-root {
+  display: flex !important;
+}
+
 @media (max-width: 36em) {
   .catalog-heading > .mantine-Group-root:last-child {
-    flex-wrap: wrap;
+    flex-wrap: wrap !important;
   }
 
   .catalog-sort-quick.mantine-SegmentedControl-root {
     flex: 1 1 100%;
+  }
+
+  .catalog-sort-quick .mantine-SegmentedControl-control {
+    flex: 1 1 0;
   }
 }
 
