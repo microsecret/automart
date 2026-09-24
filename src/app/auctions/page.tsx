@@ -792,8 +792,8 @@ function AuctionsPageContent() {
                       </Box>
                     </Group>
                     <Group className={styles.resultSpecs} gap={4} mt={8} wrap="wrap" align="flex-start">
-                      {l.fuelType && <Badge className={styles.resultSpec} size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "orange"} leftSection={<IconGasStation size={12} />}>Топливо: {FUEL_LABELS[l.fuelType] || l.fuelType}</Badge>}
-                      {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo" leftSection={<IconCar size={12} />}>Кузов: {BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
+                      {l.fuelType && <Badge className={styles.resultSpec} size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "gray"} leftSection={<IconGasStation size={12} />}>{FUEL_LABELS[l.fuelType] || l.fuelType}</Badge>}
+                      {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconCar size={12} />}>{BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
                       <Badge className={styles.resultSpec} size="xs" variant="light" color={l.power ? "violet" : "gray"} leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
                       {rentalTransfer && <Badge className={styles.resultSpec} size="xs" variant="light" color="indigo">Переоформление аренды</Badge>}
