@@ -67,17 +67,24 @@ type EmptyStateProps = {
   actionLabel?: string
   actionHref?: string
   onAction?: () => void
+  /** Значок раздела; по умолчанию — «ничего не найдено». */
+  icon?: React.ReactNode
 }
 
-export function EmptyState({ title, description, actionLabel, actionHref, onAction }: EmptyStateProps) {
+/* Пустое состояние — одно на весь сайт: фирменный значок, заголовок,
+   пояснение и заполненная кнопка первого шага. Раньше у общего компонента
+   был серый значок и бледная кнопка, а разделы кабинета рисовали свои
+   пустые состояния ярче — рядом они выглядели собранными из разных
+   наборов. */
+export function EmptyState({ title, description, actionLabel, actionHref, onAction, icon }: EmptyStateProps) {
   return (
     <Paper radius="md" p={{ base: "lg", md: "xl" }} withBorder>
       <Stack align="center" gap="sm" maw={480} mx="auto" ta="center">
-        <ThemeIcon size={52} radius="xl" color="gray" variant="light"><IconSearchOff size={26} /></ThemeIcon>
-        <Text fw={700} fz="lg">{title}</Text>
+        <ThemeIcon size={52} radius="md" color="indigo" variant="light">{icon ?? <IconSearchOff size={26} />}</ThemeIcon>
+        <Text fw={700} fz="lg" c="var(--market-ink)">{title}</Text>
         <Text size="sm" c="dimmed">{description}</Text>
-        {actionLabel && actionHref && <Button component={Link} href={actionHref} variant="light" color="indigo" size="sm" mt="xs">{actionLabel}</Button>}
-        {actionLabel && onAction && <Button variant="light" color="indigo" size="sm" mt="xs" onClick={onAction}>{actionLabel}</Button>}
+        {actionLabel && actionHref && <Button component={Link} href={actionHref} color="indigo" size="sm" mt="xs">{actionLabel}</Button>}
+        {actionLabel && onAction && <Button color="indigo" size="sm" mt="xs" onClick={onAction}>{actionLabel}</Button>}
       </Stack>
     </Paper>
   )

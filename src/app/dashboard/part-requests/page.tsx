@@ -6,7 +6,7 @@ import {
   Anchor, Badge, Box, Button, Card, Container, Divider, Group, Loader, Stack, Text, ThemeIcon, Title,
 } from "@mantine/core"
 import { IconBuildingStore, IconPhone, IconSearch } from "@tabler/icons-react"
-import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
 type Offer = {
@@ -89,17 +89,15 @@ export default function MyPartRequestsPage() {
       ) : error ? (
         <AsyncErrorState title="Не удалось загрузить заявки" onRetry={() => void mutate()} />
       ) : requests.length === 0 ? (
-        <Card withBorder radius="md" p="lg" mt="md">
-          <Stack gap="sm" align="flex-start">
-            <Text size="sm">
-              Вы ещё не оставляли заявок. Если нужной детали нет в каталоге — опишите её,
-              и магазины ответят ценой и сроком.
-            </Text>
-            <Button component={Link} href="/parts-finder" variant="light" color="indigo">
-              Найти запчасть
-            </Button>
-          </Stack>
-        </Card>
+        <Box mt="md">
+          <EmptyState
+            icon={<IconSearch size={24} />}
+            title="Заявок пока нет"
+            description="Если нужной детали нет в каталоге — опишите её, и магазины ответят ценой и сроком."
+            actionLabel="Найти запчасть"
+            actionHref="/parts-finder"
+          />
+        </Box>
       ) : (
         <Stack gap="md" mt="md">
           {requests.map((request) => {
