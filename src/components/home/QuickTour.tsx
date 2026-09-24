@@ -51,8 +51,15 @@ export default function QuickTour() {
   useEffect(() => {
     if (readSeen()) return
     /* Пауза, чтобы человек сначала увидел страницу, а не подсказку поверх
-       недогруженной выдачи. */
-    const timer = window.setTimeout(() => setStep(0), 1800)
+       недогруженной выдачи.
+
+       Отметка «видел» ставится в момент показа, а не только по «Закрыть».
+       Иначе каждое обновление страницы запускало тур заново — владелец
+       поймал это на живом сайте 24.09.2026. */
+    const timer = window.setTimeout(() => {
+      markSeen()
+      setStep(0)
+    }, 1800)
     return () => window.clearTimeout(timer)
   }, [])
 
@@ -66,8 +73,16 @@ export default function QuickTour() {
     const target = visibleTarget(STEPS[step].selector)
     if (!target) return
     target.classList.add("lw-tour-target")
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" })
+    /* Прокрутка — только если место за краем экрана. Раньше тур центрировал
+       каждую цель, и на первом шаге страница сама съезжала вниз, обрезая
+       заголовок героя. */
+    const rect = target.getBoundingClientRect()
+    const header = document.querySelector<HTMLElement>(".market-app-header")?.offsetHeight ?? 0
+    const offscreen = rect.top < header || rect.bottom > window.innerHeight - 24
+    if (offscreen) {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" })
+    }
     return () => target.classList.remove("lw-tour-target")
   }, [step])
 

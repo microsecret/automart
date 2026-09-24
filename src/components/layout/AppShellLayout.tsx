@@ -879,15 +879,6 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         <NavLink component={Link} href="/dashboard?tab=subscriptions" label="Подписки на поиск" leftSection={<IconBookmark size={15} stroke={1.7} />} active={pathname === "/dashboard" && dashboardTab === "subscriptions"} color="indigo" variant="subtle" className="market-side-account__link" />
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.payments.href} label={ACCOUNT_NAVIGATION.payments.label} leftSection={<IconCreditCard size={15} stroke={1.7} />} active={pathname === "/dashboard" && dashboardTab === "payments"} color="indigo" variant="subtle" className="market-side-account__link" />
 
-        {/* Партнёрский блок отделён подписью: до проверки компании этих
-            разделов в меню нет вовсе, поэтому список у обычного продавца
-            короче на треть. */}
-        {isPartner && (
-          <>
-            <Text className="market-side-account__group" component="p">Партнёрские разделы</Text>
-            <NavLink component={Link} href="/dashboard/store" prefetch={false} label="Магазин запчастей" leftSection={<IconBuildingStore size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
-          </>
-        )}
 
         {/* Приглашать друзей может любой пользователь — это не партнёрский
             раздел для проверенных компаний, поэтому и название другое. */}
@@ -901,6 +892,19 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
         <NavLink component={Link} href={ACCOUNT_NAVIGATION.profile.href} label={ACCOUNT_NAVIGATION.profile.label} leftSection={<IconSettings size={15} stroke={1.7} />} active={pathname === "/dashboard" && dashboardTab === "profile"} color="indigo" variant="subtle" className="market-side-account__link market-side-account__link--profile" />
         {isAdmin && <NavLink component={Link} href="/admin" prefetch={false} label="Админ-панель" leftSection={<IconSettings size={15} stroke={1.7} />} active={pathname.startsWith("/admin")} color="indigo" variant="subtle" className="market-side-account__link" />}
         {isModerator && <NavLink component={Link} href="/moderation" prefetch={false} label="Модерация" leftSection={<IconGavel size={15} stroke={1.7} />} active={pathname.startsWith("/moderation")} color="indigo" variant="subtle" className="market-side-account__link" />}
+        {/* Партнёрский блок — последним в кабинете.
+
+            Он появляется, только когда сервер подтвердит проверку компании,
+            то есть через долю секунды после загрузки. Стоя в середине
+            списка, он при появлении сталкивал вниз «Сообщения», «Профиль» и
+            всё под ними — владелец поймал этот скачок при обновлении
+            страницы. В конце кабинета он ничего внутри кабинета не двигает. */}
+        {isPartner && (
+          <>
+            <Text className="market-side-account__group" component="p">Партнёрские разделы</Text>
+            <NavLink component={Link} href="/dashboard/store" prefetch={false} label="Магазин запчастей" leftSection={<IconBuildingStore size={15} stroke={1.7} />} active={pathname.startsWith("/dashboard/store")} color="indigo" variant="subtle" className="market-side-account__link" />
+          </>
+        )}
       </Stack>
       {/* Кнопки «Подать объявление» здесь больше нет.
 

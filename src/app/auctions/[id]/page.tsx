@@ -416,7 +416,7 @@ function AuctionDetail() {
                       <ActionIcon aria-label="Следующее фото" variant="filled" color="dark" radius="xl" size="lg" pos="absolute" right={12} top="50%" style={{ zIndex: 3, transform: "translateY(-50%)", opacity: 0.82 }} onClick={() => setActiveImageIndex((activeImageIndex + 1) % galleryImages.length)}><IconChevronRight size={20} /></ActionIcon>
                     </>
                   )}
-                  <Badge pos="absolute" top={16} left={16} color="orange" variant="filled" size="lg">{publicLotNumber ? `${auctionSourceLabel(listing.source)} · ${publicLotNumber}` : auctionSourceLabel(listing.source)}</Badge>
+                  <Badge pos="absolute" top={16} left={16} color="dark" variant="filled" size="lg">{publicLotNumber ? `${auctionSourceLabel(listing.source)} · ${publicLotNumber}` : auctionSourceLabel(listing.source)}</Badge>
                   <Stack pos="absolute" top={16} right={16} gap={6} align="flex-end">
                     <Badge color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
                     <Badge color="gray" variant="filled" leftSection={<IconEye size={13} />}>{listing.viewCount.toLocaleString("ru")} просмотров</Badge>
@@ -615,7 +615,7 @@ function AuctionDetail() {
                         <img src={auctionCardImageUrl(similarImage)} alt={similarIdentity.title} loading="lazy" decoding="async" referrerPolicy="no-referrer" className={styles.similarImage} />
                       ) : <Center h="100%"><IconPhotoOff size={28} color="var(--mantine-color-gray-5)" /></Center>}
                       <Badge pos="absolute" top={10} left={10} color="dark" variant="filled">{similarListing.year}</Badge>
-                      <Badge pos="absolute" top={10} right={10} color="orange" variant="filled">{auctionSourceLabel(similarListing.source)}</Badge>
+                      <Badge pos="absolute" top={10} right={10} color="dark" variant="filled">{auctionSourceLabel(similarListing.source)}</Badge>
                     </Box>
                     <Stack gap={8} p="md" className={styles.similarContent}>
                       <Group gap="xs" wrap="nowrap"><BrandIcon brand={similarIdentity.make} size={30} /><Text fw={800} c="var(--market-ink)" lineClamp={2} className={styles.similarTitle}>{similarIdentity.title}</Text></Group>
