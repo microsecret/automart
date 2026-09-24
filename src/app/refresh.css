@@ -1610,3 +1610,61 @@
     animation: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------
+   19. Карточка машины на телефоне и планшете
+   --------------------------------------------------------------------- */
+
+/* Одна колонка: фото → название и цена → связь с продавцом → остальное.
+
+   Правая колонка десктопа (название, цена, «Показать телефон») на узком
+   экране уезжала целиком под левую — после характеристик, описания и
+   похожих объявлений. Замер iPhone 13: заголовок h1 стоял на 2800-м
+   пикселе, на пятом экране. Колонки раскрываются в общий поток
+   (display: contents), и порядок задаётся явно. */
+@media (max-width: 72em) {
+  .vehicle-detail-layout {
+    display: flex !important;
+    flex-direction: column;
+    gap: var(--mantine-spacing-md);
+  }
+
+  .vehicle-detail-layout__main,
+  .vehicle-detail-layout__main > .mantine-Stack-root,
+  .vehicle-detail-layout__aside,
+  .vehicle-detail-layout__sticky-aside,
+  .vehicle-detail-layout__sticky-aside > .mantine-Stack-root {
+    display: contents !important;
+  }
+
+  .vehicle-detail-layout__main > .mantine-Stack-root > *,
+  .vehicle-detail-layout__sticky-aside > .mantine-Stack-root > * {
+    order: 3;
+  }
+
+  .vehicle-detail-layout__main > .mantine-Stack-root > .vehicle-detail-gallery {
+    order: 0;
+  }
+
+  .vehicle-detail-layout__sticky-aside > .mantine-Stack-root > :nth-child(1) {
+    order: 1;
+  }
+
+  .vehicle-detail-layout__sticky-aside > .mantine-Stack-root > :nth-child(2) {
+    order: 2;
+  }
+}
+
+/* Таблицы характеристик и состояния — в две колонки на телефоне: в три
+   и четыре значения резались до «Растам…» и «Собств…». */
+@media (max-width: 36em) {
+  .vehicle-detail-specs__grid,
+  .vehicle-detail-statuses__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .vehicle-detail-specs__item,
+  .vehicle-detail-statuses__item {
+    padding: 11px 12px !important;
+  }
+}

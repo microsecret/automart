@@ -227,17 +227,17 @@ export default function CreatePartPage() {
                 </Group>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="var(--market-ink)">Состояние</Text>
+                    <Text className="form-field-label">Состояние</Text>
                     <SegmentedControl aria-label="Состояние запчасти" value={f.condition} onChange={(value) => set("condition", value)} data={PART_CONDITIONS.map(({ value, label }) => ({ value, label }))} size="sm" radius="md" fullWidth />
                   </Stack>
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="var(--market-ink)">Наличие</Text>
+                    <Text className="form-field-label">Наличие</Text>
                     <SegmentedControl aria-label="Наличие запчасти" value={f.availability} onChange={(value) => set("availability", value)} data={PART_AVAILABILITY_TYPES.map(({ value, label }) => ({ value, label }))} size="sm" radius="md" fullWidth />
                   </Stack>
                 </SimpleGrid>
                 <Group gap="sm" grow>
                   <Stack gap={6}>
-                    <Text size="xs" fw={700} c="var(--market-ink)">Формат сделки</Text>
+                    <Text className="form-field-label">Формат сделки</Text>
                     <SegmentedControl aria-label="Формат сделки" value={f.saleFormat} onChange={(value) => set("saleFormat", value)} data={[{ value: "FIXED", label: "Фикс. цена" }, { value: "AUCTION", label: "Аукцион" }]} size="sm" radius="md" fullWidth />
                   </Stack>
                   <Select label="Продавец" data={SELLER_TYPES.map(t => ({ value: t.value, label: t.label }))} value={f.sellerType} onChange={(v) => set("sellerType", v || "OWNER")} size="sm" />
