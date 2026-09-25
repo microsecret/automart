@@ -447,7 +447,7 @@ export default function HomePage(p: HomePageProps = {}) {
                 </Text>
                 <Text size="sm" c="rgba(255,255,255,0.84)" mt={12} maw={560}>
                   {auctionStats.auctions
-                    ? `${auctionStats.auctions.toLocaleString("ru-RU")} живых лотов из Японии, Кореи, Китая, США и Европы — плюс объявления в России. `
+                    ? `${auctionStats.auctions.toLocaleString("ru-RU")} живых лотов из Японии, Кореи и Китая — плюс объявления в России. `
                     : "Аукционы Японии, Кореи, Китая, США и Европы — плюс объявления в России. "}
                   Проверка истории, растаможка и доставка под контролем площадки.
                 </Text>

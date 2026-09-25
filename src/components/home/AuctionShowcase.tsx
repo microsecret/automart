@@ -97,7 +97,7 @@ export default function AuctionShowcase() {
           </Text>
           <Text size="sm" c="dimmed">
             {total > 0
-              ? `${total.toLocaleString("ru-RU")} живых лотов из Японии, Кореи, Китая, США и Европы`
+              ? `${total.toLocaleString("ru-RU")} живых лотов из Японии, Кореи и Китая`
               : "Лоты из Японии, Кореи, Китая, США и Европы"}
           </Text>
         </Box>
