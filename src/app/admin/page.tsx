@@ -224,6 +224,7 @@ type AuctionAdminStats = {
     active: number
     fresh: number
     stale: number
+    outOfCatalog?: number
     freshPercent: number | null
     pendingRemoval: number
     qualityHold: number
@@ -261,8 +262,12 @@ const SOURCE_RUN_STATUS_META: Record<AuctionOperationalStatus, { color: MantineC
   NOT_RUN: { color: "gray" },
 }
 
+/* Внимания требует площадка, лоты которой выпали из показа, а не та, что
+   вышла за норматив проверки: при нынешней пропускной способности сборщика
+   «вне норматива» почти все площадки всегда, и счётчик «ждут решения» горел
+   зря. */
 function sourceNeedsAttention(source: AuctionAdminStats["sourceHealth"][number]) {
-  return source.stale > 0
+  return (source.outOfCatalog ?? 0) > 0
     || source.pendingRemoval > 0
     || source.qualityHold > 0
     || ["DEGRADED", "FAILED", "STUCK", "NOT_RUN"].includes(source.operationalStatus)
@@ -674,11 +679,12 @@ export default function AdminDashboard() {
                           {AUCTION_OPERATIONAL_STATUS_LABELS[source.operationalStatus]}
                         </Badge>
                         {source.consecutiveIssues > 1 && <Badge size="xs" variant="light" color="red">Серия проблем: {source.consecutiveIssues}</Badge>}
-                        {source.stale > 0 && <Badge size="xs" variant="light" color="orange">Устарели: {source.stale}</Badge>}
+                        {(source.outOfCatalog ?? 0) > 0 && <Badge size="xs" variant="light" color="orange">Выпали из показа: {source.outOfCatalog}</Badge>}
+                        {source.stale > 0 && <Badge size="xs" variant="light" color="gray">Вне норматива: {source.stale}</Badge>}
                         {source.pendingRemoval > 0 && <Badge size="xs" variant="light" color="red">Проверка снятия: {source.pendingRemoval}</Badge>}
                         {source.qualityHold > 0 && <Badge size="xs" variant="light" color="grape">Карантин: {source.qualityHold}</Badge>}
                         {source.active === 0 && source.qualityHold === 0 && <Badge size="xs" variant="light" color="gray">Нет активных лотов</Badge>}
-                        {source.active > 0 && source.stale === 0 && source.pendingRemoval === 0 && <Badge size="xs" variant="light" color="teal">Актуален</Badge>}
+                        {source.active > 0 && !(source.outOfCatalog ?? 0) && source.pendingRemoval === 0 && <Badge size="xs" variant="light" color="teal">Актуален</Badge>}
                       </Group>
                     </Group>
                   </Paper>

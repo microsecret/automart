@@ -95,6 +95,7 @@ type AuctionStatsResponse = {
     active: number
     fresh: number
     stale: number
+    outOfCatalog?: number
     freshPercent: number | null
     pendingRemoval: number
     qualityHold: number
@@ -143,10 +144,15 @@ export default function AdminAuctionsPage() {
     active: totals.active + source.active,
     fresh: totals.fresh + source.fresh,
     stale: totals.stale + source.stale,
+    outOfCatalog: totals.outOfCatalog + (source.outOfCatalog || 0),
     pendingRemoval: totals.pendingRemoval + source.pendingRemoval,
     qualityHold: totals.qualityHold + source.qualityHold,
-  }), { active: 0, fresh: 0, stale: 0, pendingRemoval: 0, qualityHold: 0 })
-  const freshnessPercent = catalogTotals.active ? Math.round((catalogTotals.fresh / catalogTotals.active) * 100) : 0
+  }), { active: 0, fresh: 0, stale: 0, outOfCatalog: 0, pendingRemoval: 0, qualityHold: 0 })
+  /* Шкала — доля лотов, которые видит покупатель. Раньше она строилась по
+     нормативу проверки (Encar — каждые 4 часа), недостижимому при нынешней
+     пропускной способности сборщика, и была красной почти всегда. */
+  const visibleTotal = Math.max(0, catalogTotals.active - catalogTotals.outOfCatalog)
+  const freshnessPercent = catalogTotals.active ? Math.round((visibleTotal / catalogTotals.active) * 100) : 0
   const parserAlerts = sourceHealth.filter((source) => ["DEGRADED", "FAILED", "STUCK", "NOT_RUN"].includes(source.operationalStatus))
 
   const openInquiryEditor = (inquiry: AuctionInquiry) => {
@@ -239,20 +245,25 @@ export default function AdminAuctionsPage() {
           <Paper radius="md" p="md" withBorder>
             <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
               <Group gap="sm" wrap="nowrap">
-                <ThemeIcon variant="light" color={catalogTotals.stale || catalogTotals.pendingRemoval || parserAlerts.length ? "orange" : "teal"} size={40} radius="md"><IconDatabase size={19} /></ThemeIcon>
+                <ThemeIcon variant="light" color={catalogTotals.outOfCatalog || catalogTotals.pendingRemoval || parserAlerts.length ? "orange" : "teal"} size={40} radius="md"><IconDatabase size={19} /></ThemeIcon>
                 <Stack gap={1}>
                   <Text size="sm" fw={800}>Каталог всех аукционных источников</Text>
                   <Text size="xs" c="dimmed">
-                    {catalogTotals.fresh.toLocaleString("ru-RU")} из {catalogTotals.active.toLocaleString("ru-RU")} активных лотов обновлены в норматив своей площадки
+                    {visibleTotal.toLocaleString("ru-RU")} из {catalogTotals.active.toLocaleString("ru-RU")} активных лотов видны покупателю · {catalogTotals.fresh.toLocaleString("ru-RU")} проверены в норматив площадки
                   </Text>
                 </Stack>
               </Group>
               <Group gap="xs" wrap="wrap">
-                {catalogTotals.stale > 0 && <Badge variant="light" color="orange">Устарели: {catalogTotals.stale}</Badge>}
+                {/* Главная тревога — лоты, выпавшие из показа: их не видит
+                    покупатель. «Вне норматива» — справка серым: при нынешней
+                    пропускной способности сборщика она горит почти всегда и
+                    оранжевым цветом пугала зря (8 008 из 9 915). */}
+                {catalogTotals.outOfCatalog > 0 && <Badge variant="light" color="orange">Выпали из показа: {catalogTotals.outOfCatalog}</Badge>}
+                {catalogTotals.stale > 0 && <Badge variant="light" color="gray">Вне норматива проверки: {catalogTotals.stale}</Badge>}
                 {catalogTotals.pendingRemoval > 0 && <Badge variant="light" color="red">Проверка снятия: {catalogTotals.pendingRemoval}</Badge>}
                 {catalogTotals.qualityHold > 0 && <Badge variant="light" color="grape">Карантин: {catalogTotals.qualityHold}</Badge>}
                 {parserAlerts.length > 0 && <Badge variant="light" color="red">Сбои парсеров: {parserAlerts.length}</Badge>}
-                {!catalogTotals.stale && !catalogTotals.pendingRemoval && !parserAlerts.length && <Badge variant="light" color="teal">Каталог актуален</Badge>}
+                {!catalogTotals.outOfCatalog && !catalogTotals.pendingRemoval && !parserAlerts.length && <Badge variant="light" color="teal">Каталог актуален</Badge>}
                 <Button component={Link} href="/admin" size="xs" variant="subtle" color="indigo">Диагностика</Button>
               </Group>
             </Group>
