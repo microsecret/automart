@@ -227,7 +227,7 @@ function DeliveriesWorkspace() {
               <Text c="rgba(255,255,255,.8)" size="md" maw={610}>Сопровождаем автомобиль или запчасть от зарубежной площадки до выдачи в вашем городе. Партнёры и реквизиты появляются только после проверки.</Text>
               <Group gap="xs" mt="xs" className="hero-chips"><Badge variant="outline">Прозрачные этапы</Badge><Badge variant="outline">Раздельные счета</Badge><Badge variant="outline">Проверенные партнёры</Badge></Group>
             </Stack>
-            <Button onClick={() => setOpened(true)} color="white" c="indigo" leftSection={<IconPlus size={17} />} size="md">Заявка на доставку</Button>
+            <Button onClick={() => setOpened(true)} color="white" c="#1e3a8a" leftSection={<IconPlus size={17} />} size="md">Заявка на доставку</Button>
           </Group>
         </Paper>
 
