@@ -1,5 +1,6 @@
 "use client"
 
+import { plural } from "@/lib/plural"
 import { useState } from "react"
 import {
   Alert, Badge, Button, Group, Modal, MultiSelect, Paper, Stack, Text, Tooltip,
@@ -98,7 +99,7 @@ export default function FuelScraperRunner({ onFinished }: { onFinished?: () => v
       })
       notifications.show({
         title: "Города пересчитаны",
-        message: `Обновлено ${result.updated} заправок из ${result.scanned}.`,
+        message: `Обновлено ${result.updated} ${plural(result.updated, "заправка", "заправки", "заправок")} из ${result.scanned}.`,
         color: "teal",
         autoClose: 10_000,
       })

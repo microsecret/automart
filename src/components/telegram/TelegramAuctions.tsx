@@ -1,5 +1,6 @@
 "use client"
 
+import { plural } from "@/lib/plural"
 import { useDeferredValue, useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
@@ -129,8 +130,8 @@ export default function TelegramAuctions() {
           восемьдесят один лот против двадцати двух объявлений в ленте
           рядом. Человек листал две дюжины и уходил, решив, что это всё. */}
       {!searching && typeof data?.pagination?.total === "number" && data.pagination.total > lots.length && (
-        <Text size="xs" c="var(--tg-hint)" mb={6}>
-          {data.pagination.total.toLocaleString("ru-RU")} лотов из Кореи, Японии и Китая
+        <Text size="xs" c="var(--tg-hint)" mb={6} px={12}>
+          {data.pagination.total.toLocaleString("ru-RU")} {plural(data.pagination.total, "лот", "лота", "лотов")} из Кореи, Японии и Китая
         </Text>
       )}
       <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed" data-updating={isValidating || undefined}>

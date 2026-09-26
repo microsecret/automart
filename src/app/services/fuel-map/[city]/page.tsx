@@ -7,6 +7,7 @@ import { cityFromSlug, cityInPrepositional } from "@/lib/fuel-city-slug"
 import { CITY_COORDINATES } from "@/lib/cities"
 import { listNearbyFuelCities } from "@/lib/fuel-city-links"
 import { absoluteUrl } from "@/lib/site-url"
+import { plural } from "@/lib/plural"
 
 /**
  * Городская страница карты АЗС.
@@ -214,7 +215,7 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
         name: `Сколько заправок в ${where}?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `На карте ${summary.stationCount} заправок${summary.brands.length ? `, крупнейшие сети — ${summary.brands.slice(0, 3).map((item) => item.brand).join(", ")}` : ""}.`,
+          text: `На карте ${summary.stationCount} ${plural(summary.stationCount, "заправка", "заправки", "заправок")}${summary.brands.length ? `, крупнейшие сети — ${summary.brands.slice(0, 3).map((item) => item.brand).join(", ")}` : ""}.`,
         },
       },
       {
@@ -236,7 +237,7 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
 
       <h1 className="fuel-city__title">Цены на бензин в {where}</h1>
       <p className="fuel-city__lead">
-        {summary.stationCount} заправок на карте. Цены собраны из открытых источников
+        {summary.stationCount} {plural(summary.stationCount, "заправка", "заправки", "заправок")} на карте. Цены собраны из открытых источников
         и уточняются отметками водителей — тех, кто прямо сейчас стоит у колонки.
       </p>
 
