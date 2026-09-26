@@ -55,6 +55,10 @@ run_stage() {
   local label="$1"
   local endpoint="$2"
   local payload="$3"
+  # Необязательный четвёртый аргумент — свой таймаут этапа в секундах.
+  # curl берёт последнее значение --max-time, поэтому оно перекрывает общие 240.
+  local stage_timeout=()
+  if [[ -n "${4:-}" ]]; then stage_timeout=(--max-time "$4"); fi
   # Деплой ждёт замок — уступаем, не начиная следующий этап. Флажок
   # старше двух часов считается забытым (деплой упал, не сняв его).
   if [[ -f "$DEPLOY_PENDING_FLAG" ]] && [[ -n "$(find "$DEPLOY_PENDING_FLAG" -mmin -120 2>/dev/null)" ]]; then
@@ -62,7 +66,7 @@ run_stage() {
     return 0
   fi
   echo "[$(date -Is)] ${label}"
-  if ! "${CURL[@]}" -X POST "${BASE_URL}${endpoint}" --data "${payload}"; then
+  if ! "${CURL[@]}" "${stage_timeout[@]}" -X POST "${BASE_URL}${endpoint}" --data "${payload}"; then
     echo
     echo "[$(date -Is)] ERROR: ${label} failed; continuing with the remaining sources" >&2
     FAILED_STAGES=$((FAILED_STAGES + 1))
@@ -73,7 +77,14 @@ run_stage() {
 run_stage "Encar discovery" "/api/parser/encar/sync" '{"limit":5}'
 # The endpoint processes due source pages serially. Its database cutoff keeps
 # the source request rate bounded and independent of cron frequency.
-run_stage "Encar freshness refresh" "/api/parser/encar/refresh" '{"limit":40}'
+# 60 лотов за проход, а не 40. Замер 25.09.2026: при 40 ёмкость ≈2 880
+# перепроверок в сутки была чуть ниже нужных ≈2 970 на окно показа 36 ч, и
+# около 830 лотов Encar выпадали из каталога. Этап на 40 лотов шёл 93 с
+# (90%: 240 с), весь проход — около 13 минут из 20, так что +20 лотов
+# укладываются в интервал (этапу дан свой таймаут 420 с — при 40 лотах
+# 90-й перцентиль уже упирался в общие 240 с); затянувшийся проход лишь пропустит следующий
+# запуск (flock -n), а не наложится на него.
+run_stage "Encar freshness refresh" "/api/parser/encar/refresh" '{"limit":60}' 420
 run_stage "K Car discovery" "/api/parser/kcar/sync" '{"limit":8}'
 run_stage "K Car freshness refresh" "/api/parser/kcar/refresh" '{"limit":40}'
 run_stage_every 3 "China Iautos discovery" "/api/parser/public/IAUTOS/sync" '{"limit":5}'

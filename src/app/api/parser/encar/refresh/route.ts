@@ -10,7 +10,11 @@ export const dynamic = "force-dynamic"
 const PARSER_TOKEN = process.env.PARSER_TOKEN
 // The collector processes one due source card at a time. The database cutoff
 // prevents every 20-minute cron tick from reopening recently confirmed lots.
-const MAX_LISTINGS_PER_REFRESH = 40
+// 60 since 25.09.2026: at 40 the daily capacity (~2 880) fell just short of
+// the ~2 970 checks the 36-hour display window needs, and ~830 Encar lots
+// dropped out of the catalogue. The collector gives this stage its own
+// 420-second timeout (scripts/run-encar-collector.sh).
+const MAX_LISTINGS_PER_REFRESH = 60
 
 export async function POST(request: NextRequest) {
   let syncRunId: string | null = null
