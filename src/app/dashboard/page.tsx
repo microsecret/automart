@@ -507,11 +507,11 @@ function DashboardContent() {
                         <Group gap="md">
                           <Text fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display),sans-serif">{formatPriceShort(l.price)}</Text>
                           <Group gap={4}>
-                            <IconEye size={13} color="gray.4" />
+                            <IconEye size={13} style={{ color: "var(--market-muted)" }} />
                             <Text fz="xs" c="var(--market-muted)">{l.views} просмотров</Text>
                           </Group>
                           <Group gap={4}>
-                            <IconClock size={13} color="gray.4" />
+                            <IconClock size={13} style={{ color: "var(--market-muted)" }} />
                             <Text fz="xs" c="var(--market-muted)">{formatRelativeDate(l.createdAt)}</Text>
                           </Group>
                         </Group>

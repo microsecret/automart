@@ -91,7 +91,7 @@ export default function SmartmatchingPage() {
               <Paper radius="md" p="xl" withBorder>
                 <Center>
                   <Stack align="center" gap="sm">
-                    <IconCar size={40} color="gray.4" />
+                    <IconCar size={40} style={{ color: "var(--market-muted)" }} />
                     <Text c="var(--market-muted)">Ничего не найдено. Попробуйте увеличить бюджет или изменить критерии.</Text>
                   </Stack>
                 </Center>

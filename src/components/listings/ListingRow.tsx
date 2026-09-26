@@ -213,7 +213,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
             <Group justify="space-between" gap={4} mt={4}>
               {listing.location ? (
                 <Group gap={4} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
-                  <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                  <IconMapPin size={11} stroke={1.8} style={{ flexShrink: 0, color: "var(--market-muted)" }} />
                   <Text fz="xs" c="var(--market-muted)" style={TRUNCATE}>{listing.location}</Text>
                 </Group>
               ) : <span />}

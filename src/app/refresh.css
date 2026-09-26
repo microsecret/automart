@@ -347,13 +347,22 @@
 .home-quick__item:nth-child(4) { animation-delay: 120ms; }
 .home-quick__item:nth-child(5) { animation-delay: 160ms; }
 
-.home-quick__item[data-tone="green"]  { --tone: #0f9f5a; --tone-soft: #e3f7ec; }
-.home-quick__item[data-tone="orange"] { --tone: #e8590c; --tone-soft: #fff0e6; }
-.home-quick__item[data-tone="violet"] { --tone: #7048e8; --tone-soft: #efeaff; }
-.home-quick__item[data-tone="teal"]   { --tone: #0c8599; --tone-soft: #e3f6f9; }
+/* Одна краска на весь ряд.
+
+   Было пять цветов — синий, зелёный, оранжевый, фиолетовый, бирюзовый —
+   по одному на плитку. Цвет здесь ничего не кодирует (в отличие от
+   направлений в левой колонке, где он повторяется в витрине и
+   заглушках), а пять акцентов на уровне глаз читались той самой
+   «радугой», которую владелец назвал детским садом. Плитки различает
+   значок и подпись; цвет остаётся фирменным и одинаковым. */
+.home-quick__item {
+  --tone: var(--market-accent-button);
+  --tone-soft: var(--market-accent-soft);
+}
 
 [data-mantine-color-scheme="dark"] .home-quick__item {
-  --tone-soft: color-mix(in srgb, var(--tone) 18%, transparent);
+  --tone: #93b4ff;
+  --tone-soft: rgba(147, 180, 255, 0.12);
   box-shadow: 0 10px 24px -16px rgba(0, 0, 0, 0.6);
 }
 
@@ -366,7 +375,7 @@
   border-radius: var(--radius-md);
   background: var(--tone-soft);
   color: var(--tone);
-  transition: transform var(--ease-base) var(--ease-out);
+  transition: background-color var(--ease-base) var(--ease-out), color var(--ease-base) var(--ease-out);
 }
 
 .home-quick__text {
@@ -410,8 +419,15 @@
     transform: translateY(-3px);
   }
 
+  /* Отклик наведения — заливка значка фирменным цветом, а не поворот:
+     наклон на -4° выглядел игрушечно в деловом ряду. */
   .home-quick__item:hover .home-quick__icon {
-    transform: scale(1.06) rotate(-4deg);
+    background: var(--tone);
+    color: #fff;
+  }
+
+  [data-mantine-color-scheme="dark"] .home-quick__item:hover .home-quick__icon {
+    color: var(--lw-navy);
   }
 
   .home-quick__item:hover .home-quick__arrow {
@@ -1907,4 +1923,17 @@ summary {
   .listing-row__tool[data-variant="filled"] svg {
     animation: none;
   }
+}
+
+/* ---------------------------------------------------------------------
+   25. Заглавная буква в названии объявления
+   --------------------------------------------------------------------- */
+
+/* Названия пишут сами продавцы, и часть приходит со строчной: «мерседес
+   w124», «ваз 2115». В ряду карточек со «Гелентваген G63» они выглядели
+   недоделанными. Данные не трогаем — поднимаем только первую букву при
+   показе; «w124» и прочие модели внутри строки остаются как написаны. */
+.listing-card__title::first-letter,
+.listing-row__title::first-letter {
+  text-transform: uppercase;
 }

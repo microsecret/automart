@@ -204,9 +204,9 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
             {article.title}
           </Text>
           <Group gap="md">
-            <Group gap={4}><IconClock size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{formatDate(article.publishedAt)}</Text></Group>
-            <Group gap={4}><IconEye size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{article.views} просмотров</Text></Group>
-            <Group gap={4}><IconMessageCircle2 size={13} color="gray.4" /><Text size="xs" c="var(--market-muted)">{article.comments?.length || 0} комментариев</Text></Group>
+            <Group gap={4}><IconClock size={13} style={{ color: "var(--market-muted)" }} /><Text size="xs" c="var(--market-muted)">{formatDate(article.publishedAt)}</Text></Group>
+            <Group gap={4}><IconEye size={13} style={{ color: "var(--market-muted)" }} /><Text size="xs" c="var(--market-muted)">{article.views} просмотров</Text></Group>
+            <Group gap={4}><IconMessageCircle2 size={13} style={{ color: "var(--market-muted)" }} /><Text size="xs" c="var(--market-muted)">{article.comments?.length || 0} комментариев</Text></Group>
           </Group>
         </Stack>
 
@@ -303,7 +303,7 @@ export default function NewsDetailClient({ id, initialArticle }: { id: string; i
                       <ThemeIcon variant="light" color="indigo" size={32} radius="md"><IconNews size={18} /></ThemeIcon>
                       <Stack gap={2} style={{ flex: 1 }}>
                         <Text size="sm" fw={600} c="var(--market-ink)" style={{ overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{news.title}</Text>
-                        <Group gap={4}><IconClock size={11} color="gray.4" /><Text size="var(--text-caps)" c="var(--market-muted)">{formatRelativeDate(news.publishedAt)}</Text></Group>
+                        <Group gap={4}><IconClock size={11} style={{ color: "var(--market-muted)" }} /><Text size="var(--text-caps)" c="var(--market-muted)">{formatRelativeDate(news.publishedAt)}</Text></Group>
                       </Stack>
                     </Group>
                   </Card>

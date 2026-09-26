@@ -21,7 +21,7 @@ export interface ListingCardData {
   isFeatured?: boolean
   createdAt?: string | Date
   /* Дата публикации: проставляется, когда модератор одобрил объявление.
-     По ней и только по ней ставится метка «Проверено». */
+     В ленте метку по ней не ставим: см. комментарий в ListingCard. */
   publishedAt?: string | Date | null
   location?: string | null
   views?: number
@@ -95,15 +95,13 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const isFresh = Boolean(
     listing.createdAt && Date.now() - new Date(listing.createdAt).getTime() < 86_400_000,
   )
-  /* Объявление прошло проверку модератором.
+  /* Метки «Проверено» в ленте больше нет.
 
-     Метка честная: publishedAt проставляется в тот момент, когда человек
-     в админке одобрил объявление. Это не «мы за него ручаемся», а «его
-     посмотрел живой модератор» — ровно то, что метка и обещает.
-
-     В макете она стоит на каждой карточке, но рисовать её всем подряд
-     нельзя: метка, которая есть у всех, ничего не значит. */
-  const isChecked = Boolean(listing.publishedAt)
+     publishedAt проставляется, когда модератор одобрил объявление, но без
+     одобрения объявление в каталог не попадает вовсе. Замер 26.09.2026:
+     49 активных из 49 с отметкой — метка стояла на каждой карточке,
+     ничего не различала и выталкивала счётчик фото на вторую строку.
+     Метка, которая есть у всех, ничего не значит. */
 
   // Сдвиг для счётчика фото и подписи: каждая метка занимает свою ширину,
   // иначе при двух метках счётчик оказывался бы поверх них.
@@ -355,9 +353,8 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
 
               В одном ряду браузер разводит элементы сам, и ширина
               подписи больше ни на что не влияет. */}
-          {(listing.isFeatured || isFresh || isChecked || images.length > 1) && (
+          {(listing.isFeatured || isFresh || images.length > 1) && (
             <Box pos="absolute" top={8} left={8} style={{ zIndex: 2, display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", maxWidth: "calc(100% - 52px)" }}>
-              {isChecked && <span className="market-tag" data-tag="checked">Проверено</span>}
               {listing.isFeatured && <span className="market-tag" data-tag="featured">Премиум</span>}
               {isFresh && <span className="market-tag" data-tag="new">Сегодня</span>}
               {images.length > 1 && (
@@ -486,7 +483,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             <Group justify="space-between" gap={4} mt={6} pt={6} className="listing-card__footer">
               {listing.location ? (
                 <Group gap={4} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
-                  <IconMapPin size={11} stroke={1.8} color="gray.4" style={{ flexShrink: 0 }} />
+                  <IconMapPin size={11} stroke={1.8} style={{ flexShrink: 0, color: "var(--market-muted)" }} />
                   <Text fz="xs" c="var(--market-muted)" style={TRUNCATE_STYLE}>{listing.location}</Text>
                 </Group>
               ) : <span />}
