@@ -1466,17 +1466,16 @@
   font-weight: 700 !important;
 }
 
-/* Характеристики на ровной подложке: последняя клетка дотягивается до
-   конца ряда, и в сетке нет пустого голубого «хвоста». */
+/* Характеристики на ровной подложке: в сетке нет пустого голубого «хвоста». */
 .vehicle-detail-specs__grid,
 .vehicle-detail-statuses__grid {
   background: var(--market-surface) !important;
 }
 
-.vehicle-detail-specs__item:last-child,
-.vehicle-detail-statuses__item:last-child {
-  grid-column-end: -1;
-}
+/* Последнюю клетку не растягиваем: grid-column-end: -1 без начала не
+   тянет клетку, а переносит её в последнюю колонку — «Руль» уезжал вправо,
+   оставляя две пустые клетки посреди ряда. Пустые клетки на ровной белой
+   подложке незаметны. */
 
 .detail-secondary-actions .mantine-Button-root,
 .detail-secondary-actions .mantine-ActionIcon-root {
@@ -1843,4 +1842,16 @@
 
 .listing-row__tool:hover {
   border-color: color-mix(in srgb, var(--market-primary) 40%, var(--market-line)) !important;
+}
+
+/* Цена — самая крупная строка карточки машины: на площадке её читают
+   первой. Название было крупнее цены (30 против 25 пикселей). */
+.vehicle-detail-layout__aside h1 {
+  font-size: var(--text-xl) !important;
+}
+
+.vehicle-detail-price {
+  margin-top: 6px;
+  font-size: clamp(26px, 1vw + 20px, 32px) !important;
+  letter-spacing: -0.02em;
 }

@@ -907,6 +907,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   {data.year} {data.make} {data.model}
                 </Title>
                 <Text
+                  className="vehicle-detail-price"
                   size="1.6rem"
                   fw={800}
                   c="var(--market-ink)"
@@ -1106,8 +1107,11 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                     </Tooltip>
                   </Group>
                 </Stack>
-              <CreditCalculator price={data.price} />
               </Card>
+
+              {/* Калькулятор — отдельной карточкой, а не внутри карточки связи: у него
+                  своя рамка, и вложенный он читался рамкой в рамке. */}
+              <CreditCalculator price={data.price} />
 
               {/* Решение модератора принимается там же, где видно нарушение,
                   а не после поиска той же карточки в админ-панели. */}
