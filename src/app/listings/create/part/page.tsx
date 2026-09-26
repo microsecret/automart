@@ -249,7 +249,7 @@ export default function CreatePartPage() {
                     <NumberInput label="Шаг ставки, ₽" value={f.auctionMinStep ? Number(f.auctionMinStep) : undefined} onChange={(v) => set("auctionMinStep", String(v || ""))} size="sm" min={1} />
                   </Group>
                 )}
-                <Textarea label="Описание" placeholder="Состояние, комплектация, гарантия..." value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={3} />
+                <Textarea label="Описание" placeholder="Состояние, комплектация, гарантия…" value={f.description} onChange={(e) => set("description", e.target.value)} size="sm" minRows={3} />
                 <Autocomplete label="Город" required data={CITY_NAMES} limit={8} value={f.location} onChange={(value) => set("location", value)} size="sm" />
               </Stack>
             </Paper>
@@ -310,7 +310,7 @@ export default function CreatePartPage() {
             <Paper className={styles.submitPanel} radius="md" p="sm" withBorder>
               <Stack gap={6}>
                 <Button fullWidth type="submit" size="md" color="indigo" loading={loading} disabled={uploadingImages} leftSection={<IconCheck size={18} />}>
-                  {loading ? "Публикация..." : "Отправить на модерацию"}
+                  {loading ? "Публикация…" : "Отправить на модерацию"}
                 </Button>
                 <Text size="xs" c="dimmed" ta="center">Сначала объявление проверит модератор. Статус появится в личном кабинете.</Text>
               </Stack>

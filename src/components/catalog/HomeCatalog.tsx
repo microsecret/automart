@@ -1000,7 +1000,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
               <Box>
                 <Text size="xs" fw={600} c="var(--market-ink-soft)" mb={6}>Ключевые слова</Text>
-                <TextInput placeholder='Например: "один хозяин", RAID, ксенон...' value={keywords} onChange={(e) => setKeywords(e.target.value)} size="sm" w="100%" maw={400} leftSection={<IconSearch size={14}/>}/>
+                <TextInput placeholder='Например: "один хозяин", RAID, ксенон…' value={keywords} onChange={(e) => setKeywords(e.target.value)} size="sm" w="100%" maw={400} leftSection={<IconSearch size={14}/>}/>
                 <Text size="var(--text-caps)" c="var(--market-muted)" mt={4}>Для точного совпадения используйте кавычки</Text>
               </Box>
 

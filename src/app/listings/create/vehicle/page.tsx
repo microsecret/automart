@@ -869,7 +869,7 @@ function CreateVehicleWorkspace() {
               <Stack gap="sm">
                 <Text fw={700} fz="sm" c="var(--market-ink)">Описание</Text>
                 <Textarea id="vehicle-field-description" label="Подробное описание" description={`${f.description.trim().length}/40 символов минимум`} placeholder="Опишите состояние, историю обслуживания, комплектацию и известные недостатки" required={!isGarageMode} value={f.description} onChange={(e) => set("description", e.target.value)} error={fieldError("description")} size="sm" minRows={4} autosize />
-                <TextInput label="Ключевые слова" placeholder='"один хозяин", ксенон, панорама...' value={f.keywords} onChange={(e) => set("keywords", e.target.value)} size="sm" />
+                <TextInput label="Ключевые слова" placeholder='"один хозяин", ксенон, панорама…' value={f.keywords} onChange={(e) => set("keywords", e.target.value)} size="sm" />
                 <Text size="xs" c="var(--market-muted)">Ключевые слова помогают найти ваше объявление</Text>
               </Stack>
             </Paper>
@@ -912,7 +912,7 @@ function CreateVehicleWorkspace() {
             <Paper className={styles.submitPanel} radius="md" p="sm" withBorder>
               <Stack gap={6}>
                 <Button fullWidth type="submit" size="md" color={isGarageMode ? "teal" : "indigo"} loading={loading} disabled={(!isGarageMode && !selectedCategory) || uploadingImages} leftSection={<IconCheck size={18} />}>
-                  {loading ? (isGarageMode ? "Сохраняем..." : "Публикация...") : (isGarageEdit ? "Сохранить изменения" : isGarageMode ? "Сохранить в личный гараж" : "Отправить на модерацию")}
+                  {loading ? (isGarageMode ? "Сохраняем…" : "Публикация…") : (isGarageEdit ? "Сохранить изменения" : isGarageMode ? "Сохранить в личный гараж" : "Отправить на модерацию")}
                 </Button>
                 <Text size="xs" c="dimmed" ta="center">{isGarageMode ? "Карточка останется приватной. Опубликовать её можно отдельным действием из гаража." : "Сначала объявление проверит модератор. Статус появится в личном кабинете."}</Text>
               </Stack>

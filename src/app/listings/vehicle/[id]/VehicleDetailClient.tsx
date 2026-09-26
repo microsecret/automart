@@ -763,7 +763,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       <Text size="sm" fw={600} c="var(--market-ink)">Ваш отзыв</Text>
                       <Rating value={reviewRating} onChange={setReviewRating} size="md" />
                     </Group>
-                    <Textarea aria-label="Текст отзыва об автомобиле" placeholder="Поделитесь впечатлениями об авто..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} size="sm" minRows={2} autosize />
+                    <Textarea aria-label="Текст отзыва об автомобиле" placeholder="Поделитесь впечатлениями об авто…" value={reviewText} onChange={(e) => setReviewText(e.target.value)} size="sm" minRows={2} autosize />
                     <Group justify="flex-end">
                       <Button size="sm" color="indigo" onClick={submitReview} loading={reviewSubmitting} disabled={!reviewText.trim()}>
                         Отправить отзыв
