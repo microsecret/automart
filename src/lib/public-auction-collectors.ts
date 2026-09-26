@@ -1199,7 +1199,7 @@ async function fetchBeforwardListing(candidate: PublicAuctionCandidate): Promise
     source: "BEFORWARD", sourceId: candidate.sourceId, sourceUrl: candidate.sourceUrl,
     sourceTitle,
     make, model, year, manufacturedMonth,
-    sourcePrice: Math.round(sourcePrice), sourceCurrency: "USD", country: "JP", auctionDate: null,
+    sourcePrice: Math.round(sourcePrice), sourceCurrency: "USD", country: beForwardCountry(location), auctionDate: null,
     mileage, fuelType,
     transmission, bodyType,
     color: pairs.get("Ext. Color") || null, engineVolume, power,
@@ -1628,3 +1628,16 @@ function fetchPublicAuctionListingRaw(source: PublicAuctionSource, candidate: Pu
   if (source === "BOBAEDREAM") return fetchBobaedreamListing(candidate)
   return fetchCarvagoListing(candidate)
 }
+
+/* Страна лота BE FORWARD — по месту стоянки машины, а не по стране
+   площадки. BE FORWARD — японский экспортёр, но продаёт и машины со стоянок
+   в Корее: замер 26.09.2026 — 357 из 1 087 активных лотов стояли в Корее и
+   были помечены Японией. Флаг, фильтр по стране и калькулятор доставки
+   (тариф до порта и фрахт до Владивостока) брали японский маршрут.
+
+   Таиланд и Дубай пока остаются Японией: тарифов оттуда в калькуляторе
+   нет, а подставлять выдуманные нельзя. */
+export function beForwardCountry(location: string | null | undefined): "JP" | "KR" {
+  return /коре|korea/i.test(location || "") ? "KR" : "JP"
+}
+

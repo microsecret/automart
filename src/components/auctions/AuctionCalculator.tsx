@@ -270,6 +270,8 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
 
   const currencySymbol = sourceCurrency === "JPY" || sourceCurrency === "CNY" ? "¥" : sourceCurrency === "KRW" ? "₩" : sourceCurrency === "USD" ? "$" : sourceCurrency === "RUB" ? "₽" : "€"
   const countryLabel = country === "JP" ? "Япония" : country === "KR" ? "Корея" : country === "US" ? "США" : country === "CN" ? "Китай" : "Европа"
+  /* «Доставка по Японии», а не «по Япония»: после «по» нужен дательный падеж. */
+  const countryDative = country === "JP" ? "Японии" : country === "KR" ? "Корее" : country === "US" ? "США" : country === "CN" ? "Китаю" : "Европе"
   const hasManufacturedMonth = Boolean(manufacturedMonth?.match(/^\d{4}-(0[1-9]|1[0-2])$/))
   const volumeLabel = isElectric ? "электро" : volume ? `${volume} см³` : "объём не указан"
 
@@ -409,7 +411,7 @@ export default function AuctionCalculator({ make, model, year, manufacturedMonth
           <CostRow icon={<IconCoin size={14} />} label={`Цена аукциона (${sourceCurrency})`} value={`${sourcePrice.toLocaleString()} ${currencySymbol}`} muted />
           <CostRow icon={<IconCoin size={14} />} label="Цена в рублях (по курсу)" value={formatPrice(calc.auctionPrice)} muted />
           <CostRow icon={<IconCar size={14} />} label="Аукционный сбор" value={formatPrice(calc.auctionFee)} />
-          <CostRow icon={<IconTruckDelivery size={14} />} label={`Доставка по ${countryLabel} до порта`} value={formatPrice(calc.inlandDelivery)} />
+          <CostRow icon={<IconTruckDelivery size={14} />} label={`Доставка по ${countryDative} до порта`} value={formatPrice(calc.inlandDelivery)} />
           <CostRow icon={<IconShip size={14} />} label="Морская доставка до Владивостока" value={formatPrice(calc.seaDelivery)} />
           {calc.customs ? (
             <CostRow
