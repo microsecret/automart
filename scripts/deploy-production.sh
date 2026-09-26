@@ -115,10 +115,33 @@ if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-fuel-digest-cron.sh || echo "Warning: fuel digest cron was not installed"
   bash scripts/install-message-attachment-prune-cron.sh || echo "Warning: message attachment prune cron was not installed"
 fi
+# Замок сборщика отпускается на время проверки типов и сборки.
+#
+# Сборка идёт в отдельную папку (build-atomic.sh) и работающий сайт не
+# трогает, а держать замок все 5–6 минут деплоя значило отнимать у
+# сборщика аукционов его запуски: 26.09.2026 при частых выкладках он три
+# раза подряд (08:40, 09:00, 09:20) упёрся в занятый замок и за час не
+# прошёл ни разу. Флажок «ждёт деплой» снимается вместе с замком — иначе
+# сборщик стартовал бы и тут же пропускал все этапы.
+LOCK_RELEASED_FOR_BUILD=0
+if command -v flock >/dev/null 2>&1; then
+  rm -f "$DEPLOY_PENDING_FLAG"
+  flock -u 9
+  LOCK_RELEASED_FOR_BUILD=1
+fi
 npm run type-check
 # Сборка в отдельную папку с подменой: работающий сайт не теряет чанки,
 # пока идёт сборка (см. scripts/build-atomic.sh).
 bash scripts/build-atomic.sh
+# Перед перезапуском замок берётся снова: сборщик не должен звать маршруты
+# в момент, когда служба поднимается на новой сборке.
+if [ "$LOCK_RELEASED_FOR_BUILD" = "1" ]; then
+  touch "$DEPLOY_PENDING_FLAG"
+  if ! flock -w "$DEPLOY_LOCK_WAIT_SECONDS" 9; then
+    echo "Timed out re-acquiring the auction collector lock before restart" >&2
+    exit 1
+  fi
+fi
 bash scripts/install-production-network.sh
 # Главная отвечает и стили скачиваются — иначе откат на прежнюю сборку.
 bash scripts/verify-or-rollback.sh
