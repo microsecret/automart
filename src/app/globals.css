@@ -2128,7 +2128,7 @@ select {
 /* Шестерёнка проворачивается при наведении — настройки в одном движении
    объясняют, что за ними. */
 .market-side-account__link--profile .mantine-NavLink-section svg {
-  transition: transform 420ms cubic-bezier(0.22, 0.9, 0.24, 1);
+  transition: transform var(--ease-slow) var(--ease-out);
 }
 
 .market-side-account__link--profile:hover .mantine-NavLink-section svg {
@@ -6026,8 +6026,12 @@ select {
    (.auction-result-card ...) уехала в файл раздела, а эти — нет. Запятая
    без продолжения съедала следующий медиазапрос целиком, и браузер
    отбрасывал блок отмены анимации. */
-.listing-card:hover .listing-card__media img {
-  transform: scale(1.04);
+/* Только под курсором: на телефоне касание оставляло фото увеличенным
+   после возврата к списку (аудит improve-animations 26.09.2026). */
+@media (hover: hover) and (pointer: fine) {
+  .listing-card:hover .listing-card__media img {
+    transform: scale(1.04);
+  }
 }
 
 .listing-card__media img {
