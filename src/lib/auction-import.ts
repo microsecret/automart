@@ -257,6 +257,11 @@ export async function saveAuctionImportItems(items: AuctionImportItem[]) {
           } : {}),
           specsRu,
           location: displayLocation,
+          /* Страна тоже обновляется при перепроверке. Её здесь не было, и
+             она навсегда оставалась такой, как при первом импорте: у BE
+             FORWARD 357 машин со стоянок в Корее так и числились Японией
+             даже после исправления разбора (26.09.2026). */
+          country: item.country,
           sourcePrice: item.sourcePrice,
           sourceCurrency: item.sourceCurrency,
           priceRub: price.priceRub,
