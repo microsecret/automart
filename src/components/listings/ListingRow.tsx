@@ -14,6 +14,7 @@ import { useFavorites } from "@/hooks/useFavorites"
 import { useRouter } from "next/navigation"
 import { notifications } from "@mantine/notifications"
 import { useCompare } from "@/hooks/useCompare"
+import { useNow } from "@/hooks/useNow"
 
 export type ListingRowData = ListingCardData
 
@@ -28,6 +29,8 @@ const TRUNCATE: React.CSSProperties = {
 export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const [imageFailed, setImageFailed] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  // Относительная дата — только в браузере, см. useNow.
+  const now = useNow()
   const router = useRouter()
   const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
   const { inCompare, toggleCompare: handleCompare } = useCompare(listing.id)
@@ -218,7 +221,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 </Group>
               ) : <span />}
               <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
-                {listing.createdAt && <Text fz="xs" c="var(--market-muted)">{formatRelativeDate(listing.createdAt)}</Text>}
+                {listing.createdAt && now !== null && <Text fz="xs" c="var(--market-muted)">{formatRelativeDate(listing.createdAt)}</Text>}
                 {isVehicle && (
                   <ActionIcon
                     className="listing-row__tool"

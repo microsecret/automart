@@ -12,6 +12,7 @@ import VehicleFallback from "./VehicleFallback"
 import NextImage from "next/image"
 import { useCompare } from "@/hooks/useCompare"
 import { useFavorites } from "@/hooks/useFavorites"
+import { useNow } from "@/hooks/useNow"
 import { shouldBypassOptimizer } from "@/lib/uploaded-image"
 
 export interface ListingCardData {
@@ -99,8 +100,12 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   // Список живёт в браузере, поэтому его состояние читается после отрисовки
   // и обновляется, когда машину добавили из другой карточки.
 
+  /* Время считается только в браузере (useNow): страница приходит из
+     кэша, и «сейчас» сервера могло быть часы назад — метка «Сегодня» и
+     «N часов назад» расходились с браузером и роняли гидратацию. */
+  const now = useNow()
   const isFresh = Boolean(
-    listing.createdAt && Date.now() - new Date(listing.createdAt).getTime() < 86_400_000,
+    now !== null && listing.createdAt && now - new Date(listing.createdAt).getTime() < 86_400_000,
   )
   /* Метки «Проверено» в ленте больше нет.
 
@@ -517,7 +522,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 {/* У свежего объявления дату в подвале не повторяем: метка
                     «Сегодня» вверху уже это сказала, а строка отнимала место у
                     города — длинные названия обрезались на середине. */}
-                {listing.createdAt && !isFresh && (
+                {listing.createdAt && now !== null && !isFresh && (
                   <Text fz="xs" c="var(--market-muted)" style={{ whiteSpace: "nowrap" }}>
                     {formatRelativeDate(listing.createdAt)}
                   </Text>
