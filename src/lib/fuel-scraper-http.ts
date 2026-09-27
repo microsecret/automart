@@ -191,7 +191,23 @@ function performRequestOnce(
   timeoutMs: number,
 ): Promise<ScraperHttpResponse> {
   return new Promise((resolve, reject) => {
+    /* Единая точка завершения — как в authorized-source-http: обрыв посреди
+       тела Node сообщает объекту ответа, и без этих слушателей промис
+       не завершался никогда, а сборщик держал замок. */
+    let settled = false
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      clearTimeout(deadline)
+      request.destroy(error)
+      reject(error)
+    }
     const request = https.request(url, { method, agent, headers, family: 4 }, (response) => {
+      response.once("error", fail)
+      response.once("aborted", () => fail(new Error("Источник оборвал ответ")))
+      response.once("close", () => {
+        if (!response.complete) fail(new Error("Источник оборвал ответ"))
+      })
       /* Медиа обрывается на первом же байте.
 
          Скрейпер ходит только за JSON и HTML, но источник вправе ответить
@@ -200,7 +216,7 @@ function performRequestOnce(
          соединений незачем: соединение занято, польза нулевая. */
       const contentType = String(response.headers["content-type"] || "").toLowerCase()
       if (contentType && /^(image|video|audio|font)\//.test(contentType)) {
-        request.destroy(new Error(`Источник ответил медиафайлом (${contentType})`))
+        fail(new Error(`Источник ответил медиафайлом (${contentType})`))
         return
       }
 
@@ -209,12 +225,14 @@ function performRequestOnce(
       response.on("data", (chunk: Buffer) => {
         size += chunk.length
         if (size > MAX_BYTES) {
-          request.destroy(new Error("Ответ источника превышает допустимый размер"))
+          fail(new Error("Ответ источника превышает допустимый размер"))
           return
         }
         chunks.push(chunk)
       })
       response.once("end", () => {
+        if (settled) return
+        settled = true
         clearTimeout(deadline)
         const status = response.statusCode || 0
         const raw = Buffer.concat(chunks)
@@ -245,12 +263,9 @@ function performRequestOnce(
         })
       })
     })
-    const deadline = setTimeout(() => request.destroy(new Error("Источник не ответил вовремя")), timeoutMs)
-    request.setTimeout(timeoutMs, () => request.destroy(new Error("Источник не ответил вовремя")))
-    request.once("error", (error) => {
-      clearTimeout(deadline)
-      reject(error)
-    })
+    const deadline = setTimeout(() => fail(new Error("Источник не ответил вовремя")), timeoutMs)
+    request.setTimeout(timeoutMs, () => fail(new Error("Источник не ответил вовремя")))
+    request.once("error", fail)
     request.end()
   })
 }

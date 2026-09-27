@@ -164,24 +164,57 @@ function updateActiveRequests(agent: https.Agent, delta: 1 | -1) {
   proxyHealth.set(agent, { ...current, activeRequests: Math.max(0, current.activeRequests + delta) })
 }
 
-function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "POST", headers: Record<string, string>, body: string | undefined, timeoutMs: number, maxBytes: number) {
+/**
+ * Один запрос без редиректов.
+ *
+ * Промис обязан завершиться при любом исходе. Раньше он ждал только двух
+ * событий: `end` у ответа и `error` у запроса. Но если источник прислал
+ * заголовки и оборвался посреди тела, Node сообщает об этом объекту ответа, а
+ * не запросу, — и `request.destroy()` по аварийному таймеру ничего не
+ * отклонял. Обработчик сборщика висел вечно, запись прогона оставалась
+ * RUNNING до уборки через 15 минут. Замер 27.09.2026: так завис 52 прогона
+ * Encar из 407 за трое суток — его каталог весит до 2 МБ, и обрыв на середине
+ * у него случается чаще всех.
+ *
+ * Теперь завершение идёт через одну точку `fail`/`resolve` с флагом, и
+ * таймер сам отклоняет промис, не надеясь на события.
+ *
+ * `send` — только для тестов: по умолчанию https.request.
+ */
+export function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "POST", headers: Record<string, string>, body: string | undefined, timeoutMs: number, maxBytes: number, send: typeof https.request = https.request) {
   return new Promise<{ status: number; headers: IncomingHttpHeaders; body: string }>((resolve, reject) => {
+    let settled = false
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      clearTimeout(hardDeadline)
+      request.destroy(error)
+      reject(error)
+    }
     const requestHeaders = body === undefined ? headers : { ...headers, "Content-Length": String(Buffer.byteLength(body)) }
     // Several East-Asian catalogue hosts publish an unreachable AAAA record
     // from our production network. Explicit IPv4 keeps source checks bounded;
     // HTTP CONNECT proxies still resolve through their configured IPv4 host.
-    const request = https.request(url, { method, agent, headers: requestHeaders, family: 4 }, (response) => {
+    const request = send(url, { method, agent, headers: requestHeaders, family: 4 }, (response) => {
       const chunks: Buffer[] = []
       let size = 0
       response.on("data", (chunk: Buffer) => {
         size += chunk.length
         if (size > maxBytes) {
-          request.destroy(new Error("Ответ источника превышает допустимый размер"))
+          fail(new Error("Ответ источника превышает допустимый размер"))
           return
         }
         chunks.push(chunk)
       })
+      response.once("error", fail)
+      response.once("aborted", () => fail(new Error("Источник оборвал ответ")))
+      // `close` без `end` — соединение закрылось посреди тела.
+      response.once("close", () => {
+        if (!response.complete) fail(new Error("Источник оборвал ответ"))
+      })
       response.once("end", () => {
+        if (settled) return
+        settled = true
         clearTimeout(hardDeadline)
         resolve({
           status: response.statusCode || 0,
@@ -190,12 +223,9 @@ function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "POST", h
         })
       })
     })
-    const hardDeadline = setTimeout(() => request.destroy(new Error("Источник превысил общий лимит времени")), timeoutMs)
-    request.setTimeout(timeoutMs, () => request.destroy(new Error("Источник не ответил вовремя")))
-    request.once("error", (error) => {
-      clearTimeout(hardDeadline)
-      reject(error)
-    })
+    const hardDeadline = setTimeout(() => fail(new Error("Источник превысил общий лимит времени")), timeoutMs)
+    request.setTimeout(timeoutMs, () => fail(new Error("Источник не ответил вовремя")))
+    request.once("error", fail)
     request.end(body)
   })
 }
