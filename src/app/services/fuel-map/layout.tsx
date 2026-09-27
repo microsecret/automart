@@ -49,8 +49,11 @@ export default async function Layout({ children }: { children: React.ReactNode }
           <ul>
             {cities.map((item) => (
               <li key={item.slug}>
+                {/* Числа рядом больше нет: это были строки импорта из двух
+                    источников цен, а не заправки. «Москва 763» спорило с
+                    «407 с ценами» над картой. Порядок списка и так
+                    показывает, где заправок больше. */}
                 <Link href={`/services/fuel-map/${item.slug}`}>{item.city}</Link>
-                <span>{item.stationCount}</span>
               </li>
             ))}
           </ul>
