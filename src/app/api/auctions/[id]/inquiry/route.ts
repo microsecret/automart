@@ -6,6 +6,7 @@ import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { normalizePhone } from "@/lib/telegram"
 import { routeAuctionInquiryToPartners } from "@/lib/auction-partner-routing"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
+import { notifyStaffAboutAuctionInquiry } from "@/lib/auction-inquiry-notify"
 
 export const dynamic = "force-dynamic"
 
@@ -82,6 +83,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       console.error("Auction inquiry partner routing error:", routingError)
       return { offered: 0 }
     })
+    // Не ждём: ответ клиенту не должен зависеть от Telegram.
+    void notifyStaffAboutAuctionInquiry(inquiry.id, routing.offered)
     return NextResponse.json({ success: true, inquiry, routing }, { status: 201 })
   } catch (error) {
     console.error("Inquiry error:", error)
