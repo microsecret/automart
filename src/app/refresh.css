@@ -1986,6 +1986,7 @@ summary {
   font-size: var(--text-sm);
   font-weight: 700;
   text-decoration: none;
+  white-space: nowrap;
   transition: background-color var(--ease-fast) var(--ease-out), transform var(--ease-fast) var(--ease-out);
 }
 
@@ -1997,6 +1998,7 @@ summary {
   color: #fff;
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   /* Кивок при каждом изменении числа: ключ в разметке перезапускает его. */
   animation: lw-mark-pop 320ms var(--ease-out);
 }

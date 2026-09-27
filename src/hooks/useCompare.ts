@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { notifications } from "@mantine/notifications"
-import { COMPARE_LIMIT, readCompareList, toggleCompare } from "@/lib/compare-list"
+import { COMPARE_LIMIT, compareDockPresence, readCompareList, toggleCompare } from "@/lib/compare-list"
 
 /**
  * Участие объявления в сравнении.
@@ -41,10 +41,13 @@ export function useCompare(listingId: string) {
       return
     }
 
+    // Плашка внизу уже показала новое число — второе сообщение не нужно.
+    if (compareDockPresence.mounted > 0) return
+
     notifications.show({
       title: result.added ? "Добавлено к сравнению" : "Убрано из сравнения",
       message: result.added
-        ? `В сравнении ${result.ids.length} из ${COMPARE_LIMIT}. Открыть список — плашка «Сравнение» внизу экрана.`
+        ? `В сравнении ${result.ids.length} из ${COMPARE_LIMIT}. Список — в разделе «Сравнение».`
         : "Машина больше не участвует в сравнении.",
       color: result.added ? "indigo" : "gray",
     })

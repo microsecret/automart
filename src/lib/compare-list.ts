@@ -17,6 +17,16 @@ const STORAGE_KEY = "compare-ids"
  */
 export const COMPARE_LIMIT = 4
 
+/**
+ * Сколько плашек «Сравнение» сейчас на экране.
+ *
+ * Плашка сама показывает счётчик и кивает при изменении — уведомление
+ * «Добавлено к сравнению» поверх неё было бы вторым сообщением о том же и
+ * на телефоне закрывало полэкрана. Там, где плашки нет (упрощённый каркас
+ * для входа из Telegram), уведомление остаётся.
+ */
+export const compareDockPresence = { mounted: 0 }
+
 /** Что сейчас в списке. */
 export function readCompareList(): string[] {
   if (typeof window === "undefined") return []

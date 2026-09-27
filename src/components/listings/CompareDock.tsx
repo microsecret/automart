@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { IconScale, IconX } from "@tabler/icons-react"
-import { COMPARE_LIMIT, clearCompareList, readCompareList } from "@/lib/compare-list"
+import { COMPARE_LIMIT, clearCompareList, compareDockPresence, readCompareList } from "@/lib/compare-list"
 
 /**
  * Плашка «Сравнение N из 4» внизу экрана.
@@ -23,6 +23,11 @@ export default function CompareDock() {
   // Уход проигрывается до снятия с экрана: иначе плашка просто пропадала бы.
   const [leaving, setLeaving] = useState(false)
   const [shown, setShown] = useState(0)
+
+  useEffect(() => {
+    compareDockPresence.mounted += 1
+    return () => { compareDockPresence.mounted -= 1 }
+  }, [])
 
   useEffect(() => {
     const sync = () => setCount(readCompareList().length)
