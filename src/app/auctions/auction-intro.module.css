@@ -58,16 +58,15 @@
   box-shadow: var(--shadow-sm);
 }
 
-.facts li[data-tone="price"] {
-  --tone: var(--mantine-color-teal-7);
+/* Один фирменный тон на все три карточки. Было три — бирюзовый, синий,
+   оранжевый: цвет ничего не различал, а ряд читался пёстрым. Карточки
+   различают значок и заголовок. */
+.facts li[data-tone] {
+  --tone: var(--market-accent-button);
 }
 
-.facts li[data-tone="lots"] {
-  --tone: var(--mantine-color-blue-7);
-}
-
-.facts li[data-tone="delivery"] {
-  --tone: var(--mantine-color-orange-6);
+:global([data-mantine-color-scheme="dark"]) .facts li[data-tone] {
+  --tone: #93b4ff;
 }
 
 .icon {

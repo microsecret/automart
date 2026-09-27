@@ -58,7 +58,9 @@
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  /* safe: если слово шире кнопки, оно прижимается к началу и обрезается
+     справа, а не срезается с обеих сторон, как при обычном center. */
+  justify-content: safe center;
   min-height: 40px;
   white-space: normal;
   text-align: center;

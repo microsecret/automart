@@ -540,7 +540,7 @@ function AuctionsPageContent() {
                 onChange={(value) => { setMake(value || ""); setPage(1) }}
                 size="sm"
               />
-            <Box className="auction-price-range"><Text size="var(--text-caps)" c="dimmed" fw={800} tt="uppercase">Ориентир цены лота, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => { setPriceFrom(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => { setPriceTo(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
+            <Box className="auction-price-range"><Text size="var(--text-caps)" c="dimmed" fw={800} tt="uppercase">Цена лота, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => { setPriceFrom(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => { setPriceTo(e.target.value); setPage(1) }} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
               <Select
                 label="Кузов"
                 placeholder="Любой"
@@ -592,7 +592,10 @@ function AuctionsPageContent() {
                     лота там и без того 2,2 экрана прокрутки. */}
               </Group>
 
-              <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, lg: 5 }} spacing="sm" aria-label="Быстрый выбор марки">
+              {/* Четыре колонки, а не пять: марок восемь, и пять давали ряды 5+3
+                  с кнопками по 155 пикселей — «Daihatsu» и «SsangYong»
+                  обрезались с обеих сторон. Четыре — ровно два ряда. */}
+              <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm" aria-label="Быстрый выбор марки">
                 {analytics.popularMakes.map((item) => (
                   <Button
                     key={item.make}
@@ -802,13 +805,14 @@ function AuctionsPageContent() {
                       {l.fuelType && <Badge className={styles.resultSpec} size="xs" variant="light" color={l.fuelType === "ELECTRIC" ? "green" : l.fuelType === "HYBRID" ? "teal" : "gray"} leftSection={<IconGasStation size={12} />}>{FUEL_LABELS[l.fuelType] || l.fuelType}</Badge>}
                       {l.bodyType && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconCar size={12} />}>{BODY_LABELS[l.bodyType] || l.bodyType}</Badge>}
                       {l.engineVolume && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEngine size={12} />}>Объём: {Math.round(l.engineVolume).toLocaleString("ru-RU")} см³</Badge>}
-                      <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconBolt size={12} />}>Мощность: {l.power ? `${l.power} л.с.` : "нет данных"}</Badge>
+                      {/* «Мощность: нет данных» не показываем: плашка без факта — шум. */}
+                      {l.power ? <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconBolt size={12} />}>Мощность: {l.power} л.с.</Badge> : null}
                       {rentalTransfer && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray">Переоформление аренды</Badge>}
                       {imageCount > 1 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconPhoto size={12} />}>Фото: {imageCount}</Badge>}
                       {l.viewCount > 0 && <Badge className={styles.resultSpec} size="xs" variant="light" color="gray" leftSection={<IconEye size={12} />}>Просмотры: {l.viewCount.toLocaleString("ru")}</Badge>}
                     </Group>
                     <Box className="auction-result-card__price-row">
-                      <Group justify="space-between" align="center" gap="xs" wrap="nowrap" className={styles.priceLine}>
+                      <Group justify="space-between" align="center" gap="xs" wrap="wrap" className={styles.priceLine}>
                         <Text className="auction-result-card__price" ff="var(--font-display),sans-serif">{formatPriceShort(displayedPrice)}</Text>
                         {priceSignal && <Badge className={styles.priceSignal} data-tone={priceSignal.tone} size="xs" variant="light" color={priceSignal.color}>{priceSignal.label}</Badge>}
                       </Group>
