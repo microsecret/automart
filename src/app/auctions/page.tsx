@@ -49,7 +49,9 @@ function readNonNegativeIntegerParam(value: string | null) {
 }
 
 type AuctionResponse = {
-  listings: AuctionListing[]
+  /* imageCount приходит в ответе view=card: вместо полного списка снимков
+     сервер отдаёт первый снимок и их число. */
+  listings: Array<AuctionListing & { imageCount?: number }>
   pagination: { total: number; pages: number; limit: number }
   importPolicy?: { maxAgeYears: number; minimumYear: number; note: string }
   analytics?: {
@@ -360,7 +362,7 @@ function AuctionsPageContent() {
     else window.history.replaceState(null, "", target)
   }, [urlRead, page, country, source, make, priceFrom, priceTo, bodyType, yearFrom, searchParams])
 
-  const { data, error, isLoading, mutate } = useSWR<AuctionResponse>(hasInvalidPriceRange ? null : "/api/auctions?" + buildQ(), fetcher)
+  const { data, error, isLoading, mutate } = useSWR<AuctionResponse>(hasInvalidPriceRange ? null : "/api/auctions?view=card&" + buildQ(), fetcher)
   const listings = data?.listings || []
   const resetFilters = () => {
     setCountry(""); setSource(""); setMake(""); setPriceFrom(""); setPriceTo(""); setBodyType(""); setYearFrom(""); setPage(1)
@@ -769,7 +771,7 @@ function AuctionsPageContent() {
                  потом чтобы вывести число. На двадцати четырёх
                  карточках это полсотни лишних разборов на каждую
                  перерисовку страницы. */
-              const imageCount = parseAuctionImages(l.images)?.length || 0
+              const imageCount = l.imageCount ?? (parseAuctionImages(l.images)?.length || 0)
               const rentalTransfer = isRentalTransferListing(l.conditionInfo)
               const displayedPrice = rentalTransfer ? l.priceRub : l.finalPrice
               const priceSignal = rentalTransfer ? null : auctionPriceSignal(displayedPrice, analytics?.medianFinalPrice)

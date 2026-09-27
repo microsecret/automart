@@ -5,6 +5,7 @@ import { auctionSourceCountry, isAuctionSource } from "@/lib/auction-sources"
 import { AUCTION_BODY_TYPES } from "@/lib/auction-normalization"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 import { containsAnyCase } from "@/lib/search-terms"
+import { parseAuctionImages } from "@/lib/media-url"
 
 export const dynamic = "force-dynamic"
 
@@ -101,6 +102,14 @@ export async function GET(request: NextRequest) {
      * урезанный, а не наоборот. Иначе страница, о которой забыли,
      * молча лишилась бы половины полей. */
     const brief = sp.get("view") === "brief"
+    /* Ответ для карточек страницы аукционов.
+
+       Замер 27.09.2026: 116 КБ на 24 лота, из них 93 КБ — images. Галереи
+       в списке нет: карточке нужен первый снимок (если imageUrl не годится)
+       и число снимков для подписи. Их и отдаём — первый снимок в том же
+       формате строки и imageCount, посчитанный тем же разбором, что делала
+       страница. */
+    const card = sp.get("view") === "card"
 
     const publicPolicy = buildPublicAuctionPolicy()
     const where: Prisma.AuctionListingWhereInput = { ...publicPolicy.where }
@@ -298,7 +307,13 @@ export async function GET(request: NextRequest) {
     if (!cachedAnalytics && analytics) writeAnalyticsCache(analyticsKey, analytics)
 
     return NextResponse.json({
-      listings,
+      listings: card
+        ? listings.map((listing) => {
+            if (!("images" in listing)) return listing
+            const images = parseAuctionImages(listing.images) || []
+            return { ...listing, images: JSON.stringify(images.slice(0, 1)), imageCount: images.length }
+          })
+        : listings,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
       importPolicy: {
         maxAgeYears: maxImportAgeYears,
