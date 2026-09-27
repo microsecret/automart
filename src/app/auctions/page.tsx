@@ -574,7 +574,7 @@ function AuctionsPageContent() {
                 clearable
                 data={[
                   { value: "SEDAN", label: "Седан" },
-                  { value: "SUV", label: "Внедорожник" },
+                  { value: "SUV", label: "Кроссовер" },
                   { value: "HATCHBACK", label: "Хэтчбек" },
                   { value: "COUPE", label: "Купе" },
                   { value: "PICKUP", label: "Пикап" },
