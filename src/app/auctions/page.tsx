@@ -480,6 +480,33 @@ function AuctionsPageContent() {
               <Badge color="teal" variant="light">Импорт-фильтр: не старше {importPolicy?.maxAgeYears ?? 5} лет</Badge>
               <Text size="xs" c="dimmed" className="auction-import-note">Год выпуска сверяется с карточкой; итоговую таможенную категорию подтвердим по документам.</Text>
             </Group>
+            {/* Быстрые подборки — как на главной.
+
+                Чтобы найти «кроссовер из Кореи до полутора миллионов», нужно
+                было открыть три выпадающих списка. Подборка — одно нажатие,
+                повторное снимает. Значения — те же, что ставят фильтры ниже,
+                поэтому подборка и фильтр всегда показывают одно и то же. */}
+            <div className="catalog-presets" role="group" aria-label="Быстрые подборки">
+              <span className="catalog-presets__label">Подборки</span>
+              {[
+                { key: "kr", label: "Корея", on: country === "KR", toggle: () => { setCountry(country === "KR" ? "" : "KR"); setSource("") } },
+                { key: "jp", label: "Япония", on: country === "JP", toggle: () => { setCountry(country === "JP" ? "" : "JP"); setSource("") } },
+                { key: "p15", label: "До 1,5 млн ₽", on: priceTo === "1500000", toggle: () => setPriceTo(priceTo === "1500000" ? "" : "1500000") },
+                { key: "suv", label: "Кроссоверы", on: bodyType === "SUV", toggle: () => setBodyType(bodyType === "SUV" ? "" : "SUV") },
+                { key: "y2023", label: "2023 и новее", on: yearFrom === "2023", toggle: () => setYearFrom(yearFrom === "2023" ? "" : "2023") },
+              ].map((preset) => (
+                <button
+                  key={preset.key}
+                  type="button"
+                  className="catalog-presets__item"
+                  aria-pressed={preset.on}
+                  onClick={() => { preset.toggle(); setPage(1) }}
+                >
+                  {preset.on && <IconX size={12} stroke={2.4} aria-hidden="true" />}
+                  {preset.label}
+                </button>
+              ))}
+            </div>
             {/* Кнопка только на телефоне: на широком экране фильтры и так
                 открыты, и вторая кнопка там была бы лишней. */}
             <Button
