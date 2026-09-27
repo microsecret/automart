@@ -9,7 +9,7 @@ import { IconBrandTelegram, IconCar, IconCheck, IconPlus, IconPhoto } from "@tab
 import { notifications } from "@mantine/notifications"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { useTelegramClosingGuard } from "@/lib/use-telegram-closing-guard"
-import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, supportsTransmission } from "@/lib/constants"
+import { BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, MOTORCYCLE_TYPES, TRUCK_BODY_TYPES, TRUCK_AXLE_FORMULAS, SPECIAL_TYPES, WATER_TYPES, HULL_MATERIALS, AIR_TYPES, ENGINE_TYPE_AIR, getSelectableFuelOptions, getSelectableTransmissionOptions, getUsageMeta, getVehicleIdentityMeta, isImplausiblyNew, supportsTransmission } from "@/lib/constants"
 import { describeRequiredSpecs } from "@/lib/listing-required-specs"
 import { getMissingVehiclePublicationRequirements, getVehiclePublicationRequirements, type VehiclePublicationField } from "@/lib/vehicle-publication-readiness"
 import type { MarketplaceVehicleType } from "@/lib/vehicleCategories"
@@ -815,6 +815,14 @@ function CreateVehicleWorkspace() {
                     ))}
                   </Group>
                   {fieldError("condition") && <Text size="xs" c="var(--market-danger-text)">{fieldError("condition")}</Text>}
+                  {/* Подсказка, а не запрет: продавцу виднее, но «Новый» с
+                      пробегом почти всегда нажат по инерции — это первая
+                      кнопка. В объявлении такая метка не показывается. */}
+                  {isImplausiblyNew(f.condition, f.mileage === "" ? null : Number(f.mileage)) && (
+                    <Text size="xs" c="var(--market-warning-text)">
+                      «Новый» — для машин без пробега. С пробегом {Number(f.mileage).toLocaleString("ru-RU")} км подойдёт «Как новый» или «Отличное».
+                    </Text>
+                  )}
                 </Stack>
                 {requiredSpecFields.has("steeringWheel") && <Select id="vehicle-field-steeringWheel" label="Руль" placeholder="Выберите" required data={STEERING_WHEELS.map(t => ({ value: t.value, label: t.label }))} value={f.steeringWheel || null} onChange={(v) => set("steeringWheel", v || "")} error={fieldError("steeringWheel")} size="sm" />}
               </Stack>

@@ -7,7 +7,7 @@ import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-metadata"
 import { authOptions } from "@/lib/auth"
 import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import VehicleDetailClient from "./VehicleDetailClient"
-import { findLabel, BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
+import { findLabel, BODY_TYPES, DRIVE_TYPES, CONDITIONS, STEERING_WHEELS, DOCUMENT_STATUSES, DAMAGE_INFO, SELLER_TYPES, AVAILABILITY_TYPES, getFuelOptions, getTransmissionOptions, getUsageMeta, isImplausiblyNew, supportsTransmission } from "@/lib/constants"
 import { cityInPrepositional } from "@/lib/geo"
 import { parseImages } from "@/lib/format"
 import { rankSimilarVehicles } from "@/lib/listing-similarity"
@@ -215,7 +215,10 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     driveType: vehicle.driveType,
     driveTypeLabel: vehicle.driveType ? findLabel(DRIVE_TYPES, vehicle.driveType) : null,
     condition: vehicle.condition,
-    conditionLabel: findLabel(CONDITIONS, vehicle.condition),
+    /* «Новый» с пробегом — ошибка продавца (первая кнопка в ряду), а не
+       факт: 2007 год и 300 000 км с меткой «Новый» на фото. Такую метку
+       не показываем и поисковику машину как новую не отдаём. */
+    conditionLabel: isImplausiblyNew(vehicle.condition, vehicle.mileage) ? null : findLabel(CONDITIONS, vehicle.condition),
     steeringWheel: vehicle.steeringWheel,
     steeringWheelLabel: vehicle.steeringWheel ? findLabel(STEERING_WHEELS, vehicle.steeringWheel) : null,
     ownersCount: vehicle.ownersCount,
@@ -296,7 +299,7 @@ export default async function VehicleDetailPage({ params }: PageProps) {
       "@type": "Offer",
       "price": vehicle.price,
       "priceCurrency": "RUB",
-      "itemCondition": `https://schema.org/${vehicle.condition === "NEW" ? "NewCondition" : "UsedCondition"}`,
+      "itemCondition": `https://schema.org/${vehicle.condition === "NEW" && !isImplausiblyNew(vehicle.condition, vehicle.mileage) ? "NewCondition" : "UsedCondition"}`,
     },
   }
 

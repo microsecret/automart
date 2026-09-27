@@ -309,6 +309,17 @@ export const CONDITIONS = [
   { value: "POOR", label: "Требует ремонта" },
 ] as const
 
+/** Пробег, после которого «Новый» — уже не новый: перегон и тест-драйвы. */
+export const NEW_CONDITION_MAX_MILEAGE = 1000
+
+/**
+ * «Новый» при заметном пробеге — ошибка выбора, а не состояние машины.
+ * «Новый» стоит первой кнопкой в ряду, и его нажимают по инерции.
+ */
+export function isImplausiblyNew(condition: string | null | undefined, mileage: number | null | undefined): boolean {
+  return condition === "NEW" && typeof mileage === "number" && mileage > NEW_CONDITION_MAX_MILEAGE
+}
+
 /**
  * Для товара важнее происхождение, чем субъективная оценка продавца.
  * Детальные исторические значения нормализуются в USED на уровне данных.

@@ -316,7 +316,7 @@ export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: num
     maxBytes: 2_000_000,
   })
   if (!response.ok) throw new Error(`Encar вернул HTTP ${response.status}`)
-  if (new URL(response.url).hostname !== ENCAR_CATALOG_HOST) throw new Error("Encar перенаправил каталог на неподдерживаемый адрес")
+  if (new URL(response.url).hostname !== ENCAR_CATALOG_HOST) throw new Error(`Encar перенаправил каталог на неподдерживаемый адрес: ${new URL(response.url).hostname}`)
 
   const html = await response.text()
   const urls = new Set<string>()
@@ -375,7 +375,7 @@ export async function scrapeEncarPublicListing(rawUrl: unknown): Promise<Auction
     throw new EncarListingUnavailableError(`Лот Encar больше недоступен (HTTP ${response.status})`)
   }
   if (!response.ok) throw new Error(`Encar вернул HTTP ${response.status}`)
-  if (new URL(response.url).hostname !== ENCAR_HOST) throw new Error("Encar перенаправил запрос на неподдерживаемый адрес")
+  if (new URL(response.url).hostname !== ENCAR_HOST) throw new Error(`Encar перенаправил запрос на неподдерживаемый адрес: ${new URL(response.url).hostname}`)
 
   const html = await response.text()
   const state = extractPreloadedState(html)

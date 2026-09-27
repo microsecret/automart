@@ -237,7 +237,7 @@ async function requestWithRedirects(rawUrl: URL, agent: https.Agent, method: "GE
   let currentMethod = method
   let currentBody = body
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
-    if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) throw new Error("Источник перенаправил запрос на неподдерживаемый адрес")
+    if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) throw new Error(`Источник перенаправил запрос на неподдерживаемый адрес: ${url.protocol}//${url.hostname}`)
     const remainingMs = deadlineAt - Date.now()
     if (remainingMs <= 0) throw new Error("Источник превысил общий лимит времени")
     const result = await requestTextOnce(url, agent, currentMethod, headers, currentBody, remainingMs, maxBytes)

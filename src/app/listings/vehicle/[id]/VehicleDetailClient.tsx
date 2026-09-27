@@ -116,7 +116,7 @@ interface VehicleData {
   driveType: string | null
   driveTypeLabel: string | null
   condition: string
-  conditionLabel: string
+  conditionLabel: string | null
   steeringWheel: string | null
   steeringWheelLabel: string | null
   ownersCount: number | null
@@ -553,7 +553,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                         style={{ objectFit: "cover" }}
                       />
                     )}
-                    <Badge
+                    {data.conditionLabel && <Badge
                       pos="absolute"
                       top={16}
                       left={16}
@@ -563,7 +563,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                       style={{ backdropFilter: "blur(var(--blur-panel))" }}
                     >
                       {data.conditionLabel}
-                    </Badge>
+                    </Badge>}
                     {images.length > 1 && <>
                       <ActionIcon aria-label="Предыдущее фото" variant="filled" color="dark" radius="xl" pos="absolute" left={14} top="50%" style={{ transform: "translateY(-50%)" }} onClick={() => moveImage(-1)}><IconChevronLeft size={18} /></ActionIcon>
                       <ActionIcon aria-label="Следующее фото" variant="filled" color="dark" radius="xl" pos="absolute" right={14} top="50%" style={{ transform: "translateY(-50%)" }} onClick={() => moveImage(1)}><IconChevronRight size={18} /></ActionIcon>
