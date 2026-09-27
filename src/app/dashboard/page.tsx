@@ -6,7 +6,7 @@ import { notifications } from "@mantine/notifications"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Anchor, Box, Stack, Group, Text, ThemeIcon, SimpleGrid, Paper, Badge, Center, Avatar, Button, Divider, ActionIcon, TextInput, Modal } from "@mantine/core"
-import { IconLayoutDashboard, IconMessageCircle2, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck } from "@tabler/icons-react"
+import { IconLayoutDashboard, IconMessageCircle2, IconTag, IconHeart, IconEye, IconStar, IconCar, IconPlus, IconSettings, IconTrendingUp, IconClock, IconExternalLink, IconTrash, IconEdit, IconAlertCircle, IconCircleCheck, IconFileDescription, IconClipboardCheck, IconArrowRight, IconTruckDelivery, IconTools, IconAt, IconPhone, IconBrandTelegram, IconShieldCheck, IconGavel, IconGasStation } from "@tabler/icons-react"
 import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages, initialOf } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
@@ -399,18 +399,22 @@ function DashboardContent() {
            * нечего. Вместо шести нулей — три действия, с которых площадка
            * начинается: продать своё, посмотреть чужое, найти запчасть.
            * Каждое ведёт в рабочий раздел, а не в обучение. */
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm" className="dashboard-first-steps">
             {[
-              { title: "Доставка из-за рубежа", note: "Маршрут, растаможка и статусы по машине с аукциона", href: "/dashboard/deliveries", icon: <IconTruckDelivery size={18} />, tone: "indigo" },
-              { title: "Посмотреть машины", note: "Объявления по России и лоты мировых аукционов", href: "/", icon: <IconTag size={18} />, tone: "cyan" },
-              { title: "Найти запчасть", note: "Подбор по марке и модели, оригинал и аналоги", href: "/parts-finder", icon: <IconTools size={18} />, tone: "teal" },
+              /* Все три ведут туда, где уже есть что смотреть.
+                 «Доставка из-за рубежа» повторяла кнопку «Мои доставки» в
+                 шапке кабинета, а «Найти запчасть» вела в пустой каталог:
+                 на 28.09.2026 в нём ноль деталей. */
+              { title: "Лоты аукционов", note: "Корея, Япония и Китай: цена лота в рублях и расчёт под ключ", href: "/auctions", icon: <IconGavel size={18} />, tone: "indigo" },
+              { title: "Объявления", note: "Машины от владельцев по России", href: "/", icon: <IconTag size={18} />, tone: "indigo" },
+              { title: "Цены на заправках", note: "Карта АЗС, цены обновляются каждые 15 минут", href: "/services/fuel-map", icon: <IconGasStation size={18} />, tone: "indigo" },
             ].map((step) => (
               <Paper key={step.title} component={Link} href={step.href} radius="md" p="md" withBorder className="dashboard-stat">
                 <Group gap="sm" align="flex-start" wrap="nowrap">
                   <ThemeIcon variant="light" color={step.tone} size={36} radius="md">{step.icon}</ThemeIcon>
                   <Stack gap={2} miw={0}>
                     <Text size="sm" fw={700} c="var(--market-ink)" lh={1.2}>{step.title}</Text>
-                    <Text size="xs" c="dimmed" lh={1.35}>{step.note}</Text>
+                    <Text size="xs" c="dimmed" lh={1.35} className="dashboard-first-steps__note">{step.note}</Text>
                   </Stack>
                 </Group>
               </Paper>

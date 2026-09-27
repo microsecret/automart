@@ -2096,3 +2096,38 @@ summary {
     min-height: calc(100dvh - var(--app-shell-header-height, 68px));
   }
 }
+
+/* ---------------------------------------------------------------------
+   28. Первые шаги в кабинете на телефоне — лента, а не три экрана
+   --------------------------------------------------------------------- */
+
+/* Три ярлыка столбиком занимали весь первый экран телефона, и «Мои
+   объявления» уезжали за сгиб. На узком экране это лента с прокруткой
+   пальцем и доводкой к карточке; пояснения скрыты — хватает заголовка. */
+@media (max-width: 47.99em) {
+  .dashboard-first-steps {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(160px, 62%);
+    grid-auto-flow: column;
+    margin-inline: -12px;
+    padding: 2px 12px 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: 12px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .dashboard-first-steps::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dashboard-first-steps > * {
+    scroll-snap-align: start;
+  }
+
+  .dashboard-first-steps__note {
+    display: none;
+  }
+}

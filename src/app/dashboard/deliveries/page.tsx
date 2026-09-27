@@ -231,12 +231,18 @@ function DeliveriesWorkspace() {
           </Group>
         </Paper>
 
-        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-          <Metric label="Всего сделок" value={summary.total} icon={<IconPackage size={18} />} color="indigo" />
-          <Metric label="В работе" value={summary.active} icon={<IconTruckDelivery size={18} />} color="blue" />
-          <Metric label="Счета и квитанции" value={summary.pendingPayments} icon={<IconFileInvoice size={18} />} color="orange" />
-          <Metric label="Требует внимания" value={summary.needsAttention} icon={<IconShieldCheck size={18} />} color={summary.needsAttention ? "red" : "teal"} />
-        </SimpleGrid>
+        {/* Сводка — только когда есть что сводить. Четыре нуля у человека
+            без доставок ничего не сообщали и отодвигали вниз единственное
+            действие — «Создать заявку». Цвет один: красным остаётся только
+            «Требует внимания», когда там не ноль, — это сигнал, а не декор. */}
+        {summary.total > 0 && (
+          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+            <Metric label="Всего сделок" value={summary.total} icon={<IconPackage size={18} />} color="indigo" />
+            <Metric label="В работе" value={summary.active} icon={<IconTruckDelivery size={18} />} color="indigo" />
+            <Metric label="Счета и квитанции" value={summary.pendingPayments} icon={<IconFileInvoice size={18} />} color="indigo" />
+            <Metric label="Требует внимания" value={summary.needsAttention} icon={<IconShieldCheck size={18} />} color={summary.needsAttention ? "red" : "indigo"} />
+          </SimpleGrid>
+        )}
 
         {isVerifiedPartner && (
           <Paper withBorder radius="xl" p={{ base: "md", md: "lg" }} style={{ background: "linear-gradient(135deg, rgba(249,115,22,.07), rgba(37,99,235,.055))" }}>
