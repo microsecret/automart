@@ -68,11 +68,18 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   const touchStartX = useRef<number | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  /* Предыдущий кадр лежит под новым, пока тот грузится.
+
+     При листании новый снимок начинал с прозрачности 0, и между кадрами на
+     170 мс проступала серая заглушка-силуэт: фото мигало. Теперь новый кадр
+     проявляется поверх старого — смена читается как одно движение. */
+  const [previousImage, setPreviousImage] = useState("")
   const { favoriteIds, isPending, toggleFavorite } = useFavorites()
   useEffect(() => {
     setActiveImg(0)
     setImageFailed(false)
     setImageLoaded(false)
+    setPreviousImage("")
   }, [listing.id])
   const isVehicle = !!listing.vehicle
   const detailHref = isVehicle
@@ -127,6 +134,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
      каталоге человек листает бегло, и тупик на краю читается как
      сломанная кнопка. */
   const showImage = (next: number) => {
+    if (imageLoaded && displayImage) setPreviousImage(displayImage)
     setActiveImg(((next % images.length) + images.length) % images.length)
     setImageFailed(false)
     setImageLoaded(false)
@@ -178,7 +186,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
             showImage(delta < 0 ? activeImg + 1 : activeImg - 1)
           }}
           data-empty-media={!hasDisplayImage || undefined}
-          data-image-loading={hasDisplayImage && !imageLoaded ? "true" : undefined}
+          data-image-loading={hasDisplayImage && !imageLoaded && !previousImage ? "true" : undefined}
           data-vehicle-type={isVehicle ? vehicleType.toLowerCase() : "part"}
           pos="relative"
           style={{ background: "var(--market-surface-subtle)", lineHeight: 0 }}
@@ -217,6 +225,18 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           <AspectRatio ratio={3 / 2}>
             <>
               <VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact={!hasDisplayImage} />
+              {previousImage && displayImage && previousImage !== displayImage && (
+                <NextImage
+                  className="listing-card__image listing-card__image--previous"
+                  data-loaded
+                  src={previousImage}
+                  alt=""
+                  aria-hidden="true"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  unoptimized={shouldBypassOptimizer(previousImage)}
+                />
+              )}
               {displayImage && (
               /* Оптимизированная картинка вместо оригинала.
 

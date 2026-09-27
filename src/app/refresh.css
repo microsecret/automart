@@ -1937,3 +1937,144 @@ summary {
 .listing-row__title::first-letter {
   text-transform: uppercase;
 }
+
+/* ---------------------------------------------------------------------
+   26. Плашка сравнения, отклик стрелок фото, пустая выдача
+   --------------------------------------------------------------------- */
+
+/* Плашка «Сравнение N из 4» выезжает снизу и уходит туда же: так видно,
+   что это не новый раздел, а то, что человек сам набрал. 260 мс — бюджет
+   выезжающей панели; уход короче, 200 мс, — он не должен задерживать. */
+.compare-dock {
+  position: fixed;
+  z-index: 240;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: var(--lw-navy);
+  box-shadow: 0 14px 34px -12px rgba(11, 20, 38, 0.55);
+  color: var(--lw-navy-text);
+  transform: translateX(-50%);
+  animation: lw-dock-in 260ms var(--ease-out) backwards;
+}
+
+.compare-dock[data-leaving] {
+  animation: lw-dock-out 200ms var(--ease-out) forwards;
+}
+
+@keyframes lw-dock-in {
+  from { opacity: 0; transform: translate(-50%, 100%); }
+}
+
+@keyframes lw-dock-out {
+  to { opacity: 0; transform: translate(-50%, 100%); }
+}
+
+.compare-dock__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  color: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color var(--ease-fast) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+.compare-dock__count {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--market-accent-button);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  /* Кивок при каждом изменении числа: ключ в разметке перезапускает его. */
+  animation: lw-mark-pop 320ms var(--ease-out);
+}
+
+.compare-dock__clear {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lw-navy-muted);
+  cursor: pointer;
+  transition: background-color var(--ease-fast) var(--ease-out), color var(--ease-fast) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .compare-dock__link:hover,
+  .compare-dock__clear:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+}
+
+.compare-dock__link:active,
+.compare-dock__clear:active {
+  transform: scale(0.97);
+}
+
+.compare-dock__link:focus-visible,
+.compare-dock__clear:focus-visible {
+  outline: 2px solid #93b4ff;
+  outline-offset: 1px;
+}
+
+/* Телефон: над нижней панелью навигации, а не поверх неё. */
+@media (max-width: 640px) {
+  .compare-dock {
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Стрелки листания фото: короткий отклик нажатия. Сдвиг по вертикали
+   сохранён — стрелка центрируется им же. */
+.listing-card__arrow {
+  transition: opacity var(--ease-base) var(--ease-out), background var(--ease-base) var(--ease-out), transform var(--ease-fast) var(--ease-out);
+}
+
+.listing-card__arrow:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+/* Предыдущий кадр под новым — без собственного проявления. */
+.listing-card__image--previous {
+  z-index: 0;
+  transition: none;
+}
+
+/* Пустая выдача — редкий момент: значок мягко встаёт на место, чтобы
+   смена «карточки → ничего» не была обрывом. */
+.lw-empty__icon {
+  animation: lw-empty-in 320ms var(--ease-out) backwards;
+}
+
+@keyframes lw-empty-in {
+  from { opacity: 0; transform: scale(0.92) translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compare-dock,
+  .compare-dock[data-leaving],
+  .compare-dock__count,
+  .lw-empty__icon {
+    animation-duration: 1ms;
+  }
+
+  .listing-card__arrow:active {
+    transform: translateY(-50%);
+  }
+}

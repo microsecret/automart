@@ -44,7 +44,7 @@ export function useCompare(listingId: string) {
     notifications.show({
       title: result.added ? "Добавлено к сравнению" : "Убрано из сравнения",
       message: result.added
-        ? `В сравнении ${result.ids.length} из ${COMPARE_LIMIT} — откройте раздел «Сравнение», когда наберёте нужные.`
+        ? `В сравнении ${result.ids.length} из ${COMPARE_LIMIT}. Открыть список — плашка «Сравнение» внизу экрана.`
         : "Машина больше не участвует в сравнении.",
       color: result.added ? "indigo" : "gray",
     })

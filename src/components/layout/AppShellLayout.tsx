@@ -39,6 +39,7 @@ import {
 } from "@/lib/navigation-registry"
 import { navbarScrollTop } from "@/lib/navbar-scroll-sync"
 import AppFooter from "./AppFooter"
+import CompareDock from "@/components/listings/CompareDock"
 import AppHeader from "./AppHeader"
 import AppAside from "@/components/sidebar/AppAside"
 import NavCount from "@/components/sidebar/NavCount"
@@ -603,6 +604,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         </div>
       </AppShell.Main>
       <SupportChat />
+      <CompareDock />
 
       <nav className="mobile-bottom-nav" aria-label="Основная навигация">
         {MOBILE_NAV.map(({ href, label, Icon, accent }) => {

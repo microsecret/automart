@@ -78,9 +78,9 @@ type EmptyStateProps = {
    наборов. */
 export function EmptyState({ title, description, actionLabel, actionHref, onAction, icon }: EmptyStateProps) {
   return (
-    <Paper radius="md" p={{ base: "lg", md: "xl" }} withBorder>
+    <Paper radius="md" p={{ base: "lg", md: "xl" }} withBorder className="lw-empty">
       <Stack align="center" gap="sm" maw={480} mx="auto" ta="center">
-        <ThemeIcon size={52} radius="md" color="indigo" variant="light">{icon ?? <IconSearchOff size={26} />}</ThemeIcon>
+        <ThemeIcon size={52} radius="md" color="indigo" variant="light" className="lw-empty__icon">{icon ?? <IconSearchOff size={26} />}</ThemeIcon>
         <Text fw={700} fz="lg" c="var(--market-ink)">{title}</Text>
         <Text size="sm" c="dimmed">{description}</Text>
         {actionLabel && actionHref && <Button component={Link} href={actionHref} color="indigo" size="sm" mt="xs">{actionLabel}</Button>}

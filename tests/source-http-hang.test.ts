@@ -7,7 +7,7 @@ import test from "node:test"
 import { requestTextOnce } from "../src/lib/authorized-source-http.ts"
 
 /* Источник прислал заголовки и половину тела, дальше — тишина или обрыв.
-   Раньше промис в этом случае не завершался никогда: так зависали 13%
+   При обрыве прежний промис не завершался никогда: так зависали 13%
    прогонов Encar. Тест проходит по http, чтобы не держать сертификат. */
 function serve(behaviour: "stall" | "cut" | "ok") {
   const server = http.createServer((_request, response) => {
