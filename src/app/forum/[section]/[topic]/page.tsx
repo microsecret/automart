@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       posts: { where: { deletedAt: null }, orderBy: { createdAt: "asc" }, take: 1, select: { content: true } },
     },
   })
-  if (!topic) return { title: "Тема не найдена — LeWheel" }
+  if (!topic) return { title: "Тема не найдена" }
 
   /* Описание из первого сообщения: поисковая выдача показывает именно
      его, и осмысленный отрывок приводит людей лучше шаблонной строки. */

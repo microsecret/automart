@@ -1,0 +1,179 @@
+/* Страница цен города и указатель городов под картой.
+
+   Правила жили в fuel-map.css, а его подключает только клиентская страница
+   карты. Страница города при прямом заходе из поиска — а именно так на неё
+   и приходят — открывалась голой разметкой: маркеры списков, синие
+   подчёркнутые ссылки, «Реутов185 АЗС» без пробела, текст вплотную к краю
+   телефона. Файл подключён в layout.tsx, общем для карты и городов. */
+/* Городская страница карты АЗС.
+
+   Разметка нарочно без Mantine: библиотека клиентская, и страница с ней
+   пришла бы поисковику пустой — ровно то, ради чего страница и делалась.
+   Стили здесь скромные: это текстовая страница для чтения и выдачи, а не
+   интерфейс. */
+.fuel-city {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  color: var(--market-ink);
+}
+.fuel-city__title {
+  /* Ступень шкалы вместо плавного роста: clamp с vw давал дробный
+     кегль при большинстве ширин окна. */
+  font-size: var(--text-2xl);
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+.fuel-city__lead {
+  color: var(--market-muted);
+  margin: 0 0 28px;
+  line-height: 1.6;
+}
+.fuel-city__subtitle {
+  font-size: 20px;
+  margin: 28px 0 12px;
+}
+/* Таблица прокручивается внутри себя: на телефоне пять колонок цен иначе
+   растягивают страницу вбок. */
+.fuel-city__table-wrap {
+  overflow-x: auto;
+}
+.fuel-city__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.fuel-city__table th,
+.fuel-city__table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--market-line);
+  white-space: nowrap;
+}
+.fuel-city__table th {
+  font-weight: 600;
+  color: var(--market-muted);
+  font-size: var(--text-sm);
+}
+.fuel-city__brands {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  color: var(--market-muted);
+  font-size: 14px;
+}
+/* Ссылки на соседние города под ценами.
+
+   Плитками, а не строчным списком: названия городов разной длины, и
+   в строку они складывались рваной лентой. */
+.fuel-city__cities {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fuel-city__cities li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-sm);
+  background: var(--market-surface);
+}
+.fuel-city__cities a {
+  color: var(--market-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.fuel-city__cities a:hover {
+  color: var(--market-primary);
+}
+.fuel-city__cities-count {
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.fuel-cities-index {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 16px 40px;
+}
+.fuel-cities-index h2 {
+  margin: 0 0 14px;
+  color: var(--market-ink);
+  font-family: var(--font-display), sans-serif;
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: var(--track-title);
+}
+.fuel-cities-index ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fuel-cities-index li {
+  /* Относительное положение нужно ссылке внутри: она растянута на всю
+     плитку, чтобы нажималась любая её точка, а не только буквы. */
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-sm);
+  background: var(--market-surface);
+  font-size: var(--text-sm);
+}
+.fuel-cities-index a {
+  color: var(--market-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Нажимается вся плитка города.
+ *
+ * Замер на iPhone 13 дал ссылкам «Москва», «Казань», «Екатеринбург»
+ * высоту 21 пиксель — это высота самих букв. В указателе до шестидесяти
+ * городов, идут они плотной сеткой, и попасть пальцем точно в слово
+ * трудно: промах между плитками не делает ничего, промах по соседней
+ * уводит в чужой город.
+ *
+ * Слой растянут на карточку и лежит под текстом счётчика, поэтому число
+ * станций остаётся читаемым, а нажатие работает по всей площади. */
+.fuel-cities-index a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.fuel-cities-index a:hover {
+  color: var(--market-primary);
+}
+.fuel-cities-index li span {
+  color: var(--market-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.fuel-city__cta {
+  margin: 28px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.fuel-city__note {
+  margin: 24px 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--market-muted);
+}

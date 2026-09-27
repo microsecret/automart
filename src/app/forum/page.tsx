@@ -8,7 +8,7 @@ import { formatAdminDateTimeShort } from "@/lib/admin-datetime"
 import ForumSearchField from "@/components/forum/ForumSearchField"
 
 export const metadata: Metadata = {
-  title: "Форум автолюбителей — LeWheel",
+  title: "Форум автолюбителей",
   description: "Форумы по маркам автомобилей, регионам России и темам: ремонт, запчасти, растаможка, выбор машины, ПДД, тюнинг. Спросите владельцев.",
 }
 

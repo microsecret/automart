@@ -48,7 +48,7 @@ async function findMember(rawName: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { name } = await params
   const member = await findMember(name)
-  if (!member) return { title: "Участник не найден — форум LeWheel" }
+  if (!member) return { title: "Участник не найден" }
 
   const rank = reputationRank(member.forumReputation)
   return {

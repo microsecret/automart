@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     where: { slug },
     select: { title: true, description: true },
   })
-  if (!section) return { title: "Раздел не найден — LeWheel" }
+  if (!section) return { title: "Раздел не найден" }
 
   return {
     title: `${section.title} — форум LeWheel`,

@@ -13,7 +13,7 @@ import UnsubscribeButton from "@/components/forum/UnsubscribeButton"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "Мои темы на форуме — LeWheel",
+  title: "Мои темы на форуме",
   robots: { index: false, follow: false },
 }
 

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 const PER_PAGE = 30
 
 export const metadata: Metadata = {
-  title: "Участники форума — LeWheel",
+  title: "Участники форума",
   description: "Кто отвечает на форуме автолюбителей LeWheel: опытные владельцы, механики, те, кто уже прошёл через это.",
 }
 

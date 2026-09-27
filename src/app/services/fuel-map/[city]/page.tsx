@@ -132,7 +132,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   /* Цена в описании выдачи — то, ради чего человек и кликает: «АИ-92 от
      62,80 ₽» отвечает на вопрос ещё до перехода на страницу. */
   const priceHint = petrol ? ` АИ-92 от ${petrol.minRub.toFixed(2).replace(".", ",")} ₽.` : ""
-  const countHint = summary ? `${summary.stationCount} АЗС на карте` : "карта заправок"
+  const countHint = summary ? `${summary.stationCount} АЗС с ценами` : "карта заправок"
 
   return buildSeoMetadata({
     title: `Цены на бензин в ${where} — ${countHint}`,
@@ -237,8 +237,10 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
 
       <h1 className="fuel-city__title">Цены на бензин в {where}</h1>
       <p className="fuel-city__lead">
-        {summary.stationCount} {plural(summary.stationCount, "заправка", "заправки", "заправок")} на карте. Цены собраны из открытых источников
-        и уточняются отметками водителей — тех, кто прямо сейчас стоит у колонки.
+        {/* «На карте» было неправдой: здесь заправки из источников цен, а на
+            самой карте их больше — вместе с теми, где цен нет. */}
+        {summary.stationCount} {plural(summary.stationCount, "заправка", "заправки", "заправок")} с ценами из открытых источников.
+        Цены уточняются отметками водителей — тех, кто прямо сейчас стоит у колонки.
       </p>
 
       {summary.prices.length > 0 && (

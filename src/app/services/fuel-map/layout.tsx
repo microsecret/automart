@@ -1,3 +1,4 @@
+import "./fuel-city.css"
 import Link from "next/link"
 import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { listFuelCities } from "@/lib/fuel-city-links"
