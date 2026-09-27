@@ -296,7 +296,7 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
            Первоуральске, поедет скорее через Екатеринбург, чем через
            Казань. */
         <section className="fuel-city__section">
-          <h2>Цены на топливо рядом</h2>
+          <h2 className="fuel-city__subtitle">Цены на топливо рядом</h2>
           <ul className="fuel-city__cities">
             {nearby.map((item) => (
               <li key={item.slug}>
@@ -312,7 +312,7 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
 
       <p className="fuel-city__cta">
         <Link href={`/services/fuel-map?city=${encodeURIComponent(city)}`}>
-          Открыть карту заправок {city} →
+          Открыть карту заправок в {where} →
         </Link>
       </p>
 
