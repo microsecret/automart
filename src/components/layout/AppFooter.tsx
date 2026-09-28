@@ -9,9 +9,6 @@ import { CREATE_VEHICLE_HREF, FOOTER_NAVIGATION } from "@/lib/navigation-registr
 const FOOTER_SECTIONS = FOOTER_NAVIGATION.map((section) => ({ ...section, links: section.items }))
 
 const telegramBotUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "")
-const SOCIALS = telegramBotUsername
-  ? [{ icon: IconBrandTelegram, href: `https://t.me/${telegramBotUsername}`, label: "Telegram", color: "#0088cc" }]
-  : []
 
 export default function AppFooter() {
   return (
@@ -22,31 +19,40 @@ export default function AppFooter() {
        закрывает страницу явно, а боковые колонки обрываются над ней —
        AppShellLayout укорачивает их, когда подвал входит в кадр.
 
-       Сверху — полоса действия: подать объявление и подписаться на бота.
-       Это две вещи, ради которых человек доходит до конца страницы. */
+       Сверху — две карточки действия: подать объявление и открыть бота. */
     <Box component="footer" className="market-app-footer">
       <Container size="xl">
         <Stack gap={0}>
+          {/* Две карточки, у каждой свой смысл.
+
+              Было: «Продаёте машину или запчасть?» и рядом две кнопки —
+              «Подать объявление» и «Бот в Telegram». Бот к продаже отношения
+              не имеет, и владелец спросил, зачем он под этим вопросом.
+              Теперь бот стоит отдельно и говорит, что он даёт: цены на
+              заправках, наличие топлива, уведомления. */}
           <Box className="market-app-footer__cta">
-            <Box>
-              <Text className="market-app-footer__cta-title">Продаёте машину или запчасть?</Text>
-              <Text className="market-app-footer__cta-text">Объявление бесплатно, публикация за пару минут. Покупатели увидят его в каталоге и в Telegram.</Text>
-            </Box>
-            <Group gap={8} wrap="wrap" className="market-app-footer__cta-actions">
+            <Box className="market-app-footer__cta-card">
+              <span className="market-app-footer__cta-icon" aria-hidden="true"><IconPlus size={20} stroke={2} /></span>
+              <Box className="market-app-footer__cta-body">
+                <Text className="market-app-footer__cta-title">Продайте машину или запчасть</Text>
+                <Text className="market-app-footer__cta-text">Бесплатно. После проверки объявление появится в каталоге и в городском чате Telegram.</Text>
+              </Box>
               <Anchor component={Link} href={CREATE_VEHICLE_HREF} prefetch={false} className="market-app-footer__btn market-app-footer__btn--primary">
-                <IconPlus size={16} stroke={2} />
                 Подать объявление
               </Anchor>
-              {SOCIALS.map((s) => {
-                const Icon = s.icon
-                return (
-                  <Anchor key={s.label} href={s.href} target="_blank" rel="noreferrer" className="market-app-footer__btn">
-                    <Icon size={16} stroke={1.8} />
-                    Бот в Telegram
-                  </Anchor>
-                )
-              })}
-            </Group>
+            </Box>
+            {telegramBotUsername && (
+              <Box className="market-app-footer__cta-card">
+                <span className="market-app-footer__cta-icon market-app-footer__cta-icon--tg" aria-hidden="true"><IconBrandTelegram size={20} stroke={1.8} /></span>
+                <Box className="market-app-footer__cta-body">
+                  <Text className="market-app-footer__cta-title">Бот LeWheel в Telegram</Text>
+                  <Text className="market-app-footer__cta-text">Цены на заправках рядом, наличие топлива и ответы по вашим объявлениям — в одном чате.</Text>
+                </Box>
+                <Anchor href={`https://t.me/${telegramBotUsername}`} target="_blank" rel="noreferrer" className="market-app-footer__btn">
+                  Открыть бота
+                </Anchor>
+              </Box>
+            )}
           </Box>
 
           {/* Бренд отдельной колонкой, разделы — сеткой. Бренд шире прочих
