@@ -30,6 +30,10 @@ export type AdminAuditAction =
      повторную модерацию, а событие попадает в журнал. */
   | "PART_STORE_LEGAL_CHANGE"
   | "REFERRAL_PAYOUT"
+  /* Администратор открыл чужую переписку. Просмотр допустим для разбора
+     жалоб и мошенничества, но каждый след остаётся в журнале. */
+  | "CONVERSATION_VIEW"
+  | "REVIEW_DELETE"
 
 type AdminAuditInput = {
   actorId: string | null

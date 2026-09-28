@@ -1,7 +1,7 @@
 "use client"
 
 import { Button, Group, Paper, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconBuildingWarehouse, IconChartBar, IconGavel, IconBrandTelegram, IconHeadset, IconLayoutDashboard, IconUsers, IconMessages, IconGasStation } from "@tabler/icons-react"
+import { IconBuildingWarehouse, IconChartBar, IconGavel, IconBrandTelegram, IconHeadset, IconLayoutDashboard, IconUsers, IconMessages, IconGasStation, IconDatabase } from "@tabler/icons-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -12,6 +12,8 @@ const ADMIN_SECTIONS = [
   { href: "/admin/auctions", label: "Аукционы", icon: IconGavel, match: (pathname: string) => pathname.startsWith("/admin/auctions") },
   { href: "/admin/partners", label: "Партнёры", icon: IconBuildingWarehouse, match: (pathname: string) => pathname.startsWith("/admin/partners") },
   { href: "/admin/support", label: "Поддержка", icon: IconHeadset, match: (pathname: string) => pathname.startsWith("/admin/support") },
+  /* Переписки, отзывы, уведомления, контакты бота, заявки на запчасти. */
+  { href: "/admin/records", label: "Данные", icon: IconDatabase, match: (pathname: string) => pathname.startsWith("/admin/records") },
   { href: "/admin/forum", label: "Форум", icon: IconMessages, match: (pathname: string) => pathname.startsWith("/admin/forum") },
   { href: "/admin/fuel", label: "АЗС и топливо", icon: IconGasStation, match: (pathname: string) => pathname.startsWith("/admin/fuel") },
   { href: "/admin/traffic", label: "Посещаемость", icon: IconChartBar, match: (pathname: string) => pathname.startsWith("/admin/traffic") },

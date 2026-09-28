@@ -75,7 +75,10 @@ function DirectorySkeleton() {
 }
 
 export default function AdminUsersPage() {
-  const [query, setQuery] = useState("")
+  /* Поиск можно передать ссылкой (?q=): так «Данные» ведут от контакта бота
+     прямо к его аккаунту. Страница рисуется только в браузере — после
+     проверки сессии, — поэтому чтение адреса здесь безопасно. */
+  const [query, setQuery] = useState(() => (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("q") || ""))
   const [page, setPage] = useState(1)
   const deferredQuery = useDeferredValue(query.trim())
   const url = `/api/users?scope=admin&page=${page}&limit=24${deferredQuery ? `&q=${encodeURIComponent(deferredQuery)}` : ""}`
