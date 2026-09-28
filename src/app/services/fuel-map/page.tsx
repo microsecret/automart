@@ -1797,6 +1797,21 @@ function FuelMapContent() {
      мог сознательно уехать смотреть другой город, и второе срабатывание
      вернуло бы его обратно. */
   const hasLocatedRef = useRef(false)
+  /* Был ли город сохранён до этого захода — читается один раз при загрузке.
+
+     Эффект «запомнить город» стоит выше и при первом запуске записывал в
+     хранилище «Москву» по умолчанию. Геолокация следом видела сохранённый
+     город, считала, что человек выбирал сам, и не срабатывала никогда.
+     Замер 28.09.2026: разрешение дано, координаты Казани — на карте Москва. */
+  const startedWithSavedCityRef = useRef<boolean | null>(null)
+  if (startedWithSavedCityRef.current === null && typeof window !== "undefined") {
+    try {
+      startedWithSavedCityRef.current = Boolean(window.localStorage.getItem(CITY_STORAGE_KEY))
+    } catch {
+      startedWithSavedCityRef.current = false
+    }
+  }
+  const skipFirstCitySaveRef = useRef(true)
   /* Человек выбрал город сам — геолокация больше не вмешивается.
      Ref, а не состояние: значение читается внутри обработчика браузера,
      который замкнул на себе первый рендер и о новом состоянии не
@@ -2173,6 +2188,12 @@ function FuelMapContent() {
 
   /* Выбранный город запоминается: следующий заход открывается на нём. */
   useEffect(() => {
+    /* Первый запуск — это город по умолчанию, а не выбор: его не храним,
+       иначе и геолокация, и следующий заход считали бы его выбранным. */
+    if (skipFirstCitySaveRef.current) {
+      skipFirstCitySaveRef.current = false
+      return
+    }
     try {
       window.localStorage.setItem(CITY_STORAGE_KEY, city)
     } catch {
@@ -2194,13 +2215,9 @@ function FuelMapContent() {
   useEffect(() => {
     if (hasLocatedRef.current) return
     /* Человек уже выбирал город раньше — его выбор важнее координат. */
-    try {
-      if (window.localStorage.getItem(CITY_STORAGE_KEY)) {
-        hasLocatedRef.current = true
-        return
-      }
-    } catch {
-      /* Хранилище недоступно: определяем по координатам. */
+    if (startedWithSavedCityRef.current) {
+      hasLocatedRef.current = true
+      return
     }
 
     hasLocatedRef.current = true
