@@ -195,6 +195,7 @@ function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; 
           alt={identity.title}
           fill
           sizes="(max-width: 48em) 100vw, (max-width: 62em) 50vw, (max-width: 75em) 33vw, 25vw"
+          quality={60}
           referrerPolicy="no-referrer"
           priority={priority}
           /* Напрямую, без оптимизатора: он отводит на загрузку исходника

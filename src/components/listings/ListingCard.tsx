@@ -239,6 +239,10 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                   aria-hidden="true"
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  /* Качество 60 вместо 75: на телефоне карточка во всю ширину, и снимок
+                     шириной 1200 весил до 200 КБ — на главной фото занимали 988 КБ из
+                     1,7 МБ. В кадре 3:2 разница не видна, вес падает примерно на треть. */
+                  quality={60}
                   unoptimized={shouldBypassOptimizer(previousImage)}
                 />
               )}
@@ -260,6 +264,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 alt={listing.title}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                quality={60}
                 onLoad={() => setImageLoaded(true)}
                 onError={() => { setImageFailed(true); setImageLoaded(false) }}
                 loading="lazy"
