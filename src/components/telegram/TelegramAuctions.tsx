@@ -34,12 +34,31 @@ const COUNTRY_FLAGS: Record<string, string> = {
   KR: "🇰🇷", JP: "🇯🇵", CN: "🇨🇳", US: "🇺🇸", DE: "🇩🇪",
 }
 
+/* Подборки — как на странице аукционов сайта: страна одним касанием и
+   бюджет. Вкладка умела только искать по марке, а человек в Telegram чаще
+   всего спрашивает «что есть из Кореи до полутора миллионов». */
+const COUNTRY_PRESETS = [
+  { value: "", label: "Все" },
+  { value: "KR", label: "Корея" },
+  { value: "JP", label: "Япония" },
+  { value: "CN", label: "Китай" },
+] as const
+const BUDGET_PRICE_TO = "1500000"
+const COUNTRY_FROM: Record<string, string> = { KR: "из Кореи", JP: "из Японии", CN: "из Китая" }
+
 export default function TelegramAuctions() {
   const [search, setSearch] = useState("")
+  const [country, setCountry] = useState("")
+  const [budget, setBudget] = useState(false)
   const deferredSearch = useDeferredValue(search.trim())
 
-  const query = new URLSearchParams({ limit: "24" })
+  /* view=brief: вкладке нужны марка, год, пробег, цена, страна и один
+     снимок — ровно краткий ответ. Полный нёс все снимки и характеристики,
+     около ста килобайт лишнего на каждый запрос в мобильной сети. */
+  const query = new URLSearchParams({ limit: "24", view: "brief" })
   if (deferredSearch.length > 1) query.set("make", deferredSearch)
+  if (country) query.set("country", country)
+  if (budget) query.set("priceTo", BUDGET_PRICE_TO)
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<AuctionResponse>(`/api/auctions?${query}`, fetchJson, {
     revalidateOnFocus: false,
@@ -64,6 +83,29 @@ export default function TelegramAuctions() {
         onChange={(event) => setSearch(event.currentTarget.value)}
         size="md"
       />
+      <Box className="tg-types" role="group" aria-label="Подборки">
+        {COUNTRY_PRESETS.map((item) => (
+          <button
+            key={item.value || "all"}
+            type="button"
+            className="tg-types__chip"
+            data-active={country === item.value || undefined}
+            aria-pressed={country === item.value}
+            onClick={() => setCountry(item.value)}
+          >
+            {item.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="tg-types__chip"
+          data-active={budget || undefined}
+          aria-pressed={budget}
+          onClick={() => setBudget((value) => !value)}
+        >
+          До 1,5 млн ₽
+        </button>
+      </Box>
     </Box>
   )
 
@@ -81,6 +123,7 @@ export default function TelegramAuctions() {
 
   const lots = data?.listings || []
   const searching = deferredSearch.length > 1
+  const filtered = searching || Boolean(country) || budget
 
   /* Сбой запроса — не то же самое, что пустой раздел.
 
@@ -108,7 +151,7 @@ export default function TelegramAuctions() {
         {searchField}
         <Stack align="center" py={48} gap={6}>
           <Text fw={700} c="var(--tg-text)">
-            {searching ? "Такой марки сейчас нет" : "Лоты обновляются"}
+            {searching ? "Такой марки сейчас нет" : filtered ? "По этой подборке пока пусто" : "Лоты обновляются"}
           </Text>
           <Text size="xs" c="var(--tg-hint)" ta="center" maw={270}>
             {searching
@@ -131,7 +174,7 @@ export default function TelegramAuctions() {
           рядом. Человек листал две дюжины и уходил, решив, что это всё. */}
       {!searching && typeof data?.pagination?.total === "number" && data.pagination.total > lots.length && (
         <Text size="xs" c="var(--tg-hint)" mb={6} px={12}>
-          {data.pagination.total.toLocaleString("ru-RU")} {plural(data.pagination.total, "лот", "лота", "лотов")} из Кореи, Японии и Китая
+          {data.pagination.total.toLocaleString("ru-RU")} {plural(data.pagination.total, "лот", "лота", "лотов")} {COUNTRY_FROM[country] || "из Кореи, Японии и Китая"}{budget ? " до 1,5 млн ₽" : ""}
         </Text>
       )}
       <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed" data-updating={isValidating || undefined}>
