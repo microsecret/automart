@@ -199,11 +199,12 @@ function performRequestOnce(
       if (settled) return
       settled = true
       clearTimeout(deadline)
-      request.destroy(error)
+      if (!request.destroyed) request.destroy(error)
       reject(error)
     }
     const request = https.request(url, { method, agent, headers, family: 4 }, (response) => {
-      response.once("error", fail)
+      // on, а не once: после обрыва событие error может прийти не один раз.
+      response.on("error", fail)
       response.once("aborted", () => fail(new Error("Источник оборвал ответ")))
       response.once("close", () => {
         if (!response.complete) fail(new Error("Источник оборвал ответ"))
@@ -265,7 +266,7 @@ function performRequestOnce(
     })
     const deadline = setTimeout(() => fail(new Error("Источник не ответил вовремя")), timeoutMs)
     request.setTimeout(timeoutMs, () => fail(new Error("Источник не ответил вовремя")))
-    request.once("error", fail)
+    request.on("error", fail)
     request.end()
   })
 }

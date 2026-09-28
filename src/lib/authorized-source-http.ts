@@ -189,7 +189,10 @@ export function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "P
       if (settled) return
       settled = true
       clearTimeout(hardDeadline)
-      request.destroy(error)
+      /* destroy — только живому запросу. Повторный destroy упавшего запроса
+         порождает второе событие error, а слушатель был одноразовым: с 27.09
+         это давало ~100 uncaughtException в сутки. */
+      if (!request.destroyed) request.destroy(error)
       reject(error)
     }
     const requestHeaders = body === undefined ? headers : { ...headers, "Content-Length": String(Buffer.byteLength(body)) }
@@ -207,7 +210,8 @@ export function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "P
         }
         chunks.push(chunk)
       })
-      response.once("error", fail)
+      // on, а не once: после обрыва событие error может прийти не один раз.
+      response.on("error", fail)
       response.once("aborted", () => fail(new Error("Источник оборвал ответ")))
       // `close` без `end` — соединение закрылось посреди тела.
       response.once("close", () => {
@@ -226,7 +230,7 @@ export function requestTextOnce(url: URL, agent: https.Agent, method: "GET" | "P
     })
     const hardDeadline = setTimeout(() => fail(new Error("Источник превысил общий лимит времени")), timeoutMs)
     request.setTimeout(timeoutMs, () => fail(new Error("Источник не ответил вовремя")))
-    request.once("error", fail)
+    request.on("error", fail)
     request.end(body)
   })
 }

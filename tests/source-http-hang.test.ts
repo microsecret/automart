@@ -60,3 +60,30 @@ test("полный ответ по-прежнему приходит целик�
     close()
   }
 })
+
+test("повторная ошибка запроса не становится uncaughtException", async () => {
+  /* Агент прокси при обрыве CONNECT испускает error дважды. С одноразовым
+     слушателем второе событие уходило в uncaughtException — ~100 в сутки. */
+  const { EventEmitter } = await import("node:events")
+  const fakeSend = (() => {
+    const request = new EventEmitter() as EventEmitter & { destroyed: boolean; destroy: (error?: Error) => void; setTimeout: () => void; end: () => void }
+    request.destroyed = false
+    request.destroy = () => { request.destroyed = true }
+    request.setTimeout = () => undefined
+    request.end = () => {
+      setTimeout(() => request.emit("error", new Error("Proxy connection ended before receiving CONNECT response")), 5)
+      setTimeout(() => request.emit("error", new Error("повторная ошибка")), 10)
+    }
+    return request
+  }) as unknown as typeof https.request
+  let uncaught = 0
+  const onUncaught = () => { uncaught += 1 }
+  process.on("uncaughtException", onUncaught)
+  try {
+    await assert.rejects(requestTextOnce(new URL("https://example.test/"), agent, "GET", {}, undefined, 1_000, 1_000, fakeSend), /Proxy connection ended/)
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    assert.equal(uncaught, 0)
+  } finally {
+    process.off("uncaughtException", onUncaught)
+  }
+})
