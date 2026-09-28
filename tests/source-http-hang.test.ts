@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { EventEmitter } from "node:events"
 import http from "node:http"
 import type https from "node:https"
 import type { AddressInfo } from "node:net"
@@ -64,7 +65,6 @@ test("полный ответ по-прежнему приходит целик�
 test("повторная ошибка запроса не становится uncaughtException", async () => {
   /* Агент прокси при обрыве CONNECT испускает error дважды. С одноразовым
      слушателем второе событие уходило в uncaughtException — ~100 в сутки. */
-  const { EventEmitter } = await import("node:events")
   const fakeSend = (() => {
     const request = new EventEmitter() as EventEmitter & { destroyed: boolean; destroy: (error?: Error) => void; setTimeout: () => void; end: () => void }
     request.destroyed = false
