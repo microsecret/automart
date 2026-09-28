@@ -316,7 +316,15 @@ export async function discoverEncarPublicListingUrls(rawUrl: unknown, limit: num
     maxBytes: 2_000_000,
   })
   if (!response.ok) throw new Error(`Encar вернул HTTP ${response.status}`)
-  if (new URL(response.url).hostname !== ENCAR_CATALOG_HOST) throw new Error(`Encar перенаправил каталог на неподдерживаемый адрес: ${new URL(response.url).hostname}`)
+  /* Каталог иногда перенаправляет с car.encar.com на fem.encar.com — это
+     тот же Encar, ссылки на лоты и так ведут туда. Замер 28.09.2026: восемь
+     прогонов поиска за 36 часов отбрасывались как «неподдерживаемый адрес»
+     именно из-за этого. Страницу без ссылок на машины всё равно отсеет
+     проверка ниже, поэтому второй хост ничем не рискует. */
+  const landedUrl = new URL(response.url)
+  if (landedUrl.hostname !== ENCAR_CATALOG_HOST && landedUrl.hostname !== ENCAR_HOST) {
+    throw new Error(`Encar перенаправил каталог на неподдерживаемый адрес: ${landedUrl.hostname}${landedUrl.pathname}`)
+  }
 
   const html = await response.text()
   const urls = new Set<string>()

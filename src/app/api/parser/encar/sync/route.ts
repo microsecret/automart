@@ -3,7 +3,7 @@ import { saveAuctionImportItems, type AuctionImportItem } from "@/lib/auction-im
 import { discoverEncarPublicListingUrls, scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
 import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
 import { prisma } from "@/lib/prisma"
-import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { closeStaleAuctionSyncRuns, summarizeItemFailures } from "@/lib/auction-sync-run"
 import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
 
 export const dynamic = "force-dynamic"
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         where: { id: syncRun.id },
         data: {
           status, discovered: urls.length, failed: failed.length, skippedByPolicy: skippedByAge.length, excludedByPolicy,
-          error: failed.length ? "В выдаче нет пригодных карточек" : null, completedAt: new Date(),
+          error: failed.length ? `В выдаче нет пригодных карточек. ${summarizeItemFailures(failed, urls.length)}` : null, completedAt: new Date(),
         },
       })
       return NextResponse.json({ success: true, status, discovered: urls.length, imported: 0, skippedKnown, maxAgeYears, skippedByAge, excludedByPolicy, failed })

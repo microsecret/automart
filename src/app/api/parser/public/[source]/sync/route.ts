@@ -12,7 +12,7 @@ import {
   publicSourceMaximumPage,
 } from "@/lib/public-auction-collectors"
 import { prisma } from "@/lib/prisma"
-import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { closeStaleAuctionSyncRuns, summarizeItemFailures } from "@/lib/auction-sync-run"
 import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
 import { isPublicListingPolicyExcludedError } from "@/lib/auction-source-policy"
 import {
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       data: {
         status, discovered: catalog.candidates.length, imported: items.length, created: result.created,
         updated: result.updated, failed: failed.length, skippedByPolicy, excludedByPolicy, completedAt: new Date(),
-        error: failed.length && !items.length ? `${source}: в выдаче нет пригодных карточек` : null,
+        error: failed.length && !items.length ? `${source}: в выдаче нет пригодных карточек. ${summarizeItemFailures(failed, catalog.candidates.length)}` : null,
       },
     })
     return NextResponse.json({ success: true, source, status, page, catalogTotal: catalog.total, discovered: catalog.candidates.length, checked, deferred, imported: items.length, unavailable, skippedKnown, skippedByPolicy, excludedByPolicy, failed, ...result })

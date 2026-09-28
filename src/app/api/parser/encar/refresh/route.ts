@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems } from "@/lib/auction-import"
 import { isEncarListingUnavailableError, scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
 import { prisma } from "@/lib/prisma"
-import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { closeStaleAuctionSyncRuns, summarizeItemFailures } from "@/lib/auction-sync-run"
 import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
 
 export const dynamic = "force-dynamic"
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       where: { id: syncRun.id },
       data: {
         status, discovered: listings.length, imported: created + updated, created, updated,
-        failed: failed.length, expired, completedAt: new Date(),
+        failed: failed.length, expired, completedAt: new Date(), error: summarizeItemFailures(failed, listings.length),
       },
     })
 

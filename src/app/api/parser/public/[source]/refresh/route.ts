@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems } from "@/lib/auction-import"
 import { fetchPublicAuctionListing, isPublicAuctionSource, isPublicListingUnavailableError } from "@/lib/public-auction-collectors"
 import { prisma } from "@/lib/prisma"
-import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
+import { closeStaleAuctionSyncRuns, summarizeItemFailures } from "@/lib/auction-sync-run"
 import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
 import { isPublicListingPolicyExcludedError } from "@/lib/auction-source-policy"
 import {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const status = auctionSourceStageStatus(checked, failed.length, deferred)
     await prisma.auctionSyncRun.update({
-      where: { id: syncRun.id }, data: { status, discovered: checked, imported: updated, updated, failed: failed.length, expired, completedAt: new Date() },
+      where: { id: syncRun.id }, data: { status, discovered: checked, imported: updated, updated, failed: failed.length, expired, completedAt: new Date(), error: summarizeItemFailures(failed, checked) },
     })
     return NextResponse.json({ success: true, source, status, refreshIntervalHours: refreshIntervalHours(source), checked, deferred, refreshed: updated, unavailable, expired, failed, updated, translated })
   } catch (error) {

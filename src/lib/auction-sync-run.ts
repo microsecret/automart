@@ -33,3 +33,8 @@ export async function closeStaleAuctionSyncRuns(
     },
   })
 }
+
+
+// Сводка причин упавших лотов — в отдельном модуле без базы, чтобы её
+// можно было проверить тестом.
+export { summarizeItemFailures } from "@/lib/auction-failure-summary"
