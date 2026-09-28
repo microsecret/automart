@@ -43,6 +43,19 @@ export function referralCodeForUser(userId: string) {
   return createHash("sha256").update(`referral:${userId}`).digest("hex").slice(0, 8).toUpperCase()
 }
 
+/**
+ * Код приглашения для того, кто открыл бота, но аккаунта на сайте не завёл.
+ *
+ * Еженедельное письмо в боте даёт кнопку «Рассказать другу» каждому, а
+ * аккаунт есть примерно у половины. Код выводится из Telegram ID и хранится
+ * в TelegramContact; проверка приглашения находит по нему аккаунт, как только
+ * человек войдёт через Telegram. До этого приглашённый держит код у себя и
+ * пробует снова при следующем заходе.
+ */
+export function referralCodeForTelegram(telegramId: string) {
+  return createHash("sha256").update(`referral:tg:${telegramId}`).digest("hex").slice(0, 8).toUpperCase()
+}
+
 /** Сумма вознаграждения. Округление вниз, чтобы не обещать лишнего. */
 export function calculateRewardAmount(orderAmountRub: number, percent: number) {
   if (!Number.isFinite(orderAmountRub) || orderAmountRub <= 0) return 0

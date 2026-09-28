@@ -51,6 +51,18 @@ export async function POST(request: NextRequest) {
 
   let partnerId = byCode?.id || null
 
+  /* Код из еженедельного письма бота у того, кто ещё не заводил аккаунт:
+     он хранится в TelegramContact. Партнёр — аккаунт с тем же Telegram ID.
+     Если аккаунта пока нет, ответ 404, и приглашённый попробует снова при
+     следующем заходе — код у него сохранён. */
+  if (!partnerId) {
+    const contact = await prisma.telegramContact.findUnique({ where: { referralCode: code }, select: { telegramId: true } })
+    if (contact) {
+      const owner = await prisma.user.findFirst({ where: { telegramId: contact.telegramId, accountStatus: "ACTIVE" }, select: { id: true } })
+      partnerId = owner?.id || null
+    }
+  }
+
   /* Уже закреплённое приглашение с тем же кодом — второй надёжный
      источник: партнёр приводил людей и до появления поля. */
   if (!partnerId) {

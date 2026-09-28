@@ -1115,11 +1115,24 @@ model TelegramContact {
   startedAt       DateTime  @default(now())
   lastSeenAt      DateTime  @default(now())
   lastBroadcastAt DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+
+  /// Еженедельное письмо «что нового»: когда ушло последнее и не отписался ли
+  /// человек кнопкой «Не присылать». Отдельно от lastBroadcastAt — по нему
+  /// идут напоминания о регистрации.
+  lastWeeklyAt DateTime?
+  weeklyOptOut Boolean   @default(false)
+
+  /// Личный код приглашения для тех, у кого ещё нет аккаунта на сайте.
+  /// Засчитывается, когда человек войдёт через Telegram: проверка кода
+  /// находит его аккаунт по telegramId.
+  referralCode String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([blocked, registered])
   @@index([lastBroadcastAt])
+  @@index([blocked, weeklyOptOut, lastWeeklyAt])
 }
 
 /// Бесплатная публикация объявления в чате продавца.

@@ -21,6 +21,8 @@ import { scheduleTelegramMessageCleanup } from "@/lib/telegram-message-cleanup"
 import { registerTelegramGroup, setTelegramChatMarketing } from "@/lib/telegram-marketing"
 import { describePendingSteps, resumeButtonLabel } from "@/lib/telegram-registration-copy"
 import { touchTelegramContact } from "@/lib/telegram-contacts"
+import { setWeeklyDigestOptOut } from "@/lib/telegram-weekly-digest"
+import { WEEKLY_DIGEST_OFF_CALLBACK } from "@/lib/telegram-weekly-digest-message"
 import { absoluteUrl } from "@/lib/site-url"
 import { forwardNoticeText, isChannelForward } from "@/lib/telegram-forward-guard"
 import { rememberUserChat } from "@/lib/listing-chat-autopost"
@@ -441,6 +443,21 @@ async function handleMessage(message: TelegramMessage) {
     }
   }
 
+  /* Подписка на еженедельное письмо — командами, если кнопку уже нажали
+     или сообщение потерялось. */
+  const digestCommand = message.text?.trim().toLowerCase().match(/^\/digest_(on|off)/)
+  if (digestCommand && message.chat.type === "private") {
+    const off = digestCommand[1] === "off"
+    await setWeeklyDigestOptOut(telegramId, off)
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: off
+        ? "🔕 Еженедельное письмо отключено. Включить снова: /digest_on"
+        : "🔔 Раз в неделю пришлём коротко: цены на АЗС, новое на площадке. Отключить: /digest_off",
+    })
+    return
+  }
+
   if (message.text?.trim().toLowerCase().startsWith("/start")) {
     if (message.chat.type === "private") {
       const user = await getTelegramUser(telegramId)
@@ -782,6 +799,17 @@ export async function POST(request: NextRequest) {
     const chatId = query.message?.chat?.id
     const messageId = query.message?.message_id
     const telegramId = query.from?.id
+
+    /* «Не присылать» под еженедельным письмом: отписка сразу и кнопка
+       меняется на подтверждение, чтобы человек видел, что его услышали. */
+    if (query.data === WEEKLY_DIGEST_OFF_CALLBACK && chatId && messageId && telegramId) {
+      void (async () => {
+        await setWeeklyDigestOptOut(String(telegramId), true)
+        await telegramApi("answerCallbackQuery", { callback_query_id: query.id, text: "Больше не пришлём. Вернуть: /digest_on" }).catch(() => undefined)
+        await telegramApi("editMessageReplyMarkup", { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } }).catch(() => undefined)
+      })().catch((error) => console.error("Weekly digest opt-out error:", error))
+      return NextResponse.json({ ok: true })
+    }
 
     if (query.data && chatId && messageId && telegramId) {
       void handleFuelCallback({

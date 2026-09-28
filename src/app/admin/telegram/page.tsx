@@ -14,6 +14,7 @@ import {
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 import { broadcastBlockReason, describeBroadcast, type BroadcastAudience } from "@/lib/broadcast-confirmation"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import WeeklyDigestPanel from "@/components/admin/WeeklyDigestPanel"
 
 type Stats = {
   trackingSince: string
@@ -223,6 +224,8 @@ export default function TelegramBroadcastPage() {
             ))}
           </SimpleGrid>
         )}
+
+        <WeeklyDigestPanel />
 
         {stats && (
           <Group gap="xs" align="center">
