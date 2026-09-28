@@ -48,9 +48,28 @@ if command -v flock >/dev/null 2>&1; then
   fi
 fi
 
+# Схема-движок Prisma не ждёт занятую базу: при записи сборщика АЗС или бота
+# он сразу отвечает «database is locked». С 28.09.2026 база в режиме WAL, и
+# первый же деплой упал на миграциях именно так. Повторяем только эту ошибку.
+run_prisma_with_retry() {
+  local output attempt
+  for attempt in 1 2 3 4 5 6; do
+    if output="$("$@" 2>&1)"; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    if [[ "$output" != *"database is locked"* ]] || (( attempt == 6 )); then
+      printf '%s\n' "$output"
+      return 1
+    fi
+    echo "База занята, повтор через 5 с (${attempt}/6): $*" >&2
+    sleep 5
+  done
+}
+
 # Run on the production host from the repository root. Secrets stay in the
 # server environment; this script deliberately never writes them to the repo.
-if ! migration_output="$(npx prisma migrate deploy 2>&1)"; then
+if ! migration_output="$(run_prisma_with_retry npx prisma migrate deploy)"; then
   printf '%s\n' "$migration_output" >&2
 
   # The first production database predates migration tracking and already has
@@ -72,7 +91,7 @@ else
 fi
 # The project has legacy schema fields created before migration tracking.
 # This safe sync only adds missing fields; it never accepts destructive changes.
-npx prisma db push --skip-generate
+run_prisma_with_retry npx prisma db push --skip-generate
 npx prisma generate
 # A fresh database must not wait for the morning cron before import prices can
 # be calculated. The step still fails the deployment when no usable rate exists,
