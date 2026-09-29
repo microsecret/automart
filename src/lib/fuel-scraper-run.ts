@@ -5,6 +5,8 @@ import { collectTwogis } from "@/lib/twogis-scraper"
 import { collectYandex } from "@/lib/yandex-scraper"
 import { collectDrom } from "@/lib/drom-scraper"
 import { collectTbank } from "@/lib/tbank-fuel-scraper"
+import { pruneVanishedStations } from "@/lib/fuel-import-store"
+import { resolveTargetRegions } from "@/lib/fuel-target-regions"
 
 /**
  * Единый запуск источников сбора АЗС.
@@ -31,6 +33,8 @@ export type FuelCollectSummary = {
   failed: number
   message: string | null
   regions: Array<{ key: string; city: string; fetched: number; saved: number; error: string | null }>
+  /** Сколько точек удалено как пропавшие из источника. */
+  pruned?: number
 }
 
 export function isFuelSource(value: string): value is FuelSource {
@@ -90,6 +94,20 @@ export async function findCoolingSources(sources: FuelSource[]): Promise<Set<str
   return cooling
 }
 
+/* Чистка пропавших точек — сразу после сбора и только по регионам, которые
+   источник отдал без ошибки. Регион, упавший в этом прогоне, не трогается:
+   молчание сломанного запроса не значит, что заправки исчезли. */
+async function pruneVanishedAfterRun(source: FuelSource, regions: FuelCollectSummary["regions"]): Promise<number> {
+  let pruned = 0
+  for (const result of regions) {
+    if (result.error) continue
+    const region = resolveTargetRegions([result.key])[0]
+    if (!region) continue
+    pruned += await pruneVanishedStations(source, region, result.fetched)
+  }
+  return pruned
+}
+
 export async function runFuelSource(
   source: FuelSource,
   regionKeys: string[] | undefined,
@@ -97,11 +115,13 @@ export async function runFuelSource(
 ): Promise<FuelCollectSummary> {
   if (source === "GDEBENZ") {
     const result = await collectGdebenz({ regionKeys, pauseMs })
-    return { source, status: result.status, fetched: result.fetched, saved: result.saved, failed: result.failed, message: null, regions: result.regions }
+    const pruned = await pruneVanishedAfterRun(source, result.regions)
+    return { source, status: result.status, fetched: result.fetched, saved: result.saved, failed: result.failed, message: null, regions: result.regions, pruned }
   }
   if (source === "GDEZAPRAVKA") {
     const result = await collectGdezapravka({ regionKeys, pauseMs })
-    return { source, status: result.status, fetched: result.fetched, saved: result.saved, failed: result.failed, message: result.message, regions: result.regions }
+    const pruned = await pruneVanishedAfterRun(source, result.regions)
+    return { source, status: result.status, fetched: result.fetched, saved: result.saved, failed: result.failed, message: result.message, regions: result.regions, pruned }
   }
   if (source === "TWOGIS") {
     const result = await collectTwogis({ regionKeys, pauseMs })

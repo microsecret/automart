@@ -5,6 +5,7 @@ import { diffFuelAvailability } from "@/lib/fuel-appeared-diff"
 import { broadcastFuelAppeared } from "@/lib/fuel-appeared-broadcast"
 import { AVAILABILITY_FUEL_LABELS } from "@/lib/fuel-availability"
 import { sanitizeStationPrices } from "@/lib/fuel-price-sanity"
+import { isCompleteRegionAnswer, shouldPruneRegion, vanishedCutoff } from "@/lib/fuel-station-freshness"
 
 /**
  * Общее хранилище импортированных АЗС и цен.
@@ -338,6 +339,49 @@ export async function finishFuelImportRun(
       completedAt: new Date(),
     },
   })
+}
+
+/**
+ * Удаляет точки, которые источник перестал отдавать по собранному региону.
+ *
+ * Без этого строка, однажды попавшая в базу, жила вечно: карта берёт точки
+ * прямоугольником вокруг города без оглядки на свежесть, и пропавшая из
+ * источника метка стояла на ней неделями. Так в центре Уфы висела
+ * «Татнефть» — пользовательская метка ГдеБЕНЗ, снятая источником 19.09.
+ *
+ * Зовётся только после успешного ответа по региону: правило и его
+ * предохранители — в fuel-station-freshness. Цены уходят вместе с точкой
+ * каскадом связи.
+ */
+export async function pruneVanishedStations(
+  source: string,
+  region: { lat1: number; lon1: number; lat2: number; lon2: number },
+  fetched: number,
+  now: Date = new Date(),
+): Promise<number> {
+  if (!isCompleteRegionAnswer(source, fetched)) return 0
+
+  const inRegion = {
+    source,
+    latitude: { gte: region.lat1, lte: region.lat2 },
+    longitude: { gte: region.lon1, lte: region.lon2 },
+  }
+  const vanishedWhere = { ...inRegion, updatedAt: { lt: vanishedCutoff(now) } }
+
+  try {
+    const vanished = await prisma.fuelStationImport.count({ where: vanishedWhere })
+    if (!vanished) return 0
+    const total = await prisma.fuelStationImport.count({ where: inRegion })
+    if (!shouldPruneRegion({ source, fetched, vanished, total })) return 0
+
+    const result = await prisma.fuelStationImport.deleteMany({ where: vanishedWhere })
+    return result.count
+  } catch (error) {
+    /* Чистка вспомогательная: её сбой не должен ронять прогон, который
+       уже записал свежие цены. */
+    console.error("Fuel vanished-station prune failed", error instanceof Error ? error.message : error)
+    return 0
+  }
 }
 
 /**
