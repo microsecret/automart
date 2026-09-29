@@ -5,6 +5,7 @@ import { diffFuelAvailability } from "@/lib/fuel-appeared-diff"
 import { broadcastFuelAppeared } from "@/lib/fuel-appeared-broadcast"
 import { AVAILABILITY_FUEL_LABELS } from "@/lib/fuel-availability"
 import { sanitizeStationPrices } from "@/lib/fuel-price-sanity"
+import { applyStationCorrection } from "@/lib/fuel-station-corrections"
 import { isCompleteRegionAnswer, shouldPruneRegion, vanishedCutoff } from "@/lib/fuel-station-freshness"
 
 /**
@@ -120,8 +121,11 @@ export async function upsertImportedStations(stations: ImportedStation[], runId?
        Отсев стоит здесь, на входе, а не у каждого читателя: карта, бот,
        витрина на главной и сводка в админке берут цены из этой таблицы
        и одинаково не должны видеть мусор. */
-    const prices = sanitizeStationPrices(rawStation.prices)
-    const station: ImportedStation = { ...rawStation, prices }
+    /* Ручные поправки — до отсева цен: у исправленной точки чужие цены
+       отбрасываются целиком (см. fuel-station-corrections). */
+    const corrected = applyStationCorrection(rawStation)
+    const prices = sanitizeStationPrices(corrected.prices)
+    const station: ImportedStation = { ...corrected, prices }
     const city = resolveStationCity(station)
 
     /* Что было на этой заправке до нынешнего прогона.
