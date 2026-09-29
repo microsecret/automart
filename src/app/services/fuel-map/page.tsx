@@ -758,13 +758,10 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
     if (isDraggingRef.current) return
 
     if (marker.stations.length === 1) {
-      /* Карточка закрытой точки не открывается: в ней цены, ради которых
-         и просят войти. Подсказка объясняет отказ — молчаливое нажатие
-         «в никуда» человек читает как поломку. */
-      if (guestOpenIds && !guestOpenIds.has(marker.stations[0].id)) {
-        setClusterHint("Цены этой заправки открыты вошедшим. Войдите — увидите все заправки города, а бот напишет, когда появится нужное топливо.")
-        return
-      }
+      /* Карточка открывается и гостю: шапка (название, адрес, часы) видна,
+         а цены и наличие закрывает замок внутри карточки с кнопками входа.
+         Раньше вместо карточки всплывала подсказка «цены открыты
+         вошедшим», и войти прямо из неё было нельзя. */
       setClusterHint(null)
       onSelect(marker.stations[0])
       return
