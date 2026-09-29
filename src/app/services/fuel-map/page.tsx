@@ -1476,7 +1476,7 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               aria-hidden={guestReturnPath ? true : undefined}
               /* inert через ref: в React 18 такого атрибута в JSX нет, а без
                  него кнопки отметок под размытием ловили бы фокус с клавиатуры. */
-              ref={(element: HTMLDivElement | null) => element?.toggleAttribute("inert", Boolean(guestReturnPath))}
+              ref={(element: HTMLDivElement | null) => { element?.toggleAttribute("inert", Boolean(guestReturnPath)) }}
             >
               {/* Ответ строкой, до подробностей.
 
