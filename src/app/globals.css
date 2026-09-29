@@ -1154,7 +1154,8 @@ select {
      Она ложилась прямо на кнопку «Войти через Telegram» — главное
      действие всей страницы, ради которого приглашение и показано.
      Нажатие открывало чат поддержки вместо входа. */
-  body:has(.fuel-gate) .support-chat__launcher {
+  body:has(.fuel-gate) .support-chat__launcher,
+  body:has(.fuel-station-lock) .support-chat__launcher {
     display: none;
   }
 

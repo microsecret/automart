@@ -13,7 +13,7 @@ import FuelPriceReporter, { type ConsensusPrice } from "@/components/fuel/FuelPr
 import FuelAvailabilityReporter, { type StationAvailability } from "@/components/fuel/FuelAvailabilityReporter"
 import FuelSubscribeButton from "@/components/fuel/FuelSubscribeButton"
 import FuelShareButton from "@/components/fuel/FuelShareButton"
-import FuelGuestGate from "@/components/fuel/FuelGuestGate"
+import FuelStationLock from "@/components/fuel/FuelStationLock"
 import { formatAge, isFresh, type AvailabilityFuel } from "@/lib/fuel-availability"
 import { TILE_SOURCES, buildTileUrl, findTileSource } from "@/lib/map-tiles"
 import { getGenericIdentity, getNetworkIdentity, getStationIdentity, type NetworkIdentity } from "@/lib/fuel-station-identity"
@@ -205,7 +205,7 @@ function pickDisplayPrice(
     : reported.priceKopecks
 }
 
-function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount, activeFuel, autoOpenSubscribeFor, subscribeFuel }: {
+function FuelStationMap({ city, coordinates, stations, selectedStation, selectedStationAddress, onSelect, onViewportChange, availabilityByStation, reportsToday, pricesByStation, selectedStationPrices, selectedStationAvailability, onPricesReported, onAvailabilityReported, guestVisibleCount, guestReturnPath = null, guestWantsSubscribe = false, activeFuel, autoOpenSubscribeFor, subscribeFuel }: {
   city: string
   coordinates: { latitude: number; longitude: number }
   stations: FuelStation[]
@@ -234,6 +234,9 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
   /* Сколько ближайших точек показать целиком, если человек не вошёл.
      null — вошёл, показываем всё. */
   guestVisibleCount: number | null
+  /** Гость: куда вернуть после входа. null — человек вошёл, замка нет. */
+  guestReturnPath?: string | null
+  guestWantsSubscribe?: boolean
   /* Выбранная в фильтре марка: её цена ставится на плашке первой. */
   activeFuel: string
   /* Заправка, для которой надо сразу раскрыть подписку.
@@ -1462,7 +1465,19 @@ function FuelStationMap({ city, coordinates, stations, selectedStation, selected
               </ActionIcon>
             </Box>
 
-            <Box className="fuel-map-selected__body">
+            {/* Гостю — приглашение войти вместо цен и наличия, под ним
+                размытое тело карточки: видно, что данные есть. */}
+            {guestReturnPath && (
+              <FuelStationLock returnPath={guestReturnPath} stationId={selectedStation.id} wantsSubscribe={guestWantsSubscribe} />
+            )}
+            <Box
+              className="fuel-map-selected__body"
+              data-locked={guestReturnPath ? "true" : undefined}
+              aria-hidden={guestReturnPath ? true : undefined}
+              /* inert через ref: в React 18 такого атрибута в JSX нет, а без
+                 него кнопки отметок под размытием ловили бы фокус с клавиатуры. */
+              ref={(element: HTMLDivElement | null) => element?.toggleAttribute("inert", Boolean(guestReturnPath))}
+            >
               {/* Ответ строкой, до подробностей.
 
                   Марки бейджами отвечали «что есть», но не отвечали
@@ -1987,7 +2002,13 @@ function FuelMapContent() {
      увидеть живые данные, а потом решить. */
   const { status: sessionStatus } = useSession()
   const isGuest = sessionStatus === "unauthenticated"
-  const GUEST_VISIBLE_STATIONS = 4
+  /* Ноль открытых точек: цены и наличие — только после входа.
+
+     Раньше гостю открывали четыре ближайшие заправки, а поверх карты
+     висела плашка входа на полэкрана. Владелец 29.09.2026 попросил иначе:
+     карта открыта целиком, а данные заправки прячутся до входа — и
+     приглашение появляется в карточке, когда человек нажал на точку. */
+  const GUEST_VISIBLE_STATIONS = 0
 
   const filteredStations = useMemo(() => {
     /* Фильтр по марке отвечает на вопрос «где сейчас есть», а не «где
@@ -2292,27 +2313,14 @@ function FuelMapContent() {
           onPricesReported={handlePricesReported}
           onAvailabilityReported={handleAvailabilityReported}
           guestVisibleCount={isGuest ? GUEST_VISIBLE_STATIONS : null}
+          /* Возвращаем ровно туда, откуда пришли: заправка из ссылки,
+             выбранная марка и намерение подписаться не теряются. */
+          guestReturnPath={isGuest ? `/services/fuel-map${searchParams.toString() ? `?${searchParams.toString()}` : ""}` : null}
+          guestWantsSubscribe={wantsSubscribe}
           activeFuel={fuelFilter}
           autoOpenSubscribeFor={wantsSubscribe ? sharedStationId : null}
           subscribeFuel={subscribeFuel}
         />
-        {isGuest && (
-          <FuelGuestGate
-            stationCount={allStations.length}
-            pricedCount={allStations.filter((station) => station.prices.length > 0).length}
-            reportsToday={nearbyAvailabilityData?.activity?.reportsToday}
-            cityLabel={areaLabel}
-            /* Возвращаем ровно туда, откуда пришли.
-
-               Адрес был прописан жёстко, и гость из чата после входа
-               терял всё: заправку из ссылки, выбранную марку и само
-               намерение подписаться. Он нажал «сообщать мне о 95-м», а
-               попадал на общую карту города и искал заново. */
-            returnPath={`/services/fuel-map${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
-            wantsSubscribe={wantsSubscribe}
-            subscribeStationId={sharedStationId}
-          />
-        )}
 
         {/* Панель управления поверх карты, а не над ней.
 

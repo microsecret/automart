@@ -2218,3 +2218,36 @@ html:has(.fuel-map-canvas) {
     display: none;
   }
 }
+
+/* Замок в карточке заправки для гостя: приглашение сразу под шапкой,
+   ниже — размытое тело карточки. Видно, что цены и отметки есть, но не
+   видно какие; нажать на размытое нельзя. */
+.fuel-station-lock {
+  position: relative;
+  z-index: 1;
+  padding: 12px 14px 4px;
+  animation: fuel-lock-in 220ms var(--ease-out) backwards;
+}
+.fuel-station-lock__card {
+  padding: 14px;
+  border: 1px solid var(--market-line);
+  border-radius: var(--radius-md);
+  background: var(--market-surface);
+  box-shadow: 0 10px 28px -18px rgba(11, 20, 38, 0.45);
+}
+.fuel-map-selected__body[data-locked="true"] {
+  max-height: 150px;
+  overflow: hidden;
+  filter: blur(5px);
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+  /* Размытое тело уходит в прозрачность книзу: это тизер, а не таблица. */
+  mask-image: linear-gradient(180deg, #000 30%, transparent);
+}
+@keyframes fuel-lock-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fuel-station-lock { animation: none; }
+}
