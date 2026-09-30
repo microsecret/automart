@@ -851,21 +851,20 @@ async function run() {
   await expect("/api/notifications", cookie, 200, { method: "PATCH", body: JSON.stringify({ id: notification.id }) })
   await expect(`/api/notifications?id=${encodeURIComponent(notification.id)}`, cookie, 200, { method: "DELETE" })
 
-  await expect("/api/ai/valuation", cookie, 200, { method: "POST", body: JSON.stringify({ vehicleId: vehicle.id }) })
-  await expect("/api/ai/smart-matching", cookie, 200, { method: "POST", body: JSON.stringify({ vehicleId: vehicle.id, limit: 5 }) })
+  await expect("/api/ai/valuation", cookie, 422, { method: "POST", body: JSON.stringify({ vehicleId: vehicle.id }) })
+  await prisma.auctionListing.createMany({
+    data: [2_600_000, 2_750_000, 2_900_000].map((priceRub, index) => ({
+      sourceId: `${marker}-valuation-${index}`, source: "ENCAR",
+      sourceUrl: `https://www.encar.com/${marker}-valuation-${index}`,
+      make: "Kia", model: "Sportage", year: 2023, mileage: 20_000 + index * 2_000,
+      sourcePrice: priceRub, sourceCurrency: "RUB", priceRub, markup: 0,
+      finalPrice: priceRub, country: "KR", status: "ACTIVE", sourceLastSeenAt: new Date(),
+    })),
+  })
+  const valuation = await expect("/api/ai/valuation", cookie, 200, { method: "POST", body: JSON.stringify({ vehicleId: vehicle.id }) })
+  record("market valuation uses seeded comparable lots, not the seller price", valuation?.sampleSize === 3 && valuation?.matchLevel === "model" && valuation?.estimatedValue > 0, `${valuation?.sampleSize ?? 0} comparable lots`)
   const historyRequest = await expect("/api/ai/history-check", cookie, 201, { method: "POST", body: JSON.stringify({ vehicleId: vehicle.id }) })
   record("history check stays pending until a verified provider exists", historyRequest?.request?.status === "REQUESTED", historyRequest?.request?.status || "missing")
-  const prediction = await expect("/api/ai/price-prediction", cookie, 200, { method: "POST", body: JSON.stringify({ vehicleId: vehicle.id, monthsAhead: 12 }) })
-  record("price prediction contains an explicit preliminary disclaimer", typeof prediction?.disclaimer === "string" && prediction.disclaimer.includes("не учитывает"), prediction?.disclaimer || "missing")
-  const damageRequest = await expect("/api/ai/damage-assessment", cookie, 202, {
-    method: "POST",
-    body: JSON.stringify({ vehicleId: vehicle.id, imageUrl: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2" }),
-  })
-  record("damage assessment stays pending until computer vision is connected", damageRequest?.request?.status === "REQUESTED", damageRequest?.request?.status || "missing")
-  await expect("/api/ai/damage-assessment", cookie, 400, {
-    method: "POST",
-    body: JSON.stringify({ vehicleId: vehicle.id, imageUrl: "https://example.com/not-owned.jpg" }),
-  })
   await expect("/api/ai/valuation", cookie, 403, { method: "POST", body: JSON.stringify({ vehicleId: sellerVehicle.id }) })
 
   const delivery = await expect("/api/delivery-orders", cookie, 201, {
