@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { ActionIcon, Badge, Button, Center, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
+import { ActionIcon, Badge, Button, Center, Group, Paper, SimpleGrid, Stack, Text } from "@mantine/core"
 import { IconBrandTelegram, IconCreditCard, IconExternalLink, IconReceipt, IconTrendingUp } from "@tabler/icons-react"
 import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
+import MetricCard from "@/components/ui/MetricCard"
 
 export type PromotionOrder = {
   id: string
@@ -68,33 +69,9 @@ export default function PromotionPanel({ spentRub, activePromotions, paidCount, 
   return (
     <Stack gap="md">
       <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-        <Paper radius="md" p="md" withBorder>
-          <Group gap="sm" wrap="nowrap">
-            <ThemeIcon color="indigo" variant="light" size={40} radius="md"><IconCreditCard size={20} /></ThemeIcon>
-            <Stack gap={1}>
-              <Text size="xs" c="dimmed">Оплачено за продвижение</Text>
-              <Text fw={800} fz="xl">{formatRubles(spentRub)}</Text>
-            </Stack>
-          </Group>
-        </Paper>
-        <Paper radius="md" p="md" withBorder>
-          <Group gap="sm" wrap="nowrap">
-            <ThemeIcon color="teal" variant="light" size={40} radius="md"><IconTrendingUp size={20} /></ThemeIcon>
-            <Stack gap={1}>
-              <Text size="xs" c="dimmed">Активные продвижения</Text>
-              <Text fw={800} fz="xl">{activePromotions}</Text>
-            </Stack>
-          </Group>
-        </Paper>
-        <Paper radius="md" p="md" withBorder>
-          <Group gap="sm" wrap="nowrap">
-            <ThemeIcon color="violet" variant="light" size={40} radius="md"><IconReceipt size={20} /></ThemeIcon>
-            <Stack gap={1}>
-              <Text size="xs" c="dimmed">Успешные оплаты</Text>
-              <Text fw={800} fz="xl">{paidCount}</Text>
-            </Stack>
-          </Group>
-        </Paper>
+        <MetricCard label="Оплачено за продвижение" value={formatRubles(spentRub)} icon={<IconCreditCard size={20} />} color="indigo" size="md" />
+        <MetricCard label="Активные продвижения" value={activePromotions} icon={<IconTrendingUp size={20} />} color="teal" size="md" />
+        <MetricCard label="Успешные оплаты" value={paidCount} icon={<IconReceipt size={20} />} color="violet" size="md" />
       </SimpleGrid>
 
       <Paper radius="md" p={{ base: "md", md: "lg" }} withBorder>

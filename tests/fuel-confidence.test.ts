@@ -156,6 +156,6 @@ test("кластер красится по доле заправок с топл
      туда приближаться. */
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
   assert.match(page, /clusterState/)
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFileSync(new URL("../src/app/services/fuel-map/fuel-map.css", import.meta.url), "utf8")
   assert.match(css, /data-cluster-state="yes"/)
 })

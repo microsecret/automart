@@ -4,12 +4,12 @@ import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import {
-  Alert, Badge, Box, Button, Card, Container, Group, Loader, Modal, Stack, Text, Textarea, ThemeIcon, Timeline, Title,
+  Alert, Badge, Box, Button, Card, Container, Group, Modal, Stack, Text, Textarea, ThemeIcon, Timeline, Title,
 } from "@mantine/core"
 import {
   IconBuildingStore, IconCheck, IconClipboardList, IconMail, IconPhone, IconTruckDelivery, IconX,
 } from "@tabler/icons-react"
-import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
 type BuyerOrder = {
@@ -98,7 +98,7 @@ export default function BuyerOrdersPage() {
   }
 
   if (isLoading) {
-    return <Container size="lg" py="xl"><Group justify="center"><Loader /></Group></Container>
+    return <Container size="lg" py="xl"><AsyncLoadingState label="Загружаем заказы…" /></Container>
   }
 
   const orders = data?.orders || []

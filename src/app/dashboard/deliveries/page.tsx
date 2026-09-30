@@ -5,12 +5,13 @@ import { auctionSourceLabel } from "@/lib/auction-source-labels"
 import useSWR from "swr"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Alert, Badge, Box, Button, Center, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
+import { Alert, Badge, Box, Button, Group, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { IconArrowRight, IconBuildingWarehouse, IconCheck, IconChevronRight, IconClipboardCheck, IconFileInvoice, IconGavel, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
 import { fetchJson } from "@/lib/api-client"
-import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState, EmptyState } from "@/components/ui/AsyncStates"
+import MetricCard from "@/components/ui/MetricCard"
 import { formatPriceShort } from "@/lib/format"
 
 const sourceOptions = [
@@ -97,7 +98,7 @@ const organizationStatusMeta = {
 } as const
 
 export default function DeliveriesPage() {
-  return <Suspense fallback={<Center py={100}><Loader color="indigo" /></Center>}><DeliveriesWorkspace /></Suspense>
+  return <Suspense fallback={<AsyncLoadingState label="Загружаем доставки…" />}><DeliveriesWorkspace /></Suspense>
 }
 
 function DeliveriesWorkspace() {
@@ -209,7 +210,7 @@ function DeliveriesWorkspace() {
     }
   }
 
-  if (isLoading) return <Center py={100}><Loader color="indigo" aria-label="Загружаем доставки" /></Center>
+  if (isLoading) return <AsyncLoadingState label="Загружаем доставки…" />
   if (error) return <Box py={80}><AsyncErrorState title="Не удалось загрузить доставки" description={error instanceof Error ? error.message : "Проверьте подключение и повторите попытку."} onRetry={() => void mutate()} backHref="/dashboard" backLabel="В кабинет" /></Box>
 
   const orders = data?.orders || []
@@ -237,10 +238,10 @@ function DeliveriesWorkspace() {
             «Требует внимания», когда там не ноль, — это сигнал, а не декор. */}
         {summary.total > 0 && (
           <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-            <Metric label="Всего сделок" value={summary.total} icon={<IconPackage size={18} />} color="indigo" />
-            <Metric label="В работе" value={summary.active} icon={<IconTruckDelivery size={18} />} color="indigo" />
-            <Metric label="Счета и квитанции" value={summary.pendingPayments} icon={<IconFileInvoice size={18} />} color="indigo" />
-            <Metric label="Требует внимания" value={summary.needsAttention} icon={<IconShieldCheck size={18} />} color={summary.needsAttention ? "red" : "indigo"} />
+            <MetricCard label="Всего сделок" value={summary.total} icon={<IconPackage size={18} />} color="indigo" />
+            <MetricCard label="В работе" value={summary.active} icon={<IconTruckDelivery size={18} />} color="indigo" />
+            <MetricCard label="Счета и квитанции" value={summary.pendingPayments} icon={<IconFileInvoice size={18} />} color="indigo" />
+            <MetricCard label="Требует внимания" value={summary.needsAttention} icon={<IconShieldCheck size={18} />} color={summary.needsAttention ? "red" : "indigo"} />
           </SimpleGrid>
         )}
 
@@ -426,10 +427,6 @@ function DeliveriesWorkspace() {
       </Modal>
     </Box>
   )
-}
-
-function Metric({ label, value, icon, color }: { label: string; value: number; icon: React.ReactNode; color: string }) {
-  return <Paper withBorder radius="md" p="sm"><Group gap="sm"><ThemeIcon variant="light" color={color} radius="md" size={38}>{icon}</ThemeIcon><Stack gap={0}><Text fw={800} fz="lg">{value}</Text><Text size="xs" c="dimmed">{label}</Text></Stack></Group></Paper>
 }
 
 function countryLabel(code: string) {

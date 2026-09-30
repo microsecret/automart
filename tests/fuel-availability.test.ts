@@ -1,6 +1,13 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { readFileSync } from "node:fs"
+
+// Стили карты живут в собственном файле; общие адаптивные правила и
+// анимация пока остаются в globals.css.
+const readFuelStyles = () => [
+  readFileSync(new URL("../src/app/services/fuel-map/fuel-map.css", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8"),
+].join("\n")
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
 import { getStationIdentity } from "../src/lib/fuel-station-identity.ts"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
@@ -195,14 +202,14 @@ test("на метке только свежие отметки", () => {
 test("состояние читается не только цветом", () => {
   /* Зачёркнутая марка понятна и при дальтонизме, и на выцветшем экране
      под солнцем. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   assert.match(css, /fuel-map-plate__fuel\[data-state="no"\][\s\S]{0,160}line-through/)
 })
 
 test("тег OpenStreetMap на плашке отличается от отметки водителя", () => {
   /* Тег говорит про ассортимент вообще, отметка — про наличие сейчас.
      Путать их нельзя: человек поедет за топливом, которого нет. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   assert.match(css, /fuel-map-plate__fuel\[data-state="unknown"\]/)
 })
 
@@ -210,7 +217,7 @@ test("цвета обозначений совпадают с цветами м�
   /* Разойдись они на тон, и подпись перестала бы объяснять карту.
      Наличие показывается кольцом, а не заливкой: заливка затирала цвет
      сети, и человек переставал отличать Лукойл от Роснефти. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
 
   for (const [state, expected] of [["yes", "#16a34a"], ["no", "#dc2626"]] as const) {
     const marker = css.slice(css.indexOf(`fuel-map-marker[data-reported="${state}"]`))
@@ -232,7 +239,7 @@ test("сеть видна всегда, наличие показывает об
   const page = readFileSync(new URL("../src/app/services/fuel-map/page.tsx", import.meta.url), "utf8")
   assert.match(page, /networkIdentity && !isCluster\s*$/m)
 
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   assert.match(css, /\.fuel-map-marker\[data-reported="yes"\] \{\s*border-color: #16a34a/)
   assert.match(css, /\.fuel-map-marker\[data-reported="no"\] \{\s*border-color: #dc2626/)
 })
@@ -248,7 +255,7 @@ test("метка указывает на заправку остриём", () =>
 
      У группы острия нет: она собирает заправки из разных мест, и оно
      показывало бы на пустоту между ними. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   assert.match(css, /\.fuel-map-marker::after \{/)
   assert.match(css, /border-top: 9px solid currentColor/)
   assert.match(css, /\.fuel-map-marker\[data-cluster\]::after \{\s*display: none/)
@@ -427,7 +434,7 @@ test("у цены видно, насколько ей верить", () => {
   const reporter = readFileSync(new URL("../src/components/fuel/FuelPriceReporter.tsx", import.meta.url), "utf8")
   assert.match(reporter, /fuel-price-row__meter/)
 
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   /* Цвет несёт то же, что и длина полосы: слабую цену видно, не
      сравнивая полосы между собой. */
   assert.match(css, /data-level="низкая"\] > span \{ background: #dc2626/)
@@ -468,7 +475,7 @@ test("наведение на метку не стирает цвет налич
   /* Раньше hover красил метку тёмно-синим: наведя курсор на зелёную
      заправку, человек видел синюю и терял ответ ровно в тот момент,
      когда к ней тянулся. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   const hoverBlock = css.slice(css.indexOf(".fuel-map-marker:hover"), css.indexOf(".fuel-map-marker:hover") + 400)
   assert.doesNotMatch(hoverBlock, /background: #1c4291/)
   /* Выбранная метка пульсирует, потому что карточка закрывает часть
@@ -485,7 +492,7 @@ test("в карточке на карте видно расстояние", () =
 test("плашки читаются на телефоне", () => {
   /* Мелкий кегль под солнцем не разбирается, а смотрят на карту именно
      там. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   const plate = css.slice(css.indexOf(".fuel-map-plate {"))
   assert.match(plate.slice(0, 700), /max-width: 2[0-9]{2}px/)
 })
@@ -697,7 +704,7 @@ test("знак сети виден на фирменной плашке", () => 
      Башнефти получался почти невидимый белый на синем: буквы
      пропадали, а плашка выглядела безымянной. Белый кружок читается на
      любом фирменном цвете. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   const rule = css.slice(css.indexOf('.fuel-map-plate[data-branded] .fuel-map-plate__logo'))
   assert.match(rule.slice(0, 320), /background: #fff/)
   assert.match(rule.slice(0, 320), /color: var\(--plate-brand\)/)
@@ -706,7 +713,7 @@ test("знак сети виден на фирменной плашке", () => 
 test("марка топлива на плашке обведена рамкой", () => {
   /* Подряд идущие «92 95 98 ДТ» сливались в строку, и человек читал их
      как один номер — особенно когда под маркой стояла цена. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   const rule = css.slice(css.indexOf('.fuel-map-plate__fuel {'))
   assert.match(rule.slice(0, 260), /border: 1px solid/)
   assert.match(rule.slice(0, 260), /border-radius/)
@@ -813,7 +820,7 @@ test("шапка не переполняется на ноутбуке", () => {
   /* Открытый раздел не прячется: человек должен видеть, где он. */
   assert.match(header, /&& !item\.active \? " market-header-tab--secondary"/)
 
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   assert.match(css, /@media \(max-width: 1400px\) \{\s*\.market-header-tab--secondary \{\s*display: none/)
 })
 
@@ -833,7 +840,7 @@ test("ассортимент виден до того, как кто-то отм
 
   /* Серый цвет честно молчит про наличие: зелёный или красный здесь
      соврали бы. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   assert.match(css, /\.fuel-tile\[data-state="unknown"\]/)
 })
 
@@ -875,7 +882,7 @@ test("группа показывает состав по сетям, а не т
   /* Одна сеть на группу — кольцо не нужно: заливка уже сказала всё. */
   assert.match(page, /if \(shares\.size < 2\) return null/)
 
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   /* Число остаётся читаемым: под ним сплошная подложка. */
   assert.match(css, /fuel-map-marker__count/)
 })
@@ -914,7 +921,7 @@ test("карту можно тянуть пальцем с любого мест
   assert.match(page, /if \(isDraggingRef\.current\) return/)
   assert.match(page, /isDraggingRef\.current = true/)
 
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   /* Жест внутри карты принадлежит карте, где бы палец ни лёг. */
   assert.match(css, /\.fuel-map-canvas \*,/)
   /* Карточка точки — исключение: её содержимое надо прокручивать. */
@@ -945,7 +952,7 @@ test("мышью карту тянут без выделения текста", 
   /* touch-action решает только жесты пальцем. На десктопе, начав тянуть
      с плашки заправки, человек попадал не в панораму, а в выделение
      текста: браузер подсвечивал «Башнефть ДТ АИ-92», карта стояла. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   const rule = css.slice(css.indexOf("Мышью карту тоже нужно тянуть"), css.indexOf("Карточка точки — исключение: в ней адрес"))
   assert.match(rule, /user-select: none/)
   assert.match(rule, /-webkit-user-drag: none/)
@@ -1370,7 +1377,7 @@ test("подписи вкладок в шапке не обрезаются на
      с ним не так.
 
      Вместо обрезки подпись уходит целиком, оставляя значок с подсказкой. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
 
   /* Ужимается ступенями: сперва теснее отступы, и только потом уходит
      подпись — одна точка перелома давала скачок от полного ряда к голым
@@ -1407,7 +1414,7 @@ test("активная вкладка шапки видна с одного вз
 
      Заливка-пилюля — то же решение, что в переключателях внутри страниц,
      поэтому ряд читается как единый элемент управления. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
 
   assert.match(css, /\.market-header-tab--active,\s*\n\.market-header-tab--active:hover \{/)
   assert.match(css, /background: var\(--market-primary-soft\) !important/)
@@ -1426,7 +1433,7 @@ test("сетки фильтров ужимаются ступенями, а не
      Фильтры аукционов не переполнялись — колонки сжимаемые, — но при
      ширине окна около восьмисот на каждую оставалось меньше сотни
      пикселей, и «1 500 000» не влезало в поле цены при вводе. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
 
   assert.match(css, /min-width: 48\.0625em\) and \(max-width: 75em\)[\s\S]{0,120}\.catalog-filter-grid/)
   assert.match(css, /min-width: 48\.0625em\) and \(max-width: 62em\)[\s\S]{0,120}\.auction-filter-grid/)
@@ -1434,7 +1441,8 @@ test("сетки фильтров ужимаются ступенями, а не
   /* Ряды полей в форме подачи разворачиваются в столбик: Mantine в режиме
      растяжения ставит предел в треть ширины и запрещает перенос — на
      телефоне это по 91 пикселю на поле. */
-  assert.match(css, /\.create-listing__section \.mantine-Group-root\[data-grow\]/)
+  const listingCss = readFileSync(new URL("../src/app/listings/create/create-listing.css", import.meta.url), "utf8")
+  assert.match(listingCss, /\.create-listing__section \.mantine-Group-root\[data-grow\]/)
 })
 
 test("шапка уплотняется прежде, чем что-то прятать", () => {
@@ -1447,7 +1455,7 @@ test("шапка уплотняется прежде, чем что-то пря�
 
   /* Короткие подписи кнопок включаются раньше: «Партнёрам» и «Подать»
      понятны без остатка фразы, а место освобождают заметное. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
   assert.match(css, /min-width: 1200px\) and \(max-width: 1600px\)/)
 })
 
@@ -1460,7 +1468,7 @@ test("шапка не режет правые кнопки", () => {
      Теперь ряд не может переполниться по построению: колонка вкладок
      уступает место и прокручивается внутри себя, а правые кнопки стоят
      на месте. */
-  const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
+  const css = readFuelStyles()
 
   assert.doesNotMatch(css, /\.market-app-header \.mantine-Container-root \{[^}]*overflow: hidden/)
   assert.match(css, /\.market-app-header__tabs \{[\s\S]{0,200}flex: 0 1 auto/)

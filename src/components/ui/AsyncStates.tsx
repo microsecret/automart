@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Box, Button, Group, Paper, Skeleton, Stack, Text, ThemeIcon } from "@mantine/core"
+import { Box, Button, Group, Loader, Paper, Skeleton, Stack, Text, ThemeIcon } from "@mantine/core"
 import { IconAlertCircle, IconArrowLeft, IconRefresh, IconSearchOff } from "@tabler/icons-react"
 
 type AsyncErrorStateProps = {
@@ -29,6 +29,9 @@ export function AsyncErrorState({
     setRetrying(true)
     try {
       await onRetry()
+    } catch {
+      // Ошибка остаётся видимой; повторный запрос не должен ронять страницу
+      // необработанным отклонением промиса.
     } finally {
       setRetrying(false)
     }
@@ -87,6 +90,37 @@ export function EmptyState({ title, description, actionLabel, actionHref, onActi
         {actionLabel && onAction && <Button color="indigo" size="sm" mt="xs" onClick={onAction}>{actionLabel}</Button>}
       </Stack>
     </Paper>
+  )
+}
+
+type AsyncLoadingStateProps = {
+  label?: string
+  compact?: boolean
+}
+
+/**
+ * Единое доступное состояние загрузки для кабинета и рабочих разделов.
+ * Видимый текст одновременно объясняет происходящее человеку и служит
+ * живым объявлением для экранного диктора; один голый spinner этого не делал.
+ */
+export function AsyncLoadingState({
+  label = "Загружаем данные…",
+  compact = false,
+}: AsyncLoadingStateProps) {
+  return (
+    <Stack
+      align="center"
+      justify="center"
+      gap="xs"
+      px="md"
+      py={compact ? "md" : "xl"}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <Loader size={compact ? "sm" : "md"} color="indigo" aria-hidden="true" />
+      <Text size="sm" c="dimmed" ta="center">{label}</Text>
+    </Stack>
   )
 }
 

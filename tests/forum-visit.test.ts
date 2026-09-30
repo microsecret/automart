@@ -82,7 +82,7 @@ test("страница раздела не кэшируется", () => {
 test("подсветка это точка, а не слово", () => {
   /* Она читается краем глаза при беге по списку, а подпись пришлось бы
      прочитать у каждой из двадцати пяти строк. */
-  const css = read("../src/app/globals.css")
+  const css = read("../src/app/forum/forum-page.css")
   assert.match(css, /\.forum-topic-new \{[\s\S]{0,200}border-radius: 50%/)
   // Признак состояния, а не событие: без движения.
   const rule = css.slice(css.indexOf(".forum-topic-new {"), css.indexOf(".forum-topic-new {") + 300)

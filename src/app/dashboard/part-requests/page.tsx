@@ -3,10 +3,10 @@
 import useSWR from "swr"
 import Link from "next/link"
 import {
-  Anchor, Badge, Box, Button, Card, Container, Divider, Group, Loader, Stack, Text, ThemeIcon, Title,
+  Anchor, Badge, Box, Button, Card, Container, Divider, Group, Stack, Text, ThemeIcon, Title,
 } from "@mantine/core"
 import { IconBuildingStore, IconPhone, IconSearch } from "@tabler/icons-react"
-import { AsyncErrorState, EmptyState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState, EmptyState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
 type Offer = {
@@ -85,7 +85,7 @@ export default function MyPartRequestsPage() {
       </Group>
 
       {isLoading ? (
-        <Group justify="center" py="xl"><Loader /></Group>
+        <AsyncLoadingState label="Загружаем заявки на запчасти…" />
       ) : error ? (
         <AsyncErrorState title="Не удалось загрузить заявки" onRetry={() => void mutate()} />
       ) : requests.length === 0 ? (

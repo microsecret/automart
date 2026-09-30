@@ -3,11 +3,11 @@
 import { useState } from "react"
 import useSWR from "swr"
 import {
-  Alert, Badge, Box, Button, Card, Container, CopyButton, Group, Loader, Progress,
+  Alert, Badge, Box, Button, Card, Container, CopyButton, Group, Progress,
   SimpleGrid, Stack, Table, Text, TextInput, ThemeIcon, Title,
 } from "@mantine/core"
 import { IconCheck, IconCopy, IconGift, IconUsers, IconWallet } from "@tabler/icons-react"
-import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 import { plural } from "@/lib/format"
 
@@ -48,7 +48,7 @@ export default function ReferralPage() {
   }
 
   if (isLoading || !data) {
-    return <Container size="lg" py="xl"><Group justify="center"><Loader /></Group></Container>
+    return <Container size="lg" py="xl"><AsyncLoadingState label="Загружаем партнёрскую статистику…" /></Container>
   }
 
   // Прогресс считается от порога следующей ставки, а не от процента: иначе

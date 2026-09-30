@@ -5,11 +5,11 @@ import { FormEvent, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { ActionIcon, Alert, Avatar, Badge, Box, Button, Center, Divider, FileInput, Group, Loader, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, Timeline, Title } from "@mantine/core"
+import { ActionIcon, Alert, Avatar, Badge, Box, Button, Divider, FileInput, Group, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, Timeline, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { IconArrowLeft, IconArrowRight, IconCalendar, IconCheck, IconCircleCheck, IconClock, IconFileDescription, IconFileInvoice, IconLock, IconMapPin, IconMessageCircle, IconNotes, IconPlus, IconReceipt, IconRoute, IconSend, IconShieldCheck, IconSparkles, IconTruckDelivery, IconUpload } from "@tabler/icons-react"
 import { canTransitionDeliveryStatus, DELIVERY_DOCUMENT_META, DELIVERY_PAYMENT_META, DELIVERY_STATUSES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
-import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 
 type DeliveryUser = { id: string; name: string | null; image: string | null; deliveryOrganizations?: Array<{ id: string; legalName: string; verificationStatus: string }> }
@@ -123,7 +123,7 @@ export default function DeliveryOrderPage() {
   const [savingEvent, setSavingEvent] = useState(false)
   const [savingPayment, setSavingPayment] = useState(false)
 
-  if (isLoading) return <Center py={100}><Loader color="indigo" /></Center>
+  if (isLoading) return <AsyncLoadingState label="Загружаем сделку…" />
   if (error || !data?.order) return <Box py={80}><AsyncErrorState title="Не удалось открыть сделку" description={error?.message || "Сделка не найдена или у вас нет к ней доступа."} onRetry={() => void mutate()} backHref="/dashboard/deliveries" backLabel="К доставкам" /></Box>
 
   const order = data.order

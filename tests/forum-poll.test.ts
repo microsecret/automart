@@ -181,7 +181,8 @@ test("до голосования проценты не показываются
 
 test("рост полосы отключается при отказе от движения", () => {
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
-  const reduced = css.slice(css.indexOf("forum-poll__bar"))
+  const forumCss = readFileSync(new URL("../src/app/forum/forum-page.css", import.meta.url), "utf8")
+  const reduced = `${forumCss}\n${css}`.slice(forumCss.indexOf("forum-poll__bar"))
   assert.match(reduced, /prefers-reduced-motion[\s\S]*?forum-poll__bar\s*\{\s*animation: none/)
 })
 

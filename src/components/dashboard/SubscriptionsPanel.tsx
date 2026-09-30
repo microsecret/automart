@@ -3,10 +3,10 @@
 import Link from "next/link"
 import useSWR from "swr"
 import { useState } from "react"
-import { ActionIcon, Badge, Box, Button, Group, Loader, Paper, Stack, Text, Tooltip } from "@mantine/core"
+import { ActionIcon, Badge, Box, Button, Group, Paper, Stack, Text, Tooltip } from "@mantine/core"
 import { IconBellOff, IconBrandTelegram, IconGasStation, IconSearch, IconTrash } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
-import { EmptyState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState, EmptyState } from "@/components/ui/AsyncStates"
 
 /**
  * Подписки человека в одном месте.
@@ -77,6 +77,7 @@ export default function SubscriptionsPanel() {
   const fuelList = fuel.data?.subscriptions ?? []
   const searchList = searches.data?.searches ?? []
   const isLoading = fuel.isLoading || searches.isLoading
+  const loadError = fuel.error || searches.error
   const isEmpty = !isLoading && fuelList.length === 0 && searchList.length === 0
 
   async function removeFuel(id: string) {
@@ -111,11 +112,16 @@ export default function SubscriptionsPanel() {
   }
 
   if (isLoading) {
+    return <AsyncLoadingState label="Загружаем подписки…" />
+  }
+
+  if (loadError) {
     return (
-      <Group justify="center" py="xl">
-        <Loader size="sm" />
-        <Text size="sm" c="dimmed">Загружаем подписки…</Text>
-      </Group>
+      <AsyncErrorState
+        title="Не удалось загрузить подписки"
+        description="Подписки на топливо и сохранённые поиски временно недоступны. Повторите запрос."
+        onRetry={() => Promise.all([fuel.mutate(), searches.mutate()])}
+      />
     )
   }
 

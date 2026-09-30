@@ -154,7 +154,8 @@ test("полоса заказа не висит в пустоте на план�
      кнопка поддержки оказывалась под ней — нажатие открывало чат
      вместо заявки. */
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8")
-  const bar = css.slice(css.indexOf(".auction-action-bar {"))
+  const auctionCss = readFileSync(new URL("../src/app/auctions/auctions-page.css", import.meta.url), "utf8")
+  const bar = auctionCss.slice(auctionCss.indexOf(".auction-action-bar {"))
   assert.match(bar.slice(0, 900), /bottom: 0;/)
   /* Подъём над меню перенесён туда, где меню действительно есть. */
   assert.match(css, /@media \(max-width: 640px\) \{\s*\.auction-action-bar \{\s*bottom: calc\(92px/)
@@ -177,7 +178,7 @@ test("карточка лота разбирает список снимков �
   /* Разбор JSON стоял прямо в разметке дважды подряд: сначала чтобы
      узнать, больше ли одного снимка, потом чтобы вывести число. */
   const page = readFileSync(new URL("../src/app/auctions/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /const imageCount = parseAuctionImages\(l\.images\)/)
+  assert.match(page, /const imageCount = l\.imageCount \?\? \(parseAuctionImages\(l\.images\)\?\.length \|\| 0\)/)
   assert.doesNotMatch(page, /\(parseAuctionImages\(l\.images\)\?\.length \|\| 0\) > 1/)
 })
 

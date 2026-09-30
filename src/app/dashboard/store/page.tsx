@@ -6,14 +6,14 @@ import { useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
 import {
-  Alert, Badge, Box, Button, Card, Container, Divider, FileInput, Group, Loader, Modal,
+  Alert, Badge, Box, Button, Card, Container, Divider, FileInput, Group, Modal,
   Select, SimpleGrid, Stack, Table, Text, TextInput, Textarea, ThemeIcon, Title,
 } from "@mantine/core"
 import { IconPencil,
   IconAlertTriangle, IconBuildingStore, IconCheck, IconExternalLink, IconFileSpreadsheet,
   IconHeartHandshake, IconPlus, IconSend, IconShieldCheck, IconTrash, IconUpload,
 } from "@tabler/icons-react"
-import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState } from "@/components/ui/AsyncStates"
 import StoreOrdersPanel from "@/components/store/StoreOrdersPanel"
 import StoreCatalogPanel from "@/components/store/StoreCatalogPanel"
 import StoreRequestsPanel from "@/components/store/StoreRequestsPanel"
@@ -277,7 +277,7 @@ export default function StoreWorkspacePage() {
   }
 
   if (isLoading) {
-    return <Container size="lg" py="xl"><Group justify="center"><Loader /></Group></Container>
+    return <Container size="lg" py="xl"><AsyncLoadingState label="Загружаем кабинет магазина…" /></Container>
   }
 
   const statusMeta = store ? STATUS_META[store.status] || STATUS_META.DRAFT : null

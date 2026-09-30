@@ -11,7 +11,8 @@ import { useSession } from "next-auth/react"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages, initialOf } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { fetchJson } from "@/lib/api-client"
-import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import MetricCard from "@/components/ui/MetricCard"
 import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import ShareInviteCard from "@/components/dashboard/ShareInviteCard"
@@ -368,27 +369,16 @@ function DashboardContent() {
           ].map((card) => {
             const isEmpty = !card.value || card.value === 0 || card.value === "—"
             return (
-              <Paper
+              <MetricCard
                 key={card.label}
-                component={Link}
+                label={card.label}
+                value={card.value}
                 href={card.href}
-                radius="md"
-                p="sm"
-                withBorder
+                icon={card.icon}
+                color={card.tone}
+                description={isEmpty ? card.hint : card.label}
                 className="dashboard-stat"
-              >
-                <Group gap="sm" align="center" wrap="nowrap">
-                  <ThemeIcon variant="light" color={card.tone} size={36} radius="md">
-                    {card.icon}
-                  </ThemeIcon>
-                  <Stack gap={0} miw={0}>
-                    <Text size="xl" fw={800} c="var(--market-ink)" lh={1}>{card.value}</Text>
-                    <Text size="xs" c="dimmed" lineClamp={1}>
-                      {isEmpty ? card.hint : card.label}
-                    </Text>
-                  </Stack>
-                </Group>
-              </Paper>
+              />
             )
           })}
         </SimpleGrid>
@@ -661,10 +651,10 @@ function DashboardContent() {
                 </Stack>
               </Group>
               {isAccountLoading && !accountProfile ? (
-                <Text size="sm" c="dimmed" aria-live="polite">Загружаем подтверждённые данные аккаунта…</Text>
+                <AsyncLoadingState label="Загружаем подтверждённые данные аккаунта…" compact />
               ) : accountProfile && (
                 <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-                  <Paper radius="md" p="sm" bg="gray.0">
+                  <Paper radius="md" p="sm" bg="var(--market-surface-subtle)">
                     <Group gap="xs" wrap="nowrap" align="flex-start">
                       <ThemeIcon variant="light" color="indigo" radius="md" size={34}><IconAt size={17} /></ThemeIcon>
                       <Box style={{ minWidth: 0 }}>
@@ -674,7 +664,7 @@ function DashboardContent() {
                       </Box>
                     </Group>
                   </Paper>
-                  <Paper radius="md" p="sm" bg="gray.0">
+                  <Paper radius="md" p="sm" bg="var(--market-surface-subtle)">
                     <Group gap="xs" wrap="nowrap" align="flex-start">
                       <ThemeIcon variant="light" color="teal" radius="md" size={34}><IconPhone size={17} /></ThemeIcon>
                       <Box style={{ minWidth: 0 }}>
@@ -684,7 +674,7 @@ function DashboardContent() {
                       </Box>
                     </Group>
                   </Paper>
-                  <Paper radius="md" p="sm" bg="gray.0">
+                  <Paper radius="md" p="sm" bg="var(--market-surface-subtle)">
                     <Group gap="xs" wrap="nowrap" align="flex-start">
                       <ThemeIcon variant="light" color="blue" radius="md" size={34}><IconBrandTelegram size={17} /></ThemeIcon>
                       <Box style={{ minWidth: 0 }}>
