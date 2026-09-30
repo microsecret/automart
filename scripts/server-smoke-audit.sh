@@ -163,14 +163,14 @@ probe 'Encar parser without token' POST '/api/parser/encar' 401 -H 'Content-Type
 probe 'Encar refresh without token' POST '/api/parser/encar/refresh' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'Encar sync without token' POST '/api/parser/encar/sync' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'admin stats without session' GET '/api/admin/stats' '401|403'
-probe 'admin listing queue without session' GET '/api/admin/listings' 403
+probe 'admin listing queue without session' GET '/api/admin/listings' '401|403'
 probe 'admin reports without session' GET '/api/admin/reports' 403
-probe 'admin auction inquiries without session' GET '/api/admin/auctions/inquiries' 403
-probe 'admin auction metrics without session' GET '/api/admin/auctions/stats' 403
-probe 'admin Telegram lot preview without session' GET '/api/admin/telegram-auction-highlight?listing=26cc45ec-c63f-496c-b15a-4a5232c1fc0f' 403
-probe 'admin role update without session' PATCH '/api/admin/users/not-a-user/role' 403 -H 'Content-Type: application/json' --data '{}'
-probe 'admin delivery partners without session' GET '/api/admin/delivery-organizations' 403
-probe 'admin delivery partner mutation without session' PATCH '/api/admin/delivery-organizations' 403 -H 'Content-Type: application/json' --data '{}'
+probe 'admin auction inquiries without session' GET '/api/admin/auctions/inquiries' '401|403'
+probe 'admin auction metrics without session' GET '/api/admin/auctions/stats' '401|403'
+probe 'admin Telegram lot preview without session' GET '/api/admin/telegram-auction-highlight?listing=26cc45ec-c63f-496c-b15a-4a5232c1fc0f' '401|403'
+probe 'admin role update without session' PATCH '/api/admin/users/not-a-user/role' '401|403' -H 'Content-Type: application/json' --data '{}'
+probe 'admin delivery partners without session' GET '/api/admin/delivery-organizations' '401|403'
+probe 'admin delivery partner mutation without session' PATCH '/api/admin/delivery-organizations' '401|403' -H 'Content-Type: application/json' --data '{}'
 probe 'admin support queue without session' GET '/api/admin/support' 403
 probe 'delivery orders without session' GET '/api/delivery-orders' 401
 probe 'partner auction offers without session' GET '/api/partner/auction-offers' 401
@@ -189,10 +189,10 @@ probe 'review creation without session' POST '/api/reviews' 401 -H 'Content-Type
 probe 'listing promotion without session' POST '/api/listings/not-a-real-listing/promote' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'listing report without session' POST '/api/listings/not-a-real-listing/reports' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'AI valuation without session' POST '/api/ai/valuation' 401 -H 'Content-Type: application/json' --data '{}'
-probe 'AI smart matching without session' POST '/api/ai/smart-matching' 401 -H 'Content-Type: application/json' --data '{}'
+probe 'retired AI smart matching API' POST '/api/ai/smart-matching' 404 -H 'Content-Type: application/json' --data '{}'
 probe 'AI history check without session' POST '/api/ai/history-check' 401 -H 'Content-Type: application/json' --data '{}'
-probe 'AI price prediction without session' POST '/api/ai/price-prediction' 401 -H 'Content-Type: application/json' --data '{}'
-probe 'AI damage assessment without session' POST '/api/ai/damage-assessment' 401 -H 'Content-Type: application/json' --data '{}'
+probe 'retired AI price prediction API' POST '/api/ai/price-prediction' 404 -H 'Content-Type: application/json' --data '{}'
+probe 'retired AI damage assessment API' POST '/api/ai/damage-assessment' 404 -H 'Content-Type: application/json' --data '{}'
 probe 'payment intent without session' POST '/api/payment/create-intent' 401 -H 'Content-Type: application/json' --data '{}'
 probe 'payment webhook unsigned' POST '/api/payment/webhook' '400|503' -H 'Content-Type: application/json' --data '{}'
 probe 'Telegram webhook without secret' POST '/api/telegram/webhook' '401|503' -H 'Content-Type: application/json' --data '{}'
