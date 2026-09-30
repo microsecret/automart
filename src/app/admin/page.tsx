@@ -372,6 +372,9 @@ export default function AdminDashboard() {
 
   const c = data.counts
   const stats: AdminMetric[] = [
+    /* Карточки ведут в админку, а не в личные разделы администратора:
+       «Сообщения» открывали /messages — его собственную переписку, и 10
+       диалогов пользователей из счётчика было не найти. */
     { label: "Пользователи", value: c.users, icon: <IconUsers size={18} />, color: "indigo", href: "/admin/users", new: data.recent.newUsers },
     /* Каждая карточка открывает свой раздел.
 
@@ -381,10 +384,10 @@ export default function AdminDashboard() {
        как поломка, а не как решение показать одну цифру. */
     { label: "Объявления", value: c.listings, icon: <IconTag size={18} />, color: "blue", href: "/moderation", new: data.recent.newListings },
     { label: "Транспорт", value: c.vehicles, icon: <IconCar size={18} />, color: "teal", href: "/?type=vehicle" },
-    { label: "Запчасти", value: c.parts, icon: <IconCar size={18} />, color: "green", href: "/parts-finder" },
-    { label: "Сообщения", value: c.messages, icon: <IconMessageCircle2 size={18} />, color: "cyan", href: "/messages" },
-    { label: "Отзывы", value: c.reviews, icon: <IconStar size={18} />, color: "orange", href: "/moderation" },
-    { label: "Уведомления", value: c.notifications, icon: <IconBell size={18} />, color: "red", href: "/notifications" },
+    { label: "Запчасти", value: c.parts, icon: <IconCar size={18} />, color: "green", href: "/admin/records?kind=part-requests" },
+    { label: "Сообщения", value: c.messages, icon: <IconMessageCircle2 size={18} />, color: "cyan", href: "/admin/records?kind=inbox" },
+    { label: "Отзывы", value: c.reviews, icon: <IconStar size={18} />, color: "orange", href: "/admin/records?kind=reviews" },
+    { label: "Уведомления", value: c.notifications, icon: <IconBell size={18} />, color: "red", href: "/admin/records?kind=notifications" },
     { label: "AI-запросы", value: c.aiLogs, icon: <IconRobot size={18} />, color: "violet", href: "/admin/traffic" },
     { label: "Поддержка", value: c.supportTickets, icon: <IconHeadset size={18} />, color: "grape", href: "/admin/support" },
   ]
