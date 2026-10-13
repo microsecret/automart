@@ -4,6 +4,8 @@ import { Box, Group, Text, UnstyledButton } from "@mantine/core"
 import {
   IconBattery3, IconBottle, IconCar, IconDisc, IconDroplet, IconFilter, IconFlask, IconLamp, IconSparkles,
   IconTool, IconWiper, IconCircleDot, IconEngine, IconSnowflake,
+  IconArmchair, IconArrowBarUp, IconBolt, IconBucketDroplet, IconCamera, IconDroplets, IconFirstAidKit, IconHammer,
+  IconLayout, IconPackage, IconSettings2, IconSpray, IconWind,
 } from "@tabler/icons-react"
 import { DEPARTMENTS, productGroupsOfDepartment, type DepartmentKey } from "@/lib/product-groups"
 
@@ -13,6 +15,10 @@ const GROUP_ICONS: Record<string, typeof IconCar> = {
   brake_pads: IconDisc, brake_discs: IconDisc, oil_filter: IconFilter, air_filter: IconFilter,
   cabin_filter: IconFilter, fuel_filter: IconFilter, spark_plugs: IconEngine, wiper_blades: IconWiper,
   bulbs: IconLamp, shock_absorbers: IconCar, autochem: IconFlask, tools: IconTool,
+  hydraulic_fluid: IconDroplets, greases: IconBucketDroplet, other_fluids: IconDroplet,
+  chem_engine: IconFlask, chem_additives: IconFlask, chem_body: IconSpray, chem_interior: IconSpray, chem_repair: IconSpray,
+  dashcams: IconCamera, car_mats: IconLayout, seat_covers: IconArmchair, chargers: IconBolt, compressors: IconWind,
+  jacks: IconArrowBarUp, safety: IconFirstAidKit, roof_racks: IconPackage, belts: IconSettings2, tool_sets: IconHammer,
 }
 
 /**

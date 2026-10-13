@@ -1,4 +1,7 @@
-/* Граница слова в регулярных выражениях ниже записана явно: встроенная
+/* Граница слова и окончания слов в регулярных выражениях ниже записаны
+   явно: встроенные  и \w в JavaScript не считают кириллицу буквой —
+   «очистител\w*» не захватывал «ь», «6ст» и «АКБ» не находились.
+   Граница слова в регулярных выражениях ниже записана явно: встроенная
    \b в JavaScript не считает кириллицу буквой, и «6ст», «АКБ», «Вт»
    не находились вовсе. */
 
@@ -132,7 +135,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
     extract(name) {
       const result: Record<string, string | number> = {}
       put(result, "capacity", firstNumber(name, /6\s*ст\s*[-–]?\s*(\d{2,3})/i) ?? firstNumber(name, new RegExp(`${NUM}\\s*а\\s*[\\/.]?\\s*[чh]`, "i")))
-      put(result, "coldCrank", firstNumber(name, /(?:пуск\.?\w*\s*(?:ток)?|ток|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))en(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|cca)\s*[:\-]?\s*(\d{2,4})/i) ?? firstNumber(name, /(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))(\d{3,4})\s*a(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))/i))
+      put(result, "coldCrank", firstNumber(name, /(?:пуск\.?[а-яёa-z0-9_]*\s*(?:ток)?|ток|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))en(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|cca)\s*[:\-]?\s*(\d{2,4})/i) ?? firstNumber(name, /(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))(\d{3,4})\s*a(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))/i))
       const dims = name.match(/(\d{2,3})\s*[xх×*]\s*(\d{2,3})\s*[xх×*]\s*(\d{2,3})/i)
       if (dims) {
         put(result, "length", Number(dims[1]))
@@ -152,7 +155,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   {
     key: "engine_oil", label: "Моторные масла", department: "fluids", partType: "CONSUMABLES", subcategory: "Моторное масло",
-    detect: /моторн\w*\s+масл|масло\s+моторн|engine\s+oil|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))motor\s*oil|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))\d{1,2}\s*w\s*-?\s*[2-6]0(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))/i,
+    detect: /моторн[а-яёa-z0-9_]*\s+масл|масло\s+моторн|engine\s+oil|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))motor\s*oil|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))\d{1,2}\s*w\s*-?\s*[2-6]0(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))/i,
     attributes: [
       { key: "viscosity", label: "Вязкость SAE", kind: "text", aliases: ["вязкость", "sae", "класс вязкости"], filter: true, summary: true },
       VOLUME,
@@ -162,7 +165,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
       },
       {
         key: "engine", label: "Двигатель", kind: "enum", aliases: ["тип двигателя", "двигатель"], filter: true,
-        options: [opt("Бензиновый и дизельный", /универс|бенз\w*\s*[\/и,]\s*диз/i), opt("Дизельный", /диз|diesel/i), opt("Бензиновый", /бенз|petrol|gasoline/i)],
+        options: [opt("Бензиновый и дизельный", /универс|бенз[а-яёa-z0-9_]*\s*[\/и,]\s*диз/i), opt("Дизельный", /диз|diesel/i), opt("Бензиновый", /бенз|petrol|gasoline/i)],
       },
       { key: "api", label: "Класс API", kind: "text", aliases: ["api", "класс api"], filter: true },
       { key: "acea", label: "Класс ACEA", kind: "text", aliases: ["acea", "класс acea"], filter: true },
@@ -185,7 +188,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   {
     key: "transmission_oil", label: "Трансмиссионные масла", department: "fluids", partType: "CONSUMABLES", subcategory: "Трансмиссионное масло",
-    detect: /трансмисс\w*\s+масл|масло\s+трансм|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))atf(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))cvt(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|gl-?[345](?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))(?:70|75|80|85)\s*w\s*-?\s*(?:80|85|90|140)(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|dexron/i,
+    detect: /трансмисс[а-яёa-z0-9_]*\s+масл|масло\s+трансм|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))atf(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))cvt(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|gl-?[345](?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))(?:70|75|80|85)\s*w\s*-?\s*(?:80|85|90|140)(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|dexron/i,
     attributes: [
       { key: "viscosity", label: "Вязкость SAE", kind: "text", aliases: ["вязкость", "sae"], filter: true, summary: true },
       VOLUME,
@@ -202,14 +205,14 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
       if (/cvt|вариатор/i.test(name)) result.purpose = "Вариатор (CVT)"
       else if (/(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))atf(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|акпп|dexron/i.test(name)) result.purpose = "АКПП"
       else if (/мкпп/i.test(name)) result.purpose = "МКПП"
-      const spec = name.match(/(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))(GL-?[345](?:\/GL-?[345])?|Dexron\s*[IV]+\w*|Mercon\s*\w+)/i)
+      const spec = name.match(/(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))(GL-?[345](?:\/GL-?[345])?|Dexron\s*[IV]+[а-яёa-z0-9_]*|Mercon\s*\w+)/i)
       if (spec) result.spec = spec[1].toUpperCase().replace(/^GL(\d)/, "GL-$1")
       return result
     },
   },
   {
     key: "antifreeze", label: "Антифризы", department: "fluids", partType: "CONSUMABLES", subcategory: "Антифриз",
-    detect: /антифриз|тосол|охлаждающ\w*\s+жидк|coolant|antifreeze/i,
+    detect: /антифриз|тосол|охлаждающ[а-яёa-z0-9_]*\s+жидк|coolant|antifreeze/i,
     attributes: [
       {
         key: "class", label: "Класс", kind: "enum", aliases: ["класс", "спецификация"], filter: true, summary: true,
@@ -238,7 +241,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   {
     key: "brake_fluid", label: "Тормозные жидкости", department: "fluids", partType: "CONSUMABLES", subcategory: "Тормозная жидкость",
-    detect: /тормозн\w*\s+жидк|brake\s+fluid|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))dot\s*[345]/i,
+    detect: /тормозн[а-яёa-z0-9_]*\s+жидк|brake\s+fluid|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))dot\s*[345]/i,
     attributes: [
       {
         key: "standard", label: "Стандарт", kind: "enum", aliases: ["стандарт", "класс"], filter: true, summary: true,
@@ -317,7 +320,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   {
     key: "wheels", label: "Колёсные диски", department: "tires", partType: "WHEELS", subcategory: "Диски",
-    detect: /(?:колесн|литой|литые|штампов|кован)\w*\s+диск|диск\w*\s+(?:колесн|литой|литые|штампов|кован)|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))pcd(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))et\s*-?\d{1,3}(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё])).*(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))dia(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))\d{1,2}(?:[.,]5)?\s*j?\s*[xх]\s*\d{2}(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё])).*(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))et(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))/i,
+    detect: /(?:колесн|литой|литые|штампов|кован)[а-яёa-z0-9_]*\s+диск|диск[а-яёa-z0-9_]*\s+(?:колесн|литой|литые|штампов|кован)|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))pcd(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))et\s*-?\d{1,3}(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё])).*(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))dia(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))\d{1,2}(?:[.,]5)?\s*j?\s*[xх]\s*\d{2}(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё])).*(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))et(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))/i,
     attributes: [
       { key: "diameter", label: "Диаметр", kind: "number", unit: "″", aliases: ["диаметр", "радиус"], filter: true, summary: true, min: 12, max: 24 },
       { key: "rimWidth", label: "Ширина обода", kind: "number", unit: "″", aliases: ["ширина", "ширина обода", "j"], filter: true, summary: true, min: 4, max: 13 },
@@ -370,7 +373,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   {
     key: "brake_discs", label: "Тормозные диски", department: "parts", partType: "BRAKES", subcategory: "Диски тормозные",
-    detect: /тормозн\w*\s+диск|диск\w*\s+тормозн|brake\s+discs?|brake\s+rotors?/i,
+    detect: /тормозн[а-яёa-z0-9_]*\s+диск|диск[а-яёa-z0-9_]*\s+тормозн|brake\s+discs?|brake\s+rotors?/i,
     attributes: [
       AXLE,
       { key: "diameter", label: "Диаметр", kind: "number", unit: "мм", aliases: ["диаметр", "диаметр, мм"], filter: true, summary: true, min: 150, max: 450 },
@@ -393,10 +396,10 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   ...(["oil", "air", "cabin", "fuel"] as const).map((kind): ProductGroup => {
     const meta = {
-      oil: { label: "Масляные фильтры", sub: "Фильтр масляный", detect: /фильтр\w*\s+масл|масл\w*\s+фильтр|oil\s+filter/i },
-      air: { label: "Воздушные фильтры", sub: "Фильтр воздушный", detect: /фильтр\w*\s+воздуш|воздуш\w*\s+фильтр|air\s+filter/i },
-      cabin: { label: "Салонные фильтры", sub: "Фильтр салонный", detect: /фильтр\w*\s+салон|салон\w*\s+фильтр|cabin\s+filter/i },
-      fuel: { label: "Топливные фильтры", sub: "Фильтр топливный", detect: /фильтр\w*\s+топлив|топлив\w*\s+фильтр|fuel\s+filter/i },
+      oil: { label: "Масляные фильтры", sub: "Фильтр масляный", detect: /фильтр[а-яёa-z0-9_]*\s+масл|масл[а-яёa-z0-9_]*\s+фильтр|oil\s+filter/i },
+      air: { label: "Воздушные фильтры", sub: "Фильтр воздушный", detect: /фильтр[а-яёa-z0-9_]*\s+воздуш|воздуш[а-яёa-z0-9_]*\s+фильтр|air\s+filter/i },
+      cabin: { label: "Салонные фильтры", sub: "Фильтр салонный", detect: /фильтр[а-яёa-z0-9_]*\s+салон|салон[а-яёa-z0-9_]*\s+фильтр|cabin\s+filter/i },
+      fuel: { label: "Топливные фильтры", sub: "Фильтр топливный", detect: /фильтр[а-яёa-z0-9_]*\s+топлив|топлив[а-яёa-z0-9_]*\s+фильтр|fuel\s+filter/i },
     }[kind]
     const attributes: AttributeDef[] = kind === "cabin"
       ? [
@@ -422,7 +425,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   }),
   {
     key: "spark_plugs", label: "Свечи зажигания", department: "parts", partType: "ENGINE", subcategory: "Свечи зажигания",
-    detect: /свеч\w*\s+зажиг|свеча(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|spark\s+plugs?/i,
+    detect: /свеч[а-яёa-z0-9_]*\s+зажиг|свеча(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|spark\s+plugs?/i,
     attributes: [
       {
         key: "electrode", label: "Электрод", kind: "enum", aliases: ["электрод", "материал электрода"], filter: true, summary: true,
@@ -443,7 +446,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   {
     key: "wiper_blades", label: "Щётки стеклоочистителя", department: "accessories", partType: "CONSUMABLES", subcategory: "Щётки дворников",
-    detect: /щ[её]тк\w*\s+(?:стеклоочист|дворник)|дворник|стеклоочистител|wiper/i,
+    detect: /щ[её]тк[а-яёa-z0-9_]*\s+(?:стеклоочист|дворник)|дворник|стеклоочистител|wiper/i,
     attributes: [
       { key: "length", label: "Длина", kind: "number", unit: "мм", aliases: ["длина", "длина, мм", "размер"], filter: true, summary: true, min: 200, max: 1100 },
       {
@@ -491,7 +494,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   {
     key: "shock_absorbers", label: "Амортизаторы", department: "parts", partType: "SUSPENSION", subcategory: "Амортизаторы",
-    detect: /амортизатор|shock\s+absorber|стойк\w*\s+амортиз/i,
+    detect: /амортизатор|shock\s+absorber|стойк[а-яёa-z0-9_]*\s+амортиз/i,
     attributes: [
       AXLE,
       {
@@ -511,6 +514,290 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
       else if (/прав|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))rh(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))/i.test(name)) result.side = "Правый"
       if (/газомасл|газо-масл/i.test(name)) result.shockType = "Газомасляный"
       else if (/газ(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|газов|gas/i.test(name)) result.shockType = "Газовый"
+      return result
+    },
+  },
+  /* ---------- Группы, добавленные 13.10.2026 по структуре autodoc и
+     характеристикам avtovek02. Детекторы без \b: граница слова в JS не
+     видит кириллицу, поэтому ищутся корни слов. ---------- */
+  {
+    key: "hydraulic_fluid", label: "Жидкости ГУР и гидравлические", department: "fluids", partType: "CONSUMABLES", subcategory: "Жидкость ГУР",
+    detect: /жидкост[а-яёa-z0-9_]*\s+(?:гур|для\s+гур|гидроусил)|гидравлическ[а-яёa-z0-9_]*\s+жидк|psf|chf\s*11s/i,
+    attributes: [
+      { key: "fluidType", label: "Тип", kind: "enum", aliases: ["тип", "тип жидкости"], filter: true, summary: true,
+        options: [opt("ATF", /atf|dexron/i), opt("Синтетическая", /синт|synth/i), opt("Минеральная", /минерал|mineral/i)] },
+      { key: "spec", label: "Спецификация", kind: "text", aliases: ["спецификация", "допуск"], filter: true, summary: true },
+      VOLUME,
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      put(result, "volume", volumeLiters(name))
+      if (/atf|dexron/i.test(name)) result.fluidType = "ATF"
+      const spec = name.match(/(dexron\s*[ivx]+[а-яёa-z0-9_]*|chf\s*11s|pentosin\s*\w+)/i)
+      if (spec) result.spec = spec[1].replace(/\s+/g, " ").toUpperCase()
+      return result
+    },
+  },
+  {
+    key: "greases", label: "Смазки", department: "fluids", partType: "CHEMICALS", subcategory: "Смазки",
+    detect: /смазк|литол|солидол|шрус-?4|графитк|wd-?40/i,
+    attributes: [
+      { key: "greaseType", label: "Тип смазки", kind: "enum", aliases: ["тип", "тип смазки"], filter: true, summary: true,
+        options: [opt("Литиевая", /литиев|литол/i), opt("Медная", /медн|copper/i), opt("Графитная", /графит/i), opt("Силиконовая", /силикон/i),
+          opt("Для ШРУС", /шрус/i), opt("Проникающая", /проника|wd-?40|жидкий\s+ключ/i), opt("Молибденовая", /молибден|mos2/i), opt("Тефлоновая", /тефлон|ptfe/i)] },
+      { key: "form", label: "Форма выпуска", kind: "enum", aliases: ["форма", "упаковка"], filter: true, summary: true,
+        options: [opt("Аэрозоль", /аэрозол|спрей|spray/i), opt("Туба", /туба|тюбик/i), opt("Банка", /банка|ведро/i), opt("Картридж", /картридж/i)] },
+      { key: "weight", label: "Вес", kind: "number", unit: "г", aliases: ["вес", "масса", "вес, г"], filter: true, min: 1, max: 50000 },
+      VOLUME,
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      put(result, "volume", volumeLiters(name))
+      const grams = firstNumber(name, new RegExp(`${NUM}\\s*(?:г|гр|g)(?![а-яa-z])`, "i"))
+      const kg = firstNumber(name, new RegExp(`${NUM}\\s*кг`, "i"))
+      put(result, "weight", grams ?? (kg !== undefined ? kg * 1000 : undefined))
+      if (/аэрозол|спрей|spray/i.test(name)) result.form = "Аэрозоль"
+      for (const [value, re] of [["Медная", /медн|copper/i], ["Графитная", /графит/i], ["Силиконовая", /силикон/i], ["Для ШРУС", /шрус/i], ["Литиевая", /литиев|литол/i], ["Проникающая", /проника|wd-?40/i]] as const) {
+        if (re.test(name)) { result.greaseType = value; break }
+      }
+      return result
+    },
+  },
+  {
+    key: "other_fluids", label: "Технические жидкости", department: "fluids", partType: "CONSUMABLES", subcategory: "Технические жидкости",
+    detect: /дистиллирован|adblue|ad\s*blue|мочевин|электролит/i,
+    attributes: [
+      { key: "purpose", label: "Назначение", kind: "enum", aliases: ["назначение"], filter: true, summary: true,
+        options: [opt("Дистиллированная вода", /дистил/i), opt("AdBlue (мочевина)", /adblue|ad\s*blue|мочевин/i), opt("Электролит", /электролит/i)] },
+      VOLUME,
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      put(result, "volume", volumeLiters(name))
+      if (/дистил/i.test(name)) result.purpose = "Дистиллированная вода"
+      else if (/adblue|ad\s*blue|мочевин/i.test(name)) result.purpose = "AdBlue (мочевина)"
+      else if (/электролит/i.test(name)) result.purpose = "Электролит"
+      return result
+    },
+  },
+  ...([
+    { key: "chem_engine", label: "Промывки и очистители двигателя", sub: "Очистители", detect: /промывк|раскоксов|очистител[а-яёa-z0-9_]*\s+(?:двигат|инжект|форсун|топлив|карбюр|дросс|egr|клапан)/i },
+    { key: "chem_additives", label: "Присадки", sub: "Присадки", detect: /присадк|октан-?корректор|антигель|депрессор|восстановител[а-яёa-z0-9_]*\s+(?:двигат|масл)|стоп-?течь/i },
+    { key: "chem_body", label: "Шампуни, полироли и воски", sub: "Полироли и воски", detect: /автошампун|шампунь|полирол|воск|антидожд|антизапотев|очистител[а-яёa-z0-9_]*\s+(?:стек|кузов|битум)|удалител[а-яёa-z0-9_]*\s+(?:битум|насеком)|керамик/i },
+    { key: "chem_interior", label: "Для салона", sub: "Очистители", detect: /для\s+салона|очистител[а-яёa-z0-9_]*\s+(?:пластик|кож|ткан|обивк)|кондиционер[а-яёa-z0-9_]*\s+(?:кож|пласт)|полирол[а-яёa-z0-9_]*\s+(?:пластик|панел)|освежител|ароматизатор/i },
+    { key: "chem_repair", label: "Герметики, клеи и антикоры", sub: "Автохимия", detect: /герметик|фиксатор[а-яёa-z0-9_]*\s+резьб|холодн[а-яёa-z0-9_]*\s+сварк|клей|антикор|мовиль|преобразовател[а-яёa-z0-9_]*\s+ржавч|антигравий|грунт|кузовн[а-яёa-z0-9_]*\s+шпатл/i },
+  ] as const).map((meta): ProductGroup => ({
+    key: meta.key, label: meta.label, department: "chemicals", partType: "CHEMICALS", subcategory: meta.sub, detect: meta.detect,
+    attributes: [
+      VOLUME,
+      { key: "form", label: "Форма выпуска", kind: "enum", aliases: ["форма", "форма выпуска", "упаковка"], filter: true, summary: true,
+        options: [opt("Аэрозоль", /аэрозол|спрей|spray/i), opt("Жидкость", /жидк|liquid/i), opt("Гель", /гель|gel/i), opt("Паста", /паст|paste/i), opt("Концентрат", /концентр/i), opt("Салфетки", /салфетк/i)] },
+      { key: "weight", label: "Вес", kind: "number", unit: "г", aliases: ["вес", "масса"], min: 1, max: 50000 },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      put(result, "volume", volumeLiters(name))
+      if (/аэрозол|спрей|spray/i.test(name)) result.form = "Аэрозоль"
+      else if (/гель|gel/i.test(name)) result.form = "Гель"
+      else if (/паст/i.test(name)) result.form = "Паста"
+      else if (/концентр/i.test(name)) result.form = "Концентрат"
+      return result
+    },
+  })),
+  {
+    key: "dashcams", label: "Видеорегистраторы", department: "accessories", partType: "ACCESSORIES", subcategory: "Видеорегистратор",
+    detect: /видеорегистратор|dash\s*cam|радар-?детектор|антирадар/i,
+    attributes: [
+      { key: "deviceType", label: "Тип", kind: "enum", aliases: ["тип", "тип устройства"], filter: true, summary: true,
+        options: [opt("Комбо (регистратор + радар)", /комбо|сигнатур/i), opt("Радар-детектор", /радар|антирадар/i), opt("Видеорегистратор", /регистратор|dash/i)] },
+      { key: "resolution", label: "Разрешение", kind: "enum", aliases: ["разрешение", "разрешение видео"], filter: true, summary: true,
+        options: [opt("4K", /4k|2160/i), opt("2K", /2k|1440|qhd/i), opt("Full HD", /full\s*hd|1080/i), opt("HD", /hd|720/i)] },
+      { key: "cameras", label: "Камер", kind: "number", aliases: ["количество камер", "камер"], filter: true, min: 1, max: 4 },
+      { key: "gps", label: "GPS", kind: "enum", aliases: ["gps"], filter: true, options: [opt("Есть", /^(да|есть|yes|\+|gps)/i), opt("Нет", /^(нет|no|-)/i)] },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      if (/4k|2160/i.test(name)) result.resolution = "4K"
+      else if (/2k|1440|qhd/i.test(name)) result.resolution = "2K"
+      else if (/full\s*hd|1080/i.test(name)) result.resolution = "Full HD"
+      if (/2\s*камер|две\s+камер|dual/i.test(name)) result.cameras = 2
+      if (/gps/i.test(name)) result.gps = "Есть"
+      if (/комбо|сигнатур/i.test(name)) result.deviceType = "Комбо (регистратор + радар)"
+      else if (/радар|антирадар/i.test(name)) result.deviceType = "Радар-детектор"
+      else result.deviceType = "Видеорегистратор"
+      return result
+    },
+  },
+  {
+    key: "car_mats", label: "Коврики", department: "accessories", partType: "ACCESSORIES", subcategory: "Коврики",
+    detect: /коврик/i,
+    attributes: [
+      { key: "placement", label: "Где", kind: "enum", aliases: ["назначение", "расположение"], filter: true, summary: true,
+        options: [opt("В багажник", /багаж/i), opt("В салон", /салон|комплект/i)] },
+      { key: "material", label: "Материал", kind: "enum", aliases: ["материал"], filter: true, summary: true,
+        options: [opt("EVA", /eva|эва/i), opt("Полиуретан", /полиуретан/i), opt("Резина", /резин/i), opt("Текстиль", /текстил|ворс/i)] },
+      { key: "pieces", label: "В комплекте", kind: "number", unit: "шт", aliases: ["количество", "в комплекте"], min: 1, max: 10 },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      result.placement = /багаж/i.test(name) ? "В багажник" : "В салон"
+      for (const [value, re] of [["EVA", /eva|эва/i], ["Полиуретан", /полиуретан/i], ["Резина", /резин/i], ["Текстиль", /текстил|ворс/i]] as const) {
+        if (re.test(name)) { result.material = value; break }
+      }
+      put(result, "pieces", firstNumber(name, /(\d)\s*(?:шт|предм)/i))
+      return result
+    },
+  },
+  {
+    key: "seat_covers", label: "Чехлы и накидки", department: "accessories", partType: "ACCESSORIES", subcategory: "Чехлы",
+    detect: /чехл|накидк[а-яёa-z0-9_]*\s+на\s+сид/i,
+    attributes: [
+      { key: "material", label: "Материал", kind: "enum", aliases: ["материал"], filter: true, summary: true,
+        options: [opt("Экокожа", /экокож|эко-кож|кожзам/i), opt("Алькантара", /алькантар/i), opt("Велюр", /велюр/i), opt("Жаккард", /жаккард/i), opt("Ткань", /ткан|полиэстер/i)] },
+      { key: "set", label: "Комплект", kind: "enum", aliases: ["комплект"], filter: true, summary: true,
+        options: [opt("Полный", /полн|комплект/i), opt("Передние", /передн/i)] },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      if (/экокож|эко-кож|кожзам/i.test(name)) result.material = "Экокожа"
+      else if (/велюр/i.test(name)) result.material = "Велюр"
+      if (/передн/i.test(name)) result.set = "Передние"
+      else if (/полн|комплект/i.test(name)) result.set = "Полный"
+      return result
+    },
+  },
+  {
+    key: "chargers", label: "Зарядные и пусковые устройства", department: "accessories", partType: "TOOLS", subcategory: "Пусковые устройства",
+    detect: /зарядн[а-яёa-z0-9_]*\s+устройств|пусков[а-яёa-z0-9_]*\s+устройств|пуско-?зарядн|бустер|jump\s*starter/i,
+    attributes: [
+      { key: "deviceType", label: "Тип", kind: "enum", aliases: ["тип"], filter: true, summary: true,
+        options: [opt("Пуско-зарядное", /пуско-?зарядн/i), opt("Пусковое (бустер)", /пусков|бустер|jump/i), opt("Зарядное", /зарядн/i)] },
+      { key: "current", label: "Ток", kind: "number", unit: "А", aliases: ["ток", "ток заряда", "пиковый ток"], filter: true, summary: true, min: 1, max: 5000 },
+      { key: "capacityMah", label: "Ёмкость батареи", kind: "number", unit: "мА·ч", aliases: ["ёмкость батареи", "емкость батареи"], filter: true, min: 1000, max: 100000 },
+      { key: "voltage", label: "Напряжение", kind: "text", aliases: ["напряжение"], filter: true },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      if (/пуско-?зарядн/i.test(name)) result.deviceType = "Пуско-зарядное"
+      else if (/пусков|бустер|jump/i.test(name)) result.deviceType = "Пусковое (бустер)"
+      else result.deviceType = "Зарядное"
+      put(result, "current", firstNumber(name, /(\d{1,4})\s*(?:a|а)(?![а-яa-z])/i))
+      put(result, "capacityMah", firstNumber(name, /(\d{4,6})\s*(?:mah|мач|ма·ч)/i))
+      const volts = name.match(/(\d{1,2}(?:\s*\/\s*\d{1,2})?)\s*(?:v|в)(?![а-яa-z])/i)
+      if (volts) result.voltage = `${volts[1].replace(/\s+/g, "")} В`
+      return result
+    },
+  },
+  {
+    key: "compressors", label: "Компрессоры и манометры", department: "tools", partType: "TOOLS", subcategory: "Компрессоры",
+    detect: /компрессор|манометр|насос[а-яёa-z0-9_]*\s+(?:для\s+)?шин|подкачк/i,
+    attributes: [
+      { key: "performance", label: "Производительность", kind: "number", unit: "л/мин", aliases: ["производительность"], filter: true, summary: true, min: 5, max: 500 },
+      { key: "pressure", label: "Давление", kind: "number", unit: "атм", aliases: ["давление", "максимальное давление"], filter: true, summary: true, min: 1, max: 20 },
+      { key: "power", label: "Питание", kind: "enum", aliases: ["питание", "подключение"], filter: true,
+        options: [opt("От прикуривателя", /прикурив/i), opt("От АКБ (клеммы)", /акб|клемм|аккумулятор/i), opt("Аккумуляторный", /беспровод|встроен/i)] },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      put(result, "performance", firstNumber(name, /(\d{1,3})\s*л\s*\/\s*мин/i))
+      put(result, "pressure", firstNumber(name, /(\d{1,2})\s*(?:атм|bar|бар)/i))
+      if (/прикурив/i.test(name)) result.power = "От прикуривателя"
+      else if (/акб|клемм/i.test(name)) result.power = "От АКБ (клеммы)"
+      return result
+    },
+  },
+  {
+    key: "jacks", label: "Домкраты", department: "tools", partType: "TOOLS", subcategory: "Домкраты",
+    detect: /домкрат/i,
+    attributes: [
+      { key: "jackType", label: "Тип", kind: "enum", aliases: ["тип"], filter: true, summary: true,
+        options: [opt("Подкатной", /подкат/i), opt("Бутылочный", /бутыл/i), opt("Ромбический", /ромб/i), opt("Реечный", /реечн/i), opt("Пневматический", /пневм/i)] },
+      { key: "capacity", label: "Грузоподъёмность", kind: "number", unit: "т", aliases: ["грузоподъёмность", "грузоподъемность"], filter: true, summary: true, min: 0.5, max: 50 },
+      { key: "maxHeight", label: "Высота подъёма", kind: "number", unit: "мм", aliases: ["высота подъема", "максимальная высота"], filter: true, min: 100, max: 1500 },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      for (const [value, re] of [["Подкатной", /подкат/i], ["Бутылочный", /бутыл/i], ["Ромбический", /ромб/i], ["Реечный", /реечн/i]] as const) {
+        if (re.test(name)) { result.jackType = value; break }
+      }
+      put(result, "capacity", firstNumber(name, new RegExp(`${NUM}\\s*т(?:н|онн[а-яёa-z0-9_]*)?(?![а-яa-z])`, "i")))
+      return result
+    },
+  },
+  {
+    key: "safety", label: "Аптечки, огнетушители, знаки", department: "accessories", partType: "ACCESSORIES", subcategory: "Аптечки и безопасность",
+    detect: /аптечк|огнетушител|знак[а-яёa-z0-9_]*\s+аварийн|трос[а-яёa-z0-9_]*\s+буксир|светоотражающ[а-яёa-z0-9_]*\s+жилет/i,
+    attributes: [
+      { key: "itemType", label: "Что это", kind: "enum", aliases: ["тип"], filter: true, summary: true,
+        options: [opt("Аптечка", /аптечк/i), opt("Огнетушитель", /огнетуш/i), opt("Знак аварийной остановки", /знак/i), opt("Буксировочный трос", /трос/i), opt("Светоотражающий жилет", /жилет/i)] },
+      { key: "spec", label: "Стандарт / класс", kind: "text", aliases: ["стандарт", "класс", "приказ"], summary: true },
+      { key: "load", label: "Нагрузка", kind: "number", unit: "т", aliases: ["нагрузка", "разрывная нагрузка"], min: 0.5, max: 50 },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      for (const [value, re] of [["Аптечка", /аптечк/i], ["Огнетушитель", /огнетуш/i], ["Знак аварийной остановки", /знак/i], ["Буксировочный трос", /трос/i], ["Светоотражающий жилет", /жилет/i]] as const) {
+        if (re.test(name)) { result.itemType = value; break }
+      }
+      const fire = name.match(/о[пу]-?\s*\d+/i)
+      if (fire) result.spec = fire[0].toUpperCase().replace(/\s+/g, "")
+      if (/1080н|приказ/i.test(name)) result.spec = "Приказ Минздрава № 1080н"
+      put(result, "load", firstNumber(name, new RegExp(`${NUM}\\s*т(?![а-яa-z])`, "i")))
+      return result
+    },
+  },
+  {
+    key: "roof_racks", label: "Багажники и боксы", department: "accessories", partType: "ACCESSORIES", subcategory: "Багажники",
+    detect: /багажник[а-яёa-z0-9_]*\s+на\s+крыш|автобокс|бокс[а-яёa-z0-9_]*\s+на\s+крыш|поперечин|рейлинг/i,
+    attributes: [
+      { key: "rackType", label: "Тип", kind: "enum", aliases: ["тип"], filter: true, summary: true,
+        options: [opt("Автобокс", /бокс/i), opt("Поперечины", /поперечин|дуг/i), opt("Рейлинги", /рейлинг/i)] },
+      { key: "load", label: "Нагрузка", kind: "number", unit: "кг", aliases: ["нагрузка", "грузоподъемность"], filter: true, min: 10, max: 300 },
+      { key: "volumeBox", label: "Объём бокса", kind: "number", unit: "л", aliases: ["объем бокса", "объём бокса"], filter: true, min: 100, max: 800 },
+      LENGTH_MM(),
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      if (/бокс/i.test(name)) result.rackType = "Автобокс"
+      else if (/поперечин|дуг/i.test(name)) result.rackType = "Поперечины"
+      else if (/рейлинг/i.test(name)) result.rackType = "Рейлинги"
+      put(result, "volumeBox", firstNumber(name, /(\d{3})\s*л(?![а-яa-z])/i))
+      return result
+    },
+  },
+  {
+    key: "belts", label: "Ремни ГРМ и приводные", department: "parts", partType: "ENGINE", subcategory: "Ремень ГРМ",
+    detect: /ремень|ремня|ремни|\d\s*pk\s*\d{3,4}/i,
+    attributes: [
+      { key: "beltType", label: "Тип", kind: "enum", aliases: ["тип ремня"], filter: true, summary: true,
+        options: [opt("Ремень ГРМ", /грм|зубчат|timing/i), opt("Поликлиновой", /поликлин|\d\s*pk/i), opt("Клиновой", /клинов/i)] },
+      { key: "ribs", label: "Рёбер / зубьев", kind: "number", aliases: ["количество ребер", "количество зубьев", "зубьев"], filter: true, summary: true, min: 3, max: 300 },
+      { key: "length", label: "Длина", kind: "number", unit: "мм", aliases: ["длина", "длина, мм"], filter: true, summary: true, min: 300, max: 3000 },
+      { key: "kit", label: "Комплект", kind: "enum", aliases: ["комплект"], filter: true, options: [opt("С роликами", /комплект|ролик|kit/i), opt("Только ремень", /^нет$/i)] },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      const pk = name.match(/(\d)\s*pk\s*(\d{3,4})/i)
+      if (pk) { result.beltType = "Поликлиновой"; put(result, "ribs", Number(pk[1])); put(result, "length", Number(pk[2])) }
+      else if (/грм|зубчат/i.test(name)) result.beltType = "Ремень ГРМ"
+      const teeth = firstNumber(name, /(\d{2,3})\s*(?:зуб|z)(?![а-яa-z])/i)
+      if (teeth !== undefined) put(result, "ribs", teeth)
+      if (/комплект|ролик|kit/i.test(name)) result.kit = "С роликами"
+      return result
+    },
+  },
+  {
+    key: "tool_sets", label: "Наборы и ручной инструмент", department: "tools", partType: "TOOLS", subcategory: "Наборы инструментов",
+    detect: /набор[а-яёa-z0-9_]*\s+(?:инструм|ключей|головок|бит|отвертод)|ключ[а-яёa-z0-9_]*\s+(?:баллон|динамомет|рожков|накидн|свечн)|трещотк|съ[её]мник/i,
+    attributes: [
+      { key: "pieces", label: "Предметов", kind: "number", unit: "шт", aliases: ["количество предметов", "предметов"], filter: true, summary: true, min: 1, max: 500 },
+      { key: "drive", label: "Посадка", kind: "enum", aliases: ["посадочный квадрат", "посадка"], filter: true, summary: true,
+        options: [opt("1/4\"", /1\/4/), opt("3/8\"", /3\/8/), opt("1/2\"", /1\/2/), opt("3/4\"", /3\/4/)] },
+    ],
+    extract(name) {
+      const result: Record<string, string | number> = {}
+      put(result, "pieces", firstNumber(name, /(\d{1,3})\s*(?:предм|пр\.|шт|pcs)/i))
+      const drive = name.match(/(1\/4|3\/8|1\/2|3\/4)/)
+      if (drive) result.drive = `${drive[1]}"`
       return result
     },
   },
@@ -536,7 +823,7 @@ export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   },
   {
     key: "tools", label: "Инструменты", department: "tools", partType: "TOOLS", subcategory: "Инструменты",
-    detect: /домкрат|компрессор|набор\s+(?:ключей|инструм|головок)|ключ\w*\s+(?:баллон|динамомет|рожков|накидн)|пусков\w*\s+устройств|бустер|отв[её]ртк|съ[её]мник|инструмент/i,
+    detect: /домкрат|компрессор|набор\s+(?:ключей|инструм|головок)|ключ[а-яёa-z0-9_]*\s+(?:баллон|динамомет|рожков|накидн)|пусков[а-яёa-z0-9_]*\s+устройств|бустер|отв[её]ртк|съ[её]мник|инструмент/i,
     attributes: [],
   },
 ]
@@ -563,7 +850,15 @@ export function productGroupBySubcategory(subcategory: string | null | undefined
  */
 export function detectProductGroup(name: string, category?: string | null): ProductGroup | null {
   const haystack = `${category ?? ""} ${name}`
-  const ordered = ["transmission_oil", "brake_fluid", "washer_fluid", "antifreeze", "engine_oil", "battery", "brake_discs", "brake_pads", "oil_filter", "air_filter", "cabin_filter", "fuel_filter", "spark_plugs", "wiper_blades", "shock_absorbers", "tires", "wheels", "bulbs", "autochem", "tools"]
+  const ordered = [
+    "transmission_oil", "brake_fluid", "washer_fluid", "antifreeze", "hydraulic_fluid", "engine_oil", "other_fluids",
+    /* Зарядное «для аккумулятора» — не аккумулятор: устройства раньше АКБ. */
+    "chargers", "compressors", "jacks", "battery",
+    "brake_discs", "brake_pads", "oil_filter", "air_filter", "cabin_filter", "fuel_filter", "spark_plugs", "wiper_blades",
+    "shock_absorbers", "belts", "tires", "wheels", "bulbs",
+    "dashcams", "car_mats", "seat_covers", "safety", "roof_racks",
+    "greases", "chem_engine", "chem_additives", "chem_body", "chem_interior", "chem_repair", "autochem", "tool_sets", "tools",
+  ]
   for (const key of ordered) {
     const group = PRODUCT_GROUP_BY_KEY.get(key)
     if (group?.detect.test(haystack)) return group

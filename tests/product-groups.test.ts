@@ -99,3 +99,42 @@ test("аккумулятор без слова «аккумулятор»: по 
   assert.equal(detectProductGroupByColumns({ "Длина": "240" }), null, "одной общей колонки мало")
   assert.equal(detectProductGroup("Рычаг 60 мм"), null)
 })
+
+test("новые группы: жидкости, химия, аксессуары, инструмент распознаются и не путаются", () => {
+  const cases: Array<[string, string]> = [
+    ["Жидкость ГУР Pentosin CHF 11S 1л", "hydraulic_fluid"],
+    ["Смазка медная аэрозоль 400 мл", "greases"],
+    ["Вода дистиллированная 5л", "other_fluids"],
+    ["Промывка двигателя 5 минут Hi-Gear 444 мл", "chem_engine"],
+    ["Очиститель инжектора Liqui Moly", "chem_engine"],
+    ["Присадка в топливо антигель", "chem_additives"],
+    ["Автошампунь для бесконтактной мойки 1л", "chem_body"],
+    ["Очиститель пластика салона", "chem_interior"],
+    ["Герметик прокладок красный", "chem_repair"],
+    ["Видеорегистратор 70mai A800 4K GPS", "dashcams"],
+    ["Коврики в салон EVA Toyota Camry 5 шт", "car_mats"],
+    ["Коврик в багажник полиуретан", "car_mats"],
+    ["Чехлы на сиденья экокожа полный комплект", "seat_covers"],
+    ["Пуско-зарядное устройство для аккумулятора 12/24В", "chargers"],
+    ["Компрессор автомобильный 35 л/мин 10 атм от прикуривателя", "compressors"],
+    ["Домкрат подкатной 2,5 т", "jacks"],
+    ["Аптечка автомобильная по приказу 1080н", "safety"],
+    ["Огнетушитель ОП-2", "safety"],
+    ["Автобокс на крышу 430 л", "roof_racks"],
+    ["Ремень поликлиновой 6PK1220", "belts"],
+    ["Набор инструментов 108 предметов 1/2", "tool_sets"],
+    ["Масло моторное ZIC X9 5W-40 4л", "engine_oil"],
+    ["Аккумулятор Varta 60 Ач", "battery"],
+  ]
+  for (const [name, key] of cases) assert.equal(detectProductGroup(name)?.key, key, name)
+})
+
+test("новые группы: характеристики из названия", () => {
+  assert.deepEqual(attrs("belts", "Ремень поликлиновой 6PK1220"), { beltType: "Поликлиновой", ribs: 6, length: 1220 })
+  assert.equal(attrs("compressors", "Компрессор 35 л/мин 10 атм от прикуривателя").performance, 35)
+  assert.equal(attrs("jacks", "Домкрат подкатной 2,5 т").capacity, 2.5)
+  assert.equal(attrs("dashcams", "Видеорегистратор 70mai A800 4K GPS").resolution, "4K")
+  assert.equal(attrs("greases", "Смазка медная аэрозоль 400 мл").greaseType, "Медная")
+  assert.equal(attrs("safety", "Огнетушитель ОП-2").spec, "ОП-2")
+  assert.equal(attrs("tool_sets", "Набор инструментов 108 предметов 1/2").pieces, 108)
+})
