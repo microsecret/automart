@@ -74,7 +74,7 @@ export default async function CatalogModelPage({ params }: Props) {
         </span>
         <div>
           <h1 className={styles.titleDark}>
-            Запчасти {name} <span className={styles.titleCount}>{total > 0 ? `${total} предложений` : "0 предложений"}</span>
+            Запчасти {name}{total > 0 && <> <span className={styles.titleCount}>{total} предложений</span></>}
           </h1>
           <p className={styles.muted}>
             {total > 0 ? `Предложения магазинов по ${byUnit.size} узлам` : "Магазины ещё не загрузили детали для этой модели — узлы и подбор уже работают"}

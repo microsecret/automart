@@ -24,6 +24,9 @@
   margin: 0 auto;
   padding: 16px 16px 72px;
   display: grid;
+  /* minmax(0, 1fr): иначе горизонтальная лента узлов на телефоне
+     распирает колонку до своей ширины и страница едет вбок. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
   color: var(--catalog-ink);
 }
@@ -731,8 +734,8 @@
 .sellerBand .muted { margin-top: 4px; }
 
 @media (max-width: 1000px) {
-  .shopLayout { grid-template-columns: 1fr; }
-  .sidebar { position: static; }
+  .shopLayout { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { position: static; min-width: 0; }
   .sidebarList { display: flex; overflow-x: auto; padding: 0 12px 8px; gap: 6px; scrollbar-width: none; }
   .sidebarList a { border: 0; border-radius: 999px; background: var(--catalog-bg); padding: 8px 14px; white-space: nowrap; }
   .sidebarTitle { display: none; }
