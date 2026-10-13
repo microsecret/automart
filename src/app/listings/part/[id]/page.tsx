@@ -59,7 +59,7 @@ export default async function PartDetailPage({ params }: PageProps) {
          находил деталь в каталоге, нажимал на неё и упирался в пустую
          страницу. Заказать можно было только с витрины магазина, куда
          ещё надо догадаться зайти. */
-      store: { select: { id: true, slug: true, name: true, status: true } },
+      store: { select: { id: true, slug: true, name: true, status: true, legalName: true, inn: true, ogrn: true, legalAddress: true, contactPhone: true, sellerType: true } },
       attributes: { select: { key: true, num: true, text: true } },
       user: {
         select: {
@@ -126,6 +126,21 @@ export default async function PartDetailPage({ params }: PageProps) {
        «Ёмкость — 62 Ач», «Полярность — обратная». */
     productGroupLabel: part.productGroup ? PRODUCT_GROUP_BY_KEY.get(part.productGroup)?.label ?? null : null,
     brandName: part.brandName,
+    /* Сведения, которые покупатель обязан видеть до покупки (ЗоЗПП ст. 9,
+       10, 26.1): документы, гарантия, продавец. */
+    legal: {
+      brandName: part.brandName, manufacturerInfo: part.manufacturerInfo, originCountry: part.originCountry,
+      warrantyMonths: part.warrantyMonths, shelfLife: part.shelfLife, safetyInfo: part.safetyInfo, gtin: part.gtin,
+      conformityType: part.conformityType, conformityRegulation: part.conformityRegulation, conformityNumber: part.conformityNumber,
+      conformityValidUntil: part.conformityValidUntil ? part.conformityValidUntil.toISOString() : null,
+      conformityUrl: part.conformityUrl, condition: part.condition,
+    },
+    seller: part.store?.status === "ACTIVE" ? {
+      name: part.store.name, legalName: part.store.legalName, inn: part.store.inn, ogrn: part.store.ogrn,
+      legalAddress: part.store.legalAddress, contactPhone: part.store.contactPhone, sellerType: part.store.sellerType,
+      /* Опубликованный магазин прошёл проверку реквизитов администратором. */
+      verified: true,
+    } : null,
     specs: (() => {
       const group = part.productGroup ? PRODUCT_GROUP_BY_KEY.get(part.productGroup) : null
       if (!group) return []

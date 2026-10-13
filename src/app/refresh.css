@@ -2287,3 +2287,26 @@ summary {
 
 .parts-article-link b { font-variant-numeric: tabular-nums; }
 .parts-article-link:hover { filter: brightness(0.97); }
+
+/* ---------- Документы, гарантия, продавец, возврат (ЗоЗПП ст. 9, 10, 26.1) ---------- */
+.part-legal { display: grid; gap: 22px; }
+.part-legal__block h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--market-ink);
+}
+.part-legal__note { margin: 6px 0 0; font-size: 13px; line-height: 1.55; color: var(--market-muted); }
+.part-legal__verified {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f8a60;
+}
+.part-legal a { color: var(--mantine-color-indigo-7); }

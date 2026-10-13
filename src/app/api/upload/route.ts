@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { hasExpectedFileSignature } from "@/lib/file-signature"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
+import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
 
@@ -21,8 +22,12 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const userLimit = rateLimit(`upload:user:${session.user.id}`, { windowMs: 60 * 60_000, maxRequests: 12 })
-    const ipLimit = rateLimit(`upload:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: 40 })
+    /* Продавец заводит каталог: десятки позиций по нескольку фото за час.
+       Двенадцать загрузок в час хватает частнику на объявление, но не
+       магазину, поэтому владельцу витрины лимит выше. */
+    const ownsStore = await prisma.partStore.count({ where: { ownerId: session.user.id } }).then((count) => count > 0).catch(() => false)
+    const userLimit = rateLimit(`upload:user:${session.user.id}`, { windowMs: 60 * 60_000, maxRequests: ownsStore ? 150 : 12 })
+    const ipLimit = rateLimit(`upload:ip:${getClientIp(request)}`, { windowMs: 60 * 60_000, maxRequests: ownsStore ? 200 : 40 })
     const limit = !userLimit.success ? userLimit : ipLimit
     if (!limit.success) {
       return NextResponse.json(

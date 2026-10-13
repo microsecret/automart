@@ -54,6 +54,7 @@ import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-inte
 import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 import PartOrderButton from "@/components/store/PartOrderButton"
 import AddToCartButton from "@/components/cart/AddToCartButton"
+import PartLegalInfo, { type PartLegal, type SellerInfo } from "@/components/parts/PartLegalInfo"
 
 const PART_TYPES_MAP: Record<string, string> = {
   ENGINE: "Двигатель", TRANSMISSION: "Трансмиссия", SUSPENSION: "Подвеска",
@@ -89,6 +90,8 @@ interface PartData {
   productGroupLabel?: string | null
   brandName?: string | null
   specs?: Array<{ label: string; value: string }>
+  legal?: PartLegal
+  seller?: SellerInfo | null
   suspensionType: string | null
   brakeType: string | null
   compatibility: { id: string; make: string; model: string; generation: string | null; yearFrom: number | null; yearTo: number | null; engine: string | null }[]
@@ -342,6 +345,13 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                 </dl>
               </Card>
             ) : null}
+
+            {/* Документы, гарантия, продавец и возврат — у товара магазина. */}
+            {data.store && data.legal && (
+              <Card withBorder radius="md" p="lg">
+                <PartLegalInfo legal={data.legal} seller={data.seller ?? null} />
+              </Card>
+            )}
 
             {/* Совместимость */}
             <Card withBorder radius="md" p="lg">

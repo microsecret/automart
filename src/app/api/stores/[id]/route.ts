@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       id: true, ownerId: true, name: true, status: true,
       // Нужны для сравнения: правка юридических данных снимает отметку
       // о проверке, а правка названия или города — нет.
-      legalName: true, inn: true, contactPhone: true, contactEmail: true,
+      legalName: true, inn: true, contactPhone: true, contactEmail: true, ogrn: true, legalAddress: true, sellerType: true,
       _count: { select: { parts: true } },
     },
   })
@@ -62,7 +62,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
        Название, описание и город к проверке не относятся: их правка
        статуса не меняет. */
-    const LEGAL_FIELDS = ["legalName", "inn", "contactPhone", "contactEmail"] as const
+    const LEGAL_FIELDS = ["legalName", "inn", "contactPhone", "contactEmail", "ogrn", "legalAddress"] as const
     const changedLegalFields = LEGAL_FIELDS.filter((field) => {
       if (body?.[field] === undefined) return false
       const next = readText(body[field], 200)
@@ -83,6 +83,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         ...(body?.inn !== undefined ? { inn: readText(body.inn, 20) } : {}),
         ...(body?.contactPhone !== undefined ? { contactPhone: readText(body.contactPhone, 40) } : {}),
         ...(body?.contactEmail !== undefined ? { contactEmail: readText(body.contactEmail, 120) } : {}),
+        ...(body?.ogrn !== undefined ? { ogrn: readText(body.ogrn, 20)?.replace(/\D/g, "") || null } : {}),
+        ...(body?.legalAddress !== undefined ? { legalAddress: readText(body.legalAddress, 300) } : {}),
+        ...(body?.sellerType !== undefined && ["COMPANY", "ENTREPRENEUR", "SELF_EMPLOYED"].includes(String(body.sellerType)) ? { sellerType: String(body.sellerType) } : {}),
         ...(body?.defaultOriginCountry !== undefined ? { defaultOriginCountry: readText(body.defaultOriginCountry, 4) } : {}),
         ...(body?.defaultLeadTimeDaysMin !== undefined ? { defaultLeadTimeDaysMin: Number.isFinite(Number(body.defaultLeadTimeDaysMin)) ? Number(body.defaultLeadTimeDaysMin) : null } : {}),
         ...(body?.defaultLeadTimeDaysMax !== undefined ? { defaultLeadTimeDaysMax: Number.isFinite(Number(body.defaultLeadTimeDaysMax)) ? Number(body.defaultLeadTimeDaysMax) : null } : {}),
@@ -160,6 +163,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // а покупатель попал бы на страницу без товаров.
   if (nextStatus === "PENDING" && store._count.parts === 0) {
     return NextResponse.json({ error: "Добавьте хотя бы одну позицию перед отправкой на проверку" }, { status: 409 })
+  }
+  /* Покупатель обязан видеть, кто продаёт: наименование, ОГРН или
+     ОГРНИП и адрес (ЗоЗПП ст. 9 п. 1.2). У самозанятого ОГРН нет — ИНН. */
+  if (nextStatus === "PENDING") {
+    const missing = [
+      !store.legalName && "юрлицо или ФИО",
+      !store.inn && "ИНН",
+      store.sellerType !== "SELF_EMPLOYED" && !store.ogrn && "ОГРН или ОГРНИП",
+      !store.legalAddress && "адрес",
+      !store.contactPhone && "телефон",
+    ].filter(Boolean)
+    if (missing.length) {
+      return NextResponse.json({ error: `Заполните реквизиты в карточке магазина: ${missing.join(", ")} — их показывают покупателю по закону о защите прав потребителей` }, { status: 409 })
+    }
   }
 
   const updated = await prisma.partStore.update({

@@ -312,6 +312,19 @@ model Part {
   productGroup    String?
   attributes      PartAttribute[]
 
+  // Сведения, которых закон требует при продаже на расстоянии (ЗоЗПП ст. 10,
+  // 26.1; правила продажи № 657) и подтверждение соответствия ЕАЭС.
+  gtin                 String? // штрихкод товара (GTIN/EAN) — для маркируемых групп
+  manufacturerInfo     String? // изготовитель / импортёр и адрес
+  warrantyMonths       Int?
+  shelfLife            String? // срок годности или службы
+  safetyInfo           String? // правила безопасного использования
+  conformityType       String? // CERTIFICATE, DECLARATION, NOT_REQUIRED
+  conformityRegulation String? // ТР ТС 018/2011, ТР ТС 030/2012…
+  conformityNumber     String?
+  conformityValidUntil DateTime?
+  conformityUrl        String? // запись в реестре ФСА
+
   // Reverse relation for listings
   listings Listing[]   @relation("ListingPart")
   bids     PartBid[]
@@ -365,6 +378,11 @@ model PartStore {
   contactPhone           String?
   contactEmail           String?
   city                   String?
+  // Сведения о продавце для покупателя (ЗоЗПП ст. 9 п. 1.2): ОГРН/ОГРНИП и
+  // адрес; форма — чтобы не пускать самозанятых к маркируемым товарам.
+  ogrn                   String?
+  legalAddress           String?
+  sellerType             String? // COMPANY, ENTREPRENEUR, SELF_EMPLOYED
   // Условия по умолчанию подставляются в новые позиции, чтобы продавцу не
   // приходилось заполнять их в каждой строке загрузки.
   defaultLeadTimeDaysMin Int?

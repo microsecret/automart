@@ -4,6 +4,17 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { replacePartAttributes, resolvePartAttributes } from "@/lib/part-attributes-store"
+import { readLegalFields, validateLegal } from "@/lib/part-legal-fields"
+
+/* Фото позиции — только загруженные на площадку: чужая ссылка в карточке
+   магазина — это и подмена картинки, и запрос на сторонний сервер. */
+function readImages(value: unknown) {
+  if (!Array.isArray(value)) return undefined
+  const urls = value.filter((url): url is string => typeof url === "string" && /^\/uploads\/[\w.-]+$/.test(url)).slice(0, 8)
+  return urls.length ? JSON.stringify(urls) : null
+}
+
+const readMake = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim().slice(0, 60) : null)
 
 export const dynamic = "force-dynamic"
 
@@ -25,6 +36,7 @@ async function requireStore(storeId: string) {
       defaultLeadTimeDaysMin: true,
       defaultLeadTimeDaysMax: true,
       defaultOriginCountry: true,
+      sellerType: true,
     },
   })
   if (!store) return { error: NextResponse.json({ error: "Магазин не найден" }, { status: 404 }) }
@@ -50,7 +62,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     select: {
       id: true, name: true, price: true, oemNumber: true, brandName: true, partType: true,
       condition: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true,
-      make: true, model: true, createdAt: true, productGroup: true,
+      make: true, model: true, createdAt: true, productGroup: true, images: true, description: true,
+      gtin: true, manufacturerInfo: true, warrantyMonths: true, shelfLife: true, safetyInfo: true, originCountry: true,
+      conformityType: true, conformityRegulation: true, conformityNumber: true, conformityValidUntil: true, conformityUrl: true,
       attributes: { select: { key: true, num: true, text: true } },
     },
   })
@@ -106,6 +120,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   /* Раздел и подкатегория — из группы, если продавец их не задал:
      аккумулятор сразу встаёт в «Электрика → Аккумулятор». */
   const partType = typeof body?.partType === "string" && body.partType ? body.partType : group?.partType ?? "OTHER"
+  const legal = readLegalFields(body)
+  const check = validateLegal(group?.key, { ...legal, brandName: body?.brandName, condition: body?.condition === "USED" ? "USED" : "NEW", originCountry: legal.originCountry ?? guard.store.defaultOriginCountry }, guard.store.sellerType)
+  if (Object.keys(check.errors).length) {
+    return NextResponse.json({ error: Object.values(check.errors)[0], fieldErrors: check.errors, warnings: check.warnings }, { status: 422 })
+  }
 
   const part = await prisma.part.create({
     data: {
@@ -123,8 +142,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       /* Марка и модель обязательны у позиции, но продавец часто продаёт
          универсальную деталь. Импорт в таком случае пишет то же самое —
          пусть позиции из обоих источников выглядят одинаково. */
-      make: typeof body?.make === "string" && body.make.trim() ? body.make.trim().slice(0, 60) : "Универсальная",
-      model: typeof body?.model === "string" && body.model.trim() ? body.model.trim().slice(0, 60) : "—",
+      make: readMake(body?.make) ?? "Универсальная",
+      model: readMake(body?.make) ? readMake(body?.model) ?? "—" : "—",
+      images: readImages(body?.images) ?? null,
       supplyMode,
       /* Срок магазина подставляется, когда продавец его не указал:
          покупатель должен видеть срок у каждой позиции под заказ. */
@@ -133,6 +153,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       originCountry: guard.store.defaultOriginCountry,
       location: guard.store.city || "Уточняется",
       vehicleType: "CAR",
+      ...legal,
     },
     select: { id: true, name: true, price: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true },
   })
@@ -154,7 +175,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // недоступен даже по прямому идентификатору.
   const part = await prisma.part.findFirst({
     where: { id: partId, storeId: guard.store.id },
-    select: { id: true, name: true, partType: true },
+    select: {
+      id: true, name: true, partType: true, productGroup: true, brandName: true, condition: true, originCountry: true,
+      gtin: true, conformityType: true, conformityNumber: true,
+    },
   })
   if (!part) return NextResponse.json({ error: "Позиция не найдена" }, { status: 404 })
 
@@ -179,6 +203,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     ? resolvePartAttributes({ name: typeof body?.name === "string" ? body.name : part.name, productGroup: body?.productGroup, attributes: body?.attributes })
     : null
 
+  /* Проверка закона — по итоговым значениям: присланным поверх сохранённых. */
+  const legal = readLegalFields(body)
+  const nextGroup = attributeUpdate ? attributeUpdate.group?.key ?? null : part.productGroup
+  const check = validateLegal(nextGroup, {
+    ...part,
+    ...legal,
+    ...(body?.brandName !== undefined ? { brandName: body.brandName } : {}),
+    ...(body?.condition !== undefined ? { condition: body.condition === "USED" ? "USED" : "NEW" } : {}),
+  }, guard.store.sellerType)
+  /* Ошибки закона блокируют только правку из формы карточки: быстрая
+     правка цены у старой позиции без документов не должна упираться в
+     поля, которых в списке нет. */
+  const fromFullForm = body?.productGroup !== undefined
+  if (fromFullForm && Object.keys(check.errors).length) {
+    return NextResponse.json({ error: Object.values(check.errors)[0], fieldErrors: check.errors, warnings: check.warnings }, { status: 422 })
+  }
+
   const updated = await prisma.part.update({
     where: { id: partId },
     data: {
@@ -186,6 +227,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...(body?.name !== undefined ? { name: String(body.name).trim().slice(0, 200) } : {}),
       ...(body?.oemNumber !== undefined ? { oemNumber: String(body.oemNumber).trim().slice(0, 64) || null } : {}),
       ...(body?.brandName !== undefined ? { brandName: String(body.brandName).trim().slice(0, 80) || null } : {}),
+      ...(body?.description !== undefined ? { description: String(body.description).trim().slice(0, 2_000) || null } : {}),
+      ...(body?.condition !== undefined ? { condition: body.condition === "USED" ? "USED" : "NEW" } : {}),
+      ...(body?.images !== undefined ? { images: readImages(body.images) ?? null } : {}),
+      ...(body?.make !== undefined ? { make: readMake(body.make) ?? "Универсальная", model: readMake(body.make) ? readMake(body?.model) ?? "—" : "—" } : {}),
+      ...legal,
       ...(attributeUpdate ? {
         productGroup: attributeUpdate.group?.key ?? null,
         ...(attributeUpdate.group && (PART_SUBCATEGORIES[part.partType] || []).includes(attributeUpdate.group.subcategory)

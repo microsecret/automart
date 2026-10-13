@@ -4,14 +4,41 @@ import { PART_TYPES } from "@/lib/constants"
 import { useState } from "react"
 import useSWR from "swr"
 import {
-  ActionIcon, Alert, Badge, Box, Button, Card, Group, Loader, Modal, NumberInput, Select,
-  Stack, Table, Text, TextInput, ThemeIcon,
+  ActionIcon, Alert, Badge, Box, Button, Card, Divider, Group, Loader, Modal, NumberInput, SegmentedControl, Select,
+  SimpleGrid, Stack, Table, Text, TextInput, Textarea, ThemeIcon,
 } from "@mantine/core"
 import { IconEdit, IconPackage, IconPlus, IconSearch, IconTrash } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 import { detectProductGroup } from "@/lib/product-groups"
 import ProductAttributesFields, { attributesToForm } from "@/components/store/ProductAttributesFields"
+import ProductPhotosField from "@/components/store/ProductPhotosField"
+import ProductLegalFields, { EMPTY_LEGAL, legalToForm, type LegalFormValues } from "@/components/store/ProductLegalFields"
+import { checkLegal } from "@/lib/product-legal"
+import { getBrandsByCategory, getModels } from "@/lib/catalog"
+
+/* Марки для поля «Для какой машины» — один раз, а не на каждую букву. */
+const CAR_BRANDS = getBrandsByCategory("cars").map((brand) => brand.name)
+
+function parseImageList(value: string | null | undefined): string[] {
+  try {
+    const parsed = value ? JSON.parse(value) : []
+    return Array.isArray(parsed) ? parsed.filter((url): url is string => typeof url === "string") : []
+  } catch {
+    return []
+  }
+}
+
+/* Подзаголовок раздела формы: форма длинная, без деления читается анкетой. */
+function FormSection({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <Box>
+      <Text fw={800} size="sm">{title}</Text>
+      {hint && <Text size="xs" c="dimmed" mb={8}>{hint}</Text>}
+      <Stack gap="sm" mt={hint ? 0 : 8}>{children}</Stack>
+    </Box>
+  )
+}
 
 type StorePart = {
   id: string
@@ -26,6 +53,20 @@ type StorePart = {
   leadTimeDaysMax: number | null
   make: string
   model: string
+  condition: string
+  images?: string | null
+  description?: string | null
+  gtin?: string | null
+  manufacturerInfo?: string | null
+  warrantyMonths?: number | null
+  shelfLife?: string | null
+  safetyInfo?: string | null
+  originCountry?: string | null
+  conformityType?: string | null
+  conformityRegulation?: string | null
+  conformityNumber?: string | null
+  conformityValidUntil?: string | null
+  conformityUrl?: string | null
   productGroup?: string | null
   attributes?: Array<{ key: string; num: number | null; text: string | null }>
 }
@@ -58,7 +99,8 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
      колодку. Форма здесь та же, что и для правки, — поля совпадают. */
   const [isCreating, setIsCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<StorePart | null>(null)
-  const [form, setForm] = useState({ name: "", price: 0 as string | number, supplyMode: "ORDER", leadMin: "" as string | number, leadMax: "" as string | number, oemNumber: "", brandName: "" })
+  const emptyForm = { name: "", price: "" as string | number, supplyMode: "ORDER", leadMin: "" as string | number, leadMax: "" as string | number, oemNumber: "", brandName: "", description: "", condition: "NEW", make: null as string | null, model: null as string | null, images: [] as string[] }
+  const [form, setForm] = useState(emptyForm)
   /* Группа и характеристики: выбранная вручную группа не перебивается
      догадкой по названию. */
   const [productGroup, setProductGroup] = useState<string | null>(null)
@@ -66,6 +108,11 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
   const [attributeValues, setAttributeValues] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [legalValues, setLegalValues] = useState<LegalFormValues>(EMPTY_LEGAL)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  /* Подсказки закона считаются прямо в форме — продавец видит их до
+     отправки, а не после ответа сервера. */
+  const legalWarnings = checkLegal(productGroup, { ...legalValues, brandName: form.brandName, condition: form.condition }).warnings
 
   const openEditor = (part: StorePart) => {
     setEditTarget(part)
@@ -78,10 +125,17 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
       leadMax: part.leadTimeDaysMax ?? "",
       oemNumber: part.oemNumber ?? "",
       brandName: part.brandName ?? "",
+      description: part.description ?? "",
+      condition: part.condition === "USED" ? "USED" : "NEW",
+      make: part.make && part.make !== "Универсальная" ? part.make : null,
+      model: part.model && part.model !== "—" ? part.model : null,
+      images: parseImageList(part.images),
     })
     setProductGroup(part.productGroup ?? null)
     setGroupTouched(Boolean(part.productGroup))
     setAttributeValues(attributesToForm(part.attributes))
+    setLegalValues(legalToForm(part))
+    setFieldErrors({})
   }
 
   const save = async () => {
@@ -101,15 +155,23 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
           leadTimeDaysMax: form.leadMax === "" ? null : Number(form.leadMax),
           oemNumber: form.oemNumber,
           brandName: form.brandName,
+          description: form.description,
+          condition: form.condition,
+          make: form.make ?? "",
+          model: form.model ?? "",
+          images: form.images,
           productGroup: productGroup ?? "",
           attributes: attributeValues,
+          ...legalValues,
         }),
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
+        setFieldErrors(payload?.fieldErrors || {})
         setActionError(typeof payload?.error === "string" ? payload.error : "Не удалось сохранить позицию")
         return
       }
+      setFieldErrors({})
       setEditTarget(null)
       setIsCreating(false)
       await mutate()
@@ -121,7 +183,9 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
 
   /** Открывает пустую форму: новая позиция «под заказ» без срока. */
   const startCreating = () => {
-    setForm({ name: "", price: "", supplyMode: "ORDER", leadMin: "", leadMax: "", oemNumber: "", brandName: "" })
+    setForm(emptyForm)
+    setLegalValues(EMPTY_LEGAL)
+    setFieldErrors({})
     setProductGroup(null)
     setGroupTouched(false)
     setAttributeValues({})
@@ -259,46 +323,98 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
         onClose={() => { setEditTarget(null); setIsCreating(false) }}
         title={isCreating ? "Новая позиция" : "Изменить позицию"}
         centered
-        size="lg"
+        size="xl"
         /* В форме несколько полей: промах мимо окна не должен стирать
            набранное. Крестик и «Отмена» остаются. */
         closeOnClickOutside={false}
       >
-        <Stack gap="sm">
-          <TextInput
-            label="Название"
-            value={form.name}
-            onChange={(event) => {
-              const name = event.currentTarget.value
-              setForm({ ...form, name })
-              if (!groupTouched) setProductGroup(detectProductGroup(name)?.key ?? null)
-            }}
-          />
-          <Group gap="sm" grow>
-            <TextInput label="Артикул" value={form.oemNumber} onChange={(event) => setForm({ ...form, oemNumber: event.currentTarget.value })} />
-            <TextInput label="Производитель" value={form.brandName} onChange={(event) => setForm({ ...form, brandName: event.currentTarget.value })} />
-          </Group>
-          <NumberInput label="Цена, ₽" min={1} value={form.price} onChange={(value) => setForm({ ...form, price: value })} thousandSeparator=" " />
-          <Select
-            label="Наличие"
-            data={[{ value: "STOCK", label: "В наличии" }, { value: "ORDER", label: "Под заказ" }]}
-            value={form.supplyMode}
-            onChange={(value) => setForm({ ...form, supplyMode: value || "ORDER" })}
-            allowDeselect={false}
-          />
-          {form.supplyMode === "ORDER" && (
-            <Group gap="sm" grow>
-              <NumberInput label="Срок от, дней" min={0} max={365} value={form.leadMin} onChange={(value) => setForm({ ...form, leadMin: value })} />
-              <NumberInput label="Срок до, дней" min={0} max={365} value={form.leadMax} onChange={(value) => setForm({ ...form, leadMax: value })} />
-            </Group>
-          )}
-          <ProductAttributesFields
-            name={form.name}
+        <Stack gap="lg">
+          <FormSection title="Основное">
+            <TextInput
+              label="Название"
+              placeholder="Масло моторное ZIC X9 5W-40 4 л"
+              description="Как в прайсе: марку, артикул и объём лучше писать в названии — характеристики заполнятся сами"
+              value={form.name}
+              onChange={(event) => {
+                const name = event.currentTarget.value
+                setForm({ ...form, name })
+                if (!groupTouched) setProductGroup(detectProductGroup(name)?.key ?? null)
+              }}
+            />
+            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
+              <TextInput label="Артикул" value={form.oemNumber} onChange={(event) => setForm({ ...form, oemNumber: event.currentTarget.value })} />
+              <TextInput label="Производитель" placeholder="ZIC, Bosch, Toyota" value={form.brandName} onChange={(event) => setForm({ ...form, brandName: event.currentTarget.value })} error={fieldErrors.brandName} />
+              <NumberInput label="Цена, ₽" min={1} value={form.price} onChange={(value) => setForm({ ...form, price: value })} thousandSeparator=" " />
+              <Select
+                label="Наличие"
+                data={[{ value: "STOCK", label: "В наличии" }, { value: "ORDER", label: "Под заказ" }]}
+                value={form.supplyMode}
+                onChange={(value) => setForm({ ...form, supplyMode: value || "ORDER" })}
+                allowDeselect={false}
+              />
+            </SimpleGrid>
+            {form.supplyMode === "ORDER" && (
+              <Group gap="sm" grow>
+                <NumberInput label="Срок от, дней" min={0} max={365} value={form.leadMin} onChange={(value) => setForm({ ...form, leadMin: value })} />
+                <NumberInput label="Срок до, дней" min={0} max={365} value={form.leadMax} onChange={(value) => setForm({ ...form, leadMax: value })} />
+              </Group>
+            )}
+            <SegmentedControl
+              value={form.condition}
+              onChange={(value) => setForm({ ...form, condition: value })}
+              data={[{ value: "NEW", label: "Новый" }, { value: "USED", label: "Б/у" }]}
+            />
+          </FormSection>
+
+          <Divider />
+          <FormSection title="Фото" hint="Карточки с фото открывают чаще. Первое фото — обложка.">
+            <ProductPhotosField value={form.images} onChange={(images) => setForm((current) => ({ ...current, images }))} />
+          </FormSection>
+
+          <Divider />
+          <FormSection title="Для какой машины" hint="Не указали — позиция считается универсальной (масла, химия, аксессуары).">
+            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
+              <Select label="Марка" placeholder="Универсальная" data={CAR_BRANDS} searchable clearable value={form.make} onChange={(make) => setForm({ ...form, make, model: null })} />
+              <Select label="Модель" placeholder={form.make ? "Любая модель" : "Сначала марка"} data={form.make ? getModels(form.make, "cars") : []} searchable clearable disabled={!form.make} value={form.model} onChange={(model) => setForm({ ...form, model })} />
+            </SimpleGrid>
+          </FormSection>
+
+          <Divider />
+          <FormSection title="Группа и характеристики">
+            <ProductAttributesFields
+              name={form.name}
+              group={productGroup}
+              values={attributeValues}
+              onGroupChange={(next) => { setProductGroup(next); setGroupTouched(true) }}
+              onValuesChange={setAttributeValues}
+            />
+            {fieldErrors.productGroup && <Alert color="red" variant="light">{fieldErrors.productGroup}</Alert>}
+          </FormSection>
+
+          <Divider />
+          <ProductLegalFields
             group={productGroup}
-            values={attributeValues}
-            onGroupChange={(next) => { setProductGroup(next); setGroupTouched(true) }}
-            onValuesChange={setAttributeValues}
+            condition={form.condition}
+            values={legalValues}
+            errors={fieldErrors}
+            onChange={setLegalValues}
           />
+
+          <Divider />
+          <FormSection title="Описание">
+            <Textarea
+              placeholder="Применимость, комплектация, условия гарантии и возврата"
+              autosize minRows={3} maxRows={10} maxLength={2000}
+              value={form.description}
+              onChange={(event) => setForm({ ...form, description: event.currentTarget.value })}
+            />
+          </FormSection>
+
+          {legalWarnings.length > 0 && (
+            <Alert color="yellow" variant="light" title="Проверьте перед публикацией">
+              <Stack gap={4}>{legalWarnings.map((warning) => <Text key={warning} size="sm">{warning}</Text>)}</Stack>
+            </Alert>
+          )}
           {actionError && <Alert color="red" variant="light">{actionError}</Alert>}
           <Group gap="xs" justify="flex-end">
             <Button variant="subtle" color="gray" onClick={() => { setEditTarget(null); setIsCreating(false) }}>Отмена</Button>

@@ -23,7 +23,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true, name: true, slug: true, description: true, city: true, status: true, statusReason: true,
-      legalName: true, inn: true, contactPhone: true, contactEmail: true,
+      legalName: true, inn: true, contactPhone: true, contactEmail: true, ogrn: true, legalAddress: true, sellerType: true,
       defaultLeadTimeDaysMin: true, defaultLeadTimeDaysMax: true, defaultOriginCountry: true,
       createdAt: true,
       _count: { select: { parts: true } },
@@ -75,6 +75,8 @@ export async function POST(request: NextRequest) {
       city: readText(body?.city, 80),
       legalName: readText(body?.legalName, 200),
       inn: readText(body?.inn, 20),
+      ogrn: readText(body?.ogrn, 20)?.replace(/[^0-9]/g, "") || null,
+      legalAddress: readText(body?.legalAddress, 300),
       contactPhone: readText(body?.contactPhone, 40),
       contactEmail: readText(body?.contactEmail, 120),
       defaultOriginCountry: readText(body?.defaultOriginCountry, 4),

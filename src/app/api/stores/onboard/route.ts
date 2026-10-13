@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
   const email = readText(body?.email, 120)
   const sells = readText(body?.sells, 300)
   const description = readText(body?.description, 1_000)
+  const ogrn = readText(body?.ogrn, 20).replace(/\D/g, "")
+  const legalAddress = readText(body?.legalAddress, 300)
 
   const fieldErrors: Record<string, string> = {}
   if (storeName.length < 3) fieldErrors.storeName = "Название магазина — от трёх символов"
@@ -55,6 +57,11 @@ export async function POST(request: NextRequest) {
   if (city.length < 2) fieldErrors.city = "Укажите город"
   if (phone.replace(/\D/g, "").length < 10) fieldErrors.phone = "Телефон для связи с покупателями"
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fieldErrors.email = "Проверьте адрес почты"
+  /* ОГРН — 13 цифр, ОГРНИП — 15; у самозанятого его нет. Можно заполнить
+     позже, но до публикации магазина — обязательно. */
+  if (ogrn && sellerForm !== "SELF_EMPLOYED" && ogrn.length !== (sellerForm === "COMPANY" ? 13 : 15)) {
+    fieldErrors.ogrn = sellerForm === "COMPANY" ? "ОГРН — 13 цифр" : "ОГРНИП — 15 цифр"
+  }
   if (Object.keys(fieldErrors).length) {
     return NextResponse.json({ error: Object.values(fieldErrors)[0], fieldErrors }, { status: 422 })
   }
@@ -111,6 +118,9 @@ export async function POST(request: NextRequest) {
         inn,
         contactPhone: phone,
         contactEmail: email || null,
+        sellerType: sellerForm,
+        ogrn: sellerForm === "SELF_EMPLOYED" ? null : ogrn || null,
+        legalAddress: legalAddress || null,
         status: "DRAFT",
       },
       select: { id: true, name: true, slug: true, status: true },

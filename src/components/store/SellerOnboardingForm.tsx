@@ -20,7 +20,7 @@ const FORMS = [
   { value: "SELF_EMPLOYED", label: "Самозанятый" },
 ]
 
-type Fields = "storeName" | "legalName" | "inn" | "city" | "phone" | "email" | "sellerForm"
+type Fields = "storeName" | "legalName" | "inn" | "ogrn" | "legalAddress" | "city" | "phone" | "email" | "sellerForm"
 
 /**
  * Анкета продавца: магазин-черновик и проверка реквизитов одним шагом.
@@ -31,7 +31,7 @@ export default function SellerOnboardingForm({ onCreated, compact = false }: { o
   const router = useRouter()
   const { status } = useSession()
   const [form, setForm] = useState({
-    storeName: "", sellerForm: "ENTREPRENEUR", legalName: "", inn: "", city: "", phone: "", email: "", description: "",
+    storeName: "", sellerForm: "ENTREPRENEUR", legalName: "", inn: "", ogrn: "", legalAddress: "", city: "", phone: "", email: "", description: "",
   })
   const [departments, setDepartments] = useState<string[]>(["Запчасти"])
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Fields, string>>>({})
@@ -128,6 +128,18 @@ export default function SellerOnboardingForm({ onCreated, compact = false }: { o
             required label="ИНН" placeholder={innHint} inputMode="numeric" maxLength={12}
             description="Сверим по ФНС до публикации витрины"
             value={form.inn} onChange={set("inn")} error={fieldErrors.inn}
+          />
+          {form.sellerForm !== "SELF_EMPLOYED" && (
+            <TextInput
+              label={form.sellerForm === "COMPANY" ? "ОГРН" : "ОГРНИП"} placeholder={form.sellerForm === "COMPANY" ? "13 цифр" : "15 цифр"} inputMode="numeric"
+              description="Можно позже, но до публикации — обязательно"
+              value={form.ogrn} onChange={set("ogrn")} error={fieldErrors.ogrn}
+            />
+          )}
+          <TextInput
+            label="Юридический адрес" placeholder="г. Уфа, ул. ..."
+            description="Покупатель видит его по закону"
+            value={form.legalAddress} onChange={set("legalAddress")} error={fieldErrors.legalAddress}
           />
           <TextInput
             required label="Телефон" placeholder="+7 900 000-00-00" type="tel" inputMode="tel" autoComplete="tel"

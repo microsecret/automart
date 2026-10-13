@@ -31,6 +31,9 @@ type Store = {
   status: string
   statusReason: string | null
   legalName: string | null
+  ogrn?: string | null
+  legalAddress?: string | null
+  sellerType?: string | null
   inn: string | null
   contactPhone: string | null
   contactEmail: string | null
@@ -112,7 +115,7 @@ const PART_TYPE_LABELS: Record<string, string> = Object.fromEntries(
 export default function StoreWorkspacePage() {
   const { data, error, isLoading, mutate } = useSWR<{ stores: Store[]; access?: PartnerAccess }>("/api/stores", fetchJson, { revalidateOnFocus: false })
   const [isCreating, setIsCreating] = useState(false)
-  const [form, setForm] = useState({ name: "", city: "", description: "", legalName: "", inn: "", contactPhone: "", contactEmail: "", defaultOriginCountry: "CN" as string | null })
+  const [form, setForm] = useState({ name: "", city: "", description: "", legalName: "", inn: "", ogrn: "", legalAddress: "", contactPhone: "", contactEmail: "", defaultOriginCountry: "CN" as string | null })
   const [saveError, setSaveError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -436,6 +439,12 @@ export default function StoreWorkspacePage() {
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                     <TextInput label="Юридическое название" placeholder="ООО «АвтоДеталь»" value={form.legalName} onChange={(event) => setForm({ ...form, legalName: event.currentTarget.value })} />
                     <TextInput label="ИНН" placeholder="7701234567" value={form.inn} onChange={(event) => setForm({ ...form, inn: event.currentTarget.value })} inputMode="numeric" />
+                    {/* ОГРН и адрес покупатель обязан видеть (ЗоЗПП ст. 9) — без
+                        них магазин не уходит на публикацию. У самозанятого ОГРН нет. */}
+                    {store?.sellerType !== "SELF_EMPLOYED" && (
+                      <TextInput label="ОГРН / ОГРНИП" placeholder="13 или 15 цифр" value={form.ogrn} onChange={(event) => setForm({ ...form, ogrn: event.currentTarget.value })} inputMode="numeric" />
+                    )}
+                    <TextInput label="Юридический адрес" placeholder="г. Уфа, ул. ..." value={form.legalAddress} onChange={(event) => setForm({ ...form, legalAddress: event.currentTarget.value })} />
                     {/* Клавиатура под вводимое.
 
                         Оба поля открывали буквенную клавиатуру: чтобы
@@ -565,6 +574,8 @@ export default function StoreWorkspacePage() {
                           description: store.description || "",
                           legalName: store.legalName || "",
                           inn: store.inn || "",
+                          ogrn: store.ogrn || "",
+                          legalAddress: store.legalAddress || "",
                           contactPhone: store.contactPhone || "",
                           contactEmail: store.contactEmail || "",
                           defaultOriginCountry: store.defaultOriginCountry || "",
