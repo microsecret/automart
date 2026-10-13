@@ -53,7 +53,6 @@ type StorePart = {
   leadTimeDaysMax: number | null
   make: string
   model: string
-  condition: string
   images?: string | null
   description?: string | null
   gtin?: string | null
