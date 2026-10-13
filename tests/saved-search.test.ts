@@ -51,3 +51,9 @@ test("значения не выходят за пределы своего па
   const query = normalizeSavedSearchQuery("make=BMW%26redirect%3Devil", "LISTINGS")
   assert.ok(!query.includes("&redirect="), `значение вырвалось за границы: ${query}`)
 })
+
+test("подписка на запчасти: фильтры раздела и характеристики проходят, мусор — нет", () => {
+  const query = normalizeSavedSearchQuery("group=bulbs&brand=Philips&a_base=H7&a_power=50..60&evil=1&a_DROP%20TABLE=x&availability=IN_STOCK", "PARTS")
+  assert.equal(query, "a_base=H7&a_power=50..60&availability=IN_STOCK&brand=Philips&group=bulbs")
+  assert.equal(savedSearchHref("PARTS", query), `/parts-finder?${query}`)
+})
