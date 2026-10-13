@@ -438,7 +438,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                 </Card>
               )}
 
-              <Card withBorder radius="md" p="lg">
+              <Card withBorder radius="md" p="lg" id="order" style={{ scrollMarginTop: 96 }}>
                 <Stack gap="sm">
                   {/* Заказ — главное действие для товара магазина.
 

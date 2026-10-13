@@ -16,11 +16,13 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const listing = await prisma.listing.findFirst({
-    where: { partId: id, ...publicListingWhere },
-    select: { part: { select: { name: true, make: true, model: true, price: true, images: true, location: true } } },
+  /* Товар работающего магазина объявления не имеет, а заголовок искал
+     только объявление: страница открывалась, но называлась «Запчасть не
+     найдена» и закрывалась от поисковиков. */
+  const part = await prisma.part.findFirst({
+    where: { id, OR: [{ listings: { some: publicListingWhere } }, { store: { status: "ACTIVE" } }] },
+    select: { name: true, make: true, model: true, price: true, images: true, location: true },
   })
-  const part = listing?.part
   if (!part) return { title: "Запчасть не найдена", robots: { index: false, follow: false } }
   const title = `${part.name} для ${part.make} ${part.model}`
   const description = `${part.name} для ${part.make} ${part.model} в ${part.location}, цена ${part.price.toLocaleString("ru-RU")} ₽. Совместимость и фотографии.`

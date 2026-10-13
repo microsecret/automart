@@ -173,6 +173,7 @@ export const FOOTER_NAVIGATION: readonly NavigationSection[] = [
     title: "Запчасти",
     items: [
       { id: "all-parts", label: "Все запчасти", href: "/parts-finder" },
+      { id: "catalogs", label: "Каталоги по маркам", href: "/catalogs" },
       ...PART_NAVIGATION.filter((item) => item.id !== "lighting").map((item) => ({
         ...item,
         label: "shortLabel" in item ? item.shortLabel : item.label,

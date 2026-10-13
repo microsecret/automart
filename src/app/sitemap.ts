@@ -8,6 +8,7 @@ import { listAuctionLandings } from "@/lib/auction-landing"
 import { listNewsTags } from "@/lib/news-tags"
 import { toCitySlug } from "@/lib/fuel-city-slug"
 import { partCategorySlug } from "@/lib/part-category-slug"
+import { CATALOG_REGIONS, catalogBrandsByRegion, catalogHref } from "@/lib/parts-catalog"
 import { CITY_COORDINATES } from "@/lib/cities"
 
 export const dynamic = "force-dynamic"
@@ -30,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/category/water", "/category/air",
     "/services", "/services/valuation", "/services/history-check", "/services/smart-matching", "/services/safe-deal", "/services/legal-documents", "/services/fuel-map",
     "/sell", "/help/sell", "/help/safety", "/help/rules", "/help/support", "/legal/privacy", "/legal/terms",
-    "/parts-finder", "/auctions", "/forum",
+    "/parts-finder", "/catalogs", "/auctions", "/forum",
     /* Участники форума: страница отвечает на запрос «кто отвечает на
        форуме» и ведёт вглубь, к профилям и темам. Поиск по форуму и
        список отслеживаемых сюда не идут — они закрыты от индексации:
@@ -46,6 +47,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: path === "" ? 1 : path.startsWith("/category") ? 0.9 : 0.7,
     })),
   ]
+
+  /* Каталоги запчастей по маркам: страница марки отвечает на запрос
+     «запчасти Toyota» даже без предложений — там модели и узлы. Страницы
+     моделей сюда не идут: их тысячи, а пустые поисковик сочтёт дублями. */
+  for (const region of CATALOG_REGIONS) {
+    for (const brand of catalogBrandsByRegion(region)) {
+      pages.push({ url: `${baseUrl}${catalogHref(brand.name)}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 })
+    }
+  }
 
   /* Категории запчастей.
 
