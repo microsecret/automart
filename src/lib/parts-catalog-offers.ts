@@ -117,17 +117,23 @@ export async function loadModelPhotos(brand: string, models: readonly string[]):
     take: 400,
     select: { model: true, imageUrl: true },
   })
+  /* Корейские площадки пишут модель с приставками и комплектацией:
+     «The New K5 3-е поколение 2.0 LPG Prestige». Приставки снимаем, а
+     модель ищем отдельным словом — «K5» найдётся, «K5» в «K50» нет. */
+  const normalized = lots.map((lot) => ({
+    model: ` ${lot.model.toLowerCase().replace(/^(?:the\s+)?(?:all[-\s]?new\s+|new\s+)?/, "").replace(/\s+/g, " ").trim()} `,
+    imageUrl: lot.imageUrl as string,
+  }))
   const photos = new Map<string, string>()
-  const byModel = new Map(lots.map((lot) => [lot.model.trim().toLowerCase(), lot.imageUrl as string]))
   for (const model of models) {
-    const key = model.toLowerCase()
-    /* Точное совпадение, затем «Tiggo 7» ← «Tiggo 7 Pro»: лот уточняет
-       модель, справочник — нет. Обратное («Tiggo» ← «Tiggo 7») не берём:
+    const key = model.toLowerCase().trim()
+    /* Точное совпадение, затем лот, где модель — начало названия, затем
+       отдельное слово внутри. Обратное («Tiggo» ← «Tiggo 7») не берём:
        на плитке оказалась бы другая машина. */
-    const exact = byModel.get(key)
-    const prefixed = exact ? null : lots.find((lot) => lot.model.toLowerCase().startsWith(`${key} `))
-    const url = exact ?? prefixed?.imageUrl
-    if (url) photos.set(model, url)
+    const match = normalized.find((lot) => lot.model === ` ${key} `)
+      ?? normalized.find((lot) => lot.model.startsWith(` ${key} `))
+      ?? normalized.find((lot) => lot.model.includes(` ${key} `))
+    if (match) photos.set(model, match.imageUrl)
   }
   return photos
 }

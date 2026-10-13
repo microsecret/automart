@@ -98,7 +98,9 @@ export default async function CatalogBrandPage({ params, searchParams }: Props) 
                   : <IconCar size={26} stroke={1.4} />}
               </span>
               <span className={styles.modelName}>{model}</span>
-              <span className={count ? styles.modelCount : styles.modelEmpty}>{count ? `${count} предл.` : "узлы и заявка"}</span>
+              {/* Счётчик только при предложениях: плашка «узлы и заявка» у
+                  каждой модели сжимала название до переноса. */}
+              {count > 0 ? <span className={styles.modelCount}>{count} предл.</span> : <span aria-hidden="true" />}
             </Link>
           ))}
         </div>
