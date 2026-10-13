@@ -23,6 +23,9 @@ export async function routeAuctionInquiryToPartners(inquiryId: string) {
   const organizations = await prisma.deliveryOrganization.findMany({
     where: {
       verificationStatus: "VERIFIED",
+      /* Продавцы запчастей — партнёры площадки, но не перевозчики: заявки
+         на импорт автомобилей и доставки им не назначаются. */
+      organizationType: { not: "PARTS_SELLER" },
       ...(attemptedPartnerIds.length ? { ownerId: { notIn: attemptedPartnerIds } } : {}),
     },
     select: {

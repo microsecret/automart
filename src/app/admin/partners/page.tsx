@@ -57,7 +57,7 @@ type OrganizationsResponse = {
 }
 
 function organizationKindLabel(value: string) {
-  const labels: Record<string, string> = { COMPANY: "Компания", ENTREPRENEUR: "ИП", BROKER: "Брокер", LOGISTICS: "Логистика" }
+  const labels: Record<string, string> = { COMPANY: "Компания", ENTREPRENEUR: "ИП", BROKER: "Брокер", LOGISTICS: "Логистика", PARTS_SELLER: "Продавец запчастей" }
   return labels[value] || value
 }
 

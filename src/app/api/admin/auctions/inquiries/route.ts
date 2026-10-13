@@ -69,7 +69,8 @@ export async function GET(request: NextRequest) {
         take: 100,
       }),
       prisma.deliveryOrganization.findMany({
-        where: { verificationStatus: "VERIFIED" },
+        // Продавцы запчастей не ведут импорт автомобилей.
+        where: { verificationStatus: "VERIFIED", organizationType: { not: "PARTS_SELLER" } },
         orderBy: { legalName: "asc" },
         select: {
           id: true,

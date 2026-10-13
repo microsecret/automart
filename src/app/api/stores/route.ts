@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { slugify } from "@/lib/news"
+import { uniqueStoreSlug } from "@/lib/part-store-slug"
 import { checkPartnerAccess } from "@/lib/partner-access"
 
 export const dynamic = "force-dynamic"
@@ -64,13 +64,7 @@ export async function POST(request: NextRequest) {
 
   // Адрес витрины должен быть уникальным и читаемым: к базовому slug
   // добавляется суффикс, только если имя уже занято.
-  const baseSlug = slugify(name) || "store"
-  let slug = baseSlug
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    const taken = await prisma.partStore.findUnique({ where: { slug }, select: { id: true } })
-    if (!taken) break
-    slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`
-  }
+  const slug = await uniqueStoreSlug(name)
 
   const store = await prisma.partStore.create({
     data: {

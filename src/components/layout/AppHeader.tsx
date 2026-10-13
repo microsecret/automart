@@ -573,8 +573,11 @@ function ServiceNavigationMenu({ serviceNavigation, serviceShortcuts, primaryAct
           ))}
           <Menu.Divider />
           <Menu.Label>Партнёрская сеть</Menu.Label>
+          <Menu.Item component={Link} href="/sell" leftSection={<IconBuildingStore size={15} />} color="indigo">
+            Открыть магазин автотоваров
+          </Menu.Item>
           <Menu.Item component={Link} href="/dashboard/deliveries?partner=apply" leftSection={<IconHeartHandshake size={15} />} color="orange">
-            Стать партнёром
+            Партнёр по доставке
           </Menu.Item>
           <Menu.Divider />
           <Menu.Label>Площадка и поддержка</Menu.Label>

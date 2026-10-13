@@ -18,6 +18,7 @@ import { AsyncErrorState, AsyncLoadingState } from "@/components/ui/AsyncStates"
 import StoreOrdersPanel from "@/components/store/StoreOrdersPanel"
 import StoreCatalogPanel from "@/components/store/StoreCatalogPanel"
 import StoreRequestsPanel from "@/components/store/StoreRequestsPanel"
+import SellerOnboardingForm from "@/components/store/SellerOnboardingForm"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type Store = {
@@ -312,10 +313,23 @@ export default function StoreWorkspacePage() {
           </Group>
         </Card>
 
-        {access && !access.allowed ? (
-          /* Инструменты магазина открываются проверенной компании: до этого
-             продавцу нужно объяснить шаг, а не показывать форму, которую
-             сервер всё равно отклонит. */
+        {access && !access.allowed && !store && access.applicationStatus !== "PENDING" ? (
+          /* Анкета продавца вместо тупика «Нужен статус партнёра».
+
+             Раньше здесь была ссылка на анкету перевозчика, и до её
+             проверки продавец не мог начать каталог — магазинов не было ни
+             одного. Теперь анкета создаёт черновик сразу, проверка идёт
+             параллельно с наполнением каталога. */
+          <Card withBorder radius="md" p="lg">
+            <Text fw={800} size="lg">Откройте магазин на LeWheel</Text>
+            <Text size="sm" c="dimmed" mb="md">
+              {access.applicationStatus === "REJECTED" && access.reason ? `Прошлая заявка отклонена: ${access.reason}` : "Короткая анкета — и можно загружать прайс."}
+            </Text>
+            <SellerOnboardingForm onCreated={() => mutate()} />
+          </Card>
+        ) : access && !access.allowed && !store ? (
+          /* Анкета партнёра доставки на проверке, магазина нет: объяснить
+             шаг, а не показывать форму, которую сервер всё равно отклонит. */
           <Card withBorder radius="md" p="xl">
             <Stack align="center" gap="sm" ta="center" maw={520} mx="auto">
               <ThemeIcon variant="light" color={access.applicationStatus === "PENDING" ? "orange" : "indigo"} size={52} radius="md">
@@ -445,6 +459,14 @@ export default function StoreWorkspacePage() {
           </Card>
         ) : (
           <>
+            {/* Продавец из анкеты: реквизиты ещё сверяются, но каталог уже
+                можно наполнять — сказать это прямо, чтобы не ждал впустую. */}
+            {access && !access.allowed && (
+              <Alert color="indigo" variant="light" icon={<IconShieldCheck size={18} />} title="Реквизиты на проверке">
+                Загружайте прайс и заполняйте карточку уже сейчас. Когда каталог готов — отправьте магазин
+                на публикацию: мы сверим реквизиты и откроем витрину одним решением.
+              </Alert>
+            )}
             {/* Переключатель появляется, только когда магазинов правда
                 несколько: одному владельцу лишний ряд кнопок ни к чему. */}
             {stores.length > 1 && (

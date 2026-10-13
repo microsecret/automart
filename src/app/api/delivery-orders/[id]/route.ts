@@ -85,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         const partnerId = asTrimmedString(body.partnerId, 80) || null
         if (partnerId) {
           const verifiedPartner = await prisma.deliveryOrganization.findFirst({
-            where: { ownerId: partnerId, verificationStatus: "VERIFIED" },
+            where: { ownerId: partnerId, verificationStatus: "VERIFIED", organizationType: { not: "PARTS_SELLER" } },
             select: { id: true },
           })
           if (!verifiedPartner) return NextResponse.json({ error: "Можно назначить только проверенного партнёра" }, { status: 409 })

@@ -101,6 +101,9 @@ export default function PartStoreModerationPanel() {
           onChange={setStatus}
           data={[
             { value: "PENDING", label: "На проверке" },
+            /* Черновики — продавцы из анкеты /sell, которые ещё наполняют
+               каталог. Реквизиты можно сверить заранее. */
+            { value: "DRAFT", label: "Черновики" },
             { value: "ACTIVE", label: "Опубликованы" },
             { value: "SUSPENDED", label: "Приостановлены" },
           ]}

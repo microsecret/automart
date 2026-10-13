@@ -177,6 +177,9 @@ export const FOOTER_NAVIGATION: readonly NavigationSection[] = [
         ...item,
         label: "shortLabel" in item ? item.shortLabel : item.label,
       })),
+      /* Вход для продавцов — там, где его ищут: рядом с каталогом,
+         который они будут наполнять. */
+      { id: "sell", label: "Открыть магазин", href: "/sell" },
     ],
   },
   { title: "Сервисы", items: SERVICE_NAVIGATION },

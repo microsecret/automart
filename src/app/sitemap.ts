@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/category/cars", "/category/moto", "/category/trucks", "/category/special",
     "/category/water", "/category/air",
     "/services", "/services/valuation", "/services/history-check", "/services/smart-matching", "/services/safe-deal", "/services/legal-documents", "/services/fuel-map",
-    "/help/sell", "/help/safety", "/help/rules", "/help/support", "/legal/privacy", "/legal/terms",
+    "/sell", "/help/sell", "/help/safety", "/help/rules", "/help/support", "/legal/privacy", "/legal/terms",
     "/parts-finder", "/auctions", "/forum",
     /* Участники форума: страница отвечает на запрос «кто отвечает на
        форуме» и ведёт вглубь, к профилям и темам. Поиск по форуму и

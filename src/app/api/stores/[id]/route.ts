@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isAdmin } from "@/lib/permissions"
 import { adminAuditValueLabel, recordAdminAudit } from "@/lib/admin-audit"
+import { USER_ROLE } from "@/lib/permissions"
+import { notifyAdmins } from "@/lib/admin-notify"
 
 export const dynamic = "force-dynamic"
 
@@ -113,10 +115,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "Укажите причину приостановки" }, { status: 400 })
     }
 
-    const updated = await prisma.partStore.update({
-      where: { id },
-      data: { status: nextStatus, statusReason: nextStatus === "ACTIVE" ? null : reason },
-      select: { id: true, status: true, statusReason: true },
+    /* Публикация магазина подтверждает и продавца, пришедшего через анкету
+       /sell: администратор сверяет реквизиты один раз, а не в двух
+       разделах. Организации перевозчиков здесь не трогаются — их
+       проверяют в «Партнёрах». */
+    const { updated, sellerVerified } = await prisma.$transaction(async (tx) => {
+      const saved = await tx.partStore.update({
+        where: { id },
+        data: { status: nextStatus, statusReason: nextStatus === "ACTIVE" ? null : reason },
+        select: { id: true, status: true, statusReason: true },
+      })
+      if (nextStatus !== "ACTIVE") return { updated: saved, sellerVerified: false }
+      const verified = await tx.deliveryOrganization.updateMany({
+        where: { ownerId: store.ownerId, organizationType: "PARTS_SELLER", verificationStatus: "PENDING" },
+        data: { verificationStatus: "VERIFIED", verificationSource: "MANUAL" },
+      })
+      if (verified.count > 0) {
+        await tx.user.updateMany({
+          where: { id: store.ownerId, role: { in: [USER_ROLE.USER, USER_ROLE.VERIFIED_USER] } },
+          data: { role: USER_ROLE.PARTNER },
+        })
+      }
+      return { updated: saved, sellerVerified: verified.count > 0 }
     })
 
     await recordAdminAudit({
@@ -126,7 +146,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       entityType: "PartStore",
       entityId: id,
       summary: `Магазин «${store.name}»: статус «${adminAuditValueLabel(store.status)}» → «${adminAuditValueLabel(nextStatus)}»${reason ? `; причина: ${reason}` : ""}`,
-      metadata: { previousStatus: store.status, nextStatus, reason },
+      metadata: { previousStatus: store.status, nextStatus, reason, sellerVerified },
     })
 
     return NextResponse.json({ store: updated })
@@ -147,5 +167,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     data: { status: nextStatus, statusReason: null },
     select: { id: true, status: true, statusReason: true },
   })
+  /* Магазин в очереди проверки — администратор узнаёт сразу, а не когда
+     случайно заглянет в раздел: продавец ждёт публикации, чтобы продавать. */
+  if (nextStatus === "PENDING") {
+    await notifyAdmins({
+      title: "Магазин ждёт публикации",
+      lines: [`«${store.name}»: ${store._count.parts} позиций в каталоге`, store.legalName ? `${store.legalName}${store.inn ? `, ИНН ${store.inn}` : ""}` : ""],
+      relatedType: "PART_STORE",
+      relatedId: id,
+      adminPath: "/admin",
+      buttonText: "Открыть админку",
+    })
+  }
   return NextResponse.json({ store: updated })
 }
