@@ -6,6 +6,7 @@ import { IconArrowRight, IconSearch } from "@tabler/icons-react"
 import { decodeVin, looksLikeVin } from "@/lib/vin-decode"
 import { catalogHref, findCatalogBrandByName } from "@/lib/parts-catalog"
 import { matchKnownMake } from "@/lib/listing-make"
+import { articleHref, looksLikeArticle } from "@/lib/article-number"
 import styles from "./catalogs.module.css"
 
 /**
@@ -41,6 +42,12 @@ export default function CatalogSearch({ variant = "hero" }: { variant?: "hero" |
     const brand = brandName ? findCatalogBrandByName(brandName) : null
     if (brand && query.split(/\s+/).length <= 2) {
       router.push(catalogHref(brand.name))
+      return
+    }
+    /* Номер детали — на страницу артикула: там предложения всех
+       магазинов и аналоги, а не выдача по совпадению в названии. */
+    if (looksLikeArticle(query)) {
+      router.push(articleHref(query))
       return
     }
     router.push(`/parts-finder?q=${encodeURIComponent(query)}`)

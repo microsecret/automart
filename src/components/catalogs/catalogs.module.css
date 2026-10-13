@@ -846,3 +846,129 @@
 @media (prefers-reduced-motion: reduce) {
   .cartBadge { animation: none; }
 }
+
+/* ---------- Страница артикула (план 002, этап 4) ----------
+   Плотный прайс в одну строку: производитель и название, магазин, срок,
+   цена и корзина — как у autodoc / part-kom. */
+.articleCross { margin: 0; font-size: 14px; color: var(--catalog-muted); }
+.articleCross a { color: var(--catalog-accent); text-decoration: none; font-variant-numeric: tabular-nums; }
+.articleCross a:hover { text-decoration: underline; }
+
+.articleSort { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--catalog-muted); margin-bottom: -12px; }
+.articleSort a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--catalog-ink);
+  text-decoration: none;
+  font-weight: 600;
+}
+.articleSort a:hover { background: var(--catalog-surface); }
+.articleSort a[aria-current] { background: var(--catalog-ink); color: var(--catalog-bg); }
+
+.articleList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 12px;
+  border: 1px solid var(--catalog-line);
+  overflow: hidden;
+}
+
+.articleRow {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 120px 120px 56px;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--catalog-line);
+  background: var(--catalog-bg);
+  transition: background-color 140ms ease;
+}
+
+.articleRow:first-child { border-top: 0; }
+
+@media (hover: hover) {
+  .articleRow:hover { background: var(--catalog-surface); }
+}
+
+.articleThumb {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: var(--catalog-surface);
+  color: var(--catalog-muted);
+  overflow: hidden;
+}
+
+.articleThumb img { width: 100%; height: 100%; object-fit: contain; }
+
+.articleMain { display: grid; gap: 2px; min-width: 0; }
+.articleBrand { font-size: 12px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: var(--catalog-muted); }
+
+.articleName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--catalog-ink);
+  text-decoration: none;
+}
+
+.articleName:hover { color: var(--catalog-accent); }
+
+.articleSeller {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--catalog-muted);
+}
+
+.articleSeller a { color: inherit; text-decoration: none; font-weight: 600; }
+.articleSeller a:hover { color: var(--catalog-accent); }
+
+.articleLeadStock,
+.articleLeadOrder { font-size: 14px; font-weight: 700; }
+.articleLeadStock { color: var(--catalog-ok); }
+.articleLeadOrder { color: var(--catalog-order); }
+
+.articlePrice { justify-self: end; font-size: 19px; font-variant-numeric: tabular-nums; }
+
+.articleMore {
+  justify-self: end;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--catalog-accent);
+  text-decoration: none;
+}
+
+.articleFits { display: flex; flex-wrap: wrap; gap: 8px; }
+.articleFits a,
+.articleFits span {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--catalog-line);
+  color: var(--catalog-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.articleFits a:hover { border-color: var(--catalog-accent); color: var(--catalog-accent); }
+
+@media (max-width: 760px) {
+  .articleRow {
+    grid-template-columns: 48px minmax(0, 1fr) auto auto;
+    grid-template-areas: "thumb main main main" "lead lead price buy";
+    row-gap: 8px;
+    padding: 12px;
+  }
+  .articleThumb { grid-area: thumb; width: 48px; height: 48px; }
+  .articleMain { grid-area: main; }
+  .articleLeadStock, .articleLeadOrder { grid-area: lead; }
+  .articlePrice { grid-area: price; }
+  .articleRow > :last-child { grid-area: buy; }
+  .articleName { white-space: normal; }
+}

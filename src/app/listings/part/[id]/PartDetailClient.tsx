@@ -331,7 +331,13 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                 <Title order={3} size="h4" mb="md">Характеристики{data.productGroupLabel ? ` · ${data.productGroupLabel}` : ""}</Title>
                 <dl className="part-detail__specs">
                   {data.brandName && <div><dt>Производитель</dt><dd>{data.brandName}</dd></div>}
-                  {data.oemNumber && <div><dt>Артикул</dt><dd>{data.oemNumber}</dd></div>}
+                  {data.oemNumber && (
+                    <div>
+                      <dt>Артикул</dt>
+                      {/* Номер ведёт ко всем предложениям и аналогам по нему. */}
+                      <dd><Link href={`/artikul/${encodeURIComponent(data.oemNumber)}`} className="part-detail__article-link">{data.oemNumber}</Link></dd>
+                    </div>
+                  )}
                   {data.specs?.map((spec) => <div key={spec.label}><dt>{spec.label}</dt><dd>{spec.value}</dd></div>)}
                 </dl>
               </Card>

@@ -2262,3 +2262,28 @@ summary {
 @media (prefers-reduced-motion: reduce) {
   .lw-cart-button { transition: none; }
 }
+
+/* ---------- Ссылки на страницу артикула ---------- */
+.part-detail__article-link {
+  color: var(--mantine-color-indigo-7);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.part-detail__article-link:hover { text-decoration: underline; }
+
+.parts-article-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--mantine-color-indigo-light);
+  color: var(--mantine-color-indigo-light-color);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.parts-article-link b { font-variant-numeric: tabular-nums; }
+.parts-article-link:hover { filter: brightness(0.97); }

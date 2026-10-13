@@ -15,6 +15,7 @@ import PartRequestPrompt from "@/components/parts/PartRequestPrompt"
 import PartFacetsPanel, { type Facet } from "@/components/parts/PartFacetsPanel"
 import DepartmentNav from "@/components/parts/DepartmentNav"
 import AddToCartButton from "@/components/cart/AddToCartButton"
+import { articleHref, looksLikeArticle } from "@/lib/article-number"
 import { DEPARTMENTS, formatAttributeValue, PRODUCT_GROUP_BY_KEY, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
@@ -478,6 +479,14 @@ function PartsContent() {
             Пять блоков стояли над пустым каталогом: человек видел стену
             полей, которыми нечего настраивать, а приглашение разместить
             первую запчасть уезжало за пределы экрана. */}
+        {/* Набран номер детали — предлагаем страницу артикула: там все
+            магазины по этому номеру и аналоги, а не совпадения в названиях. */}
+        {debouncedQ && looksLikeArticle(debouncedQ) && (
+          <Link href={articleHref(debouncedQ)} className="parts-article-link">
+            Все предложения и аналоги по номеру <b>{debouncedQ.trim().toUpperCase()}</b> <IconArrowRight size={15} aria-hidden="true" />
+          </Link>
+        )}
+
         {/* Отделы видны всегда: это навигация магазина, а не обещание
             товара — в пустой группе честно скажут, что там пока пусто. */}
         <DepartmentNav
