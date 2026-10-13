@@ -1088,3 +1088,41 @@
 }
 
 .offerMore:hover { border-color: var(--catalog-accent); color: var(--catalog-accent); }
+
+/* ---------- Страницы товарных групп /avtotovary ---------- */
+.groupTile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 56px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--catalog-line);
+  background: var(--catalog-bg);
+  color: var(--catalog-ink);
+  text-decoration: none;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+@media (hover: hover) {
+  .groupTile:hover { border-color: var(--catalog-accent); background: var(--catalog-accent-soft); }
+}
+
+.groupActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+
+.groupSecondary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid var(--catalog-line);
+  color: var(--catalog-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.groupSecondary:hover { border-color: var(--catalog-accent); }
+
+.megaTitle a { color: var(--catalog-accent); text-transform: none; letter-spacing: 0; }

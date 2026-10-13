@@ -68,7 +68,7 @@ export default function ShopBar() {
             </ul>
           </div>
           <div>
-            <p className={styles.megaTitle}>Каталог товаров</p>
+            <p className={styles.megaTitle}>Каталог товаров · <Link href="/avtotovary" onClick={() => setOpen(false)}>все автотовары</Link></p>
             <ul className={`${styles.megaList} ${styles.megaListWide}`}>
               {CATALOG_UNITS.map((unit) => (
                 <li key={unit.partType}>

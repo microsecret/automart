@@ -9,6 +9,9 @@ import { listNewsTags } from "@/lib/news-tags"
 import { toCitySlug } from "@/lib/fuel-city-slug"
 import { partCategorySlug } from "@/lib/part-category-slug"
 import { CATALOG_REGIONS, catalogBrandsByRegion, catalogHref } from "@/lib/parts-catalog"
+import { PRODUCT_GROUP_BY_KEY } from "@/lib/product-groups"
+import { groupHref } from "@/lib/product-group-pages"
+import { PUBLIC_PART_WHERE } from "@/lib/parts-catalog-offers"
 import { CITY_COORDINATES } from "@/lib/cities"
 
 export const dynamic = "force-dynamic"
@@ -31,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/category/water", "/category/air",
     "/services", "/services/valuation", "/services/history-check", "/services/smart-matching", "/services/safe-deal", "/services/legal-documents", "/services/fuel-map",
     "/sell", "/help/sell", "/help/safety", "/help/rules", "/help/support", "/legal/privacy", "/legal/terms",
-    "/parts-finder", "/catalogs", "/auctions", "/forum",
+    "/parts-finder", "/catalogs", "/avtotovary", "/auctions", "/forum",
     /* Участники форума: страница отвечает на запрос «кто отвечает на
        форуме» и ведёт вглубь, к профилям и темам. Поиск по форуму и
        список отслеживаемых сюда не идут — они закрыты от индексации:
@@ -47,6 +50,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: path === "" ? 1 : path.startsWith("/category") ? 0.9 : 0.7,
     })),
   ]
+
+  /* Страницы товарных групп — только с товарами: пустые закрыты от
+     индексации, и в карте сайта им не место. */
+  const groupCounts = await prisma.part.groupBy({
+    by: ["productGroup"],
+    where: { AND: [PUBLIC_PART_WHERE, { productGroup: { not: null } }] },
+    _count: { _all: true },
+  }).catch(() => [])
+  for (const row of groupCounts) {
+    const group = row.productGroup ? PRODUCT_GROUP_BY_KEY.get(row.productGroup) : null
+    if (group && row._count._all > 0) pages.push({ url: `${baseUrl}${groupHref(group)}`, lastModified: now, changeFrequency: "daily", priority: 0.7 })
+  }
 
   /* Каталоги запчастей по маркам: страница марки отвечает на запрос
      «запчасти Toyota» даже без предложений — там модели и узлы. Страницы
