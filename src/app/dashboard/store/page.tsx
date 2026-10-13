@@ -629,9 +629,23 @@ export default function StoreWorkspacePage() {
                   <Text fw={700} size="sm">Загрузка прайс-листа</Text>
                   <Text size="xs" c="dimmed">
                     CSV с колонками «Название» и «Цена». Остальные — по возможности: «Артикул», «Аналоги»,
-                    «Бренд», «Марка», «Категория», «Кол-во», «Срок».
+                    «Бренд», «Марка», «Категория», «Кол-во», «Срок», «Штрих-код», «Страна», «Гарантия, мес», «Сертификат».
                   </Text>
                 </Box>
+              </Group>
+
+              {/* Шаблон под группу: колонки характеристик и поля закона уже на
+                  месте — прайс сразу ляжет в каталог с фильтрами. */}
+              <Group gap="xs" mb="sm" wrap="wrap" className="price-templates">
+                <Text size="xs" fw={700} c="dimmed">Шаблон прайса:</Text>
+                {[
+                  ["", "Общий"], ["engine_oil", "Масла"], ["battery", "АКБ"], ["tires", "Шины"], ["wheels", "Диски"],
+                  ["brake_pads", "Колодки"], ["oil_filter", "Фильтры"], ["antifreeze", "Антифризы"], ["chem_body", "Автохимия"], ["bulbs", "Лампы"],
+                ].map(([group, label]) => (
+                  <Button key={group || "general"} component="a" href={`/api/stores/price-template${group ? `?group=${group}` : ""}`} size="compact-xs" variant="light" color="teal" download>
+                    {label}
+                  </Button>
+                ))}
               </Group>
 
               <Group gap="sm" align="flex-end" wrap="wrap">

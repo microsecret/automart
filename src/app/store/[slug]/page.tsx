@@ -1,41 +1,42 @@
-import { PART_TYPES } from "@/lib/constants"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Badge, Box, Button, Card, Container, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core"
-import { IconBuildingStore, IconMapPin, IconTruckDelivery } from "@tabler/icons-react"
+import type { Prisma } from "@prisma/client"
+import { IconBuildingStore, IconClock, IconMapPin, IconSearch, IconShieldCheck } from "@tabler/icons-react"
 import StructuredData from "@/components/seo/StructuredData"
-import PartOrderButton from "@/components/store/PartOrderButton"
-import AddToCartButton from "@/components/cart/AddToCartButton"
+import ShopBar from "@/components/catalogs/ShopBar"
+import PartOfferCard from "@/components/catalogs/PartOfferCard"
 import { prisma } from "@/lib/prisma"
 import { plural } from "@/lib/plural"
+import { parseMarketplaceImages } from "@/lib/media-url"
+import { containsAnyCase } from "@/lib/search-terms"
+import { PRODUCT_GROUP_BY_KEY } from "@/lib/product-groups"
+import { countryLabel } from "@/lib/product-legal"
+import styles from "@/components/catalogs/catalogs.module.css"
 
-type PageProps = { params: Promise<{ slug: string }>; searchParams?: Promise<{ page?: string }> }
+type PageProps = {
+  params: Promise<{ slug: string }>
+  searchParams?: Promise<{ page?: string; group?: string; q?: string; sort?: string }>
+}
 
 /* Позиций на странице витрины. Без постраничного просмотра покупатель видел
    только 60 последних: после загрузки прайса на 60 строк ручная позиция
    магазина пропадала из вида (поймано сквозным прогоном 13.10.2026). */
-const STORE_PAGE_SIZE = 60
+const STORE_PAGE_SIZE = 48
 
-export const revalidate = 600
-
-const ORIGIN_LABELS: Record<string, string> = {
-  CN: "Китай", KR: "Корея", JP: "Япония", DE: "Европа", RU: "Россия",
+const SORTS: Readonly<Record<string, { label: string; orderBy: Prisma.PartOrderByWithRelationInput }>> = {
+  new: { label: "Новые", orderBy: { createdAt: "desc" } },
+  cheap: { label: "Дешевле", orderBy: { price: "asc" } },
+  dear: { label: "Дороже", orderBy: { price: "desc" } },
 }
-
-/* Подписи берутся из общего словаря PART_TYPES: локальная копия
-   разошлась с ним — тип OTHER подписывался «Запчасти» на витрине и
-   «Другое» в кабинете. */
-const PART_TYPE_LABELS: Record<string, string> = Object.fromEntries(
-  PART_TYPES.map((type) => [type.value, type.label]),
-)
 
 /** Витрина публикуется только после проверки: черновик виден лишь владельцу. */
 async function getPublicStore(slug: string) {
   return prisma.partStore.findFirst({
     where: { slug, status: "ACTIVE" },
     select: {
-      id: true, name: true, slug: true, description: true, city: true,
+      id: true, name: true, slug: true, description: true, city: true, logoUrl: true,
+      legalName: true, inn: true, ogrn: true, legalAddress: true, sellerType: true,
       defaultLeadTimeDaysMin: true, defaultLeadTimeDaysMax: true, defaultOriginCountry: true,
       _count: { select: { parts: true } },
     },
@@ -46,12 +47,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   const store = await getPublicStore(slug)
   if (!store) return { title: "Магазин недоступен", robots: { index: false, follow: false } }
-
-  const origin = store.defaultOriginCountry ? ORIGIN_LABELS[store.defaultOriginCountry] : null
-  const title = `${store.name} — запчасти${origin ? ` из ${origin === "Европа" ? "Европы" : origin === "Китай" ? "Китая" : origin === "Корея" ? "Кореи" : origin === "Япония" ? "Японии" : "России"}` : ""} под заказ`
+  const title = `${store.name} — автотовары${store.city ? `, ${store.city}` : ""}`
   const description = store.description?.slice(0, 155)
-    || `${store.name}: ${store._count.parts} позиций в каталоге${store.city ? `, ${store.city}` : ""}. Сроки поставки и наличие указаны в карточке каждой запчасти.`
-
+    || `${store.name}: ${store._count.parts} позиций в каталоге${store.city ? `, ${store.city}` : ""}. Цены, сроки поставки и наличие в карточке каждого товара.`
   return {
     title,
     description,
@@ -61,174 +59,194 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+/**
+ * Витрина магазина в раскладке каталога: строка магазина, шапка продавца,
+ * слева группы его товаров со счётчиками, справа поиск, сортировка и
+ * карточки с корзиной. Реквизиты продавца — по закону о защите прав
+ * потребителей (ст. 9): покупатель видит, у кого покупает.
+ */
 export default async function StorefrontPage({ params, searchParams }: PageProps) {
   const { slug } = await params
-  const requestedPage = Number.parseInt((await searchParams)?.page || "1", 10)
+  const query = (await searchParams) ?? {}
   const store = await getPublicStore(slug)
   if (!store) notFound()
-  const pageCount = Math.max(1, Math.ceil(store._count.parts / STORE_PAGE_SIZE))
-  const currentPage = Number.isFinite(requestedPage) ? Math.min(pageCount, Math.max(1, requestedPage)) : 1
 
-  const [parts, categories] = await Promise.all([
-    prisma.part.findMany({
-      where: { storeId: store.id },
-      orderBy: { createdAt: "desc" },
-      skip: (currentPage - 1) * STORE_PAGE_SIZE,
-      take: STORE_PAGE_SIZE,
-      select: {
-        id: true, name: true, price: true, oemNumber: true, brandName: true, partType: true,
-        condition: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true,
-        originCountry: true, make: true, model: true,
-        // Аналоги показывают, что деталь подходит вместо привычного номера:
-        // покупатель ищет по своему артикулу и должен узнать позицию.
-        crossReferences: { select: { number: true }, take: 4 },
-      },
-    }),
+  const group = query.group && PRODUCT_GROUP_BY_KEY.has(query.group) ? query.group : null
+  const search = (query.q || "").trim().slice(0, 80)
+  const sort = SORTS[query.sort || ""] ? (query.sort as string) : "new"
+
+  const where: Prisma.PartWhereInput = {
+    storeId: store.id,
+    ...(group ? { productGroup: group } : {}),
+    ...(search ? { OR: [...containsAnyCase("name", search), { oemNumber: { contains: search.toUpperCase() } }, ...containsAnyCase("brandName", search)] as Prisma.PartWhereInput["OR"] } : {}),
+  }
+
+  const [total, groups] = await Promise.all([
+    prisma.part.count({ where }),
     prisma.part.groupBy({
-      by: ["partType"],
+      by: ["productGroup"],
       where: { storeId: store.id },
       _count: { _all: true },
-      orderBy: { _count: { partType: "desc" } },
-      take: 10,
+      orderBy: { _count: { productGroup: "desc" } },
+      take: 40,
     }),
   ])
+  const pageCount = Math.max(1, Math.ceil(total / STORE_PAGE_SIZE))
+  const requestedPage = Number.parseInt(query.page || "1", 10)
+  const currentPage = Number.isFinite(requestedPage) ? Math.min(pageCount, Math.max(1, requestedPage)) : 1
 
-  const origin = store.defaultOriginCountry ? ORIGIN_LABELS[store.defaultOriginCountry] : null
+  const parts = await prisma.part.findMany({
+    where,
+    orderBy: [SORTS[sort].orderBy, { id: "desc" }],
+    skip: (currentPage - 1) * STORE_PAGE_SIZE,
+    take: STORE_PAGE_SIZE,
+    select: {
+      id: true, name: true, price: true, oemNumber: true, brandName: true, images: true,
+      supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true,
+    },
+  })
+
+  const href = (patch: Record<string, string | null>) => {
+    const params = new URLSearchParams()
+    const next = { group, q: search || null, sort: sort === "new" ? null : sort, page: null as string | null, ...patch }
+    for (const [key, value] of Object.entries(next)) if (value) params.set(key, value)
+    const queryString = params.toString()
+    return `/store/${store.slug}${queryString ? `?${queryString}` : ""}`
+  }
+
+  const origin = countryLabel(store.defaultOriginCountry)
+  const initials = store.name.replace(/[^\p{L}\d]/gu, "").slice(0, 2)
+  const groupedTotal = groups.filter((row) => row.productGroup).reduce((sum, row) => sum + row._count._all, 0)
+  const otherCount = store._count.parts - groupedTotal
 
   return (
-    <Container size="lg" py={{ base: "md", md: "xl" }}>
-      <Stack gap="lg">
-        <Card withBorder radius="md" p="md">
-          <Group gap="sm" align="flex-start" wrap="nowrap">
-            <ThemeIcon variant="light" color="indigo" size={48} radius="md"><IconBuildingStore size={24} /></ThemeIcon>
-            <Box style={{ minWidth: 0 }}>
-              <Title order={1} size="h3" ff="var(--font-display),sans-serif">{store.name}</Title>
-              {store.description && <Text size="sm" c="dimmed" mt={4} maw={720}>{store.description}</Text>}
-              <Group gap={6} mt={8} wrap="wrap">
-                <Badge variant="light" color="indigo">{store._count.parts} {plural(store._count.parts, "позиция", "позиции", "позиций")}</Badge>
-                {store.city && <Badge variant="outline" color="gray" leftSection={<IconMapPin size={11} />}>{store.city}</Badge>}
-                {origin && <Badge variant="light" color="teal">Поставка из: {origin}</Badge>}
-                {store.defaultLeadTimeDaysMin && (
-                  <Badge variant="outline" color="gray" leftSection={<IconTruckDelivery size={11} />}>
-                    {store.defaultLeadTimeDaysMin}–{store.defaultLeadTimeDaysMax || store.defaultLeadTimeDaysMin} дней
-                  </Badge>
-                )}
-              </Group>
-            </Box>
-          </Group>
-        </Card>
+    <main className={styles.page}>
+      <ShopBar />
+      <nav className={styles.crumbs} aria-label="Навигация">
+        <Link href="/">Главная</Link>
+        <span aria-hidden="true">›</span>
+        <Link href="/parts-finder">Запчасти</Link>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{store.name}</span>
+      </nav>
 
-        {categories.length > 0 && (
-          <Group gap={6} wrap="wrap">
-            {categories.map((category) => (
-              <Badge key={category.partType} size="lg" variant="light" color="gray">
-                {PART_TYPE_LABELS[category.partType] || category.partType} · {category._count._all}
-              </Badge>
+      <header className={styles.storeHero}>
+        <span className={styles.storeLogo}>
+          {store.logoUrl ? <img src={store.logoUrl} alt="" /> : <span>{initials}</span>}
+        </span>
+        <div className={styles.storeHeroMain}>
+          <h1 className={styles.titleDark}>
+            {store.name} <span className={styles.titleCount}>{store._count.parts} {plural(store._count.parts, "товар", "товара", "товаров")}</span>
+          </h1>
+          <div className={styles.storeFacts}>
+            <span className={styles.storeVerified}><IconShieldCheck size={16} /> Реквизиты проверены</span>
+            {store.city && <span><IconMapPin size={16} /> {store.city}</span>}
+            {store.defaultLeadTimeDaysMin && (
+              <span><IconClock size={16} /> Под заказ {store.defaultLeadTimeDaysMin}–{store.defaultLeadTimeDaysMax || store.defaultLeadTimeDaysMin} дн.</span>
+            )}
+            {origin && <span><IconBuildingStore size={16} /> Поставки: {origin}</span>}
+          </div>
+          {store.description && <p className={styles.muted}>{store.description}</p>}
+        </div>
+        <details className={styles.storeRequisites}>
+          <summary>О продавце</summary>
+          <dl>
+            {store.legalName && <div><dt>{store.sellerType === "SELF_EMPLOYED" ? "Самозанятый" : store.sellerType === "ENTREPRENEUR" ? "ИП" : "Организация"}</dt><dd>{store.legalName}</dd></div>}
+            {store.ogrn && <div><dt>{store.ogrn.length === 15 ? "ОГРНИП" : "ОГРН"}</dt><dd>{store.ogrn}</dd></div>}
+            {store.inn && <div><dt>ИНН</dt><dd>{store.inn}</dd></div>}
+            {store.legalAddress && <div><dt>Адрес</dt><dd>{store.legalAddress}</dd></div>}
+          </dl>
+        </details>
+      </header>
+
+      <div className={styles.shopLayout}>
+        <aside className={styles.sidebar} aria-label="Группы товаров магазина">
+          <p className={styles.sidebarTitle}>Товары</p>
+          <ul className={styles.sidebarList}>
+            <li><Link href={href({ group: null })} aria-current={!group ? "true" : undefined}><span>Все товары</span><b>{store._count.parts}</b></Link></li>
+            {groups.filter((row) => row.productGroup && PRODUCT_GROUP_BY_KEY.has(row.productGroup)).map((row) => (
+              <li key={row.productGroup}>
+                <Link href={href({ group: row.productGroup })} aria-current={group === row.productGroup ? "true" : undefined}>
+                  <span>{PRODUCT_GROUP_BY_KEY.get(row.productGroup as string)?.label}</span>
+                  <b>{row._count._all}</b>
+                </Link>
+              </li>
             ))}
-          </Group>
-        )}
+            {otherCount > 0 && groups.length > 1 && <li className={styles.sidebarNote}><span>Без группы — {otherCount}</span></li>}
+          </ul>
+        </aside>
 
-        {parts.length === 0 ? (
-          /* Пустой каталог был тупиком: человек читал «пока пуст» и
-             уходил. Магазин при этом ищет заявки в кабинете — заявку
-             можно оставить прямо отсюда, и она до него дойдёт. */
-          <Card withBorder radius="md" p="xl">
-            <Stack align="center" gap="sm">
-              <Text ta="center" c="dimmed">Каталог магазина пока пуст.</Text>
-              <Text ta="center" size="sm" maw={420}>
-                Если ищете конкретную деталь — опишите её: магазины ответят ценой и сроком
-                и свяжутся с вами.
-              </Text>
-              <Button component={Link} href="/parts-finder" variant="light" color="indigo">
-                Оставить заявку на деталь
-              </Button>
-            </Stack>
-          </Card>
-        ) : (
-          <>
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
-            {parts.map((part) => (
-              // Карточка не оборачивается в ссылку целиком: внутри есть
-              // кнопка заказа, а вложенная в ссылку кнопка недопустима и
-              // ломает клавиатурную навигацию.
-              <Card key={part.id} withBorder radius="md" p="sm">
-                <Text fw={700} size="sm" lineClamp={2} component={Link} href={`/listings/part/${part.id}`} style={{ color: "inherit", textDecoration: "none" }}>
-                  {part.name}
-                </Text>
-                <Group gap={4} mt={6} wrap="wrap">
-                  {part.brandName && <Badge size="xs" variant="light" color="indigo">{part.brandName}</Badge>}
-                  {part.oemNumber && <Badge size="xs" variant="outline" color="gray">{part.oemNumber}</Badge>}
-                  <Badge size="xs" variant="light" color={part.condition === "NEW" ? "teal" : "orange"}>
-                    {part.condition === "NEW" ? "Новая" : "Б/у"}
-                  </Badge>
-                </Group>
-                {/* Срок и происхождение — то, ради чего покупатель сравнивает
-                    магазины: цена без срока поставки не даёт принять решение. */}
-                <Group gap={4} mt={6} wrap="wrap">
-                  {part.supplyMode === "STOCK" ? (
-                    <Badge size="xs" variant="light" color="teal">В наличии</Badge>
-                  ) : (
-                    <Badge size="xs" variant="light" color="orange">
-                      {part.leadTimeDaysMin
-                        ? `Под заказ ${part.leadTimeDaysMin}–${part.leadTimeDaysMax || part.leadTimeDaysMin} дн`
-                        : "Под заказ"}
-                    </Badge>
-                  )}
-                  {part.originCountry && ORIGIN_LABELS[part.originCountry] && (
-                    <Badge size="xs" variant="outline" color="gray">{ORIGIN_LABELS[part.originCountry]}</Badge>
-                  )}
-                </Group>
-                {part.crossReferences.length > 0 && (
-                  <Text size="var(--text-caps)" c="dimmed" mt={6}>
-                    Заменяет: {part.crossReferences.map((cross) => cross.number).join(", ")}
-                  </Text>
-                )}
-                <Text fw={800} size="lg" mt={8}>{part.price.toLocaleString("ru-RU")} ₽</Text>
-                <PartOrderButton
-                  partId={part.id}
-                  itemName={part.name}
-                  priceRub={part.price}
-                  supplyMode={part.supplyMode}
-                  leadTimeDaysMin={part.leadTimeDaysMin}
-                  leadTimeDaysMax={part.leadTimeDaysMax}
-                  storeName={store.name}
+        <div className={styles.shopMain}>
+          <div className={styles.storeToolbar}>
+            <form className={styles.storeSearch} action={`/store/${store.slug}`} role="search">
+              {group && <input type="hidden" name="group" value={group} />}
+              <IconSearch size={18} aria-hidden="true" />
+              <input name="q" defaultValue={search} placeholder="Поиск в магазине: название, артикул, бренд" aria-label="Поиск в магазине" />
+            </form>
+            <nav className={styles.articleSort} aria-label="Сортировка">
+              {Object.entries(SORTS).map(([key, value]) => (
+                <Link key={key} href={href({ sort: key === "new" ? null : key })} aria-current={sort === key ? "true" : undefined} prefetch={false}>{value.label}</Link>
+              ))}
+            </nav>
+          </div>
+
+          {parts.length === 0 ? (
+            <section className={styles.sellerBand}>
+              <div>
+                <h2 className={styles.h2}>{search || group ? "Ничего не нашлось" : "Каталог магазина пока пуст"}</h2>
+                <p className={styles.muted}>
+                  {search || group
+                    ? "Попробуйте другой запрос или посмотрите все товары магазина."
+                    : "Ищете конкретную деталь — опишите её: магазины ответят ценой и сроком."}
+                </p>
+              </div>
+              <Link href={search || group ? href({ group: null, q: null }) : "/parts-finder"} className={styles.sellerButton}>
+                {search || group ? "Все товары" : "Оставить заявку"}
+              </Link>
+            </section>
+          ) : (
+            <div className={styles.offerGrid}>
+              {parts.map((part) => (
+                <PartOfferCard
+                  key={part.id}
+                  offer={{
+                    id: part.id, name: part.name, price: part.price,
+                    image: parseMarketplaceImages(part.images, 1)?.[0] ?? null,
+                    oemNumber: part.oemNumber, brandName: part.brandName, storeName: null,
+                    supplyMode: part.supplyMode, leadTimeDaysMin: part.leadTimeDaysMin, leadTimeDaysMax: part.leadTimeDaysMax,
+                  }}
                 />
-                {/* Корзина — для тех, кто собирает несколько деталей, в том
-                    числе у разных магазинов: оформление одно на всех. */}
-                <AddToCartButton partId={part.id} price={part.price} className="lw-cart-button" />
-              </Card>
-            ))}
-          </SimpleGrid>
-          {pageCount > 1 && (
-            <Group justify="center" gap="xs" mt="md">
-              {currentPage > 1 && <Button component={Link} href={`/store/${store.slug}?page=${currentPage - 1}`} variant="default" size="sm">Назад</Button>}
-              <Text size="sm" c="dimmed">Страница {currentPage} из {pageCount}</Text>
-              {currentPage < pageCount && <Button component={Link} href={`/store/${store.slug}?page=${currentPage + 1}`} variant="default" size="sm">Дальше</Button>}
-            </Group>
+              ))}
+            </div>
           )}
-          </>
-        )}
 
-        <StructuredData
-          data={{
-            "@context": "https://schema.org",
-            "@type": "Store",
-            name: store.name,
-            description: store.description || undefined,
-            url: `https://lewheel.ru/store/${store.slug}`,
-            address: store.city ? { "@type": "PostalAddress", addressLocality: store.city } : undefined,
-            makesOffer: parts.slice(0, 10).map((part) => ({
-              "@type": "Offer",
-              name: part.name,
-              price: part.price,
-              priceCurrency: "RUB",
-              availability: part.supplyMode === "STOCK"
-                ? "https://schema.org/InStock"
-                : "https://schema.org/PreOrder",
-            })),
-          }}
-        />
-      </Stack>
-    </Container>
+          {pageCount > 1 && (
+            <nav className={styles.pager} aria-label="Страницы">
+              {currentPage > 1 && <Link href={href({ page: String(currentPage - 1) })}>Назад</Link>}
+              <span>Страница {currentPage} из {pageCount}</span>
+              {currentPage < pageCount && <Link href={href({ page: String(currentPage + 1) })}>Дальше</Link>}
+            </nav>
+          )}
+        </div>
+      </div>
+
+      <StructuredData
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Store",
+          name: store.name,
+          description: store.description || undefined,
+          url: `https://lewheel.ru/store/${store.slug}`,
+          address: store.city ? { "@type": "PostalAddress", addressLocality: store.city } : undefined,
+          makesOffer: parts.slice(0, 10).map((part) => ({
+            "@type": "Offer",
+            name: part.name,
+            price: part.price,
+            priceCurrency: "RUB",
+            availability: part.supplyMode === "STOCK" ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
+          })),
+        }}
+      />
+    </main>
   )
 }

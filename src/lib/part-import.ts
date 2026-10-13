@@ -265,7 +265,9 @@ export function matchColumns(headerCells: string[]) {
 export function parsePartImportFile(content: string, options: { maxRows?: number } = {}): PartImportResult {
   const maxRows = options.maxRows ?? 5_000
   // BOM ломает сопоставление первой колонки, если файл выгружен из Excel.
-  const lines = content.replace(/^﻿/, "").split(/\r?\n/).filter((line) => line.trim().length > 0)
+  const lines = content.replace(/^﻿/, "").split(/\r?\n/)
+    /* Строки с «#» — пояснения и пример из шаблона прайса площадки. */
+    .filter((line) => line.trim().length > 0 && !line.trimStart().startsWith("#"))
   if (!lines.length) {
     return { columns: {}, rows: [], errors: [{ line: 0, reason: "Файл пуст", raw: "" }], totalRows: 0 }
   }

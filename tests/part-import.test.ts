@@ -164,3 +164,15 @@ test("колонки закона: штрихкод, страна, гарант�
   assert.equal(row.conformityNumber, "ЕАЭС N RU Д-KR.АБ12.В.00001/26")
   assert.equal(row.productGroup, "engine_oil")
 })
+
+test("строки-комментарии шаблона пропускаются, заголовок после них находится", () => {
+  const file = [
+    "# Шаблон прайса LeWheel — Аккумуляторы. Строки с # при загрузке пропускаются",
+    "Название;Цена;Ёмкость, Ач",
+    "#пример: Аккумулятор Varta 60 Ач;7200;60",
+    "Аккумулятор Bosch S4 60 Ач;8100;60",
+  ].join("\n")
+  const result = parsePartImportFile(file)
+  assert.equal(result.rows.length, 1)
+  assert.equal(result.rows[0].name, "Аккумулятор Bosch S4 60 Ач")
+})
