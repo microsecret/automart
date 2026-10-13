@@ -204,9 +204,13 @@ export async function GET(request: NextRequest) {
       ? await prisma.part.count({ where: { OR: [{ listings: { some: publicListingWhere } }, { store: { status: "ACTIVE" } }] } })
       : total
 
+    /* Работающие магазины — для формы заявки «ищу деталь»: без них
+       ответить на заявку некому, и форма не показывается. */
+    const activeStores = await prisma.partStore.count({ where: { status: "ACTIVE" } })
+
     return NextResponse.json({
       parts: parts.map((part) => ({ ...part, availability: part.availability || "IN_STOCK" })),
-      pagination: { page, limit, total, pages: Math.ceil(total / limit), catalogTotal },
+      pagination: { page, limit, total, pages: Math.ceil(total / limit), catalogTotal, activeStores },
     })
   } catch (error) {
     console.error("Parts GET error:", error)

@@ -1,10 +1,11 @@
 "use client"
 
+import { plural } from "@/lib/plural"
 import { PART_TYPES } from "@/lib/constants"
 import { notifications } from "@mantine/notifications"
 import { useState } from "react"
 import Link from "next/link"
-import useSWR from "swr"
+import useSWR, { mutate as revalidateKey } from "swr"
 import {
   Alert, Badge, Box, Button, Card, Container, Divider, FileInput, Group, Modal,
   Select, SimpleGrid, Stack, Table, Text, TextInput, Textarea, ThemeIcon, Title,
@@ -71,8 +72,8 @@ type ImportPreview = {
 }
 
 const STATUS_META: Record<string, { label: string; color: string; hint: string }> = {
-  DRAFT: { label: "Черновик", color: "gray", hint: "Витрина видна только вам. Отправьте на проверку, когда наполните каталог." },
-  PENDING: { label: "На проверке", color: "orange", hint: "Заявка в очереди. Обычно проверка занимает один рабочий день." },
+  DRAFT: { label: "Черновик", color: "gray", hint: "Витрина откроется покупателям после проверки. Наполните каталог и отправьте магазин на проверку." },
+  PENDING: { label: "На проверке", color: "orange", hint: "Магазин в очереди на проверку. Витрина откроется, как только администратор подтвердит данные." },
   ACTIVE: { label: "Опубликован", color: "teal", hint: "Витрина доступна покупателям и попадает в поиск по каталогу." },
   SUSPENDED: { label: "Приостановлен", color: "red", hint: "Публикация снята администратором. Причина указана ниже." },
 }
@@ -238,7 +239,10 @@ export default function StoreWorkspacePage() {
       setLastApplied({ batchId: preview.batchId, created: payload?.created || 0 })
       setPreview(null)
       setFile(null)
+      setPastedRows("")
       await mutate()
+      // Каталог ниже читает свой ключ — без этого новые позиции не появлялись.
+      await revalidateKey((key) => typeof key === "string" && key.startsWith(`/api/stores/${store?.id}/parts`))
     } catch (requestError) {
       setImportError(getApiClientErrorMessage(requestError, "Публикация не завершилась. Проверьте каталог перед повторной попыткой."))
     } finally {
@@ -263,6 +267,7 @@ export default function StoreWorkspacePage() {
       setLastApplied(null)
       setRevertTarget(null)
       await mutate()
+      await revalidateKey((key) => typeof key === "string" && key.startsWith(`/api/stores/${store?.id}/parts`))
     } finally {
       setImportState("idle")
     }
@@ -297,7 +302,9 @@ export default function StoreWorkspacePage() {
                 </Text>
               </Box>
             </Group>
-            {store && (
+            {/* Витрина открыта только у опубликованного магазина: у черновика
+                кнопка вела на 404, хотя подсказка обещала «видна вам». */}
+            {store && store.status === "ACTIVE" && (
               <Button component="a" href={`/store/${store.slug}`} target="_blank" variant="white" color="dark" size="sm" leftSection={<IconExternalLink size={15} />}>
                 Открыть витрину
               </Button>
@@ -564,7 +571,7 @@ export default function StoreWorkspacePage() {
                 → панели нет → добавить вручную нечем → остаётся прайс-лист,
                 которого на телефоне неоткуда взять → кнопка «Отправить на
                 проверку» заблокирована. */}
-            <StoreCatalogPanel storeId={store.id} />
+            <StoreCatalogPanel storeId={store.id} onChanged={() => void mutate()} />
 
             <Card withBorder radius="md" p="md">
               <Group gap="sm" mb="sm">
@@ -630,7 +637,7 @@ export default function StoreWorkspacePage() {
               {lastApplied && (
                 <Alert color="teal" variant="light" mt="sm" icon={<IconCheck size={16} />}>
                   <Group justify="space-between" gap="sm" wrap="wrap">
-                    <Text size="sm">Опубликовано {lastApplied.created} позиций.</Text>
+                    <Text size="sm">{plural(lastApplied.created, "Опубликована", "Опубликованы", "Опубликовано")} {lastApplied.created} {plural(lastApplied.created, "позиция", "позиции", "позиций")}.</Text>
                     <Button size="compact-xs" variant="light" color="red" leftSection={<IconTrash size={13} />} onClick={() => setRevertTarget(lastApplied)}>
                       Откатить загрузку
                     </Button>
@@ -650,7 +657,7 @@ export default function StoreWorkspacePage() {
                   </Box>
                   {preview.batchId && preview.readyRows > 0 && (
                     <Button color="teal" leftSection={<IconCheck size={16} />} onClick={applyImport} loading={importState === "applying"}>
-                      Опубликовать {preview.readyRows} позиций
+                      Опубликовать {preview.readyRows} {plural(preview.readyRows, "позиция", "позиции", "позиций")}
                     </Button>
                   )}
                 </Group>
@@ -677,7 +684,7 @@ export default function StoreWorkspacePage() {
                               <Table.Td>
                                 {row.oemNumber || "—"}
                                 {row.crossNumbers.length > 0 && (
-                                  <Text size="var(--text-caps)" c="dimmed">+{row.crossNumbers.length} аналог{row.crossNumbers.length === 1 ? "" : row.crossNumbers.length < 5 ? "а" : "ов"}</Text>
+                                  <Text size="var(--text-caps)" c="dimmed">+{row.crossNumbers.length} {plural(row.crossNumbers.length, "аналог", "аналога", "аналогов")}</Text>
                                 )}
                               </Table.Td>
                               <Table.Td>{PART_TYPE_LABELS[row.partType] || row.partType}</Table.Td>
@@ -696,7 +703,7 @@ export default function StoreWorkspacePage() {
                     </Table.ScrollContainer>
                     {preview.readyRows > preview.preview.length && (
                       <Text size="xs" c="dimmed" mt={6}>
-                        Показаны первые {preview.preview.length} позиций из {preview.readyRows}.
+                        Показаны первые {preview.preview.length} из {preview.readyRows}.
                       </Text>
                     )}
                   </Box>
@@ -724,7 +731,7 @@ export default function StoreWorkspacePage() {
       <Modal opened={Boolean(revertTarget)} onClose={() => setRevertTarget(null)} title="Откатить загрузку?" centered>
         <Stack gap="sm">
           <Text size="sm">
-            Из каталога будут удалены все {revertTarget?.created} позиций этой загрузки. Остальной каталог не затрагивается.
+            Из каталога будут удалены все {revertTarget?.created} {plural(revertTarget?.created ?? 0, "позиция", "позиции", "позиций")} этой загрузки. Остальной каталог не затрагивается.
           </Text>
           <Group gap="xs" justify="flex-end">
             <Button variant="subtle" color="gray" onClick={() => setRevertTarget(null)}>Отмена</Button>

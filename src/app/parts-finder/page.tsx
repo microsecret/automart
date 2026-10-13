@@ -11,6 +11,7 @@ import { getBrandsByCategory } from "@/lib/catalog"
 import { formatPrice, parseImages } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
 import PartsShowcase from "@/components/parts/PartsShowcase"
+import PartRequestPrompt from "@/components/parts/PartRequestPrompt"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
 type PartResult = {
@@ -32,7 +33,7 @@ type PartsResponse = {
   parts: PartResult[]
   /* catalogTotal — сколько позиций в каталоге без учёта фильтров:
      нужен, чтобы отличить «нет по запросу» от «раздел пуст». */
-  pagination: { total: number; pages: number; limit: number; catalogTotal?: number }
+  pagination: { total: number; pages: number; limit: number; catalogTotal?: number; activeStores?: number }
 }
 
 const fetcher = fetchJson
@@ -551,6 +552,8 @@ function PartsContent() {
         </Stack>
 
         {data && data.pagination?.pages > 1 && <Stack align="center" gap={6}><Pagination value={page} onChange={setPage} total={data.pagination.pages} boundaries={1} siblings={1} size="sm" color="indigo" /><Text size="xs" c="dimmed">Страница {page} из {data.pagination.pages} · по {data.pagination.limit} запчасти</Text></Stack>}
+
+        <PartRequestPrompt activeStores={data?.pagination?.activeStores ?? 0} />
       </Stack>
     </Container>
   )

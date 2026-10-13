@@ -128,6 +128,11 @@ export async function GET(request: NextRequest) {
       id: true, partName: true, oemNumber: true, make: true, model: true,
       year: true, condition: true, comment: true, city: true, clarity: true,
       status: true, createdAt: true,
+      /* Контакты покупателя. Форма обещает, что магазин свяжется, а
+         выдача их не отдавала: магазин видел заявку гостя и не мог ему
+         ответить никак — уведомление гостю не уходит, у него нет аккаунта.
+         Заявки видят только владельцы работающих проверенных магазинов. */
+      name: true, phone: true, email: true, contactMethod: true,
       _count: { select: { offers: true } },
       /* Свой ответ на заявке. Магазин видел только общее число
          предложений и не понимал, отвечал ли он сам: жал «Ответить»

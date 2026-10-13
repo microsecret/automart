@@ -19,6 +19,10 @@ type PartRequest = {
   condition: string
   comment: string | null
   city: string | null
+  name?: string | null
+  phone?: string | null
+  email?: string | null
+  contactMethod?: string | null
   clarity: number
   status: string
   createdAt: string
@@ -182,6 +186,22 @@ export default function StoreRequestsPanel({ storeId }: { storeId: string }) {
                     </Group>
                     {vehicle && <Text size="xs" c="dimmed">{vehicle}</Text>}
                     {request.comment && <Text size="xs" c="var(--market-ink)" mt={4} lineClamp={2}>{request.comment}</Text>}
+                    {/* Контакт покупателя: гостю уведомление о предложении
+                        не дойдёт, связаться можно только напрямую. */}
+                    {request.phone && (
+                      <Group gap={6} mt={6} wrap="wrap">
+                        <Text size="xs" fw={600}>{request.name || "Покупатель"}</Text>
+                        <Button component="a" href={`tel:${request.phone.replace(/[^\d+]/g, "")}`} size="compact-sm" variant="light" color="teal">
+                          {request.phone}
+                        </Button>
+                        {request.email && (
+                          <Button component="a" href={`mailto:${request.email}`} size="compact-sm" variant="subtle" color="gray">
+                            {request.email}
+                          </Button>
+                        )}
+                        {request.contactMethod === "MESSENGER" && <Badge size="xs" variant="light" color="gray">просит в мессенджер</Badge>}
+                      </Group>
+                    )}
                     <Text size="var(--text-caps)" c="dimmed" mt={4}>
                       {[
                         request.city,

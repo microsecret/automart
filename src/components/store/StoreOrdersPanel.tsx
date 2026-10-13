@@ -1,5 +1,6 @@
 "use client"
 
+import { plural } from "@/lib/plural"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
 import {
@@ -137,7 +138,7 @@ export default function StoreOrdersPanel({ storeId }: { storeId: string }) {
           <Box>
             <Group gap={6}>
               <Text fw={700} size="sm">Заказы покупателей</Text>
-              {newCount > 0 && <Badge size="sm" variant="filled" color="orange">{newCount} новых</Badge>}
+              {newCount > 0 && <Badge size="sm" variant="filled" color="orange">{newCount} {plural(newCount, "новый", "новых", "новых")}</Badge>}
             </Group>
             <Text size="xs" c="dimmed">Свяжитесь по телефону, подтвердите наличие и срок.</Text>
           </Box>

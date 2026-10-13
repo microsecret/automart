@@ -33,7 +33,10 @@ const PART_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   PART_TYPES.map((type) => [type.value, type.label]),
 )
 
-export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
+/* onChanged — кабинету: число позиций решает, доступна ли кнопка «Отправить
+   на проверку». Раньше после ручного добавления она оставалась заблокированной
+   до перезагрузки страницы. */
+export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: string; onChanged?: () => void }) {
   const [query, setQuery] = useState("")
   const [appliedQuery, setAppliedQuery] = useState("")
   const { data, error, isLoading, mutate } = useSWR<{ parts: StorePart[] }>(
@@ -92,6 +95,7 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
       setEditTarget(null)
       setIsCreating(false)
       await mutate()
+      onChanged?.()
     } finally {
       setIsSaving(false)
     }
@@ -116,6 +120,7 @@ export default function StoreCatalogPanel({ storeId }: { storeId: string }) {
       }
       setDeleteTarget(null)
       await mutate()
+      onChanged?.()
     } finally {
       setIsSaving(false)
     }

@@ -52,6 +52,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   if (!nextStatus) {
     if (sellerNotes === undefined) return NextResponse.json({ error: "Нечего сохранять" }, { status: 400 })
+    /* Заметка — внутренняя запись магазина. Без этой проверки покупатель
+       одним запросом затирал её: проверка ниже срабатывала только при
+       смене статуса. */
+    if (!isSeller) return NextResponse.json({ error: "Заметку продавца меняет магазин" }, { status: 403 })
     const updated = await prisma.partOrder.update({
       where: { id },
       data: { sellerNotes: sellerNotes || null },
@@ -84,19 +88,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Укажите причину отмены" }, { status: 400 })
   }
 
-  const updated = await prisma.partOrder.update({
-    where: { id },
+  /* Смена статуса — только с того статуса, который проверяли. Покупатель
+     отменяет, а продавец в ту же секунду подтверждает: без условия
+     последний перезаписывал первого, и обе стороны получали
+     противоречивые уведомления. Проигравший запрос получает 409. */
+  const guarded = await prisma.partOrder.updateMany({
+    where: { id, status: order.status },
     data: {
       status: nextStatus,
-      /* Причина не стирается на обычных переходах.
-
-         Здесь стояло `: null` — и подтверждение заказа затирало
-         пояснение, которое продавец написал раньше. Причина пишется
-         только там, где она есть, а отмена без неё не проходит
-         проверкой выше. */
       ...(nextStatus === "CANCELLED" ? { statusReason } : {}),
       ...(sellerNotes !== undefined ? { sellerNotes: sellerNotes || null } : {}),
     },
+  })
+  if (guarded.count === 0) {
+    return NextResponse.json({ error: "Заказ уже изменили — обновите страницу" }, { status: 409 })
+  }
+  const updated = await prisma.partOrder.findUniqueOrThrow({
+    where: { id },
     select: { id: true, status: true, statusReason: true, sellerNotes: true },
   })
 

@@ -419,6 +419,10 @@ model PartImportBatch {
   createdRows Int       @default(0)
   skippedRows Int       @default(0)
   errorReport String? // JSON: номер строки и причина отказа
+  /// Все разобранные строки прайса (JSON) — публикуются отсюда, а не из
+  /// запроса браузера: в предпросмотр уходит 25 строк, и раньше только они
+  /// и попадали в каталог. После публикации очищается.
+  rowsJson    String?
   appliedAt   DateTime?
   revertedAt  DateTime?
   createdAt   DateTime  @default(now())

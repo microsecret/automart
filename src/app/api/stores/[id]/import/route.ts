@@ -8,6 +8,12 @@ export const dynamic = "force-dynamic"
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024
 const MAX_PREVIEW_ROWS = 25
+/** Потолок позиций одной загрузки. */
+const MAX_APPLY_ROWS = 5_000
+const intInRange = (value: unknown, min: number, max: number) => {
+  const number = Number(value)
+  return Number.isFinite(number) ? Math.min(max, Math.max(min, Math.round(number))) : null
+}
 
 async function requireStore(storeId: string) {
   const session = await getServerSession(authOptions)
@@ -40,7 +46,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Файл больше 4 МБ. Разделите прайс на части." }, { status: 413 })
   }
 
-  const content = await file.text()
+  /* Кодировка — по содержимому. Excel на русской Windows и 1С сохраняют
+     CSV в Windows-1251; file.text() всегда читал UTF-8, заголовки
+     превращались в «кракозябры», и сервер отвечал «не найдены колонки». */
+  const buffer = await file.arrayBuffer()
+  const utf8 = new TextDecoder("utf-8").decode(buffer)
+  const content = utf8.includes("\uFFFD") ? new TextDecoder("windows-1251").decode(buffer) : utf8
   const parsed = parsePartImportFile(content)
   if (!parsed.rows.length) {
     return NextResponse.json({
@@ -58,6 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       createdRows: 0,
       skippedRows: parsed.errors.length,
       errorReport: parsed.errors.length ? JSON.stringify(parsed.errors.slice(0, 200)) : null,
+      rowsJson: JSON.stringify(parsed.rows.slice(0, MAX_APPLY_ROWS)),
     },
     select: { id: true },
   })
@@ -86,7 +98,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const batch = await prisma.partImportBatch.findFirst({
     where: { id: batchId, storeId: store.id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, rowsJson: true },
   })
   if (!batch) return NextResponse.json({ error: "Загрузка не найдена" }, { status: 404 })
 
@@ -104,18 +116,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ reverted: removed.count })
   }
 
-  if (batch.status !== "PREVIEW") {
+  /* Строки — из самой партии. Раньше публиковалось то, что прислал
+     браузер, а он присылал 25 строк предпросмотра: из прайса на 800
+     позиций в каталог попадало 25, остальные терялись молча. Старые
+     партии без сохранённых строк публикуются по-прежнему из запроса. */
+  let stored: unknown = null
+  try { stored = batch.rowsJson ? JSON.parse(batch.rowsJson) : null } catch { stored = null }
+  const rows = Array.isArray(stored) ? stored : Array.isArray(body?.rows) ? body.rows : null
+  if (!rows?.length) return NextResponse.json({ error: "Нет позиций для публикации" }, { status: 400 })
+
+  /* Захват партии одной записью: двойной клик или два запроса разом
+     опубликовали бы прайс дважды. Второй запрос получит 409. */
+  const claimed = await prisma.partImportBatch.updateMany({ where: { id: batch.id, status: "PREVIEW" }, data: { status: "APPLYING" } })
+  if (claimed.count === 0) {
     return NextResponse.json({ error: "Эта загрузка уже обработана" }, { status: 409 })
   }
 
-  const rows = Array.isArray(body?.rows) ? body.rows : null
-  if (!rows?.length) return NextResponse.json({ error: "Нет позиций для публикации" }, { status: 400 })
-
   const now = new Date()
-  const data = rows.slice(0, 5_000).flatMap((row: Record<string, unknown>) => {
+  const data = rows.slice(0, MAX_APPLY_ROWS).flatMap((row: Record<string, unknown>) => {
     const name = typeof row.name === "string" ? row.name.trim().slice(0, 200) : ""
     const price = Number(row.price)
-    if (!name || !Number.isFinite(price) || price <= 0) return []
+    if (!name || !Number.isFinite(price) || price <= 0 || price > 100_000_000) return []
+    const leadMin = intInRange(row.leadTimeDaysMin, 0, 365)
+    const leadMax = intInRange(row.leadTimeDaysMax, 0, 365)
 
     return [{
       userId,
@@ -125,7 +148,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       price: Math.round(price),
       description: typeof row.description === "string" ? row.description.slice(0, 1_000) : null,
       condition: row.condition === "USED" ? "USED" : "NEW",
-      partType: typeof row.partType === "string" ? row.partType : "OTHER",
+      partType: typeof row.partType === "string" && row.partType ? row.partType.slice(0, 32) : "OTHER",
       oemNumber: typeof row.oemNumber === "string" ? row.oemNumber.slice(0, 64) : null,
       brandName: typeof row.brandName === "string" ? row.brandName.slice(0, 80) : null,
       make: typeof row.make === "string" && row.make ? row.make.slice(0, 60) : "Универсальная",
@@ -133,8 +156,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       supplyMode: row.supplyMode === "STOCK" ? "STOCK" : "ORDER",
       // Срок магазина подставляется, когда в строке его не было: покупатель
       // должен видеть срок у каждой позиции под заказ.
-      leadTimeDaysMin: Number.isFinite(Number(row.leadTimeDaysMin)) ? Number(row.leadTimeDaysMin) : store.defaultLeadTimeDaysMin,
-      leadTimeDaysMax: Number.isFinite(Number(row.leadTimeDaysMax)) ? Number(row.leadTimeDaysMax) : store.defaultLeadTimeDaysMax,
+      // Дробный срок ронял весь createMany (Int-поле): срок округляется и
+      // ограничивается годом.
+      leadTimeDaysMin: leadMin ?? store.defaultLeadTimeDaysMin,
+      leadTimeDaysMax: leadMax ?? store.defaultLeadTimeDaysMax,
       originCountry: store.defaultOriginCountry,
       location: store.city || "Уточняется",
       vehicleType: "CAR",
@@ -143,9 +168,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }]
   })
 
-  if (!data.length) return NextResponse.json({ error: "Все позиции отклонены проверкой" }, { status: 422 })
+  if (!data.length) {
+    await prisma.partImportBatch.update({ where: { id: batch.id }, data: { status: "PREVIEW" } })
+    return NextResponse.json({ error: "Все позиции отклонены проверкой" }, { status: 422 })
+  }
 
-  const created = await prisma.part.createMany({ data })
+  let created: { count: number }
+  try {
+    created = await prisma.part.createMany({ data })
+  } catch (error) {
+    /* Сбой записи — партия возвращается в предпросмотр, её можно
+       опубликовать снова, а не «застрять» с частью позиций. */
+    await prisma.part.deleteMany({ where: { batchId: batch.id, storeId: store.id } }).catch(() => undefined)
+    await prisma.partImportBatch.update({ where: { id: batch.id }, data: { status: "PREVIEW" } }).catch(() => undefined)
+    console.error("Part import apply failed", error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: "Не удалось опубликовать позиции. Попробуйте ещё раз." }, { status: 500 })
+  }
 
   // Аналоги пишутся отдельным проходом: createMany не создаёт связанные
   // записи, а без них номер-заменитель не находится поиском.
@@ -180,7 +218,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   await prisma.partImportBatch.update({
     where: { id: batch.id },
-    data: { status: "APPLIED", createdRows: created.count, appliedAt: now },
+    data: { status: "APPLIED", createdRows: created.count, appliedAt: now, rowsJson: null },
   })
 
   return NextResponse.json({ created: created.count })
