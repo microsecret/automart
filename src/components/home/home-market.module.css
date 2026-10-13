@@ -1,0 +1,110 @@
+/* Блок «Запчасти и автотовары» на главной: створ 1280, как у секций
+   главной; карточки отделов на белом с рамкой, как в каталоге. */
+
+.block {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 1280px);
+  margin: 8px auto 0;
+  padding: 0 16px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(22px, 2.6vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--market-ink);
+}
+
+.lead { margin: 4px 0 0; color: var(--market-muted); font-size: 15px; line-height: 1.5; max-width: 60ch; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease, border-color 160ms ease;
+}
+
+.primary { background: #1d4ed8; color: #fff; }
+.secondary { border: 1px solid var(--mantine-color-default-border); color: var(--market-ink); }
+.primary:active, .secondary:active { transform: scale(0.97); }
+
+@media (hover: hover) {
+  .primary:hover { filter: brightness(1.1); }
+  .secondary:hover { border-color: var(--mantine-color-indigo-5); }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--market-ink);
+  text-decoration: none;
+}
+
+.cardTitle:hover { color: #1d4ed8; }
+
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+
+.list a {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 14px;
+  color: var(--market-muted);
+  text-decoration: none;
+}
+
+.list a:hover { color: var(--market-ink); }
+.list b { color: #0f8a60; font-size: 13px; }
+
+@media (max-width: 640px) {
+  .block { padding: 0 10px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .card { padding: 12px; }
+  .actions { width: 100%; }
+  .primary, .secondary { flex: 1 1 auto; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary, .secondary { transition: none; }
+}

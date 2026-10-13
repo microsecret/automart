@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Suspense } from "react"
 import HomeCatalog from "@/components/catalog/HomeCatalog"
 import ForumHighlights from "@/components/forum/ForumHighlights"
+import HomeMarketBlock from "@/components/home/HomeMarketBlock"
 import { getCatalogFirstPage } from "@/lib/catalog-first-page"
 
 export const metadata: Metadata = {
@@ -38,6 +39,11 @@ export default async function RootPage() {
   return (
     <>
       <HomeCatalog initialListings={initialListings ?? undefined} />
+      {/* Запчасти и автотовары — вход в новые разделы с главной: раньше
+          каталоги по маркам и магазины были видны только из меню. */}
+      <Suspense fallback={null}>
+        <HomeMarketBlock />
+      </Suspense>
       {/* Блок форума идёт после каталога: человек пришёл за машинами, и
           обсуждения — это то, что удерживает его, когда подходящего лота
           не нашлось. Suspense не даёт запросу к форуму задержать первый
