@@ -96,3 +96,38 @@ export async function loadModelParts(brand: string, model: string, take = 12) {
       part.compatibility.some((row) => matchKnownMake(row.make) === brand && sameModel(row.model, model)))
     .slice(0, take)
 }
+
+/**
+ * Миниатюры моделей для каталога — из наших же лотов аукционов.
+ *
+ * Образец (chinaspare) показывает фото машины на плитке модели; чужие
+ * снимки брать нельзя, а у нас 25 тысяч лотов с фотографиями. Берётся
+ * свежий активный лот на модель. Марку лоты пишут по-разному («KIA»,
+ * «Kia»), поэтому она сверяется через справочник.
+ */
+export async function loadModelPhotos(brand: string, models: readonly string[]): Promise<Map<string, string>> {
+  const makes = await prisma.auctionListing.groupBy({ by: ["make"], where: { status: "ACTIVE", adminHiddenAt: null }, _count: { _all: true }, orderBy: { make: "asc" }, take: 2_000 })
+  const variants = makes.map((row) => row.make).filter((make) => matchKnownMake(make) === brand)
+  if (!variants.length) return new Map()
+
+  const lots = await prisma.auctionListing.findMany({
+    where: { status: "ACTIVE", adminHiddenAt: null, make: { in: variants }, imageUrl: { not: null } },
+    distinct: ["model"],
+    orderBy: { createdAt: "desc" },
+    take: 400,
+    select: { model: true, imageUrl: true },
+  })
+  const photos = new Map<string, string>()
+  const byModel = new Map(lots.map((lot) => [lot.model.trim().toLowerCase(), lot.imageUrl as string]))
+  for (const model of models) {
+    const key = model.toLowerCase()
+    /* Точное совпадение, затем «Tiggo 7» ← «Tiggo 7 Pro»: лот уточняет
+       модель, справочник — нет. Обратное («Tiggo» ← «Tiggo 7») не берём:
+       на плитке оказалась бы другая машина. */
+    const exact = byModel.get(key)
+    const prefixed = exact ? null : lots.find((lot) => lot.model.toLowerCase().startsWith(`${key} `))
+    const url = exact ?? prefixed?.imageUrl
+    if (url) photos.set(model, url)
+  }
+  return photos
+}

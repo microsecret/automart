@@ -68,17 +68,22 @@ export default async function CatalogsPage() {
                 const logo = brandLogoImage(brand.name)
                 const count = byBrand.get(brand.name) ?? 0
                 return (
+                  /* Плитка как у chinaspare: логотип в сером квадрате, название и
+                     первые модели — человек узнаёт марку по своей машине. */
                   <Link key={brand.name} href={catalogHref(brand.name)} className={styles.brandTile} prefetch={false}>
                     <span className={styles.brandLogo}>
                       {logo
-                        ? <img src={logo} alt="" loading="lazy" decoding="async" width={56} height={37} />
+                        ? <img src={logo} alt="" loading="lazy" decoding="async" width={56} height={36} />
                         : <span className={styles.brandInitial}>{brand.name.replace(/[^\p{L}\d]/gu, "").slice(0, 2)}</span>}
                     </span>
-                    <span className={styles.brandName}>{brand.name}</span>
-                    <span className={styles.brandMeta}>
-                      {count > 0
-                        ? <b>{count} {plural(count, "предложение", "предложения", "предложений")}</b>
-                        : `${brand.models.length} ${plural(brand.models.length, "модель", "модели", "моделей")}`}
+                    <span className={styles.brandText}>
+                      <span className={styles.brandName}>{brand.name}</span>
+                      <span className={styles.brandModels}>{brand.models.slice(0, 4).join(", ")}</span>
+                      <span className={styles.brandMeta}>
+                        {count > 0
+                          ? <b>{count} {plural(count, "предложение", "предложения", "предложений")}</b>
+                          : `${brand.models.length} ${plural(brand.models.length, "модель", "модели", "моделей")}`}
+                      </span>
                     </span>
                   </Link>
                 )

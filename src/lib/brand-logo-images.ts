@@ -122,6 +122,32 @@ const BRAND_LOGO_FILES: Record<string, string> = {
   "камаз": "kamaz",
   "маз": "maz",
   "уаз": "uaz",
+  /* Добавлены 13.10.2026 к каталогам запчастей: car-logos-dataset (MIT) и
+     Wikimedia Commons (общественное достояние). Логотипы с правом только
+     fair use (Denza, Hanteng, Huanghai) и фото шильдиков под CC BY-SA
+     (Voyah, Forthing, Dadi) не брались — у этих марок остаются инициалы. */
+  "москвич": "moskvich",
+  "aurus": "aurus",
+  "tank": "tank",
+  "gac": "gac",
+  "avatr": "avatr",
+  "aito": "aito",
+  "ora": "ora",
+  "skyworth": "skyworth",
+  "kaiyi": "kaiyi",
+  "baic": "baic",
+  "baojun": "baojun",
+  "brilliance": "brilliance",
+  "evolute": "evolute",
+  "hafei": "hafei",
+  "haima": "haima",
+  "hawtai": "hawtai",
+  "jaecoo": "jaecoo",
+  "lifan": "lifan",
+  "livan": "livan",
+  "mg": "mg",
+  "soueast": "soueast",
+  "wuling": "wuling",
 }
 
 export function brandLogoKey(brand: string): string {

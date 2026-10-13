@@ -3,7 +3,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { brandLogoImage } from "@/lib/brand-logo-images"
 import { catalogHref, findCatalogBrand, regionOfBrand } from "@/lib/parts-catalog"
-import { countBy, loadOfferIndex } from "@/lib/parts-catalog-offers"
+import { countBy, loadModelPhotos, loadOfferIndex } from "@/lib/parts-catalog-offers"
+import { auctionCardImageUrl } from "@/lib/media-url"
+import { IconCar } from "@tabler/icons-react"
 import { decodeVin } from "@/lib/vin-decode"
 import ShopBar from "@/components/catalogs/ShopBar"
 import styles from "@/components/catalogs/catalogs.module.css"
@@ -35,6 +37,9 @@ export default async function CatalogBrandPage({ params, searchParams }: Props) 
   const logo = brandLogoImage(brand.name)
   const decoded = vin ? decodeVin(vin) : null
   const total = offers.reduce((sum, row) => sum + row.count, 0)
+  const photos = await loadModelPhotos(brand.name, brand.models).catch(() => new Map<string, string>())
+  const modelsWord = brand.models.length % 10 === 1 && brand.models.length % 100 !== 11 ? "модель"
+    : [2, 3, 4].includes(brand.models.length % 10) && ![12, 13, 14].includes(brand.models.length % 100) ? "модели" : "моделей"
 
   /* Модели с предложениями — первыми: человек пришёл за деталью, и
      пустые модели не должны прятать ту, где деталь уже есть. */
@@ -58,7 +63,7 @@ export default async function CatalogBrandPage({ params, searchParams }: Props) 
         </span>
         <div>
           <h1 className={styles.titleDark}>
-            Запчасти {brand.name} <span className={styles.titleCount}>{brand.models.length} моделей</span>
+            Запчасти {brand.name} <span className={styles.titleCount}>{brand.models.length} {modelsWord}</span>
           </h1>
           <p className={styles.muted}>
             {total > 0 ? `${total} предложений магазинов` : "Предложений магазинов пока нет — выберите модель, узлы и подбор уже работают"}
@@ -85,6 +90,13 @@ export default async function CatalogBrandPage({ params, searchParams }: Props) 
         <div className={styles.modelGrid}>
           {models.map(({ model, count }) => (
             <Link key={model} href={catalogHref(brand.name, model)} className={styles.modelTile} prefetch={false}>
+              {/* Фото — из нашего лота аукциона этой модели; нет лота —
+                  нейтральный значок, а не чужая картинка. */}
+              <span className={styles.modelThumb}>
+                {photos.get(model)
+                  ? <img src={auctionCardImageUrl(photos.get(model) as string)} alt="" loading="lazy" decoding="async" />
+                  : <IconCar size={26} stroke={1.4} />}
+              </span>
               <span className={styles.modelName}>{model}</span>
               <span className={count ? styles.modelCount : styles.modelEmpty}>{count ? `${count} предл.` : "узлы и заявка"}</span>
             </Link>
