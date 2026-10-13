@@ -487,3 +487,129 @@
   line-height: 1.6;
   color: var(--market-muted);
 }
+
+/* ---------- Отделы магазина и товарные группы (план 002, этап 2) ----------
+   Вкладки отделов и плитки групп — как «Аккумуляторы», «Масла», «Шины» в
+   автомагазинах-образцах. Плитка группы открывает фильтры её характеристик. */
+.parts-departments {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.parts-departments__tabs {
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.parts-departments__tabs::-webkit-scrollbar { display: none; }
+
+.parts-departments__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--mantine-color-default);
+  border: 1px solid var(--mantine-color-default-border);
+  color: var(--market-ink);
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.parts-departments__tab:active { transform: scale(0.97); }
+
+.parts-departments__tab[data-active] {
+  background: var(--market-ink);
+  border-color: var(--market-ink);
+  color: var(--mantine-color-body);
+}
+
+.parts-departments__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.parts-departments__group {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  min-height: 96px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
+  color: var(--market-ink);
+  transition: border-color 160ms ease, box-shadow 200ms ease, transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) {
+  .parts-departments__group:hover {
+    border-color: var(--mantine-color-indigo-5);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px -18px rgba(13, 27, 50, 0.35);
+  }
+}
+
+.parts-departments__group:active { transform: scale(0.98); }
+
+.parts-departments__group[data-active] {
+  border-color: var(--mantine-color-indigo-6);
+  box-shadow: 0 0 0 3px var(--mantine-color-indigo-light);
+}
+
+.parts-departments__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--mantine-color-indigo-light);
+  color: var(--mantine-color-indigo-light-color);
+}
+
+/* Колонка характеристик: секции со стрелкой, как «Длина ▸» у образца. */
+.parts-facets__section + .parts-facets__section { border-top: 1px solid var(--mantine-color-default-border); }
+
+.parts-facets__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 2px;
+}
+
+.parts-facets__chevron {
+  color: var(--market-muted);
+  transform: rotate(-90deg);
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.parts-facets__chevron[data-open] { transform: none; }
+
+.part-result-card__specs {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .parts-departments__groups {
+    grid-auto-flow: column;
+    grid-auto-columns: 132px;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .parts-departments__group { min-height: 88px; padding: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parts-departments__tab, .parts-departments__group, .parts-facets__chevron { transition: none; }
+}

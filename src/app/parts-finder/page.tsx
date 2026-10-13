@@ -12,6 +12,9 @@ import { formatPrice, parseImages } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
 import PartsShowcase from "@/components/parts/PartsShowcase"
 import PartRequestPrompt from "@/components/parts/PartRequestPrompt"
+import PartFacetsPanel, { type Facet } from "@/components/parts/PartFacetsPanel"
+import DepartmentNav from "@/components/parts/DepartmentNav"
+import { DEPARTMENTS, formatAttributeValue, PRODUCT_GROUP_BY_KEY, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
 type PartResult = {
@@ -27,6 +30,8 @@ type PartResult = {
   oemNumber?: string | null
   location?: string | null
   compatibility?: Array<{ make: string; model: string }>
+  productGroup?: string | null
+  attributes?: Array<{ key: string; num: number | null; text: string | null }>
 }
 
 type PartsResponse = {
@@ -34,6 +39,30 @@ type PartsResponse = {
   /* catalogTotal — сколько позиций в каталоге без учёта фильтров:
      нужен, чтобы отличить «нет по запросу» от «раздел пуст». */
   pagination: { total: number; pages: number; limit: number; catalogTotal?: number; activeStores?: number }
+  group?: { key: string; label: string }
+  facets?: Facet[]
+}
+
+/* Фильтры характеристик лежат в адресе как a_<ключ>=значение. */
+function readAttributeParams(params: URLSearchParams) {
+  const result: Record<string, string> = {}
+  params.forEach((value, key) => { if (key.startsWith("a_") && value) result[key.slice(2)] = value })
+  return result
+}
+
+/** Две-три главные характеристики под названием: «62 Ач · 600 А · Обратная». */
+function summaryAttributes(part: PartResult) {
+  const group = part.productGroup ? PRODUCT_GROUP_BY_KEY.get(part.productGroup) : null
+  if (!group || !part.attributes?.length) return ""
+  return group.attributes
+    .filter((def) => def.summary)
+    .map((def) => {
+      const value = part.attributes?.find((item) => item.key === def.key)
+      return value ? formatAttributeValue(def, value) : null
+    })
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(" · ")
 }
 
 const fetcher = fetchJson
@@ -46,6 +75,16 @@ function formatPartsCount(total: number): string {
   if (lastOne === 1) return `${total} запчасть`
   if (lastOne >= 2 && lastOne <= 4) return `${total} запчасти`
   return `${total} запчастей`
+}
+
+/** «1 товар», «3 товара», «12 товаров» — счётчик в заголовке товарной группы. */
+function formatGoodsCount(total: number): string {
+  const lastTwo = total % 100
+  const lastOne = total % 10
+  if (lastTwo >= 11 && lastTwo <= 14) return `${total} товаров`
+  if (lastOne === 1) return `${total} товар`
+  if (lastOne >= 2 && lastOne <= 4) return `${total} товара`
+  return `${total} товаров`
 }
 
 function parseMultiValue(value: string | null) {
@@ -120,6 +159,12 @@ function PartsContent() {
   const [priceFrom, setPriceFrom] = useState(sp.get("priceFrom") || "")
   const [priceTo, setPriceTo] = useState(sp.get("priceTo") || "")
   const [page, setPage] = useState(Number(sp.get("page")) || 1)
+  const [group, setGroup] = useState<string | null>(sp.get("group"))
+  const [department, setDepartment] = useState<DepartmentKey | null>(() => {
+    const fromGroup = PRODUCT_GROUP_BY_KEY.get(sp.get("group") || "")?.department
+    return fromGroup ?? (DEPARTMENTS.some((item) => item.key === sp.get("dept")) ? sp.get("dept") as DepartmentKey : null)
+  })
+  const [attrs, setAttrs] = useState<Record<string, string>>(() => readAttributeParams(new URLSearchParams(sp.toString())))
 
   useEffect(() => {
     const validPartType = urlPartType && PART_TYPES.some((item) => item.value === urlPartType) ? urlPartType : null
@@ -154,6 +199,10 @@ function PartsContent() {
     setPriceFrom(params.get("priceFrom") || "")
     setPriceTo(params.get("priceTo") || "")
     setPage(Number(params.get("page")) || 1)
+    const nextGroup = PRODUCT_GROUP_BY_KEY.has(params.get("group") || "") ? params.get("group") : null
+    setGroup(nextGroup)
+    if (nextGroup) setDepartment(PRODUCT_GROUP_BY_KEY.get(nextGroup)?.department ?? null)
+    setAttrs(readAttributeParams(params))
     setUrlRead(true)
   }, [searchKey])
 
@@ -196,7 +245,10 @@ function PartsContent() {
   const { data: modelsData, error: modelsError, isLoading: isModelsLoading } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
   const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
   const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
-  const filterKey = useMemo(() => [q, partType, subcategory, make, model, conditions.join(","), availability.join(","), saleFormat, priceFrom, priceTo].join("|"), [q, partType, subcategory, make, model, conditions, availability, saleFormat, priceFrom, priceTo])
+  const attrsKey = JSON.stringify(attrs)
+  const filterKey = useMemo(() => [q, partType, subcategory, make, model, conditions.join(","), availability.join(","), saleFormat, priceFrom, priceTo, group, attrsKey].join("|"), [q, partType, subcategory, make, model, conditions, availability, saleFormat, priceFrom, priceTo, group, attrsKey])
+  /* Группа для фильтров: выбранная явно или следующая из подкатегории. */
+  const activeGroup = (group ? PRODUCT_GROUP_BY_KEY.get(group) : null) ?? productGroupBySubcategory(subcategory)
 
   useEffect(() => {
     setPage(1)
@@ -223,6 +275,11 @@ function PartsContent() {
     if (priceFrom) u.set("priceFrom", priceFrom)
     if (priceTo) u.set("priceTo", priceTo)
     if (make) u.set("compatible", "true")
+    if (group) u.set("group", group)
+    if (activeGroup) {
+      u.set("facets", "1")
+      for (const [key, value] of Object.entries(attrs)) if (value) u.set(`a_${key}`, value)
+    }
     return u.toString()
   }
 
@@ -242,12 +299,15 @@ function PartsContent() {
     if (saleFormat) params.set("saleFormat", saleFormat)
     if (priceFrom) params.set("priceFrom", priceFrom)
     if (priceTo) params.set("priceTo", priceTo)
+    if (group) params.set("group", group)
+    else if (department) params.set("dept", department)
+    for (const [key, value] of Object.entries(attrs)) if (value) params.set(`a_${key}`, value)
     if (page > 1) params.set("page", String(page))
     const nextSearchKey = params.toString()
     if (nextSearchKey !== searchKey) {
       router.replace(nextSearchKey ? `/parts-finder?${nextSearchKey}` : "/parts-finder", { scroll: false })
     }
-  }, [urlRead, availability, conditions, make, model, page, partType, priceFrom, priceTo, q, router, saleFormat, searchKey, subcategory])
+  }, [urlRead, availability, conditions, make, model, page, partType, priceFrom, priceTo, q, router, saleFormat, searchKey, subcategory, group, department, attrs])
 
   /* Раздел пуст или фильтр не подошёл — это разные ситуации.
 
@@ -255,8 +315,8 @@ function PartsContent() {
      отправляет крутить настройки впустую: объявлений в разделе нет вовсе, и
      ни один фильтр их не покажет. */
   const hasActiveFilters = Boolean(
-    q || partType || subcategory || make || model || saleFormat
-    || conditions.length || availability.length || priceFrom || priceTo,
+    q || partType || subcategory || make || model || saleFormat || group
+    || conditions.length || availability.length || priceFrom || priceTo || Object.keys(attrs).length,
   )
 
   /* Есть ли запчасти в разделе вообще.
@@ -277,6 +337,7 @@ function PartsContent() {
   const resetFilters = () => {
     setQ(""); setPartType(null); setSubcategory(null); setMake(null); setModel(null)
     setConditions([]); setAvailability([]); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1)
+    setGroup(null); setAttrs({})
     router.replace("/parts-finder", { scroll: false })
   }
 
@@ -390,7 +451,10 @@ function PartsContent() {
                 гулял между страницами (64 пикселя здесь против 10 у
                 карточек ниже). */}
             <Stack gap={0}>
-              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Каталог запчастей</Text>
+              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">
+                {activeGroup?.label ?? "Каталог запчастей"}
+                {activeGroup && data?.pagination?.total ? <Text span inherit c="var(--market-muted)" fw={500} ml={10}>{formatGoodsCount(data.pagination.total)}</Text> : null}
+              </Text>
               {/* Пока каталог пуст, подписи нет вовсе.
 
                   Здесь стояло «Заявка на деталь · подбор по авто ·
@@ -412,6 +476,35 @@ function PartsContent() {
             Пять блоков стояли над пустым каталогом: человек видел стену
             полей, которыми нечего настраивать, а приглашение разместить
             первую запчасть уезжало за пределы экрана. */}
+        {/* Отделы видны всегда: это навигация магазина, а не обещание
+            товара — в пустой группе честно скажут, что там пока пусто. */}
+        <DepartmentNav
+          group={group}
+          department={department}
+          onSelect={(next) => {
+            setDepartment(next.department)
+            setGroup(next.group)
+            setAttrs({})
+            if (next.group) { setPartType(null); setSubcategory(null) }
+            setPage(1)
+          }}
+        />
+
+        {activeGroup && data?.facets && data.facets.length > 0 && (
+          <PartFacetsPanel
+            title={activeGroup.label}
+            facets={data.facets}
+            values={attrs}
+            onChange={(key, value) => setAttrs((current) => {
+              const next = { ...current }
+              if (value) next[key] = value
+              else delete next[key]
+              return next
+            })}
+            onReset={() => setAttrs({})}
+          />
+        )}
+
         {(hasParts || hasActiveFilters) && (
           <>
             {CategoryBar}
@@ -513,6 +606,10 @@ function PartsContent() {
                                 {p.availability && <Badge className="part-result-card__status-badge" data-tone={p.availability === "ON_ORDER" ? "attention" : "available"} size="xs" variant="light">{findLabel(AVAILABILITY_TYPES, p.availability)}</Badge>}
                                 {p.saleFormat === "AUCTION" && <Badge className="part-result-card__status-badge" data-tone="auction" size="xs" variant="light">Аукцион</Badge>}
                               </Group>
+
+                              {summaryAttributes(p) && (
+                                <Text size="xs" fw={600} c="var(--market-ink)" className="part-result-card__specs">{summaryAttributes(p)}</Text>
+                              )}
 
                               {(p.subcategory || p.oemNumber) && (
                                 <Group gap={8} wrap="wrap" className="part-result-card__metadata">

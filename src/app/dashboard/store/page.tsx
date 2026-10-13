@@ -19,6 +19,7 @@ import StoreOrdersPanel from "@/components/store/StoreOrdersPanel"
 import StoreCatalogPanel from "@/components/store/StoreCatalogPanel"
 import StoreRequestsPanel from "@/components/store/StoreRequestsPanel"
 import SellerOnboardingForm from "@/components/store/SellerOnboardingForm"
+import { formatAttributeValue, PRODUCT_GROUP_BY_KEY } from "@/lib/product-groups"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type Store = {
@@ -61,6 +62,20 @@ type PreviewRow = {
   leadTimeDaysMin: number | null
   leadTimeDaysMax: number | null
   description: string | null
+  productGroup?: string | null
+  attributes?: Array<{ key: string; num: number | null; text: string | null }>
+}
+
+/* Что площадка поняла из строки прайса: «Аккумуляторы: 62 Ач, 600 А».
+   Продавец видит ошибку разбора до публикации, а не в каталоге. */
+function recognizedSpecs(row: PreviewRow) {
+  const group = row.productGroup ? PRODUCT_GROUP_BY_KEY.get(row.productGroup) : null
+  if (!group) return null
+  const values = (row.attributes || []).map((value) => {
+    const def = group.attributes.find((item) => item.key === value.key)
+    return def ? `${def.label.toLowerCase()} ${formatAttributeValue(def, value)}` : null
+  }).filter(Boolean)
+  return `${group.label}${values.length ? `: ${values.join(", ")}` : ""}`
 }
 
 type ImportPreview = {
@@ -702,7 +717,10 @@ export default function StoreWorkspacePage() {
                         <Table.Tbody>
                           {preview.preview.map((row) => (
                             <Table.Tr key={row.line}>
-                              <Table.Td>{row.name}</Table.Td>
+                              <Table.Td>
+                                {row.name}
+                                {recognizedSpecs(row) && <Text size="var(--text-caps)" c="indigo.7">{recognizedSpecs(row)}</Text>}
+                              </Table.Td>
                               <Table.Td>
                                 {row.oemNumber || "—"}
                                 {row.crossNumbers.length > 0 && (

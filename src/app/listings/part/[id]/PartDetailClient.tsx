@@ -85,6 +85,9 @@ interface PartData {
   partType: string
   subcategory: string | null
   oemNumber: string | null
+  productGroupLabel?: string | null
+  brandName?: string | null
+  specs?: Array<{ label: string; value: string }>
   suspensionType: string | null
   brakeType: string | null
   compatibility: { id: string; make: string; model: string; generation: string | null; yearFrom: number | null; yearTo: number | null; engine: string | null }[]
@@ -319,6 +322,19 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                 </Box>
               )}
             </Card>
+
+            {/* Характеристики товара по его группе — как у автомагазинов:
+                у аккумулятора ёмкость и габариты, у масла вязкость и допуски. */}
+            {(data.specs?.length || data.brandName) ? (
+              <Card withBorder radius="md" p="lg">
+                <Title order={3} size="h4" mb="md">Характеристики{data.productGroupLabel ? ` · ${data.productGroupLabel}` : ""}</Title>
+                <dl className="part-detail__specs">
+                  {data.brandName && <div><dt>Производитель</dt><dd>{data.brandName}</dd></div>}
+                  {data.oemNumber && <div><dt>Артикул</dt><dd>{data.oemNumber}</dd></div>}
+                  {data.specs?.map((spec) => <div key={spec.label}><dt>{spec.label}</dt><dd>{spec.value}</dd></div>)}
+                </dl>
+              </Card>
+            ) : null}
 
             {/* Совместимость */}
             <Card withBorder radius="md" p="lg">

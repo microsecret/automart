@@ -126,3 +126,28 @@ test("handles a BOM and a shuffled column order", () => {
   assert.equal(result.rows[0].price, 5_600)
   assert.equal(result.rows[0].oemNumber, "12345-ABC")
 })
+
+test("прайс аккумуляторов: группа и характеристики из колонок и названия", () => {
+  const file = [
+    "Наименование;Цена;Артикул;Производитель;Ёмкость, Ач;Полярность;Длина",
+    "ELAB azia 6ст-62 Ач D23 пуск. ток 600;5657,66;062112K11EAS;ELAB;62;обратная;232",
+    "Масло моторное Mobil Super 3000 5W-40 4л синтетическое;3200;152566;Mobil;;;",
+    "Рычаг подвески передний;4100;54500-2B000;Hyundai;;;",
+  ].join("\n")
+
+  const result = parsePartImportFile(file)
+  assert.equal(result.rows.length, 3)
+  const [battery, oil, arm] = result.rows
+  assert.equal(battery.productGroup, "battery")
+  assert.equal(battery.partType, "ELECTRICAL")
+  assert.equal(battery.subcategory, "Аккумулятор")
+  const values = Object.fromEntries(battery.attributes.map((item: { key: string; num: number | null; text: string | null }) => [item.key, item.num ?? item.text]))
+  assert.equal(values.capacity, 62)
+  assert.equal(values.coldCrank, 600)
+  assert.equal(values.polarity, "Обратная (+ справа)")
+  assert.equal(values.length, 232)
+  assert.equal(oil.productGroup, "engine_oil")
+  assert.equal(oil.subcategory, "Моторное масло")
+  assert.equal(arm.productGroup, null, "незнакомая деталь остаётся без группы")
+  assert.deepEqual(arm.attributes, [])
+})

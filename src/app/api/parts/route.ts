@@ -9,6 +9,8 @@ import { PART_AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPE
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { normalizeListingCity } from "@/lib/listing-city"
+import { PRODUCT_GROUP_BY_KEY, productGroupBySubcategory } from "@/lib/product-groups"
+import { attributeFilters, loadFacets } from "@/lib/part-facets"
 
 export const dynamic = "force-dynamic"
 
@@ -66,6 +68,9 @@ export async function GET(request: NextRequest) {
     const saleFormat = sp.get("saleFormat")
     const oemNumber = sp.get("oemNumber")
     const sort = sp.get("sort") || "newest"
+    /* Товарная группа — явно (`group=battery`) или по подкатегории
+       («Аккумулятор»): от неё зависят фильтры по характеристикам. */
+    const group = PRODUCT_GROUP_BY_KEY.get(sp.get("group") || "") ?? productGroupBySubcategory(subcategory)
 
     // A Part is publicly visible only through an active, non-deleted Listing.
     // The nested relation keeps drafts and records awaiting moderation out of
@@ -123,7 +128,11 @@ export async function GET(request: NextRequest) {
       })
     }
     if (partType) where.partType = partType
-    if (subcategory) where.subcategory = { contains: subcategory }
+    if (sp.get("group") && group) {
+      /* Группа включает и позиции, у которых раздел другой (продавец
+         указал «Двигатель» для масляного фильтра), — ищем по группе. */
+      and.push({ OR: [{ productGroup: group.key }, { subcategory: group.subcategory }] })
+    } else if (subcategory) where.subcategory = { contains: subcategory }
     if (make && sp.get("compatible") === "true") {
       and.push({
         OR: [
@@ -165,6 +174,10 @@ export async function GET(request: NextRequest) {
       if (maxPrice !== undefined) where.price.lte = maxPrice
     }
 
+    /* Фасеты считаются без фильтров по характеристикам: иначе, выбрав
+       «62 Ач», человек больше не увидел бы остальных вариантов ёмкости. */
+    const facetWhere: Prisma.PartWhereInput = { ...where, ...(and.length ? { AND: [...and] } : {}) }
+    if (group) and.push(...attributeFilters(group, sp))
     if (and.length) where.AND = and
 
     /* Второй ключ — идентификатор: без него порядок между записями с
@@ -185,10 +198,12 @@ export async function GET(request: NextRequest) {
         orderBy,
         include: {
           compatibility: { select: { id: true, make: true, model: true, generation: true, yearFrom: true, yearTo: true } },
+          attributes: { select: { key: true, num: true, text: true } },
         },
       }),
       prisma.part.count({ where }),
     ])
+    const facets = group && sp.get("facets") === "1" ? await loadFacets(group, facetWhere).catch(() => []) : undefined
 
     /* Сколько позиций в каталоге вообще, без учёта фильтров.
     
@@ -211,6 +226,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       parts: parts.map((part) => ({ ...part, availability: part.availability || "IN_STOCK" })),
       pagination: { page, limit, total, pages: Math.ceil(total / limit), catalogTotal, activeStores },
+      ...(group ? { group: { key: group.key, label: group.label } } : {}),
+      ...(facets ? { facets } : {}),
     })
   } catch (error) {
     console.error("Parts GET error:", error)

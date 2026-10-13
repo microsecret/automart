@@ -5,6 +5,9 @@
 // Поэтому импорт не отвергает файл целиком: он принимает годные строки,
 // объясняет каждую отклонённую и показывает результат до записи в каталог.
 
+// @ts-expect-error Node's strip-types test runner requires the explicit extension.
+import { detectProductGroup, readProductAttributes } from "./product-groups.ts"
+
 export const PART_IMPORT_COLUMNS = [
   { key: "name", label: "Название", required: true, aliases: ["наименование", "товар", "деталь", "name", "title"] },
   { key: "price", label: "Цена", required: true, aliases: ["стоимость", "цена, руб", "price", "cost"] },
@@ -37,6 +40,10 @@ export type PartImportRow = {
   leadTimeDaysMin: number | null
   leadTimeDaysMax: number | null
   description: string | null
+  /** Товарная группа и характеристики: «Ёмкость, Ач» из колонки и из названия. */
+  productGroup: string | null
+  subcategory: string | null
+  attributes: Array<{ key: string; num: number | null; text: string | null }>
 }
 
 export type PartImportError = {
@@ -67,6 +74,10 @@ const PART_TYPE_ALIASES: Readonly<Record<string, string>> = {
   рулевое: "STEERING", руль: "STEERING", steering: "STEERING",
   аксессуары: "ACCESSORIES", accessories: "ACCESSORIES",
   расходники: "CONSUMABLES", consumables: "CONSUMABLES",
+  масла: "CONSUMABLES", масло: "CONSUMABLES", жидкости: "CONSUMABLES", фильтры: "CONSUMABLES",
+  аккумулятор: "ELECTRICAL", акб: "ELECTRICAL",
+  автохимия: "CHEMICALS", химия: "CHEMICALS", chemicals: "CHEMICALS",
+  инструмент: "TOOLS", tools: "TOOLS",
 }
 
 function normalizeHeader(value: string) {
@@ -243,7 +254,16 @@ export function parsePartImportFile(content: string, options: { maxRows?: number
   }
 
   const delimiter = detectDelimiter(lines[0])
-  const columns = matchColumns(parseCsvLine(lines[0], delimiter))
+  const headerCells = parseCsvLine(lines[0], delimiter)
+  const columns = matchColumns(headerCells)
+  /* Колонки, не ставшие полями каталога, — кандидаты в характеристики:
+     «Ёмкость, Ач», «Вязкость», «Длина». Что им соответствует, решает
+     товарная группа строки. */
+  const matchedPositions = new Set(Object.values(columns))
+  const extraColumns = headerCells
+    .map((header, position) => ({ header: header.trim(), position }))
+    .filter((item) => item.header && !matchedPositions.has(item.position))
+    .slice(0, 40)
 
   const missing = PART_IMPORT_COLUMNS.filter((column) => column.required && columns[column.key] === undefined)
   if (missing.length) {
@@ -304,6 +324,19 @@ export function parsePartImportFile(content: string, options: { maxRows?: number
     // отсутствие товара: скрывать её из каталога неправильно.
     const supplyMode = (quantity !== null && Number.isFinite(quantity) && quantity > 0) ? "STOCK" as const : "ORDER" as const
 
+    const category = readCell("partType")
+    const detectedType = detectPartType(category)
+    const group = detectProductGroup(name, category)
+    const extra: Record<string, string> = {}
+    for (const item of extraColumns) {
+      const value = cells[item.position]?.trim()
+      if (value) extra[item.header] = value.slice(0, 120)
+    }
+    /* Категория из прайса главнее догадки: её указал продавец. Группа
+       даёт раздел только строкам без категории, а подкатегорию — когда
+       раздел с ней совпадает. */
+    const partType = detectedType === "OTHER" && group ? group.partType : detectedType
+
     rows.push({
       line: index + 1,
       name: name.slice(0, 200),
@@ -313,12 +346,15 @@ export function parsePartImportFile(content: string, options: { maxRows?: number
       brandName: readCell("brandName")?.slice(0, 80) || null,
       make: readCell("make")?.slice(0, 60) || null,
       model: readCell("model")?.slice(0, 60) || null,
-      partType: detectPartType(readCell("partType")),
+      partType,
       condition: detectCondition(readCell("condition")),
       supplyMode,
       leadTimeDaysMin: leadTime.min,
       leadTimeDaysMax: leadTime.max,
       description: readCell("description")?.slice(0, 1_000) || null,
+      productGroup: group?.key ?? null,
+      subcategory: group && group.partType === partType ? group.subcategory : null,
+      attributes: group ? readProductAttributes(group, name, extra) : [],
     })
   }
 

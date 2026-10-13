@@ -307,6 +307,10 @@ model Part {
   originCountry   String? // CN, KR, JP, DE, RU
   brandName       String? // производитель детали, а не автомобиля
   batchId         String? // партия массовой загрузки, чтобы её можно было откатить
+  // Товарная группа (аккумуляторы, моторные масла, шины…) — ключ из
+  // src/lib/product-groups.ts. По ней выбирается набор характеристик.
+  productGroup    String?
+  attributes      PartAttribute[]
 
   // Reverse relation for listings
   listings Listing[]   @relation("ListingPart")
@@ -325,12 +329,29 @@ model Part {
   @@index([storeId, createdAt])
   @@index([batchId])
   @@index([oemNumber])
+  @@index([productGroup])
 }
 
 // === МАГАЗИН ЗАПЧАСТЕЙ ===
 
 // Витрина продавца: отдельная сущность, потому что у магазина есть реквизиты,
 // условия доставки и репутация, которых нет у частного объявления.
+/// Характеристика позиции: «Ёмкость = 62», «Вязкость = 5W-30». Отдельной
+/// таблицей, а не JSON в позиции: по ним фильтруют список, и SQLite должна
+/// искать по индексу (ключ + число / ключ + текст), а не разбирать JSON.
+model PartAttribute {
+  id     String  @id @default(uuid())
+  partId String
+  part   Part    @relation(fields: [partId], references: [id], onDelete: Cascade)
+  key    String
+  num    Float?
+  text   String?
+
+  @@unique([partId, key])
+  @@index([key, num])
+  @@index([key, text])
+}
+
 model PartStore {
   id                     String   @id @default(uuid())
   ownerId                String

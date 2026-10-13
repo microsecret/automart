@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
+import { formatAttributeValue, PRODUCT_GROUP_BY_KEY } from "@/lib/product-groups"
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-metadata"
 import { authOptions } from "@/lib/auth"
 import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
@@ -56,6 +57,7 @@ export default async function PartDetailPage({ params }: PageProps) {
          страницу. Заказать можно было только с витрины магазина, куда
          ещё надо догадаться зайти. */
       store: { select: { id: true, slug: true, name: true, status: true } },
+      attributes: { select: { key: true, num: true, text: true } },
       user: {
         select: {
           id: true, name: true, image: true, createdAt: true,
@@ -117,6 +119,18 @@ export default async function PartDetailPage({ params }: PageProps) {
     partType: part.partType,
     subcategory: part.subcategory,
     oemNumber: part.oemNumber,
+    /* Характеристики в порядке справочника группы, с единицами:
+       «Ёмкость — 62 Ач», «Полярность — обратная». */
+    productGroupLabel: part.productGroup ? PRODUCT_GROUP_BY_KEY.get(part.productGroup)?.label ?? null : null,
+    brandName: part.brandName,
+    specs: (() => {
+      const group = part.productGroup ? PRODUCT_GROUP_BY_KEY.get(part.productGroup) : null
+      if (!group) return []
+      return group.attributes.flatMap((def) => {
+        const value = part.attributes.find((item) => item.key === def.key)
+        return value ? [{ label: def.label, value: formatAttributeValue(def, value) }] : []
+      })
+    })(),
     suspensionType: part.suspensionType,
     brakeType: part.brakeType,
     compatibility: part.compatibility || [],

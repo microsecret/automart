@@ -29,6 +29,8 @@ const SLUG_BY_TYPE: Readonly<Record<string, string>> = {
   STEERING: "rulevoe-upravlenie",
   ACCESSORIES: "aksessuary",
   CONSUMABLES: "rashodniki",
+  CHEMICALS: "avtohimiya",
+  TOOLS: "instrumenty",
 }
 
 const TYPE_BY_SLUG = new Map<string, string>()

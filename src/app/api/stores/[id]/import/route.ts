@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { randomUUID } from "node:crypto"
 import { normalizeOemNumber, parsePartImportFile } from "@/lib/part-import"
+import { normalizeAttributeValue, PRODUCT_GROUP_BY_KEY } from "@/lib/product-groups"
+import { PART_SUBCATEGORIES } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -139,14 +142,32 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const now = new Date()
+  /* Характеристики пишутся отдельной таблицей, а createMany не создаёт
+     связанные записи и не возвращает id — поэтому id позиций задаём сами. */
+  const attributeRows: Array<{ partId: string; key: string; num: number | null; text: string | null }> = []
   const data = rows.slice(0, MAX_APPLY_ROWS).flatMap((row: Record<string, unknown>) => {
     const name = typeof row.name === "string" ? row.name.trim().slice(0, 200) : ""
     const price = Number(row.price)
     if (!name || !Number.isFinite(price) || price <= 0 || price > 100_000_000) return []
     const leadMin = intInRange(row.leadTimeDaysMin, 0, 365)
     const leadMax = intInRange(row.leadTimeDaysMax, 0, 365)
+    const partType = typeof row.partType === "string" && row.partType ? row.partType.slice(0, 32) : "OTHER"
+    const group = typeof row.productGroup === "string" ? PRODUCT_GROUP_BY_KEY.get(row.productGroup) ?? null : null
+    const subcategory = typeof row.subcategory === "string" && (PART_SUBCATEGORIES[partType] || []).includes(row.subcategory) ? row.subcategory : null
+    const id = randomUUID()
+    /* Значения перепроверяются по справочнику: строки лежали в базе между
+       предпросмотром и публикацией, доверять им как есть нельзя. */
+    if (group && Array.isArray(row.attributes)) {
+      for (const item of row.attributes as Array<Record<string, unknown>>) {
+        const def = group.attributes.find((attribute) => attribute.key === item?.key)
+        const raw = typeof item?.num === "number" ? item.num : typeof item?.text === "string" ? item.text : null
+        const value = def && raw !== null ? normalizeAttributeValue(def, raw) : null
+        if (value) attributeRows.push({ partId: id, ...value })
+      }
+    }
 
     return [{
+      id,
       userId,
       storeId: store.id,
       batchId: batch.id,
@@ -154,7 +175,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       price: Math.round(price),
       description: typeof row.description === "string" ? row.description.slice(0, 1_000) : null,
       condition: row.condition === "USED" ? "USED" : "NEW",
-      partType: typeof row.partType === "string" && row.partType ? row.partType.slice(0, 32) : "OTHER",
+      partType,
+      subcategory,
+      productGroup: group?.key ?? null,
       oemNumber: typeof row.oemNumber === "string" ? row.oemNumber.slice(0, 64) : null,
       brandName: typeof row.brandName === "string" ? row.brandName.slice(0, 80) : null,
       make: typeof row.make === "string" && row.make ? row.make.slice(0, 60) : "Универсальная",
@@ -189,6 +212,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     await prisma.partImportBatch.update({ where: { id: batch.id }, data: { status: "PREVIEW" } }).catch(() => undefined)
     console.error("Part import apply failed", error instanceof Error ? error.message : error)
     return NextResponse.json({ error: "Не удалось опубликовать позиции. Попробуйте ещё раз." }, { status: 500 })
+  }
+
+  if (attributeRows.length) {
+    await prisma.partAttribute.createMany({ data: attributeRows }).catch((error) => {
+      console.warn("Part attributes were not saved", error instanceof Error ? error.message : error)
+    })
   }
 
   // Аналоги пишутся отдельным проходом: createMany не создаёт связанные
