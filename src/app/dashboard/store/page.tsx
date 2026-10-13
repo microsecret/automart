@@ -86,6 +86,7 @@ type ImportPreview = {
   totalRows: number
   readyRows: number
   skippedRows: number
+  missingConformity?: number
   preview: PreviewRow[]
   errors: Array<{ line: number; reason: string; raw: string }>
 }
@@ -709,6 +710,14 @@ export default function StoreWorkspacePage() {
                     </Button>
                   )}
                 </Group>
+
+                {/* Документы о соответствии в прайсе бывают редко: позиции
+                    публикуются, но продавец видит, где их не хватает. */}
+                {(preview.missingConformity ?? 0) > 0 && (
+                  <Alert color="yellow" variant="light" mb="sm" icon={<IconAlertTriangle size={16} />}>
+                    У {preview.missingConformity} {plural(preview.missingConformity ?? 0, "позиции", "позиций", "позиций")} нет номера сертификата или декларации — для этих групп он обязателен по техрегламенту. Добавьте его в карточке позиции до продажи или колонкой «Сертификат» в прайсе.
+                  </Alert>
+                )}
 
                 {preview.preview.length > 0 && (
                   <Box style={{ overflowX: "auto" }}>

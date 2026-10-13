@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto"
 import { normalizeOemNumber, parsePartImportFile } from "@/lib/part-import"
 import { normalizeAttributeValue, PRODUCT_GROUP_BY_KEY } from "@/lib/product-groups"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
+import { checkLegal, legalRules } from "@/lib/product-legal"
 
 export const dynamic = "force-dynamic"
 
@@ -24,7 +25,7 @@ async function requireStore(storeId: string) {
 
   const store = await prisma.partStore.findFirst({
     where: { id: storeId, ownerId: session.user.id },
-    select: { id: true, name: true, defaultLeadTimeDaysMin: true, defaultLeadTimeDaysMax: true, defaultOriginCountry: true, city: true },
+    select: { id: true, name: true, defaultLeadTimeDaysMin: true, defaultLeadTimeDaysMax: true, defaultOriginCountry: true, city: true, sellerType: true },
   })
   if (!store) return { error: NextResponse.json({ error: "Магазин не найден" }, { status: 404 }) }
   return { store, userId: session.user.id }
@@ -56,6 +57,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const utf8 = new TextDecoder("utf-8").decode(buffer)
   const content = utf8.includes("\uFFFD") ? new TextDecoder("windows-1251").decode(buffer) : utf8
   const parsed = parsePartImportFile(content)
+  /* Закон — построчно. Маркируемый новый товар без штрихкода и группы,
+     закрытые самозанятому, не публикуются: продавать их так нельзя.
+     Отсутствие документа о соответствии строку не отсекает — сертификаты
+     редко лежат в прайсе, — но продавец видит, сколько их не хватает. */
+  let missingConformity = 0
+  parsed.rows = parsed.rows.filter((row) => {
+    const check = checkLegal(row.productGroup, {
+      gtin: row.gtin, brandName: row.brandName, condition: row.condition,
+      conformityType: row.conformityNumber ? "CERTIFICATE" : null, conformityNumber: row.conformityNumber,
+    }, store.sellerType)
+    const blocking = check.errors.productGroup || check.errors.gtin
+    if (blocking) {
+      parsed.errors.push({ line: row.line, reason: blocking, raw: row.name.slice(0, 160) })
+      return false
+    }
+    if (row.condition !== "USED" && legalRules(row.productGroup).conformity && !row.conformityNumber) missingConformity += 1
+    return true
+  })
   if (!parsed.rows.length) {
     return NextResponse.json({
       error: "Не удалось прочитать ни одной позиции",
@@ -84,6 +103,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     skippedRows: parsed.errors.length,
     preview: parsed.rows.slice(0, MAX_PREVIEW_ROWS),
     errors: parsed.errors.slice(0, 20),
+    missingConformity,
   })
 }
 
@@ -189,7 +209,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       // ограничивается годом.
       leadTimeDaysMin: leadMin ?? store.defaultLeadTimeDaysMin,
       leadTimeDaysMax: leadMax ?? store.defaultLeadTimeDaysMax,
-      originCountry: store.defaultOriginCountry,
+      originCountry: typeof row.originCountry === "string" && row.originCountry ? row.originCountry.slice(0, 40) : store.defaultOriginCountry,
+      gtin: typeof row.gtin === "string" && /^\d{8,14}$/.test(row.gtin) ? row.gtin : null,
+      warrantyMonths: intInRange(row.warrantyMonths, 0, 120),
+      conformityNumber: typeof row.conformityNumber === "string" && row.conformityNumber ? row.conformityNumber.slice(0, 80) : null,
+      conformityType: typeof row.conformityNumber === "string" && row.conformityNumber ? (/д/i.test(row.conformityNumber.slice(0, 12)) ? "DECLARATION" : "CERTIFICATE") : null,
       location: store.city || "Уточняется",
       vehicleType: "CAR",
       createdAt: now,

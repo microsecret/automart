@@ -151,3 +151,16 @@ test("прайс аккумуляторов: группа и характери�
   assert.equal(arm.productGroup, null, "незнакомая деталь остаётся без группы")
   assert.deepEqual(arm.attributes, [])
 })
+
+test("колонки закона: штрихкод, страна, гарантия, сертификат", () => {
+  const file = [
+    "Наименование;Цена;Штрих-код;Страна производства;Гарантия, мес;Сертификат",
+    "Масло моторное ZIC X9 5W-40 4л;4100;8801234567893;Корея;12;ЕАЭС N RU Д-KR.АБ12.В.00001/26",
+  ].join("\n")
+  const [row] = parsePartImportFile(file).rows
+  assert.equal(row.gtin, "8801234567893")
+  assert.equal(row.originCountry, "Корея")
+  assert.equal(row.warrantyMonths, 12)
+  assert.equal(row.conformityNumber, "ЕАЭС N RU Д-KR.АБ12.В.00001/26")
+  assert.equal(row.productGroup, "engine_oil")
+})

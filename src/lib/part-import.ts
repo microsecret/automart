@@ -21,6 +21,12 @@ export const PART_IMPORT_COLUMNS = [
   { key: "quantity", label: "Количество", required: false, aliases: ["кол-во", "остаток", "наличие", "qty", "stock"] },
   { key: "leadTime", label: "Срок поставки", required: false, aliases: ["срок", "доставка", "дни", "lead time"] },
   { key: "description", label: "Описание", required: false, aliases: ["примечание", "комментарий", "description", "note"] },
+  /* Сведения по закону: штрихкод для «Честного знака», страна, гарантия и
+     номер сертификата или декларации (ЗоЗПП ст. 10, ТР ТС). */
+  { key: "gtin", label: "Штрихкод", required: false, aliases: ["штрих-код", "штрихкод", "ean", "ean13", "gtin", "баркод", "barcode"] },
+  { key: "originCountry", label: "Страна", required: false, aliases: ["страна производства", "страна происхождения", "country"] },
+  { key: "warranty", label: "Гарантия", required: false, aliases: ["гарантия, мес", "гарантийный срок", "warranty"] },
+  { key: "conformity", label: "Сертификат", required: false, aliases: ["декларация", "номер сертификата", "номер декларации", "сертификат соответствия"] },
 ] as const
 
 export type PartImportColumnKey = (typeof PART_IMPORT_COLUMNS)[number]["key"]
@@ -40,6 +46,10 @@ export type PartImportRow = {
   leadTimeDaysMin: number | null
   leadTimeDaysMax: number | null
   description: string | null
+  gtin: string | null
+  originCountry: string | null
+  warrantyMonths: number | null
+  conformityNumber: string | null
   /** Товарная группа и характеристики: «Ёмкость, Ач» из колонки и из названия. */
   productGroup: string | null
   subcategory: string | null
@@ -352,6 +362,13 @@ export function parsePartImportFile(content: string, options: { maxRows?: number
       leadTimeDaysMin: leadTime.min,
       leadTimeDaysMax: leadTime.max,
       description: readCell("description")?.slice(0, 1_000) || null,
+      gtin: readCell("gtin")?.replace(/\D/g, "").slice(0, 14) || null,
+      originCountry: readCell("originCountry")?.slice(0, 40) || null,
+      warrantyMonths: (() => {
+        const months = Number((readCell("warranty") || "").replace(/[^\d]/g, ""))
+        return readCell("warranty") && Number.isFinite(months) ? Math.min(120, months) : null
+      })(),
+      conformityNumber: readCell("conformity")?.slice(0, 80) || null,
       productGroup: group?.key ?? null,
       subcategory: group && group.partType === partType ? group.subcategory : null,
       attributes: group ? readProductAttributes(group, name, extra) : [],
