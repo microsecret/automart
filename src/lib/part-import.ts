@@ -6,7 +6,7 @@
 // объясняет каждую отклонённую и показывает результат до записи в каталог.
 
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { detectProductGroup, readProductAttributes } from "./product-groups.ts"
+import { detectProductGroup, detectProductGroupByColumns, readProductAttributes } from "./product-groups.ts"
 
 export const PART_IMPORT_COLUMNS = [
   { key: "name", label: "Название", required: true, aliases: ["наименование", "товар", "деталь", "name", "title"] },
@@ -326,12 +326,12 @@ export function parsePartImportFile(content: string, options: { maxRows?: number
 
     const category = readCell("partType")
     const detectedType = detectPartType(category)
-    const group = detectProductGroup(name, category)
     const extra: Record<string, string> = {}
     for (const item of extraColumns) {
       const value = cells[item.position]?.trim()
       if (value) extra[item.header] = value.slice(0, 120)
     }
+    const group = detectProductGroup(name, category) ?? detectProductGroupByColumns(extra)
     /* Категория из прайса главнее догадки: её указал продавец. Группа
        даёт раздел только строкам без категории, а подкатегорию — когда
        раздел с ней совпадает. */

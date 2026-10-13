@@ -25,8 +25,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     select: { name: true, make: true, model: true, price: true, images: true, location: true },
   })
   if (!part) return { title: "Запчасть не найдена", robots: { index: false, follow: false } }
-  const title = `${part.name} для ${part.make} ${part.model}`
-  const description = `${part.name} для ${part.make} ${part.model} в ${part.location}, цена ${part.price.toLocaleString("ru-RU")} ₽. Совместимость и фотографии.`
+  /* Универсальная позиция магазина хранит марку «Универсальная» и модель
+     «—»: в заголовке выходило «…для Универсальная —». */
+  const forVehicle = part.make && part.make !== "Универсальная" && part.make !== "Universal" ? ` для ${part.make}${part.model && part.model !== "—" ? ` ${part.model}` : ""}` : ""
+  const title = `${part.name}${forVehicle}`
+  const description = `${part.name}${forVehicle} в ${part.location}, цена ${part.price.toLocaleString("ru-RU")} ₽. Совместимость и фотографии.`
   const canonical = `/listings/part/${id}`
   const images = parseImages(part.images)
   return {

@@ -108,7 +108,9 @@ const saeViscosity = (name: string) => {
 export const PRODUCT_GROUPS: readonly ProductGroup[] = [
   {
     key: "battery", label: "Аккумуляторы", department: "parts", partType: "ELECTRICAL", subcategory: "Аккумулятор",
-    detect: /аккумулятор|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))акб(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))6\s*ст(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|battery/i,
+    /* «60 Ач» в названии — тоже аккумулятор: Varta и Bosch пишут модель
+       и ёмкость без слова «аккумулятор». */
+    detect: /аккумулятор|\d{2,3}\s*а\s*[/.]?\s*ч(?![а-яё])|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))акб(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))6\s*ст(?:(?<![\wА-яЁё])(?=[\wА-яЁё])|(?<=[\wА-яЁё])(?![\wА-яЁё]))|battery/i,
     attributes: [
       { key: "capacity", label: "Ёмкость", kind: "number", unit: "Ач", aliases: ["емкость", "ёмкость", "емкость, ач", "ёмкость, ач", "ач"], filter: true, summary: true, min: 1, max: 400 },
       { key: "coldCrank", label: "Пусковой ток", kind: "number", unit: "А", aliases: ["пусковой ток", "пусковой ток, а", "ток холодной прокрутки", "cca", "en"], filter: true, summary: true, min: 20, max: 3000 },
@@ -567,6 +569,22 @@ export function detectProductGroup(name: string, category?: string | null): Prod
     if (group?.detect.test(haystack)) return group
   }
   return null
+}
+
+/**
+ * Группа по колонкам прайса: строка без узнаваемого названия, но с
+ * заполненными «Ёмкость, Ач» и «Полярность» — аккумулятор. Нужны хотя
+ * бы две колонки группы: одна «Длина» есть у половины групп.
+ */
+export function detectProductGroupByColumns(columns: Record<string, string>): ProductGroup | null {
+  const headers = Object.entries(columns).filter(([, value]) => value.trim()).map(([header]) => normalizeHeader(header))
+  if (headers.length < 2) return null
+  let best: { group: ProductGroup; hits: number } | null = null
+  for (const group of PRODUCT_GROUPS) {
+    const hits = group.attributes.filter((def) => headers.some((header) => header === normalizeHeader(def.label) || (def.aliases ?? []).includes(header))).length
+    if (hits >= 2 && (!best || hits > best.hits)) best = { group, hits }
+  }
+  return best?.group ?? null
 }
 
 const normalizeHeader = (value: string) => value.trim().toLocaleLowerCase("ru-RU").replace(/[«»"']/g, "").replace(/\s+/g, " ")

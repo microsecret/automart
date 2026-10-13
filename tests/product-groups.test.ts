@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 // @ts-expect-error Node's strip-types test runner requires the explicit extension.
-import { detectProductGroup, formatAttributeValue, PRODUCT_GROUP_BY_KEY, PRODUCT_GROUPS, readProductAttributes } from "../src/lib/product-groups.ts"
+import { detectProductGroup, detectProductGroupByColumns, formatAttributeValue, PRODUCT_GROUP_BY_KEY, PRODUCT_GROUPS, readProductAttributes } from "../src/lib/product-groups.ts"
 
 const attrs = (key: string, name: string, columns: Record<string, string> = {}) => {
   const group = PRODUCT_GROUP_BY_KEY.get(key)
@@ -88,4 +88,14 @@ test("ключи групп и характеристик уникальны", (
     assert.equal(new Set(keys).size, keys.length, group.key)
     assert.ok(group.attributes.filter((item: { summary?: boolean }) => item.summary).length <= 4, group.key)
   }
+})
+
+test("аккумулятор без слова «аккумулятор»: по «Ач» в названии и по колонкам", () => {
+  assert.equal(detectProductGroup("Varta Blue Dynamic 60 Ач обратная 540A 242x175x175")?.key, "battery")
+  assert.deepEqual(attrs("battery", "Varta Blue Dynamic 60 Ач обратная 540A 242x175x175"), {
+    capacity: 60, coldCrank: 540, length: 242, width: 175, height: 175, polarity: "Обратная (+ справа)",
+  })
+  assert.equal(detectProductGroupByColumns({ "Ёмкость, Ач": "60", "Полярность": "обратная" })?.key, "battery")
+  assert.equal(detectProductGroupByColumns({ "Длина": "240" }), null, "одной общей колонки мало")
+  assert.equal(detectProductGroup("Рычаг 60 мм"), null)
 })
