@@ -367,15 +367,17 @@
 
 @media (max-width: 640px) {
   .page { padding-top: 12px; }
+  /* Вторая строка — счётчик и цена во всю ширину: в колонке под
+     картинкой (64px) счётчик обрезался до одной кнопки. */
   .line {
-    grid-template-columns: 64px minmax(0, 1fr);
-    grid-template-areas: "thumb main" "stepper price";
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-areas: "thumb main main" "stepper stepper price";
     row-gap: 10px;
     padding: 12px 14px;
   }
   .thumb { grid-area: thumb; width: 64px; height: 64px; }
   .lineMain { grid-area: main; }
-  .stepper { grid-area: stepper; }
+  .stepper { grid-area: stepper; justify-self: start; }
   .linePrice { grid-area: price; align-self: center; }
   .storeHead, .storeFoot { padding-inline: 14px; }
   .summary { padding: 16px; }
