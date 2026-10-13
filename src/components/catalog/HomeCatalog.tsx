@@ -70,13 +70,17 @@ const QUICK_SORTS = [
 ]
 const MORE_SORTS = SORT_OPTIONS.filter((o) => !QUICK_SORT_VALUES.has(o.value)).map((o) => ({ value: o.value, label: o.label }))
 
+/* Плитки — живые фотографии (Unsplash и Pexels, бесплатная лицензия).
+   Владелец попросил реалистичные сочные картинки вместо значков на белом.
+   Кадр обрезан 2:1 и сжат в webp двух размеров; photoPos — где главный
+   объект, чтобы подпись слева его не закрывала. */
 const HERO_ACTIONS = [
-  { href: "#catalog", label: "Купить авто", note: "Весь каталог", tone: "blue", icon: <IconCar size={19} stroke={1.8} /> },
-  { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", tone: "green", icon: <IconTag size={19} stroke={1.8} /> },
-  { href: "/auctions", label: "Аукционы", note: "Азия и Европа", tone: "orange", icon: <IconGavel size={19} stroke={1.8} /> },
+  { href: "#catalog", label: "Купить авто", note: "Весь каталог", tone: "blue", photo: "buy", photoPos: "50% 50%", icon: <IconCar size={19} stroke={1.8} /> },
+  { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", tone: "green", photo: "sell", photoPos: "50% 45%", icon: <IconTag size={19} stroke={1.8} /> },
+  { href: "/auctions", label: "Аукционы", note: "Азия и Европа", tone: "orange", photo: "auctions", photoPos: "50% 50%", icon: <IconGavel size={19} stroke={1.8} /> },
   /* VIN расшифровывается в каталогах по маркам, а не в поиске запчастей:
      ссылка ведёт туда, что обещает подпись. */
-  { href: "/catalogs", label: "Запчасти", note: "По марке и VIN", tone: "violet", icon: <IconSettings size={19} stroke={1.8} /> },
+  { href: "/catalogs", label: "Запчасти", note: "По марке и VIN", tone: "violet", photo: "parts", photoPos: "68% 50%", icon: <IconSettings size={19} stroke={1.8} /> },
   /* «Заправки», а не «Где заправиться»: замер показал, что полная
      подпись требует 131 пиксель при ширине плитки 124 и вылезает за
      края. Уменьшать кегль дальше нельзя — четырнадцать пикселей и так
@@ -84,7 +88,7 @@ const HERO_ACTIONS = [
 
      Короткое имя не выдумано: оно уже стоит в навигации проекта как
      shortLabel для этого же раздела. */
-  { href: "/services/fuel-map", label: "Заправки", note: "Цены на карте", tone: "teal", icon: <IconGasStation size={19} stroke={1.8} /> },
+  { href: "/services/fuel-map", label: "Заправки", note: "Цены на карте", tone: "teal", photo: "fuel", photoPos: "62% 50%", icon: <IconGasStation size={19} stroke={1.8} /> },
 ] as const
 
 export default function HomePage(p: HomePageProps = {}) {
@@ -550,6 +554,18 @@ export default function HomePage(p: HomePageProps = {}) {
         <nav className="home-quick" aria-label="Быстрые действия">
           {HERO_ACTIONS.map((action) => (
             <Link key={action.href} href={action.href} className="home-quick__item" data-tone={action.tone}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- готовые webp двух размеров, оптимизатор не нужен */}
+              <img
+                className="home-quick__photo"
+                src={`/images/home-quick/${action.photo}-640.webp`}
+                srcSet={`/images/home-quick/${action.photo}-640.webp 640w, /images/home-quick/${action.photo}-1280.webp 1280w`}
+                sizes="(max-width: 992px) 46vw, 20vw"
+                alt=""
+                width={640}
+                height={320}
+                decoding="async"
+                style={{ objectPosition: action.photoPos }}
+              />
               <span className="home-quick__icon" aria-hidden="true">{action.icon}</span>
               <span className="home-quick__text">
                 <span className="home-quick__label">{action.label}</span>

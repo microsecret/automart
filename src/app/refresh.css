@@ -446,6 +446,97 @@
   outline-offset: 2px;
 }
 
+/* Плитка-фотография.
+
+   Владелец попросил живые сочные снимки вместо значков на белом. Фото
+   лежит под всей плиткой, снизу — тёмная вуаль: белая подпись на ней
+   читается на любом кадре, и светлом (рукопожатие), и пёстром (автовоз).
+   Тема сайта на плитку не влияет — фото одинаково в светлой и тёмной. */
+.home-quick__item {
+  isolation: isolate;
+  overflow: hidden;
+  align-items: flex-end;
+  min-height: 128px;
+  padding: 14px 16px;
+  border-color: rgba(11, 20, 38, 0.08);
+  background: #0b1426;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(11, 20, 38, 0.08), 0 14px 28px -18px rgba(11, 20, 38, 0.55);
+}
+
+.home-quick__item::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to top, rgba(6, 12, 26, 0.86) 0%, rgba(6, 12, 26, 0.42) 46%, rgba(6, 12, 26, 0) 78%);
+  content: "";
+  pointer-events: none;
+}
+
+.home-quick__photo {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 700ms var(--ease-out);
+}
+
+[data-mantine-color-scheme="dark"] .home-quick__item {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.home-quick__item .home-quick__icon,
+[data-mantine-color-scheme="dark"] .home-quick__item .home-quick__icon {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(8, 14, 30, 0.42);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.home-quick__item .home-quick__label {
+  font-size: var(--text-lg);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.home-quick__item .home-quick__note {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.home-quick__item .home-quick__arrow {
+  top: 14px;
+  right: 14px;
+  color: #fff;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-quick__item:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 8px rgba(11, 20, 38, 0.1), 0 22px 36px -18px rgba(11, 20, 38, 0.6);
+  }
+
+  .home-quick__item:hover .home-quick__photo {
+    transform: scale(1.06);
+  }
+
+  .home-quick__item:hover .home-quick__icon,
+  [data-mantine-color-scheme="dark"] .home-quick__item:hover .home-quick__icon {
+    background: var(--market-accent-button);
+    color: #fff;
+  }
+
+  .home-quick__item:hover .home-quick__arrow {
+    color: #fff;
+  }
+}
+
 /* Узкая колонка: плитка встаёт столбиком — значок над подписью.
 
    Ширина считается от колонки контента, а не от окна: при окне 1280 и
@@ -458,19 +549,11 @@
 
 @container lw-home (max-width: 1000px) {
   .home-quick__item {
-    flex-direction: column;
-    justify-content: center;
-    gap: 6px;
-    min-height: 84px;
-    padding: 10px 6px;
-    text-align: center;
+    min-height: 112px;
+    padding: 10px 10px 12px;
   }
 
-  .home-quick__text {
-    align-items: center;
-  }
-
-  .home-quick__label {
+  .home-quick__item .home-quick__label {
     font-size: var(--text-sm);
   }
 
@@ -479,9 +562,12 @@
     display: none;
   }
 
-  .home-quick__icon {
-    width: 34px;
-    height: 34px;
+  .home-quick__item .home-quick__icon,
+  [data-mantine-color-scheme="dark"] .home-quick__item .home-quick__icon {
+    top: 8px;
+    left: 8px;
+    width: 30px;
+    height: 30px;
   }
 }
 
@@ -508,7 +594,7 @@
   }
 
   .home-quick__item {
-    min-height: 60px;
+    min-height: 108px;
     scroll-snap-align: start;
   }
 }
@@ -1148,6 +1234,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .home-quick__item,
+  .home-quick__photo,
   .home-quick__icon,
   .home-quick__arrow,
   .listing-card__tools,
