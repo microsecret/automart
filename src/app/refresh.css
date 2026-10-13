@@ -557,7 +557,12 @@
     font-size: var(--text-sm);
   }
 
-  .home-quick__note,
+  /* Пояснение на фото остаётся: «Цены на карте», «Азия и Европа»
+     говорят, что внутри, — без него плитка лишь картинка. */
+  .home-quick__item .home-quick__note {
+    font-size: 11px;
+  }
+
   .home-quick__arrow {
     display: none;
   }
