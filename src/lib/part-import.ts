@@ -233,19 +233,26 @@ function detectPartType(value: string | undefined) {
 /** Сопоставляет колонки файла с полями каталога по названию заголовка. */
 export function matchColumns(headerCells: string[]) {
   const columns: Partial<Record<PartImportColumnKey, number>> = {}
-  headerCells.forEach((cell, index) => {
-    const normalized = normalizeHeader(cell)
-    if (!normalized) return
-    for (const column of PART_IMPORT_COLUMNS) {
-      if (columns[column.key] !== undefined) continue
-      const matches = normalized === normalizeHeader(column.label)
-        || column.aliases.some((alias) => normalized === alias || normalized.includes(alias))
-      if (matches) {
-        columns[column.key] = index
-        return
+  const taken = new Set<number>()
+  /* Два прохода: сначала точные совпадения, потом вхождения. Иначе
+     «Штрих-код» уходил в «Артикул» — у того среди синонимов есть «код». */
+  for (const exact of [true, false]) {
+    headerCells.forEach((cell, index) => {
+      if (taken.has(index)) return
+      const normalized = normalizeHeader(cell)
+      if (!normalized) return
+      for (const column of PART_IMPORT_COLUMNS) {
+        if (columns[column.key] !== undefined) continue
+        const matches = normalized === normalizeHeader(column.label)
+          || column.aliases.some((alias) => normalized === alias || (!exact && normalized.includes(alias)))
+        if (matches) {
+          columns[column.key] = index
+          taken.add(index)
+          return
+        }
       }
-    }
-  })
+    })
+  }
   return columns
 }
 
