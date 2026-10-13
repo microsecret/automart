@@ -7,6 +7,11 @@ import { NavigationProgress } from "@mantine/nprogress"
 import { SessionProvider } from "next-auth/react"
 import { theme } from "@/theme/theme"
 import { useState, useEffect, useCallback } from "react"
+import dynamic from "next/dynamic"
+
+/* Окно «Товар добавлен в корзину» — одно на сайт, грузится лениво: на
+   страницах без корзины его код не нужен до первого нажатия. */
+const CartAddedModal = dynamic(() => import("@/components/cart/CartAddedModal"), { ssr: false })
 
 const STORAGE_KEY = "automart-color-scheme"
 
@@ -67,6 +72,7 @@ export default function AppProviders({ children }: { children: React.ReactNode }
           <ModalsProvider>
             <Notifications position="top-right" />
             {children}
+            <CartAddedModal />
           </ModalsProvider>
         </MantineProvider>
       </ColorSchemeContext.Provider>

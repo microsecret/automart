@@ -64,7 +64,11 @@ export function useCartCount() {
   return useCart().reduce((sum, item) => sum + item.quantity, 0)
 }
 
-export function addToCart(partId: string, price: number, quantity = 1) {
+/** Событие для окна «Товар добавлен в корзину». */
+export const CART_ADDED_EVENT = "lw-cart-added"
+
+export function addToCart(partId: string, price: number, quantity = 1, options: { silent?: boolean } = {}) {
+  if (!options.silent) window.dispatchEvent(new CustomEvent(CART_ADDED_EVENT, { detail: { partId } }))
   const items = read()
   const existing = items.find((item) => item.partId === partId)
   if (existing) {
