@@ -5,6 +5,7 @@ import Link from "next/link"
 import { IconChevronRight, IconClipboardList, IconMenu2, IconX } from "@tabler/icons-react"
 import { CATALOG_REGIONS, CATALOG_UNITS } from "@/lib/parts-catalog"
 import CatalogSearch from "./CatalogSearch"
+import CartLink from "@/components/cart/CartLink"
 import styles from "./catalogs.module.css"
 
 /**
@@ -44,10 +45,13 @@ export default function ShopBar() {
         <span>Каталоги</span>
       </button>
       <CatalogSearch variant="bar" />
-      <Link href="/dashboard/orders" className={styles.shopBarLink} prefetch={false}>
-        <IconClipboardList size={20} />
-        <span>Заказы</span>
-      </Link>
+      <div className={styles.shopBarActions}>
+        <Link href="/dashboard/orders" className={styles.shopBarLink} prefetch={false}>
+          <IconClipboardList size={20} />
+          <span>Заказы</span>
+        </Link>
+        <CartLink className={styles.shopBarLink} badgeClassName={styles.cartBadge} />
+      </div>
 
       {open && (
         <div id="shop-catalog-menu" className={styles.megaMenu}>

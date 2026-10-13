@@ -14,12 +14,17 @@ type PageProps = { params: Promise<{ country: string; make: string }> }
 export const revalidate = 3600
 
 /**
- * Маршруты берутся из фактического каталога, поэтому новое направление
- * появляется само, как только парсер привёз по нему достаточно лотов.
+ * Страницы направлений рисуются при первом заходе и кэшируются на час, а
+ * не при сборке.
+ *
+ * Раньше сборка отрисовывала их все заранее, и каждая делала тяжёлые
+ * выборки по 25 тысячам лотов — пока живой сайт и сборщики писали в ту
+ * же SQLite. 13.10.2026 деплой упал на /auctions/iz/koreya/mercedes-benz:
+ * база не ответила вовремя. Список направлений по-прежнему берётся из
+ * каталога (карта сайта, ссылки), просто без пререндера.
  */
 export async function generateStaticParams() {
-  const landings = await listAuctionLandings()
-  return landings.map((landing) => ({ country: landing.countrySlug, make: landing.makeSlug }))
+  return []
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

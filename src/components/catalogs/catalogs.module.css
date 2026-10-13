@@ -690,6 +690,8 @@
 .offerLeadOrder { color: var(--catalog-order); }
 
 .offerBuy {
+  border: 0;
+  cursor: pointer;
   display: grid;
   place-items: center;
   width: 56px;
@@ -811,4 +813,36 @@
 @media (prefers-reduced-motion: reduce) {
   .spotHalo, .megaMenu { animation: none; }
   .brandTile, .spotDot, .searchButton, .regionTab, .headerAction, .sellerButton, .catalogButton, .offerBuy { transition: none; }
+}
+
+/* ---------- Корзина в строке магазина ---------- */
+.shopBarActions { display: flex; gap: 8px; }
+
+.cartBadge {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--catalog-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  animation: badgePop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badgePop { from { transform: scale(0.6); } }
+
+.offerBuy[data-in-cart] { background: var(--catalog-ok); }
+
+@media (max-width: 640px) {
+  .shopBarActions { justify-self: end; }
+  .shopBarActions .shopBarLink span:not(.cartBadge) { display: none; }
+  .shopBarActions .shopBarLink { padding: 0 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartBadge { animation: none; }
 }

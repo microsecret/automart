@@ -14,6 +14,7 @@ import PartsShowcase from "@/components/parts/PartsShowcase"
 import PartRequestPrompt from "@/components/parts/PartRequestPrompt"
 import PartFacetsPanel, { type Facet } from "@/components/parts/PartFacetsPanel"
 import DepartmentNav from "@/components/parts/DepartmentNav"
+import AddToCartButton from "@/components/cart/AddToCartButton"
 import { DEPARTMENTS, formatAttributeValue, PRODUCT_GROUP_BY_KEY, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 
@@ -32,6 +33,7 @@ type PartResult = {
   compatibility?: Array<{ make: string; model: string }>
   productGroup?: string | null
   attributes?: Array<{ key: string; num: number | null; text: string | null }>
+  storeId?: string | null
 }
 
 type PartsResponse = {
@@ -635,6 +637,9 @@ function PartsContent() {
 
                               <Group gap="xs" mt={4} justify="space-between" className="part-result-card__footer">
                                 <Text size="xs" c="var(--market-muted)">{p.location || "Город не указан"}</Text>
+                                {/* Товар магазина можно положить в корзину прямо из
+                                    выдачи; частное объявление — только через продавца. */}
+                                {p.storeId && p.price ? <AddToCartButton partId={p.id} price={p.price} className="lw-cart-button lw-cart-button--compact" compact /> : null}
                                 <Link className="part-result-card__cta" href={`/listings/part/${p.id}`} aria-label={`Подробнее о запчасти: ${p.name}`}>
                                   <span>Подробнее</span><IconArrowRight size={14} aria-hidden="true" />
                                 </Link>

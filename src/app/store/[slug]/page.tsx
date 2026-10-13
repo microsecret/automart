@@ -6,6 +6,7 @@ import { Badge, Box, Button, Card, Container, Group, SimpleGrid, Stack, Text, Th
 import { IconBuildingStore, IconMapPin, IconTruckDelivery } from "@tabler/icons-react"
 import StructuredData from "@/components/seo/StructuredData"
 import PartOrderButton from "@/components/store/PartOrderButton"
+import AddToCartButton from "@/components/cart/AddToCartButton"
 import { prisma } from "@/lib/prisma"
 import { plural } from "@/lib/plural"
 
@@ -192,6 +193,9 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
                   leadTimeDaysMax={part.leadTimeDaysMax}
                   storeName={store.name}
                 />
+                {/* Корзина — для тех, кто собирает несколько деталей, в том
+                    числе у разных магазинов: оформление одно на всех. */}
+                <AddToCartButton partId={part.id} price={part.price} className="lw-cart-button" />
               </Card>
             ))}
           </SimpleGrid>

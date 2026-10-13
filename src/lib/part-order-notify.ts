@@ -25,6 +25,17 @@ type OrderNotification = {
   comment: string | null
 }
 
+type CheckoutNotification = {
+  /** Заказ, на который ведёт уведомление в кабинете, — первый из оформления. */
+  orderId: string
+  storeId: string
+  items: Array<{ itemName: string; quantity: number; itemPriceRub: number }>
+  contactName: string
+  contactPhone: string
+  city: string | null
+  comment: string | null
+}
+
 /**
  * Сообщает владельцу магазина о новом заказе.
  *
@@ -32,6 +43,24 @@ type OrderNotification = {
  * совершил, и терять его из-за недоступного Telegram нельзя.
  */
 export async function notifyStoreOwnerAboutOrder(order: OrderNotification) {
+  await notifyStoreOwnerAboutCheckout({
+    orderId: order.orderId,
+    storeId: order.storeId,
+    items: [{ itemName: order.itemName, quantity: order.quantity, itemPriceRub: order.itemPriceRub }],
+    contactName: order.contactName,
+    contactPhone: order.contactPhone,
+    city: order.city,
+    comment: order.comment,
+  })
+}
+
+/**
+ * Одно сообщение магазину на всё оформление корзины.
+ *
+ * Корзина из пяти позиций одного магазина — это один покупатель и один
+ * звонок, а не пять уведомлений подряд, которые продавец пролистает.
+ */
+export async function notifyStoreOwnerAboutCheckout(order: CheckoutNotification) {
   try {
     const store = await prisma.partStore.findUnique({
       where: { id: order.storeId },
@@ -40,12 +69,15 @@ export async function notifyStoreOwnerAboutOrder(order: OrderNotification) {
         owner: { select: { id: true, telegramId: true, telegramVerifiedAt: true } },
       },
     })
-    if (!store?.owner) return
+    if (!store?.owner || !order.items.length) return
 
-    const total = order.itemPriceRub * order.quantity
+    const total = order.items.reduce((sum, item) => sum + item.itemPriceRub * item.quantity, 0)
+    const single = order.items.length === 1 ? order.items[0] : null
     const title = "Новый заказ в магазине"
     const content = [
-      `${order.itemName} — ${order.quantity} шт на ${total.toLocaleString("ru-RU")} ₽`,
+      single
+        ? `${single.itemName} — ${single.quantity} шт на ${total.toLocaleString("ru-RU")} ₽`
+        : `${order.items.length} позиций на ${total.toLocaleString("ru-RU")} ₽: ${order.items.map((item) => item.itemName).join(", ").slice(0, 300)}`,
       `Покупатель: ${order.contactName}, ${order.contactPhone}`,
       order.city ? `Город: ${order.city}` : null,
     ].filter(Boolean).join("\n")
@@ -64,11 +96,17 @@ export async function notifyStoreOwnerAboutOrder(order: OrderNotification) {
     if (!store.owner.telegramId || !store.owner.telegramVerifiedAt) return
 
     const miniAppUrl = getTelegramPageUrl("/dashboard/store")
+    const itemLines = single
+      ? [`📦 ${escapeHtml(single.itemName)}`, `🔢 ${single.quantity} шт · <b>${total.toLocaleString("ru-RU")} ₽</b>`]
+      : [
+          ...order.items.slice(0, 15).map((item) => `📦 ${escapeHtml(item.itemName)} — ${item.quantity} шт · ${(item.itemPriceRub * item.quantity).toLocaleString("ru-RU")} ₽`),
+          order.items.length > 15 ? `…и ещё ${order.items.length - 15}` : null,
+          `Итого: <b>${total.toLocaleString("ru-RU")} ₽</b>`,
+        ]
     const lines = [
       `🛒 <b>Новый заказ · ${escapeHtml(store.name)}</b>`,
       "",
-      `📦 ${escapeHtml(order.itemName)}`,
-      `🔢 ${order.quantity} шт · <b>${total.toLocaleString("ru-RU")} ₽</b>`,
+      ...itemLines,
       "",
       `👤 ${escapeHtml(order.contactName)}`,
       `📞 ${escapeHtml(order.contactPhone)}`,

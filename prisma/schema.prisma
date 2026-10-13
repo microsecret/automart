@@ -420,12 +420,16 @@ model PartOrder {
   statusReason String?
   sellerNotes  String?
   ipHash       String? // антиспам без хранения адреса
+  // Общий номер оформления корзины: позиции разных магазинов оформлены
+  // одним действием покупателя, но каждый магазин видит только свои.
+  checkoutId   String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([storeId, status, createdAt])
   @@index([buyerId, createdAt])
   @@index([partId])
+  @@index([checkoutId])
 }
 
 // Партия массовой загрузки. Хранится отдельно, чтобы неудачный импорт можно

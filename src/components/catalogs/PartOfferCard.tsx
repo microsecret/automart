@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { IconPhoto, IconShoppingCart } from "@tabler/icons-react"
+import { IconPhoto } from "@tabler/icons-react"
+import AddToCartButton from "@/components/cart/AddToCartButton"
 import styles from "./catalogs.module.css"
 
 export type PartOffer = {
@@ -55,9 +56,7 @@ export default function PartOfferCard({ offer }: { offer: PartOffer }) {
           <b className={styles.offerPrice}>{rub(offer.price)}</b>
           <span className={offer.supplyMode === "ORDER" ? styles.offerLeadOrder : styles.offerLeadStock}>{leadLabel(offer)}</span>
         </div>
-        <Link href={`${href}#order`} className={styles.offerBuy} prefetch={false} aria-label={`Заказать: ${offer.name}`}>
-          <IconShoppingCart size={20} />
-        </Link>
+        <AddToCartButton partId={offer.id} price={offer.price} className={styles.offerBuy} compact label={`В корзину: ${offer.name}`} />
       </div>
     </article>
   )

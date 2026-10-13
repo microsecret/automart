@@ -53,6 +53,7 @@ import { useFavorites } from "@/hooks/useFavorites"
 import { readIntent, returnUrlWithIntent, stripIntent } from "@/lib/pending-intent"
 import ListingViewTracker from "@/components/analytics/ListingViewTracker"
 import PartOrderButton from "@/components/store/PartOrderButton"
+import AddToCartButton from "@/components/cart/AddToCartButton"
 
 const PART_TYPES_MAP: Record<string, string> = {
   ENGINE: "Двигатель", TRANSMISSION: "Трансмиссия", SUSPENSION: "Подвеска",
@@ -472,6 +473,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                       storeName={data.store.name}
                     />
                   )}
+                  {data.store && <AddToCartButton partId={data.id} price={data.price} className="lw-cart-button" />}
                   {phone ? (
                     <Button component="a" href={`tel:${phone}`} size="lg" leftSection={<IconPhone size={18} />} variant="light" color="indigo">
                       {phone}
