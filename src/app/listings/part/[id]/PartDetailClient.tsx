@@ -91,7 +91,7 @@ interface PartData {
   brandName?: string | null
   specs?: Array<{ label: string; value: string }>
   legal?: PartLegal
-  seller?: SellerInfo | null
+  storeSeller?: SellerInfo | null
   suspensionType: string | null
   brakeType: string | null
   compatibility: { id: string; make: string; model: string; generation: string | null; yearFrom: number | null; yearTo: number | null; engine: string | null }[]
@@ -349,7 +349,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
             {/* Документы, гарантия, продавец и возврат — у товара магазина. */}
             {data.store && data.legal && (
               <Card withBorder radius="md" p="lg">
-                <PartLegalInfo legal={data.legal} seller={data.seller ?? null} />
+                <PartLegalInfo legal={data.legal} seller={data.storeSeller ?? null} />
               </Card>
             )}
 

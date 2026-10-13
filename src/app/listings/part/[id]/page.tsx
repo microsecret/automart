@@ -135,7 +135,7 @@ export default async function PartDetailPage({ params }: PageProps) {
       conformityValidUntil: part.conformityValidUntil ? part.conformityValidUntil.toISOString() : null,
       conformityUrl: part.conformityUrl, condition: part.condition,
     },
-    seller: part.store?.status === "ACTIVE" ? {
+    storeSeller: part.store?.status === "ACTIVE" ? {
       name: part.store.name, legalName: part.store.legalName, inn: part.store.inn, ogrn: part.store.ogrn,
       legalAddress: part.store.legalAddress, contactPhone: part.store.contactPhone, sellerType: part.store.sellerType,
       /* Опубликованный магазин прошёл проверку реквизитов администратором. */
