@@ -637,8 +637,10 @@
 }
 
 .offerCard {
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  /* Колонкой, а не сеткой строк: сводка характеристик есть не у всех
+     карточек, а цена с корзиной должна стоять внизу у всех. */
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 16px;
   border-radius: 12px;
@@ -682,7 +684,7 @@
 .offerSpecs dt { color: var(--catalog-muted); }
 .offerSpecs dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.offerFoot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.offerFoot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; }
 .offerPrice { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .offerLeadStock,
 .offerLeadOrder { font-size: 12px; font-weight: 600; }
@@ -1062,4 +1064,12 @@
 @media (max-width: 640px) {
   .storeHero { padding: 14px; gap: 12px; }
   .storeSearch { max-width: none; }
+}
+
+/* Главные характеристики в карточке: «60 Ач · 540 А · Обратная». */
+.offerSummary {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--catalog-accent);
+  font-variant-numeric: tabular-nums;
 }

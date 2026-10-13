@@ -937,3 +937,18 @@ export function formatAttributeValue(def: AttributeDef | undefined, value: { num
   }
   return value.text ?? ""
 }
+
+/** Главные характеристики одной строкой: «60 Ач · 540 А · Обратная (+ справа)». */
+export function summarizeAttributes(groupKey: string | null | undefined, values: ReadonlyArray<{ key: string; num: number | null; text: string | null }> | undefined, limit = 3) {
+  const group = groupKey ? PRODUCT_GROUP_BY_KEY.get(groupKey) : null
+  if (!group || !values?.length) return ""
+  return group.attributes
+    .filter((def) => def.summary)
+    .map((def) => {
+      const value = values.find((item) => item.key === def.key)
+      return value ? formatAttributeValue(def, value) : null
+    })
+    .filter(Boolean)
+    .slice(0, limit)
+    .join(" · ")
+}

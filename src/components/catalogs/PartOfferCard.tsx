@@ -14,6 +14,8 @@ export type PartOffer = {
   supplyMode: string
   leadTimeDaysMin: number | null
   leadTimeDaysMax: number | null
+  /** Главные характеристики строкой: «60 Ач · 540 А». */
+  summary?: string
 }
 
 const rub = (value: number) => `${value.toLocaleString("ru-RU")} ₽`
@@ -44,6 +46,7 @@ export default function PartOfferCard({ offer }: { offer: PartOffer }) {
         {offer.image ? <img src={offer.image} alt="" loading="lazy" decoding="async" /> : <IconPhoto size={44} stroke={1.3} />}
       </Link>
       <Link href={href} className={styles.offerTitle} prefetch={false}>{offer.name}</Link>
+      {offer.summary && <span className={styles.offerSummary}>{offer.summary}</span>}
       {specs.length > 0 && (
         <dl className={styles.offerSpecs}>
           {specs.map(([label, value]) => (

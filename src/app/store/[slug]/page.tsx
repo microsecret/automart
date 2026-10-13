@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma"
 import { plural } from "@/lib/plural"
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { containsAnyCase } from "@/lib/search-terms"
-import { PRODUCT_GROUP_BY_KEY } from "@/lib/product-groups"
+import { PRODUCT_GROUP_BY_KEY, summarizeAttributes } from "@/lib/product-groups"
 import { countryLabel } from "@/lib/product-legal"
 import styles from "@/components/catalogs/catalogs.module.css"
 
@@ -102,7 +102,8 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
     take: STORE_PAGE_SIZE,
     select: {
       id: true, name: true, price: true, oemNumber: true, brandName: true, images: true,
-      supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true,
+      supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true, productGroup: true,
+      attributes: { select: { key: true, num: true, text: true } },
     },
   })
 
@@ -214,6 +215,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
                     image: parseMarketplaceImages(part.images, 1)?.[0] ?? null,
                     oemNumber: part.oemNumber, brandName: part.brandName, storeName: null,
                     supplyMode: part.supplyMode, leadTimeDaysMin: part.leadTimeDaysMin, leadTimeDaysMax: part.leadTimeDaysMax,
+                    summary: summarizeAttributes(part.productGroup, part.attributes),
                   }}
                 />
               ))}

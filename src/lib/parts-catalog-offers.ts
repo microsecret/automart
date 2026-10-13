@@ -86,7 +86,8 @@ export async function loadModelParts(brand: string, model: string, take = 12) {
     select: {
       id: true, name: true, price: true, make: true, model: true, partType: true, subcategory: true,
       brandName: true, oemNumber: true, condition: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true,
-      images: true, store: { select: { name: true, slug: true } },
+      images: true, store: { select: { name: true, slug: true } }, productGroup: true,
+      attributes: { select: { key: true, num: true, text: true } },
       compatibility: { select: { make: true, model: true } },
     },
   })

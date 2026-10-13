@@ -7,6 +7,7 @@ import { parseMarketplaceImages } from "@/lib/media-url"
 import { CATALOG_UNITS, catalogHref, catalogPartsHref, findCatalogBrand, findCatalogModel, regionOfBrand } from "@/lib/parts-catalog"
 import { countBy, loadModelParts, loadOfferIndex } from "@/lib/parts-catalog-offers"
 import CarSchematic from "@/components/catalogs/CarSchematic"
+import { summarizeAttributes } from "@/lib/product-groups"
 import ShopBar from "@/components/catalogs/ShopBar"
 import PartOfferCard from "@/components/catalogs/PartOfferCard"
 import PartRequestPrompt from "@/components/parts/PartRequestPrompt"
@@ -123,6 +124,7 @@ export default async function CatalogModelPage({ params }: Props) {
                       image: parseMarketplaceImages(part.images, 1)?.[0] ?? null,
                       oemNumber: part.oemNumber, brandName: part.brandName, storeName: part.store?.name ?? null,
                       supplyMode: part.supplyMode, leadTimeDaysMin: part.leadTimeDaysMin, leadTimeDaysMax: part.leadTimeDaysMax,
+                      summary: summarizeAttributes(part.productGroup, part.attributes),
                     }}
                   />
                 ))}
