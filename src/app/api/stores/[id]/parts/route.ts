@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { replacePartAttributes, resolvePartAttributes } from "@/lib/part-attributes-store"
 import { readLegalFields, validateLegal } from "@/lib/part-legal-fields"
+import { CATALOG_ISSUES, isCatalogIssue } from "@/lib/store-catalog-quality"
 
 /* Фото позиции — только загруженные на площадку: чужая ссылка в карточке
    магазина — это и подмена картинки, и запрос на сторонний сервер. */
@@ -50,9 +51,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (guard.error) return guard.error
 
   const query = request.nextUrl.searchParams.get("q")?.trim().slice(0, 80) || ""
+  /* Недостаток из сводки качества: «без фото», «без документов»… */
+  const issue = request.nextUrl.searchParams.get("issue")
   const parts = await prisma.part.findMany({
     where: {
       storeId: guard.store.id,
+      ...(isCatalogIssue(issue) ? { AND: [CATALOG_ISSUES[issue].where] } : {}),
       ...(query
         ? { OR: [{ name: { contains: query } }, { oemNumber: { contains: query } }, { brandName: { contains: query } }] }
         : {}),

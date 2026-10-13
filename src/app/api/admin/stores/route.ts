@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
+import { storeCatalogQuality } from "@/lib/store-catalog-quality"
 
 export const dynamic = "force-dynamic"
 
@@ -25,10 +26,14 @@ export async function GET(request: NextRequest) {
     select: {
       id: true, name: true, slug: true, city: true, legalName: true, inn: true,
       contactPhone: true, contactEmail: true, status: true, statusReason: true, createdAt: true,
+      ogrn: true, legalAddress: true, sellerType: true,
       owner: { select: { id: true, name: true, email: true } },
       _count: { select: { parts: true } },
     },
   })
 
-  return NextResponse.json({ stores })
+  /* Сводка качества каталога — администратору перед публикацией: без
+     документов и штрихкодов маркируемый товар продавать нельзя. */
+  const withQuality = await Promise.all(stores.map(async (store) => ({ ...store, quality: await storeCatalogQuality(store.id) })))
+  return NextResponse.json({ stores: withQuality })
 }

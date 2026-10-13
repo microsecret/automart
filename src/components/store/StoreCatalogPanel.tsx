@@ -83,8 +83,19 @@ const PART_TYPE_LABELS: Record<string, string> = Object.fromEntries(
 export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: string; onChanged?: () => void }) {
   const [query, setQuery] = useState("")
   const [appliedQuery, setAppliedQuery] = useState("")
+  /* Сводка качества каталога: чипы с недостатками фильтруют список —
+     продавец сразу видит, каким позициям не хватает фото или документов. */
+  const [issue, setIssue] = useState<string | null>(null)
+  const listParams = new URLSearchParams()
+  if (appliedQuery) listParams.set("q", appliedQuery)
+  if (issue) listParams.set("issue", issue)
   const { data, error, isLoading, mutate } = useSWR<{ parts: StorePart[] }>(
-    `/api/stores/${storeId}/parts${appliedQuery ? `?q=${encodeURIComponent(appliedQuery)}` : ""}`,
+    `/api/stores/${storeId}/parts${listParams.toString() ? `?${listParams}` : ""}`,
+    fetchJson,
+    { revalidateOnFocus: false },
+  )
+  const { data: quality, mutate: refreshQuality } = useSWR<{ total: number; issues: Array<{ key: string; label: string; count: number; blocking: boolean }> }>(
+    `/api/stores/${storeId}/quality`,
     fetchJson,
     { revalidateOnFocus: false },
   )
@@ -173,7 +184,7 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
       setFieldErrors({})
       setEditTarget(null)
       setIsCreating(false)
-      await mutate()
+      await Promise.all([mutate(), refreshQuality()])
       onChanged?.()
     } finally {
       setIsSaving(false)
@@ -203,7 +214,7 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
         return
       }
       setDeleteTarget(null)
-      await mutate()
+      await Promise.all([mutate(), refreshQuality()])
       onChanged?.()
     } finally {
       setIsSaving(false)
@@ -244,6 +255,27 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
           <Button size="xs" variant="light" color="indigo" onClick={() => setAppliedQuery(query.trim())}>Найти</Button>
         </Group>
       </Group>
+
+      {quality && quality.total > 0 && (
+        <Group gap={6} mb="sm" wrap="wrap" className="catalog-quality">
+          <Text size="xs" fw={700} c="dimmed">Качество каталога:</Text>
+          {quality.issues.every((item) => item.count === 0) ? (
+            <Badge color="teal" variant="light">Всё заполнено</Badge>
+          ) : quality.issues.filter((item) => item.count > 0).map((item) => (
+            <Button
+              key={item.key}
+              size="compact-xs"
+              radius="xl"
+              variant={issue === item.key ? "filled" : "light"}
+              color={item.blocking ? "red" : "orange"}
+              onClick={() => setIssue((current) => (current === item.key ? null : item.key))}
+            >
+              {item.label} · {item.count}
+            </Button>
+          ))}
+          {issue && <Button size="compact-xs" variant="subtle" color="gray" onClick={() => setIssue(null)}>Показать все</Button>}
+        </Group>
+      )}
 
       {actionError && <Alert color="red" variant="light" mb="sm">{actionError}</Alert>}
 

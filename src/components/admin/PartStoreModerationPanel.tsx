@@ -23,6 +23,10 @@ type AdminStore = {
   createdAt: string
   owner: { id: string; name: string | null; email: string | null }
   _count: { parts: number }
+  ogrn?: string | null
+  legalAddress?: string | null
+  sellerType?: string | null
+  quality?: { total: number; issues: Array<{ key: string; label: string; count: number; blocking: boolean }> }
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = Object.fromEntries(
@@ -136,6 +140,18 @@ export default function PartStoreModerationPanel() {
                       Владелец: {store.owner.name || store.owner.email || store.owner.id}
                       {store.contactPhone ? ` · ${store.contactPhone}` : ""}
                     </Text>
+                    <Text size="xs" c="dimmed">
+                      {store.sellerType === "SELF_EMPLOYED" ? "Самозанятый" : store.sellerType === "ENTREPRENEUR" ? "ИП" : store.sellerType === "COMPANY" ? "Юрлицо" : "Форма не указана"}
+                      {store.ogrn ? ` · ${store.ogrn.length === 15 ? "ОГРНИП" : "ОГРН"} ${store.ogrn}` : store.sellerType !== "SELF_EMPLOYED" ? " · ОГРН не указан" : ""}
+                      {store.legalAddress ? ` · ${store.legalAddress}` : " · адрес не указан"}
+                    </Text>
+                    {store.quality && store.quality.issues.some((item) => item.count > 0) && (
+                      <Group gap={4} mt={6} wrap="wrap">
+                        {store.quality.issues.filter((item) => item.count > 0).map((item) => (
+                          <Badge key={item.key} size="xs" variant="light" color={item.blocking ? "red" : "orange"}>{item.label}: {item.count}</Badge>
+                        ))}
+                      </Group>
+                    )}
                     {store.statusReason && <Text size="xs" c="red.7" mt={4}>Причина: {store.statusReason}</Text>}
                   </Box>
                   <Group gap="xs" wrap="wrap">
