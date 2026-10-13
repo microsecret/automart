@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { Button, Group, Select, SimpleGrid, Text, TextInput } from "@mantine/core"
 import { IconWand } from "@tabler/icons-react"
 import { DEPARTMENTS, PRODUCT_GROUP_BY_KEY, PRODUCT_GROUPS, readProductAttributes } from "@/lib/product-groups"
@@ -31,6 +32,31 @@ export default function ProductAttributesFields({ name, group, values, onGroupCh
   onValuesChange: (values: Record<string, string>) => void
 }) {
   const current = group ? PRODUCT_GROUP_BY_KEY.get(group) ?? null : null
+  /* Поля, которые продавец правил руками: автоподстановка их не трогает. */
+  /* Сохранённые значения при правке позиции тоже считаются «ручными»:
+     открыть карточку не должно значить перезаписать её разбором названия. */
+  const editedRef = useRef(new Set<string>(Object.entries(values).filter(([, value]) => value).map(([key]) => key)))
+  const valuesRef = useRef(values)
+  valuesRef.current = values
+
+  /* Характеристики подставляются из названия по мере ввода: «0W-20 4л» —
+     это вязкость и объём, и набирать их второй раз незачем. Раньше
+     для этого нужно было нажать «Заполнить из названия». */
+  useEffect(() => {
+    if (!current || !name.trim()) return
+    const extracted = readProductAttributes(current, name)
+    const next = { ...valuesRef.current }
+    let changed = false
+    for (const def of current.attributes) {
+      if (editedRef.current.has(def.key)) continue
+      const value = extracted.find((item) => item.key === def.key)
+      const text = value ? (value.num !== null ? String(value.num) : value.text ?? "") : ""
+      if ((next[def.key] ?? "") !== text) { next[def.key] = text; changed = true }
+    }
+    if (changed) onValuesChange(next)
+    // onValuesChange — сеттер состояния родителя, он стабилен.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, current])
 
   const fillFromName = () => {
     if (!current) return
@@ -50,7 +76,7 @@ export default function ProductAttributesFields({ name, group, values, onGroupCh
         placeholder="Не выбрана"
         data={GROUP_OPTIONS}
         value={group}
-        onChange={(value) => { onGroupChange(value); onValuesChange({}) }}
+        onChange={(value) => { editedRef.current.clear(); onGroupChange(value); onValuesChange({}) }}
         searchable
         clearable
       />
@@ -66,7 +92,10 @@ export default function ProductAttributesFields({ name, group, values, onGroupCh
             {current.attributes.map((def) => {
               const label = def.unit && def.kind === "number" ? `${def.label}, ${def.unit}` : def.label
               const value = values[def.key] ?? ""
-              const set = (next: string | null) => onValuesChange({ ...values, [def.key]: next ?? "" })
+              const set = (next: string | null) => {
+                editedRef.current.add(def.key)
+                onValuesChange({ ...values, [def.key]: next ?? "" })
+              }
               if (def.kind === "enum" && def.options) {
                 return (
                   <Select

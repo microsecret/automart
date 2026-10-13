@@ -114,7 +114,7 @@ export function checkLegal(group: string | null | undefined, input: LegalInput, 
   if (isNew && rules.conformity) {
     const type = input.conformityType
     if (!type || type === "NOT_REQUIRED") {
-      errors.conformityType = `${rules.conformity.regulation}: нужен ${rules.conformity.form === "certificate" ? "сертификат" : rules.conformity.form === "declaration" ? "декларация" : "сертификат или декларация"} о соответствии`
+      errors.conformityType = `${rules.conformity.regulation}: ${rules.conformity.form === "certificate" ? "нужен сертификат" : rules.conformity.form === "declaration" ? "нужна декларация" : "нужен сертификат или декларация"} о соответствии`
     } else if (!input.conformityNumber?.trim()) {
       errors.conformityNumber = "Номер документа из реестра ФСА"
     }

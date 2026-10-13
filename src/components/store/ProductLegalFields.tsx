@@ -97,7 +97,7 @@ export default function ProductLegalFields({ group, condition, values, errors, o
             data={COUNTRIES}
             searchable
             clearable
-            placeholder="Выберите или введите"
+            placeholder="Выберите страну"
             value={values.originCountry || null}
             onChange={(value) => set("originCountry", value ?? "")}
           />
