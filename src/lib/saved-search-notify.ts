@@ -5,6 +5,8 @@ import { markTelegramContactBlocked } from "@/lib/telegram-contacts"
 import { publicListingWhere } from "@/lib/listing-lifecycle"
 import { savedSearchHref, type SavedSearchScope } from "@/lib/saved-search"
 import { getSiteUrl } from "@/lib/site-url"
+import { newPartsSince, partsWhereFromQuery } from "@/lib/part-search-where"
+import { auctionsWhereFromQuery, listingsWhereFromQuery } from "@/lib/saved-search-where"
 
 /**
  * Уведомления по сохранённым поискам.
@@ -31,16 +33,24 @@ function plural(count: number) {
 }
 
 /** Сколько подходящих записей появилось после указанного момента. */
-async function countNewMatches(scope: SavedSearchScope, since: Date) {
+async function countNewMatches(scope: SavedSearchScope, since: Date, query = "") {
+  /* Запчасти считаются по фильтрам подписки: «Сообщить о поступлении»
+     автоламп H7 не должно срабатывать на новый фильтр масляный. */
+  if (scope === "PARTS") {
+    return prisma.part.count({ where: { AND: [partsWhereFromQuery(query), newPartsSince(since)] } })
+  }
+  /* Счёт — по фильтрам подписки. Раньше считались все новые записи
+     раздела: подписчик на «Toyota Camry» получал «5 новых вариантов» и
+     не находил по ссылке ни одного. */
   if (scope === "AUCTIONS") {
     return prisma.auctionListing.count({
       // Только ACTIVE: истёкшие и исключённые политикой лоты в выдаче не
       // показываются, и уведомление привело бы человека в пустой список.
-      where: { createdAt: { gt: since }, status: "ACTIVE" },
+      where: { AND: [{ createdAt: { gt: since }, status: "ACTIVE", adminHiddenAt: null }, auctionsWhereFromQuery(query)] },
     })
   }
   return prisma.listing.count({
-    where: { ...publicListingWhere, createdAt: { gt: since } },
+    where: { AND: [{ ...publicListingWhere, createdAt: { gt: since } }, listingsWhereFromQuery(query)] },
   })
 }
 
@@ -63,7 +73,7 @@ export async function processSavedSearchNotifications(now = new Date()) {
     where: { notifyTelegram: true },
     select: {
       id: true, title: true, scope: true, query: true, lastNotifiedAt: true,
-      user: { select: { telegramId: true } },
+      user: { select: { id: true, telegramId: true } },
     },
     /* Первыми — те, кого не уведомляли дольше всех: иначе при обрезании
        списка одни и те же подписки всегда оказывались бы в хвосте и не
@@ -83,11 +93,11 @@ export async function processSavedSearchNotifications(now = new Date()) {
      Момент округляется до минуты: отличие в секунды меняет ответ разве
      что на единицу, а совпадений становится на порядок больше. */
   const countCache = new Map<string, number>()
-  const countNewMatchesCached = async (scope: SavedSearchScope, since: Date) => {
-    const key = `${scope}:${Math.floor(since.getTime() / 60_000)}`
+  const countNewMatchesCached = async (scope: SavedSearchScope, since: Date, query: string) => {
+    const key = `${scope}:${query}:${Math.floor(since.getTime() / 60_000)}`
     const cached = countCache.get(key)
     if (cached !== undefined) return cached
-    const value = await countNewMatches(scope, since)
+    const value = await countNewMatches(scope, since, query)
     countCache.set(key, value)
     return value
   }
@@ -101,14 +111,34 @@ export async function processSavedSearchNotifications(now = new Date()) {
 
   for (const search of searches) {
     const telegramId = search.user?.telegramId
+    const since = search.lastNotifiedAt || dayAgo
     if (!telegramId) {
-      // Без привязанного Telegram доставлять некуда.
+      /* Без Telegram подписка на запчасти уходит уведомлением на сайте:
+         «сообщить о поступлении» нажимают и те, кто вошёл по почте. Для
+         объявлений и аукционов прежнее правило — только Telegram. */
+      if (search.scope === "PARTS" && search.user?.id) {
+        const count = await countNewMatchesCached("PARTS", since, search.query)
+        if (count > 0) {
+          await prisma.notification.create({
+            data: {
+              userId: search.user.id,
+              title: "Появились товары по подписке",
+              content: `${count} ${plural(count)} по подписке «${search.title}»`,
+              type: "INFO",
+              relatedType: "SAVED_SEARCH",
+              relatedId: search.id,
+            },
+          })
+          await prisma.savedSearch.update({ where: { id: search.id }, data: { lastNotifiedAt: now, lastMatchCount: count } })
+          notified += 1
+          continue
+        }
+      }
       skipped += 1
       continue
     }
 
-    const since = search.lastNotifiedAt || dayAgo
-    const count = await countNewMatchesCached(search.scope as SavedSearchScope, since)
+    const count = await countNewMatchesCached(search.scope as SavedSearchScope, since, search.query)
     if (count === 0) {
       skipped += 1
       continue

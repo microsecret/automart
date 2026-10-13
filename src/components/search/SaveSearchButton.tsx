@@ -11,7 +11,7 @@ import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
 
 type Props = {
   /** Раздел: объявления площадки или импортные аукционы. */
-  scope: "LISTINGS" | "AUCTIONS"
+  scope: "LISTINGS" | "AUCTIONS" | "PARTS"
   /** Подсказка для названия — обычно то, что человек искал. */
   suggestedTitle?: string
 }
@@ -62,7 +62,7 @@ function SaveSearchButtonInner({ scope, suggestedTitle }: Props) {
         size="compact-sm"
         leftSection={<IconBellPlus size={15} />}
       >
-        Войти и следить
+        {scope === "PARTS" ? "Войти и подписаться" : "Войти и следить"}
       </Button>
     )
   }
@@ -111,14 +111,15 @@ function SaveSearchButtonInner({ scope, suggestedTitle }: Props) {
         leftSection={<IconBellPlus size={15} />}
         onClick={openDialog}
       >
-        Следить за поиском
+        {scope === "PARTS" ? "Сообщить о поступлении" : "Следить за поиском"}
       </Button>
 
-      <Modal opened={opened} onClose={() => setOpened(false)} title="Следить за поиском" radius="md" centered>
+      <Modal opened={opened} onClose={() => setOpened(false)} title={scope === "PARTS" ? "Сообщить о поступлении" : "Следить за поиском"} radius="md" centered>
         <Stack gap="md">
           <Text size="sm" c="dimmed">
-            Сохраним ваши фильтры и сообщим, когда появятся новые подходящие варианты —
-            не придётся возвращаться и проверять каталог вручную.
+            {scope === "PARTS"
+              ? "Сохраним раздел и фильтры и сообщим, когда магазины выложат подходящие товары: в Telegram, а если он не привязан — в уведомлениях на сайте."
+              : "Сохраним ваши фильтры и сообщим, когда появятся новые подходящие варианты — не придётся возвращаться и проверять каталог вручную."}
           </Text>
 
           <TextInput
@@ -164,5 +165,6 @@ function defaultTitle(query: string, scope: Props["scope"]) {
   const search = params.get("q")?.trim()
   if (search) return search
 
+  if (scope === "PARTS") return "Запчасти: мой поиск"
   return scope === "AUCTIONS" ? "Аукционы: мой поиск" : "Объявления: мой поиск"
 }

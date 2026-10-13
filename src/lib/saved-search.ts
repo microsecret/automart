@@ -6,7 +6,8 @@
  * увести подписчика по чужой ссылке из его же уведомления.
  */
 
-export const SAVED_SEARCH_SCOPES = ["LISTINGS", "AUCTIONS"] as const
+/* PARTS — «Сообщить о поступлении» в каталоге запчастей и автотоваров. */
+export const SAVED_SEARCH_SCOPES = ["LISTINGS", "AUCTIONS", "PARTS"] as const
 export type SavedSearchScope = (typeof SAVED_SEARCH_SCOPES)[number]
 
 /** Параметры каталога объявлений. */
@@ -22,11 +23,18 @@ const AUCTION_PARAMS = new Set([
   "priceFrom", "priceTo", "yearFrom", "sort",
 ])
 
+/** Параметры поиска запчастей; характеристики группы — a_<ключ>. */
+const PART_PARAMS = new Set([
+  "q", "group", "partType", "subcategory", "make", "model", "brand",
+  "priceFrom", "priceTo", "availability", "conditions",
+])
+const PART_ATTRIBUTE_PARAM = /^a_[a-zA-Z]{2,30}$/
+
 /** Длина значения: длиннее — это уже не фильтр, а попытка что-то протащить. */
 const MAX_VALUE_LENGTH = 120
 
 export function normalizeSavedSearchQuery(raw: string, scope: SavedSearchScope): string {
-  const allowed = scope === "AUCTIONS" ? AUCTION_PARAMS : LISTING_PARAMS
+  const allowed = scope === "AUCTIONS" ? AUCTION_PARAMS : scope === "PARTS" ? PART_PARAMS : LISTING_PARAMS
   const source = new URLSearchParams(raw.startsWith("?") ? raw.slice(1) : raw)
   const result = new URLSearchParams()
 
@@ -34,7 +42,7 @@ export function normalizeSavedSearchQuery(raw: string, scope: SavedSearchScope):
   // одинаковую подписку независимо от порядка выбора на странице.
   const keys = [...new Set([...source.keys()])].sort()
   for (const key of keys) {
-    if (!allowed.has(key)) continue
+    if (!allowed.has(key) && !(scope === "PARTS" && PART_ATTRIBUTE_PARAM.test(key))) continue
     for (const value of source.getAll(key)) {
       const trimmed = value.trim()
       if (!trimmed || trimmed.length > MAX_VALUE_LENGTH) continue
@@ -47,6 +55,6 @@ export function normalizeSavedSearchQuery(raw: string, scope: SavedSearchScope):
 
 /** Адрес страницы, на которую ведёт подписка. */
 export function savedSearchHref(scope: SavedSearchScope, query: string) {
-  const base = scope === "AUCTIONS" ? "/auctions" : "/"
+  const base = scope === "AUCTIONS" ? "/auctions" : scope === "PARTS" ? "/parts-finder" : "/"
   return query ? `${base}?${query}` : base
 }

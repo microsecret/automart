@@ -6,6 +6,7 @@ import { useState } from "react"
 import { ActionIcon, Badge, Box, Button, Group, Paper, Stack, Text, Tooltip } from "@mantine/core"
 import { IconBellOff, IconBrandTelegram, IconGasStation, IconSearch, IconTrash } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
+import { savedSearchHref, type SavedSearchScope } from "@/lib/saved-search"
 import { AsyncErrorState, AsyncLoadingState, EmptyState } from "@/components/ui/AsyncStates"
 
 /**
@@ -37,6 +38,7 @@ type SavedSearch = {
   id: string
   title: string
   scope: string
+  query?: string
   notifyTelegram: boolean
   lastMatchCount: number | null
   createdAt: string
@@ -198,7 +200,7 @@ export default function SubscriptionsPanel() {
                   <Group gap={6} wrap="wrap">
                     <Text size="xs" c="dimmed">
                       {typeof search.lastMatchCount === "number"
-                        ? `${search.lastMatchCount} объявлений в прошлой проверке`
+                        ? `${search.lastMatchCount} ${search.scope === "PARTS" ? "товаров" : search.scope === "AUCTIONS" ? "лотов" : "объявлений"} в прошлой проверке`
                         : `Сохранён ${formatDate(search.createdAt)}`}
                     </Text>
                     {search.notifyTelegram && (
@@ -209,7 +211,9 @@ export default function SubscriptionsPanel() {
                   </Group>
                 </Box>
                 <Group gap={4} wrap="nowrap">
-                  <Button component={Link} href="/search" size="compact-xs" variant="subtle">
+                  {/* Открывает выдачу подписки с её фильтрами: раньше любая
+                      подписка вела на общий /search без условий. */}
+                  <Button component={Link} href={savedSearchHref(search.scope as SavedSearchScope, search.query ?? "")} size="compact-xs" variant="subtle">
                     Открыть
                   </Button>
                   <Tooltip label="Удалить поиск" withArrow>

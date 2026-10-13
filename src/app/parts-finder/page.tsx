@@ -19,6 +19,7 @@ import DepartmentNav from "@/components/parts/DepartmentNav"
 import PartFacetsPanel, { type Facet } from "@/components/parts/PartFacetsPanel"
 import PartRequestPrompt from "@/components/parts/PartRequestPrompt"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import SaveSearchButton from "@/components/search/SaveSearchButton"
 import catalog from "@/components/catalogs/catalogs.module.css"
 import styles from "./finder.module.css"
 
@@ -314,6 +315,9 @@ function PartsContent() {
             <Button className={styles.filtersButton} variant="default" leftSection={<IconAdjustmentsHorizontal size={16} />} onClick={() => setFiltersOpen(true)}>
               Фильтры{activeChips.length ? ` · ${activeChips.length}` : ""}
             </Button>
+            {/* Подписка на раздел с фильтрами: магазины подключаются, и
+                «сообщить о поступлении» превращает пустую страницу в спрос. */}
+            {searching && <SaveSearchButton scope="PARTS" suggestedTitle={[group?.label, make, model, brands.join(", ")].filter(Boolean).join(" · ") || undefined} />}
             <nav className={catalog.articleSort} aria-label="Сортировка">
               {SORTS.map((item) => (
                 <button key={item.value} type="button" className={styles.sortButton} aria-current={sort === item.value ? "true" : undefined} onClick={() => update({ sort: item.value === "newest" ? null : item.value })}>
@@ -372,6 +376,7 @@ function PartsContent() {
                       : "Попробуйте другой запрос или выберите машину в каталоге по маркам."}
                   </p>
                   <div className={styles.emptyActions}>
+                    <SaveSearchButton scope="PARTS" suggestedTitle={[group?.label, make, model].filter(Boolean).join(" · ") || undefined} />
                     <Link href="/sell" className={catalog.sellerButton}>{group ? `Продаёте ${group.label.toLowerCase()}? Откройте магазин` : "Открыть магазин"}</Link>
                     <Link href="/catalogs" className={styles.secondaryLink}>Каталог по маркам</Link>
                   </div>
