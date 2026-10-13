@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { PART_SUBCATEGORIES } from "@/lib/constants"
+import { replacePartAttributes, resolvePartAttributes } from "@/lib/part-attributes-store"
 
 export const dynamic = "force-dynamic"
 
@@ -48,7 +50,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     select: {
       id: true, name: true, price: true, oemNumber: true, brandName: true, partType: true,
       condition: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true,
-      make: true, model: true, createdAt: true,
+      make: true, model: true, createdAt: true, productGroup: true,
+      attributes: { select: { key: true, num: true, text: true } },
     },
   })
 
@@ -99,6 +102,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const supplyMode = body?.supplyMode === "STOCK" ? "STOCK" : "ORDER"
+  const { group, values } = resolvePartAttributes({ name, productGroup: body?.productGroup, attributes: body?.attributes })
+  /* Раздел и подкатегория — из группы, если продавец их не задал:
+     аккумулятор сразу встаёт в «Электрика → Аккумулятор». */
+  const partType = typeof body?.partType === "string" && body.partType ? body.partType : group?.partType ?? "OTHER"
 
   const part = await prisma.part.create({
     data: {
@@ -108,7 +115,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       price: Math.round(price),
       description: typeof body?.description === "string" ? body.description.trim().slice(0, 1_000) || null : null,
       condition: body?.condition === "USED" ? "USED" : "NEW",
-      partType: typeof body?.partType === "string" && body.partType ? body.partType : "OTHER",
+      partType,
+      subcategory: group && (PART_SUBCATEGORIES[partType] || []).includes(group.subcategory) ? group.subcategory : null,
+      productGroup: group?.key ?? null,
       oemNumber: typeof body?.oemNumber === "string" ? body.oemNumber.trim().slice(0, 64) || null : null,
       brandName: typeof body?.brandName === "string" ? body.brandName.trim().slice(0, 80) || null : null,
       /* Марка и модель обязательны у позиции, но продавец часто продаёт
@@ -127,6 +136,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     },
     select: { id: true, name: true, price: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true },
   })
+  if (values.length) await replacePartAttributes(part.id, values)
 
   return NextResponse.json({ part }, { status: 201 })
 }
@@ -144,7 +154,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // недоступен даже по прямому идентификатору.
   const part = await prisma.part.findFirst({
     where: { id: partId, storeId: guard.store.id },
-    select: { id: true },
+    select: { id: true, name: true, partType: true },
   })
   if (!part) return NextResponse.json({ error: "Позиция не найдена" }, { status: 404 })
 
@@ -163,18 +173,31 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Минимальный срок не может быть больше максимального" }, { status: 400 })
   }
 
+  /* Характеристики трогаем, только когда форма их прислала: правка цены
+     из списка не должна стирать заполненные поля. */
+  const attributeUpdate = body?.productGroup !== undefined || body?.attributes !== undefined
+    ? resolvePartAttributes({ name: typeof body?.name === "string" ? body.name : part.name, productGroup: body?.productGroup, attributes: body?.attributes })
+    : null
+
   const updated = await prisma.part.update({
     where: { id: partId },
     data: {
       ...(price !== undefined ? { price: Math.round(price) } : {}),
       ...(body?.name !== undefined ? { name: String(body.name).trim().slice(0, 200) } : {}),
       ...(body?.oemNumber !== undefined ? { oemNumber: String(body.oemNumber).trim().slice(0, 64) || null } : {}),
+      ...(body?.brandName !== undefined ? { brandName: String(body.brandName).trim().slice(0, 80) || null } : {}),
+      ...(attributeUpdate ? {
+        productGroup: attributeUpdate.group?.key ?? null,
+        ...(attributeUpdate.group && (PART_SUBCATEGORIES[part.partType] || []).includes(attributeUpdate.group.subcategory)
+          ? { subcategory: attributeUpdate.group.subcategory } : {}),
+      } : {}),
       ...(body?.supplyMode !== undefined ? { supplyMode: body.supplyMode === "STOCK" ? "STOCK" : "ORDER" } : {}),
       ...(leadMin !== undefined ? { leadTimeDaysMin: Number.isFinite(leadMin) ? Math.round(leadMin) : null } : {}),
       ...(leadMax !== undefined ? { leadTimeDaysMax: Number.isFinite(leadMax) ? Math.round(leadMax) : null } : {}),
     },
     select: { id: true, name: true, price: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true },
   })
+  if (attributeUpdate) await replacePartAttributes(partId, attributeUpdate.values)
 
   return NextResponse.json({ part: updated })
 }

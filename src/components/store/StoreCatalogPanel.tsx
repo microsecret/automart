@@ -10,6 +10,8 @@ import {
 import { IconEdit, IconPackage, IconPlus, IconSearch, IconTrash } from "@tabler/icons-react"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
+import { detectProductGroup } from "@/lib/product-groups"
+import ProductAttributesFields, { attributesToForm } from "@/components/store/ProductAttributesFields"
 
 type StorePart = {
   id: string
@@ -24,6 +26,8 @@ type StorePart = {
   leadTimeDaysMax: number | null
   make: string
   model: string
+  productGroup?: string | null
+  attributes?: Array<{ key: string; num: number | null; text: string | null }>
 }
 
 /* Подписи берутся из общего словаря PART_TYPES: локальная копия
@@ -54,7 +58,12 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
      колодку. Форма здесь та же, что и для правки, — поля совпадают. */
   const [isCreating, setIsCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<StorePart | null>(null)
-  const [form, setForm] = useState({ name: "", price: 0 as string | number, supplyMode: "ORDER", leadMin: "" as string | number, leadMax: "" as string | number })
+  const [form, setForm] = useState({ name: "", price: 0 as string | number, supplyMode: "ORDER", leadMin: "" as string | number, leadMax: "" as string | number, oemNumber: "", brandName: "" })
+  /* Группа и характеристики: выбранная вручную группа не перебивается
+     догадкой по названию. */
+  const [productGroup, setProductGroup] = useState<string | null>(null)
+  const [groupTouched, setGroupTouched] = useState(false)
+  const [attributeValues, setAttributeValues] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -67,7 +76,12 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
       supplyMode: part.supplyMode,
       leadMin: part.leadTimeDaysMin ?? "",
       leadMax: part.leadTimeDaysMax ?? "",
+      oemNumber: part.oemNumber ?? "",
+      brandName: part.brandName ?? "",
     })
+    setProductGroup(part.productGroup ?? null)
+    setGroupTouched(Boolean(part.productGroup))
+    setAttributeValues(attributesToForm(part.attributes))
   }
 
   const save = async () => {
@@ -85,6 +99,10 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
           supplyMode: form.supplyMode,
           leadTimeDaysMin: form.leadMin === "" ? null : Number(form.leadMin),
           leadTimeDaysMax: form.leadMax === "" ? null : Number(form.leadMax),
+          oemNumber: form.oemNumber,
+          brandName: form.brandName,
+          productGroup: productGroup ?? "",
+          attributes: attributeValues,
         }),
       })
       const payload = await response.json().catch(() => null)
@@ -103,7 +121,10 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
 
   /** Открывает пустую форму: новая позиция «под заказ» без срока. */
   const startCreating = () => {
-    setForm({ name: "", price: "", supplyMode: "ORDER", leadMin: "", leadMax: "" })
+    setForm({ name: "", price: "", supplyMode: "ORDER", leadMin: "", leadMax: "", oemNumber: "", brandName: "" })
+    setProductGroup(null)
+    setGroupTouched(false)
+    setAttributeValues({})
     setActionError(null)
     setIsCreating(true)
   }
@@ -238,12 +259,25 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
         onClose={() => { setEditTarget(null); setIsCreating(false) }}
         title={isCreating ? "Новая позиция" : "Изменить позицию"}
         centered
+        size="lg"
         /* В форме несколько полей: промах мимо окна не должен стирать
            набранное. Крестик и «Отмена» остаются. */
         closeOnClickOutside={false}
       >
         <Stack gap="sm">
-          <TextInput label="Название" value={form.name} onChange={(event) => setForm({ ...form, name: event.currentTarget.value })} />
+          <TextInput
+            label="Название"
+            value={form.name}
+            onChange={(event) => {
+              const name = event.currentTarget.value
+              setForm({ ...form, name })
+              if (!groupTouched) setProductGroup(detectProductGroup(name)?.key ?? null)
+            }}
+          />
+          <Group gap="sm" grow>
+            <TextInput label="Артикул" value={form.oemNumber} onChange={(event) => setForm({ ...form, oemNumber: event.currentTarget.value })} />
+            <TextInput label="Производитель" value={form.brandName} onChange={(event) => setForm({ ...form, brandName: event.currentTarget.value })} />
+          </Group>
           <NumberInput label="Цена, ₽" min={1} value={form.price} onChange={(value) => setForm({ ...form, price: value })} thousandSeparator=" " />
           <Select
             label="Наличие"
@@ -258,6 +292,13 @@ export default function StoreCatalogPanel({ storeId, onChanged }: { storeId: str
               <NumberInput label="Срок до, дней" min={0} max={365} value={form.leadMax} onChange={(value) => setForm({ ...form, leadMax: value })} />
             </Group>
           )}
+          <ProductAttributesFields
+            name={form.name}
+            group={productGroup}
+            values={attributeValues}
+            onGroupChange={(next) => { setProductGroup(next); setGroupTouched(true) }}
+            onValuesChange={setAttributeValues}
+          />
           {actionError && <Alert color="red" variant="light">{actionError}</Alert>}
           <Group gap="xs" justify="flex-end">
             <Button variant="subtle" color="gray" onClick={() => { setEditTarget(null); setIsCreating(false) }}>Отмена</Button>
