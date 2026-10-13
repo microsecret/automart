@@ -116,6 +116,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ reverted: removed.count })
   }
 
+  // Уже опубликованная партия — 409 до разбора строк: после публикации
+  // они стёрты, и иначе ответом было бы «нет позиций».
+  if (batch.status !== "PREVIEW") {
+    return NextResponse.json({ error: "Эта загрузка уже обработана" }, { status: 409 })
+  }
+
   /* Строки — из самой партии. Раньше публиковалось то, что прислал
      браузер, а он присылал 25 строк предпросмотра: из прайса на 800
      позиций в каталог попадало 25, остальные терялись молча. Старые

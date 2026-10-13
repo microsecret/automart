@@ -7,8 +7,14 @@ import { IconBuildingStore, IconMapPin, IconTruckDelivery } from "@tabler/icons-
 import StructuredData from "@/components/seo/StructuredData"
 import PartOrderButton from "@/components/store/PartOrderButton"
 import { prisma } from "@/lib/prisma"
+import { plural } from "@/lib/plural"
 
-type PageProps = { params: Promise<{ slug: string }> }
+type PageProps = { params: Promise<{ slug: string }>; searchParams?: Promise<{ page?: string }> }
+
+/* Позиций на странице витрины. Без постраничного просмотра покупатель видел
+   только 60 последних: после загрузки прайса на 60 строк ручная позиция
+   магазина пропадала из вида (поймано сквозным прогоном 13.10.2026). */
+const STORE_PAGE_SIZE = 60
 
 export const revalidate = 600
 
@@ -54,16 +60,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function StorefrontPage({ params }: PageProps) {
+export default async function StorefrontPage({ params, searchParams }: PageProps) {
   const { slug } = await params
+  const requestedPage = Number.parseInt((await searchParams)?.page || "1", 10)
   const store = await getPublicStore(slug)
   if (!store) notFound()
+  const pageCount = Math.max(1, Math.ceil(store._count.parts / STORE_PAGE_SIZE))
+  const currentPage = Number.isFinite(requestedPage) ? Math.min(pageCount, Math.max(1, requestedPage)) : 1
 
   const [parts, categories] = await Promise.all([
     prisma.part.findMany({
       where: { storeId: store.id },
       orderBy: { createdAt: "desc" },
-      take: 60,
+      skip: (currentPage - 1) * STORE_PAGE_SIZE,
+      take: STORE_PAGE_SIZE,
       select: {
         id: true, name: true, price: true, oemNumber: true, brandName: true, partType: true,
         condition: true, supplyMode: true, leadTimeDaysMin: true, leadTimeDaysMax: true,
@@ -94,7 +104,7 @@ export default async function StorefrontPage({ params }: PageProps) {
               <Title order={1} size="h3" ff="var(--font-display),sans-serif">{store.name}</Title>
               {store.description && <Text size="sm" c="dimmed" mt={4} maw={720}>{store.description}</Text>}
               <Group gap={6} mt={8} wrap="wrap">
-                <Badge variant="light" color="indigo">{store._count.parts} позиций</Badge>
+                <Badge variant="light" color="indigo">{store._count.parts} {plural(store._count.parts, "позиция", "позиции", "позиций")}</Badge>
                 {store.city && <Badge variant="outline" color="gray" leftSection={<IconMapPin size={11} />}>{store.city}</Badge>}
                 {origin && <Badge variant="light" color="teal">Поставка из: {origin}</Badge>}
                 {store.defaultLeadTimeDaysMin && (
@@ -184,6 +194,13 @@ export default async function StorefrontPage({ params }: PageProps) {
               </Card>
             ))}
           </SimpleGrid>
+          {pageCount > 1 && (
+            <Group justify="center" gap="xs" mt="md">
+              {currentPage > 1 && <Button component={Link} href={`/store/${store.slug}?page=${currentPage - 1}`} variant="default" size="sm">Назад</Button>}
+              <Text size="sm" c="dimmed">Страница {currentPage} из {pageCount}</Text>
+              {currentPage < pageCount && <Button component={Link} href={`/store/${store.slug}?page=${currentPage + 1}`} variant="default" size="sm">Дальше</Button>}
+            </Group>
+          )}
         )}
 
         <StructuredData
