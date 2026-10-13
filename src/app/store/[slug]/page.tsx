@@ -135,8 +135,8 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
             <Stack align="center" gap="sm">
               <Text ta="center" c="dimmed">Каталог магазина пока пуст.</Text>
               <Text ta="center" size="sm" maw={420}>
-                Если ищете конкретную деталь — опишите её. Магазины отвечают ценой и сроком,
-                обычно в течение дня.
+                Если ищете конкретную деталь — опишите её: магазины ответят ценой и сроком
+                и свяжутся с вами.
               </Text>
               <Button component={Link} href="/parts-finder" variant="light" color="indigo">
                 Оставить заявку на деталь
@@ -144,6 +144,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
             </Stack>
           </Card>
         ) : (
+          <>
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
             {parts.map((part) => (
               // Карточка не оборачивается в ссылку целиком: внутри есть
@@ -201,6 +202,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
               {currentPage < pageCount && <Button component={Link} href={`/store/${store.slug}?page=${currentPage + 1}`} variant="default" size="sm">Дальше</Button>}
             </Group>
           )}
+          </>
         )}
 
         <StructuredData
