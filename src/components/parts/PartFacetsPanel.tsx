@@ -17,16 +17,27 @@ export type Facet =
  * же виде оно лежит в адресе страницы и уходит в API.
  */
 export default function PartFacetsPanel({
-  title, facets, values, onChange, onReset,
+  title, facets, values, onChange, onReset, bare = false,
 }: {
   title: string
   facets: Facet[]
   values: Record<string, string>
   onChange: (key: string, value: string | null) => void
   onReset: () => void
+  /** Без своей рамки и заголовка — внутри колонки фильтров. */
+  bare?: boolean
 }) {
   const active = Object.values(values).filter(Boolean).length
   if (!facets.length) return null
+  if (bare) {
+    return (
+      <Stack gap={0}>
+        {facets.map((facet) => (
+          <FacetSection key={facet.key} facet={facet} value={values[facet.key] || ""} onChange={(value) => onChange(facet.key, value)} />
+        ))}
+      </Stack>
+    )
+  }
 
   return (
     <Paper radius="md" p="sm" withBorder className="parts-facets">

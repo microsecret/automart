@@ -1,0 +1,149 @@
+/* Поиск запчастей: колонка фильтров, панель инструментов, активные
+   фильтры. Общие части (строка магазина, сетка карточек) — из
+   catalogs.module.css. */
+
+aside.sidebar { padding: 4px 0; background: var(--mantine-color-body); border: 1px solid var(--mantine-color-default-border); }
+
+.filters { display: grid; gap: 0; }
+
+.filterSection {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+.filterSection:first-child { border-top: 0; }
+
+.filterSection h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--market-ink);
+}
+
+.filterLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mantine-color-indigo-7);
+  text-decoration: none;
+}
+
+.checkList { display: grid; gap: 8px; }
+.checkLabel { display: inline-flex; gap: 6px; align-items: baseline; }
+.checkLabel small { color: var(--market-muted); font-size: 12px; }
+
+.priceRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.search { flex: 1 1 280px; max-width: 520px; }
+.filtersButton { display: none; }
+
+.sortButton {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--market-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sortButton:hover { background: var(--mantine-color-default-hover); }
+.sortButton[aria-current] { background: var(--market-ink); color: var(--mantine-color-body); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mantine-color-indigo-light);
+  color: var(--mantine-color-indigo-light-color);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip:hover { filter: brightness(0.96); }
+
+.siblings { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.siblings::-webkit-scrollbar { display: none; }
+
+.sibling,
+.siblingAll {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mantine-color-default-border);
+  color: var(--market-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.siblingAll { border-color: transparent; background: var(--mantine-color-default-hover); }
+.sibling:hover { border-color: var(--mantine-color-indigo-5); }
+.sibling[aria-current] { background: var(--market-ink); border-color: var(--market-ink); color: var(--mantine-color-body); }
+
+.skeleton {
+  height: 340px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--mantine-color-default-hover), var(--mantine-color-default-border), var(--mantine-color-default-hover));
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* Пока грузится новая выдача, старая остаётся на месте приглушённой —
+   без прыжка страницы к скелету и обратно. */
+.refreshing { opacity: 0.55; transition: opacity 160ms ease; }
+
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 28px;
+  border-radius: 16px;
+  background: var(--mantine-color-default-hover);
+}
+
+.emptyActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+
+.secondaryLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid var(--mantine-color-default-border);
+  color: var(--market-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 1000px) {
+  aside.sidebar { display: none; }
+  .filtersButton { display: inline-flex; }
+}
+
+@media (max-width: 640px) {
+  .search { flex-basis: 100%; max-width: none; }
+  .empty { padding: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+  .refreshing { transition: none; }
+}

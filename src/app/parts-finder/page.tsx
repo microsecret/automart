@@ -1,678 +1,408 @@
 "use client"
 export const dynamic = "force-dynamic"
-import { useEffect, useMemo, useState, Suspense } from "react"
+
+import { Suspense, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import useSWR from "swr"
-import Link from "next/link"
-import { Box, Stack, Group, Text, Paper, Select, TextInput, Button, Center, Loader, Badge, ThemeIcon, Container, SimpleGrid, Pagination, Checkbox } from "@mantine/core"
-import { IconSearch, IconCar, IconCheck, IconCircleCheck, IconHash, IconTools, IconEngine, IconSettings, IconDisc, IconBatteryAutomotive, IconArmchair, IconBulb, IconSnowflake, IconArrowRight } from "@tabler/icons-react"
-import { findLabel, PART_TYPES, PART_SUBCATEGORIES, PART_CONDITIONS, PART_AVAILABILITY_TYPES, AVAILABILITY_TYPES } from "@/lib/constants"
-import { getBrandsByCategory } from "@/lib/catalog"
-import { formatPrice, parseImages } from "@/lib/format"
+import { Button, Center, Checkbox, Drawer, Loader, Pagination, Select, TextInput, UnstyledButton } from "@mantine/core"
+import { IconAdjustmentsHorizontal, IconArrowRight, IconSearch, IconX } from "@tabler/icons-react"
+import { PART_SUBCATEGORIES, PART_TYPES } from "@/lib/constants"
+import { getBrandsByCategory, getModels } from "@/lib/catalog"
+import { parseImages } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
-import PartsShowcase from "@/components/parts/PartsShowcase"
-import PartRequestPrompt from "@/components/parts/PartRequestPrompt"
-import PartFacetsPanel, { type Facet } from "@/components/parts/PartFacetsPanel"
-import DepartmentNav from "@/components/parts/DepartmentNav"
-import AddToCartButton from "@/components/cart/AddToCartButton"
+import { DEPARTMENTS, PRODUCT_GROUP_BY_KEY, productGroupsOfDepartment, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
 import { articleHref, looksLikeArticle } from "@/lib/article-number"
-import { DEPARTMENTS, formatAttributeValue, PRODUCT_GROUP_BY_KEY, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
-import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
+import ShopBar from "@/components/catalogs/ShopBar"
+import PartOfferCard from "@/components/catalogs/PartOfferCard"
+import DepartmentNav from "@/components/parts/DepartmentNav"
+import PartFacetsPanel, { type Facet } from "@/components/parts/PartFacetsPanel"
+import PartRequestPrompt from "@/components/parts/PartRequestPrompt"
+import { AsyncErrorState } from "@/components/ui/AsyncStates"
+import catalog from "@/components/catalogs/catalogs.module.css"
+import styles from "./finder.module.css"
 
 type PartResult = {
   id: string
   name: string
-  price: number | null
+  price: number
   images: string | null
-  partType?: string | null
-  condition?: string | null
-  availability?: string | null
-  saleFormat?: string | null
-  subcategory?: string | null
-  oemNumber?: string | null
-  location?: string | null
-  compatibility?: Array<{ make: string; model: string }>
-  productGroup?: string | null
-  attributes?: Array<{ key: string; num: number | null; text: string | null }>
-  storeId?: string | null
+  oemNumber: string | null
+  brandName: string | null
+  supplyMode: string
+  leadTimeDaysMin: number | null
+  leadTimeDaysMax: number | null
+  location: string | null
+  storeId: string | null
+  summary?: string
+  store?: { name: string; slug: string; city: string | null } | null
 }
 
 type PartsResponse = {
   parts: PartResult[]
-  /* catalogTotal — сколько позиций в каталоге без учёта фильтров:
-     нужен, чтобы отличить «нет по запросу» от «раздел пуст». */
   pagination: { total: number; pages: number; limit: number; catalogTotal?: number; activeStores?: number }
   group?: { key: string; label: string }
   facets?: Facet[]
+  brands?: Array<{ value: string; count: number }>
 }
 
-/* Фильтры характеристик лежат в адресе как a_<ключ>=значение. */
-function readAttributeParams(params: URLSearchParams) {
-  const result: Record<string, string> = {}
-  params.forEach((value, key) => { if (key.startsWith("a_") && value) result[key.slice(2)] = value })
-  return result
-}
+const PAGE_SIZE = 24
+const SORTS = [
+  { value: "newest", label: "Новые" },
+  { value: "price_asc", label: "Дешевле" },
+  { value: "price_desc", label: "Дороже" },
+]
+const CAR_BRANDS = getBrandsByCategory("cars").map((brand) => brand.name)
 
-/** Две-три главные характеристики под названием: «62 Ач · 600 А · Обратная». */
-function summaryAttributes(part: PartResult) {
-  const group = part.productGroup ? PRODUCT_GROUP_BY_KEY.get(part.productGroup) : null
-  if (!group || !part.attributes?.length) return ""
-  return group.attributes
-    .filter((def) => def.summary)
-    .map((def) => {
-      const value = part.attributes?.find((item) => item.key === def.key)
-      return value ? formatAttributeValue(def, value) : null
-    })
-    .filter(Boolean)
-    .slice(0, 3)
-    .join(" · ")
-}
-
-const fetcher = fetchJson
-
-/** «1 запчасть», «2 запчасти», «5 запчастей»: без склонения счётчик читается как ошибка. */
-function formatPartsCount(total: number): string {
+function goods(total: number) {
   const lastTwo = total % 100
-  const lastOne = total % 10
-  if (lastTwo >= 11 && lastTwo <= 14) return `${total} запчастей`
-  if (lastOne === 1) return `${total} запчасть`
-  if (lastOne >= 2 && lastOne <= 4) return `${total} запчасти`
-  return `${total} запчастей`
-}
-
-/** «1 товар», «3 товара», «12 товаров» — счётчик в заголовке товарной группы. */
-function formatGoodsCount(total: number): string {
-  const lastTwo = total % 100
-  const lastOne = total % 10
+  const last = total % 10
   if (lastTwo >= 11 && lastTwo <= 14) return `${total} товаров`
-  if (lastOne === 1) return `${total} товар`
-  if (lastOne >= 2 && lastOne <= 4) return `${total} товара`
+  if (last === 1) return `${total} товар`
+  if (last >= 2 && last <= 4) return `${total} товара`
   return `${total} товаров`
 }
 
-function parseMultiValue(value: string | null) {
-  return Array.from(new Set((value || "").split(",").map((item) => item.trim()).filter(Boolean)))
-}
+const list = (value: string | null) => Array.from(new Set((value || "").split(",").map((item) => item.trim()).filter(Boolean)))
 
-const PART_FALLBACKS = {
-  ENGINE: { icon: IconEngine, color: "orange" },
-  TRANSMISSION: { icon: IconSettings, color: "violet" },
-  SUSPENSION: { icon: IconSettings, color: "blue" },
-  BRAKES: { icon: IconDisc, color: "red" },
-  ELECTRICAL: { icon: IconBatteryAutomotive, color: "indigo" },
-  BODY: { icon: IconCar, color: "cyan" },
-  INTERIOR: { icon: IconArmchair, color: "grape" },
-  WHEELS: { icon: IconDisc, color: "gray" },
-  LIGHTING: { icon: IconBulb, color: "yellow" },
-  COOLING: { icon: IconSnowflake, color: "cyan" },
-  EXHAUST: { icon: IconSettings, color: "orange" },
-  STEERING: { icon: IconSettings, color: "blue" },
-  ACCESSORIES: { icon: IconTools, color: "teal" },
-  CONSUMABLES: { icon: IconTools, color: "lime" },
-  OTHER: { icon: IconTools, color: "indigo" },
-} as const
-
-function PartMedia({ image, name, partType }: { image: string; name: string; partType?: string | null }) {
-  const [failed, setFailed] = useState(!image || image.includes("/placeholder"))
-  const [loaded, setLoaded] = useState(false)
-  const fallback = PART_FALLBACKS[partType as keyof typeof PART_FALLBACKS] || PART_FALLBACKS.OTHER
-  const FallbackIcon = fallback.icon
-
-  return (
-    <Box className="part-result-card__media" data-empty-media={failed || undefined} data-part-type={partType || "OTHER"}>
-      <Stack gap={4} align="center" className="part-result-card__placeholder" style={{ opacity: !loaded || failed ? 1 : 0 }}>
-        <ThemeIcon variant="light" color={fallback.color} size={50} radius="xl"><FallbackIcon size={28} stroke={1.5} /></ThemeIcon>
-      </Stack>
-      {!failed && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={name} onLoad={() => setLoaded(true)} onError={() => setFailed(true)} loading="lazy" decoding="async" data-loaded={loaded || undefined} />
-      )}
-    </Box>
-  )
-}
-
+/**
+ * Поиск запчастей и автотоваров в раскладке автомагазина.
+ *
+ * Состояние фильтров живёт только в адресе страницы: одна правда вместо
+ * двух эффектов, которые раскладывали адрес в состояния и собирали
+ * обратно, — прежняя страница теряла параметры, когда запись опережала
+ * чтение. Слева одна колонка фильтров (машина, производитель, цена,
+ * наличие, состояние, характеристики группы), справа поиск, сортировка,
+ * активные фильтры и карточки — как у autodoc и avtovek.
+ */
 function PartsContent() {
   const sp = useSearchParams()
   const router = useRouter()
-  const searchKey = sp.toString()
-  const urlPartType = sp.get("partType")
-  const urlSubcategory = sp.get("subcategory")
-  const [q, setQ] = useState(sp.get("q") || "")
-  /* Запрос уходит на сервер не на каждую букву.
+  const key = sp.toString()
+  const params = useMemo(() => new URLSearchParams(key), [key])
 
-     Поле поиска входило в ключ запроса напрямую: набирая «тормозной
-     диск», человек отправлял тринадцать запросов подряд, и на экране
-     мелькали ответы на недописанные слова. Последний из них ещё и мог
-     прийти раньше предыдущего, показав результат не по тому тексту.
+  const update = (patch: Record<string, string | null>, keepPage = false) => {
+    const next = new URLSearchParams(key)
+    for (const [name, value] of Object.entries(patch)) {
+      if (value) next.set(name, value)
+      else next.delete(name)
+    }
+    if (!keepPage) next.delete("page")
+    const query = next.toString()
+    router.replace(query ? `/parts-finder?${query}` : "/parts-finder", { scroll: false })
+  }
 
-     Треть секунды — обычная пауза между нажатиями внутри слова; она
-     достаточно коротка, чтобы человек не заметил ожидания. */
-  const [debouncedQ, setDebouncedQ] = useState(q)
+  const groupKey = PRODUCT_GROUP_BY_KEY.has(params.get("group") || "") ? params.get("group") : null
+  const partType = PART_TYPES.some((item) => item.value === params.get("partType")) ? params.get("partType") : null
+  const subcategory = partType && (PART_SUBCATEGORIES[partType] || []).includes(params.get("subcategory") || "") ? params.get("subcategory") : null
+  const group = (groupKey ? PRODUCT_GROUP_BY_KEY.get(groupKey) : null) ?? productGroupBySubcategory(subcategory)
+  const department = (group?.department ?? (DEPARTMENTS.some((item) => item.key === params.get("dept")) ? params.get("dept") : null)) as DepartmentKey | null
+  const make = params.get("make")
+  const model = params.get("model")
+  const brands = list(params.get("brand"))
+  const availability = list(params.get("availability"))
+  const conditions = list(params.get("conditions") || params.get("condition"))
+  const sort = SORTS.some((item) => item.value === params.get("sort")) ? (params.get("sort") as string) : "newest"
+  const page = Math.max(1, Number(params.get("page")) || 1)
+  const attrs: Record<string, string> = {}
+  params.forEach((value, name) => { if (name.startsWith("a_") && value) attrs[name.slice(2)] = value })
+
+  /* Поле поиска — с паузой: запрос уходит не на каждую букву. */
+  const [q, setQ] = useState(params.get("q") || "")
+  useEffect(() => { setQ(params.get("q") || "") }, [params])
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedQ(q), 350)
+    const timer = window.setTimeout(() => { if ((params.get("q") || "") !== q.trim()) update({ q: q.trim() || null }) }, 400)
     return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q])
-  const [partType, setPartType] = useState<string | null>(sp.get("partType"))
-  const [subcategory, setSubcategory] = useState<string | null>(sp.get("subcategory"))
-  const [make, setMake] = useState<string | null>(sp.get("make"))
-  const [model, setModel] = useState<string | null>(sp.get("model"))
-  const [conditions, setConditions] = useState<string[]>(() => parseMultiValue(sp.get("conditions") || sp.get("condition")))
-  const [availability, setAvailability] = useState<string[]>(() => parseMultiValue(sp.get("availability")))
-  const [saleFormat, setSaleFormat] = useState<string | null>(sp.get("saleFormat"))
-  const [priceFrom, setPriceFrom] = useState(sp.get("priceFrom") || "")
-  const [priceTo, setPriceTo] = useState(sp.get("priceTo") || "")
-  const [page, setPage] = useState(Number(sp.get("page")) || 1)
-  const [group, setGroup] = useState<string | null>(sp.get("group"))
-  const [department, setDepartment] = useState<DepartmentKey | null>(() => {
-    const fromGroup = PRODUCT_GROUP_BY_KEY.get(sp.get("group") || "")?.department
-    return fromGroup ?? (DEPARTMENTS.some((item) => item.key === sp.get("dept")) ? sp.get("dept") as DepartmentKey : null)
-  })
-  const [attrs, setAttrs] = useState<Record<string, string>>(() => readAttributeParams(new URLSearchParams(sp.toString())))
 
-  useEffect(() => {
-    const validPartType = urlPartType && PART_TYPES.some((item) => item.value === urlPartType) ? urlPartType : null
-    const validSubcategory = validPartType && urlSubcategory && (PART_SUBCATEGORIES[validPartType] || []).includes(urlSubcategory)
-      ? urlSubcategory
-      : null
-    setPartType((current) => current === validPartType ? current : validPartType)
-    setSubcategory((current) => current === validSubcategory ? current : validSubcategory)
-  }, [urlPartType, urlSubcategory])
+  const [priceFrom, setPriceFrom] = useState(params.get("priceFrom") || "")
+  const [priceTo, setPriceTo] = useState(params.get("priceTo") || "")
+  useEffect(() => { setPriceFrom(params.get("priceFrom") || ""); setPriceTo(params.get("priceTo") || "") }, [params])
+  const applyPrice = () => update({ priceFrom: priceFrom.replace(/\D/g, "") || null, priceTo: priceTo.replace(/\D/g, "") || null })
 
-  /* Пока адрес не прочитан, писать его нельзя.
+  const apiQuery = useMemo(() => {
+    const query = new URLSearchParams(key)
+    query.set("limit", String(PAGE_SIZE))
+    query.set("facets", "1")
+    if (make) query.set("compatible", "true")
+    query.delete("dept")
+    return query.toString()
+  }, [key, make])
+  const { data, error, isLoading, mutate } = useSWR<PartsResponse>(`/api/parts?${apiQuery}`, fetchJson, { keepPreviousData: true })
 
-     Здесь два эффекта работают со строкой запроса: один раскладывает
-     её в состояния, другой собирает обратно. Порядок между ними не
-     задан, и запись успевала сработать раньше чтения — со свежими,
-     ещё пустыми состояниями. Заход по ссылке из бокового меню вида
-     /parts-finder?partType=ENGINE (таких шесть) мог потерять параметр
-     до того, как он применится.
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [showAllBrands, setShowAllBrands] = useState(false)
 
-     Тот же приём уже отлажен на странице аукционов, где эта ошибка
-     съедала выбранную страну. */
-  const [urlRead, setUrlRead] = useState(false)
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchKey)
-    setQ(params.get("q") || "")
-    setMake(params.get("make"))
-    setModel(params.get("model"))
-    setConditions(parseMultiValue(params.get("conditions") || params.get("condition")))
-    setAvailability(parseMultiValue(params.get("availability")))
-    setSaleFormat(params.get("saleFormat"))
-    setPriceFrom(params.get("priceFrom") || "")
-    setPriceTo(params.get("priceTo") || "")
-    setPage(Number(params.get("page")) || 1)
-    const nextGroup = PRODUCT_GROUP_BY_KEY.has(params.get("group") || "") ? params.get("group") : null
-    setGroup(nextGroup)
-    if (nextGroup) setDepartment(PRODUCT_GROUP_BY_KEY.get(nextGroup)?.department ?? null)
-    setAttrs(readAttributeParams(params))
-    setUrlRead(true)
-  }, [searchKey])
-
-  const selectPartType = (nextPartType: string | null) => {
-    setPartType(nextPartType)
-    setSubcategory(null)
-    setPage(1)
-    const params = new URLSearchParams(searchKey)
-    if (nextPartType) params.set("partType", nextPartType)
-    else params.delete("partType")
-    params.delete("subcategory")
-    params.delete("page")
-    const query = params.toString()
-    router.replace(query ? `/parts-finder?${query}` : "/parts-finder", { scroll: false })
+  const toggle = (name: string, values: string[], value: string) => {
+    const next = values.includes(value) ? values.filter((item) => item !== value) : [...values, value]
+    update({ [name]: next.length ? next.join(",") : null })
   }
 
-  const selectSubcategory = (nextSubcategory: string | null) => {
-    setSubcategory(nextSubcategory)
-    setPage(1)
-    const params = new URLSearchParams(searchKey)
-    if (nextSubcategory) params.set("subcategory", nextSubcategory)
-    else params.delete("subcategory")
-    params.delete("page")
-    const query = params.toString()
-    router.replace(query ? `/parts-finder?${query}` : "/parts-finder", { scroll: false })
-  }
-
-  /* Список марок собирается один раз, а не на каждую перерисовку.
-
-     Он строится из постоянного справочника и не зависит ни от чего на
-     странице, но стоял прямо в теле компонента: каждый набранный
-     символ в поиске создавал новый массив, а выпадающий список с
-     поиском пересобирался заново вместо того, чтобы просто
-     отфильтровать готовый. */
-  const partBrandOptions = useMemo(
-    () => getBrandsByCategory("cars").map((brand) => ({ value: brand.name, label: brand.name })),
-    [],
-  )
-  const modelRequest = make ? `/api/v1/models?brand_id=${encodeURIComponent(make)}&category=cars` : null
-  const { data: modelsData, error: modelsError, isLoading: isModelsLoading } = useSWR<{ models?: string[] }>(modelRequest, fetcher)
-  const modelOptions = (modelsData?.models || []).map((value) => ({ value, label: value }))
-  const hasInvalidPriceRange = Boolean(priceFrom && priceTo && Number(priceFrom) > Number(priceTo))
-  const attrsKey = JSON.stringify(attrs)
-  const filterKey = useMemo(() => [q, partType, subcategory, make, model, conditions.join(","), availability.join(","), saleFormat, priceFrom, priceTo, group, attrsKey].join("|"), [q, partType, subcategory, make, model, conditions, availability, saleFormat, priceFrom, priceTo, group, attrsKey])
-  /* Группа для фильтров: выбранная явно или следующая из подкатегории. */
-  const activeGroup = (group ? PRODUCT_GROUP_BY_KEY.get(group) : null) ?? productGroupBySubcategory(subcategory)
-
-  useEffect(() => {
-    setPage(1)
-  }, [filterKey])
-
-  const subcats = partType ? PART_SUBCATEGORIES[partType] || [] : []
-
-  const toggleMultiFilter = (value: string, values: string[], setValues: (next: string[]) => void) => {
-    setValues(values.includes(value) ? values.filter((item) => item !== value) : [...values, value])
-  }
-
-  const buildQuery = () => {
-    const u = new URLSearchParams()
-    u.set("page", String(page))
-    u.set("limit", "24")
-    if (debouncedQ) u.set("q", debouncedQ)
-    if (partType) u.set("partType", partType)
-    if (subcategory) u.set("subcategory", subcategory)
-    if (make) u.set("make", make)
-    if (model) u.set("model", model)
-    if (conditions.length) u.set("conditions", conditions.join(","))
-    if (availability.length) u.set("availability", availability.join(","))
-    if (saleFormat) u.set("saleFormat", saleFormat)
-    if (priceFrom) u.set("priceFrom", priceFrom)
-    if (priceTo) u.set("priceTo", priceTo)
-    if (make) u.set("compatible", "true")
-    if (group) u.set("group", group)
-    if (activeGroup) {
-      u.set("facets", "1")
-      for (const [key, value] of Object.entries(attrs)) if (value) u.set(`a_${key}`, value)
-    }
-    return u.toString()
-  }
-
-  const { data, error, isLoading, mutate } = useSWR<PartsResponse>(hasInvalidPriceRange ? null : "/api/parts?" + buildQuery(), fetcher)
-  const parts: PartResult[] = data?.parts || []
-
-  useEffect(() => {
-    if (!urlRead) return
-    const params = new URLSearchParams()
-    if (q) params.set("q", q)
-    if (partType) params.set("partType", partType)
-    if (subcategory) params.set("subcategory", subcategory)
-    if (make) params.set("make", make)
-    if (model) params.set("model", model)
-    if (conditions.length) params.set("conditions", conditions.join(","))
-    if (availability.length) params.set("availability", availability.join(","))
-    if (saleFormat) params.set("saleFormat", saleFormat)
-    if (priceFrom) params.set("priceFrom", priceFrom)
-    if (priceTo) params.set("priceTo", priceTo)
-    if (group) params.set("group", group)
-    else if (department) params.set("dept", department)
-    for (const [key, value] of Object.entries(attrs)) if (value) params.set(`a_${key}`, value)
-    if (page > 1) params.set("page", String(page))
-    const nextSearchKey = params.toString()
-    if (nextSearchKey !== searchKey) {
-      router.replace(nextSearchKey ? `/parts-finder?${nextSearchKey}` : "/parts-finder", { scroll: false })
-    }
-  }, [urlRead, availability, conditions, make, model, page, partType, priceFrom, priceTo, q, router, saleFormat, searchKey, subcategory, group, department, attrs])
-
-  /* Раздел пуст или фильтр не подошёл — это разные ситуации.
-
-     Предложение «измените фильтры» человеку, который ничего не выбирал,
-     отправляет крутить настройки впустую: объявлений в разделе нет вовсе, и
-     ни один фильтр их не покажет. */
-  const hasActiveFilters = Boolean(
-    q || partType || subcategory || make || model || saleFormat || group
-    || conditions.length || availability.length || priceFrom || priceTo || Object.keys(attrs).length,
-  )
-
-  /* Есть ли запчасти в разделе вообще.
-
-     Отличается от «нашлось по фильтрам»: пустая выдача при выбранных
-     условиях означает «уточните запрос», а пустой раздел — «здесь пока
-     никто ничего не разместил». */
-  /* Пуст ли раздел на самом деле.
-  
-     Прежде выбранный фильтр сам по себе считался признаком непустого
-     каталога, и по ссылке из бокового меню (?partType=ENGINE) человек
-     видел «По этим условиям запчастей нет» вместо витрины. Ссылок таких
-     шесть, то есть половина входов в раздел упиралась в плашку. */
-  const catalogEmpty = data ? (data.pagination?.catalogTotal ?? data.pagination?.total ?? 0) === 0 : false
-
-  const hasParts = Boolean(data?.pagination?.total) || (hasActiveFilters && !catalogEmpty)
-
+  const activeChips: Array<{ label: string; clear: Record<string, string | null> }> = [
+    ...(make ? [{ label: `${make}${model ? ` ${model}` : ""}`, clear: { make: null, model: null } }] : []),
+    ...brands.map((brand) => ({ label: brand, clear: { brand: brands.filter((item) => item !== brand).join(",") || null } })),
+    ...(params.get("priceFrom") || params.get("priceTo") ? [{ label: `Цена ${params.get("priceFrom") ? `от ${params.get("priceFrom")}` : ""}${params.get("priceTo") ? ` до ${params.get("priceTo")}` : ""} ₽`, clear: { priceFrom: null, priceTo: null } }] : []),
+    ...availability.map((value) => ({ label: value === "ON_ORDER" ? "Под заказ" : "В наличии", clear: { availability: availability.filter((item) => item !== value).join(",") || null } })),
+    ...conditions.map((value) => ({ label: value === "USED" ? "Б/у" : "Новые", clear: { conditions: conditions.filter((item) => item !== value).join(",") || null, condition: null } })),
+    ...(subcategory ? [{ label: subcategory, clear: { subcategory: null } }] : []),
+    ...Object.entries(attrs).map(([attrKey, value]) => {
+      const def = group?.attributes.find((item) => item.key === attrKey)
+      return { label: `${def?.label ?? attrKey}: ${value.replace("..", "–").split("|").join(", ")}`, clear: { [`a_${attrKey}`]: null } }
+    }),
+  ]
   const resetFilters = () => {
-    setQ(""); setPartType(null); setSubcategory(null); setMake(null); setModel(null)
-    setConditions([]); setAvailability([]); setSaleFormat(null); setPriceFrom(""); setPriceTo(""); setPage(1)
-    setGroup(null); setAttrs({})
-    router.replace("/parts-finder", { scroll: false })
+    const keep = new URLSearchParams()
+    if (groupKey) keep.set("group", groupKey)
+    if (partType && !groupKey) keep.set("partType", partType)
+    router.replace(keep.toString() ? `/parts-finder?${keep}` : "/parts-finder", { scroll: false })
   }
 
-  const CategoryBar = (
-    <Paper radius="md" p="sm" withBorder className="parts-category-bar">
-      <Stack gap={8}>
-        {/* Категории идут одним прокручиваемым рядом.
+  const parts = data?.parts ?? []
+  const total = data?.pagination?.total ?? 0
+  const catalogEmpty = data ? (data.pagination.catalogTotal ?? total) === 0 : false
+  const searching = Boolean(params.get("q") || make || partType || group)
+  const title = group?.label ?? (partType ? PART_TYPES.find((item) => item.value === partType)?.label : null) ?? (params.get("q") ? `Поиск: «${params.get("q")}»` : "Запчасти и автотовары")
+  const departmentLabel = department ? DEPARTMENTS.find((item) => item.key === department)?.label : null
 
-            Прежде шестнадцать кнопок стояли в два ряда и занимали
-            пол-экрана над каталогом: глаз читал их подряд, а не находил
-            нужную. Заголовок со значком занимал ещё строку и ничего не
-            сообщал — кнопки говорят сами за себя. */}
-        <Group gap={6} wrap="nowrap" className="parts-category-row">
-          <Button size="compact-sm" radius="xl" variant={!partType ? "filled" : "default"} color="indigo" onClick={() => selectPartType(null)}>Все</Button>
-          {PART_TYPES.map((t) => (
-            <Button key={t.value} size="compact-sm" radius="xl" variant={partType === t.value ? "filled" : "default"} color="indigo" onClick={() => selectPartType(partType === t.value ? null : t.value)}>{t.label}</Button>
-          ))}
-        </Group>
-        <Group className="parts-condition-shortcuts" gap={6} wrap="wrap">
-          <Text size="xs" fw={700} c="dimmed">Состояние:</Text>
-          {PART_CONDITIONS.map((item) => {
-            const selected = conditions.includes(item.value)
-            return <Button key={item.value} size="compact-xs" radius="xl" variant={selected ? "filled" : "light"} color={item.value === "NEW" ? "teal" : "indigo"} onClick={() => toggleMultiFilter(item.value, conditions, setConditions)}>{item.label}</Button>
-          })}
-        </Group>
-        {partType && subcats.length > 0 && (
-          <Group gap={6} wrap="wrap" className="parts-subcategories">
-            <Text size="xs" c="dimmed">Уточнить:</Text>
-            {subcats.map((sc) => <Button key={sc} size="compact-xs" radius="xl" variant={subcategory === sc ? "light" : "subtle"} color="violet" onClick={() => selectSubcategory(subcategory === sc ? null : sc)}>{sc}</Button>)}
-          </Group>
-        )}
-      </Stack>
-    </Paper>
-  )
+  const filters = (
+    <div className={styles.filters}>
+      <section className={styles.filterSection}>
+        <h3>Автомобиль</h3>
+        <Select placeholder="Марка" data={CAR_BRANDS} searchable clearable value={make} onChange={(value) => update({ make: value, model: null })} size="sm" />
+        <Select placeholder={make ? "Любая модель" : "Сначала марка"} data={make ? getModels(make, "cars") : []} searchable clearable disabled={!make} value={model} onChange={(value) => update({ model: value })} size="sm" />
+        <Link href="/catalogs" className={styles.filterLink}>Каталог по маркам и VIN <IconArrowRight size={14} /></Link>
+      </section>
 
-  const VehiclePicker = (
-    <Paper radius="md" p="md" withBorder className="parts-vehicle-inline__panel">
-      <Stack gap="sm">
-        <Group gap="sm">
-          <ThemeIcon variant="light" color="violet" size={32} radius="md"><IconCar size={18} /></ThemeIcon>
-          <Stack gap={0}>
-            <Text fw={800} fz="sm" c="var(--market-ink)" ff="var(--font-display),sans-serif">Подбор по авто</Text>
-            <Text size="xs" c="var(--market-muted)">Найдём запчасти на ваш авто</Text>
-          </Stack>
-        </Group>
-        <Select label="Марка" placeholder="Выберите марку" data={partBrandOptions} searchable clearable value={make} onChange={(v) => { setMake(v); setModel(null) }} size="xs" />
-        <Select
-          label="Модель"
-          placeholder={make ? (isModelsLoading ? "Загружаем модели" : "Любая модель") : "Сначала марка"}
-          data={modelOptions}
-          searchable
-          clearable
-          disabled={!make || isModelsLoading}
-          rightSection={isModelsLoading ? <Loader size={13} aria-label="Загрузка моделей" /> : undefined}
-          error={modelsError ? "Не удалось загрузить модели" : undefined}
-          value={model}
-          onChange={setModel}
-          size="xs"
-        />
-        {make && (
-          <Badge variant="filled" color="violet" size="sm" radius="md">
-            <Group gap={4}><IconCheck size={12} /> Совместимость: {make}{model ? " " + model : ""}</Group></Badge>
-        )}
-        {(make || model) && (
-          <Button variant="subtle" color="gray" size="xs" onClick={() => { setMake(null); setModel(null) }}>Сбросить</Button>
-        )}
-      </Stack>
-    </Paper>
-  )
+      {(data?.brands?.length || brands.length) ? (
+        <section className={styles.filterSection}>
+          <h3>Производитель</h3>
+          <div className={styles.checkList}>
+            {[...brands.filter((brand) => !data?.brands?.some((item) => item.value === brand)).map((value) => ({ value, count: 0 })), ...(data?.brands ?? [])]
+              .slice(0, showAllBrands ? 60 : 8)
+              .map((item) => (
+                <Checkbox
+                  key={item.value}
+                  size="sm"
+                  checked={brands.includes(item.value)}
+                  onChange={() => toggle("brand", brands, item.value)}
+                  label={<span className={styles.checkLabel}><span>{item.value}</span>{item.count > 0 && <small>{item.count}</small>}</span>}
+                />
+              ))}
+          </div>
+          {(data?.brands?.length ?? 0) > 8 && (
+            <UnstyledButton className={styles.filterLink} onClick={() => setShowAllBrands((value) => !value)}>
+              {showAllBrands ? "Свернуть" : `Все производители (${data?.brands?.length})`}
+            </UnstyledButton>
+          )}
+        </section>
+      ) : null}
 
-  const FilterBar = (
-    <Paper radius="md" p="sm" withBorder className="parts-filter-panel">
-      <Stack gap="sm">
-          <Box className="parts-filter-grid">
-            <TextInput className="parts-filter-grid__search" label="Название, OEM или аналог" placeholder="Например, 90919-012 или Corolla" leftSection={<IconSearch size={14} />} value={q} onChange={(e) => setQ(e.target.value)} size="sm" />
-            <Box className="parts-price-range"><Text size="var(--text-caps)" c="dimmed" fw={700} tt="uppercase">Цена, ₽</Text><Group gap={4} wrap="nowrap"><TextInput aria-label="Цена от" placeholder="От" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /><TextInput aria-label="Цена до" placeholder="До" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} size="sm" type="number" error={hasInvalidPriceRange} /></Group></Box>
-            <Box className="parts-filter-field parts-filter-checks">
-              <Text size="var(--text-caps)" c="dimmed" fw={700} tt="uppercase" mb={6}>Наличие</Text>
-              <Group gap={8} wrap="wrap">
-                {PART_AVAILABILITY_TYPES.map((item) => <Checkbox key={item.value} size="xs" label={item.label} checked={availability.includes(item.value)} onChange={() => toggleMultiFilter(item.value, availability, setAvailability)} />)}
-              </Group>
-            </Box>
-            <Select label="Формат сделки" placeholder="Любой" data={[{ value: "FIXED", label: "Фиксированная цена" }, { value: "AUCTION", label: "Аукцион" }]} clearable value={saleFormat} onChange={setSaleFormat} size="sm" />
-          </Box>
-        {hasInvalidPriceRange && <Text size="xs" c="var(--market-danger-text)">Цена «от» не может быть выше цены «до».</Text>}
-        {(partType || make || conditions.length || availability.length || saleFormat || priceFrom || priceTo) && (
-          <Group gap={6} wrap="wrap">
-            <Text size="xs" c="var(--market-muted)">Активные:</Text>
-            {partType && <Badge size="xs" variant="light" color="indigo">{PART_TYPES.find((t) => t.value === partType)?.label}</Badge>}
-            {subcategory && <Badge size="xs" variant="light" color="violet">{subcategory}</Badge>}
-            {conditions.map((item) => <Badge key={item} size="xs" variant="light" color="green">{findLabel(PART_CONDITIONS, item)}</Badge>)}
-            {availability.map((item) => <Badge key={item} size="xs" variant="light" color="teal">{findLabel(AVAILABILITY_TYPES, item)}</Badge>)}
-            {saleFormat && <Badge size="xs" variant="light" color="orange">{saleFormat === "AUCTION" ? "Аукцион" : "Цена"}</Badge>}
-            {priceFrom && <Badge size="xs" variant="light" color="gray">от {priceFrom}₽</Badge>}
-            {priceTo && <Badge size="xs" variant="light" color="gray">до {priceTo}₽</Badge>}
-            <Button variant="subtle" size="xs" color="red" onClick={resetFilters}>Сбросить</Button>
-          </Group>
-        )}
-      </Stack>
-    </Paper>
+      <section className={styles.filterSection}>
+        <h3>Цена, ₽</h3>
+        <div className={styles.priceRow}>
+          <TextInput size="sm" placeholder="от" inputMode="numeric" value={priceFrom} onChange={(event) => setPriceFrom(event.currentTarget.value)} onBlur={applyPrice} onKeyDown={(event) => { if (event.key === "Enter") applyPrice() }} aria-label="Цена от" />
+          <TextInput size="sm" placeholder="до" inputMode="numeric" value={priceTo} onChange={(event) => setPriceTo(event.currentTarget.value)} onBlur={applyPrice} onKeyDown={(event) => { if (event.key === "Enter") applyPrice() }} aria-label="Цена до" />
+        </div>
+      </section>
+
+      <section className={styles.filterSection}>
+        <h3>Наличие</h3>
+        <div className={styles.checkList}>
+          <Checkbox size="sm" label="В наличии" checked={availability.includes("IN_STOCK")} onChange={() => toggle("availability", availability, "IN_STOCK")} />
+          <Checkbox size="sm" label="Под заказ" checked={availability.includes("ON_ORDER")} onChange={() => toggle("availability", availability, "ON_ORDER")} />
+        </div>
+      </section>
+
+      <section className={styles.filterSection}>
+        <h3>Состояние</h3>
+        <div className={styles.checkList}>
+          <Checkbox size="sm" label="Новые" checked={conditions.includes("NEW")} onChange={() => toggle("conditions", conditions, "NEW")} />
+          <Checkbox size="sm" label="Б/у" checked={conditions.includes("USED")} onChange={() => toggle("conditions", conditions, "USED")} />
+        </div>
+      </section>
+
+      {!group && (
+        <section className={styles.filterSection}>
+          <h3>Узел</h3>
+          <Select placeholder="Любой" data={PART_TYPES.map((item) => ({ value: item.value, label: item.label }))} clearable value={partType} onChange={(value) => update({ partType: value, subcategory: null })} size="sm" />
+          {partType && (PART_SUBCATEGORIES[partType] || []).length > 0 && (
+            <Select placeholder="Уточнить" data={PART_SUBCATEGORIES[partType]} clearable searchable value={subcategory} onChange={(value) => update({ subcategory: value })} size="sm" />
+          )}
+        </section>
+      )}
+
+      {group && data?.facets && data.facets.length > 0 && (
+        <section className={styles.filterSection}>
+          <h3>Характеристики</h3>
+          <PartFacetsPanel
+            bare
+            title={group.label}
+            facets={data.facets}
+            values={attrs}
+            onChange={(attrKey, value) => update({ [`a_${attrKey}`]: value })}
+            onReset={() => update(Object.fromEntries(Object.keys(attrs).map((name) => [`a_${name}`, null])))}
+          />
+        </section>
+      )}
+
+      {activeChips.length > 0 && <Button variant="subtle" color="gray" size="sm" onClick={resetFilters}>Сбросить фильтры</Button>}
+    </div>
   )
 
   return (
-    <Container size="xl" p={{ base: "sm", md: "md" }}>
-      <Stack gap="md">
-        {/* Заголовок */}
-        <Group gap="sm" align="center" justify="space-between">
-          <Group gap="sm">
-            {/* Значка перед заголовком нет: название раздела написано
-                словами, а значок сдвигал заголовок вправо — левый край
-                гулял между страницами (64 пикселя здесь против 10 у
-                карточек ниже). */}
-            <Stack gap={0}>
-              <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">
-                {activeGroup?.label ?? "Каталог запчастей"}
-                {activeGroup && data?.pagination?.total ? <Text span inherit c="var(--market-muted)" fw={500} ml={10}>{formatGoodsCount(data.pagination.total)}</Text> : null}
-              </Text>
-              {/* Пока каталог пуст, подписи нет вовсе.
+    <main className={catalog.page}>
+      <ShopBar />
 
-                  Здесь стояло «Заявка на деталь · подбор по авто ·
-                  бесплатно», но на 28.09.2026 в базе ноль магазинов
-                  запчастей: заявку прочитать некому, и подпись обещала
-                  то, чего площадка сделать не может. Что делать с пустым
-                  разделом, честно говорит карточка ниже. */}
-              {data?.pagination?.total ? (
-                <Text size="xs" c="var(--market-muted)">
-                  {`${formatPartsCount(data.pagination.total)} · кросс-совместимость по авто`}
-                </Text>
-              ) : null}
-            </Stack>
-          </Group>
-        </Group>
-
-        {/* Фильтры показываются, когда есть что фильтровать.
-
-            Пять блоков стояли над пустым каталогом: человек видел стену
-            полей, которыми нечего настраивать, а приглашение разместить
-            первую запчасть уезжало за пределы экрана. */}
-        {/* Набран номер детали — предлагаем страницу артикула: там все
-            магазины по этому номеру и аналоги, а не совпадения в названиях. */}
-        {debouncedQ && looksLikeArticle(debouncedQ) && (
-          <Link href={articleHref(debouncedQ)} className="parts-article-link">
-            Все предложения и аналоги по номеру <b>{debouncedQ.trim().toUpperCase()}</b> <IconArrowRight size={15} aria-hidden="true" />
-          </Link>
-        )}
-
-        {/* Отделы видны всегда: это навигация магазина, а не обещание
-            товара — в пустой группе честно скажут, что там пока пусто. */}
-        <DepartmentNav
-          group={group}
-          department={department}
-          onSelect={(next) => {
-            setDepartment(next.department)
-            setGroup(next.group)
-            setAttrs({})
-            if (next.group) { setPartType(null); setSubcategory(null) }
-            setPage(1)
-          }}
-        />
-
-        {activeGroup && data?.facets && data.facets.length > 0 && (
-          <PartFacetsPanel
-            title={activeGroup.label}
-            facets={data.facets}
-            values={attrs}
-            onChange={(key, value) => setAttrs((current) => {
-              const next = { ...current }
-              if (value) next[key] = value
-              else delete next[key]
-              return next
-            })}
-            onReset={() => setAttrs({})}
-          />
-        )}
-
-        {(hasParts || hasActiveFilters) && (
+      <nav className={catalog.crumbs} aria-label="Навигация">
+        <Link href="/">Главная</Link>
+        <span aria-hidden="true">›</span>
+        <Link href="/parts-finder">Запчасти</Link>
+        {departmentLabel && (
           <>
-            {CategoryBar}
-
-            <Group gap="md" align="stretch" className="parts-workspace" wrap="wrap">
-              <Box style={{ flex: 1, minWidth: 0 }}>{FilterBar}</Box>
-              <Box className="parts-vehicle-inline">{VehiclePicker}</Box>
-            </Group>
+            <span aria-hidden="true">›</span>
+            {group ? <Link href={`/parts-finder?dept=${department}`}>{departmentLabel}</Link> : <span aria-current="page">{departmentLabel}</span>}
           </>
         )}
+        {group && <><span aria-hidden="true">›</span><span aria-current="page">{group.label}</span></>}
+      </nav>
 
-        {/* Область результатов держит высоту, пока данные не пришли.
+      <header className={catalog.pageHead}>
+        <h1 className={catalog.titleDark}>
+          {title}
+          {data && total > 0 && <> <span className={catalog.titleCount}>{goods(total)}</span></>}
+        </h1>
+        {params.get("q") && looksLikeArticle(params.get("q") as string) && (
+          <Link href={articleHref(params.get("q") as string)} className="parts-article-link">
+            Все предложения и аналоги по номеру <b>{(params.get("q") as string).toUpperCase()}</b> <IconArrowRight size={15} aria-hidden="true" />
+          </Link>
+        )}
+      </header>
 
-            Скелет на шесть карточек резервировал около пятисот пикселей,
-            а пустая выдача занимала вдвое меньше — страница прыгала вверх
-            на 420 пикселей в момент прихода данных. Замер сдвига макета
-            показывал 0.595 при пороге 0.1: худший показатель на сайте.
+      {/* Плитки отделов — на входе в раздел. В выбранной группе вместо них
+          строка соседних групп: тот же переход, а места втрое меньше. */}
+      {!group ? (
+        <DepartmentNav
+          group={null}
+          department={department}
+          onSelect={(next) => update({ dept: next.group ? null : next.department, group: next.group, partType: null, subcategory: null })}
+        />
+      ) : (
+        <nav className={styles.siblings} aria-label={`Отдел «${departmentLabel}»`}>
+          <Link href={`/parts-finder?dept=${group.department}`} className={styles.siblingAll}>← {departmentLabel}</Link>
+          {productGroupsOfDepartment(group.department).map((item) => (
+            <Link key={item.key} href={`/parts-finder?group=${item.key}`} className={styles.sibling} aria-current={item.key === group.key ? "true" : undefined}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
 
-            Минимальная высота снимается, как только выдача заполнена: у
-            неё своя высота, и держать её незачем. */}
-        <Stack gap="sm" mih={isLoading ? 520 : undefined}>
+      <div className={catalog.shopLayout}>
+        <aside className={`${catalog.sidebar} ${styles.sidebar}`} aria-label="Фильтры">{filters}</aside>
 
-              {isLoading ? (
-                <ResultsGridSkeleton count={6} mediaHeight={148} />
-              ) : error ? (
-                <AsyncErrorState
-                  title="Не удалось загрузить запчасти"
-                  description="Каталог временно не отвечает. Попробуйте обновить выдачу."
-                  onRetry={() => mutate()}
+        <div className={catalog.shopMain}>
+          <div className={styles.toolbar}>
+            <TextInput
+              className={styles.search}
+              leftSection={<IconSearch size={16} />}
+              placeholder={group ? `Поиск в разделе «${group.label}»` : "Название, артикул или аналог"}
+              value={q}
+              onChange={(event) => setQ(event.currentTarget.value)}
+              aria-label="Поиск запчастей"
+            />
+            <Button className={styles.filtersButton} variant="default" leftSection={<IconAdjustmentsHorizontal size={16} />} onClick={() => setFiltersOpen(true)}>
+              Фильтры{activeChips.length ? ` · ${activeChips.length}` : ""}
+            </Button>
+            <nav className={catalog.articleSort} aria-label="Сортировка">
+              {SORTS.map((item) => (
+                <button key={item.value} type="button" className={styles.sortButton} aria-current={sort === item.value ? "true" : undefined} onClick={() => update({ sort: item.value === "newest" ? null : item.value })}>
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          {activeChips.length > 0 && (
+            <div className={styles.chips}>
+              {activeChips.map((chip) => (
+                <button key={chip.label} type="button" className={styles.chip} onClick={() => update(chip.clear)}>
+                  {chip.label} <IconX size={13} aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {error ? (
+            <AsyncErrorState title="Не удалось загрузить товары" description="Каталог временно не отвечает. Попробуйте обновить выдачу." onRetry={() => mutate()} />
+          ) : isLoading && !data ? (
+            <div className={catalog.offerGrid} aria-busy="true">
+              {Array.from({ length: 6 }).map((_, index) => <div key={index} className={styles.skeleton} />)}
+            </div>
+          ) : parts.length > 0 ? (
+            <div className={`${catalog.offerGrid} ${isLoading ? styles.refreshing : ""}`}>
+              {parts.map((part) => (
+                <PartOfferCard
+                  key={part.id}
+                  offer={{
+                    id: part.id, name: part.name, price: part.price,
+                    image: parseImages(part.images)[0] || null,
+                    oemNumber: part.oemNumber, brandName: part.brandName,
+                    storeName: part.store?.name ?? null, location: part.location,
+                    supplyMode: part.supplyMode, leadTimeDaysMin: part.leadTimeDaysMin, leadTimeDaysMax: part.leadTimeDaysMax,
+                    summary: part.summary, canBuy: Boolean(part.storeId),
+                  }}
                 />
-              ) : parts.length === 0 ? (
-                hasActiveFilters && !catalogEmpty ? (
-                  <Paper radius="md" p="xl" withBorder>
-                    <Center>
-                      <Stack align="center" gap="xs" maw={420} ta="center">
-                        <IconTools size={40} color="#a1a1aa" />
-                        <Text fw={600}>По этим условиям запчастей нет</Text>
-                        <Text size="sm" c="dimmed">Попробуйте убрать часть фильтров или поискать по названию детали.</Text>
-                        <Button variant="light" color="indigo" size="xs" mt={4} onClick={resetFilters}>Сбросить фильтры</Button>
-                      </Stack>
-                    </Center>
-                  </Paper>
-                ) : catalogEmpty ? (
-                  /* Каталог пуст — говорим об этом прямо.
-                   *
-                   * Раньше здесь показывалась витрина категорий с
-                   * подписью «Выберите вид детали, чтобы уточнить». Но
-                   * выбирать нечего: замер базы на 19 сентября 2026 дал
-                   * ноль запчастей и ноль объявлений о них. Человек
-                   * щёлкал «Двигатель» и упирался в пустую выдачу.
-                   *
-                   * Честная строка вместо приглашения к действию,
-                   * которое ни к чему не приведёт. Ссылка ведёт туда,
-                   * где товар есть, а не в никуда. */
-                  <Paper radius="md" p="xl" withBorder>
-                    <Center>
-                      <Stack align="center" gap="xs" maw={460} ta="center">
-                        <IconTools size={40} color="#a1a1aa" />
-                        <Text fw={600}>Запчасти пока не размещены</Text>
-                        <Text size="sm" c="dimmed">
-                          Раздел открыт для продавцов: разместите деталь — она появится здесь
-                          и в поиске по марке автомобиля.
-                        </Text>
-                        <Group gap="xs" mt={6}>
-                          <Button component={Link} href="/listings/create/part" size="xs" color="indigo">
-                            Разместить запчасть
-                          </Button>
-                          <Button component={Link} href="/" size="xs" variant="light" color="indigo">
-                            Смотреть машины
-                          </Button>
-                        </Group>
-                      </Stack>
-                    </Center>
-                  </Paper>
-                ) : (
-                  <PartsShowcase />
-                )
+              ))}
+            </div>
+          ) : (
+            <section className={styles.empty}>
+              {activeChips.length > 0 && !catalogEmpty ? (
+                <>
+                  <h2 className={catalog.h2}>По этим фильтрам ничего нет</h2>
+                  <p className={catalog.muted}>Уберите часть фильтров — например, производителя или цену.</p>
+                  <Button variant="light" color="indigo" onClick={resetFilters}>Сбросить фильтры</Button>
+                </>
               ) : (
-                <SimpleGrid cols={{ base: 1, sm: 2, xl: 3 }} spacing="sm">
-                  {parts.map((p) => {
-                    const images = parseImages(p.images)
-                    const image = images[0] || ""
-                    return (
-                      <Paper key={p.id} radius="md" withBorder className="part-result-card" style={{ overflow: "hidden", borderColor: "var(--mantine-color-border)" }}>
-                        <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                          <PartMedia image={image} name={p.name} partType={p.partType} />
-                        </Link>
-                        <Box p="sm" className="part-result-card__content">
-                            <Stack gap={4}>
-                              <Group gap="sm" align="flex-start" justify="space-between">
-                                <Link href={`/listings/part/${p.id}`} style={{ textDecoration: "none" }}>
-                                  <Text fw={700} fz="sm" c="var(--market-ink)" className="part-result-card__title">{p.name}</Text>
-                                </Link>
-                                <Text fw={800} fz="md" c="var(--market-ink)" ff="var(--font-display),sans-serif" className="part-result-card__price">{formatPrice(p.price)}</Text>
-                              </Group>
-
-                              <Group gap={6} wrap="wrap" className="part-result-card__status">
-                                {p.condition && <Badge className="part-result-card__status-badge" data-tone={p.condition === "NEW" ? "success" : "neutral"} size="xs" variant="light">{findLabel(PART_CONDITIONS, p.condition)}</Badge>}
-                                {p.availability && <Badge className="part-result-card__status-badge" data-tone={p.availability === "ON_ORDER" ? "attention" : "available"} size="xs" variant="light">{findLabel(AVAILABILITY_TYPES, p.availability)}</Badge>}
-                                {p.saleFormat === "AUCTION" && <Badge className="part-result-card__status-badge" data-tone="auction" size="xs" variant="light">Аукцион</Badge>}
-                              </Group>
-
-                              {summaryAttributes(p) && (
-                                <Text size="xs" fw={600} c="var(--market-ink)" className="part-result-card__specs">{summaryAttributes(p)}</Text>
-                              )}
-
-                              {(p.subcategory || p.oemNumber) && (
-                                <Group gap={8} wrap="wrap" className="part-result-card__metadata">
-                                  {p.subcategory && <Text size="xs" className="part-result-card__metadata-value">{p.subcategory}</Text>}
-                                  {p.oemNumber && <Group gap={4} className="part-result-card__metadata-value"><IconHash size={11} /> <span>{p.oemNumber}</span></Group>}
-                                </Group>
-                              )}
-
-                              {p.compatibility && p.compatibility.length > 0 && (
-                                <Group gap={6} wrap="wrap" mt={2} className="part-result-card__compatibility">
-                                  <Group gap={4}>
-                                    <IconCircleCheck size={13} color="var(--market-success-text)" />
-                                    <Text size="xs" fw={600} c="var(--market-muted)">Подходит:</Text>
-                                  </Group>
-                                  {p.compatibility.slice(0, 4).map((c, i) => (
-                                    <Badge key={i} className="part-result-card__compatibility-chip" size="xs" variant="light" color="indigo" radius="sm">{c.make} {c.model}</Badge>
-                                  ))}
-                                  {p.compatibility.length > 4 && (
-                                    <Text size="xs" c="var(--market-muted)">+{p.compatibility.length - 4} ещё</Text>
-                                  )}
-                                </Group>
-                              )}
-
-                              <Group gap="xs" mt={4} justify="space-between" className="part-result-card__footer">
-                                <Text size="xs" c="var(--market-muted)">{p.location || "Город не указан"}</Text>
-                                {/* Товар магазина можно положить в корзину прямо из
-                                    выдачи; частное объявление — только через продавца. */}
-                                {p.storeId && p.price ? <AddToCartButton partId={p.id} price={p.price} className="lw-cart-button lw-cart-button--compact" compact /> : null}
-                                <Link className="part-result-card__cta" href={`/listings/part/${p.id}`} aria-label={`Подробнее о запчасти: ${p.name}`}>
-                                  <span>Подробнее</span><IconArrowRight size={14} aria-hidden="true" />
-                                </Link>
-                              </Group>
-                            </Stack>
-                        </Box>
-                      </Paper>
-                    )
-                  })}
-                </SimpleGrid>
+                <>
+                  <h2 className={catalog.h2}>{group ? `В разделе «${group.label}» пока нет товаров` : searching ? "Ничего не нашлось" : "Каталог наполняется"}</h2>
+                  <p className={catalog.muted}>
+                    {group
+                      ? "Магазины подключаются к площадке. Если товар нужен сейчас — оставьте заявку, а продавцам — откройте магазин."
+                      : "Попробуйте другой запрос или выберите машину в каталоге по маркам."}
+                  </p>
+                  <div className={styles.emptyActions}>
+                    <Link href="/sell" className={catalog.sellerButton}>{group ? `Продаёте ${group.label.toLowerCase()}? Откройте магазин` : "Открыть магазин"}</Link>
+                    <Link href="/catalogs" className={styles.secondaryLink}>Каталог по маркам</Link>
+                  </div>
+                </>
               )}
-        </Stack>
+            </section>
+          )}
 
-        {data && data.pagination?.pages > 1 && <Stack align="center" gap={6}><Pagination value={page} onChange={setPage} total={data.pagination.pages} boundaries={1} siblings={1} size="sm" color="indigo" /><Text size="xs" c="dimmed">Страница {page} из {data.pagination.pages} · по {data.pagination.limit} запчасти</Text></Stack>}
+          {data && data.pagination.pages > 1 && (
+            <Center>
+              <Pagination value={page} onChange={(next) => { update({ page: String(next) }, true); window.scrollTo({ top: 0, behavior: "smooth" }) }} total={data.pagination.pages} siblings={1} boundaries={1} color="indigo" />
+            </Center>
+          )}
 
-        <PartRequestPrompt activeStores={data?.pagination?.activeStores ?? 0} />
-      </Stack>
-    </Container>
+          <PartRequestPrompt activeStores={data?.pagination?.activeStores ?? 0} />
+        </div>
+      </div>
+
+      <Drawer opened={filtersOpen} onClose={() => setFiltersOpen(false)} position="bottom" size="88%" title="Фильтры" radius="lg">
+        {filters}
+        <Button fullWidth mt="md" color="indigo" onClick={() => setFiltersOpen(false)}>
+          Показать {data ? goods(total) : "товары"}
+        </Button>
+      </Drawer>
+    </main>
   )
 }
 
 export default function PartsFinderPage() {
   return (
-    <Suspense fallback={<Container py={80}><Center><Loader size="sm" color="indigo" /></Center></Container>}>
+    <Suspense fallback={<Center py={80}><Loader size="sm" color="indigo" /></Center>}>
       <PartsContent />
     </Suspense>
   )

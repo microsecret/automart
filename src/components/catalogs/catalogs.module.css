@@ -1073,3 +1073,18 @@
   color: var(--catalog-accent);
   font-variant-numeric: tabular-nums;
 }
+
+.offerMore {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--catalog-line);
+  color: var(--catalog-ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.offerMore:hover { border-color: var(--catalog-accent); color: var(--catalog-accent); }

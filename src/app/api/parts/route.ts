@@ -9,7 +9,7 @@ import { PART_AVAILABILITY_TYPES, PART_CONDITIONS, PART_SUBCATEGORIES, PART_TYPE
 import { parseMarketplaceImages } from "@/lib/media-url"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
 import { normalizeListingCity } from "@/lib/listing-city"
-import { PRODUCT_GROUP_BY_KEY, productGroupBySubcategory } from "@/lib/product-groups"
+import { PRODUCT_GROUP_BY_KEY, productGroupBySubcategory, summarizeAttributes } from "@/lib/product-groups"
 import { attributeFilters, loadFacets } from "@/lib/part-facets"
 
 export const dynamic = "force-dynamic"
@@ -153,12 +153,20 @@ export async function GET(request: NextRequest) {
     // У старых записей availability не заполнялся: считаем их доступными,
     // не скрывая каталог при выборе «В наличии».
     if (availability.length) {
+      /* Наличие хранится в двух местах: у частного объявления — поле
+         availability, у товара магазина — supplyMode (STOCK / ORDER), а
+         availability пустое. Раньше пустое поле считалось «в наличии», и
+         товар магазина под заказ попадал в фильтр «В наличии». */
       const availabilityValues = new Set(availability)
+      const variants: Prisma.PartWhereInput[] = [
+        { storeId: null, availability: { in: Array.from(availabilityValues) } },
+      ]
       if (availabilityValues.has("IN_STOCK")) {
-        and.push({ OR: [{ availability: { in: Array.from(availabilityValues) } }, { availability: null }] })
-      } else {
-        where.availability = { in: Array.from(availabilityValues) }
+        variants.push({ storeId: null, availability: null })
+        variants.push({ storeId: { not: null }, supplyMode: "STOCK" })
       }
+      if (availabilityValues.has("ON_ORDER")) variants.push({ storeId: { not: null }, supplyMode: "ORDER" })
+      and.push({ OR: variants })
     }
     if (saleFormat === "FIXED" || saleFormat === "AUCTION") where.saleFormat = saleFormat
     if (oemNumber) {
@@ -178,6 +186,11 @@ export async function GET(request: NextRequest) {
        «62 Ач», человек больше не увидел бы остальных вариантов ёмкости. */
     const facetWhere: Prisma.PartWhereInput = { ...where, ...(and.length ? { AND: [...and] } : {}) }
     if (group) and.push(...attributeFilters(group, sp))
+    /* Производитель — главный фильтр автомагазинов (avtovek, autodoc).
+       Как и характеристики, в подсчёт брендов он не входит: выбрав Bosch,
+       человек видит, сколько позиций у остальных. */
+    const brands = parseFilterValues(sp.get("brand")).slice(0, 30)
+    if (brands.length) and.push({ brandName: { in: brands } })
     if (and.length) where.AND = and
 
     /* Второй ключ — идентификатор: без него порядок между записями с
@@ -199,11 +212,22 @@ export async function GET(request: NextRequest) {
         include: {
           compatibility: { select: { id: true, make: true, model: true, generation: true, yearFrom: true, yearTo: true } },
           attributes: { select: { key: true, num: true, text: true } },
+          store: { select: { name: true, slug: true, city: true } },
         },
       }),
       prisma.part.count({ where }),
     ])
-    const facets = group && sp.get("facets") === "1" ? await loadFacets(group, facetWhere).catch(() => []) : undefined
+    const wantFacets = sp.get("facets") === "1"
+    const brandFacet = wantFacets
+      ? await prisma.part.groupBy({
+          by: ["brandName"],
+          where: { AND: [facetWhere, { brandName: { not: null } }] },
+          _count: { _all: true },
+          orderBy: { _count: { brandName: "desc" } },
+          take: 60,
+        }).then((rows) => rows.map((row) => ({ value: row.brandName as string, count: row._count._all }))).catch(() => [])
+      : undefined
+    const facets = group && wantFacets ? await loadFacets(group, facetWhere).catch(() => []) : undefined
 
     /* Сколько позиций в каталоге вообще, без учёта фильтров.
     
@@ -224,10 +248,17 @@ export async function GET(request: NextRequest) {
     const activeStores = await prisma.partStore.count({ where: { status: "ACTIVE" } })
 
     return NextResponse.json({
-      parts: parts.map((part) => ({ ...part, availability: part.availability || "IN_STOCK" })),
+      parts: parts.map((part) => ({
+        ...part,
+        availability: part.availability || "IN_STOCK",
+        /* Сводка характеристик считается здесь: клиенту не нужно тащить
+           справочник групп, чтобы показать «60 Ач · 540 А». */
+        summary: summarizeAttributes(part.productGroup, part.attributes),
+      })),
       pagination: { page, limit, total, pages: Math.ceil(total / limit), catalogTotal, activeStores },
       ...(group ? { group: { key: group.key, label: group.label } } : {}),
       ...(facets ? { facets } : {}),
+      ...(brandFacet ? { brands: brandFacet } : {}),
     })
   } catch (error) {
     console.error("Parts GET error:", error)

@@ -16,6 +16,10 @@ export type PartOffer = {
   leadTimeDaysMax: number | null
   /** Главные характеристики строкой: «60 Ач · 540 А». */
   summary?: string
+  /** Частное объявление в корзину не кладётся — его покупают через продавца. */
+  canBuy?: boolean
+  /** Город продавца — для частных объявлений вместо магазина. */
+  location?: string | null
 }
 
 const rub = (value: number) => `${value.toLocaleString("ru-RU")} ₽`
@@ -37,7 +41,7 @@ export default function PartOfferCard({ offer }: { offer: PartOffer }) {
   const specs = [
     offer.oemNumber ? ["Артикул", offer.oemNumber] : null,
     offer.brandName ? ["Производитель", offer.brandName] : null,
-    offer.storeName ? ["Магазин", offer.storeName] : null,
+    offer.storeName ? ["Магазин", offer.storeName] : offer.location ? ["Город", offer.location] : null,
   ].filter(Boolean) as Array<[string, string]>
 
   return (
@@ -59,7 +63,9 @@ export default function PartOfferCard({ offer }: { offer: PartOffer }) {
           <b className={styles.offerPrice}>{rub(offer.price)}</b>
           <span className={offer.supplyMode === "ORDER" ? styles.offerLeadOrder : styles.offerLeadStock}>{leadLabel(offer)}</span>
         </div>
-        <AddToCartButton partId={offer.id} price={offer.price} className={styles.offerBuy} compact label={`В корзину: ${offer.name}`} />
+        {offer.canBuy === false
+          ? <Link href={href} className={styles.offerMore} prefetch={false}>Подробнее</Link>
+          : <AddToCartButton partId={offer.id} price={offer.price} className={styles.offerBuy} compact label={`В корзину: ${offer.name}`} />}
       </div>
     </article>
   )
