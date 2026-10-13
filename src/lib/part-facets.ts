@@ -49,6 +49,7 @@ export async function loadFacets(group: ProductGroup, where: Prisma.PartWhereInp
     by: ["key", "num", "text"],
     where: { key: { in: defs.map((def) => def.key) }, part: where },
     _count: { _all: true },
+    orderBy: { key: "asc" },
     take: 3_000,
   })
 

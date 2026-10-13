@@ -75,7 +75,7 @@ test("незнакомое — без группы и без выдуманны�
 })
 
 test("значения выводятся с единицами", () => {
-  const capacity = PRODUCT_GROUP_BY_KEY.get("battery").attributes.find((item: { key: string }) => item.key === "capacity")
+  const capacity = PRODUCT_GROUP_BY_KEY.get("battery")?.attributes.find((item: { key: string }) => item.key === "capacity")
   assert.equal(formatAttributeValue(capacity, { num: 62, text: null }), "62 Ач")
   assert.equal(formatAttributeValue(undefined, { num: null, text: "5W-30" }), "5W-30")
 })
