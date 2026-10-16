@@ -1,15 +1,16 @@
-import { Anchor, Badge, Box, Button, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconArrowRight, IconBrain, IconChartBar, IconFileDescription, IconFileSearch, IconGasStation, IconMapPin, IconRoute, IconShieldCheck } from "@tabler/icons-react"
+import { Badge, Box, Button, Group, Paper, Stack, Text, ThemeIcon } from "@mantine/core"
+import { IconArrowRight, IconMapPin, IconRoute } from "@tabler/icons-react"
 import Link from "next/link"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 
 const SERVICES = [
-  { href: "/services/valuation", title: "Оценка стоимости", description: "Ориентир по рынку перед покупкой или продажей.", icon: IconChartBar, color: "indigo", stage: "Сравнить рынок" },
-  { href: "/services/history-check", title: "Проверка истории", description: "Заявка на проверку VIN и ключевых ограничений.", icon: IconFileSearch, color: "cyan", stage: "Проверить VIN" },
-  { href: "/services/smart-matching", title: "Умный подбор", description: "Подбор транспорта по бюджету и параметрам.", icon: IconBrain, color: "violet", stage: "Подобрать авто" },
-  { href: "/services/safe-deal", title: "Безопасная сделка", description: "Прозрачный сценарий оплаты и документов.", icon: IconShieldCheck, color: "teal", stage: "Провести сделку" },
-  { href: "/services/legal-documents", title: "Документы сделки", description: "Чек-листы для ДКП и акта приёма-передачи техники.", icon: IconFileDescription, color: "grape", stage: "Подготовить" },
-  { href: "/services/fuel-map", title: "Карта АЗС", description: "Где сейчас есть топливо и почём — по отметкам водителей.", icon: IconGasStation, color: "orange", stage: "Найти заправку" },
-]
+  { href: "/services/valuation", title: "Оценка стоимости", description: "Ориентир по рынку перед покупкой или продажей.", artwork: "valuation", stage: "Сравнить рынок" },
+  { href: "/services/history-check", title: "Проверка истории", description: "Заявка на проверку VIN и ключевых ограничений.", artwork: "history-check", stage: "Проверить VIN" },
+  { href: "/services/smart-matching", title: "Умный подбор", description: "Подбор транспорта по бюджету и параметрам.", artwork: "matching", stage: "Подобрать авто" },
+  { href: "/services/safe-deal", title: "Безопасная сделка", description: "Прозрачный сценарий оплаты и документов.", artwork: "safe-deal", stage: "Провести сделку" },
+  { href: "/services/legal-documents", title: "Документы сделки", description: "Чек-листы для ДКП и акта приёма-передачи техники.", artwork: "documents", stage: "Подготовить" },
+  { href: "/services/fuel-map", title: "Карта АЗС", description: "Где сейчас есть топливо и почём — по отметкам водителей.", artwork: "fuel-map", stage: "Найти заправку" },
+] as const
 
 export default function ServicesPage() {
   return <Box className="service-page" p={{ base: "sm", md: "md" }}>
@@ -34,26 +35,17 @@ export default function ServicesPage() {
         <Box><Text fw={800} fz="lg">Выберите следующий шаг</Text><Text size="sm" c="dimmed">Каждый сервис ведёт к конкретному действию, а не к пустой справочной странице.</Text></Box>
       </Group>
 
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+      <Box className="lw-service-grid">
         {SERVICES.map((service) => {
-          const Icon = service.icon
-          return <Paper key={service.href} component={Link} href={service.href} withBorder radius="md" p="lg" className="service-card">
-            <Stack gap="md" h="100%">
-              {/* Цвет остался только у значка — он помогает узнать сервис
-                  боковым зрением. Метка шага стала нейтральной: раньше на
-                  каждой карточке было по три цветных элемента, и шесть
-                  карточек давали восемнадцать пятен шести разных оттенков.
-                  Взгляду не за что зацепиться, когда всё одинаково яркое. */}
-              <Group justify="space-between" align="flex-start"><ThemeIcon size={44} radius="md" variant="light" color={service.color}><Icon size={22} /></ThemeIcon><Badge size="xs" variant="default" radius="xl">{service.stage}</Badge></Group>
+          return <Paper key={service.href} component={Link} href={service.href} withBorder radius="md" className="service-card lw-service-widget">
+            <Box className="lw-service-widget__copy">
               <Box><Text fw={800} fz="lg">{service.title}</Text><Text size="sm" c="dimmed" mt={6} lh={1.45}>{service.description}</Text></Box>
-              {/* Призыв одного цвета на всех карточках: действие одно и то
-                  же — открыть сервис, — и красить его в шесть разных
-                  оттенков значило обещать шесть разных действий. */}
-              <Anchor component="span" size="sm" fw={700} c="var(--market-primary)" mt="auto">Открыть сервис <IconArrowRight size={14} style={{ verticalAlign: "-2px" }} /></Anchor>
-            </Stack>
+              <span className="lw-widget-action">{service.stage}<IconArrowRight size={15} aria-hidden="true" /></span>
+            </Box>
+            <ServiceArtwork kind={service.artwork} size={128} />
           </Paper>
         })}
-      </SimpleGrid>
+      </Box>
     </Stack>
   </Box>
 }

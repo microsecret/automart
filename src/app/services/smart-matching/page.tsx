@@ -4,13 +4,14 @@ import { useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Text, Paper, Select, NumberInput, Button, Group, ThemeIcon, Center, Loader, Divider, Badge, SimpleGrid } from "@mantine/core"
-import { IconTarget, IconSparkles, IconCar } from "@tabler/icons-react"
+import { IconSparkles, IconCar } from "@tabler/icons-react"
 import { formatPriceShort, formatMileage, parseImages } from "@/lib/format"
 import BrandIcon from "@/components/brands/BrandIcon"
 import { BODY_TYPES, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState } from "@/components/ui/AsyncStates"
 import VehicleFallback from "@/components/listings/VehicleFallback"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 
 const fetcher = fetchJson
 
@@ -52,7 +53,7 @@ export default function SmartmatchingPage() {
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 800, margin: "0 auto" }}>
       <Stack gap="md">
         <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconTarget size={22} /></ThemeIcon>
+          <ServiceArtwork kind="matching" size={80} />
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Умный подбор авто</Text>
             <Text size="xs" c="var(--market-muted)">Подберём лучшие варианты под ваш бюджет и критерии</Text>

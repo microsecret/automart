@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { ActionIcon, Badge, Box, Button, Center, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconArrowRight, IconCar, IconChecklist, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
+import { ActionIcon, Badge, Box, Button, Center, Group, Paper, SimpleGrid, Stack, Text } from "@mantine/core"
+import { IconArrowRight, IconChecklist, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
 import BrandIcon from "@/components/brands/BrandIcon"
 import VehicleFallback from "@/components/listings/VehicleFallback"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import { BODY_TYPES, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import { formatMileage, parseImages } from "@/lib/format"
@@ -47,7 +48,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
     <Paper className="dashboard-garage" radius="md" p={{ base: "md", md: "lg" }} withBorder>
       <Group justify="space-between" align="flex-start" mb="md" gap="md" wrap="wrap">
         <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="teal" size={42} radius="md"><IconCar size={21} /></ThemeIcon>
+          <ServiceArtwork kind="garage" size={64} />
           <Stack gap={1}>
             <Text fw={800} fz="lg" c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный гараж</Text>
             <Text size="sm" c="dimmed">Ваши автомобили не публикуются в каталоге и доступны только вам.</Text>
@@ -128,7 +129,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
       ) : (
         <Center py={{ base: "xl", md: 56 }}>
           <Stack align="center" gap="sm" maw={420} ta="center">
-            <ThemeIcon variant="light" color="teal" size={54} radius="xl"><IconCar size={27} /></ThemeIcon>
+            <ServiceArtwork kind="garage" size={176} />
             <Text fw={700} fz="lg">В гараже пока нет автомобилей</Text>
             <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно. Когда понадобится, создайте из неё объявление без повторного ввода.</Text>
             <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>

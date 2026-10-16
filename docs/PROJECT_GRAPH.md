@@ -40,6 +40,8 @@ flowchart LR
 | Admin decision audit | `src/components/admin/AdminAuditLog.tsx` | `src/app/api/admin/audit/route.ts`, `src/lib/admin-audit.ts`, mutating admin routes |
 | Auction source health | `src/app/api/admin/auctions/stats/route.ts` | `auction-crawl-policy.ts`, admin sources tab |
 | Shared site navigation | `src/lib/navigation-registry.ts` | header, footer, app shell, dashboard and Telegram shell |
+| Shared 3D component artwork | `src/components/ui/ServiceArtwork.tsx` | `public/images/ui/titanium-v1/`, home quick actions, service pages, garage, partner workspace and Telegram shortcuts |
+| Tactile buttons and component materials | `src/app/component-materials.css` | `src/theme/theme.ts`, root layout, `ListingCard` detail actions; semantic danger colors remain independent |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
 | Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |
@@ -58,6 +60,15 @@ flowchart LR
 | iAutos gallery relay | `src/app/api/auction-media/route.ts` | `media-url.ts`, detail gallery |
 
 ## Auction ingestion graph
+
+The titanium/teal/copper artwork is decorative and never replaces listing
+photos, vehicle facts, brand logos or accessible action labels. The shared
+component fixes image dimensions and lazy-loads local WebP files. Server-only
+`scripts/prepare-ui-artwork.mjs` prepares 320px and 640px variants from external
+transparent PNG masters; the large masters are not shipped in public assets.
+Mantine retains button loading/disabled semantics, keyboard focus and danger
+colors. The component stylesheet adds matching materials across themes and
+gates hover movement by pointer capability and reduced-motion preference.
 
 ```mermaid
 flowchart TD

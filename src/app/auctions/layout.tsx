@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import "./auctions-page.css"
 import styles from "./auction-intro.module.css"
 import AuctionsIntroGate from "./AuctionsIntroGate"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 
 /* Обновление задаётся здесь, а не в самой странице.
 
@@ -51,7 +52,7 @@ export default function AuctionsLayout({ children }: { children: React.ReactNode
     <>
       <AuctionsIntroGate>
       <div className={styles.intro}>
-        <h1 className={styles.title}>Автомобильные аукционы мира</h1>
+        <h1 className={styles.title}><ServiceArtwork kind="auctions" size={80} className="lw-heading-art" />Автомобильные аукционы мира</h1>
         {/* Обещание совпадает с тем, что человек видит ниже.
 
             Прежний текст говорил «доставка и растаможка посчитаны для

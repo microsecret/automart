@@ -1,7 +1,8 @@
 import { Alert, Box, Button, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconAlertCircle, IconArrowRight, IconCar, IconChecklist, IconFileDescription, IconMotorbike, IconShieldCheck, IconSignature } from "@tabler/icons-react"
+import { IconAlertCircle, IconArrowRight, IconCar, IconChecklist, IconMotorbike, IconShieldCheck, IconSignature } from "@tabler/icons-react"
 import Link from "next/link"
 import LegalDocumentBuilder from "@/components/services/LegalDocumentBuilder"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 
 const DOCUMENTS = [
   {
@@ -34,7 +35,7 @@ export default function LegalDocumentsPage() {
         <Paper className="service-hub-hero" radius="xl" p={{ base: "lg", md: "xl" }} withBorder>
           <Group justify="space-between" align="flex-end" gap="lg" wrap="wrap">
             <Stack gap="xs" maw={700}>
-              <Group gap="sm"><ThemeIcon size={42} radius="md" variant="white"><IconFileDescription size={21} /></ThemeIcon><Text c="white" fw={800} size="sm">ДОКУМЕНТЫ СДЕЛКИ</Text></Group>
+              <Group gap="sm"><ServiceArtwork kind="documents" size={80} /><Text c="white" fw={800} size="sm">ДОКУМЕНТЫ СДЕЛКИ</Text></Group>
               <Text component="h1" ff="var(--font-display),sans-serif">Подготовьте сделку спокойно и без пропущенных деталей.</Text>
               <Text size="sm" c="rgba(255,255,255,0.8)" maw={620}>Единый чек-лист для автомобиля, мототехники и передачи. Данные из объявления можно сверить перед встречей с продавцом.</Text>
             </Stack>

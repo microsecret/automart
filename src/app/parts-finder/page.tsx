@@ -10,6 +10,7 @@ import { IconAdjustmentsHorizontal, IconArrowRight, IconSearch, IconX } from "@t
 import { PART_SUBCATEGORIES, PART_TYPES } from "@/lib/constants"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { parseImages } from "@/lib/format"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import { fetchJson } from "@/lib/api-client"
 import { DEPARTMENTS, PRODUCT_GROUP_BY_KEY, productGroupsOfDepartment, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
 import { articleHref, looksLikeArticle } from "@/lib/article-number"
@@ -270,6 +271,7 @@ function PartsContent() {
 
       <header className={catalog.pageHead}>
         <h1 className={catalog.titleDark}>
+          <ServiceArtwork kind="parts" size={64} className="lw-heading-art" />
           {title}
           {data && total > 0 && <> <span className={catalog.titleCount}>{goods(total)}</span></>}
         </h1>

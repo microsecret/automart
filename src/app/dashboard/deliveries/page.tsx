@@ -7,11 +7,12 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, Badge, Box, Button, Group, Modal, Paper, Progress, Select, SimpleGrid, Stack, Text, TextInput, Textarea, ThemeIcon, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconArrowRight, IconBuildingWarehouse, IconCheck, IconChevronRight, IconClipboardCheck, IconFileInvoice, IconGavel, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
+import { IconArrowRight, IconCheck, IconChevronRight, IconClipboardCheck, IconFileInvoice, IconGavel, IconMapPin, IconPackage, IconPlus, IconRoute, IconShieldCheck, IconTruckDelivery } from "@tabler/icons-react"
 import { DELIVERY_COUNTRIES, DELIVERY_STATUS_META, deliveryProgress } from "@/lib/delivery"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, AsyncLoadingState, EmptyState } from "@/components/ui/AsyncStates"
 import MetricCard from "@/components/ui/MetricCard"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import { formatPriceShort } from "@/lib/format"
 
 const sourceOptions = [
@@ -314,10 +315,10 @@ function DeliveriesWorkspace() {
           </SimpleGrid>
         )}
 
-        <Paper withBorder radius="xl" p={{ base: "md", md: "lg" }} style={{ background: "linear-gradient(135deg, rgba(37,99,235,.055), rgba(20,184,166,.045))" }}>
+        <Paper withBorder radius="lg" p={{ base: "md", md: "lg" }} className="lw-partner-widget">
           <Group justify="space-between" align="center" gap="lg" wrap="wrap">
-            <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 280 }}>
-              <ThemeIcon size={48} radius="lg" variant="gradient" gradient={{ from: "indigo", to: "violet", deg: 135 }}><IconBuildingWarehouse size={24} /></ThemeIcon>
+            <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+              <ServiceArtwork kind="partner" size={96} />
               <Stack gap={4}>
                 <Group gap="xs" wrap="wrap"><Text fw={800} fz="lg">Работаете с международной доставкой?</Text>{organizationData?.organization && <Badge variant="light" color={organizationStatusMeta[organizationData.organization.verificationStatus].color}>{organizationStatusMeta[organizationData.organization.verificationStatus].label}</Badge>}</Group>
                 <Text size="sm" c="dimmed" maw={720}>ИП, ООО, логистические компании и брокеры могут подать реквизиты. После проверки организация попадёт в закрытый реестр партнёров LeWheel.</Text>
@@ -365,7 +366,7 @@ function DeliveriesWorkspace() {
             <Box className="partner-application-hero">
               <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
                 <Group gap="md" wrap="nowrap" align="flex-start" maw={590}>
-                  <ThemeIcon size={52} radius="lg" className="partner-application-hero__icon"><IconBuildingWarehouse size={27} /></ThemeIcon>
+                  <ServiceArtwork kind="partner" size={96} />
                   <Stack gap={6}>
                     <Title order={2} fz={{ base: "22px", sm: "26px" }} lh={1.08}>Получайте заявки в своей географии</Title>
                     <Text size="sm" c="rgba(255,255,255,.76)" lh={1.5}>Выкуп, логистика и таможенное сопровождение — только после проверки компании. Контакты клиента остаются внутри защищённой сделки.</Text>

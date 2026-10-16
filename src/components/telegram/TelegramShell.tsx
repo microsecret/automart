@@ -6,6 +6,7 @@ import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import type { TelegramThemeParams } from "@/lib/telegram-webapp"
 import { fetchJson } from "@/lib/api-client"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import {
   IconCar,
   IconFileDescription,
@@ -451,7 +452,16 @@ export default function TelegramShell({
         </>
       )}
 
-      <Box className="tg-shell__body">{children}</Box>
+      <Box className="tg-shell__body">
+        {activeTab === "/telegram" && (
+          <nav className="lw-mini-tools" aria-label="Быстрые действия">
+            <Link href="/telegram?tab=auctions"><ServiceArtwork kind="auctions" size={72} /><span>Аукционы</span></Link>
+            <Link href="/services/fuel-map?from=telegram"><ServiceArtwork kind="fuel-map" size={72} /><span>Карта АЗС</span></Link>
+            <Link href="/dashboard?tab=garage&from=telegram"><ServiceArtwork kind="garage" size={72} /><span>Мой гараж</span></Link>
+          </nav>
+        )}
+        {children}
+      </Box>
 
       <Box component="nav" className="tg-nav" aria-label="Разделы приложения">
         {TABS.map(({ href, label, Icon, accent }) => {

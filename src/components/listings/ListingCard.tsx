@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Card, Text, Group, Badge, Box, ActionIcon, AspectRatio, UnstyledButton } from "@mantine/core"
-import { IconChevronLeft, IconChevronRight, IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
+import { IconArrowRight, IconChevronLeft, IconChevronRight, IconEye, IconHeart, IconMapPin, IconScale } from "@tabler/icons-react"
 import Link from "next/link"
 import { formatPriceShort, formatMileage, formatRelativeDate, parseImages } from "@/lib/format"
 import { findLabel, getFuelOptions, getTransmissionOptions, getUsageMeta, supportsTransmission } from "@/lib/constants"
@@ -535,16 +535,9 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               </Group>
             </Group>
 
-            {/* Подписи «Подробнее» больше нет.
-
-                Замер карточки в каталоге: фотография 125 пикселей, текст
-                под ней 184 — подпись занимала больше места, чем сама
-                машина. «Подробнее» из этих 184 забирало 26 и не сообщало
-                ничего: карточка кликабельна целиком, накладка поверх
-                фотографии ведёт туда же, а курсор над ней и так меняется
-                на указатель.
-
-                Освободившееся место отдано снимку. */}
+            <Link href={detailHref} className="lw-detail-action" aria-label={`Подробнее об объявлении: ${listing.title}`}>
+              <span>Подробнее</span><IconArrowRight size={15} aria-hidden="true" />
+            </Link>
           </Box>
         </Box>
       </Card>

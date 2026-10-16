@@ -5,8 +5,9 @@ import useSWR from "swr"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { Alert, Box, Button, Group, Loader, Paper, Select, Stack, Text, ThemeIcon, Timeline } from "@mantine/core"
-import { IconCar, IconCheck, IconClock, IconHistory, IconInfoCircle, IconShieldCheck } from "@tabler/icons-react"
+import { IconCar, IconCheck, IconClock, IconInfoCircle, IconShieldCheck } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 
 type OwnedVehicle = { id: string; make: string; model: string; year: number; mileage: number | null; location: string }
 type VehiclesResponse = { vehicles: OwnedVehicle[] }
@@ -46,7 +47,7 @@ export default function HistoryCheckPage() {
   return (
     <Box p={{ base: "sm", md: "md" }} maw={720} mx="auto">
       <Stack gap="md">
-        <Group gap="sm" align="center"><ThemeIcon variant="light" color="green" size={44} radius="md"><IconHistory size={22} /></ThemeIcon><Stack gap={0}><Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Проверка истории</Text><Text size="xs" c="var(--market-muted)">Заявка на проверку собственных автомобилей с прозрачным статусом</Text></Stack></Group>
+        <Group gap="sm" align="center"><ServiceArtwork kind="history-check" size={80} /><Stack gap={0}><Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Проверка истории</Text><Text size="xs" c="var(--market-muted)">Заявка на проверку собственных автомобилей с прозрачным статусом</Text></Stack></Group>
 
         <Alert icon={<IconInfoCircle size={16} />} color="orange" radius="md" variant="light">Площадка пока не подключена к государственным и коммерческим реестрам. Мы не показываем вымышленные ДТП, ограничения или пробег: заявка сохранится и будет обработана только после подключения проверенного поставщика данных.</Alert>
 

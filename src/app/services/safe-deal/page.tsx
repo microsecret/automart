@@ -1,4 +1,5 @@
 import Link from "next/link"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import { Box, Stack, Title, Text, Card, Group, ThemeIcon, SimpleGrid, Button, Alert } from "@mantine/core"
 import { IconShieldCheck, IconCheck, IconWallet, IconFileCheck, IconKey } from "@tabler/icons-react"
 
@@ -14,7 +15,7 @@ export default function SafeDealPage() {
     <Box p={{ base: "sm", md: "md" }} style={{ maxWidth: 700, margin: "0 auto" }}>
       <Stack gap="md">
         <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="green" size={44} radius="md"><IconShieldCheck size={22} /></ThemeIcon>
+          <ServiceArtwork kind="safe-deal" size={80} />
           <Stack gap={0}>
             <Title order={1} size="h3" ff="var(--font-display),sans-serif">Сопровождаемая сделка</Title>
             <Text size="xs" c="var(--market-muted)">Проверка, документы и прозрачные этапы без лишних рисков</Text>

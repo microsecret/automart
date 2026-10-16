@@ -8,6 +8,7 @@ import { Alert, Box, Button, Group, Loader, Paper, Select, SimpleGrid, Stack, Te
 import { IconCalculator, IconCar, IconInfoCircle, IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 
 type OwnedVehicle = {
   id: string
@@ -70,7 +71,7 @@ export default function ValuationPage() {
     <Box p={{ base: "sm", md: "md" }} maw={720} mx="auto">
       <Stack gap="md">
         <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconCalculator size={22} /></ThemeIcon>
+          <ServiceArtwork kind="valuation" size={80} />
           <Stack gap={0}>
             <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Предварительная оценка</Text>
             {/* Мера строки: замер дал 99 знаков при норме чтения 60–75. */}
