@@ -1,7 +1,7 @@
 import Link from "next/link"
 import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import { Box, Stack, Title, Text, Card, Group, ThemeIcon, SimpleGrid, Button, Alert } from "@mantine/core"
-import { IconShieldCheck, IconCheck, IconWallet, IconFileCheck, IconKey } from "@tabler/icons-react"
+import { IconCheck, IconWallet, IconFileCheck, IconKey } from "@tabler/icons-react"
 
 const STEPS = [
   { icon: <IconWallet size={20} />, title: "Заявка и договор", desc: "Покупатель и партнёр фиксируют состав услуги, стоимость и реквизиты до начала работы" },

@@ -62,7 +62,13 @@ try {
         await card.focus()
         assert.equal(await card.evaluate((element) => getComputedStyle(element).outlineStyle), "solid", "Keyboard focus remains visible")
       }
-      if (capture.route === "/") assert.equal(await page.locator(".lw-quick-widget").count(), 5, "All five home actions remain available")
+      if (capture.route === "/") {
+        assert.equal(await page.locator(".lw-quick-widget").count(), 5, "All five home actions remain available")
+        if (capture.width < 600) {
+          const columns = await page.locator(".home-quick").evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length)
+          assert.equal(columns, 2, "Mobile quick actions stay in a two-column grid")
+        }
+      }
       if (capture.target) await page.locator(capture.target).screenshot({ path: path.join(output, `${capture.name}.png`), timeout: 30000 })
       else await page.screenshot({ path: path.join(output, `${capture.name}.png`), timeout: 30000 })
       if (capture.name === "home-desktop") {
