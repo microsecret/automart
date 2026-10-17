@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic"
 import useSWR from "swr"
 import Link from "next/link"
 import { Box, Stack, Group, Text, SimpleGrid, Center, Paper, Button, ThemeIcon, Pagination, SegmentedControl } from "@mantine/core"
-import { IconHeart, IconHeartBroken, IconLayoutGrid, IconList } from "@tabler/icons-react"
+import { IconHeart, IconLayoutGrid, IconList } from "@tabler/icons-react"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import { useState } from "react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
@@ -57,7 +58,7 @@ export default function FavoritesPage() {
           <Paper radius="md" p="xl" withBorder>
             <Center>
               <Stack align="center" gap="sm" ta="center" maw={400}>
-                <ThemeIcon variant="light" color={needsSignIn ? "indigo" : "red"} size={56} radius="md"><IconHeart size={28} /></ThemeIcon>
+                {needsSignIn ? <ServiceArtwork kind="favorites" size={144} /> : <ThemeIcon variant="light" color="red" size={56} radius="md"><IconHeart size={28} /></ThemeIcon>}
                 {needsSignIn ? (
                   <>
                     <Text fw={700}>Войдите, чтобы видеть избранное</Text>
@@ -78,7 +79,7 @@ export default function FavoritesPage() {
           <Paper radius="md" p="xl" withBorder>
             <Center>
               <Stack align="center" gap="md">
-                <ThemeIcon variant="light" color="gray" size={56} radius="md"><IconHeartBroken size={28} /></ThemeIcon>
+                <ServiceArtwork kind="favorites" size={176} />
                 <Stack gap={0} align="center">
                   <Text fw={600} fz="lg" c="var(--market-ink)">В избранном пусто</Text>
                   <Text size="sm" c="var(--market-muted)" ta="center">Нажимайте на ♥ в карточках объявлений, чтобы сохранить их здесь</Text>

@@ -87,7 +87,7 @@ try {
       console.error(`FAIL ${capture.name}: ${error.message}`)
     } finally { await context.close() }
   }
-  for (const name of ["auctions", "fuel-map", "garage", "partner", "history-check", "publish-listing", "valuation", "matching", "safe-deal", "documents", "parts"]) {
+  for (const name of ["auctions", "fuel-map", "garage", "partner", "history-check", "publish-listing", "valuation", "matching", "safe-deal", "documents", "parts", "deliveries", "messages", "favorites"]) {
     for (const size of [320, 640]) {
       const response = await fetch(new URL(`/images/ui/titanium-v1/${name}-${size}.webp`, baseUrl))
       assert.equal(response.status, 200, `${name}-${size}: public asset`)

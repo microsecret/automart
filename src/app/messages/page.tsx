@@ -22,7 +22,8 @@ import {
   Box,
   TextInput,
 } from "@mantine/core"
-import { IconArrowRight, IconMessageCircle2, IconMessageCircleOff, IconSearch, IconShieldCheck } from "@tabler/icons-react"
+import { IconArrowRight, IconMessageCircleOff, IconSearch, IconShieldCheck } from "@tabler/icons-react"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import Link from "next/link"
 import { formatRelativeDate, initialOf } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
@@ -109,7 +110,7 @@ export default function MessagesPage() {
               {visibleConversations.length === 0 ? (
                 <Center className="messages-workspace__list-empty">
                   <Stack align="center" gap="xs" ta="center" px="md">
-                    <ThemeIcon size={46} radius="xl" variant="light" color="indigo"><IconMessageCircleOff size={23} /></ThemeIcon>
+                    {conversations.length ? <ThemeIcon size={46} radius="xl" variant="light" color="indigo"><IconMessageCircleOff size={23} /></ThemeIcon> : <ServiceArtwork kind="messages" size={96} />}
                     <Text fw={700}>{conversations.length ? "Ничего не найдено" : "Пока нет диалогов"}</Text>
                     <Text size="xs" c="dimmed">{conversations.length ? "Измените запрос." : "Переписка появится после сообщения продавцу."}</Text>
                   </Stack>
@@ -158,7 +159,7 @@ export default function MessagesPage() {
             </Box>
             <Center className="messages-workspace__preview">
               <Stack align="center" gap="md" ta="center" maw={430} px="lg">
-                <ThemeIcon size={66} radius="xl" variant="light" color="indigo"><IconMessageCircle2 size={31} /></ThemeIcon>
+                <ServiceArtwork kind="messages" size={176} />
                 <Stack gap={4} align="center">
                   <Text fw={800} size="lg">{conversations.length ? "Выберите диалог" : "Сообщения по сделкам — в одном месте"}</Text>
                   <Text size="sm" c="dimmed">{conversations.length ? "Откройте переписку слева, чтобы продолжить разговор." : "Откройте объявление и нажмите «Написать продавцу». Новый диалог сразу появится в этом списке."}</Text>

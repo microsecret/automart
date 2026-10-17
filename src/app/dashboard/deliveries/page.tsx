@@ -297,7 +297,7 @@ function DeliveriesWorkspace() {
         </Group>
 
         {orders.length === 0 ? (
-          <EmptyState title="Пока нет заявок на доставку" description="Создайте первую заявку. Менеджер сначала согласует маршрут и партнёра — реквизиты для оплаты не появляются автоматически." actionLabel="Создать заявку" onAction={() => setOpened(true)} />
+          <EmptyState artwork="deliveries" title="Пока нет заявок на доставку" description="Создайте первую заявку. Менеджер сначала согласует маршрут и партнёра — реквизиты для оплаты не появляются автоматически." actionLabel="Создать заявку" onAction={() => setOpened(true)} />
         ) : (
           <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="sm">
             {orders.map((order) => {

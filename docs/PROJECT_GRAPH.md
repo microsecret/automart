@@ -63,7 +63,10 @@ flowchart LR
 
 The titanium/teal/copper artwork is decorative and never replaces listing
 photos, vehicle facts, brand logos or accessible action labels. The shared
-component fixes image dimensions and lazy-loads local WebP files. Server-only
+component fixes image dimensions and lazy-loads local WebP files.
+The deliveries, messages and favorites artwork is used in account empty states
+through the same component; error and search-miss states retain semantic icons.
+Server-only
 `scripts/prepare-ui-artwork.mjs` prepares 320px and 640px variants from external
 transparent PNG masters; the large masters are not shipped in public assets.
 Mantine retains button loading/disabled semantics, keyboard focus and danger

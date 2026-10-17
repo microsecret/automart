@@ -7,7 +7,7 @@ import sharp from "sharp"
 const sourceDirectory = process.argv[2]
 if (!sourceDirectory) throw new Error("A source directory is required")
 const outputDirectory = path.resolve(process.argv[3] || "public/images/ui/titanium-v1")
-const artwork = ["auctions", "fuel-map", "garage", "partner", "history-check", "publish-listing", "valuation", "matching", "safe-deal", "documents", "parts"]
+const artwork = ["auctions", "fuel-map", "garage", "partner", "history-check", "publish-listing", "valuation", "matching", "safe-deal", "documents", "parts", "deliveries", "messages", "favorites"]
 await fs.mkdir(outputDirectory, { recursive: true })
 
 for (const name of artwork) {

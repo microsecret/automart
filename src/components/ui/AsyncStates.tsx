@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import ServiceArtwork, { type ServiceArtworkKind } from "@/components/ui/ServiceArtwork"
 import { Box, Button, Group, Loader, Paper, Skeleton, Stack, Text, ThemeIcon } from "@mantine/core"
 import { IconAlertCircle, IconArrowLeft, IconRefresh, IconSearchOff } from "@tabler/icons-react"
 
@@ -72,6 +73,7 @@ type EmptyStateProps = {
   onAction?: () => void
   /** Значок раздела; по умолчанию — «ничего не найдено». */
   icon?: React.ReactNode
+  artwork?: ServiceArtworkKind
 }
 
 /* Пустое состояние — одно на весь сайт: фирменный значок, заголовок,
@@ -79,11 +81,11 @@ type EmptyStateProps = {
    был серый значок и бледная кнопка, а разделы кабинета рисовали свои
    пустые состояния ярче — рядом они выглядели собранными из разных
    наборов. */
-export function EmptyState({ title, description, actionLabel, actionHref, onAction, icon }: EmptyStateProps) {
+export function EmptyState({ title, description, actionLabel, actionHref, onAction, icon, artwork }: EmptyStateProps) {
   return (
     <Paper radius="md" p={{ base: "lg", md: "xl" }} withBorder className="lw-empty">
       <Stack align="center" gap="sm" maw={480} mx="auto" ta="center">
-        <ThemeIcon size={52} radius="md" color="indigo" variant="light" className="lw-empty__icon">{icon ?? <IconSearchOff size={26} />}</ThemeIcon>
+        {artwork ? <ServiceArtwork kind={artwork} size={176} /> : <ThemeIcon size={52} radius="md" color="indigo" variant="light" className="lw-empty__icon">{icon ?? <IconSearchOff size={26} />}</ThemeIcon>}
         <Text fw={700} fz="lg" c="var(--market-ink)">{title}</Text>
         <Text size="sm" c="dimmed">{description}</Text>
         {actionLabel && actionHref && <Button component={Link} href={actionHref} color="indigo" size="sm" mt="xs">{actionLabel}</Button>}
