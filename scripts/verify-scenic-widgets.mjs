@@ -62,6 +62,7 @@ try {
       try {
         const response = await page.goto(base + route, { waitUntil: "domcontentloaded", timeout: 60000 })
         assert.equal(response.status(), 200)
+        await page.waitForFunction((scheme) => document.documentElement.getAttribute("data-mantine-color-scheme") === scheme, mobile ? "dark" : "light")
         const selector = index === 0 ? ".lw-scenic-tile" : ".lw-scenic-banner"
         await page.locator(selector).first().waitFor({ state: "visible" })
         if (route.includes("tab=")) {
