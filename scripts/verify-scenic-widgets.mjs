@@ -41,9 +41,14 @@ try {
     for (const mobile of [false, true]) {
       const name = `${index}-${mobile ? "mobile-dark" : "desktop-light"}`
       const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 }, reducedMotion: "reduce" })
-      await context.addInitScript((scheme) => localStorage.setItem("automart-color-scheme", scheme), mobile ? "dark" : "light")
+      await context.addInitScript((scheme) => {
+        localStorage.setItem("automart-color-scheme", scheme)
+        localStorage.setItem("lw-quick-tour-v1", "done")
+      }, mobile ? "dark" : "light")
       if (index > 0) {
-        await context.addCookies([{ name: "next-auth.session-token", value: token, url: base, httpOnly: true }])
+        // Middleware chooses the Secure name from the configured HTTPS origin,
+        // even on loopback. Explicit headers avoid browser prefix restrictions.
+        await context.setExtraHTTPHeaders({ Cookie: `next-auth.session-token=${token}; __Secure-next-auth.session-token=${token}` })
         await context.route("**/api/**", async (request) => {
           if (request.request().method() !== "GET") return request.fulfill({ status: 200, json: { success: true } })
           const pathname = new URL(request.request().url()).pathname
@@ -55,11 +60,15 @@ try {
       const errors = []
       page.on("pageerror", (error) => errors.push(error.message))
       try {
-        const response = await page.goto(base + route, { waitUntil: "networkidle", timeout: 60000 })
+        const response = await page.goto(base + route, { waitUntil: "domcontentloaded", timeout: 60000 })
         assert.equal(response.status(), 200)
         const selector = index === 0 ? ".lw-scenic-tile" : ".lw-scenic-banner"
         await page.locator(selector).first().waitFor({ state: "visible" })
-        if (route.includes("tab=")) await page.locator(`.lw-scenic-banner img[src*="${route.split("=")[1] === "garage" ? "garage" : route.split("=")[1]}"]`).first().waitFor()
+        if (route.includes("tab=")) {
+          const feature = page.locator(`.lw-scenic-banner img[src*="${route.split("=")[1]}"]`).first()
+          await feature.waitFor()
+          await feature.scrollIntoViewIfNeeded()
+        }
         await page.locator(`${selector} img`).evaluateAll(async (images) => { await Promise.all(images.map((image) => image.decode())) })
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
         assert.ok(overflow <= 1, `horizontal overflow: ${overflow}`)
