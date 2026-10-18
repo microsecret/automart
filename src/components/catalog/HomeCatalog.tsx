@@ -72,12 +72,12 @@ const MORE_SORTS = SORT_OPTIONS.filter((o) => !QUICK_SORT_VALUES.has(o.value)).m
 
 /* Shared titanium artwork; labels and destinations stay ordinary links. */
 const HERO_ACTIONS = [
-  { href: "#catalog", label: "Купить авто", note: "Весь каталог", artwork: "matching" },
-  { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", artwork: "publish-listing" },
-  { href: "/auctions", label: "Аукционы", note: "Азия и Европа", artwork: "auctions" },
+  { href: "#catalog", label: "Купить авто", note: "Весь каталог", scene: "buy" },
+  { href: CREATE_VEHICLE_HREF, label: "Продать авто", note: "Бесплатно", scene: "sell" },
+  { href: "/auctions", label: "Аукционы", note: "Азия и Европа", scene: "auctions" },
   /* VIN расшифровывается в каталогах по маркам, а не в поиске запчастей:
      ссылка ведёт туда, что обещает подпись. */
-  { href: "/catalogs", label: "Запчасти", note: "По марке и VIN", artwork: "parts" },
+  { href: "/catalogs", label: "Запчасти", note: "По марке и VIN", scene: "parts" },
   /* «Заправки», а не «Где заправиться»: замер показал, что полная
      подпись требует 131 пиксель при ширине плитки 124 и вылезает за
      края. Уменьшать кегль дальше нельзя — четырнадцать пикселей и так
@@ -85,7 +85,7 @@ const HERO_ACTIONS = [
 
      Короткое имя не выдумано: оно уже стоит в навигации проекта как
      shortLabel для этого же раздела. */
-  { href: "/services/fuel-map", label: "Заправки", note: "Цены на карте", artwork: "fuel-map" },
+  { href: "/services/fuel-map", label: "Заправки", note: "Цены на карте", scene: "fuel" },
 ] as const
 
 export default function HomePage(p: HomePageProps = {}) {
@@ -549,9 +549,9 @@ export default function HomePage(p: HomePageProps = {}) {
           инструментов у площадки-образца, и герой стал на треть ниже. */}
       {p.showHero !== false && !p.categorySlug && (
         <nav className="home-quick" aria-label="Быстрые действия">
-          {HERO_ACTIONS.map((action, index) => (
+          {HERO_ACTIONS.map((action) => (
             <Link key={action.href} href={action.href} className="home-quick__item lw-quick-widget lw-scenic-tile">
-              <NextImage src={`/images/ui/scenic-v1/${["buy", "sell", "auctions", "parts", "fuel"][index]}-960.webp`} alt="" aria-hidden="true" fill sizes="(max-width: 620px) 100vw, 50vw" unoptimized className="lw-scenic-tile__image" />
+              <NextImage src={`/images/ui/scenic-v1/${action.scene}-960.webp`} alt="" aria-hidden="true" fill sizes="(max-width: 620px) 100vw, 50vw" unoptimized className="lw-scenic-tile__image" />
               <span className="home-quick__text">
                 <span className="home-quick__label">{action.label}</span>
                 <span className="home-quick__note">{action.note}</span>

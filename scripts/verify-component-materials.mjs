@@ -48,8 +48,8 @@ try {
       const response = await page.goto(new URL(capture.route, baseUrl).href, { waitUntil: "domcontentloaded", timeout: 60000 })
       assert.equal(response.status(), 200, `${capture.name}: HTTP status`)
       await page.waitForFunction((scheme) => document.documentElement.dataset.mantineColorScheme === scheme, capture.scheme)
-      await page.locator(capture.target || ".lw-service-artwork").first().waitFor({ state: "visible", timeout: 30000 })
-      const images = await page.locator(".lw-service-artwork").evaluateAll(async (elements) => {
+      await page.locator(capture.target || ".lw-service-artwork, .lw-scenic-tile__image").first().waitFor({ state: "visible", timeout: 30000 })
+      const images = await page.locator(".lw-service-artwork, .lw-scenic-tile__image").evaluateAll(async (elements) => {
         await Promise.all(elements.map(async (image) => { image.loading = "eager"; try { await image.decode() } catch { /* Report below. */ } }))
         return elements.map((image) => ({ src: image.getAttribute("src"), loaded: image.complete && image.naturalWidth > 0 }))
       })
@@ -66,7 +66,7 @@ try {
         assert.equal(await page.locator(".lw-quick-widget").count(), 5, "All five home actions remain available")
         if (capture.width < 600) {
           const columns = await page.locator(".home-quick").evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length)
-          assert.equal(columns, 2, "Mobile quick actions stay in a two-column grid")
+          assert.equal(columns, 1, "Wide scenic actions stay readable in one mobile column")
         }
       }
       if (capture.target) await page.locator(capture.target).screenshot({ path: path.join(output, `${capture.name}.png`), timeout: 30000 })
