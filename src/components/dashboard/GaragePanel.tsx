@@ -54,7 +54,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
             <Text size="sm" c="dimmed">Ваши автомобили не публикуются в каталоге и доступны только вам.</Text>
           </Stack>
         </Group>
-        <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" size="sm" leftSection={<IconPlus size={16} />}>Добавить автомобиль</Button>
+        <Button component={Link} href="/listings/create/vehicle?mode=garage" color="indigo" size="sm" leftSection={<IconPlus size={16} />}>Добавить автомобиль</Button>
       </Group>
 
       </ScenicBanner>
@@ -132,7 +132,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
           <Stack align="center" gap="sm" maw={420} ta="center">
             <Text fw={700} fz="lg">В гараже пока нет автомобилей</Text>
             <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно. Когда понадобится, создайте из неё объявление без повторного ввода.</Text>
-            <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>
+            <Button component={Link} href="/listings/create/vehicle?mode=garage" color="indigo" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>
           </Stack>
         </Center>
       )}

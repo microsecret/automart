@@ -20,7 +20,7 @@
   background: linear-gradient(90deg, rgb(2 28 33 / 96%), rgb(2 28 33 / 80%) 38%, rgb(2 28 33 / 16%) 75%);
   pointer-events: none;
 }
-.lw-scenic-banner__content { position: relative; max-width: 100%; }
+.lw-scenic-banner__content { position: relative; max-width: 100%; overflow-wrap: anywhere; }
 .lw-scenic-banner__content .mantine-Text-root,
 .lw-scenic-banner__content .mantine-Title-root { color: #fff !important; }
 .lw-scenic-banner__content .mantine-Anchor-root { color: #b6edef; }
@@ -51,6 +51,12 @@
 .home-quick__item.lw-scenic-tile .home-quick__arrow { color: #efc6a6; }
 .lw-scenic-tile:focus-visible { outline: 3px solid var(--market-focus-ring); outline-offset: 3px; }
 @media (max-width: 620px) {
+  .dashboard-first-steps {
+    min-width: 0;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
   .lw-scenic-banner { min-height: 240px; }
   .lw-scenic-banner::before { background: rgb(2 28 33 / 78%); }
   .lw-scenic-banner__content .mantine-Group-root { flex-wrap: wrap; }
