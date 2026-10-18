@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Box, Stack, Group, Text, SimpleGrid, Center, Paper, Button, ThemeIcon, Pagination, SegmentedControl } from "@mantine/core"
 import { IconHeart, IconLayoutGrid, IconList } from "@tabler/icons-react"
 import ServiceArtwork from "@/components/ui/ServiceArtwork"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 import { useState } from "react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
@@ -36,6 +37,7 @@ export default function FavoritesPage() {
   return (
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
+        <ScenicBanner scene="buy">
         <Group justify="space-between" align="center">
           <Stack gap={0}>
             <Group gap="sm" align="center">
@@ -48,6 +50,7 @@ export default function FavoritesPage() {
           )}
         </Group>
 
+        </ScenicBanner>
         <DashboardNav active="favorites" />
 
         {isLoading ? (

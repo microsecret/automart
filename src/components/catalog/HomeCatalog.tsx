@@ -26,7 +26,6 @@ import AuctionShowcase from "@/components/home/AuctionShowcase"
 import PromoSlot from "@/components/home/PromoSlot"
 import QuickTour from "@/components/home/QuickTour"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
-import ServiceArtwork from "@/components/ui/ServiceArtwork"
 
 type HomePageProps = {
   /* Первая страница витрины, отрисованная на сервере: без неё робот
@@ -426,7 +425,7 @@ export default function HomePage(p: HomePageProps = {}) {
     <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)" className="home-page-stack">
       {p.showHero !== false && !p.categorySlug && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
-          <NextImage src="/images/home/automarket-hero.webp" alt="LeWheel: транспорт, запчасти и международные аукционы" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
+          <NextImage src="/images/ui/scenic-v1/buy-1600.webp" alt="" fill priority unoptimized sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
           <Box className="home-auctions__scrim" />
           <Box className="home-auctions__content">
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
@@ -550,9 +549,9 @@ export default function HomePage(p: HomePageProps = {}) {
           инструментов у площадки-образца, и герой стал на треть ниже. */}
       {p.showHero !== false && !p.categorySlug && (
         <nav className="home-quick" aria-label="Быстрые действия">
-          {HERO_ACTIONS.map((action) => (
-            <Link key={action.href} href={action.href} className="home-quick__item lw-quick-widget">
-              <ServiceArtwork kind={action.artwork} size={112} />
+          {HERO_ACTIONS.map((action, index) => (
+            <Link key={action.href} href={action.href} className="home-quick__item lw-quick-widget lw-scenic-tile">
+              <NextImage src={`/images/ui/scenic-v1/${["buy", "sell", "auctions", "parts", "fuel"][index]}-960.webp`} alt="" aria-hidden="true" fill sizes="(max-width: 620px) 100vw, 50vw" unoptimized className="lw-scenic-tile__image" />
               <span className="home-quick__text">
                 <span className="home-quick__label">{action.label}</span>
                 <span className="home-quick__note">{action.note}</span>

@@ -5,6 +5,7 @@ import { ActionIcon, Badge, Button, Center, Group, Paper, SimpleGrid, Stack, Tex
 import { IconBrandTelegram, IconCreditCard, IconExternalLink, IconReceipt, IconTrendingUp } from "@tabler/icons-react"
 import { PROMOTION_TARIFFS } from "@/lib/promotion-tariffs"
 import MetricCard from "@/components/ui/MetricCard"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 
 export type PromotionOrder = {
   id: string
@@ -68,6 +69,13 @@ const formatOrderDate = (value: string) => new Intl.DateTimeFormat("ru-RU", {
 export default function PromotionPanel({ spentRub, activePromotions, paidCount, orders, onViewListings }: PromotionPanelProps) {
   return (
     <Stack gap="md">
+      <ScenicBanner scene="payments">
+        <Stack gap="sm" maw={520}>
+          <Text component="h2" fw={800} fz="h2">Оплаты</Text>
+          <Text>История платежей и продвижение объявлений</Text>
+          <Button onClick={onViewListings} color="indigo" w="fit-content">Выбрать объявление</Button>
+        </Stack>
+      </ScenicBanner>
       <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
         <MetricCard label="Оплачено за продвижение" value={formatRubles(spentRub)} icon={<IconCreditCard size={20} />} color="indigo" size="md" />
         <MetricCard label="Активные продвижения" value={activePromotions} icon={<IconTrendingUp size={20} />} color="teal" size="md" />

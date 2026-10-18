@@ -42,6 +42,7 @@ flowchart LR
 | Shared site navigation | `src/lib/navigation-registry.ts` | header, footer, app shell, dashboard and Telegram shell |
 | Shared 3D component artwork | `src/components/ui/ServiceArtwork.tsx` | `public/images/ui/titanium-v1/`, home quick actions, service pages, garage, partner workspace and Telegram shortcuts |
 | Tactile buttons and component materials | `src/app/component-materials.css` | `src/theme/theme.ts`, root layout, `ListingCard` detail actions; semantic danger colors remain independent |
+| Full-bleed scenic widgets | `src/components/ui/ScenicBanner.tsx` | `scenic-widgets.css`, `public/images/ui/scenic-v1/`; home actions and account banners preserve real HTML controls and real user data |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
 | Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |

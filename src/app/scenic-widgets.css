@@ -1,0 +1,60 @@
+/* Approved full-bleed petrol/metal artwork; text and actions remain HTML. */
+.lw-scenic-banner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #052b31;
+  color: #fff;
+  min-height: 230px;
+  padding: clamp(22px, 3vw, 40px);
+}
+.lw-scenic-banner__image,
+.lw-scenic-tile__image { object-fit: cover; object-position: right center; z-index: -2; }
+.lw-scenic-banner::before,
+.home-quick__item.lw-scenic-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(2 28 33 / 96%), rgb(2 28 33 / 80%) 38%, rgb(2 28 33 / 16%) 75%);
+  pointer-events: none;
+}
+.lw-scenic-banner__content { position: relative; max-width: 100%; }
+.lw-scenic-banner__content .mantine-Text-root,
+.lw-scenic-banner__content .mantine-Title-root { color: #fff !important; }
+.lw-scenic-banner__content .mantine-Anchor-root { color: #b6edef; }
+.lw-scenic-banner--compact { min-height: 170px; }
+.lw-dashboard-welcome .dashboard-head { min-height: 155px; align-items: flex-start; }
+.lw-dashboard-welcome .dashboard-head__actions { align-self: flex-end; flex-wrap: wrap; }
+.dashboard-garage > .lw-scenic-banner { margin-bottom: 24px; }
+.home-page-stack > .home-quick:has(.lw-scenic-tile) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.home-quick__item.lw-quick-widget.lw-scenic-tile {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 178px;
+  padding: 24px;
+  border: 0;
+  border-radius: 14px;
+  background: #052b31;
+  color: white;
+  justify-content: center;
+}
+.home-quick__item.lw-scenic-tile:last-child { grid-column: 1 / -1; }
+.lw-scenic-tile .home-quick__text { margin-top: 0; max-width: 65%; }
+.home-quick__item.lw-scenic-tile .home-quick__label { color: #fff; font-size: clamp(20px, 2vw, 29px); }
+.home-quick__item.lw-scenic-tile .home-quick__note { color: #e4bd9f; font-size: 14px; }
+.home-quick__item.lw-scenic-tile .home-quick__arrow { color: #efc6a6; }
+.lw-scenic-tile:focus-visible { outline: 3px solid var(--market-focus-ring); outline-offset: 3px; }
+@media (max-width: 620px) {
+  .lw-scenic-banner { min-height: 240px; }
+  .lw-scenic-banner::before { background: rgb(2 28 33 / 78%); }
+  .lw-scenic-banner__content .mantine-Group-root { flex-wrap: wrap; }
+  .home-page-stack > .home-quick:has(.lw-scenic-tile) { grid-template-columns: 1fr; }
+  .home-quick__item.lw-quick-widget.lw-scenic-tile { min-height: 155px; padding: 20px; }
+  .lw-scenic-tile .home-quick__text { max-width: 75%; }
+}

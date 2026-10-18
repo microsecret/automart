@@ -5,7 +5,7 @@ import { ActionIcon, Badge, Box, Button, Center, Group, Paper, SimpleGrid, Stack
 import { IconArrowRight, IconChecklist, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
 import BrandIcon from "@/components/brands/BrandIcon"
 import VehicleFallback from "@/components/listings/VehicleFallback"
-import ServiceArtwork from "@/components/ui/ServiceArtwork"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 import { AsyncErrorState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import { BODY_TYPES, findLabel, FUEL_TYPES, TRANSMISSIONS } from "@/lib/constants"
 import { formatMileage, parseImages } from "@/lib/format"
@@ -46,9 +46,9 @@ type GaragePanelProps = {
 export default function GaragePanel({ data, error, isLoading, deletingId, onRetry, onRequestDelete }: GaragePanelProps) {
   return (
     <Paper className="dashboard-garage" radius="md" p={{ base: "md", md: "lg" }} withBorder>
-      <Group justify="space-between" align="flex-start" mb="md" gap="md" wrap="wrap">
+      <ScenicBanner scene="garage">
+      <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
         <Group gap="sm" align="center">
-          <ServiceArtwork kind="garage" size={64} />
           <Stack gap={1}>
             <Text fw={800} fz="lg" c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный гараж</Text>
             <Text size="sm" c="dimmed">Ваши автомобили не публикуются в каталоге и доступны только вам.</Text>
@@ -57,6 +57,7 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
         <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" size="sm" leftSection={<IconPlus size={16} />}>Добавить автомобиль</Button>
       </Group>
 
+      </ScenicBanner>
       {isLoading ? (
         <ResultsGridSkeleton count={3} mediaHeight={96} />
       ) : error ? (
@@ -129,7 +130,6 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
       ) : (
         <Center py={{ base: "xl", md: 56 }}>
           <Stack align="center" gap="sm" maw={420} ta="center">
-            <ServiceArtwork kind="garage" size={176} />
             <Text fw={700} fz="lg">В гараже пока нет автомобилей</Text>
             <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно. Когда понадобится, создайте из неё объявление без повторного ввода.</Text>
             <Button component={Link} href="/listings/create/vehicle?mode=garage" color="teal" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>

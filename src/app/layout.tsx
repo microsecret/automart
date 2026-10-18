@@ -1,6 +1,7 @@
 import "./globals.css"
 import "./refresh.css"
 import "./component-materials.css"
+import "./scenic-widgets.css"
 import type { Metadata, Viewport } from "next"
 import { ColorSchemeScript } from "@mantine/core"
 import AppProviders from "@/components/providers/AppProviders"

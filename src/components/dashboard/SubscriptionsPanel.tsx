@@ -8,6 +8,7 @@ import { IconBellOff, IconBrandTelegram, IconGasStation, IconSearch, IconTrash }
 import { fetchJson } from "@/lib/api-client"
 import { savedSearchHref, type SavedSearchScope } from "@/lib/saved-search"
 import { AsyncErrorState, AsyncLoadingState, EmptyState } from "@/components/ui/AsyncStates"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 
 /**
  * Подписки человека в одном месте.
@@ -127,22 +128,34 @@ export default function SubscriptionsPanel() {
     )
   }
 
+  const banner = <ScenicBanner scene="subscriptions">
+    <Stack gap="sm" maw={520}>
+      <Text component="h2" fw={800} fz="h2">Подписки на поиск</Text>
+      <Text>Сохраняйте поиск и следите за новыми предложениями</Text>
+      <Button component={Link} href="/" color="indigo" w="fit-content">Найти автомобиль</Button>
+    </Stack>
+  </ScenicBanner>
+
   /* Пустое состояние объясняет, что подписка вообще существует и где её
      завести: человек, не знавший о функции, попадает сюда из меню и
      должен уйти отсюда с пониманием, а не с пустым экраном. */
   if (isEmpty) {
     return (
+      <Stack gap="md">
+      {banner}
       <EmptyState
         title="Пока нет ни одной подписки"
         description="Бот пишет в Telegram, когда на заправке появляется нужное топливо или в каталоге выходит подходящее объявление. Подписка заводится одной кнопкой на карте АЗС или в результатах поиска."
         actionLabel="Открыть карту АЗС"
         actionHref="/services/fuel-map"
       />
+      </Stack>
     )
   }
 
   return (
     <Stack gap="lg">
+      {banner}
       {fuelList.length > 0 && (
         <Stack gap="sm">
           <Group gap={8}>

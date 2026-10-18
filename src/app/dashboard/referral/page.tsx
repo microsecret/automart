@@ -4,12 +4,13 @@ import { useState } from "react"
 import useSWR from "swr"
 import {
   Alert, Badge, Box, Button, Card, Container, CopyButton, Group, Progress,
-  SimpleGrid, Stack, Table, Text, TextInput, ThemeIcon, Title,
+  SimpleGrid, Stack, Table, Text, TextInput, Title,
 } from "@mantine/core"
 import { IconCheck, IconCopy, IconGift, IconUsers, IconWallet } from "@tabler/icons-react"
 import { AsyncErrorState, AsyncLoadingState } from "@/components/ui/AsyncStates"
 import { fetchJson } from "@/lib/api-client"
 import { plural } from "@/lib/format"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 
 type ReferralData = {
   code: string
@@ -60,12 +61,10 @@ export default function ReferralPage() {
   return (
     <Container size="lg" py={{ base: "md", md: "xl" }}>
       <Stack gap="lg">
-        <Card className="store-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
+        <ScenicBanner scene="referral">
           <Group justify="space-between" align="center" gap="md" wrap="wrap">
             <Group gap="sm" align="center" wrap="nowrap">
-              <ThemeIcon variant="white" color="dark" size={46} radius="md"><IconGift size={23} /></ThemeIcon>
               <Box>
-                <Badge variant="white" color="indigo" size="sm" mb={4}>ПАРТНЁРСКАЯ ПРОГРАММА</Badge>
                 <Title order={1} size="h3" c="white" ff="var(--font-display),sans-serif">Приглашайте и зарабатывайте</Title>
                 <Text size="sm" c="rgba(255,255,255,.76)" mt={2}>
                   Процент с платных тарифов приглашённых. Чем больше активных партнёров, тем выше ставка.
@@ -78,7 +77,7 @@ export default function ReferralPage() {
               <Text size="xs" c="rgba(255,255,255,.7)">{data.tier.label}</Text>
             </Card>
           </Group>
-        </Card>
+        </ScenicBanner>
 
         <Card withBorder radius="md" p="md">
           <Text fw={700} size="sm" mb={4}>Ваша реферальная ссылка</Text>

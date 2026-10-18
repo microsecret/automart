@@ -17,6 +17,7 @@ import { LISTING_STATUS, LISTING_STATUS_META } from "@/lib/listing-lifecycle"
 import VehicleFallback from "@/components/listings/VehicleFallback"
 import ShareInviteCard from "@/components/dashboard/ShareInviteCard"
 import GaragePanel, { type GarageResponse } from "@/components/dashboard/GaragePanel"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 import SubscriptionsPanel from "@/components/dashboard/SubscriptionsPanel"
 import PromotionPanel, { type PromotionOrder } from "@/components/dashboard/PromotionPanel"
 import { FORUM_SIGNATURE_MAX } from "@/lib/forum"
@@ -295,6 +296,7 @@ function DashboardContent() {
             пространство» с «Новым объявлением» — на одном экране шесть
             кнопок подачи вместе с меню и шапкой сайта. Владелец назвал это
             разнобоем: одно действие — одна кнопка. */}
+        <ScenicBanner scene="buy" className="lw-dashboard-welcome">
         <Group gap="md" align="center" justify="space-between" wrap="wrap" className="dashboard-head">
           <Group gap="sm" align="center" wrap="nowrap" miw={0}>
             <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconLayoutDashboard size={22} /></ThemeIcon>
@@ -311,6 +313,7 @@ function DashboardContent() {
           </Group>
         </Group>
 
+        </ScenicBanner>
         {hasAttentionItems && (
           <Alert color="orange" variant="light" icon={<IconAlertCircle size={18} />} className="dashboard-attention">
             <Group justify="space-between" gap="sm" wrap="wrap">

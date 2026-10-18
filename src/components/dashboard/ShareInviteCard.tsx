@@ -1,9 +1,10 @@
 "use client"
 
 import useSWR from "swr"
-import { Anchor, Button, CopyButton, Group, Paper, Text, ThemeIcon } from "@mantine/core"
+import { Anchor, Button, CopyButton, Group, Text, ThemeIcon } from "@mantine/core"
 import { IconBrandTelegram, IconCheck, IconCopy, IconGift } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 
 type ReferralResponse = { link?: string; code?: string }
 
@@ -24,7 +25,7 @@ export default function ShareInviteCard() {
   const telegramShare = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`
 
   return (
-    <Paper withBorder radius="md" p="md">
+    <ScenicBanner scene="referral" className="lw-scenic-banner--compact">
       <Group gap="sm" wrap="nowrap" align="flex-start">
         <ThemeIcon variant="light" color="teal" size={34} radius="md"><IconGift size={18} /></ThemeIcon>
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -61,6 +62,6 @@ export default function ShareInviteCard() {
           </Group>
         </div>
       </Group>
-    </Paper>
+    </ScenicBanner>
   )
 }
