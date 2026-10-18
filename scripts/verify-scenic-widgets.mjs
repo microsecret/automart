@@ -76,6 +76,8 @@ try {
           assert.equal(await page.locator(".lw-scenic-tile").count(), 5)
           const columns = await page.locator(".home-quick").evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length)
           assert.equal(columns, mobile ? 1 : 2)
+          const heights = await page.locator(".lw-scenic-tile").evaluateAll((tiles) => tiles.map((tile) => tile.getBoundingClientRect().height))
+          assert.ok(heights.every((height) => height >= 100 && height <= 120), `Compact widget heights: ${heights.join(", ")}`)
         }
         assert.deepEqual(errors, [])
         await page.screenshot({ path: path.join(output, `${name}.png`), fullPage: false })
