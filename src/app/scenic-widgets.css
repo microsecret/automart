@@ -6,11 +6,12 @@
   border-radius: 16px;
   background: #052b31;
   color: #fff;
-  min-height: 230px;
-  padding: clamp(22px, 3vw, 40px);
+  min-height: 150px;
+  padding: 20px 24px;
 }
 .lw-scenic-banner__image,
 .lw-scenic-tile__image { object-fit: cover; object-position: right center; z-index: -2; }
+.lw-scenic-banner__image { object-fit: contain; }
 .lw-scenic-banner::before,
 .home-quick__item.lw-scenic-tile::before {
   content: "";
@@ -24,10 +25,20 @@
 .lw-scenic-banner__content .mantine-Text-root,
 .lw-scenic-banner__content .mantine-Title-root { color: #fff !important; }
 .lw-scenic-banner__content .mantine-Anchor-root { color: #b6edef; }
-.lw-scenic-banner--compact { min-height: 170px; }
-.lw-dashboard-welcome .dashboard-head { min-height: 155px; align-items: flex-start; }
-.lw-dashboard-welcome .dashboard-head__actions { align-self: flex-end; flex-wrap: wrap; }
-.dashboard-garage > .lw-scenic-banner { margin-bottom: 24px; }
+.lw-scenic-banner--compact { min-height: 124px; }
+.lw-dashboard-welcome .dashboard-head {
+  min-height: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.lw-dashboard-welcome .dashboard-head__actions { align-self: flex-start; flex-wrap: wrap; }
+.dashboard-garage > .lw-scenic-banner { margin-bottom: 12px; }
+.side-widget__head,
+.market-side-account__head {
+  background: linear-gradient(135deg, #053d46, #08535f) !important;
+  color: #fff;
+}
 .home-page-stack > .home-quick:has(.lw-scenic-tile) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
@@ -49,6 +60,11 @@
 .home-quick__item.lw-scenic-tile .home-quick__label { color: #fff; font-size: clamp(18px, 1.5vw, 22px); }
 .home-quick__item.lw-scenic-tile .home-quick__note { color: #e4bd9f; font-size: 12px; }
 .lw-scenic-tile__image { object-position: right 60%; }
+.home-quick__item.lw-scenic-tile[data-scene="fuel"] { justify-content: flex-end; }
+.lw-scenic-tile[data-scene="fuel"] .lw-scenic-tile__image {
+  object-fit: contain;
+  object-position: right bottom;
+}
 .home-quick__item.lw-scenic-tile .home-quick__arrow { color: #efc6a6; }
 .lw-scenic-tile:focus-visible { outline: 3px solid var(--market-focus-ring); outline-offset: 3px; }
 @media (max-width: 620px) {
@@ -58,7 +74,9 @@
     margin-inline: 0;
     padding-inline: 0;
   }
-  .lw-scenic-banner { min-height: 240px; }
+  .lw-scenic-banner { min-height: 180px; padding: 18px; }
+  .lw-scenic-banner--compact { min-height: 140px; }
+  .lw-scenic-banner__image { object-fit: cover; object-position: 65% center; }
   .lw-scenic-banner::before { background: rgb(2 28 33 / 78%); }
   .lw-scenic-banner__content .mantine-Group-root { flex-wrap: wrap; }
   .home-page-stack > .home-quick:has(.lw-scenic-tile) { grid-template-columns: 1fr; }

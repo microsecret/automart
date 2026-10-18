@@ -296,6 +296,7 @@ function DashboardContent() {
             пространство» с «Новым объявлением» — на одном экране шесть
             кнопок подачи вместе с меню и шапкой сайта. Владелец назвал это
             разнобоем: одно действие — одна кнопка. */}
+        {!["garage", "subscriptions", "payments"].includes(tab) && (
         <ScenicBanner scene="buy" className="lw-dashboard-welcome">
         <Group gap="md" align="center" justify="space-between" wrap="wrap" className="dashboard-head">
           <Group gap="sm" align="center" wrap="nowrap" miw={0}>
@@ -314,6 +315,7 @@ function DashboardContent() {
         </Group>
 
         </ScenicBanner>
+        )}
         {hasAttentionItems && (
           <Alert color="orange" variant="light" icon={<IconAlertCircle size={18} />} className="dashboard-attention">
             <Group justify="space-between" gap="sm" wrap="wrap">
@@ -325,7 +327,7 @@ function DashboardContent() {
 
         {/* Статусы объявлений — отдельной полосой и только у тех, у кого
             объявления есть. */}
-          {hasAnyListings && (
+          {hasAnyListings && tab === "listings" && (
           <SimpleGrid className="dashboard-workspace__status-grid" cols={{ base: 2, sm: 4 }} spacing="xs" >
             {[
               { label: "Черновики", value: workflow.drafts, icon: <IconFileDescription size={17} />, color: "gray", status: LISTING_STATUS.DRAFT },
@@ -360,7 +362,7 @@ function DashboardContent() {
             публикации») написаны верно, но шесть подсказок подряд — это
             уже не помощь, а перечень того, чего у человека нет. Вместо
             них ниже стоит один блок с первым шагом. */}
-        {hasAnyListings ? (
+        {tab === "listings" && (hasAnyListings ? (
         <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="sm">
           {[
             { label: "Объявления", value: stats.totalListings, icon: <IconTag size={18} />, tone: "indigo", href: "/dashboard?tab=listings", hint: "Разместите первое" },
@@ -413,8 +415,7 @@ function DashboardContent() {
               </Paper>
             ))}
           </SimpleGrid>
-        )}
-
+        ))}
         {/* Контент табов */}
         {tab === "listings" && (
           <Stack gap="xs" id="dashboard-listings">
@@ -424,13 +425,13 @@ function DashboardContent() {
               </Alert>
             )}
             {data.listings.length === 0 ? (
-              <Paper radius="md" p="xl" withBorder>
+              <Paper radius="md" p="md" withBorder>
                 <Center>
                   {/* Пустой экран — это точка, где продавец решает, продолжать
                       ли. Машина в гараже уже содержит характеристики, поэтому
                       подача из неё короче, чем заполнение формы с нуля. */}
                   <Stack align="center" gap="sm" maw={420} ta="center">
-                    <ThemeIcon variant="light" color="indigo" size={48} radius="md"><IconTag size={24} /></ThemeIcon>
+                    <ThemeIcon variant="light" color="indigo" size={36} radius="md"><IconTag size={20} /></ThemeIcon>
                     <Text fw={700}>У вас пока нет объявлений</Text>
                     <Text size="sm" c="dimmed">
                       {stats.garageCount > 0

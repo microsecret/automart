@@ -550,7 +550,7 @@ export default function HomePage(p: HomePageProps = {}) {
       {p.showHero !== false && !p.categorySlug && (
         <nav className="home-quick" aria-label="Быстрые действия">
           {HERO_ACTIONS.map((action) => (
-            <Link key={action.href} href={action.href} className="home-quick__item lw-quick-widget lw-scenic-tile">
+            <Link key={action.href} href={action.href} data-scene={action.scene} className="home-quick__item lw-quick-widget lw-scenic-tile">
               <NextImage src={`/images/ui/scenic-v1/${action.scene}-960.webp`} alt="" aria-hidden="true" fill sizes="(max-width: 620px) 100vw, 50vw" unoptimized className="lw-scenic-tile__image" />
               <span className="home-quick__text">
                 <span className="home-quick__label">{action.label}</span>

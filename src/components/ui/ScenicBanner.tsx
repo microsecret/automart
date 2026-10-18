@@ -10,7 +10,7 @@ export default function ScenicBanner({ scene, children, className = "" }: {
   className?: string
 }) {
   return (
-    <section className={`lw-scenic-banner ${className}`.trim()}>
+    <section data-scene={scene} className={`lw-scenic-banner ${className}`.trim()}>
       <Image src={`/images/ui/scenic-v1/${scene}-1600.webp`} alt="" aria-hidden="true" fill sizes="(max-width: 600px) 100vw, 1200px" unoptimized className="lw-scenic-banner__image" />
       <div className="lw-scenic-banner__content">{children}</div>
     </section>

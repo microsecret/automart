@@ -84,10 +84,10 @@ export default function ReferralPage() {
           <Text size="xs" c="dimmed" mb="sm">
             Отправьте её тому, кого приглашаете. Связь закрепляется при регистрации и не меняется.
           </Text>
-          <Group gap="xs" wrap="nowrap">
+          <Group gap="xs" wrap="wrap">
             {/* Подпись нужна читалке экрана: без неё поле объявляется просто
                 «текстовое поле», и назначение ссылки теряется. */}
-            <TextInput value={data.link} readOnly aria-label="Ваша реферальная ссылка" style={{ flex: 1 }} />
+            <TextInput value={data.link} readOnly aria-label="Ваша реферальная ссылка" style={{ flex: "1 1 260px", minWidth: 0 }} />
             <CopyButton value={data.link} timeout={2000}>
               {({ copied, copy }) => (
                 <Button color={copied ? "teal" : "indigo"} onClick={copy} leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />}>

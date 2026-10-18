@@ -222,14 +222,12 @@ function DeliveriesWorkspace() {
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
         <ScenicBanner scene="deliveries">
-          <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
             <Stack gap="xs" maw={650}>
               <Title order={1} size="h3" c="white" lh={1.1} lts="-.025em" ff="var(--font-display), sans-serif">Маршрут, документы и статусы — в одном кабинете</Title>
               <Text c="rgba(255,255,255,.8)" size="md" maw={610}>Сопровождаем автомобиль или запчасть от зарубежной площадки до выдачи в вашем городе. Партнёры и реквизиты появляются только после проверки.</Text>
+              <Button onClick={() => setOpened(true)} color="indigo" leftSection={<IconPlus size={17} />} size="md" w="fit-content">Заявка на доставку</Button>
               <Group gap="xs" mt="xs" className="hero-chips"><Badge variant="outline">Прозрачные этапы</Badge><Badge variant="outline">Раздельные счета</Badge><Badge variant="outline">Проверенные партнёры</Badge></Group>
             </Stack>
-            <Button onClick={() => setOpened(true)} color="indigo" leftSection={<IconPlus size={17} />} size="md">Заявка на доставку</Button>
-          </Group>
         </ScenicBanner>
 
         {/* Сводка — только когда есть что сводить. Четыре нуля у человека

@@ -47,15 +47,13 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
   return (
     <Paper className="dashboard-garage" radius="md" p={{ base: "md", md: "lg" }} withBorder>
       <ScenicBanner scene="garage">
-      <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
-        <Group gap="sm" align="center">
+      <Stack gap="sm" align="flex-start">
           <Stack gap={1}>
-            <Text fw={800} fz="lg" c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный гараж</Text>
+            <Text component="h1" fw={800} fz="lg" c="var(--market-ink)" ff="var(--font-display),sans-serif">Личный гараж</Text>
             <Text size="sm" c="dimmed">Ваши автомобили не публикуются в каталоге и доступны только вам.</Text>
           </Stack>
-        </Group>
         <Button component={Link} href="/listings/create/vehicle?mode=garage" color="indigo" size="sm" leftSection={<IconPlus size={16} />}>Добавить автомобиль</Button>
-      </Group>
+      </Stack>
 
       </ScenicBanner>
       {isLoading ? (
@@ -128,11 +126,10 @@ export default function GaragePanel({ data, error, isLoading, deletingId, onRetr
           })}
         </SimpleGrid>
       ) : (
-        <Center py={{ base: "xl", md: 56 }}>
+        <Center py="lg">
           <Stack align="center" gap="sm" maw={420} ta="center">
             <Text fw={700} fz="lg">В гараже пока нет автомобилей</Text>
             <Text size="sm" c="dimmed">Добавьте свою машину, чтобы хранить данные приватно. Когда понадобится, создайте из неё объявление без повторного ввода.</Text>
-            <Button component={Link} href="/listings/create/vehicle?mode=garage" color="indigo" size="sm" leftSection={<IconPlus size={16} />}>Добавить первый автомобиль</Button>
           </Stack>
         </Center>
       )}

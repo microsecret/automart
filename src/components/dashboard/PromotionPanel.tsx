@@ -71,7 +71,7 @@ export default function PromotionPanel({ spentRub, activePromotions, paidCount, 
     <Stack gap="md">
       <ScenicBanner scene="payments">
         <Stack gap="sm" maw={520}>
-          <Text component="h2" fw={800} fz="h2">Оплаты</Text>
+          <Text component="h1" fw={800} fz="h2">Оплаты</Text>
           <Text>История платежей и продвижение объявлений</Text>
           <Button onClick={onViewListings} color="indigo" w="fit-content">Выбрать объявление</Button>
         </Stack>

@@ -7,7 +7,7 @@ import { ActionIcon, Badge, Box, Button, Group, Paper, Stack, Text, Tooltip } fr
 import { IconBellOff, IconBrandTelegram, IconGasStation, IconSearch, IconTrash } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
 import { savedSearchHref, type SavedSearchScope } from "@/lib/saved-search"
-import { AsyncErrorState, AsyncLoadingState, EmptyState } from "@/components/ui/AsyncStates"
+import { AsyncErrorState, AsyncLoadingState } from "@/components/ui/AsyncStates"
 import ScenicBanner from "@/components/ui/ScenicBanner"
 
 /**
@@ -130,9 +130,12 @@ export default function SubscriptionsPanel() {
 
   const banner = <ScenicBanner scene="subscriptions">
     <Stack gap="sm" maw={520}>
-      <Text component="h2" fw={800} fz="h2">Подписки на поиск</Text>
+      <Text component="h1" fw={800} fz="h2">Подписки на поиск</Text>
       <Text>Сохраняйте поиск и следите за новыми предложениями</Text>
-      <Button component={Link} href="/" color="indigo" w="fit-content">Найти автомобиль</Button>
+      <Group gap="xs">
+        <Button component={Link} href="/" color="indigo">Найти автомобиль</Button>
+        <Button component={Link} href="/services/fuel-map" variant="default">Открыть карту АЗС</Button>
+      </Group>
     </Stack>
   </ScenicBanner>
 
@@ -143,12 +146,12 @@ export default function SubscriptionsPanel() {
     return (
       <Stack gap="md">
       {banner}
-      <EmptyState
-        title="Пока нет ни одной подписки"
-        description="Бот пишет в Telegram, когда на заправке появляется нужное топливо или в каталоге выходит подходящее объявление. Подписка заводится одной кнопкой на карте АЗС или в результатах поиска."
-        actionLabel="Открыть карту АЗС"
-        actionHref="/services/fuel-map"
-      />
+      <Paper withBorder radius="md" p="md">
+        <Stack gap={4}>
+          <Text fw={700}>Пока нет ни одной подписки</Text>
+          <Text size="sm" c="dimmed">Бот пишет в Telegram, когда на заправке появляется нужное топливо или в каталоге выходит подходящее объявление. Сохраните поиск в каталоге или оформите подписку на карте АЗС.</Text>
+        </Stack>
+      </Paper>
       </Stack>
     )
   }

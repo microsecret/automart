@@ -60,6 +60,11 @@ flowchart LR
 | SEO landing metadata | `src/lib/seo-metadata.ts` | category generator and public route layouts |
 | iAutos gallery relay | `src/app/api/auction-media/route.ts` | `media-url.ts`, detail gallery |
 
+Account scenic headings are owned by each feature panel (garage, subscriptions,
+payments), not duplicated by the welcome banner. Listing statistics and first-step
+shortcuts belong only to the listings tab. Banner actions follow the text at the
+left edge; decorative images never carry user data or replace controls.
+
 ## Auction ingestion graph
 
 The titanium/teal/copper artwork is decorative and never replaces listing

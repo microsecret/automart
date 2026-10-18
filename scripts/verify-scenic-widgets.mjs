@@ -69,16 +69,29 @@ try {
           const feature = page.locator(`.lw-scenic-banner img[src*="${route.split("=")[1]}"]`).first()
           await feature.waitFor()
           await feature.scrollIntoViewIfNeeded()
+          assert.equal(await page.locator(".lw-dashboard-welcome").count(), 0, "Feature panel has no duplicate welcome banner")
+          assert.equal(await page.locator(".lw-scenic-banner").count(), 1, "One scenic heading per account section")
+          assert.equal(await page.locator("h1").count(), 1, "Feature keeps a single accessible page heading")
         }
         await page.locator(`${selector} img`).evaluateAll(async (images) => { await Promise.all(images.map((image) => image.decode())) })
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
         assert.ok(overflow <= 1, `horizontal overflow: ${overflow}`)
         if (index === 0) {
+          if (!mobile) await page.locator(".side-widget__head").first().waitFor({ state: "visible" })
           assert.equal(await page.locator(".lw-scenic-tile").count(), 5)
           const columns = await page.locator(".home-quick").evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length)
           assert.equal(columns, mobile ? 1 : 2)
           const heights = await page.locator(".lw-scenic-tile").evaluateAll((tiles) => tiles.map((tile) => tile.getBoundingClientRect().height))
           assert.ok(heights.every((height) => height >= 100 && height <= 120), `Compact widget heights: ${heights.join(", ")}`)
+          assert.equal(await page.locator('.lw-scenic-tile[data-scene="fuel"] img').evaluate((image) => getComputedStyle(image).objectFit), "contain", "Fuel scene is not cropped")
+        }
+        if (route === "/dashboard" || route === "/dashboard/deliveries" || route.includes("tab=garage")) {
+          const banner = route === "/dashboard" ? page.locator(".lw-dashboard-welcome") : page.locator(".lw-scenic-banner").first()
+          const action = banner.getByRole(route === "/dashboard/deliveries" ? "button" : "link").first()
+          const bounds = await banner.boundingBox()
+          const button = await action.boundingBox()
+          assert.ok(button.x <= bounds.x + 48, "Primary banner actions align to the left")
+          if (route === "/dashboard") assert.ok(bounds.height <= (mobile ? 220 : 170), "Welcome stays compact")
         }
         assert.deepEqual(errors, [])
         await page.screenshot({ path: path.join(output, `${name}.png`), fullPage: false })
