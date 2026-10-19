@@ -7,6 +7,7 @@ import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 import { containsAnyCase } from "@/lib/search-terms"
 import { parseAuctionImages } from "@/lib/media-url"
 import { groupAuctionMakes } from "@/lib/auction-make-groups.mjs"
+import { createAsyncReadCache } from "@/lib/async-read-cache.mjs"
 
 export const dynamic = "force-dynamic"
 
@@ -54,28 +55,10 @@ type AnalyticsPayload = {
   bodyDistribution: Array<{ bodyType: string; count: number }>
 }
 
-const analyticsCache = new Map<string, { at: number; payload: AnalyticsPayload }>()
-
-function readAnalyticsCache(key: string): AnalyticsPayload | null {
-  const hit = analyticsCache.get(key)
-  if (!hit) return null
-  if (Date.now() - hit.at >= ANALYTICS_TTL_MS) {
-    analyticsCache.delete(key)
-    return null
-  }
-  return hit.payload
-}
-
-function writeAnalyticsCache(key: string, payload: AnalyticsPayload): void {
-  /* Набор фильтров задаёт человек, поэтому число ключей ничем не
-     ограничено сверху. Держим последние — редкие сочетания вытесняются
-     первыми, а обычные (без фильтров, по стране) остаются. */
-  if (analyticsCache.size >= ANALYTICS_CACHE_LIMIT) {
-    const oldest = analyticsCache.keys().next().value
-    if (oldest !== undefined) analyticsCache.delete(oldest)
-  }
-  analyticsCache.set(key, { at: Date.now(), payload })
-}
+const analyticsCache = createAsyncReadCache({ ttlMs: ANALYTICS_TTL_MS, maxEntries: ANALYTICS_CACHE_LIMIT })
+// Live records are shared only while pending, never after completion. Moderation
+// and freshness policy remain authoritative on each subsequent catalogue read.
+const pageReads = createAsyncReadCache({ ttlMs: 0, maxEntries: ANALYTICS_CACHE_LIMIT })
 
 export async function GET(request: NextRequest) {
   try {
@@ -182,21 +165,9 @@ export async function GET(request: NextRequest) {
       /"(\d{4}-\d{2}-\d{2}T\d{2}:\d)\d:\d{2}\.\d{3}Z"/g,
       (_match, prefix: string) => `"${prefix}0"`,
     )
-    const cachedAnalytics = readAnalyticsCache(analyticsKey)
-
-    /* Считать ли сводки в этом запросе.
-     *
-     * Семь из девяти запросов к базе здесь — аналитика: средние,
-     * медиана, распределения по маркам, источникам, топливу и кузову.
-     * Они выполнялись всегда, даже когда результат лежал в кэше или
-     * когда спрашивала витрина, которой сводки не нужны вовсе.
-     *
-     * Замер боевого ответа: 1,2 секунды на двадцать лотов. Основная
-     * доля — эти семь проходов по таблице в 16 тысяч строк. */
-    const needAnalytics = !cachedAnalytics && !brief
-
     /* Лоты и счётчик нужны всегда — это и есть ответ. */
-    const [listings, total] = await prisma.$transaction([
+    const pageKey = JSON.stringify({ filters: analyticsKey, skip, limit, brief })
+    const [listings, total] = await pageReads.get(pageKey, () => prisma.$transaction([
       prisma.auctionListing.findMany({
         where, skip, take: limit,
         /* Поля перечислены поимённо.
@@ -228,12 +199,12 @@ export async function GET(request: NextRequest) {
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       }),
       prisma.auctionListing.count({ where }),
-    ])
+    ]))
 
-    /* Сводки — отдельной транзакцией и только по надобности.
-       Пустой массив вместо результатов, когда считать не нужно. */
-    const [aggregates, popularMakes, sourceDistribution, fuelDistribution, bodyDistribution, powerKnown, mileageKnown] = needAnalytics
-      ? await prisma.$transaction([
+    // Brief consumers skip statistics entirely. Concurrent cache misses share
+    // one calculation instead of scheduling the same eight scans repeatedly.
+    const analytics: AnalyticsPayload | null = brief ? null : await analyticsCache.get(analyticsKey, async () => {
+    const [aggregates, popularMakes, sourceDistribution, fuelDistribution, bodyDistribution, powerKnown, mileageKnown] = await prisma.$transaction([
       prisma.auctionListing.aggregate({
         where,
         _avg: { finalPrice: true, year: true, mileage: true },
@@ -267,14 +238,12 @@ export async function GET(request: NextRequest) {
       prisma.auctionListing.count({ where: { ...where, power: { not: null } } }),
       prisma.auctionListing.count({ where: { ...where, mileage: { not: null } } }),
         ])
-      : [null, [], [], [], [], 0, 0] as const
 
     // Average price is sensitive to premium lots. The median is an additional
     // factual reference for the active filters, calculated without guessing a
     // market price or using listings outside the current result set.
     const middleOffset = Math.floor(Math.max(0, total - 1) / 2)
-    // При попадании в кэш медиану считать незачем: она уже в сводках.
-    const medianRows = needAnalytics && total > 0
+    const medianRows = total > 0
       ? await prisma.auctionListing.findMany({
           where,
           orderBy: { finalPrice: "asc" },
@@ -287,9 +256,7 @@ export async function GET(request: NextRequest) {
       ? Math.round(medianRows.reduce((sum, row) => sum + row.finalPrice, 0) / medianRows.length)
       : null
 
-    /* В кратком режиме сводок нет вовсе: витрина их не читает, а
-       считать было нечем — аналитические запросы пропущены. */
-    const analytics: AnalyticsPayload | null = brief ? null : cachedAnalytics || {
+    return {
       total,
       averageFinalPrice: aggregates && aggregates._avg.finalPrice ? Math.round(aggregates._avg.finalPrice) : null,
       medianFinalPrice,
@@ -304,7 +271,7 @@ export async function GET(request: NextRequest) {
       fuelDistribution: fuelDistribution.flatMap((item) => item.fuelType ? [{ fuelType: item.fuelType, count: Number(item._count) }] : []),
       bodyDistribution: bodyDistribution.flatMap((item) => item.bodyType ? [{ bodyType: item.bodyType, count: Number(item._count) }] : []),
     }
-    if (!cachedAnalytics && analytics) writeAnalyticsCache(analyticsKey, analytics)
+    })
 
     return NextResponse.json({
       listings: card
