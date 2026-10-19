@@ -62,9 +62,12 @@ try {
     const name = mobile ? "mobile-dark-reduced-motion" : "desktop-light"
     const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 }, reducedMotion: mobile ? "reduce" : "no-preference" })
     await context.addInitScript((theme) => localStorage.setItem("mantine-color-scheme-value", theme), mobile ? "dark" : "light")
-    // Credentials are sent ONLY to this isolated loopback origin.
+    // Playwright route.continue cannot override Cookie (the browser ignores
+    // that header). Context headers work; abort every external request before
+    // dispatch so this disposable session never leaves the loopback origin.
+    await context.setExtraHTTPHeaders({ Cookie: otherAuth })
     await context.route("**/*", (route) => new URL(route.request().url()).origin === base
-      ? route.continue({ headers: { ...route.request().headers(), cookie: otherAuth } })
+      ? route.continue()
       : route.abort())
     const page = await context.newPage()
     await page.goto(`${base}/auctions?${payload.query}`, { waitUntil: "domcontentloaded" })
