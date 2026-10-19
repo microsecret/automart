@@ -32,6 +32,7 @@ flowchart LR
 | Task | Start here | Then inspect |
 |---|---|---|
 | Auction catalogue UI | `src/app/auctions/page.tsx` | `src/app/api/auctions/route.ts`, auction components |
+| Auction make shortcuts | `src/lib/auction-make-groups.mjs` | API merges case variants and sums the complete distribution before top-eight selection; UI active-state uses the same case-insensitive key |
 | Auction detail and galleries | `src/app/auctions/[id]/page.tsx` | `src/lib/auction-media.ts`, source collector |
 | Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |

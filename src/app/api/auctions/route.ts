@@ -6,6 +6,7 @@ import { AUCTION_BODY_TYPES } from "@/lib/auction-normalization"
 import { buildPublicAuctionPolicy } from "@/lib/auction-public-catalog"
 import { containsAnyCase } from "@/lib/search-terms"
 import { parseAuctionImages } from "@/lib/media-url"
+import { groupAuctionMakes } from "@/lib/auction-make-groups.mjs"
 
 export const dynamic = "force-dynamic"
 
@@ -244,7 +245,6 @@ export async function GET(request: NextRequest) {
         where,
         _count: true,
         orderBy: { _count: { make: "desc" } },
-        take: 8,
       }),
       prisma.auctionListing.groupBy({
         by: ["source"],
@@ -299,7 +299,7 @@ export async function GET(request: NextRequest) {
       averageMileage: aggregates && aggregates._avg.mileage ? Math.round(aggregates._avg.mileage) : null,
       powerKnown,
       mileageKnown,
-      popularMakes: popularMakes.map((item) => ({ make: item.make, count: Number(item._count) })),
+      popularMakes: groupAuctionMakes(popularMakes.map((item) => ({ make: item.make, count: Number(item._count) }))),
       sources: sourceDistribution.map((item) => ({ source: item.source, count: Number(item._count) })),
       fuelDistribution: fuelDistribution.flatMap((item) => item.fuelType ? [{ fuelType: item.fuelType, count: Number(item._count) }] : []),
       bodyDistribution: bodyDistribution.flatMap((item) => item.bodyType ? [{ bodyType: item.bodyType, count: Number(item._count) }] : []),

@@ -19,6 +19,7 @@ import { AUCTION_LANDING_COUNTRIES, makeSlug } from "@/lib/auction-landing-route
 import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "./auctions.module.css"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
+import { auctionMakeKey } from "@/lib/auction-make-groups.mjs"
 
 const fetcher = fetchJson
 
@@ -628,15 +629,15 @@ function AuctionsPageContent() {
                   <Button
                     key={item.make}
                     className={styles.brandShortcut}
-                    data-active={make === item.make || undefined}
+                    data-active={auctionMakeKey(make) === auctionMakeKey(item.make) || undefined}
                     variant="default"
                     color="indigo"
                     size="md"
                     fullWidth
                     justify="space-between"
                     leftSection={<BrandIcon brand={auctionMakeLabel(item.make)} size={34} variant="rounded" />}
-                    rightSection={<Badge size="xs" variant={make === item.make ? "filled" : "light"} color="indigo">{item.count}</Badge>}
-                    onClick={() => { setMake(make === item.make ? "" : item.make); setPage(1) }}
+                    rightSection={<Badge size="xs" variant={auctionMakeKey(make) === auctionMakeKey(item.make) ? "filled" : "light"} color="indigo">{item.count}</Badge>}
+                    onClick={() => { setMake(auctionMakeKey(make) === auctionMakeKey(item.make) ? "" : item.make); setPage(1) }}
                   >
                     {auctionMakeLabel(item.make)}
                   </Button>
