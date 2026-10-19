@@ -11,7 +11,17 @@
 }
 .lw-scenic-banner__image,
 .lw-scenic-tile__image { object-fit: cover; object-position: right center; z-index: -2; }
-.lw-scenic-banner__image { object-fit: contain; }
+.lw-scenic-banner__image {
+  left: auto !important;
+  width: 72% !important;
+  object-fit: cover;
+  object-position: right 65%;
+  mask-image: linear-gradient(90deg, transparent, #000 30%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%);
+}
+.lw-scenic-banner[data-scene="buy"] .lw-scenic-banner__image { object-position: right 50%; }
+.lw-scenic-banner[data-scene="referral"] .lw-scenic-banner__image { object-position: right 80%; }
+.lw-scenic-banner[data-scene="garage"] .lw-scenic-banner__image { object-position: right 70%; }
 .lw-scenic-banner::before,
 .home-quick__item.lw-scenic-tile::before {
   content: "";
@@ -76,7 +86,13 @@
   }
   .lw-scenic-banner { min-height: 180px; padding: 18px; }
   .lw-scenic-banner--compact { min-height: 140px; }
-  .lw-scenic-banner__image { object-fit: cover; object-position: 65% center; }
+  .lw-scenic-banner .lw-scenic-banner__image {
+    left: 0 !important;
+    width: 100% !important;
+    object-position: 65% center;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
   .lw-scenic-banner::before { background: rgb(2 28 33 / 78%); }
   .lw-scenic-banner__content .mantine-Group-root { flex-wrap: wrap; }
   .home-page-stack > .home-quick:has(.lw-scenic-tile) { grid-template-columns: 1fr; }

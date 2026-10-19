@@ -64,6 +64,9 @@ Account scenic headings are owned by each feature panel (garage, subscriptions,
 payments), not duplicated by the welcome banner. Listing statistics and first-step
 shortcuts belong only to the listings tab. Banner actions follow the text at the
 left edge; decorative images never carry user data or replace controls.
+The profile and seller-store headers have dedicated decorative scenes. Desktop
+scenes occupy the right 72% with a masked blend into the text surface; mobile
+scenes fill the banner behind the contrast overlay instead of becoming thumbnails.
 
 ## Auction ingestion graph
 

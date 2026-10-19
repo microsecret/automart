@@ -297,21 +297,21 @@ function DashboardContent() {
             кнопок подачи вместе с меню и шапкой сайта. Владелец назвал это
             разнобоем: одно действие — одна кнопка. */}
         {!["garage", "subscriptions", "payments"].includes(tab) && (
-        <ScenicBanner scene="buy" className="lw-dashboard-welcome">
+        <ScenicBanner scene={tab === "profile" ? "profile" : "buy"} className="lw-dashboard-welcome">
         <Group gap="md" align="center" justify="space-between" wrap="wrap" className="dashboard-head">
           <Group gap="sm" align="center" wrap="nowrap" miw={0}>
-            <ThemeIcon variant="light" color="indigo" size={44} radius="md"><IconLayoutDashboard size={22} /></ThemeIcon>
+            <ThemeIcon variant="light" color="indigo" size={44} radius="md">{tab === "profile" ? <IconSettings size={22} /> : <IconLayoutDashboard size={22} />}</ThemeIcon>
             <Stack gap={0} miw={0}>
               <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif" className="dashboard-head__title">
-                {`Здравствуйте${greetingName ? `, ${greetingName}` : ""}`}
+                {tab === "profile" ? "Профиль и настройки" : `Здравствуйте${greetingName ? `, ${greetingName}` : ""}`}
               </Text>
               <Text size="xs" c="var(--market-muted)">Личный кабинет · {DASHBOARD_TAB_LABELS[tab] || "Мои объявления"}</Text>
             </Stack>
           </Group>
-          <Group gap="xs" wrap="nowrap" className="dashboard-head__actions">
+          {tab !== "profile" && <Group gap="xs" wrap="nowrap" className="dashboard-head__actions">
             <Button component={Link} href="/dashboard/deliveries" variant="default" size="sm" leftSection={<IconTruckDelivery size={16} />}>Мои доставки</Button>
             <Button component={Link} href="/listings/create/vehicle" color="indigo" size="sm" leftSection={<IconPlus size={16} />}><span className="lw-label-full">Разместить объявление</span><span className="lw-label-short">Разместить</span></Button>
-          </Group>
+          </Group>}
         </Group>
 
         </ScenicBanner>

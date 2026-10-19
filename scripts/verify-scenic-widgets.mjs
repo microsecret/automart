@@ -32,8 +32,10 @@ const fixtures = {
   "/api/favorites": { favorites: [], pagination: { total: 0, pages: 1 } },
   "/api/delivery-orders": { orders: [], summary: { total: 0, active: 0, pendingPayments: 0, needsAttention: 0 } },
   "/api/delivery-organizations": { organization: null },
+  "/api/stores": { stores: [], access: { allowed: true, applicationStatus: "VERIFIED", reason: null } },
+  "/api/users/scenic-visual-fixture": { user: { ...user, emailVerified: null, image: null, phone: null, telegramUsername: null, telegramVerifiedAt: null, createdAt: "2026-10-01T00:00:00.000Z", registrationChannel: "TELEGRAM", forumSignature: null } },
 }
-const routes = ["/", "/dashboard", "/dashboard?tab=garage", "/dashboard?tab=subscriptions", "/dashboard?tab=payments", "/favorites", "/dashboard/deliveries", "/dashboard/referral"]
+const routes = ["/", "/dashboard", "/dashboard?tab=garage", "/dashboard?tab=subscriptions", "/dashboard?tab=payments", "/favorites", "/dashboard/deliveries", "/dashboard/referral", "/dashboard?tab=profile", "/dashboard/store"]
 const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] })
 const report = { privateDataMode: "browser-local visual fixtures; not API E2E", captures: [], failures: [] }
 try {
@@ -69,11 +71,18 @@ try {
           const feature = page.locator(`.lw-scenic-banner img[src*="${route.split("=")[1]}"]`).first()
           await feature.waitFor()
           await feature.scrollIntoViewIfNeeded()
-          assert.equal(await page.locator(".lw-dashboard-welcome").count(), 0, "Feature panel has no duplicate welcome banner")
+          assert.equal(await page.locator(".lw-dashboard-welcome").count(), route.includes("tab=profile") ? 1 : 0, "Feature panel has no duplicate welcome banner")
           assert.equal(await page.locator(".lw-scenic-banner").count(), 1, "One scenic heading per account section")
           assert.equal(await page.locator("h1").count(), 1, "Feature keeps a single accessible page heading")
         }
         await page.locator(`${selector} img`).evaluateAll(async (images) => { await Promise.all(images.map((image) => image.decode())) })
+        if (index > 0 && !mobile) {
+          const scene = page.locator(".lw-scenic-banner").first()
+          const box = await scene.boundingBox()
+          const photo = await scene.locator("img").boundingBox()
+          assert.ok(photo.width >= box.width * 0.68, "Scenery extends across the banner, not a thumbnail")
+          assert.notEqual(await scene.locator("img").evaluate((image) => getComputedStyle(image).maskImage), "none", "Photo blends into the text surface")
+        }
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
         assert.ok(overflow <= 1, `horizontal overflow: ${overflow}`)
         if (index === 0) {

@@ -21,6 +21,7 @@ import StoreRequestsPanel from "@/components/store/StoreRequestsPanel"
 import SellerOnboardingForm from "@/components/store/SellerOnboardingForm"
 import { formatAttributeValue, PRODUCT_GROUP_BY_KEY } from "@/lib/product-groups"
 import { fetchJson, getApiClientErrorMessage } from "@/lib/api-client"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 
 type Store = {
   id: string
@@ -310,18 +311,14 @@ export default function StoreWorkspacePage() {
   return (
     <Container size="lg" py={{ base: "md", md: "xl" }}>
       <Stack gap="lg">
-        <Card className="store-workspace__hero" radius="md" p={{ base: "md", sm: "lg" }}>
-          <Group justify="space-between" align="center" gap="md" wrap="wrap">
-            <Group gap="sm" align="center" wrap="nowrap">
-              <ThemeIcon variant="white" color="dark" size={46} radius="md"><IconBuildingStore size={23} /></ThemeIcon>
+        <ScenicBanner scene="store">
+          <Stack align="flex-start" gap="sm">
               <Box>
-                <Badge variant="white" color="indigo" size="sm" mb={4}>КАБИНЕТ ПРОДАВЦА</Badge>
                 <Title order={1} size="h3" c="white" ff="var(--font-display),sans-serif">Магазин запчастей</Title>
                 <Text size="sm" c="rgba(255,255,255,.76)" mt={2}>
                   Витрина с собственным адресом, каталог и загрузка прайс-листа одним файлом.
                 </Text>
               </Box>
-            </Group>
             {/* Витрина открыта только у опубликованного магазина: у черновика
                 кнопка вела на 404, хотя подсказка обещала «видна вам». */}
             {store && store.status === "ACTIVE" && (
@@ -329,8 +326,8 @@ export default function StoreWorkspacePage() {
                 Открыть витрину
               </Button>
             )}
-          </Group>
-        </Card>
+          </Stack>
+        </ScenicBanner>
 
         {access && !access.allowed && !store && access.applicationStatus !== "PENDING" ? (
           /* Анкета продавца вместо тупика «Нужен статус партнёра».
