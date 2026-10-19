@@ -268,10 +268,6 @@
 }@media (prefers-reduced-motion: reduce) {}
 
 @media (max-width: 480px) {
-  .brandDiscovery {
-    margin-inline: -2px;
-  }
-
   .insight {
     padding: 9px;
   }
