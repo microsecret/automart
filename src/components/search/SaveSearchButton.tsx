@@ -122,7 +122,7 @@ function SaveSearchButtonInner({ scope, suggestedTitle }: Props) {
         {scope === "PARTS" ? "Сообщить о поступлении" : "Следить за поиском"}
       </Button>
 
-      <Modal opened={opened} onClose={() => { if (!savingRef.current) setOpened(false) }} title={scope === "PARTS" ? "Сообщить о поступлении" : "Следить за поиском"} radius="md" size={520} centered transitionProps={{ transition: "fade", duration: 0 }}>
+      <Modal opened={opened} onClose={() => { if (!savingRef.current) setOpened(false) }} title={scope === "PARTS" ? "Сообщить о поступлении" : "Следить за поиском"} radius="md" size={520} zIndex={600} centered transitionProps={{ transition: "fade", duration: 0 }}>
         {saved ? (
           <Stack gap="md" className={styles.success} role="status" aria-live="polite">
             <IconCircleCheck size={42} className={styles.successIcon} aria-hidden="true" />

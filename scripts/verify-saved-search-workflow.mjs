@@ -87,8 +87,15 @@ try {
     await page.screenshot({ path: `${output}/${name}-form.png` })
     await dialog.getByRole("button", { name: "Сохранить подписку", exact: true }).click()
     await dialog.getByRole("heading", { name: "Этот поиск уже сохранён", exact: true }).waitFor()
+    await dialog.locator('[role="status"]').evaluate(async (element) => {
+      await Promise.all(element.getAnimations().map((animation) => animation.finished))
+    })
     check(`${name}: real API retry gives confirmation and subscription link`, await dialog.getByRole("link", { name: "Мои подписки", exact: true }).getAttribute("href") === "/dashboard?tab=subscriptions")
     check(`${name}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
+    check(`${name}: primary action is not covered by floating controls`, await dialog.getByRole("link", { name: "Мои подписки", exact: true }).evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      return element.contains(document.elementFromPoint(rect.right - 12, rect.top + rect.height / 2))
+    }))
     check(`${name}: requested theme applied`, await page.locator("html").getAttribute("data-mantine-color-scheme") === (mobile ? "dark" : "light"))
     if (mobile) check("reduced motion disables confirmation movement", await dialog.locator('[role="status"]').evaluate((element) => getComputedStyle(element).animationName) === "none")
     await page.screenshot({ path: `${output}/${name}-success.png` })
