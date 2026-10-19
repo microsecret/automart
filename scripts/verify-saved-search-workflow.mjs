@@ -61,7 +61,7 @@ try {
   for (const mobile of [false, true]) {
     const name = mobile ? "mobile-dark-reduced-motion" : "desktop-light"
     const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 }, reducedMotion: mobile ? "reduce" : "no-preference" })
-    await context.addInitScript((theme) => localStorage.setItem("mantine-color-scheme-value", theme), mobile ? "dark" : "light")
+    await context.addInitScript((theme) => localStorage.setItem("automart-color-scheme", theme), mobile ? "dark" : "light")
     // Playwright route.continue cannot override Cookie (the browser ignores
     // that header). Context headers work; abort every external request before
     // dispatch so this disposable session never leaves the loopback origin.
@@ -71,6 +71,7 @@ try {
       : route.abort())
     const page = await context.newPage()
     await page.goto(`${base}/auctions?${payload.query}`, { waitUntil: "domcontentloaded" })
+    await page.waitForFunction((theme) => document.documentElement.getAttribute("data-mantine-color-scheme") === theme, mobile ? "dark" : "light")
     await page.getByRole("button", { name: "Следить за поиском", exact: true }).click()
     const dialog = page.getByRole("dialog")
     await dialog.getByRole("region", { name: "Условия подписки" }).waitFor()
