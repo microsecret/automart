@@ -1,0 +1,58 @@
+.summary {
+  padding: 12px 14px;
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-indigo-light);
+  color: var(--mantine-color-text);
+}
+
+.facets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--mantine-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.tutorial summary {
+  cursor: pointer;
+  color: var(--mantine-color-indigo-light-color);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  padding-block: 8px;
+  min-height: 44px;
+}
+
+.tutorial summary:focus-visible {
+  outline: 2px solid var(--mantine-color-indigo-filled);
+  outline-offset: 3px;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.steps {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding-left: 22px;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.5;
+}
+
+.success {
+  animation: saved-search-confirm 160ms var(--ease-out) both;
+}
+
+.successIcon {
+  color: var(--mantine-color-indigo-light-color);
+}
+
+@keyframes saved-search-confirm {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .success { animation: none; }
+}

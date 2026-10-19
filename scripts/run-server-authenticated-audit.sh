@@ -5,6 +5,11 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_root"
 
 audit_port="${AUTOMART_AUTH_AUDIT_PORT:-4011}"
+audit_script="${AUTOMART_AUTH_AUDIT_SCRIPT:-scripts/server-authenticated-audit.mjs}"
+case "$audit_script" in
+  scripts/server-authenticated-audit.mjs|scripts/verify-saved-search-workflow.mjs) ;;
+  *) echo "Unknown authenticated audit script" >&2; exit 1 ;;
+esac
 if ! [[ "$audit_port" =~ ^[0-9]+$ ]] || (( 10#$audit_port < 1024 || 10#$audit_port > 65535 )); then
   echo "AUTOMART_AUTH_AUDIT_PORT must be an integer from 1024 to 65535" >&2
   exit 1
@@ -44,7 +49,7 @@ trap cleanup EXIT INT TERM
 database_url="file:${audit_database}"
 base_url="http://127.0.0.1:${audit_port}"
 
-env DATABASE_URL="$database_url" npx prisma migrate deploy
+env DATABASE_URL="$database_url" node node_modules/prisma/build/index.js migrate deploy
 env DATABASE_URL="$database_url" node --env-file=.env scripts/refresh-auction-rates.mjs
 
 env \
@@ -79,4 +84,4 @@ env \
   DELIVERY_DOCUMENTS_PATH="$audit_documents" \
   MESSAGE_ATTACHMENTS_PATH="$audit_message_attachments" \
   NEXTAUTH_URL="$base_url" \
-  node --env-file=.env scripts/server-authenticated-audit.mjs
+  node --env-file=.env "$audit_script"

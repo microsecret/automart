@@ -34,6 +34,7 @@ flowchart LR
 | Auction catalogue UI | `src/app/auctions/page.tsx` | `src/app/api/auctions/route.ts`, auction components |
 | Auction make shortcuts | `src/lib/auction-make-groups.mjs` | API merges case variants and sums the complete distribution before top-eight selection; UI active-state uses the same case-insensitive key |
 | Concurrent auction reads | `src/lib/async-read-cache.mjs` | `/api/auctions` shares pending page reads only; five-minute analytics cache coalesces pending calculations, bounds bookkeeping and never retains errors. Process-local optimisation, not distributed rate limiting. |
+| Saved search workflow | `src/components/search/SaveSearchButton.tsx` | `saved-search-summary.mjs`, `/api/saved-searches`; readonly filter preview, optional short tutorial, inline errors and confirmation; owner/scope/query deduplication and quota check share one database transaction |
 | Auction detail and galleries | `src/app/auctions/[id]/page.tsx` | `src/lib/auction-media.ts`, source collector |
 | Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |

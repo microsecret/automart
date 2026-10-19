@@ -48,7 +48,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
     const title = typeof body?.title === "string" ? body.title.trim().slice(0, 120) : ""
-    const scope: SavedSearchScope = SAVED_SEARCH_SCOPES.includes(body?.scope) ? body.scope : "LISTINGS"
+    if (!SAVED_SEARCH_SCOPES.includes(body?.scope)) {
+      return NextResponse.json({ error: "Выберите корректный раздел поиска" }, { status: 400 })
+    }
+    const scope: SavedSearchScope = body.scope
+    if (typeof body?.query !== "string" || body.query.length > 4096) {
+      return NextResponse.json({ error: "Слишком длинные или некорректные условия поиска" }, { status: 400 })
+    }
 
     // Условия приходят с клиента, поэтому чистим их сами: в базу попадают
     // только известные параметры, а не произвольная строка из адреса.
@@ -56,29 +62,35 @@ export async function POST(request: NextRequest) {
 
     if (!title) return NextResponse.json({ error: "Назовите подписку" }, { status: 400 })
 
-    const count = await prisma.savedSearch.count({ where: { userId: session.user.id } })
-    if (count >= MAX_SAVED_SEARCHES) {
+    const result = await prisma.$transaction(async (tx) => {
+      // Check identity before capacity: retrying an existing subscription at
+      // the limit must not create another row or reset its notification clock.
+      const existing = await tx.savedSearch.findFirst({
+        where: { userId: session.user.id, scope, query },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, title: true, scope: true, query: true, notifyTelegram: true, createdAt: true },
+      })
+      if (existing) return { search: existing, alreadySaved: true }
+      const count = await tx.savedSearch.count({ where: { userId: session.user.id } })
+      if (count >= MAX_SAVED_SEARCHES) return null
+      const search = await tx.savedSearch.create({
+        data: {
+          userId: session.user.id, title, scope, query,
+          notifyTelegram: body?.notifyTelegram !== false,
+          lastNotifiedAt: new Date(),
+        },
+        select: { id: true, title: true, scope: true, query: true, notifyTelegram: true, createdAt: true },
+      })
+      return { search, alreadySaved: false }
+    })
+    if (!result) {
       return NextResponse.json(
         { error: `Больше ${MAX_SAVED_SEARCHES} подписок не сохраняется — удалите ненужные` },
         { status: 409 },
       )
     }
 
-    const created = await prisma.savedSearch.create({
-      data: {
-        userId: session.user.id,
-        title,
-        scope,
-        query,
-        notifyTelegram: body?.notifyTelegram !== false,
-        // Отсчёт «новых» начинается с момента подписки, иначе первое же
-        // уведомление принесёт весь текущий каталог.
-        lastNotifiedAt: new Date(),
-      },
-      select: { id: true, title: true, scope: true, query: true, notifyTelegram: true, createdAt: true },
-    })
-
-    return NextResponse.json(created, { status: 201 })
+    return NextResponse.json({ ...result.search, alreadySaved: result.alreadySaved }, { status: result.alreadySaved ? 200 : 201 })
   } catch (error) {
     console.error("Saved searches POST error:", error)
     return NextResponse.json({ error: "Не удалось сохранить подписку" }, { status: 500 })
