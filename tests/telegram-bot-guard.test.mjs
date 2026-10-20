@@ -93,8 +93,8 @@ test("departure removes old approval before any future rejoin", async () => {
   await guardTelegramBots(f.join, f.deps); assert.equal(bans(f).length, 1)
 })
 test("unknown role never produces a speculative ban", async () => {
-  const f = fixture({ lookupFailure: true }); await assert.rejects(guardTelegramBots(f.join, f.deps))
-  assert.equal(bans(f).length, 0)
+  const f = fixture({ lookupFailure: true }); await guardTelegramBots(f.join, f.deps)
+  assert.equal(bans(f).length, 0); assert.equal(f.warnings.length, 1)
 })
 test("duplicate join after removal does not ban again", async () => {
   const f = fixture({ targetStatus: "kicked" }); await guardTelegramBots(f.join, f.deps)
@@ -103,4 +103,47 @@ test("duplicate join after removal does not ban again", async () => {
 test("an observable unapproved bot message is removed as fallback", async () => {
   const f = fixture(); await guardTelegramBots({ message: { chat: f.chat, from: bot, message_id: 123 } }, f.deps)
   assert.equal(bans(f).length, 1)
+})
+test("one failed role lookup does not prevent removal of another non-admin bot", async () => {
+  const f = fixture(); f.join.message.new_chat_members.push({ id: 21, is_bot: true })
+  const api = f.deps.api
+  f.deps.api = async (method, payload) => {
+    if (method === "getChatMember" && String(payload.user_id) === "20") throw new Error("role unavailable")
+    return api(method, payload)
+  }
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["21"])
+  assert.equal(f.warnings.length, 1)
+})
+test("one failed ban does not prevent the next bot from being moderated", async () => {
+  const f = fixture(); f.join.message.new_chat_members.push({ id: 21, is_bot: true })
+  const api = f.deps.api
+  f.deps.api = async (method, payload) => {
+    if (method === "banChatMember" && String(payload.user_id) === "20") throw new Error("ban unavailable")
+    return api(method, payload)
+  }
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["21"])
+  assert.equal(f.warnings.length, 1)
+})
+test("historical cleanup failure does not suppress message deletion", async () => {
+  const f = fixture(); f.deps.forget = async () => { throw new Error("storage unavailable") }
+  await guardTelegramBots(f.join, f.deps)
+  assert.equal(bans(f).length, 1)
+  assert.equal(f.calls.some((call) => call.method === "deleteMessage"), true)
+  assert.equal(f.warnings.length, 1)
+})
+test("duplicate targets and shared service message are handled once per event", async () => {
+  const f = fixture(); f.join.message.new_chat_members.push(bot, { id: 21, is_bot: true })
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20", "21"])
+  assert.equal(f.calls.filter((call) => call.method === "deleteMessage").length, 1)
+  assert.equal(f.calls.filter((call) => call.method === "getChatMember" && call.payload.user_id === "10").length, 1)
+})
+test("mixed administrator, human and ordinary bot batch preserves only protected members", async () => {
+  const f = fixture(); f.join.message.new_chat_members = [{ id: 40, is_bot: false }, { id: 22, is_bot: true }, bot]
+  const api = f.deps.api
+  f.deps.api = async (method, payload) => method === "getChatMember" && String(payload.user_id) === "22" ? { status: "administrator" } : api(method, payload)
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20"])
 })
