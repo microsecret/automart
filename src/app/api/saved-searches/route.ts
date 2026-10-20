@@ -20,7 +20,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       select: {
         id: true, title: true, scope: true, query: true,
-        notifyTelegram: true, lastMatchCount: true, createdAt: true,
+        notifyTelegram: true, lastMatchCount: true, lastCheckedAt: true, createdAt: true,
       },
     })
     return NextResponse.json({ searches })
@@ -94,6 +94,43 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Saved searches POST error:", error)
     return NextResponse.json({ error: "Не удалось сохранить подписку" }, { status: 500 })
+  }
+}
+
+/** Pause delivery without deleting filters. Resuming watches new matches only. */
+export async function PATCH(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const limit = rateLimit(`saved-search-update:${session.user.id}`, { windowMs: 60_000, maxRequests: 30 })
+  if (!limit.success) return NextResponse.json({ error: "Слишком часто. Повторите через минуту." }, { status: 429, headers: rateLimitHeaders(limit) })
+
+  const body = await request.json().catch(() => null)
+  if (!body || typeof body.id !== "string" || !body.id || body.id.length > 200 || typeof body.notifyTelegram !== "boolean" || Object.keys(body).some((key) => !["id", "notifyTelegram"].includes(key))) {
+    return NextResponse.json({ error: "Укажите подписку и включение или паузу уведомлений" }, { status: 400 })
+  }
+  try {
+    const search = await prisma.$transaction(async (tx) => {
+      const existing = await tx.savedSearch.findFirst({ where: { id: body.id, userId: session.user.id } })
+      if (!existing) return null
+      if (existing.notifyTelegram === body.notifyTelegram) return existing
+      return tx.savedSearch.update({
+        where: { id: existing.id },
+        data: {
+          notifyTelegram: body.notifyTelegram,
+          // Repeated enable requests must not keep moving the watermark.
+          ...(body.notifyTelegram ? { lastNotifiedAt: new Date(), lastCheckedAt: null, lastMatchCount: null } : {}),
+        },
+      })
+    })
+    if (!search) return NextResponse.json({ error: "Подписка не найдена" }, { status: 404 })
+    return NextResponse.json({ search: {
+      id: search.id, title: search.title, scope: search.scope, query: search.query,
+      notifyTelegram: search.notifyTelegram, lastMatchCount: search.lastMatchCount,
+      lastCheckedAt: search.lastCheckedAt, createdAt: search.createdAt,
+    } })
+  } catch (error) {
+    console.error("Saved searches PATCH error:", error)
+    return NextResponse.json({ error: "Не удалось изменить подписку. Повторите попытку." }, { status: 500 })
   }
 }
 
