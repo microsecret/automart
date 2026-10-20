@@ -52,7 +52,6 @@ flowchart LR
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
 | Third-party Telegram bots | `src/lib/telegram-bot-guard.mjs` | Polling receives `chat_member`; joins and role changes are checked before registration moderation. Only live administrator-role bots are permitted, regardless of inviter. Historical `TelegramBotApproval` rows never grant permission. Non-admin bots are banned with message revocation when the moderator has restriction rights; own/admin bots are protected. |
-
 | Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |
 | Unified URL search | `src/app/search/page.tsx` | `HomeCatalog.tsx`, `/api/listings` query contract |
 | Auction import | source collector | parser sync/refresh route, `auction-import.ts` |
