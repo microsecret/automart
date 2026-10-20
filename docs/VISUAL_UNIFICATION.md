@@ -18,12 +18,17 @@ entire site has been redrawn or passed a WCAG/visual-regression audit.
 
 ## Findings and next implementation batches
 
-- [ ] P2: `scenic-widgets.css` repeats literal scene/foreground/link/copper values
+- [x] P2: `scenic-widgets.css` repeats literal scene/foreground/link/copper values
   while `component-materials.css` and Mantine maintain parallel palette tokens.
   Extract semantic scene tokens without recoloring approved artwork or masks.
   Benefit: a controlled palette adjustment no longer leaves old colors in a
   sidebar, banner or helper link. Mask black/transparent values are technical,
   not brand-color defects.
+  Implemented through `--lw-scene-*`, `--lw-widget-heading-*` and the stable
+  enamel base in the existing material sheet. Server before/after matrix:
+  `scripts/verify-scenic-materials.mjs` covers 16 rendered views across home,
+  services, garage and subscriptions in both themes and device sizes. This
+  checks computed material parity, not pixel-level visual diffs of all pages.
 - [ ] P2: document common navigation icon sizes/stroke and CTA density. Header
   maps currently use 14px and 15px icons for different contexts; this is not
   itself an accessibility defect. Verify perceived weight and touch hit areas

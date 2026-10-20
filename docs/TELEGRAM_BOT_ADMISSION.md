@@ -1,5 +1,14 @@
 # Third-party bot admission policy
 
+## Current rule (owner clarification, 20 October 2026)
+
+Only bots with a live administrator role in the group may remain. The
+inviter's role grants no exception, including anonymous administrators.
+Historical `TelegramBotApproval` rows never authorize a bot and no new approvals
+are written. The table remains for compatibility, not as an active allowlist.
+Role changes, including demotion, are re-checked against live Telegram state.
+Anonymous human administrator speech on behalf of the group is not a bot account.
+
 Only configured moderated groups (`TELEGRAM_MODERATION_ENABLED` and the existing
 chat allowlist) are affected. The moderator must be a group administrator with
 `can_restrict_members`; service-message cleanup also needs `can_delete_messages`.
@@ -13,12 +22,11 @@ punished. The moderator itself and target bots with an administrator role are
 always protected. Live Telegram role lookups, not names/usernames, determine
 the exception. A failed role lookup never authorizes a destructive action.
 
-An ordinary member's unapproved bot is banned with `revoke_messages: true` and
+Any detected non-administrator bot is banned with `revoke_messages: true` and
 is not automatically unbanned afterwards. Telegram revokes the removed bot's
-messages in supergroups. A bot admitted by a verified chat administrator is
-persisted in `TelegramBotApproval` for that chat only. Approval survives process
-restarts but is cleared when a leave/kick membership event is received. A group
-administrator can explicitly unban and re-add a previously banned bot.
+messages in supergroups. Historical approval rows are cleared on leave/kick
+events and successful removal, but never exempt a bot. A group administrator
+must grant the bot an administrator role if it is to remain.
 
 ## Platform limits
 
@@ -31,8 +39,8 @@ administrator bots are not mass-removed, and there is no MTProto/userbot login.
 
 Webhook handling retains the application's existing asynchronous processing:
 successful receipt is not a durable job acknowledgment. A process crash can
-lose an in-flight event. Previously admin-approved bots whose admission was
-never observed have no historical provenance in this new table. Membership
+lose an in-flight event. Previously existing non-admin bots are checked when
+an observable message or membership event about them is received. Membership
 events are processed as received; a future durable ordered event queue would
 be a separate reliability increment.
 

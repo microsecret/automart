@@ -1,7 +1,7 @@
 const admins = new Set(["creator", "owner", "administrator"])
 const present = (member) => ["member", "administrator", "creator", "owner"].includes(member?.status) || (member?.status === "restricted" && member.is_member === true)
 
-/** Admission-first moderation. Transport and approval storage are injected so
+/** Administrator-role-only moderation. Transport is injected so
  * every destructive decision is testable without contacting Telegram. */
 export async function guardTelegramBots(update, deps) {
   const membership = update?.chat_member
@@ -16,8 +16,7 @@ export async function guardTelegramBots(update, deps) {
       await deps.forget(chatId, String(memberBot.id))
       return true
     }
-    // Promotions and permission changes do not constitute a new admission.
-    if (present(membership.old_chat_member)) return true
+    // Re-check role changes as well: a demoted bot must leave immediately.
   }
   const joining = membership ? [memberBot] : (message?.new_chat_members || []).filter((user) => user.is_bot)
   const senderBot = message?.from?.is_bot ? message.from : null
@@ -25,7 +24,6 @@ export async function guardTelegramBots(update, deps) {
   if (!joining.length && String(message?.sender_chat?.id) === chatId) return false
   const targets = joining.length ? joining : senderBot ? [senderBot] : []
   if (!targets.length) return false
-  const actor = membership?.from || message?.from
   for (const bot of targets) {
     const botId = String(bot.id)
     if (botId === deps.ownBotId) continue
@@ -33,19 +31,6 @@ export async function guardTelegramBots(update, deps) {
     const target = await deps.api("getChatMember", { chat_id: chatId, user_id: botId })
     if (admins.has(target.status)) continue
     if (!present(target)) continue // Late/duplicate update after removal.
-    const approved = await deps.approved(chatId, botId)
-    if (approved) continue
-    if (joining.length && String(message?.sender_chat?.id) === chatId) {
-      await deps.approve(chatId, botId, `chat:${chatId}`)
-      continue
-    }
-    if (joining.length && actor?.id) {
-      const inviter = await deps.api("getChatMember", { chat_id: chatId, user_id: actor.id })
-      if (admins.has(inviter.status)) {
-        await deps.approve(chatId, botId, String(actor.id))
-        continue
-      }
-    }
     const own = await deps.api("getChatMember", { chat_id: chatId, user_id: deps.ownBotId })
     if (!admins.has(own.status) || own.can_restrict_members !== true) {
       deps.warn("missing can_restrict_members", chatId)

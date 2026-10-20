@@ -32,21 +32,20 @@ test("ordinary member-added bot is banned with message revocation", async () => 
   assert.equal(f.calls.some((call) => call.method === "deleteMessage"), true)
   assert.equal(f.calls.some((call) => call.method === "unbanChatMember"), false)
 })
-test("administrator-added bot gets durable per-chat approval", async () => {
+test("administrator-added bot without administrator role is banned", async () => {
   const f = fixture({ admin: true }); await guardTelegramBots(f.join, f.deps)
-  assert.equal(bans(f).length, 0); assert.equal(f.approvals.get("-100:20"), "30")
-  await guardTelegramBots({ message: { chat: f.chat, from: bot, message_id: 100 } }, { ...f.deps })
-  assert.equal(bans(f).length, 0)
+  assert.equal(bans(f).length, 1); assert.equal(f.approvals.size, 0)
+  assert.equal(f.calls.some((call) => String(call.payload.user_id) === "30"), false)
 })
-test("approval does not exempt the bot in another chat", async () => {
-  const f = fixture(); f.approvals.set("-999:20", "30")
+test("legacy approval in the same chat no longer grants an exception", async () => {
+  const f = fixture(); f.approvals.set("-100:20", "30")
   await guardTelegramBots(f.join, f.deps); assert.equal(bans(f).length, 1)
 })
-test("anonymous group administrator admission is approved", async () => {
+test("anonymous administrator-added non-admin bot is also banned", async () => {
   const f = fixture(); f.join.message.sender_chat = { id: -100, type: "supergroup" }
   f.join.message.from = { id: 1087968824, is_bot: true }
   await guardTelegramBots(f.join, f.deps)
-  assert.equal(bans(f).length, 0); assert.equal(f.approvals.get("-100:20"), "chat:-100")
+  assert.equal(bans(f).length, 1); assert.equal(f.approvals.size, 0)
 })
 test("anonymous group speech is not mistaken for a bot account", async () => {
   const f = fixture()
@@ -79,9 +78,13 @@ test("chat_member admission works without a service message", async () => {
   const f = fixture(); await guardTelegramBots({ chat_member: { chat: f.chat, from: { id: 30 }, old_chat_member: { status: "left", user: bot }, new_chat_member: { status: "member", user: bot } } }, f.deps)
   assert.equal(bans(f).length, 1)
 })
-test("membership permission changes are not mistaken for new joins", async () => {
+test("present non-admin bot is removed on a membership permission update", async () => {
   const f = fixture(); await guardTelegramBots({ chat_member: { chat: f.chat, from: { id: 30 }, old_chat_member: { status: "member", user: bot }, new_chat_member: { status: "restricted", is_member: true, user: bot } } }, f.deps)
-  assert.equal(f.calls.length, 0)
+  assert.equal(bans(f).length, 1)
+})
+test("demotion from administrator to member removes the bot", async () => {
+  const f = fixture(); await guardTelegramBots({ chat_member: { chat: f.chat, from: { id: 30 }, old_chat_member: { status: "administrator", user: bot }, new_chat_member: { status: "member", user: bot } } }, f.deps)
+  assert.equal(bans(f).length, 1)
 })
 test("departure removes old approval before any future rejoin", async () => {
   const f = fixture(); f.approvals.set("-100:20", "30")

@@ -1,11 +1,22 @@
 /* LeWheel titanium / petrol enamel / copper component family.
    Uses the existing light/dark surfaces and preserves semantic danger colors. */
 :root {
-  --lw-enamel: #08535f;
+  --lw-enamel-base: #08535f;
+  --lw-enamel: var(--lw-enamel-base);
   --lw-enamel-hover: #073f4a;
   --lw-copper: #d5a27e;
   --lw-copper-ink: #2e2018;
   --lw-metal-highlight: rgb(255 255 255 / 22%);
+  /* Scenic artwork has a deliberately dark surface in both page themes.
+     These semantic values are shared by banners, quick tiles and sidebars. */
+  --lw-scene-surface: #052b31;
+  --lw-scene-ink: #fff;
+  --lw-scene-link: #b6edef;
+  --lw-scene-note: #e4bd9f;
+  --lw-scene-arrow: #efc6a6;
+  --lw-scene-shade: 2 28 33;
+  --lw-widget-heading-start: #053d46;
+  --lw-widget-heading-end: var(--lw-enamel-base);
   --market-primary: #08616c;
   --market-primary-soft: #e4f2f3;
   --market-accent: #08616c;
@@ -18,7 +29,7 @@
 
 :root[data-mantine-color-scheme="dark"] {
   --lw-enamel: #0b6974;
-  --lw-enamel-hover: #08535f;
+  --lw-enamel-hover: var(--lw-enamel-base);
   --market-primary: #7acdd2;
   --market-primary-soft: #142d32;
   --market-accent: #7acdd2;
