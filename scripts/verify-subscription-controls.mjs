@@ -29,7 +29,10 @@ async function screenshot(page, path) {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     window.scrollTo(0, 0)
   })
-  await page.evaluate(() => Promise.all(document.getAnimations().filter((animation) => animation.effect?.getTiming().iterations !== Infinity).map((animation) => animation.finished.catch(() => {}))))
+  await page.evaluate(() => Promise.race([
+    Promise.all(document.getAnimations().filter((animation) => animation.effect?.getTiming().iterations !== Infinity).map((animation) => animation.finished.catch(() => {}))),
+    new Promise((resolve) => setTimeout(resolve, 350)),
+  ]))
   await page.screenshot({ path, fullPage: true })
 }
 try {
