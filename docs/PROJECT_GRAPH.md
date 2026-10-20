@@ -52,6 +52,11 @@ flowchart LR
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
 | Third-party Telegram bots | `src/lib/telegram-bot-guard.mjs` | Polling receives `chat_member`; joins and role changes are checked before registration moderation. Only live administrator-role bots are permitted, regardless of inviter. Historical `TelegramBotApproval` rows never grant permission. Non-admin bots are banned with message revocation when the moderator has restriction rights; own/admin bots are protected. |
+
+Bot batches isolate each target's failure. Moderator capability is shared only
+within one update, while every target's role is checked live. Duplicate targets
+and an already-deleted shared service message are not processed twice; legacy
+approval cleanup cannot suppress message removal after a successful ban.
 | Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |
 | Unified URL search | `src/app/search/page.tsx` | `HomeCatalog.tsx`, `/api/listings` query contract |
 | Auction import | source collector | parser sync/refresh route, `auction-import.ts` |

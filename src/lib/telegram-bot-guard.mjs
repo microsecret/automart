@@ -13,7 +13,7 @@ export async function guardTelegramBots(update, deps) {
   if (membership) {
     if (!memberBot?.is_bot || String(memberBot.id) === deps.ownBotId) return false
     if (!present(membership.new_chat_member)) {
-      await deps.forget(chatId, String(memberBot.id))
+      await deps.forget(chatId, String(memberBot.id)).catch(() => deps.warn("historical approval cleanup failed", chatId))
       return true
     }
     // Re-check role changes as well: a demoted bot must leave immediately.
@@ -24,23 +24,40 @@ export async function guardTelegramBots(update, deps) {
   if (!joining.length && String(message?.sender_chat?.id) === chatId) return false
   const targets = joining.length ? joining : senderBot ? [senderBot] : []
   if (!targets.length) return false
+  const seen = new Set()
+  let ownMembership
+  let messageDeleted = false
   for (const bot of targets) {
     const botId = String(bot.id)
-    if (botId === deps.ownBotId) continue
-    // Check live target role first: never attempt to ban a chat administrator.
-    const target = await deps.api("getChatMember", { chat_id: chatId, user_id: botId })
-    if (admins.has(target.status)) continue
-    if (!present(target)) continue // Late/duplicate update after removal.
-    const own = await deps.api("getChatMember", { chat_id: chatId, user_id: deps.ownBotId })
-    if (!admins.has(own.status) || own.can_restrict_members !== true) {
-      deps.warn("missing can_restrict_members", chatId)
-      continue
-    }
-    // Do not unban afterwards: an ordinary member must not re-add the spam bot.
-    await deps.api("banChatMember", { chat_id: chatId, user_id: botId, revoke_messages: true })
-    await deps.forget(chatId, botId)
-    if (message?.message_id && own.can_delete_messages === true) {
-      await deps.api("deleteMessage", { chat_id: chatId, message_id: message.message_id }).catch(() => deps.warn("service/message cleanup failed", chatId))
+    if (botId === deps.ownBotId || seen.has(botId)) continue
+    seen.add(botId)
+    try {
+      // Always verify each target's live role. Never share this lookup between
+      // bots or events: a legitimate bot may have just been promoted.
+      const target = await deps.api("getChatMember", { chat_id: chatId, user_id: botId })
+      if (admins.has(target.status)) continue
+      if (!present(target)) continue // Late/duplicate update after removal.
+      // Only share moderator capability within this event. A rejected promise
+      // remains rejected, so an outage cannot trigger a retry storm or a ban.
+      ownMembership ||= deps.api("getChatMember", { chat_id: chatId, user_id: deps.ownBotId })
+      const own = await ownMembership
+      if (!admins.has(own.status) || own.can_restrict_members !== true) {
+        deps.warn("missing can_restrict_members", chatId)
+        continue
+      }
+      // Do not unban afterwards: an ordinary member must not re-add the bot.
+      await deps.api("banChatMember", { chat_id: chatId, user_id: botId, revoke_messages: true })
+      // Obsolete approval cleanup must not prevent message cleanup after a ban.
+      await deps.forget(chatId, botId).catch(() => deps.warn("historical approval cleanup failed", chatId))
+      if (!messageDeleted && message?.message_id && own.can_delete_messages === true) {
+        await deps.api("deleteMessage", { chat_id: chatId, message_id: message.message_id })
+          .then(() => { messageDeleted = true })
+          .catch(() => deps.warn("service/message cleanup failed", chatId))
+      }
+    } catch {
+      // API error bodies can contain sensitive transport details. Log a fixed
+      // diagnostic, keep this bot untouched, and process the remaining targets.
+      deps.warn("bot role check or removal failed", chatId)
     }
   }
   return true

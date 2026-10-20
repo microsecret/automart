@@ -147,3 +147,21 @@ test("mixed administrator, human and ordinary bot batch preserves only protected
   await guardTelegramBots(f.join, f.deps)
   assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20"])
 })
+test("unknown moderator capability never authorizes any bot removal", async () => {
+  const f = fixture(); f.join.message.new_chat_members.push({ id: 21, is_bot: true })
+  const api = f.deps.api; let capabilityReads = 0
+  f.deps.api = async (method, payload) => {
+    if (method === "getChatMember" && String(payload.user_id) === "10") { capabilityReads++; throw new Error("capability unavailable") }
+    return api(method, payload)
+  }
+  await guardTelegramBots(f.join, f.deps)
+  assert.equal(bans(f).length, 0); assert.equal(capabilityReads, 1)
+})
+test("moderator capability is rechecked for the next event", async () => {
+  const options = { restrict: true }; const f = fixture(options)
+  await guardTelegramBots(f.join, f.deps)
+  options.restrict = false; f.join.message.new_chat_members = [{ id: 21, is_bot: true }]
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20"])
+  assert.equal(f.calls.filter((call) => call.method === "getChatMember" && call.payload.user_id === "10").length, 2)
+})

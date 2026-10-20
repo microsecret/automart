@@ -46,6 +46,26 @@ be a separate reliability increment.
 
 ## Verification and rollout
 
+### Batch reliability
+
+A failed target lookup or ban no longer aborts the remaining bots in the same
+update. Each target's live administrator role is still checked independently;
+an unknown role never authorizes removal. Moderator capability is requested
+once per event, including sharing a failure without amplifying requests, and
+is fetched afresh in the next event. Duplicate bot IDs are deduplicated only
+inside that event, not across future role changes.
+
+The shared service message is deleted at most once successfully. A historical
+approval-table cleanup failure warns but does not prevent deleting the message
+after a successful ban. Error logging uses fixed diagnostics without Telegram
+response bodies or tokens. This remains best-effort event processing, not a
+durable retry queue: a failed bot may wait for another event.
+
+The original server test reproduced five failing batch/error-path checks before
+the fix. Additional tests verify denial on unknown moderator capability and a
+fresh capability lookup in the next event. All tests use injected transport;
+no real group member is removed by the test suite.
+
 `node --test tests/telegram-bot-guard.test.mjs` runs on the server with injected
 Telegram transport and approval storage. It never bans a real bot during tests.
 The additive migration creates only the approval table. Take an online SQLite
