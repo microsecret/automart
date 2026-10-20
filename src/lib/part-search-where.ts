@@ -78,6 +78,7 @@ export function partsWhereFromQuery(query: string): Prisma.PartWhereInput {
  * изменился после неё (опубликованный магазин выкладывает весь каталог
  * разом, а позиции были созданы ещё в черновике).
  */
-export function newPartsSince(since: Date): Prisma.PartWhereInput {
-  return { OR: [{ createdAt: { gt: since } }, { store: { status: "ACTIVE", updatedAt: { gt: since } } }] }
+export function newPartsSince(since: Date, until?: Date): Prisma.PartWhereInput {
+  const window = { gt: since, ...(until ? { lte: until } : {}) }
+  return { OR: [{ createdAt: window }, { store: { status: "ACTIVE", updatedAt: window } }] }
 }

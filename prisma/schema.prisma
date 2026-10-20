@@ -38,6 +38,7 @@ model User {
   // Напоминания о незавершённой регистрации: когда отправили последнее и
   // сколько всего. Нужны, чтобы не писать человеку бесконечно.
   savedSearches    SavedSearch[]
+  savedSearchDeliveries SavedSearchDelivery[]
   regReminderAt    DateTime?
   regReminderCount Int           @default(0)
 
@@ -1120,12 +1121,14 @@ model SavedSearch {
   /// От этой отметки отсчитываются «новые» лоты.
   lastNotifiedAt DateTime?
   lastMatchCount Int       @default(0)
+  lastCheckedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId, createdAt])
   @@index([notifyTelegram, lastNotifiedAt])
+  @@index([notifyTelegram, lastCheckedAt])
 }
 
 model TelegramBroadcast {
@@ -1144,6 +1147,22 @@ model TelegramBroadcast {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// Durable quota ledger. Visible notification deletion does not reset limits.
+model SavedSearchDelivery {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  searchId       String
+  windowStart    DateTime
+  windowEnd      DateTime
+  matchCount     Int
+  telegramStatus String   @default("NOT_REQUESTED")
+  createdAt      DateTime @default(now())
+
+  @@unique([searchId, windowStart])
+  @@index([userId, createdAt])
 }
 
 model TelegramContact {

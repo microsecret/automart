@@ -74,7 +74,7 @@ export function auctionsWhereFromQuery(query: string): Prisma.AuctionListingWher
   const params = new URLSearchParams(query)
   const and: Prisma.AuctionListingWhereInput[] = []
   const country = params.get("country")
-  if (country) and.push({ country })
+  if (country) and.push({ country: country === "EU" ? "DE" : country })
   const source = params.get("source")
   if (source) and.push({ source })
   const make = params.get("make")

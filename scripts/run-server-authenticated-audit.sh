@@ -7,7 +7,7 @@ cd "$project_root"
 audit_port="${AUTOMART_AUTH_AUDIT_PORT:-4011}"
 audit_script="${AUTOMART_AUTH_AUDIT_SCRIPT:-scripts/server-authenticated-audit.mjs}"
 case "$audit_script" in
-  scripts/server-authenticated-audit.mjs|scripts/verify-saved-search-workflow.mjs) ;;
+  scripts/server-authenticated-audit.mjs|scripts/verify-saved-search-workflow.mjs|scripts/verify-saved-search-notifications.mjs) ;;
   *) echo "Unknown authenticated audit script" >&2; exit 1 ;;
 esac
 if ! [[ "$audit_port" =~ ^[0-9]+$ ]] || (( 10#$audit_port < 1024 || 10#$audit_port > 65535 )); then
@@ -48,11 +48,17 @@ trap cleanup EXIT INT TERM
 
 database_url="file:${audit_database}"
 base_url="http://127.0.0.1:${audit_port}"
+audit_extra_env=()
+if [[ "$audit_script" == scripts/verify-saved-search-notifications.mjs ]]; then
+  # These tests must never call the live Telegram bot, even on a regression.
+  audit_extra_env+=("TELEGRAM_BOT_TOKEN=")
+fi
 
 env DATABASE_URL="$database_url" node node_modules/prisma/build/index.js migrate deploy
 env DATABASE_URL="$database_url" node --env-file=.env scripts/refresh-auction-rates.mjs
 
 env \
+  "${audit_extra_env[@]}" \
   DATABASE_URL="$database_url" \
   DELIVERY_DOCUMENTS_PATH="$audit_documents" \
   MESSAGE_ATTACHMENTS_PATH="$audit_message_attachments" \
