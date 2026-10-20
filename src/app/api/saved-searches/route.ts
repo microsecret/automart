@@ -118,7 +118,7 @@ export async function PATCH(request: NextRequest) {
         data: {
           notifyTelegram: body.notifyTelegram,
           // Repeated enable requests must not keep moving the watermark.
-          ...(body.notifyTelegram ? { lastNotifiedAt: new Date(), lastCheckedAt: null, lastMatchCount: null } : {}),
+          ...(body.notifyTelegram ? { lastNotifiedAt: new Date(), lastCheckedAt: null, lastMatchCount: 0 } : {}),
         },
       })
     })

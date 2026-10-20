@@ -279,7 +279,7 @@ export default function SubscriptionsPanel() {
                   <Group gap={6} wrap="wrap">
                     <Badge size="sm" variant="light" color={search.notifyTelegram ? "indigo" : "gray"}>{search.notifyTelegram ? "Следим за новыми" : "На паузе"}</Badge>
                     <Text size="xs" c="dimmed">
-                      {typeof search.lastMatchCount === "number"
+                      {search.lastCheckedAt && typeof search.lastMatchCount === "number"
                         ? `Совпадений при последнем подсчёте: ${search.lastMatchCount}`
                         : `Сохранён ${formatDate(search.createdAt)}`}
                     </Text>

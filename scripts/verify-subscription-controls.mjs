@@ -40,7 +40,7 @@ try {
   check("pause preserves previous matching watermark", (await db.savedSearch.findUniqueOrThrow({ where: { id: search.id } })).lastNotifiedAt.getTime() === since.getTime())
   await patch(auth, { id: search.id, notifyTelegram: true })
   const resumed = await db.savedSearch.findUniqueOrThrow({ where: { id: search.id } })
-  check("resume skips the paused interval and awaits a fresh check", resumed.lastNotifiedAt > since && resumed.lastCheckedAt === null && resumed.lastMatchCount === null)
+  check("resume skips the paused interval and awaits a fresh check", resumed.lastNotifiedAt > since && resumed.lastCheckedAt === null && resumed.lastMatchCount === 0)
   await patch(auth, { id: search.id, notifyTelegram: true })
   check("retrying enable does not move watermark again", (await db.savedSearch.findUniqueOrThrow({ where: { id: search.id } })).lastNotifiedAt.getTime() === resumed.lastNotifiedAt.getTime())
   check("pause and resume do not erase daily delivery budget", await db.savedSearchDelivery.count({ where: { userId: owner.id } }) === 1)
