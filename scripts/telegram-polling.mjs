@@ -246,7 +246,7 @@ async function poll() {
              шлёт точку, бот спрашивает кнопками «есть / нет». Без
              callback_query они не приходят вовсе, и любая кнопка молча
              ничего не делает. */
-          allowed_updates: ["message", "callback_query"],
+          allowed_updates: ["message", "callback_query", "chat_member"],
         }, (pollTimeoutSeconds + 15) * 1_000)
 
         if (connectivityFailed) {

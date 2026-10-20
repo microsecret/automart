@@ -26,10 +26,12 @@ import { WEEKLY_DIGEST_OFF_CALLBACK } from "@/lib/telegram-weekly-digest-message
 import { absoluteUrl } from "@/lib/site-url"
 import { forwardNoticeText, isChannelForward } from "@/lib/telegram-forward-guard"
 import { rememberUserChat } from "@/lib/listing-chat-autopost"
+import { moderateTelegramBotUpdate } from "@/lib/telegram-bot-admission"
 
 export const dynamic = "force-dynamic"
 
 type TelegramMessage = {
+  new_chat_members?: Array<{ id: number | string; is_bot?: boolean }>
   message_id: number
   text?: string
   caption?: string
@@ -74,7 +76,7 @@ type TelegramCallbackQuery = {
   message?: { message_id: number; chat: { id: number } }
 }
 
-type TelegramUpdate = { message?: TelegramMessage; callback_query?: TelegramCallbackQuery }
+type TelegramUpdate = { message?: TelegramMessage; callback_query?: TelegramCallbackQuery; chat_member?: unknown }
 type TelegramSentMessage = { message_id: number }
 
 const MODERATION_NOTICE_COOLDOWN_MS = 60 * 60 * 1000
@@ -402,6 +404,7 @@ async function sendRegistrationStep(chatId: string, step: TelegramRegistrationSt
 }
 
 async function handleMessage(message: TelegramMessage) {
+  if (await moderateTelegramBotUpdate({ message })) return
   if (!message.from || message.from.is_bot) return
   const telegramId = String(message.from.id)
   const chatId = String(message.chat.id)
@@ -841,6 +844,11 @@ export async function POST(request: NextRequest) {
       longitude: editedLocation.location.longitude,
     }).catch((error) => console.error("Telegram live location error:", error))
 
+    return NextResponse.json({ ok: true })
+  }
+
+  if (update.chat_member) {
+    void moderateTelegramBotUpdate(update).catch((error) => console.error("Telegram bot admission failed:", error instanceof Error ? error.name : "UnknownError"))
     return NextResponse.json({ ok: true })
   }
 

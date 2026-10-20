@@ -1295,6 +1295,16 @@ model TelegramUserChat {
   @@index([userId, lastSeenAt])
 }
 
+// Administrator-approved third-party bots; scoped independently per group.
+model TelegramBotApproval {
+  chatId     String
+  botId      String
+  approvedBy String
+  approvedAt DateTime @default(now())
+
+  @@id([chatId, botId])
+}
+
 model TelegramChat {
   id               String    @id
   type             String
