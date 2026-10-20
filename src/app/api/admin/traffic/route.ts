@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAdminSession } from "@/lib/admin-route-guard"
 import { prisma } from "@/lib/prisma"
+import { trafficVisitorIdentity, type AnonymousTrafficIdentity } from "@/lib/analytics-identity"
 import { moscowDayKey, moscowHour } from "@/lib/moscow-periods"
 import { SECTION_GROUP_LABELS, sectionForPath, readablePath } from "@/lib/traffic-sections"
 import {
@@ -13,10 +14,9 @@ export const dynamic = "force-dynamic"
 /** Сколько строк показывать в списках: длиннее их не читают. */
 const TOP_LIMIT = 12
 
-function countUnique(events: { visitorKey: string | null; ipHash: string | null }[]) {
-  // Уникальность по ключу посетителя, а при его отсутствии — по хешу адреса:
-  // без этого один человек с отключёнными куками считался бы за десятерых.
-  return new Set(events.map((e) => e.visitorKey || e.ipHash).filter(Boolean)).size
+function countUnique(events: AnonymousTrafficIdentity[]) {
+  // Use the same privacy-safe identity as the main administrator summary.
+  return new Set(events.map(trafficVisitorIdentity).filter(Boolean)).size
 }
 
 export async function GET(request: NextRequest) {
@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
       prisma.visitEvent.findMany({
         // Верхняя граница закрывает период явно: у календарного месяца она
         // наступает раньше, чем «сейчас», как только начнётся следующий.
-        where: { createdAt: { gte: current.from, lt: current.to } },
+        where: { createdAt: { gte: current.from, lt: current.to, lte: now } },
         select: {
-          createdAt: true, path: true, visitorKey: true, ipHash: true,
+          createdAt: true, path: true, visitorKey: true, ipHash: true, sessionKey: true,
           referer: true, trafficSource: true, deviceType: true, campaign: true,
           /* Город человек выбирает сам, userId отличает своего от гостя:
              владелец спрашивает и «откуда заходят», и «сколько вошедших». */
@@ -52,8 +52,9 @@ export async function GET(request: NextRequest) {
         where: { createdAt: { gte: previous.from, lt: previous.to } },
         /* Путь нужен, чтобы сравнить разделы: «карта заправок выросла
            вдвое» полезнее, чем «посетителей стало больше». */
-        select: { visitorKey: true, ipHash: true, path: true },
+        select: { visitorKey: true, ipHash: true, sessionKey: true, path: true },
         take: 50_000,
+        orderBy: { createdAt: "desc" },
       }),
     ])
 
@@ -74,10 +75,27 @@ export async function GET(request: NextRequest) {
     const byCity = new Map<string, Set<string>>()
     const byDay = new Map<string, { visitors: Set<string>; views: number }>()
     const signedIn = new Set<string>()
-    const viewsPerVisitor = new Map<string, number>()
+    const viewsPerSession = new Map<string, number>()
 
     for (const event of events) {
-      const visitor = event.visitorKey || event.ipHash
+      // Views are real even for legacy rows without any visitor identifier.
+      // Do not fabricate a visitor, or drop those views from the charts.
+      byPath.set(event.path, (byPath.get(event.path) || 0) + 1)
+      const section = sectionForPath(event.path)
+      if (!bySection.has(section.key)) {
+        bySection.set(section.key, { label: section.label, group: section.group, visitors: new Set(), views: 0 })
+      }
+      const sectionEntry = bySection.get(section.key)!
+      sectionEntry.views += 1
+      const day = moscowDayKey(event.createdAt)
+      if (!byDay.has(day)) byDay.set(day, { visitors: new Set(), views: 0 })
+      const dayEntry = byDay.get(day)!
+      dayEntry.views += 1
+      const hour = moscowHour(event.createdAt)
+      viewsByHour.set(hour, (viewsByHour.get(hour) || 0) + 1)
+      if (event.sessionKey) viewsPerSession.set(event.sessionKey, (viewsPerSession.get(event.sessionKey) || 0) + 1)
+
+      const visitor = trafficVisitorIdentity(event)
       if (!visitor) continue
 
       const source = trafficSourceLabel(event.trafficSource)
@@ -99,15 +117,7 @@ export async function GET(request: NextRequest) {
         byCampaign.get(event.campaign)!.add(visitor)
       }
 
-      byPath.set(event.path, (byPath.get(event.path) || 0) + 1)
-
-      const section = sectionForPath(event.path)
-      if (!bySection.has(section.key)) {
-        bySection.set(section.key, { label: section.label, group: section.group, visitors: new Set(), views: 0 })
-      }
-      const sectionEntry = bySection.get(section.key)!
       sectionEntry.visitors.add(visitor)
-      sectionEntry.views += 1
 
       if (event.city) {
         if (!byCity.has(event.city)) byCity.set(event.city, new Set())
@@ -116,21 +126,14 @@ export async function GET(request: NextRequest) {
 
       /* Динамика по дням: одна цифра за период не показывает, был ли
          рост ровным или это всплеск одного дня. */
-      const day = moscowDayKey(event.createdAt)
-      if (!byDay.has(day)) byDay.set(day, { visitors: new Set(), views: 0 })
-      const dayEntry = byDay.get(day)!
       dayEntry.visitors.add(visitor)
-      dayEntry.views += 1
 
       if (event.userId) signedIn.add(visitor)
-      viewsPerVisitor.set(visitor, (viewsPerVisitor.get(visitor) || 0) + 1)
 
       // Час берётся московский: сервер живёт в UTC и без пересчёта пик
       // активности смещался бы на три часа назад.
-      const hour = moscowHour(event.createdAt)
       if (!byHour.has(hour)) byHour.set(hour, new Set())
       byHour.get(hour)!.add(visitor)
-      viewsByHour.set(hour, (viewsByHour.get(hour) || 0) + 1)
     }
 
     const toList = (map: Map<string, Set<string>>) =>
@@ -147,7 +150,7 @@ export async function GET(request: NextRequest) {
     const previousBySection = new Map<string, Set<string>>()
     const previousVisitorSet = new Set<string>()
     for (const event of previousEvents) {
-      const visitor = event.visitorKey || event.ipHash
+      const visitor = trafficVisitorIdentity(event)
       if (!visitor) continue
       previousVisitorSet.add(visitor)
       const key = sectionForPath(event.path).key
@@ -164,7 +167,7 @@ export async function GET(request: NextRequest) {
        Вернувшимся считаем того, кто был и в прошлом отрезке. */
     const currentVisitors = new Set<string>()
     for (const event of events) {
-      const visitor = event.visitorKey || event.ipHash
+      const visitor = trafficVisitorIdentity(event)
       if (visitor) currentVisitors.add(visitor)
     }
     const returning = [...currentVisitors].filter((visitor) => previousVisitorSet.has(visitor)).length
@@ -177,8 +180,21 @@ export async function GET(request: NextRequest) {
 
     /* Один экран за визит — это отказ: человек открыл страницу и ушёл,
        не заглянув дальше. */
-    const bounced = [...viewsPerVisitor.values()].filter((count) => count <= 1).length
-    const bounceRate = uniqueVisitors > 0 ? Math.round((bounced / uniqueVisitors) * 100) : 0
+    const bounced = [...viewsPerSession.values()].filter((count) => count === 1).length
+    const bounceRate = viewsPerSession.size > 0 ? Math.round((bounced / viewsPerSession.size) * 100) : 0
+
+    // A visitor can open several sections within one product group. Union
+    // the identities once instead of adding per-section unique counts.
+    const byGroup = new Map<string, { group: string; label: string; visitors: Set<string>; views: number }>()
+    for (const entry of bySection.values()) {
+      let group = byGroup.get(entry.group)
+      if (!group) {
+        group = { group: entry.group, label: SECTION_GROUP_LABELS[entry.group as keyof typeof SECTION_GROUP_LABELS] || entry.group, visitors: new Set(), views: 0 }
+        byGroup.set(entry.group, group)
+      }
+      group.views += entry.views
+      for (const visitor of entry.visitors) group.visitors.add(visitor)
+    }
 
     /* Сколько людей вообще дошло до бота.
 
@@ -245,24 +261,9 @@ export async function GET(request: NextRequest) {
          Десять разделов в списке отвечают на вопрос точно, но не сразу:
          владелец хочет видеть за секунду, чем площадка живёт в целом, и
          только потом разбираться внутри направления. */
-      groups: [...bySection.values()].reduce<Array<{ group: string; label: string; visitors: number; views: number }>>((result, entry) => {
-        const existing = result.find((row) => row.group === entry.group)
-        if (existing) {
-          existing.views += entry.views
-          /* Посетители складываются приблизительно: один человек мог
-             зайти и в каталог, и в запчасти, и точное объединение
-             множеств тут не окупается — доли остаются верными. */
-          existing.visitors += entry.visitors.size
-        } else {
-          result.push({
-            group: entry.group,
-            label: SECTION_GROUP_LABELS[entry.group as keyof typeof SECTION_GROUP_LABELS] || entry.group,
-            visitors: entry.visitors.size,
-            views: entry.views,
-          })
-        }
-        return result
-      }, []).sort((a, b) => b.views - a.views),
+      groups: [...byGroup.values()]
+        .map(({ visitors, ...group }) => ({ ...group, visitors: visitors.size }))
+        .sort((a, b) => b.views - a.views),
       /* Разделы: чем люди пользовались, а не какие адреса открывали. */
       sections: [...bySection.entries()]
         .map(([key, entry]) => {

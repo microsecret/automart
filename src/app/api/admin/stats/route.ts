@@ -171,7 +171,7 @@ export async function GET() {
          Правильное решение — почасовые сводки вместо сырых событий; предел
          держит панель работоспособной, пока их нет. */
       prisma.visitEvent.findMany({
-        where: { createdAt: { gte: trafficWindowStart } },
+        where: { createdAt: { gte: trafficWindowStart, lte: now } },
         orderBy: { createdAt: "desc" },
         take: 50_000,
         select: { createdAt: true, visitorKey: true, sessionKey: true, ipHash: true, userId: true, deviceType: true, trafficSource: true },

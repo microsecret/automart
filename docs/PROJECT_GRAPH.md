@@ -40,6 +40,7 @@ flowchart LR
 | Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |
 | Admin analytics and charts | `src/app/admin/page.tsx` | `src/app/api/admin/stats/route.ts`, analytics visit route |
+| Traffic report reconciliation | `src/app/api/admin/traffic/route.ts` | Shares IP-first/legacy-fallback identity with the main summary; group visitors are set unions, unidentified events retain page views, bounce uses sessions. Disposable API regression: `scripts/verify-admin-traffic.mjs`. |
 | Campaign/button analytics | `src/components/analytics/AppAnalytics.tsx` | visit API, admin traffic API and traffic dashboard |
 | Admin decision audit | `src/components/admin/AdminAuditLog.tsx` | `src/app/api/admin/audit/route.ts`, `src/lib/admin-audit.ts`, mutating admin routes |
 | Auction source health | `src/app/api/admin/auctions/stats/route.ts` | `auction-crawl-policy.ts`, admin sources tab |

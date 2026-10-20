@@ -31,7 +31,7 @@ try {
   await db.visitEvent.createMany({ data: [
     { path: "/", visitorKey: "browser-a", ipHash: "private-ip-one", sessionKey: "session-a", userId: admin.id, createdAt: now },
     { path: "/listings/vehicle/audit", visitorKey: "browser-b", ipHash: "private-ip-one", sessionKey: "session-b", createdAt: now },
-    { path: "/category/passenger", visitorKey: "browser-a", ipHash: "private-ip-one", sessionKey: "session-a", createdAt: now },
+    { path: "/category/passenger", visitorKey: "browser-c", ipHash: "private-ip-one", sessionKey: "session-a", createdAt: now },
     { path: "/services/fuel-map", sessionKey: "legacy-session", createdAt: now },
     { path: "/news", createdAt: now },
     { path: "/", visitorKey: "browser-previous", ipHash: "private-ip-one", sessionKey: "old-session", createdAt: new Date(dayStart.getTime() - 1000) },
