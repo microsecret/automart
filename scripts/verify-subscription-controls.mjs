@@ -22,6 +22,16 @@ async function patch(auth, body) {
   const response = await fetch(`${base}/api/saved-searches`, { method: "PATCH", headers: { Cookie: auth, "Content-Type": "application/json" }, body: JSON.stringify(body) })
   return { status: response.status, body: await response.json() }
 }
+async function screenshot(page, path) {
+  // A full-page capture keeps fixed chrome at the current scroll offset.
+  // Reset scroll/focus so it reflects the normal top-of-page viewport.
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+    window.scrollTo(0, 0)
+  })
+  await page.evaluate(() => Promise.all(document.getAnimations().filter((animation) => animation.effect?.getTiming().iterations !== Infinity).map((animation) => animation.finished.catch(() => {}))))
+  await page.screenshot({ path, fullPage: true })
+}
 try {
   const marker = Date.now()
   const owner = await db.user.create({ data: { name: "Проверка управления", email: `controls-${marker}@audit.invalid` } })
@@ -76,12 +86,12 @@ try {
     await page.getByText("На паузе", { exact: true }).waitFor()
     check(`${name}: pause updates state without deleting search`, !await toggle.isChecked() && await page.getByRole("heading", { name: title }).isVisible())
     check(`${name}: layout fits viewport`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
-    await page.screenshot({ path: `${output}/${name}-paused.png`, fullPage: true })
+    await screenshot(page, `${output}/${name}-paused.png`)
     await toggle.focus()
     await toggle.press("Space")
     await page.getByText("Следим за новыми", { exact: true }).waitFor()
     check(`${name}: keyboard resumes notification delivery`, await toggle.isChecked())
-    await page.screenshot({ path: `${output}/${name}-active.png`, fullPage: true })
+    await screenshot(page, `${output}/${name}-active.png`)
     await context.close()
   }
   await writeFile(`${output}/report.json`, JSON.stringify({ checks, failures: [] }, null, 2))
