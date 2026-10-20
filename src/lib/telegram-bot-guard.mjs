@@ -21,6 +21,8 @@ export async function guardTelegramBots(update, deps) {
   }
   const joining = membership ? [memberBot] : (message?.new_chat_members || []).filter((user) => user.is_bot)
   const senderBot = message?.from?.is_bot ? message.from : null
+  // Anonymous administrators speak on behalf of this group, not as a bot.
+  if (!joining.length && String(message?.sender_chat?.id) === chatId) return false
   const targets = joining.length ? joining : senderBot ? [senderBot] : []
   if (!targets.length) return false
   const actor = membership?.from || message?.from
@@ -33,7 +35,11 @@ export async function guardTelegramBots(update, deps) {
     if (!present(target)) continue // Late/duplicate update after removal.
     const approved = await deps.approved(chatId, botId)
     if (approved) continue
-    if (joining.length && actor?.id && !actor.is_bot) {
+    if (joining.length && String(message?.sender_chat?.id) === chatId) {
+      await deps.approve(chatId, botId, `chat:${chatId}`)
+      continue
+    }
+    if (joining.length && actor?.id) {
       const inviter = await deps.api("getChatMember", { chat_id: chatId, user_id: actor.id })
       if (admins.has(inviter.status)) {
         await deps.approve(chatId, botId, String(actor.id))

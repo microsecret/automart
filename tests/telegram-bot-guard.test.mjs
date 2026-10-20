@@ -42,6 +42,17 @@ test("approval does not exempt the bot in another chat", async () => {
   const f = fixture(); f.approvals.set("-999:20", "30")
   await guardTelegramBots(f.join, f.deps); assert.equal(bans(f).length, 1)
 })
+test("anonymous group administrator admission is approved", async () => {
+  const f = fixture(); f.join.message.sender_chat = { id: -100, type: "supergroup" }
+  f.join.message.from = { id: 1087968824, is_bot: true }
+  await guardTelegramBots(f.join, f.deps)
+  assert.equal(bans(f).length, 0); assert.equal(f.approvals.get("-100:20"), "chat:-100")
+})
+test("anonymous group speech is not mistaken for a bot account", async () => {
+  const f = fixture()
+  assert.equal(await guardTelegramBots({ message: { chat: f.chat, from: { id: 1087968824, is_bot: true }, sender_chat: { id: -100 } } }, f.deps), false)
+  assert.equal(f.calls.length, 0)
+})
 test("own moderator bot is never banned", async () => {
   const f = fixture(); f.join.message.new_chat_members = [{ id: 10, is_bot: true }]
   await guardTelegramBots(f.join, f.deps); assert.equal(f.calls.length, 0)
