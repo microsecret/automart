@@ -54,7 +54,7 @@ export default function AvatarUpload({ currentImage, name, onChange, disabled }:
     <Box>
       <Group gap="md" align="center">
         <Box style={{ position: "relative" }}>
-          <Avatar src={currentImage} size={72} radius="xl" color="indigo">
+          <Avatar src={currentImage} size={72} radius="xl" color="indigo" className="lw-user-avatar">
             {(name || "У").slice(0, 1).toUpperCase()}
           </Avatar>
 

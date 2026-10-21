@@ -455,7 +455,7 @@ export default function AppHeader({ navigationOpened = false, onNavigationToggle
                 <Menu shadow="md" width={220} position="bottom-end" radius="md" offset={4}>
                   <Menu.Target>
                     <ActionIcon variant="subtle" radius="xl" size={32} aria-label="Открыть меню профиля" className="market-app-header__utility-action market-app-header__utility-action--avatar">
-                      <Avatar src={session.user?.image} size={28} radius="xl" color="indigo">
+                      <Avatar src={session.user?.image} size={28} radius="xl" color="indigo" className="lw-user-avatar">
                         {initialOf(session.user?.name)}
                       </Avatar>
                     </ActionIcon>

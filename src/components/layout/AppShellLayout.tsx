@@ -844,7 +844,7 @@ function AuthenticatedAccountPanel({ pathname, dashboardTab, session, roleLabel,
        * кабинета — остаётся на светлом: читать их придётся подолгу. */}
       <Box className="market-side-account__head">
         <Group wrap="nowrap" gap={10} align="center">
-          <Avatar src={session.user.image} radius="xl" size={32} className="market-side-account__avatar">
+          <Avatar src={session.user.image} radius="xl" size={32} className="market-side-account__avatar lw-user-avatar">
             {initialOf(session.user.name)}
           </Avatar>
           <Box style={{ minWidth: 0, flex: 1 }}>

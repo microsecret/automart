@@ -637,7 +637,7 @@ function DashboardContent() {
                 </Alert>
               )}
               <Group gap="md" align="center">
-                <Avatar src={accountProfile?.image || session?.user?.image} size={64} radius="xl" color="indigo">{initialOf(accountProfile?.name || session?.user?.name)}</Avatar>
+                <Avatar src={accountProfile?.image || session?.user?.image} size={64} radius="xl" color="indigo" className="lw-user-avatar">{initialOf(accountProfile?.name || session?.user?.name)}</Avatar>
                 <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
                   <Group gap="xs" wrap="wrap">
                     <Text fw={700} fz="lg" c="var(--market-ink)">{accountProfile?.name || session?.user?.name || "Без имени"}</Text>

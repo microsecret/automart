@@ -25,6 +25,15 @@
   --market-accent-soft: #e4f2f3;
   --market-accent-button: #08535f;
   --market-focus-ring: #087a88;
+  /* Shared shell neutrals: titanium with a petrol undertone, not legacy blue.
+     Semantic success/warning/danger colours are intentionally independent. */
+  --market-line: #c5d3d2;
+  --market-surface-subtle: #f3f6f5;
+  --market-field-hover: #edf5f3;
+  --market-field-line: #b6c9c8;
+  --market-focus: rgb(8 122 136 / 18%);
+  --lw-control-radius: 10px;
+  --lw-avatar-rim: #ac7955;
 }
 
 :root[data-mantine-color-scheme="dark"] {
@@ -38,6 +47,50 @@
   --market-accent-soft: #142d32;
   --market-accent-button: #0b6974;
   --market-focus-ring: #7adce0;
+  --market-line: #34464b;
+  --market-surface-subtle: #162327;
+  --market-field-hover: #1e3035;
+  --market-field-line: #486269;
+  --market-focus: rgb(122 220 224 / 20%);
+}
+
+/* Keep navigation a single functional icon family. Semantic badges/counters,
+   brand logos and artwork are not recoloured or resized by these selectors. */
+.market-side-nav--toned { --nav-tone: var(--market-primary) !important; }
+.market-header-tab__icon > svg,
+.market-side-nav .mantine-NavLink-section[data-position="left"] > svg,
+.market-side-account__link .mantine-NavLink-section[data-position="left"] > svg {
+  stroke-width: 1.8;
+}
+.market-side-nav .mantine-NavLink-section[data-position="left"] > svg,
+.market-side-account__link .mantine-NavLink-section[data-position="left"] > svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Same material around real uploaded portraits; initials are rendered as
+   text, never as a bitmap that would blur or replace a user's photograph. */
+.lw-user-avatar {
+  border: 1px solid var(--lw-avatar-rim);
+  border-radius: 50%;
+  box-shadow: inset 0 1px 0 var(--lw-metal-highlight);
+  background: linear-gradient(150deg, var(--lw-enamel), var(--lw-scene-surface));
+}
+.lw-user-avatar .mantine-Avatar-placeholder {
+  background: transparent;
+  color: var(--lw-scene-ink);
+  font-weight: 700;
+}
+
+:is(.market-header-search, .catalog-filter-panel, .home-hero__search) .mantine-Input-input:not([data-error]):not(:disabled) {
+  border-color: var(--market-field-line);
+  border-radius: var(--lw-control-radius);
+  caret-color: var(--market-primary);
+}
+:is(.market-header-search, .catalog-filter-panel, .home-hero__search) .mantine-Input-input:not([data-error]):not(:disabled):focus {
+  border-color: var(--market-focus-ring);
+  box-shadow: 0 0 0 2px var(--market-focus);
 }
 
 .lw-service-artwork {

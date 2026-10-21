@@ -48,6 +48,7 @@ flowchart LR
 | Shared site navigation | `src/lib/navigation-registry.ts` | header, footer, app shell, dashboard and Telegram shell |
 | Shared 3D component artwork | `src/components/ui/ServiceArtwork.tsx` | `public/images/ui/titanium-v1/`, home quick actions, service pages, garage, partner workspace and Telegram shortcuts |
 | Tactile buttons and component materials | `src/app/component-materials.css` | `src/theme/theme.ts`, root layout, `ListingCard` detail actions; semantic danger colors remain independent |
+| Unified shell and account identity | `src/app/component-materials.css` | Titanium field/border/focus tokens, consistent sidebar icon tone/stroke and opt-in `lw-user-avatar` for header/sidebar/profile/upload. Rollout checklist: `docs/VISUAL_ROLLOUT.md`; disposable browser matrix: `scripts/verify-shell-materials.mjs`. |
 | Full-bleed scenic widgets | `src/components/ui/ScenicBanner.tsx` | `scenic-widgets.css`, `public/images/ui/scenic-v1/`; home actions and account banners preserve real HTML controls and real user data |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Database-backed release readiness | `scripts/verify-or-rollback.sh` | Home/CSS plus catalog status and JSON; `--check-only` disables rollback. Fake HTTP regression: `scripts/test-release-readiness.py`; lock recovery evidence: `docs/INCIDENT_2026-10-21.md`. |
