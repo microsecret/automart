@@ -50,6 +50,7 @@ flowchart LR
 | Tactile buttons and component materials | `src/app/component-materials.css` | `src/theme/theme.ts`, root layout, `ListingCard` detail actions; semantic danger colors remain independent |
 | Full-bleed scenic widgets | `src/components/ui/ScenicBanner.tsx` | `scenic-widgets.css`, `public/images/ui/scenic-v1/`; home actions and account banners preserve real HTML controls and real user data |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
+| Database-backed release readiness | `scripts/verify-or-rollback.sh` | Home/CSS plus catalog status and JSON; `--check-only` disables rollback. Fake HTTP regression: `scripts/test-release-readiness.py`; lock recovery evidence: `docs/INCIDENT_2026-10-21.md`. |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
 | Third-party Telegram bots | `src/lib/telegram-bot-guard.mjs` | Polling receives `chat_member`; joins and role changes are checked before registration moderation. Only live administrator-role bots are permitted, regardless of inviter. Historical `TelegramBotApproval` rows never grant permission. Non-admin bots are banned with message revocation when the moderator has restriction rights; own/admin bots are protected. |
 | Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |
