@@ -1,7 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { IconArrowRight, IconX } from "@tabler/icons-react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
+import { Portal } from "@mantine/core"
+import { IconArrowRight, IconHelpCircle, IconX } from "@tabler/icons-react"
 
 /**
  * Короткий тур по главной — четыре шага при первом визите.
@@ -19,7 +20,7 @@ const STEPS = [
   { selector: ".home-hero__search", title: "Ищите по марке", text: "Наберите марку или модель — выдача ниже сузится сразу, без перезагрузки." },
   { selector: ".home-quick", title: "Пять быстрых путей", text: "Купить, продать, аукционы Азии и Европы, запчасти и цены на заправках." },
   { selector: ".catalog-presets", title: "Готовые подборки", text: "«До миллиона», «Автомат» — частые запросы одним нажатием. Нажмите ещё раз, чтобы снять." },
-  { selector: ".sidebar-create-cta, .mobile-bottom-nav__accent", title: "Продать — бесплатно", text: "Объявление публикуется за пару минут и уходит в каталог и Telegram." },
+  { selector: ".sidebar-create-cta, .mobile-bottom-nav__accent", title: "Продать — бесплатно", text: "Заполните объявление и отправьте на модерацию. После одобрения оно появится в каталоге." },
 ] as const
 
 const STORAGE_KEY = "lw-quick-tour-v1"
@@ -47,6 +48,10 @@ function visibleTarget(selector: string): HTMLElement | null {
 
 export default function QuickTour() {
   const [step, setStep] = useState<number | null>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
+  const id = useId()
 
   useEffect(() => {
     if (readSeen()) return
@@ -57,16 +62,45 @@ export default function QuickTour() {
        Иначе каждое обновление страницы запускало тур заново — владелец
        поймал это на живом сайте 24.09.2026. */
     const timer = window.setTimeout(() => {
+      if (document.visibilityState !== "visible" || document.activeElement?.matches("input, textarea, select, [contenteditable=true]")) return
       markSeen()
       setStep(0)
     }, 1800)
-    return () => window.clearTimeout(timer)
+    const cancel = () => window.clearTimeout(timer)
+    // First interaction means the visitor has already started a task. Leave
+    // the optional replay control available instead of interrupting them.
+    window.addEventListener("pointerdown", cancel, { once: true })
+    window.addEventListener("keydown", cancel, { once: true })
+    window.addEventListener("wheel", cancel, { once: true, passive: true })
+    window.addEventListener("touchstart", cancel, { once: true, passive: true })
+    return () => {
+      cancel()
+      window.removeEventListener("pointerdown", cancel)
+      window.removeEventListener("keydown", cancel)
+      window.removeEventListener("wheel", cancel)
+      window.removeEventListener("touchstart", cancel)
+    }
   }, [])
 
   const close = useCallback(() => {
     markSeen()
+    if (panel.current?.contains(document.activeElement)) trigger.current?.focus({ preventScroll: true })
     setStep(null)
   }, [])
+
+  function start() {
+    markSeen()
+    setStep(0)
+    window.requestAnimationFrame(() => closeButton.current?.focus({ preventScroll: true }))
+  }
+
+  function next() {
+    if (step === null) return
+    for (let candidate = step + 1; candidate < STEPS.length; candidate++) {
+      if (visibleTarget(STEPS[candidate].selector)) { setStep(candidate); return }
+    }
+    close()
+  }
 
   useEffect(() => {
     if (step === null) return
@@ -95,28 +129,34 @@ export default function QuickTour() {
     return () => window.removeEventListener("keydown", onKey)
   }, [step, close])
 
-  if (step === null) return null
-  const current = STEPS[step]
+  const current = step === null ? null : STEPS[step]
   const last = step === STEPS.length - 1
 
   return (
-    <div className="lw-tour" role="dialog" aria-live="polite" aria-label={`Подсказка ${step + 1} из ${STEPS.length}`}>
-      <button type="button" className="lw-tour__close" onClick={close} aria-label="Закрыть подсказки">
-        <IconX size={15} stroke={2} />
+    <>
+    <button ref={trigger} type="button" className="lw-tour-launch" onClick={start} aria-expanded={step !== null} aria-controls={step === null ? undefined : id}>
+      <IconHelpCircle size={16} aria-hidden="true" /> Как пользоваться каталогом
+    </button>
+    {current && step !== null && <Portal><div ref={panel} id={id} className="lw-tour" role="region" aria-label="Подсказки по каталогу">
+      <button ref={closeButton} type="button" className="lw-tour__close" onClick={close} aria-label="Закрыть подсказки">
+        <IconX size={17} stroke={2} aria-hidden="true" />
       </button>
+      <div aria-live="polite" aria-atomic="true">
       <span className="lw-tour__count">{step + 1} / {STEPS.length}</span>
       <p className="lw-tour__title">{current.title}</p>
       <p className="lw-tour__text">{current.text}</p>
+      </div>
       <div className="lw-tour__footer">
         <div className="lw-tour__dots" aria-hidden="true">
           {STEPS.map((item, index) => <span key={item.title} data-on={index === step || undefined} />)}
         </div>
         <button type="button" className="lw-tour__skip" onClick={close}>Пропустить</button>
-        <button type="button" className="lw-tour__next" onClick={() => (last ? close() : setStep(step + 1))}>
+        <button type="button" className="lw-tour__next" onClick={next}>
           {last ? "Понятно" : "Далее"}
-          {!last && <IconArrowRight size={14} stroke={2.2} />}
+          {!last && <IconArrowRight size={14} stroke={2.2} aria-hidden="true" />}
         </button>
       </div>
-    </div>
+    </div></Portal>}
+    </>
   )
 }

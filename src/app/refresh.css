@@ -1415,20 +1415,41 @@
   padding: 16px 16px 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
-  background: var(--lw-navy);
+  background: var(--lw-scene-surface);
   box-shadow: 0 24px 60px -20px rgba(11, 20, 38, 0.65);
   color: var(--lw-navy-text);
-  animation: lw-tour-in 360ms var(--ease-out) both;
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: lw-tour-in 180ms var(--ease-out) both;
 }
+
+.lw-tour-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--lw-scene-link);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  text-align: start;
+}
+.lw-tour-launch:focus-visible { outline: 2px solid var(--lw-scene-link); outline-offset: 3px; }
+.lw-tour-launch:hover { text-decoration: underline; text-underline-offset: 4px; }
 
 .lw-tour__close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 4px;
+  right: 4px;
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1442,7 +1463,7 @@
 }
 
 .lw-tour__count {
-  color: #8fb3ff;
+  color: var(--lw-scene-link);
   font-size: var(--text-caps);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1480,12 +1501,12 @@
   height: 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.2);
-  transition: width var(--ease-base) var(--ease-out), background-color var(--ease-base) var(--ease-out);
+  transition: background-color var(--ease-fast) var(--ease-out);
 }
 
 .lw-tour__dots span[data-on] {
   width: 18px;
-  background: #8fb3ff;
+  background: var(--lw-scene-link);
 }
 
 .lw-tour__skip,
@@ -1493,7 +1514,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
+  min-height: 44px;
   padding: 0 12px;
   border: 0;
   border-radius: var(--radius-md);
@@ -1518,36 +1539,32 @@
 }
 
 .lw-tour__next:hover {
-  background: #1d4ed8;
+  background: var(--lw-enamel-hover);
 }
 
 .lw-tour button:focus-visible {
-  outline: 2px solid #8fb3ff;
+  outline: 2px solid var(--lw-scene-link);
   outline-offset: 2px;
 }
 
-/* Подсвеченное место: кольцо с мягкой пульсацией. */
+/* Static highlight: no perpetual pulse or layout work while reading. */
 .lw-tour-target {
   position: relative;
   z-index: 5;
   border-radius: var(--radius-lg);
-  animation: lw-tour-pulse 1.6s var(--ease-out) infinite;
+  box-shadow: 0 0 0 3px var(--market-focus-ring);
 }
 
 @keyframes lw-tour-in {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
-}
-
-@keyframes lw-tour-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px var(--market-accent-button), 0 0 0 6px color-mix(in srgb, var(--market-accent-button) 26%, transparent); }
-  50% { box-shadow: 0 0 0 3px var(--market-accent-button), 0 0 0 12px color-mix(in srgb, var(--market-accent-button) 8%, transparent); }
 }
 
 @media (max-width: 61.99em) {
   .lw-tour {
     right: 16px;
-    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(144px + env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - 240px);
   }
 }
 
@@ -1698,8 +1715,8 @@
 /* Тур в тёмной теме: тёмно-синяя карточка сливалась с тёмной страницей —
    рамка и тень посветлее отделяют её. */
 [data-mantine-color-scheme="dark"] .lw-tour {
-  border-color: rgba(143, 179, 255, 0.28);
-  background: #13233f;
+  border-color: color-mix(in srgb, var(--lw-scene-link) 28%, transparent);
+  background: var(--lw-scene-surface);
   box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.8);
 }
 

@@ -529,6 +529,7 @@ export default function HomePage(p: HomePageProps = {}) {
                   </Text>
                 )}
 
+                <QuickTour />
               </Box>
               {/* Правая колонка героя пуста намеренно.
 
@@ -1170,8 +1171,6 @@ export default function HomePage(p: HomePageProps = {}) {
           и они замыкают витрину, а не разрывают её. */}
       {p.showHero !== false && !p.categorySlug && <PromoSlot />}
 
-      {/* Тур для первого визита — только на главной и только один раз. */}
-      {p.showHero !== false && !p.categorySlug && <QuickTour />}
     </Stack></Box>
   )
 }

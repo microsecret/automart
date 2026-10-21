@@ -56,6 +56,7 @@ flowchart LR
 | Third-party Telegram bots | `src/lib/telegram-bot-guard.mjs` | Polling receives `chat_member`; joins and role changes are checked before registration moderation. Only live administrator-role bots are permitted, regardless of inviter. Historical `TelegramBotApproval` rows never grant permission. Non-admin bots are banned with message revocation when the moderator has restriction rights; own/admin bots are protected. |
 | Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |
 | Unified URL search | `src/app/search/page.tsx` | `HomeCatalog.tsx`, `/api/listings` query contract |
+| Optional catalog walkthrough | `src/components/home/QuickTour.tsx` | Hero replay control, non-modal hints, interruption-aware first visit, focus recovery and reduced motion; server browser matrix: `scripts/verify-quick-tour.mjs`, behavior contract: `docs/CATALOG_QUICK_TOUR.md`. |
 | Auction import | source collector | parser sync/refresh route, `auction-import.ts` |
 | Exchange rates | `src/lib/exchange-rates.ts` | CBR refresh script and cron |
 | Freshness/removal | source refresh route | `auction-crawl-policy.ts`, `auction-source-freshness.ts`, listing status fields |
