@@ -48,10 +48,20 @@ export function createTelegramWorkerRoute<T>(
   handler: (request: NextRequest) => Promise<T>,
   options: TelegramWorkerOptions,
 ) {
+  // Admission control for this route in this process only. Do not expire the
+  // guard on a timer: a timed-out caller does not cancel the running worker.
+  // This is not a durable queue or a cross-process/exactly-once guarantee.
+  let running = false
   return async function POST(request: NextRequest): Promise<NextResponse> {
     const secret = process.env.TELEGRAM_WEBHOOK_SECRET
     if (!secret) return NextResponse.json({ error: "Telegram не настроен" }, { status: 503 })
     if (!hasValidSecret(request, secret)) return NextResponse.json({ error: "Требуется ключ" }, { status: 401 })
+
+    if (running) return NextResponse.json(
+      { error: "Задача уже выполняется", code: "WORKER_BUSY" },
+      { status: 409, headers: { "Retry-After": "15", "Cache-Control": "no-store" } },
+    )
+    running = true
 
     try {
       return NextResponse.json(await handler(request))
@@ -61,6 +71,8 @@ export function createTelegramWorkerRoute<T>(
         { error: options.errorMessage || "Не удалось выполнить задачу" },
         { status: 500 },
       )
+    } finally {
+      running = false
     }
   }
 }

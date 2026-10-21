@@ -52,6 +52,7 @@ flowchart LR
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Database-backed release readiness | `scripts/verify-or-rollback.sh` | Home/CSS plus catalog status and JSON; `--check-only` disables rollback. Fake HTTP regression: `scripts/test-release-readiness.py`; lock recovery evidence: `docs/INCIDENT_2026-10-21.md`. |
 | Telegram registration | `scripts/telegram-polling.mjs` | Telegram API routes and user model |
+| Telegram scheduled worker admission | `src/lib/telegram-worker-route.ts` | Secret verification precedes a per-route, process-local non-overlap guard; concurrent duplicates return 409/WORKER_BUSY with Retry-After. Finally releases admission after errors. Not a durable queue or distributed lock. Regression: `tests/telegram-worker-route.test.mjs`. |
 | Third-party Telegram bots | `src/lib/telegram-bot-guard.mjs` | Polling receives `chat_member`; joins and role changes are checked before registration moderation. Only live administrator-role bots are permitted, regardless of inviter. Historical `TelegramBotApproval` rows never grant permission. Non-admin bots are banned with message revocation when the moderator has restriction rights; own/admin bots are protected. |
 | Private account details | `src/app/api/users/[id]/route.ts` | dashboard profile workspace, authenticated audit |
 | Unified URL search | `src/app/search/page.tsx` | `HomeCatalog.tsx`, `/api/listings` query contract |
