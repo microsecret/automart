@@ -5,6 +5,7 @@ import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
 import WidgetSkeleton from "./WidgetSkeleton"
+import SidebarEmblem from "./SidebarEmblem"
 import { formatPriceShort } from "@/lib/format"
 import { cleanModelLabel, isShowcaseReady } from "@/lib/auction-model-quality"
 
@@ -102,7 +103,7 @@ export default function FreshLotsWidget() {
   return (
     <Box component="section" className="side-widget" data-tone="lots" aria-label="Свежие лоты аукционов">
       <Box className="side-widget__head">
-        <Text component="h2" className="side-widget__title">Свежие лоты</Text>
+        <Text component="h2" className="side-widget__title"><SidebarEmblem tone="lots" />Свежие лоты</Text>
         <Link href="/auctions" className="side-widget__all">Все</Link>
       </Box>
 

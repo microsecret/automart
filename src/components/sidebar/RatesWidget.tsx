@@ -4,6 +4,7 @@ import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
 import WidgetSkeleton from "./WidgetSkeleton"
+import SidebarEmblem from "./SidebarEmblem"
 
 /**
  * Курсы валют ЦБ в правой колонке.
@@ -72,7 +73,7 @@ export default function RatesWidget() {
   return (
     <Box component="section" className="side-widget" data-tone="rates" aria-label="Курсы валют">
       <Box className="side-widget__head">
-        <Text component="h2" className="side-widget__title">Курсы ЦБ</Text>
+        <Text component="h2" className="side-widget__title"><SidebarEmblem tone="rates" />Курсы ЦБ</Text>
       </Box>
 
       <Box className="side-widget__body">

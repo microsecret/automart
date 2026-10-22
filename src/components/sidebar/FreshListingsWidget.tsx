@@ -5,6 +5,7 @@ import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
 import WidgetSkeleton from "./WidgetSkeleton"
+import SidebarEmblem from "./SidebarEmblem"
 import { formatPriceShort } from "@/lib/format"
 
 /**
@@ -67,7 +68,7 @@ export default function FreshListingsWidget() {
   return (
     <Box component="section" className="side-widget" data-tone="listings" aria-label="Свежие объявления">
       <Box className="side-widget__head">
-        <Text component="h2" className="side-widget__title">Свежие объявления</Text>
+        <Text component="h2" className="side-widget__title"><SidebarEmblem tone="listings" />Свежие объявления</Text>
         <Link href="/" className="side-widget__all">Все</Link>
       </Box>
 

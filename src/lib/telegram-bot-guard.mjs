@@ -24,6 +24,15 @@ export async function guardTelegramBots(update, deps) {
   if (!joining.length && String(message?.sender_chat?.id) === chatId) return false
   const targets = joining.length ? joining : senderBot ? [senderBot] : []
   if (!targets.length) return false
+  // Only an actual addition identifies an inviter. Permission changes and
+  // ordinary messages must never punish the actor who happened to emit them.
+  const addition = membership
+    ? ["left", "kicked"].includes(membership.old_chat_member?.status) && present(membership.new_chat_member)
+    : joining.length > 0 && !message?.sender_chat
+  const actor = addition ? (membership?.from || message?.from) : null
+  const inviterId = actor?.is_bot === false && Number.isSafeInteger(actor.id) && actor.id > 0
+    && String(actor.id) !== deps.ownBotId ? String(actor.id) : null
+  let inviterChecked = false
   const seen = new Set()
   let ownMembership
   let messageDeleted = false
@@ -47,6 +56,19 @@ export async function guardTelegramBots(update, deps) {
       }
       // Do not unban afterwards: an ordinary member must not re-add the bot.
       await deps.api("banChatMember", { chat_id: chatId, user_id: botId, revoke_messages: true })
+      if (inviterId && !inviterChecked) {
+        inviterChecked = true
+        try {
+          const inviter = await deps.api("getChatMember", { chat_id: chatId, user_id: inviterId })
+          if (present(inviter) && !admins.has(inviter.status)) {
+            await deps.api("banChatMember", { chat_id: chatId, user_id: inviterId, revoke_messages: true })
+          }
+        } catch {
+          // An unavailable actor role never authorizes a ban and must not
+          // prevent cleanup of the bot or processing the rest of this batch.
+          deps.warn("inviter role check or removal failed", chatId)
+        }
+      }
       // Obsolete approval cleanup must not prevent message cleanup after a ban.
       await deps.forget(chatId, botId).catch(() => deps.warn("historical approval cleanup failed", chatId))
       if (!messageDeleted && message?.message_id && own.can_delete_messages === true) {

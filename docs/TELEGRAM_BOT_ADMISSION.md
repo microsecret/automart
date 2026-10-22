@@ -1,6 +1,6 @@
 # Third-party bot admission policy
 
-## Current rule (owner clarification, 20 October 2026)
+## Current rule (owner clarification, 21 October 2026)
 
 Only bots with a live administrator role in the group may remain. The
 inviter's role grants no exception, including anonymous administrators.
@@ -17,8 +17,14 @@ Missing rights warn in the server log, never report a successful removal.
 The polling bridge now explicitly requests `chat_member` alongside messages and
 callbacks. Both the service message's new members and membership join events
 reach the same tested guard before registration moderation. Normal human
-members are never banned by this policy; the person who invited a bot is not
-punished. The moderator itself and target bots with an administrator role are
+members are not targeted unless they are the confirmed human inviter of a
+successfully removed non-admin bot. That inviter is banned only after a live
+role lookup confirms they are present and not an administrator or owner.
+Permission updates/demotions and ordinary bot messages do not identify an
+inviter and never trigger human punishment. Anonymous senders and unknown
+roles are not used for speculative bans. One inviter is checked at most once
+per update; an inviter lookup/ban failure does not stop bot cleanup.
+The moderator itself and target bots with an administrator role are
 always protected. Live Telegram role lookups, not names/usernames, determine
 the exception. A failed role lookup never authorizes a destructive action.
 

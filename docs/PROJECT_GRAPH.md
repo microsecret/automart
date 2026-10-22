@@ -49,6 +49,7 @@ flowchart LR
 | Shared 3D component artwork | `src/components/ui/ServiceArtwork.tsx` | `public/images/ui/titanium-v1/`, home quick actions, service pages, garage, partner workspace and Telegram shortcuts |
 | Tactile buttons and component materials | `src/app/component-materials.css` | `src/theme/theme.ts`, root layout, `ListingCard` detail actions; semantic danger colors remain independent |
 | Unified shell and account identity | `src/app/component-materials.css` | Titanium field/border/focus tokens, consistent sidebar icon tone/stroke and opt-in `lw-user-avatar` for header/sidebar/profile/upload. Rollout checklist: `docs/VISUAL_ROLLOUT.md`; disposable browser matrix: `scripts/verify-shell-materials.mjs`. |
+| Automotive sidebar materials | `src/app/sidebar-materials.css` | Compact enamel/copper section headings, consistent left navigation, distinct decorative `SidebarEmblem` identities for news/lots/rates/listings. Data queries, permissions and link destinations stay owned by existing widgets. |
 | Full-bleed scenic widgets | `src/components/ui/ScenicBanner.tsx` | `scenic-widgets.css`, `public/images/ui/scenic-v1/`; home actions and account banners preserve real HTML controls and real user data |
 | Website authentication | `src/app/auth/` | `src/app/api/auth/`, NextAuth configuration |
 | Database-backed release readiness | `scripts/verify-or-rollback.sh` | Home/CSS plus catalog status and JSON; `--check-only` disables rollback. Fake HTTP regression: `scripts/test-release-readiness.py`; lock recovery evidence: `docs/INCIDENT_2026-10-21.md`. |
@@ -75,6 +76,9 @@ Bot batches isolate each target's failure. Moderator capability is shared only
 within one update, while every target's role is checked live. Duplicate targets
 and an already-deleted shared service message are not processed twice; legacy
 approval cleanup cannot suppress message removal after a successful ban.
+Confirmed human inviters of successfully removed non-admin bots are also banned
+only after a live non-admin role check. Demotions, anonymous actors, ordinary
+messages and unknown roles never authorize a human ban.
 
 Account scenic headings are owned by each feature panel (garage, subscriptions,
 payments), not duplicated by the welcome banner. Listing statistics and first-step

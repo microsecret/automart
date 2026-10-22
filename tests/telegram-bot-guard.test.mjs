@@ -165,3 +165,75 @@ test("moderator capability is rechecked for the next event", async () => {
   assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20"])
   assert.equal(f.calls.filter((call) => call.method === "getChatMember" && call.payload.user_id === "10").length, 2)
 })
+
+test("confirmed ordinary human inviter and non-admin bot are both banned", async () => {
+  const f = fixture(); f.join.message.from.is_bot = false
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20", "30"])
+  assert.ok(bans(f).every((call) => call.payload.revoke_messages === true))
+})
+
+test("human administrators and owners remain protected", async () => {
+  for (const status of ["administrator", "creator", "owner"]) {
+    const f = fixture(); f.join.message.from.is_bot = false
+    const api = f.deps.api
+    f.deps.api = async (method, payload) => method === "getChatMember" && payload.user_id === "30" ? { status } : api(method, payload)
+    await guardTelegramBots(f.join, f.deps)
+    assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20"])
+  }
+})
+
+test("adding an administrator bot does not punish its human inviter", async () => {
+  const f = fixture({ targetStatus: "administrator" }); f.join.message.from.is_bot = false
+  await guardTelegramBots(f.join, f.deps); assert.equal(bans(f).length, 0)
+})
+
+test("membership join bans the ordinary inviter but demotion does not", async () => {
+  for (const previous of ["left", "kicked", "administrator", "member"]) {
+    const f = fixture()
+    await guardTelegramBots({ chat_member: { chat: f.chat, from: { id: 30, is_bot: false }, old_chat_member: { status: previous, user: bot }, new_chat_member: { status: "member", user: bot } } }, f.deps)
+    assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20", ...(["left", "kicked"].includes(previous) ? ["30"] : [])])
+  }
+})
+
+test("unknown inviter role never bans a human or blocks bot cleanup", async () => {
+  const f = fixture(); f.join.message.from.is_bot = false
+  const api = f.deps.api
+  f.deps.api = async (method, payload) => {
+    if (method === "getChatMember" && payload.user_id === "30") throw new Error("unavailable")
+    return api(method, payload)
+  }
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20"])
+  assert.ok(f.calls.some((call) => call.method === "deleteMessage"))
+})
+
+test("inviter is handled only once per bot batch", async () => {
+  const f = fixture(); f.join.message.from.is_bot = false
+  f.join.message.new_chat_members.push({ id: 21, is_bot: true })
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20", "30", "21"])
+  assert.equal(f.calls.filter((call) => call.method === "getChatMember" && call.payload.user_id === "30").length, 1)
+})
+
+test("failed bot removal does not punish its inviter", async () => {
+  const f = fixture(); f.join.message.from.is_bot = false
+  const api = f.deps.api
+  f.deps.api = async (method, payload) => {
+    if (method === "banChatMember" && payload.user_id === "20") throw new Error("failed")
+    return api(method, payload)
+  }
+  await guardTelegramBots(f.join, f.deps); assert.equal(bans(f).length, 0)
+})
+
+test("failed inviter removal does not stop remaining bots", async () => {
+  const f = fixture(); f.join.message.from.is_bot = false
+  f.join.message.new_chat_members.push({ id: 21, is_bot: true })
+  const api = f.deps.api
+  f.deps.api = async (method, payload) => {
+    if (method === "banChatMember" && payload.user_id === "30") throw new Error("failed")
+    return api(method, payload)
+  }
+  await guardTelegramBots(f.join, f.deps)
+  assert.deepEqual(bans(f).map((call) => call.payload.user_id), ["20", "21"])
+})

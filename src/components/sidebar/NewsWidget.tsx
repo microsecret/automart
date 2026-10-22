@@ -5,6 +5,7 @@ import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
 import { fetchJson } from "@/lib/api-client"
 import WidgetSkeleton from "./WidgetSkeleton"
+import SidebarEmblem from "./SidebarEmblem"
 
 /**
  * Новости рынка в правой колонке.
@@ -61,7 +62,7 @@ export default function NewsWidget() {
   return (
     <Box component="section" className="side-widget" data-tone="news" aria-label="Новости рынка">
       <Box className="side-widget__head">
-        <Text component="h2" className="side-widget__title">Новости рынка</Text>
+        <Text component="h2" className="side-widget__title"><SidebarEmblem tone="news" />Новости рынка</Text>
         <Link href="/news" className="side-widget__all">Все</Link>
       </Box>
 
