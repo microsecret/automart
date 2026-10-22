@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import NextImage from "next/image"
 import { ActionIcon, Box, Text, Select, Group, Pagination, Stack, Paper, TextInput, Button, SimpleGrid, Badge, Collapse, Divider, Chip, Loader, SegmentedControl, Tooltip , ThemeIcon} from "@mantine/core"
-import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconSparkles, IconBell } from "@tabler/icons-react"
+import { IconLayoutGrid, IconList, IconSearch, IconAdjustmentsHorizontal, IconX, IconChevronDown, IconGasStation, IconManualGearbox, IconCar, IconEngine, IconPalette, IconBolt, IconTruck, IconTractor, IconSpeedboat, IconPlane, IconArrowUpRight, IconBell } from "@tabler/icons-react"
 import ListingCard, { type ListingCardData } from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
 import { COUNTRY_FLAGS, getBrandsByCategory } from "@/lib/catalog"
@@ -422,7 +422,7 @@ export default function HomePage(p: HomePageProps = {}) {
      главной ограничитель снят с колонки контента ради героя во всю
      ширину, и ширину держат вместо него прямые дети этой стопки. */
   return (
-    <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)" className="home-page-stack">
+    <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)" className={`home-page-stack${p.categorySlug === "cars" || p.categorySlug === "parts" ? " catalog-artwork-page" : ""}`}>
       {p.showHero !== false && !p.categorySlug && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
           <NextImage src="/images/ui/scenic-v1/buy-1600.webp" alt="" fill priority unoptimized sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
@@ -608,14 +608,21 @@ export default function HomePage(p: HomePageProps = {}) {
           ним: они отвечают на вопрос «что тут ещё есть», который
           возникает уже после просмотра товара. */}
 
-      <Group id="catalog" justify="space-between" align="center" className="catalog-heading">
-        <Stack gap={0}>
+      <Group id="catalog" justify="space-between" align="center" className={`catalog-heading${p.categorySlug === "cars" || p.categorySlug === "parts" ? " catalog-heading--illustrated" : ""}`}>
+        <Group gap="md" wrap="nowrap" className="catalog-heading__identity">
+          {(p.categorySlug === "cars" || p.categorySlug === "parts") && <NextImage
+            src={`/images/ui/category-v1/${p.categorySlug}-320.webp`}
+            width={144} height={96} alt="" aria-hidden="true" unoptimized
+            className="catalog-heading__artwork" draggable={false}
+          />}
+          <Stack gap={2} className="catalog-heading__copy">
           {p.showHeading !== false && <Text component={p.categorySlug ? "h1" : "h2"} fw={800} fz="var(--text-2xl)" c="var(--market-ink)">{p.pageTitle || "Все объявления"}</Text>}
           {/* Цвет переменной, а не ступенью палитры: `gray.5` — это
               жёсткий #5b6b84, он не меняется с темой, и в ночной подпись
               давала контраст 3.55 при норме 4.5. */}
           {data && <Text size="xs" c="var(--market-muted)" aria-live="polite">{data.pagination?.total || 0} {plural(data.pagination?.total || 0, "объявление", "объявления", "объявлений")}</Text>}
-        </Stack>
+          </Stack>
+        </Group>
         {/* Сортировка прячется, когда сортировать нечего.
 
             Замер поиска по бессмыслице: ноль объявлений, а рядом стоят
@@ -724,7 +731,7 @@ export default function HomePage(p: HomePageProps = {}) {
               <Badge color="indigo" variant="light" radius="xl">Выбрано условий: {activeFilterCount}</Badge>
             </Group>
           )}
-          <Box className="catalog-filter-grid">
+          <Box className="catalog-filter-grid" id="catalog-basic-filters">
             {/* type="search", autoComplete="off" и spellCheck={false} — по
                 тем же причинам, что у поля в герое: клавиатура телефона
                 получает кнопку «Найти», браузер не лезет с сохранённым
@@ -815,7 +822,7 @@ export default function HomePage(p: HomePageProps = {}) {
 
           {hasInvalidPriceRange && <Text size="xs" c="var(--market-danger-text)">Цена «от» не может быть выше цены «до».</Text>}
 
-          {!isPartSearch && <Group justify="space-between" align="center">
+          <Group justify="space-between" align="center" className={isPartSearch ? "catalog-filter-actions--parts" : undefined}>
             <Button
               variant={showAdvanced ? "filled" : "default"}
               color="indigo"
@@ -824,7 +831,7 @@ export default function HomePage(p: HomePageProps = {}) {
               className="catalog-filter-toggle"
               onClick={() => { setShowAdvanced((value) => !value); setAdvancedEverOpened(true) }}
               aria-expanded={showAdvanced}
-              aria-controls="catalog-advanced-filters"
+              aria-controls={isPartSearch ? "catalog-basic-filters" : "catalog-advanced-filters"}
               leftSection={<IconAdjustmentsHorizontal size={16} />}
               rightSection={
                 <Group gap={6}>
@@ -839,7 +846,7 @@ export default function HomePage(p: HomePageProps = {}) {
               Фильтры
             </Button>
             {activeFilterCount > 0 && <Button variant="subtle" size="xs" color="gray" leftSection={<IconX size={14}/>} onClick={resetFilters}>Сбросить фильтры</Button>}
-          </Group>}
+          </Group>
 
           {!isPartSearch && advancedEverOpened && <Collapse in={showAdvanced} id="catalog-advanced-filters">
             <Divider my="xs"/>

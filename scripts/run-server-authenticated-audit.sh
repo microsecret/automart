@@ -7,7 +7,7 @@ cd "$project_root"
 audit_port="${AUTOMART_AUTH_AUDIT_PORT:-4011}"
 audit_script="${AUTOMART_AUTH_AUDIT_SCRIPT:-scripts/server-authenticated-audit.mjs}"
 case "$audit_script" in
-  scripts/server-authenticated-audit.mjs|scripts/verify-saved-search-workflow.mjs|scripts/verify-saved-search-notifications.mjs|scripts/verify-admin-traffic.mjs|scripts/verify-subscription-controls.mjs|scripts/verify-scenic-materials.mjs|scripts/verify-quick-tour.mjs|scripts/verify-shell-materials.mjs) ;;
+  scripts/server-authenticated-audit.mjs|scripts/verify-saved-search-workflow.mjs|scripts/verify-saved-search-notifications.mjs|scripts/verify-admin-traffic.mjs|scripts/verify-subscription-controls.mjs|scripts/verify-scenic-materials.mjs|scripts/verify-quick-tour.mjs|scripts/verify-shell-materials.mjs|scripts/verify-category-artwork.mjs) ;;
   *) echo "Unknown authenticated audit script" >&2; exit 1 ;;
 esac
 if ! [[ "$audit_port" =~ ^[0-9]+$ ]] || (( 10#$audit_port < 1024 || 10#$audit_port > 65535 )); then
