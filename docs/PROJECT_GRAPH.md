@@ -69,6 +69,7 @@ flowchart LR
 | Auction partner routing and SLA | `src/lib/auction-partner-routing.ts` | `partner-scoring.js`, offer API, hourly SLA cron |
 | Garage to moderated listing | `src/app/api/garage/route.ts` | dashboard garage, vehicle creation workspace |
 | Private message attachments | `src/app/api/messages/route.ts` | conversation page, protected attachment download route |
+| Full-mailbox conversation search | `src/app/api/messages/route.ts` | Bounded `q` search matches counterpart names, listing titles and message history before pagination, with participant scope on every query; returns the real latest message. `conversation-search.mjs` provides literal Cyrillic/ASCII case-pair matching for SQLite. Web messages use a debounced query and keyboard-focus-preserving reset. |
 | Vehicle publication readiness | `src/lib/vehicle-publication-readiness.ts` | full form, owner resubmission/edit API, listing/admin gates, protected legacy enforcement route and post-deploy script |
 | Search metadata and structured data | `src/app/layout.tsx` | route layouts, `StructuredData.tsx`, sitemap/robots/manifest |
 | SEO landing metadata | `src/lib/seo-metadata.ts` | category generator and public route layouts |

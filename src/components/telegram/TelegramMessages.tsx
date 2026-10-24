@@ -84,7 +84,7 @@ function ConversationRow({ conversation }: { conversation: Conversation }) {
       className="tg-chat"
       data-unread={conversation.unreadCount > 0 || undefined}
     >
-      <Avatar src={conversation.otherUser.image} radius="xl" size={44} color="indigo">
+      <Avatar src={conversation.otherUser.image} radius="xl" size={44} color="indigo" className="lw-user-avatar">
         {name.slice(0, 1).toUpperCase()}
       </Avatar>
 

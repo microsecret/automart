@@ -6,6 +6,8 @@ import { getServerSession } from "next-auth"
 import sharp from "sharp"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
+import { conversationSearchGlob, MAX_CONVERSATION_QUERY_LENGTH } from "@/lib/conversation-search.mjs"
 import { notifyNewMessage } from "@/lib/message-notify"
 import { createConversationId, normalizeMessageContent } from "@/lib/messages"
 import { getClientIp, rateLimit, rateLimitHeaders } from "@/lib/rate-limit"
@@ -88,6 +90,11 @@ export async function GET(request: NextRequest) {
     const page = Math.min(10_000, Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1))
     const limit = Math.min(50, Math.max(1, Number.parseInt(searchParams.get("limit") || String(MESSAGE_PAGE_SIZE), 10) || MESSAGE_PAGE_SIZE))
     const skip = (page - 1) * limit
+    const query = (searchParams.get("q") || "").trim().normalize("NFC")
+    if (query.length > MAX_CONVERSATION_QUERY_LENGTH) {
+      return NextResponse.json({ error: "Поисковый запрос слишком длинный" }, { status: 400 })
+    }
+    const searchPattern = conversationSearchGlob(query)
     const participantWhere = {
       OR: [
         { senderId: session.user.id },
@@ -97,14 +104,39 @@ export async function GET(request: NextRequest) {
 
     // Get conversations where the current user is either sender or receiver
     // Now we can efficiently query by conversationId
+    // Search every message in the owner's mailbox before paging, but present
+    // the actual latest message, not the old message that happened to match.
+    const matching = searchPattern ? Prisma.sql`
+      (m."content" GLOB ${searchPattern}
+       OR EXISTS (SELECT 1 FROM "User" u
+         WHERE u."id" = CASE WHEN m."senderId" = ${session.user.id} THEN m."receiverId" ELSE m."senderId" END
+         AND u."id" <> ${session.user.id} AND u."name" GLOB ${searchPattern})
+       OR EXISTS (SELECT 1 FROM "Listing" l WHERE l."id" = m."listingId" AND l."title" GLOB ${searchPattern}))
+    ` : Prisma.empty
+    const searchedMailbox = searchPattern ? Prisma.sql`
+      FROM "Message" m
+      WHERE m."senderId" = ${session.user.id} OR m."receiverId" = ${session.user.id}
+      GROUP BY m."conversationId"
+      HAVING MAX(CASE WHEN ${matching} THEN 1 ELSE 0 END) = 1
+    ` : Prisma.empty
+    const [searchedIds, searchedCount] = searchPattern ? await Promise.all([
+      prisma.$queryRaw<Array<{ conversationId: string }>>`
+        SELECT m."conversationId" ${searchedMailbox}
+        ORDER BY MAX(m."createdAt") DESC, m."conversationId" ASC LIMIT ${limit} OFFSET ${skip}
+      `,
+      prisma.$queryRaw<Array<{ count: number | bigint }>>`
+        SELECT COUNT(*) AS count FROM (SELECT m."conversationId" ${searchedMailbox}) AS matches
+      `,
+    ]) : [null, null]
+
     const [conversations, conversationCount] = await Promise.all([
       prisma.message.groupBy({
         by: ['conversationId'],
-        where: participantWhere,
+        where: searchedIds ? { AND: [participantWhere, { conversationId: { in: searchedIds.map((row) => row.conversationId) } }] } : participantWhere,
         _count: { id: true },
         _max: { createdAt: true },
-        orderBy: { _max: { createdAt: 'desc' } },
-        skip,
+        orderBy: [{ _max: { createdAt: 'desc' } }, { conversationId: "asc" }],
+        skip: searchedIds ? 0 : skip,
         take: limit,
       }),
       /* Число диалогов считается запросом, а не выгрузкой.
@@ -118,7 +150,7 @@ export async function GET(request: NextRequest) {
 
          COUNT(DISTINCT) считает то же самое на стороне базы и
          возвращает одну строку. */
-      prisma.$queryRaw<Array<{ count: number | bigint }>>`
+      searchedCount || prisma.$queryRaw<Array<{ count: number | bigint }>>`
         SELECT COUNT(DISTINCT "conversationId") AS count
         FROM "Message"
         WHERE "senderId" = ${session.user.id} OR "receiverId" = ${session.user.id}

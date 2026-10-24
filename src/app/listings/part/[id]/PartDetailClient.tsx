@@ -417,7 +417,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
                   {data.reviews.map((review) => (
                     <Box key={review.id}>
                       <Group gap="sm" mb={6}>
-                        <Avatar src={review.user.image} radius="xl" size="sm" color="indigo">{initialOf(review.user.name)}</Avatar>
+                        <Avatar src={review.user.image} radius="xl" size="sm" color="indigo" className="lw-user-avatar">{initialOf(review.user.name)}</Avatar>
                         <Stack gap={2}>
                           <Text size="sm" fw={500}>{review.user.name || "Аноним"}</Text>
                           <Rating value={review.rating} size="xs" readOnly />
@@ -511,7 +511,7 @@ export default function PartDetailClient({ data }: { data: PartData }) {
 
               <Card withBorder radius="md" p="lg">
                 <Group gap="sm" mb="sm">
-                  <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">{initialOf(data.seller.name)}</Avatar>
+                  <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo" className="lw-user-avatar">{initialOf(data.seller.name)}</Avatar>
                   <Stack gap={2}>
                     <Text fw={600}>{data.seller.name || "Продавец"}</Text>
                     <Text size="xs" c="var(--market-muted)">На Авторынке с {formatDate(data.seller.memberSince)}</Text>

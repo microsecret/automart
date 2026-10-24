@@ -253,7 +253,7 @@ function ConversationWorkspace() {
           <Button component={Link} href="/messages" variant="default" color="gray" p={8} aria-label="К списку сообщений">
             <IconArrowLeft size={20} />
           </Button>
-          <Avatar src={latestPage?.otherUser?.image} radius="xl" color="indigo" size="md">
+          <Avatar src={latestPage?.otherUser?.image} radius="xl" color="indigo" size="md" className="lw-user-avatar">
             {initialOf(latestPage?.otherUser?.name)}
           </Avatar>
           <Stack gap={0}>

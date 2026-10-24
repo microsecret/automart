@@ -83,12 +83,31 @@
   font-weight: 700;
 }
 
-:is(.market-header-search, .catalog-filter-panel, .home-hero__search) .mantine-Input-input:not([data-error]):not(:disabled) {
+.messages-workspace { height: clamp(360px, calc(100svh - 310px), 640px); min-height: 0; }
+.messages-workspace__list { min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; }
+.messages-workspace__search { position: sticky; top: 0; z-index: 1; background: var(--market-surface); }
+.messages-workspace__search .mantine-TextInput-input { min-height: 44px; }
+.messages-unread-count { min-width: 22px; color: #fff; background: #08535f; }
+.messages-unread-count .mantine-Badge-label { color: #fff; }
+
+.lw-favorites-banner {
+  background: linear-gradient(145deg, var(--lw-widget-heading-start), var(--lw-scene-surface));
+  border-radius: 12px;
+  color: var(--lw-scene-ink);
+  box-shadow: inset 0 1px var(--lw-metal-highlight);
+}
+.lw-favorites-banner__identity { min-width: 0; }
+.lw-favorites-banner__copy .mantine-Text-root { color: var(--lw-scene-ink) !important; }
+@media (max-width: 600px) {
+  .lw-favorites-banner .lw-service-artwork { width: 64px; height: 64px; }
+}
+
+:is(.market-header-search, .catalog-filter-panel, .home-hero__search, .messages-workspace__search) .mantine-Input-input:not([data-error]):not(:disabled) {
   border-color: var(--market-field-line);
   border-radius: var(--lw-control-radius);
   caret-color: var(--market-primary);
 }
-:is(.market-header-search, .catalog-filter-panel, .home-hero__search) .mantine-Input-input:not([data-error]):not(:disabled):focus {
+:is(.market-header-search, .catalog-filter-panel, .home-hero__search, .messages-workspace__search) .mantine-Input-input:not([data-error]):not(:disabled):focus {
   border-color: var(--market-focus-ring);
   box-shadow: 0 0 0 2px var(--market-focus);
 }

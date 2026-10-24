@@ -1,7 +1,7 @@
 import Image from "next/image"
 import type { ReactNode } from "react"
 
-export type ScenicScene = "buy" | "sell" | "auctions" | "parts" | "fuel" | "garage" | "deliveries" | "subscriptions" | "payments" | "referral" | "profile" | "store"
+export type ScenicScene = "buy" | "sell" | "auctions" | "parts" | "fuel" | "garage" | "deliveries" | "subscriptions" | "payments" | "referral" | "profile" | "store" | "messages"
 
 /** Decorative scenery only; controls and account data stay real accessible HTML. */
 export default function ScenicBanner({ scene, children, className = "" }: {

@@ -1,7 +1,8 @@
 "use client"
 export const dynamic = "force-dynamic"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useDebouncedValue } from "@mantine/hooks"
 import { useRouter } from "next/navigation"
 import useSWR from "swr"
 import { useSession } from "next-auth/react"
@@ -21,9 +22,11 @@ import {
   ThemeIcon,
   Box,
   TextInput,
+  ActionIcon,
 } from "@mantine/core"
-import { IconArrowRight, IconMessageCircleOff, IconSearch, IconShieldCheck } from "@tabler/icons-react"
+import { IconArrowRight, IconMessageCircleOff, IconSearch, IconShieldCheck, IconX } from "@tabler/icons-react"
 import ServiceArtwork from "@/components/ui/ServiceArtwork"
+import ScenicBanner from "@/components/ui/ScenicBanner"
 import Link from "next/link"
 import { formatRelativeDate, initialOf } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
@@ -52,8 +55,11 @@ export default function MessagesPage() {
   const router = useRouter()
   const [page, setPage] = useState(1)
   const [query, setQuery] = useState("")
-  const { data, error, isLoading, mutate } = useSWR<ConversationsResponse>(
-    session ? `/api/messages?page=${page}&limit=20` : null,
+  const [debouncedQuery] = useDebouncedValue(query, 250)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const hasSearch = Boolean(debouncedQuery.trim())
+  const { data, error, isLoading, isValidating, mutate } = useSWR<ConversationsResponse>(
+    session ? `/api/messages?page=${page}&limit=20&q=${encodeURIComponent(debouncedQuery.trim())}` : null,
     fetchJson,
     { refreshInterval: 5000, keepPreviousData: true }
   )
@@ -65,11 +71,8 @@ export default function MessagesPage() {
   }, [session, status, router])
 
   const conversations = data?.conversations || []
-  const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU")
-  const visibleConversations = normalizedQuery
-    ? conversations.filter((conversation) => [conversation.otherUser.name, conversation.listing?.title, conversation.lastMessage?.content].filter(Boolean).join(" ").toLocaleLowerCase("ru-RU").includes(normalizedQuery))
-    : conversations
   const pagination = data?.pagination
+  const clearQuery = () => { setQuery(""); setPage(1); inputRef.current?.focus() }
 
   useEffect(() => {
     if (pagination && pagination.pages > 0 && page > pagination.pages) setPage(pagination.pages)
@@ -84,20 +87,19 @@ export default function MessagesPage() {
   return (
     <Container size="lg" py="xl">
       <Stack gap="lg">
-        <Group justify="space-between" align="flex-end" gap="md">
-          <Stack gap={4}>
-            <Text size="xs" fw={800} tt="uppercase" c="indigo" style={{ letterSpacing: "var(--track-caps)" }}>Личный кабинет</Text>
+        <ScenicBanner scene="messages" className="lw-messages-banner">
+          <Stack gap={6} align="flex-start">
             <Title order={1} size="h2">Сообщения</Title>
-            <Text c="dimmed">Диалоги по объявлениям и договорённостям с продавцами.</Text>
-          </Stack>
-          <Button component={Link} href="/" variant="light" color="indigo" rightSection={<IconArrowRight size={16} />}>
+            <Text size="sm">Диалоги по объявлениям и договорённостям с продавцами.</Text>
+          <Button component={Link} href="/" variant="filled" color="indigo" rightSection={<IconArrowRight size={16} />}>
             Найти объявление
           </Button>
-        </Group>
+          </Stack>
+        </ScenicBanner>
 
         <DashboardNav active="messages" />
 
-        {isLoading ? (
+        {isLoading && !data ? (
           <Paper withBorder radius="xl" p="xl"><Center py={56}><Loader color="indigo" /></Center></Paper>
         ) : error ? (
           <AsyncErrorState title="Не удалось загрузить сообщения" description="Диалоги временно недоступны. Повторите запрос." onRetry={() => mutate()} />
@@ -105,19 +107,22 @@ export default function MessagesPage() {
           <Paper withBorder radius="md" p={0} className="messages-workspace av-fade-in">
             <Box className="messages-workspace__list">
               <Box p="md" className="messages-workspace__search">
-                <TextInput value={query} onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Поиск по диалогам" leftSection={<IconSearch size={16} />} aria-label="Поиск по диалогам" />
+                <TextInput ref={inputRef} value={query} onChange={(event) => { setQuery(event.currentTarget.value); setPage(1) }} placeholder="Собеседник, объявление или текст" leftSection={<IconSearch size={16} aria-hidden="true" />} aria-label="Поиск по диалогам" aria-describedby="message-search-hint" type="search" autoComplete="off" spellCheck={false} maxLength={120}
+                  rightSectionWidth={query ? 76 : 32} rightSection={<Group gap={2} wrap="nowrap">{isValidating && <Loader size={16} aria-hidden="true" />}{query && <ActionIcon size={44} variant="subtle" onClick={clearQuery} aria-label="Очистить поиск"><IconX size={16} aria-hidden="true" /></ActionIcon>}</Group>} />
+                <Text id="message-search-hint" size="xs" c="var(--market-muted)" mt={6}>Поиск по всем диалогам и истории сообщений.</Text>
               </Box>
-              {visibleConversations.length === 0 ? (
+              {conversations.length === 0 ? (
                 <Center className="messages-workspace__list-empty">
                   <Stack align="center" gap="xs" ta="center" px="md">
-                    {conversations.length ? <ThemeIcon size={46} radius="xl" variant="light" color="indigo"><IconMessageCircleOff size={23} /></ThemeIcon> : <ServiceArtwork kind="messages" size={96} />}
-                    <Text fw={700}>{conversations.length ? "Ничего не найдено" : "Пока нет диалогов"}</Text>
-                    <Text size="xs" c="dimmed">{conversations.length ? "Измените запрос." : "Переписка появится после сообщения продавцу."}</Text>
+                    {hasSearch ? <ThemeIcon size={46} radius="xl" variant="light" color="indigo"><IconMessageCircleOff size={23} /></ThemeIcon> : <ServiceArtwork kind="messages" size={96} />}
+                    <Text fw={700}>{hasSearch ? "Ничего не найдено" : "Пока нет диалогов"}</Text>
+                    <Text size="xs" c="dimmed">{hasSearch ? "Измените запрос или очистите поиск." : "Переписка появится после сообщения продавцу."}</Text>
+                    {hasSearch && <Button variant="subtle" size="sm" onClick={clearQuery}>Сбросить поиск</Button>}
                   </Stack>
                 </Center>
               ) : (
                 <Stack gap={0}>
-                  {visibleConversations.map((conv) => (
+                  {conversations.map((conv) => (
                     <Box
                 key={conv.id}
                 component={Link}
@@ -126,7 +131,7 @@ export default function MessagesPage() {
                 data-unread={conv.unreadCount > 0 || undefined}
               >
                 <Group gap="sm" align="flex-start">
-                  <Avatar src={conv.otherUser.image} radius="xl" color="indigo">
+                  <Avatar src={conv.otherUser.image} radius="xl" color="indigo" className="lw-user-avatar">
                     {initialOf(conv.otherUser.name)}
                   </Avatar>
                   <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
@@ -142,7 +147,7 @@ export default function MessagesPage() {
                         {conv.lastMessage?.content || (conv.lastMessage?.attachmentCount ? `📷 Фото: ${conv.lastMessage.attachmentCount}` : "Нет сообщений")}
                       </Text>
                       {conv.unreadCount > 0 && (
-                        <Badge color="indigo" size="xs" variant="filled" circle>
+                        <Badge color="indigo" size="sm" variant="filled" className="messages-unread-count" aria-label={`Непрочитанных: ${conv.unreadCount}`}>
                           {conv.unreadCount}
                         </Badge>
                       )}
@@ -161,10 +166,10 @@ export default function MessagesPage() {
               <Stack align="center" gap="md" ta="center" maw={430} px="lg">
                 <ServiceArtwork kind="messages" size={176} />
                 <Stack gap={4} align="center">
-                  <Text fw={800} size="lg">{conversations.length ? "Выберите диалог" : "Сообщения по сделкам — в одном месте"}</Text>
-                  <Text size="sm" c="dimmed">{conversations.length ? "Откройте переписку слева, чтобы продолжить разговор." : "Откройте объявление и нажмите «Написать продавцу». Новый диалог сразу появится в этом списке."}</Text>
+                  <Text fw={800} size="lg">{hasSearch ? "Поиск по переписке" : conversations.length ? "Выберите диалог" : "Сообщения по сделкам — в одном месте"}</Text>
+                  <Text size="sm" c="dimmed">{hasSearch ? "Поиск учитывает имена собеседников, объявления и историю сообщений." : conversations.length ? "Откройте переписку слева, чтобы продолжить разговор." : "Откройте объявление и нажмите «Написать продавцу». Новый диалог сразу появится в этом списке."}</Text>
                 </Stack>
-                {!conversations.length && <Button component={Link} href="/" color="indigo" leftSection={<IconArrowRight size={17} />}>Найти автомобиль</Button>}
+                {!hasSearch && !conversations.length && <Button component={Link} href="/" color="indigo" leftSection={<IconArrowRight size={17} />}>Найти автомобиль</Button>}
                 <Group gap={6} wrap="nowrap"><IconShieldCheck size={15} color="var(--mantine-color-teal-6)" /><Text size="xs" c="dimmed">Не переводите общение и оплату за пределы площадки.</Text></Group>
               </Stack>
             </Center>

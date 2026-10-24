@@ -802,7 +802,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
                   {data.reviews.map((review) => (
                     <Box key={review.id}>
                       <Group gap="sm" mb={6}>
-                        <Avatar src={review.user.image} radius="xl" size="sm" color="indigo">
+                        <Avatar src={review.user.image} radius="xl" size="sm" color="indigo" className="lw-user-avatar">
                           {initialOf(review.user.name)}
                         </Avatar>
                         <Stack gap={2}>
@@ -1126,7 +1126,7 @@ export default function VehicleDetailClient({ data }: { data: VehicleData }) {
               {/* Продавец */}
               <Card withBorder radius="md" p="lg">
                 <Group gap="sm" mb="sm">
-                  <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo">
+                  <Avatar src={data.seller.image} radius="xl" size="lg" color="indigo" className="lw-user-avatar">
                     {initialOf(data.seller.name)}
                   </Avatar>
                   <Stack gap={2}>

@@ -22,6 +22,8 @@
 .lw-scenic-banner[data-scene="buy"] .lw-scenic-banner__image { object-position: right 50%; }
 .lw-scenic-banner[data-scene="referral"] .lw-scenic-banner__image { object-position: right 80%; }
 .lw-scenic-banner[data-scene="garage"] .lw-scenic-banner__image { object-position: right 70%; }
+.lw-scenic-banner.lw-messages-banner { min-height: 128px; padding: 16px 20px; }
+.lw-scenic-banner[data-scene="messages"] .lw-scenic-banner__image { object-fit: contain; object-position: right center; }
 .lw-scenic-banner::before,
 .home-quick__item.lw-scenic-tile::before {
   content: "";

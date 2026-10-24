@@ -2,10 +2,9 @@
 export const dynamic = "force-dynamic"
 import useSWR from "swr"
 import Link from "next/link"
-import { Box, Stack, Group, Text, SimpleGrid, Center, Paper, Button, ThemeIcon, Pagination, SegmentedControl } from "@mantine/core"
+import { Box, Stack, Group, Text, SimpleGrid, Center, Paper, Button, ThemeIcon, Pagination, SegmentedControl, VisuallyHidden } from "@mantine/core"
 import { IconHeart, IconLayoutGrid, IconList } from "@tabler/icons-react"
 import ServiceArtwork from "@/components/ui/ServiceArtwork"
-import ScenicBanner from "@/components/ui/ScenicBanner"
 import { useState } from "react"
 import ListingCard from "@/components/listings/ListingCard"
 import ListingRow from "@/components/listings/ListingRow"
@@ -37,20 +36,23 @@ export default function FavoritesPage() {
   return (
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md">
-        <ScenicBanner scene="buy">
+        <Paper component="section" className="lw-favorites-banner" p="md">
         <Group justify="space-between" align="center">
-          <Stack gap={0}>
+          <Group gap="md" wrap="nowrap" className="lw-favorites-banner__identity">
+          <ServiceArtwork kind="favorites" size={88} />
+          <Stack gap={2} className="lw-favorites-banner__copy">
             <Group gap="sm" align="center">
               <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Избранное</Text>
             </Group>
             {data && <Text size="xs" c="var(--market-muted)">{data.pagination.total} объявлений в избранном</Text>}
           </Stack>
+          </Group>
           {favorites.length > 0 && (
-            <SegmentedControl size="xs" value={view} onChange={setView} data={[{label:<IconLayoutGrid size={14}/>,value:"grid"},{label:<IconList size={14}/>,value:"list"}]} />
+            <SegmentedControl aria-label="Вид избранного" size="xs" value={view} onChange={setView} data={[{label:<><IconLayoutGrid size={14} aria-hidden="true"/><VisuallyHidden>Сетка</VisuallyHidden></>,value:"grid"},{label:<><IconList size={14} aria-hidden="true"/><VisuallyHidden>Список</VisuallyHidden></>,value:"list"}]} />
           )}
         </Group>
 
-        </ScenicBanner>
+        </Paper>
         <DashboardNav active="favorites" />
 
         {isLoading ? (
