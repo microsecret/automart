@@ -428,6 +428,8 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
                 radius="xl"
                 onClick={handleCompare}
                 data-on={inCompare || undefined}
+                data-action="compare"
+                aria-pressed={inCompare}
                 aria-label={inCompare ? "Убрать из сравнения" : "Добавить к сравнению"}
               >
                 <IconScale size={16} stroke={1.9} />
@@ -442,6 +444,8 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
               onClick={toggleFav}
               loading={isPending(listing.id)}
               data-on={isFav || undefined}
+              data-action="favorite"
+              aria-pressed={isFav}
               aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
             >
               <IconHeart size={16} stroke={1.9} fill={isFav ? "currentColor" : "none"} />

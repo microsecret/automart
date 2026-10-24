@@ -7,7 +7,7 @@ import { chromium } from "playwright-core"
 const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
-const output = "/tmp/lewheel-category-artwork-20261022"
+const output = "/tmp/lewheel-listing-media-20261024"
 await mkdir(output, { recursive: true })
 const checks = []
 const check = (name, value) => { assert.ok(value, name); checks.push(name); console.log(`PASS ${name}`) }
@@ -29,13 +29,16 @@ try {
     const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1560, height: 1000 }, isMobile: mobile, hasTouch: mobile, reducedMotion: "reduce" })
     await context.addInitScript((theme) => { localStorage.setItem("automart-color-scheme", theme); localStorage.setItem("lw-quick-tour-v1", "done") }, theme)
     await context.route("**/*", (route) => new URL(route.request().url()).origin === base ? route.continue() : route.abort())
+    await context.route("https://media.audit.invalid/**", (route) => route.fulfill({ path: "public/images/ui/category-v1/cars-320.webp", contentType: "image/webp" }))
     await context.route("**/api/listings?*", (route) => {
       const url = new URL(route.request().url())
       if (url.searchParams.get("limit") !== "20") return route.fallback()
       const isPart = url.searchParams.get("type") === "part"
+      // Local decorative art is a test-only image, never a production listing photo.
+      const media = (i) => JSON.stringify(i === 2 ? ["/uploads/audit-missing.webp"] : i === 3 ? ["https://media.audit.invalid/test-photo.webp"] : [])
       const listings = [1, 2, 3, 4].map((i) => ({ id: `audit-listing-${i}`, title: "Тестовое объявление", price: 500000 + i * 10000, location: "Москва", views: 0,
-        ...(isPart ? { part: { id: `audit-part-${i}`, name: "Тестовая деталь", price: 5000, condition: "NEW", partType: "ENGINE", images: "[]" } }
-          : { vehicle: { id: `audit-car-${i}`, make: "Toyota", model: "Corolla", year: 2024, mileage: 20000, fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SEDAN", images: "[]", vehicleType: "CAR" } }) }))
+        ...(isPart ? { part: { id: `audit-part-${i}`, name: "Тестовая деталь", price: 5000, condition: "NEW", partType: "ENGINE", images: media(i) } }
+          : { vehicle: { id: `audit-car-${i}`, make: "Toyota", model: "Corolla", year: 2024, mileage: 20000, fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SEDAN", images: media(i), vehicleType: "CAR" } }) }))
       return route.fulfill({ json: { listings, pagination: { total: 4, pages: 1, limit: 20 } } })
     })
     for (const category of ["cars", "parts"]) {
@@ -51,11 +54,45 @@ try {
       check(`${key}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: compact header`, await page.locator(".catalog-heading").evaluate((node) => node.getBoundingClientRect().height <= 230))
       check(`${key}: enamel detail actions and original destinations`, await page.locator(".lw-detail-action").evaluateAll((nodes) => nodes.length === 4 && nodes.every((node) => getComputedStyle(node).backgroundImage.includes("gradient") && /\/listings\/(vehicle|part)\/audit-/.test(node.getAttribute("href")))))
+      const cards = page.locator(".listing-card")
+      await cards.nth(1).locator('[data-empty-media="true"]').first().waitFor()
+      check(`${key}: failed image recovers to fallback`, await cards.nth(1).locator('.vehicle-fallback').count() > 0)
+      check(`${key}: real loaded media remains visible`, await cards.nth(2).locator('img.listing-card__image[data-loaded]').evaluate((node) => node.complete && node.naturalWidth > 0))
+      check(`${key}: obsolete decorative layers removed`, await page.locator('.vehicle-fallback__halo, .vehicle-fallback__glow, .vehicle-fallback__beam').count() === 0)
+      check(`${key}: centered fallback icon has contrasting enamel`, await cards.first().locator('.vehicle-fallback').evaluate((node) => {
+        const icon = node.querySelector('.mantine-ThemeIcon-root'), outer = node.getBoundingClientRect(), inner = icon.getBoundingClientRect(), style = getComputedStyle(icon)
+        return Math.abs((outer.x + outer.width / 2) - (inner.x + inner.width / 2)) < 2 && Math.abs((outer.y + outer.height / 2) - (inner.y + inner.height / 2)) < 2 && style.color === "rgb(255, 255, 255)" && style.backgroundImage.includes("gradient")
+      }))
+      const first = cards.first()
+      const favorite = first.getByRole("button", { name: "Добавить в избранное", exact: true })
+      await favorite.focus()
+      check(`${key}: photo tool ink stays dark on white`, await favorite.evaluate((node) => getComputedStyle(node).color === "rgb(18, 52, 60)"))
+      await favorite.press("Enter")
+      await first.getByRole("button", { name: "Убрать из избранного", exact: true }).waitFor()
+      check(`${key}: guest favorite persists without navigation`, new URL(page.url()).pathname === `/category/${category}` && await page.evaluate(() => JSON.parse(localStorage.getItem("lewheel:guest-favorites") || "[]").includes("audit-listing-1")))
+      check(`${key}: selected favorite is announced`, await first.locator('[data-action="favorite"]').getAttribute("aria-pressed") === "true")
+      await first.screenshot({ path: `${output}/${key}-selected.png` })
+      if (category === "cars") {
+        await first.getByRole("button", { name: "Добавить к сравнению", exact: true }).click()
+        await first.getByRole("button", { name: "Убрать из сравнения", exact: true }).waitFor()
+        check(`${key}: comparison toggle is announced`, await first.locator('[data-action="compare"]').getAttribute("aria-pressed") === "true")
+      }
       await Promise.all([page.waitForRequest((request) => { const url = new URL(request.url()); return url.pathname === "/api/listings" && url.searchParams.get("sort") === "price_asc" && url.searchParams.get("limit") === "20" }), page.getByText("Дешевле", { exact: true }).click()])
       await page.waitForURL((url) => url.searchParams.get("sort") === "price_asc")
       check(`${key}: sort URL preserved`, new URL(page.url()).searchParams.get("sort") === "price_asc")
       await page.getByRole("button", { name: "Показать объявления списком", exact: true }).click()
       check(`${key}: list control works`, await page.getByRole("button", { name: "Показать объявления списком", exact: true }).getAttribute("aria-pressed") === "true")
+      const row = page.locator(".listing-card--row").first()
+      check(`${key}: row fallback names the actual subject`, await row.locator('.vehicle-fallback').getAttribute("aria-label") === `Фото не добавлено: ${category === "parts" ? "Запчасть" : "Автомобиль"}`)
+      check(`${key}: favorite state survives grid/list switch`, await row.locator('[data-action="favorite"]').getAttribute("aria-pressed") === "true")
+      await row.getByRole("button", { name: "Убрать из избранного", exact: true }).click()
+      await row.getByRole("button", { name: "Добавить в избранное", exact: true }).waitFor()
+      check(`${key}: row can remove guest favorite`, await row.locator('[data-action="favorite"]').getAttribute("aria-pressed") === "false")
+      if (category === "cars") {
+        await row.getByRole("button", { name: "Убрать из сравнения", exact: true }).click()
+        await row.getByRole("button", { name: "Добавить к сравнению", exact: true }).waitFor()
+      }
+      await page.screenshot({ path: `${output}/${key}-list.png` })
       await page.getByRole("button", { name: "Показать объявления плиткой", exact: true }).click()
       if (mobile) {
         const toggle = page.getByRole("button", { name: "Фильтры", exact: true })

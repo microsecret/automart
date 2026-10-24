@@ -11,8 +11,6 @@ import { hasBrandLogo } from "@/components/brands/BrandLogo"
 import VehicleFallback, { vehicleTypeLabel } from "./VehicleFallback"
 import type { ListingCardData } from "./ListingCard"
 import { useFavorites } from "@/hooks/useFavorites"
-import { useRouter } from "next/navigation"
-import { notifications } from "@mantine/notifications"
 import { useCompare } from "@/hooks/useCompare"
 import { useNow } from "@/hooks/useNow"
 
@@ -31,8 +29,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   // Относительная дата — только в браузере, см. useNow.
   const now = useNow()
-  const router = useRouter()
-  const { favoriteIds, isAuthenticated, isPending, toggleFavorite } = useFavorites()
+  const { favoriteIds, isPending, toggleFavorite } = useFavorites()
   const { inCompare, toggleCompare: handleCompare } = useCompare(listing.id)
 
   const isVehicle = !!listing.vehicle
@@ -74,16 +71,6 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
   const toggleFav = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!isAuthenticated) {
-      notifications.show({
-        title: "Войдите, чтобы сохранить",
-        message: "Избранное синхронизируется между сайтом и Telegram после авторизации.",
-        color: "indigo",
-      })
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(detailHref)}`)
-      return
-    }
-
     void toggleFavorite(listing.id)
   }
 
@@ -130,7 +117,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
             {hasDisplayImage ? (
               <AspectRatio ratio={4 / 3} w={180}>
                 <>
-                  <VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact />
+                  <VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     className="listing-card__image"
@@ -145,7 +132,7 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                 </>
               </AspectRatio>
             ) : (
-              <Box h="100%" className="listing-card__media" data-empty-media="true"><VehicleFallback type={isVehicle ? vehicleType : "CAR"} bodyType={listing.vehicle?.bodyType} compact /></Box>
+              <Box h="100%" className="listing-card__media" data-empty-media="true"><VehicleFallback type={isVehicle ? vehicleType : "PART"} bodyType={listing.vehicle?.bodyType} compact /></Box>
             )}
             {/* Счётчик кадров: показывает, что фото можно листать. */}
             {hasDisplayImage && images.length > 1 && (
@@ -230,6 +217,9 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                     size={32}
                     radius="md"
                     onClick={handleCompare}
+                    data-action="compare"
+                    data-on={inCompare || undefined}
+                    aria-pressed={inCompare}
                     aria-label={inCompare ? "Убрать из сравнения" : "Добавить к сравнению"}
                     style={{ position: "relative", zIndex: 2 }}
                   >
@@ -246,6 +236,9 @@ export default function ListingRow({ listing }: { listing: ListingRowData }) {
                   radius="md"
                   onClick={toggleFav}
                   loading={isPending(listing.id)}
+                  data-action="favorite"
+                  data-on={isFav || undefined}
+                  aria-pressed={isFav}
                   aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
                   style={{ position: "relative", zIndex: 2 }}
                 >

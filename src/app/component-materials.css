@@ -83,6 +83,14 @@
   font-weight: 700;
 }
 
+/* Photo tools keep a white backing in both themes; their ink must not inherit
+   the dark theme's white text. Selected hearts retain their semantic red. */
+.listing-card__tools .listing-card__favorite { color: #12343c !important; }
+.listing-card__tools .listing-card__favorite[data-on][data-action="compare"] { color: var(--lw-enamel-base) !important; }
+.listing-card__tools .listing-card__favorite[data-on][data-action="favorite"] { color: #b3263b !important; }
+.listing-row__tool[data-on] { color: #fff !important; background: var(--lw-enamel-base) !important; }
+.listing-row__tool[data-on][data-action="favorite"] { background: #b3263b !important; }
+
 .messages-workspace { height: clamp(360px, calc(100svh - 310px), 640px); min-height: 0; }
 .messages-workspace__list { min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; }
 .messages-workspace__search { position: sticky; top: 0; z-index: 1; background: var(--market-surface); }
