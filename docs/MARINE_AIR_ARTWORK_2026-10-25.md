@@ -53,4 +53,3 @@ Prepared WebP sizes:
 TypeScript, scoped ESLint, optimized server build and 592 browser/asset
 assertions passed before promotion. Screenshot files are preserved beside
 the local PNG masters in `screenshots/`.
-
