@@ -7,11 +7,11 @@ import { chromium } from "playwright-core"
 const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
-const output = "/tmp/lewheel-marine-air-artwork-20261025"
+const output = "/tmp/lewheel-parts-artwork-20261025"
 await mkdir(output, { recursive: true })
 const checks = []
 const check = (name, value) => { assert.ok(value, name); checks.push(name); console.log(`PASS ${name}`) }
-for (const name of ["cars", "parts", "moto", "trucks", "special", "water", "air"]) for (const size of [320, 640]) {
+for (const name of ["cars", "parts", "moto", "trucks", "special", "water", "air", "brakes", "suspension", "electrical", "lighting"]) for (const size of [320, 640]) {
   const file = `public/images/ui/category-v1/${name}-${size}.webp`
   const metadata = await sharp(file).metadata(), stats = await sharp(file).stats(), info = await stat(file)
   check(`${name}-${size}: bounded transparent WebP`, metadata.hasAlpha && metadata.width <= size && metadata.height <= size && stats.channels[3].min === 0 && info.size < 110000)
@@ -114,6 +114,36 @@ try {
       await page.locator("h1").click()
       await page.evaluate(() => window.scrollTo(0, 0))
       await page.screenshot({ path: `${output}/${key}.png` })
+      await page.close()
+    }
+    for (const [slug, kind, type] of [["dvigatel", "parts", "ENGINE"], ["tormoza", "brakes", "BRAKES"], ["podveska", "suspension", "SUSPENSION"], ["elektrika", "electrical", "ELECTRICAL"], ["optika", "lighting", "LIGHTING"]]) {
+      const key = `part-${slug}-${mobile ? "mobile" : "desktop"}-${theme}`
+      const page = await context.newPage(), errors = []
+      page.on("pageerror", (error) => errors.push(error.message))
+      const response = await page.goto(`${base}/parts-finder/${slug}`, { waitUntil: "networkidle" })
+      await page.locator(`html[data-mantine-color-scheme="${theme}"]`).waitFor()
+      check(`${key}: page and semantic title`, response.status() === 200 && await page.locator("h1").count() === 1)
+      const heading = page.locator(".part-category__heading")
+      check(`${key}: full decorative artwork`, await heading.locator("img").evaluate((img, kind) => img.complete && img.naturalWidth > 0 && img.src.includes(`/${kind}-320.webp`) && img.alt === "" && img.getAttribute("aria-hidden") === "true" && getComputedStyle(img).objectFit === "contain", kind))
+      check(`${key}: compact heading`, await heading.evaluate((node) => node.getBoundingClientRect().height <= 210))
+      check(`${key}: no page overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+      check(`${key}: subcategory destinations preserved`, await page.locator(".part-category__list").first().locator("a").evaluateAll((links, type) => links.length > 0 && links.every((a) => new URL(a.href).searchParams.get("partType") === type), type))
+      if (mobile) await page.getByRole("button", { name: "Открыть навигацию", exact: true }).click()
+      const nav = page.locator(`.market-side-nav--part[href="/parts-finder/${slug}"]`)
+      await nav.waitFor()
+      await nav.scrollIntoViewIfNeeded()
+      check(`${key}: current sidebar link`, await nav.getAttribute("data-active") !== null)
+      check(`${key}: sidebar artwork loaded`, await nav.locator("img").evaluate((img) => img.complete && img.naturalWidth > 0 && img.alt === ""))
+      if (mobile) await page.getByRole("button", { name: "Закрыть навигацию", exact: true }).click()
+      const cta = page.locator(".part-category__cta a")
+      check(`${key}: search action uses shared material and touch size`, await cta.evaluate((a) => getComputedStyle(a).backgroundImage.includes("gradient") && getComputedStyle(a).color === "rgb(255, 255, 255)" && a.getBoundingClientRect().height >= 44))
+      await cta.focus()
+      check(`${key}: keyboard can reach search action`, await cta.evaluate((a) => a === document.activeElement))
+      await page.screenshot({ path: `${output}/${key}.png` })
+      await cta.press("Enter")
+      await page.waitForURL((url) => url.pathname === "/parts-finder" && url.searchParams.get("partType") === type)
+      check(`${key}: search action retains type`, new URL(page.url()).searchParams.get("partType") === type)
+      check(`${key}: no runtime errors`, errors.length === 0)
       await page.close()
     }
     await context.close()

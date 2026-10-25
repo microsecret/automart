@@ -44,6 +44,7 @@ import AppHeader from "./AppHeader"
 import AppAside from "@/components/sidebar/AppAside"
 import NavCount from "@/components/sidebar/NavCount"
 import CountryCount from "@/components/sidebar/CountryCount"
+import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
 
 const TRANSPORT_ICONS = {
   cars: <IconCar size={16} stroke={1.8} />,
@@ -488,7 +489,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
               </SidebarPanel>
 
               <SidebarPanel title="Запчасти" href="/parts-finder" icon={<IconTools size={15} />} footer="Все запчасти →" footerHref="/parts-finder">
-                <Suspense fallback={PARTS.map((item) => <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} color="indigo" className="market-side-nav market-side-nav--nested" />)}>
+                <Suspense fallback={PARTS.map((item) => <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} leftSection={<PartCategoryArtwork kind={item.id} compact />} color="indigo" className="market-side-nav market-side-nav--part" />)}>
                   <PartCategoryLinks pathname={pathname || ""} />
                 </Suspense>
               </SidebarPanel>
@@ -711,8 +712,8 @@ function PartCategoryLinks({ pathname }: { pathname: string }) {
   const selectedPartType = pathname === "/parts-finder" ? searchParams.get("partType") : null
 
   return PARTS.map((item) => {
-    const partType = item.href.split("partType=")[1]
-    return <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} active={selectedPartType === partType} color="indigo" className="market-side-nav market-side-nav--nested" />
+    const partType = { engine: "ENGINE", brakes: "BRAKES", suspension: "SUSPENSION", electrical: "ELECTRICAL", lighting: "LIGHTING" }[item.id]
+    return <NavLink key={item.href} component={Link} href={item.href} prefetch={false} label={item.label} leftSection={<PartCategoryArtwork kind={item.id} compact />} active={pathname === item.href || selectedPartType === partType} color="indigo" className="market-side-nav market-side-nav--part" />
   })
 }
 

@@ -6,6 +6,8 @@ import { absoluteUrl } from "@/lib/site-url"
 import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/lib/part-category-slug"
+import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
+import { PART_NAVIGATION } from "@/lib/navigation-registry"
 
 /**
  * Страница категории запчастей.
@@ -94,6 +96,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
 
   const lower = summary.label.toLocaleLowerCase("ru-RU")
   const others = partCategoriesWithPages().filter((row) => row.slug !== summary.slug)
+  const artworkKind = PART_NAVIGATION.find((item) => item.href === `/parts-finder/${slug}`)?.id
 
   /* Хлебные крошки для выдачи: поисковик показывает путь под ссылкой, и
      человек видит, что попадёт в раздел запчастей, а не на случайную
@@ -119,7 +122,10 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
         <span>{summary.label}</span>
       </nav>
 
-      <h1 className="part-category__title">{summary.label}: новые и б/у запчасти</h1>
+      <header className={artworkKind ? "part-category__heading part-category__heading--illustrated" : "part-category__heading"}>
+        {artworkKind && <PartCategoryArtwork kind={artworkKind} />}
+        <h1 className="part-category__title">{summary.label}: новые и б/у запчасти</h1>
+      </header>
 
       <p className="part-category__lead">
         {summary.count > 0

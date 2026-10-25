@@ -49,6 +49,16 @@
 }
 .market-side-account__group { letter-spacing: 0.025em; }
 .market-side-account__name { color: #fff; }
+.part-category-artwork--compact {
+  display: block;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+.market-side-nav--part .mantine-NavLink-section[data-position="left"] { margin-inline-end: 8px; }
 
 .side-widget__head { min-height: 42px !important; padding: 7px 10px !important; }
 .side-widget__title {

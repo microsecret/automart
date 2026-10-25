@@ -7,7 +7,7 @@ const source = process.argv[2]
 if (!source) throw new Error("A source directory is required")
 const output = path.resolve(process.argv[3] || "public/images/ui/category-v1")
 await fs.mkdir(output, { recursive: true })
-const available = ["cars", "parts", "moto", "trucks", "special", "water", "air"]
+const available = ["cars", "parts", "moto", "trucks", "special", "water", "air", "brakes", "suspension", "electrical", "lighting"]
 const selected = process.argv.slice(4)
 for (const name of selected.length ? selected : ["cars", "parts"]) {
   if (!available.includes(name)) throw new Error(`Unknown category artwork: ${name}`)
