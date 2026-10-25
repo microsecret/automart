@@ -7,11 +7,11 @@ import { chromium } from "playwright-core"
 const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
-const output = "/tmp/lewheel-listing-media-20261024"
+const output = "/tmp/lewheel-transport-artwork-20261025"
 await mkdir(output, { recursive: true })
 const checks = []
 const check = (name, value) => { assert.ok(value, name); checks.push(name); console.log(`PASS ${name}`) }
-for (const name of ["cars", "parts"]) for (const size of [320, 640]) {
+for (const name of ["cars", "parts", "moto", "trucks", "special"]) for (const size of [320, 640]) {
   const file = `public/images/ui/category-v1/${name}-${size}.webp`
   const metadata = await sharp(file).metadata(), stats = await sharp(file).stats(), info = await stat(file)
   check(`${name}-${size}: bounded transparent WebP`, metadata.hasAlpha && metadata.width <= size && metadata.height <= size && stats.channels[3].min === 0 && info.size < 110000)
@@ -34,14 +34,15 @@ try {
       const url = new URL(route.request().url())
       if (url.searchParams.get("limit") !== "20") return route.fallback()
       const isPart = url.searchParams.get("type") === "part"
+      const vehicleType = url.searchParams.get("vehicleType") || "CAR"
       // Local decorative art is a test-only image, never a production listing photo.
       const media = (i) => JSON.stringify(i === 2 ? ["/uploads/audit-missing.webp"] : i === 3 ? ["https://media.audit.invalid/test-photo.webp"] : [])
       const listings = [1, 2, 3, 4].map((i) => ({ id: `audit-listing-${i}`, title: "Тестовое объявление", price: 500000 + i * 10000, location: "Москва", views: 0,
         ...(isPart ? { part: { id: `audit-part-${i}`, name: "Тестовая деталь", price: 5000, condition: "NEW", partType: "ENGINE", images: media(i) } }
-          : { vehicle: { id: `audit-car-${i}`, make: "Toyota", model: "Corolla", year: 2024, mileage: 20000, fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SEDAN", images: media(i), vehicleType: "CAR" } }) }))
+          : { vehicle: { id: `audit-car-${i}`, make: "Toyota", model: "Corolla", year: 2024, mileage: 20000, fuelType: "GASOLINE", transmission: "AUTOMATIC", bodyType: "SEDAN", images: media(i), vehicleType } }) }))
       return route.fulfill({ json: { listings, pagination: { total: 4, pages: 1, limit: 20 } } })
     })
-    for (const category of ["cars", "parts"]) {
+    for (const category of ["cars", "parts", "moto", "trucks", "special"]) {
       const key = `${category}-${mobile ? "mobile" : "desktop"}-${theme}`
       const page = await context.newPage(), errors = []
       page.on("pageerror", (error) => errors.push(error.message))
@@ -83,7 +84,8 @@ try {
       await page.getByRole("button", { name: "Показать объявления списком", exact: true }).click()
       check(`${key}: list control works`, await page.getByRole("button", { name: "Показать объявления списком", exact: true }).getAttribute("aria-pressed") === "true")
       const row = page.locator(".listing-card--row").first()
-      check(`${key}: row fallback names the actual subject`, await row.locator('.vehicle-fallback').getAttribute("aria-label") === `Фото не добавлено: ${category === "parts" ? "Запчасть" : "Автомобиль"}`)
+      const subject = { cars: "Автомобиль", parts: "Запчасть", moto: "Мотоцикл", trucks: "Грузовой транспорт", special: "Спецтехника" }[category]
+      check(`${key}: row fallback names the actual subject`, await row.locator('.vehicle-fallback').getAttribute("aria-label") === `Фото не добавлено: ${subject}`)
       check(`${key}: favorite state survives grid/list switch`, await row.locator('[data-action="favorite"]').getAttribute("aria-pressed") === "true")
       await row.getByRole("button", { name: "Убрать из избранного", exact: true }).click()
       await row.getByRole("button", { name: "Добавить в избранное", exact: true }).waitFor()

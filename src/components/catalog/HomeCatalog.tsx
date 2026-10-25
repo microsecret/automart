@@ -89,6 +89,7 @@ const HERO_ACTIONS = [
 ] as const
 
 export default function HomePage(p: HomePageProps = {}) {
+  const hasCategoryArtwork = ["cars", "parts", "moto", "trucks", "special"].includes(p.categorySlug || "")
   const [query, setQuery] = useState(p.initialQuery || "")
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
@@ -422,7 +423,7 @@ export default function HomePage(p: HomePageProps = {}) {
      главной ограничитель снят с колонки контента ради героя во всю
      ширину, и ширину держат вместо него прямые дети этой стопки. */
   return (
-    <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)" className={`home-page-stack${p.categorySlug === "cars" || p.categorySlug === "parts" ? " catalog-artwork-page" : ""}`}>
+    <Box p={{base:"sm",md:"md"}}><Stack gap="var(--section-gap)" className={`home-page-stack${hasCategoryArtwork ? " catalog-artwork-page" : ""}`}>
       {p.showHero !== false && !p.categorySlug && (
         <Paper className="home-auctions home-auctions--market" radius="xl" p={{base:"lg",md:"xl"}}>
           <NextImage src="/images/ui/scenic-v1/buy-1600.webp" alt="" fill priority unoptimized sizes="(max-width: 768px) 100vw, 1200px" className="home-auctions__image" />
@@ -608,9 +609,9 @@ export default function HomePage(p: HomePageProps = {}) {
           ним: они отвечают на вопрос «что тут ещё есть», который
           возникает уже после просмотра товара. */}
 
-      <Group id="catalog" justify="space-between" align="center" className={`catalog-heading${p.categorySlug === "cars" || p.categorySlug === "parts" ? " catalog-heading--illustrated" : ""}`}>
+      <Group id="catalog" justify="space-between" align="center" className={`catalog-heading${hasCategoryArtwork ? " catalog-heading--illustrated" : ""}`}>
         <Group gap="md" wrap="nowrap" className="catalog-heading__identity">
-          {(p.categorySlug === "cars" || p.categorySlug === "parts") && <NextImage
+          {hasCategoryArtwork && <NextImage
             src={`/images/ui/category-v1/${p.categorySlug}-320.webp`}
             width={144} height={96} alt="" aria-hidden="true" unoptimized
             className="catalog-heading__artwork" draggable={false}

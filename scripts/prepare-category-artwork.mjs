@@ -7,7 +7,10 @@ const source = process.argv[2]
 if (!source) throw new Error("A source directory is required")
 const output = path.resolve(process.argv[3] || "public/images/ui/category-v1")
 await fs.mkdir(output, { recursive: true })
-for (const name of ["cars", "parts"]) {
+const available = ["cars", "parts", "moto", "trucks", "special"]
+const selected = process.argv.slice(4)
+for (const name of selected.length ? selected : ["cars", "parts"]) {
+  if (!available.includes(name)) throw new Error(`Unknown category artwork: ${name}`)
   const file = path.join(source, `${name}.png`)
   const metadata = await sharp(file).metadata()
   const stats = await sharp(file).stats()
