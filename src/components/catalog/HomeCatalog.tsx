@@ -89,7 +89,7 @@ const HERO_ACTIONS = [
 ] as const
 
 export default function HomePage(p: HomePageProps = {}) {
-  const hasCategoryArtwork = ["cars", "parts", "moto", "trucks", "special"].includes(p.categorySlug || "")
+  const hasCategoryArtwork = ["cars", "parts", "moto", "trucks", "special", "water", "air"].includes(p.categorySlug || "")
   const [query, setQuery] = useState(p.initialQuery || "")
   const [page, setPage] = useState(1)
   const [view, setView] = useState("grid")
