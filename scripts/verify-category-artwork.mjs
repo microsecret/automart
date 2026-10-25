@@ -7,11 +7,11 @@ import { chromium } from "playwright-core"
 const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
-const output = "/tmp/lewheel-parts-artwork-20261025"
+const output = "/tmp/lewheel-parts-mechanical-artwork-20261025"
 await mkdir(output, { recursive: true })
 const checks = []
 const check = (name, value) => { assert.ok(value, name); checks.push(name); console.log(`PASS ${name}`) }
-for (const name of ["cars", "parts", "moto", "trucks", "special", "water", "air", "brakes", "suspension", "electrical", "lighting"]) for (const size of [320, 640]) {
+for (const name of ["cars", "parts", "moto", "trucks", "special", "water", "air", "brakes", "suspension", "electrical", "lighting", "transmission", "wheels", "cooling"]) for (const size of [320, 640]) {
   const file = `public/images/ui/category-v1/${name}-${size}.webp`
   const metadata = await sharp(file).metadata(), stats = await sharp(file).stats(), info = await stat(file)
   check(`${name}-${size}: bounded transparent WebP`, metadata.hasAlpha && metadata.width <= size && metadata.height <= size && stats.channels[3].min === 0 && info.size < 110000)
@@ -116,7 +116,7 @@ try {
       await page.screenshot({ path: `${output}/${key}.png` })
       await page.close()
     }
-    for (const [slug, kind, type] of [["dvigatel", "parts", "ENGINE"], ["tormoza", "brakes", "BRAKES"], ["podveska", "suspension", "SUSPENSION"], ["elektrika", "electrical", "ELECTRICAL"], ["optika", "lighting", "LIGHTING"]]) {
+    for (const [slug, kind, type] of [["dvigatel", "parts", "ENGINE"], ["tormoza", "brakes", "BRAKES"], ["podveska", "suspension", "SUSPENSION"], ["elektrika", "electrical", "ELECTRICAL"], ["optika", "lighting", "LIGHTING"], ["transmissiya", "transmission", "TRANSMISSION"], ["kolesa-i-diski", "wheels", "WHEELS"], ["ohlazhdenie", "cooling", "COOLING"]]) {
       const key = `part-${slug}-${mobile ? "mobile" : "desktop"}-${theme}`
       const page = await context.newPage(), errors = []
       page.on("pageerror", (error) => errors.push(error.message))
@@ -128,13 +128,15 @@ try {
       check(`${key}: compact heading`, await heading.evaluate((node) => node.getBoundingClientRect().height <= 210))
       check(`${key}: no page overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: subcategory destinations preserved`, await page.locator(".part-category__list").first().locator("a").evaluateAll((links, type) => links.length > 0 && links.every((a) => new URL(a.href).searchParams.get("partType") === type), type))
-      if (mobile) await page.getByRole("button", { name: "Открыть навигацию", exact: true }).click()
-      const nav = page.locator(`.market-side-nav--part[href="/parts-finder/${slug}"]`)
-      await nav.waitFor()
-      await nav.scrollIntoViewIfNeeded()
-      check(`${key}: current sidebar link`, await nav.getAttribute("data-active") !== null)
-      check(`${key}: sidebar artwork loaded`, await nav.locator("img").evaluate((img) => img.complete && img.naturalWidth > 0 && img.alt === ""))
-      if (mobile) await page.getByRole("button", { name: "Закрыть навигацию", exact: true }).click()
+      if (["ENGINE", "BRAKES", "SUSPENSION", "ELECTRICAL", "LIGHTING"].includes(type)) {
+        if (mobile) await page.getByRole("button", { name: "Открыть навигацию", exact: true }).click()
+        const nav = page.locator(`.market-side-nav--part[href="/parts-finder/${slug}"]`)
+        await nav.waitFor()
+        await nav.scrollIntoViewIfNeeded()
+        check(`${key}: current sidebar link`, await nav.getAttribute("data-active") !== null)
+        check(`${key}: sidebar artwork loaded`, await nav.locator("img").evaluate((img) => img.complete && img.naturalWidth > 0 && img.alt === ""))
+        if (mobile) await page.getByRole("button", { name: "Закрыть навигацию", exact: true }).click()
+      }
       const cta = page.locator(".part-category__cta a")
       check(`${key}: search action uses shared material and touch size`, await cta.evaluate((a) => getComputedStyle(a).backgroundImage.includes("gradient") && getComputedStyle(a).color === "rgb(255, 255, 255)" && a.getBoundingClientRect().height >= 44))
       await cta.focus()

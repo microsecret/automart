@@ -6,6 +6,9 @@ const SOURCES: Readonly<Record<string, string>> = {
   suspension: "/images/ui/category-v1/suspension-320.webp",
   electrical: "/images/ui/category-v1/electrical-320.webp",
   lighting: "/images/ui/category-v1/lighting-320.webp",
+  transmission: "/images/ui/category-v1/transmission-320.webp",
+  wheels: "/images/ui/category-v1/wheels-320.webp",
+  cooling: "/images/ui/category-v1/cooling-320.webp",
 }
 
 /** Decorative identity only: the caller owns the visible label and destination. */

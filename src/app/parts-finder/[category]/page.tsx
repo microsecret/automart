@@ -7,7 +7,6 @@ import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/lib/part-category-slug"
 import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
-import { PART_NAVIGATION } from "@/lib/navigation-registry"
 
 /**
  * Страница категории запчастей.
@@ -96,7 +95,11 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
 
   const lower = summary.label.toLocaleLowerCase("ru-RU")
   const others = partCategoriesWithPages().filter((row) => row.slug !== summary.slug)
-  const artworkKind = PART_NAVIGATION.find((item) => item.href === `/parts-finder/${slug}`)?.id
+  const artworkKind = ({
+    ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension",
+    ELECTRICAL: "electrical", LIGHTING: "lighting", TRANSMISSION: "transmission",
+    WHEELS: "wheels", COOLING: "cooling",
+  } as Readonly<Record<string, string>>)[summary.partType]
 
   /* Хлебные крошки для выдачи: поисковик показывает путь под ссылкой, и
      человек видит, что попадёт в раздел запчастей, а не на случайную
