@@ -25,13 +25,15 @@ import { CITY_COORDINATES } from "@/lib/cities"
    каталога. Сортировка по алфавиту — человек ищет свой город глазами. */
 const CITY_NAMES = Object.keys(CITY_COORDINATES).sort((a, b) => a.localeCompare(b, "ru"))
 
+/* art — объёмный значок каталога: тот же, что в мини-приложении и в
+   боковом меню сайта. */
 const CATS = [
-  { value: "CAR", label: "Легковые" },
-  { value: "MOTORCYCLE", label: "Мото" },
-  { value: "TRUCK", label: "Грузовики" },
-  { value: "SPECIAL", label: "Спецтехника" },
-  { value: "WATER", label: "Водный транспорт" },
-  { value: "AIR", label: "Авиа" },
+  { value: "CAR", label: "Легковые", art: "cars" },
+  { value: "MOTORCYCLE", label: "Мото", art: "moto" },
+  { value: "TRUCK", label: "Грузовики", art: "trucks" },
+  { value: "SPECIAL", label: "Спецтехника", art: "special" },
+  { value: "WATER", label: "Водный транспорт", art: "water" },
+  { value: "AIR", label: "Авиа", art: "air" },
 ]
 
 const BRAND_CATEGORY_BY_VEHICLE_TYPE = {
@@ -540,9 +542,11 @@ function CreateVehicleWorkspace() {
         {garagePrefillState === "error" && <Alert color="orange" variant="light" title="Не удалось прочитать запись гаража">Можно заполнить объявление вручную; приватная запись в гараже не изменилась.</Alert>}
 
         {isTelegramMiniApp && (
-          <Alert color="indigo" variant="light" title="Быстрая подача из Telegram" icon={<IconBrandTelegram size={18} />}>
-            Добавьте данные и снимите фото прямо с телефона — номер и аккаунт уже подтверждены ботом.
-          </Alert>
+          /* Одна строка, а не плашка с заголовком: на телефоне вступления
+             занимали полтора экрана до первого поля. */
+          <Text className="create-listing__telegram-note" size="sm">
+            <IconBrandTelegram size={16} aria-hidden="true" /> Номер и аккаунт уже подтверждены ботом — снимите фото прямо с телефона.
+          </Text>
         )}
 
         {isGarageMode && (
@@ -635,7 +639,26 @@ function CreateVehicleWorkspace() {
                 <Text fw={700} fz="sm" c="var(--market-ink)">Тип транспорта</Text>
                 <Badge size="sm" color="indigo" variant="light">Шаг 1</Badge>
               </Group>
-              <SegmentedControl value={f.vehicleType} onChange={setVehicleType} data={CATS} size="sm" fullWidth />
+              {/* Плитки со значками вместо переключателя: на телефоне шесть
+                  типов в одну строку не помещались — «Спецтехника»
+                  обрезалась, а водный транспорт и авиа были не видны. */}
+              <div className="create-listing__kinds" role="radiogroup" aria-label="Тип транспорта">
+                {CATS.map((category) => (
+                  <button
+                    key={category.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={f.vehicleType === category.value}
+                    className="create-listing__kind"
+                    data-active={f.vehicleType === category.value || undefined}
+                    onClick={() => setVehicleType(category.value)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- значок 320 пикселей уже нарезан */}
+                    <img src={`/images/ui/category-v1/${category.art}-320.webp`} width={44} height={36} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                    <span>{category.label}</span>
+                  </button>
+                ))}
+              </div>
               {/* Что понадобится — до того, как продавец начал заполнять.
                   Иначе он упрётся в ошибку на последнем шаге и бросит форму. */}
               <Text size="xs" c="var(--market-muted)" mt="xs">{describeRequiredSpecs(f.vehicleType)}</Text>
@@ -907,7 +930,7 @@ function CreateVehicleWorkspace() {
                      На карте АЗС capture остаётся: там снимок колонки
                      делается на месте и прямо сейчас. */
                   disabled={uploadingImages || images.length >= 12}
-                  placeholder="Выберите или снимите фотографии"
+                  placeholder="Добавить фото"
                   onChange={uploadPhotos}
                   leftSection={<IconPhoto size={16} />}
                   error={fieldError("images")}

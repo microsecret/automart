@@ -154,3 +154,96 @@
     width: 100%;
   }
 }
+
+/* Тип транспорта плитками со значками каталога.
+
+   Переключатель на шесть позиций на телефоне обрезал «Спецтехнику», а
+   водный транспорт и авиа оставались за краем без намёка, что они есть.
+   Плитки прокручиваются вбок, и край следующей виден. */
+.create-listing__kinds {
+  display: flex;
+  gap: 8px;
+  margin-inline: -4px;
+  padding: 2px 4px 4px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.create-listing__kinds::-webkit-scrollbar {
+  display: none;
+}
+
+.create-listing__kind {
+  display: flex;
+  min-width: 88px;
+  flex: 1 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px 9px;
+  border: 1.5px solid var(--mantine-color-default-border);
+  border-radius: 14px;
+  background: var(--mantine-color-body);
+  color: var(--market-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms ease, background-color 180ms ease;
+}
+
+.create-listing__kind img {
+  width: 44px;
+  height: 36px;
+  object-fit: contain;
+  transition: transform 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.create-listing__kind:active {
+  transform: scale(0.95);
+}
+
+.create-listing__kind[data-active] {
+  border-color: var(--market-accent-button, #0b5560);
+  background: color-mix(in srgb, var(--market-accent-button, #0b5560) 9%, var(--mantine-color-body));
+  color: var(--market-accent-button, #0b5560);
+}
+
+.create-listing__kind[data-active] img {
+  transform: scale(1.1) translateY(-1px);
+}
+
+.create-listing__kind:focus-visible {
+  outline: 2px solid var(--market-focus-ring, #0b5560);
+  outline-offset: 2px;
+}
+
+/* Пометка о Telegram — одна строка вместо плашки с заголовком. */
+.create-listing__telegram-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--market-muted);
+}
+
+.create-listing__telegram-note svg {
+  flex: 0 0 auto;
+  color: #229ed9;
+}
+
+@media (max-width: 640px) {
+  /* Три шага дублируют плашку готовности и метки «Шаг 1», «Шаг 2» у
+     разделов, а на телефоне занимали треть экрана до первого поля. */
+  .create-listing__journey {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-listing__kind,
+  .create-listing__kind img {
+    transition: none;
+  }
+}
