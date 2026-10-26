@@ -953,9 +953,9 @@ body:has(.tg-shell[data-main-button="hidden"]) {
   padding: 0 4px;
   border: 1px solid rgb(226 232 240 / 90%);
   border-radius: 24px;
-  /* Плотнее прежних 78 %: пёстрое фото под полупрозрачной панелью
+  /* Почти сплошная, а не 78 %: пёстрое фото и подписи под панелью
      спорило с подписями вкладок. */
-  background: rgb(255 255 255 / 92%);
+  background: rgb(255 255 255 / 96%);
   box-shadow: 0 1px 1px rgb(15 40 60 / 4%), 0 16px 36px -14px rgb(15 40 60 / 30%);
   -webkit-backdrop-filter: saturate(1.9) blur(22px);
   backdrop-filter: saturate(1.9) blur(22px);
