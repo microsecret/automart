@@ -54,6 +54,10 @@ export default function TelegramHome({ signedIn, botUsername }: { signedIn: bool
           <Link
             key={story.key}
             href={resolve(story.href, story.signedOnly)}
+            /* Без предзагрузки: семь кругов вели к тяжёлым разделам, и
+               телефон заранее качал их скрипты, даже если человек
+               никуда не нажимал. */
+            prefetch={false}
             className="tg-story"
             style={{ "--i": index } as React.CSSProperties}
             onClick={() => tapFeedback()}
@@ -106,6 +110,7 @@ function PromoCarousel({ resolve }: { resolve: (href: string, signedOnly?: boole
           <Link
             key={promo.key}
             href={resolve(promo.href, promo.signedOnly)}
+            prefetch={false}
             className="tg-promo"
             data-tone={promo.tone}
             data-index={index}
