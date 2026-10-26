@@ -42,5 +42,7 @@ test("пустой список объясняет, зачем нужна под
      подписок и было три на двести двенадцать человек. */
   const panel = readFileSync(new URL("../src/components/dashboard/SubscriptionsPanel.tsx", import.meta.url), "utf8")
   assert.match(panel, /Бот пишет в Telegram/)
-  assert.match(panel, /actionHref="\/services\/fuel-map"/)
+  /* Переход к карте АЗС теперь кнопкой в шапке раздела, а не в
+     карточке пустого состояния — проверяем, что он есть. */
+  assert.match(panel, /href="\/services\/fuel-map"/)
 })
