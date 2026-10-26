@@ -51,14 +51,23 @@
 .market-side-account__name { color: #fff; }
 .part-category-artwork--compact {
   display: block;
-  flex: 0 0 28px;
-  width: 28px;
-  height: 28px;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   pointer-events: none;
   user-select: none;
 }
 .market-side-nav--part .mantine-NavLink-section[data-position="left"] { margin-inline-end: 8px; }
+.lw-navigation-artwork { display: block; flex: 0 0 22px; width: 22px; height: 22px; object-fit: contain; pointer-events: none; user-select: none; }
+/* These links now have real artwork; remove their former empty-icon indent. */
+.market-side-panel .mantine-NavLink-root.market-side-nav--service { padding-left: 9px !important; }
+.lw-auction-flag { display: inline-flex; width: 22px; height: 16px; flex: 0 0 22px; border-radius: 3px; overflow: hidden; box-shadow: 0 1px 2px rgb(0 0 0 / 18%); transform-origin: left center; }
+.lw-auction-flag svg { width: 100%; height: 100%; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .market-side-nav:hover .lw-auction-flag, .market-side-nav:focus-visible .lw-auction-flag { animation: lw-flag-wave 700ms ease-out 1; }
+}
+@keyframes lw-flag-wave { 0%, 100% { transform: perspective(80px) rotateY(0); } 35% { transform: perspective(80px) rotateY(-18deg); } 65% { transform: perspective(80px) rotateY(10deg); } }
 
 .side-widget__head { min-height: 42px !important; padding: 7px 10px !important; }
 .side-widget__title {

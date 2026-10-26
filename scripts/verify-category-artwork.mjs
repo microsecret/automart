@@ -7,7 +7,7 @@ import { chromium } from "playwright-core"
 const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
-const output = "/tmp/lewheel-parts-mechanical-artwork-20261025"
+const output = "/tmp/lewheel-parts-scenic-20261026"
 await mkdir(output, { recursive: true })
 const checks = []
 const check = (name, value) => { assert.ok(value, name); checks.push(name); console.log(`PASS ${name}`) }
@@ -124,7 +124,8 @@ try {
       await page.locator(`html[data-mantine-color-scheme="${theme}"]`).waitFor()
       check(`${key}: page and semantic title`, response.status() === 200 && await page.locator("h1").count() === 1)
       const heading = page.locator(".part-category__heading")
-      check(`${key}: full decorative artwork`, await heading.locator("img").evaluate((img, kind) => img.complete && img.naturalWidth > 0 && img.src.includes(`/${kind}-320.webp`) && img.alt === "" && img.getAttribute("aria-hidden") === "true" && getComputedStyle(img).objectFit === "contain", kind))
+      const scene = { ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension", ELECTRICAL: "electrical", LIGHTING: "lighting" }[type]
+      check(`${key}: full decorative artwork`, await heading.locator("img").evaluate((img, expected) => img.complete && img.naturalWidth > 0 && img.src.includes(expected) && img.alt === "" && img.getAttribute("aria-hidden") === "true" && getComputedStyle(img).objectFit === "contain", scene ? `/part-${scene}-1600.webp` : `/${kind}-320.webp`))
       check(`${key}: compact heading`, await heading.evaluate((node) => node.getBoundingClientRect().height <= 210))
       check(`${key}: no page overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       check(`${key}: subcategory destinations preserved`, await page.locator(".part-category__list").first().locator("a").evaluateAll((links, type) => links.length > 0 && links.every((a) => new URL(a.href).searchParams.get("partType") === type), type))

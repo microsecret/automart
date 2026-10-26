@@ -6,7 +6,7 @@ const source = process.argv[2]
 if (!source) throw new Error("Source directory required")
 const target = process.argv[3] || "public/images/ui/scenic-v1"
 await mkdir(target, { recursive: true })
-const available = ["buy", "sell", "auctions", "parts", "fuel", "garage", "deliveries", "subscriptions", "payments", "referral", "profile", "store", "messages"]
+const available = ["buy", "sell", "auctions", "parts", "fuel", "garage", "deliveries", "subscriptions", "payments", "referral", "profile", "store", "messages", "part-engine", "part-brakes", "part-suspension", "part-electrical", "part-lighting"]
 const selected = process.argv.slice(4)
 for (const name of selected.length ? selected : available) {
   if (!available.includes(name)) throw new Error(`Unknown scenic asset: ${name}`)

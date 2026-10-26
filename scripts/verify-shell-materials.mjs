@@ -9,14 +9,14 @@ const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
 assert.ok(process.env.NEXTAUTH_SECRET)
-const output = "/tmp/lewheel-sidebar-materials-20261022"
+const output = "/tmp/lewheel-sidebar-artwork-20261026"
 await mkdir(output, { recursive: true })
 const results = []
 const check = (name, value) => { assert.ok(value, name); results.push(name); console.log(`PASS ${name}`) }
 const db = new PrismaClient()
 let browser
 try {
-  const user = await db.user.create({ data: { name: "Проверка стиля", email: `shell-${Date.now()}@audit.invalid` } })
+  const user = await db.user.create({ data: { name: "Проверка стиля", role: "ADMIN", email: `shell-${Date.now()}@audit.invalid` } })
   const token = await encode({ secret: process.env.NEXTAUTH_SECRET, maxAge: 600, token: { id: user.id, sub: user.id, role: user.role } })
   let executablePath = chromium.executablePath()
   try { await access(executablePath) } catch {
@@ -36,6 +36,7 @@ try {
       const url = new URL(route.request().url())
       const sample = ["Corolla", "RAV4", "Camry"]
       let body
+      if (url.pathname === "/api/dashboard/stats") body = { stats: { totalListings: 0, favoritesCount: 0, garageCount: 0, activeDeliveries: 0, unreadMessages: 2, unreadNotifications: 1 }, workflow: { pendingModeration: 0, needsAttention: 0 }, partnerAccess: { allowed: true } }
       if (url.pathname === "/api/news" && url.searchParams.get("limit") === "5") body = { news: sample.map((model, i) => ({ id: `news-${i}`, slug: `audit-${i}`, title: `Автомобильный рынок: ${model}`, publishedAt: new Date().toISOString() })) }
       if (url.pathname === "/api/auctions" && url.searchParams.get("view") === "brief") body = { listings: sample.map((model, i) => ({ id: `lot-${i}`, make: "Toyota", model, year: 2024, priceRub: 2000000 + i * 100000, country: "JP" })) }
       if (url.pathname === "/api/listings" && url.searchParams.get("limit") === "10" && url.searchParams.get("sort") === "newest") body = { listings: sample.map((model, i) => ({ id: `listing-${i}`, price: 1500000, vehicle: { id: `vehicle-${i}`, make: "Toyota", model, year: 2024 } })) }
@@ -79,6 +80,33 @@ try {
       if (name === "profile") {
         await page.locator(".lw-user-avatar").first().waitFor()
         check(`${key}: profile monogram is real text`, await page.locator(".lw-user-avatar .mantine-Avatar-placeholder").count() > 0)
+      }
+      if (name === "home") {
+        if (mobile) await page.getByRole("button", { name: "Открыть навигацию", exact: true }).click()
+        const rail = page.locator(".market-app-navbar")
+        check(`${key}: every sidebar destination has artwork or a flag`, await rail.locator("a.market-side-nav, a.market-side-account__link").evaluateAll((links) => links.length >= 35 && links.every((link) => link.querySelector("img.lw-navigation-artwork, img.part-category-artwork, .lw-auction-flag"))))
+        for (const img of await rail.locator("img.lw-navigation-artwork, img.part-category-artwork").all()) {
+          await img.scrollIntoViewIfNeeded()
+          await img.evaluate((node) => node.decode())
+        }
+        check(`${key}: compact 22px illustrations loaded`, await rail.locator("img.lw-navigation-artwork, img.part-category-artwork").evaluateAll((images) => images.every((img) => img.complete && img.naturalWidth > 0 && img.getBoundingClientRect().width === 22 && img.getBoundingClientRect().height === 22 && img.alt === "" && img.getAttribute("aria-hidden") === "true")))
+        check(`${key}: all section artwork shares one left alignment`, await rail.locator(".market-side-nav img, .market-side-nav .lw-auction-flag").evaluateAll((nodes) => { const positions = nodes.map((node) => node.getBoundingClientRect().left); return positions.length > 20 && Math.max(...positions) - Math.min(...positions) <= 1 }))
+        check(`${key}: five distinct correctly routed flags`, await rail.locator(".lw-auction-flag").evaluateAll((flags) => flags.length === 5 && new Set(flags.map((f) => f.dataset.country)).size === 5 && flags.every((f) => new URL(f.closest("a").href).searchParams.get("country") === f.dataset.country && f.getAttribute("aria-hidden") === "true")))
+        const flag = rail.locator('.lw-auction-flag[data-country="JP"]')
+        await flag.scrollIntoViewIfNeeded()
+        check(`${key}: reduced motion disables flag movement`, await flag.evaluate((node) => getComputedStyle(node).animationName === "none"))
+        await page.screenshot({ path: `${output}/${key}-auction-navigation.png` })
+        for (const label of ["Транспорт", "Сервисы", "Помощь"]) {
+          await rail.locator(".market-side-panel").filter({ has: page.locator(".market-side-panel__title", { hasText: label }) }).scrollIntoViewIfNeeded()
+          await page.screenshot({ path: `${output}/${key}-${label === "Транспорт" ? "transport" : label === "Сервисы" ? "services" : "help"}.png` })
+        }
+        if (!mobile) {
+          await page.emulateMedia({ reducedMotion: "no-preference" })
+          await flag.hover()
+          check(`${key}: optional flag animation is bounded`, await flag.evaluate((node) => getComputedStyle(node).animationName === "lw-flag-wave" && getComputedStyle(node).animationIterationCount === "1"))
+          await page.emulateMedia({ reducedMotion: "reduce" })
+        }
+        if (mobile) await page.getByRole("button", { name: "Закрыть навигацию", exact: true }).click()
       }
       check(`${key}: identity frames use the same circular shape`, await page.locator(".lw-user-avatar").evaluateAll((avatars) => avatars.every((avatar) => getComputedStyle(avatar).borderRadius === "50%")))
       check(`${key}: monograms have readable contrast across both enamel stops`, await page.locator(".lw-user-avatar").evaluateAll((avatars) => {

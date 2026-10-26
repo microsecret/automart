@@ -15,7 +15,7 @@ const SOURCES: Readonly<Record<string, string>> = {
 export default function PartCategoryArtwork({ kind, compact = false }: { kind: string; compact?: boolean }) {
   const src = SOURCES[kind]
   if (!src) return null
-  return <Image src={src} alt="" aria-hidden="true" width={compact ? 28 : 144} height={compact ? 28 : 104}
+  return <Image src={src} alt="" aria-hidden="true" width={compact ? 22 : 144} height={compact ? 22 : 104}
     unoptimized loading="lazy" decoding="async" draggable={false}
     className={compact ? "part-category-artwork part-category-artwork--compact" : "part-category-artwork"} />
 }

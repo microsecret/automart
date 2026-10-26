@@ -7,6 +7,7 @@ import { buildSeoMetadata } from "@/lib/seo-metadata"
 import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/lib/part-category-slug"
 import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
+import Image from "next/image"
 
 /**
  * Страница категории запчастей.
@@ -100,6 +101,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
     ELECTRICAL: "electrical", LIGHTING: "lighting", TRANSMISSION: "transmission",
     WHEELS: "wheels", COOLING: "cooling",
   } as Readonly<Record<string, string>>)[summary.partType]
+  const scenicKind = ["engine", "brakes", "suspension", "electrical", "lighting"].includes(artworkKind) ? artworkKind : null
 
   /* Хлебные крошки для выдачи: поисковик показывает путь под ссылкой, и
      человек видит, что попадёт в раздел запчастей, а не на случайную
@@ -125,8 +127,8 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
         <span>{summary.label}</span>
       </nav>
 
-      <header className={artworkKind ? "part-category__heading part-category__heading--illustrated" : "part-category__heading"}>
-        {artworkKind && <PartCategoryArtwork kind={artworkKind} />}
+      <header data-part-scene={scenicKind || undefined} className={scenicKind ? "part-category__heading part-category__heading--scene" : artworkKind ? "part-category__heading part-category__heading--illustrated" : "part-category__heading"}>
+        {scenicKind ? <Image src={`/images/ui/scenic-v1/part-${scenicKind}-1600.webp`} width={1600} height={534} alt="" aria-hidden="true" unoptimized className="part-category__scene" /> : artworkKind && <PartCategoryArtwork kind={artworkKind} />}
         <h1 className="part-category__title">{summary.label}: новые и б/у запчасти</h1>
       </header>
 
