@@ -179,15 +179,15 @@ export default function TelegramAuctions() {
         </Text>
       )}
       <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed" data-updating={isValidating || undefined}>
-        {lots.map((lot) => (
-          <AuctionCard key={lot.id} lot={lot} />
+        {lots.map((lot, index) => (
+          <AuctionCard key={lot.id} lot={lot} first={index === 0} />
         ))}
       </Stack>
     </>
   )
 }
 
-function AuctionCard({ lot }: { lot: AuctionLot }) {
+function AuctionCard({ lot, first }: { lot: AuctionLot; first: boolean }) {
   const [failed, setFailed] = useState(false)
   const tap = () => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
 
@@ -200,7 +200,7 @@ function AuctionCard({ lot }: { lot: AuctionLot }) {
              Сырой адрес отдавал Carsensor по полминуты, а beforward не
              показывался вовсе. */
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={auctionCardImageUrl(lot.imageUrl)} alt={`${lot.make} ${lot.model}`} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
+          <img src={auctionCardImageUrl(lot.imageUrl)} alt={`${lot.make} ${lot.model}`} loading={first ? "eager" : "lazy"} fetchPriority={first ? "high" : "auto"} decoding="async" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
         ) : (
           <Box className="tg-card__media-empty"><IconPhotoOff size={22} /></Box>
         )}

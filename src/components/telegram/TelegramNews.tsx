@@ -76,14 +76,14 @@ export default function TelegramNews() {
 
   return (
     <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed">
-      {news.map((item) => (
-        <NewsCard key={item.id} item={item} />
+      {news.map((item, index) => (
+        <NewsCard key={item.id} item={item} first={index === 0} />
       ))}
     </Stack>
   )
 }
 
-function NewsCard({ item }: { item: NewsItem }) {
+function NewsCard({ item, first }: { item: NewsItem; first: boolean }) {
   const [failed, setFailed] = useState(false)
   const tap = () => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
 
@@ -101,6 +101,8 @@ function NewsCard({ item }: { item: NewsItem }) {
             fill
             sizes="(min-width: 640px) 320px, 94vw"
             quality={68}
+            /* Первая обложка — главная картинка экрана: грузится сразу. */
+            priority={first}
             unoptimized={!isOptimizableNewsImage(item.imageUrl)}
             onError={() => setFailed(true)}
           />
