@@ -75,6 +75,31 @@ export default function TelegramShell({
   const unreadMessages = shellStats?.stats?.unreadMessages || 0
   const unreadNotifications = shellStats?.stats?.unreadNotifications || 0
 
+  /* Панель вкладок уходит при прокрутке вниз и возвращается при
+     прокрутке вверх. Порог в 8 пикселей гасит дрожание пальца, а у
+     самого верха панель видна всегда. */
+  const [navHidden, setNavHidden] = useState(false)
+  useEffect(() => {
+    let lastY = window.scrollY
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const y = window.scrollY
+      if (y < 120) setNavHidden(false)
+      else if (y - lastY > 8) setNavHidden(true)
+      else if (lastY - y > 8) setNavHidden(false)
+      if (Math.abs(y - lastY) > 8) lastY = y
+    }
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuMounted, setMenuMounted] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -364,7 +389,7 @@ export default function TelegramShell({
       {/* Плавающая панель вкладок со стеклом — как в iOS 26 и Material 3:
           объёмные значки вместо контурных, выбранная вкладка — на
           подложке, которая въезжает пружиной. */}
-      <Box component="nav" className="tg-nav" aria-label="Разделы приложения">
+      <Box component="nav" className="tg-nav" data-hidden={navHidden || undefined} aria-label="Разделы приложения">
         {TABS.map(({ id, href, label }) => {
           const active = href === activeTab
           return (

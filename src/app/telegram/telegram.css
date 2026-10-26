@@ -917,11 +917,19 @@ body:has(.tg-shell) .support-chat__launcher {
 
 /* ===== Плавающая панель вкладок ===== */
 
-/* Главная кнопка Telegram рисуется клиентом в самом низу экрана, и
-   панель встаёт над ней. Переменная объявлена и на body: кнопка
-   поддержки и другие соседи оболочки должны видеть то же число. */
+/* Запас под главную кнопку Telegram — ноль.
+
+   Прежде здесь стояли 60 пикселей: считалось, что кнопка рисуется поверх
+   страницы. В нынешних клиентах она нативная и стоит под окном
+   приложения, а окно само становится ниже. Запас поднимал панель на
+   70 пикселей над краем — на снимке владельца 27.10.2026 она висела
+   посреди ленты и закрывала карточку.
+
+   Переменная оставлена: ей пользуются соседи оболочки (кнопка
+   поддержки), и вернуть запас для особого клиента можно здесь одним
+   числом. */
 body:has(.tg-shell) {
-  --tg-main-button-height: 60px;
+  --tg-main-button-height: 0px;
 }
 
 .tg-shell[data-main-button="hidden"],
@@ -943,12 +951,31 @@ body:has(.tg-shell[data-main-button="hidden"]) {
      а не в bottom — так bottom остаётся ровно высотой главной кнопки. */
   margin: 0 auto calc(env(safe-area-inset-bottom, 0px) + 10px);
   padding: 0 4px;
-  border: 1px solid rgb(255 255 255 / 70%);
+  border: 1px solid rgb(226 232 240 / 90%);
   border-radius: 24px;
-  background: rgb(255 255 255 / 78%);
+  /* Плотнее прежних 78 %: пёстрое фото под полупрозрачной панелью
+     спорило с подписями вкладок. */
+  background: rgb(255 255 255 / 92%);
   box-shadow: 0 1px 1px rgb(15 40 60 / 4%), 0 16px 36px -14px rgb(15 40 60 / 30%);
   -webkit-backdrop-filter: saturate(1.9) blur(22px);
   backdrop-filter: saturate(1.9) blur(22px);
+  transition: transform 320ms var(--tg-spring), opacity 200ms ease;
+}
+
+/* Листают вниз — панель уходит и отдаёт ленте весь экран; листают
+   вверх — возвращается. Так ведут себя панели браузеров и приложений
+   на телефоне. */
+.tg-nav[data-hidden] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(100% + 24px));
+}
+
+/* С клавиатуры панель возвращается, как только фокус попал в неё. */
+.tg-nav[data-hidden]:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 .tg-nav__item {
