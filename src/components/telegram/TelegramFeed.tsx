@@ -262,7 +262,9 @@ function TelegramFeedCard({ listing, index }: { listing: FeedListing; index: num
             src={image}
             alt={vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : listing.title}
             fill
-            sizes="(min-width: 640px) 320px, 94vw"
+            /* Около двух пикселей на точку: на экране x3 версия 1080 весила
+               до 164 КБ, а разницы в карточке шириной 390 точек не видно. */
+            sizes="(min-width: 640px) 320px, 70vw"
             quality={68}
             priority={index === 0}
             unoptimized={shouldBypassOptimizer(image)}

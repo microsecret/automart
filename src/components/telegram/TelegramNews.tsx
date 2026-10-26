@@ -99,7 +99,9 @@ function NewsCard({ item, first }: { item: NewsItem; first: boolean }) {
             src={item.imageUrl}
             alt={item.title}
             fill
-            sizes="(min-width: 640px) 320px, 94vw"
+            /* Около двух пикселей на точку: на экране x3 версия 1080 весила
+               до 164 КБ, а разницы в карточке шириной 390 точек не видно. */
+            sizes="(min-width: 640px) 320px, 70vw"
             quality={68}
             /* Первая обложка — главная картинка экрана: грузится сразу. */
             priority={first}
