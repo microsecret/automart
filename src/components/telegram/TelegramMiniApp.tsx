@@ -5,14 +5,16 @@ import { resolveStartRoute } from "@/lib/telegram-start-route"
 import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
-import { Box, Button, Loader, Stack, Text } from "@mantine/core"
-import { IconAlertTriangle, IconBrandTelegram } from "@tabler/icons-react"
+import { Box, Loader, Stack, Text } from "@mantine/core"
+import { IconAlertTriangle, IconBrandTelegram, IconChevronRight } from "@tabler/icons-react"
 import { tapFeedback, waitForTelegramWebApp } from "@/lib/telegram-webapp"
 import TelegramShell from "./TelegramShell"
 import TelegramFeed from "./TelegramFeed"
 import TelegramAuctions from "./TelegramAuctions"
 import TelegramNews from "./TelegramNews"
 import TelegramMessages from "./TelegramMessages"
+import TelegramHome from "./TelegramHome"
+import TelegramOnboarding from "./TelegramOnboarding"
 
 /**
  * Приложение LeWheel внутри Telegram.
@@ -145,38 +147,29 @@ export default function TelegramMiniApp() {
   if (status === "browser" || status === "signup" || status === "error") {
     return (
       <TelegramShell title={heading.title} subtitle={heading.subtitle} activeTab={heading.href} signedIn={false}>
-        <Stack gap="md">
-          {/* Тревожный вид — только настоящей ошибке.
-
-              Приглашение зарегистрироваться и сорвавшийся вход
-              выглядели одинаково: красная плашка со значком
-              предупреждения. Человек, впервые открывший приложение,
-              видел её на первом же экране. */}
-          <Box className="tg-notice" data-tone={status === "error" ? "error" : undefined}>
-            {status === "error" ? <IconAlertTriangle size={18} /> : <IconBrandTelegram size={18} />}
-            <Text size="sm">{message}</Text>
-          </Box>
-          {(status === "error" || status === "signup") && botUsername && (
-            <Button
-              component="a"
-              href={`https://t.me/${botUsername}`}
-              onClick={() => tapFeedback()}
-              className="tg-button"
-              fullWidth
-            >
-              {status === "signup" ? "Открыть бот и завести профиль" : "Открыть бот"}
-            </Button>
-          )}
-          {status === "browser" && (
-            <Button component={Link} href="/" onClick={() => tapFeedback()} className="tg-button" fullWidth>
-              Перейти на сайт
-            </Button>
-          )}
-          {tab === "auctions" ? <TelegramAuctions />
-            : tab === "news" ? <TelegramNews />
-            : tab === "chats" ? <TelegramMessages />
-            : <TelegramFeed />}
-        </Stack>
+        <TelegramOnboarding />
+        {tab === "vehicles" && <TelegramHome signedIn={false} botUsername={botUsername} />}
+        {/* Плашка входа — одна строка с переходом, а не абзац и кнопка во
+            всю ширину: прежние два блока занимали полэкрана, и машины
+            начинались ниже середины. Тревожный вид — только настоящей
+            ошибке. */}
+        <Link
+          href={status !== "browser" && botUsername ? `https://t.me/${botUsername}` : "/"}
+          onClick={() => tapFeedback()}
+          className="tg-signin"
+          data-tone={status === "error" ? "error" : undefined}
+        >
+          <span className="tg-signin__icon">{status === "error" ? <IconAlertTriangle size={18} /> : <IconBrandTelegram size={18} />}</span>
+          <span className="tg-signin__text">
+            <strong>{status === "browser" ? "Перейти на сайт" : status === "signup" ? "Войти через бота" : "Открыть бот"}</strong>
+            <span>{message}</span>
+          </span>
+          <IconChevronRight size={18} className="tg-signin__chevron" />
+        </Link>
+        {tab === "auctions" ? <TelegramAuctions />
+          : tab === "news" ? <TelegramNews />
+          : tab === "chats" ? <TelegramMessages />
+          : <TelegramFeed />}
       </TelegramShell>
     )
   }
@@ -191,6 +184,8 @@ export default function TelegramMiniApp() {
          нет. */
       signedIn={status === "ready"}
     >
+      <TelegramOnboarding />
+      {tab === "vehicles" && <TelegramHome signedIn={status === "ready"} botUsername={botUsername} />}
       {/* Лента показывается сразу, вход подтягивается сбоку.
 
           Здесь стоял экран ожидания со спиннером: человек открывал
@@ -206,7 +201,7 @@ export default function TelegramMiniApp() {
           Переписка — исключение: без входа показывать нечего, и там
           ожидание честнее пустого экрана. */}
       {status === "loading" && (
-        <Box className="tg-notice" data-tone="muted" mb="sm">
+        <Box className="tg-notice" data-tone="muted">
           <Loader size="xs" color="var(--tg-accent)" />
           <Text size="xs">Открываем ваш аккаунт…</Text>
         </Box>

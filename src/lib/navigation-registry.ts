@@ -225,6 +225,9 @@ export const TELEGRAM_MENU_NAVIGATION = [
       { id: "part-requests", label: "Заявки на запчасти", href: "/dashboard/part-requests?from=telegram" },
       { id: "deliveries", label: "Мои доставки", href: "/dashboard/deliveries?from=telegram" },
       { id: "documents", label: "Мои документы", href: "/dashboard/documents?from=telegram" },
+      /* Круглая кнопка поддержки в приложении скрыта — она закрывала
+         фотографии машин. Поддержка живёт здесь. */
+      { id: "support", label: "Поддержка", href: "/help/support?from=telegram" },
     ],
   },
   {

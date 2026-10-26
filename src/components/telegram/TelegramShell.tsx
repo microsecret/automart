@@ -4,29 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
 import { Box, Text } from "@mantine/core"
-import type { TelegramThemeParams } from "@/lib/telegram-webapp"
+import { IconLayoutGrid, IconX } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
-import ServiceArtwork from "@/components/ui/ServiceArtwork"
-import {
-  IconCar,
-  IconFileDescription,
-  IconShieldCheck,
-  IconCoin,
-  IconSparkles,
-  IconShieldLock,
-  IconGasStation,
-  IconGavel,
-  IconHeart,
-  IconList,
-  IconMenu2,
-  IconMessageCircle2,
-  IconMessages,
-  IconNews,
-  IconTool,
-  IconTruckDelivery,
-  IconX,
-  IconUser,
-} from "@tabler/icons-react"
+import AuctionFlag from "@/components/sidebar/AuctionFlag"
+import MiniArt from "./MiniArt"
 import {
   CREATE_VEHICLE_HREF,
   TELEGRAM_MENU_NAVIGATION,
@@ -34,88 +15,31 @@ import {
 } from "@/lib/navigation-registry"
 
 /**
- * Оболочка приложения Telegram: шапка, лента и нижняя навигация.
+ * Оболочка приложения Telegram: шапка, содержимое, нижняя панель и
+ * шторка разделов.
  *
- * Приложение выглядело как страница со ссылками. Здесь оно устроено как
- * мобильное приложение: содержимое во весь экран, навигация внизу под
- * большим пальцем, оформление совпадает с темой мессенджера.
+ * Устроена как приложение для iOS и Android, а не как страница со
+ * ссылками: стеклянная шапка, плавающая панель вкладок под большим
+ * пальцем, разделы — плитками в шторке снизу.
  *
- * Цвета берутся из переменных платформы (themeParams). Так приложение
- * выглядит родным и в светлой теме, и в тёмной, и у тех, кто поставил
- * свою: чужеродная белая страница внутри тёмного Telegram — первое, что
- * выдаёт наспех сделанное приложение.
+ * Своя светлая палитра вместо темы мессенджера. Владелец попросил
+ * светлое и сочное приложение; в тёмной теме Telegram прежняя лента
+ * выглядела мрачно, а титановые значки на тёмном фоне терялись. Шапку и
+ * подложку Telegram красим в те же цвета, чтобы на стыке не было шва.
  */
 
-/* Запасные цвета — на случай, если платформа их не отдала.
+/* Цвета шапки и подложки Telegram — те же, что фон приложения в
+   telegram.css. Платформа принимает только готовые значения, не
+   переменные CSS. */
+const APP_BG = "#f2f5f9"
+const APP_SURFACE = "#ffffff"
+const APP_ACCENT = "#0b7285"
 
-   Подобраны под тёмное оформление Telegram по умолчанию: приложение,
-   открытое в старом клиенте, не должно вспыхивать белым. */
-const FALLBACK: Required<Pick<TelegramThemeParams,
-  "bg_color" | "secondary_bg_color" | "text_color" | "hint_color" | "link_color"
-  | "button_color" | "button_text_color" | "section_bg_color" | "section_separator_color"
->> = {
-  bg_color: "#17212b",
-  secondary_bg_color: "#0e1621",
-  text_color: "#ffffff",
-  hint_color: "#708499",
-  link_color: "#6ab3f3",
-  button_color: "#5288c1",
-  button_text_color: "#ffffff",
-  section_bg_color: "#17212b",
-  section_separator_color: "#101921",
-}
+/* Аукционы по странам показываются флажками, остальные разделы шторки —
+   плитками с объёмными значками. */
+const COUNTRY_SECTION = "Аукционы по странам"
 
-/* Разделы выезжающего меню.
-
-   Прежде здесь был ряд вкладок под заголовком, но он повторял нижнюю
-   навигацию — четыре подписи из пяти совпадали. Толку от такого дубля
-   нет, а место он занимал.
-
-   Меню открывается кнопкой слева вверху, как в мобильной версии сайта, и
-   вмещает то, чему не нашлось места внизу: личные разделы, запчасти,
-   аукционы по странам. */
-const MENU_ICONS: Record<string, typeof IconCar | null> = {
-  vehicles: IconCar,
-  auctions: IconGavel,
-  news: IconNews,
-  parts: IconTool,
-  favorites: IconHeart,
-  messages: IconMessageCircle2,
-  listings: IconList,
-  garage: IconCar,
-  deliveries: IconTruckDelivery,
-  documents: IconFileDescription,
-  /* Сервисы: без значков строки меню сливаются в список текста, и глаз
-     не за что зацепить — а именно здесь человек ищет то, за чем вернулся. */
-  "fuel-map": IconGasStation,
-  "history-check": IconShieldCheck,
-  valuation: IconCoin,
-  "smart-matching": IconSparkles,
-  "safe-deal": IconShieldLock,
-  "legal-documents": IconFileDescription,
-  forum: IconMessages,
-}
-
-const TAB_ICONS = {
-  vehicles: IconCar,
-  fuel: IconGasStation,
-  auctions: IconGavel,
-  news: IconNews,
-  chats: IconMessageCircle2,
-} satisfies Record<(typeof TELEGRAM_TAB_NAVIGATION)[number]["id"], typeof IconCar>
-
-const MENU_SECTIONS = TELEGRAM_MENU_NAVIGATION.map((section) => ({
-  ...section,
-  items: section.items.map((item) => ({ ...item, Icon: MENU_ICONS[item.id] || null })),
-}))
-
-const TABS = TELEGRAM_TAB_NAVIGATION.map((item) => ({
-  ...item,
-  Icon: TAB_ICONS[item.id],
-  /* Выделенной вкладки в панели больше нет: подача переехала на главную
-     кнопку Telegram, которая и без того заметнее всего. */
-  accent: false,
-}))
+const TABS = TELEGRAM_TAB_NAVIGATION
 
 export default function TelegramShell({
   children,
@@ -135,34 +59,33 @@ export default function TelegramShell({
 
      Главная кнопка ведёт на форму подачи, а она закрыта: без входа
      человек внутри Telegram упирался в форму почты и пароля, которых у
-     него нет и быть не может — он пришёл из бота. Тупик на самой
-     заметной кнопке приложения.
-
-     Бот эту ловушку обходит: его кнопки ведут через мини-приложение,
-     где вход происходит сам. Здесь делаем то же — кнопка ждёт, пока
+     него нет и быть не может — он пришёл из бота. Кнопка ждёт, пока
      вход завершится. */
   signedIn?: boolean
 }) {
   const [ready, setReady] = useState(false)
-  /* Непрочитанные сообщения для значка на вкладке.
-
-     Тот же адрес, что у шапки сайта и бокового меню, и с теми же
-     условиями: запрос дорогой, и три места не должны дёргать его
-     каждое по-своему. */
-  const { data: shellStats } = useSWR<{ stats?: { unreadMessages?: number } }>(
+  /* Непрочитанные сообщения и уведомления — для значков на вкладке и
+     колокольчике. Тот же адрес, что у шапки сайта: запрос дорогой, и
+     три места не должны дёргать его каждое по-своему. */
+  const { data: shellStats } = useSWR<{ stats?: { unreadMessages?: number; unreadNotifications?: number } }>(
     "/api/dashboard/stats",
     fetchJson,
     { revalidateOnFocus: false, dedupingInterval: 20_000 },
   )
   const unreadMessages = shellStats?.stats?.unreadMessages || 0
+  const unreadNotifications = shellStats?.stats?.unreadNotifications || 0
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuMounted, setMenuMounted] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   const openMenu = useCallback(() => {
     setMenuMounted(true)
-    window.requestAnimationFrame(() => setMenuOpen(true))
+    window.requestAnimationFrame(() => {
+      setMenuOpen(true)
+      closeButtonRef.current?.focus({ preventScroll: true })
+    })
   }, [])
 
   const closeMenu = useCallback(() => {
@@ -170,21 +93,18 @@ export default function TelegramShell({
     menuButtonRef.current?.focus({ preventScroll: true })
   }, [])
 
+  /* Шторка уезжает 300 мс — размонтируем после, иначе уход обрывается. */
   useEffect(() => {
     if (menuOpen || !menuMounted) return
-    const timeout = window.setTimeout(() => setMenuMounted(false), 220)
+    const timeout = window.setTimeout(() => setMenuMounted(false), 320)
     return () => window.clearTimeout(timeout)
   }, [menuMounted, menuOpen])
 
-  /* Пока меню открыто, страница под ним стоит.
+  /* Пока шторка открыта, страница под ней стоит.
 
-     Затемнение перекрывало ленту только на вид: палец по нему двигал
-     список машин, и, закрыв меню, человек оказывался в другом месте
-     ленты, чем был. На телефоне это первое, что происходит, — по
-     затемнению нажимают, чтобы закрыть, и попутно смахивают.
-
-     Позиция запоминается и возвращается: фиксация страницы сама по
-     себе отматывает её наверх. */
+     Палец по затемнению двигал ленту, и, закрыв меню, человек оказывался
+     в другом месте ленты. Позиция запоминается и возвращается: фиксация
+     страницы сама по себе отматывает её наверх. */
   useEffect(() => {
     if (!menuMounted) return
 
@@ -221,9 +141,19 @@ export default function TelegramShell({
   }, [closeMenu, menuMounted])
 
   useEffect(() => {
+    /* Тема запоминается на сеанс: кабинет, объявление и форма подачи
+       открываются обычными страницами сайта. Приложение теперь светлое,
+       и страницы за ним тоже светлые — без вспышки тёмного кабинета
+       после светлой ленты. Отдельный ключ и хранилище сеанса не трогают
+       выбор темы на самом сайте. */
+    try {
+      sessionStorage.setItem("telegram-color-scheme", "light")
+    } catch {
+      // Приватный режим запрещает хранилище — тема просто не запомнится.
+    }
+
     const webApp = window.Telegram?.WebApp
     if (!webApp) {
-      // Открыто в обычном браузере: запасная тема уже задана в стилях.
       setReady(true)
       return
     }
@@ -231,62 +161,15 @@ export default function TelegramShell({
     webApp.ready?.()
     webApp.expand?.()
     /* Свайп вниз закрывает приложение — при прокрутке ленты это
-       происходит случайно и раздражает. Отключаем там, где платформа
-       позволяет. */
+       происходит случайно и раздражает. */
     webApp.disableVerticalSwipes?.()
-
-    const theme = webApp.themeParams || {}
-    const root = document.documentElement
-    for (const [key, fallback] of Object.entries(FALLBACK)) {
-      const value = theme[key as keyof TelegramThemeParams] || fallback
-      root.style.setProperty(`--tg-${key.replace(/_/g, "-")}`, value)
-    }
-    /* Короткие имена для стилей: полные названия платформы длинны и
-       читаются хуже в правилах. */
-    root.style.setProperty("--tg-bg", theme.bg_color || FALLBACK.bg_color)
-    root.style.setProperty("--tg-surface", theme.section_bg_color || theme.bg_color || FALLBACK.section_bg_color)
-    root.style.setProperty("--tg-elevated", theme.secondary_bg_color || FALLBACK.secondary_bg_color)
-    root.style.setProperty("--tg-text", theme.text_color || FALLBACK.text_color)
-    root.style.setProperty("--tg-hint", theme.hint_color || FALLBACK.hint_color)
-    root.style.setProperty("--tg-accent", theme.button_color || FALLBACK.button_color)
-    root.style.setProperty("--tg-accent-text", theme.button_text_color || FALLBACK.button_text_color)
-    root.style.setProperty("--tg-line", theme.section_separator_color || FALLBACK.section_separator_color)
-
-    /* Тема мессенджера сохраняется на время сеанса, а не навсегда.
-
-       Кабинет, объявление и форма подачи открываются как обычные
-       страницы, и скрипта Telegram там нет: человек с тёмным
-       мессенджером переходил из тёмной ленты в белый кабинет. Ради
-       этого тема и запоминается.
-
-       Раньше она писалась в тот же ключ, что и выбор темы на сайте, и
-       перекрывала его: открыв мини-приложение один раз, человек со
-       светлым сайтом и тёмным Telegram получал тёмный сайт в браузере
-       навсегда — при том что менял тему не там, где выбирал.
-
-       Отдельный ключ и хранилище сеанса решают обе задачи: внутри
-       Telegram страницы остаются тёмными, а закрыв мессенджер, человек
-       видит свой сайт таким, каким его настроил. */
-    try {
-      const scheme = webApp.colorScheme === "dark" ? "dark" : "light"
-      sessionStorage.setItem("telegram-color-scheme", scheme)
-    } catch {
-      // Приватный режим запрещает хранилище — тема просто не запомнится.
-    }
-
-    webApp.setHeaderColor?.(theme.bg_color || FALLBACK.bg_color)
-    webApp.setBackgroundColor?.(theme.secondary_bg_color || FALLBACK.secondary_bg_color)
+    webApp.setHeaderColor?.(APP_BG)
+    webApp.setBackgroundColor?.(APP_BG)
+    webApp.setBottomBarColor?.(APP_SURFACE)
     setReady(true)
 
-    /* Кнопка платформы зовёт разместить объявление.
-
-       Это самое заметное место в приложении: она всегда внизу экрана, во
-       всю ширину, цветом мессенджера — ссылка в ленте с ней не
-       сравнится. Приложение и делается ради того, чтобы машины
-       выкладывали отсюда.
-
-       На вкладке подачи её нет: звать туда, где человек уже находится,
-       незачем. */
+    /* Кнопка платформы зовёт разместить объявление: она всегда внизу
+       экрана во всю ширину — заметнее любой ссылки в ленте. */
     if (mainAction === false || !signedIn) {
       webApp.MainButton?.hide()
       return
@@ -299,9 +182,11 @@ export default function TelegramShell({
 
     webApp.MainButton?.setParams?.({
       text: "Разместить объявление",
-      color: theme.button_color || FALLBACK.button_color,
-      text_color: theme.button_text_color || FALLBACK.button_text_color,
+      color: APP_ACCENT,
+      text_color: "#ffffff",
       is_visible: true,
+      /* Блик по кнопке — с версии 7.10; старые клиенты поле пропускают. */
+      has_shine_effect: true,
     })
     webApp.MainButton?.setText("Разместить объявление")
     webApp.MainButton?.onClick(openCreate)
@@ -313,23 +198,12 @@ export default function TelegramShell({
     }
   }, [mainAction, signedIn])
 
-  /* Высота шапки нужна полю поиска: оно липнет под неё.
-
-     Числом её не задать — подпись бывает в одну строку и в две, а на
-     узком экране заголовок переносится. Замер показал 67 пикселей там,
-     где предполагалось 64, и верх поля прятался под шапкой. */
+  /* Высота шапки нужна полю поиска: оно липнет под неё. Числом её не
+     задать — подпись бывает в одну строку и в две. */
   const headRef = useRef<HTMLDivElement>(null)
-  /* Кнопка «назад» платформы.
 
-     В типе она описана, но не вызывалась ни разу — то есть её просто
-     не было. Комментарий рядом утверждал, что «назад» возвращает к
-     предыдущей вкладке; на деле человек, ушедший из ленты в объявление
-     или в меню, мог вернуться только закрыв приложение целиком:
-     вертикальные жесты в мини-приложении отключены, а другой кнопки
-     нет.
-
-     На корневой ленте кнопка не нужна: возвращаться оттуда некуда, и
-     лишняя стрелка предлагала бы выйти из приложения. */
+  /* Кнопка «назад» платформы. На корневой ленте не нужна: возвращаться
+     оттуда некуда, и лишняя стрелка предлагала бы выйти из приложения. */
   useEffect(() => {
     const webApp = window.Telegram?.WebApp
     const backButton = webApp?.BackButton
@@ -363,7 +237,6 @@ export default function TelegramShell({
     }
     apply()
 
-    // Высота меняется при повороте экрана и смене раздела.
     const observer = new ResizeObserver(apply)
     observer.observe(head)
     return () => observer.disconnect()
@@ -374,97 +247,125 @@ export default function TelegramShell({
       className="tg-shell"
       data-ready={ready || undefined}
       /* Панель вкладок стоит над главной кнопкой Telegram, а когда
-         кнопки нет — возвращается к нижнему краю: пустая полоса под ней
-         выглядела бы обрывом страницы. */
+         кнопки нет — опускается к нижнему краю. */
       data-main-button={mainAction === false || !signedIn ? "hidden" : undefined}
     >
       <Box className="tg-shell__head" ref={headRef}>
-        {/* Кнопка меню слева, как в мобильной версии сайта. */}
-        <button
-          ref={menuButtonRef}
-          type="button"
-          className="tg-shell__menu-button"
-          onClick={() => {
-            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
-            openMenu()
-          }}
-          aria-label="Открыть меню"
-          aria-expanded={menuOpen}
-        >
-          <IconMenu2 size={20} />
-        </button>
+        <Link href="/telegram" className="tg-shell__brand" aria-label="LeWheel — свежие объявления">
+          {/* eslint-disable-next-line @next/next/no-img-element -- знак 128 пикселей, оптимизатор не нужен */}
+          <img src="/images/telegram/mark-128.webp" width={36} height={36} alt="" aria-hidden="true" />
+        </Link>
 
         <Box className="tg-shell__heading">
           <Text className="tg-shell__title">{title}</Text>
           {subtitle && <Text className="tg-shell__subtitle">{subtitle}</Text>}
         </Box>
+
+        <Link
+          href="/notifications?from=telegram"
+          className="tg-shell__icon-button"
+          aria-label={unreadNotifications > 0 ? `Уведомления: ${unreadNotifications} новых` : "Уведомления"}
+          onClick={() => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")}
+        >
+          <MiniArt kind="notifications" size={24} />
+          {unreadNotifications > 0 && <span className="tg-dot" aria-hidden="true" />}
+        </Link>
+
+        <button
+          ref={menuButtonRef}
+          type="button"
+          className="tg-shell__icon-button"
+          onClick={() => {
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")
+            openMenu()
+          }}
+          aria-label="Все разделы"
+          aria-expanded={menuOpen}
+          aria-haspopup="dialog"
+        >
+          <IconLayoutGrid size={20} stroke={1.9} />
+        </button>
       </Box>
 
-      {/* Выезжающее меню.
+      {/* Шторка разделов.
 
-          Прежде здесь был ряд вкладок, повторявший нижнюю навигацию.
-          Меню вмещает то, чему не нашлось места внизу, и приходит сбоку —
-          так видно, откуда оно и куда уйдёт. */}
+          Выезжающее слева меню было списком мелкого текста, где у части
+          строк не было значков, а у выбранной белая надпись стояла на
+          голубом и не читалась. Шторка снизу — привычный жест iOS и
+          Android, и до неё дотягивается большой палец. */}
       {menuMounted && (
         <>
+          <Box className="tg-sheet__backdrop" data-open={menuOpen || undefined} onClick={closeMenu} aria-hidden="true" />
           <Box
-            className="tg-menu__backdrop"
+            className="tg-sheet"
             data-open={menuOpen || undefined}
-            onClick={closeMenu}
-            aria-hidden="true"
-          />
-          <Box component="nav" className="tg-menu" data-open={menuOpen || undefined} aria-label="Разделы" aria-hidden={!menuOpen}>
-            <Box className="tg-menu__head">
-              <Text className="tg-menu__brand">LeWheel</Text>
-              <button
-                type="button"
-                className="tg-menu__close"
-                onClick={closeMenu}
-                tabIndex={menuOpen ? undefined : -1}
-                aria-label="Закрыть меню"
-              >
+            role="dialog"
+            aria-modal="true"
+            aria-label="Все разделы"
+          >
+            <span className="tg-sheet__grabber" aria-hidden="true" />
+            <Box className="tg-sheet__head">
+              <Text className="tg-sheet__title">Все разделы</Text>
+              <button ref={closeButtonRef} type="button" className="tg-sheet__close" onClick={closeMenu} aria-label="Закрыть">
                 <IconX size={18} />
               </button>
             </Box>
 
-            {MENU_SECTIONS.map((section) => (
-              <Box key={section.title} className="tg-menu__section">
-                <Text className="tg-menu__section-title">{section.title}</Text>
-                {section.items.map(({ href, label, Icon }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="tg-menu__item"
-                    data-active={href === activeTab || undefined}
-                    onClick={() => {
-                      window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()
-                      closeMenu()
-                    }}
-                    tabIndex={menuOpen ? undefined : -1}
-                  >
-                    {Icon ? <Icon size={18} stroke={1.8} /> : <span className="tg-menu__flag" />}
-                    <span>{label}</span>
-                  </Link>
-                ))}
-              </Box>
-            ))}
+            <Box className="tg-sheet__scroll">
+              {TELEGRAM_MENU_NAVIGATION.map((section) => (
+                <Box key={section.title} component="nav" className="tg-sheet__section" aria-label={section.title}>
+                  <Text className="tg-sheet__section-title">{section.title}</Text>
+                  {section.title === COUNTRY_SECTION ? (
+                    <Box className="tg-sheet__countries">
+                      {section.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="tg-sheet__country"
+                          onClick={() => {
+                            window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()
+                            closeMenu()
+                          }}
+                        >
+                          <AuctionFlag country={item.id} />
+                          <span>{item.label}</span>
+                        </Link>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Box className="tg-sheet__grid">
+                      {section.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="tg-sheet__tile"
+                          data-active={item.href === activeTab || undefined}
+                          aria-current={item.href === activeTab ? "page" : undefined}
+                          onClick={() => {
+                            window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()
+                            closeMenu()
+                          }}
+                        >
+                          <span className="tg-sheet__tile-art"><MiniArt kind={item.id} size={40} /></span>
+                          <span className="tg-sheet__tile-label">{item.label}</span>
+                        </Link>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+              ))}
+            </Box>
           </Box>
         </>
       )}
 
-      <Box className="tg-shell__body">
-        {activeTab === "/telegram" && (
-          <nav className="lw-mini-tools" aria-label="Быстрые действия">
-            <Link href="/telegram?tab=auctions"><ServiceArtwork kind="auctions" size={72} /><span>Аукционы</span></Link>
-            <Link href="/services/fuel-map?from=telegram"><ServiceArtwork kind="fuel-map" size={72} /><span>Карта АЗС</span></Link>
-            <Link href="/dashboard?tab=garage&from=telegram"><ServiceArtwork kind="garage" size={72} /><span>Мой гараж</span></Link>
-          </nav>
-        )}
-        {children}
-      </Box>
+      <Box className="tg-shell__body">{children}</Box>
 
+      {/* Плавающая панель вкладок со стеклом — как в iOS 26 и Material 3:
+          объёмные значки вместо контурных, выбранная вкладка — на
+          подложке, которая въезжает пружиной. */}
       <Box component="nav" className="tg-nav" aria-label="Разделы приложения">
-        {TABS.map(({ href, label, Icon, accent }) => {
+        {TABS.map(({ id, href, label }) => {
           const active = href === activeTab
           return (
             <Link
@@ -472,19 +373,12 @@ export default function TelegramShell({
               href={href}
               className="tg-nav__item"
               data-active={active || undefined}
-              data-accent={accent || undefined}
               onClick={() => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")}
               aria-current={active ? "page" : undefined}
             >
               <Box className="tg-nav__icon">
-                <Icon size={accent ? 21 : 19} stroke={active ? 2.2 : 1.8} />
-                {/* Непрочитанные видно, не заходя в переписку.
-
-                    Счётчик был только внутри строки чата — то есть
-                    там, куда ещё надо дойти. Человек, которому написал
-                    продавец, узнавал об этом, лишь открыв вкладку
-                    наугад: уведомление приходит не всем, а красной
-                    точки на вкладке не было. */}
+                <MiniArt kind={id} size={28} />
+                {/* Непрочитанные видно, не заходя в переписку. */}
                 {href.includes("tab=chats") && unreadMessages > 0 && (
                   <span className="tg-nav__badge">{unreadMessages > 9 ? "9+" : unreadMessages}</span>
                 )}

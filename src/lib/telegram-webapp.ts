@@ -58,6 +58,8 @@ export type TelegramWebApp = {
 
   setHeaderColor?: (color: string) => void
   setBackgroundColor?: (color: string) => void
+  /** С версии 7.10. Цвет полосы под главной кнопкой. */
+  setBottomBarColor?: (color: string) => void
   /** С версии 7.7. Свайп вниз закрывает приложение — при прокрутке ленты это происходит случайно. */
   disableVerticalSwipes?: () => void
   enableVerticalSwipes?: () => void

@@ -1,48 +1,73 @@
 /* Приложение LeWheel внутри Telegram.
  *
- * Оформление держится на переменных платформы: цвета приходят из темы
- * мессенджера и подставляются в TelegramShell. Приложение выглядит родным
- * и в светлой теме, и в тёмной, и у тех, кто поставил свою — чужеродная
- * белая страница внутри тёмного Telegram первое, что выдаёт наспех
- * сделанное приложение.
+ * Своя светлая палитра вместо темы мессенджера: владелец попросил
+ * светлое, сочное приложение «как для iOS и Android». Прежняя лента
+ * брала цвета Telegram и в тёмной теме выглядела мрачно, а титановые
+ * значки на тёмном фоне терялись.
  *
- * Запасные значения подобраны под тёмное оформление по умолчанию:
- * приложение в старом клиенте не должно вспыхивать белым.
+ * Фирменный цвет — бирюзово-нефтяной, тот же, что в эмали значков:
+ * значки и кнопки говорят на одном языке. Сочность дают живые
+ * фотографии и цветные подборки, а не краска на каждой кнопке.
+ *
+ * Движение — короткое и пружинистое, как в системных приложениях, и
+ * гасится целиком при «Уменьшить движение» в настройках телефона.
  */
 
 :root {
-  --tg-bg: #17212b;
-  --tg-surface: #1d2733;
-  --tg-elevated: #0e1621;
-  --tg-text: #ffffff;
-  --tg-hint: #708499;
-  --tg-accent: #5288c1;
+  --tg-bg: #f2f5f9;
+  --tg-surface: #ffffff;
+  --tg-elevated: #f2f5f9;
+  --tg-text: #0b1420;
+  --tg-hint: #5d6b7e;
+  --tg-accent: #0b7285;
+  --tg-accent-strong: #095c6b;
+  --tg-accent-soft: #e2f3f5;
   --tg-accent-text: #ffffff;
-  --tg-line: #101921;
+  --tg-line: #e2e8f0;
+  --tg-fresh: #12805c;
+  --tg-shadow: 0 1px 2px rgb(15 40 60 / 6%), 0 10px 28px -14px rgb(15 40 60 / 22%);
+  --tg-shadow-lift: 0 2px 6px rgb(15 40 60 / 8%), 0 18px 40px -18px rgb(15 40 60 / 32%);
+  --tg-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --tg-out: cubic-bezier(0.23, 1, 0.32, 1);
 
-  /* Высота нижней навигации плюс безопасный отступ снизу: под лентой
-     должно оставаться место, иначе последняя карточка уезжает под панель. */
-  --tg-nav-height: 58px;
+  /* Высота нижней панели: под лентой должно оставаться место, иначе
+     последняя карточка уезжает под неё. */
+  --tg-nav-height: 64px;
+  /* Единая ось содержимого — 12 пикселей от края экрана. */
+  --tg-edge: 12px;
+  --tg-card-gap: 12px;
+}
 
-  /* Зазор между карточками: 8 пикселей у auto.ru, 10 у drom.ru. */
-  --tg-card-gap: 8px;
+body:has(.tg-shell) {
+  background: var(--tg-bg);
 }
 
 .tg-shell {
   display: flex;
   min-height: 100dvh;
   flex-direction: column;
-  background: var(--tg-elevated);
+  background:
+    radial-gradient(120% 60% at 100% 0%, rgb(11 114 133 / 9%) 0%, transparent 60%),
+    radial-gradient(90% 50% at 0% 0%, rgb(255 170 60 / 8%) 0%, transparent 55%),
+    var(--tg-bg);
   color: var(--tg-text);
-  /* Пока тема не пришла, показываем запасные цвета без мигания. */
   opacity: 0;
-  transition: opacity 160ms ease-out;
+  transition: opacity 180ms ease-out;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .tg-shell[data-ready] {
   opacity: 1;
 }
 
+/* Внутри приложения есть свои чаты, а круглая кнопка поддержки сайта
+   висела поверх фотографий машин. Поддержка — в шторке разделов. */
+body:has(.tg-shell) .support-chat__launcher {
+  display: none;
+}
+
+/* Шапка — стекло: лента просвечивает под ней, как в системных
+   приложениях. Без поддержки размытия остаётся плотная подложка. */
 .tg-shell__head {
   position: sticky;
   z-index: 5;
@@ -50,120 +75,579 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px var(--tg-edge) 10px;
-  border-bottom: 1px solid var(--tg-line);
-  background: var(--tg-bg);
+  padding: 10px var(--tg-edge);
+  border-bottom: 1px solid rgb(226 232 240 / 70%);
+  background: rgb(242 245 249 / 82%);
+  -webkit-backdrop-filter: saturate(1.8) blur(18px);
+  backdrop-filter: saturate(1.8) blur(18px);
+}
+
+.tg-shell__brand {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--tg-shadow);
+}
+
+.tg-shell__brand img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
 }
 
 .tg-shell__heading {
   min-width: 0;
-}
-
-/* Кнопка меню слева — там же, где она в мобильной версии сайта. */
-.tg-shell__menu-button {
-  display: flex;
-  /* 44 пикселя — норма зоны нажатия для пальца. */
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--tg-hint) 16%, transparent);
-  color: var(--tg-text);
-  cursor: pointer;
-  transition: background 120ms ease-out, transform 120ms ease-out;
-}
-
-.tg-shell__menu-button:active {
-  transform: scale(0.94);
-  background: color-mix(in srgb, var(--tg-accent) 24%, transparent);
+  flex: 1;
 }
 
 .tg-shell__title {
+  overflow: hidden;
   font-family: var(--font-display), sans-serif;
-  font-size: var(--text-lg);
+  font-size: 19px;
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--tg-text);
 }
 
 .tg-shell__subtitle {
-  margin-top: 2px;
-  font-size: var(--text-xs);
+  overflow: hidden;
+  margin-top: 1px;
+  font-size: 12px;
   line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--tg-hint);
 }
 
+/* Круглые кнопки шапки: 44 пикселя — норма зоны нажатия для пальца. */
+.tg-shell__icon-button {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--tg-shadow);
+  color: var(--tg-text);
+  cursor: pointer;
+  transition: transform 160ms var(--tg-out);
+}
+
+.tg-shell__icon-button:active {
+  transform: scale(0.92);
+}
+
+.tg-shell__icon-button:focus-visible,
+.tg-nav__item:focus-visible,
+.tg-sheet__tile:focus-visible,
+.tg-kind:focus-visible,
+.tg-story:focus-visible,
+.tg-promo:focus-visible,
+.tg-card:focus-visible {
+  outline: 2px solid var(--tg-accent);
+  outline-offset: 2px;
+}
+
+.tg-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #f03e3e;
+}
+
 .tg-shell__body {
+  display: flex;
   flex: 1;
-  /* Боковых полей нет: у auto.ru и drom.ru карточка занимает все 390
-     пикселей экрана. Наши прежние поля по 10 отнимали двадцать пикселей
-     у фотографии — на телефоне это заметно. */
-  /* Запас под навигацией больше её высоты: у панели сверху рамка, а
-     снизу безопасный отступ экрана. Без запаса последняя карточка
-     заходила под неё на шесть пикселей. */
-  padding: 10px 0 calc(var(--tg-nav-height) + var(--tg-main-button-height, 0px) + env(safe-area-inset-bottom, 0px) + 20px);
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 0 calc(var(--tg-nav-height) + var(--tg-main-button-height, 0px) + env(safe-area-inset-bottom, 0px) + 32px);
 }
 
-/* Карточка отделяется от соседней подложкой, а не отступом от края. */
-.tg-shell__body > * > .tg-card {
-  border-radius: 0;
+/* Карточки и плашки держат общий отступ от края. На планшете и в
+   настольном Telegram лента не растягивается шире удобного. */
+.tg-shell__body > * {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
 }
 
-@media (min-width: 400px) {
-  /* На широком экране поля возвращаются: карточка во всю ширину
-     планшета выглядит растянутой. */
-  .tg-shell__body {
-    padding-inline: var(--tg-edge);
+/* ===== Верх главного экрана ===== */
+
+.tg-home {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Круглые разделы: живые фото в цветном кольце. */
+.tg-stories {
+  display: flex;
+  gap: 14px;
+  padding: 2px var(--tg-edge) 4px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: var(--tg-edge);
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.tg-stories::-webkit-scrollbar {
+  display: none;
+}
+
+.tg-story {
+  display: flex;
+  width: 70px;
+  flex: 0 0 70px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--tg-text);
+  text-decoration: none;
+  scroll-snap-align: start;
+  animation: tg-pop 460ms var(--tg-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+.tg-story__ring {
+  display: grid;
+  width: 70px;
+  height: 70px;
+  place-items: center;
+  padding: 2.5px;
+  border-radius: 50%;
+  background: conic-gradient(from 200deg, #0b7285, #20c997, #ffd43b, #ff6b35, #f03e3e, #0b7285);
+  transition: transform 180ms var(--tg-out);
+}
+
+.tg-story__ring img {
+  width: 100%;
+  height: 100%;
+  border: 2.5px solid #fff;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #dfe7ee;
+}
+
+.tg-story:active .tg-story__ring {
+  transform: scale(0.92);
+}
+
+.tg-story__label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Подборки: одна карточка на экран, листаются пальцем. */
+.tg-promos__track {
+  display: flex;
+  gap: 10px;
+  padding: 4px var(--tg-edge) 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: var(--tg-edge);
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.tg-promos__track::-webkit-scrollbar {
+  display: none;
+}
+
+.tg-promo {
+  --tone: #0b7285;
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  width: min(88%, 460px);
+  flex: 0 0 min(88%, 460px);
+  aspect-ratio: 16 / 8.6;
+  isolation: isolate;
+  border-radius: 24px;
+  background: #062a31;
+  box-shadow: var(--tg-shadow-lift);
+  color: #fff;
+  text-decoration: none;
+  scroll-snap-align: start;
+  transition: transform 200ms var(--tg-out);
+}
+
+.tg-promo[data-tone="amber"] { --tone: #b4410b; }
+.tg-promo[data-tone="blue"] { --tone: #1c4fd6; }
+.tg-promo[data-tone="coral"] { --tone: #c92a2a; }
+
+.tg-promo:active {
+  transform: scale(0.97);
+}
+
+.tg-promo__scene {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 78% 50%;
+}
+
+/* Цветная вуаль слева: под текстом сплошной тон подборки, справа
+   открывается сцена. Белый текст на тоне проходит контраст 4.5:1. */
+.tg-promo::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(90deg, var(--tone) 0%, color-mix(in srgb, var(--tone) 88%, transparent) 38%, color-mix(in srgb, var(--tone) 20%, transparent) 70%, transparent 100%),
+    linear-gradient(0deg, rgb(0 0 0 / 18%), transparent 40%);
+  content: "";
+}
+
+.tg-promo__body {
+  display: flex;
+  max-width: 62%;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 16px;
+}
+
+.tg-promo__title {
+  font-family: var(--font-display), sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.tg-promo__text {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 88%);
+}
+
+.tg-promo__action {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--tone);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.tg-promos__dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Точка — кнопка, и зона нажатия у неё больше рисунка. */
+.tg-promos__dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #c4cfdb;
+  cursor: pointer;
+  transition: width 260ms var(--tg-spring), background-color 200ms ease;
+}
+
+.tg-promos__dot::before {
+  position: absolute;
+  inset: -10px -4px;
+  content: "";
+}
+
+.tg-promos__dot[data-active] {
+  width: 20px;
+  background: var(--tg-accent);
+}
+
+/* Плашка входа: одна строка с переходом в бота, фирменный синий
+   Telegram — сразу понятно, куда ведёт. */
+.tg-signin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 2 * var(--tg-edge));
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #229ed9 0%, #1c7fd6 100%);
+  box-shadow: 0 12px 26px -16px rgb(28 127 214 / 70%);
+  color: #fff;
+  text-decoration: none;
+  transition: transform 180ms var(--tg-out);
+}
+
+.tg-signin[data-tone="error"] {
+  background: linear-gradient(120deg, #e03131 0%, #c92a2a 100%);
+  box-shadow: 0 12px 26px -16px rgb(201 42 42 / 70%);
+}
+
+.tg-signin:active {
+  transform: scale(0.98);
+}
+
+.tg-signin__icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 20%);
+}
+
+.tg-signin__text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 90%);
+}
+
+.tg-signin__text strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.tg-signin__chevron {
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+/* ===== Поиск и типы техники ===== */
+
+.tg-search {
+  position: sticky;
+  z-index: 4;
+  /* Под шапкой: отступ считается от её настоящей высоты. */
+  top: var(--tg-head-height, 64px);
+  padding: 6px var(--tg-edge);
+  background: linear-gradient(to bottom, var(--tg-bg) 70%, rgb(242 245 249 / 0%));
+}
+
+.tg-search__input input {
+  height: 46px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--tg-shadow);
+  color: var(--tg-text);
+  font-size: 15px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tg-search__input input::placeholder {
+  color: #8a97a8;
+}
+
+.tg-search__input input:focus {
+  border-color: var(--tg-accent);
+  box-shadow: 0 0 0 4px rgb(11 114 133 / 14%);
+  outline: none;
+}
+
+.tg-search__input .mantine-Input-section {
+  color: var(--tg-hint);
+}
+
+.tg-search__clear {
+  display: flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: #e9eef4;
+  color: var(--tg-text);
+  cursor: pointer;
+}
+
+/* Плитки типов техники со значками каталога. */
+.tg-kinds {
+  display: flex;
+  gap: 8px;
+  padding: 0 var(--tg-edge) 2px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.tg-kinds::-webkit-scrollbar {
+  display: none;
+}
+
+.tg-kind {
+  display: flex;
+  min-width: 76px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 8px 9px;
+  border: 1.5px solid transparent;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--tg-shadow);
+  color: var(--tg-text);
+  cursor: pointer;
+  font: inherit;
+  transition: transform 160ms var(--tg-out), border-color 180ms ease, background-color 180ms ease;
+}
+
+.tg-kind:active {
+  transform: scale(0.94);
+}
+
+.tg-kind__art {
+  display: grid;
+  width: 44px;
+  height: 36px;
+  place-items: center;
+}
+
+.tg-kind__art .tg-art {
+  width: 40px;
+  height: 34px;
+  object-fit: contain;
+  transition: transform 260ms var(--tg-spring);
+}
+
+.tg-kind__label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.tg-kind[data-active] {
+  border-color: var(--tg-accent);
+  background: var(--tg-accent-soft);
+  color: var(--tg-accent-strong);
+}
+
+.tg-kind[data-active] .tg-art {
+  transform: scale(1.1) translateY(-1px);
+}
+
+/* Подборки аукционов — прежние кнопки-капсулы, в новой палитре. */
+.tg-types {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
+}
+
+.tg-types::-webkit-scrollbar {
+  display: none;
+}
+
+.tg-types__chip {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--tg-shadow);
+  color: var(--tg-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 34px;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms var(--tg-out);
+}
+
+.tg-types__chip[data-active] {
+  background: var(--tg-accent);
+  color: var(--tg-accent-text);
+}
+
+.tg-types__chip:active {
+  transform: scale(0.95);
+}
+
+/* ===== Карточки ===== */
+
+.tg-feed {
+  padding-inline: var(--tg-edge);
+  transition: opacity 140ms ease-out;
+}
+
+.tg-feed[data-updating] {
+  opacity: 0.6;
+}
+
+@media (min-width: 40em) {
+  /* Важность повышена: класс висит на Stack из Mantine, а тот задаёт
+     flex-колонку своими стилями. */
+  .tg-feed.tg-feed {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    align-items: start;
   }
-
-  .tg-shell__body > * > .tg-card {
-    border-radius: 16px;
-  }
 }
 
-/* Карточка машины — вертикальная, фото во всю ширину.
- *
- * Сначала я сделал горизонтальную ради плотности: помещается больше
- * объявлений на экран. Замер показал цену этого решения — карточка
- * вышла 99 пикселей высотой против 333 у auto.ru и 391 у drom.ru, и
- * машину в таком кадре почти не видно.
- *
- * Обе площадки независимо пришли к вертикальной раскладке с фото во всю
- * ширину: покупатель выбирает машину глазами, и фотография здесь важнее
- * плотности списка.
- */
 .tg-card {
   display: block;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 22px;
   background: var(--tg-surface);
+  box-shadow: var(--tg-shadow);
   color: inherit;
   text-decoration: none;
-  /* Тени нет намеренно: у auto.ru и drom.ru `box-shadow: none` —
-     карточку от фона отделяет подложка. На тёмной теме тень и не
-     читается вовсе. */
-  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background 140ms ease-out;
+  transition: transform 160ms var(--tg-out), box-shadow 200ms ease;
+  animation: tg-rise 480ms var(--tg-out) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
 }
 
-/* Нажатие подтверждается вдавливанием — на телефоне наведения нет, и
-   это единственный способ показать, что касание принято. */
 .tg-card:active {
-  transform: scale(0.985);
-  background: color-mix(in srgb, var(--tg-accent) 8%, var(--tg-surface));
+  transform: scale(0.98);
+  box-shadow: var(--tg-shadow-lift);
 }
 
 .tg-card__media {
   position: relative;
   overflow: hidden;
   width: 100%;
-  /* Кадр 4:3 — одинаково у auto.ru и drom.ru. Наше прежнее 1,25 было
-     исключением, а привычка у людей сложилась по этим площадкам. */
+  /* Кадр 4:3 — как у auto.ru и drom.ru: привычка сложилась по ним. */
   aspect-ratio: 4 / 3;
-  background: var(--tg-elevated);
+  background: #e6ecf2;
 }
 
 .tg-card__media img {
@@ -181,403 +665,114 @@
   color: var(--tg-hint);
 }
 
+/* Метка на фото — матовое стекло, а не синий прямоугольник: флаг
+   страны и «Сегодня» читаются на любом снимке. */
 .tg-card__badge {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 10px;
+  left: 10px;
+  height: 24px;
+  padding-inline: 9px;
   border: 0;
-  background: var(--tg-accent);
-  color: var(--tg-accent-text);
-  font-weight: 700;
+  background: rgb(255 255 255 / 88%);
+  color: var(--tg-text);
+  font-weight: 800;
+  text-transform: none;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.tg-card__badge[data-fresh] {
+  background: var(--tg-fresh);
+  color: #fff;
 }
 
 .tg-card__body {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 3px;
-  padding: 10px var(--tg-edge) 12px;
+  gap: 4px;
+  padding: 12px 14px 14px;
 }
 
 /* Цена первой строкой и крупнее остального: листая ленту, человек
-   сравнивает цены, а не названия. 24 пикселя и вес 700 — так набрана
-   цена и у auto.ru, и у drom.ru. */
+   сравнивает цены, а не названия. */
 .tg-card__price {
   font-family: var(--font-display), sans-serif;
-  font-size: var(--text-xl);
-  font-weight: 700;
+  font-size: 23px;
+  font-weight: 800;
   line-height: 1.1;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   color: var(--tg-text);
   font-variant-numeric: tabular-nums;
 }
 
 .tg-card__title {
-  /* 15 пикселей: у auto.ru столько же, у drom.ru 18 — наши прежние 14
-     были мельче обоих. Название машины не должно теряться под ценой. */
-  font-size: var(--text-md);
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 650;
   line-height: 1.25;
-  color: color-mix(in srgb, var(--tg-text) 82%, transparent);
+  color: #26334a;
+}
+
+.tg-card__note {
+  margin-top: -2px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--tg-hint);
 }
 
 .tg-card__facts {
-  font-size: var(--text-xs);
+  margin-top: 2px;
+  font-size: 12px;
   color: var(--tg-hint);
 }
 
 .tg-card__facts > span {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
   white-space: nowrap;
 }
 
 .tg-card__place {
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Нижняя навигация.
- *
- * Пять разделов — предел: шестой сжимает подписи до нечитаемых. Порядок
- * по частоте: машины, аукционы, подача (главное действие площадки),
- * избранное, профиль.
- */
-/* Панель встаёт над главной кнопкой Telegram.
-
-   Кнопка платформы рисуется клиентом в самом низу экрана во всю
-   ширину, а панель стояла там же — пять вкладок либо оказывались под
-   ней, либо выдавливались за край.
-
-   Высота кнопки известна платформе, но не странице; шестьдесят
-   пикселей — её обычный размер в мессенджере. Переменная задаётся
-   здесь, чтобы запас под содержимым и положение панели считались от
-   одного числа и не разъезжались. */
-.tg-shell,
-/* Переменная объявляется и на body тоже.
-
-   На .tg-shell её видят только потомки, а кнопка чата поддержки живёт
-   рядом с оболочкой, а не внутри неё: в её правиле переменная не
-   разрешалась и падала в ноль. Кнопка вставала на 76 пикселей, панель
-   вкладок при поднятой главной кнопке Telegram занимала полосу с 60 до
-   118 — они пересекались, и нажатие на «Бензин» открывало чат поддержки
-   вместо карты заправок.
-
-   Значение выставляется по тому же признаку, что и на оболочке: разметка
-   ставит data-main-button на .tg-shell, а :has поднимает это состояние на
-   body, откуда его видно всем. */
-body:has(.tg-shell) {
-  --tg-main-button-height: 60px;
-}
-
-/* Кнопки нет — панель возвращается к нижнему краю: пустая полоса под
-   ней выглядела бы обрывом страницы. */
-.tg-shell[data-main-button="hidden"],
-body:has(.tg-shell[data-main-button="hidden"]) {
-  --tg-main-button-height: 0px;
-}
-
-.tg-nav {
-  position: fixed;
-  z-index: 20;
-  right: 0;
-  bottom: var(--tg-main-button-height, 0px);
-  left: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  border-top: 1px solid var(--tg-line);
-  background: var(--tg-bg);
-}
-
-.tg-nav__item {
-  display: flex;
-  height: var(--tg-nav-height);
-  flex-direction: column;
+.tg-card__stat {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 3px;
-  color: var(--tg-hint);
-  text-decoration: none;
-  transition: color 120ms ease-out, transform 120ms ease-out;
+  font-variant-numeric: tabular-nums;
 }
 
-.tg-nav__item:active {
-  transform: scale(0.94);
+/* Заготовка карточки на время загрузки. */
+.tg-card--skeleton {
+  animation: none;
 }
 
-.tg-nav__item[data-active] {
-  color: var(--tg-accent);
+.tg-skeleton {
+  display: block;
+  background: linear-gradient(100deg, #e6ecf2 30%, #f4f7fa 50%, #e6ecf2 70%);
+  background-size: 300% 100%;
+  animation: tg-shimmer 1.3s linear infinite;
 }
 
-/* Подача выделена: это главное действие площадки, ради него приложение и
-   существует. Значок в круге фирменного цвета — как в приложениях, где
-   создание отличают от навигации. */
-.tg-nav__item[data-accent] {
-  color: var(--tg-accent-text);
+.tg-skeleton--line {
+  height: 14px;
+  border-radius: 7px;
 }
 
-.tg-nav__item[data-accent] svg {
-  padding: 6px;
-  border-radius: 50%;
-  background: var(--tg-accent);
-  box-sizing: content-box;
+.tg-skeleton--line + .tg-skeleton--line {
+  margin-top: 6px;
 }
 
-.tg-nav__label {
-  /* Ступень шкалы вместо дробного rem: 0.62rem при базе страницы 15
-     пикселей даёт 9.3 — край буквы попадает между пикселями экрана, и
-     подпись отрисовывается мягче, чем должна. Мини-приложение читают с
-     телефона, где это заметнее всего. */
-  font-size: var(--text-2xs);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.01em;
-}
-
-/* Служебное сообщение: вход не прошёл или приложение открыто вне
-   Telegram. Не занимает весь экран — лента под ним всё равно работает. */
-.tg-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--tg-accent) 14%, var(--tg-surface));
-  color: var(--tg-text);
-}
-
-.tg-notice[data-tone="error"] {
-  background: color-mix(in srgb, #e03131 18%, var(--tg-surface));
-}
-
-/* Приглушённая строка состояния: вход ещё идёт, но лента уже видна.
-
-   Обычный tg-notice подсвечен акцентом и читается как важное
-   сообщение. Здесь же речь о фоновой работе, которая закончится сама
-   через секунду, — она не должна перетягивать внимание с машин. */
-.tg-notice[data-tone="muted"] {
-  align-items: center;
-  padding: 8px 12px;
-  background: color-mix(in srgb, var(--tg-hint) 12%, var(--tg-surface));
-  color: var(--tg-hint);
-}
-
-.tg-button {
-  height: 46px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--tg-accent);
-  color: var(--tg-accent-text);
-  font-weight: 700;
-}
-
-.tg-button:active {
-  transform: scale(0.985);
-}
-
-/* Движение гасится, если человек об этом попросил в настройках
-   устройства: вдавливание и переходы исчезают, поведение остаётся. */
-@media (prefers-reduced-motion: reduce) {
-  .tg-shell,
-  .tg-card,
-  .tg-nav__item,
-  .tg-button {
-    transition: none;
-  }
-
-  .tg-card:active,
-  .tg-nav__item:active,
-  .tg-button:active {
-    transform: none;
-  }
-}
-
-/* Подпись под ценой лота: она не итоговая.
-
-   В ленте объявлений цена — это то, за что продают. У аукционного лота
-   она означает другое: стоимость лота с комиссией, без пошлины и
-   доставки. Без подписи человек сравнивал бы несравнимое. */
-.tg-card__note {
-  margin-top: -1px;
-  font-size: var(--text-caps);
-  line-height: 1.2;
-  color: var(--tg-hint);
-}
-
-/* Поиск в ленте.
-
-   Без него лента годится, пока объявлений десяток: дальше человек,
-   которому нужна конкретная марка, листает вслепую. У auto.ru поле
-   поиска липкое и прячется при прокрутке вниз — здесь оно просто
-   липкое: приложение короче сайта, и прятать нечего.
-
-   Поле стоит под шапкой, а не в ней: шапка в Telegram своя, и
-   нагромождать два ряда над лентой значит отнять у неё экран. */
-/* Единая ось содержимого — 12 пикселей от края экрана.
-
-   Замер показал четыре разные: заголовок на 62, поиск на 10, карточка на
-   0, цена на 12. Взгляд спотыкается на каждой строке, а вместе это
-   читается как несобранность.
-
-   Двенадцать — внутренний отступ карточки: подписи под фотографией
-   встают ровно под полем поиска. */
-:root {
-  --tg-edge: 12px;
-}
-
-.tg-search {
-  position: sticky;
-  z-index: 4;
-  /* Под шапкой, а не под ней же.
-
-     Обе полосы липкие, но шапка выше по слою: при прокрутке поле
-     поиска целиком уходило под неё, и искать становилось нечем, пока
-     не вернёшься в самый верх.
-
-     Отступ считается от самой шапки, а не задан числом: подпись бывает
-     в одну строку и в две, и высота меняется. Замер показал 67
-     пикселей там, где предполагалось 64. */
-  top: var(--tg-head-height, 68px);
-  padding: 8px var(--tg-edge);
-  background: var(--tg-elevated);
-}
-
-.tg-search__input input {
-  height: 42px;
-  border: 1px solid color-mix(in srgb, var(--tg-hint) 26%, transparent);
-  border-radius: 12px;
-  background: var(--tg-surface);
-  color: var(--tg-text);
-  font-size: var(--text-md);
-}
-
-.tg-search__input input::placeholder {
-  color: var(--tg-hint);
-}
-
-.tg-search__input input:focus {
-  border-color: var(--tg-accent);
-  outline: none;
-}
-
-/* Лента типов техники под поиском.
-
-   Прокручивается вбок: семь кнопок в строку не помещаются даже на
-   широком телефоне, а в столбик заняли бы пол-экрана. Частые «Все» и
-   «Легковые» видны сразу, редкие уезжают за край — растворение у правого
-   края показывает, что список продолжается. */
-.tg-types {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
-}
-
-.tg-types::-webkit-scrollbar {
-  display: none;
-}
-
-.tg-types__chip {
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 0 13px;
-  border: 1px solid color-mix(in srgb, var(--tg-hint) 26%, transparent);
-  border-radius: 999px;
-  background: var(--tg-surface);
-  color: var(--tg-text);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 30px;
-  white-space: nowrap;
-  /* Перечислены свойства, а не all: анимировать заодно размеры и границы
-     значит гонять пересчёт вёрстки на каждое касание. */
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
-}
-
-/* Выбранный тип заливается акцентом темы: на солнце рамка не читается,
-   а заливка видна и боковым зрением. */
-.tg-types__chip[data-active] {
-  border-color: var(--tg-accent);
-  background: var(--tg-accent);
-  color: var(--tg-accent-text);
-}
-
-.tg-types__chip:active {
-  transform: scale(0.97);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tg-types__chip {
-    transition: none;
-  }
-
-  .tg-types__chip:active {
-    transform: none;
-  }
-}
-
-/* Значок поиска и кнопка очистки берут приглушённый цвет темы. */
-.tg-search__input .mantine-Input-section {
-  color: var(--tg-hint);
-}
-
-.tg-search__clear {
-  display: flex;
-  padding: 4px;
-  border: 0;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--tg-hint) 22%, transparent);
-  color: var(--tg-text);
-  cursor: pointer;
-}
-
-/* Выдача приглушается на время обновления: человек набирает запрос и
-   видит, что идёт работа, не теряя прежний результат из виду. */
-.tg-feed {
-  transition: opacity 140ms ease-out;
-}
-
-/* На широком экране лента идёт в две-три колонки.
-
-   Приложение открывают не только с телефона: в Telegram на планшете и на
-   настольном компьютере окно бывает шириной в тысячу точек, и одна
-   карточка растягивалась на всю — снимок машины высотой в полэкрана, по
-   одному объявлению за раз. Просмотр десяти машин превращался в десять
-   прокруток.
-
-   На телефоне ничего не меняется: до 640 точек колонка остаётся одна. */
-@media (min-width: 40em) {
-  /* Важность повышена намеренно: класс висит на Stack из Mantine, а тот
-     задаёт flex-колонку своими стилями и перебивает обычное правило. */
-  .tg-feed.tg-feed {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-    align-items: start;
-  }
-}
-
-.tg-feed[data-updating] {
-  opacity: 0.6;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tg-feed {
-    transition: none;
-  }
-}
-
-/* Карточка новости.
-
-   Фото ниже, чем у машины: у новости оно иллюстрация, а не предмет
-   выбора — заголовок важнее. */
+/* Новости: фото ниже — у новости оно иллюстрация, а не предмет выбора. */
 .tg-card--news .tg-card__media {
   aspect-ratio: 16 / 9;
 }
@@ -588,212 +783,46 @@ body:has(.tg-shell[data-main-button="hidden"]) {
 }
 
 .tg-card__news-title {
-  font-size: var(--text-md);
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   line-height: 1.3;
   letter-spacing: -0.015em;
   color: var(--tg-text);
 }
 
 .tg-card__news-summary {
-  font-size: var(--text-sm);
-  line-height: 1.35;
-  color: color-mix(in srgb, var(--tg-text) 72%, transparent);
+  font-size: 13px;
+  line-height: 1.4;
+  color: #475569;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .tg-shell__tab {
-    transition: none;
-  }
-
-  .tg-shell__tab:active {
-    transform: none;
-  }
-}
-
-/* Выезжающее меню.
-
-   Прежде под заголовком стоял ряд вкладок, но он повторял нижнюю
-   навигацию — четыре подписи из пяти совпадали. Меню вмещает то, чему не
-   нашлось места внизу: личные разделы, запчасти, аукционы по странам.
-
-   Приходит слева — оттуда же, где кнопка: так видно, откуда оно взялось
-   и куда уйдёт. */
-.tg-menu__backdrop {
-  position: fixed;
-  z-index: 40;
-  inset: 0;
-  background: rgb(0 0 0 / 55%);
-  opacity: 0;
-  transition: opacity 160ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.tg-menu__backdrop[data-open] {
-  opacity: 1;
-}
-
-.tg-menu {
-  position: fixed;
-  z-index: 41;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  overflow-y: auto;
-  width: min(84vw, 320px);
-  /* Нижний запас учитывает полосу жестов.
-
-     Список меню длиннее экрана и всегда прокручивается, а двадцати
-     четырёх пикселей меньше типичных тридцати четырёх у iPhone: последний
-     пункт упирался в системную полосу, и тап по нему уходил в жест
-     «домой» вместо перехода. */
-  padding: 14px 0 calc(24px + env(safe-area-inset-bottom, 0px));
-  border-right: 1px solid var(--tg-line);
-  background: var(--tg-bg);
-  transform: translateX(-100%);
-  transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.tg-menu[data-open] {
-  transform: translateX(0);
-}
-
-.tg-menu__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px 14px;
-  border-bottom: 1px solid var(--tg-line);
-}
-
-.tg-menu__brand {
-  font-family: var(--font-display), sans-serif;
-  font-size: var(--text-lg);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--tg-text);
-}
-
-.tg-menu__close {
-  display: flex;
-  padding: 7px;
-  border: 0;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--tg-hint) 18%, transparent);
-  color: var(--tg-text);
-  cursor: pointer;
-}
-
-.tg-menu__section {
-  padding: 14px 8px 4px;
-}
-
-.tg-menu__section-title {
-  padding: 0 8px 6px;
-  color: var(--tg-hint);
-  font-size: var(--text-caps);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.tg-menu__item {
-  display: flex;
-  align-items: center;
-  /* 46 пикселей — норма зоны нажатия: пункты меню выбирают пальцем. */
-  min-height: 46px;
-  gap: 12px;
-  padding: 0 10px;
-  border-radius: 10px;
-  color: var(--tg-text);
-  font-size: var(--text-md);
-  font-weight: 500;
-  text-decoration: none;
-  transition: background-color 120ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.tg-menu__item:active {
-  background: color-mix(in srgb, var(--tg-accent) 18%, transparent);
-}
-
-.tg-menu__item[data-active] {
-  background: color-mix(in srgb, var(--tg-accent) 22%, transparent);
-  color: var(--tg-accent-text);
-  font-weight: 700;
-}
-
-/* Флаг стоит в самой подписи — здесь только выравнивание по сетке
-   значков, чтобы строки не разъезжались. */
-.tg-menu__flag {
-  width: 18px;
-}
-
-/* При ограничении движения остаётся короткая смена прозрачности, которая
-   показывает изменение состояния без перемещения панели по экрану. */
-@media (prefers-reduced-motion: reduce) {
-  .tg-menu {
-    opacity: 0;
-    transform: none;
-    transition: opacity 120ms cubic-bezier(0.23, 1, 0.32, 1) !important;
-  }
-
-  .tg-menu[data-open] {
-    opacity: 1;
-  }
-
-  .tg-menu__backdrop {
-    transition-duration: 120ms !important;
-  }
-
-  .tg-shell__menu-button,
-  .tg-menu__item {
-    transition: none;
-  }
-
-  .tg-shell__menu-button:active {
-    transform: none;
-  }
-}
-
-/* Подпись новости: дата, источник, просмотры и комментарии.
-
-   Просмотры показывают, читают ли заметку: одинокая новость без единого
-   просмотра выглядит заброшенной, а с сотней — стоящей внимания. */
 .tg-card__news-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 10px;
-  font-size: var(--text-xs);
+  font-size: 12px;
   color: var(--tg-hint);
 }
 
-.tg-card__stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-variant-numeric: tabular-nums;
-}
+/* ===== Переписка ===== */
 
-/* Строка переписки.
-
-   Устроена как в мессенджере: аватар, имя, время справа, предпросмотр
-   последнего сообщения. Человек читает такой список не задумываясь —
-   привычка сложилась задолго до нашего приложения.
-
-   Раньше пункт меню уводил на сайт: человек выходил из приложения, ждал
-   загрузку обычной страницы и терял ленту, к которой возвращался. */
 .tg-chat {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  margin: 0 var(--tg-edge) 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: var(--tg-surface);
+  box-shadow: var(--tg-shadow);
   color: inherit;
   text-decoration: none;
-  transition: background 120ms ease-out;
+  transition: transform 160ms var(--tg-out);
 }
 
 .tg-chat:active {
-  background: color-mix(in srgb, var(--tg-accent) 12%, transparent);
+  transform: scale(0.98);
 }
 
 .tg-chat__body {
@@ -810,35 +839,32 @@ body:has(.tg-shell[data-main-button="hidden"]) {
 
 .tg-chat__name {
   min-width: 0;
-  font-size: var(--text-md);
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: var(--tg-text);
 }
 
 .tg-chat__time {
   flex: 0 0 auto;
-  font-size: var(--text-xs);
+  font-size: 12px;
   color: var(--tg-hint);
   font-variant-numeric: tabular-nums;
 }
 
-/* Объявление, о котором идёт разговор: без него непонятно, про какую
-   машину речь, когда переписок несколько. */
 .tg-chat__listing {
-  font-size: var(--text-xs);
+  font-size: 12px;
+  font-weight: 600;
   color: var(--tg-accent);
 }
 
 .tg-chat__preview {
-  font-size: var(--text-sm);
+  font-size: 13px;
   color: var(--tg-hint);
 }
 
-/* Непрочитанное выделяется насыщенностью имени, а не цветом строки:
-   цветная подложка в списке читается как выделение, а не как «новое». */
 .tg-chat[data-unread] .tg-chat__preview {
-  color: color-mix(in srgb, var(--tg-text) 80%, transparent);
-  font-weight: 600;
+  color: #26334a;
+  font-weight: 650;
 }
 
 .tg-chat__badge {
@@ -847,35 +873,571 @@ body:has(.tg-shell[data-main-button="hidden"]) {
   color: var(--tg-accent-text);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .tg-chat {
-    transition: none;
-  }
+/* ===== Служебные плашки и кнопки ===== */
+
+.tg-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: calc(100% - 2 * var(--tg-edge));
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--tg-accent-soft);
+  color: var(--tg-text);
 }
 
+.tg-notice[data-tone="error"] {
+  background: #ffe3e3;
+}
 
-/* Значок непрочитанных на вкладке.
+/* Вход идёт в фоне: тихая строка, не перетягивает внимание с машин. */
+.tg-notice[data-tone="muted"] {
+  align-items: center;
+  align-self: center;
+  width: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--tg-shadow);
+  color: var(--tg-hint);
+}
 
-   Счётчик был только внутри строки чата — там, куда ещё надо дойти.
-   Человек, которому написал продавец, узнавал об этом, лишь открыв
-   вкладку наугад. */
+.tg-button {
+  height: 46px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--tg-accent);
+  color: var(--tg-accent-text);
+  font-weight: 800;
+}
+
+.tg-button:active {
+  transform: scale(0.97);
+}
+
+/* ===== Плавающая панель вкладок ===== */
+
+/* Главная кнопка Telegram рисуется клиентом в самом низу экрана, и
+   панель встаёт над ней. Переменная объявлена и на body: кнопка
+   поддержки и другие соседи оболочки должны видеть то же число. */
+body:has(.tg-shell) {
+  --tg-main-button-height: 60px;
+}
+
+.tg-shell[data-main-button="hidden"],
+body:has(.tg-shell[data-main-button="hidden"]) {
+  --tg-main-button-height: 0px;
+}
+
+.tg-nav {
+  position: fixed;
+  z-index: 20;
+  right: var(--tg-edge);
+  bottom: var(--tg-main-button-height, 0px);
+  left: var(--tg-edge);
+  display: grid;
+  max-width: 520px;
+  height: var(--tg-nav-height);
+  grid-template-columns: repeat(5, 1fr);
+  /* Панель парит: отступ от нижнего края и полосы жестов задан полем,
+     а не в bottom — так bottom остаётся ровно высотой главной кнопки. */
+  margin: 0 auto calc(env(safe-area-inset-bottom, 0px) + 10px);
+  padding: 0 4px;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 78%);
+  box-shadow: 0 1px 1px rgb(15 40 60 / 4%), 0 16px 36px -14px rgb(15 40 60 / 30%);
+  -webkit-backdrop-filter: saturate(1.9) blur(22px);
+  backdrop-filter: saturate(1.9) blur(22px);
+}
+
+.tg-nav__item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--tg-hint);
+  text-decoration: none;
+  transition: color 160ms ease, transform 160ms var(--tg-out);
+}
+
+.tg-nav__item:active {
+  transform: scale(0.9);
+}
+
 .tg-nav__icon {
   position: relative;
   display: grid;
+  width: 52px;
+  height: 32px;
   place-items: center;
+  isolation: isolate;
+}
+
+/* Подложка выбранной вкладки въезжает пружиной — как индикатор
+   Material 3 и капсула iOS. */
+.tg-nav__icon::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--tg-accent-soft);
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition: opacity 180ms ease, transform 360ms var(--tg-spring);
+}
+
+.tg-nav__item[data-active] .tg-nav__icon::before {
+  opacity: 1;
+  transform: none;
+}
+
+.tg-nav__icon .tg-art {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: saturate(0.55) brightness(1.04);
+  opacity: 0.82;
+  transition: filter 200ms ease, opacity 200ms ease, transform 360ms var(--tg-spring);
+}
+
+.tg-nav__item[data-active] .tg-art {
+  filter: none;
+  opacity: 1;
+  transform: translateY(-1px) scale(1.08);
+}
+
+.tg-nav__item[data-active] {
+  color: var(--tg-accent-strong);
+}
+
+.tg-nav__label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tg-nav__badge {
   position: absolute;
-  top: -5px;
-  right: -8px;
-  min-width: 16px;
+  top: -3px;
+  right: 2px;
+  min-width: 17px;
   padding: 0 4px;
+  border: 2px solid #fff;
   border-radius: 999px;
-  background: #e03131;
+  background: #f03e3e;
   color: #fff;
   font-size: 10px;
-  font-weight: 700;
-  line-height: 16px;
+  font-weight: 800;
+  line-height: 13px;
   text-align: center;
+}
+
+/* ===== Шторка разделов ===== */
+
+.tg-sheet__backdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  background: rgb(8 20 32 / 38%);
+  opacity: 0;
+  transition: opacity 260ms var(--tg-out);
+}
+
+.tg-sheet__backdrop[data-open] {
+  opacity: 1;
+}
+
+.tg-sheet {
+  position: fixed;
+  z-index: 41;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  max-width: 640px;
+  max-height: 88dvh;
+  flex-direction: column;
+  margin-inline: auto;
+  border-radius: 28px 28px 0 0;
+  background: var(--tg-bg);
+  box-shadow: 0 -18px 50px -20px rgb(8 20 32 / 40%);
+  transform: translateY(100%);
+  transition: transform 340ms var(--tg-spring);
+}
+
+.tg-sheet[data-open] {
+  transform: none;
+}
+
+.tg-sheet__grabber {
+  width: 38px;
+  height: 5px;
+  margin: 8px auto 2px;
+  border-radius: 999px;
+  background: #c7d1dc;
+}
+
+.tg-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 16px 8px;
+}
+
+.tg-sheet__title {
+  font-family: var(--font-display), sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--tg-text);
+}
+
+.tg-sheet__close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #e3e9f0;
+  color: var(--tg-text);
+  cursor: pointer;
+}
+
+.tg-sheet__scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 12px calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+.tg-sheet__section + .tg-sheet__section {
+  margin-top: 14px;
+}
+
+.tg-sheet__section-title {
+  padding: 0 4px 8px;
+  color: var(--tg-hint);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tg-sheet__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--tg-shadow);
+}
+
+.tg-sheet__tile {
+  display: flex;
+  min-width: 0;
+  min-height: 92px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 2px;
+  border-radius: 16px;
+  color: var(--tg-text);
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 160ms ease, transform 160ms var(--tg-out);
+}
+
+.tg-sheet__tile:active {
+  transform: scale(0.94);
+  background: #f1f5f9;
+}
+
+.tg-sheet__tile[data-active] {
+  background: var(--tg-accent-soft);
+  color: var(--tg-accent-strong);
+}
+
+.tg-sheet__tile-art {
+  display: grid;
+  width: 52px;
+  height: 46px;
+  place-items: center;
+}
+
+.tg-sheet__tile-art .tg-art {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.tg-sheet__tile-label {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  hyphens: auto;
+}
+
+.tg-sheet__countries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tg-sheet__country {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--tg-shadow);
+  color: var(--tg-text);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 160ms var(--tg-out);
+}
+
+.tg-sheet__country:active {
+  transform: scale(0.95);
+}
+
+/* ===== Знакомство при первом запуске ===== */
+
+.tg-tour {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.tg-tour__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(8 20 32 / 42%);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: tg-fade 240ms ease-out;
+}
+
+.tg-tour__card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 420px;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 20px 18px;
+  border-radius: 30px;
+  background:
+    radial-gradient(100% 70% at 50% 0%, rgb(11 114 133 / 14%) 0%, transparent 70%),
+    #fff;
+  box-shadow: 0 30px 60px -20px rgb(8 20 32 / 45%);
+  text-align: center;
+  animation: tg-sheet-in 420ms var(--tg-spring);
+}
+
+.tg-tour[data-closing] .tg-tour__card {
+  animation: tg-sheet-out 240ms var(--tg-out) forwards;
+}
+
+.tg-tour[data-closing] .tg-tour__backdrop {
+  animation: tg-fade 240ms ease-out reverse forwards;
+}
+
+.tg-tour__skip {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tg-hint);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tg-tour__slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: tg-slide-in 380ms var(--tg-out);
+}
+
+.tg-tour__art {
+  display: grid;
+  width: 132px;
+  height: 132px;
+  place-items: center;
+  margin: 10px 0 6px;
+  border-radius: 36px;
+  background: linear-gradient(145deg, #e2f3f5, #fff4e6);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 80%), var(--tg-shadow);
+}
+
+.tg-tour__art .tg-art {
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  animation: tg-float 3.2s ease-in-out infinite;
+}
+
+.tg-tour__title {
+  margin: 10px 0 6px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--tg-text);
+  text-wrap: balance;
+}
+
+.tg-tour__text {
+  max-width: 32ch;
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.tg-tour__dots {
+  display: flex;
+  gap: 5px;
+  margin: 16px 0 14px;
+}
+
+.tg-tour__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #cfd8e3;
+  transition: width 280ms var(--tg-spring), background-color 200ms ease;
+}
+
+.tg-tour__dot[data-active] {
+  width: 22px;
+  background: var(--tg-accent);
+}
+
+.tg-tour__next {
+  width: 100%;
+  height: 52px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #0b7285, #0f8a9d);
+  box-shadow: 0 14px 28px -14px rgb(11 114 133 / 75%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms var(--tg-out);
+}
+
+.tg-tour__next:active {
+  transform: scale(0.97);
+}
+
+.tg-tour__next:focus-visible,
+.tg-tour__skip:focus-visible {
+  outline: 2px solid var(--tg-accent);
+  outline-offset: 3px;
+}
+
+.tg-tour__step {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ===== Движение ===== */
+
+@keyframes tg-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes tg-pop {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes tg-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+@keyframes tg-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tg-sheet-in {
+  from { opacity: 0; transform: translateY(60px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes tg-sheet-out {
+  to { opacity: 0; transform: translateY(40px) scale(0.97); }
+}
+
+@keyframes tg-slide-in {
+  from { opacity: 0; transform: translateX(22px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes tg-float {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-6px) rotate(1.5deg); }
+}
+
+/* «Уменьшить движение»: въезды, пружины и парение исчезают, состояние
+   по-прежнему видно по цвету. */
+@media (prefers-reduced-motion: reduce) {
+  .tg-shell *,
+  .tg-shell *::before,
+  .tg-tour *,
+  .tg-sheet,
+  .tg-sheet__backdrop {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+
+  .tg-sheet {
+    transition: opacity 120ms ease !important;
+    opacity: 0;
+    transform: none;
+  }
+
+  .tg-sheet[data-open] {
+    opacity: 1;
+  }
+
+  .tg-skeleton {
+    animation: none !important;
+  }
 }

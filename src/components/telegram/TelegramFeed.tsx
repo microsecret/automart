@@ -3,9 +3,10 @@
 import { useDeferredValue, useMemo, useState } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Badge, Box, Button, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
+import { Badge, Box, Button, Group, Stack, Text, TextInput } from "@mantine/core"
 import { IconEye, IconMapPin, IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
+import MiniArt from "./MiniArt"
 import { formatMileage, formatPriceShort } from "@/lib/format-numbers"
 import { parseImages } from "@/lib/format"
 
@@ -60,14 +61,16 @@ const FEED_LIMIT = 24
 
    Порядок по спросу: легковые ищут чаще всего, воздушный транспорт —
    единицы, и он уезжает за край прокручиваемой ленты. */
+/* У каждого типа свой объёмный значок — тот же, что в каталоге сайта:
+   плитка со значком узнаётся боковым зрением быстрее подписи. */
 const FEED_TYPES = [
-  { value: "", label: "Все" },
-  { value: "cars", label: "Легковые" },
-  { value: "moto", label: "Мото" },
-  { value: "trucks", label: "Грузовики" },
-  { value: "special", label: "Спецтехника" },
-  { value: "water", label: "Водный" },
-  { value: "air", label: "Воздушный" },
+  { value: "", label: "Все", art: "all" },
+  { value: "cars", label: "Легковые", art: "cars" },
+  { value: "moto", label: "Мото", art: "moto" },
+  { value: "trucks", label: "Грузовики", art: "trucks" },
+  { value: "special", label: "Спецтехника", art: "special" },
+  { value: "water", label: "Водный", art: "water" },
+  { value: "air", label: "Воздушный", art: "air" },
 ] as const
 
 export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) {
@@ -112,24 +115,30 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
         onChange={(event) => setSearch(event.currentTarget.value)}
         size="md"
       />
+    </Box>
+  )
 
-      {/* Лента прокручивается вбок: семь кнопок в строку не помещаются,
-          а в столбик заняли бы пол-экрана. Частые «Все» и «Легковые»
-          видны сразу, редкие уезжают за край. */}
-      <Box className="tg-types" role="group" aria-label="Тип техники">
-        {FEED_TYPES.map((item) => (
-          <button
-            key={item.value || "all"}
-            type="button"
-            className="tg-types__chip"
-            data-active={pickedType === item.value || undefined}
-            aria-pressed={pickedType === item.value}
-            onClick={() => setPickedType(item.value)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </Box>
+  /* Плитки типов прокручиваются вбок и уходят вверх вместе с лентой:
+     липким остаётся только поиск. Плитки со значками выше кнопок, и
+     липкая полоса из двух рядов отняла бы у ленты треть экрана. */
+  const typeTiles = (
+    <Box className="tg-kinds" role="group" aria-label="Тип техники">
+      {FEED_TYPES.map((item) => (
+        <button
+          key={item.value || "all"}
+          type="button"
+          className="tg-kind"
+          data-active={pickedType === item.value || undefined}
+          aria-pressed={pickedType === item.value}
+          onClick={() => {
+            window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()
+            setPickedType(item.value)
+          }}
+        >
+          <span className="tg-kind__art"><MiniArt kind={item.art} size={34} /></span>
+          <span className="tg-kind__label">{item.label}</span>
+        </button>
+      ))}
     </Box>
   )
 
@@ -137,9 +146,19 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
     return (
       <>
         {searchField}
-        <Stack align="center" py={48} gap="xs">
-          <Loader size="sm" color="var(--tg-accent)" />
-          <Text size="xs" c="var(--tg-hint)">Загружаем объявления…</Text>
+        {typeTiles}
+        {/* Заготовки карточек вместо спиннера: человек сразу видит, что
+            здесь будет лента, и экран не прыгает, когда она приходит. */}
+        <Stack gap="var(--tg-card-gap)" className="tg-feed" aria-busy="true" aria-label="Загружаем объявления">
+          {[0, 1].map((key) => (
+            <Box key={key} className="tg-card tg-card--skeleton">
+              <Box className="tg-card__media tg-skeleton" />
+              <Box className="tg-card__body">
+                <span className="tg-skeleton tg-skeleton--line" style={{ width: "38%" }} />
+                <span className="tg-skeleton tg-skeleton--line" style={{ width: "72%" }} />
+              </Box>
+            </Box>
+          ))}
         </Stack>
       </>
     )
@@ -160,6 +179,7 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
     return (
       <>
         {searchField}
+        {typeTiles}
         <Stack align="center" py={48} gap={10}>
           <Text fw={700} c="var(--tg-text)">Не удалось загрузить</Text>
           <Text size="xs" c="var(--tg-hint)" ta="center" maw={270}>
@@ -175,6 +195,7 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
     return (
       <>
         {searchField}
+        {typeTiles}
         <Stack align="center" py={48} gap={6}>
           <Text fw={700} c="var(--tg-text)">
             {searching ? "Ничего не нашлось" : "Пока пусто"}
@@ -192,19 +213,20 @@ export default function TelegramFeed({ vehicleType }: { vehicleType?: string }) 
   return (
     <>
       {searchField}
+      {typeTiles}
       {/* Выдача приглушается на время обновления, а не подменяется молча:
           человек набирает запрос и видит, что идёт работа, не теряя
           прежний результат из виду. */}
       <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed" data-updating={isValidating || undefined}>
-        {listings.map((listing) => (
-          <TelegramFeedCard key={listing.id} listing={listing} />
+        {listings.map((listing, index) => (
+          <TelegramFeedCard key={listing.id} listing={listing} index={index} />
         ))}
       </Stack>
     </>
   )
 }
 
-function TelegramFeedCard({ listing }: { listing: FeedListing }) {
+function TelegramFeedCard({ listing, index }: { listing: FeedListing; index: number }) {
   const [failed, setFailed] = useState(false)
   const vehicle = listing.vehicle
   const image = useMemo(() => parseImages(vehicle?.images)[0] || null, [vehicle?.images])
@@ -225,6 +247,9 @@ function TelegramFeedCard({ listing }: { listing: FeedListing }) {
       href={`/listings/vehicle/${vehicle?.id || listing.id}?from=telegram`}
       onClick={tap}
       className="tg-card"
+      /* Порядковый номер задаёт задержку въезда: первые карточки
+         появляются друг за другом, дальние — без ожидания. */
+      style={{ "--i": Math.min(index, 6) } as React.CSSProperties}
     >
       <Box className="tg-card__media">
         {image && !failed ? (
@@ -241,7 +266,7 @@ function TelegramFeedCard({ listing }: { listing: FeedListing }) {
             <IconPhotoOff size={22} />
           </Box>
         )}
-        {isFresh && <Badge className="tg-card__badge" size="xs">Сегодня</Badge>}
+        {isFresh && <Badge className="tg-card__badge" data-fresh size="xs">Сегодня</Badge>}
       </Box>
 
       <Box className="tg-card__body">
