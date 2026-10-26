@@ -48,9 +48,12 @@ test("поиск запчастей не бьёт по серверу на ка�
   /* Поле входило в ключ запроса напрямую: набирая «тормозной диск»,
      человек отправлял тринадцать запросов подряд. */
   const page = readFileSync(new URL("../src/app/parts-finder/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /debouncedQ/)
-  assert.match(page, /setDebouncedQ\(q\), 350/)
-  assert.match(page, /u\.set\("q", debouncedQ\)/)
+  /* После переписывания страницы поле пишет в адрес с паузой, а запрос
+     строится из адреса, не из поля: буквы не доходят до сервера, пока
+     человек печатает. */
+  assert.match(page, /window\.setTimeout\(\(\) => \{ if \(\(params\.get\("q"\) \|\| ""\) !== q\.trim\(\)\) update\(\{ q: q\.trim\(\) \|\| null \}\) \}, 400\)/)
+  assert.match(page, /useSWR<PartsResponse>\(`\/api\/parts\?\$\{apiQuery\}`/)
+  assert.doesNotMatch(page, /apiQuery = useMemo\([^)]*q[^)]*\[q\]/)
 })
 
 test("прокрутка не пересчитывает раскладку на каждое событие", () => {
@@ -94,13 +97,14 @@ test("рассылка сохранённых поисков не делает �
      выборка шла без ограничения: при десяти тысячах подписок это
      десять тысяч одинаковых запросов подряд в одном прогоне. */
   const notify = readFileSync(new URL("../src/lib/saved-search-notify.ts", import.meta.url), "utf8")
-  assert.match(notify, /countCache/)
-  assert.match(notify, /countNewMatchesCached/)
-  /* Выборка ограничена, а первыми идут те, кого дольше не уведомляли:
+  assert.match(notify, /countCache\.get\(key\)/)
+  assert.match(notify, /countCache\.set\(key, count\)/)
+  /* Выборка ограничена, а первыми идут те, кого дольше не проверяли:
      иначе при обрезании списка одни и те же подписки всегда
-     оставались бы в хвосте. */
-  assert.match(notify, /MAX_SEARCHES_PER_RUN/)
-  assert.match(notify, /orderBy: \{ lastNotifiedAt: "asc" \}/)
+     оставались бы в хвосте. Очередь сдвигается и у исчерпавших
+     дневной лимит. */
+  assert.match(notify, /take: MAX_SEARCHES_PER_RUN/)
+  assert.match(notify, /orderBy: \[\{ lastCheckedAt: "asc" \}, \{ id: "asc" \}\]/)
 })
 
 test("каталог получил индексы под свои сортировки", () => {
@@ -169,9 +173,13 @@ test("фильтр запчастей не теряет параметр из с
      раньше чтения, и заход по /parts-finder?partType=ENGINE мог
      потерять параметр. */
   const page = readFileSync(new URL("../src/app/parts-finder/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /const \[urlRead, setUrlRead\]/)
-  assert.match(page, /if \(!urlRead\) return/)
-  assert.match(page, /setUrlRead\(true\)/)
+  /* Теперь адрес — единственный источник фильтров: состояния читаются
+     из него при каждой отрисовке, а пишутся только по действию
+     человека. Эффекта, который собирал бы адрес обратно и мог обогнать
+     чтение, нет вовсе. */
+  assert.match(page, /const params = useMemo\(\(\) => new URLSearchParams\(key\), \[key\]\)/)
+  assert.match(page, /params\.get\("partType"\)/)
+  assert.doesNotMatch(page, /useEffect\(\(\) => \{[^}]*router\.replace/)
 })
 
 test("карточка лота разбирает список снимков один раз", () => {
@@ -187,7 +195,10 @@ test("список марок в фильтре запчастей не пере
      компонента: каждый набранный символ создавал новый массив, и
      выпадающий список пересобирался заново. */
   const page = readFileSync(new URL("../src/app/parts-finder/page.tsx", import.meta.url), "utf8")
-  assert.match(page, /const partBrandOptions = useMemo\(/)
+  /* Справочник марок машин собирается один раз при загрузке модуля, а
+     производители запчастей приходят счётчиками из ответа сервера. */
+  assert.match(page, /^const CAR_BRANDS = getBrandsByCategory\("cars"\)/m)
+  assert.match(page, /data\?\.brands/)
 })
 
 test("лимитер не перебирает всю карту на каждый запрос", () => {

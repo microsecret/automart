@@ -137,7 +137,7 @@ export default function TelegramMiniApp() {
      самое, от чего мы уходим: человек пришёл за товаром, а видит
      служебное сообщение. */
   const HEADINGS = {
-    vehicles: { title: "Свежие объявления", subtitle: "Транспорт с проверкой и доставкой", href: "/telegram" },
+    vehicles: { title: "Свежие объявления", subtitle: "С проверкой и доставкой", href: "/telegram" },
     auctions: { title: "Мировые аукционы", subtitle: "Корея, Япония и Китай с расчётом под ключ", href: "/telegram?tab=auctions" },
     news: { title: "Новости авторынка", subtitle: "Что происходит с ценами и рынком", href: "/telegram?tab=news" },
     chats: { title: "Сообщения", subtitle: "Переписка с продавцами", href: "/telegram?tab=chats" },

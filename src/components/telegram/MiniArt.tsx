@@ -16,7 +16,7 @@ const ART: Readonly<Record<string, string>> = {
   news: "titanium-v1/documents-320",
   chats: "titanium-v1/messages-320",
   messages: "titanium-v1/messages-320",
-  forum: "navigation-v1/support-96",
+  forum: "titanium-v1/messages-320",
   parts: "category-v1/parts-320",
   favorites: "titanium-v1/favorites-320",
   notifications: "navigation-v1/bell-96",
