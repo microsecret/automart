@@ -118,6 +118,9 @@ node scripts/audit-listing-integrity.mjs || echo "Warning: listing integrity aud
 if command -v crontab >/dev/null 2>&1; then
   bash scripts/install-auction-rate-cron.sh || echo "Warning: auction-rate cron was not installed"
   bash scripts/install-encar-collector-cron.sh || echo "Warning: Encar collector cron was not installed"
+  # Сторож зависшей блокировки базы: 21.10.2026 сайт простоял 43 минуты,
+  # пока перезапуск не сделали вручную.
+  bash scripts/install-db-watchdog-cron.sh || echo "Warning: db watchdog cron was not installed"
   # Инсталлятор получает только разрешающий флаг. Раньше deploy не загружал
   # .env вообще, принимал значение по умолчанию `off` и удалял уже включённое
   # расписание при каждом релизе.
