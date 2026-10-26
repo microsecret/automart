@@ -73,7 +73,7 @@ export default function TelegramNews() {
   }
 
   return (
-    <Stack gap="var(--tg-card-gap)" pb={8}>
+    <Stack gap="var(--tg-card-gap)" pb={8} className="tg-feed">
       {news.map((item) => (
         <NewsCard key={item.id} item={item} />
       ))}
