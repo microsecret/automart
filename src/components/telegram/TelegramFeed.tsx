@@ -2,6 +2,8 @@
 
 import { useDeferredValue, useMemo, useState } from "react"
 import Link from "next/link"
+import NextImage from "next/image"
+import { shouldBypassOptimizer } from "@/lib/uploaded-image"
 import useSWR from "swr"
 import { Badge, Box, Button, Group, Stack, Text, TextInput } from "@mantine/core"
 import { IconEye, IconMapPin, IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
@@ -253,12 +255,17 @@ function TelegramFeedCard({ listing, index }: { listing: FeedListing; index: num
     >
       <Box className="tg-card__media">
         {image && !failed ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          /* Через оптимизатор: оригиналы из /uploads весили по 130–280 КБ,
+             и главная картинка экрана на телефоне появлялась через 1.8 с.
+             Первая карточка грузится сразу — она и есть главная картинка. */
+          <NextImage
             src={image}
             alt={vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : listing.title}
-            loading="lazy"
-            decoding="async"
+            fill
+            sizes="(min-width: 640px) 320px, 94vw"
+            quality={68}
+            priority={index === 0}
+            unoptimized={shouldBypassOptimizer(image)}
             onError={() => setFailed(true)}
           />
         ) : (

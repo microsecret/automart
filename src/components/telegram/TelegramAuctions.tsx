@@ -7,6 +7,7 @@ import useSWR from "swr"
 import { Badge, Box, Button, Group, Loader, Stack, Text, TextInput } from "@mantine/core"
 import { IconPhotoOff, IconSearch, IconX } from "@tabler/icons-react"
 import { fetchJson } from "@/lib/api-client"
+import { auctionCardImageUrl } from "@/lib/media-url"
 import { formatMileage, formatPriceShort } from "@/lib/format-numbers"
 
 /**
@@ -194,8 +195,12 @@ function AuctionCard({ lot }: { lot: AuctionLot }) {
     <Box component={Link} href={`/auctions/${lot.id}?from=telegram`} onClick={tap} className="tg-card">
       <Box className="tg-card__media">
         {lot.imageUrl && !failed ? (
+          /* Та же версия снимка, что в карточке лота на сайте: уменьшенная
+             у площадки, а медленные и капризные источники — через релей.
+             Сырой адрес отдавал Carsensor по полминуты, а beforward не
+             показывался вовсе. */
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={lot.imageUrl} alt={`${lot.make} ${lot.model}`} loading="lazy" decoding="async" onError={() => setFailed(true)} />
+          <img src={auctionCardImageUrl(lot.imageUrl)} alt={`${lot.make} ${lot.model}`} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
         ) : (
           <Box className="tg-card__media-empty"><IconPhotoOff size={22} /></Box>
         )}

@@ -11,6 +11,7 @@ import { newsHref } from "@/lib/news"
 import { fetchJson } from "@/lib/api-client"
 import { AsyncErrorState, EmptyState, ResultsGridSkeleton } from "@/components/ui/AsyncStates"
 import NextImage from "next/image"
+import { isOptimizableNewsImage } from "@/lib/news-image"
 
 type NewsArticle = {
   id: string
@@ -128,28 +129,6 @@ function NewsCard({ article, featured }: { article: NewsArticle; featured: boole
       </Card>
     </Link>
   )
-}
-
-/* Домены, которые умеет обрабатывать next/image.
-
-   Список повторяет `remotePatterns` в next.config.js: там он задаёт
-   разрешение, здесь — выбор пути. Незнакомый источник грузится как есть,
-   иначе обложка не откроется вовсе. */
-const OPTIMIZABLE_NEWS_HOSTS = new Set([
-  "www.zr.ru",
-  "avatars.avto.ru",
-  "resizer.mail.ru",
-  "img-renderer.rambler.ru",
-  "kolesa-uploads.ru",
-])
-
-function isOptimizableNewsImage(url: string): boolean {
-  if (url.startsWith("/")) return true
-  try {
-    return OPTIMIZABLE_NEWS_HOSTS.has(new URL(url).hostname)
-  } catch {
-    return false
-  }
 }
 
 export default function NewsListClient({ initialData }: { initialData: NewsResponse }) {

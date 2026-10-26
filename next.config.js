@@ -94,6 +94,9 @@ const nextConfig = {
       { protocol: "https", hostname: "resizer.mail.ru" },
       { protocol: "https", hostname: "img-renderer.rambler.ru" },
       { protocol: "https", hostname: "kolesa-uploads.ru" },
+      /* 63 обложки за месяц, до 259 КБ каждая. Список повторён в
+         src/lib/news-image.ts — там решают, звать ли оптимизатор. */
+      { protocol: "https", hostname: "s0.rbk.ru" },
       /* Фото аукционных лотов.
 
          Разрешены были только корейские encar и kcar — это две тысячи

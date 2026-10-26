@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import NextImage from "next/image"
+import { isOptimizableNewsImage } from "@/lib/news-image"
 import useSWR from "swr"
 import { Box, Button, Loader, Stack, Text } from "@mantine/core"
 import { IconEye, IconMessageCircle2, IconNews } from "@tabler/icons-react"
@@ -93,8 +95,15 @@ function NewsCard({ item }: { item: NewsItem }) {
     <Box component={Link} href={`${newsHref(item)}?from=telegram`} onClick={tap} className="tg-card tg-card--news">
       {item.imageUrl && !failed ? (
         <Box className="tg-card__media">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.imageUrl} alt={item.title} loading="lazy" decoding="async" onError={() => setFailed(true)} />
+          <NextImage
+            src={item.imageUrl}
+            alt={item.title}
+            fill
+            sizes="(min-width: 640px) 320px, 94vw"
+            quality={68}
+            unoptimized={!isOptimizableNewsImage(item.imageUrl)}
+            onError={() => setFailed(true)}
+          />
         </Box>
       ) : (
         <Box className="tg-card__media tg-card__media--flat">
