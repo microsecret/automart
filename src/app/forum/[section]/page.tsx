@@ -1,7 +1,8 @@
+import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Anchor, Badge, Box, Breadcrumbs, Card, Container, Group, Stack, Text, Title } from "@mantine/core"
+import { Anchor, Badge, Box, Breadcrumbs, Card, Container, Group, Stack, Text } from "@mantine/core"
 import { IconEye, IconMessages, IconPin } from "@tabler/icons-react"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -108,12 +109,9 @@ export default async function ForumSectionPage({ params, searchParams }: Props) 
           <Text size="xs" c="var(--market-muted)">{section.title}</Text>
         </Breadcrumbs>
 
-        <Box>
-          <Title order={1} fz={{ base: "22px", md: "26px" }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
-            {section.title}
-          </Title>
-          {section.description && <Text size="sm" c="var(--market-muted)" mt={4}>{section.description}</Text>}
-        </Box>
+        <SectionArtworkHeader scene="forum" title={section.title}>
+          {section.description && <p>{section.description}</p>}
+        </SectionArtworkHeader>
 
         {/* Подразделы идут первыми: у родительского раздела своих тем
             обычно нет, и человеку нужен переход глубже, а не форма. */}

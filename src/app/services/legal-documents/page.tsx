@@ -1,28 +1,30 @@
+import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
 import { Alert, Box, Button, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core"
-import { IconAlertCircle, IconArrowRight, IconCar, IconChecklist, IconMotorbike, IconShieldCheck, IconSignature } from "@tabler/icons-react"
+import { IconAlertCircle, IconArrowRight, IconChecklist, IconShieldCheck } from "@tabler/icons-react"
 import Link from "next/link"
 import LegalDocumentBuilder from "@/components/services/LegalDocumentBuilder"
 import ServiceArtwork from "@/components/ui/ServiceArtwork"
+import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
 
 const DOCUMENTS = [
   {
     title: "Договор купли-продажи автомобиля",
     description: "Соберите данные продавца, покупателя и автомобиля до передачи денег и ключей.",
-    icon: IconCar,
-    color: "indigo",
+    art: "car",
+    color: "teal",
     fields: ["Данные сторон и документы", "VIN, марка, модель, год", "Цена, порядок оплаты и дата передачи"],
   },
   {
     title: "Договор купли-продажи мототехники",
     description: "Та же понятная структура для мотоцикла, квадроцикла и другой техники с номерными агрегатами.",
-    icon: IconMotorbike,
-    color: "violet",
+    art: "moto",
+    color: "teal",
     fields: ["Паспортные данные сторон", "Марка, модель, VIN или номер рамы", "Комплектация и состояние на дату передачи"],
   },
   {
     title: "Акт приёма-передачи",
     description: "Зафиксируйте ключи, документы, пробег и видимые особенности, чтобы у сделки была понятная история.",
-    icon: IconSignature,
+    art: "document",
     color: "teal",
     fields: ["Количество ключей и документов", "Показания одометра или моточасов", "Комплектация, замечания и подписи"],
   },
@@ -32,16 +34,10 @@ export default function LegalDocumentsPage() {
   return (
     <Box className="service-page" p={{ base: "sm", md: "md" }}>
       <Stack gap="lg">
-        <Paper className="service-hub-hero" radius="xl" p={{ base: "lg", md: "xl" }} withBorder>
-          <Group justify="space-between" align="flex-end" gap="lg" wrap="wrap">
-            <Stack gap="xs" maw={700}>
-              <Group gap="sm"><ServiceArtwork kind="documents" size={80} /><Text c="white" fw={800} size="sm">ДОКУМЕНТЫ СДЕЛКИ</Text></Group>
-              <Text component="h1" ff="var(--font-display),sans-serif">Подготовьте сделку спокойно и без пропущенных деталей.</Text>
-              <Text size="sm" c="rgba(255,255,255,0.8)" maw={620}>Единый чек-лист для автомобиля, мототехники и передачи. Данные из объявления можно сверить перед встречей с продавцом.</Text>
-            </Stack>
-            <Button component={Link} href="/services/safe-deal" variant="white" color="dark" size="sm" rightSection={<IconArrowRight size={16} />}>Как проходит сделка</Button>
-          </Group>
-        </Paper>
+        <SectionArtworkHeader scene="legal-documents" title="Документы сделки">
+          <p>Единый чек-лист для автомобиля, мототехники и передачи. Данные из объявления можно сверить перед встречей с продавцом.</p>
+          <Button component={Link} href="/services/safe-deal" mt="md" variant="white" color="dark" size="sm" rightSection={<IconArrowRight size={16} />}>Как проходит сделка</Button>
+        </SectionArtworkHeader>
 
         <Group gap="sm" align="center">
           <ThemeIcon size={38} radius="md" variant="light" color="indigo"><IconChecklist size={19} /></ThemeIcon>
@@ -50,10 +46,9 @@ export default function LegalDocumentsPage() {
 
         <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
           {DOCUMENTS.map((document) => {
-            const Icon = document.icon
             return <Paper key={document.title} withBorder radius="md" p="lg" className="service-card">
               <Stack gap="md" h="100%">
-                <ThemeIcon size={44} radius="md" variant="light" color={document.color}><Icon size={22} /></ThemeIcon>
+                <Box h={104} style={{ display: "flex", alignItems: "center" }}>{document.art === "document" ? <ServiceArtwork kind="documents" size={80} /> : <PartCategoryArtwork kind={document.art} />}</Box>
                 <Box><Text fw={800} fz="lg">{document.title}</Text><Text size="sm" c="dimmed" mt={6} lh={1.45}>{document.description}</Text></Box>
                 <Stack gap={8}>
                   {document.fields.map((field) => <Group key={field} gap={8} align="flex-start" wrap="nowrap">

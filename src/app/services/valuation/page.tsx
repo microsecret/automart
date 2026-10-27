@@ -8,7 +8,7 @@ import { Alert, Box, Button, Group, Loader, Paper, Select, SimpleGrid, Stack, Te
 import { IconCalculator, IconCar, IconInfoCircle, IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
 import { formatPrice } from "@/lib/format"
 import { fetchJson } from "@/lib/api-client"
-import ServiceArtwork from "@/components/ui/ServiceArtwork"
+import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
 
 type OwnedVehicle = {
   id: string
@@ -68,16 +68,11 @@ export default function ValuationPage() {
   const selectedVehicle = data?.vehicles.find((vehicle) => vehicle.id === vehicleId)
 
   return (
-    <Box p={{ base: "sm", md: "md" }} maw={720} mx="auto">
+    <Box p={{ base: "sm", md: "md" }} maw={1000} mx="auto">
       <Stack gap="md">
-        <Group gap="sm" align="center">
-          <ServiceArtwork kind="valuation" size={80} />
-          <Stack gap={0}>
-            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Предварительная оценка</Text>
-            {/* Мера строки: замер дал 99 знаков при норме чтения 60–75. */}
-            <Text size="xs" c="var(--market-muted)" maw="var(--measure)">Прозрачный ориентир по данным вашего объявления — без ложных обещаний рыночной экспертизы</Text>
-          </Stack>
-        </Group>
+        <SectionArtworkHeader scene="valuation" title="Предварительная оценка">
+          <p>Прозрачный ориентир по данным вашего объявления — без ложных обещаний рыночной экспертизы</p>
+        </SectionArtworkHeader>
 
         {status === "unauthenticated" ? (
           <Paper withBorder radius="md" p="xl"><Stack align="center" gap="sm"><ThemeIcon size={52} radius="xl" variant="light" color="indigo"><IconCar size={25} /></ThemeIcon><Text fw={700}>Войдите, чтобы оценить свой автомобиль</Text><Text size="sm" c="dimmed" ta="center">Сервис работает только с вашими сохранёнными объявлениями или автомобилями в гараже.</Text><Button component={Link} href="/auth/signin?callbackUrl=%2Fservices%2Fvaluation" color="indigo">Войти</Button></Stack></Paper>
@@ -100,7 +95,7 @@ export default function ValuationPage() {
 
         {result && (
           <Stack gap="md">
-            <Paper radius="md" p="xl" withBorder style={{ background: "linear-gradient(135deg, #eef2fb 0%, #fff 100%)", borderColor: "#b9caee" }}>
+            <Paper radius="md" p="xl" withBorder style={{ background: "var(--market-primary-soft)", borderColor: "var(--market-line)" }}>
               <Stack gap="sm" align="center">
                 <Text size="xs" c="var(--market-muted)" tt="uppercase" fw={700}>Предварительный ориентир</Text>
                 <Text fz="34px" fw={800} c="var(--market-accent-text)" ff="var(--font-display),sans-serif" lh={1}>{formatPrice(result.estimatedValue)}</Text>

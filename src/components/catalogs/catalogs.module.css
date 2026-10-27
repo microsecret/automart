@@ -12,8 +12,8 @@
   --catalog-line: hsl(220 13% 89%);
   --catalog-ink: var(--market-ink, #0d1b32);
   --catalog-muted: var(--market-muted, #5b6474);
-  --catalog-accent: #1d4ed8;
-  --catalog-accent-soft: rgba(29, 78, 216, 0.08);
+  --catalog-accent: var(--market-primary);
+  --catalog-accent-soft: var(--market-primary-soft);
   --catalog-ok: #0f8a60;
   --catalog-order: #b45309;
   --catalog-car-top: #e8edf5;
@@ -35,8 +35,8 @@
   --catalog-surface: hsl(220 14% 14%);
   --catalog-surface-hover: hsl(220 14% 18%);
   --catalog-line: hsl(220 12% 24%);
-  --catalog-accent: #60a5fa;
-  --catalog-accent-soft: rgba(96, 165, 250, 0.12);
+  --catalog-accent: var(--market-primary);
+  --catalog-accent-soft: var(--market-primary-soft);
   --catalog-ok: #34d399;
   --catalog-order: #fbbf24;
   --catalog-car-top: #2a3446;
@@ -129,7 +129,7 @@
 .megaList a {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   padding: 8px 10px;
   border-radius: 8px;
@@ -139,7 +139,7 @@
   text-decoration: none;
 }
 
-.megaList a svg { color: var(--catalog-muted); opacity: 0; transition: opacity 140ms ease; }
+.megaList a svg { margin-left: auto; color: var(--catalog-muted); opacity: 0; transition: opacity 140ms ease; }
 .megaList a:hover { background: var(--catalog-surface); }
 .megaList a:hover svg { opacity: 1; }
 
@@ -200,7 +200,7 @@
   padding: 0 18px;
   border: 0;
   border-radius: 8px;
-  background: var(--catalog-accent);
+  background: var(--lw-enamel-base);
   color: #fff;
   font: inherit;
   font-weight: 700;
@@ -425,7 +425,7 @@
   min-height: 46px;
   padding: 0 20px;
   border-radius: 10px;
-  background: var(--catalog-accent);
+  background: var(--lw-enamel-base);
   color: #fff;
   font-weight: 700;
   text-decoration: none;
@@ -699,7 +699,7 @@
   width: 56px;
   height: 42px;
   border-radius: 8px;
-  background: var(--catalog-accent);
+  background: var(--lw-enamel-base);
   color: #fff;
   transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease;
 }
@@ -827,7 +827,7 @@
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--catalog-accent);
+  background: var(--lw-enamel-base);
   color: #fff;
   font-size: 12px;
   font-weight: 800;

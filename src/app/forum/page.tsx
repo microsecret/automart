@@ -1,6 +1,7 @@
+import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Anchor, Box, Card, Container, Group, Stack, Text, ThemeIcon, Title } from "@mantine/core"
+import { Anchor, Box, Card, Container, Group, Stack, Text, ThemeIcon } from "@mantine/core"
 import { IconMap2, IconMessages, IconCar, IconTool } from "@tabler/icons-react"
 import { prisma } from "@/lib/prisma"
 import { FORUM_GROUPS, pluralTopics } from "@/lib/forum"
@@ -75,20 +76,17 @@ export default async function ForumPage() {
   return (
     <Container size="xl" py={{ base: "md", md: "xl" }}>
       <Stack gap="lg">
-        <Box>
-          <Title order={1} fz={{ base: "22px", md: "34px" }} ff="var(--font-display),sans-serif" c="var(--market-ink)">
-            Форум автолюбителей
-          </Title>
+        <SectionArtworkHeader scene="forum" title="Форум автолюбителей">
           {/* Мера строки, а не жёсткие пиксели: 680 при кегле 13 дают 105
               знаков в строке при норме чтения 60–75. Переменная --measure
               считает ширину от самого кегля и не разъезжается, если он
               изменится. */}
-          <Text size="sm" c="var(--market-muted)" mt={6} maw="var(--measure)">
+          <Text size="sm" component="p" c="#dcf0ee" mt={6} maw="var(--measure)">
             {allTopics > 0
               ? `${allTopics} ${pluralTopics(allTopics)} по маркам, регионам России и темам: ремонт, запчасти, растаможка, выбор машины. Отвечают владельцы.`
               : "Форумы по маркам, регионам России и темам: ремонт, запчасти, растаможка, выбор машины. Спросите тех, кто уже ездит."}
           </Text>
-        </Box>
+        </SectionArtworkHeader>
 
         {/* Поиск над разделами: человек с поломкой ищет готовый разбор, а
             не выбирает раздел. Без поиска он заведёт новую тему о том, что

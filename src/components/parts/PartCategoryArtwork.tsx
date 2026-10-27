@@ -1,6 +1,8 @@
 import Image from "next/image"
 
 const SOURCES: Readonly<Record<string, string>> = {
+  car: "/images/ui/category-v1/cars-320.webp",
+  moto: "/images/ui/category-v1/moto-320.webp",
   engine: "/images/ui/category-v1/parts-320.webp",
   brakes: "/images/ui/category-v1/brakes-320.webp",
   suspension: "/images/ui/category-v1/suspension-320.webp",

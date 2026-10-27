@@ -66,7 +66,7 @@ export default function CatalogSearch({ variant = "hero" }: { variant?: "hero" |
         spellCheck={false}
         enterKeyHint="search"
       />
-      <button type="submit" className={styles.searchButton}>
+      <button type="submit" className={styles.searchButton} aria-label="Найти">
         <span>Найти</span>
         <IconArrowRight size={18} aria-hidden="true" />
       </button>

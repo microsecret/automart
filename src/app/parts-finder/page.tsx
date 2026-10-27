@@ -10,7 +10,7 @@ import { IconAdjustmentsHorizontal, IconArrowRight, IconSearch, IconX } from "@t
 import { PART_SUBCATEGORIES, PART_TYPES } from "@/lib/constants"
 import { getBrandsByCategory, getModels } from "@/lib/catalog"
 import { parseImages } from "@/lib/format"
-import ServiceArtwork from "@/components/ui/ServiceArtwork"
+import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
 import { fetchJson } from "@/lib/api-client"
 import { DEPARTMENTS, PRODUCT_GROUP_BY_KEY, productGroupsOfDepartment, productGroupBySubcategory, type DepartmentKey } from "@/lib/product-groups"
 import { articleHref, looksLikeArticle } from "@/lib/article-number"
@@ -269,18 +269,14 @@ function PartsContent() {
         {group && <><span aria-hidden="true">›</span><span aria-current="page">{group.label}</span></>}
       </nav>
 
-      <header className={catalog.pageHead}>
-        <h1 className={catalog.titleDark}>
-          <ServiceArtwork kind="parts" size={64} className="lw-heading-art" />
-          {title}
-          {data && total > 0 && <> <span className={catalog.titleCount}>{goods(total)}</span></>}
-        </h1>
+      <SectionArtworkHeader scene="parts" title={title}>
+        <p>{data && total > 0 ? goods(total) : "Поиск по артикулу, марке автомобиля и VIN"}</p>
         {params.get("q") && looksLikeArticle(params.get("q") as string) && (
           <Link href={articleHref(params.get("q") as string)} className="parts-article-link">
             Все предложения и аналоги по номеру <b>{(params.get("q") as string).toUpperCase()}</b> <IconArrowRight size={15} aria-hidden="true" />
           </Link>
         )}
-      </header>
+      </SectionArtworkHeader>
 
       {/* Плитки отделов — на входе в раздел. В выбранной группе вместо них
           строка соседних групп: тот же переход, а места втрое меньше. */}

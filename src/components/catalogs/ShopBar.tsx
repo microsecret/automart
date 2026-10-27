@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
 import { IconChevronRight, IconClipboardList, IconMenu2, IconX } from "@tabler/icons-react"
 import { CATALOG_REGIONS, CATALOG_UNITS } from "@/lib/parts-catalog"
 import CatalogSearch from "./CatalogSearch"
@@ -73,7 +74,7 @@ export default function ShopBar() {
               {CATALOG_UNITS.map((unit) => (
                 <li key={unit.partType}>
                   <Link href={`/parts-finder?partType=${unit.partType}`} onClick={() => setOpen(false)}>
-                    {unit.label} <IconChevronRight size={14} />
+                    <PartCategoryArtwork kind={unit.partType.toLowerCase()} compact />{unit.label} <IconChevronRight size={14} />
                   </Link>
                 </li>
               ))}

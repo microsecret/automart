@@ -1,5 +1,6 @@
 "use client"
 
+import ProductGroupArtwork from "./ProductGroupArtwork"
 import { Box, Group, Text, UnstyledButton } from "@mantine/core"
 import {
   IconBattery3, IconBottle, IconCar, IconDisc, IconDroplet, IconFilter, IconFlask, IconLamp, IconSparkles,
@@ -63,7 +64,7 @@ export default function DepartmentNav({ group, department, onSelect }: {
               aria-pressed={isOn}
               onClick={() => onSelect({ department: current, group: isOn ? null : item.key })}
             >
-              <span className="parts-departments__icon"><Icon size={22} stroke={1.6} /></span>
+              <span className="parts-departments__icon"><ProductGroupArtwork group={item.key} fallback={<Icon size={22} stroke={1.6} />} /></span>
               <Text span size="sm" fw={700} lh={1.25}>{item.label}</Text>
             </UnstyledButton>
           )

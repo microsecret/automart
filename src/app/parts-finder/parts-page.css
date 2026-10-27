@@ -615,23 +615,25 @@
 .parts-departments__tab:active { transform: scale(0.97); }
 
 .parts-departments__tab[data-active] {
-  background: var(--market-ink);
-  border-color: var(--market-ink);
-  color: var(--mantine-color-body);
+  background: var(--lw-enamel-base);
+  border-color: var(--lw-enamel-base);
+  color: white;
 }
 
 .parts-departments__groups {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
   gap: 10px;
 }
 
 .parts-departments__group {
   display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
   justify-items: start;
   gap: 10px;
-  min-height: 96px;
-  padding: 14px;
+  min-height: 88px;
+  padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--mantine-color-default-border);
   background: var(--mantine-color-body);
@@ -641,7 +643,7 @@
 
 @media (hover: hover) {
   .parts-departments__group:hover {
-    border-color: var(--mantine-color-indigo-5);
+    border-color: var(--market-primary);
     transform: translateY(-2px);
     box-shadow: 0 14px 30px -18px rgba(13, 27, 50, 0.35);
   }
@@ -650,21 +652,22 @@
 .parts-departments__group:active { transform: scale(0.98); }
 
 .parts-departments__group[data-active] {
-  border-color: var(--mantine-color-indigo-6);
-  box-shadow: 0 0 0 3px var(--mantine-color-indigo-light);
+  border-color: var(--market-primary);
+  background: var(--market-primary-soft);
 }
 
 .parts-departments__icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   border-radius: 10px;
-  background: var(--mantine-color-indigo-light);
-  color: var(--mantine-color-indigo-light-color);
+  background: transparent;
+  color: var(--market-primary);
 }
 
 /* Колонка характеристик: секции со стрелкой, как «Длина ▸» у образца. */
+.parts-departments__icon img { max-width: 100%; max-height: 100%; }
 .parts-facets__section + .parts-facets__section { border-top: 1px solid var(--mantine-color-default-border); }
 
 .parts-facets__head {
@@ -691,7 +694,7 @@
 @media (max-width: 640px) {
   .parts-departments__groups {
     grid-auto-flow: column;
-    grid-auto-columns: 132px;
+    grid-auto-columns: 172px;
     grid-template-columns: none;
     overflow-x: auto;
     scrollbar-width: none;
