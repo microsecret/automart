@@ -7,6 +7,7 @@ cd "$project_root"
 audit_port="${AUTOMART_AUTH_AUDIT_PORT:-4011}"
 audit_script="${AUTOMART_AUTH_AUDIT_SCRIPT:-scripts/server-authenticated-audit.mjs}"
 case "$audit_script" in
+  scripts/verify-catalog-details.mjs) ;;
   scripts/verify-section-hubs.mjs) ;;
   scripts/server-authenticated-audit.mjs|scripts/verify-saved-search-workflow.mjs|scripts/verify-saved-search-notifications.mjs|scripts/verify-admin-traffic.mjs|scripts/verify-subscription-controls.mjs|scripts/verify-scenic-materials.mjs|scripts/verify-quick-tour.mjs|scripts/verify-shell-materials.mjs|scripts/verify-category-artwork.mjs|scripts/verify-prisma-concurrency.mjs|scripts/verify-message-workspace.mjs) ;;
   *) echo "Unknown authenticated audit script" >&2; exit 1 ;;

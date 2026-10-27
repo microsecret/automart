@@ -74,7 +74,7 @@ export default function ShopBar() {
               {CATALOG_UNITS.map((unit) => (
                 <li key={unit.partType}>
                   <Link href={`/parts-finder?partType=${unit.partType}`} onClick={() => setOpen(false)}>
-                    <PartCategoryArtwork kind={unit.partType.toLowerCase()} compact />{unit.label} <IconChevronRight size={14} />
+                    <span className={styles.megaArtwork}><PartCategoryArtwork kind={unit.partType.toLowerCase()} compact /></span>{unit.label} <IconChevronRight size={14} />
                   </Link>
                 </li>
               ))}

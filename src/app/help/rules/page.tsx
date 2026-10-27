@@ -1,7 +1,9 @@
 "use client"
 
+import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
+
 import { Box, Stack, Text, Paper, ThemeIcon, Group, SimpleGrid, Badge, Divider, List } from "@mantine/core"
-import { IconScale, IconCheck, IconX, IconInfoCircle } from "@tabler/icons-react"
+import { IconCheck, IconX, IconInfoCircle } from "@tabler/icons-react"
 
 /* Страница остаётся клиентской из-за составного компонента List.Item:
    при оптимизации импортов пакетов Mantine такие вложенные компоненты не
@@ -14,13 +16,7 @@ export default function RulesPage() {
   return (
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md" maw={800} mx="auto">
-        <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="violet" size={44} radius="md"><IconScale size={22} /></ThemeIcon>
-          <Stack gap={0}>
-            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Правила площадки</Text>
-            <Text size="xs" c="var(--market-muted)">Обновлены: 8 августа 2026</Text>
-          </Stack>
-        </Group>
+        <SectionArtworkHeader scene="legal-documents" title="Правила площадки"><p>Обновлены: 8 августа 2026</p></SectionArtworkHeader>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
           <Paper radius="md" p="lg" withBorder style={{ background: "var(--market-success-surface)", borderColor: "var(--market-success-line)" }}>

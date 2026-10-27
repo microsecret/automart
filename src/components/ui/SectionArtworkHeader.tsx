@@ -2,7 +2,7 @@ import Image from "next/image"
 import type { ReactNode } from "react"
 import styles from "./section-artwork-header.module.css"
 
-export type SectionScene = "parts" | "auctions" | "forum" | "legal-documents" | "valuation" | "help"
+export type SectionScene = "parts" | "auctions" | "forum" | "legal-documents" | "valuation" | "help" | "sell"
 
 /** Artwork is decorative; headings, counters and actions remain real HTML. */
 export default function SectionArtworkHeader({ scene, title, children }: {

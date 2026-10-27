@@ -6,6 +6,10 @@ const PRODUCTS: Readonly<Record<string, string>> = {
   spark_plugs: "sparkplug", belts: "belt",
   engine_oil: "oil", transmission_oil: "oil", brake_fluid: "oil", washer_fluid: "oil",
   hydraulic_fluid: "oil", greases: "oil", other_fluids: "oil",
+  wiper_blades: "wiper", dashcams: "dashcam", car_mats: "mats", seat_covers: "seat-cover",
+  chargers: "charger", compressors: "compressor", jacks: "jack", safety: "safety", roof_racks: "roof-rack",
+  tools: "tools", tool_sets: "tools", autochem: "care",
+  chem_engine: "care", chem_additives: "oil", chem_body: "care", chem_interior: "care", chem_repair: "care",
 }
 const CATEGORIES: Readonly<Record<string, string>> = {
   battery: "electrical", brake_pads: "brakes", brake_discs: "brakes",
@@ -18,5 +22,5 @@ export default function ProductGroupArtwork({ group, fallback }: { group: string
   const category = CATEGORIES[group]
   const src = product ? `/images/ui/product-v1/${product}-192.webp`
     : category ? `/images/ui/category-v1/${category}-320.webp` : null
-  return src ? <Image src={src} alt="" aria-hidden="true" width={64} height={64} unoptimized loading="lazy" draggable={false} style={{ objectFit: "contain" }} /> : fallback
+  return src ? <Image src={src} alt="" aria-hidden="true" width={52} height={52} unoptimized loading="lazy" draggable={false} style={{ display: "block", width: 52, height: 52, objectFit: "contain", flexShrink: 0 }} /> : fallback
 }

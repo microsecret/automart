@@ -650,6 +650,12 @@
 }
 
 .parts-departments__group:active { transform: scale(0.98); }
+.parts-departments__group .mantine-Text-root {
+  min-width: 0;
+  justify-self: stretch;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
 
 .parts-departments__group[data-active] {
   border-color: var(--market-primary);

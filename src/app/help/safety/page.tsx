@@ -1,11 +1,13 @@
+import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import { Box, Stack, Text, Paper, ThemeIcon, Group, SimpleGrid, Alert } from "@mantine/core"
-import { IconShieldCheck, IconAlertTriangle, IconChecks, IconEye, IconCash, IconMapPin, IconPhone } from "@tabler/icons-react"
+import { IconShieldCheck, IconAlertTriangle, IconChecks } from "@tabler/icons-react"
 
 const SAFETY_RULES = [
-  { icon: IconEye, title: "Проверяйте при встрече", text: "Осмотрите авто или запчасть лично. Сверьте VIN, номера деталей. Не переводите деньги до осмотра." },
-  { icon: IconCash, title: "Сопровождение оплаты", text: "Фиксируйте документы, этапы и реквизиты оплаты до передачи автомобиля." },
-  { icon: IconMapPin, title: "Встречайтесь в людных местах", text: "Днём, на охраняемых парковках или в ГИБДД для проверки авто. Не ездите в гаражи одни." },
-  { icon: IconPhone, title: "Не давайте предоплату", text: "Требование предоплаты на карту — частый приём мошенников. Особенно «Сбербанк Онлайн» на чужое имя." },
+  { art: "history-check" as const, title: "Проверяйте при встрече", text: "Осмотрите авто или запчасть лично. Сверьте VIN, номера деталей. Не переводите деньги до осмотра." },
+  { art: "documents" as const, title: "Сопровождение оплаты", text: "Фиксируйте документы, этапы и реквизиты оплаты до передачи автомобиля." },
+  { art: "garage" as const, title: "Встречайтесь в людных местах", text: "Днём, на охраняемых парковках или в ГИБДД для проверки авто. Не ездите в гаражи одни." },
+  { art: "messages" as const, title: "Не давайте предоплату", text: "Требование предоплаты на карту — частый приём мошенников. Особенно «Сбербанк Онлайн» на чужое имя." },
 ]
 
 const SCAM_SIGNS = [
@@ -21,13 +23,7 @@ export default function SafetyPage() {
   return (
     <Box p={{ base: "sm", md: "md" }}>
       <Stack gap="md" maw={800} mx="auto">
-        <Group gap="sm" align="center">
-          <ThemeIcon variant="light" color="red" size={44} radius="md"><IconShieldCheck size={22} /></ThemeIcon>
-          <Stack gap={0}>
-            <Text component="h1" c="var(--market-ink)" ff="var(--font-display),sans-serif">Безопасность</Text>
-            <Text size="xs" c="var(--market-muted)">Как не стать жертвой мошенников</Text>
-          </Stack>
-        </Group>
+        <SectionArtworkHeader scene="legal-documents" title="Безопасность"><p>Как не стать жертвой мошенников</p></SectionArtworkHeader>
 
         <Alert icon={<IconAlertTriangle size={16} />} color="red" variant="light" radius="md" title="Главное правило">
           Никогда не переводите деньги до осмотра товара и проверки реквизитов. Для сложной покупки оформляйте сопровождаемую сделку с понятными документами и этапами.
@@ -35,11 +31,10 @@ export default function SafetyPage() {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
           {SAFETY_RULES.map((r) => {
-            const Icon = r.icon
             return (
               <Paper key={r.title} radius="md" p="md" withBorder>
                 <Group gap="sm" align="flex-start">
-                  <ThemeIcon variant="light" color="green" size={36} radius="md"><Icon size={20} /></ThemeIcon>
+                  <ServiceArtwork kind={r.art} size={44} />
                   <Stack gap={4} style={{ flex: 1 }}>
                     <Text fw={700} fz="sm" c="var(--market-ink)">{r.title}</Text>
                     <Text size="xs" c="var(--market-ink-soft)" lh={1.5}>{r.text}</Text>

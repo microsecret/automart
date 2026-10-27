@@ -1,8 +1,11 @@
 "use client"
 
+import SectionArtworkHeader from "@/components/ui/SectionArtworkHeader"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
+
 import Link from "next/link"
-import { Alert, Box, Button, Card, Group, List, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core"
-import { IconBook2, IconHeadset, IconLock, IconMessageCircle2, IconRobot, IconUserCheck } from "@tabler/icons-react"
+import { Alert, Box, Button, Card, Group, List, SimpleGrid, Stack, Text, Title } from "@mantine/core"
+import { IconMessageCircle2 } from "@tabler/icons-react"
 
 const HELP_LINKS = [
   { href: "/auth/signup", label: "Регистрация через Telegram-бота" },
@@ -18,28 +21,26 @@ export default function HelpSupportPage() {
   return (
     <Box p={{ base: "sm", md: "xl" }} maw={900} w="100%" mx="auto" style={{ minWidth: 0, overflowWrap: "anywhere" }}>
       <Stack gap="xl">
-        <Stack gap="xs" ta="center" align="center">
-          <ThemeIcon size={58} radius="xl" variant="gradient" gradient={{ from: "indigo", to: "violet" }}><IconHeadset size={28} /></ThemeIcon>
-          <Title order={1} fz={{ base: "26px", sm: "44px" }} lh={1.1}>Поддержка LeWheel</Title>
-          <Text c="dimmed" maw={650}>Задайте вопрос без регистрации. Переписка сохранится в этом браузере, а после входа может быть привязана к вашему кабинету.</Text>
-          <Button size="md" leftSection={<IconMessageCircle2 size={18} />} onClick={openSupport}>Открыть чат</Button>
-        </Stack>
+        <SectionArtworkHeader scene="help" title="Поддержка LeWheel">
+          <p>Задайте вопрос без регистрации. Переписка сохранится в этом браузере, а после входа может быть привязана к вашему кабинету.</p>
+          <Button mt="md" size="md" leftSection={<IconMessageCircle2 size={18} />} onClick={openSupport}>Открыть чат</Button>
+        </SectionArtworkHeader>
 
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
           <Card withBorder radius="md" p="lg">
-            <Stack gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconRobot size={18} /></ThemeIcon><Text fw={700}>Сначала — инструкция</Text><Text size="sm" c="dimmed">Помощник отвечает по проверенной базе знаний: регистрация, объявления, аукционы, доставка и безопасность.</Text></Stack>
+            <Stack gap="sm"><ServiceArtwork kind="documents" size={44} /><Text fw={700}>Сначала — инструкция</Text><Text size="sm" c="dimmed">Помощник отвечает по проверенной базе знаний: регистрация, объявления, аукционы, доставка и безопасность.</Text></Stack>
           </Card>
           <Card withBorder radius="md" p="lg">
-            <Stack gap="sm"><ThemeIcon variant="light" color="teal" radius="md"><IconUserCheck size={18} /></ThemeIcon><Text fw={700}>Затем — оператор</Text><Text size="sm" c="dimmed">Если ответа недостаточно, нажмите «Позвать оператора». Сотрудник увидит историю и продолжит диалог в том же окне.</Text></Stack>
+            <Stack gap="sm"><ServiceArtwork kind="messages" size={44} /><Text fw={700}>Затем — оператор</Text><Text size="sm" c="dimmed">Если ответа недостаточно, нажмите «Позвать оператора». Сотрудник увидит историю и продолжит диалог в том же окне.</Text></Stack>
           </Card>
           <Card withBorder radius="md" p="lg">
-            <Stack gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconLock size={18} /></ThemeIcon><Text fw={700}>Контакт — по желанию</Text><Text size="sm" c="dimmed">Гость может оставить имя, телефон или email. Пароли, коды входа и платёжные данные поддержка не запрашивает.</Text></Stack>
+            <Stack gap="sm"><ServiceArtwork kind="safe-deal" size={44} /><Text fw={700}>Контакт — по желанию</Text><Text size="sm" c="dimmed">Гость может оставить имя, телефон или email. Пароли, коды входа и платёжные данные поддержка не запрашивает.</Text></Stack>
           </Card>
         </SimpleGrid>
 
         <Card withBorder radius="md" p={{ base: "md", sm: "xl" }}>
           <Group align="flex-start" gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
-            <ThemeIcon variant="light" color="grape" size={40} radius="md" style={{ flexShrink: 0 }}><IconBook2 size={20} /></ThemeIcon>
+            <ServiceArtwork kind="documents" size={40} />
             <Stack gap="sm" style={{ minWidth: 0 }}>
               <div><Title order={3}>Быстрые инструкции</Title><Text size="sm" c="dimmed">Откройте нужный раздел или задайте уточняющий вопрос помощнику.</Text></div>
               <List spacing="xs">
