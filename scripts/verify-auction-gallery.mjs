@@ -49,6 +49,7 @@ try {
     await main.evaluate(img => img.decode())
     check(name + ": main source shown whole", await main.evaluate(img => getComputedStyle(img).objectFit === "contain" && img.naturalWidth > img.naturalHeight))
     check(name + ": previews contain images", await gallery.locator('button[aria-label^="Показать фото"] img').evaluateAll(items => items.every(img => getComputedStyle(img).objectFit === "contain")))
+    check(name + ": thumbnail images stay inside buttons", await gallery.locator('button[aria-label^="Показать фото"] img').evaluateAll(items => items.every(img => { const a = img.getBoundingClientRect(), b = img.parentElement.getBoundingClientRect(); return a.left >= b.left && a.right <= b.right && a.top >= b.top && a.bottom <= b.bottom })))
     check(name + ": thirty-thumbnail window retained", await gallery.locator('button[aria-label^="Показать фото"]').count() === 30)
     await frame.focus()
     check(name + ": keyboard focus visible", await frame.evaluate(el => getComputedStyle(el).outlineStyle !== "none"))

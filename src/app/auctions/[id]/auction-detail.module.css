@@ -19,6 +19,7 @@
 }
 .thumbnail {
   display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   color: var(--market-muted);
   flex: 0 0 76px;
@@ -31,6 +32,7 @@
   overflow: hidden;
   cursor: pointer;
 }
+.thumbnail > img { min-width: 0; min-height: 0; }
 .thumbnail[aria-current="true"] { border-color: var(--market-primary); }
 .thumbnail:focus-visible { outline: 3px solid var(--market-focus-ring); outline-offset: 1px; }
 
