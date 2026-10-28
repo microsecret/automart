@@ -130,7 +130,10 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
       </nav>
 
       <header data-part-scene={scenicKind || undefined} className={scenicKind ? "part-category__heading part-category__heading--scene" : artworkKind ? "part-category__heading part-category__heading--illustrated" : "part-category__heading"}>
-        {scenicKind ? <Image src={`/images/ui/scenic-v1/part-${scenicKind}-1600.webp`} width={1600} height={534} alt="" aria-hidden="true" unoptimized className="part-category__scene" /> : artworkKind && <PartCategoryArtwork kind={artworkKind} />}
+        {scenicKind ? <picture>
+          <source media="(max-width: 600px)" srcSet={`/images/ui/scenic-v1/part-${scenicKind}-960.webp`} />
+          <Image src={`/images/ui/scenic-v1/part-${scenicKind}-1600.webp`} width={1600} height={534} alt="" aria-hidden="true" unoptimized className="part-category__scene" />
+        </picture> : artworkKind && <PartCategoryArtwork kind={artworkKind} />}
         <h1 className="part-category__title">{summary.label}: новые и б/у запчасти</h1>
       </header>
 

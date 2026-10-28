@@ -11,7 +11,10 @@ export default function SectionArtworkHeader({ scene, title, children }: {
   children?: ReactNode
 }) {
   return <header className={styles.header} data-section-scene={scene}>
-    <Image src={`/images/ui/scenic-v1/${scene}-1600.webp`} alt="" aria-hidden="true" fill unoptimized sizes="(max-width: 600px) 100vw, 1000px" className={styles.image} />
+    <picture>
+      <source media="(max-width: 600px)" srcSet={`/images/ui/scenic-v1/${scene}-960.webp`} />
+      <Image src={`/images/ui/scenic-v1/${scene}-1600.webp`} alt="" aria-hidden="true" fill unoptimized sizes="(max-width: 600px) 100vw, 1000px" className={styles.image} />
+    </picture>
     <div className={styles.content}><h1>{title}</h1>{children}</div>
   </header>
 }

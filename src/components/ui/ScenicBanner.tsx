@@ -11,7 +11,10 @@ export default function ScenicBanner({ scene, children, className = "" }: {
 }) {
   return (
     <section data-scene={scene} className={`lw-scenic-banner ${className}`.trim()}>
-      <Image src={`/images/ui/scenic-v1/${scene}-1600.webp`} alt="" aria-hidden="true" fill sizes="(max-width: 600px) 100vw, 1200px" unoptimized className="lw-scenic-banner__image" />
+      <picture>
+        <source media="(max-width: 600px)" srcSet={`/images/ui/scenic-v1/${scene}-960.webp`} />
+        <Image src={`/images/ui/scenic-v1/${scene}-1600.webp`} alt="" aria-hidden="true" fill sizes="(max-width: 600px) 100vw, 1200px" unoptimized className="lw-scenic-banner__image" />
+      </picture>
       <div className="lw-scenic-banner__content">{children}</div>
     </section>
   )
