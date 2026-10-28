@@ -21,6 +21,7 @@ import styles from "./auctions.module.css"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 import { auctionMakeKey } from "@/lib/auction-make-groups.mjs"
 import BodyTypeArtwork from "@/components/auctions/BodyTypeArtwork"
+import AuctionFlag from "@/components/sidebar/AuctionFlag"
 
 const fetcher = fetchJson
 
@@ -32,6 +33,7 @@ const COUNTRIES = [
   { value: "US", label: "🇺🇸 США" },
   { value: "DE", label: "🇩🇪 Европа" },
 ]
+const CARD_COUNTRY_NAMES: Record<string, string> = { JP: "Япония", KR: "Корея", CN: "Китай", US: "США", DE: "Европа" }
 
 const SOURCES = [
   { value: "", label: "Все площадки" },
@@ -168,15 +170,13 @@ function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; 
     return () => window.clearTimeout(timer)
   }, [image, loaded, failed])
 
-  /* Картинка отдаётся оптимизированной: домены аукционных CDN уже
-     разрешены в next.config.js, но раздел показывал оригиналы по
-     несколько мегабайт в слот шириной около трёхсот пикселей.
-
-     sizes считается по сетке карточек: до четырёх колонок на широком
-     экране, две на планшете, одна на телефоне. */
+  const photoLabel = failed ? "Фото недоступно" : "Фото не добавлено"
+  const countryName = CARD_COUNTRY_NAMES[listing.country] || listing.country
+  // Source renditions remain direct: existing CDN latency can exceed the
+  // optimizer deadline. Contain keeps portrait and landscape photos complete.
   return (
-    <Box className="auction-card__media" data-empty-media={!hasImage || undefined} data-loading={hasImage && !loaded || undefined}>
-      {!hasImage && <VehicleFallback type="CAR" compact />}
+    <Box className="auction-card__media" data-auction-media-state={!hasImage ? failed ? "unavailable" : "missing" : loaded ? "loaded" : "loading"} data-empty-media={!hasImage || undefined} data-loading={hasImage && !loaded || undefined}>
+      {!hasImage && <VehicleFallback type="CAR" compact label={photoLabel} />}
       {hasImage ? (
         <NextImage
           src={image}
@@ -193,17 +193,16 @@ function AuctionMedia({ listing, priority = false }: { listing: AuctionListing; 
           unoptimized
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
-          style={{ objectFit: "cover" }}
+          style={{ objectFit: "contain", transform: "none" }}
         />
       ) : (
         <Stack className="auction-card__image-pending" gap={4} align="center">
-          <ThemeIcon variant="light" color="gray" radius="xl" size={36}><IconPhoto size={19} /></ThemeIcon>
-          <Badge size="xs" variant="white" color="gray">Фото ожидается</Badge>
+          <Badge size="xs" variant="light" color="gray">{photoLabel}</Badge>
         </Stack>
       )}
-      <Badge pos="absolute" top={8} left={8} variant="filled" size="sm">{auctionSourceLabel(listing.source)}</Badge>
-      <Badge pos="absolute" top={8} right={8} color="dark" variant="filled" size="sm">
-        {listing.country === "JP" ? "🇯🇵" : listing.country === "KR" ? "🇰🇷" : listing.country === "US" ? "🇺🇸" : listing.country === "DE" ? "🇪🇺" : listing.country === "CN" ? "🇨🇳" : listing.country}
+      <Badge className="auction-card__source" pos="absolute" top={8} left={8} variant="filled" size="sm">{auctionSourceLabel(listing.source)}</Badge>
+      <Badge className="auction-card__country" pos="absolute" top={8} right={8} color="dark" variant="filled" size="sm">
+        <Group component="span" gap={4} wrap="nowrap"><AuctionFlag country={listing.country} /><span>{countryName}</span></Group>
       </Badge>
     </Box>
   )

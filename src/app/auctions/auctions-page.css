@@ -169,7 +169,8 @@
   animation: auction-media-loading 1.35s ease-in-out infinite;
 }
 .auction-card__media[data-empty-media] {
-  aspect-ratio: 16 / 7;
+  /* Error, absent and loaded media keep the same frame to prevent jumps. */
+  aspect-ratio: 4 / 3;
   background: var(--market-surface-subtle);
 }
 .auction-card__media > img {
@@ -177,16 +178,20 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform var(--ease-slow) var(--ease-out), filter var(--ease-slow) var(--ease-out);
 }
 .auction-card__image-pending {
   position: absolute;
   inset: 0;
   z-index: 1;
-  justify-content: center;
+  justify-content: flex-end;
+  padding-bottom: 12px;
   pointer-events: none;
 }
+.auction-card__source,
+.auction-card__country { max-width: calc(50% - 12px); }
+.auction-card__country .lw-auction-flag { width: 18px; height: 12px; flex: 0 0 18px; }
 .auction-result-card__content {
   display: flex;
   flex: 1;
@@ -242,14 +247,13 @@
 /* Подпись отступает на второй план: она поясняет цену, а не соревнуется
    с ней за внимание. */
 .auction-result-card__price-note {
-  overflow: hidden;
   color: var(--market-muted);
   font-size: var(--text-caps);
   font-weight: 600;
   letter-spacing: var(--track-caps);
   line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .auction-result-card__date {
   min-width: 0;

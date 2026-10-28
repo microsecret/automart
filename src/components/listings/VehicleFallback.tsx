@@ -18,7 +18,7 @@ export function vehicleTypeLabel(type: VehicleKind, bodyType?: string | null) {
   return FALLBACKS[type as keyof typeof FALLBACKS]?.label || "Транспорт"
 }
 
-export default function VehicleFallback({ type, bodyType, compact = false }: { type: VehicleKind; bodyType?: string | null; compact?: boolean }) {
+export default function VehicleFallback({ type, bodyType, compact = false, label }: { type: VehicleKind; bodyType?: string | null; compact?: boolean; label?: string }) {
   const item = FALLBACKS[type as keyof typeof FALLBACKS] || FALLBACKS.CAR
   const Icon = type === "AIR" && bodyType === "HELICOPTER" ? IconHelicopter : item.Icon
 
@@ -27,7 +27,7 @@ export default function VehicleFallback({ type, bodyType, compact = false }: { t
       className={`vehicle-fallback vehicle-fallback--${String(type || "CAR").toLowerCase()}`}
       data-compact={compact || undefined}
       data-kind={type === "AIR" && bodyType === "HELICOPTER" ? "helicopter" : String(type || "CAR").toLowerCase()}
-      aria-label={`Фото не добавлено: ${vehicleTypeLabel(type, bodyType)}`}
+      aria-label={label || `Фото не добавлено: ${vehicleTypeLabel(type, bodyType)}`}
       role="img"
     >
       <ThemeIcon variant="light" color={item.color} radius="xl" size={compact ? 38 : 54}>
