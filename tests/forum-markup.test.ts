@@ -379,3 +379,34 @@ test("исполняемого кода не проходит ни в одной
     assert.doesNotMatch(stripped, /(?:href|src)="(?:javascript|data):/i, attack)
   }
 })
+
+test("ссылка внутри подписи картинки не вскрывает атрибуты тега", () => {
+  /* Аудит 28.10.2026: разбор ссылок шёл по уже собранному <img> и
+     находил «[b](...)» в атрибуте alt. Кавычки ссылки закрывали alt, а
+     хвост адреса становился атрибутом onerror — скрипт у каждого
+     читателя. */
+  const html = renderForumMarkup("![a[b](/uploads/nope.png) c](https://x.ru/q/onerror=alert&#40;1&#41;//)")
+  assert.doesNotMatch(html, /<img[^>]*onerror/i)
+  assert.doesNotMatch(html, /alt="[^"]*<a /)
+  /* Каждый тег <img> закрыт и не содержит лишних атрибутов. */
+  for (const tag of html.match(/<img[^>]*>/g) ?? []) {
+    assert.match(tag, /^<img src="[^"]+" alt="[^"]*" loading="lazy" class="forum-image" \/>$/)
+  }
+})
+
+test("картинка в ссылке и обычная разметка после меток работают", () => {
+  const html = renderForumMarkup("**жирно** и [сайт](https://lewheel.ru) и `код`")
+  assert.match(html, /<strong>жирно<\/strong>/)
+  assert.match(html, /<a href="https:\/\/lewheel\.ru"/)
+  assert.match(html, /<code>код<\/code>/)
+  assert.doesNotMatch(html, /\u0000/)
+})
+
+test("данные для поисковиков не закрывают свой блок script", async () => {
+  /* На форуме стояла замена на "\u003c" — в JS это тот же «<». */
+  // @ts-expect-error Node's strip-types test runner requires the explicit extension.
+  const { serializeJsonLd } = await import("../src/lib/json-ld.ts")
+  const out = serializeJsonLd({ name: "</script><img src=x onerror=alert(1)>" })
+  assert.doesNotMatch(out, /</)
+  assert.equal(JSON.parse(out).name, "</script><img src=x onerror=alert(1)>")
+})

@@ -20,6 +20,7 @@ import SubscribeButton from "@/components/forum/SubscribeButton"
 import TopicModeration from "@/components/forum/TopicModeration"
 import { isModerator } from "@/lib/permissions"
 import ReplyForm from "./ReplyForm"
+import { serializeJsonLd } from "@/lib/json-ld"
 
 type Props = { params: Promise<{ section: string; topic: string }>; searchParams: Promise<{ page?: string }> }
 
@@ -158,7 +159,7 @@ export default async function ForumTopicPage({ params, searchParams }: Props) {
           /* Скобка заменяется на её экранированную запись, а не на саму
              себя: иначе сообщение с «</script>» закрыло бы блок разметки
              и остальное попало бы на страницу как разметка. */
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\u003c") }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
     <Container size="md" py={{ base: "md", md: "xl" }}>

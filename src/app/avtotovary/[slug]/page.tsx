@@ -11,6 +11,7 @@ import { plural } from "@/lib/plural"
 import ShopBar from "@/components/catalogs/ShopBar"
 import PartOfferCard from "@/components/catalogs/PartOfferCard"
 import styles from "@/components/catalogs/catalogs.module.css"
+import { serializeJsonLd } from "@/lib/json-ld"
 
 export const revalidate = 900
 
@@ -113,7 +114,7 @@ export default async function ProductGroupPage({ params }: Props) {
 
   return (
     <main className={styles.page}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }} />
       <ShopBar />
       <nav className={styles.crumbs} aria-label="Навигация">
         <Link href="/">Главная</Link>

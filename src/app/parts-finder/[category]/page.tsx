@@ -8,6 +8,7 @@ import { PART_SUBCATEGORIES } from "@/lib/constants"
 import { partCategoriesWithPages, partCategoryLabel, partTypeFromSlug } from "@/lib/part-category-slug"
 import PartCategoryArtwork from "@/components/parts/PartCategoryArtwork"
 import Image from "next/image"
+import { serializeJsonLd } from "@/lib/json-ld"
 
 /**
  * Страница категории запчастей.
@@ -121,7 +122,7 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
 
   return (
     <main className="part-category">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
 
       <nav className="part-category__crumbs" aria-label="Навигация по разделу">
         <Link href="/parts-finder">Запчасти</Link>

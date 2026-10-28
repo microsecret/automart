@@ -5,6 +5,7 @@ import { makeSeoDescription, newsHref } from "@/lib/news"
 import { absoluteUrl } from "@/lib/site-url"
 import { readNewsContentMetadata } from "@/lib/news-content"
 import NewsDetailClient, { type NewsArticle } from "./NewsDetailClient"
+import { serializeJsonLd } from "@/lib/json-ld"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -131,7 +132,7 @@ export default async function NewsDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <NewsDetailClient id={id} initialArticle={initialArticle} />
     </>
   )

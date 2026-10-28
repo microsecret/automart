@@ -8,6 +8,7 @@ import { CITY_COORDINATES } from "@/lib/cities"
 import { listNearbyFuelCities } from "@/lib/fuel-city-links"
 import { absoluteUrl } from "@/lib/site-url"
 import { plural } from "@/lib/plural"
+import { serializeJsonLd } from "@/lib/json-ld"
 
 /**
  * Городская страница карты АЗС.
@@ -231,9 +232,9 @@ export default async function FuelCityPage({ params }: { params: Promise<{ city:
 
   return (
     <main className="fuel-city">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
-      {faq && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }} />
+      {faq && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faq) }} />}
 
       <h1 className="fuel-city__title">Цены на бензин в {where}</h1>
       <p className="fuel-city__lead">

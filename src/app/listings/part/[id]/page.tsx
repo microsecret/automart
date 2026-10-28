@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth"
 import { isListingModerator, LISTING_STATUS, publicListingWhere } from "@/lib/listing-lifecycle"
 import PartDetailClient from "./PartDetailClient"
 import { parseImages } from "@/lib/format"
+import { serializeJsonLd } from "@/lib/json-ld"
 
 export const dynamic = "force-dynamic"
 
@@ -200,7 +201,7 @@ export default async function PartDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <PartDetailClient data={data} />
     </>
   )

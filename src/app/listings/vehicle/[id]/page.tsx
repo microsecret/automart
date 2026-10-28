@@ -12,6 +12,7 @@ import { cityInPrepositional } from "@/lib/geo"
 import { parseImages } from "@/lib/format"
 import { rankSimilarVehicles } from "@/lib/listing-similarity"
 import { YEAR_SPREAD, buildPriceVerdict } from "@/lib/listing-price-verdict"
+import { serializeJsonLd } from "@/lib/json-ld"
 
 export const dynamic = "force-dynamic"
 
@@ -305,7 +306,7 @@ export default async function VehicleDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <VehicleDetailClient data={data} />
     </>
   )
