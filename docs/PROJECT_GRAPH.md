@@ -32,6 +32,7 @@ flowchart LR
 | Task | Start here | Then inspect |
 |---|---|---|
 | Auction catalogue UI | `src/app/auctions/page.tsx` | `src/app/api/auctions/route.ts`, auction components |
+| Illustrated auction body filters | `src/components/auctions/BodyTypeArtwork.tsx` | Seven distinct decorative bodies in fixed contain frames; real analytics determine the existing top-six filter tiles. Alpha-trimmed 120/240px WebP preparation: `scripts/prepare-body-artwork.mjs`; disposable API/browser audit: `scripts/verify-auction-body-artwork.mjs`; prompts: `docs/AUCTION_BODY_ARTWORK_2026-10-28.md`. |
 | Auction make shortcuts | `src/lib/auction-make-groups.mjs` | API merges case variants and sums the complete distribution before top-eight selection; UI active-state uses the same case-insensitive key |
 | Concurrent auction reads | `src/lib/async-read-cache.mjs` | `/api/auctions` shares pending page reads only; five-minute analytics cache coalesces pending calculations, bounds bookkeeping and never retains errors. Process-local optimisation, not distributed rate limiting. |
 | Saved search workflow | `src/components/search/SaveSearchButton.tsx` | `saved-search-summary.mjs`, `/api/saved-searches`; readonly filter preview, optional short tutorial, inline errors and confirmation; owner/scope/query deduplication and quota check share one database transaction |

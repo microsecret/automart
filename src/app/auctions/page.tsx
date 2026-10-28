@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Container, Stack, Group, Text, Paper, Select, TextInput, SimpleGrid, Badge, ThemeIcon, Button, Pagination, Box, Collapse, Divider, Progress, UnstyledButton } from "@mantine/core"
 import NextImage from "next/image"
-import { IconBolt, IconBus, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconTruck, IconX } from "@tabler/icons-react"
+import { IconBolt, IconCar, IconChartBar, IconChevronDown, IconDatabaseOff, IconEngine, IconEye, IconGasStation, IconGavel, IconPhoto, IconRefresh, IconX } from "@tabler/icons-react"
 import { formatPriceShort, plural } from "@/lib/format"
 import { auctionCardImageUrl, highQualityAuctionImageUrl, isSafeMediaUrl, parseAuctionImages } from "@/lib/media-url"
 import VehicleFallback from "@/components/listings/VehicleFallback"
@@ -20,6 +20,7 @@ import BrandIcon from "@/components/brands/BrandIcon"
 import styles from "./auctions.module.css"
 import SaveSearchButton from "@/components/search/SaveSearchButton"
 import { auctionMakeKey } from "@/lib/auction-make-groups.mjs"
+import BodyTypeArtwork from "@/components/auctions/BodyTypeArtwork"
 
 const fetcher = fetchJson
 
@@ -74,20 +75,6 @@ type AuctionResponse = {
 
 const FUEL_LABELS: Record<string, string> = { GASOLINE: "Бензин", DIESEL: "Дизель", ELECTRIC: "Электро", HYBRID: "Гибрид", GAS: "Газ" }
 const BODY_LABELS: Record<string, string> = { SUV: "Кроссовер", SEDAN: "Седан", PICKUP: "Пикап", WAGON: "Универсал", HATCHBACK: "Хэтчбек", MINIVAN: "Минивэн", COUPE: "Купе" }
-
-/* Значки кузовов. Набор Tabler не различает седан и хэтчбек, поэтому
-   разные виды помечены теми значками, что у него есть: внедорожник,
-   пикап и фургон узнаются, остальные идут общим силуэтом машины.
-   Подпись под значком в любом случае называет кузов словом. */
-const BODY_ICONS: Record<string, React.ReactNode> = {
-  SUV: <IconCar size={20} />,
-  SEDAN: <IconCar size={20} />,
-  HATCHBACK: <IconCar size={20} />,
-  COUPE: <IconCar size={20} />,
-  PICKUP: <IconTruck size={20} />,
-  WAGON: <IconCar size={20} />,
-  MINIVAN: <IconBus size={20} />,
-}
 
 function isRentalTransferListing(conditionInfo: string | null) {
   if (!conditionInfo) return false
@@ -410,7 +397,6 @@ function AuctionsPageContent() {
       value: item.bodyType,
       label: BODY_LABELS[item.bodyType] || item.bodyType,
       count: item.count,
-      icon: BODY_ICONS[item.bodyType] || <IconCar size={20} />,
     }))
   const importPolicy = data?.importPolicy
   const countryLabel = COUNTRIES.find((item) => item.value === country)?.label.replace(/^\S+\s/, "") || "этой страны"
@@ -460,11 +446,12 @@ function AuctionsPageContent() {
                 key={tile.value}
                 type="button"
                 className="auction-body-tile"
+                data-body-type={tile.value}
                 data-active={bodyType === tile.value || undefined}
                 aria-pressed={bodyType === tile.value}
                 onClick={() => { setBodyType(bodyType === tile.value ? "" : tile.value); setPage(1) }}
               >
-                <span className="auction-body-tile__icon" aria-hidden="true">{tile.icon}</span>
+                <BodyTypeArtwork bodyType={tile.value} />
                 <span className="auction-body-tile__label">{tile.label}</span>
                 <span className="auction-body-tile__count">{tile.count.toLocaleString("ru-RU")}</span>
               </button>

@@ -446,6 +446,10 @@
 .auction-body-tile:active {
   transform: translateY(0) scale(0.985);
 }
+.auction-body-tile:focus-visible {
+  outline: 3px solid var(--market-focus-ring);
+  outline-offset: 2px;
+}
 
 /* Поля фильтра — как в каталоге объявлений: подпись над полем, рамка у
    самого поля, без плашки вокруг каждого.
