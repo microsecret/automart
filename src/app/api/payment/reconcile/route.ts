@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { reconcilePendingPromotions } from "@/lib/promotion-reconcile"
 import { expireFinishedPromotions } from "@/lib/promotion-expiry"
+import { hasBearerToken } from "@/lib/bearer-token"
 
 export const dynamic = "force-dynamic"
 
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   if (!PARSER_TOKEN) {
     return NextResponse.json({ error: "Сверка не настроена" }, { status: 503 })
   }
-  if (request.headers.get("authorization") !== `Bearer ${PARSER_TOKEN}`) {
+  if (!hasBearerToken(request, PARSER_TOKEN)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

@@ -452,7 +452,11 @@ function DashboardContent() {
                 </Center>
               </Paper>
             ) : (
-              data.listings.filter((l) => !statusFilter || l.status === statusFilter).map((l) => {
+              /* «Нужно открыть» — это и отклонённые, и приостановленные:
+                 так их считает плитка. Фильтр брал только отклонённые, и
+                 на плитке стояло «2», а в списке было одно (аудит кабинета
+                 28.10.2026). */
+              data.listings.filter((l) => !statusFilter || l.status === statusFilter || (statusFilter === LISTING_STATUS.REJECTED && l.status === LISTING_STATUS.PAUSED)).map((l) => {
                 const isVehicle = !!l.vehicle
                 const images = parseImages(isVehicle ? l.vehicle?.images : l.part?.images)
                 const image = images[0]
@@ -754,11 +758,14 @@ function DashboardContent() {
         <Stack gap="md">
           <Text size="sm" c="dimmed">
             {removalConfirmation?.kind === "listing"
-              ? `Объявление «${removalConfirmation?.title}» исчезнет из каталога, но сохранится в архиве кабинета.`
+              ? `Объявление «${removalConfirmation?.title}» исчезнет из каталога и из списка ваших объявлений.`
               : `Автомобиль «${removalConfirmation?.title}» будет удалён из личного гаража. Эта запись не является объявлением и не влияет на каталог.`}
           </Text>
           <Alert color={removalConfirmation?.kind === "listing" ? "orange" : "red"} variant="light">
-            {removalConfirmation?.kind === "listing" ? "Его можно будет использовать как основу для новой публикации позже." : "Удаление записи из гаража нельзя отменить."}
+            {/* Архива на деле нет: снятие ставит отметку удаления, и
+                открыть такое объявление потом нельзя. Обещание архива
+                убрано — честнее предупредить (аудит кабинета 28.10.2026). */}
+            {removalConfirmation?.kind === "listing" ? "Вернуть его потом не получится — машину придётся разместить заново." : "Удаление записи из гаража нельзя отменить."}
           </Alert>
           <Group justify="flex-end">
             <Button variant="default" disabled={isRemovalSaving || Boolean(garageDeletingId)} onClick={() => setRemovalConfirmation(null)}>Отмена</Button>

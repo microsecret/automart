@@ -4,6 +4,7 @@ import { isEncarListingUnavailableError, scrapeEncarPublicListing } from "@/lib/
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns, summarizeItemFailures } from "@/lib/auction-sync-run"
 import { refreshDueCutoff, refreshIntervalHours } from "@/lib/auction-crawl-policy"
+import { hasBearerToken } from "@/lib/bearer-token"
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       console.error("PARSER_TOKEN is not configured")
       return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
     }
-    if (request.headers.get("authorization") !== `Bearer ${PARSER_TOKEN}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!hasBearerToken(request, PARSER_TOKEN)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = await request.json().catch(() => null) as { limit?: unknown } | null
     const requestedLimit = Number(body?.limit)

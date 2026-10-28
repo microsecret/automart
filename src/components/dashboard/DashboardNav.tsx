@@ -41,6 +41,12 @@ const ITEM_ICONS = {
  * общей раскладке и её нельзя забыть, добавляя новую страницу.
  */
 function resolveActiveId(pathname: string, tab: string | null): string | undefined {
+  /* Разделы на своих адресах. Запчасти, магазин и заказы здесь не
+     значились, и на их страницах полоса не подсвечивала ничего (аудит
+     кабинета 28.10.2026). */
+  if (pathname.startsWith("/dashboard/part-requests")) return "part-requests"
+  if (pathname.startsWith("/dashboard/store")) return "store"
+  if (pathname.startsWith("/dashboard/orders")) return "orders"
   if (pathname.startsWith("/dashboard/deliveries")) return "deliveries"
   if (pathname.startsWith("/dashboard/documents")) return "documents"
   if (pathname.startsWith("/favorites")) return "favorites"
@@ -48,7 +54,9 @@ function resolveActiveId(pathname: string, tab: string | null): string | undefin
   if (pathname !== "/dashboard") return undefined
 
   // Разделы самой страницы кабинета живут в строке запроса.
-  if (tab === "garage" || tab === "payments" || tab === "profile") return tab
+  /* Подписки тоже вкладка кабинета: без этой строки на них
+     подсвечивались «Объявления». */
+  if (tab === "garage" || tab === "payments" || tab === "profile" || tab === "subscriptions") return tab
   return "listings"
 }
 

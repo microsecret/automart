@@ -48,7 +48,9 @@ export async function GET(request: Request) {
       favoritesCount,
     ] = await Promise.all([
       prisma.listing.findMany({
-        where: { userId },
+        /* Снятые объявления в список не попадают: они висели с пометкой
+           «В архиве», а карандаш открывал «Объявление не найдено». */
+        where: { userId, deletedAt: null },
         include: {
           vehicle: { select: { id: true, make: true, model: true, year: true, price: true, mileage: true, images: true, location: true, vehicleType: true, bodyType: true } },
           part: { select: { id: true, name: true, price: true, images: true } },
@@ -108,13 +110,13 @@ export async function GET(request: Request) {
          число, сумма просмотров и разбивка по статусам нужны по всем.
          Раньше ради этого выбирались все объявления со связями. */
       prisma.listing.aggregate({
-        where: { userId },
+        where: { userId, deletedAt: null },
         _count: true,
         _sum: { views: true },
       }),
       prisma.listing.groupBy({
         by: ["status"],
-        where: { userId },
+        where: { userId, deletedAt: null },
         _count: true,
       }),
       prisma.listing.count({

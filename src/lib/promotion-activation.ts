@@ -52,7 +52,18 @@ export async function activatePaidPromotion(input: PromotionPaymentInput): Promi
   }
   if (order.status === "PAID" && order.providerPaymentId === providerPaymentId) return "already_active"
 
-  const promoUntil = new Date(paymentCreatedAt.getTime() + tariff.durationDays * 86_400_000)
+  /* Продление, а не замена срока.
+
+     Срок считался от даты нового платежа: продавец, оплативший тот же
+     тариф ещё до конца прежнего, терял оставшиеся дни — новый срок
+     просто затирал старый (аудит бэкенда 28.10.2026). Если тот же тариф
+     ещё действует, новый срок начинается с его конца. Повтор уведомления
+     срок не продлит: второй раз заказ не пройдёт отметку ниже. */
+  const current = await prisma.listing.findUnique({ where: { id: listingId }, select: { promoType: true, promoUntil: true } })
+  const anchor = current?.promoType === tariff.id && current.promoUntil && current.promoUntil > paymentCreatedAt
+    ? current.promoUntil
+    : paymentCreatedAt
+  const promoUntil = new Date(anchor.getTime() + tariff.durationDays * 86_400_000)
 
   const activated = await prisma.$transaction(async (tx) => {
     const claimed = await tx.promotionOrder.updateMany({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { regionsForScheduledRun, targetRegionKeys } from "@/lib/fuel-target-regions"
 import { FUEL_SOURCES, resolveFuelSources, runFuelSources } from "@/lib/fuel-scraper-run"
+import { hasBearerToken } from "@/lib/bearer-token"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       console.error("PARSER_TOKEN is not configured")
       return NextResponse.json({ error: "Fuel scraper is not configured" }, { status: 503 })
     }
-    if (request.headers.get("authorization") !== `Bearer ${PARSER_TOKEN}`) {
+    if (!hasBearerToken(request, PARSER_TOKEN)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

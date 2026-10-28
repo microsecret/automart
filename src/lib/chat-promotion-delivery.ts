@@ -152,10 +152,21 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
   const now = new Date()
   const maxOrders = options.maxOrders ?? 5
 
-  const orders = await prisma.promotionOrder.findMany({
-    where: { tariffId: "chats", status: "PAID", promoUntil: { gt: now } },
+  /* Все действующие заказы, а не пять первых.
+
+     Раньше брались пять самых старых оплат, а уже опубликованные и снятые
+     с продажи отсеивались только в цикле: когда действующих заказов больше
+     пяти, первые пять занимали все места, и шестой с остальными не
+     выходили весь оплаченный месяц (аудит 28.10.2026). Теперь снятые
+     отсекает запрос, а очередь из тех, кому пора, собирается ниже. */
+  const allOrders = await prisma.promotionOrder.findMany({
+    where: {
+      tariffId: "chats",
+      status: "PAID",
+      promoUntil: { gt: now },
+      listing: { status: "ACTIVE", deletedAt: null },
+    },
     orderBy: { paidAt: "asc" },
-    take: maxOrders,
     select: {
       id: true,
       listingId: true,
@@ -169,7 +180,7 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
     },
   })
 
-  if (!orders.length) return { processed: 0, published: 0, pinned: 0, skipped: 0 }
+  if (!allOrders.length) return { processed: 0, published: 0, pinned: 0, skipped: 0 }
 
   const chats = await prisma.telegramChat.findMany({
     where: { active: true, marketingEnabled: true },
@@ -190,12 +201,19 @@ export async function runChatPromotionDelivery(options: { maxOrders?: number } =
      сведения. Здесь один запрос и набор в памяти. */
   const recentPosts = await prisma.chatPromotionPost.findMany({
     where: {
-      orderId: { in: orders.map((order) => order.id) },
+      orderId: { in: allOrders.map((order) => order.id) },
       publishedAt: { gt: new Date(now.getTime() - REPOST_INTERVAL_MS) },
     },
     select: { orderId: true, chatId: true },
   })
   const postedRecently = new Set(recentPosts.map((post) => `${post.orderId}:${post.chatId}`))
+
+  /* В работу — только те, кому есть куда публиковаться: хотя бы один чат
+     без свежего поста этого заказа. Предел на проход сохраняется — он
+     бережёт лимит отправки Telegram. */
+  const orders = allOrders
+    .filter((order) => chats.some((chat) => !postedRecently.has(`${order.id}:${chat.id}`)))
+    .slice(0, maxOrders)
 
   for (const order of orders) {
     /* Снятое или скрытое объявление в чатах не публикуется: продавец мог

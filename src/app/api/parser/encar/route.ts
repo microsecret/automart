@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { saveAuctionImportItems, type AuctionImportItem } from "@/lib/auction-import"
 import { scrapeEncarPublicListing } from "@/lib/encar-public-scraper"
 import { assessImportAge, excludeListingsOutsideImportAgePolicy, resolveMaximumImportAgeYears } from "@/lib/import-age-policy"
+import { hasBearerToken } from "@/lib/bearer-token"
 
 export const dynamic = "force-dynamic"
 
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
       console.error("PARSER_TOKEN is not configured")
       return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
     }
-    if (request.headers.get("authorization") !== `Bearer ${PARSER_TOKEN}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!hasBearerToken(request, PARSER_TOKEN)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = await request.json().catch(() => null) as { urls?: unknown; maxAgeYears?: unknown } | null
     if (!Array.isArray(body?.urls) || body.urls.length === 0 || body.urls.length > MAX_URLS_PER_REQUEST) {

@@ -11,6 +11,7 @@ import {
   auctionSourceStageStatus,
   remainingAuctionSourceItems,
 } from "@/lib/auction-sync-budget"
+import { hasBearerToken } from "@/lib/bearer-token"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const stageStartedAt = Date.now()
     const parserToken = process.env.PARSER_TOKEN
     if (!parserToken) return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
-    if (request.headers.get("authorization") !== `Bearer ${parserToken}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!hasBearerToken(request, parserToken)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const body = await request.json().catch(() => null) as { limit?: unknown } | null
     const requestedLimit = Number(body?.limit)
     const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), MAX_LISTINGS_PER_REFRESH) : MAX_LISTINGS_PER_REFRESH

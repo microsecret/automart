@@ -5,6 +5,7 @@ import { discoverKCarListingIds, fetchKCarListing, isKCarListingUnavailableError
 import { prisma } from "@/lib/prisma"
 import { closeStaleAuctionSyncRuns } from "@/lib/auction-sync-run"
 import { recentDiscoveryCutoff } from "@/lib/auction-crawl-policy"
+import { hasBearerToken } from "@/lib/bearer-token"
 
 export const dynamic = "force-dynamic"
 
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const parserToken = process.env.PARSER_TOKEN
     if (!parserToken) return NextResponse.json({ error: "Auction import is not configured" }, { status: 503 })
-    if (request.headers.get("authorization") !== `Bearer ${parserToken}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!hasBearerToken(request, parserToken)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = await request.json().catch(() => null) as { limit?: unknown; page?: unknown; maxAgeYears?: unknown } | null
     const requestedLimit = Number(body?.limit)

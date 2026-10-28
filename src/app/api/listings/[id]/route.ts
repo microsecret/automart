@@ -196,11 +196,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Нет изменений для сохранения" }, { status: 400 })
     }
 
-    const requiresRemoderation = listing.status === LISTING_STATUS.ACTIVE
+    /* Отклонённое объявление после правки уходит на проверку снова.
+
+       Кнопка в кабинете называется «Исправить и отправить снова», но
+       сохранение меняло статус только у активного объявления: исправленное
+       после отказа так и оставалось «Нужна доработка», и продавец ждал
+       проверки, которой не будет (аудит кабинета 28.10.2026). */
+    const resubmitsRejected = listing.status === LISTING_STATUS.REJECTED
+    const requiresRemoderation = listing.status === LISTING_STATUS.ACTIVE || resubmitsRejected
     const nextStatus = requiresRemoderation ? LISTING_STATUS.PENDING_MODERATION : listing.status
     const now = new Date()
 
-    if (listing.vehicle && (listing.status === LISTING_STATUS.ACTIVE || listing.status === LISTING_STATUS.PENDING_MODERATION)) {
+    if (listing.vehicle && (listing.status === LISTING_STATUS.ACTIVE || listing.status === LISTING_STATUS.PENDING_MODERATION || resubmitsRejected)) {
       const nextVehicle = { ...listing.vehicle, ...specPatch }
       const publicationError = validateVehiclePublication({
         ...nextVehicle,
@@ -230,7 +237,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           description: after.description,
           price: after.price,
           status: nextStatus,
-          statusReason: requiresRemoderation ? "Изменено владельцем: требуется повторная модерация" : listing.statusReason,
+          statusReason: resubmitsRejected
+            ? "Исправлено владельцем после отказа: на повторной проверке"
+            : requiresRemoderation ? "Изменено владельцем: требуется повторная модерация" : listing.statusReason,
           lastStatusChangedAt: requiresRemoderation ? now : listing.lastStatusChangedAt,
         },
         include: editableListingInclude,

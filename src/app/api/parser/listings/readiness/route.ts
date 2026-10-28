@@ -3,6 +3,7 @@ import { recordAdminAudit } from "@/lib/admin-audit"
 import { LISTING_STATUS } from "@/lib/listing-lifecycle"
 import { prisma } from "@/lib/prisma"
 import { readStoredVehicleSubtype, validateVehiclePublication } from "@/lib/vehicle-publication-readiness"
+import { hasBearerToken } from "@/lib/bearer-token"
 
 export const dynamic = "force-dynamic"
 
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
       console.error("PARSER_TOKEN is not configured")
       return NextResponse.json({ error: "Listing readiness enforcement is not configured" }, { status: 503 })
     }
-    if (request.headers.get("authorization") !== `Bearer ${PARSER_TOKEN}`) {
+    if (!hasBearerToken(request, PARSER_TOKEN)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
