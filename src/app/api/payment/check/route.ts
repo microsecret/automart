@@ -49,10 +49,17 @@ export async function POST(request: NextRequest) {
   })
 
   if (!order) {
-    /* Заказа в ожидании нет — либо уведомление уже всё сделало, либо
-       оплаты не было вовсе. И то и другое человеку показывать одинаково:
-       страница сама перечитает состояние объявления. */
-    return NextResponse.json({ status: "unknown" }, { headers: rateLimitHeaders(limit) })
+    /* Заказа в ожидании нет: либо уведомление кассы уже всё сделало, либо
+       оплата сорвалась. Раньше оба случая отвечали «unknown», а страница
+       показывала его как успех — «Оплата прошла, продвижение включено»
+       даже тому, у кого платёж отменён. Смотрим последний заказ. */
+    const last = await prisma.promotionOrder.findFirst({
+      where: { listingId, userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      select: { status: true },
+    })
+    const status = last?.status === "PAID" ? "activated" : last?.status === "FAILED" || last?.status === "CANCELED" ? "canceled" : "unknown"
+    return NextResponse.json({ status }, { headers: rateLimitHeaders(limit) })
   }
 
   const result = await reconcileSingleOrder(order.id, session.user.id)

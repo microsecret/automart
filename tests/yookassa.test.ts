@@ -86,3 +86,27 @@ test("маршрут сверки закрыт токеном", () => {
   assert.match(route, /PARSER_TOKEN/)
   assert.match(route, /status: 401/)
 })
+
+test("сверка ищет платёж по номеру, записанному при создании оплаты", () => {
+  /* До активации номер платежа лежит в providerCheckoutId, а
+     providerPaymentId пуст. Сверка искала по второму и не находила ни
+     одного заказа: продвижение включалось только уведомлением кассы
+     (аудит 28.10.2026). */
+  const reconcile = readFileSync(new URL("../src/lib/promotion-reconcile.ts", import.meta.url), "utf8")
+  assert.match(reconcile, /providerCheckoutId: \{ not: null \}/)
+  assert.match(reconcile, /fetchYookassaPayment\(config, order\.providerCheckoutId\)/)
+  assert.doesNotMatch(reconcile, /providerPaymentId: \{ not: null \}/)
+  /* Отменённая оплата не выдаётся за принятую. */
+  assert.match(reconcile, /return "canceled"/)
+  const page = readFileSync(new URL("../src/app/listings/[id]/promote/page.tsx", import.meta.url), "utf8")
+  assert.doesNotMatch(page, /payload\?\.status === "activated" \|\| payload\?\.status === "unknown"/)
+})
+
+test("истёкшее продвижение снимается по расписанию", () => {
+  /* Значок «Премиум» и место выше в выдаче оставались навсегда. */
+  const expiry = readFileSync(new URL("../src/lib/promotion-expiry.ts", import.meta.url), "utf8")
+  assert.match(expiry, /promoUntil: \{ lte: now \}/)
+  assert.match(expiry, /isFeatured: false, promoType: null/)
+  const route = readFileSync(new URL("../src/app/api/payment/reconcile/route.ts", import.meta.url), "utf8")
+  assert.match(route, /expireFinishedPromotions\(\)/)
+})

@@ -44,7 +44,7 @@ export default function PromotePage() {
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null)
   /* Что показывать после возвращения из кассы: ждём подтверждения или
      продвижение уже включилось. */
-  const [checkState, setCheckState] = useState<"idle" | "checking" | "activated" | "pending">("idle")
+  const [checkState, setCheckState] = useState<"idle" | "checking" | "activated" | "pending" | "unknown">("idle")
   const [selected, setSelected] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -86,9 +86,19 @@ export default function PromotePage() {
         const payload = await response.json().catch(() => null)
         if (cancelled) return
 
-        if (payload?.status === "activated" || payload?.status === "unknown") {
+        if (payload?.status === "activated") {
           setCheckState("activated")
           void reloadViews()
+          return
+        }
+        /* Отменённую оплату показываем отменённой, а не «принятой». */
+        if (payload?.status === "canceled") {
+          setPaymentStatus("canceled")
+          return
+        }
+        /* Касса не ответила или заказа нет: успехом это не называем. */
+        if (payload?.status === "unknown") {
+          setCheckState("unknown")
           return
         }
 
@@ -155,6 +165,8 @@ export default function PromotePage() {
               <Text size="sm" c="var(--market-success-text)">
                 {checkState === "activated"
                   ? "Оплата прошла, продвижение включено."
+                  : checkState === "unknown"
+                    ? "Не видим подтверждения оплаты. Если деньги списаны — напишите в поддержку, проверим вручную."
                   : checkState === "checking"
                     ? "Платёж принят, проверяем подтверждение кассы…"
                     : "Платёж принят. Продвижение включится в течение нескольких минут — страницу можно закрыть."}

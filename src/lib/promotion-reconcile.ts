@@ -42,7 +42,12 @@ export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
   const orders = await prisma.promotionOrder.findMany({
     where: {
       status: "PENDING",
-      providerPaymentId: { not: null },
+      /* Номер платежа ЮKassa до оплаты лежит в providerCheckoutId — его
+         пишет создание платежа. providerPaymentId заполняет только
+         активация, и у ждущих заказов он всегда пуст: прежний отбор по
+         нему не находил ни одного заказа, и сверка годами отвечала
+         «проверено 0» (аудит 28.10.2026). */
+      providerCheckoutId: { not: null },
       createdAt: {
         gte: new Date(now - MAX_AGE_HOURS * 3_600_000),
         lte: new Date(now - MIN_AGE_MINUTES * 60_000),
@@ -55,7 +60,7 @@ export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
       /* Хранится строчными («chats»), а поиск тарифа приводит к
          верхнему регистру — ключи совпадают. */
       tariffId: true,
-      providerPaymentId: true,
+      providerCheckoutId: true,
     },
     /* Ограничение бережёт и нас, и кассу: при сбое, накопившем сотни
        заказов, разберём их за несколько проходов, а не одним залпом. */
@@ -66,11 +71,11 @@ export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
   const result: ReconcileResult = { checked: 0, activated: 0, failed: 0, skipped: 0 }
 
   for (const order of orders) {
-    if (!order.providerPaymentId) continue
+    if (!order.providerCheckoutId) continue
     result.checked += 1
 
     try {
-      const payment = await fetchYookassaPayment(config, order.providerPaymentId)
+      const payment = await fetchYookassaPayment(config, order.providerCheckoutId)
       const tariff = getPromotionTariff(order.tariffId)
 
       if (!tariff) {
@@ -129,25 +134,27 @@ export async function reconcilePendingPromotions(): Promise<ReconcileResult> {
  *
  * Поэтому спрашиваем кассу сразу, как только он вернулся.
  */
-export async function reconcileSingleOrder(orderId: string, userId: string): Promise<"activated" | "pending" | "unknown"> {
+export async function reconcileSingleOrder(orderId: string, userId: string): Promise<"activated" | "pending" | "canceled" | "unknown"> {
   const config = yookassaConfig()
   if (!config) return "unknown"
 
   const order = await prisma.promotionOrder.findFirst({
     /* Только свой заказ: чужой id не должен запускать обращение к кассе. */
-    where: { id: orderId, userId, status: "PENDING", providerPaymentId: { not: null } },
-    select: { id: true, listingId: true, userId: true, tariffId: true, providerPaymentId: true },
+    where: { id: orderId, userId, status: "PENDING", providerCheckoutId: { not: null } },
+    select: { id: true, listingId: true, userId: true, tariffId: true, providerCheckoutId: true },
   })
-  if (!order?.providerPaymentId) return "unknown"
+  if (!order?.providerCheckoutId) return "unknown"
 
   try {
-    const payment = await fetchYookassaPayment(config, order.providerPaymentId)
+    const payment = await fetchYookassaPayment(config, order.providerCheckoutId)
     const tariff = getPromotionTariff(order.tariffId)
     if (!tariff) return "unknown"
 
     if (payment.status === "canceled") {
       await markPromotionOrderFailed(order.id, "FAILED")
-      return "unknown"
+      /* Отдельный ответ: человек отменил оплату в кассе, а страница
+         показывала «Платёж принят». */
+      return "canceled"
     }
 
     if (payment.status !== "succeeded" || !payment.paid) return "pending"

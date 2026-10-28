@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { reconcilePendingPromotions } from "@/lib/promotion-reconcile"
+import { expireFinishedPromotions } from "@/lib/promotion-expiry"
 
 export const dynamic = "force-dynamic"
 
@@ -34,7 +35,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await reconcilePendingPromotions()
-    return NextResponse.json({ success: true, ...result })
+    /* Тем же проходом раз в пять минут: истёкшее продвижение снимается
+       почти сразу после конца срока. */
+    const expired = await expireFinishedPromotions()
+    return NextResponse.json({ success: true, ...result, expired })
   } catch (error) {
     console.error("Сверка платежей не выполнена:", error)
     return NextResponse.json({ error: "Сверка не выполнена" }, { status: 500 })
