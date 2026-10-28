@@ -40,6 +40,7 @@ flowchart LR
 | Saved search delivery | `src/lib/saved-search-notify.ts` | `SavedSearchDelivery` persists rolling quota and processing claims; site notification and watermark commit atomically; optional Telegram send follows. Separate lastCheckedAt rotates the queue without discarding deferred matches; new auction counts use the public visibility policy. |
 | Subscription controls | `src/components/dashboard/SubscriptionsPanel.tsx` | Owner-only `/api/saved-searches PATCH` pauses delivery without deleting filters; false-to-true resumes from now without erasing the durable quota. The panel exposes filter previews, delivery status, a short tutorial and recoverable mutation errors. |
 | Auction detail and galleries | `src/app/auctions/[id]/page.tsx` | `src/lib/auction-media.ts`, source collector |
+| Whole-photo auction gallery | `src/app/auctions/[id]/page.tsx` | Main/preview/thumbnail/similar media use contain fitting. Gallery frames and selected thumbnails share theme tokens. Region-local arrows/Home/End and thumbnail-only scroll preserve page position; existing 30-thumbnail window retained. Isolated long-gallery keyboard/error audit: `scripts/verify-auction-gallery.mjs`. |
 | Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |
 | Admin analytics and charts | `src/app/admin/page.tsx` | `src/app/api/admin/stats/route.ts`, analytics visit route |

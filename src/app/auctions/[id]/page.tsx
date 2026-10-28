@@ -149,7 +149,9 @@ function AuctionDetail() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const thumbnailRailRef = useRef<HTMLDivElement>(null)
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(() => new Set())
+  const [failedThumbnailUrls, setFailedThumbnailUrls] = useState<Set<string>>(() => new Set())
   const [loadedImageUrls, setLoadedImageUrls] = useState<Set<string>>(() => new Set())
   /* Тот же список, но доступный эффекту без перезапуска.
 
@@ -216,8 +218,20 @@ function AuctionDetail() {
   }, [activeImageIndex, galleryImages])
 
   useEffect(() => {
+    const rail = thumbnailRailRef.current
+    const selected = rail?.querySelector<HTMLElement>('[aria-current="true"]')
+    if (!rail || !selected) return
+    // Move only the thumbnail rail, never the page's vertical scroll position.
+    if (selected.offsetLeft < rail.scrollLeft) rail.scrollLeft = selected.offsetLeft
+    else if (selected.offsetLeft + selected.offsetWidth > rail.scrollLeft + rail.clientWidth) {
+      rail.scrollLeft = selected.offsetLeft + selected.offsetWidth - rail.clientWidth
+    }
+  }, [activeImageIndex, thumbnailIndexes])
+
+  useEffect(() => {
     setActiveImageIndex(0)
     setFailedImageUrls(new Set())
+    setFailedThumbnailUrls(new Set())
     setLoadedImageUrls(new Set())
   }, [listing?.id])
 
@@ -362,8 +376,16 @@ function AuctionDetail() {
           {/* Левая — фото + характеристики */}
           <Box className="auction-detail-layout__main">
             <Stack gap="md">
-              <Paper radius="md" withBorder style={{ overflow: "hidden" }}>
-                <Box style={{ position: "relative", background: "var(--mantine-color-gray-1)", aspectRatio: "16/10" }}>
+              <Paper data-auction-gallery role="region" aria-label="Фотографии лота" radius="md" withBorder style={{ overflow: "hidden" }} onKeyDown={(event) => {
+                if (galleryImages.length < 2 || event.altKey || event.ctrlKey || event.metaKey) return
+                const next = event.key === "ArrowLeft" ? (activeImageIndex - 1 + galleryImages.length) % galleryImages.length
+                  : event.key === "ArrowRight" ? (activeImageIndex + 1) % galleryImages.length
+                  : event.key === "Home" ? 0 : event.key === "End" ? galleryImages.length - 1 : null
+                if (next === null) return
+                event.preventDefault()
+                setActiveImageIndex(next)
+              }}>
+                <Box data-gallery-frame className={styles.galleryFrame} tabIndex={0} aria-label="Просмотр фото. Стрелки — переключение, Home и End — первое и последнее фото.">
                   {(!activeImage || failedImageUrls.has(activeImage)) && (
                     <Center h="100%" px="lg">
                       <Stack gap="xs" align="center" ta="center" maw={420}>
@@ -387,7 +409,7 @@ function AuctionDetail() {
                         aria-hidden="true"
                         referrerPolicy="no-referrer"
                         decoding="sync"
-                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "blur(1px)", transform: "scale(1.005)" }}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
                       />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -406,7 +428,7 @@ function AuctionDetail() {
                           setFailedImageUrls((previous) => new Set(previous).add(activeImage))
                           setLoadedImageUrls((previous) => new Set(previous).add(activeImageHighQuality))
                         }}
-                        style={{ position: "absolute", zIndex: 1, inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                        style={{ position: "absolute", zIndex: 1, inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
                       />
                     </>
                   )}
@@ -423,8 +445,8 @@ function AuctionDetail() {
                   </Stack>
                 </Box>
                 {galleryImages.length > 1 && (
-                  <Box p="sm" style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
-                    <Group gap="xs" wrap="nowrap" style={{ overflowX: "auto", paddingBottom: 2 }}>
+                  <Box p="sm" style={{ borderTop: "1px solid var(--market-line)" }}>
+                    <Group ref={thumbnailRailRef} className={styles.thumbnailRail} gap="xs" wrap="nowrap">
                       {thumbnailIndexes.map((index) => {
                         const image = galleryImages[index]
                         return (
@@ -436,10 +458,12 @@ function AuctionDetail() {
                           onFocus={() => warmGalleryImage(image)}
                           aria-label={`Показать фото ${index + 1}`}
                           aria-current={index === activeImageIndex ? "true" : undefined}
-                          style={{ flex: "0 0 auto", width: 76, height: 56, padding: 0, border: index === activeImageIndex ? "2px solid var(--mantine-color-orange-6)" : "1px solid var(--mantine-color-gray-3)", borderRadius: 8, background: "var(--mantine-color-gray-1)", overflow: "hidden", cursor: "pointer" }}
+                          className={styles.thumbnail}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={auctionThumbnailImageUrl(image)} alt="" referrerPolicy="no-referrer" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.style.opacity = "0.25" }} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                          {failedThumbnailUrls.has(image) ? <IconPhotoOff size={20} aria-hidden="true" /> : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={auctionThumbnailImageUrl(image)} alt="" referrerPolicy="no-referrer" loading="lazy" decoding="async" onError={() => setFailedThumbnailUrls(previous => new Set(previous).add(image))} style={{ display: "block", width: "100%", height: "100%", objectFit: "contain" }} />
+                          )}
                         </UnstyledButton>
                         )
                       })}
