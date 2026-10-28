@@ -16,6 +16,9 @@ const SOURCES: Readonly<Record<string, string>> = {
   consumables: "/images/ui/product-v1/filter-192.webp",
   chemicals: "/images/ui/product-v1/care-192.webp",
   tools: "/images/ui/product-v1/tools-192.webp",
+  body: "/images/ui/category-v1/body-320.webp",
+  exhaust: "/images/ui/category-v1/exhaust-320.webp",
+  steering: "/images/ui/category-v1/steering-320.webp",
 }
 
 /** Decorative identity only: the caller owns the visible label and destination. */

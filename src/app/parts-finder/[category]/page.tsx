@@ -100,6 +100,8 @@ export default async function PartCategoryPage({ params }: { params: Promise<{ c
     ENGINE: "engine", BRAKES: "brakes", SUSPENSION: "suspension",
     ELECTRICAL: "electrical", LIGHTING: "lighting", TRANSMISSION: "transmission",
     WHEELS: "wheels", COOLING: "cooling",
+    BODY: "body", EXHAUST: "exhaust", STEERING: "steering", INTERIOR: "interior",
+    ACCESSORIES: "accessories", CONSUMABLES: "consumables", CHEMICALS: "chemicals", TOOLS: "tools",
   } as Readonly<Record<string, string>>)[summary.partType]
   const scenicKind = ["engine", "brakes", "suspension", "electrical", "lighting"].includes(artworkKind) ? artworkKind : null
 

@@ -1039,7 +1039,10 @@
 .market-app-footer {
   margin-top: var(--section-gap);
   border-top: 0 !important;
-  background: var(--lw-navy) !important;
+  --lw-navy-line: rgba(197, 223, 220, 0.18);
+  --lw-navy-muted: #b8d4d3;
+  --lw-navy-text: #eef7f5;
+  background: var(--lw-scene-surface) !important;
   color: var(--lw-navy-text);
 }
 
@@ -1048,7 +1051,7 @@
 }
 
 [data-mantine-color-scheme="dark"] .market-app-footer {
-  background: #0a1120 !important;
+  background: #05252a !important;
   border-top: 1px solid var(--market-line) !important;
 }
 
@@ -1056,15 +1059,17 @@
    столбиком. Каждая: значок, заголовок с пояснением и одна кнопка. */
 .market-app-footer__cta {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 12px;
   padding: 26px 0;
   border-bottom: 1px solid var(--lw-navy-line);
 }
 
 .market-app-footer__cta-card {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  align-items: start;
   gap: 14px;
   min-width: 0;
   padding: 16px 18px;
@@ -1077,10 +1082,11 @@
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  grid-row: 1 / 3;
+  width: 56px;
+  height: 56px;
   border-radius: var(--radius-md);
-  background: var(--market-accent-button);
+  background: transparent;
   color: #ffffff;
 }
 
@@ -1090,6 +1096,8 @@
 }
 
 .market-app-footer__cta-body {
+  grid-column: 2;
+  grid-row: 1;
   flex: 1;
   min-width: 0;
 }
@@ -1109,6 +1117,10 @@
 }
 
 .market-app-footer__cta-card .market-app-footer__btn {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+  align-self: end;
   flex: 0 0 auto;
   white-space: nowrap;
 }
@@ -1121,10 +1133,13 @@
   }
 
   .market-app-footer__cta-card {
-    flex-wrap: wrap;
+    grid-template-columns: 56px minmax(0, 1fr);
   }
+  .market-app-footer__cta-icon { grid-row: 1; }
 
   .market-app-footer__cta-card .market-app-footer__btn {
+    grid-column: 1 / -1;
+    width: 100%;
     flex-basis: 100%;
     justify-content: center;
   }
@@ -1152,12 +1167,12 @@
 
 .market-app-footer__btn--primary {
   border-color: transparent;
-  background: var(--market-accent-button);
+  background: var(--lw-enamel-base);
 }
 
 .market-app-footer__btn--primary:hover {
   border-color: transparent;
-  background: #1d4ed8;
+  background: var(--lw-enamel-hover);
 }
 
 .market-app-footer__btn:active {
@@ -1179,7 +1194,7 @@
 }
 
 .market-app-footer__link {
-  color: #a7b5ca !important;
+  color: #c5d9d7 !important;
   font-size: var(--text-sm) !important;
   text-decoration: none !important;
   transition: color var(--ease-fast) var(--ease-out);

@@ -2,7 +2,8 @@
 
 import { Box, Text, Group, Stack, Container, Anchor, SimpleGrid } from "@mantine/core"
 import Link from "next/link"
-import { IconBrandTelegram, IconPlus } from "@tabler/icons-react"
+import Image from "next/image"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import LeWheelBrand from "@/components/brand/LeWheelBrand"
 import { CREATE_VEHICLE_HREF, FOOTER_NAVIGATION } from "@/lib/navigation-registry"
 
@@ -32,7 +33,7 @@ export default function AppFooter() {
               заправках, наличие топлива, уведомления. */}
           <Box className="market-app-footer__cta">
             <Box className="market-app-footer__cta-card">
-              <span className="market-app-footer__cta-icon" aria-hidden="true"><IconPlus size={20} stroke={2} /></span>
+              <span className="market-app-footer__cta-icon" aria-hidden="true"><ServiceArtwork kind="publish-listing" size={56} /></span>
               <Box className="market-app-footer__cta-body">
                 <Text className="market-app-footer__cta-title">Продайте машину или запчасть</Text>
                 <Text className="market-app-footer__cta-text">Бесплатно. После проверки объявление появится в каталоге и в городском чате Telegram.</Text>
@@ -43,7 +44,7 @@ export default function AppFooter() {
             </Box>
             {telegramBotUsername && (
               <Box className="market-app-footer__cta-card">
-                <span className="market-app-footer__cta-icon market-app-footer__cta-icon--tg" aria-hidden="true"><IconBrandTelegram size={20} stroke={1.8} /></span>
+                <span className="market-app-footer__cta-icon" aria-hidden="true"><Image src="/images/ui/product-v1/telegram-assistant-192.webp" width={56} height={56} alt="" unoptimized loading="lazy" style={{ objectFit: "contain" }} /></span>
                 <Box className="market-app-footer__cta-body">
                   <Text className="market-app-footer__cta-title">Бот LeWheel в Telegram</Text>
                   <Text className="market-app-footer__cta-text">Цены на заправках рядом, наличие топлива и ответы по вашим объявлениям — в одном чате.</Text>

@@ -54,7 +54,7 @@ try {
     check(`catalog ${device} ${theme}: full group coverage`, keys.size >= 30)
     await page.getByRole("button", { name: "Каталоги", exact: true }).click()
     const menu = page.locator("#shop-catalog-menu")
-    check(`catalog ${device} ${theme}: expanded menu art`, await menu.locator("img").count() === 13)
+    check(`catalog ${device} ${theme}: expanded menu art`, await menu.locator("img").count() === 16)
     if (device === "desktop") await page.screenshot({ path: `${output}/menu-${theme}.png` })
     await page.keyboard.press("Escape")
     check(`catalog ${device} ${theme}: Escape closes menu`, await menu.count() === 0)

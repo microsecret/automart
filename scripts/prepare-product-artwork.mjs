@@ -9,6 +9,7 @@ await mkdir(target, { recursive: true })
 const original = ["filter", "sparkplug", "belt", "oil"]
 const available = [...original, "tools", "care", "wiper", "dashcam", "mats", "seat-cover", "compressor", "jack", "safety", "roof-rack", "charger"]
 const selected = process.argv.slice(3)
+available.push("telegram-assistant")
 for (const name of selected.length ? selected : original) {
   if (!available.includes(name)) throw new Error(`Unknown product asset: ${name}`)
   const input = sharp(path.join(source, `${name}.png`))
