@@ -43,3 +43,22 @@ test("кнопки: карта, поделиться личной ссылкой
   assert.ok(buttons.some((button) => "callback_data" in button && button.callback_data === "digest_off"))
   assert.ok(message.text.length < 1024)
 })
+
+test("незарегистрированному письмо не мешает напоминаниям о регистрации", () => {
+  /* Письмо уходило в 08:05, напоминание в 12:20, обе с шагом в неделю:
+     письмо всегда успевало первым, и напоминание не уходило никогда. */
+  assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(10), registered: false }, now), false)
+  assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(34), registered: false }, now), false)
+  /* После пяти недель напоминания кончаются — письмо снова идёт. */
+  assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(36), registered: false }, now), true)
+  /* Зарегистрированным — как раньше. */
+  assert.equal(isWeeklyDigestDue({ ...base, startedAt: ago(10), registered: true }, now), true)
+})
+
+test("окно напоминаний в письме совпадает с расписанием напоминаний", async () => {
+  // @ts-expect-error Node's strip-types test runner requires the explicit extension.
+  const schedule = await import("../src/lib/signup-nudge-schedule.ts")
+  // @ts-expect-error Node's strip-types test runner requires the explicit extension.
+  const { SIGNUP_NUDGE_WINDOW_MS } = await import("../src/lib/telegram-weekly-digest-message.ts")
+  assert.equal(SIGNUP_NUDGE_WINDOW_MS, schedule.FIRST_NUDGE_DELAY_MS + schedule.NUDGE_INTERVAL_MS * schedule.MAX_NUDGES)
+})

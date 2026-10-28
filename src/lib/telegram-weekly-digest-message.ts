@@ -18,12 +18,30 @@ export const WEEKLY_DIGEST_FIRST_DELAY_MS = WEEKLY_DIGEST_INTERVAL_MS
 export const WEEKLY_DIGEST_QUIET_MS = 3 * 24 * 60 * 60 * 1000
 export const WEEKLY_DIGEST_OFF_CALLBACK = "digest_off"
 
+/**
+ * Пять недель после «Старта» незарегистрированному человеку пишут
+ * напоминания о регистрации (signup-nudge-schedule: первое через неделю,
+ * дальше раз в неделю, четыре штуки). Письмо в это время молчит.
+ *
+ * Оба шли с шагом в неделю и делили одну отметку lastBroadcastAt, но
+ * письмо уходит в 08:05, а напоминание в 12:20: письмо каждый раз
+ * успевало первым, и до напоминания очередь не доходила никогда. Человек,
+ * которому нужнее всего «зарегистрируйтесь — это бесплатно», получал
+ * дайджест цен на бензин. Замечено 28.10.2026.
+ *
+ * Число повторено здесь, а не импортировано: модуль проверяется тестом
+ * без сборки и держится без зависимостей. Тест сверяет его с расписанием.
+ */
+export const SIGNUP_NUDGE_WINDOW_MS = 5 * 7 * 24 * 60 * 60 * 1000
+
 export type WeeklyDigestContact = {
   blocked: boolean
   weeklyOptOut: boolean
   startedAt: Date
   lastWeeklyAt: Date | null
   lastBroadcastAt: Date | null
+  /** Завёл ли аккаунт; не передан — считается зарегистрированным. */
+  registered?: boolean
 }
 
 /** Пора ли слать письмо этому человеку. */
@@ -31,6 +49,7 @@ export function isWeeklyDigestDue(contact: WeeklyDigestContact, now: Date): bool
   if (contact.blocked || contact.weeklyOptOut) return false
   const time = now.getTime()
   if (time - contact.startedAt.getTime() < WEEKLY_DIGEST_FIRST_DELAY_MS) return false
+  if (contact.registered === false && time - contact.startedAt.getTime() < SIGNUP_NUDGE_WINDOW_MS) return false
   if (contact.lastWeeklyAt && time - contact.lastWeeklyAt.getTime() < WEEKLY_DIGEST_INTERVAL_MS) return false
   if (contact.lastBroadcastAt && time - contact.lastBroadcastAt.getTime() < WEEKLY_DIGEST_QUIET_MS) return false
   return true

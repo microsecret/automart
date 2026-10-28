@@ -97,7 +97,7 @@ export async function processWeeklyDigest(options: { dryRun?: boolean } = {}): P
       OR: [{ lastWeeklyAt: null }, { lastWeeklyAt: { lte: intervalAgo } }],
       AND: [{ OR: [{ lastBroadcastAt: null }, { lastBroadcastAt: { lte: quietAgo } }] }],
     },
-    select: { telegramId: true, blocked: true, weeklyOptOut: true, startedAt: true, lastWeeklyAt: true, lastBroadcastAt: true },
+    select: { telegramId: true, blocked: true, weeklyOptOut: true, startedAt: true, lastWeeklyAt: true, lastBroadcastAt: true, registered: true },
     orderBy: [{ lastWeeklyAt: "asc" }, { startedAt: "asc" }],
     take: MAX_PER_RUN,
   })

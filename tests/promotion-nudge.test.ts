@@ -151,3 +151,20 @@ test("маршрут закрыт ключом", () => {
   const route = read("../src/app/api/telegram/promotion-nudges/route.ts")
   assert.match(route, /createTelegramWorkerRoute/)
 })
+
+test("цифры сети в тексте живые и честно округлены", async () => {
+  /* «11 чатов, 114 000 подписчиков» были зашиты в текст и устарели: к
+     28.10.2026 чатов 18, участников 160 тысяч. Теперь цифры приходят
+     параметром. */
+  // @ts-expect-error Node's strip-types test runner requires the explicit extension.
+  const { chatPromotionPitch, formatMembers } = await import("../src/lib/promotion-nudge-rules.ts")
+  const text = nudgeText({ index: 0, title: "Toyota Camry", views: 12, days: 8, priceRub: 300, planDays: 30, network: { chats: 18, members: 160134, repostDays: 2 } })
+  assert.match(text, /18 чатов/)
+  assert.match(text, /160 тыс\./)
+  assert.match(text, /до 15 публикаций/)
+  assert.match(text, /около 10 ₽ в день/)
+  assert.doesNotMatch(text, /11 чатах|114 000/)
+  assert.equal(formatMembers(160999), "160 тыс.")
+  /* Telegram не ответил — участники не называются. */
+  assert.doesNotMatch(chatPromotionPitch({ chats: 18, members: null, repostDays: 2 }, 300, 30).join(" "), /участник/)
+})

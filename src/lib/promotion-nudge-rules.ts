@@ -82,6 +82,45 @@ export function shouldNudge(input: {
  * последнее, и об этом сказано прямо. Один и тот же текст трижды
  * читается как сбой рассылки.
  */
+/**
+ * Сеть чатов, в которой идёт платный показ: живые цифры, а не записанные в
+ * текст. «11 чатов и 114 000 подписчиков» стояли здесь константой, а к
+ * 28.10.2026 чатов стало 18 и участников 160 тысяч — продавцу обещали
+ * меньше, чем он получал бы. Цифры приносит рассылка (chat-network-stats).
+ */
+export type ChatNetwork = {
+  chats: number
+  /** Участников во всех чатах; null — Telegram не ответил, число не называем. */
+  members: number | null
+  /** Как часто пост повторяется в каждом чате. */
+  repostDays: number
+}
+
+/** «160 тыс.» — округление вниз: обещать больше, чем есть, нельзя. */
+export function formatMembers(members: number): string {
+  if (members >= 1000) return `${Math.floor(members / 1000)} тыс.`
+  return String(members)
+}
+
+/**
+ * Что получает продавец за платный показ — строками для сообщения.
+ *
+ * Число публикаций считается из срока и шага повтора: 30 дней при повторе
+ * раз в двое суток дают 15 публикаций в каждом чате. Чаще не повторяем
+ * намеренно — забитый объявлениями чат теряет подписчиков, и показ в нём
+ * перестаёт стоить денег.
+ */
+export function chatPromotionPitch(network: ChatNetwork, priceRub: number, planDays: number): string[] {
+  const perChat = Math.max(1, Math.floor(planDays / Math.max(1, network.repostDays)))
+  const perDay = Math.ceil(priceRub / Math.max(1, planDays))
+  const audience = network.members ? ` — ${formatMembers(network.members)} участников` : ""
+  return [
+    `📣 ${network.chats} чатов авторынка по городам${audience}`,
+    `📌 Пост с закрепом, повтор каждые ${network.repostDays} дн. — до ${perChat} публикаций в каждом чате`,
+    `💸 ${priceRub} ₽ за ${planDays} дней — около ${perDay} ₽ в день`,
+  ]
+}
+
 export function nudgeText(input: {
   index: number
   title: string
@@ -93,24 +132,30 @@ export function nudgeText(input: {
      того же места, что и страница оплаты. */
   priceRub: number
   planDays: number
+  /** Сеть чатов; без неё текст обходится без чисел. */
+  network?: ChatNetwork
 }): string {
   const name = input.title.trim() || "Ваше объявление"
+  const pitch = input.network
+    ? chatPromotionPitch(input.network, input.priceRub, input.planDays).join("\n")
+    : `📣 Показ во всех чатах авторынка сети с закрепом — ${input.priceRub} ₽ за ${input.planDays} дней.`
 
   if (input.index === 0) {
     /* Цифры вместо уговоров: «12 просмотров за 8 дней» продавец
        понимает сам, и вывод делает тоже сам. */
     return (
-      `«${name}» опубликовано ${input.days} дней назад — ${input.views} просмотров.\n\n` +
-      "Объявления в топе и в чатах сети смотрят в разы чаще. " +
-      `Показ в 11 чатах — ${input.priceRub} рублей за ${input.planDays} дней.`
+      `🚗 «${name}» опубликовано ${input.days} дн. назад — ${input.views} просмотров.\n\n` +
+      "Ускорим продажу: покажем машину во всех чатах авторынка LeWheel.\n" +
+      pitch
     )
   }
 
   if (input.index === 1) {
     return (
-      `«${name}» всё ещё ждёт покупателя.\n\n` +
-      "Показ в 11 чатах сети — это 114 000 подписчиков, которые ищут машину прямо сейчас. " +
-      `${input.priceRub} рублей за ${input.planDays} дней.`
+      `🔥 «${name}» всё ещё ждёт покупателя.\n\n` +
+      "В чатах авторынка по городам люди ищут машину прямо сейчас — " +
+      "закрепим ваш пост и будем повторять его весь месяц.\n" +
+      pitch
     )
   }
 
