@@ -278,14 +278,20 @@ test("разметка идёт без пометок Markdown", () => {
   assert.match(topicPage, /stripForumMarkup\(firstPost\.content\)/)
 })
 
-test("угловая скобка в разметке экранирована", () => {
+test("угловая скобка в разметке экранирована", async () => {
   /* Иначе сообщение с закрывающим тегом script закрыло бы блок разметки,
-     и остальное попало бы на страницу как разметка. Проверяем, что в
-     замене стоит экранированная запись, а не сам символ. */
-  const replacement = topicPage.match(/replace\(\/<\/g, "([^"]+)"\)/)?.[1]
-  // Шесть символов: обратный слэш, u, 0, 0, 3, c.
-  assert.equal(replacement?.length, 6, `в замене стоит ${JSON.stringify(replacement)}`)
-  assert.match(replacement || "", /u003c$/)
+     и остальное попало бы на страницу как разметка.
+
+     Прежняя проверка считала символы замены в исходнике: там стояло
+     "\u003c" — шесть знаков в файле, но в строке JS это один символ «<»,
+     и замена ничего не меняла. Тест проходил при живой уязвимости
+     (аудит 28.10.2026). Теперь проверяется сам результат. */
+  assert.match(topicPage, /serializeJsonLd\(jsonLd\)/)
+  // @ts-expect-error Node's strip-types test runner requires the explicit extension.
+  const { serializeJsonLd } = await import("../src/lib/json-ld.ts")
+  const out = serializeJsonLd({ name: "</script><b>" })
+  assert.doesNotMatch(out, /</)
+  assert.equal(JSON.parse(out).name, "</script><b>")
 })
 
 test("страница участников есть в карте сайта", () => {
