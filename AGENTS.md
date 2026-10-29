@@ -14,3 +14,12 @@ Before broad repository work, read `docs/PROJECT_GRAPH.md` and start from the
 smallest relevant node. Use targeted `rg` queries only after selecting that
 node. Update the graph whenever a source pipeline, API route, scheduled job or
 major UI ownership boundary changes.
+
+## User preference: review before release
+
+The user explicitly requires code review for every completed change before
+push and deployment. Review the final scoped diff for correctness, security,
+error states, data exposure and likely regressions; fix material findings and
+run checks appropriate to the change. Report findings honestly and distinguish
+self-review from an independent review. Do not claim a review tool was used if
+it was unavailable. Preserve this preference across future project tasks.

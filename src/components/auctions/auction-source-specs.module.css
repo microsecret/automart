@@ -1,0 +1,26 @@
+.list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+  margin: 0;
+}
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--market-line);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.label, .value { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.label { color: var(--market-muted); }
+.value { text-align: right; color: var(--market-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.row[data-available="false"] .value { color: var(--market-muted); font-weight: 400; }
+@media (max-width: 48em) { .list { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 23em) {
+  .row { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .value { text-align: left; }
+}

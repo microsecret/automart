@@ -7,7 +7,7 @@ import useSWR from "swr"
 import Link from "next/link"
 import { ActionIcon, Alert, Anchor, Badge, Box, Button, Center, Container, Group, Loader, Paper, Progress, SimpleGrid, Stack, Text, Textarea, TextInput, ThemeIcon, UnstyledButton } from "@mantine/core"
 import { useMediaQuery } from "@mantine/hooks"
-import { IconArrowRight, IconCheck, IconChevronLeft, IconChevronRight, IconEye, IconGavel, IconListDetails, IconPhotoOff, IconShieldCheck, IconTruckDelivery, IconX } from "@tabler/icons-react"
+import { IconArrowRight, IconCheck, IconChevronLeft, IconChevronRight, IconEye, IconGavel, IconPhotoOff, IconShieldCheck, IconTruckDelivery, IconX } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import AuctionCalculator from "@/components/auctions/AuctionCalculator"
 import AuctionDamageReport from "@/components/auctions/AuctionDamageReport"
@@ -20,6 +20,8 @@ import { AUCTION_DAMAGE_KINDS, type AuctionDamageKind, type AuctionDamageReport 
 import { buildAuctionSourceSpecs } from "@/lib/auction-source-details"
 import { formatPriceShort, plural } from "@/lib/format"
 import AuctionFlag from "@/components/sidebar/AuctionFlag"
+import AuctionSourceSpecs from "@/components/auctions/AuctionSourceSpecs"
+import ServiceArtwork from "@/components/ui/ServiceArtwork"
 import BrandIcon from "@/components/brands/BrandIcon"
 import type { AuctionListing } from "@prisma/client"
 import styles from "./auction-detail.module.css"
@@ -485,17 +487,10 @@ function AuctionDetail() {
                 )}
               </Paper>
 
-              <Paper radius="md" p="md" withBorder>
+              <Paper data-source-specs radius="md" p="md" withBorder>
                   <Stack gap="sm">
-                    <Group gap="sm"><ThemeIcon variant="light" color="indigo" radius="md"><IconListDetails size={18} /></ThemeIcon><Box><Text fw={700} c="var(--market-ink)">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и приведены к единому формату для всех площадок</Text></Box></Group>
-                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={0} verticalSpacing={0}>
-                      {publicSpecs.map((item) => (
-                        <Group key={`${item.label}-${item.detail}`} justify="space-between" align="flex-start" gap="md" py="xs" px={{ base: 0, sm: "xs" }} wrap="nowrap" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
-                          <Text size="sm" c="dimmed">{item.label}</Text>
-                          <Text size="sm" fw={item.available ? 700 : 500} ta="right" c={item.available ? "var(--market-ink)" : "dimmed"} style={{ overflowWrap: "anywhere" }}>{item.detail}</Text>
-                        </Group>
-                      ))}
-                    </SimpleGrid>
+                    <Group gap="sm" wrap="nowrap" align="flex-start"><ServiceArtwork kind="documents" size={40} /><Box style={{ minWidth: 0 }}><Text component="h2" m={0} fz="md" lh={1.35} fw={700} c="var(--market-ink)">Подробные данные источника</Text><Text size="xs" c="dimmed">Параметры собраны из открытой карточки и приведены к единому формату для всех площадок</Text></Box></Group>
+                    <AuctionSourceSpecs items={publicSpecs} />
                     <Group gap={6} mt={2}>
                       <Text size="xs" c="dimmed">Первоисточник:</Text>
                       <Anchor href={listing.sourceUrl} target="_blank" rel="noreferrer" size="xs" fw={600}>
