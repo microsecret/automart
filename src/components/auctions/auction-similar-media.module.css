@@ -1,0 +1,12 @@
+.frame { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--market-surface-subtle); }
+.image { display: block; width: 100%; height: 100%; object-fit: contain; }
+.status {
+  position: absolute;
+  bottom: 10px;
+  left: 8px;
+  right: 8px;
+  color: var(--market-muted);
+  text-align: center;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}

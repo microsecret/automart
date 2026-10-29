@@ -22,11 +22,13 @@ import { formatPriceShort, plural } from "@/lib/format"
 import AuctionFlag from "@/components/sidebar/AuctionFlag"
 import AuctionSourceSpecs from "@/components/auctions/AuctionSourceSpecs"
 import ServiceArtwork from "@/components/ui/ServiceArtwork"
+import AuctionSimilarMedia from "@/components/auctions/AuctionSimilarMedia"
 import BrandIcon from "@/components/brands/BrandIcon"
 import type { AuctionListing } from "@prisma/client"
 import styles from "./auction-detail.module.css"
 
 type AuctionDetailResponse = { listing: AuctionListing; similar: AuctionListing[] }
+const SIMILAR_BODY_LABELS: Record<string, string> = { SUV: "Кроссовер", SEDAN: "Седан", HATCHBACK: "Хэтчбек", COUPE: "Купе", PICKUP: "Пикап", WAGON: "Универсал", MINIVAN: "Минивэн" }
 type AuctionInquiryResponse = { success: true; inquiry: { id: string; createdAt: string } }
 
 type AuctionEquipment = {
@@ -625,7 +627,7 @@ function AuctionDetail() {
         </Box>
 
         {data?.similar && data.similar.length > 0 && (
-          <Stack gap="sm" mt="md">
+          <Stack data-similar-listings gap="sm" mt="md">
             <Group justify="space-between" align="flex-end" gap="sm">
               <Box>
                 <Text component="h2" fz={{ base: "22px", sm: "26px" }} fw={800} c="var(--market-ink)">Похожие автомобили</Text>
@@ -639,12 +641,9 @@ function AuctionDetail() {
                 const similarImages = parseAuctionImages(similarListing.images) || []
                 const similarImage = isSafeMediaUrl(similarListing.imageUrl) ? similarListing.imageUrl : similarImages[0]
                 return (
-                  <Paper key={similarListing.id} component={Link} href={`/auctions/${similarListing.id}`} radius="md" withBorder className={styles.similarCard}>
-                    <Box h={150} bg="gray.1" pos="relative" style={{ overflow: "hidden" }}>
-                      {similarImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={auctionCardImageUrl(similarImage)} alt={similarIdentity.title} loading="lazy" decoding="async" referrerPolicy="no-referrer" className={styles.similarImage} />
-                      ) : <Center h="100%"><IconPhotoOff size={28} color="var(--mantine-color-gray-5)" /></Center>}
+                  <Paper data-similar-id={similarListing.id} key={similarListing.id} component={Link} href={`/auctions/${similarListing.id}`} radius="md" withBorder className={styles.similarCard}>
+                    <Box h={150} pos="relative" style={{ overflow: "hidden", background: "var(--market-surface-subtle)" }}>
+                      <AuctionSimilarMedia src={similarImage ? auctionCardImageUrl(similarImage) : null} alt={similarIdentity.title} />
                       <Badge pos="absolute" top={10} left={10} color="dark" variant="filled">{similarListing.year}</Badge>
                       <Badge pos="absolute" top={10} right={10} color="dark" variant="filled">{auctionSourceLabel(similarListing.source)}</Badge>
                     </Box>
@@ -652,8 +651,8 @@ function AuctionDetail() {
                       <Group gap="xs" wrap="nowrap"><BrandIcon brand={similarIdentity.make} size={30} /><Text fw={800} c="var(--market-ink)" lineClamp={2} className={styles.similarTitle}>{similarIdentity.title}</Text></Group>
                       <Group gap={6} wrap="wrap" className={styles.similarFacts}>
                         {similarListing.mileage != null && <Badge size="xs" variant="light" color="gray">{similarListing.mileage.toLocaleString("ru")} км</Badge>}
-                        {similarListing.fuelType && <Badge size="xs" variant="light" color="orange">{similarListing.fuelType === "GASOLINE" ? "Бензин" : similarListing.fuelType === "DIESEL" ? "Дизель" : similarListing.fuelType === "HYBRID" ? "Гибрид" : similarListing.fuelType === "ELECTRIC" ? "Электро" : similarListing.fuelType}</Badge>}
-                        {similarListing.bodyType && <Badge size="xs" variant="light" color="indigo">{similarListing.bodyType === "SUV" ? "Кроссовер" : similarListing.bodyType === "SEDAN" ? "Седан" : similarListing.bodyType}</Badge>}
+                        {similarListing.fuelType && <Badge size="xs" variant="light" color="orange">{similarListing.fuelType === "GASOLINE" ? "Бензин" : similarListing.fuelType === "DIESEL" ? "Дизель" : similarListing.fuelType === "HYBRID" ? "Гибрид" : similarListing.fuelType === "ELECTRIC" ? "Электро" : similarListing.fuelType === "GAS" ? "Газ" : similarListing.fuelType}</Badge>}
+                        {similarListing.bodyType && <Badge size="xs" variant="light" color="indigo">{SIMILAR_BODY_LABELS[similarListing.bodyType] || similarListing.bodyType}</Badge>}
                         {similarListing.engineVolume && <Badge size="xs" variant="light" color="gray">{Math.round(similarListing.engineVolume).toLocaleString("ru")} см³</Badge>}
                       </Group>
                       <Group justify="space-between" gap="xs" wrap="nowrap" className={styles.similarPriceRow}>
@@ -671,7 +670,7 @@ function AuctionDetail() {
                               по одной цифре, а платил по другой. */}
                           <Text size="var(--text-caps)" c="dimmed">лот + комиссия</Text>
                         </Box>
-                        <ThemeIcon variant="light" color="indigo" radius="xl" size={30}><IconArrowRight size={16} /></ThemeIcon>
+                        <ThemeIcon variant="light" color="indigo" radius="xl" size={30} aria-hidden="true"><IconArrowRight size={16} /></ThemeIcon>
                       </Group>
                     </Stack>
                   </Paper>
