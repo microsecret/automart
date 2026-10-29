@@ -1,6 +1,35 @@
 .galleryImage {
   transition: opacity var(--ease-base) var(--ease-out), filter var(--ease-base) var(--ease-out);
 }
+.galleryMetadata {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--market-line);
+  background: var(--market-surface);
+  color: var(--market-ink);
+}
+.gallerySource {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 180px;
+  overflow-wrap: anywhere;
+}
+.galleryFacts { min-width: 0; flex: 0 1 auto; }
+.galleryFact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--market-muted);
+}
+.galleryFact :global(.lw-auction-flag) { width: 20px; height: 14px; flex: 0 0 20px; }
+.galleryFact > svg { flex-shrink: 0; }
 .galleryFrame {
   position: relative;
   background: var(--market-surface-subtle);

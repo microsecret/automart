@@ -18,7 +18,8 @@ import { auctionVehicleIdentity, isCustomerFacingRussianText } from "@/lib/aucti
 import { auctionSourceLabel } from "@/lib/auction-sources"
 import { AUCTION_DAMAGE_KINDS, type AuctionDamageKind, type AuctionDamageReport as AuctionDamageReportValue } from "@/lib/auction-damage"
 import { buildAuctionSourceSpecs } from "@/lib/auction-source-details"
-import { formatPriceShort } from "@/lib/format"
+import { formatPriceShort, plural } from "@/lib/format"
+import AuctionFlag from "@/components/sidebar/AuctionFlag"
 import BrandIcon from "@/components/brands/BrandIcon"
 import type { AuctionListing } from "@prisma/client"
 import styles from "./auction-detail.module.css"
@@ -365,7 +366,7 @@ function AuctionDetail() {
      самые пять выходов, что есть у страницы 404. */
   if (!listing) return <Container py={80}><AsyncErrorState title="Лот не найден" description="Возможно, он уже продан или снят с площадки. Посмотрите другие лоты — каталог обновляется каждый час." backHref="/auctions" backLabel="Вернуться к лотам" /></Container>
 
-  const COUNTRY_LABELS: Record<string, string> = { JP: "🇯🇵 Япония", KR: "🇰🇷 Корея", US: "🇺🇸 США", DE: "🇪🇺 Европа", CN: "🇨🇳 Китай", AE: "🇦🇪 ОАЭ", EU: "🇪🇺 Европа" }
+  const COUNTRY_LABELS: Record<string, string> = { JP: "Япония", KR: "Корея", US: "США", DE: "Европа", CN: "Китай", AE: "ОАЭ", EU: "Европа" }
   const publicIdentity = identity || auctionVehicleIdentity(listing.make, listing.model)
 
   return (
@@ -385,6 +386,22 @@ function AuctionDetail() {
                 event.preventDefault()
                 setActiveImageIndex(next)
               }}>
+                <Box data-gallery-metadata className={styles.galleryMetadata}>
+                  <Box className={styles.gallerySource}>
+                    <Text component="span" size="sm" fw={700}>{auctionSourceLabel(listing.source)}</Text>
+                    {publicLotNumber && <Text data-gallery-lot component="span" size="xs" c="dimmed">Лот № {publicLotNumber}</Text>}
+                  </Box>
+                  <Group className={styles.galleryFacts} gap="sm" wrap="wrap">
+                    <span className={styles.galleryFact} data-gallery-country>
+                      {["JP", "KR", "US", "DE", "CN", "EU"].includes(listing.country) && <AuctionFlag country={listing.country === "EU" ? "DE" : listing.country} />}
+                      <Text component="span" size="xs">{COUNTRY_LABELS[listing.country] || listing.country}</Text>
+                    </span>
+                    <span className={styles.galleryFact} data-gallery-views>
+                      <IconEye size={15} aria-hidden="true" />
+                      <Text component="span" size="xs">{listing.viewCount.toLocaleString("ru")} {plural(listing.viewCount, "просмотр", "просмотра", "просмотров")}</Text>
+                    </span>
+                  </Group>
+                </Box>
                 <Box data-gallery-frame className={styles.galleryFrame} tabIndex={0} aria-label="Просмотр фото. Стрелки — переключение, Home и End — первое и последнее фото.">
                   {(!activeImage || failedImageUrls.has(activeImage)) && (
                     <Center h="100%" px="lg">
@@ -438,11 +455,6 @@ function AuctionDetail() {
                       <ActionIcon aria-label="Следующее фото" variant="filled" color="dark" radius="xl" size="lg" pos="absolute" right={12} top="50%" style={{ zIndex: 3, transform: "translateY(-50%)", opacity: 0.82 }} onClick={() => setActiveImageIndex((activeImageIndex + 1) % galleryImages.length)}><IconChevronRight size={20} /></ActionIcon>
                     </>
                   )}
-                  <Badge pos="absolute" top={16} left={16} color="dark" variant="filled" size="lg">{publicLotNumber ? `${auctionSourceLabel(listing.source)} · ${publicLotNumber}` : auctionSourceLabel(listing.source)}</Badge>
-                  <Stack pos="absolute" top={16} right={16} gap={6} align="flex-end">
-                    <Badge color="dark" variant="filled" size="lg">{COUNTRY_LABELS[listing.country] || listing.country}</Badge>
-                    <Badge color="gray" variant="filled" leftSection={<IconEye size={13} />}>{listing.viewCount.toLocaleString("ru")} просмотров</Badge>
-                  </Stack>
                 </Box>
                 {galleryImages.length > 1 && (
                   <Box p="sm" style={{ borderTop: "1px solid var(--market-line)" }}>

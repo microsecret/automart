@@ -6,7 +6,7 @@ import { PrismaClient } from "@prisma/client"
 const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
-const output = "/tmp/lewheel-auction-gallery-20261028"
+const output = process.env.GALLERY_AUDIT_METADATA === "1" ? "/tmp/lewheel-gallery-metadata-20261028" : "/tmp/lewheel-auction-gallery-20261028"
 await mkdir(output, { recursive: true })
 const db = new PrismaClient(), results = []
 const check = (name, condition) => { assert.ok(condition, name); results.push(name); console.log("PASS " + name) }
@@ -14,7 +14,7 @@ let browser
 try {
   const images = Array.from({ length: 35 }, (_, i) => `/uploads/gallery-audit-${i + 1}.svg`)
   const listing = await db.auctionListing.create({ data: {
-    sourceId: "gallery-audit", source: "ENCAR", sourceUrl: "https://www.encar.com/",
+    sourceId: "gallery-audit", source: "ENCAR", sourceUrl: "https://www.encar.com/", lotNumber: "1234567890".repeat(6),
     make: "Audit", model: "Проверка галереи", year: new Date().getFullYear(), bodyType: "SEDAN",
     mileage: 15000, sourcePrice: 10000000, sourceCurrency: "KRW", priceRub: 600000,
     markup: 10000, finalPrice: 610000, country: "KR", status: "ACTIVE", isTranslated: true,
@@ -47,6 +47,16 @@ try {
     const selected = () => gallery.locator('button[aria-current="true"]')
     await frame.waitFor()
     await main.evaluate(img => img.decode())
+    const metadata = gallery.locator("[data-gallery-metadata]")
+    check(name + ": source and complete long lot number visible", (await metadata.innerText()).includes("Encar") && (await metadata.locator("[data-gallery-lot]").innerText()).includes("1234567890".repeat(6)))
+    check(name + ": metadata stays above photo", await metadata.evaluate(el => el.getBoundingClientRect().bottom <= el.parentElement.querySelector("[data-gallery-frame]").getBoundingClientRect().top + 1))
+    check(name + ": metadata is not clipped or covered", await metadata.evaluate(el => [...el.querySelectorAll("[data-gallery-lot], [data-gallery-country], [data-gallery-views]")].every(item => {
+      const r = item.getBoundingClientRect(), parent = el.getBoundingClientRect()
+      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+      return r.left >= parent.left && r.right <= parent.right && item.scrollWidth <= item.clientWidth + 1 && (top === item || item.contains(top))
+    })))
+    check(name + ": country uses named vector flag", (await metadata.locator("[data-gallery-country]").innerText()) === "Корея" && await metadata.locator("[data-gallery-country] svg").count() === 1)
+    check(name + ": one view has correct plural", (await metadata.locator("[data-gallery-views]").innerText()) === "1 просмотр")
     check(name + ": main source shown whole", await main.evaluate(img => getComputedStyle(img).objectFit === "contain" && img.naturalWidth > img.naturalHeight))
     check(name + ": previews contain images", await gallery.locator('button[aria-label^="Показать фото"] img').evaluateAll(items => items.every(img => getComputedStyle(img).objectFit === "contain")))
     check(name + ": thumbnail images stay inside buttons", await gallery.locator('button[aria-label^="Показать фото"] img').evaluateAll(items => items.every(img => { const a = img.getBoundingClientRect(), b = img.parentElement.getBoundingClientRect(); return a.left >= b.left && a.right <= b.right && a.top >= b.top && a.bottom <= b.bottom })))

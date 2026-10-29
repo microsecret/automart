@@ -41,6 +41,7 @@ flowchart LR
 | Subscription controls | `src/components/dashboard/SubscriptionsPanel.tsx` | Owner-only `/api/saved-searches PATCH` pauses delivery without deleting filters; false-to-true resumes from now without erasing the durable quota. The panel exposes filter previews, delivery status, a short tutorial and recoverable mutation errors. |
 | Auction detail and galleries | `src/app/auctions/[id]/page.tsx` | `src/lib/auction-media.ts`, source collector |
 | Whole-photo auction gallery | `src/app/auctions/[id]/page.tsx` | Main/preview/thumbnail/similar media use contain fitting. Gallery frames and selected thumbnails share theme tokens. Region-local arrows/Home/End and thumbnail-only scroll preserve page position; existing 30-thumbnail window retained. Isolated long-gallery keyboard/error audit: `scripts/verify-auction-gallery.mjs`. |
+| Gallery metadata visibility | `src/app/auctions/[id]/page.tsx` | Wrapping source/lot/country/views toolbar is outside the photo frame; authored flags and shared Russian plurals retain actual facts. Long-lot bounds and browser hit testing extend `scripts/verify-auction-gallery.mjs`; notes: `docs/GALLERY_METADATA_2026-10-28.md`. |
 | Unified auction source fields | `src/lib/auction-source-details.ts` | `auction-import.ts`, detail page |
 | Interactive damage report | `src/components/auctions/AuctionDamageReport.tsx` | `auction-damage.ts`, source inspection adapter |
 | Admin analytics and charts | `src/app/admin/page.tsx` | `src/app/api/admin/stats/route.ts`, analytics visit route |
