@@ -48,11 +48,13 @@ try {
         }))
         const unique = [...new Map(rows.map(row => [row.source, row])).values()]
         let before = 0, after = 0
+        const originalFiles = new Set(rows.map(row => `public${new URL(row.source).pathname}`
+          .replace(/-(96|320|640)\.webp$/, `-${row.intended > 160 ? 640 : 320}.webp`)))
         for (const row of unique) {
           const file = `public${new URL(row.source).pathname}`
           after += (await stat(file)).size
-          before += (await stat(file.replace(/-(96|320|640)\.webp$/, `-${row.intended > 160 ? 640 : 320}.webp`))).size
         }
+        for (const file of originalFiles) before += (await stat(file)).size
         measurements.push({ view: name, before, after })
         check(name + ": image bytes do not increase", after <= before)
         check(name + ": no horizontal overflow", await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
