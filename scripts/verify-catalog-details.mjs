@@ -6,7 +6,7 @@ import { chromium } from "playwright-core"
 const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
-const output = "/tmp/lewheel-catalog-details-20261028"
+const output = "/tmp/lewheel-department-keyboard-20261031"
 await mkdir(output, { recursive: true })
 const results = []
 const failures = []
@@ -52,6 +52,31 @@ try {
       await page.screenshot({ path: `${output}/dept-${tabs.indexOf(label)}-${device}-${theme}.png` })
     }
     check(`catalog ${device} ${theme}: full group coverage`, keys.size >= 30)
+    const tabList = page.getByRole("tablist", { name: "Отделы", exact: true })
+    await tabList.scrollIntoViewIfNeeded()
+    await page.getByRole("tab", { name: "Инструменты", exact: true }).focus()
+    for (const [key, label, dept] of [["Home", "Запчасти", "parts"], ["ArrowLeft", "Инструменты", "tools"], ["ArrowRight", "Запчасти", "parts"], ["End", "Инструменты", "tools"], ["Home", "Запчасти", "parts"], ["ArrowRight", "Масла и жидкости", "fluids"]]) {
+      const beforeY = await page.evaluate(() => scrollY)
+      await page.keyboard.press(key)
+      const selected = page.getByRole("tab", { name: label, exact: true })
+      await page.waitForURL(url => url.searchParams.get("dept") === dept)
+      await selected.and(page.locator('[aria-selected="true"]')).waitFor()
+      check(`${device}-${theme} ${key} ${dept}: focus and selection`, await selected.evaluate(el => el === document.activeElement && el.tabIndex === 0))
+      check(`${device}-${theme} ${key} ${dept}: one tab stop and labelled panel`, await tabList.evaluate(el => {
+        const tabs = [...el.querySelectorAll('[role="tab"]')], active = tabs.find(tab => tab.getAttribute("aria-selected") === "true")
+        const panel = document.getElementById(active?.getAttribute("aria-controls"))
+        return tabs.filter(tab => tab.tabIndex === 0).length === 1 && panel?.getAttribute("role") === "tabpanel" && panel.getAttribute("aria-labelledby") === active.id
+      }))
+      check(`${device}-${theme} ${key} ${dept}: rail reveals tab without page jump`, await selected.evaluate((el, y) => {
+        const a = el.getBoundingClientRect(), rail = el.closest('[role="tablist"]').getBoundingClientRect()
+        return a.left >= rail.left - 1 && a.right <= rail.right + 1 && Math.abs(scrollY - y) <= 1
+      }, beforeY))
+    }
+    check(`${device}-${theme}: keyboard focus uses theme ring`, await page.getByRole("tab", { name: "Масла и жидкости", exact: true }).evaluate(el => getComputedStyle(el).outlineStyle === "solid" && getComputedStyle(el).outlineWidth === "3px"))
+    await page.screenshot({ path: `${output}/keyboard-${device}-${theme}.png` })
+    await page.keyboard.press("Tab")
+    check(`${device}-${theme}: Tab reaches product groups`, await page.locator("[data-product-group]").first().evaluate(el => el === document.activeElement))
+    await page.getByRole("tab", { name: "Инструменты", exact: true }).click()
     await page.getByRole("button", { name: "Каталоги", exact: true }).click()
     const menu = page.locator("#shop-catalog-menu")
     check(`catalog ${device} ${theme}: expanded menu art`, await menu.locator("img").count() === 16)

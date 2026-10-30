@@ -590,7 +590,7 @@
 .parts-departments__tabs {
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 2px;
+  padding: 4px;
 }
 
 .parts-departments__tabs::-webkit-scrollbar { display: none; }
@@ -613,6 +613,13 @@
 }
 
 .parts-departments__tab:active { transform: scale(0.97); }
+
+.parts-departments__tab:focus-visible,
+.parts-departments__group:focus-visible {
+  outline: 3px solid var(--market-focus-ring);
+  outline-offset: 1px;
+}
+.parts-departments__group:focus-visible { outline-offset: -3px; }
 
 .parts-departments__tab[data-active] {
   background: var(--lw-enamel-base);
@@ -711,4 +718,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .parts-departments__tab, .parts-departments__group, .parts-facets__chevron { transition: none; }
+  .parts-departments__tab:active,
+  .parts-departments__group:active,
+  .parts-departments__group:hover { transform: none; }
 }
