@@ -19,6 +19,7 @@ const assets: Readonly<Record<string, string>> = {
 export default function NavigationArtwork({ kind }: { kind: string }) {
   const asset = assets[kind]
   if (!asset) return null
-  return <Image src={`/images/ui/${asset}.webp`} width={22} height={22} alt="" aria-hidden="true"
+  const compactAsset = asset.replace(/-320$/, "-96")
+  return <Image src={`/images/ui/${compactAsset}.webp`} width={22} height={22} alt="" aria-hidden="true"
     unoptimized loading="lazy" decoding="async" draggable={false} className="lw-navigation-artwork" />
 }

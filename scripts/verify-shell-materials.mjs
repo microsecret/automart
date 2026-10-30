@@ -9,7 +9,7 @@ const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:4011"
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/)
 assert.ok((process.env.DATABASE_URL || "").includes("audit"))
 assert.ok(process.env.NEXTAUTH_SECRET)
-const output = "/tmp/lewheel-sidebar-artwork-20261026"
+const output = "/tmp/lewheel-sidebar-compact-20261030"
 await mkdir(output, { recursive: true })
 const results = []
 const check = (name, value) => { assert.ok(value, name); results.push(name); console.log(`PASS ${name}`) }
@@ -90,6 +90,7 @@ try {
           await img.evaluate((node) => node.decode())
         }
         check(`${key}: compact 22px illustrations loaded`, await rail.locator("img.lw-navigation-artwork, img.part-category-artwork").evaluateAll((images) => images.every((img) => img.complete && img.naturalWidth > 0 && img.getBoundingClientRect().width === 22 && img.getBoundingClientRect().height === 22 && img.alt === "" && img.getAttribute("aria-hidden") === "true")))
+        check(`${key}: sidebar downloads only compact source artwork`, await rail.locator("img.lw-navigation-artwork, img.part-category-artwork").evaluateAll((images) => images.length > 20 && images.every((img) => img.currentSrc.endsWith("-96.webp") && img.naturalWidth === 96)))
         check(`${key}: all section artwork shares one left alignment`, await rail.locator(".market-side-nav img, .market-side-nav .lw-auction-flag").evaluateAll((nodes) => { const positions = nodes.map((node) => node.getBoundingClientRect().left); return positions.length > 20 && Math.max(...positions) - Math.min(...positions) <= 1 }))
         check(`${key}: five distinct correctly routed flags`, await rail.locator(".lw-auction-flag").evaluateAll((flags) => flags.length === 5 && new Set(flags.map((f) => f.dataset.country)).size === 5 && flags.every((f) => new URL(f.closest("a").href).searchParams.get("country") === f.dataset.country && f.getAttribute("aria-hidden") === "true")))
         const flag = rail.locator('.lw-auction-flag[data-country="JP"]')
