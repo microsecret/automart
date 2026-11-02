@@ -32,6 +32,8 @@ Reconciliation defaults to preview. --apply queues only IDs recorded in the
 three campaign tables during the last 48 hours, only in group/channel chats,
 and reopens recent failed cleanup except messages already reported absent.
 It neither guesses message IDs nor sends test messages or reads chat history.
+An idempotent five-minute reconciliation cron repairs later missed registrations
+as well; its dedicated flock prevents overlapping repair runs.
 No schema migration or dependency addition is needed.
 
 Regression checks exercise due times, retry beyond attempt five, permission
