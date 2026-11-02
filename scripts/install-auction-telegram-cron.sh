@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Когда лента включена, она подхватывает новые лоты отдельно от коллектора.
-# Публикация раз в восемь часов не засоряет живые чаты, а `flock -n` пропускает
+# Публикация раз в сутки не засоряет живые чаты, а `flock -n` пропускает
 # запуск, если предыдущий ещё идёт: наложение прогонов дало бы дубли.
 #
 # Kept idempotent so deploys replace, rather than duplicate, the tagged entry.
@@ -19,6 +19,6 @@ if [ "${AUTOMART_AUCTION_TELEGRAM_CRON:-off}" != "on" ]; then
   exit 0
 fi
 
-JOB="8 */8 * * * cd /root/AutoMart && /usr/bin/flock -n /tmp/automart-auction-telegram.lock /usr/bin/node scripts/publish-auction-highlights.mjs >> /var/log/automart-auction-telegram.log 2>&1 # automart-auction-telegram"
+JOB="8 9 * * * cd /root/AutoMart && /usr/bin/flock -n /tmp/automart-auction-telegram.lock /usr/bin/node scripts/publish-auction-highlights.mjs >> /var/log/automart-auction-telegram.log 2>&1 # automart-auction-telegram"
 replace_cron_job "# automart-auction-telegram" "$JOB"
 echo "Installed automart auction Telegram cron"

@@ -24,14 +24,12 @@ import { CITY_COORDINATES } from "@/lib/cities"
 import { buildNetworkPrices } from "@/lib/fuel-network-prices"
 import { buildFuelPriceDigestPost } from "@/lib/fuel-price-digest-post"
 import { toCitySlug } from "@/lib/fuel-city-slug"
+import { hasRecentFuelChatPost } from "./fuel-chat-frequency"
+import { scheduleTelegramMessageCleanup } from "./telegram-message-cleanup"
 
 /**
- * Не чаще раза в сутки на чат.
- *
- * Сводка утренняя: вторая за день ничего не добавляет, а чат превращает
- * в ленту уведомлений, из которой выходят.
+ * Сводка и приглашение делят общий интервал не менее 72 часов на чат.
  */
-const CHAT_INTERVAL_MS = 20 * 60 * 60 * 1000
 
 /**
  * За какой срок берём отметки.
@@ -111,10 +109,7 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
       continue
     }
 
-    const recent = await prisma.fuelDigestPost.findFirst({
-      where: { chatId: chat.id, publishedAt: { gt: new Date(now.getTime() - CHAT_INTERVAL_MS) } },
-      select: { id: true },
-    })
+    const recent = await hasRecentFuelChatPost(chat.id, now)
     if (recent) {
       result.skipped += 1
       continue
@@ -178,6 +173,7 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
       }
 
       await prisma.fuelDigestPost.create({ data: { chatId: chat.id, messageId: priceMessageId } })
+      await scheduleTelegramMessageCleanup(chat.id, priceMessageId)
       result.sent += 1
       continue
     }
@@ -202,6 +198,7 @@ export async function broadcastFuelDigest(): Promise<DigestResult> {
     }
 
     await prisma.fuelDigestPost.create({ data: { chatId: chat.id, messageId } })
+    await scheduleTelegramMessageCleanup(chat.id, messageId)
     result.sent += 1
   }
 

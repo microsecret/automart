@@ -36,7 +36,7 @@ const forceListing = process.argv.includes("--force")
 const explicitListingArg = getArgValue("--listing")
 const explicitListingId = parseAuctionHighlightListingId(explicitListingArg)
 const explicitLimit = Number(getArgValue("--limit"))
-const limit = Number.isInteger(explicitLimit) ? Math.min(Math.max(explicitLimit, 1), 10) : Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_POST_LIMIT || 3), 1), 10)
+const limit = getArgValue("--limit") !== null && Number.isInteger(explicitLimit) ? Math.min(Math.max(explicitLimit, 1), 10) : 1
 const maxAgeHours = Math.min(Math.max(Number(process.env.TELEGRAM_AUCTION_MAX_AGE_HOURS || 72), 1), 720)
 const freshnessBoundary = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000)
 const sourceFreshnessHours = Math.min(
@@ -367,6 +367,13 @@ async function publish(listing, chatId, countryMedian) {
     const messageText = error instanceof Error ? error.message : ""
     if (!/Unique constraint failed/i.test(messageText)) throw error
   }
+  if (Number.isInteger(message?.message_id) && message.message_id > 0) {
+    await prisma.telegramMessageCleanup.upsert({
+      where: { chatId_messageId: { chatId, messageId: message.message_id } },
+      create: { chatId, messageId: message.message_id, deleteAt: new Date(Date.now() + 5 * 60_000) },
+      update: {},
+    })
+  }
 }
 
 async function resolveChatIds() {
@@ -513,6 +520,7 @@ async function main() {
   let sent = 0
   let highlightedLots = 0
   for (const chatId of chatIds) {
+    if (!forceListing && await prisma.auctionTelegramPost.findFirst({ where: { chatId, createdAt: { gt: new Date(Date.now() - 24 * 60 * 60_000) } }, select: { id: true } })) continue
     const candidatesPool = diversifiedCandidates
       .filter(({ listing }) => forceListing || !postedKeys.has(`${listing.id}:${chatId}`))
     const candidates = (explicitListingId || forceListing)
