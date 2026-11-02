@@ -7,8 +7,8 @@ const collector = readFileSync(new URL("../scripts/run-encar-collector.sh", impo
 const deploy = readFileSync(new URL("../scripts/deploy-production.sh", import.meta.url), "utf8")
 const exampleEnvironment = readFileSync(new URL("../.env.example", import.meta.url), "utf8")
 
-test("подборка аукционных лотов запускается не чаще раза в восемь часов", () => {
-  assert.match(cronInstaller, /JOB="8 \*\/8 \* \* \*/)
+test("подборка аукционных лотов запускается раз в сутки", () => {
+  assert.match(cronInstaller, /JOB="8 9 \* \* \*/)
   assert.match(cronInstaller, /flock -n \/tmp\/automart-auction-telegram\.lock/)
 })
 
